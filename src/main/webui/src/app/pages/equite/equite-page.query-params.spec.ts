@@ -42,12 +42,36 @@ const RAPPORT: RapportEquite = {
   colonnesSolveur: [],
 };
 
+/** The edition's animateurs as the referential lists them: Carol holds no seat in the plan. */
+const ANIMATEURS = [{ id: 'bob' }, { id: 'alice' }, { id: 'carol' }];
+
+/** The API as the page and the referential store read it. */
+async function get(url: string): Promise<unknown> {
+  if (url === '/api/animateurs') {
+    return ANIMATEURS;
+  }
+  if (url === '/api/planning/volumetrie') {
+    return {
+      animateurCount: 3,
+      posteCount: 0,
+      contrainteAdHocCount: 0,
+      hoursToFill: 0,
+      hoursAvailable: 0,
+    };
+  }
+  return RAPPORT;
+}
+
 type PageInternals = {
   sort: WritableSignal<Sort>;
   filtre: WritableSignal<string>;
   viewChanged: Signal<boolean>;
   lignesAffichees: Signal<LigneEquite[]>;
   resetView(): void;
+  comparedId: Signal<string>;
+  comparedSearch: Signal<string>;
+  onComparedSearch(text: string): void;
+  choisir(animateurId: string): void;
 };
 
 function setUp(queryParams: Record<string, string>) {
@@ -56,7 +80,7 @@ function setUp(queryParams: Record<string, string>) {
     providers: [
       provideZonelessChangeDetection(),
       provideRouter([]),
-      { provide: ApiService, useValue: { get: vi.fn(async () => RAPPORT), downloadGet: vi.fn() } },
+      { provide: ApiService, useValue: { get: vi.fn(get), downloadGet: vi.fn() } },
       { provide: Location, useValue: { path: () => '/equite', replaceState } },
       {
         provide: ActivatedRoute,
@@ -113,6 +137,70 @@ describe('EquitePage query-param sync', () => {
     await fixture.whenStable();
 
     expect(replaceState).toHaveBeenCalledWith('/equite?sort=heuresTotal&dir=desc&q=bob');
+  });
+
+  it('keeps the radar axes and the compared person in the URL, axes in canonical order', async () => {
+    const { fixture, replaceState, page } = setUp({
+      vue: 'fiche',
+      animateur: 'bob',
+      axes: 'plusLongueSerie,inconnu,heuresJourFerie',
+      comparer: 'alice',
+    });
+    await fixture.whenStable();
+
+    expect(replaceState).toHaveBeenLastCalledWith(
+      '/equite?vue=fiche&animateur=bob&axes=heuresJourFerie%2CplusLongueSerie&comparer=alice',
+    );
+    expect(page.viewChanged()).toBe(true);
+  });
+
+  it('names the compared person in the field after a reload, so emptying it ends the comparison', async () => {
+    const { fixture, replaceState, page } = setUp({
+      vue: 'fiche',
+      animateur: 'bob',
+      comparer: 'alice',
+    });
+    await fixture.whenStable();
+    await vi.waitFor(() => expect(page.comparedSearch()).toBe('Alice'));
+
+    page.onComparedSearch('');
+    await fixture.whenStable();
+    expect(page.comparedId()).toBe('');
+    expect(replaceState).toHaveBeenLastCalledWith('/equite?vue=fiche&animateur=bob');
+  });
+
+  it('ends the comparison when the fiche moves to the compared person', async () => {
+    const { fixture, replaceState, page } = setUp({
+      vue: 'fiche',
+      animateur: 'bob',
+      comparer: 'alice',
+    });
+    await fixture.whenStable();
+    await vi.waitFor(() => expect(page.comparedSearch()).toBe('Alice'));
+
+    page.choisir('alice');
+    await fixture.whenStable();
+    expect(page.comparedId()).toBe('');
+    expect(page.comparedSearch()).toBe('');
+    expect(replaceState).toHaveBeenLastCalledWith('/equite?vue=fiche&animateur=alice');
+  });
+
+  it('says a known animateur holds no seat, and treats an unknown id as no choice', async () => {
+    const known = setUp({ vue: 'fiche', animateur: 'carol' });
+    await known.fixture.whenStable();
+    known.fixture.detectChanges();
+    await vi.waitFor(() => {
+      known.fixture.detectChanges();
+      expect(known.fixture.nativeElement.textContent).toContain("n'a aucun poste");
+    });
+
+    TestBed.resetTestingModule();
+    const unknown = setUp({ vue: 'fiche', animateur: 'ghost' });
+    await unknown.fixture.whenStable();
+    unknown.fixture.detectChanges();
+    const text = unknown.fixture.nativeElement.textContent as string;
+    expect(text).toContain('Tapez un nom');
+    expect(text).not.toContain("n'a aucun poste");
   });
 
   it('clears every param once the view is reset', async () => {
