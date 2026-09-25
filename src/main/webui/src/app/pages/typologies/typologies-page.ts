@@ -117,6 +117,7 @@ export class TypologiesPage extends ReferenceTablePage<TypologieItem> {
   protected readonly columns = [
     'select',
     'id',
+    'code',
     'label',
     'ninja',
     'competents',
@@ -164,7 +165,7 @@ export class TypologiesPage extends ReferenceTablePage<TypologieItem> {
     super({
       rows: (store) => store.typologies(),
       id: (typologie) => typologie.id,
-      champsFiltre: (typologie) => [typologie.id, typologie.label],
+      champsFiltre: (typologie) => [typologie.id, typologie.code, typologie.label],
       detail: (typologie, store) => ({
         title: typologie.label || typologie.id,
         subtitle: typologie.id,

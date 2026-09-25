@@ -13,7 +13,10 @@ export interface TypologieFormData {
   typologie: TypologieItem | null;
 }
 
-/** Add/edit dialog for a typologie: id, display label, cap and free note. */
+/**
+ * Add/edit dialog for a typologie: code, display label, cap and free note. The
+ * id is drawn by the server on creation and only shown, read-only, on an edit.
+ */
 @Component({
   selector: 'app-typologie-form-dialog',
   imports: [
@@ -59,7 +62,9 @@ export class TypologieFormDialog {
     // ninja is carried over untouched: it is set from the list page's dedicated
     // select (only one typologie may hold it), and a PUT replaces the whole row.
     const typologie: TypologieItem = {
-      id: draft.id.trim(),
+      id: draft.id,
+      // A blank code is no code: the server keeps the column empty.
+      code: draft.code?.trim() || null,
       label: draft.label.trim(),
       ninja: draft.ninja ?? false,
       // Empty field means « no cap », never zero: a cap of zero would put every
@@ -86,6 +91,7 @@ function toDraft(typologie: TypologieItem | null): TypologieItem {
   return typologie
     ? {
         id: typologie.id,
+        code: typologie.code ?? '',
         label: typologie.label ?? '',
         ninja: typologie.ninja ?? false,
         maxCreneauxParAnimateur: typologie.maxCreneauxParAnimateur ?? null,
@@ -94,6 +100,7 @@ function toDraft(typologie: TypologieItem | null): TypologieItem {
       }
     : {
         id: '',
+        code: '',
         label: '',
         ninja: false,
         maxCreneauxParAnimateur: null,

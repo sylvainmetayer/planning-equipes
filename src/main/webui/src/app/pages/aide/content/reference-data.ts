@@ -71,6 +71,10 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
+          text: $localize`:@@aide.data.identifiants:Aucun identifiant ne se saisit : l'application en attribue un à chaque fiche qu'elle crée — A12 pour un animateur, S3 pour un stand, T2 pour une typologie, L1 pour un emplacement, C4 pour un ajustement. Un stand, une typologie ou un emplacement peut porter en plus un code, facultatif et unique dans l'édition, comme « STRATEGIE » ou « PAVILLON » : c'est la clé lisible que citent les fichiers d'import, et que les exports écrivent à côté de l'identifiant.`,
+        },
+        {
+          kind: 'paragraph',
           text: $localize`:@@aide.data.bulk:Chaque écran permet de cocher plusieurs lignes pour les supprimer ou les modifier d'un geste. En modification groupée, un champ laissé vide veut dire « ne pas modifier » : les valeurs propres à chaque ligne sont préservées. Cela vaut aussi pour les horaires : une règle valable pour vingt stands se saisit une fois.`,
         },
         {
@@ -226,7 +230,7 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.competences.csv:« Exporter en CSV » rend la grille telle quelle : une colonne « animateur » avec l'identifiant — jamais le nom —, puis une colonne par typologie, et dans chaque case DEBUTANT, AUTONOME, REFERENT ou rien. « Importer un CSV » relit ce format, après un aperçu ligne par ligne. Le point qui compte : une case vide du fichier laisse l'appréciation telle qu'elle est. L'import ajoute et met à jour, il ne retire jamais — retirer une appréciation reste un geste de la grille.`,
+          text: $localize`:@@aide.competences.csv:« Exporter en CSV » rend la grille telle quelle : une colonne « animateur » avec l'identifiant — jamais le nom —, puis une colonne par typologie, nommée par son code, et dans chaque case DEBUTANT, AUTONOME, REFERENT ou rien. « Importer un CSV » relit ce format, après un aperçu ligne par ligne. Le point qui compte : une case vide du fichier laisse l'appréciation telle qu'elle est. L'import ajoute et met à jour, il ne retire jamais — retirer une appréciation reste un geste de la grille.`,
         },
       ],
       links: [
@@ -249,7 +253,7 @@ export function buildReferenceDataSections(): HelpSection[] {
         {
           kind: 'list',
           items: [
-            $localize`:@@aide.importCsv.onglet.typologies:Typologies, emplacements, stands : un identifiant et un libellé suffisent. Latitude et longitude sont facultatives pour un emplacement ; l'effectif l'est pour un stand, qui tient alors à une personne. Une typologie qu'un stand cite sans qu'elle existe est créée, et l'aperçu la nomme.`,
+            $localize`:@@aide.importCsv.onglet.typologies:Typologies, emplacements, stands : un code et un libellé suffisent — le code est la clé que les autres fichiers citent, l'identifiant est attribué par l'application. Latitude et longitude sont facultatives pour un emplacement ; l'effectif l'est pour un stand, qui tient alors à une personne. Une typologie qu'un stand cite sans qu'elle existe est créée, et l'aperçu la nomme.`,
             $localize`:@@aide.importCsv.onglet.creneaux:Créneaux et journées types : un créneau se reconnaît à sa date et à ses deux heures, si bien qu'un fichier rejoué met la grille à jour au lieu de la doubler. Une journée type se reconnaît à son nom. Attention : importer des journées types ne déplace aucun créneau — la grille ne bouge qu'en appliquant le calendrier.`,
             $localize`:@@aide.importCsv.onglet.animateurs:Animateurs : le plus utile, détaillé ci-dessous.`,
             $localize`:@@aide.importCsv.onglet.grille:Grille des stands : la matrice du classeur, stands en lignes, jours et créneaux en colonnes. Elle a sa propre section dans ce guide.`,
@@ -272,7 +276,7 @@ export function buildReferenceDataSections(): HelpSection[] {
         {
           kind: 'callout',
           title: $localize`:@@aide.importCsv.callout.title:Les deux refus qui surprennent`,
-          text: $localize`:@@aide.importCsv.callout.text:Créez vos créneaux d'abord : sans dates d'événement, un jour d'indisponibilité importé serait invisible dans l'espace animateur, puis effacé. Et donnez une date de naissance à chaque nouvelle fiche : tout le régime mineur / majeur en dépend. Si deux personnes portent le même nom, ajoutez une colonne identifiant ou e-mail — l'import refuse la ligne plutôt que de choisir à votre place.`,
+          text: $localize`:@@aide.importCsv.callout.text:Créez vos créneaux d'abord : sans dates d'événement, un jour d'indisponibilité importé serait invisible dans l'espace animateur, puis effacé. Et donnez une date de naissance à chaque nouvelle fiche : tout le régime mineur / majeur en dépend. Si deux personnes portent le même nom, ajoutez une colonne e-mail, ou l'identifiant que l'application leur a attribué — l'import refuse la ligne plutôt que de choisir à votre place.`,
         },
         {
           kind: 'paragraph',
@@ -305,7 +309,7 @@ export function buildReferenceDataSections(): HelpSection[] {
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.importGrille.format:L'onglet lit un CSV tel qu'un tableur l'exporte : une première colonne qui nomme le stand par son identifiant ou son nom exact, puis une colonne par jour et par créneau, un effectif par case, vide, « - » ou 0 pour fermé. Deux lignes d'en-tête — les dates, puis les bandes « 10h00-12h00 » — ou une seule, « 2026-07-08 10h00-12h00 ». Le plus simple est de partir de « Télécharger la grille actuelle comme modèle ».`,
+          text: $localize`:@@aide.importGrille.format:L'onglet lit un CSV tel qu'un tableur l'exporte : une première colonne qui nomme le stand par son code, son identifiant ou son nom exact, puis une colonne par jour et par créneau, un effectif par case, vide, « - » ou 0 pour fermé. Deux lignes d'en-tête — les dates, puis les bandes « 10h00-12h00 » — ou une seule, « 2026-07-08 10h00-12h00 ». Le plus simple est de partir de « Télécharger la grille actuelle comme modèle ».`,
         },
         {
           kind: 'paragraph',
@@ -317,7 +321,7 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.importGrille.stands:Un stand accepté est réécrit comme depuis la grille de saisie : tout son horaire suit ses cases, et ses effectifs minimum et maximum suivent la plus petite et la plus grande. Un stand absent du fichier n'est pas touché, et l'import n'en crée aucun : un identifiant inconnu, ou un nom porté par deux stands, rejette la ligne en le disant.`,
+          text: $localize`:@@aide.importGrille.stands:Un stand accepté est réécrit comme depuis la grille de saisie : tout son horaire suit ses cases, et ses effectifs minimum et maximum suivent la plus petite et la plus grande. Un stand absent du fichier n'est pas touché, et l'import n'en crée aucun : un code ou un identifiant inconnu, ou un nom porté par deux stands, rejette la ligne en le disant.`,
         },
       ],
       links: [

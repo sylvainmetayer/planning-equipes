@@ -17,6 +17,7 @@ import {
   ouvrirSelect,
   pageAdmin,
   seedPlanning,
+  EDITION_REFERENCE,
 } from './support';
 import { repartirDeLaReference } from './reference';
 
@@ -64,9 +65,9 @@ test.beforeAll(async ({ playwright }, testInfo) => {
     `delete from poste_affectation where creneau_id in (${CRENEAU_A_VENIR}, ${CRENEAU_PASSE});\n` +
       `delete from creneau where id in (${CRENEAU_A_VENIR}, ${CRENEAU_PASSE});\n` +
       `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) ` +
-      `values ('DEFAUT', ${CRENEAU_A_VENIR}, '${DATE}', '10:00', '20:00');\n` +
+      `values ('${EDITION_REFERENCE}', ${CRENEAU_A_VENIR}, '${DATE}', '10:00', '20:00');\n` +
       `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) ` +
-      `values ('DEFAUT', ${CRENEAU_PASSE}, '${DATE_PASSEE}', '10:00', '20:00');`,
+      `values ('${EDITION_REFERENCE}', ${CRENEAU_PASSE}, '${DATE_PASSEE}', '10:00', '20:00');`,
   );
 });
 

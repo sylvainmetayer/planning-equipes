@@ -29,6 +29,7 @@ export function readStandDraft(raw: unknown, recordId: string | null): StandDraf
   const valid =
     typeof raw['id'] === 'string' &&
     typeof raw['nom'] === 'string' &&
+    (raw['code'] === undefined || typeof raw['code'] === 'string') &&
     typeof raw['reserveMajeurs'] === 'boolean' &&
     typeof raw['premium'] === 'boolean' &&
     EFFORT_LEVELS.has(raw['niveauEffort']) &&
@@ -51,7 +52,8 @@ export function readStandDraft(raw: unknown, recordId: string | null): StandDraf
   if (recordId !== null && raw['id'] !== recordId) {
     return null;
   }
-  return raw as unknown as StandDraft;
+  // A draft saved before stands carried a code has none: an empty one.
+  return { code: '', ...raw } as unknown as StandDraft;
 }
 
 function fingerprint(draft: StandDraft): string {

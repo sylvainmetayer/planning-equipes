@@ -37,7 +37,7 @@
     }
     <table mat-table [dataSource]="typologiesFiltrees()" matSort [matSortActive]="sort().active"
            [matSortDirection]="sort().direction" (matSortChange)="sort.set($event)">
-      <caption class="visually-hidden" i18n="@@typologies.table.caption">Typologies de jeu du référentiel : identifiant, libellé, compétents, souhaits, stands, état et actions</caption>
+      <caption class="visually-hidden" i18n="@@typologies.table.caption">Typologies de jeu du référentiel : identifiant, code, libellé, compétents, souhaits, stands, état et actions</caption>
       <ng-container matColumnDef="select">
         <th mat-header-cell scope="col" *matHeaderCellDef>
           <mat-checkbox i18n-aria-label="@@bulk.selectAll" aria-label="Tout sélectionner"
@@ -53,6 +53,10 @@
       <ng-container matColumnDef="id">
         <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@common.id">Id</th>
         <td mat-cell *matCellDef="let typologie">{{ typologie.id }}</td>
+      </ng-container>
+      <ng-container matColumnDef="code">
+        <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@referentiel.field.code">Code</th>
+        <td mat-cell *matCellDef="let typologie">{{ typologie.code }}</td>
       </ng-container>
       <ng-container matColumnDef="label">
         <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@typologies.field.label">Libellé</th>

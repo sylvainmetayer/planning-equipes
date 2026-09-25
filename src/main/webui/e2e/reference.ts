@@ -55,7 +55,12 @@ import { MOT_DE_PASSE_ADMIN } from './support';
  * demande déjà.</p>
  */
 
-/** Les préfixes d'identifiant que les specs se réservent. */
+/**
+ * Les préfixes que les specs se réservent : ceux des identifiants de leurs
+ * fixtures SQL, et ceux des noms et des codes de ce qu'elles créent par l'API
+ * ou l'écran — l'identifiant, lui, c'est l'application qui le tire. Une ligne
+ * d'insertion qui porte une valeur commençant par l'un d'eux est de test.
+ */
 const PREFIXES_DE_TEST = ['E2E-', 'E2EIMP-', 'SOLV-', 'FUZZ-', 'CJ-', 'ENE-', 'ADH-', 'CSV-'];
 
 /**

@@ -52,7 +52,7 @@
     <mat-card-content>
       @if (vue.typologiesCreees.length > 0) {
         <p class="empty-hint" i18n="@@importRef.typologiesCreees">
-          Typologie(s) citée(s) mais absente(s) du référentiel, qui seront créées avec leur identifiant pour libellé : {{ vue.typologiesCreees.join(', ') }}.
+          Typologie(s) citée(s) mais absente(s) du référentiel, qui seront créées avec leur code pour libellé : {{ vue.typologiesCreees.join(', ') }}.
         </p>
       }
       <div class="table-wrapper">
@@ -61,7 +61,7 @@
           <thead>
             <tr>
               <th scope="col" i18n="@@importRef.apercu.ligne">Ligne</th>
-              <th scope="col" i18n="@@common.id">Id</th>
+              <th scope="col" i18n="@@importRef.apercu.cle">Clé</th>
               <th scope="col" i18n="@@common.nom">Nom</th>
               <th scope="col" i18n="@@importRef.apercu.action">Action</th>
               <th scope="col" i18n="@@importRef.apercu.pourquoi">Ce qu'il faut savoir</th>

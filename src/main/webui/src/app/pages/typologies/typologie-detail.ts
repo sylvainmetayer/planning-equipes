@@ -47,6 +47,11 @@ export function buildTypologieDetail(
       rows: [
         { label: $localize`:@@common.id:Id`, value: typologie.id },
         {
+          label: $localize`:@@referentiel.field.code:Code`,
+          value: typologie.code || $localize`:@@detail.none:Aucun`,
+          muted: !typologie.code,
+        },
+        {
           label: $localize`:@@typologies.field.label:Libellé`,
           value: typologie.label || typologie.id,
         },

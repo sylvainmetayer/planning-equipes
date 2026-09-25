@@ -136,16 +136,12 @@ describe('CreneauFormDialog', () => {
       couverturePause: false,
       modifieLe: null,
     });
-    const [, , editingId, , options] = save.mock.calls[0] as unknown as [
+    const [, , editingId] = save.mock.calls[0] as unknown as [
       string,
       Partial<Creneau>,
       number | null,
-      string,
-      { requireId?: boolean },
     ];
     expect(editingId).toBeNull();
-    // Without this flag the shared CRUD would refuse an id-less payload.
-    expect(options.requireId).toBe(false);
     expect(close).toHaveBeenCalledWith(true);
   });
 

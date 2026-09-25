@@ -2,7 +2,15 @@
 // and the seeding of a tiny two-seat planning through the admin API only —
 // exactly what a browser could do, no backdoor into the database.
 
-import { APIRequestContext, Browser, Locator, Page, Playwright, expect } from '@playwright/test';
+import {
+  APIRequestContext,
+  APIResponse,
+  Browser,
+  Locator,
+  Page,
+  Playwright,
+  expect,
+} from '@playwright/test';
 
 export const MOT_DE_PASSE_ADMIN = process.env['E2E_ADMIN_PASSWORD'] ?? 'admin';
 
@@ -161,7 +169,65 @@ export function dayLabel(date: string): string {
   return `${weekdays[new Date(Date.UTC(year, month - 1, day)).getUTCDay()]} ${dayMonth(date)}`;
 }
 
-/** Ids of everything the suite seeds, so reseeding stays idempotent. */
+/**
+ * The edition every spec works in: the one a fresh stack creates, numbered
+ * `E1` like every edition since ids are drawn by the application (ADR 0046).
+ */
+export const EDITION_REFERENCE = 'E1';
+
+/**
+ * The SQL expression naming a typologie of the reference edition by its code.
+ * Typologie ids are drawn by the application (`T1`, `T2`…), in an order no
+ * fixture should depend on; the code (`STRATEGIE`) is what stays readable.
+ */
+export function typologieSql(code: string): string {
+  return `(select id from typologie where edition_id = '${EDITION_REFERENCE}' and code = '${code}')`;
+}
+
+/**
+ * The id the application gave the typologie carrying `code` — what a read of
+ * a stand or an animateur names, where a payload may still cite the code.
+ */
+export async function typologieId(admin: APIRequestContext, code: string): Promise<string> {
+  const reponse = await admin.get('/api/typologies');
+  expect(reponse.ok()).toBe(true);
+  const typologies = (await reponse.json()) as { id: string; code?: string | null }[];
+  const id = typologies.find((typologie) => typologie.code === code)?.id;
+  expect(id, `typologie of code ${code} must exist`).toBeTruthy();
+  return id as string;
+}
+
+/**
+ * The id the server drew for what a creation answered. Every referential is
+ * numbered by the application now: a spec never chooses an id, it reads the
+ * one it was given — at the top of the body, or on the entity a warning-
+ * carrying answer wraps.
+ */
+export async function idCree(reponse: APIResponse): Promise<string> {
+  expect(reponse.ok(), await reponse.text()).toBe(true);
+  const corps = (await reponse.json()) as Record<string, unknown>;
+  const direct = corps['id'];
+  if (typeof direct === 'string') {
+    return direct;
+  }
+  for (const [cle, valeur] of Object.entries(corps)) {
+    if (cle === 'avertissements' || !valeur || typeof valeur !== 'object') {
+      continue;
+    }
+    const imbrique = (valeur as Record<string, unknown>)['id'];
+    if (typeof imbrique === 'string') {
+      return imbrique;
+    }
+  }
+  throw new Error(`no id in the creation answer: ${JSON.stringify(corps)}`);
+}
+
+/**
+ * Ids of everything the suite seeds, so reseeding stays idempotent. These rows
+ * are written straight into the database through `/api/database/import`, not
+ * created through the API: their ids are fixture keys the counters never draw
+ * (no `A12` shape), which is what lets a reseed find and delete them.
+ */
 export const SEED = {
   demandeur: 'E2E-A',
   cible: 'E2E-B',
@@ -186,12 +252,12 @@ export async function contexteAdmin(
   playwright: Playwright,
   baseURL: string,
 ): Promise<APIRequestContext> {
-  // Pinned on the DEFAUT edition: the suite seeds hard-coded 'DEFAUT' rows,
+  // Pinned on the reference edition: the suite seeds rows of that edition,
   // while an unpinned request follows whatever edition the target instance
   // flags as default — which any real deployment may have changed.
   const request = await playwright.request.newContext({
     baseURL,
-    extraHTTPHeaders: { 'X-Edition-Id': 'DEFAUT' },
+    extraHTTPHeaders: { 'X-Edition-Id': EDITION_REFERENCE },
   });
   const connexion = await request.post('/j_security_check', {
     form: { j_username: 'admin', j_password: MOT_DE_PASSE_ADMIN },
@@ -241,27 +307,27 @@ export async function seedPlanning(
     // The dataset itself. Every stand carries a typologie (issue #343): a
     // stand seeded without one would be refused at its next save. access_token is deliberately omitted: the database
     // generates it, and the suite reads it back through the admin API.
-    `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs) values ('DEFAUT', '${SEED.standDemandeur}', 'Stand E2E un', 1, 1, false);`,
-    `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs) values ('DEFAUT', '${SEED.standCible}', 'Stand E2E deux', 1, 1, false);`,
-    `insert into stand_typologie (edition_id, stand_id, typologie) values ('DEFAUT', '${SEED.standDemandeur}', 'STRATEGIE');`,
-    `insert into stand_typologie (edition_id, stand_id, typologie) values ('DEFAUT', '${SEED.standCible}', 'STRATEGIE');`,
+    `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs) values ('${EDITION_REFERENCE}', '${SEED.standDemandeur}', 'Stand E2E un', 1, 1, false);`,
+    `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs) values ('${EDITION_REFERENCE}', '${SEED.standCible}', 'Stand E2E deux', 1, 1, false);`,
+    `insert into stand_typologie (edition_id, stand_id, typologie) values ('${EDITION_REFERENCE}', '${SEED.standDemandeur}', ${typologieSql('STRATEGIE')});`,
+    `insert into stand_typologie (edition_id, stand_id, typologie) values ('${EDITION_REFERENCE}', '${SEED.standCible}', ${typologieSql('STRATEGIE')});`,
     // Alice carries an email (mail-sending tests); Bruno deliberately none.
-    `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager, email) values ('DEFAUT', '${SEED.demandeur}', 'Alice', 'E2E', '1990-01-01', false, '${SEED.demandeur}@example.org');`,
-    `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('DEFAUT', '${SEED.cible}', 'Bruno', 'E2E', '1992-02-02', false);`,
-    `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) values ('DEFAUT', ${SEED.creneauId}, '${SEED.jour}', '10:00', '12:00');`,
-    `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('DEFAUT', 'E2E-P1', '${SEED.standDemandeur}', ${SEED.creneauId}, '${SEED.demandeur}');`,
-    `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('DEFAUT', 'E2E-P2', '${SEED.standCible}', ${SEED.creneauId}, '${SEED.cible}');`,
+    `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager, email) values ('${EDITION_REFERENCE}', '${SEED.demandeur}', 'Alice', 'E2E', '1990-01-01', false, '${SEED.demandeur}@example.org');`,
+    `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('${EDITION_REFERENCE}', '${SEED.cible}', 'Bruno', 'E2E', '1992-02-02', false);`,
+    `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) values ('${EDITION_REFERENCE}', ${SEED.creneauId}, '${SEED.jour}', '10:00', '12:00');`,
+    `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('${EDITION_REFERENCE}', 'E2E-P1', '${SEED.standDemandeur}', ${SEED.creneauId}, '${SEED.demandeur}');`,
+    `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('${EDITION_REFERENCE}', 'E2E-P2', '${SEED.standCible}', ${SEED.creneauId}, '${SEED.cible}');`,
     ...(options.avecCollegueIndisponible
       ? [
-          `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('DEFAUT', '${SEED.collegueIndisponible}', 'Chloé', 'E2E', '1995-03-03', false);`,
-          `insert into animateur_jour_indispo (edition_id, animateur_id, jour) values ('DEFAUT', '${SEED.collegueIndisponible}', '${SEED.jour}');`,
+          `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('${EDITION_REFERENCE}', '${SEED.collegueIndisponible}', 'Chloé', 'E2E', '1995-03-03', false);`,
+          `insert into animateur_jour_indispo (edition_id, animateur_id, jour) values ('${EDITION_REFERENCE}', '${SEED.collegueIndisponible}', '${SEED.jour}');`,
         ]
       : []),
     ...(options.avecCollegueLibre
       ? [
-          `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('DEFAUT', '${SEED.collegueLibre}', 'Denis', 'E2E', '1988-04-04', false);`,
-          `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) values ('DEFAUT', ${SEED.creneauAutreJour}, '${SEED.jourSuivant}', '14:00', '16:00');`,
-          `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('DEFAUT', 'E2E-P3', '${SEED.standCible}', ${SEED.creneauAutreJour}, '${SEED.collegueLibre}');`,
+          `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('${EDITION_REFERENCE}', '${SEED.collegueLibre}', 'Denis', 'E2E', '1988-04-04', false);`,
+          `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) values ('${EDITION_REFERENCE}', ${SEED.creneauAutreJour}, '${SEED.jourSuivant}', '14:00', '16:00');`,
+          `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('${EDITION_REFERENCE}', 'E2E-P3', '${SEED.standCible}', ${SEED.creneauAutreJour}, '${SEED.collegueLibre}');`,
         ]
       : []),
   ].join('\n');
@@ -357,25 +423,25 @@ export async function seedReferentielSolveur(
   }
   for (const stand of stands) {
     statements.push(
-      `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs) values ('DEFAUT', '${stand.id}', '${stand.nom}', ${stand.effectif}, ${stand.effectif}, ${stand.reserveMajeurs ?? false});`,
+      `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs) values ('${EDITION_REFERENCE}', '${stand.id}', '${stand.nom}', ${stand.effectif}, ${stand.effectif}, ${stand.reserveMajeurs ?? false});`,
       // A stand always carries a typologie (issue #343): without one, the specs
       // that then edit the stand through the API would be refused.
-      `insert into stand_typologie (edition_id, stand_id, typologie) values ('DEFAUT', '${stand.id}', 'STRATEGIE');`,
+      `insert into stand_typologie (edition_id, stand_id, typologie) values ('${EDITION_REFERENCE}', '${stand.id}', ${typologieSql('STRATEGIE')});`,
     );
   }
   for (const animateur of animateurs) {
     statements.push(
-      `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager, email) values ('DEFAUT', '${animateur.id}', '${animateur.prenom}', '${animateur.nom}', '${animateur.dateNaissance}', false, '${animateur.id}@example.org');`,
+      `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager, email) values ('${EDITION_REFERENCE}', '${animateur.id}', '${animateur.prenom}', '${animateur.nom}', '${animateur.dateNaissance}', false, '${animateur.id}@example.org');`,
     );
     for (const jour of animateur.joursIndisponibles ?? []) {
       statements.push(
-        `insert into animateur_jour_indispo (edition_id, animateur_id, jour) values ('DEFAUT', '${animateur.id}', '${jour}');`,
+        `insert into animateur_jour_indispo (edition_id, animateur_id, jour) values ('${EDITION_REFERENCE}', '${animateur.id}', '${jour}');`,
       );
     }
   }
   for (const creneau of creneaux) {
     statements.push(
-      `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) values ('DEFAUT', ${creneau.id}, '${creneau.date}', '${creneau.debut}', '${creneau.fin}');`,
+      `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) values ('${EDITION_REFERENCE}', ${creneau.id}, '${creneau.date}', '${creneau.debut}', '${creneau.fin}');`,
     );
   }
   const importReponse = await admin.post('/api/database/import', {
@@ -568,11 +634,11 @@ export async function pageAdmin(browser: Browser, admin: APIRequestContext): Pro
   // edition from localStorage. Conditional, so a test that deliberately
   // switches editions (setStoredEditionIdAndReload writes before reloading)
   // is not snapped back on the next navigation.
-  await contexte.addInitScript(() => {
+  await contexte.addInitScript((edition) => {
     if (!localStorage.getItem('planning-equipes.editionId')) {
-      localStorage.setItem('planning-equipes.editionId', 'DEFAUT');
+      localStorage.setItem('planning-equipes.editionId', edition);
     }
-  });
+  }, EDITION_REFERENCE);
   return contexte.newPage();
 }
 

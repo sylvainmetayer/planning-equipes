@@ -53,9 +53,10 @@ export interface AdHocConstraintFormData {
 
 /**
  * Add/edit dialog for a manual adjustment (a {@code ContrainteAdHoc}). The backend only exposes POST
- * (create or overwrite by id) and DELETE, so editing always re-saves under
- * the same id — `editingId` here only drives the dialog title and the
- * read-only id field, never a PUT-vs-POST branch.
+ * (create without an id — the server draws one — or overwrite by id) and
+ * DELETE, so editing always re-saves under the same id — `editingId` here only
+ * drives the dialog title and the read-only id field, never a PUT-vs-POST
+ * branch.
  */
 @Component({
   selector: 'app-ad-hoc-constraint-form-dialog',
@@ -99,7 +100,8 @@ export class AdHocConstraintFormDialog {
   protected async save(): Promise<void> {
     const draft = this.draft();
     const contrainte: ContrainteAdHoc = {
-      id: draft.id.trim(),
+      // Empty on creation: the server draws the id; set, it names the one to edit.
+      id: draft.id,
       type: draft.type,
       animateursConcernes: draft.animateurIds.map((id) => ({ id })),
       creneau: draft.creneauId !== '' ? { id: draft.creneauId } : null,

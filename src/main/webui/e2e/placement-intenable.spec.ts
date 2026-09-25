@@ -37,6 +37,8 @@ import {
   dialogueOuvert,
   pageAdmin,
   seedReferentielSolveur,
+  EDITION_REFERENCE,
+  idCree,
 } from './support';
 import { repartirDeLaReference } from './reference';
 
@@ -77,7 +79,11 @@ const CRENEAUX: CreneauSeed[] = [
   { id: JOURNEE, date: JOUR_JOURNEE, debut: '10:00', fin: '12:00' },
 ];
 
-const EXCEPTION = 'E2E-INTEN-FORCEE';
+/**
+ * L'id que l'application a donné à la dernière exception écrite : un id ne se
+ * choisit plus, il se lit dans la réponse.
+ */
+let exception = '';
 
 interface Avertissement {
   type: string;
@@ -107,8 +113,9 @@ test.afterEach(async () => {
   await admin.post('/api/database/import', {
     headers: { 'Content-Type': 'text/plain' },
     data: [
-      `delete from contrainte_animateur where contrainte_id like 'E2E-INTEN-%';`,
-      `delete from contrainte_ad_hoc where id like 'E2E-INTEN-%';`,
+      // Par leur raison, pas leur id : c'est l'application qui les numérote.
+      `delete from contrainte_animateur where contrainte_id in (select id from contrainte_ad_hoc where raison like 'E2E : %');`,
+      `delete from contrainte_ad_hoc where raison like 'E2E : %';`,
       `delete from verrouillage_planning where animateur_id like 'E2E-INTEN-%' or stand_id like 'E2E-INTEN-%';`,
     ].join('\n'),
   });
@@ -121,7 +128,6 @@ function affectationForcee(options: {
   creneau?: number | null;
 }) {
   return {
-    id: EXCEPTION,
     type: 'AFFECTATION_FORCEE',
     animateursConcernes: options.animateurs.map((id) => ({ id })),
     creneau: options.creneau == null ? null : { id: options.creneau },
@@ -133,7 +139,7 @@ function affectationForcee(options: {
 /** Écrit l'exception et rend les avertissements du corps de succès. */
 async function ecrire(contrainte: object): Promise<Avertissement[]> {
   const reponse = await admin.post('/api/contraintes-ad-hoc', { data: contrainte });
-  expect(reponse.ok(), await reponse.text()).toBe(true);
+  exception = await idCree(reponse);
   return ((await reponse.json()) as { avertissements: Avertissement[] }).avertissements;
 }
 
@@ -153,7 +159,7 @@ test.describe('piste 1 — la raison légale', () => {
 
     const legal = avertissements.find((a) => a.type === 'AFFECTATION_FORCEE_MOTIF_LEGAL');
     expect(legal, JSON.stringify(avertissements)).toBeDefined();
-    expect(legal?.message).toContain(EXCEPTION);
+    expect(legal?.message).toContain(exception);
     expect(legal?.message).toContain('travailDeNuitInterditPourMineur');
     // La phrase est recopiée dans un journal que le navigateur garde après la
     // déconnexion : elle nomme l'exception, jamais la personne (docs/rgpd.md §7).
@@ -161,17 +167,17 @@ test.describe('piste 1 — la raison légale', () => {
 
     // Averti, jamais refusé : la ligne est bien là.
     const ecrites = (await (await admin.get('/api/contraintes-ad-hoc')).json()) as { id: string }[];
-    expect(ecrites.map((c) => c.id)).toContain(EXCEPTION);
+    expect(ecrites.map((c) => c.id)).toContain(exception);
 
     // Et la faisabilité la reprend, sans qu'aucune résolution ait tourné.
-    const bloquante = (await causes()).find((cause) => cause.contrainteIds?.includes(EXCEPTION));
+    const bloquante = (await causes()).find((cause) => cause.contrainteIds?.includes(exception));
     expect(bloquante, 'la faisabilité doit nommer l’exception').toBeDefined();
     expect(bloquante?.type).toBe('AFFECTATION_FORCEE_MOTIF_LEGAL');
     expect(bloquante?.severite).toBe('CRITIQUE');
 
     const page = await pageAdmin(browser, admin);
     await page.goto('/diagnostic');
-    await expect(page.locator('#contenu')).toContainText(EXCEPTION);
+    await expect(page.locator('#contenu')).toContainText(exception);
     await page.context().close();
   });
 
@@ -191,7 +197,7 @@ test.describe('piste 1 — la raison légale', () => {
     );
     expect(avertissements.map((a) => a.type)).not.toContain('AFFECTATION_FORCEE_MOTIF_LEGAL');
 
-    expect((await causes()).filter((cause) => cause.contrainteIds?.includes(EXCEPTION))).toEqual(
+    expect((await causes()).filter((cause) => cause.contrainteIds?.includes(exception))).toEqual(
       [],
     );
   });
@@ -237,12 +243,12 @@ test.describe('piste 2 — l’emploi du temps verrouillé', () => {
     );
     const verrouille = surExceptions.find((a) => a.type === 'AFFECTATION_FORCEE_SIEGE_VERROUILLE');
     expect(verrouille, JSON.stringify(surExceptions)).toBeDefined();
-    expect(verrouille?.message).toContain(EXCEPTION);
+    expect(verrouille?.message).toContain(exception);
     expect(verrouille?.message).not.toContain(MAJEUR);
 
     const bloquante = (await causes()).find(
       (cause) =>
-        cause.contrainteIds?.includes(EXCEPTION) &&
+        cause.contrainteIds?.includes(exception) &&
         cause.type === 'AFFECTATION_FORCEE_SIEGE_VERROUILLE',
     );
     expect(bloquante?.severite, 'la faisabilité doit reprendre le blocage').toBe('CRITIQUE');
@@ -268,7 +274,7 @@ test.describe('piste 3 — le siège écrit à la main', () => {
       headers: { 'Content-Type': 'text/plain' },
       data: [
         `delete from poste_affectation where id = '${SIEGE_NUIT}';`,
-        `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('DEFAUT', '${SIEGE_NUIT}', '${STAND_TOUS}', ${NUIT}, '${MAJEUR}');`,
+        `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('${EDITION_REFERENCE}', '${SIEGE_NUIT}', '${STAND_TOUS}', ${NUIT}, '${MAJEUR}');`,
       ].join('\n'),
     });
     expect(insertion.ok(), await insertion.text()).toBe(true);
@@ -328,7 +334,7 @@ test.describe('piste 5 — la confirmation avant le calcul', () => {
     const dialog = await dialogueOuvert(page);
     await expect(dialog).toContainText('Lancer malgré un problème bloquant');
     // La cause est citée telle que le serveur l'a écrite, pas reformulée.
-    await expect(dialog).toContainText(EXCEPTION);
+    await expect(dialog).toContainText(exception);
 
     // La confirmation demande, elle ne refuse pas — et renoncer ne lance rien.
     await dialog.getByRole('button', { name: 'Annuler' }).click();

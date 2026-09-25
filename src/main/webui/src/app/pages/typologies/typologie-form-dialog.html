@@ -5,10 +5,16 @@
 @if (editingLocked()) {
   <p class="locked-hint span-2" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
 }
+@if (editingId()) {
 <mat-form-field appearance="outline">
   <mat-label i18n="@@stands.field.id">Identifiant</mat-label>
-  <input matInput name="id" required [readonly]="!!editingId()"
-         [ngModel]="draft().id" (ngModelChange)="patch({ id: $event })" />
+  <input matInput name="id" readonly [ngModel]="draft().id" />
+</mat-form-field>
+}
+<mat-form-field appearance="outline">
+  <mat-label i18n="@@referentiel.field.code">Code</mat-label>
+  <input matInput name="code" maxlength="64" [ngModel]="draft().code ?? ''" (ngModelChange)="patch({ code: $event })" />
+  <mat-hint i18n="@@referentiel.hint.code">Clé lisible citée par les fichiers d'import (facultatif)</mat-hint>
 </mat-form-field>
 <mat-form-field appearance="outline">
   <mat-label i18n="@@typologies.field.label">Libellé</mat-label>

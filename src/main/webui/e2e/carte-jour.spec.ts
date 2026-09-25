@@ -9,7 +9,7 @@
 // give the three states the screen exists to tell apart.
 
 import { APIRequestContext, Page, expect, test } from '@playwright/test';
-import { contexteAdmin, shiftDate, pageAdmin } from './support';
+import { contexteAdmin, shiftDate, pageAdmin, EDITION_REFERENCE, typologieSql } from './support';
 import { repartirDeLaReference } from './reference';
 
 const SEED = {
@@ -50,22 +50,22 @@ function nettoyage(): string {
 async function amorcer(): Promise<void> {
   const script = [
     nettoyage(),
-    `insert into emplacement (edition_id, id, nom, latitude, longitude) values ('DEFAUT', '${SEED.lieuMatin}', 'Halle du matin', 46.6513, 2.2492);`,
-    `insert into emplacement (edition_id, id, nom, latitude, longitude) values ('DEFAUT', '${SEED.lieuSoir}', 'Halle du soir', 46.6490, 2.2547);`,
-    `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs, emplacement_id) values ('DEFAUT', '${SEED.matin}', 'Stand du matin', 1, 1, false, '${SEED.lieuMatin}');`,
-    `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs, emplacement_id) values ('DEFAUT', '${SEED.soir}', 'Stand du soir', 1, 1, false, '${SEED.lieuSoir}');`,
-    `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs) values ('DEFAUT', '${SEED.nomade}', 'Stand nomade', 1, 1, false);`,
-    `insert into stand_typologie (edition_id, stand_id, typologie) values ('DEFAUT', '${SEED.matin}', 'STRATEGIE');`,
-    `insert into stand_typologie (edition_id, stand_id, typologie) values ('DEFAUT', '${SEED.soir}', 'STRATEGIE');`,
-    `insert into stand_typologie (edition_id, stand_id, typologie) values ('DEFAUT', '${SEED.nomade}', 'STRATEGIE');`,
-    `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('DEFAUT', '${SEED.animateur}', 'Carte', 'Jour', '1990-01-01', false);`,
-    `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) values ('DEFAUT', ${SEED.creneauMatin}, '${SEED.jour}', '09:00', '11:00');`,
-    `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) values ('DEFAUT', ${SEED.creneauSoir}, '${SEED.jour}', '17:00', '19:00');`,
+    `insert into emplacement (edition_id, id, nom, latitude, longitude) values ('${EDITION_REFERENCE}', '${SEED.lieuMatin}', 'Halle du matin', 46.6513, 2.2492);`,
+    `insert into emplacement (edition_id, id, nom, latitude, longitude) values ('${EDITION_REFERENCE}', '${SEED.lieuSoir}', 'Halle du soir', 46.6490, 2.2547);`,
+    `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs, emplacement_id) values ('${EDITION_REFERENCE}', '${SEED.matin}', 'Stand du matin', 1, 1, false, '${SEED.lieuMatin}');`,
+    `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs, emplacement_id) values ('${EDITION_REFERENCE}', '${SEED.soir}', 'Stand du soir', 1, 1, false, '${SEED.lieuSoir}');`,
+    `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs) values ('${EDITION_REFERENCE}', '${SEED.nomade}', 'Stand nomade', 1, 1, false);`,
+    `insert into stand_typologie (edition_id, stand_id, typologie) values ('${EDITION_REFERENCE}', '${SEED.matin}', ${typologieSql('STRATEGIE')});`,
+    `insert into stand_typologie (edition_id, stand_id, typologie) values ('${EDITION_REFERENCE}', '${SEED.soir}', ${typologieSql('STRATEGIE')});`,
+    `insert into stand_typologie (edition_id, stand_id, typologie) values ('${EDITION_REFERENCE}', '${SEED.nomade}', ${typologieSql('STRATEGIE')});`,
+    `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('${EDITION_REFERENCE}', '${SEED.animateur}', 'Carte', 'Jour', '1990-01-01', false);`,
+    `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) values ('${EDITION_REFERENCE}', ${SEED.creneauMatin}, '${SEED.jour}', '09:00', '11:00');`,
+    `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) values ('${EDITION_REFERENCE}', ${SEED.creneauSoir}, '${SEED.jour}', '17:00', '19:00');`,
     // Morning: staffed. Evening: open with nobody — the case the screen exists
     // for. Nomade: staffed but nowhere to draw it.
-    `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('DEFAUT', 'CJ-P1', '${SEED.matin}', ${SEED.creneauMatin}, '${SEED.animateur}');`,
-    `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('DEFAUT', 'CJ-P2', '${SEED.soir}', ${SEED.creneauSoir}, null);`,
-    `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('DEFAUT', 'CJ-P3', '${SEED.nomade}', ${SEED.creneauMatin}, '${SEED.animateur}');`,
+    `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('${EDITION_REFERENCE}', 'CJ-P1', '${SEED.matin}', ${SEED.creneauMatin}, '${SEED.animateur}');`,
+    `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('${EDITION_REFERENCE}', 'CJ-P2', '${SEED.soir}', ${SEED.creneauSoir}, null);`,
+    `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('${EDITION_REFERENCE}', 'CJ-P3', '${SEED.nomade}', ${SEED.creneauMatin}, '${SEED.animateur}');`,
   ].join('\n');
   const reponse = await admin.post('/api/database/import', {
     headers: { 'Content-Type': 'text/plain' },

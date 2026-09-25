@@ -13,8 +13,15 @@ import { repartirDeLaReference } from './reference';
 
 let admin: APIRequestContext;
 
-/** Ids the file hands out itself, so the cleanup is deterministic. */
-const IDS = ['E2E-CSV-1', 'E2E-CSV-2', 'E2E-CSV-3'] as const;
+/**
+ * The surnames the files bring in. A file no longer hands out ids — the
+ * application draws them — so the cleanup and the assertions find the fiches
+ * by name.
+ */
+const NOMS = ['Duranteau', 'Lefèvreau'] as const;
+
+/** The persons of the dirty file that must not land, as « prénom nom ». */
+const REFUSES = ['Carla Moreau', 'Diego Santos', 'Elena Rossi', 'Farid Belkacem'];
 
 /** The seeded day, as a French spreadsheet writes it. */
 const JOUR_EVENEMENT = SEED.jour.split('-').reverse().join('/');
@@ -35,8 +42,8 @@ test.afterAll(async () => {
 
 async function nettoyer(): Promise<void> {
   const script = [
-    `delete from poste_affectation where animateur_id like 'E2E-CSV-%';`,
-    `delete from animateur where id like 'E2E-CSV-%';`,
+    `delete from poste_affectation where animateur_id in (select id from animateur where nom in (${NOMS.map((nom) => `'${nom}'`).join(', ')}));`,
+    `delete from animateur where nom in (${NOMS.map((nom) => `'${nom}'`).join(', ')});`,
   ].join('\n');
   const reponse = await admin.post('/api/database/import', {
     headers: { 'Content-Type': 'text/plain' },
@@ -114,9 +121,9 @@ test('un fichier propre : aperçu, validation, rapport, et les fiches en base', 
     page,
     'benevoles.csv',
     [
-      'id;prenom;nom;date de naissance;jours indisponibles',
-      `${IDS[0]};Amélie;Duranteau;12/03/1990;${JOUR_EVENEMENT}`,
-      `${IDS[1]};Bruno;Lefèvreau;04/06/1988;`,
+      'prenom;nom;date de naissance;jours indisponibles',
+      `Amélie;Duranteau;12/03/1990;${JOUR_EVENEMENT}`,
+      `Bruno;Lefèvreau;04/06/1988;`,
       '',
     ].join('\n'),
   );
@@ -144,10 +151,10 @@ test('un fichier propre : aperçu, validation, rapport, et les fiches en base', 
     nom: string;
     joursIndisponibles: string[];
   }[];
-  const amelie = roster.find((animateur) => animateur.id === IDS[0]);
-  expect(amelie?.nom).toBe('Duranteau');
+  const amelie = roster.find((animateur) => animateur.nom === NOMS[0]);
+  expect(amelie?.id, 'the fiche gets an id drawn by the application').toMatch(/^A\d+$/);
   expect(amelie?.joursIndisponibles).toEqual([SEED.jour]);
-  expect(roster.some((animateur) => animateur.id === IDS[1])).toBe(true);
+  expect(roster.some((animateur) => animateur.nom === NOMS[1])).toBe(true);
 
   await page.context().close();
 });
@@ -162,13 +169,13 @@ test('un fichier sale : les lignes fautives sont rejetées, les bonnes passent q
     page,
     'benevoles-sales.csv',
     [
-      'id;prenom;nom;date de naissance;email;competences;jours indisponibles',
-      `${IDS[0]};Amélie;Duranteau;12/03/1990;amelie@example.org;;${JOUR_EVENEMENT}`,
-      'E2E-CSV-BAD1;Carla;Moreau;32/13/1990;carla@example.org;;',
-      'E2E-CSV-BAD2;Diego;Santos;01/01/1990;pas-une-adresse;;',
-      'E2E-CSV-BAD3;Elena;Rossi;01/01/1990;elena@example.org;typologie-inexistante;',
-      'E2E-CSV-BAD4;Farid;Belkacem;01/01/1990;farid@example.org;;01/01/2031',
-      `${IDS[1]};Bruno;Lefèvreau;04/06/1988;bruno@example.org;;`,
+      'prenom;nom;date de naissance;email;competences;jours indisponibles',
+      `Amélie;Duranteau;12/03/1990;amelie@example.org;;${JOUR_EVENEMENT}`,
+      'Carla;Moreau;32/13/1990;carla@example.org;;',
+      'Diego;Santos;01/01/1990;pas-une-adresse;;',
+      'Elena;Rossi;01/01/1990;elena@example.org;typologie-inexistante;',
+      'Farid;Belkacem;01/01/1990;farid@example.org;;01/01/2031',
+      `Bruno;Lefèvreau;04/06/1988;bruno@example.org;;`,
       '',
     ].join('\n'),
   );
@@ -186,11 +193,11 @@ test('un fichier sale : les lignes fautives sont rejetées, les bonnes passent q
 
   // The point of a row-by-row import: four refusals cost four rows, not the file.
   const apres = await admin.get('/api/animateurs');
-  const roster = (await apres.json()) as { id: string }[];
-  const ids = roster.map((animateur) => animateur.id);
-  expect(ids).toContain(IDS[0]);
-  expect(ids).toContain(IDS[1]);
-  expect(ids.filter((id) => id.startsWith('E2E-CSV-BAD'))).toEqual([]);
+  const roster = (await apres.json()) as { prenom: string; nom: string }[];
+  const personnes = roster.map((animateur) => `${animateur.prenom} ${animateur.nom}`);
+  expect(personnes).toContain('Amélie Duranteau');
+  expect(personnes).toContain('Bruno Lefèvreau');
+  expect(personnes.filter((personne) => REFUSES.includes(personne))).toEqual([]);
 
   await page.context().close();
 });
@@ -253,15 +260,15 @@ test("une colonne mal mappée est refusée à l'aperçu, pas à l'écriture", as
     page,
     'benevoles-commentes.csv',
     [
-      'id;prenom;nom;date de naissance;commentaires',
-      `${IDS[0]};Amélie;Duranteau;12/03/1990;${commentaire}`,
+      'prenom;nom;date de naissance;commentaires',
+      `Amélie;Duranteau;12/03/1990;${commentaire}`,
       '',
     ].join('\n'),
   );
 
   await expect(ligne(page, 2)).toContainText('Création');
 
-  await choisirColonne(page, 'Nom', 'commentaires (5)');
+  await choisirColonne(page, 'Nom', 'commentaires (4)');
 
   await expect(ligne(page, 2)).toContainText('Nom trop long');
   await expect(ligne(page, 2)).toContainText('128 au maximum');

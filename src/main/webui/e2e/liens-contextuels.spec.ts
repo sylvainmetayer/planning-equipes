@@ -5,7 +5,7 @@
 // refresh shows the list, not the dialog again.
 
 import { APIRequestContext, expect, test, type Page } from '@playwright/test';
-import { contexteAdmin, pageAdmin, SEED, seedPlanning } from './support';
+import { contexteAdmin, pageAdmin, SEED, seedPlanning, typologieId } from './support';
 import { repartirDeLaReference } from './reference';
 
 let admin: APIRequestContext;
@@ -80,8 +80,10 @@ test("un id inconnu n'ouvre rien et laisse la liste", async ({ browser }) => {
 test('« ?typologie= » filtre les animateurs sur la typologie nommée, et la puce le retire', async ({
   browser,
 }) => {
+  // Named by its id, as the screens that link here write it: the code is for files.
+  const strategie = await typologieId(admin, 'STRATEGIE');
   const page = await pageAdmin(browser, admin);
-  await page.goto('/animateurs?typologie=STRATEGIE', { waitUntil: 'domcontentloaded' });
+  await page.goto(`/animateurs?typologie=${strategie}`, { waitUntil: 'domcontentloaded' });
 
   const puce = page.locator('.animateurs-typologie-filtre');
   await expect(puce).toContainText('Typologie :');

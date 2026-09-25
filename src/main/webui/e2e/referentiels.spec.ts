@@ -10,6 +10,7 @@ import {
   contexteAdmin,
   dialogueOuvert,
   dayMonth,
+  idCree,
   ouvrirSelect,
   pageAdmin,
   seedPlanning,
@@ -21,13 +22,9 @@ let admin: APIRequestContext;
 test.beforeAll(async ({ playwright }, testInfo) => {
   admin = await contexteAdmin(playwright, testInfo.project.use.baseURL as string);
   await repartirDeLaReference(admin);
+  // Idempotence across runs is the reference's: what this spec created
+  // through the UI — under ids the application drew — went with the restore.
   await seedPlanning(admin);
-  // Idempotence across runs: drop what this spec creates through the UI.
-  await admin.delete('/api/animateurs/E2E-UI').catch(() => undefined);
-  await admin.delete('/api/typologies/E2E-TYPO').catch(() => undefined);
-  await admin.delete('/api/typologies/E2E-TYPO-CAP').catch(() => undefined);
-  await admin.delete('/api/typologies/E2E-TYPO-NOTE').catch(() => undefined);
-  await admin.delete(`/api/stands/${STAND_MODELE}`).catch(() => undefined);
 });
 
 test.afterAll(async () => {
@@ -45,9 +42,9 @@ test.describe('fiche animateur', () => {
     // Create, with the new email field.
     await page.getByRole('button', { name: 'Ajouter' }).click();
     const dialog = await dialogueOuvert(page);
-    await dialog.getByLabel('Identifiant').fill('E2E-UI');
+    // No identifier to type: the application draws it. The name is the marker.
     await dialog.getByLabel('Prénom').fill('Uma');
-    await dialog.getByLabel('Nom', { exact: true }).fill('E2E');
+    await dialog.getByLabel('Nom', { exact: true }).fill('E2E-UI');
     await dialog.getByLabel('Date de naissance').fill('1995-05-05');
     await dialog.getByLabel('E-mail').fill('uma@example.org');
     await dialog.getByRole('button', { name: "Créer l'animateur" }).click();
@@ -129,8 +126,8 @@ test.describe('typologies', () => {
 
     await page.getByRole('button', { name: 'Ajouter' }).click();
     const dialog = await dialogueOuvert(page);
-    await dialog.getByLabel('Identifiant').fill('E2E-TYPO');
     await dialog.getByLabel('Libellé').fill('Typologie E2E');
+    await dialog.getByLabel('Code', { exact: true }).fill('E2E-TYPO');
     await dialog.getByRole('button', { name: /Créer/ }).click();
     await expect(dialog).toBeHidden();
     const ligne = page.getByRole('row', { name: /E2E-TYPO/ });
@@ -154,8 +151,8 @@ test.describe('typologies', () => {
 
     await page.getByRole('button', { name: 'Ajouter' }).click();
     const dialog = await dialogueOuvert(page);
-    await dialog.getByLabel('Identifiant').fill('E2E-TYPO-CAP');
     await dialog.getByLabel('Libellé').fill('Typologie plafonnée');
+    await dialog.getByLabel('Code', { exact: true }).fill('E2E-TYPO-CAP');
     await dialog.getByLabel('Créneaux maximum par animateur').fill('4');
     await dialog.getByRole('button', { name: /Créer/ }).click();
     await expect(dialog).toBeHidden();
@@ -165,10 +162,12 @@ test.describe('typologies', () => {
     const reponse = await admin.get('/api/typologies');
     expect(reponse.ok()).toBe(true);
     const typologies = (await reponse.json()) as {
-      id: string;
+      code: string | null;
       maxCreneauxParAnimateur: number | null;
     }[];
-    expect(typologies.find((each) => each.id === 'E2E-TYPO-CAP')?.maxCreneauxParAnimateur).toBe(4);
+    expect(typologies.find((each) => each.code === 'E2E-TYPO-CAP')?.maxCreneauxParAnimateur).toBe(
+      4,
+    );
 
     // And the edit round trip: reopening the form shows it, and saving again
     // does not silently clear it.
@@ -182,8 +181,11 @@ test.describe('typologies', () => {
     await expect(edition).toBeHidden();
 
     const apres = await admin.get('/api/typologies');
-    const relues = (await apres.json()) as { id: string; maxCreneauxParAnimateur: number | null }[];
-    expect(relues.find((each) => each.id === 'E2E-TYPO-CAP')?.maxCreneauxParAnimateur).toBe(2);
+    const relues = (await apres.json()) as {
+      code: string | null;
+      maxCreneauxParAnimateur: number | null;
+    }[];
+    expect(relues.find((each) => each.code === 'E2E-TYPO-CAP')?.maxCreneauxParAnimateur).toBe(2);
     await page.context().close();
   });
 
@@ -198,15 +200,18 @@ test.describe('typologies', () => {
 
     await page.getByRole('button', { name: 'Ajouter' }).click();
     const dialog = await dialogueOuvert(page);
-    await dialog.getByLabel('Identifiant').fill('E2E-TYPO-NOTE');
     await dialog.getByLabel('Libellé').fill('Typologie annotée');
+    await dialog.getByLabel('Code', { exact: true }).fill('E2E-TYPO-NOTE');
     await dialog.getByLabel('Description').fill("Nécessite d'apprendre 45 jeux");
     await dialog.getByRole('button', { name: /Créer/ }).click();
     await expect(dialog).toBeHidden();
 
     const reponse = await admin.get('/api/typologies');
-    const typologies = (await reponse.json()) as { id: string; description: string | null }[];
-    expect(typologies.find((each) => each.id === 'E2E-TYPO-NOTE')?.description).toBe(
+    const typologies = (await reponse.json()) as {
+      code: string | null;
+      description: string | null;
+    }[];
+    expect(typologies.find((each) => each.code === 'E2E-TYPO-NOTE')?.description).toBe(
       "Nécessite d'apprendre 45 jeux",
     );
 
@@ -268,8 +273,10 @@ test.describe('typologies', () => {
   });
 });
 
-/** The stand whose typical day the two tests below copy. */
+/** The code of the stand whose typical day the two tests below copy. */
 const STAND_MODELE = 'E2E-HOR';
+/** Its id, as the application drew it at the creation. */
+let standModeleId = '';
 
 /** One stand of the edition as `GET /api/stands` returns it — only what the assertions read. */
 interface StandLu {
@@ -294,7 +301,7 @@ test.describe('horaires de stand', () => {
     // effectif the one-seat seeded stands could not hold.
     const modele = await admin.post('/api/stands', {
       data: {
-        id: STAND_MODELE,
+        code: STAND_MODELE,
         nom: 'Stand modèle E2E',
         typologiesProposees: ['STRATEGIE'],
         effectifMin: 1,
@@ -306,11 +313,11 @@ test.describe('horaires de stand', () => {
         ],
       },
     });
-    expect(modele.ok(), await modele.text()).toBe(true);
+    standModeleId = await idCree(modele);
   });
 
   test.afterAll(async () => {
-    await admin.delete(`/api/stands/${STAND_MODELE}`).catch(() => undefined);
+    await admin.delete(`/api/stands/${standModeleId}`).catch(() => undefined);
   });
 
   test('la fiche copie les horaires d’un autre stand, l’aperçu puis la page Ouvertures les reflètent', async ({
@@ -344,7 +351,7 @@ test.describe('horaires de stand', () => {
     await expect(formulaire).toBeHidden();
 
     // Saved as new rows of the target stand, not as the model's.
-    const modele = await lireStand(STAND_MODELE);
+    const modele = await lireStand(standModeleId);
     const cible = await lireStand(SEED.standCible);
     expect(cible.horaires).toHaveLength(1);
     expect(cible.horaires[0].fenetres[0].heureDebut).toMatch(/^10:00/);
@@ -395,7 +402,7 @@ test.describe('horaires de stand', () => {
       expect(stand.ouvertures[0].date).toBe(SEED.jour);
     }
     // The model itself was not in the selection and keeps its own rows.
-    expect((await lireStand(STAND_MODELE)).horaires).toHaveLength(1);
+    expect((await lireStand(standModeleId)).horaires).toHaveLength(1);
     await page.context().close();
   });
 });

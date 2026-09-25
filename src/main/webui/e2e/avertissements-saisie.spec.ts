@@ -8,6 +8,7 @@ import {
   contexteAdmin,
   shiftDate,
   dialogueOuvert,
+  idCree,
   pageAdmin,
   seedReferentielSolveur,
 } from './support';
@@ -21,10 +22,30 @@ const JOUR = shiftDate('2027-06-10');
 const JOUR_HORS_BORNES = shiftDate('2027-08-15');
 /** A minor on JOUR, whichever year the suite runs in. */
 const NAISSANCE_MINEURE = shiftDate('2015-06-11');
+/** Codes of the two stands this suite creates: their ids are drawn by the application. */
 const STAND = 'E2E-AVERT-S';
 const STAND_MATIN = 'E2E-AVERT-M';
-const ANIMATEUR = 'E2E-AVERT';
+/** The animateur's name, which is what the suite finds them by: the id is drawn too. */
+const ANIMATEUR = 'E2E-Avert';
 const CRENEAU_REFERENCE = 987500;
+
+/** The id the application gave the stand carrying `code`, `undefined` when none does. */
+async function standParCode(code: string): Promise<string | undefined> {
+  const stands = (await (await admin.get('/api/stands')).json()) as {
+    id: string;
+    code?: string | null;
+  }[];
+  return stands.find((stand) => stand.code === code)?.id;
+}
+
+/** The id the application gave the animateur this suite creates, `undefined` before. */
+async function animateurId(): Promise<string | undefined> {
+  const animateurs = (await (await admin.get('/api/animateurs')).json()) as {
+    id: string;
+    nom: string;
+  }[];
+  return animateurs.find((animateur) => animateur.nom === ANIMATEUR)?.id;
+}
 
 /** Les stands que cette suite n'a pas créés, dans leur état d'origine, pour les rendre tels quels. */
 let standsVoisins: Record<string, unknown>[] = [];
@@ -77,7 +98,7 @@ test.beforeAll(async ({ playwright }, testInfo) => {
   // l'avertissement crierait au loup sur un créneau parfaitement valide.
   const stand = await admin.post('/api/stands', {
     data: {
-      id: STAND,
+      code: STAND,
       nom: "Stand de l'après-midi",
       typologiesProposees: ['STRATEGIE'],
       effectifMin: 1,
@@ -86,14 +107,21 @@ test.beforeAll(async ({ playwright }, testInfo) => {
       horaires: [{ mode: 'OUVERTURE', jours: 'TOUS', fenetres: [{ heureDebut: '14:00:00' }] }],
     },
   });
-  expect(stand.ok(), await stand.text()).toBe(true);
+  await idCree(stand);
 });
 
 test.afterAll(async () => {
   await supprimerCreneauxDuJour();
-  await admin.delete(`/api/animateurs/${ANIMATEUR}`).catch(() => undefined);
-  await admin.delete(`/api/stands/${STAND}`).catch(() => undefined);
-  await admin.delete(`/api/stands/${STAND_MATIN}`).catch(() => undefined);
+  const animateur = await animateurId();
+  if (animateur) {
+    await admin.delete(`/api/animateurs/${animateur}`).catch(() => undefined);
+  }
+  for (const code of [STAND, STAND_MATIN]) {
+    const id = await standParCode(code);
+    if (id) {
+      await admin.delete(`/api/stands/${id}`).catch(() => undefined);
+    }
+  }
   for (const voisin of standsVoisins) {
     await admin.put(`/api/stands/${voisin['id']}`, { data: voisin }).catch(() => undefined);
   }
@@ -155,8 +183,8 @@ test.describe('avertissements de saisie', () => {
 
     await page.getByRole('button', { name: 'Ajouter' }).first().click();
     const dialog = await dialogueOuvert(page);
-    await dialog.getByLabel('Identifiant').fill(STAND_MATIN);
     await dialog.getByLabel('Nom').fill('Stand du matin');
+    await dialog.getByLabel('Code', { exact: true }).fill(STAND_MATIN);
     // A stand always carries a typologie (issue #343): the form refuses to submit without one.
     await dialog.getByLabel('Typologies de jeu').click();
     await page.getByRole('option', { name: 'STRATEGIE' }).click();
@@ -184,9 +212,8 @@ test.describe('avertissements de saisie', () => {
 
     await page.getByRole('button', { name: 'Ajouter' }).click();
     const dialog = await dialogueOuvert(page);
-    await dialog.getByLabel('Identifiant').fill(ANIMATEUR);
     await dialog.getByLabel('Prénom').fill('Camille');
-    await dialog.getByLabel('Nom', { exact: true }).fill('Avert');
+    await dialog.getByLabel('Nom', { exact: true }).fill(ANIMATEUR);
     await dialog.getByLabel('Date de naissance').fill(NAISSANCE_MINEURE);
     await dialog.getByLabel('Jour').fill(JOUR_HORS_BORNES);
     await dialog.getByRole('button', { name: 'Ajouter', exact: true }).click();
@@ -199,10 +226,14 @@ test.describe('avertissements de saisie', () => {
     const bulle = page.locator('mat-snack-bar-container');
     await expect(bulle).toContainText(/mineur pendant tout l'événement/);
     await expect(bulle).toContainText(JOUR_HORS_BORNES);
-    // Le message dit qui par son identifiant, jamais par son identité ni par sa
-    // date de naissance : il finit dans un journal de navigateur.
-    await expect(bulle).toContainText('E2E-AVERT');
+    // Le message dit qui par son identifiant — celui que l'application vient
+    // d'attribuer —, jamais par son identité ni par sa date de naissance : il
+    // finit dans un journal de navigateur.
+    const id = await animateurId();
+    expect(id, 'the animateur must have been written').toBeTruthy();
+    await expect(bulle).toContainText(id as string);
     await expect(bulle).not.toContainText('Camille');
+    await expect(bulle).not.toContainText(ANIMATEUR);
     await expect(bulle).not.toContainText(NAISSANCE_MINEURE);
 
     // La fiche existe, et l'indisponibilité hors bornes a bien été écrite.

@@ -17,19 +17,22 @@ import {
 } from './support';
 import { repartirDeLaReference } from './reference';
 
+/**
+ * The edition is found by its name: its id (`E2`, `E3`…) is drawn by the
+ * application, like every id below. What the spec types is a name or a code.
+ */
 const EDITION_NOM = 'E2E Journées types';
-/** Ce que `slugify` fait du nom : c'est l'id que l'API et le stockage local portent. */
-const EDITION_ID = 'E2E-JOURNEES-TYPES';
+/** Codes: the readable keys the spec gives, and finds its rows by. */
 const TYPOLOGIE = 'E2E-JT-JEU';
 const STANDS = [
-  { id: 'E2E-JT-S1', nom: 'Stand un E2E' },
-  { id: 'E2E-JT-S2', nom: 'Stand deux E2E' },
-  { id: 'E2E-JT-S3', nom: 'Stand trois E2E' },
+  { code: 'E2E-JT-S1', nom: 'Stand un E2E' },
+  { code: 'E2E-JT-S2', nom: 'Stand deux E2E' },
+  { code: 'E2E-JT-S3', nom: 'Stand trois E2E' },
 ] as const;
 const ANIMATEURS = [
-  { id: 'E2E-JT-A', prenom: 'Alix', nom: 'Journee' },
-  { id: 'E2E-JT-B', prenom: 'Bao', nom: 'Journee' },
-  { id: 'E2E-JT-C', prenom: 'Cléo', nom: 'Journee' },
+  { email: 'e2e-jt-a@example.org', prenom: 'Alix', nom: 'Journee' },
+  { email: 'e2e-jt-b@example.org', prenom: 'Bao', nom: 'Journee' },
+  { email: 'e2e-jt-c@example.org', prenom: 'Cléo', nom: 'Journee' },
 ] as const;
 const JOUR1 = shiftDate('2026-07-13');
 const JOUR2 = shiftDate('2026-07-14');
@@ -40,16 +43,32 @@ let admin: APIRequestContext;
 test.beforeAll(async ({ playwright }, testInfo) => {
   admin = await contexteAdmin(playwright, testInfo.project.use.baseURL as string);
   await repartirDeLaReference(admin);
-  await admin.delete(`/api/editions/${EDITION_ID}`).catch(() => undefined);
+  await supprimerEdition();
 });
 
 test.afterAll(async () => {
-  await admin.delete(`/api/editions/${EDITION_ID}`).catch(() => undefined);
+  await supprimerEdition();
   await admin.dispose();
 });
 
-/** L'en-tête qui vise l'édition créée par la spec, pour les lectures par l'API. */
-const DANS_EDITION = { headers: { 'X-Edition-Id': EDITION_ID } };
+/** The id the application gave the edition this spec creates, `undefined` before. */
+async function editionCreee(): Promise<string | undefined> {
+  const editions = (await (await admin.get('/api/editions')).json()) as {
+    id: string;
+    nom: string;
+  }[];
+  return editions.find((edition) => edition.nom === EDITION_NOM)?.id;
+}
+
+async function supprimerEdition(): Promise<void> {
+  const id = await editionCreee();
+  if (id) {
+    await admin.delete(`/api/editions/${id}`).catch(() => undefined);
+  }
+}
+
+/** Set once the edition exists: the header that aims the API reads at it. */
+let DANS_EDITION: { headers: Record<string, string> } = { headers: {} };
 
 async function creerJourneeType(page: Page, nom: string, vacations: string): Promise<void> {
   await page.getByRole('button', { name: 'Nouvelle journée type' }).click();
@@ -75,11 +94,11 @@ async function affecterDates(
   await page.getByRole('button', { name: `Affecter ${attendu} date(s)` }).click();
 }
 
-async function creerStand(page: Page, id: string, nom: string): Promise<void> {
+async function creerStand(page: Page, code: string, nom: string): Promise<void> {
   await page.getByRole('button', { name: 'Ajouter' }).click();
   const dialog = await dialogueOuvert(page);
-  await dialog.getByLabel('Identifiant').fill(id);
   await dialog.getByLabel('Nom', { exact: true }).fill(nom);
+  await dialog.getByLabel('Code', { exact: true }).fill(code);
   await dialog.getByLabel('Effectif minimum').fill('1');
   await dialog.getByLabel('Effectif maximum').fill('1');
   await ouvrirSelect(dialog, 'Typologies de jeu');
@@ -90,14 +109,18 @@ async function creerStand(page: Page, id: string, nom: string): Promise<void> {
   await expect(dialog).toBeHidden();
 }
 
-async function creerAnimateur(page: Page, id: string, prenom: string, nom: string): Promise<void> {
+async function creerAnimateur(
+  page: Page,
+  email: string,
+  prenom: string,
+  nom: string,
+): Promise<void> {
   await page.getByRole('button', { name: 'Ajouter' }).click();
   const dialog = await dialogueOuvert(page);
-  await dialog.getByLabel('Identifiant').fill(id);
   await dialog.getByLabel('Prénom').fill(prenom);
   await dialog.getByLabel('Nom', { exact: true }).fill(nom);
   await dialog.getByLabel('Date de naissance').fill('1990-01-01');
-  await dialog.getByLabel('E-mail').fill(`${id.toLowerCase()}@example.org`);
+  await dialog.getByLabel('E-mail').fill(email);
   await dialog.getByRole('button', { name: 'Ajouter une appréciation' }).click();
   await choisirOption(dialog, 'Typologie', 'Jeux E2E');
   await choisirOption(dialog, 'Niveau', 'AUTONOME');
@@ -127,7 +150,12 @@ async function effectifsDesMatins(): Promise<(number | null)[]> {
       ),
   );
   expect(matins.size).toBe(2);
-  const standUn = rapport.stands.find((ligne) => ligne.standId === STANDS[0].id)!;
+  const stands = (await (await admin.get('/api/stands', DANS_EDITION)).json()) as {
+    id: string;
+    code: string | null;
+  }[];
+  const standUnId = stands.find((stand) => stand.code === STANDS[0].code)?.id;
+  const standUn = rapport.stands.find((ligne) => ligne.standId === standUnId)!;
   return standUn.jours
     .flatMap((jour) => jour.creneaux)
     .filter((cellule) => matins.has(cellule.creneauId))
@@ -154,6 +182,9 @@ test('une édition saisie de bout en bout, résolue, et relue sur l’axe du tem
   await page.getByRole('button', { name: 'Ajouter' }).click();
   const ligneEdition = page.getByRole('row', { name: new RegExp(EDITION_NOM) });
   await expect(ligneEdition).toBeVisible();
+  const editionId = await editionCreee();
+  expect(editionId, 'the edition must have been created').toBeTruthy();
+  DANS_EDITION = { headers: { 'X-Edition-Id': editionId as string } };
   const rechargement = page.waitForEvent('load');
   await ligneEdition.getByRole('button', { name: 'Travailler dans cette édition' }).click();
   await rechargement;
@@ -163,8 +194,8 @@ test('une édition saisie de bout en bout, résolue, et relue sur l’axe du tem
   await page.goto('/typologies');
   await page.getByRole('button', { name: 'Ajouter' }).click();
   let dialog = await dialogueOuvert(page);
-  await dialog.getByLabel('Identifiant').fill(TYPOLOGIE);
   await dialog.getByLabel('Libellé').fill('Jeux E2E');
+  await dialog.getByLabel('Code', { exact: true }).fill(TYPOLOGIE);
   await dialog.getByRole('button', { name: /Créer/ }).click();
   await expect(dialog).toBeHidden();
   await expect(page.getByRole('row', { name: /Jeux E2E/ })).toBeVisible();
@@ -172,8 +203,8 @@ test('une édition saisie de bout en bout, résolue, et relue sur l’axe du tem
   await page.goto('/emplacements');
   await page.getByRole('button', { name: 'Ajouter' }).click();
   dialog = await dialogueOuvert(page);
-  await dialog.getByLabel('Identifiant').fill('E2E-JT-PAV');
   await dialog.getByLabel('Nom', { exact: true }).fill('Pavillon E2E');
+  await dialog.getByLabel('Code', { exact: true }).fill('E2E-JT-PAV');
   await dialog.getByRole('button', { name: /Créer/ }).click();
   await expect(dialog).toBeHidden();
 
@@ -213,7 +244,7 @@ test('une édition saisie de bout en bout, résolue, et relue sur l’axe du tem
   // 4. Les stands, puis leur effectif par créneau dans la grille des ouvertures.
   await page.goto('/stands');
   for (const stand of STANDS) {
-    await creerStand(page, stand.id, stand.nom);
+    await creerStand(page, stand.code, stand.nom);
   }
 
   await page.goto('/ouvertures?vue=saisie');
@@ -326,9 +357,9 @@ test('une édition saisie de bout en bout, résolue, et relue sur l’axe du tem
   // 6. Les animateurs.
   await page.goto('/animateurs');
   for (const animateur of ANIMATEURS) {
-    await creerAnimateur(page, animateur.id, animateur.prenom, animateur.nom);
+    await creerAnimateur(page, animateur.email, animateur.prenom, animateur.nom);
   }
-  await expect(page.getByRole('row', { name: /E2E-JT-/ })).toHaveCount(3);
+  await expect(page.getByRole('row', { name: /Journee/ })).toHaveCount(3);
 
   // 7. Un solve court, depuis la page Solveur.
   const parametres = await page.request.put('/api/parametres-solveur', {

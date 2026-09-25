@@ -18,7 +18,7 @@
                             (edit)="editSelection()" (remove)="removeSelection()" (clear)="selection.clear()" />
     }
     <table mat-table [dataSource]="emplacementsFiltres()">
-      <caption class="visually-hidden" i18n="@@emplacements.table.caption">Emplacements du référentiel : identifiant, nom, coordonnées et actions</caption>
+      <caption class="visually-hidden" i18n="@@emplacements.table.caption">Emplacements du référentiel : identifiant, code, nom, coordonnées et actions</caption>
       <ng-container matColumnDef="select">
         <th mat-header-cell scope="col" *matHeaderCellDef>
           <mat-checkbox i18n-aria-label="@@bulk.selectAll" aria-label="Tout sélectionner"
@@ -34,6 +34,10 @@
       <ng-container matColumnDef="id">
         <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@common.id">Id</th>
         <td mat-cell *matCellDef="let emplacement">{{ emplacement.id }}</td>
+      </ng-container>
+      <ng-container matColumnDef="code">
+        <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@referentiel.field.code">Code</th>
+        <td mat-cell *matCellDef="let emplacement">{{ emplacement.code }}</td>
       </ng-container>
       <ng-container matColumnDef="nom">
         <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@common.nom">Nom</th>

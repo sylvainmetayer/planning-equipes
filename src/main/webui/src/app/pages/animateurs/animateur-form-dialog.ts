@@ -156,7 +156,7 @@ export class AnimateurFormDialog {
       }
     });
     const animateur: Animateur = {
-      id: draft.id.trim(),
+      id: draft.id,
       prenom: draft.prenom.trim(),
       nom: draft.nom.trim(),
       dateNaissance: draft.dateNaissance,

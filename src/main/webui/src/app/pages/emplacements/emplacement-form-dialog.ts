@@ -12,7 +12,9 @@ import { MapPicker, MapPosition } from '../../shared/map-picker';
 import { StatusMessage } from '../../shared/status-message';
 
 interface EmplacementDraft {
+  /** Drawn by the server on creation: empty until then, read-only after. */
   id: string;
+  code: string;
   nom: string;
   latitude: number | null;
   longitude: number | null;
@@ -24,7 +26,7 @@ export interface EmplacementFormData {
   emplacement: Emplacement | null;
 }
 
-/** Add/edit dialog for an emplacement: identity plus GPS coordinates, set via the map picker or typed directly. */
+/** Add/edit dialog for an emplacement: name, code plus GPS coordinates, set via the map picker or typed directly. */
 @Component({
   selector: 'app-emplacement-form-dialog',
   imports: [
@@ -80,7 +82,9 @@ export class EmplacementFormDialog {
   protected async save(): Promise<void> {
     const draft = this.draft();
     const emplacement: Emplacement = {
-      id: draft.id.trim(),
+      id: draft.id,
+      // A blank code is no code: the server keeps the column empty.
+      code: draft.code.trim() || null,
       nom: draft.nom.trim(),
       latitude:
         draft.latitude === null || draft.latitude === undefined || `${draft.latitude}` === ''
@@ -107,10 +111,11 @@ export class EmplacementFormDialog {
 
 function toDraft(emplacement: Emplacement | null): EmplacementDraft {
   if (!emplacement) {
-    return { id: '', nom: '', latitude: null, longitude: null, modifieLe: null };
+    return { id: '', code: '', nom: '', latitude: null, longitude: null, modifieLe: null };
   }
   return {
     id: emplacement.id,
+    code: emplacement.code ?? '',
     nom: emplacement.nom ?? '',
     latitude: emplacement.latitude,
     longitude: emplacement.longitude,

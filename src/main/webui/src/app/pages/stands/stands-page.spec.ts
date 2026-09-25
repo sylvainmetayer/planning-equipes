@@ -567,16 +567,16 @@ describe('StandsPage table', () => {
     ]);
 
     expect(racine().querySelector('h1')!.textContent!).toContain('Stands (2)');
-    expect(lignes()[0][3]).toBe('2–4 · majeurs · premium');
-    expect(lignes()[0][4]).toBe('ambiance, expert');
-    expect(lignes()[1][4]).toBe('—');
+    expect(lignes()[0][4]).toBe('2–4 · majeurs · premium');
+    expect(lignes()[0][5]).toBe('ambiance, expert');
+    expect(lignes()[1][5]).toBe('—');
   });
 
   it('summarises the horaires as rules and exceptions, not as a raw window count', async () => {
     await rendre([stand({ id: 's1', horaires: [horaire(3), horaire(2)] })]);
 
     // A stand open 10:00-12:00 then 14:00-20:00 every day used to read "24".
-    expect(lignes()[0][6]).toBe('2 règle(s)');
+    expect(lignes()[0][7]).toBe('2 règle(s)');
   });
 
   it('flags a stand named by a feasibility cause, for a screen reader too', async () => {

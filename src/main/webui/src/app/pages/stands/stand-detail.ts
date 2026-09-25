@@ -35,6 +35,11 @@ export function buildStandDetail(
       title: $localize`:@@detail.section.identity:Identité`,
       rows: [
         { label: $localize`:@@common.id:Id`, value: stand.id },
+        {
+          label: $localize`:@@referentiel.field.code:Code`,
+          value: stand.code || $localize`:@@detail.none:Aucun`,
+          muted: !stand.code,
+        },
         { label: $localize`:@@common.nom:Nom`, value: stand.nom },
         {
           label: $localize`:@@stands.field.emplacement:Emplacement`,

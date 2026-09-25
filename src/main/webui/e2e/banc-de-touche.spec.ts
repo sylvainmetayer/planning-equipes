@@ -13,7 +13,15 @@
 // show it.
 
 import { APIRequestContext, expect, Page, test } from '@playwright/test';
-import { contexteAdmin, shiftDate, ouvrirSelect, pageAdmin, SEED, seedPlanning } from './support';
+import {
+  contexteAdmin,
+  shiftDate,
+  ouvrirSelect,
+  pageAdmin,
+  SEED,
+  seedPlanning,
+  EDITION_REFERENCE,
+} from './support';
 import { repartirDeLaReference } from './reference';
 
 /** A créneau of the referential that no seat of the saved plan points at. */
@@ -53,7 +61,7 @@ async function semer(): Promise<void> {
     `delete from poste_affectation where creneau_id = ${CRENEAU_SANS_SIEGE};\n` +
       `delete from creneau where id = ${CRENEAU_SANS_SIEGE};\n` +
       `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) ` +
-      `values ('DEFAUT', ${CRENEAU_SANS_SIEGE}, '${DATE_SANS_SIEGE}', '09:00', '11:00');`,
+      `values ('${EDITION_REFERENCE}', ${CRENEAU_SANS_SIEGE}, '${DATE_SANS_SIEGE}', '09:00', '11:00');`,
   );
 }
 
@@ -155,7 +163,7 @@ test('un créneau porteur de sièges liste le banc et les motifs de chacun', asy
 test("sans planning enregistré, l'écran dit quoi faire", async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
   try {
-    await sql(`delete from poste_affectation where edition_id = 'DEFAUT';`);
+    await sql(`delete from poste_affectation where edition_id = '${EDITION_REFERENCE}';`);
 
     await ouvrirBanc(page, CRENEAU_SANS_SIEGE);
 

@@ -60,6 +60,10 @@
         <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@common.id">Id</th>
         <td mat-cell *matCellDef="let stand">{{ stand.id }}</td>
       </ng-container>
+      <ng-container matColumnDef="code">
+        <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@referentiel.field.code">Code</th>
+        <td mat-cell *matCellDef="let stand">{{ stand.code }}</td>
+      </ng-container>
       <ng-container matColumnDef="nom">
         <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@common.nom">Nom</th>
         <td mat-cell *matCellDef="let stand">

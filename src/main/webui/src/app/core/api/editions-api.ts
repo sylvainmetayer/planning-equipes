@@ -36,13 +36,15 @@ export class EditionsApi {
    * behind (issue #90), which is what the year-template case wants — preparing
    * 2027 from 2026 has no business copying the names, birth dates and e-mail
    * addresses of people who have not signed up again.
+   *
+   * Only the name is sent: the server draws the new edition's id.
    */
-  create(target: unknown, source: string | null, avecAnimateurs = true): Promise<Edition> {
+  create(nom: string, source: string | null, avecAnimateurs = true): Promise<Edition> {
     if (!source) {
-      return this.api.post<Edition>('/api/editions', target);
+      return this.api.post<Edition>('/api/editions', { nom });
     }
     const url = `/api/editions/${encodeURIComponent(source)}/dupliquer?avecAnimateurs=${avecAnimateurs}`;
-    return this.api.post<Edition>(url, target);
+    return this.api.post<Edition>(url, { nom });
   }
 
   rename(editionId: string, nom: string): Promise<unknown> {

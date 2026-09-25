@@ -65,6 +65,7 @@ export class StandsPage extends ReferenceTablePage<Stand> implements OnInit {
   protected readonly columns = [
     'select',
     'id',
+    'code',
     'nom',
     'effectif',
     'typologies',
@@ -101,6 +102,7 @@ export class StandsPage extends ReferenceTablePage<Stand> implements OnInit {
       id: (stand) => stand.id,
       champsFiltre: (stand) => [
         stand.id,
+        stand.code,
         stand.nom,
         ...(stand.typologiesProposees ?? []),
         stand.emplacement?.nom,

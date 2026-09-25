@@ -132,9 +132,6 @@ export class CreneauFormDialog {
         creneau,
         editingId,
         $localize`:@@creneaux.entityLabel:Créneau`,
-        {
-          requireId: false,
-        },
       )
     ) {
       this.dialogRef.close(true);

@@ -12,13 +12,15 @@ import {
   CreneauSeed,
   StandSeed,
   contexteAdmin,
+  idCree,
   shiftDate,
   pageAdmin,
   seedReferentielSolveur,
 } from './support';
 import { repartirDeLaReference } from './reference';
 
-const EDITION_B = { id: 'E2E-EDITION-B', nom: 'Édition e2e verrou' };
+/** Created by its name; `id` is the one the application draws, read back at creation. */
+const EDITION_B = { id: '', nom: 'Édition e2e verrou' };
 
 // Same twelve-seat shape as solveur.spec.ts: the solve only needs to RUN for a
 // while, and a real search space keeps it busy past the assertions below (the
@@ -50,10 +52,15 @@ let admin: APIRequestContext;
 test.beforeAll(async ({ playwright }, testInfo) => {
   admin = await contexteAdmin(playwright, testInfo.project.use.baseURL as string);
   await repartirDeLaReference(admin);
-  // Leftover from a crashed previous run; a 404/409 here is fine.
-  await admin.delete(`/api/editions/${EDITION_B.id}`);
-  const creation = await admin.post('/api/editions', { data: EDITION_B });
-  expect(creation.ok(), await creation.text()).toBe(true);
+  // Leftover from a crashed previous run, found by its name.
+  const editions = (await (await admin.get('/api/editions')).json()) as {
+    id: string;
+    nom: string;
+  }[];
+  for (const reste of editions.filter((edition) => edition.nom === EDITION_B.nom)) {
+    await admin.delete(`/api/editions/${reste.id}`);
+  }
+  EDITION_B.id = await idCree(await admin.post('/api/editions', { data: { nom: EDITION_B.nom } }));
 });
 
 test.afterAll(async () => {

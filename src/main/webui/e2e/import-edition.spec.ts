@@ -9,10 +9,18 @@ import { APIRequestContext, expect, test } from '@playwright/test';
 import { contexteAdmin, pageAdmin } from './support';
 import { repartirDeLaReference } from './reference';
 
-const EDITION_IMPORT = { id: 'E2E-IMPORT-CIBLE', nom: 'Édition import e2e' };
+/**
+ * Named, never numbered: an edition the section does not designate by an
+ * existing id is created under its name, with an id the application draws.
+ */
+const EDITION_IMPORT = { nom: 'Édition import e2e' };
 
+/**
+ * The ids of the file are references local to it; the created rows get ids
+ * of their own. The stand carries a code — the readable key that survives the
+ * import — which is what the assertions find it by.
+ */
 const SCENARIO = `edition:
-  id: ${EDITION_IMPORT.id}
   nom: ${EDITION_IMPORT.nom}
 
 festival:
@@ -27,6 +35,7 @@ creneaux:
 
 stands:
   - id: E2EIMP-S1
+    code: E2EIMP-S1
     nom: Stand import edition
     typologiesProposees:
       - STRATEGIE
@@ -46,15 +55,31 @@ animateurs:
 
 let admin: APIRequestContext;
 
+/** The id the application gave the edition of that name, `undefined` when none exists. */
+async function editionImportee(): Promise<string | undefined> {
+  const editions = (await (await admin.get('/api/editions')).json()) as {
+    id: string;
+    nom: string;
+  }[];
+  return editions.find((edition) => edition.nom === EDITION_IMPORT.nom)?.id;
+}
+
+async function supprimerEdition(): Promise<void> {
+  const id = await editionImportee();
+  if (id) {
+    await admin.delete(`/api/editions/${id}`);
+  }
+}
+
 test.beforeAll(async ({ playwright }, testInfo) => {
   admin = await contexteAdmin(playwright, testInfo.project.use.baseURL as string);
   await repartirDeLaReference(admin);
-  // Leftover from a crashed previous run; a 404 here is fine.
-  await admin.delete(`/api/editions/${EDITION_IMPORT.id}`);
+  // Leftover from a crashed previous run.
+  await supprimerEdition();
 });
 
 test.afterAll(async () => {
-  await admin.delete(`/api/editions/${EDITION_IMPORT.id}`);
+  await supprimerEdition();
   await admin.dispose();
 });
 
@@ -96,12 +121,16 @@ test("l'import d'un fichier à section edition annonce la cible, importe ailleur
   ).toBeVisible();
 
   // The ambient edition was never touched by the import.
-  const standsCourants = (await (await page.request.get('/api/stands')).json()) as { id: string }[];
-  expect(standsCourants.map((stand) => stand.id)).not.toContain('E2EIMP-S1');
+  const standsCourants = (await (await page.request.get('/api/stands')).json()) as {
+    code: string | null;
+  }[];
+  expect(standsCourants.map((stand) => stand.code)).not.toContain('E2EIMP-S1');
+  const editionCible = await editionImportee();
+  expect(editionCible, 'the import must have created the edition').toBeTruthy();
   const standsCible = (await (
-    await page.request.get('/api/stands', { headers: { 'X-Edition-Id': EDITION_IMPORT.id } })
-  ).json()) as { id: string }[];
-  expect(standsCible.map((stand) => stand.id)).toContain('E2EIMP-S1');
+    await page.request.get('/api/stands', { headers: { 'X-Edition-Id': editionCible as string } })
+  ).json()) as { code: string | null }[];
+  expect(standsCible.map((stand) => stand.code)).toContain('E2EIMP-S1');
 
   // Switching reloads the page onto the freshly written edition. The waiter is
   // armed BEFORE the click on purpose: `waitForLoadState('load')` resolves

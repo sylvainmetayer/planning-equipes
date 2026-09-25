@@ -159,27 +159,19 @@ describe('ReferenceCrudService', () => {
       expect(notification.message).toContain('1');
     });
 
-    // Toutes les entités sauf les créneaux sont clés par un identifiant saisi
-    // par l'utilisateur : sans lui, la sauvegarde n'a pas de sens et ne doit
-    // pas atteindre le serveur.
-    it('refuse un identifiant manquant sans appeler le store', async () => {
-      const ok = await service.save('stands', { id: '' }, null, 'le stand');
-
-      expect(ok).toBe(false);
-      expect(store.save).not.toHaveBeenCalled();
-      expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ variant: 'error' }),
-      );
-    });
-
-    // Les créneaux passent requireId: false, leur id étant généré côté serveur.
-    it('accepte un identifiant absent quand requireId vaut false', async () => {
-      const ok = await service.save('creneaux', { id: null }, null, 'le créneau', {
-        requireId: false,
-      });
+    // No entity is keyed by a typed id any more: a creation goes out without
+    // one, and the server draws it.
+    it('sends a creation without its blank id', async () => {
+      const ok = await service.save('stands', { id: '', nom: 'Échecs' }, null, 'le stand');
 
       expect(ok).toBe(true);
-      expect(store.save).toHaveBeenCalled();
+      expect(store.save).toHaveBeenCalledWith('stands', { nom: 'Échecs' }, null);
+    });
+
+    it('keeps the id of an ad hoc constraint re-saved through a POST', async () => {
+      await service.save('contraintes-ad-hoc', { id: 'C4' }, null, "l'ajustement");
+
+      expect(store.save).toHaveBeenCalledWith('contraintes-ad-hoc', { id: 'C4' }, null);
     });
 
     // Le payload d'une création de créneau n'a pas d'id : interpoler le sien
@@ -190,7 +182,7 @@ describe('ReferenceCrudService', () => {
         avertissements: [{ type: 'CRENEAU_DEBORDE_OUVERTURE_STANDS', message: 'déborde' }],
       });
 
-      await service.save('creneaux', { id: null }, null, 'Créneau', { requireId: false });
+      await service.save('creneaux', { id: null }, null, 'Créneau');
 
       const notification = notifications.notify.mock.calls[0][0] as { title: string };
       expect(notification.title).toContain('4242');
@@ -200,7 +192,7 @@ describe('ReferenceCrudService', () => {
     it('affiche aussi l’identifiant du serveur sur la bulle de succès', async () => {
       store.save.mockResolvedValueOnce({ id: 4242, avertissements: [] });
 
-      await service.save('creneaux', { id: null }, null, 'Créneau', { requireId: false });
+      await service.save('creneaux', { id: null }, null, 'Créneau');
 
       const notification = notifications.notify.mock.calls[0][0] as { title: string };
       expect(notification.title).toContain('4242');
