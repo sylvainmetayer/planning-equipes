@@ -11,6 +11,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /** CRUD of the animateur referential, plus the espace access token they are reached by. */
 @ApplicationScoped
@@ -109,8 +110,16 @@ public class AnimateurService {
     private void validate(Animateur animateur) {
         requireIdentity(animateur);
         // A typologie may be named by its code (ADR 0050): stored by its id.
-        animateur.setCompetences(typologies.resolveKeys(animateur.getCompetences()));
-        animateur.setSouhaits(typologies.resolveIds(animateur.getSouhaits()));
+        // One read of the referential for both lists, none when both are empty.
+        boolean sansCompetences =
+                animateur.getCompetences() == null || animateur.getCompetences().isEmpty();
+        boolean sansSouhaits =
+                animateur.getSouhaits() == null || animateur.getSouhaits().isEmpty();
+        if (!sansCompetences || !sansSouhaits) {
+            Map<String, String> parCle = typologies.idsByKey();
+            animateur.setCompetences(TypologieService.resolveKeys(animateur.getCompetences(), parCle));
+            animateur.setSouhaits(TypologieService.resolveIds(animateur.getSouhaits(), parCle));
+        }
         if (animateur.getCompetences() != null) {
             typologies.validateIds(animateur.getCompetences().keySet());
         }

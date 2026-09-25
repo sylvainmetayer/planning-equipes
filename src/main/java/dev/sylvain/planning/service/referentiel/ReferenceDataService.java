@@ -617,6 +617,11 @@ public class ReferenceDataService implements ReferenceData {
         return typologies.importer(typologie);
     }
 
+    /** See {@link TypologieService#idsByKey}: every typologie under its id and its code, to its id. */
+    public Map<String, String> typologyIdsByKey() {
+        return typologies.idsByKey();
+    }
+
     public TypologieItem createTypologie(TypologieItem typologie) {
         return typologies.create(typologie);
     }
