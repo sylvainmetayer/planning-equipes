@@ -262,37 +262,43 @@ public class ArchiveEvenementService {
     private void write(
             OutputStream output, Set<ArchivePart> parts, FormatPlanning format, String manifest, String scenario)
             throws IOException {
-        // Not closed with the stream: the response owns the output, the ZIP only
-        // finishes its central directory on it.
-        ZipOutputStream zip = new ZipOutputStream(output, StandardCharsets.UTF_8);
-        entry(zip, MANIFEST, manifest.getBytes(StandardCharsets.UTF_8));
-        PlanningEvenement planning =
-                parts.stream().anyMatch(ArchivePart::needsPlan) ? persistence.loadPersistedPlanning() : null;
-        if (parts.contains(ArchivePart.PDF_GLOBAL)) {
-            entry(zip, ArchivePart.PDF_GLOBAL.entry(), exports.exportGlobalPdf(planning));
+        // Closing the ZIP closes the response stream too, as the other ZIP exports
+        // do: nothing is written after the central directory.
+        try (ZipOutputStream zip = new ZipOutputStream(output, StandardCharsets.UTF_8)) {
+            entry(zip, MANIFEST, manifest.getBytes(StandardCharsets.UTF_8));
+            // Read once, and only when a part needs it.
+            PlanningEvenement planning = null;
+            if (parts.contains(ArchivePart.PDF_GLOBAL)) {
+                planning = loadedPlan(planning);
+                entry(zip, ArchivePart.PDF_GLOBAL.entry(), exports.exportGlobalPdf(planning));
+            }
+            if (parts.contains(ArchivePart.EQUITE)) {
+                csvEntry(zip, ArchivePart.EQUITE.entry(), EquiteService.generateCsv(equite.rapport()));
+            }
+            if (parts.contains(ArchivePart.HEURES)) {
+                planning = loadedPlan(planning);
+                csvEntry(zip, ArchivePart.HEURES.entry(), hours.generateCsv(hours.compute(planning)));
+            }
+            if (parts.contains(ArchivePart.REFERENTIELS)) {
+                referentials.writeEntries(
+                        EnumSet.allOf(ReferentielCsvExportService.ExportTarget.class), zip, REFERENTIALS_FOLDER);
+            }
+            if (scenario != null) {
+                entry(zip, ArchivePart.SCENARIO.entry(), scenario.getBytes(StandardCharsets.UTF_8));
+            }
+            if (parts.contains(ArchivePart.PUBLICATION)) {
+                csvEntry(
+                        zip, ArchivePart.PUBLICATION.entry(), PlanPublicationService.generateCsv(publication.apercu()));
+            }
+            if (parts.contains(ArchivePart.INDIVIDUELS)) {
+                // Last, and the largest: one document at a time into the response.
+                exports.writeAllBundle(withoutEspaceTokens(loadedPlan(planning)), format, zip, INDIVIDUAL_FOLDER);
+            }
         }
-        if (parts.contains(ArchivePart.EQUITE)) {
-            csvEntry(zip, ArchivePart.EQUITE.entry(), EquiteService.generateCsv(equite.rapport()));
-        }
-        if (parts.contains(ArchivePart.HEURES)) {
-            csvEntry(zip, ArchivePart.HEURES.entry(), hours.generateCsv(hours.compute(planning)));
-        }
-        if (parts.contains(ArchivePart.REFERENTIELS)) {
-            referentials.writeEntries(
-                    EnumSet.allOf(ReferentielCsvExportService.ExportTarget.class), zip, REFERENTIALS_FOLDER);
-        }
-        if (scenario != null) {
-            entry(zip, ArchivePart.SCENARIO.entry(), scenario.getBytes(StandardCharsets.UTF_8));
-        }
-        if (parts.contains(ArchivePart.PUBLICATION)) {
-            csvEntry(zip, ArchivePart.PUBLICATION.entry(), PlanPublicationService.generateCsv(publication.apercu()));
-        }
-        if (parts.contains(ArchivePart.INDIVIDUELS)) {
-            // Last, and the largest: one document at a time into the response.
-            exports.writeAllBundle(withoutEspaceTokens(planning), format, zip, INDIVIDUAL_FOLDER);
-        }
-        zip.finish();
-        zip.flush();
+    }
+
+    private PlanningEvenement loadedPlan(PlanningEvenement alreadyRead) {
+        return alreadyRead != null ? alreadyRead : persistence.loadPersistedPlanning();
     }
 
     /**
