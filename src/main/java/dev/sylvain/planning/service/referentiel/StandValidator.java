@@ -62,7 +62,8 @@ final class StandValidator {
         if (stand.getTypologiesProposees() == null
                 || stand.getTypologiesProposees().isEmpty()) {
             throw new BusinessError.Invalid(
-                    "Le stand « " + stand.getId() + " » ne propose aucune typologie de jeu : "
+                    "Le stand « " + (stand.getId() != null ? stand.getId() : stand.getNom())
+                            + " » ne propose aucune typologie de jeu : "
                             + "un stand est toujours rattaché à au moins une typologie. Choisissez-en une avant d'enregistrer.");
         }
     }
