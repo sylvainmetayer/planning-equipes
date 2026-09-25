@@ -7,6 +7,7 @@ import static org.hamcrest.Matchers.notNullValue;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
+import io.restassured.path.json.JsonPath;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -21,24 +22,26 @@ class StaleWriteResourceTest {
     @Test
     void putWithAnOutdatedModifieLeAnswers409WithTheCodeAndTheCurrentStamp() {
         String stand = """
-                {"id":"SW-S1","nom":"Stand","typologiesProposees":["STRATEGIE"],"effectifMin":1,"effectifMax":1,
+                {"nom":"Stand","typologiesProposees":["STRATEGIE"],"effectifMin":1,"effectifMax":1,
                  "reserveMajeurs":false,"premium":false,"niveauEffort":"NORMAL"}""";
+        // The id is generated on creation (ADR 0050): the response names the row.
+        JsonPath cree = given().contentType(ContentType.JSON)
+                .body(stand)
+                .when()
+                .post("/api/stands")
+                .then()
+                .statusCode(200)
+                .body("stand.modifieLe", notNullValue())
+                .extract()
+                .jsonPath();
+        String id = cree.getString("stand.id");
+        String modifieLe = cree.getString("stand.modifieLe");
         try {
-            String modifieLe = given().contentType(ContentType.JSON)
-                    .body(stand)
-                    .when()
-                    .post("/api/stands")
-                    .then()
-                    .statusCode(200)
-                    .body("stand.modifieLe", notNullValue())
-                    .extract()
-                    .path("stand.modifieLe");
-
             given().contentType(ContentType.JSON)
                     .body(stand.replace(
                             "\"nom\":\"Stand\"", "\"nom\":\"Périmé\",\"modifieLe\":\"2020-01-01T00:00:00Z\""))
                     .when()
-                    .put("/api/stands/SW-S1")
+                    .put("/api/stands/" + id)
                     .then()
                     .statusCode(409)
                     .body("code", equalTo(StaleWriteError.STALE_WRITE_CODE))
@@ -49,19 +52,19 @@ class StaleWriteResourceTest {
             given().contentType(ContentType.JSON)
                     .body(stand.replace("\"nom\":\"Stand\"", "\"nom\":\"À jour\",\"modifieLe\":\"" + modifieLe + "\""))
                     .when()
-                    .put("/api/stands/SW-S1")
+                    .put("/api/stands/" + id)
                     .then()
                     .statusCode(200)
                     .body("stand.nom", equalTo("À jour"));
             given().contentType(ContentType.JSON)
                     .body(stand.replace("\"nom\":\"Stand\"", "\"nom\":\"Sans précondition\""))
                     .when()
-                    .put("/api/stands/SW-S1")
+                    .put("/api/stands/" + id)
                     .then()
                     .statusCode(200)
                     .body("stand.nom", equalTo("Sans précondition"));
         } finally {
-            given().when().delete("/api/stands/SW-S1");
+            given().when().delete("/api/stands/" + id);
         }
     }
 }
