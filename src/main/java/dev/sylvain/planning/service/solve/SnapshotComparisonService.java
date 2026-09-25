@@ -110,15 +110,27 @@ public class SnapshotComparisonService {
      *                             arrêté closed, not from a solver setting.
      *                             False when either side predates the figure,
      *                             since nothing can be said
+     * @param dosagesDifferents    the two plans were solved under different
+     *                             weightings: their scores are not comparable
+     *                             at equal weights, and the UI lists what
+     *                             differs from the two {@code kpi.dosage}.
+     *                             False when either dosage is unknown
      */
-    @Schema(requiredProperties = {"editionsDifferentes", "volumetriesDifferentes", "consignesDifferentes"})
+    @Schema(
+            requiredProperties = {
+                "editionsDifferentes",
+                "volumetriesDifferentes",
+                "consignesDifferentes",
+                "dosagesDifferents"
+            })
     public record ComparaisonSnapshots(
             CoteComparaison base,
             CoteComparaison variante,
             boolean editionsDifferentes,
             boolean volumetriesDifferentes,
             List<DiffContrainte> diffViolations,
-            boolean consignesDifferentes) {}
+            boolean consignesDifferentes,
+            boolean dosagesDifferents) {}
 
     /**
      * Compares two sides, each designated either by a snapshot id or by
@@ -140,7 +152,17 @@ public class SnapshotComparisonService {
                 diffViolations(coteBase.kpi(), coteVariante.kpi()),
                 coteBase.consignes() != null
                         && coteVariante.consignes() != null
-                        && !Objects.equals(coteBase.consignes(), coteVariante.consignes()));
+                        && !Objects.equals(coteBase.consignes(), coteVariante.consignes()),
+                dosagesDifferents(coteBase.kpi(), coteVariante.kpi()));
+    }
+
+    /** Both dosages known, and not the same weighting. */
+    static boolean dosagesDifferents(PlanningKpi base, PlanningKpi variante) {
+        return base != null
+                && variante != null
+                && base.dosage() != null
+                && variante.dosage() != null
+                && !base.dosage().sameAs(variante.dosage());
     }
 
     /** {@code null} when {@code selecteur} designates a snapshot that does not exist. */

@@ -17,8 +17,17 @@
       <mat-progress-bar mode="indeterminate" />
     }
     <app-status-message [text]="error()" tone="error" />
+    @if (dosageFilter()) {
+      <div class="calendar-toolbar">
+        <p class="calendar-meta" i18n="@@kpi.dosage.filtered">Résolutions calculées sous le même dosage.</p>
+        <button matButton type="button" (click)="allDosages()">
+          <mat-icon>filter_alt_off</mat-icon>
+          <ng-container i18n="@@kpi.dosage.all">Tous les dosages</ng-container>
+        </button>
+      </div>
+    }
     <div class="table-wrapper">
-      <table mat-table [dataSource]="entries()">
+      <table mat-table [dataSource]="visibleEntries()">
         <caption class="visually-hidden" i18n="@@kpi.table.caption">
           Autopsie du planning par résolution : date, édition, score, couverture, équilibre, modifications
           manuelles et durée
@@ -90,6 +99,33 @@
         <ng-container matColumnDef="duree">
           <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@kpi.column.duree">Durée</th>
           <td mat-cell *matCellDef="let entry">{{ dureeLabel(entry) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="dosage">
+          <th
+            mat-header-cell scope="col"
+            *matHeaderCellDef
+            i18n-matTooltip="@@kpi.dosage.tooltip"
+            matTooltip="Poids et activations sous lesquels la résolution a été lancée, par rapport aux défauts."
+            i18n="@@kpi.column.dosage"
+          >
+            Dosage
+          </th>
+          <td mat-cell *matCellDef="let entry">
+            <span tabindex="0" matTooltipClass="tooltip-multiligne" [matTooltip]="dosageDetail(entry)">{{ dosageLabel(entry) }}</span>
+            @if (dosageKnown(entry) && !dosageFilter()) {
+              <button
+                matIconButton
+                type="button"
+                i18n-matTooltip="@@kpi.dosage.same"
+                matTooltip="Résolutions sous le même dosage"
+                i18n-aria-label="@@kpi.dosage.same"
+                aria-label="Résolutions sous le même dosage"
+                (click)="sameDosage(entry)"
+              >
+                <mat-icon>filter_alt</mat-icon>
+              </button>
+            }
+          </td>
         </ng-container>
         <ng-container matColumnDef="actions" stickyEnd>
           <th mat-header-cell scope="col" *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>

@@ -368,3 +368,69 @@
   color: var(--mat-sys-primary);
   font-weight: 600;
 }
+
+/*
+ * The weight history dialog of one rule: a chart drawn by hand in SVG — this
+ * rule's violations per solve, the changes of setting as vertical markers —
+ * over a dated list. Colours are theme tokens, the list carries the text.
+ */
+.weight-history-note {
+  color: var(--mat-sys-on-surface-variant);
+  margin-top: 0;
+}
+
+.weight-history-chart {
+  display: block;
+  width: 100%;
+  max-width: 30rem;
+  height: auto;
+  margin-block: 0.5rem 1rem;
+}
+
+.weight-history-axis {
+  stroke: var(--mat-sys-outline-variant);
+  stroke-width: 1;
+}
+
+.weight-history-tick {
+  fill: var(--mat-sys-on-surface-variant);
+  font-size: 9px;
+}
+
+.weight-history-marker {
+  stroke: var(--mat-sys-tertiary);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+}
+
+.weight-history-line {
+  fill: none;
+  stroke: var(--mat-sys-primary);
+  stroke-width: 2;
+}
+
+.weight-history-point {
+  fill: var(--mat-sys-primary);
+}
+
+.weight-history-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  max-height: 45vh;
+  overflow-y: auto;
+  font: var(--mat-sys-body-medium);
+}
+
+.weight-history-list li {
+  margin-bottom: 0.35rem;
+}
+
+.weight-history-date,
+.weight-history-origin,
+.weight-history-instance {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.weight-history-date {
+  margin-right: 0.5rem;
+}

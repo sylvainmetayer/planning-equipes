@@ -107,6 +107,9 @@ public class DatabaseDumpService {
             "parametres_solveur",
             "constraint_toggle",
             "ponderation_contrainte",
+            // The history of those two tables, values included: the reason a
+            // dosage is what it is outlives the ninety days of the journal.
+            "ponderation_contrainte_historique",
             // Settings, alongside the three already above: an edition's
             // collection window, exchange fair and notification schedule shape
             // what it does as surely as its legal parameters do.
@@ -193,7 +196,9 @@ public class DatabaseDumpService {
             "kpi_historique",
             // BIGSERIAL too, V40 and V54, for the same reason.
             "plan_snapshot",
-            "publication_destinataire");
+            "publication_destinataire",
+            // BIGSERIAL since V103.
+            "ponderation_contrainte_historique");
 
     /**
      * Advances each identity/serial sequence past the highest id now in its

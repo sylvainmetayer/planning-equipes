@@ -80,6 +80,7 @@ class IsolationEditionStructurelleTest {
             "contrainte_animateur",
             "constraint_toggle",
             "ponderation_contrainte",
+            "ponderation_contrainte_historique",
             "verrouillage_planning",
             "validation_journee",
             "parametres_legaux",

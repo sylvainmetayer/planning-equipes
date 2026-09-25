@@ -2337,6 +2337,8 @@ export interface ComparaisonSnapshots {
   volumetriesDifferentes: boolean;
   /** The two sides were not captured under the same consignes: part of the gap is the band, not the solve. */
   consignesDifferentes: boolean;
+  /** The two plans were solved under different weightings: their scores do not compare at equal weights. */
+  dosagesDifferents: boolean;
   diffViolations: DiffContrainte[];
 }
 
@@ -3263,6 +3265,62 @@ export interface PlanningKpi {
   heuresFermeesParConsigne: number | null;
   /** The reading of the score of the analysis measured; null on a snapshot older than the reading. */
   lecture?: ScoreSentence[] | null;
+  /** The weighting the plan was solved under, taken at launch; null when unknown (an older row). */
+  dosage?: Dosage | null;
+}
+
+/**
+ * The weighting a solve ran under, reduced to what departs from a default:
+ * `weights` from the deployment's, `disabled`/`enabled` from the catalogue's,
+ * and `instanceWeights`, the deployment's own weights away from 1 — what says
+ * « the instance changed » rather than « the edition retuned ».
+ */
+export interface Dosage {
+  weights: Record<string, number>;
+  instanceWeights: Record<string, number>;
+  disabled: string[];
+  enabled: string[];
+}
+
+/** Where a change of weight or activation came from — never who. */
+export type WeightChangeOrigin = 'SCREEN' | 'ASSISTANT' | 'SCENARIO' | 'DUPLICATION';
+
+/** One change of a rule's effective weight or activation in the edition, values included. */
+export interface WeightChange {
+  id: number;
+  name: string;
+  weightBefore: number | null;
+  weightAfter: number | null;
+  /** The edition dropped its own weight: « 20 → défaut (1) ». */
+  backToDefault: boolean;
+  activeBefore: boolean | null;
+  activeAfter: boolean | null;
+  origin: WeightChangeOrigin;
+  actor: string;
+  /** For a DUPLICATION, the edition the dosage was inherited from. */
+  sourceEdition: string | null;
+  createdAt: string;
+}
+
+/** One finished solve of the edition, as the weight history reads it. */
+export interface ResolutionUnderDosage {
+  id: number;
+  createdAt: string;
+  score: string | null;
+  scoreHard: number | null;
+  scoreMedium: number | null;
+  scoreSoft: number | null;
+  scoreMediumHorsPlancher: number | null;
+  /** Violations of the rule asked about; null on the global history or when unmeasured. */
+  ruleViolations: number | null;
+  dosage: Dosage | null;
+}
+
+/** `GET /api/constraints/{name}/historique` — changes and solves, each oldest first. */
+export interface ConstraintHistory {
+  name: string | null;
+  changes: WeightChange[];
+  resolutions: ResolutionUnderDosage[];
 }
 
 /** One row of `GET /api/kpi/historique` (issue #89) — survives its edition's deletion. */

@@ -7,6 +7,7 @@ import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.analyse.Dosage;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
 import dev.sylvain.planning.service.espace.JourJClock;
@@ -424,6 +425,11 @@ public class PlanningService {
     public PlanningEvenement solve(
             PlanningEvenement problem, SolveBudget budget, Consumer<Solver<PlanningEvenement>> onSolverReady) {
         return solveRunner.solve(problem, budget, onSolverReady);
+    }
+
+    /** @see SolverConfiguration#dosageOf(PlanningEvenement) */
+    public Dosage dosageOf(PlanningEvenement ranWith) {
+        return solverConfiguration.dosageOf(ranWith);
     }
 
     /** @see SolveRunner#solveUntilFeasible */

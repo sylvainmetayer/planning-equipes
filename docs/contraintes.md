@@ -514,6 +514,18 @@ couches, la plus proche l'emportant : le déploiement
 
 Valeurs de 1 à 100 ; `0` est refusé — voir [`api.md`](api.md#contraintes).
 
+### Garder la trace d'un dosage
+
+Un dosage se règle à tâtons, et le tâtonnement ne vaut que si l'on peut
+relire ce qu'il a donné. Chaque changement effectif de poids ou d'activation
+est donc historisé par édition, valeurs comprises, et chaque résolution
+mémorise le dosage sous lequel elle a été **lancée** : la page Contraintes
+pose, règle par règle, les changements et les scores qui ont suivi, l'Autopsie
+filtre les résolutions calculées sous le même dosage, et le Comparateur signale
+deux plans que des poids différents rendent incomparables. Ce rapprochement est
+une juxtaposition, pas une mesure d'effet — voir
+[`api.md`](api.md#historique-des-réglages-de-pondération).
+
 ### Ce qui se dose, et ce qui ne se dose pas
 
 Les règles qui varient réellement d'un organisateur à l'autre sont les

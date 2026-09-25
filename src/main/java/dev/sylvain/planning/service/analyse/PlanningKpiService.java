@@ -8,6 +8,7 @@ import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.PlanningDi
 import dev.sylvain.planning.service.consigne.ConsigneService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
+import dev.sylvain.planning.service.solve.PlanDosageRepository;
 import dev.sylvain.planning.service.solve.PlanSnapshotService.AffectationSnapshot;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -56,12 +57,16 @@ public class PlanningKpiService {
 
     private final ConsigneService consigneService;
 
+    private final PlanDosageRepository planDosage;
+
     @Inject
     public PlanningKpiService(
             PlanningPersistenceService persistenceService,
             ReferenceDataService referenceDataService,
             ConstraintAnalysisStore analysisStore,
-            ConsigneService consigneService) {
+            ConsigneService consigneService,
+            PlanDosageRepository planDosage) {
+        this.planDosage = planDosage;
         this.persistenceService = persistenceService;
         this.referenceDataService = referenceDataService;
         this.analysisStore = analysisStore;
@@ -92,6 +97,10 @@ public class PlanningKpiService {
      * @param heuresFermeesParConsigne seat-hours the bands of those consignes
      *                          took away from the nominal days; {@code null}
      *                          for the same reason
+     * @param dosage            the weighting the plan was solved under, taken
+     *                          when that solve was launched (see {@link Dosage});
+     *                          {@code null} when unknown — a line or a snapshot
+     *                          older than the figure, a plan never solved
      * @param lecture           the reading of the score (see
      *                          {@link ScoreReading}) of the analysis these
      *                          figures were taken from — what the Comparateur
@@ -132,7 +141,8 @@ public class PlanningKpiService {
             Integer plancherMedium,
             Integer journeesSousConsigne,
             Double heuresFermeesParConsigne,
-            List<ScoreReading.ScoreSentence> lecture) {
+            List<ScoreReading.ScoreSentence> lecture,
+            Dosage dosage) {
 
         /** The same figures carrying {@code lecture}, the reading of the analysis they were taken from. */
         public PlanningKpi withReading(List<ScoreReading.ScoreSentence> lecture) {
@@ -160,7 +170,38 @@ public class PlanningKpiService {
                     plancherMedium,
                     journeesSousConsigne,
                     heuresFermeesParConsigne,
-                    lecture);
+                    lecture,
+                    dosage);
+        }
+
+        /** The same figures, stamped with the dosage the plan was solved under. */
+        public PlanningKpi withDosage(Dosage dosage) {
+            return new PlanningKpi(
+                    score,
+                    scoreHard,
+                    scoreMedium,
+                    scoreSoft,
+                    postesTotal,
+                    postesPourvus,
+                    animateursAffectes,
+                    standsDistincts,
+                    creneauxDistincts,
+                    heuresTotal,
+                    heuresMoyenne,
+                    heuresEcartType,
+                    heuresMin,
+                    heuresMax,
+                    heuresIncompletes,
+                    modificationsManuelles,
+                    tauxModificationsManuelles,
+                    dureeSolveSecondes,
+                    violationsParContrainte,
+                    scoreMediumHorsPlancher,
+                    plancherMedium,
+                    journeesSousConsigne,
+                    heuresFermeesParConsigne,
+                    lecture,
+                    dosage);
         }
     }
 
@@ -203,7 +244,8 @@ public class PlanningKpiService {
                                         .sum()
                                 / 60.0,
                         EffectiveWork.breakMinutesPerAnimateur(planning.getPostes(), planning.parametresLegaux())))
-                .withReading(diagnostic == null ? null : diagnostic.lecture());
+                .withReading(diagnostic == null ? null : diagnostic.lecture())
+                .withDosage(planDosage.current());
     }
 
     /**
@@ -348,6 +390,7 @@ public class PlanningKpiService {
                 inputs.plancherMedium(),
                 inputs.journeesSousConsigne(),
                 inputs.heuresFermeesParConsigne(),
+                null,
                 null);
     }
 

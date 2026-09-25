@@ -254,6 +254,10 @@
                          i18n-matTooltip="@@constraints.poids.tooltip"
                          (change)="onPoidsChange(constraint, poids)" />
                 </mat-form-field>
+                <button matIconButton type="button" (click)="showHistory(constraint)"
+                        [attr.aria-label]="historyLabel(constraint)" [matTooltip]="historyLabel(constraint)">
+                  <mat-icon>history</mat-icon>
+                </button>
               </div>
               @if (constraint.parametres?.length) {
                 <p class="constraint-parametres">

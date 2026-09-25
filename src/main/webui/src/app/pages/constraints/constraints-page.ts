@@ -43,6 +43,7 @@ import { ViolationDetailsDialog } from '../../shared/violation-details-dialog';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 import { errorPrefix } from '../../core/error-message';
 import { LegalDisableConfirmService } from './legal-disable-dialog';
+import { WeightHistoryDialog } from './weight-history-dialog';
 import { classeCellule, ColonnePivot, buildPivot, cellLink } from './ecarts-pivot';
 import { nextGridCell } from '../../core/grid-navigation';
 
@@ -657,6 +658,18 @@ export class ConstraintsPage implements OnInit {
       return 'constraint-result constraint-result-empty';
     }
     return `constraint-result ${(constraint.matchCount ?? 0) > 0 ? 'constraint-result-hit' : 'constraint-result-clean'}`;
+  }
+
+  /** The weight history of one rule, beside the solves that followed each change. */
+  protected showHistory(constraint: ConstraintView): void {
+    this.dialog.open(WeightHistoryDialog, {
+      data: { name: constraint.name },
+      width: '40rem',
+    });
+  }
+
+  protected historyLabel(constraint: ConstraintView): string {
+    return $localize`:@@constraints.history.label:Historique des réglages de ${constraint.name}:name:`;
   }
 
   /** Opens the who/what/when detail popup — only ever called for a HARD constraint with matches (see the template). */

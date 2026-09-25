@@ -67,3 +67,9 @@
   cursor: pointer;
   font: var(--mat-sys-title-small);
 }
+
+/* The rules two dosages disagree on: « rule : base → variante ». */
+.comparateur-dosages {
+  margin-block: 0 1rem;
+  font: var(--mat-sys-body-medium);
+}

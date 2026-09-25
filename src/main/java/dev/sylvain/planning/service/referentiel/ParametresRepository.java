@@ -14,7 +14,9 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.time.LocalTime;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import javax.sql.DataSource;
 
 /**
@@ -32,8 +34,12 @@ public class ParametresRepository {
 
     private final JdbcEditionScope scope;
 
+    /** Where a change of weight or activation is recorded, in the same transaction as the change. */
+    private final WeightHistoryRepository history;
+
     @Inject
-    public ParametresRepository(DataSource dataSource, JdbcEditionScope scope) {
+    public ParametresRepository(DataSource dataSource, JdbcEditionScope scope, WeightHistoryRepository history) {
+        this.history = history;
         this.dataSource = dataSource;
         this.scope = scope;
     }
@@ -306,10 +312,27 @@ public class ParametresRepository {
     /**
      * Overrides one constraint's weight for this edition, or drops the
      * override when {@code poids} is {@code null} — the constraint then falls
-     * back to the configured default.
+     * back to the configured default. {@code change} is handed the override
+     * stored before this write — {@code null} when there was none — and what it
+     * returns, when not {@code null}, is written to the weight history.
+     *
+     * <p>Both in one transaction, the read included and serialised with any
+     * other write of this rule's weight: a history line for a write that
+     * rolled back would describe a dosage that never existed, and a
+     * before-value read outside the transaction could be one a concurrent
+     * write had already replaced.</p>
      */
-    public void setConstraintWeight(String nom, Integer poids) {
-        try (Connection connection = dataSource.getConnection()) {
+    public void setConstraintWeight(String nom, Integer poids, Function<Integer, WeightChange> change) {
+        scope.write("Failed to save constraint weight", connection -> {
+            lockRule(connection, "ponderation_contrainte", nom);
+            Integer stored;
+            try (PreparedStatement ps = scope.prepareScoped(
+                    connection, "SELECT poids FROM ponderation_contrainte WHERE edition_id = ? AND nom = ?")) {
+                ps.setString(2, nom);
+                try (ResultSet rs = ps.executeQuery()) {
+                    stored = rs.next() ? rs.getInt("poids") : null;
+                }
+            }
             if (poids == null) {
                 try (PreparedStatement ps = scope.prepareScoped(
                         connection, "DELETE FROM ponderation_contrainte WHERE edition_id = ? AND nom = ?")) {
@@ -327,20 +350,33 @@ public class ParametresRepository {
                     ps.executeUpdate();
                 }
             }
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to save constraint weight", e);
-        }
+            WeightChange line = change.apply(stored);
+            if (line != null) {
+                history.insert(connection, line);
+            }
+        });
     }
 
     /**
      * Records the state this edition chose for one constraint, or drops the
      * row when {@code actif} is {@code null} — the constraint then falls back
      * to the catalogue's default, same convention as
-     * {@link #setConstraintWeight}. Nothing else is recorded: this is a state
-     * table, not an audit log (see migration V39).
+     * {@link #setConstraintWeight}. The table is a state, not an audit log
+     * (see migration V39); what changed, and when, is what {@code change}
+     * returns from the state stored before — read, like the weight's, inside
+     * the transaction that writes.
      */
-    public void setEtatContrainte(String nom, Boolean actif) {
-        try (Connection connection = dataSource.getConnection()) {
+    public void setEtatContrainte(String nom, Boolean actif, Function<Boolean, WeightChange> change) {
+        scope.write("Failed to save constraint toggle", connection -> {
+            lockRule(connection, "constraint_toggle", nom);
+            Boolean stored;
+            try (PreparedStatement ps = scope.prepareScoped(
+                    connection, "SELECT actif FROM constraint_toggle WHERE edition_id = ? AND nom = ?")) {
+                ps.setString(2, nom);
+                try (ResultSet rs = ps.executeQuery()) {
+                    stored = rs.next() ? rs.getBoolean("actif") : null;
+                }
+            }
             if (actif == null) {
                 try (PreparedStatement ps = scope.prepareScoped(
                         connection, "DELETE FROM constraint_toggle WHERE edition_id = ? AND nom = ?")) {
@@ -358,8 +394,36 @@ public class ParametresRepository {
                     ps.executeUpdate();
                 }
             }
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to save constraint toggle", e);
+            WeightChange line = change.apply(stored);
+            if (line != null) {
+                history.insert(connection, line);
+            }
+        });
+    }
+
+    /**
+     * Serialises the writes of one rule's weight (or toggle) in this edition
+     * until the transaction ends. A row lock would not do: the first override
+     * of a rule has no row to lock yet, and two such writes would both read
+     * « nothing stored ».
+     */
+    private void lockRule(Connection connection, String table, String nom) throws SQLException {
+        try (PreparedStatement ps =
+                connection.prepareStatement("SELECT pg_advisory_xact_lock(hashtextextended(?, 0))")) {
+            ps.setString(1, table + '/' + scope.editionId() + '/' + nom);
+            ps.execute();
         }
+    }
+
+    /** Writes lines to the weight history alone — the dosage an edition inherited by duplication. */
+    public void recordHistory(List<WeightChange> changes) {
+        if (changes.isEmpty()) {
+            return;
+        }
+        scope.write("Failed to record the weight history", connection -> {
+            for (WeightChange change : changes) {
+                history.insert(connection, change);
+            }
+        });
     }
 }

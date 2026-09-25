@@ -461,6 +461,11 @@ manque quand même — l'analyse n'a pas pu être produite —, le solve suivant
 rétablit ce score en analysant le plan persisté avant de le remplacer et l'écrit
 dans l'instantané, devant un calcul qui va durer des minutes.
 
+**Deux plans calculés sous des dosages différents ne se comparent pas à poids
+égaux** : `dosagesDifferents` le dit quand les deux `kpi.dosage` sont connus et
+diffèrent, et l'écran liste les règles en cause. Une restauration remet le plan
+avec le dosage sous lequel il avait été calculé.
+
 Une restauration répond `409` **sans rien écrire** si des références ont
 disparu, en listant lesquelles. Elle répond aussi `409` — même corps que les
 écritures du référentiel, le job en cause nommé — tant qu'une résolution tient
@@ -980,6 +985,39 @@ en écart d'abord, avec leur id, leur raison et le nombre d'écarts qu'elles
 portent. C'est ce qui répond à « *lesquelles* de mes exceptions » quand une
 règle ad hoc affiche douze correspondances. Liste vide quand le plan les honore
 toutes — et quand rien n'a jamais été analysé.
+
+### Historique des réglages de pondération
+
+`GET /api/constraints/{name}/historique` et `GET /api/constraints/historique`
+(toutes les règles) répondent `{ changes, resolutions }`. `changes` : chaque
+changement de poids ou d'activation dans l'édition, **valeurs effectives**
+avant et après, défaut du déploiement compris (`backToDefault` pour
+« 20 → défaut (1) »), `origin` (`SCREEN`, `ASSISTANT`, `SCENARIO`,
+`DUPLICATION`, cette dernière avec `sourceEdition`) et l'`actor` du journal qui
+s'en déduit. Une ligne n'est écrite **que si la valeur effective change** : un
+`PUT` qui remet la même valeur n'écrit rien, un import de scénario qui ne bouge
+rien non plus. `resolutions` : les lignes de l'Autopsie de l'édition, avec
+leur score, le `dosage` sous lequel chacune a tourné, et pour une règle donnée
+`ruleViolations`, son nombre d'écarts.
+
+Trois pièges :
+
+- **ce n'est pas le journal.** Le journal des actions ne garde que des noms de
+  champs et expire à 90 jours ; cette table garde les valeurs, dure autant que
+  l'édition et ne porte rien de nominatif — l'origine est typée, jamais une
+  personne ;
+- **le dosage est celui du lancement.** Il est pris juste avant que le solveur
+  ne démarre et stocké avec la ligne KPI (`kpi.dosage`) et avec le plan
+  (`planning_resolution.dosage`, recopié par chaque instantané) : un poids
+  changé pendant la résolution vaut pour la suivante. `dosage` ne garde que ce
+  qui s'écarte d'un défaut — `weights` (écart au déploiement), `disabled` /
+  `enabled` (écart au catalogue) — plus `instanceWeights`, les poids du
+  déploiement, qui disent quand c'est **l'instance** qui a changé et non
+  l'édition. `null` sur une ligne antérieure : dosage inconnu, jamais
+  « défaut » ;
+- **juxtaposer n'est pas expliquer.** L'écran pose les scores qui ont suivi un
+  réglage, sans prétendre isoler son effet : le référentiel a pu bouger entre
+  deux résolutions.
 
 ### Le plancher : signalé par règle, jamais appliqué
 

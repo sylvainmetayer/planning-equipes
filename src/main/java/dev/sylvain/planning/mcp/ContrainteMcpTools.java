@@ -3,7 +3,9 @@ package dev.sylvain.planning.mcp;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintDiagnostic;
+import dev.sylvain.planning.service.analyse.WeightHistoryService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.WeightChangeOrigin;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore.StoredAnalysis;
 import dev.sylvain.planning.service.solve.PlanningService;
@@ -36,14 +38,41 @@ public class ContrainteMcpTools {
 
     private final PlanningService planningService;
 
+    private final WeightHistoryService weightHistory;
+
     @Inject
     ContrainteMcpTools(
             ConstraintAnalysisStore analysisStore,
             ReferenceDataService referenceDataService,
-            PlanningService planningService) {
+            PlanningService planningService,
+            WeightHistoryService weightHistory) {
+        this.weightHistory = weightHistory;
         this.analysisStore = analysisStore;
         this.referenceDataService = referenceDataService;
         this.planningService = planningService;
+    }
+
+    @Tool(
+            name = "consulter_historique_ponderation",
+            description = "Historique des réglages de pondération de l'édition : chaque changement de poids ou "
+                    + "d'activation d'une règle, valeurs effectives avant et après (défaut compris), origine "
+                    + "(SCREEN, ASSISTANT, SCENARIO, DUPLICATION) et date ; puis les résolutions de l'édition, "
+                    + "avec leur score, le dosage sous lequel chacune a tourné (null = inconnu) et, pour une "
+                    + "règle donnée, son nombre d'écarts. Juxtaposition, pas causalité : le référentiel a pu "
+                    + "changer entre deux résolutions.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    WeightHistoryService.ConstraintHistory weightHistory(
+            @ToolArg(description = "Nom d'une contrainte ; absent = toutes les règles", required = false)
+                    String contrainte,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        return contrainte == null || contrainte.isBlank()
+                ? weightHistory.all()
+                : weightHistory.forConstraint(contrainte);
     }
 
     @Tool(
@@ -139,13 +168,13 @@ public class ContrainteMcpTools {
         if (poids != null && poids <= 0) {
             throw new BusinessError.Invalid("poids : attendu un entier strictement positif, reçu " + poids);
         }
-        referenceDataService.setConstraintWeight(nom, poids);
+        referenceDataService.setConstraintWeight(nom, poids, WeightChangeOrigin.ASSISTANT);
         return new PoidsResult(nom, planningService.effectiveConstraintWeights().getOrDefault(nom, 1), poids == null);
     }
 
     private ToggleResult setActive(String nom, boolean actif) {
         requireConnue(nom);
-        referenceDataService.setContrainteActive(nom, actif);
+        referenceDataService.setContrainteActive(nom, actif, WeightChangeOrigin.ASSISTANT);
         return new ToggleResult(nom, actif);
     }
 
