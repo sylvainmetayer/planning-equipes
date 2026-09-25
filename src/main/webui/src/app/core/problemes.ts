@@ -276,7 +276,7 @@ export function linksOfViolation(violation: ViolationReference): LienProbleme[] 
  * Screens a feasibility cause can be acted upon from, in the order one would try them.
  * `nomsStands` names the stands the cause lists by id; an unknown one keeps its id.
  */
-export function liensDeCause(
+export function causeLinks(
   cause: CauseInfaisabilite,
   nomsStands: LabelIndex = new Map(),
 ): LienProbleme[] {
@@ -327,7 +327,7 @@ export function liensDeCause(
   return liens;
 }
 
-export function detailsDeCause(
+export function causeDetails(
   cause: CauseInfaisabilite,
   nomsStands: LabelIndex = new Map(),
 ): string[] {
@@ -425,10 +425,10 @@ export function construireProblemes(
       source: 'FAISABILITE',
       titre: typeCauseLabel(cause.type),
       message: cause.message,
-      details: detailsDeCause(cause, nomsStands),
+      details: causeDetails(cause, nomsStands),
       references: [],
       actions: (cause.actions ?? []).map(actionOf),
-      liens: liensDeCause(cause, nomsStands),
+      liens: causeLinks(cause, nomsStands),
     });
   });
 

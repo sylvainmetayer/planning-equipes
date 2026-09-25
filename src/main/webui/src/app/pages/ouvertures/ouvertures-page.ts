@@ -490,7 +490,7 @@ export class OuverturesPage implements OnInit {
   );
 
   /** The names of these stands, joined; an id the report does not know stays as it is. */
-  private nomsDe(standIds: readonly string[]): string {
+  private standNamesOf(standIds: readonly string[]): string {
     return labelsOf(this.nomsStands(), standIds).join(', ');
   }
 
@@ -1084,7 +1084,7 @@ export class OuverturesPage implements OnInit {
     if (aplatis.length > 0) {
       const confirme = await this.confirm.ask({
         title: $localize`:@@ouvertures.saisie.aplatirTitle:Remplacer des cases à plusieurs valeurs ?`,
-        message: $localize`:@@ouvertures.saisie.aplatirMessage:${this.nomsDe(aplatis)}:stands: : des cases qui portaient plusieurs valeurs ont été modifiées ; la valeur tapée s'appliquera à tout le créneau.`,
+        message: $localize`:@@ouvertures.saisie.aplatirMessage:${this.standNamesOf(aplatis)}:stands: : des cases qui portaient plusieurs valeurs ont été modifiées ; la valeur tapée s'appliquera à tout le créneau.`,
         confirmLabel: $localize`:@@ouvertures.saisie.aplatirLabel:Enregistrer`,
       });
       if (!confirme) {
@@ -1110,7 +1110,7 @@ export class OuverturesPage implements OnInit {
     const heures = Math.round(cout.minutes / 6) / 10;
     const confirme = await this.confirm.ask({
       title: $localize`:@@ouvertures.saisie.alignerTitle:Aligner les fenêtres sur les créneaux ?`,
-      message: $localize`:@@ouvertures.saisie.alignerMessage:${partiels.length}:stands: stand(s), ${cout.cases}:cases: case(s) : chaque case sera étendue à son créneau entier, à sa valeur la plus haute, soit ${heures}:heures: h d'ouverture en plus (${this.nomsDe(partiels)}:liste:).`,
+      message: $localize`:@@ouvertures.saisie.alignerMessage:${partiels.length}:stands: stand(s), ${cout.cases}:cases: case(s) : chaque case sera étendue à son créneau entier, à sa valeur la plus haute, soit ${heures}:heures: h d'ouverture en plus (${this.standNamesOf(partiels)}:liste:).`,
       confirmLabel: $localize`:@@ouvertures.saisie.alignerLabel:Aligner`,
       danger: true,
     });
@@ -1144,7 +1144,7 @@ export class OuverturesPage implements OnInit {
           $localize`:@@ouvertures.saisie.doneMessage:${rapport.stands.length}:stands: stand(s) réécrit(s) en ${regles}:regles: règle(s) et ${exceptions}:exceptions: exception(s) datée(s).` +
           (nonCompactes.length > 0
             ? ' ' +
-              $localize`:@@ouvertures.saisie.doneNonCompactes:${this.nomsDe(nonCompactes)}:stands: sont restés en fenêtres datées : leur motif ne se répète pas.`
+              $localize`:@@ouvertures.saisie.doneNonCompactes:${this.standNamesOf(nonCompactes)}:stands: sont restés en fenêtres datées : leur motif ne se répète pas.`
             : ''),
         variant: 'success',
       });
