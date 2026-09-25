@@ -16,7 +16,7 @@
       <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
     @if (echecsTemporaires() > 0) {
-      <button matButton="outlined" type="button" class="renvoyer-echecs" [disabled]="renvoiEnCours()"
+      <button matButton="outlined" type="button" class="renvoyer-echecs" [disabled]="resendInProgress()"
               (click)="resendFailed()">
         <mat-icon>forward_to_inbox</mat-icon>
         <ng-container i18n="@@animateurs.renvoyer.bouton">Renvoyer les envois en échec</ng-container>

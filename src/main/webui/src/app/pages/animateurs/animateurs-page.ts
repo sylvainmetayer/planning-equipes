@@ -231,7 +231,7 @@ export class AnimateursPage implements OnInit {
   );
 
   /** True while a resend is under way: one click, one run. */
-  protected readonly renvoiEnCours = signal(false);
+  protected readonly resendInProgress = signal(false);
 
   /** « Confirmés 12 · Relancés 3 · Silencieux 5 — Dernière publication le … », or nothing to say yet. */
   protected readonly syntheseLabel = computed(() => {
@@ -518,7 +518,7 @@ export class AnimateursPage implements OnInit {
     if (!confirmed) {
       return;
     }
-    this.renvoiEnCours.set(true);
+    this.resendInProgress.set(true);
     try {
       const rapport = await this.animateursApi.resendFailed();
       const noms = new Map(this.store.animateurs().map((each) => [each.id, nomAffiche(each)]));
@@ -537,7 +537,7 @@ export class AnimateursPage implements OnInit {
         variant: 'error',
       });
     } finally {
-      this.renvoiEnCours.set(false);
+      this.resendInProgress.set(false);
     }
   }
 
