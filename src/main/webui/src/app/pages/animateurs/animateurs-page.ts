@@ -23,7 +23,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AnimateursApi } from '../../core/api/animateurs-api';
 import { intlLocale } from '../../core/locale';
 import {
@@ -107,9 +107,10 @@ import { resumeRelance } from './relance-resume';
     BulkActionsBar,
     SortHeaderName,
     TableFilter,
+    RouterLink,
   ],
   templateUrl: './animateurs-page.html',
-  styleUrl: './animateurs-page.css',
+  styleUrls: ['../../../styles/animateur-form.css', './animateurs-page.css'],
   // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,

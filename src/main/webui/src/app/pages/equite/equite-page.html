@@ -79,7 +79,7 @@
 
         @if (ligneChoisie(); as choisie) {
           <h2 class="equite-fiche-nom">
-            <a class="equite-lien-timeline" routerLink="/timeline" [queryParams]="{ animateur: choisie.animateurId }">{{ choisie.nom }}</a>
+            <a class="equite-lien-fiche" [routerLink]="['/animateurs', choisie.animateurId]">{{ choisie.nom }}</a>
           </h2>
           <table class="equite-fiche">
             <caption class="visually-hidden" i18n="@@equite.fiche.caption">Équité d'un animateur : un indicateur par ligne, sa valeur, son écart à la médiane et la synthèse de la colonne</caption>
@@ -151,7 +151,7 @@
               @if (col === colonneAnimateur) {
                 <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header>{{ libelleColonne(col) }}</th>
                 <td mat-cell *matCellDef="let ligne" class="equite-cell-animateur">
-                  <a class="equite-lien-timeline" routerLink="/timeline" [queryParams]="{ animateur: ligne.animateurId }">{{ ligne.nom }}</a>
+                  <a class="equite-lien-fiche" [routerLink]="['/animateurs', ligne.animateurId]">{{ ligne.nom }}</a>
                 </td>
                 <td mat-footer-cell *matFooterCellDef i18n="@@equite.synthese.label">Synthèse ({{ lignesAffichees().length }} affichés sur {{ lignes().length }})</td>
               } @else {

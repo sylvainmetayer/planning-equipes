@@ -15,13 +15,13 @@
   white-space: nowrap;
 }
 
-.equite-lien-timeline {
+.equite-lien-fiche {
   color: var(--mat-sys-primary);
   text-decoration: none;
 }
 
-.equite-lien-timeline:hover,
-.equite-lien-timeline:focus-visible {
+.equite-lien-fiche:hover,
+.equite-lien-fiche:focus-visible {
   text-decoration: underline;
 }
 

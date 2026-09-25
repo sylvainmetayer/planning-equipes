@@ -102,7 +102,7 @@
                             (click)="basculer(ligne.animateurId); $event.stopPropagation()">
                       <mat-icon>{{ ouvert() === ligne.animateurId ? 'expand_less' : 'expand_more' }}</mat-icon>
                     </button>
-                    <span class="fragilite-nom">{{ ligne.nom }}</span>
+                    <a class="fragilite-nom" [routerLink]="['/animateurs', ligne.animateurId]" (click)="$event.stopPropagation()">{{ ligne.nom }}</a>
                     @if (ligne.ninja) {
                       <span class="fragilite-badge" i18n="@@fragilite.badge.ninja">ninja</span>
                     }
@@ -186,7 +186,9 @@
                     }
                   </td>
                   <td>
-                    @if (ligne.nom) {
+                    @if (ligne.nom && ligne.animateurId) {
+                      <a class="fragilite-lien-fiche" [routerLink]="['/animateurs', ligne.animateurId]">{{ ligne.nom }}</a>
+                    } @else if (ligne.nom) {
                       {{ ligne.nom }}
                     } @else {
                       <span class="fragilite-alerte" i18n="@@fragilite.competences.personne">personne</span>

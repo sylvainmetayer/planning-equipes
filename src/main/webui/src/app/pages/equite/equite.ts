@@ -7,7 +7,7 @@ import { correspondAuFiltre } from '../../core/text-filter';
 import { ColonneSolveur, LigneEquite, RapportEquite, SyntheseColonne } from '../../core/models';
 import { SortState } from '../../core/view-query-params';
 
-/** The first column: the person, linking to their timeline. */
+/** The first column: the person, linking to their fiche. */
 export const COLONNE_ANIMATEUR = 'animateur';
 
 /** The numeric columns before the ISO weeks, and after them — in table order. */

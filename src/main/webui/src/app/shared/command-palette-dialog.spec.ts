@@ -136,7 +136,7 @@ describe('CommandPaletteDialog', () => {
     const ligne = options(fixture).find((option) => option.textContent?.includes('Amélie'));
     ligne?.click();
     expect(dialogRef.close).toHaveBeenCalledWith(
-      expect.objectContaining({ route: '/timeline', queryParams: { animateur: 'a1' } }),
+      expect.objectContaining({ route: '/animateurs/a1' }),
     );
   });
 

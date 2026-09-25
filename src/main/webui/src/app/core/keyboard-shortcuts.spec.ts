@@ -171,13 +171,13 @@ describe('chercherCommandes', () => {
     expect(resultats.every((commande) => commande.famille === 'navigation')).toBe(true);
   });
 
-  it('finds an animateur by first name, and sends the user to their timeline', () => {
+  it('finds an animateur by first name, and sends the user to their fiche', () => {
     const found = chercherCommandes('amelie', sources).find(
       (commande) => commande.famille === 'animateur',
     );
     expect(found?.label).toBe('Amélie Durand');
-    expect(found?.route).toBe('/timeline');
-    expect(found?.queryParams).toEqual({ animateur: 'a1' });
+    expect(found?.route).toBe('/animateurs/a1');
+    expect(found?.queryParams).toBeUndefined();
   });
 
   it('finds a stand ignoring accents, and opens the calendar filtered on it', () => {

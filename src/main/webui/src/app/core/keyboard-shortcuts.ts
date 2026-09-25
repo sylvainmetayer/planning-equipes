@@ -315,7 +315,7 @@ export interface SourcesPalette {
  */
 export const MAX_PER_FAMILY = 8;
 
-/** Where an animateur found in the palette leads: their own timeline, pre-selected. */
+/** Where an animateur found in the palette leads: their fiche, everything known about them on one page. */
 function commandeAnimateur(animateur: Animateur): CommandePalette {
   return {
     id: `animateur:${animateur.id}`,
@@ -323,8 +323,7 @@ function commandeAnimateur(animateur: Animateur): CommandePalette {
     label: `${animateur.prenom} ${animateur.nom}`.trim(),
     hint: animateur.id,
     icon: 'person',
-    route: '/timeline',
-    queryParams: { animateur: animateur.id },
+    route: `/animateurs/${animateur.id}`,
   };
 }
 

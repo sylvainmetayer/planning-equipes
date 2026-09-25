@@ -273,19 +273,19 @@ describe('EquitePage', () => {
       expect(page.tooltipColonne('heuresSoiree')).toContain('non prise en compte');
     });
 
-    it('links every person to their timeline', async () => {
+    it('links every person to their fiche', async () => {
       const page = createPage();
       await vi.waitFor(() => expect(page.rapport()).not.toBeNull());
       fixture.detectChanges();
 
       const liens = Array.from(
         (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>(
-          'a.equite-lien-timeline',
+          'a.equite-lien-fiche',
         ),
       );
       expect(liens.map((lien) => lien.getAttribute('href'))).toEqual([
-        '/timeline?animateur=bob',
-        '/timeline?animateur=alice',
+        '/animateurs/bob',
+        '/animateurs/alice',
       ]);
     });
   });

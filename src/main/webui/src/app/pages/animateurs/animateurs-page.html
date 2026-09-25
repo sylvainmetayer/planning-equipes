@@ -143,6 +143,9 @@
       <ng-container matColumnDef="actions" stickyEnd>
         <th mat-header-cell scope="col" *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
         <td mat-cell *matCellDef="let animateur" class="row-actions">
+          <a matIconButton [routerLink]="['/animateurs', animateur.id]" i18n-matTooltip="@@animateurs.ouvrirFiche" matTooltip="Ouvrir sa fiche complète" i18n-aria-label="@@animateurs.ouvrirFiche" aria-label="Ouvrir sa fiche complète">
+            <mat-icon>badge</mat-icon>
+          </a>
           <button matIconButton i18n-matTooltip="@@common.consult" matTooltip="Consulter le détail" i18n-aria-label="@@common.consult" aria-label="Consulter le détail" (click)="consult(animateur)">
             <mat-icon>visibility</mat-icon>
           </button>

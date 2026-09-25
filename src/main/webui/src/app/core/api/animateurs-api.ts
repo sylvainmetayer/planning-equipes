@@ -5,6 +5,7 @@
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
 import {
+  AnimateurProfile,
   ConfirmationView,
   ImportCompetencesDemande,
   ImportCompetencesRapport,
@@ -20,6 +21,13 @@ import {
 @Injectable({ providedIn: 'root' })
 export class AnimateursApi {
   private readonly api = inject(ApiService);
+
+  /** Everything known about one animateur, on one page; 404 for an unknown id. */
+  profile(animateurId: string): Promise<AnimateurProfile> {
+    return this.api.get<AnimateurProfile>(
+      `/api/animateurs/${encodeURIComponent(animateurId)}/fiche`,
+    );
+  }
 
   /** A new espace link for one animateur; the old one stops working at once. */
   regenerateToken(animateurId: string): Promise<void> {

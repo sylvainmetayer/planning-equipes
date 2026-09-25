@@ -1,6 +1,6 @@
 // L'écran Équité sur le planning ensemencé : le tableau liste les animateurs
 // affectés, le tri se pose dans l'URL et survit au rechargement, l'export CSV
-// répond, et un nom mène à la timeline de la personne.
+// répond, et un nom mène à la fiche de la personne.
 
 import { APIRequestContext, expect, test } from '@playwright/test';
 import { contexteAdmin, pageAdmin, SEED, seedPlanning } from './support';
@@ -101,14 +101,18 @@ test("l'export CSV répond avec une ligne par animateur", async ({ browser }) =>
   await page.context().close();
 });
 
-test('un clic sur un animateur ouvre sa timeline', async ({ browser }) => {
+test('un clic sur un animateur ouvre sa fiche, qui mène à sa timeline', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/equite');
 
   await page.getByRole('link', { name: /Alice E2E/ }).click();
 
+  await expect(page).toHaveURL(new RegExp(`/animateurs/${SEED.demandeur}$`));
+  await expect(page.locator('#contenu')).toContainText('Identité et régime');
+  await expect(page.locator('#contenu')).toContainText('Écart à la médiane');
+
+  await page.getByRole('link', { name: 'Ouvrir sa timeline' }).click();
   await expect(page).toHaveURL(new RegExp(String.raw`/timeline\?animateur=${SEED.demandeur}`));
   await expect(page.locator('#contenu')).toContainText('Timeline animateur');
-  await expect(page.locator('#contenu')).toContainText('Stands à couvrir');
   await page.context().close();
 });

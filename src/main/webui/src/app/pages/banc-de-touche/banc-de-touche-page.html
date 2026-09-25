@@ -83,7 +83,7 @@
           <tbody>
             @for (ligne of lignes(); track ligne.animateurId) {
               <tr [class]="'banc-row banc-row-' + ligne.etat">
-                <td>{{ ligne.nom }}</td>
+                <td><a class="banc-lien-fiche" [routerLink]="['/animateurs', ligne.animateurId]">{{ ligne.nom }}</a></td>
                 <td>
                   <span class="banc-state">
                     <mat-icon inline aria-hidden="true">{{ etatIcone(ligne.etat) }}</mat-icon>
