@@ -60,7 +60,9 @@ public class DemandeEchange {
      */
     private Instant communiqueeLe;
 
-    public DemandeEchange() {}
+    public DemandeEchange() {
+        // Filled field by field: by the service that opens a request, and by the row mapper.
+    }
 
     public String getId() {
         return id;

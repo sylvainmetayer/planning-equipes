@@ -111,13 +111,13 @@ public class VerrouillagePlanning {
         this.creneauHeureFin = null;
         this.jour = null;
         switch (target) {
-            case VerrouillageTarget.OnAnimateur sur -> this.animateurId = sur.animateurId();
-            case VerrouillageTarget.OnStand sur -> this.standId = sur.standId();
-            case VerrouillageTarget.OnCreneau sur -> this.creneauId = sur.creneauId();
-            case VerrouillageTarget.OnJour sur -> this.jour = sur.jour();
-            case VerrouillageTarget.OnAnimateurAndCreneau sur -> {
-                this.animateurId = sur.animateurId();
-                this.creneauId = sur.creneauId();
+            case VerrouillageTarget.OnAnimateur(String animateur) -> this.animateurId = animateur;
+            case VerrouillageTarget.OnStand(String stand) -> this.standId = stand;
+            case VerrouillageTarget.OnCreneau(long creneau) -> this.creneauId = creneau;
+            case VerrouillageTarget.OnJour(LocalDate date) -> this.jour = date;
+            case VerrouillageTarget.OnAnimateurAndCreneau(String animateur, long creneau) -> {
+                this.animateurId = animateur;
+                this.creneauId = creneau;
             }
         }
     }

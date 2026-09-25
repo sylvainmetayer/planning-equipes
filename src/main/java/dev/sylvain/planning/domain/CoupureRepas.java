@@ -118,61 +118,81 @@ public record CoupureRepas(
     public static CoupureRepas of(List<PosteAffectation> postesDuJour, FenetreRepas fenetre) {
         int ouverture = fenetre.debutMinutes();
         int fermeture = fenetre.finMinutes();
+        if (!worksAround(postesDuJour, ouverture, fermeture)) {
+            return new CoupureRepas(fenetre, false, 0, null, null);
+        }
+        List<int[]> occupes = occupiedInside(postesDuJour, ouverture, fermeture);
+        occupes.sort(Comparator.comparingInt(intervalle -> intervalle[0]));
+        GapScan scan = new GapScan(fenetre.dureeMinutes());
+        int curseur = ouverture;
+        for (int[] occupe : occupes) {
+            scan.gap(curseur, occupe[0]);
+            curseur = Math.max(curseur, occupe[1]);
+        }
+        scan.gap(curseur, fermeture);
+        return new CoupureRepas(fenetre, true, scan.plusGrandTrou, scan.premierTrou, scan.dernierTrou);
+    }
+
+    /** Whether a seat starts before the window opens and a seat ends after it closes. */
+    private static boolean worksAround(List<PosteAffectation> postesDuJour, int ouverture, int fermeture) {
         boolean travailleAvant = false;
         boolean travailleApres = false;
+        for (PosteAffectation poste : postesDuJour) {
+            LocalTime debut = poste.heureDebutEffectif();
+            if (debut != null) {
+                int debutMinutes = debut.toSecondOfDay() / 60;
+                travailleAvant |= debutMinutes < ouverture;
+                travailleApres |= debutMinutes + poste.getDureeEffectiveMinutes() > fermeture;
+            }
+        }
+        return travailleAvant && travailleApres;
+    }
+
+    /** The seats clipped to the window, as {@code [start, end]} minutes; those outside it left out. */
+    private static List<int[]> occupiedInside(List<PosteAffectation> postesDuJour, int ouverture, int fermeture) {
         List<int[]> occupes = new ArrayList<>();
         for (PosteAffectation poste : postesDuJour) {
             LocalTime debut = poste.heureDebutEffectif();
-            if (debut == null) {
-                continue;
-            }
-            int debutMinutes = debut.toSecondOfDay() / 60;
-            int finMinutes = debutMinutes + poste.getDureeEffectiveMinutes();
-            travailleAvant |= debutMinutes < ouverture;
-            travailleApres |= finMinutes > fermeture;
-            int bas = Math.max(debutMinutes, ouverture);
-            int haut = Math.min(finMinutes, fermeture);
-            if (haut > bas) {
-                occupes.add(new int[] {bas, haut});
+            if (debut != null) {
+                int debutMinutes = debut.toSecondOfDay() / 60;
+                int bas = Math.max(debutMinutes, ouverture);
+                int haut = Math.min(debutMinutes + poste.getDureeEffectiveMinutes(), fermeture);
+                if (haut > bas) {
+                    occupes.add(new int[] {bas, haut});
+                }
             }
         }
-        if (!travailleAvant || !travailleApres) {
-            return new CoupureRepas(fenetre, false, 0, null, null);
-        }
+        return occupes;
+    }
 
-        occupes.sort(Comparator.comparingInt(intervalle -> intervalle[0]));
-        int requis = fenetre.dureeMinutes();
-        int curseur = ouverture;
-        int plusGrandTrou = 0;
-        Integer premierTrou = null;
+    /** The free stretches of the window, read in order. */
+    private static final class GapScan {
+        private final int requis;
+        private int plusGrandTrou;
+        private Integer premierTrou;
         // The latest a break could start: inside the LAST long-enough stretch,
         // pushed to its own end. A day leaving the whole window free must not
         // read as « eats at noon » when the window prefers late — the person
         // picks, and the preference reads what they could pick (issue #596).
-        Integer dernierTrou = null;
-        for (int[] occupe : occupes) {
-            if (occupe[0] > curseur) {
-                int trou = occupe[0] - curseur;
-                plusGrandTrou = Math.max(plusGrandTrou, trou);
-                if (trou >= requis) {
-                    if (premierTrou == null) {
-                        premierTrou = curseur;
-                    }
-                    dernierTrou = occupe[0] - requis;
-                }
-            }
-            curseur = Math.max(curseur, occupe[1]);
+        private Integer dernierTrou;
+
+        GapScan(int requis) {
+            this.requis = requis;
         }
-        if (fermeture > curseur) {
-            int trou = fermeture - curseur;
+
+        /** The free stretch {@code [debut, fin)}, when not empty. */
+        void gap(int debut, int fin) {
+            if (fin <= debut) {
+                return;
+            }
+            int trou = fin - debut;
             plusGrandTrou = Math.max(plusGrandTrou, trou);
             if (trou >= requis) {
                 if (premierTrou == null) {
-                    premierTrou = curseur;
+                    premierTrou = debut;
                 }
-                dernierTrou = fermeture - requis;
+                dernierTrou = fin - requis;
             }
         }
-        return new CoupureRepas(fenetre, true, plusGrandTrou, premierTrou, dernierTrou);
     }
 }

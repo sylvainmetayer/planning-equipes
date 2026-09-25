@@ -63,7 +63,10 @@ public record PauseSurPoste(
                     apres = poste;
                 }
             }
-            return apres != null ? apres : avant != null ? avant : postes.get(0);
+            if (apres != null) {
+                return apres;
+            }
+            return avant != null ? avant : postes.get(0);
         }
     }
 

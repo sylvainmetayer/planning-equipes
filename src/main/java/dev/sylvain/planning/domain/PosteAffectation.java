@@ -149,12 +149,18 @@ public class PosteAffectation {
 
     /** Start time this poste actually covers: the override if set, else the créneau's own start. */
     public LocalTime heureDebutEffectif() {
-        return heureDebutEffective != null ? heureDebutEffective : (creneau != null ? creneau.getHeureDebut() : null);
+        if (heureDebutEffective != null) {
+            return heureDebutEffective;
+        }
+        return creneau != null ? creneau.getHeureDebut() : null;
     }
 
     /** End time this poste actually covers: the override if set, else the créneau's own end. */
     public LocalTime heureFinEffectif() {
-        return heureFinEffective != null ? heureFinEffective : (creneau != null ? creneau.getHeureFin() : null);
+        if (heureFinEffective != null) {
+            return heureFinEffective;
+        }
+        return creneau != null ? creneau.getHeureFin() : null;
     }
 
     /**
