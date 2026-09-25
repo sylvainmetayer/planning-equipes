@@ -45,6 +45,8 @@ public class StandService {
 
     private final JdbcEditionScope scope;
 
+    private final GelReferentielService gel;
+
     @Inject
     public StandService(
             StandRepository repository,
@@ -55,7 +57,8 @@ public class StandService {
             SolverJobService solverJobs,
             ConsigneRepository consignes,
             IdGenerator ids,
-            JdbcEditionScope scope) {
+            JdbcEditionScope scope,
+            GelReferentielService gel) {
         this.repository = repository;
         this.creneaux = creneaux;
         this.typologies = typologies;
@@ -65,6 +68,7 @@ public class StandService {
         this.consignes = consignes;
         this.ids = ids;
         this.scope = scope;
+        this.gel = gel;
     }
 
     /**
@@ -120,6 +124,7 @@ public class StandService {
      * Creates the stand under an id the application draws (ADR 0050): an id
      * the caller sent is overwritten.
      */
+    @RefusedWhileFrozen(ReferentialFamily.STANDS)
     public Stand create(Stand stand) {
         validate(stand);
         scope.write("Failed to create stand " + stand.getNom(), connection -> {
@@ -137,6 +142,7 @@ public class StandService {
      * stand names may have been written by the same unit of work a moment
      * ago, so they are checked on that connection, where they exist.
      */
+    @RefusedWhileFrozen(ReferentialFamily.STANDS)
     Stand create(Connection connection, Stand stand) throws SQLException {
         StandValidator.check(stand);
         stand.setCode(Codes.normalise(stand.getCode(), IdGenerator.Kind.STAND));
@@ -165,6 +171,11 @@ public class StandService {
      * {@code PUT /api/stands/{id}} per stand, one transaction each, so there is
      * no server-side batch to check once — unlike {@code CreneauService.deleteInBulk},
      * which really is one.</p>
+     *
+     * <p>Under a {@link ReferentialFamily#STANDS} freeze, refused only when the
+     * edit moves a frozen field — compared with the stand as stored, so a
+     * rename or a new location stays open (ADR 0052). Checked here rather than
+     * by {@link RefusedWhileFrozen}, which can only refuse the whole call.</p>
      */
     public Stand update(String id, Stand stand) {
         solverJobs.refuseIfSolving();
@@ -172,7 +183,13 @@ public class StandService {
             throw new BusinessError.NotFound("Stand inconnu : " + id);
         }
         stand.setId(id);
+        // Before the freeze compares: the game categories may be named by
+        // their code, and a code is not the id the stored stand holds.
         validate(stand);
+        // The before-image only under a freeze: it reads the whole referential.
+        gel.refuseIfFrozen(
+                ReferentialFamily.STANDS,
+                () -> GelReferentielService.changesFrozenStandFields(repository.findStand(id), stand));
         stand.setCode(Codes.normalise(stand.getCode(), IdGenerator.Kind.STAND));
         Codes.refuseTaken(stand.getCode(), repository.idByCode(stand.getCode()), id, "le stand");
         repository.saveStand(stand, false);
@@ -191,6 +208,7 @@ public class StandService {
      * and reserveMajeurs, dropping emplacement, premium and niveauEffort. See
      * {@link SolverJobService#refuseIfSolving}.</p>
      */
+    @RefusedWhileFrozen(ReferentialFamily.STANDS)
     public void delete(String id) {
         solverJobs.refuseIfSolving();
         repository.deleteStand(id);
@@ -209,6 +227,7 @@ public class StandService {
      * reason {@link #update} gives: the landing persist would revert the bounds
      * and windows just written.</p>
      */
+    @RefusedWhileFrozen(ReferentialFamily.STANDS)
     public List<GrilleHorairesStands.LigneGrille> saisirGrille(List<GrilleHorairesStands.SaisieStand> saisies) {
         solverJobs.refuseIfSolving();
         List<Creneau> edition = creneaux.list();
@@ -284,8 +303,11 @@ public class StandService {
         // Checked once for the whole compaction, not per stand: it rewrites every
         // compacted stand through saveStand, and a landing solve would revert
         // their typologies, indisponibilités and ouvertures. A dry run writes
-        // nothing, hence the check sitting after the early return.
+        // nothing, hence the check sitting after the early return — and the
+        // freeze with it: a compaction rewrites opening hours, which a
+        // STANDS freeze covers, but a dry run may still be read.
         solverJobs.refuseIfSolving();
+        gel.refuseIfFrozen(ReferentialFamily.STANDS);
         Set<String> compactes = rapport.stands().stream()
                 .filter(HoraireCompaction.LigneCompactage::compacte)
                 .map(HoraireCompaction.LigneCompactage::standId)

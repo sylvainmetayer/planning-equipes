@@ -15,6 +15,7 @@ import { PlanningApi } from '../../core/api/planning-api';
 import { errorMessage, errorPrefix } from '../../core/error-message';
 import { ScenarioImportService } from '../../core/scenario-import.service';
 import { SolverJobService } from '../../core/solver-job.service';
+import { GelEditionNotice } from '../../shared/gel-edition-notice';
 import { OutputPanel } from '../../shared/output-panel';
 
 /**
@@ -32,6 +33,7 @@ import { OutputPanel } from '../../shared/output-panel';
 @Component({
   selector: 'app-scenario-preenregistre',
   imports: [
+    GelEditionNotice,
     MatButtonModule,
     MatCardModule,
     MatFormFieldModule,

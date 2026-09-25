@@ -22,6 +22,24 @@ import {
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { GelNotice } from '../../shared/gel-notice';
+import { injectGelReferentiel } from '../../core/gel-referentiel.store';
+import { FreezeFamily } from '../../core/models';
+
+/** The family a file of this referential writes (ADR 0052); the day templates are none. */
+export function frozenFamilyOf(target: ReferentielImportTarget): FreezeFamily | null {
+  switch (target) {
+    case 'TYPOLOGIES':
+    case 'EMPLACEMENTS':
+      return 'TYPOLOGIES_EMPLACEMENTS';
+    case 'STANDS':
+      return 'STANDS';
+    case 'CRENEAUX':
+      return 'CRENEAUX';
+    case 'JOURNEES_TYPES':
+      return null;
+  }
+}
 
 const CLASSE_ACTION: Record<ActionImportReferentiel, string> = {
   CREE: 'import-ligne-creation',
@@ -46,7 +64,7 @@ const ICONE_ACTION: Record<ActionImportReferentiel, string> = {
  */
 @Component({
   selector: 'app-import-referentiel',
-  imports: [MatButtonModule, MatCardModule, MatIconModule, MatProgressBarModule],
+  imports: [GelNotice, MatButtonModule, MatCardModule, MatIconModule, MatProgressBarModule],
   templateUrl: './import-referentiel-card.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -60,6 +78,15 @@ export class ImportReferentielCard {
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
   private readonly store = inject(ReferenceDataStore);
+  private readonly gel = injectGelReferentiel();
+
+  /** The family this file would write, when a freeze can cover it. */
+  protected readonly family = computed(() => frozenFamilyOf(this.target()));
+  /** The server refuses the whole file while its family is frozen: the screen says so before. */
+  protected readonly frozen = computed(() => {
+    const family = this.family();
+    return family !== null && this.gel.isFrozen(family);
+  });
 
   private readonly fileInput = viewChild.required<ElementRef<HTMLInputElement>>('csvInput');
 
@@ -81,7 +108,8 @@ export class ImportReferentielCard {
       !this.rapport()?.applied &&
       (this.rapport()?.accepted ?? 0) > 0 &&
       !this.analyseEnCours() &&
-      !this.importEnCours(),
+      !this.importEnCours() &&
+      !this.frozen(),
   );
 
   protected classeAction(action: ActionImportReferentiel): string {

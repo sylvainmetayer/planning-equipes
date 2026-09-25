@@ -9,6 +9,7 @@ import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
 import { EditionStore } from '../../core/edition.store';
+import { GelReferentielStore } from '../../core/gel-referentiel.store';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
@@ -21,7 +22,7 @@ import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
 import { PlanningApi } from '../../core/api/planning-api';
 import { DebugPage, CLEAR_KEYWORD } from './debug-page';
 import type { DemandeRecopie } from '../../shared/confirmation-recopie';
-import type { Edition } from '../../core/models';
+import type { Edition, EtatGel } from '../../core/models';
 
 /** Reaches the protected handler the template binds the button to. */
 type PageInternals = { onResetDatabase: () => Promise<void> };
@@ -29,6 +30,14 @@ type PageInternals = { onResetDatabase: () => Promise<void> };
 function page(): PageInternals {
   return TestBed.createComponent(DebugPage).componentInstance as unknown as PageInternals;
 }
+
+/** What `GET /api/editions/courant/gel` answers when two families are frozen. */
+const FROZEN_STATES: EtatGel[] = [
+  { famille: 'STANDS', libelle: 'Stands', fige: true, figeLe: '2026-07-01T08:00:00Z' },
+  { famille: 'CRENEAUX', libelle: 'Créneaux', fige: true, figeLe: '2026-07-01T08:00:00Z' },
+  { famille: 'TYPOLOGIES_EMPLACEMENTS', libelle: 'Typologies', fige: false, figeLe: null },
+  { famille: 'COMPETENCES', libelle: 'Compétences', fige: false, figeLe: null },
+];
 
 describe('DebugPage reset', () => {
   const api = { get: vi.fn(), post: vi.fn() };
@@ -38,6 +47,7 @@ describe('DebugPage reset', () => {
   const notifications = { notify: vi.fn() };
   const courant = vi.fn<() => Edition | null>();
   const rechargerEditions = vi.fn(async () => undefined);
+  let gel: EtatGel[] = [];
 
   beforeEach(() => {
     api.get.mockReset();
@@ -47,6 +57,10 @@ describe('DebugPage reset', () => {
     notifications.notify.mockReset();
     courant.mockReset();
     api.get.mockResolvedValue({ adminEmail: null });
+    gel = [];
+    api.get.mockImplementation(async (url: string) =>
+      url === '/api/editions/courant/gel' ? gel : { adminEmail: null },
+    );
     api.post.mockResolvedValue({ deleted: 0 });
     planningApi.reset.mockReset();
     planningApi.reset.mockResolvedValue({ deleted: 0 });
@@ -158,5 +172,19 @@ describe('DebugPage reset', () => {
     expect(notifications.notify).toHaveBeenCalledWith(
       expect.objectContaining({ variant: 'warning' }),
     );
+  });
+
+  // The server refuses to empty an edition while any family of its referential
+  // is frozen: no transcription asked, no snapshot offered, nothing sent.
+  it('asks for nothing while a family of the referential is frozen', async () => {
+    gel = FROZEN_STATES;
+    const internals = page();
+    await TestBed.inject(GelReferentielStore).ensureLoaded();
+
+    await internals.onResetDatabase();
+
+    expect(recopie.demander).not.toHaveBeenCalled();
+    expect(instantane.proposer).not.toHaveBeenCalled();
+    expect(planningApi.reset).not.toHaveBeenCalled();
   });
 });

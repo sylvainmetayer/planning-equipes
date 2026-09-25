@@ -22,6 +22,8 @@ import { AnimateursApi } from '../../core/api/animateurs-api';
 import { errorMessage } from '../../core/error-message';
 import { AnimateurCsvMapping, ImportCsvDemande, ImportCsvRapport } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
+import { injectGelReferentiel } from '../../core/gel-referentiel.store';
+import { GelNotice } from '../../shared/gel-notice';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import {
@@ -61,6 +63,7 @@ import {
     MatSelectModule,
     MatTooltipModule,
     RouterLink,
+    GelNotice,
   ],
   templateUrl: './import-animateurs-page.html',
   styleUrl: '../../../styles/import-animateurs.css',
@@ -76,6 +79,9 @@ export class ImportAnimateursPage {
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
   private readonly store = inject(ReferenceDataStore);
+  /** A COMPETENCES freeze refuses a file retouching an animateur's competences, not a newcomer (ADR 0052). */
+  protected readonly competencesFrozen = computed(() => this.gel.isFrozen('COMPETENCES'));
+  private readonly gel = injectGelReferentiel();
 
   private readonly fileInput = viewChild.required<ElementRef<HTMLInputElement>>('csvInput');
 

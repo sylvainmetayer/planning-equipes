@@ -479,6 +479,34 @@ contrainte ad hoc suit la même règle, avec une conséquence de plus : une règ
 écrite pour un créneau disparu ne vaut **rien** au lieu de valoir pour toute
 l'édition.
 
+### Gel du référentiel
+
+Le verrou fige des **sièges** d'un plan calculé ; le gel fige les **fiches**
+dont ce plan est calculé, une fois leur préparation terminée
+([décision 0052](decisions/0052-gel-du-referentiel-distinct-du-verrou.md)).
+Il se pose et se lève par famille, dans une édition, par l'organisateur :
+
+| Famille | Ce qui ne s'écrit plus |
+| --- | --- |
+| Stands | création, suppression, effectifs min/max, réserve majeurs, typologies proposées, horaires (règles, ouvertures et fermetures datées) |
+| Créneaux | création, suppression, date, heures, couverture de pause ; journées types appliquées, dérivation, séries |
+| Typologies & emplacements | création, suppression, plafond par typologie, typologie ninja |
+| Compétences | niveaux de compétence des animateurs déjà inscrits (fiche, grille, import) |
+
+Une famille figée refuse l'écriture **par tous les chemins** — formulaire,
+édition en lot, import CSV, import de grille, MCP — en `409` avec le code
+`REFERENTIEL_FIGE`. Restent libres : le nom, le lieu et le niveau d'effort
+d'un stand, le libellé et la description d'une typologie, le nom et la
+position d'un emplacement, les données des personnes hors compétences
+(disponibilités, souhaits, déclarations, e-mail), la **création** d'un
+animateur avec ses compétences, les ajustements, les verrous, et les
+**consignes** — l'outil prévu pour fermer une bande tard sans rien détruire.
+L'import de scénario et la remise à zéro, qui remplacent tout, sont refusés
+tant qu'une famille est figée.
+
+Un gel n'est pas recopié par la duplication d'une édition : la nouvelle
+repart en préparation. Il ne touche pas un calcul en cours.
+
 ### Replanification incrémentale
 
 Répond à « il est 9 h, untel se désiste, que fait-on ? ». Elle **repart du

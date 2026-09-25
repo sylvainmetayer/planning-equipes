@@ -21,6 +21,8 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { Creneau } from '../../core/models';
 import { JoursFeriesService } from '../../core/jours-feries.service';
 import { PastilleFerie } from '../../shared/pastille-ferie';
+import { injectGelReferentiel } from '../../core/gel-referentiel.store';
+import { GelNotice } from '../../shared/gel-notice';
 
 /** Sentinel `mat-select` value that reveals the "new group" name field. */
 
@@ -57,6 +59,7 @@ export interface CreneauFormData {
     MatIconModule,
     MatTooltipModule,
     PastilleFerie,
+    GelNotice,
   ],
   templateUrl: './creneau-form-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -65,6 +68,9 @@ export class CreneauFormDialog {
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
   protected readonly editingLocked = this.jobs.editingLocked;
+  private readonly gel = injectGelReferentiel();
+  /** Every field of a timeslot is covered by a CRENEAUX freeze (ADR 0052): the form only reads. */
+  protected readonly creneauxFrozen = computed(() => this.gel.isFrozen('CRENEAUX'));
 
   protected readonly dialogRef = inject<MatDialogRef<CreneauFormDialog, boolean>>(MatDialogRef);
   private readonly data = inject<CreneauFormData>(MAT_DIALOG_DATA);

@@ -1,4 +1,4 @@
-// The home page (issue #485): « État de l'édition » lists the eleven steps of
+// The home page (issue #485): « État de l'édition » lists the twelve steps of
 // the cycle, each with a state and a link to the screen that moves it — or,
 // for the coherence of the referential, a detail unfolded in place. The
 // states are the server's; what a browser adds is that the lines render,
@@ -22,6 +22,7 @@ test.afterAll(async () => {
 
 const LIGNES = [
   'referentiels',
+  'gel',
   'coherence',
   'collecte',
   'ouvertures',
@@ -34,7 +35,7 @@ const LIGNES = [
   'foire',
 ];
 
-test("la page d'accueil liste les onze étapes du cycle", async ({ browser }) => {
+test("la page d'accueil liste les douze étapes du cycle", async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/');
 
@@ -44,9 +45,10 @@ test("la page d'accueil liste les onze étapes du cycle", async ({ browser }) =>
   for (const id of LIGNES) {
     await expect(page.locator(`li[data-ligne="${id}"]`), `ligne ${id}`).toBeVisible();
   }
-  // Every line carries its state and a link: nothing is a dead end. The
-  // coherence line alone unfolds in place, each of its anomalies linking on.
-  await expect(page.locator('li.accueil-ligne a.accueil-lien')).toHaveCount(LIGNES.length - 1);
+  // Every line carries its state and a link: nothing is a dead end. Two lines
+  // unfold in place instead — the coherence, each of its anomalies linking on,
+  // and the freeze of the referential, its switches.
+  await expect(page.locator('li.accueil-ligne a.accueil-lien')).toHaveCount(LIGNES.length - 2);
   await expect(page.locator('.accueil-bilan')).toContainText('à faire');
   await page.context().close();
 });

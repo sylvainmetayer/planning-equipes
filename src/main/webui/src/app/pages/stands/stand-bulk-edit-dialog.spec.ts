@@ -14,10 +14,11 @@ import { NgForm } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { EditionsApi } from '../../core/api/editions-api';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
-import { Creneau, Emplacement, Stand } from '../../core/models';
+import { Creneau, Emplacement, EtatGel, Stand } from '../../core/models';
 import { StandBulkEditDialog } from './stand-bulk-edit-dialog';
 import { StandBulkPatch } from './stand-bulk-edit';
 
@@ -63,6 +64,8 @@ function mount(
     modeles?: Stand[];
     creneaux?: Creneau[];
     modele?: Stand;
+    /** What `GET /api/editions/courant/gel` answers; nothing frozen by default. */
+    gel?: EtatGel[];
   } = {},
 ) {
   const saveMany = vi.fn(async () => options.saveMany ?? stands.length);
@@ -87,6 +90,7 @@ function mount(
       { provide: ReferenceCrudService, useValue: { saveMany } },
       { provide: MatDialogRef, useValue: { close } },
       { provide: MAT_DIALOG_DATA, useValue: { stands, modele: options.modele } },
+      { provide: EditionsApi, useValue: { gel: vi.fn(async () => options.gel ?? []) } },
     ],
   });
   return { fixture: TestBed.createComponent(StandBulkEditDialog), saveMany, close };
@@ -526,6 +530,27 @@ describe('StandBulkEditDialog', () => {
       (root(fixture).querySelector('fieldset.form-fieldset') as HTMLFieldSetElement).disabled,
     ).toBe(true);
     expect(submit(fixture).disabled).toBe(true);
+  });
+
+  it('closes the whole form under a stands freeze, with its padlock, and writes nothing', async () => {
+    const { fixture, saveMany } = mount([stand('s1')], {
+      gel: [{ famille: 'STANDS', libelle: 'Stands', fige: true, figeLe: '2026-07-01T08:00:00Z' }],
+    });
+    await fixture.whenStable();
+    await fill(fixture, { effectifMin: 2 });
+
+    expect(root(fixture).querySelector('app-gel-notice .gel-notice')).not.toBeNull();
+    // The padlock sits outside the disabled fieldset: « Lever le gel » stays clickable.
+    expect(root(fixture).querySelector<HTMLButtonElement>('.gel-notice-lever')!.disabled).toBe(
+      false,
+    );
+    expect(
+      (root(fixture).querySelector('fieldset.form-fieldset') as HTMLFieldSetElement).disabled,
+    ).toBe(true);
+    expect(submit(fixture).disabled).toBe(true);
+    root(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
+    await fixture.whenStable();
+    expect(saveMany).not.toHaveBeenCalled();
   });
 
   it('applies the patch to every selected stand and closes', async () => {

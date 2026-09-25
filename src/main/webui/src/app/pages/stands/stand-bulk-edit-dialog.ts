@@ -15,6 +15,8 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { joursEdition } from '../../core/horaire-stand';
 import { SolverJobService } from '../../core/solver-job.service';
+import { injectGelReferentiel } from '../../core/gel-referentiel.store';
+import { GelNotice } from '../../shared/gel-notice';
 import { NiveauEffort, Stand } from '../../core/models';
 import {
   ModeEmplacement,
@@ -71,6 +73,7 @@ function patchInitial(data: StandBulkEditData): StandBulkPatch {
     MatButtonModule,
     MatIconModule,
     HoraireReglesEditor,
+    GelNotice,
   ],
   templateUrl: './stand-bulk-edit-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -97,6 +100,12 @@ export class StandBulkEditDialog {
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
   protected readonly editingLocked = this.jobs.editingLocked;
+  private readonly gel = injectGelReferentiel();
+  /**
+   * A STANDS freeze (ADR 0052) closes the bulk edit whole, as the Stands page
+   * does its bulk bar: « Comparer » on the Ouvertures page opens it too.
+   */
+  protected readonly locked = computed(() => this.editingLocked() || this.gel.isFrozen('STANDS'));
 
   protected readonly dialogRef = inject<MatDialogRef<StandBulkEditDialog, boolean>>(MatDialogRef);
   private readonly data = inject<StandBulkEditData>(MAT_DIALOG_DATA);
@@ -221,6 +230,7 @@ export class StandBulkEditDialog {
 
   protected async save(): Promise<void> {
     if (
+      this.locked() ||
       this.rienAModifier() ||
       this.standsInvalides().length > 0 ||
       this.enCours() ||

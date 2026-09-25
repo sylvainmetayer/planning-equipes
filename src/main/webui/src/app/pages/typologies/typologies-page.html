@@ -2,8 +2,11 @@
   <mat-card-header>
     <h1 mat-card-title i18n="@@typologies.list.title">Typologies ({{ store.typologies().length }})</h1>
   </mat-card-header>
+  <mat-card-content>
+    <app-gel-notice family="TYPOLOGIES_EMPLACEMENTS" />
+  </mat-card-content>
   <mat-card-actions class="card-actions">
-    <button matButton="filled" type="button" [disabled]="editingLocked()" (click)="openCreate()">
+    <button matButton="filled" type="button" [disabled]="creationLocked()" (click)="openCreate()">
       <mat-icon>add</mat-icon>
       <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
@@ -31,7 +34,7 @@
   }
   <mat-card-content class="table-wrapper">
     @if (selection.hasSelection()) {
-      <app-bulk-actions-bar [count]="selection.count()" [disabled]="editingLocked()"
+      <app-bulk-actions-bar [count]="selection.count()" [disabled]="creationLocked()"
                             [filtre]="!!filtre()" [editable]="false"
                             (remove)="removeSelection()" (clear)="selection.clear()" />
     }
@@ -109,7 +112,7 @@
           <button matIconButton i18n-matTooltip="@@common.edit" matTooltip="Modifier" i18n-aria-label="@@common.edit" aria-label="Modifier" [disabled]="editingLocked()" (click)="edit(typologie)">
             <mat-icon>edit</mat-icon>
           </button>
-          <button matIconButton i18n-matTooltip="@@common.delete" matTooltip="Supprimer" i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action" [disabled]="editingLocked()"
+          <button matIconButton i18n-matTooltip="@@common.delete" matTooltip="Supprimer" i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action" [disabled]="creationLocked()"
                   (click)="remove(typologie)">
             <mat-icon>delete</mat-icon>
           </button>
@@ -139,7 +142,7 @@
             <mat-icon>storefront</mat-icon>
             <span i18n="@@typologies.etat.action.stands">Voir les stands</span>
           </a>
-          <button mat-menu-item type="button" [disabled]="editingLocked()" (click)="remove(typologie)">
+          <button mat-menu-item type="button" [disabled]="creationLocked()" (click)="remove(typologie)">
             <mat-icon>delete</mat-icon>
             <span i18n="@@common.delete">Supprimer</span>
           </button>

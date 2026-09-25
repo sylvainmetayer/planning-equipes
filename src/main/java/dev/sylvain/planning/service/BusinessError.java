@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service;
 
 import java.time.Instant;
+import java.util.List;
 
 /**
  * A request the domain refuses, as opposed to a bug. The distinction matters
@@ -89,6 +90,27 @@ public abstract sealed class BusinessError extends IllegalArgumentException {
 
         public Instant getModifieLe() {
             return modifieLe;
+        }
+    }
+
+    /**
+     * The write touches a family of the referential the organiser froze
+     * (ADR 0052) — {@code 409}, told apart from {@link Conflict} by the
+     * {@code REFERENTIEL_FIGE} code of its body: the client answers it by
+     * showing the padlock and the way to lift the freeze, not with a plain
+     * banner. Carries the frozen families that refused it, as their wire
+     * names.
+     */
+    public static final class Frozen extends BusinessError {
+        private final transient List<String> familles;
+
+        public Frozen(String message, List<String> familles) {
+            super(message);
+            this.familles = List.copyOf(familles);
+        }
+
+        public List<String> getFamilles() {
+            return familles;
         }
     }
 }

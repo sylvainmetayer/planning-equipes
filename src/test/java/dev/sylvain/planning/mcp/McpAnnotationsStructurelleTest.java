@@ -110,7 +110,11 @@ class McpAnnotationsStructurelleTest {
             "publier_",
             "envoyer_",
             "relancer_",
-            "compacter_");
+            "compacter_",
+            // Freezing a family of the referential and lifting it again: a
+            // switch, redone by calling the other tool (ADR 0052).
+            "figer_",
+            "lever_gel");
 
     /**
      * The tools that leave the building, and the only ones allowed to declare

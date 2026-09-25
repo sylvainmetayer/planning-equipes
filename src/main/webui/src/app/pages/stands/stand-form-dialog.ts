@@ -25,6 +25,8 @@ import { datesEvenement, decrireJour, premiereErreurHoraire } from './stand-hora
 import { HoraireReglesEditor } from './horaire-regles-editor';
 import { DraftBanner, FormDraft } from '../../shared/brouillon-dialog';
 import { StatusMessage } from '../../shared/status-message';
+import { GelNotice } from '../../shared/gel-notice';
+import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 import { readStandDraft, isStandModified } from './stand-brouillon';
 import { IndisponibiliteStand, OuvertureStand, Stand } from '../../core/models';
 import {
@@ -86,6 +88,7 @@ export interface StandFormData {
     HoraireReglesEditor,
     DraftBanner,
     StatusMessage,
+    GelNotice,
   ],
   templateUrl: './stand-form-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -95,6 +98,14 @@ export class StandFormDialog {
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
   protected readonly editingLocked = this.jobs.editingLocked;
+  /**
+   * A STANDS freeze (ADR 0052) makes the headcounts, the adults-only flag, the
+   * typologies and the hours read-only; the name, the location, premium and
+   * effort stay editable — the server compares the same fields.
+   */
+  private readonly gel = injectGelReferentiel();
+  protected readonly standsFrozen = computed(() => this.gel.isFrozen('STANDS'));
+  protected readonly frozenLocked = computed(() => this.editingLocked() || this.standsFrozen());
 
   protected readonly dialogRef = inject<MatDialogRef<StandFormDialog, boolean>>(MatDialogRef);
   private readonly data = inject<StandFormData>(MAT_DIALOG_DATA);
@@ -108,6 +119,8 @@ export class StandFormDialog {
   }
 
   protected readonly editingId = signal<string | null>(this.data.stand?.id ?? null);
+  /** A new stand is a creation, which a STANDS freeze refuses whole. */
+  protected readonly creationFrozen = computed(() => this.standsFrozen() && !this.editingId());
   private readonly initial = toDraft(this.data.stand);
   protected readonly draft = signal<StandDraft>(this.initial);
 

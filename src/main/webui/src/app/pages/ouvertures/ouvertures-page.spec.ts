@@ -8,13 +8,14 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { EditionsApi } from '../../core/api/editions-api';
 import { StandsApi } from '../../core/api/stands-api';
 import { ConsignesStore } from '../../core/consignes.store';
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
-import { OpeningLayers, EtatJourneesTypes, RapportOuvertures } from '../../core/models';
+import { EtatGel, OpeningLayers, EtatJourneesTypes, RapportOuvertures } from '../../core/models';
 import { JourneesTypesApi } from '../../core/api/journees-types-api';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { OuverturesPage } from './ouvertures-page';
@@ -177,6 +178,8 @@ function mount(
     rapport?: RapportOuvertures;
     journeesTypes?: EtatJourneesTypes | null;
     couches?: string;
+    /** What `GET /api/editions/courant/gel` answers; nothing frozen by default. */
+    gel?: EtatGel[];
   } = {},
 ) {
   const get = vi.fn(async () => options.rapport ?? rapport());
@@ -225,6 +228,7 @@ function mount(
         },
       },
       { provide: JourneesTypesApi, useValue: { etat: etatJT } },
+      { provide: EditionsApi, useValue: { gel: vi.fn(async () => options.gel ?? []) } },
       {
         provide: ReferenceDataStore,
         useValue: {
@@ -303,6 +307,11 @@ function bouton(fixture: ComponentFixture<OuverturesPage>, libelle: string): HTM
   );
   expect(trouve, `bouton « ${libelle} »`).toBeDefined();
   return trouve!;
+}
+
+/** A family frozen since 1 July, as the server reports it. */
+function frozen(famille: EtatGel['famille']): EtatGel {
+  return { famille, libelle: famille, fige: true, figeLe: '2026-07-01T08:00:00Z' };
 }
 
 describe('OuverturesPage — saisie', () => {
@@ -942,6 +951,70 @@ describe('OuverturesPage — saisie', () => {
     ).toBe(true);
     expect(bouton(fixture, 'Enregistrer').disabled).toBe(true);
   });
+
+  it('turns the entry grid read-only under a stands freeze, with its padlock', async () => {
+    const { fixture, put } = mount({ vue: 'saisie', gel: [frozen('STANDS')] });
+    await fixture.whenStable();
+
+    expect(root(fixture).querySelector('app-gel-notice .gel-notice')).not.toBeNull();
+    const cells = Array.from(
+      root(fixture).querySelectorAll<HTMLInputElement>('.grille-saisie input'),
+    );
+    expect(cells).toHaveLength(8);
+    expect(cells.every((each) => each.disabled)).toBe(true);
+    expect(bouton(fixture, 'Enregistrer').disabled).toBe(true);
+    // Stand B has a partial cell: only the freeze keeps « Aligner » closed.
+    expect(bouton(fixture, 'Aligner les fenêtres partielles').disabled).toBe(true);
+    for (const selector of [
+      '.recopier-jour',
+      '.recopier-ligne',
+      '.dupliquer-ligne',
+      '.scinder-colonne',
+      '.appliquer-colonne',
+    ]) {
+      const buttons = Array.from(root(fixture).querySelectorAll<HTMLButtonElement>(selector));
+      expect(buttons.length, selector).toBeGreaterThan(0);
+      expect(
+        buttons.every((each) => each.disabled),
+        selector,
+      ).toBe(true);
+    }
+
+    // A keystroke that reaches the grid anyway (a disabled field sends none) changes nothing.
+    taper(champ(fixture, 'B', 2), '3');
+    await fixture.whenStable();
+    expect(bouton(fixture, 'Enregistrer').textContent).not.toContain('(1)');
+    expect(put).not.toHaveBeenCalled();
+  });
+
+  it('keeps the entry grid open under a timeslots-only freeze: the hours belong to the stands', async () => {
+    const { fixture } = mount({ vue: 'saisie', gel: [frozen('CRENEAUX')] });
+    await fixture.whenStable();
+
+    expect(root(fixture).querySelector('app-gel-notice .gel-notice')).toBeNull();
+    expect(
+      Array.from(root(fixture).querySelectorAll<HTMLInputElement>('.grille-saisie input')).every(
+        (each) => !each.disabled,
+      ),
+    ).toBe(true);
+    expect(bouton(fixture, 'Aligner les fenêtres partielles').disabled).toBe(false);
+    for (const selector of [
+      '.recopier-jour',
+      '.recopier-ligne',
+      '.scinder-colonne',
+      '.appliquer-colonne',
+    ]) {
+      const buttons = Array.from(root(fixture).querySelectorAll<HTMLButtonElement>(selector));
+      expect(
+        buttons.every((each) => !each.disabled),
+        selector,
+      ).toBe(true);
+    }
+
+    taper(champ(fixture, 'B', 2), '3');
+    await fixture.whenStable();
+    expect(bouton(fixture, 'Enregistrer').disabled).toBe(false);
+  });
 });
 
 // The grid by kind of day: the same cells, said once per template. What is
@@ -1041,6 +1114,26 @@ describe('OuverturesPage — grille par journée type', () => {
       expect.objectContaining({ variant: 'warning', title: expect.stringContaining('propager') }),
     );
     expect(champ(fixture, 'B', 0, 'jt:4@14:00-20:00').value).toBe('-');
+  });
+
+  it('closes the grid by kind of day too under a stands freeze: it writes the same hours', async () => {
+    const { fixture } = mount({ vue: 'journees-types', gel: [frozen('STANDS')] });
+    await fixture.whenStable();
+
+    expect(root(fixture).querySelector('app-gel-notice .gel-notice')).not.toBeNull();
+    expect(
+      Array.from(
+        root(fixture).querySelectorAll<HTMLInputElement>('.grille-journees-types input'),
+      ).every((each) => each.disabled),
+    ).toBe(true);
+    expect(
+      Array.from(
+        root(fixture).querySelectorAll<HTMLButtonElement>(
+          '.grille-journees-types .appliquer-colonne, .grille-journees-types .dupliquer-ligne',
+        ),
+      ).every((each) => each.disabled),
+    ).toBe(true);
+    expect(bouton(fixture, 'Enregistrer').disabled).toBe(true);
   });
 
   it('reste sur la grille par date quand l’édition n’a pas de journées types', async () => {

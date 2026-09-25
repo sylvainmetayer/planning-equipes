@@ -7,6 +7,8 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { EditionsApi } from '../../core/api/editions-api';
+import { EtatGel } from '../../core/models';
 import { ScenarioImportService } from '../../core/scenario-import.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ImportScenarioCard } from './import-scenario-card';
@@ -18,14 +20,25 @@ function file(nom: string, contenu: string): File {
   return created;
 }
 
+/** What `GET /api/editions/courant/gel` answers when two families are frozen. */
+const FROZEN_STATES: EtatGel[] = [
+  { famille: 'STANDS', libelle: 'Stands', fige: true, figeLe: '2026-07-01T08:00:00Z' },
+  { famille: 'CRENEAUX', libelle: 'Créneaux', fige: true, figeLe: '2026-07-01T08:00:00Z' },
+  { famille: 'TYPOLOGIES_EMPLACEMENTS', libelle: 'Typologies', fige: false, figeLe: null },
+  { famille: 'COMPETENCES', libelle: 'Compétences', fige: false, figeLe: null },
+];
+
 describe('ImportScenarioCard', () => {
   const scenarioImport = { importer: vi.fn(), recapitulatif: vi.fn() };
   const editingLocked = signal(false);
+  const gel = vi.fn<() => Promise<EtatGel[]>>();
 
   let fixture: ComponentFixture<ImportScenarioCard>;
 
   beforeEach(() => {
     editingLocked.set(false);
+    gel.mockReset();
+    gel.mockResolvedValue([]);
     scenarioImport.importer.mockReset();
     scenarioImport.recapitulatif.mockReset();
     scenarioImport.importer.mockResolvedValue({ status: 'imported', result: null });
@@ -40,6 +53,7 @@ describe('ImportScenarioCard', () => {
         provideRouter([]),
         { provide: ScenarioImportService, useValue: scenarioImport },
         { provide: SolverJobService, useValue: { editingLocked } },
+        { provide: EditionsApi, useValue: { gel } },
       ],
     });
   });
@@ -108,5 +122,35 @@ describe('ImportScenarioCard', () => {
       each.textContent!.includes('Importer un fichier'),
     ) as HTMLButtonElement;
     expect(bouton.disabled).toBe(true);
+  });
+
+  function importButton(racine: HTMLElement): HTMLButtonElement {
+    return Array.from(racine.querySelectorAll('button')).find((each) =>
+      each.textContent!.includes('Importer un fichier'),
+    ) as HTMLButtonElement;
+  }
+
+  // The server refuses a scenario into a frozen edition, but the file may name
+  // another one: a warning, never a closed door.
+  it('warns that this edition is frozen, and still lets a file be picked', async () => {
+    gel.mockResolvedValue(FROZEN_STATES);
+    const racine = await monter();
+
+    const notice = racine.querySelector('app-gel-edition-notice .gel-edition-notice');
+    expect(notice).not.toBeNull();
+    expect(notice!.textContent).toContain('« Stands » et « Créneaux »');
+    expect(notice!.textContent).toContain('sera refusé jusqu');
+    expect(notice!.querySelector('a')!.getAttribute('href')).toContain('/parametres');
+    expect(importButton(racine).disabled).toBe(false);
+
+    await choisirFichier(racine);
+    expect(scenarioImport.importer).toHaveBeenCalledOnce();
+  });
+
+  it('says nothing about the freeze while every family is open', async () => {
+    const racine = await monter();
+
+    expect(racine.querySelector('app-gel-edition-notice .gel-edition-notice')).toBeNull();
+    expect(importButton(racine).disabled).toBe(false);
   });
 });

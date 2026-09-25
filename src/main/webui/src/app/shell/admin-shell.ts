@@ -61,6 +61,7 @@ import { MascotDialog } from './mascot-dialog';
 import { NavGroup, buildNavGroups, visibleNavGroups } from './nav-groups';
 import { NewWindowLink } from '../shared/new-window-link';
 import { PageFocusService } from '../core/page-focus.service';
+import { GelInvitation } from '../core/gel-invitation';
 
 /**
  * Admin shell: Material toolbar, navigation drawer listing every admin page,
@@ -116,6 +117,7 @@ export class AdminShell {
   protected readonly jobs = inject(SolverJobService);
   private readonly branding = inject(BRANDING);
   protected readonly resolution = inject(PlanningResolutionStore);
+  private readonly gelInvitation = inject(GelInvitation);
   protected readonly editions = inject(EditionStore);
   protected readonly notifications = inject(NotificationService);
   protected readonly theme = inject(ThemeService);
@@ -201,8 +203,15 @@ export class AdminShell {
     // `SOLVE` alone left that banner up after a targeted replan until the next
     // referential write or a page reload — telling the operator their fresh
     // plan was stale.
+    // A landed solve is also the first of the two milestones at which freezing
+    // the stands and the timeslots is offered (ADR 0052), once per edition.
     for (const type of ['SOLVE', 'SOLVE_INCREMENTAL'] as const) {
-      destroyRef.onDestroy(this.jobs.onResult(type, () => void this.resolution.reload()));
+      destroyRef.onDestroy(
+        this.jobs.onResult(type, () => {
+          void this.resolution.reload();
+          void this.gelInvitation.offer('resolution');
+        }),
+      );
     }
     // Router `title` is applied on NavigationEnd too; subscribing after it in
     // the same microtask order means `Title.getTitle()` already holds the new

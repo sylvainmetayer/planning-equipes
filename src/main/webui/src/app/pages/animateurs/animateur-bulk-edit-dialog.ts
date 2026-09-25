@@ -11,6 +11,8 @@ import { labelAnimateursPluriel } from '../../core/entity-labels';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
+import { injectGelReferentiel } from '../../core/gel-referentiel.store';
+import { GelNotice } from '../../shared/gel-notice';
 import { Animateur, NiveauCompetence } from '../../core/models';
 import {
   AnimateurBulkPatch,
@@ -43,6 +45,7 @@ export interface AnimateurBulkEditData {
     MatSelectModule,
     MatButtonModule,
     MatIconModule,
+    GelNotice,
   ],
   templateUrl: './animateur-bulk-edit-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -53,6 +56,13 @@ export class AnimateurBulkEditDialog {
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
   protected readonly editingLocked = this.jobs.editingLocked;
+  private readonly gel = injectGelReferentiel();
+  /**
+   * A COMPETENCES freeze (ADR 0052) covers the appreciation of the animateurs
+   * already in the roster — every row of a bulk edit: that section is closed,
+   * the manager flag, the souhaits and the days off stay open.
+   */
+  protected readonly competencesFrozen = computed(() => this.gel.isFrozen('COMPETENCES'));
 
   protected readonly dialogRef =
     inject<MatDialogRef<AnimateurBulkEditDialog, boolean>>(MatDialogRef);
@@ -88,7 +98,9 @@ export class AnimateurBulkEditDialog {
     if (this.rienAModifier() || this.enCours()) {
       return;
     }
-    const patch = this.patch();
+    const patch = this.competencesFrozen()
+      ? { ...this.patch(), competence: patchAnimateurVide().competence }
+      : this.patch();
     const payloads = this.data.animateurs.map((animateur) =>
       appliquerPatchAnimateur(animateur, patch),
     );

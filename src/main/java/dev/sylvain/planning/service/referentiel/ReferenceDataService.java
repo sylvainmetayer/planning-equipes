@@ -196,7 +196,7 @@ public class ReferenceDataService implements ReferenceData {
                 .filter(candidat -> Objects.equals(candidat.getId(), id))
                 .findFirst()
                 .orElse(null);
-        Animateur ecrit = updateAnimateur(id, animateur);
+        Animateur ecrit = animateurs.update(id, animateur, avant);
         currentAction.champsModifies(ChampsModifies.surAnimateur(avant, ecrit));
         return new WrittenAnimateur(ecrit, coherence.onAnimateur(avant, ecrit));
     }
@@ -756,8 +756,10 @@ public class ReferenceDataService implements ReferenceData {
      * Replaces the whole persisted reference dataset with the one carried by a
      * (sample or solved) planning, so it becomes editable through the CRUD
      * endpoints. Every referential at once, in a single transaction — which is
-     * why it belongs to the facade rather than to any one of them.
+     * why it belongs to the facade rather than to any one of them — and why
+     * it is refused while any family is frozen (ADR 0052).
      */
+    @RefusedWhileFrozen
     public void importFromPlanning(PlanningEvenement planning) {
         // Refused while a solve holds this edition's solver: the landing persist
         // would re-insert the referential this import just replaced, old créneaux

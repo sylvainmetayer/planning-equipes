@@ -867,6 +867,41 @@ laisse la même trace. Refusé `400` tant que rien n'a jamais été publié, ou 
 un id ne désigne personne — alors rien ne part, pas même aux ids valides qui le
 précédaient.
 
+## Gel du référentiel
+
+Le gel se pose par famille et par édition
+([décision 0052](decisions/0052-gel-du-referentiel-distinct-du-verrou.md)) ;
+les routes qui le lisent, le posent et le lèvent sont celles de l'OpenAPI.
+Poser deux fois est un seul gel : la date reste la première. Lever un gel
+absent n'est pas une erreur.
+
+Une écriture qu'une famille figée couvre est refusée en **`409`**, comme une
+écriture périmée, et l'on distingue les deux par le **`code`** du corps :
+`MODIFICATION_CONCURRENTE` appelle « recharger ou écraser »,
+`REFERENTIEL_FIGE` appelle « lever le gel » et porte `familles`, les familles
+en cause. Trois conséquences qui ne se lisent pas dans le schéma :
+
+- **le refus porte sur le champ, pas sur la route.** `PUT /api/stands/{id}`
+  qui ne change que le nom passe sous un gel des stands ; le même `PUT` qui
+  change un effectif est refusé. La comparaison se fait contre la fiche
+  stockée, si bien que l'édition en lot — un `PUT` par ligne avec la fiche
+  entière — refuse exactement les lignes qu'elle modifie vraiment ;
+- **un fichier est refusé en entier**, avant la première ligne : l'import CSV
+  d'une famille figée, l'import de grille des stands, et l'import d'animateurs
+  dès qu'il change les compétences d'une personne déjà inscrite — un nouvel
+  arrivant garde les siennes ;
+- **l'import de scénario et la remise à zéro** sont refusés tant qu'une
+  famille, quelle qu'elle soit, est figée : ils remplacent tout. De même pour
+  un **calcul dont le client fournit le problème** (`POST /api/solve`,
+  `POST /api/solve/async`) : son atterrissage réécrit les stands, créneaux et
+  compétences que ce problème porte. Un calcul construit par le serveur à
+  partir de l'édition n'est jamais refusé ;
+- **l'import d'un dump SQL n'est pas refusé** : il remplace toute la base, gel
+  compris, et restaure donc l'état de gel que le dump contenait.
+
+Les consignes, elles, restent ouvertes : leur écriture de grille ne passe pas
+par les méthodes que le gel garde.
+
 ## Historique des actions
 
 `GET /api/historique?limite=200` — ce qui a été fait dans l'édition courante,

@@ -27,3 +27,19 @@ export function errorPrefix(error: unknown): string {
   const message = errorMessage(error);
   return $localize`:@@common.errorPrefix:Erreur : ${message}:message:`;
 }
+
+/** The `code` a 409 carries when the write touches a frozen family of the referential (ADR 0052). */
+export const CODE_FROZEN_REFERENTIAL = 'REFERENTIEL_FIGE';
+
+/**
+ * Whether a caught value is the refusal of a frozen referential — the one 409
+ * after which the screen re-reads the freeze, since another session may have
+ * laid it down since this one loaded its padlocks.
+ */
+export function isFrozenReferential(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    (error as { code?: unknown }).code === CODE_FROZEN_REFERENTIAL
+  );
+}

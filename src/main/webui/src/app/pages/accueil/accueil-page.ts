@@ -20,6 +20,7 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { buildLignes, buildToday, statutIcon, statutLabel, summarizeLignes } from './accueil';
 import { coherenceGroups } from './coherence';
 import { bandeLabel, libelleDate } from '../../core/consigne-wording';
+import { GelReferentielCard } from '../../shared/gel-referentiel-card';
 
 /**
  * « État de l'édition », the home screen (issue #485): the cycle of the
@@ -34,7 +35,14 @@ import { bandeLabel, libelleDate } from '../../core/consigne-wording';
  */
 @Component({
   selector: 'app-accueil-page',
-  imports: [MatButtonModule, MatCardModule, MatIconModule, MatProgressBarModule, RouterLink],
+  imports: [
+    GelReferentielCard,
+    MatButtonModule,
+    MatCardModule,
+    MatIconModule,
+    MatProgressBarModule,
+    RouterLink,
+  ],
   templateUrl: './accueil-page.html',
   styleUrl: './accueil-page.css',
   // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
@@ -121,5 +129,17 @@ export class AccueilPage {
 
   protected toggleCoherence(): void {
     this.coherenceOpen.update((open) => !open);
+  }
+
+  /** Whether the freeze line is unfolded into its switches (ADR 0052). */
+  protected readonly gelOpen = signal(false);
+
+  protected toggleGel(): void {
+    this.gelOpen.update((open) => !open);
+  }
+
+  /** A switch moved: the line's own sentence and state follow at once, the panel still open. */
+  protected gelChanged(): void {
+    this.etat.reload();
   }
 }

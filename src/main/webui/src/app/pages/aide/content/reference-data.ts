@@ -43,6 +43,53 @@ export function buildReferenceDataSections(): HelpSection[] {
       ],
     },
     {
+      id: 'gel-du-referentiel',
+      icon: 'lock',
+      title: $localize`:@@aide.gel.title:Gel du référentiel`,
+      summary: $localize`:@@aide.gel.summary:Figer une famille de fiches une fois sa préparation terminée, pour qu'aucune retouche ne fasse bouger le planning.`,
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.gel.intro:Une fois les stands prêts, ou les créneaux arrêtés, on les fige : plus aucun chemin ne les modifie — formulaire, modification en masse, import de fichier, assistant — jusqu'à la levée du gel. Le gel se pose famille par famille, dans l'édition courante, depuis l'État de l'édition ou l'onglet Édition des Paramètres. L'application le propose après le premier calcul et après la première publication, sans jamais l'imposer.`,
+        },
+        {
+          kind: 'definitions',
+          items: [
+            {
+              term: $localize`:@@aide.gel.stands.terme:Stands`,
+              text: $localize`:@@aide.gel.stands.def:Création, suppression, effectifs, réserve aux majeurs, typologies proposées et horaires. Le nom, l'emplacement, premium et effort restent modifiables.`,
+            },
+            {
+              term: $localize`:@@aide.gel.creneaux.terme:Créneaux`,
+              text: $localize`:@@aide.gel.creneaux.def:Création, suppression, date, heures, relais repas, et ce qui génère la grille : journées types appliquées, séries, dérivation. Les journées types elles-mêmes restent modifiables.`,
+            },
+            {
+              term: $localize`:@@aide.gel.typologies.terme:Typologies et emplacements`,
+              text: $localize`:@@aide.gel.typologies.def:Création, suppression, plafond par typologie et typologie ninja. Libellés, descriptions, noms et positions restent modifiables.`,
+            },
+            {
+              term: $localize`:@@aide.gel.competences.terme:Compétences`,
+              text: $localize`:@@aide.gel.competences.def:Les appréciations des animateurs déjà inscrits, par la fiche, la grille ou l'import. Un nouvel animateur arrive avec les siennes.`,
+            },
+          ],
+        },
+        {
+          kind: 'callout',
+          title: $localize`:@@aide.gel.ouvert.titre:Ce qui reste ouvert`,
+          text: $localize`:@@aide.gel.ouvert.texte:Disponibilités, souhaits, déclarations, e-mails, ajustements manuels, verrouillages et consignes. Un stand à fermer en urgence se ferme par une consigne, sans lever le gel. L'import d'un scénario et la remise à zéro, qui remplacent tout, sont refusés tant qu'une famille est figée.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.gel.lever:Un champ figé s'affiche en lecture seule, avec un cadenas et la date du gel ; « Lever le gel » demande confirmation et rappelle si le planning est déjà publié. Pose et levée figurent dans l'Historique des actions. Le gel n'est pas le verrouillage : le verrou fige des affectations d'un planning calculé, le gel fige les fiches dont il est calculé. Une édition dupliquée repart sans gel.`,
+        },
+      ],
+      links: [
+        { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
+        { route: '/verrouillages', label: $localize`:@@nav.link.verrouillages:Verrouillages` },
+        { route: '/consignes', label: $localize`:@@nav.link.consignes:Consignes` },
+      ],
+    },
+    {
       id: 'donnees',
       icon: 'inventory_2',
       title: $localize`:@@aide.data.title:Données de référence`,

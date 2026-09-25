@@ -23,10 +23,11 @@
 
 <div class="bulk-field">
   <h3 i18n="@@animateurs.appreciation.title">Appréciation</h3>
+  <app-gel-notice family="COMPETENCES" />
   <div class="bulk-field-row">
     <mat-form-field appearance="outline">
       <mat-label i18n="@@bulk.action">Action</mat-label>
-      <mat-select name="competenceMode" [ngModel]="patch().competence.mode"
+      <mat-select name="competenceMode" [disabled]="competencesFrozen()" [ngModel]="patch().competence.mode"
                   (ngModelChange)="update({ competence: { mode: $event, typologie: patch().competence.typologie, niveau: patch().competence.niveau } })">
         @for (mode of modesEntree; track mode.value) {
           <mat-option [value]="mode.value">{{ mode.label }}</mat-option>
@@ -35,7 +36,7 @@
     </mat-form-field>
     <mat-form-field appearance="outline">
       <mat-label i18n="@@animateurs.competences.typologie">Typologie</mat-label>
-      <mat-select name="competenceTypologie" [disabled]="patch().competence.mode === 'AUCUN'"
+      <mat-select name="competenceTypologie" [disabled]="competencesFrozen() || patch().competence.mode === 'AUCUN'"
                   [ngModel]="patch().competence.typologie"
                   (ngModelChange)="update({ competence: { mode: patch().competence.mode, typologie: $event, niveau: patch().competence.niveau } })">
         @for (typologie of store.typologies(); track typologie.id) {
@@ -45,7 +46,7 @@
     </mat-form-field>
     <mat-form-field appearance="outline">
       <mat-label i18n="@@animateurs.competences.niveau">Niveau</mat-label>
-      <mat-select name="competenceNiveau" [disabled]="patch().competence.mode !== 'AJOUTER'"
+      <mat-select name="competenceNiveau" [disabled]="competencesFrozen() || patch().competence.mode !== 'AJOUTER'"
                   [ngModel]="patch().competence.niveau"
                   (ngModelChange)="update({ competence: { mode: patch().competence.mode, typologie: patch().competence.typologie, niveau: $event } })">
         @for (niveau of niveaux; track niveau) {

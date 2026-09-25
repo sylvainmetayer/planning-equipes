@@ -8,6 +8,7 @@ import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.consigne.ConsigneRepository;
 import dev.sylvain.planning.service.consigne.ConsigneService;
 import dev.sylvain.planning.service.edition.EditionService;
+import dev.sylvain.planning.service.referentiel.GelReferentielService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.WeightChangeOrigin;
 import dev.sylvain.planning.solver.ConstraintCatalog;
@@ -54,18 +55,22 @@ public class ScenarioImportService {
 
     private final ScenarioTargetIds identifiants;
 
+    private final GelReferentielService gel;
+
     @Inject
     public ScenarioImportService(
             ReferenceDataService referenceDataService,
             EditionService editionService,
             EditionContext editionContext,
             ConsigneRepository consigneRepository,
-            ScenarioTargetIds identifiants) {
+            ScenarioTargetIds identifiants,
+            GelReferentielService gel) {
         this.referenceDataService = referenceDataService;
         this.editionService = editionService;
         this.editionContext = editionContext;
         this.consigneRepository = consigneRepository;
         this.identifiants = identifiants;
+        this.gel = gel;
     }
 
     /**
@@ -91,12 +96,19 @@ public class ScenarioImportService {
      * uploaded — the two callers differ only in where the bytes were read from.
      * It used to be written out twice, and the two copies had drifted: the
      * bundled path re-read the file once per optional section.
+     *
+     * <p>Refused while any family of the target edition is frozen, and before
+     * the parameters — the first section written — so a refused import leaves
+     * nothing behind (ADR 0052). Checked inside the target edition rather than
+     * by an interceptor, since the file may name another edition than the
+     * call's.</p>
      */
     private ScenarioImportOutcome importScenario(ScenarioDto scenario) {
         // Built once before anything is written, so that a file the mapper
         // refuses is refused before its edition: section is acted upon.
         ScenarioYamlReader.fromDto(scenario, referenceDataService::getParametresLegaux);
         return importIntoTarget(ScenarioYamlReader.edition(scenario), () -> {
+            gel.refuseIfFrozen();
             // The ids of the file are its own; the ones of the edition are
             // decided here, inside it (ADR 0050).
             ScenarioYamlReader.ScenarioImporte importe = ScenarioYamlReader.fromDto(

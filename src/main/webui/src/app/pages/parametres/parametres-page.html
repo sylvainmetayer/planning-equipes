@@ -31,6 +31,9 @@
         <h2 mat-card-title i18n="@@typologies.field.ninja">Typologie ninja</h2>
         <mat-card-subtitle i18n="@@typologies.field.ninjaHint">Un animateur qui possède cette typologie sait s'adapter : il peut être affecté à n'importe quel stand.</mat-card-subtitle>
       </mat-card-header>
+      <mat-card-content>
+        <app-gel-notice family="TYPOLOGIES_EMPLACEMENTS" />
+      </mat-card-content>
       @if (alerteNinjaManquant()) {
         <mat-card-content class="parametres-alerte-ninja">
           <app-status-message [text]="alerteNinjaManquant()" tone="warning" />
@@ -39,7 +42,7 @@
       <mat-card-actions class="card-actions">
         <mat-form-field appearance="outline" class="ninja-select" subscriptSizing="dynamic">
           <mat-label i18n="@@typologies.field.ninja">Typologie ninja</mat-label>
-          <mat-select name="ninja" [disabled]="editionLocked()" [ngModel]="typologieNinjaId()"
+          <mat-select name="ninja" [disabled]="editionLocked() || typologiesFrozen()" [ngModel]="typologieNinjaId()"
                       (ngModelChange)="setNinja($event)">
             <mat-option [value]="null" i18n="@@typologies.field.noNinja">Aucune</mat-option>
             @for (typologie of store.typologies(); track typologie.id) {
@@ -52,6 +55,16 @@
           <ng-container i18n="@@parametres.versTypologies">Gérer les typologies</ng-container>
         </a>
       </mat-card-actions>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="page-card" id="gel-referentiel">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@parametres.gel.title">Gel du référentiel</h2>
+        <mat-card-subtitle i18n="@@parametres.gel.subtitle">Une famille figée ne se modifie plus, par aucun chemin, jusqu'à la levée du gel.</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <app-gel-referentiel-card />
+      </mat-card-content>
     </mat-card>
 
     <app-parametres-qualite />

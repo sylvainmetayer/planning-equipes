@@ -8,6 +8,7 @@
   }
 }
 <fieldset class="form-fieldset" [disabled]="editingLocked()">
+<app-gel-notice class="span-2" family="STANDS" />
 @if (editingLocked()) {
   @if (formDraft.lockNotice(); as notice) {
     <app-status-message class="span-2" [text]="notice" tone="warning" />
@@ -32,13 +33,13 @@
 </mat-form-field>
 <mat-form-field appearance="outline">
   <mat-label i18n="@@stands.field.effectifMin">Effectif minimum</mat-label>
-  <input matInput name="effectifMin" type="number" min="0"
+  <input matInput name="effectifMin" type="number" min="0" [readonly]="standsFrozen()"
          aria-describedby="stand-effectif-erreur" [attr.aria-invalid]="effectifInvalid() || null"
          [ngModel]="draft().effectifMin" (ngModelChange)="patch({ effectifMin: $event })" />
 </mat-form-field>
 <mat-form-field appearance="outline">
   <mat-label i18n="@@stands.field.effectifMax">Effectif maximum</mat-label>
-  <input matInput name="effectifMax" type="number" min="0"
+  <input matInput name="effectifMax" type="number" min="0" [readonly]="standsFrozen()"
          aria-describedby="stand-effectif-erreur" [attr.aria-invalid]="effectifInvalid() || null"
          [ngModel]="draft().effectifMax" (ngModelChange)="patch({ effectifMax: $event })" />
 </mat-form-field>
@@ -47,7 +48,7 @@
 }
 <mat-form-field appearance="outline" class="span-2">
   <mat-label i18n="@@stands.field.typologies">Typologies de jeu</mat-label>
-  <mat-select name="typologies" multiple required [disabled]="editingLocked()"
+  <mat-select name="typologies" multiple required [disabled]="frozenLocked()"
               aria-describedby="stand-typologies-erreur" [attr.aria-invalid]="typologiesInvalides() || null"
               [ngModel]="draft().typologiesProposees" (ngModelChange)="patch({ typologiesProposees: $event })">
     @for (typologie of store.typologies(); track typologie.id) {
@@ -68,7 +69,7 @@
     }
   </mat-select>
 </mat-form-field>
-<mat-checkbox name="reserveMajeurs" [disabled]="editingLocked()"
+<mat-checkbox name="reserveMajeurs" [disabled]="frozenLocked()"
               [ngModel]="draft().reserveMajeurs" (ngModelChange)="patch({ reserveMajeurs: $event })"
               i18n="@@stands.field.reserveMajeurs">Réservé aux majeurs</mat-checkbox>
 <mat-checkbox name="premium" [disabled]="editingLocked()"
@@ -82,7 +83,7 @@
               [ngModel]="draft().niveauEffort === 'EPUISANT'"
               (ngModelChange)="patch({ niveauEffort: $event ? 'EPUISANT' : 'NORMAL' })"
               i18n="@@stands.field.niveauEffort">Épuisant physiquement</mat-checkbox>
-<fieldset class="span-2 horaires-section stand-section">
+<fieldset class="span-2 horaires-section stand-section" [disabled]="standsFrozen()">
   <legend i18n="@@stands.horaires.title">Horaires récurrents</legend>
   <p class="empty-hint" i18n="@@stands.horaires.hint">
     Ouvert sur chaque créneau par défaut. Une règle vaut tous les jours, en une ligne : « 10:00-12:00, 14:00- ». « Cas particulier » la restreint à certains jours ou en fait une fermeture.
@@ -93,7 +94,7 @@
   @if (standsModeles().length > 0) {
     <mat-form-field appearance="outline" class="stand-copie-horaires">
       <mat-label i18n="@@stands.copieHoraires.label">Copier les horaires de…</mat-label>
-      <mat-select name="copyHorairesFrom" [disabled]="editingLocked()"
+      <mat-select name="copyHorairesFrom" [disabled]="frozenLocked()"
                   [ngModel]="standSource()?.id ?? null" (ngModelChange)="copyHorairesFrom($event)">
         @for (stand of standsModeles(); track stand.id) {
           <mat-option [value]="stand.id">{{ stand.nom || stand.id }}</mat-option>
@@ -110,9 +111,9 @@
   }
   <app-horaire-regles-editor [horaires]="draft().horaires" [effectifMax]="effectifMaxDeclare()" [effectifMin]="effectifMinDeclare()"
                              [jours]="joursEdition()" [exceptions]="draft()"
-                             [disabled]="editingLocked()" (horairesChange)="patch({ horaires: $event })" />
+                             [disabled]="frozenLocked()" (horairesChange)="patch({ horaires: $event })" />
 </fieldset>
-<fieldset class="span-2 stand-section">
+<fieldset class="span-2 stand-section" [disabled]="standsFrozen()">
   <legend i18n="@@stands.indisponibilites.title">Fermetures ponctuelles</legend>
   <p class="empty-hint" i18n="@@stands.indisponibilites.hint">
     Une fermeture datée prime sur les règles pour le jour qu'elle nomme ; le stand reste ouvert le reste de la journée.
@@ -141,7 +142,7 @@
       </mat-form-field>
       <button matIconButton type="button" i18n-matTooltip="@@common.delete" matTooltip="Supprimer"
               i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action"
-              [disabled]="editingLocked()" (click)="retirerIndisponibilite($index)">
+              [disabled]="frozenLocked()" (click)="retirerIndisponibilite($index)">
         <mat-icon>delete</mat-icon>
       </button>
     </div>
@@ -149,12 +150,12 @@
   @if (indisponibiliteInvalide()) {
     <p class="field-error" role="alert" i18n="@@stands.indisponibilites.invalid">Chaque fermeture doit avoir une date et une heure de début ; l'heure de fin, si elle est renseignée, doit être après l'heure de début.</p>
   }
-  <button matButton type="button" data-focus="ajouter-indisponibilite" [disabled]="editingLocked()" (click)="ajouterIndisponibilite()">
+  <button matButton type="button" data-focus="ajouter-indisponibilite" [disabled]="frozenLocked()" (click)="ajouterIndisponibilite()">
     <mat-icon>add</mat-icon>
     <ng-container i18n="@@stands.indisponibilites.add">Ajouter une fermeture</ng-container>
   </button>
 </fieldset>
-<fieldset class="span-2 stand-section">
+<fieldset class="span-2 stand-section" [disabled]="standsFrozen()">
   <legend i18n="@@stands.ouvertures.title">Ouvertures ponctuelles</legend>
   <p class="empty-hint" i18n="@@stands.ouvertures.hint">
     Ce jour-là, le stand n'est ouvert que sur les fenêtres listées ; prime aussi sur les règles.
@@ -189,7 +190,7 @@
       </mat-form-field>
       <button matIconButton type="button" i18n-matTooltip="@@common.delete" matTooltip="Supprimer"
               i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action"
-              [disabled]="editingLocked()" (click)="retirerOuverture($index)">
+              [disabled]="frozenLocked()" (click)="retirerOuverture($index)">
         <mat-icon>delete</mat-icon>
       </button>
     </div>
@@ -205,7 +206,7 @@
       Un même jour ne peut pas avoir à la fois une fermeture et une ouverture.
     </p>
   }
-  <button matButton type="button" data-focus="ajouter-ouverture" [disabled]="editingLocked()" (click)="ajouterOuverture()">
+  <button matButton type="button" data-focus="ajouter-ouverture" [disabled]="frozenLocked()" (click)="ajouterOuverture()">
     <mat-icon>add</mat-icon>
     <ng-container i18n="@@stands.ouvertures.add">Ajouter une ouverture</ng-container>
   </button>
@@ -232,7 +233,7 @@
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button matButton type="button" (click)="formDraft.close()" i18n="@@common.cancel">Annuler</button>
-  <button matButton="filled" type="submit" [disabled]="formulaireInvalide() || editingLocked()">
+  <button matButton="filled" type="submit" [disabled]="formulaireInvalide() || editingLocked() || creationFrozen()">
     <mat-icon>save</mat-icon>
     {{ submitLabel() }}
   </button>

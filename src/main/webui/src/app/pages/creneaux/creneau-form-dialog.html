@@ -1,7 +1,8 @@
 <h2 mat-dialog-title>{{ formTitle() }}</h2>
 <form (ngSubmit)="save()">
 <mat-dialog-content class="form-grid">
-<fieldset class="form-fieldset" [disabled]="editingLocked()">
+<app-gel-notice class="span-2" family="CRENEAUX" />
+<fieldset class="form-fieldset" [disabled]="editingLocked() || creneauxFrozen()">
 @if (editingLocked()) {
   <p class="locked-hint span-2" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
 }
@@ -23,7 +24,7 @@
   <input matInput name="heureFin" type="time" required
          [ngModel]="draft().heureFin" (ngModelChange)="patch({ heureFin: $event })" />
 </mat-form-field>
-<mat-checkbox name="couverturePause" class="span-2"
+<mat-checkbox name="couverturePause" class="span-2" [disabled]="editingLocked() || creneauxFrozen()"
               i18n-matTooltip="@@creneaux.couverturePause.tooltip"
               matTooltip="Vacation de relais pendant la coupure repas : chaque stand n'y reçoit que la moitié de ses sièges, arrondie au supérieur, pour que l'autre moitié mange."
               [ngModel]="draft().couverturePause" (ngModelChange)="patch({ couverturePause: $event })"
@@ -35,7 +36,7 @@
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button matButton type="button" (click)="dialogRef.close(false)" i18n="@@common.cancel">Annuler</button>
-  <button matButton="filled" type="submit" [disabled]="formulaireInvalide() || editingLocked()">
+  <button matButton="filled" type="submit" [disabled]="formulaireInvalide() || editingLocked() || creneauxFrozen()">
     <mat-icon>save</mat-icon>
     {{ submitLabel() }}
   </button>

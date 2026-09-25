@@ -12,6 +12,7 @@ import dev.sylvain.planning.service.notification.Notification;
 import dev.sylvain.planning.service.publication.PlanPublieService;
 import dev.sylvain.planning.service.publication.PublicationDiffService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.RefusedWhileFrozen;
 import dev.sylvain.planning.service.validation.ValidationJourneeService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
@@ -185,7 +186,14 @@ public class SolvePipeline {
      * The common case: the problem is already there, and the edition is the one
      * of the current thread. This is the form {@code POST /api/planning/solve}
      * calls.
+     *
+     * <p>Refused while any family of the referential is frozen: the problem
+     * comes from the caller, and landing it rewrites the stands, timeslots and
+     * competences it carries over the edition's own (ADR 0052). A solve whose
+     * problem the server builds from the edition reads what the freeze
+     * protects and is never refused.</p>
      */
+    @RefusedWhileFrozen
     public Resolution<PlanningEvenement> execute(PlanningEvenement probleme, Long secondsLimit) {
         SolveBudget budget = budgetPolicy.forSolve(secondsLimit, referenceDataService.getParametresSolveur());
         return execute(

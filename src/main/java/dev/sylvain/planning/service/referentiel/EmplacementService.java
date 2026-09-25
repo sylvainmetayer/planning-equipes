@@ -48,6 +48,7 @@ public class EmplacementService {
      * Creates the emplacement under an id the application draws (ADR 0050):
      * an id the caller sent is overwritten.
      */
+    @RefusedWhileFrozen(ReferentialFamily.TYPOLOGIES_EMPLACEMENTS)
     public Emplacement create(Emplacement emplacement) {
         scope.write(
                 "Failed to create emplacement " + emplacement.getNom(), connection -> create(connection, emplacement));
@@ -60,6 +61,7 @@ public class EmplacementService {
      * the rest, or not at all. The caller marks the referential modified once
      * its transaction is committed (see {@code TypologieService}).
      */
+    @RefusedWhileFrozen(ReferentialFamily.TYPOLOGIES_EMPLACEMENTS)
     Emplacement create(Connection connection, Emplacement emplacement) throws SQLException {
         validateCoordinates(emplacement);
         emplacement.setCode(Codes.normalise(emplacement.getCode(), IdGenerator.Kind.EMPLACEMENT));
@@ -88,6 +90,7 @@ public class EmplacementService {
         return repository.idByCode(code);
     }
 
+    @RefusedWhileFrozen(ReferentialFamily.TYPOLOGIES_EMPLACEMENTS)
     public void delete(String id) {
         repository.deleteEmplacement(id);
         changeTracker.markModified();

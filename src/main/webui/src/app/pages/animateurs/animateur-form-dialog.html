@@ -64,16 +64,19 @@
 <div class="span-2 subform">
   <div class="subform-header">
     <h3 i18n="@@animateurs.appreciation.title">Appréciation</h3>
-    <button matButton type="button" [disabled]="toutesTypologiesPrises()" (click)="addCompetence()">
+    <button matButton type="button" [disabled]="toutesTypologiesPrises() || competencesFrozen()" (click)="addCompetence()">
       <mat-icon>add</mat-icon>
       <ng-container i18n="@@animateurs.appreciation.add">Ajouter une appréciation</ng-container>
     </button>
   </div>
+  @if (competencesFrozen()) {
+    <app-gel-notice family="COMPETENCES" />
+  }
   @for (competence of draft().competences; track $index) {
     <div class="competence-row">
       <mat-form-field appearance="outline">
         <mat-label i18n="@@animateurs.competences.typologie">Typologie</mat-label>
-        <mat-select [name]="'typologie-' + $index" [disabled]="editingLocked()" [ngModel]="competence.typologie"
+        <mat-select [name]="'typologie-' + $index" [disabled]="editingLocked() || competencesFrozen()" [ngModel]="competence.typologie"
                     (ngModelChange)="updateCompetence($index, { typologie: $event })">
           @for (typologie of typologiesDisponibles($index); track typologie.id) {
             <mat-option [value]="typologie.id">{{ typologie.label }}</mat-option>
@@ -82,7 +85,7 @@
       </mat-form-field>
       <mat-form-field appearance="outline">
         <mat-label i18n="@@animateurs.competences.niveau">Niveau</mat-label>
-        <mat-select [name]="'niveau-' + $index" [disabled]="editingLocked()" [ngModel]="competence.niveau"
+        <mat-select [name]="'niveau-' + $index" [disabled]="editingLocked() || competencesFrozen()" [ngModel]="competence.niveau"
                     (ngModelChange)="updateCompetence($index, { niveau: $event })">
           @for (niveau of niveaux; track niveau) {
             <mat-option [value]="niveau">{{ niveau }}</mat-option>
@@ -90,7 +93,7 @@
         </mat-select>
       </mat-form-field>
       <button matIconButton type="button" i18n-matTooltip="@@animateurs.appreciation.remove" matTooltip="Retirer cette appréciation" i18n-aria-label="@@animateurs.appreciation.remove" aria-label="Retirer cette appréciation" class="danger-action"
-              (click)="removeCompetence($index)">
+              [disabled]="competencesFrozen()" (click)="removeCompetence($index)">
         <mat-icon>delete</mat-icon>
       </button>
     </div>

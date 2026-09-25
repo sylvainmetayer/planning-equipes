@@ -5,16 +5,28 @@
 
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { EditionsApi } from '../../core/api/editions-api';
 import { PlanningApi } from '../../core/api/planning-api';
+import { EtatGel } from '../../core/models';
 import { ScenarioImportService } from '../../core/scenario-import.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ScenarioPreenregistre } from './scenario-preenregistre';
+
+/** What `GET /api/editions/courant/gel` answers when two families are frozen. */
+const FROZEN_STATES: EtatGel[] = [
+  { famille: 'STANDS', libelle: 'Stands', fige: true, figeLe: '2026-07-01T08:00:00Z' },
+  { famille: 'CRENEAUX', libelle: 'Créneaux', fige: true, figeLe: '2026-07-01T08:00:00Z' },
+  { famille: 'TYPOLOGIES_EMPLACEMENTS', libelle: 'Typologies', fige: false, figeLe: null },
+  { famille: 'COMPETENCES', libelle: 'Compétences', fige: false, figeLe: null },
+];
 
 describe('ScenarioPreenregistre', () => {
   const planningApi = { scenarioNames: vi.fn() };
   const scenarioImport = { importer: vi.fn(), recapitulatif: vi.fn() };
   const editingLocked = signal(false);
+  const gel = vi.fn<() => Promise<EtatGel[]>>();
 
   let fixture: ComponentFixture<ScenarioPreenregistre>;
 
@@ -25,6 +37,8 @@ describe('ScenarioPreenregistre', () => {
 
   beforeEach(() => {
     editingLocked.set(false);
+    gel.mockReset();
+    gel.mockResolvedValue([]);
     planningApi.scenarioNames.mockReset();
     scenarioImport.importer.mockReset();
     scenarioImport.recapitulatif.mockReset();
@@ -42,8 +56,10 @@ describe('ScenarioPreenregistre', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
+        provideRouter([]),
         { provide: PlanningApi, useValue: planningApi },
         { provide: ScenarioImportService, useValue: scenarioImport },
+        { provide: EditionsApi, useValue: { gel } },
         {
           provide: SolverJobService,
           useValue: {
@@ -120,5 +136,28 @@ describe('ScenarioPreenregistre', () => {
     const { racine } = await monter();
 
     expect(racine.textContent).toContain('réseau coupé');
+  });
+
+  // A bundled scenario may name another edition: the freeze of this one warns,
+  // the server judges, and the button stays available.
+  it('warns that this edition is frozen, and still loads a scenario', async () => {
+    gel.mockResolvedValue(FROZEN_STATES);
+    const { page, racine } = await monter();
+
+    const notice = racine.querySelector('app-gel-edition-notice .gel-edition-notice');
+    expect(notice).not.toBeNull();
+    expect(notice!.textContent).toContain('« Stands » et « Créneaux »');
+    expect(notice!.textContent).toContain('sera refusé jusqu');
+    expect(bouton().disabled).toBe(false);
+
+    await page.onLoadSample();
+    expect(scenarioImport.importer).toHaveBeenCalledOnce();
+  });
+
+  it('says nothing about the freeze while every family is open', async () => {
+    const { racine } = await monter();
+
+    expect(racine.querySelector('app-gel-edition-notice .gel-edition-notice')).toBeNull();
+    expect(bouton().disabled).toBe(false);
   });
 });

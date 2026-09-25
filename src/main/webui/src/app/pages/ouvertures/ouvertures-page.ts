@@ -40,6 +40,8 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { dayNavigation } from '../../core/day-navigation';
 import { keepViewInQueryParams } from '../../core/view-query-params';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { GelNotice } from '../../shared/gel-notice';
+import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 import { PastilleFerie } from '../../shared/pastille-ferie';
 import { JourneeStandsVue, buildJourneeStands, pasHoraire } from './journee-stands';
 import { OpeningsComparisonView } from './comparaison-vue';
@@ -204,6 +206,7 @@ interface LigneView {
     OpeningsComparisonView,
     OpeningLayersView,
     PastilleFerie,
+    GelNotice,
   ],
   templateUrl: './ouvertures-page.html',
   // horaires-stand.css: « Comparer » opens the stands' bulk edit, whose rule editor it styles.
@@ -239,6 +242,16 @@ export class OuverturesPage implements OnInit {
   private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
   /** Typing is disabled while a solve runs: the server would refuse the save, and the landing persist would revert it. */
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
+  private readonly gel = injectGelReferentiel();
+  /**
+   * The two entry grids write the stands' opening hours, which a STANDS
+   * freeze covers (ADR 0052): the server refuses the save, so the cells and
+   * every gesture that changes them are closed, the notice saying why. A
+   * CRENEAUX freeze leaves them open — nothing here writes a timeslot.
+   */
+  protected readonly gridLocked = computed(
+    () => this.editingLocked() || this.gel.isFrozen('STANDS'),
+  );
 
   protected readonly rapport = signal<RapportOuvertures | null>(null);
 
@@ -363,7 +376,7 @@ export class OuverturesPage implements OnInit {
     const reference = this.reference();
     const partielles = this.partielles();
     const modifies = new Set(this.standsModifies());
-    const verrouille = this.editingLocked();
+    const verrouille = this.gridLocked();
     const feries = this.holidaysByDate();
     // Every stand is rendered once and the filter only hides rows: rebuilding
     // twenty-eight rows of sixty cells when the field empties is what lagged.
@@ -486,7 +499,7 @@ export class OuverturesPage implements OnInit {
     const cellules = this.cellules();
     const reference = this.reference();
     const modifies = new Set(this.standsModifies());
-    const verrouille = this.editingLocked();
+    const verrouille = this.gridLocked();
     const visibles = new Set(this.lignes().map((ligne) => ligne.standId));
     const first = this.standIdsAffiches()[0];
     return (this.rapport()?.stands ?? []).map((ligne) => {
@@ -796,7 +809,7 @@ export class OuverturesPage implements OnInit {
    * empty effectif as « celui du stand ». Anything else is left as typed.
    */
   protected saisir(standId: string, colonneId: string, text: string): void {
-    if (text.trim() === '') {
+    if (this.gridLocked() || text.trim() === '') {
       return;
     }
     const lu = readCell(text);
@@ -926,7 +939,7 @@ export class OuverturesPage implements OnInit {
   /** A block copied from a spreadsheet lands from the cell it is pasted in; a single value pastes as typed. */
   protected onPaste(event: ClipboardEvent, standId: string, colonneId: string): void {
     const text = event.clipboardData?.getData('text') ?? '';
-    if (!/[\t\n]/.test(text)) {
+    if (this.gridLocked() || !/[\t\n]/.test(text)) {
       return;
     }
     event.preventDefault();
@@ -979,7 +992,7 @@ export class OuverturesPage implements OnInit {
 
   /** The row above this one, on screen, copied onto it — the stand that opens like its neighbour. */
   protected copyLignePrecedente(standId: string): void {
-    if (this.editingLocked()) {
+    if (this.gridLocked()) {
       return;
     }
     if (!hasLignePrecedente(standId, this.standIdsAffiches())) {
@@ -1009,7 +1022,7 @@ export class OuverturesPage implements OnInit {
    * choosing one of them.
    */
   protected applyColonne(colonneId: string): void {
-    if (this.editingLocked()) {
+    if (this.gridLocked()) {
       return;
     }
     const lignes = this.standIdsAffiches();
@@ -1075,6 +1088,9 @@ export class OuverturesPage implements OnInit {
    * then does nothing at all — silence would read as success.
    */
   private appliquerRecopie(recopie: (cellules: Cellules) => Cellules): void {
+    if (this.gridLocked()) {
+      return;
+    }
     const before = this.cellules();
     const after = recopie(before);
     this.applyMouvement(
@@ -1092,6 +1108,9 @@ export class OuverturesPage implements OnInit {
    */
   protected scinder(colonne: ColonneGrille, heure: string): void {
     this.scissionActive.set(null);
+    if (this.gridLocked()) {
+      return;
+    }
     const nouvelles = scinder(this.colonnes(), colonne.colonneId, heure);
     if (nouvelles === null) {
       this.notifications.notify({
@@ -1139,7 +1158,7 @@ export class OuverturesPage implements OnInit {
    */
   protected async enregistrer(): Promise<void> {
     const modifies = this.standsModifies();
-    if (modifies.length === 0 || this.enregistrement()) {
+    if (modifies.length === 0 || this.enregistrement() || this.gridLocked()) {
       return;
     }
     const aplatis = modifies.filter((standId) =>
@@ -1170,7 +1189,12 @@ export class OuverturesPage implements OnInit {
    */
   protected async alignerPartiels(): Promise<void> {
     const partiels = this.standsPartiels();
-    if (partiels.length === 0 || this.standsModifies().length > 0 || this.enregistrement()) {
+    if (
+      partiels.length === 0 ||
+      this.standsModifies().length > 0 ||
+      this.enregistrement() ||
+      this.gridLocked()
+    ) {
       return;
     }
     const cout = aplatissement(this.segments(), this.colonnes());

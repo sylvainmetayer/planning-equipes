@@ -54,6 +54,7 @@ dev/sylvain/planning/api/FeasibilityResourceTest.java
 dev/sylvain/planning/api/FoireAndEspaceExportsTest.java
 dev/sylvain/planning/api/FormationResourceTest.java
 dev/sylvain/planning/api/FrozenPastAcceptanceTest.java
+dev/sylvain/planning/api/GelReferentielResourceTest.java
 dev/sylvain/planning/api/HistoriqueResourceTest.java
 dev/sylvain/planning/api/HorlogeSimuleeRecetteTest.java
 dev/sylvain/planning/api/ImpactPublicationTest.java
@@ -106,6 +107,7 @@ dev/sylvain/planning/mcp/CarpoolBackedAdHocMcpTest.java
 dev/sylvain/planning/mcp/DiagnosticMcpToolsTest.java
 dev/sylvain/planning/mcp/DiagnosticPlanMcpToolsTest.java
 dev/sylvain/planning/mcp/EditionMcpToolsTest.java
+dev/sylvain/planning/mcp/GelReferentielMcpToolsTest.java
 dev/sylvain/planning/mcp/McpApiKeyAuthenticationMechanismTest.java
 dev/sylvain/planning/mcp/McpKeyLockoutTest.java
 dev/sylvain/planning/mcp/McpPromptsResourcesTest.java

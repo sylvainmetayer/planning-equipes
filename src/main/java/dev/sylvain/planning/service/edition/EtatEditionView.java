@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.edition;
 
+import dev.sylvain.planning.service.referentiel.GelReferentielService;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -27,6 +28,7 @@ public record EtatEditionView(
         String editionId,
         String editionNom,
         EtatReferentiels referentiels,
+        EtatGelReferentiel gel,
         EtatCoherence coherence,
         EtatCollecte collecte,
         EtatOuvertures ouvertures,
@@ -76,6 +78,20 @@ public record EtatEditionView(
      */
     @Schema(requiredProperties = {"animateurs", "creneaux", "stands", "statut", "typologiesOrphelines"})
     public record EtatReferentiels(int stands, int animateurs, int creneaux, int typologiesOrphelines, Statut statut) {}
+
+    /**
+     * The freeze of the referential (ADR 0052), family by family: what the
+     * organiser declared ready and no path may write any more. Read beside the
+     * referentials line, since a frozen family is a preparation step closed.
+     * {@code FAIT} once the stands and the timeslots are frozen — the two the
+     * screens propose to freeze after a first solve —, {@code INFO} otherwise:
+     * freezing is offered, never required, and an open family holds nothing
+     * back.
+     *
+     * @param familles the four families, frozen or not, in declaration order
+     */
+    @Schema(requiredProperties = {"familles", "statut"})
+    public record EtatGelReferentiel(List<GelReferentielService.EtatGel> familles, Statut statut) {}
 
     /**
      * The coherence checklist of the referential, counted by severity: every

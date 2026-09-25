@@ -98,6 +98,8 @@ const EXCEPTIONS_ASSUMEES = {
     "bandeau présent dès le rendu de l'écran, qui ne change pas après une action",
   'app/shared/work-in-progress-banner.ts {{ message() }}':
     "bandeau statique d'un écran en chantier, présent dès le rendu",
+  'app/shared/gel-edition-notice.ts {{ message() }}':
+    "note (role=\"note\") rendue avec l'écran : elle dit l'état de l'édition avant le geste, pas le résultat d'une action",
 };
 
 function walk(dir, out) {

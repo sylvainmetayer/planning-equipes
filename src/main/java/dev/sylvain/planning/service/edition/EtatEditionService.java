@@ -42,8 +42,10 @@ import dev.sylvain.planning.service.publication.PlanPublicationService.ApercuPub
 import dev.sylvain.planning.service.referentiel.CoherenceAnalyzer;
 import dev.sylvain.planning.service.referentiel.CoherenceReferentielService;
 import dev.sylvain.planning.service.referentiel.CoherenceReferentielService.CoherenceReport;
+import dev.sylvain.planning.service.referentiel.GelReferentielService;
 import dev.sylvain.planning.service.referentiel.JoursEvenement;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.ReferentialFamily;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore.StoredAnalysis;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
@@ -125,6 +127,8 @@ public class EtatEditionService {
 
     private final JourJClock jourJClock;
 
+    private final GelReferentielService gelService;
+
     @Inject
     public EtatEditionService(
             EditionService editionService,
@@ -143,7 +147,8 @@ public class EtatEditionService {
             DemandeEchangeService demandeEchangeService,
             ValidationPrerequisService prerequisService,
             CoherenceReferentielService coherenceService,
-            JourJClock jourJClock) {
+            JourJClock jourJClock,
+            GelReferentielService gelService) {
         this.editionService = editionService;
         this.editionContext = editionContext;
         this.referenceDataService = referenceDataService;
@@ -161,6 +166,7 @@ public class EtatEditionService {
         this.prerequisService = prerequisService;
         this.coherenceService = coherenceService;
         this.jourJClock = jourJClock;
+        this.gelService = gelService;
     }
 
     /**
@@ -231,7 +237,59 @@ public class EtatEditionService {
             int demandesEnAttente,
             ProgressionValidations relecture,
             CoherenceReport coherence,
-            TodayFacts today) {}
+            TodayFacts today,
+            List<GelReferentielService.EtatGel> gel) {
+
+        /** The facts of an edition whose referential nothing freezes — what the rules' tests start from. */
+        public Facts(
+                Edition edition,
+                int stands,
+                int animateurs,
+                int creneaux,
+                int typologiesOrphelines,
+                boolean collecteOuverte,
+                int declarationsEnAttente,
+                int declarationsTraitees,
+                RapportOuvertures ouvertures,
+                StaffingSummary staffing,
+                PlanningResolution resolution,
+                PlanningDiagnostic diagnostic,
+                Instant lastDataChange,
+                boolean solveEnCours,
+                FeasibilityReport faisabilite,
+                ApercuPublication publication,
+                SyntheseConfirmations confirmations,
+                boolean foireOuverte,
+                int demandesEnAttente,
+                ProgressionValidations relecture,
+                CoherenceReport coherence,
+                TodayFacts today) {
+            this(
+                    edition,
+                    stands,
+                    animateurs,
+                    creneaux,
+                    typologiesOrphelines,
+                    collecteOuverte,
+                    declarationsEnAttente,
+                    declarationsTraitees,
+                    ouvertures,
+                    staffing,
+                    resolution,
+                    diagnostic,
+                    lastDataChange,
+                    solveEnCours,
+                    faisabilite,
+                    publication,
+                    confirmations,
+                    foireOuverte,
+                    demandesEnAttente,
+                    relecture,
+                    coherence,
+                    today,
+                    List.of());
+        }
+    }
 
     /** The state of the current edition. */
     public EtatEditionView etat() {
@@ -314,7 +372,8 @@ public class EtatEditionService {
                                 .filter(Objects::nonNull)
                                 .distinct()
                                 .sorted()
-                                .toList()));
+                                .toList()),
+                gelService.etat());
     }
 
     /**
@@ -335,6 +394,7 @@ public class EtatEditionService {
                 facts.edition().getId(),
                 facts.edition().getNom(),
                 referentiels(facts, referentielsSaisis),
+                gel(facts.gel()),
                 coherence(facts),
                 collecte(facts),
                 ouvertures(facts),
@@ -347,6 +407,18 @@ public class EtatEditionService {
                 foire(facts),
                 aTraiter(facts),
                 evenement(facts.today()));
+    }
+
+    /** The freeze, family by family — see {@link EtatEditionView.EtatGelReferentiel} for its state. */
+    static EtatEditionView.EtatGelReferentiel gel(List<GelReferentielService.EtatGel> familles) {
+        boolean preparationFigee = familles.stream()
+                        .filter(famille -> famille.famille() == ReferentialFamily.STANDS
+                                || famille.famille() == ReferentialFamily.CRENEAUX)
+                        .filter(GelReferentielService.EtatGel::fige)
+                        .count()
+                == 2;
+        return new EtatEditionView.EtatGelReferentiel(
+                familles, preparationFigee ? EtatEditionView.Statut.FAIT : EtatEditionView.Statut.INFO);
     }
 
     /**

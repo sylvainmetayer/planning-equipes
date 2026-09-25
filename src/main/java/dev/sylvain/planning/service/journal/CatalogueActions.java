@@ -87,6 +87,8 @@ public final class CatalogueActions {
     private static final String EDITION_DUPLIQUEE = "EDITION_DUPLIQUEE";
     private static final String EDITION_PAR_DEFAUT = "EDITION_PAR_DEFAUT";
     private static final String EDITION_SUPPRIMEE = "EDITION_SUPPRIMEE";
+    private static final String GEL_POSE = "GEL_POSE";
+    private static final String GEL_LEVE = "GEL_LEVE";
     private static final String SOLVE_LANCE = "SOLVE_LANCE";
     private static final String SOLVE_INCREMENTAL_LANCE = "SOLVE_INCREMENTAL_LANCE";
     private static final String SOLVE_ARRETE = "SOLVE_ARRETE";
@@ -266,6 +268,10 @@ public final class CatalogueActions {
         action(EDITION_DUPLIQUEE, "Édition dupliquée", Entite.EDITION);
         action(EDITION_PAR_DEFAUT, "Édition par défaut changée", Entite.EDITION);
         action(EDITION_SUPPRIMEE, "Édition supprimée", Entite.EDITION);
+        // The freeze of the referential (ADR 0052) moves no data a solve
+        // reads: it only refuses the writes to come, hence action().
+        action(GEL_POSE, "Gel du référentiel posé", Entite.EDITION);
+        action(GEL_LEVE, "Gel du référentiel levé", Entite.EDITION);
 
         /* ------------------- The planning itself -------------------- */
         action(SOLVE_LANCE, "Résolution lancée", Entite.PLANNING);
@@ -444,6 +450,8 @@ public final class CatalogueActions {
         route("EditionResource#duplicate", EDITION_DUPLIQUEE);
         route("EditionResource#setAsDefault", EDITION_PAR_DEFAUT);
         route("EditionResource#delete", EDITION_SUPPRIMEE);
+        route("EditionResource#freeze", GEL_POSE);
+        route("EditionResource#lift", GEL_LEVE);
 
         route("PlanningResource#solve", SOLVE_LANCE);
         route("PlanningResource#reset", PLANNING_REINITIALISE);
@@ -598,6 +606,8 @@ public final class CatalogueActions {
         outil("dupliquer_edition", EDITION_DUPLIQUEE);
         outil("definir_edition_par_defaut", EDITION_PAR_DEFAUT);
         outil("supprimer_edition", EDITION_SUPPRIMEE);
+        outil("figer_referentiel", GEL_POSE);
+        outil("lever_gel", GEL_LEVE);
 
         outil("lancer_solveur", SOLVE_LANCE);
         outil("resoudre_incremental", SOLVE_INCREMENTAL_LANCE);

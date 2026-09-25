@@ -12,6 +12,7 @@ import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /** CRUD of the animateur referential, plus the espace access token they are reached by. */
 @ApplicationScoped
@@ -29,6 +30,8 @@ public class AnimateurService {
 
     private final IdGenerator ids;
 
+    private final GelReferentielService gel;
+
     @Inject
     public AnimateurService(
             AnimateurRepository repository,
@@ -36,13 +39,15 @@ public class AnimateurService {
             ReferenceDataChangeTracker changeTracker,
             ConcurrentModificationGuard staleWrites,
             SolverJobService solverJobs,
-            IdGenerator ids) {
+            IdGenerator ids,
+            GelReferentielService gel) {
         this.repository = repository;
         this.typologies = typologies;
         this.changeTracker = changeTracker;
         this.staleWrites = staleWrites;
         this.solverJobs = solverJobs;
         this.ids = ids;
+        this.gel = gel;
     }
 
     public List<Animateur> list() {
@@ -76,14 +81,39 @@ public class AnimateurService {
      * row ({@code ReferenceDataStore.saveMany} issues one
      * {@code PUT /api/animateurs/{id}} per animateur), so there is no
      * server-side batch to check once.</p>
+     *
+     * <p>Under a {@link ReferentialFamily#COMPETENCES} freeze, refused only
+     * when the competences move — compared with the fiche as stored, so the
+     * person's own data (availability, wishes, e-mail) stays open, and so
+     * does a declaration applied through this same method (ADR 0052).</p>
      */
     public Animateur update(String id, Animateur animateur) {
         solverJobs.refuseIfSolving();
+        return update(id, animateur, () -> stored(id));
+    }
+
+    /**
+     * {@link #update(String, Animateur)} for a caller that has already read
+     * the fiche as stored — the facade, for its warnings; the competence grid,
+     * for its rows — so a freeze compares against it instead of reading the
+     * roster once more per row of a bulk edit.
+     */
+    public Animateur update(String id, Animateur animateur, Animateur avant) {
+        solverJobs.refuseIfSolving();
+        return update(id, animateur, () -> avant);
+    }
+
+    /** Both overloads, once each has refused a write while a solve runs. */
+    private Animateur update(String id, Animateur animateur, Supplier<Animateur> avant) {
         if (!repository.animateurExists(id)) {
             throw new BusinessError.NotFound("Animateur inconnu : " + id);
         }
         animateur.setId(id);
+        // Before the freeze compares: a competence may be named by the code of
+        // its game category, and the stored fiche holds ids.
         validate(animateur);
+        gel.refuseIfFrozen(
+                ReferentialFamily.COMPETENCES, () -> GelReferentielService.changesCompetences(avant.get(), animateur));
         repository.saveAnimateur(animateur, false);
         changeTracker.markModified();
         return animateur;
@@ -102,6 +132,14 @@ public class AnimateurService {
         solverJobs.refuseIfSolving();
         repository.deleteAnimateur(id);
         changeTracker.markModified();
+    }
+
+    /** The fiche as stored — the before-image a freeze compares an edit against. */
+    private Animateur stored(String id) {
+        return repository.listAnimateurs().stream()
+                .filter(candidat -> id.equals(candidat.getId()))
+                .findFirst()
+                .orElse(null);
     }
 
     /**

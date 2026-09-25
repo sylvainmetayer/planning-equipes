@@ -186,6 +186,8 @@ public class AnimateurCsvImportService {
 
     private final ReferenceUsageService usages;
 
+    private final GelReferentielService gel;
+
     @Inject
     public AnimateurCsvImportService(
             AnimateurRepository animateurs,
@@ -194,7 +196,8 @@ public class AnimateurCsvImportService {
             DeclarationDisponibiliteRepository declarationRepository,
             ReferenceDataChangeTracker changeTracker,
             SolverJobService solverJobs,
-            ReferenceUsageService usages) {
+            ReferenceUsageService usages,
+            GelReferentielService gel) {
         this.animateurs = animateurs;
         this.typologies = typologies;
         this.declarations = declarations;
@@ -202,6 +205,7 @@ public class AnimateurCsvImportService {
         this.changeTracker = changeTracker;
         this.solverJobs = solverJobs;
         this.usages = usages;
+        this.gel = gel;
     }
 
     /** The report, plus what applying it would write — never leaves this class. */
@@ -257,6 +261,9 @@ public class AnimateurCsvImportService {
                     + " ligne(s) sont rejetées : corrigez le fichier ou choisissez l'ajout, "
                     + "sinon les animateurs que ces lignes désignent seraient supprimés.");
         }
+        if (gel.isFrozen(ReferentialFamily.COMPETENCES) && movesCompetences(analysis.toWrite())) {
+            gel.refuseIfFrozen(ReferentialFamily.COMPETENCES);
+        }
         animateurs.importAnimateurs(analysis.toWrite(), analysis.toDelete());
         changeTracker.markModified();
         // A created fiche has its id only now, drawn by the write: the report
@@ -284,6 +291,19 @@ public class AnimateurCsvImportService {
     private static AnimateurCsvImportReport.ImportedRow withId(AnimateurCsvImportReport.ImportedRow row, String id) {
         return new AnimateurCsvImportReport.ImportedRow(
                 row.line(), row.label(), id, row.action(), row.reasons(), row.warnings(), row.joursIndisponibles());
+    }
+
+    /**
+     * Whether the file changes the competences of an animateur already in the
+     * roster — what a {@link ReferentialFamily#COMPETENCES} freeze refuses. A
+     * new animateur arrives with theirs: a new fiche is not a retouch (ADR 0052).
+     */
+    private boolean movesCompetences(List<Animateur> toWrite) {
+        Map<String, Animateur> existants = new HashMap<>();
+        animateurs.listAnimateurs().forEach(animateur -> existants.put(animateur.getId(), animateur));
+        return toWrite.stream()
+                .anyMatch(animateur ->
+                        GelReferentielService.changesCompetences(existants.get(animateur.getId()), animateur));
     }
 
     /* ------------------------------- Analysis ------------------------------- */

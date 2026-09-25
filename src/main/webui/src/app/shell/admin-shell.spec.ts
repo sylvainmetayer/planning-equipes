@@ -34,6 +34,7 @@ import {
 import { memoryStorage } from '../core/testing/brouillon';
 import { SESSION_END_BUS, SessionEndBus } from '../core/session-end';
 import { AdminShell } from './admin-shell';
+import { GelInvitation } from '../core/gel-invitation';
 
 const NAV_STORAGE_KEY = 'planning-equipes.nav.collapsedGroups';
 const THEME_STORAGE_KEY = 'planning-equipes.theme';
@@ -154,6 +155,7 @@ describe('AdminShell', () => {
    * solve, which is what shipped.
    */
   const onResultByType = new Map<string, () => void>();
+  const gelOffer = vi.fn().mockResolvedValue(undefined);
   const unregisterResult = vi.fn();
 
   let fixture: ComponentFixture<AdminShell>;
@@ -240,6 +242,9 @@ describe('AdminShell', () => {
         // exists on a deployment that has one, and most of these tests are
         // about the sequence, not about the brand.
         { provide: BRANDING, useValue: { ...BRANDING_NEUTRE, mascotUrl: 'mascotte.png' } },
+        // The freeze invitation writes to localStorage and opens a snack bar:
+        // neither belongs to these tests, which only check that it is offered.
+        { provide: GelInvitation, useValue: { offer: gelOffer } },
       ],
     });
     // Spied before the shell is built: it preloads them in its constructor.
@@ -304,6 +309,15 @@ describe('AdminShell', () => {
       onResultByType.get('SOLVE')?.();
 
       expect(resolutionReload).toHaveBeenCalledOnce();
+    });
+
+    it('offers to freeze the stands and the timeslots once a solve has landed', () => {
+      createShell();
+      gelOffer.mockClear();
+
+      onResultByType.get('SOLVE')?.();
+
+      expect(gelOffer).toHaveBeenCalledWith('resolution');
     });
 
     /**

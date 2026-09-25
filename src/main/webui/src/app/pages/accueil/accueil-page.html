@@ -101,6 +101,22 @@
                 }
                 <mat-icon iconPositionEnd>{{ coherenceOpen() ? 'expand_less' : 'expand_more' }}</mat-icon>
               </button>
+            } @else if (ligne.panneau === 'gel') {
+              <button matButton type="button" class="accueil-lien"
+                      [attr.aria-controls]="gelOpen() ? 'accueil-gel-panneau' : null"
+                      [attr.aria-expanded]="gelOpen()" (click)="toggleGel()">
+                @if (gelOpen()) {
+                  <ng-container i18n="@@accueil.gel.masquer">Masquer les familles</ng-container>
+                } @else {
+                  <ng-container i18n="@@accueil.gel.voir">Figer ou lever</ng-container>
+                }
+                <mat-icon iconPositionEnd>{{ gelOpen() ? 'expand_less' : 'expand_more' }}</mat-icon>
+              </button>
+            }
+            @if (ligne.panneau === 'gel' && gelOpen()) {
+              <div id="accueil-gel-panneau" class="accueil-panneau">
+                <app-gel-referentiel-card (changed)="gelChanged()" />
+              </div>
             }
             @if (ligne.panneau === 'coherence' && coherenceOpen()) {
               <div id="accueil-coherence-panneau" class="accueil-panneau">

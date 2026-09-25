@@ -5,6 +5,8 @@ import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.edition.EtatEditionService;
 import dev.sylvain.planning.service.edition.EtatEditionView;
 import dev.sylvain.planning.service.referentiel.CoherenceReferentielService;
+import dev.sylvain.planning.service.referentiel.GelReferentielService;
+import dev.sylvain.planning.service.referentiel.ReferentialFamily;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -38,14 +40,18 @@ public class EditionResource {
 
     private final CoherenceReferentielService coherenceService;
 
+    private final GelReferentielService gelService;
+
     @Inject
     public EditionResource(
             EditionService editionService,
             EtatEditionService etatEditionService,
-            CoherenceReferentielService coherenceService) {
+            CoherenceReferentielService coherenceService,
+            GelReferentielService gelService) {
         this.editionService = editionService;
         this.etatEditionService = etatEditionService;
         this.coherenceService = coherenceService;
+        this.gelService = gelService;
     }
 
     @GET
@@ -90,6 +96,43 @@ public class EditionResource {
     @Path("/courant/coherence")
     public CoherenceReferentielService.CoherenceReport coherence() {
         return coherenceService.report();
+    }
+
+    /**
+     * The freeze of the current edition's referential, family by family
+     * (ADR 0052): which of the four are frozen, and since when.
+     */
+    @GET
+    @Path("/courant/gel")
+    public List<GelReferentielService.EtatGel> gel() {
+        return gelService.etat();
+    }
+
+    @GET
+    @Path("/courant/gel/{famille}")
+    public GelReferentielService.EtatGel gel(@PathParam("famille") ReferentialFamily famille) {
+        return gelService.etat(famille);
+    }
+
+    /**
+     * Freezes the family: from now on every write of it is refused in
+     * {@code 409 REFERENTIEL_FIGE}, whatever path it takes. Idempotent — a
+     * family already frozen keeps its date. Accepted while a solve runs, which
+     * read its data at its start.
+     */
+    @PUT
+    @Path("/courant/gel/{famille}")
+    public GelReferentielService.EtatGel freeze(@PathParam("famille") ReferentialFamily famille) {
+        gelService.freeze(famille);
+        return gelService.etat(famille);
+    }
+
+    /** Lifts the freeze of the family; lifting an open family changes nothing. */
+    @DELETE
+    @Path("/courant/gel/{famille}")
+    public GelReferentielService.EtatGel lift(@PathParam("famille") ReferentialFamily famille) {
+        gelService.lift(famille);
+        return gelService.etat(famille);
     }
 
     @POST

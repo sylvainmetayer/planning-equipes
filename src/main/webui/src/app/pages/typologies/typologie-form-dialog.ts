@@ -5,6 +5,8 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { injectGelReferentiel } from '../../core/gel-referentiel.store';
+import { GelNotice } from '../../shared/gel-notice';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { TypologieItem } from '../../core/models';
@@ -26,6 +28,7 @@ export interface TypologieFormData {
     MatInputModule,
     MatButtonModule,
     MatIconModule,
+    GelNotice,
   ],
   templateUrl: './typologie-form-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -40,6 +43,13 @@ export class TypologieFormDialog {
   private readonly crud = inject(ReferenceCrudService);
 
   protected readonly editingId = signal<string | null>(this.data.typologie?.id ?? null);
+  private readonly gel = injectGelReferentiel();
+  /** The cap is covered by a TYPOLOGIES_EMPLACEMENTS freeze, the label and the note are not (ADR 0052). */
+  protected readonly typologiesFrozen = computed(() =>
+    this.gel.isFrozen('TYPOLOGIES_EMPLACEMENTS'),
+  );
+  /** A creation, which the freeze refuses whole. */
+  protected readonly creationFrozen = computed(() => this.typologiesFrozen() && !this.editingId());
   protected readonly draft = signal<TypologieItem>(toDraft(this.data.typologie));
   /** Names the typologie as it was loaded: its id is drawn per edition and tells a reader nothing. */
   protected readonly formTitle = computed(() => {

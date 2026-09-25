@@ -219,6 +219,16 @@ Single Quarkus service, no separate solver microservice. Package root:
     PDF); and the ones that predate the split — `service/diagnostic/`,
     `service/journal/`, `service/mail/`, `service/notification/`,
     `service/backup/` (nightly `pg_dump` — see below).
+- **A frozen family of the referential refuses every write, by annotation.**
+  `service/referentiel/GelReferentielService` holds the freeze (ADR 0052); a
+  service method writing stands, timeslots, game categories/locations or
+  competences carries `@RefusedWhileFrozen(ReferentialFamily.X)` (interceptor,
+  `409 REFERENTIEL_FIGE`), or compares with its before-image and calls
+  `gel.refuseIfFrozen` itself when only some fields are frozen.
+  `GelReferentielStructuralTest` fails on a method of those services in neither
+  case nor argued as open — and on an annotated method called on `this`, which
+  bypasses the interceptor. Consignes stay open: their grid write goes through
+  the in-transaction timeslot methods, which only `ConsigneService` calls.
 - **Mails follow two opposite failure policies, and the split is structural.**
   `MailService` holds only what an admin explicitly asks for (an animateur's
   planning, an espace access code, the Débogage test mail): the mail *is* the

@@ -53,6 +53,7 @@ public class CreneauService {
         return repository.findCreneau(id);
     }
 
+    @RefusedWhileFrozen(ReferentialFamily.CRENEAUX)
     public Creneau create(Creneau creneau) {
         CreneauValidator.check(creneau);
         creneau.setId(null); // ignore any client-supplied id — the database always generates it
@@ -66,6 +67,11 @@ public class CreneauService {
      * consigne adds the créneaux its openings need together with its rows,
      * or not at all. The caller marks the referential modified once its
      * transaction has committed.
+     *
+     * <p>Not refused under a {@link ReferentialFamily#CRENEAUX} freeze, and
+     * that is the point: the consigne is the tool left open to change the
+     * shape of a date late (ADR 0043, ADR 0052), and this is its one grid
+     * write. Nothing else calls it.</p>
      */
     public Creneau create(Connection connection, Creneau creneau) throws SQLException {
         CreneauValidator.check(creneau);
@@ -83,6 +89,7 @@ public class CreneauService {
      * date or hours changed meanwhile would silently come back. See
      * {@link SolverJobService#refuseIfSolving}.</p>
      */
+    @RefusedWhileFrozen(ReferentialFamily.CRENEAUX)
     public Creneau update(Long id, Creneau creneau) {
         solverJobs.refuseIfSolving();
         CreneauValidator.check(creneau);
@@ -103,6 +110,7 @@ public class CreneauService {
      * créneaux its result names, so the grid would come back on its own. See
      * {@link SolverJobService#refuseIfSolving}.</p>
      */
+    @RefusedWhileFrozen(ReferentialFamily.CRENEAUX)
     public void delete(Long id) {
         solverJobs.refuseIfSolving();
         repository.deleteCreneau(id);
@@ -124,6 +132,7 @@ public class CreneauService {
      * what keeps the numbering correct when a batch adds a date earlier than
      * every existing one.</p>
      */
+    @RefusedWhileFrozen(ReferentialFamily.CRENEAUX)
     public List<Creneau> createInBulk(List<Creneau> creneaux) {
         // A recurrence and a derivation both land here, and both add rows a
         // running solve would not know about — the same reason delete and
@@ -150,6 +159,7 @@ public class CreneauService {
     }
 
     /** Deletes a batch of créneaux, for the same "one intent, one edit" reason as {@link #createInBulk}. */
+    @RefusedWhileFrozen(ReferentialFamily.CRENEAUX)
     public int deleteInBulk(Collection<Long> ids) {
         // Checked once for the lot, not once per row: the whole batch is refused
         // or none of it is, and the solver state cannot change under us anyway.
@@ -169,7 +179,11 @@ public class CreneauService {
         return supprimes;
     }
 
-    /** Same as {@link #deleteInBulk}, inside the caller's transaction — see {@link #create(Connection, Creneau)}. */
+    /**
+     * Same as {@link #deleteInBulk}, inside the caller's transaction — see
+     * {@link #create(Connection, Creneau)}, including why a freeze does not
+     * refuse it: it removes the créneaux a consigne added.
+     */
     public int deleteInBulk(Connection connection, Collection<Long> ids) throws SQLException {
         solverJobs.refuseIfSolving();
         int supprimes = 0;
@@ -190,6 +204,7 @@ public class CreneauService {
      * edit, not one edit per row. Nothing is removed — a timeslot the file
      * leaves out stays, which is the doctrine of every CSV import here.</p>
      */
+    @RefusedWhileFrozen(ReferentialFamily.CRENEAUX)
     public void importer(List<Creneau> aCreer, List<Creneau> aMettreAJour) {
         // Both halves add or move rows a running solve would not know about,
         // the same reason the bulk create and the replace refuse.
@@ -214,6 +229,7 @@ public class CreneauService {
      * asked to start over. Refused while a solve runs, like every rewrite of
      * the grid.
      */
+    @RefusedWhileFrozen(ReferentialFamily.CRENEAUX)
     public List<Creneau> replace(List<Creneau> creneaux) {
         solverJobs.refuseIfSolving();
         for (Creneau creneau : creneaux) {

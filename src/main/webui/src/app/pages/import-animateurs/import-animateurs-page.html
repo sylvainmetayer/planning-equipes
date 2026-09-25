@@ -18,6 +18,10 @@
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
+    <app-gel-notice family="COMPETENCES" />
+    @if (competencesFrozen()) {
+      <p class="empty-hint" i18n="@@importAnimateurs.gel.hint">Un fichier qui change les compétences d'un animateur déjà inscrit sera refusé ; les nouveaux arrivent avec les leurs.</p>
+    }
     <p class="empty-hint" i18n="@@importCsv.fichier.format">
       La date de naissance est obligatoire pour créer une fiche. Plusieurs valeurs dans une même
       cellule sont séparées par « | » ; une compétence s'écrit « typologie » ou

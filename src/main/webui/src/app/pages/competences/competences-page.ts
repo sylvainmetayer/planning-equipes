@@ -26,6 +26,8 @@ import {
 import { intlLocale } from '../../core/locale';
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
+import { injectGelReferentiel } from '../../core/gel-referentiel.store';
+import { GelNotice } from '../../shared/gel-notice';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
@@ -82,6 +84,7 @@ import {
     MatTooltipModule,
     RouterLink,
     TableFilter,
+    GelNotice,
   ],
   templateUrl: './competences-page.html',
   styleUrls: ['./competences-page.css', '../../../styles/saisie-repetitive.css'],
@@ -97,8 +100,16 @@ export class CompetencesPage implements OnInit {
   private readonly confirm = inject(ConfirmService);
   private readonly route = inject(ActivatedRoute);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
-  /** Typing is disabled while a solve runs: the server would refuse the save, and the landing persist would revert it. */
-  protected readonly editingLocked = inject(SolverJobService).editingLocked;
+  private readonly solving = inject(SolverJobService).editingLocked;
+  private readonly gel = injectGelReferentiel();
+  /**
+   * Typing is disabled while a solve runs — the server would refuse the save,
+   * and the landing persist would revert it — and while the competences are
+   * frozen (ADR 0052): the grid and its import write nothing else.
+   */
+  protected readonly editingLocked = computed(
+    () => this.solving() || this.gel.isFrozen('COMPETENCES'),
+  );
 
   protected readonly chargement = signal(true);
   protected readonly enregistrement = signal(false);

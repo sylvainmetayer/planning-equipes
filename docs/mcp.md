@@ -425,7 +425,7 @@ méthode de service nommée appelle bien `refuseIfSolving` :
 | --- | --- | --- |
 | **refusé** | modification et suppression de stands et d'animateurs, horaires et plages d'un stand, modification et suppression de créneaux, créneaux récurrents et dérivés, journées types matérialisées, consignes, `affecter_poste`, `deplacer_affectation`, `accepter_demande_echange`, restauration d'instantané, imports, réinitialisation | le refus (`409` côté REST), le job en cause nommé : l'atterrissage du calcul défairait l'écriture |
 | **accepté, averti** (`@WarnsWhileSolving`) | typologies, emplacements, contraintes ad hoc, paramètres légaux et durée du solveur, verrouillages, activation et poids des contraintes, création d'un stand, d'un animateur, d'un créneau, `ajouter_validation_journee` | la réponse habituelle, avec **`RESOLUTION_EN_COURS`** dans `avertissements` |
-| **sans rapport** | le solveur lui-même, éditions, publications et envois, préréglages de consigne, `retirer_validation_journee`, journées types non matérialisées, instantanés, paramètres de notification et de sauvegarde | la réponse habituelle ; chaque exclusion porte son motif dans le test |
+| **sans rapport** | le solveur lui-même, éditions, gel du référentiel, publications et envois, préréglages de consigne, `retirer_validation_journee`, journées types non matérialisées, instantanés, paramètres de notification et de sauvegarde | la réponse habituelle ; chaque exclusion porte son motif dans le test |
 
 `RESOLUTION_EN_COURS` veut dire : **enregistré**, mais la résolution en cours a
 lu le référentiel et le plan à son démarrage et ne verra pas cette écriture ;
@@ -438,6 +438,25 @@ Il ne vient ni d'une résolution d'une **autre** édition — c'est l'édition
 désignée par l'argument `edition` qui compte —, ni d'une résolution seulement
 **en file**, qui lira l'écriture à son tour. Les écrans n'en ont pas besoin :
 ils verrouillent ces saisies le temps du calcul.
+
+## Un référentiel figé refuse, sans exception pour l'assistant
+
+`figer_referentiel` et `lever_gel` posent et lèvent le gel d'une famille du
+référentiel — `STANDS`, `CRENEAUX`, `TYPOLOGIES_EMPLACEMENTS`, `COMPETENCES`
+([décision 0052](decisions/0052-gel-du-referentiel-distinct-du-verrou.md)) —
+et `etat_edition` dit lesquelles le sont, dans son bloc `gel`. Les deux outils
+sont journalisés comme leurs routes REST, et classés « sans rapport » avec une
+résolution en cours : un gel refuse les écritures à venir, il ne change aucune
+donnée qu'un calcul lit.
+
+Le refus d'une écriture figée n'est pas une règle MCP : il est posé sur les
+services, que les outils appellent comme les écrans. `modifier_stand` qui
+change un effectif, `supprimer_creneau`, `creer_typologie`, `modifier_animateur`
+qui change des compétences reviennent donc en refus métier, avec la phrase qui
+nomme les familles à lever ; `modifier_stand` qui ne touche que le nom, ou
+`appliquer_consigne`, passent. Lever un gel n'est à faire que sur demande
+explicite : après une publication, toute retouche fait bouger des plannings
+déjà envoyés.
 
 ## Le nom publié est déclaré, pas déduit de la méthode
 

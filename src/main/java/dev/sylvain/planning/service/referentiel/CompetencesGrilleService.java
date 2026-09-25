@@ -66,6 +66,7 @@ public class CompetencesGrilleService {
      * row ceiling is refused outright, since the grid has one row per animateur
      * and nothing legitimate sends more of them.
      */
+    @RefusedWhileFrozen(ReferentialFamily.COMPETENCES)
     public List<LigneCompetences> saveGrid(List<SaisieCompetences> saisies) {
         solverJobs.refuseIfSolving();
         if (saisies.size() > MAX_ROWS) {
@@ -111,7 +112,7 @@ public class CompetencesGrilleService {
     private LigneCompetences writeGridRow(String id, Animateur source, SaisieCompetences saisie) {
         Animateur copie = GrilleCompetences.withCompetences(source, saisie.competences(), saisie.modifieLe());
         try {
-            animateurs.update(id, copie);
+            animateurs.update(id, copie, source);
             return new LigneCompetences(id, ResultatLigne.WRITTEN, null, copie.getModifieLe());
         } catch (BusinessError.Stale stale) {
             return new LigneCompetences(id, ResultatLigne.STALE, stale.getMessage(), stale.getModifieLe());

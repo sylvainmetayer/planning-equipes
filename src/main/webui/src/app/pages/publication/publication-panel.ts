@@ -40,6 +40,7 @@ import {
   sortRecipients,
   RecipientSort,
 } from './publication-diff';
+import { GelInvitation } from '../../core/gel-invitation';
 
 /**
  * What leaves the application once the planning is good enough: the documents
@@ -68,6 +69,7 @@ import {
 })
 export class PublicationPanel implements OnInit {
   private readonly planningApi = inject(PlanningApi);
+  private readonly gelInvitation = inject(GelInvitation);
   private readonly planningState = inject(PlanningStateService);
   private readonly confirm = inject(ConfirmService);
   private readonly params = currentViewParams();
@@ -315,6 +317,8 @@ export class PublicationPanel implements OnInit {
         );
         this.excluded.set(new Set());
         this.listOpen.set(false);
+        // The second milestone at which freezing is offered (ADR 0052).
+        void this.gelInvitation.offer('publication');
       } catch (error) {
         this.reported.emit(errorPrefix(error));
       } finally {

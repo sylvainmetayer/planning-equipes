@@ -5,6 +5,9 @@
       L'appréciation de chaque animateur sur chaque typologie, saisie en grille ; les souhaits déclarés y sont visibles en regard.
     </mat-card-subtitle>
   </mat-card-header>
+  <mat-card-content>
+    <app-gel-notice family="COMPETENCES" />
+  </mat-card-content>
   <mat-card-actions class="card-actions">
     <button matButton="filled" type="button" class="competences-enregistrer"
             [disabled]="editingLocked() || enregistrement() || animateursModifies().length === 0" (click)="save()">
