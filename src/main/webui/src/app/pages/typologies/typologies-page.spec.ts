@@ -321,7 +321,7 @@ describe('TypologiesPage table', () => {
       seedUsage();
       await rendre(typologies);
 
-      expect(lignes().map((row) => [row[1], row[4], row[5], row[6], row[7]])).toEqual([
+      expect(lignes().map((row) => [row[1], row[5], row[6], row[7], row[8]])).toEqual([
         ['echecs', '0', '2', '1', 'error Orpheline'],
         ['cartes', '1', '0', '1', 'warning Fragile'],
         ['des', '2', '0', '1', ''],
