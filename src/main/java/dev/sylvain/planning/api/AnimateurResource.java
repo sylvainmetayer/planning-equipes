@@ -8,8 +8,6 @@ import dev.sylvain.planning.service.publication.RelanceManuelleService;
 import dev.sylvain.planning.service.referentiel.AnimateurCsvImportReport;
 import dev.sylvain.planning.service.referentiel.AnimateurCsvImportRequest;
 import dev.sylvain.planning.service.referentiel.AnimateurCsvImportService;
-import dev.sylvain.planning.service.referentiel.CompetencesGrilleImportReport;
-import dev.sylvain.planning.service.referentiel.CompetencesGrilleImportRequest;
 import dev.sylvain.planning.service.referentiel.CompetencesGrilleService;
 import dev.sylvain.planning.service.referentiel.GrilleCompetences;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
@@ -246,41 +244,6 @@ public class AnimateurResource {
     public RapportSaisieGrilleCompetences saveCompetencesGrid(SaisieGrilleCompetences saisie) {
         return new RapportSaisieGrilleCompetences(competencesGrille.saveGrid(
                 saisie == null || saisie.animateurs() == null ? List.of() : saisie.animateurs()));
-    }
-
-    /**
-     * The grid as a CSV — ids of animateurs in rows, typologies in columns
-     * (their code when they have one, their id otherwise), a level or nothing
-     * per cell. No prénom, no nom: the id is what
-     * the import needs, and a file naming nobody travels lighter.
-     */
-    @GET
-    @Path("/competences/export")
-    @Produces("text/csv")
-    public Response exportCompetencesGrid() {
-        return CsvDownload.attachment(competencesGrille.exportCsv(), CompetencesGrilleService.EXPORT_FICHIER);
-    }
-
-    /**
-     * What the competences matrix would do, without doing any of it: the
-     * typologie each column landed on, one line of report per animateur row.
-     * A pure read — no transaction is opened.
-     */
-    @POST
-    @Path("/competences/import-grille/analyse")
-    public CompetencesGrilleImportReport analyseCompetencesGrid(CompetencesGrilleImportRequest request) {
-        return competencesGrille.preview(request);
-    }
-
-    /**
-     * Applies the same request the preview was computed from — file included,
-     * re-read and re-checked — and writes the accepted fiches in one
-     * transaction. {@code 409} while a solve runs.
-     */
-    @POST
-    @Path("/competences/import-grille")
-    public CompetencesGrilleImportReport importCompetencesGrid(CompetencesGrilleImportRequest request) {
-        return competencesGrille.apply(request);
     }
 
     /**

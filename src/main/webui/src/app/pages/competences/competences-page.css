@@ -1,7 +1,7 @@
-/* "Compétences": the animateur × typologie grid, its filters, its legend and
-   the import report. Only what Material does not cover — chiefly the cell, a
-   button carrying the level as a letter and a colour, and the animateur's wish
-   as a marker distinct from the colour. */
+/* "Compétences": the animateur × typologie grid, its filters and its legend.
+   Only what Material does not cover — chiefly the cell, a button carrying the
+   level as a letter and a colour, and the animateur's wish as a marker
+   distinct from the colour. */
 
 .competences-controles {
   display: flex;
@@ -223,23 +223,6 @@
 .niveau-referent {
   background: var(--mat-sys-primary-container);
   color: var(--mat-sys-on-primary-container);
-}
-
-.competences-import {
-  margin-top: 1rem;
-}
-
-.competences-import-motifs {
-  margin: 0;
-  padding-left: 1.1rem;
-}
-
-.import-ligne-inchangee td:first-child {
-  font-variant-numeric: tabular-nums;
-}
-
-.import-ligne-inchangee {
-  color: var(--mat-sys-on-surface-variant);
 }
 
 @media (max-width: 60rem) {

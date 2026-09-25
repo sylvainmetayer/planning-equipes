@@ -1,6 +1,6 @@
 # 0030 — La grille des compétences transpose 0021 : identité par identifiant, case vide inchangée, jamais de suppression
 
-- **Statut** : accepté
+- **Statut** : abandonné — l'échange de la grille par fichier est retiré, la saisie se fait à l'écran ; voir [0050](0050-identifiants-generes-par-edition.md) (D6)
 - **Date** : septembre 2026
 - **Portée** : référentiel, import de données, API, écran d'administration
 

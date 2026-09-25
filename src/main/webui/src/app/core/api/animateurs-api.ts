@@ -7,8 +7,6 @@ import { ApiService } from '../api.service';
 import {
   AnimateurProfile,
   ConfirmationView,
-  ImportCompetencesDemande,
-  ImportCompetencesRapport,
   ImportCsvDemande,
   ImportCsvRapport,
   RapportRelance,
@@ -72,29 +70,5 @@ export class AnimateursApi {
     return this.api.put<RapportSaisieCompetences>('/api/animateurs/competences/grille', {
       animateurs,
     });
-  }
-
-  /** The grid as a CSV of ids and levels, in the format the import reads back. */
-  downloadCompetencesGrid(): Promise<string> {
-    return this.api.downloadGet(
-      '/api/animateurs/competences/export',
-      'grille-competences.csv',
-      'text/csv',
-    );
-  }
-
-  /** What the competences import would do, without writing anything. */
-  analyseCompetencesImport(demande: ImportCompetencesDemande): Promise<ImportCompetencesRapport> {
-    return this.api.post<ImportCompetencesRapport>(
-      '/api/animateurs/competences/import-grille/analyse',
-      demande,
-    );
-  }
-
-  applyCompetencesImport(demande: ImportCompetencesDemande): Promise<ImportCompetencesRapport> {
-    return this.api.post<ImportCompetencesRapport>(
-      '/api/animateurs/competences/import-grille',
-      demande,
-    );
   }
 }

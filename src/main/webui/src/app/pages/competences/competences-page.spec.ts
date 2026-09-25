@@ -496,23 +496,6 @@ describe('CompetencesPage', () => {
     expect(ask).toHaveBeenCalledOnce();
   });
 
-  it('brings the import card under the eye: the grid is as long as the roster', async () => {
-    const scrollIntoView = vi.fn();
-    Element.prototype.scrollIntoView = scrollIntoView;
-    const { fixture } = mount();
-    await fixture.whenStable();
-    expect(scrollIntoView).not.toHaveBeenCalled();
-
-    bouton(fixture, 'Importer un CSV').click();
-    await fixture.whenStable();
-
-    expect(root(fixture).querySelector('.competences-import')).not.toBeNull();
-    expect(scrollIntoView).toHaveBeenCalled();
-    expect((scrollIntoView.mock.instances[0] as HTMLElement).classList).toContain(
-      'competences-import',
-    );
-  });
-
   /* ------------------------- repetitive entry (#316) ------------------------- */
 
   it('takes the row above into this one, on the button and on Ctrl+D', async () => {

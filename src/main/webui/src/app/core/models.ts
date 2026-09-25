@@ -3506,44 +3506,6 @@ export interface RapportSaisieCompetences {
   animateurs: LigneSaisieCompetences[];
 }
 
-export type ImportCompetencesAction = 'UPDATED' | 'UNCHANGED' | 'REJECTED';
-
-/** One column of the file: the header read, and the typologie it names — or why it names none. */
-export interface ImportCompetencesColonne {
-  index: number;
-  label: string;
-  typologieId: string | null;
-  reason: string | null;
-}
-
-export interface ImportCompetencesLigne {
-  line: number;
-  label: string;
-  animateurId: string | null;
-  action: ImportCompetencesAction;
-  reasons: string[];
-  /** Appreciations the row adds or changes. */
-  cellules: number;
-}
-
-/** What the matrix would do, animateur by animateur — the same shape once applied. */
-export interface ImportCompetencesRapport {
-  applied: boolean;
-  separator: string;
-  columns: ImportCompetencesColonne[];
-  total: number;
-  accepted: number;
-  unchanged: number;
-  rejected: number;
-  rows: ImportCompetencesLigne[];
-  warnings: string[];
-}
-
-export interface ImportCompetencesDemande {
-  fileName: string;
-  content: string;
-}
-
 /** Body of both calls — the file travels again, so the write re-validates it. */
 export interface ImportCsvDemande {
   fileName: string;

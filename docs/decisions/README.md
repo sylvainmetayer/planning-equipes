@@ -53,7 +53,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0027](0027-pas-de-compilation-native.md) | Pas de compilation native | Accepté · issue #392 |
 | [0028](0028-transactions-declaratives-narayana.md) | Transactions déclaratives (`@Transactional`, Narayana) pour les unités de travail composées | **Proposé** · mesuré, non tranché · issue #448 |
 | [0029](0029-retrait-des-familles-de-relais.md) | Les familles de relais sont retirées | Accepté · remplace 0026 |
-| [0030](0030-grille-competences-import-additif.md) | La grille des compétences transpose 0021 : identité par identifiant, case vide inchangée, jamais de suppression | Accepté · transpose 0021 et 0022 |
+| [0030](0030-grille-competences-import-additif.md) | La grille des compétences transpose 0021 : identité par identifiant, case vide inchangée, jamais de suppression | Abandonné · retiré par 0050 |
 | [0031](0031-signaler-le-plancher-sans-le-decider.md) | Une règle qui pénalise tout faute de donnée est signalée comme plancher, jamais désactivée | Accepté |
 | [0032](0032-journees-types-nommees-vacations-fixes.md) | Des journées types nommées génèrent les créneaux par différence ; les créneaux restent la vérité | Accepté |
 | [0033](0033-un-stand-qui-declare-ses-ouvertures-est-ferme-ailleurs.md) | Un stand qui déclare ses ouvertures est fermé les jours qu'il ne déclare pas ; l'élagage retire les fermetures devenues muettes | Accepté |
