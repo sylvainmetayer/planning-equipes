@@ -29,7 +29,7 @@
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.version>3.39.4</quarkus.platform.version>
-        <timefold.solver.version>2.5.0</timefold.solver.version>
+        <timefold.solver.version>2.6.0</timefold.solver.version>
         <quinoa.version>2.9.0</quinoa.version>
         <sentry.version>8.57.0</sentry.version>
         <!-- Kept aligned with the jackson-databind version Flyway pulls in
