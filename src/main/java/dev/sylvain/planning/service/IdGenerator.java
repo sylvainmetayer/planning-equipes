@@ -59,8 +59,12 @@ public class IdGenerator {
 
     private static final Pattern EDITION_SHAPE = Pattern.compile("[Ee][1-9][0-9]*");
 
+    private final JdbcEditionScope scope;
+
     @Inject
-    JdbcEditionScope scope;
+    public IdGenerator(JdbcEditionScope scope) {
+        this.scope = scope;
+    }
 
     /** Draws the next id of {@code kind} in the current edition, in a transaction of its own. */
     public String next(Kind kind) {

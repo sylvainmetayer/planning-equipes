@@ -27,22 +27,23 @@ public class AnimateurService {
 
     private final SolverJobService solverJobs;
 
+    private final IdGenerator ids;
+
     @Inject
     public AnimateurService(
             AnimateurRepository repository,
             TypologieService typologies,
             ReferenceDataChangeTracker changeTracker,
             ConcurrentModificationGuard staleWrites,
-            SolverJobService solverJobs) {
+            SolverJobService solverJobs,
+            IdGenerator ids) {
         this.repository = repository;
         this.typologies = typologies;
         this.changeTracker = changeTracker;
         this.staleWrites = staleWrites;
         this.solverJobs = solverJobs;
+        this.ids = ids;
     }
-
-    @Inject
-    IdGenerator ids;
 
     public List<Animateur> list() {
         return repository.listAnimateurs();

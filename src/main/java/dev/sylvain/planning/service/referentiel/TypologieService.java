@@ -35,21 +35,23 @@ public class TypologieService implements TypologieLibelles {
 
     private final ConcurrentModificationGuard staleWrites;
 
+    private final IdGenerator ids;
+
+    private final JdbcEditionScope scope;
+
     @Inject
     public TypologieService(
             TypologieRepository repository,
             ReferenceDataChangeTracker changeTracker,
-            ConcurrentModificationGuard staleWrites) {
+            ConcurrentModificationGuard staleWrites,
+            IdGenerator ids,
+            JdbcEditionScope scope) {
         this.repository = repository;
         this.changeTracker = changeTracker;
         this.staleWrites = staleWrites;
+        this.ids = ids;
+        this.scope = scope;
     }
-
-    @Inject
-    IdGenerator ids;
-
-    @Inject
-    JdbcEditionScope scope;
 
     public List<TypologieItem> list() {
         return repository.listTypologies();
