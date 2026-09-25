@@ -187,6 +187,13 @@ describe('JourJPage', () => {
     expect(send).toBeUndefined();
   });
 
+  it('points the publication reminder at the Publication screen', () => {
+    const lien = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('a')).find(
+      (each) => (each.textContent ?? '').includes('Aller à la publication'),
+    );
+    expect(lien?.getAttribute('href')).toBe('/publication');
+  });
+
   it('asks for a confirmation before writing an absence', async () => {
     bouton('Marquer absent').click();
     await fixture.whenStable();
