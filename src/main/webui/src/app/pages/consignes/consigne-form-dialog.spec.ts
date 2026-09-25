@@ -136,10 +136,10 @@ describe('ConsigneFormDialog — the stands list', () => {
 
   it('names the preview stands by their name, an unknown id kept as-is', () => {
     mount(['2026-07-11'], [{ id: 'S1', nom: 'Bourse aux jeux' } as Stand]);
-    const texte = (
+    const text = (
       fixture.componentInstance as unknown as { standsText(ids: string[]): string }
     ).standsText(['S1', 'S9']);
-    expect(texte).toBe('Bourse aux jeux, S9');
+    expect(text).toBe('Bourse aux jeux, S9');
   });
 
   it('does not tick a deep-linked date the form does not offer, and says so', async () => {

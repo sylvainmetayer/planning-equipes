@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { actionsOfRule, compterProblemes, construireProblemes, liensDeCause } from './problemes';
+import { actionsOfRule, compterProblemes, construireProblemes, causeLinks } from './problemes';
 import type {
   CauseInfaisabilite,
   ConstraintView,
@@ -235,7 +235,7 @@ describe('construireProblemes', () => {
   });
 
   it('opens the créneau a cause names, then each stand up to three, then the openings', () => {
-    const liens = liensDeCause(cause({ creneauId: '12', standIds: ['a', 'b', 'c', 'd'] }));
+    const liens = causeLinks(cause({ creneauId: '12', standIds: ['a', 'b', 'c', 'd'] }));
     expect(liens.map((lien) => [lien.route, lien.queryParams?.['edit']])).toEqual([
       ['/creneaux', '12'],
       ['/stands', 'a'],
@@ -248,7 +248,7 @@ describe('construireProblemes', () => {
 
   // The deadlock has two halves and the cause only names the exception.
   it('sends a locked-schedule cause to the locks as well as to the adjustments', () => {
-    const liens = liensDeCause(
+    const liens = causeLinks(
       cause({
         type: 'AFFECTATION_FORCEE_SIEGE_VERROUILLE',
         severite: 'CRITIQUE',
@@ -265,7 +265,7 @@ describe('construireProblemes', () => {
 
   // Every other cause keeps the adjustments link alone.
   it('does not offer the locks on a day-off cause', () => {
-    const liens = liensDeCause(
+    const liens = causeLinks(
       cause({
         type: 'AFFECTATION_FORCEE_JOUR_INDISPONIBLE',
         severite: 'CRITIQUE',
