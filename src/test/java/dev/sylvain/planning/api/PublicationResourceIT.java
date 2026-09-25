@@ -135,6 +135,14 @@ class PublicationResourceIT {
      * tell apart.
      */
     private void semer(String prefixe, int creneauId, String nom) {
+        // Raw rows land in the edition the requests below resolve to, whose id
+        // is drawn by the application (ADR 0050) — read, never assumed.
+        String edition = given().when()
+                .get("/api/editions/courant")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("id");
         String script = String.join(
                 "\n",
                 "delete from poste_affectation where id like '" + prefixe + "-%';",
@@ -142,22 +150,23 @@ class PublicationResourceIT {
                 "delete from creneau where id = " + creneauId + ";",
                 "delete from animateur where id like '" + prefixe + "-%';",
                 "delete from stand where id like '" + prefixe + "-%';",
-                "insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs)"
-                        + " values ('DEFAUT', '" + prefixe + "-S1', 'Stand " + prefixe + " un', 1, 1, false);",
-                "insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs)"
-                        + " values ('DEFAUT', '" + prefixe + "-S2', 'Stand " + prefixe + " deux', 1, 1, false);",
+                "insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs)" + " values ('"
+                        + edition + "', '" + prefixe + "-S1', 'Stand " + prefixe + " un', 1, 1, false);",
+                "insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs)" + " values ('"
+                        + edition + "', '" + prefixe + "-S2', 'Stand " + prefixe + " deux', 1, 1, false);",
                 "insert into animateur (edition_id, id, prenom, nom, date_naissance, manager, email)"
-                        + " values ('DEFAUT', '" + prefixe + "-A', 'Alice', '" + nom + "', '1990-01-01', false,"
+                        + " values ('" + edition + "', '" + prefixe + "-A', 'Alice', '" + nom
+                        + "', '1990-01-01', false,"
                         + " '" + prefixe.toLowerCase() + "-alice@example.org');",
-                "insert into animateur (edition_id, id, prenom, nom, date_naissance, manager)" + " values ('DEFAUT', '"
-                        + prefixe + "-B', 'Bruno', '" + nom + "', '1992-02-02', false);",
-                "insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin)" + " values ('DEFAUT', "
-                        + creneauId + ", '2026-07-11', '10:00', '12:00');",
+                "insert into animateur (edition_id, id, prenom, nom, date_naissance, manager)" + " values ('" + edition
+                        + "', '" + prefixe + "-B', 'Bruno', '" + nom + "', '1992-02-02', false);",
+                "insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin)" + " values ('" + edition
+                        + "', " + creneauId + ", '2026-07-11', '10:00', '12:00');",
                 "insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id)"
-                        + " values ('DEFAUT', '" + prefixe + "-P1', '" + prefixe + "-S1', " + creneauId
+                        + " values ('" + edition + "', '" + prefixe + "-P1', '" + prefixe + "-S1', " + creneauId
                         + ", '" + prefixe + "-A');",
                 "insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id)"
-                        + " values ('DEFAUT', '" + prefixe + "-P2', '" + prefixe + "-S2', " + creneauId
+                        + " values ('" + edition + "', '" + prefixe + "-P2', '" + prefixe + "-S2', " + creneauId
                         + ", '" + prefixe + "-B');");
         given().contentType(ContentType.TEXT)
                 .body(script)
