@@ -1,8 +1,8 @@
 @startuml
-' Entrer dans son espace : le lien personnel désigne la fiche, le code à six
-' chiffres reçu par e-mail ouvre une session de 30 jours. L'espace ne montre
-' que le plan publié. Voir docs/api.md, « Espace animateur » et
-' « Accusé de réception du planning ».
+' Entrer dans son espace : le lien personnel désigne la fiche, la session
+' Keycloak dit qui frappe — son adresse vérifiée doit être celle de la fiche.
+' L'espace ne montre que le plan publié. Voir docs/api.md, « Espace
+' animateur » et « Accusé de réception du planning », et docs/keycloak.md.
 skinparam backgroundColor #FFFFFF
 skinparam responseMessageBelowArrow true
 hide footbox
@@ -10,40 +10,41 @@ autonumber
 
 actor "Animateur" as animateur
 boundary "Navigateur" as front
+boundary "Keycloak\n(realm planning)" as keycloak
+participant AuthResource as auth
 participant EspaceTokenFilter as jeton
 participant SessionEspaceFilter as session
+participant OidcAuthentication as oidc
+participant EditionRequestScope as portee
 participant EspaceAnimateurResource as espace
-participant EspaceAccesService as acces
-participant MailService as mails
 participant ConfirmationPlanningService as confirmations
 database PostgreSQL as db
 
-animateur -> front : ouvre le lien reçu (/espace/{jeton})
-front -> jeton : POST /api/espace-animateur/{jeton}/code
+animateur -> front : ouvre le lien reçu (/animateur/{jeton})
+front -> session : GET /api/espace-animateur/{jeton}
+session -> jeton : resoudreOuAborter(contexte)
 note right of jeton : jeton inconnu : 404 ;\nX-Edition-Id est ignoré, le jeton désigne l'édition
-jeton -> espace : requestCode()
-espace -> acces : requestCode(animateurId)
-alt pas d'e-mail sur la fiche
-  acces --> front : 400
-else trop de demandes
-  acces --> front : 429 + Retry-After
-else
-  acces -> db : UPSERT espace_acces (empreinte du code, 10 min, 5 essais)
-  acces -> mails : sendAccessCode(email, prénom, code)
-  note right of mails : l'e-mail EST l'opération :\nun échec remonte en 500
-  acces --> front : CodeEnvoye (e-mail masqué)
-end
+session -> oidc : trustedEmail()
+session --> front : 401 sans session Keycloak :\nl'écran propose « Se connecter avec mon compte »
 
-animateur -> front : saisit le code
-front -> espace : POST /api/espace-animateur/{jeton}/session {code}
-espace -> acces : openSession(animateurId, code)
-acces -> db : INSERT espace_session (30 jours), code supprimé
-espace --> front : 204 + cookie planning-espace\n(HttpOnly, SameSite=Strict, chemin /api/espace-animateur)
+animateur -> front : Se connecter avec mon compte
+front -> auth : GET /api/auth/oidc/login?redirect=/animateur/{jeton}
+auth --> front : 302 vers Keycloak (code flow, PKCE)
+front -> keycloak : identifiant, puis passkey, code par e-mail\nou mot de passe
+keycloak --> front : retour sur /animateur/{jeton}, session ouverte
 
 front -> session : GET /api/espace-animateur/{jeton}
-note right of session : sans cookie valide : 401.\nUn proxy d'accès qui atteste l'e-mail\n(mode remote user) en tient lieu.
-session -> espace : espace()
-espace --> front : plan publié de la personne\n(vide avant toute publication)
+session -> jeton : resoudreOuAborter(contexte)
+session -> oidc : trustedEmail()
+note right of oidc : rôle de realm « animateur »\net adresse VÉRIFIÉE ; un compte\ndésactivé dans l'application n'a plus rien
+alt adresse de la session = adresse de la fiche
+  session -> portee : markIdentityProven()
+  note right of portee : c'est cette preuve, pas le jeton,\nqui fait nommer l'animateur\ndans l'historique
+  session -> espace : espace()
+  espace --> front : plan publié de la personne\n(vide avant toute publication)
+else lien d'un collègue, ou fiche sans adresse
+  session --> front : 401 : ce compte n'ouvre pas cet espace
+end
 
 animateur -> front : « J'ai bien reçu mon planning »
 front -> espace : POST /api/espace-animateur/{jeton}/confirmation
