@@ -30,8 +30,8 @@ class RefusMetierMcpToolsTest {
     JourneeTypeMcpTools journeeTypeTools;
 
     @Test
-    void uneDateAuMauvaisFormatDitLeFormatAttendu() {
-        assertThatThrownBy(() -> creneauTools.creer_creneau("18/07/2026", "09:00", "12:00", null, null))
+    void aDateInTheWrongFormatStatesTheExpectedFormat() {
+        assertThatThrownBy(() -> creneauTools.createCreneau("18/07/2026", "09:00", "12:00", null, null))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("18/07/2026")
@@ -39,8 +39,8 @@ class RefusMetierMcpToolsTest {
     }
 
     @Test
-    void uneRecurrenceSansFenetreDonneUnExemple() {
-        assertThatThrownBy(() -> creneauTools.creer_creneaux_recurrents("", null, null, null, null, null, null, null))
+    void aRecurrenceWithoutAWindowGivesAnExample() {
+        assertThatThrownBy(() -> creneauTools.createRecurringCreneaux("", null, null, null, null, null, null, null))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("fenetres")
@@ -48,16 +48,16 @@ class RefusMetierMcpToolsTest {
     }
 
     @Test
-    void uneVacationIllisibleEstCitee() {
-        assertThatThrownBy(() -> journeeTypeTools.definir_journee_type("Jour normal", "neuf heures", null))
+    void anUnreadableVacationIsQuoted() {
+        assertThatThrownBy(() -> journeeTypeTools.defineJourneeType("Jour normal", "neuf heures", null))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("neuf heures");
     }
 
     @Test
-    void uneEditionInconnueEnumereLesEditions() {
-        assertThatThrownBy(() -> creneauTools.lister_creneaux("edition-qui-nexiste-pas"))
+    void anUnknownEditionListsTheEditions() {
+        assertThatThrownBy(() -> creneauTools.listCreneaux("edition-qui-nexiste-pas"))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("lister_editions");

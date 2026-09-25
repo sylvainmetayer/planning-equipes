@@ -53,8 +53,12 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
 
     static final String PRINCIPAL = "mcp";
 
+    private final ConfigMcp config;
+
     @Inject
-    ConfigMcp config;
+    McpApiKeyAuthenticationMechanism(ConfigMcp config) {
+        this.config = config;
+    }
 
     @Override
     public Uni<SecurityIdentity> authenticate(RoutingContext context, IdentityProviderManager identityProviderManager) {

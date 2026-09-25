@@ -31,11 +31,15 @@ import java.lang.reflect.Parameter;
 @Priority(Interceptor.Priority.APPLICATION)
 public class EditionCibleeInterceptor {
 
-    @Inject
-    McpEditions editions;
+    private final McpEditions editions;
+
+    private final EditionContext editionContext;
 
     @Inject
-    EditionContext editionContext;
+    EditionCibleeInterceptor(McpEditions editions, EditionContext editionContext) {
+        this.editions = editions;
+        this.editionContext = editionContext;
+    }
 
     @AroundInvoke
     Object dansEditionCiblee(InvocationContext context) throws Exception {

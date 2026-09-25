@@ -37,10 +37,18 @@ import java.util.List;
 @ApplicationScoped
 public class ConsigneMcpTools {
 
+    /** Argument names, as a refusal quotes them back to the caller. */
+    private static final String ARG_FERMETURE_DEBUT = "fermetureDebut";
+
+    private final ConsigneService consignes;
+
     @Inject
-    ConsigneService consignes;
+    ConsigneMcpTools(ConsigneService consignes) {
+        this.consignes = consignes;
+    }
 
     @Tool(
+            name = "lister_consignes",
             description = "Liste les consignes de l'édition — par date, la bande horaire fermée pour tous les stands, "
                     + "le motif, les fenêtres de compensation et les stands rouverts — et les préréglages "
                     + "(« Plan canicule ») dont elles se posent.",
@@ -50,7 +58,7 @@ public class ConsigneMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    ConsignesView lister_consignes(
+    ConsignesView listConsignes(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         ConsigneService.EtatConsignes etat = consignes.etat();
         return new ConsignesView(
@@ -60,6 +68,7 @@ public class ConsigneMcpTools {
     }
 
     @Tool(
+            name = "consulter_preselection_consigne",
             description = "Les stands lus contre une bande fermée sur une date, sans rien écrire : ce que la bande "
                     + "prend à chacun (minutes perdues), l'effectif hérité, ceux proposés cochés pour rouvrir, et ceux "
                     + "écartés parce qu'ils ont posé leurs horaires à la main ce jour-là.",
@@ -69,17 +78,20 @@ public class ConsigneMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    Preselection consulter_preselection_consigne(
+    Preselection getConsignePreselection(
             @ToolArg(description = "Date (AAAA-MM-JJ)") String date,
             @ToolArg(description = "Début de la bande fermée pour tous (HH:MM)") String fermetureDebut,
             @ToolArg(description = "Fin de la bande (HH:MM) ; omise = jusqu'à minuit", required = false)
                     String fermetureFin,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return consignes.preselection(
-                McpArgs.date(date, "date"), McpArgs.heure(fermetureDebut, "fermetureDebut"), timeOrNull(fermetureFin));
+                McpArgs.date(date, "date"),
+                McpArgs.heure(fermetureDebut, ARG_FERMETURE_DEBUT),
+                timeOrNull(fermetureFin));
     }
 
     @Tool(
+            name = "simuler_consigne",
             description = "Simule une consigne sans rien écrire : par jour, sièges et minutes avant et après, "
                     + "créneaux à ajouter ou à retirer, vacations qui perdent leurs sièges, stands entrants et "
                     + "sortants, mineurs exclus des fenêtres ajoutées, validation de relecture retirée, verrous et "
@@ -90,7 +102,7 @@ public class ConsigneMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    List<ApercuJour> simuler_consigne(
+    List<ApercuJour> simulateConsigne(
             @ToolArg(description = "Dates concernées (AAAA-MM-JJ), séparées par des virgules") String dates,
             @ToolArg(description = "Début de la bande fermée pour tous (HH:MM)") String fermetureDebut,
             @ToolArg(description = "Fin de la bande (HH:MM) ; omise = jusqu'à minuit", required = false)
@@ -143,6 +155,7 @@ public class ConsigneMcpTools {
     }
 
     @Tool(
+            name = "appliquer_consigne",
             description = "Pose une consigne sur une ou plusieurs dates à venir — ou remplace celle qu'une date porte "
                     + "déjà : ferme la bande pour tous les stands, rouvre les stands nommés sur leurs fenêtres, ajoute "
                     + "à la grille les créneaux que ces fenêtres exigent. Rien n'est supprimé de la grille nominale. "
@@ -154,7 +167,7 @@ public class ConsigneMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    List<ApercuJour> appliquer_consigne(
+    List<ApercuJour> applyConsigne(
             @ToolArg(description = "Dates concernées (AAAA-MM-JJ), séparées par des virgules") String dates,
             @ToolArg(description = "Début de la bande fermée pour tous (HH:MM)") String fermetureDebut,
             @ToolArg(description = "Fin de la bande (HH:MM) ; omise = jusqu'à minuit", required = false)
@@ -207,6 +220,7 @@ public class ConsigneMcpTools {
     }
 
     @Tool(
+            name = "simuler_levee_consigne",
             description = "Simule la levée d'une consigne sans rien écrire : par date, les créneaux ajoutés qui "
                     + "seraient retirés avec leurs sièges, et combien de personnes y sont assises.",
             annotations =
@@ -215,13 +229,14 @@ public class ConsigneMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    List<ApercuLevee> simuler_levee_consigne(
+    List<ApercuLevee> simulateConsigneLift(
             @ToolArg(description = "Dates à lever (AAAA-MM-JJ), séparées par des virgules") String dates,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return consignes.apercuLevee(dates(dates));
     }
 
     @Tool(
+            name = "lever_consigne",
             description = "Lève la consigne des dates indiquées, qui doivent être à venir : les stands retrouvent "
                     + "leurs horaires, les créneaux que la consigne avait ajoutés sont retirés avec leurs sièges, la "
                     + "validation de relecture des journées est retirée. Un jour déjà travaillé garde la consigne qui "
@@ -233,7 +248,7 @@ public class ConsigneMcpTools {
                             destructiveHint = true,
                             idempotentHint = false,
                             openWorldHint = false))
-    LeveeResult lever_consigne(
+    LeveeResult liftConsigne(
             @ToolArg(description = "Dates à lever (AAAA-MM-JJ), séparées par des virgules") String dates,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         List<LocalDate> levees = dates(dates);
@@ -242,6 +257,7 @@ public class ConsigneMcpTools {
     }
 
     @Tool(
+            name = "definir_prereglage_consigne",
             description = "Crée ou remplace un préréglage de consigne (« Plan canicule : 12h-18h fermé, soir "
                     + "18h-22h ») : la bande, le motif et les fenêtres de compensation par défaut, mémorisés sur "
                     + "l'édition et copiés à sa duplication. Validé à froid, sans rien poser.",
@@ -251,7 +267,7 @@ public class ConsigneMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    PrereglageConsigne definir_prereglage_consigne(
+    PrereglageConsigne defineConsignePreset(
             @ToolArg(description = "Nom du préréglage") String nom,
             @ToolArg(description = "Début de la bande fermée pour tous (HH:MM)") String fermetureDebut,
             @ToolArg(description = "Fin de la bande (HH:MM) ; omise = jusqu'à minuit", required = false)
@@ -291,7 +307,7 @@ public class ConsigneMcpTools {
         return consignes.savePrereglage(new PrereglageConsigne(
                 id,
                 nom,
-                McpArgs.heure(fermetureDebut, "fermetureDebut"),
+                McpArgs.heure(fermetureDebut, ARG_FERMETURE_DEBUT),
                 endOrOpen(fermetureFin),
                 motif,
                 dayWindows(fenetres),
@@ -301,6 +317,7 @@ public class ConsigneMcpTools {
     }
 
     @Tool(
+            name = "supprimer_prereglage_consigne",
             description =
                     "Supprime un préréglage de consigne. Les consignes déjà posées avec lui restent telles quelles.",
             annotations =
@@ -309,7 +326,7 @@ public class ConsigneMcpTools {
                             destructiveHint = true,
                             idempotentHint = true,
                             openWorldHint = false))
-    SuppressionResult supprimer_prereglage_consigne(
+    SuppressionResult deleteConsignePreset(
             @ToolArg(description = "Id du préréglage") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         consignes.deletePrereglage(id);
@@ -329,7 +346,7 @@ public class ConsigneMcpTools {
             ConsigneEdition.RepasConsigne repas) {
         return new Demande(
                 dates(dates),
-                McpArgs.heure(fermetureDebut, "fermetureDebut"),
+                McpArgs.heure(fermetureDebut, ARG_FERMETURE_DEBUT),
                 endOrOpen(fermetureFin),
                 motif,
                 prereglage,
@@ -414,7 +431,7 @@ public class ConsigneMcpTools {
                 String valeur = reste.substring(etoile + 1).trim();
                 try {
                     effectif = Integer.valueOf(valeur);
-                } catch (NumberFormatException e) {
+                } catch (NumberFormatException _) {
                     throw new BusinessError.Invalid("Effectif illisible dans « " + entree + " » : " + valeur);
                 }
                 reste = reste.substring(0, etoile).trim();

@@ -26,13 +26,12 @@ class RefusMetierInterceptorTest {
     private final RefusMetierInterceptor interceptor = new RefusMetierInterceptor();
 
     @Test
-    void unRefusMetierRepartAvecSaPhrase() throws Exception {
-        Method outil = OutilsMcp.all().getFirst();
+    void aBusinessRefusalComesBackWithItsSentence() throws Exception {
+        InvocationContext refusal = contexte(OutilsMcp.all().getFirst(), () -> {
+            throw new BusinessError.Invalid("date : date invalide « 18/07/2026 », " + "format attendu AAAA-MM-JJ");
+        });
 
-        assertThatThrownBy(() -> interceptor.reportBusinessError(contexte(outil, () -> {
-                    throw new BusinessError.Invalid(
-                            "date : date invalide « 18/07/2026 », " + "format attendu AAAA-MM-JJ");
-                })))
+        assertThatThrownBy(() -> interceptor.reportBusinessError(refusal))
                 .isInstanceOf(ToolCallException.class)
                 .hasMessage("date : date invalide « 18/07/2026 », format attendu AAAA-MM-JJ")
                 .hasCauseInstanceOf(BusinessError.Invalid.class);
@@ -67,11 +66,12 @@ class RefusMetierInterceptorTest {
     }
 
     @Test
-    void unRefusSansPhraseNeRendPasUnContenuVide() throws Exception {
-        assertThatThrownBy(() ->
-                        interceptor.reportBusinessError(contexte(OutilsMcp.all().getFirst(), () -> {
-                            throw new BusinessError.Conflict(null);
-                        })))
+    void aRefusalWithoutASentenceDoesNotAnswerEmpty() throws Exception {
+        InvocationContext refusal = contexte(OutilsMcp.all().getFirst(), () -> {
+            throw new BusinessError.Conflict(null);
+        });
+
+        assertThatThrownBy(() -> interceptor.reportBusinessError(refusal))
                 .isInstanceOf(ToolCallException.class)
                 .hasMessage("Demande refusée.");
     }

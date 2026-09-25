@@ -33,10 +33,15 @@ import jakarta.inject.Inject;
 @ApplicationScoped
 public class SauvegardeMcpTools {
 
+    private final BackupService backupService;
+
     @Inject
-    BackupService backupService;
+    SauvegardeMcpTools(BackupService backupService) {
+        this.backupService = backupService;
+    }
 
     @Tool(
+            name = "etat_sauvegardes",
             description = "État de la sauvegarde nocturne, toutes éditions confondues : si elle est configurée, "
                     + "où elle écrit, sa périodicité, sa rétention, sa prochaine exécution, comment s'est passée la "
                     + "dernière et les fichiers présents. Les dumps eux-mêmes ne sont jamais servis : ils portent "
@@ -47,11 +52,12 @@ public class SauvegardeMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    BackupState etat_sauvegardes() {
+    BackupState backupState() {
         return backupService.state();
     }
 
     @Tool(
+            name = "modifier_sauvegardes",
             description = "Suspend ou relance la sauvegarde nocturne. C'est le seul réglage modifiable : la "
                     + "destination et la rétention sont des variables d'environnement, et la restauration est une "
                     + "opération d'infrastructure hors application.",
@@ -61,7 +67,7 @@ public class SauvegardeMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    BackupState modifier_sauvegardes(@ToolArg(description = "Sauvegarde nocturne active ou suspendue") boolean active) {
+    BackupState updateBackups(@ToolArg(description = "Sauvegarde nocturne active ou suspendue") boolean active) {
         return backupService.setActive(active);
     }
 }

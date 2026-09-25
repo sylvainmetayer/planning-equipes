@@ -30,16 +30,16 @@ class ScenarioMcpToolsTest {
     ScenarioMcpTools scenarioTools;
 
     @Test
-    void unYamlIllisibleRemonteUneErreurMetier() {
-        assertThatThrownBy(() -> scenarioTools.importer_scenario_yaml("festival: [pas fermé", null))
+    void anUnreadableYamlReportsABusinessError() {
+        assertThatThrownBy(() -> scenarioTools.importScenarioYaml("festival: [pas fermé", null))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("YAML invalide");
     }
 
     @Test
-    void unFichierVideRemonteUneErreurMetier() {
-        assertThatThrownBy(() -> scenarioTools.importer_scenario_yaml("", null))
+    void anEmptyFileReportsABusinessError() {
+        assertThatThrownBy(() -> scenarioTools.importScenarioYaml("", null))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Invalid.class);
     }
@@ -50,8 +50,8 @@ class ScenarioMcpToolsTest {
      * same door.
      */
     @Test
-    void validerUnYamlIllisibleRendLesErreursSansRienImporter() {
-        ScenarioMcpTools.ValidationResult resultat = scenarioTools.valider_scenario_yaml("festival: [pas fermé");
+    void validatingAnUnreadableYamlReturnsTheErrorsWithoutImportingAnything() {
+        ScenarioMcpTools.ValidationResult resultat = scenarioTools.validateScenarioYaml("festival: [pas fermé");
 
         assertThat(resultat.valide()).isFalse();
         assertThat(resultat.erreurs()).isNotEmpty();
@@ -64,8 +64,8 @@ class ScenarioMcpToolsTest {
      * scenario is added to the folder.
      */
     @Test
-    void listerLesScenariosRendDesNomsReimportables() {
-        assertThat(scenarioTools.lister_scenarios())
+    void listingTheScenariosReturnsReimportableNames() {
+        assertThat(scenarioTools.listScenarios())
                 .isNotEmpty()
                 .allSatisfy(nom -> assertThat(nom).matches(".+\\.ya?ml").doesNotContain("/"));
     }

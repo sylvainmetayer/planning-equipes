@@ -34,12 +34,17 @@ import java.util.NoSuchElementException;
 @ApplicationScoped
 public class ParametresMcpTools {
 
+    private final ReferenceDataService referenceDataService;
+
     @Inject
-    ReferenceDataService referenceDataService;
+    ParametresMcpTools(ReferenceDataService referenceDataService) {
+        this.referenceDataService = referenceDataService;
+    }
 
     /* ----------------------------- Legal parameters ------------------------- */
 
     @Tool(
+            name = "consulter_parametres_legaux",
             description = "Consulte les paramètres légaux appliqués par le solveur (durées maximales, pauses, repos).",
             annotations =
                     @Tool.Annotations(
@@ -47,12 +52,13 @@ public class ParametresMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    ParametresLegauxView consulter_parametres_legaux(
+    ParametresLegauxView getParametresLegaux(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return toView(referenceDataService.getParametresLegaux());
     }
 
     @Tool(
+            name = "modifier_parametres_legaux",
             description = "Modifie les paramètres légaux. Seuls les champs fournis sont modifiés. Les plafonds "
                     + "d'ordre public (48 h hebdomadaires pour un majeur, 35 h pour un mineur) sont refusés "
                     + "au-delà, et les planchers de pause (20 min pour un majeur, 30 pour un mineur) en deçà.",
@@ -63,7 +69,7 @@ public class ParametresMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     @WarnsWhileSolving
-    ParametresLegauxView modifier_parametres_legaux(
+    ParametresLegauxView updateParametresLegaux(
             @ToolArg(description = "Durée hebdomadaire maximale d'un majeur, en minutes", required = false)
                     Integer dureeHebdomadaireMaxMinutes,
             @ToolArg(description = "Durée hebdomadaire maximale d'un mineur, en minutes", required = false)
@@ -139,6 +145,7 @@ public class ParametresMcpTools {
     /* ---------------------------- Solver parameters ------------------------- */
 
     @Tool(
+            name = "consulter_parametres_solveur",
             description = "Consulte la durée de résolution par défaut du solveur, en secondes.",
             annotations =
                     @Tool.Annotations(
@@ -146,12 +153,13 @@ public class ParametresMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    ParametresSolveurView consulter_parametres_solveur(
+    ParametresSolveurView getParametresSolveur(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return toView(referenceDataService.getParametresSolveur());
     }
 
     @Tool(
+            name = "modifier_parametres_solveur",
             description =
                     "Modifie la durée de résolution par défaut du solveur, en secondes (valeur strictement positive).",
             annotations =
@@ -161,7 +169,7 @@ public class ParametresMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     @WarnsWhileSolving
-    ParametresSolveurView modifier_parametres_solveur(
+    ParametresSolveurView updateParametresSolveur(
             @ToolArg(description = "Durée de résolution par défaut, en secondes") int dureeResolutionSecondes,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         // Only the duration is tunable here; the rest of the parameters is kept as is.
@@ -173,6 +181,7 @@ public class ParametresMcpTools {
     /* ------------------------- Notification parameters ---------------------- */
 
     @Tool(
+            name = "consulter_parametres_notifications",
             description = "Consulte ce que les notifications planifiées ont le droit de faire sur l'édition : "
                     + "l'interrupteur, l'heure du rappel de la veille, le délai avant relance des animateurs qui n'ont "
                     + "pas confirmé, et l'ancienneté à partir de laquelle une demande d'échange sans réponse est "
@@ -183,12 +192,13 @@ public class ParametresMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    ParametresNotifications consulter_parametres_notifications(
+    ParametresNotifications getParametresNotifications(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return referenceDataService.getParametresNotifications();
     }
 
     @Tool(
+            name = "modifier_parametres_notifications",
             description = "Modifie les paramètres des notifications planifiées. Seuls les champs fournis sont "
                     + "modifiés. actives=true ARME DES ENVOIS DE COURRIELS automatiques nocturnes (rappel de la veille, "
                     + "relance des non-confirmés, alerte sur les échanges sans réponse) : cet outil n'envoie rien "
@@ -200,7 +210,7 @@ public class ParametresMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    ParametresNotifications modifier_parametres_notifications(
+    ParametresNotifications updateParametresNotifications(
             @ToolArg(description = "Notifications planifiées actives ou non", required = false) Boolean actives,
             @ToolArg(description = "Heure du rappel de la veille (HH:MM), au plus tard 23:00", required = false)
                     String heureRappelVeille,
@@ -224,6 +234,7 @@ public class ParametresMcpTools {
     /* -------------------------- Contraintes ad hoc -------------------------- */
 
     @Tool(
+            name = "lister_contraintes_ad_hoc",
             description = "Liste les contraintes ad hoc saisies au cas par cas (indisponibilité forcée, "
                     + "incompatibilité entre animateurs, affectation forcée, affinité entre animateurs) : des règles posées "
                     + "avant le calcul pour placer ou écarter quelqu'un, à distinguer des verrouillages qui figent après coup. "
@@ -234,7 +245,7 @@ public class ParametresMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    List<ContrainteAdHocView> lister_contraintes_ad_hoc(
+    List<ContrainteAdHocView> listContraintesAdHoc(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return referenceDataService.listContraintesAdHoc().stream()
                 .map(ParametresMcpTools::toView)
@@ -242,6 +253,7 @@ public class ParametresMcpTools {
     }
 
     @Tool(
+            name = "creer_contrainte_ad_hoc",
             description = "Crée une contrainte ad hoc. INDISPONIBILITE_FORCEE, INCOMPATIBILITE et "
                     + "AFFECTATION_FORCEE sont évaluées par le solveur au même niveau HARD que les contraintes légales ; "
                     + "AFFINITE est une récompense SOFT. INDISPONIBILITE_FORCEE : l'animateur ne peut pas être affecté "
@@ -256,7 +268,7 @@ public class ParametresMcpTools {
                             idempotentHint = false,
                             openWorldHint = false))
     @WarnsWhileSolving
-    WrittenContrainteAdHocView creer_contrainte_ad_hoc(
+    WrittenContrainteAdHocView createContrainteAdHoc(
             @ToolArg(description = "Id de la contrainte (unique)") String id,
             @ToolArg(description = "Type : INDISPONIBILITE_FORCEE, INCOMPATIBILITE, AFFECTATION_FORCEE ou AFFINITE")
                     String type,
@@ -298,6 +310,7 @@ public class ParametresMcpTools {
     }
 
     @Tool(
+            name = "supprimer_contrainte_ad_hoc",
             description = "Supprime une contrainte ad hoc.",
             annotations =
                     @Tool.Annotations(
@@ -306,7 +319,7 @@ public class ParametresMcpTools {
                             idempotentHint = false,
                             openWorldHint = false))
     @WarnsWhileSolving
-    SuppressionResult supprimer_contrainte_ad_hoc(
+    SuppressionResult deleteContrainteAdHoc(
             @ToolArg(description = "Id de la contrainte") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         referenceDataService.deleteContrainteAdHoc(id);

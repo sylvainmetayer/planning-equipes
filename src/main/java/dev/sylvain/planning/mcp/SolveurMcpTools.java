@@ -59,19 +59,28 @@ import java.util.function.Supplier;
 @ApplicationScoped
 public class SolveurMcpTools {
 
-    @Inject
-    SolverJobService solverJobService;
+    private final SolverJobService solverJobService;
+
+    private final PlanningPersistenceService persistenceService;
+
+    private final ConstraintAnalysisStore analysisStore;
+
+    private final ReferenceDataService referenceDataService;
 
     @Inject
-    PlanningPersistenceService persistenceService;
-
-    @Inject
-    ConstraintAnalysisStore analysisStore;
-
-    @Inject
-    ReferenceDataService referenceDataService;
+    SolveurMcpTools(
+            SolverJobService solverJobService,
+            PlanningPersistenceService persistenceService,
+            ConstraintAnalysisStore analysisStore,
+            ReferenceDataService referenceDataService) {
+        this.solverJobService = solverJobService;
+        this.persistenceService = persistenceService;
+        this.analysisStore = analysisStore;
+        this.referenceDataService = referenceDataService;
+    }
 
     @Tool(
+            name = "lancer_solveur",
             description = "Lance une résolution en tâche de fond à partir des données de référence persistées "
                     + "(stands, créneaux, animateurs). Renvoie l'id du job à interroger via statut_solveur. "
                     + "Avec enFile, la résolution attend son tour au lieu d'être refusée quand le solveur est occupé. "
@@ -83,7 +92,7 @@ public class SolveurMcpTools {
                             destructiveHint = true,
                             idempotentHint = false,
                             openWorldHint = false))
-    JobMcpView lancer_solveur(
+    JobMcpView startSolver(
             @ToolArg(description = "Durée max en secondes (défaut : configuration serveur)", required = false)
                     Long secondes,
             @ToolArg(description = "Attendre son tour si le solveur est occupé, au lieu d'échouer", required = false)
@@ -100,6 +109,7 @@ public class SolveurMcpTools {
     }
 
     @Tool(
+            name = "resoudre_incremental",
             description = "Relance une résolution partielle à partir du planning persisté : tout ce qu'un "
                     + "changement tardif n'a pas invalidé reste figé, seul le périmètre rouvert est recalculé — d'où un "
                     + "budget bien plus court qu'une résolution complète (60 s par défaut). Sans périmètre, seul ce que "
@@ -111,7 +121,7 @@ public class SolveurMcpTools {
                             destructiveHint = true,
                             idempotentHint = false,
                             openWorldHint = false))
-    JobMcpView resoudre_incremental(
+    JobMcpView solveIncremental(
             @ToolArg(description = "Ids d'animateurs dont tous les postes sont rouverts", required = false)
                     List<String> animateurIds,
             @ToolArg(description = "Jours (AAAA-MM-JJ) dont tous les postes sont rouverts", required = false)
@@ -158,6 +168,7 @@ public class SolveurMcpTools {
      * call it without asking.</p>
      */
     @Tool(
+            name = "diagnostiquer_plan",
             description = "Diagnostic du planning persisté : score global et score de chaque contrainte, nombre de "
                     + "correspondances, postes non pourvus, et la lecture du score en quelques phrases. Recalculé à la demande sur le plan en base, avec les "
                     + "contraintes et pondérations actives du moment — aucune résolution n'est lancée. Pour le détail "
@@ -168,7 +179,7 @@ public class SolveurMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    DiagnosticPlanView diagnostiquer_plan(
+    DiagnosticPlanView diagnosePlan(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         StoredAnalysis analyse = analysisStore.refreshFromPersistedPlan();
         if (analyse == null) {
@@ -192,6 +203,7 @@ public class SolveurMcpTools {
     }
 
     @Tool(
+            name = "arreter_solveur",
             description = "Arrête le job en cours (le solveur renvoie sa meilleure solution trouvée jusqu'ici). "
                     + "Sans id, arrête le job actif s'il y en a un.",
             annotations =
@@ -200,7 +212,7 @@ public class SolveurMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    JobMcpView arreter_solveur(@ToolArg(description = "Id du job à arrêter", required = false) String jobId) {
+    JobMcpView stopSolver(@ToolArg(description = "Id du job à arrêter", required = false) String jobId) {
         String id = jobId != null
                 ? jobId
                 : solverJobService
@@ -214,6 +226,7 @@ public class SolveurMcpTools {
     }
 
     @Tool(
+            name = "statut_solveur",
             description =
                     "Statut du job en cours, ou d'un job donné par son id. Sans id et sans job actif, indique qu'aucun solveur ne tourne.",
             annotations =
@@ -222,12 +235,13 @@ public class SolveurMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    JobMcpView statut_solveur(@ToolArg(description = "Id du job à interroger", required = false) String jobId) {
+    JobMcpView solverStatus(@ToolArg(description = "Id du job à interroger", required = false) String jobId) {
         Optional<SolverJob> job = jobId != null ? solverJobService.find(jobId) : solverJobService.findActive();
         return job.map(SolveurMcpTools::toView).orElse(null);
     }
 
     @Tool(
+            name = "lister_jobs",
             description = "Liste tous les jobs de résolution/analyse (en cours et terminés).",
             annotations =
                     @Tool.Annotations(
@@ -235,11 +249,12 @@ public class SolveurMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    List<JobMcpView> lister_jobs() {
+    List<JobMcpView> listJobs() {
         return solverJobService.list().stream().map(SolveurMcpTools::toView).toList();
     }
 
     @Tool(
+            name = "resultats_animateur",
             description =
                     "Résultats de planification (postes affectés) pour un animateur donné, à partir du dernier "
                             + "planning persisté en base. Ne renvoie que des ids de stand/créneau, jamais de données personnelles.",
@@ -249,7 +264,7 @@ public class SolveurMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    List<AffectationView> resultats_animateur(
+    List<AffectationView> animateurResults(
             @ToolArg(description = "Id de l'animateur") String animateurId,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         PlanningEvenement planning = persistenceService.loadPersistedPlanning();
@@ -264,6 +279,7 @@ public class SolveurMcpTools {
     }
 
     @Tool(
+            name = "supprimer_job",
             description = "Supprime un job terminé de l'historique. Un job encore en cours doit d'abord être arrêté.",
             annotations =
                     @Tool.Annotations(
@@ -271,7 +287,7 @@ public class SolveurMcpTools {
                             destructiveHint = true,
                             idempotentHint = false,
                             openWorldHint = false))
-    SuppressionResult supprimer_job(@ToolArg(description = "Id du job") String jobId) {
+    SuppressionResult deleteJob(@ToolArg(description = "Id du job") String jobId) {
         if (!solverJobService.forget(jobId)) {
             throw new NoSuchElementException("Job introuvable ou encore en cours : " + jobId);
         }
@@ -279,6 +295,7 @@ public class SolveurMcpTools {
     }
 
     @Tool(
+            name = "expliquer_echec_contraintes_dures",
             description = "Détaille les contraintes de niveau HARD encore violées lors de la dernière analyse "
                     + "(solve ou analyze), avec le message de chaque violation et les actions types qui la "
                     + "règlent (code, geste, explication). Liste vide si la dernière analyse est "
@@ -289,7 +306,7 @@ public class SolveurMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    List<ViolationHardView> expliquer_echec_contraintes_dures(
+    List<ViolationHardView> explainHardContraintesFailure(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         StoredAnalysis analysis = analysisStore.latest();
         if (analysis == null) {
@@ -322,7 +339,7 @@ public class SolveurMcpTools {
         try {
             HardMediumSoftScore parsed = HardMediumSoftScore.parseScore(score);
             return parsed.hardScore() < 0 || parsed.mediumScore() < 0 || parsed.softScore() < 0;
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException _) {
             return false;
         }
     }

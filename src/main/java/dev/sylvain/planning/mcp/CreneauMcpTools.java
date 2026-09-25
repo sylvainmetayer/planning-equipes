@@ -37,10 +37,21 @@ import java.util.NoSuchElementException;
 @ApplicationScoped
 public class CreneauMcpTools {
 
+    /** Argument names, as a refusal quotes them back to the caller. */
+    private static final String ARG_HEURE_DEBUT = "heureDebut";
+
+    private static final String ARG_DATE_DEBUT = "dateDebut";
+    private static final String ARG_DATE_FIN = "dateFin";
+
+    private final ReferenceDataService referenceDataService;
+
     @Inject
-    ReferenceDataService referenceDataService;
+    CreneauMcpTools(ReferenceDataService referenceDataService) {
+        this.referenceDataService = referenceDataService;
+    }
 
     @Tool(
+            name = "lister_creneaux",
             description = "Liste les créneaux de l'édition — ceux sur lesquels portera la prochaine résolution.",
             annotations =
                     @Tool.Annotations(
@@ -48,12 +59,13 @@ public class CreneauMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    List<CreneauView> lister_creneaux(
+    List<CreneauView> listCreneaux(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return creneauxCourants();
     }
 
     @Tool(
+            name = "creer_creneau",
             description = "Crée un créneau. Le numéro de jour n'est pas à fournir : il est recalculé pour toute "
                     + "l'édition à partir des dates.",
             annotations =
@@ -63,7 +75,7 @@ public class CreneauMcpTools {
                             idempotentHint = false,
                             openWorldHint = false))
     @WarnsWhileSolving
-    WrittenCreneauView creer_creneau(
+    WrittenCreneauView createCreneau(
             @ToolArg(description = "Date (AAAA-MM-JJ)") String date,
             @ToolArg(description = "Heure de début (HH:MM)") String heureDebut,
             @ToolArg(description = "Heure de fin (HH:MM)") String heureFin,
@@ -77,13 +89,14 @@ public class CreneauMcpTools {
                 null,
                 0,
                 McpArgs.date(date, "date"),
-                McpArgs.heure(heureDebut, "heureDebut"),
+                McpArgs.heure(heureDebut, ARG_HEURE_DEBUT),
                 McpArgs.heure(heureFin, "heureFin"));
         creneau.setCouverturePause(Boolean.TRUE.equals(couverturePause));
         return written(referenceDataService.writeCreneau(creneau));
     }
 
     @Tool(
+            name = "modifier_creneau",
             description = "Modifie un créneau. Seuls les champs fournis sont modifiés.",
             annotations =
                     @Tool.Annotations(
@@ -91,7 +104,7 @@ public class CreneauMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    WrittenCreneauView modifier_creneau(
+    WrittenCreneauView updateCreneau(
             @ToolArg(description = "Id du créneau") long id,
             @ToolArg(description = "Date (AAAA-MM-JJ)", required = false) String date,
             @ToolArg(description = "Heure de début (HH:MM)", required = false) String heureDebut,
@@ -115,7 +128,7 @@ public class CreneauMcpTools {
             creneau.setDate(McpArgs.date(date, "date"));
         }
         if (heureDebut != null) {
-            creneau.setHeureDebut(McpArgs.heure(heureDebut, "heureDebut"));
+            creneau.setHeureDebut(McpArgs.heure(heureDebut, ARG_HEURE_DEBUT));
         }
         if (heureFin != null) {
             creneau.setHeureFin(McpArgs.heure(heureFin, "heureFin"));
@@ -124,6 +137,7 @@ public class CreneauMcpTools {
     }
 
     @Tool(
+            name = "supprimer_creneau",
             description = "Supprime un créneau.",
             annotations =
                     @Tool.Annotations(
@@ -131,7 +145,7 @@ public class CreneauMcpTools {
                             destructiveHint = true,
                             idempotentHint = false,
                             openWorldHint = false))
-    SuppressionResult supprimer_creneau(
+    SuppressionResult deleteCreneau(
             @ToolArg(description = "Id du créneau") long id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         referenceDataService.deleteCreneau(id);
@@ -141,6 +155,7 @@ public class CreneauMcpTools {
     /* ----------------------------- Grid: checks ------------------------------ */
 
     @Tool(
+            name = "diagnostiquer_grille_creneaux",
             description = "Décrit la grille de créneaux en place : combien de vacations, sur quelles dates, avec "
                     + "quelle durée médiane, et combien sont des relais repas (effectif divisé par deux). Le premier "
                     + "appel utile pour découvrir une édition, avant de créer des créneaux ou de lancer "
@@ -151,12 +166,13 @@ public class CreneauMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    DiagnosticGrille diagnostiquer_grille_creneaux(
+    DiagnosticGrille diagnoseCreneauGrid(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return referenceDataService.diagnoseGrille();
     }
 
     @Tool(
+            name = "valider_creneaux",
             description = "Contrôle la cohérence de la grille de créneaux actuelle et signale ce qui cloche : "
                     + "doublons, trous dans une journée, vacations plus longues que le maximum légal, dates isolées, "
                     + "relais repas hors fenêtre, stands que personne ne pourra armer, et sous-effectif. Deux créneaux "
@@ -167,7 +183,7 @@ public class CreneauMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    RapportGrille valider_creneaux(
+    RapportGrille validateCreneaux(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return referenceDataService.controlerGrille();
     }
@@ -175,6 +191,7 @@ public class CreneauMcpTools {
     /* ----------------------------- Grid: recurrence -------------------------- */
 
     @Tool(
+            name = "previsualiser_creneaux_recurrents",
             description = "Prévisualise les créneaux qu'une règle récurrente produirait, et contrôle la grille qui "
                     + "en résulterait — sans RIEN écrire. À utiliser systématiquement avant creer_creneaux_recurrents : "
                     + "une règle qui se trompe d'une heure crée des dizaines de lignes d'un coup. "
@@ -190,7 +207,7 @@ public class CreneauMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    PrevisualisationRecurrence previsualiser_creneaux_recurrents(
+    PrevisualisationRecurrence previewRecurringCreneaux(
             @ToolArg(description = "Fenêtres, ex. « 09:00-12:00,14:00-18:00 »") String fenetres,
             @ToolArg(description = "Portée : TOUS, JOURS_SEMAINE, PLAGE ou DATES", required = false) String jours,
             @ToolArg(description = "Début de la plage (AAAA-MM-JJ), bornes incluses", required = false)
@@ -211,6 +228,7 @@ public class CreneauMcpTools {
     }
 
     @Tool(
+            name = "creer_creneaux_recurrents",
             description = "Crée les créneaux d'une règle récurrente et renvoie le contrôle de cohérence de la "
                     + "grille obtenue. Mêmes arguments que previsualiser_creneaux_recurrents, qu'il faut avoir appelé "
                     + "d'abord. Les créneaux existants ne sont pas touchés : la règle AJOUTE. Pour repartir de zéro, "
@@ -221,7 +239,7 @@ public class CreneauMcpTools {
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = false))
-    PrevisualisationRecurrence creer_creneaux_recurrents(
+    PrevisualisationRecurrence createRecurringCreneaux(
             @ToolArg(description = "Fenêtres, ex. « 09:00-12:00,14:00-18:00 »") String fenetres,
             @ToolArg(description = "Portée : TOUS, JOURS_SEMAINE, PLAGE ou DATES", required = false) String jours,
             @ToolArg(description = "Début de la plage (AAAA-MM-JJ), bornes incluses", required = false)
@@ -244,6 +262,7 @@ public class CreneauMcpTools {
     /* ------------------------ Grid: derived from the stands ------------------------ */
 
     @Tool(
+            name = "previsualiser_derivation_creneaux",
             description = "Prévisualise la grille de créneaux que les horaires des stands impliquent : chaque heure "
                     + "où un stand ouvre ou ferme est une coupure, chaque tranche entre deux coupures où au moins un stand "
                     + "est ouvert devient un créneau — sans RIEN écrire. À utiliser quand les horaires des stands existent "
@@ -256,7 +275,7 @@ public class CreneauMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    RapportDerivationMcp previsualiser_derivation_creneaux(
+    RapportDerivationMcp previewCreneauDerivation(
             @ToolArg(description = "Première date (AAAA-MM-JJ)") String dateDebut,
             @ToolArg(description = "Dernière date (AAAA-MM-JJ), incluse") String dateFin,
             @ToolArg(description = "Heure de fermeture des fenêtres ouvertes (HH:MM, 00:00 = minuit)")
@@ -278,6 +297,7 @@ public class CreneauMcpTools {
     }
 
     @Tool(
+            name = "generer_creneaux_depuis_stands",
             description = "Écrit la grille de créneaux dérivée des horaires des stands — mêmes arguments que "
                     + "previsualiser_derivation_creneaux, qu'il faut avoir appelé d'abord. Par défaut les créneaux "
                     + "s'AJOUTENT à la grille ; remplacer=true remplace toute la grille et EFFACE le planning "
@@ -288,7 +308,7 @@ public class CreneauMcpTools {
                             destructiveHint = true,
                             idempotentHint = false,
                             openWorldHint = false))
-    RapportDerivationMcp generer_creneaux_depuis_stands(
+    RapportDerivationMcp generateCreneauxFromStands(
             @ToolArg(description = "Première date (AAAA-MM-JJ)") String dateDebut,
             @ToolArg(description = "Dernière date (AAAA-MM-JJ), incluse") String dateFin,
             @ToolArg(description = "Heure de fermeture des fenêtres ouvertes (HH:MM, 00:00 = minuit)")
@@ -309,8 +329,8 @@ public class CreneauMcpTools {
     private static GrilleDepuisFenetres.Parametres parametresDerivation(
             String dateDebut, String dateFin, String heureFermeture, Integer dureeMinimaleMinutes) {
         return new GrilleDepuisFenetres.Parametres(
-                McpArgs.date(dateDebut, "dateDebut"),
-                McpArgs.date(dateFin, "dateFin"),
+                McpArgs.date(dateDebut, ARG_DATE_DEBUT),
+                McpArgs.date(dateFin, ARG_DATE_FIN),
                 McpArgs.heure(heureFermeture, "heureFermeture"),
                 dureeMinimaleMinutes == null ? GrilleDepuisFenetres.DUREE_MINIMALE_PAR_DEFAUT : dureeMinimaleMinutes);
     }
@@ -326,6 +346,7 @@ public class CreneauMcpTools {
     }
 
     @Tool(
+            name = "supprimer_creneaux",
             description = "Supprime en une fois les créneaux que les filtres désignent — l'inverse de "
                     + "creer_creneaux_recurrents, pour reprendre une règle qui s'est trompée. DESTRUCTIF. Au moins un "
                     + "filtre est exigé ; pour vider toute la grille, passer explicitement tous=true.",
@@ -335,7 +356,7 @@ public class CreneauMcpTools {
                             destructiveHint = true,
                             idempotentHint = false,
                             openWorldHint = false))
-    BulkDeleteResult supprimer_creneaux(
+    BulkDeleteResult deleteCreneaux(
             @ToolArg(description = "Ne supprimer qu'à partir de cette date (AAAA-MM-JJ)", required = false)
                     String dateDebut,
             @ToolArg(description = "Ne supprimer que jusqu'à cette date (AAAA-MM-JJ)", required = false) String dateFin,
@@ -347,9 +368,9 @@ public class CreneauMcpTools {
                             required = false)
                     Boolean all,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        LocalDate debut = McpArgs.date(dateDebut, "dateDebut");
-        LocalDate fin = McpArgs.date(dateFin, "dateFin");
-        LocalTime heure = McpArgs.heure(heureDebut, "heureDebut");
+        LocalDate debut = McpArgs.date(dateDebut, ARG_DATE_DEBUT);
+        LocalDate fin = McpArgs.date(dateFin, ARG_DATE_FIN);
+        LocalTime heure = McpArgs.heure(heureDebut, ARG_HEURE_DEBUT);
         boolean toutSupprimer = Boolean.TRUE.equals(all);
         if (!toutSupprimer && debut == null && fin == null && heure == null) {
             throw new BusinessError.Invalid("Aucun filtre fourni : préciser dateDebut, dateFin ou heureDebut, "
@@ -386,8 +407,8 @@ public class CreneauMcpTools {
             String fenetres) {
         return new RegleRecurrence(
                 jours == null ? TypeJoursHoraire.TOUS : McpArgs.enumeration(TypeJoursHoraire.class, jours, "jours"),
-                McpArgs.date(dateDebut, "dateDebut"),
-                McpArgs.date(dateFin, "dateFin"),
+                McpArgs.date(dateDebut, ARG_DATE_DEBUT),
+                McpArgs.date(dateFin, ARG_DATE_FIN),
                 McpArgs.joursSemaine(joursSemaine, "joursSemaine"),
                 McpArgs.dates(dates, "dates"),
                 McpArgs.dates(exclusions, "exclusions"),

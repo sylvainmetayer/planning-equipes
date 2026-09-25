@@ -47,13 +47,18 @@ public class InstantaneMcpTools {
      */
     static final int LIMITE_AFFECTATIONS_DEFAUT = 200;
 
-    @Inject
-    PlanSnapshotService snapshotService;
+    private final PlanSnapshotService snapshotService;
+
+    private final SnapshotComparisonService comparaisonService;
 
     @Inject
-    SnapshotComparisonService comparaisonService;
+    InstantaneMcpTools(PlanSnapshotService snapshotService, SnapshotComparisonService comparaisonService) {
+        this.snapshotService = snapshotService;
+        this.comparaisonService = comparaisonService;
+    }
 
     @Tool(
+            name = "lister_instantanes",
             description = "Liste les instantanés du planning de l'édition, du plus récent au plus ancien : "
                     + "libellé, score, nombre d'affectations et KPI au moment de la capture. Ne renvoie pas leur contenu "
                     + "(voir consulter_instantane).",
@@ -63,12 +68,13 @@ public class InstantaneMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    List<InstantaneView> lister_instantanes(
+    List<InstantaneView> listSnapshots(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return snapshotService.list().stream().map(InstantaneMcpTools::toView).toList();
     }
 
     @Tool(
+            name = "consulter_instantane",
             description = "Contenu d'un instantané : ses métadonnées et ses affectations, filtrables par stand ou "
                     + "par animateur. Ne renvoie que des ids, jamais de données personnelles. La liste est plafonnée : "
                     + "affectationsTotal dit combien il en contient réellement.",
@@ -78,7 +84,7 @@ public class InstantaneMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    InstantaneDetailView consulter_instantane(
+    InstantaneDetailView getSnapshot(
             @ToolArg(description = "Id de l'instantané") long id,
             @ToolArg(description = "Id de stand pour filtrer", required = false) String standId,
             @ToolArg(description = "Id d'animateur pour filtrer", required = false) String animateurId,
@@ -101,6 +107,7 @@ public class InstantaneMcpTools {
     }
 
     @Tool(
+            name = "capturer_instantane",
             description =
                     "Capture le planning persisté dans un nouvel instantané, pour pouvoir y revenir. "
                             + "Échoue s'il n'y a aucun planning persisté : un instantané vide ne serait qu'un piège à restaurer.",
@@ -110,7 +117,7 @@ public class InstantaneMcpTools {
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = false))
-    InstantaneView capturer_instantane(
+    InstantaneView captureSnapshot(
             @ToolArg(description = "Libellé de l'instantané", required = false) String libelle,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         String nom = libelle == null || libelle.isBlank() ? "Instantané" : libelle.trim();
@@ -128,6 +135,7 @@ public class InstantaneMcpTools {
      * says nothing was restored.
      */
     @Tool(
+            name = "restaurer_instantane",
             description = "Restaure un instantané à la place du planning courant. Refusé si l'instantané référence "
                     + "des stands, créneaux ou animateurs qui n'existent plus, ou si une résolution est en cours sur "
                     + "l'édition (elle écraserait le plan restauré) : rien n'est alors écrit. Refusé aussi si le "
@@ -140,7 +148,7 @@ public class InstantaneMcpTools {
                             destructiveHint = true,
                             idempotentHint = true,
                             openWorldHint = false))
-    RestaurationView restaurer_instantane(
+    RestaurationView restoreSnapshot(
             @ToolArg(description = "Id de l'instantané") long id,
             @ToolArg(
                             description = "Restaurer même si l'instantané est périmé (référentiel modifié depuis la "
@@ -176,6 +184,7 @@ public class InstantaneMcpTools {
     }
 
     @Tool(
+            name = "supprimer_instantane",
             description = "Supprime un instantané. Le planning courant n'est pas touché. La dernière"
                     + " publication est refusée : c'est le plan que les animateurs ont reçu. Les"
                     + " publications qu'elle a remplacées se suppriment normalement.",
@@ -185,7 +194,7 @@ public class InstantaneMcpTools {
                             destructiveHint = true,
                             idempotentHint = false,
                             openWorldHint = false))
-    SuppressionResult supprimer_instantane(
+    SuppressionResult deleteSnapshot(
             @ToolArg(description = "Id de l'instantané") long id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         if (!snapshotService.delete(id)) {
@@ -201,6 +210,7 @@ public class InstantaneMcpTools {
      * which edition {@code courant} designates.
      */
     @Tool(
+            name = "comparer_instantanes",
             description = "Compare deux plannings, chacun désigné par un id d'instantané ou par « courant » pour le "
                     + "planning persisté. Ne relance aucune résolution et ne recalcule aucun score : lit les mesures déjà "
                     + "prises. Les deux côtés peuvent appartenir à des éditions différentes.",
@@ -210,7 +220,7 @@ public class InstantaneMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    ComparaisonSnapshots comparer_instantanes(
+    ComparaisonSnapshots compareSnapshots(
             @ToolArg(description = "Côté de référence : id d'instantané ou « courant »") String base,
             @ToolArg(description = "Côté comparé : id d'instantané ou « courant »") String variante,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {

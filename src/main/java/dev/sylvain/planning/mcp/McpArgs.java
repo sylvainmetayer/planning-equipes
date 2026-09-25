@@ -35,7 +35,7 @@ final class McpArgs {
         }
         try {
             return LocalDate.parse(value.trim());
-        } catch (DateTimeParseException e) {
+        } catch (DateTimeParseException _) {
             throw new BusinessError.Invalid(champ + " : date invalide « " + value + " », format attendu AAAA-MM-JJ");
         }
     }
@@ -47,7 +47,7 @@ final class McpArgs {
         }
         try {
             return Instant.parse(value.trim());
-        } catch (DateTimeParseException e) {
+        } catch (DateTimeParseException _) {
             throw new BusinessError.Invalid(champ + " : horodatage invalide « " + value
                     + " », format attendu ISO-8601 (ex. 2026-09-06T10:15:30.123456Z)");
         }
@@ -66,7 +66,7 @@ final class McpArgs {
         }
         try {
             return LocalTime.parse(value.trim());
-        } catch (DateTimeParseException e) {
+        } catch (DateTimeParseException _) {
             throw new BusinessError.Invalid(champ + " : heure invalide « " + value + " », format attendu HH:MM");
         }
     }
@@ -112,40 +112,43 @@ final class McpArgs {
         List<FenetreHoraire> result = new ArrayList<>();
         for (String morceau : fenetres.split(",")) {
             String fenetre = morceau.trim();
-            if (fenetre.isEmpty()) {
-                continue;
+            if (!fenetre.isEmpty()) {
+                result.add(fenetre(fenetre, finRequise, effectifAutorise));
             }
-            Integer effectif = null;
-            int arobase = fenetre.indexOf('@');
-            if (arobase >= 0) {
-                if (!effectifAutorise) {
-                    throw new BusinessError.Invalid("Fenêtre invalide « " + fenetre + " » : l'effectif « @N » ne "
-                            + "se déclare que sur les fenêtres d'ouverture d'un stand");
-                }
-                effectif = effectifFenetre(fenetre.substring(arobase + 1).trim(), fenetre);
-                fenetre = fenetre.substring(0, arobase).trim();
-            }
-            int separateur = fenetre.indexOf('-');
-            if (separateur < 0) {
-                throw new BusinessError.Invalid("Fenêtre invalide « " + fenetre + " » : attendu "
-                        + (finRequise ? "« HH:MM-HH:MM »" : "« HH:MM-HH:MM » ou « HH:MM- »"));
-            }
-            String debut = fenetre.substring(0, separateur).trim();
-            String fin = fenetre.substring(separateur + 1).trim();
-            if (fin.isEmpty() && finRequise) {
-                throw new BusinessError.Invalid("Fenêtre invalide « " + fenetre + " » : une heure de fin est "
-                        + "obligatoire ici. La forme ouverte « HH:MM- » n'existe que pour les horaires de stand, "
-                        + "qui se lisent au regard d'un créneau ; un créneau est lui-même l'amplitude du jour.");
-            }
-            result.add(new FenetreHoraire(
-                    heure(debut, "fenetres.heureDebut"),
-                    fin.isEmpty() ? null : heure(fin, "fenetres.heureFin"),
-                    effectif));
         }
         if (result.isEmpty()) {
             throw new BusinessError.Invalid("fenetres ne contient aucune fenêtre exploitable");
         }
         return result;
+    }
+
+    /** One non-blank window of the compact syntax, {@code "10:00-12:00"} with its optional {@code @N} suffix. */
+    private static FenetreHoraire fenetre(String saisie, boolean finRequise, boolean effectifAutorise) {
+        String fenetre = saisie;
+        Integer effectif = null;
+        int arobase = fenetre.indexOf('@');
+        if (arobase >= 0) {
+            if (!effectifAutorise) {
+                throw new BusinessError.Invalid("Fenêtre invalide « " + fenetre + " » : l'effectif « @N » ne "
+                        + "se déclare que sur les fenêtres d'ouverture d'un stand");
+            }
+            effectif = effectifFenetre(fenetre.substring(arobase + 1).trim(), fenetre);
+            fenetre = fenetre.substring(0, arobase).trim();
+        }
+        int separateur = fenetre.indexOf('-');
+        if (separateur < 0) {
+            throw new BusinessError.Invalid("Fenêtre invalide « " + fenetre + " » : attendu "
+                    + (finRequise ? "« HH:MM-HH:MM »" : "« HH:MM-HH:MM » ou « HH:MM- »"));
+        }
+        String debut = fenetre.substring(0, separateur).trim();
+        String fin = fenetre.substring(separateur + 1).trim();
+        if (fin.isEmpty() && finRequise) {
+            throw new BusinessError.Invalid("Fenêtre invalide « " + fenetre + " » : une heure de fin est "
+                    + "obligatoire ici. La forme ouverte « HH:MM- » n'existe que pour les horaires de stand, "
+                    + "qui se lisent au regard d'un créneau ; un créneau est lui-même l'amplitude du jour.");
+        }
+        return new FenetreHoraire(
+                heure(debut, "fenetres.heureDebut"), fin.isEmpty() ? null : heure(fin, "fenetres.heureFin"), effectif);
     }
 
     /** The {@code N} of a {@code @N} suffix: a whole number of at least one, as the stand validator requires. */
@@ -157,7 +160,7 @@ final class McpArgs {
                         + "moins 1 — omettez « @N » pour reprendre l'effectif minimum du stand");
             }
             return effectif;
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException _) {
             throw new BusinessError.Invalid("Fenêtre invalide « " + fenetre + " » : attendu « HH:MM-HH:MM@N » "
                     + "avec N entier, ex. « 14:00-20:00@4 »");
         }

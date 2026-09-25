@@ -402,6 +402,20 @@ désignée par l'argument `edition` qui compte —, ni d'une résolution seuleme
 **en file**, qui lira l'écriture à son tour. Les écrans n'en ont pas besoin :
 ils verrouillent ces saisies le temps du calcul.
 
+## Le nom publié est déclaré, pas déduit de la méthode
+
+Chaque outil et chaque prompt porte son nom publié en toutes lettres —
+`@Tool(name = "lister_stands", …)` sur une méthode Java `listStands` — et le
+nom de la méthode suit la règle du reste du code (anglais, camelCase, voir
+`AGENTS.md`). Le nom publié, lui, reste en français : c'est celui que
+l'assistant choisit, celui que le journal des actions enregistre
+(`CatalogueActions`) et celui que citent les prompts. Renommer la méthode ne
+doit jamais renommer l'outil pour les clients déjà branchés.
+
+`McpToolNamesTest` échoue sur un `@Tool` ou un `@Prompt` sans `name`
+explicite, et les tests structurels (hints, édition, écriture pendant une
+résolution, journal) lisent tous ce nom publié, jamais le nom Java.
+
 ## Chaque outil annonce ce qu'il fait aux données
 
 Les quatre *hints* de la spécification MCP sont déclarés sur **tous** les

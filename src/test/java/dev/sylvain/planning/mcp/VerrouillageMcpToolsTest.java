@@ -80,26 +80,24 @@ class VerrouillageMcpToolsTest {
     }
 
     @Test
-    void deverrouillerUnIdInconnuEstRefuseSansRienSupprimer() {
+    void unlockingAnUnknownIdIsRefusedWithoutDeletingAnything() {
         ReferentielFictif referentiel = new ReferentielFictif();
         referentiel.verrouillages.add(verrouillage("V1", TypeVerrouillage.JOUR));
-        VerrouillageMcpTools tools = new VerrouillageMcpTools();
-        tools.referenceDataService = referentiel;
+        VerrouillageMcpTools tools = new VerrouillageMcpTools(referentiel);
 
-        assertThatThrownBy(() -> tools.deverrouiller("V-inexistant", null))
+        assertThatThrownBy(() -> tools.unlock("V-inexistant", null))
                 .isInstanceOf(BusinessError.NotFound.class)
                 .hasMessageContaining("V-inexistant");
         assertThat(referentiel.supprimes).isEmpty();
     }
 
     @Test
-    void deverrouillerUnIdConnuLeSupprime() {
+    void unlockingAKnownIdDeletesIt() {
         ReferentielFictif referentiel = new ReferentielFictif();
         referentiel.verrouillages.add(verrouillage("V1", TypeVerrouillage.JOUR));
-        VerrouillageMcpTools tools = new VerrouillageMcpTools();
-        tools.referenceDataService = referentiel;
+        VerrouillageMcpTools tools = new VerrouillageMcpTools(referentiel);
 
-        SuppressionResult resultat = tools.deverrouiller("V1", null);
+        SuppressionResult resultat = tools.unlock("V1", null);
 
         assertThat(resultat.supprime()).isTrue();
         assertThat(referentiel.supprimes).containsExactly("V1");

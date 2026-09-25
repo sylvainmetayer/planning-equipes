@@ -65,13 +65,11 @@ class McpEditionsTest {
     }
 
     private static McpEditions editions(Edition... connues) {
-        McpEditions resolveur = new McpEditions();
-        resolveur.editionService = new EditionService() {
+        return new McpEditions(new EditionService() {
             @Override
             public List<Edition> listEditions() {
                 return List.of(connues);
             }
-        };
-        return resolveur;
+        });
     }
 }

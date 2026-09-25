@@ -47,7 +47,7 @@ final class AnonymisationViolations {
 
     /** One or more words (letters, marks, digits, dots, hyphens, apostrophes) directly followed by a parenthesised, space-free id. */
     private static final Pattern LIBELLE_ANIMATEUR = Pattern.compile(
-            "\\p{L}[\\p{L}\\p{M}\\p{N}.'’\\-]*(?:\\s+[\\p{L}\\p{N}][\\p{L}\\p{M}\\p{N}.'’\\-]*)*\\s*\\(([^()\\s]+)\\)");
+            "\\p{L}[\\p{L}\\p{M}\\p{N}.'’\\-]*(?:\\s+[\\p{L}\\p{N}][\\p{L}\\p{M}\\p{N}.'’\\-]*+)*+\\s*\\(([^()\\s]+)\\)");
 
     /** A constraint type, its optional id, then a parenthesised reason — one level of nested parentheses allowed. */
     private static final Pattern RAISON_CONTRAINTE = Pattern.compile("\\b("

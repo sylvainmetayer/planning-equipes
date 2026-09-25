@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.quarkiverse.mcp.server.Tool;
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -23,7 +22,7 @@ final class OutilsMcp {
 
     private OutilsMcp() {}
 
-    static List<Method> all() throws IOException, URISyntaxException {
+    static List<Method> all() throws URISyntaxException {
         File dossier = new File(OutilsMcp.class
                         .getProtectionDomain()
                         .getCodeSource()
@@ -43,7 +42,7 @@ final class OutilsMcp {
             Class<?> classe;
             try {
                 classe = Class.forName(nomClasse);
-            } catch (ClassNotFoundException | NoClassDefFoundError e) {
+            } catch (ClassNotFoundException | NoClassDefFoundError _) {
                 continue; // build-time generated companion class, not a tool holder
             }
             for (Method methode : classe.getDeclaredMethods()) {

@@ -68,108 +68,106 @@ class PlanificationMcpToolsTest {
     @AfterEach
     void clearEdition() throws InterruptedException {
         awaitSolverIdle();
-        scenarioTools.reinitialiser_donnees(null);
+        scenarioTools.resetData(null);
     }
 
     @Test
-    void capturerComparerPuisRestaurerUnPlanning() throws InterruptedException {
+    void captureCompareThenRestoreAPlanning() throws InterruptedException {
         InstantaneView capture = solveAndCapture();
         assertThat(capture.automatique()).isFalse();
-        assertThat(instantaneTools.lister_instantanes(null))
+        assertThat(instantaneTools.listSnapshots(null))
                 .extracting(InstantaneView::id)
                 .contains(capture.id());
 
-        var comparaison = instantaneTools.comparer_instantanes(String.valueOf(capture.id()), "courant", null);
+        var comparaison = instantaneTools.compareSnapshots(String.valueOf(capture.id()), "courant", null);
         assertThat(comparaison.base().snapshotId()).isEqualTo(capture.id());
         assertThat(comparaison.variante().snapshotId()).isNull();
         assertThat(comparaison.editionsDifferentes()).isFalse();
 
-        var restauration = instantaneTools.restaurer_instantane(capture.id(), null, null);
+        var restauration = instantaneTools.restoreSnapshot(capture.id(), null, null);
         assertThat(restauration.affectationsRestaurees()).isEqualTo(capture.nombreAffectations());
 
-        assertThat(instantaneTools.supprimer_instantane(capture.id(), null).supprime())
+        assertThat(instantaneTools.deleteSnapshot(capture.id(), null).supprime())
                 .isTrue();
     }
 
     @Test
-    void consulterUnInstantaneNeRenvoieQueDesIdentifiants() throws InterruptedException {
+    void readingASnapshotReturnsOnlyIds() throws InterruptedException {
         InstantaneView capture = solveAndCapture();
 
-        InstantaneDetailView detail = instantaneTools.consulter_instantane(capture.id(), null, null, 5, null);
+        InstantaneDetailView detail = instantaneTools.getSnapshot(capture.id(), null, null, 5, null);
 
         assertThat(detail.affectations()).hasSizeLessThanOrEqualTo(5);
         assertThat(detail.affectationsTotal()).isEqualTo(capture.nombreAffectations());
         assertThat(detail.affectations())
                 .allSatisfy(affectation -> assertThat(affectation.standId()).isNotBlank());
 
-        instantaneTools.supprimer_instantane(capture.id(), null);
+        instantaneTools.deleteSnapshot(capture.id(), null);
     }
 
     @Test
-    void verrouillerPuisDeverrouillerUnAnimateurDuPlanning() throws InterruptedException {
+    void lockThenUnlockAnAnimateurOfThePlanning() throws InterruptedException {
         solve();
-        String animateurId =
-                planningTools.lister_affectations(null, null, null, false, null, null).affectations().stream()
-                        .map(AffectationView::animateurId)
-                        .filter(id -> id != null)
-                        .findFirst()
-                        .orElseThrow(() -> new AssertionError("le solve n'a pourvu aucun poste"));
+        String animateurId = planningTools.listAffectations(null, null, null, false, null, null).affectations().stream()
+                .map(AffectationView::animateurId)
+                .filter(id -> id != null)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("le solve n'a pourvu aucun poste"));
 
         VerrouillageView pose = verrouillageTools
-                .verrouiller("ANIMATEUR", animateurId, null, null, null, "vérifié avec l'équipe", null)
+                .lock("ANIMATEUR", animateurId, null, null, null, "vérifié avec l'équipe", null)
                 .verrouillage();
 
         assertThat(pose.type()).isEqualTo("ANIMATEUR");
         assertThat(pose.animateurId()).isEqualTo(animateurId);
         assertThat(pose.id()).isNotBlank();
-        assertThat(verrouillageTools.lister_verrouillages(null))
+        assertThat(verrouillageTools.listVerrouillages(null))
                 .extracting(VerrouillageView::id)
                 .contains(pose.id());
 
-        assertThat(verrouillageTools.deverrouiller(pose.id(), null).supprime()).isTrue();
-        assertThat(verrouillageTools.lister_verrouillages(null))
+        assertThat(verrouillageTools.unlock(pose.id(), null).supprime()).isTrue();
+        assertThat(verrouillageTools.listVerrouillages(null))
                 .extracting(VerrouillageView::id)
                 .doesNotContain(pose.id());
     }
 
     @Test
-    void verrouillerUneCibleInconnueEstRefuse() {
-        assertThatThrownBy(() ->
-                        verrouillageTools.verrouiller("STAND", null, "STAND-QUI-NEXISTE-PAS", null, null, null, null))
+    void lockingAnUnknownTargetIsRefused() {
+        assertThatThrownBy(() -> verrouillageTools.lock("STAND", null, "STAND-QUI-NEXISTE-PAS", null, null, null, null))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("STAND-QUI-NEXISTE-PAS");
     }
 
     @Test
-    void unTypeDeVerrouillageInconnuEnumereLesTypesPossibles() {
-        assertThatThrownBy(() -> verrouillageTools.verrouiller("JOURNEE", null, null, null, "2026-08-15", null, null))
+    void anUnknownLockTypeListsThePossibleTypes() {
+        assertThatThrownBy(() -> verrouillageTools.lock("JOURNEE", null, null, null, "2026-08-15", null, null))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("ANIMATEUR_CRENEAU");
     }
 
     @Test
-    void capturerSansPlanningPersisteEstRefuse() throws InterruptedException {
+    void capturingWithoutAPersistedPlanningIsRefused() throws InterruptedException {
         awaitSolverIdle();
-        scenarioTools.reinitialiser_donnees(null);
+        scenarioTools.resetData(null);
 
-        assertThatThrownBy(() -> instantaneTools.capturer_instantane("Sur du vide", null))
+        assertThatThrownBy(() -> instantaneTools.captureSnapshot("Sur du vide", null))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Conflict.class)
                 .hasMessageContaining("résolution");
     }
 
     @Test
-    void restaurerUnInstantaneInconnuEstRefuse() {
-        assertThatThrownBy(() -> instantaneTools.restaurer_instantane(999_999L, null, null))
+    void restoringAnUnknownSnapshotIsRefused() {
+        assertThatThrownBy(() -> instantaneTools.restoreSnapshot(999_999L, null, null))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.NotFound.class);
     }
 
     private InstantaneView solveAndCapture() throws InterruptedException {
         solve();
-        InstantaneView capture = instantaneTools.capturer_instantane("Après le premier solve", null);
+        InstantaneView capture = instantaneTools.captureSnapshot("Après le premier solve", null);
         assertThat(capture.nombreAffectations()).isPositive();
         return capture;
     }
@@ -177,16 +175,16 @@ class PlanificationMcpToolsTest {
     /** Loads the sample scenario and solves it once, so a plan is persisted. */
     private void solve() throws InterruptedException {
         awaitSolverIdle();
-        scenarioTools.reinitialiser_donnees(null);
-        scenarioTools.importer_scenario("scenario.yml", null);
-        JobMcpView job = solveurTools.lancer_solveur(1L, null, null, null);
+        scenarioTools.resetData(null);
+        scenarioTools.importScenario("scenario.yml", null);
+        JobMcpView job = solveurTools.startSolver(1L, null, null, null);
         assertThat(awaitFinished(job.id()).status()).isEqualTo("COMPLETED");
-        assertThat(planningTools.etat_planning(null).affectationsPersistees()).isPositive();
+        assertThat(planningTools.planningState(null).affectationsPersistees()).isPositive();
     }
 
     private JobMcpView awaitFinished(String jobId) throws InterruptedException {
         for (int essai = 0; essai < MAX_POLLS; essai++) {
-            JobMcpView job = solveurTools.statut_solveur(jobId);
+            JobMcpView job = solveurTools.solverStatus(jobId);
             if (job != null && ETATS_TERMINAUX.contains(job.status())) {
                 return job;
             }

@@ -163,10 +163,11 @@ class LanguagePolicyStructuralTest {
      * but by a rule rather than by a list: see
      * {@link #constraintNames(String)}.</p>
      *
-     * <p>MCP tool names are out of scope by construction: they are declared
-     * package-private, so the method pattern never sees them. Renaming them is
-     * a lot of its own — the name of the tool <em>is</em> the name of the
-     * method, and what a French speaking assistant picks depends on it.</p>
+     * <p>MCP tools need no entry either: their published name is declared on
+     * the annotation ({@code @Tool(name = "lister_stands")}) and stays French,
+     * because what a French speaking assistant picks depends on it, while the
+     * Java method carries an English name ({@code listStands}) like any
+     * other.</p>
      */
     private static final Set<String> EXCEPTIONS_ASSUMEES =
             Set.of("EditionCibleDto", "PlanningServiceScenarioContinuTest", "assertScenarioContinuSplitWithoutHard");

@@ -45,7 +45,7 @@ edition -> editions : solve(edition)
 note right of editions : par id, puis par nom unique ;\ninconnue ou ambiguë : BusinessError.Invalid
 edition -> contexte : executeIn(editionId, proceed)
 contexte -> journal : journaliser(contexte)
-journal -> outils : lancer_solveur(secondes, enFile, reamorcage, edition)
+journal -> outils : startSolver(secondes, enFile, reamorcage, edition)
 outils -> jobs : submitSolveFromReferenceData(secondes, enFile, reamorcage)
 alt solveur occupé
   jobs --> outils : SolverBusyException

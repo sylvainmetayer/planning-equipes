@@ -48,12 +48,22 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class StandMcpTools {
 
+    /** Argument names, as a refusal quotes them back to the caller. */
+    private static final String ARG_NIVEAU_EFFORT = "niveauEffort";
+
+    private static final String ARG_MODIFIE_LE = "modifieLe";
+
+    private final ReferenceDataService referenceDataService;
+
     @Inject
-    ReferenceDataService referenceDataService;
+    StandMcpTools(ReferenceDataService referenceDataService) {
+        this.referenceDataService = referenceDataService;
+    }
 
     /* -------------------------------- Stands ------------------------------- */
 
     @Tool(
+            name = "lister_stands",
             description = "Liste les stands, avec leurs typologies proposées, effectifs requis, "
                     + "réserve majeurs/premium, niveau d'effort, emplacement, horaires récurrents et plages datées "
                     + "(fermetures/ouvertures) qui les surchargent. Sans limite, renvoie tous les stands ; total dit "
@@ -64,7 +74,7 @@ public class StandMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    StandsView lister_stands(
+    StandsView listStands(
             @ToolArg(description = "Nombre maximum de stands renvoyés (défaut : tous)", required = false)
                     Integer limite,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
@@ -78,6 +88,7 @@ public class StandMcpTools {
     }
 
     @Tool(
+            name = "consulter_stand",
             description = "Consulte un stand par son id.",
             annotations =
                     @Tool.Annotations(
@@ -85,13 +96,14 @@ public class StandMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    StandView consulter_stand(
+    StandView getStand(
             @ToolArg(description = "Id du stand") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return toView(findStand(id));
     }
 
     @Tool(
+            name = "creer_stand",
             description = "Crée un stand. Les typologies proposées doivent exister dans le référentiel des typologies.",
             annotations =
                     @Tool.Annotations(
@@ -100,7 +112,7 @@ public class StandMcpTools {
                             idempotentHint = false,
                             openWorldHint = false))
     @WarnsWhileSolving
-    WrittenStandView creer_stand(
+    WrittenStandView createStand(
             @ToolArg(description = "Id du stand (unique)") String id,
             @ToolArg(description = "Nom affiché") String nom,
             @ToolArg(description = "Ids de typologies de jeu proposées", required = false)
@@ -124,12 +136,13 @@ public class StandMcpTools {
         stand.setNiveauEffort(
                 niveauEffort == null
                         ? NiveauEffort.NORMAL
-                        : McpArgs.enumeration(NiveauEffort.class, niveauEffort, "niveauEffort"));
+                        : McpArgs.enumeration(NiveauEffort.class, niveauEffort, ARG_NIVEAU_EFFORT));
         stand.setEmplacement(emplacementId == null ? null : findEmplacement(emplacementId));
         return written(referenceDataService.writeStand(stand));
     }
 
     @Tool(
+            name = "creer_stand_complet",
             description = "Crée un stand ET tout ce dont il dépend en un seul appel : son emplacement, ses "
                     + "typologies, et ses horaires d'ouverture récurrents. Conçu pour la mise en place d'une édition, où "
                     + "créer un stand demande sinon quatre allers-retours — et où creer_stand échoue tant que les "
@@ -149,7 +162,7 @@ public class StandMcpTools {
                             idempotentHint = false,
                             openWorldHint = false))
     @WarnsWhileSolving
-    CreationStandComplet creer_stand_complet(
+    CreationStandComplet createCompleteStand(
             @ToolArg(description = "Id du stand (unique)") String id,
             @ToolArg(description = "Nom affiché") String nom,
             @ToolArg(description = "Ids de typologies de jeu proposées", required = false)
@@ -198,11 +211,14 @@ public class StandMcpTools {
         stand.setNiveauEffort(
                 niveauEffort == null
                         ? NiveauEffort.NORMAL
-                        : McpArgs.enumeration(NiveauEffort.class, niveauEffort, "niveauEffort"));
-        stand.setEmplacement(
-                emplacementACreer != null
-                        ? emplacementACreer
-                        : emplacementId == null ? null : findEmplacement(emplacementId));
+                        : McpArgs.enumeration(NiveauEffort.class, niveauEffort, ARG_NIVEAU_EFFORT));
+        if (emplacementACreer != null) {
+            stand.setEmplacement(emplacementACreer);
+        } else if (emplacementId != null) {
+            stand.setEmplacement(findEmplacement(emplacementId));
+        } else {
+            stand.setEmplacement(null);
+        }
         if (horaires != null && !horaires.isBlank()) {
             stand.getHoraires()
                     .add(horaireOuverture(
@@ -294,6 +310,7 @@ public class StandMcpTools {
     }
 
     @Tool(
+            name = "modifier_stand",
             description = "Modifie un stand. Seuls les champs fournis sont modifiés ; les fermetures et ouvertures "
                     + "se gèrent avec les outils dédiés.",
             annotations =
@@ -302,7 +319,7 @@ public class StandMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    WrittenStandView modifier_stand(
+    WrittenStandView updateStand(
             @ToolArg(description = "Id du stand") String id,
             @ToolArg(description = "Nom affiché", required = false) String nom,
             @ToolArg(description = "Ids de typologies proposées (remplace la liste existante)", required = false)
@@ -321,7 +338,7 @@ public class StandMcpTools {
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Stand stand = findStand(id);
         if (modifieLe != null) {
-            stand.setModifieLe(McpArgs.instant(modifieLe, "modifieLe"));
+            stand.setModifieLe(McpArgs.instant(modifieLe, ARG_MODIFIE_LE));
         }
         if (nom != null) {
             stand.setNom(nom);
@@ -342,7 +359,7 @@ public class StandMcpTools {
             stand.setPremium(premium);
         }
         if (niveauEffort != null) {
-            stand.setNiveauEffort(McpArgs.enumeration(NiveauEffort.class, niveauEffort, "niveauEffort"));
+            stand.setNiveauEffort(McpArgs.enumeration(NiveauEffort.class, niveauEffort, ARG_NIVEAU_EFFORT));
         }
         if (emplacementId != null) {
             stand.setEmplacement(findEmplacement(emplacementId));
@@ -351,6 +368,7 @@ public class StandMcpTools {
     }
 
     @Tool(
+            name = "supprimer_stand",
             description = "Supprime un stand. Emporte aussi les postes du planning enregistré qui "
                     + "étaient ouverts sur ce stand : contrairement à un animateur, un poste ne peut pas "
                     + "survivre à son stand. Refusé (409) tant qu'une résolution est en cours sur cette édition, sinon elle "
@@ -361,7 +379,7 @@ public class StandMcpTools {
                             destructiveHint = true,
                             idempotentHint = false,
                             openWorldHint = false))
-    SuppressionResult supprimer_stand(
+    SuppressionResult deleteStand(
             @ToolArg(description = "Id du stand") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         referenceDataService.deleteStand(id);
@@ -369,6 +387,7 @@ public class StandMcpTools {
     }
 
     @Tool(
+            name = "ajouter_fermeture_stand",
             description =
                     "Ajoute une fermeture (indisponibilité) datée sur un stand : le stand ne peut pas être armé "
                             + "entre ces heures ce jour-là. Une fenêtre ne peut pas chevaucher minuit — dans ce cas, en saisir deux. "
@@ -380,7 +399,7 @@ public class StandMcpTools {
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = false))
-    WrittenStandView ajouter_fermeture_stand(
+    WrittenStandView addStandClosure(
             @ToolArg(description = "Id du stand") String standId,
             @ToolArg(description = "Date (AAAA-MM-JJ)") String date,
             @ToolArg(description = "Heure de début (HH:MM)") String heureDebut,
@@ -400,6 +419,7 @@ public class StandMcpTools {
     }
 
     @Tool(
+            name = "ajouter_ouverture_stand",
             description =
                     "Ajoute une ouverture datée sur un stand : ce jour-là, le stand n'est armé QUE sur cette "
                             + "plage. Un même jour ne peut pas porter à la fois une fermeture et une ouverture. Omettre heureFin "
@@ -410,7 +430,7 @@ public class StandMcpTools {
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = false))
-    WrittenStandView ajouter_ouverture_stand(
+    WrittenStandView addStandOpening(
             @ToolArg(description = "Id du stand") String standId,
             @ToolArg(description = "Date (AAAA-MM-JJ)") String date,
             @ToolArg(description = "Heure de début (HH:MM)") String heureDebut,
@@ -441,6 +461,7 @@ public class StandMcpTools {
     }
 
     @Tool(
+            name = "effacer_plages_stand",
             description = "Retire toutes les fermetures et ouvertures d'un stand pour une date donnée. Les horaires "
                     + "récurrents ne sont pas touchés : la date redevient donc gouvernée par eux, s'il en existe.",
             annotations =
@@ -449,7 +470,7 @@ public class StandMcpTools {
                             destructiveHint = true,
                             idempotentHint = true,
                             openWorldHint = false))
-    WrittenStandView effacer_plages_stand(
+    WrittenStandView clearStandRanges(
             @ToolArg(description = "Id du stand") String standId,
             @ToolArg(description = "Date (AAAA-MM-JJ)") String date,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
@@ -461,6 +482,7 @@ public class StandMcpTools {
     }
 
     @Tool(
+            name = "ajouter_horaire_stand",
             description = "Ajoute un horaire récurrent sur un stand : une seule règle au lieu d'une plage datée par "
                     + "jour d'événement. mode=OUVERTURE veut dire « fermé sauf sur ces fenêtres », mode=FERMETURE « ouvert "
                     + "sauf sur ces fenêtres ». La portée jours vaut TOUS (tous les jours), JOURS_SEMAINE (avec "
@@ -474,7 +496,7 @@ public class StandMcpTools {
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = false))
-    WrittenStandView ajouter_horaire_stand(
+    WrittenStandView addStandHoraire(
             @ToolArg(description = "Id du stand") String standId,
             @ToolArg(description = "OUVERTURE ou FERMETURE") String mode,
             @ToolArg(
@@ -518,6 +540,7 @@ public class StandMcpTools {
     }
 
     @Tool(
+            name = "effacer_horaires_stand",
             description = "Retire tous les horaires récurrents d'un stand. Ses plages datées restent en place.",
             annotations =
                     @Tool.Annotations(
@@ -525,7 +548,7 @@ public class StandMcpTools {
                             destructiveHint = true,
                             idempotentHint = true,
                             openWorldHint = false))
-    WrittenStandView effacer_horaires_stand(
+    WrittenStandView clearStandHoraires(
             @ToolArg(description = "Id du stand") String standId,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Stand stand = findStand(standId);
@@ -534,6 +557,7 @@ public class StandMcpTools {
     }
 
     @Tool(
+            name = "compacter_horaires_stands",
             description = "Réécrit les plages datées saisies à la main en horaires récurrents équivalents, pour "
                     + "tous les stands de l'édition : c'est la façon dont un jeu de données antérieur aux règles les "
                     + "rattrape. appliquer=false (défaut) est une simulation qui décrit exactement ce qui serait fait, "
@@ -544,7 +568,7 @@ public class StandMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    HoraireCompaction.RapportCompactage compacter_horaires_stands(
+    HoraireCompaction.RapportCompactage compactStandHoraires(
             @ToolArg(description = "Écrire vraiment le résultat (défaut : simulation)", required = false)
                     Boolean appliquer,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
@@ -554,6 +578,7 @@ public class StandMcpTools {
     /* ----------------------------- Emplacements ---------------------------- */
 
     @Tool(
+            name = "lister_emplacements",
             description = "Liste les emplacements géographiques (utilisés pour limiter les déplacements entre stands).",
             annotations =
                     @Tool.Annotations(
@@ -561,7 +586,7 @@ public class StandMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    List<EmplacementView> lister_emplacements(
+    List<EmplacementView> listEmplacements(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return referenceDataService.listEmplacements().stream()
                 .map(StandMcpTools::toView)
@@ -569,6 +594,7 @@ public class StandMcpTools {
     }
 
     @Tool(
+            name = "creer_emplacement",
             description = "Crée un emplacement géographique.",
             annotations =
                     @Tool.Annotations(
@@ -577,7 +603,7 @@ public class StandMcpTools {
                             idempotentHint = false,
                             openWorldHint = false))
     @WarnsWhileSolving
-    EmplacementView creer_emplacement(
+    EmplacementView createEmplacement(
             @ToolArg(description = "Id de l'emplacement (unique)") String id,
             @ToolArg(description = "Nom affiché") String nom,
             @ToolArg(description = "Latitude (-90 à 90)", required = false) Double latitude,
@@ -587,6 +613,7 @@ public class StandMcpTools {
     }
 
     @Tool(
+            name = "modifier_emplacement",
             description = "Modifie un emplacement. Seuls les champs fournis sont modifiés.",
             annotations =
                     @Tool.Annotations(
@@ -595,7 +622,7 @@ public class StandMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     @WarnsWhileSolving
-    EmplacementView modifier_emplacement(
+    EmplacementView updateEmplacement(
             @ToolArg(description = "Id de l'emplacement") String id,
             @ToolArg(description = "Nom affiché", required = false) String nom,
             @ToolArg(description = "Latitude", required = false) Double latitude,
@@ -608,7 +635,7 @@ public class StandMcpTools {
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Emplacement emplacement = findEmplacement(id);
         if (modifieLe != null) {
-            emplacement.setModifieLe(McpArgs.instant(modifieLe, "modifieLe"));
+            emplacement.setModifieLe(McpArgs.instant(modifieLe, ARG_MODIFIE_LE));
         }
         if (nom != null) {
             emplacement.setNom(nom);
@@ -623,6 +650,7 @@ public class StandMcpTools {
     }
 
     @Tool(
+            name = "supprimer_emplacement",
             description = "Supprime un emplacement.",
             annotations =
                     @Tool.Annotations(
@@ -631,7 +659,7 @@ public class StandMcpTools {
                             idempotentHint = false,
                             openWorldHint = false))
     @WarnsWhileSolving
-    SuppressionResult supprimer_emplacement(
+    SuppressionResult deleteEmplacement(
             @ToolArg(description = "Id de l'emplacement") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         referenceDataService.deleteEmplacement(id);
@@ -641,6 +669,7 @@ public class StandMcpTools {
     /* ------------------------------ Typologies ----------------------------- */
 
     @Tool(
+            name = "lister_typologies",
             description = "Liste les typologies de jeu (référentiel CRUD auquel se réfèrent les compétences des "
                     + "animateurs et les typologies proposées par les stands).",
             annotations =
@@ -649,12 +678,13 @@ public class StandMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    List<TypologieItem> lister_typologies(
+    List<TypologieItem> listTypologies(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return referenceDataService.listTypologies();
     }
 
     @Tool(
+            name = "creer_typologie",
             description = "Crée une typologie de jeu.",
             annotations =
                     @Tool.Annotations(
@@ -663,7 +693,7 @@ public class StandMcpTools {
                             idempotentHint = false,
                             openWorldHint = false))
     @WarnsWhileSolving
-    TypologieView creer_typologie(
+    TypologieView createTypologie(
             @ToolArg(description = "Id de la typologie (unique)") String id,
             @ToolArg(description = "Libellé affiché", required = false) String label,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
@@ -671,6 +701,7 @@ public class StandMcpTools {
     }
 
     @Tool(
+            name = "modifier_typologie",
             description = "Renomme une typologie de jeu.",
             annotations =
                     @Tool.Annotations(
@@ -679,7 +710,7 @@ public class StandMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     @WarnsWhileSolving
-    TypologieView modifier_typologie(
+    TypologieView updateTypologie(
             @ToolArg(description = "Id de la typologie") String id,
             @ToolArg(description = "Nouveau libellé") String label,
             @ToolArg(
@@ -698,7 +729,7 @@ public class StandMcpTools {
                 .filter(typologie -> typologie.id().equals(id))
                 .findFirst()
                 .orElse(null);
-        Instant precondition = modifieLe == null ? null : McpArgs.instant(modifieLe, "modifieLe");
+        Instant precondition = modifieLe == null ? null : McpArgs.instant(modifieLe, ARG_MODIFIE_LE);
         return TypologieView.of(referenceDataService.updateTypologie(
                 id,
                 new TypologieItem(
@@ -711,6 +742,7 @@ public class StandMcpTools {
     }
 
     @Tool(
+            name = "supprimer_typologie",
             description =
                     "Supprime une typologie de jeu. Refusé tant qu'elle est référencée par un stand ou un animateur.",
             annotations =
@@ -720,7 +752,7 @@ public class StandMcpTools {
                             idempotentHint = false,
                             openWorldHint = false))
     @WarnsWhileSolving
-    SuppressionResult supprimer_typologie(
+    SuppressionResult deleteTypologie(
             @ToolArg(description = "Id de la typologie") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         referenceDataService.deleteTypologie(id);

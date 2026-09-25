@@ -27,8 +27,12 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 class McpEditions {
 
+    private final EditionService editionService;
+
     @Inject
-    EditionService editionService;
+    McpEditions(EditionService editionService) {
+        this.editionService = editionService;
+    }
 
     /**
      * @return the edition id to run in, or {@code null} when the call names no

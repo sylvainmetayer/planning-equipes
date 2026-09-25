@@ -131,7 +131,7 @@ class McpWarnsWhileSolvingStructuralTest {
     void everyWriteToolSaysWhatHappensDuringASolve() throws Exception {
         List<String> unclassified = new ArrayList<>();
         for (Method tool : writeTools()) {
-            String name = tool.getName();
+            String name = FeatureNames.of(tool);
             int answers = (tool.isAnnotationPresent(WarnsWhileSolving.class) ? 1 : 0)
                     + (REFUSED.containsKey(name) ? 1 : 0)
                     + (UNRELATED.containsKey(name) ? 1 : 0);
@@ -204,7 +204,7 @@ class McpWarnsWhileSolvingStructuralTest {
      * thing under the same keys, the warnings aside — left out when empty.
      */
     @Test
-    void theTypologieViewHasTheKeysOfTheTypologieItem() throws Exception {
+    void theTypologieViewHasTheKeysOfTheTypologieItem() {
         List<String> item = Arrays.stream(TypologieItem.class.getRecordComponents())
                 .map(RecordComponent::getName)
                 .toList();
@@ -227,7 +227,8 @@ class McpWarnsWhileSolvingStructuralTest {
         List<String> mute = OutilsMcp.all().stream()
                 .filter(tool -> tool.isAnnotationPresent(WarnsWhileSolving.class))
                 .filter(tool -> !WarningCarrier.class.isAssignableFrom(tool.getReturnType()))
-                .map(tool -> tool.getName() + " → " + tool.getReturnType().getSimpleName())
+                .map(tool ->
+                        FeatureNames.of(tool) + " → " + tool.getReturnType().getSimpleName())
                 .toList();
         assertThat(mute)
                 .as("un outil @WarnsWhileSolving renvoie un WarningCarrier, sinon l'avertissement se perd")
@@ -237,10 +238,10 @@ class McpWarnsWhileSolvingStructuralTest {
     /** Reads never warn: the annotation on a read tool would be a statement nobody can check. */
     @Test
     void onlyWriteToolsWarn() throws Exception {
-        Set<String> writes = writeTools().stream().map(Method::getName).collect(Collectors.toSet());
+        Set<String> writes = writeTools().stream().map(FeatureNames::of).collect(Collectors.toSet());
         List<String> reads = OutilsMcp.all().stream()
                 .filter(tool -> tool.isAnnotationPresent(WarnsWhileSolving.class))
-                .map(Method::getName)
+                .map(FeatureNames::of)
                 .filter(name -> !writes.contains(name))
                 .toList();
         assertThat(reads).isEmpty();
@@ -249,7 +250,7 @@ class McpWarnsWhileSolvingStructuralTest {
     /** A classification naming a tool that no longer exists reads as a decision; it is stale. */
     @Test
     void theListsNameExistingTools() throws Exception {
-        Set<String> tools = OutilsMcp.all().stream().map(Method::getName).collect(Collectors.toSet());
+        Set<String> tools = OutilsMcp.all().stream().map(FeatureNames::of).collect(Collectors.toSet());
         Set<String> stale = new TreeSet<>(REFUSED.keySet());
         stale.addAll(UNRELATED.keySet());
         stale.removeAll(tools);

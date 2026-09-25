@@ -50,14 +50,14 @@ class DiagnosticPlanMcpToolsTest {
     @AfterEach
     void clearEdition() throws InterruptedException {
         awaitSolverIdle();
-        scenarioTools.reinitialiser_donnees(null);
+        scenarioTools.resetData(null);
     }
 
     @Test
     void diagnosticScoresThePersistedPlanWithoutStartingASolver() throws InterruptedException {
         solvedPlanning();
 
-        DiagnosticPlanView vue = solveurTools.diagnostiquer_plan(null);
+        DiagnosticPlanView vue = solveurTools.diagnosePlan(null);
 
         assertThat(vue.score()).isNotBlank();
         assertThat(vue.postesNonPourvus()).isGreaterThanOrEqualTo(0);
@@ -86,34 +86,35 @@ class DiagnosticPlanMcpToolsTest {
         assertThat(vue.lecture().getFirst()).containsPattern("règles? impératives?");
         assertThat(vue.lecture()).allSatisfy(phrase -> assertThat(phrase).doesNotContainPattern("\\b\\p{Ll}+\\p{Lu}"));
         assertThat(referenceDataService.listAnimateurs())
+                .isNotEmpty()
                 .allSatisfy(animateur ->
                         assertThat(vue.lecture()).noneMatch(phrase -> phrase.contains(animateur.getNom())));
 
         // Same plan, same score: the diagnostic reads, it does not search.
-        assertThat(solveurTools.diagnostiquer_plan(null).score()).isEqualTo(vue.score());
+        assertThat(solveurTools.diagnosePlan(null).score()).isEqualTo(vue.score());
     }
 
     @Test
     void diagnosticWithoutAPersistedPlanSaysSo() throws InterruptedException {
         awaitSolverIdle();
-        scenarioTools.reinitialiser_donnees(null);
+        scenarioTools.resetData(null);
 
-        assertThatThrownBy(() -> solveurTools.diagnostiquer_plan(null))
+        assertThatThrownBy(() -> solveurTools.diagnosePlan(null))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("résolution");
     }
 
     private void solvedPlanning() throws InterruptedException {
         awaitSolverIdle();
-        scenarioTools.reinitialiser_donnees(null);
-        scenarioTools.importer_scenario("scenario.yml", null);
-        JobMcpView job = solveurTools.lancer_solveur(1L, null, null, null);
+        scenarioTools.resetData(null);
+        scenarioTools.importScenario("scenario.yml", null);
+        JobMcpView job = solveurTools.startSolver(1L, null, null, null);
         assertThat(awaitFinished(job.id()).status()).isEqualTo(JobStatus.COMPLETED.name());
     }
 
     private JobMcpView awaitFinished(String jobId) throws InterruptedException {
         for (int essai = 0; essai < MAX_POLLS; essai++) {
-            JobMcpView job = solveurTools.statut_solveur(jobId);
+            JobMcpView job = solveurTools.solverStatus(jobId);
             if (job != null && ETATS_TERMINAUX.contains(job.status())) {
                 return job;
             }

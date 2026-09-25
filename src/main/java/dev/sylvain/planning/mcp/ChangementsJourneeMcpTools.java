@@ -30,10 +30,15 @@ import java.util.List;
 @ApplicationScoped
 public class ChangementsJourneeMcpTools {
 
+    private final ChangementsJourneeService changementsService;
+
     @Inject
-    ChangementsJourneeService changementsService;
+    ChangementsJourneeMcpTools(ChangementsJourneeService changementsService) {
+        this.changementsService = changementsService;
+    }
 
     @Tool(
+            name = "changements_journee",
             description = "Ce qui a changé sur une journée du plan enregistré : par siège (stand, heures, "
                     + "titulaire avant et après) et par animateur (vacations gagnées, retirées, déplacées). "
                     + "reference = publication (depuis le dernier plan publié) ou resolution (depuis le plan "
@@ -45,7 +50,7 @@ public class ChangementsJourneeMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    ChangementsJourneeView changements_journee(
+    ChangementsJourneeView journeeChanges(
             @ToolArg(description = "Journée (AAAA-MM-JJ)") String jour,
             @ToolArg(description = "publication ou resolution", required = false) String reference,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {

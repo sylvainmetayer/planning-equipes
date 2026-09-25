@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.quarkiverse.mcp.server.Prompt;
 import io.quarkiverse.mcp.server.Tool;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -60,6 +61,13 @@ class McpToolNamesTest {
     /** A tool name shape: {@code lister_stands}, {@code creer_stand_complet}. */
     private static final Pattern SNAKE_CASE = Pattern.compile("\\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\\b");
 
+    /**
+     * A published name: snake_case, or a single lower-case word ({@code
+     * volumes}, {@code verrouiller}). The annotation's placeholder for "use
+     * the method name" does not match, which is the point.
+     */
+    private static final Pattern PUBLISHED_NAME = Pattern.compile("[a-z][a-z0-9]*(?:_[a-z0-9]+)*");
+
     /** Inline {@code `code`} spans — in Markdown, prose is not a citation. */
     private static final Pattern SPAN_CODE = Pattern.compile("`([^`\\n]+)`");
 
@@ -84,27 +92,69 @@ class McpToolNamesTest {
      */
     private static Set<String> exposedTools() throws IOException {
         Set<String> tools = new TreeSet<>();
-        try (Stream<Path> files = Files.list(SOURCES_MCP)) {
-            for (Path file : files.filter(f -> f.toString().endsWith(".java")).toList()) {
-                String simpleName = file.getFileName().toString().replace(".java", "");
-                Class<?> type;
-                try {
-                    // Loaded without initialising: this test only reads annotations.
-                    type = Class.forName(
-                            SOURCES_MCP.toString().replace('/', '.').replace("src.main.java.", "") + "." + simpleName,
-                            false,
-                            McpToolNamesTest.class.getClassLoader());
-                } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
-                    continue;
-                }
-                for (var method : type.getDeclaredMethods()) {
-                    if (method.isAnnotationPresent(Tool.class) || method.isAnnotationPresent(Prompt.class)) {
-                        tools.add(method.getName());
-                    }
+        for (Class<?> type : featureHolders()) {
+            for (var method : type.getDeclaredMethods()) {
+                if (method.isAnnotationPresent(Tool.class) || method.isAnnotationPresent(Prompt.class)) {
+                    tools.add(FeatureNames.of(method));
                 }
             }
         }
         return tools;
+    }
+
+    /** Every compiled class of the {@code mcp} sources, loaded without initialising. */
+    private static List<Class<?>> featureHolders() throws IOException {
+        List<Class<?>> types = new ArrayList<>();
+        try (Stream<Path> files = Files.list(SOURCES_MCP)) {
+            for (Path file : files.filter(f -> f.toString().endsWith(".java")).toList()) {
+                String simpleName = file.getFileName().toString().replace(".java", "");
+                try {
+                    // Loaded without initialising: this test only reads annotations.
+                    types.add(Class.forName(
+                            SOURCES_MCP.toString().replace('/', '.').replace("src.main.java.", "") + "." + simpleName,
+                            false,
+                            McpToolNamesTest.class.getClassLoader()));
+                } catch (ClassNotFoundException | NoClassDefFoundError _) {
+                    // not a loadable class: nothing to read on it
+                }
+            }
+        }
+        return types;
+    }
+
+    /** The name declared on a tool or prompt annotation, or {@code null} when the method carries neither. */
+    private static String declaredName(Method method) {
+        Tool tool = method.getAnnotation(Tool.class);
+        if (tool != null) {
+            return tool.name();
+        }
+        Prompt prompt = method.getAnnotation(Prompt.class);
+        return prompt == null ? null : prompt.name();
+    }
+
+    /**
+     * The published name is declared, never derived from the Java method.
+     *
+     * <p>The methods carry English camelCase names while the server publishes
+     * the snake_case French ones an assistant picks from. A tool left without
+     * an explicit {@code name} would be published under its Java name, and a
+     * later rename of the method would silently rename the tool for every
+     * client and every journal entry keyed on it.</p>
+     */
+    @Test
+    void everyToolAndPromptDeclaresItsPublishedName() throws IOException {
+        List<String> undeclared = new ArrayList<>();
+        for (Class<?> type : featureHolders()) {
+            for (var method : type.getDeclaredMethods()) {
+                String declared = declaredName(method);
+                if (declared != null && !PUBLISHED_NAME.matcher(declared).matches()) {
+                    undeclared.add(type.getSimpleName() + "#" + method.getName());
+                }
+            }
+        }
+        assertThat(undeclared)
+                .as("MCP features without an explicit snake_case name = \"…\"")
+                .isEmpty();
     }
 
     /** The tool names a document quotes at its reader. */

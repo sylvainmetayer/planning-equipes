@@ -37,13 +37,19 @@ import java.util.List;
 @ApplicationScoped
 public class DisponibiliteMcpTools {
 
-    @Inject
-    DeclarationDisponibiliteService declarationService;
+    private final DeclarationDisponibiliteService declarationService;
+
+    private final EspaceAnimateurService espaceAnimateurService;
 
     @Inject
-    EspaceAnimateurService espaceAnimateurService;
+    DisponibiliteMcpTools(
+            DeclarationDisponibiliteService declarationService, EspaceAnimateurService espaceAnimateurService) {
+        this.declarationService = declarationService;
+        this.espaceAnimateurService = espaceAnimateurService;
+    }
 
     @Tool(
+            name = "lister_declarations_disponibilite",
             description = "Liste les déclarations de disponibilité envoyées par les animateurs depuis leur "
                     + "espace, de la plus récente à la plus ancienne. Chaque déclaration porte ce qui a été déclaré et, "
                     + "en regard, ce que la fiche dit aujourd'hui. Filtrable par statut : EN_ATTENTE, APPLIQUEE, "
@@ -54,7 +60,7 @@ public class DisponibiliteMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    List<DeclarationMcpView> lister_declarations_disponibilite(
+    List<DeclarationMcpView> listAvailabilityDeclarations(
             @ToolArg(description = "Statut pour filtrer : EN_ATTENTE, APPLIQUEE ou REFUSEE", required = false)
                     String statut,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
@@ -67,6 +73,7 @@ public class DisponibiliteMcpTools {
     }
 
     @Tool(
+            name = "consulter_collecte_disponibilites",
             description = "Consulte la fenêtre de collecte des disponibilités : ouverte ou non, et ses dates si "
                     + "elle en porte. Fermée tant que personne ne l'a ouverte — un formulaire ouvert sur Internet ne "
                     + "s'ouvre pas par omission.",
@@ -76,12 +83,13 @@ public class DisponibiliteMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    CollecteView consulter_collecte_disponibilites(
+    CollecteView getAvailabilityCollection(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return toView(declarationService.fenetre(), null);
     }
 
     @Tool(
+            name = "configurer_collecte_disponibilites",
             description = "Ouvre ou ferme la collecte des disponibilités, et la borne éventuellement par des "
                     + "dates. prevenirAnimateurs ENVOIE UN COURRIEL à chaque animateur avec le lien de son espace : "
                     + "c'est une décision par ouverture, pas un réglage, et personne n'est invité à une collecte qu'on "
@@ -92,7 +100,7 @@ public class DisponibiliteMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = true))
-    CollecteView configurer_collecte_disponibilites(
+    CollecteView configureAvailabilityCollection(
             @ToolArg(description = "Collecte ouverte ou fermée") boolean ouverte,
             @ToolArg(description = "Début de la collecte (AAAA-MM-JJ)", required = false) String debut,
             @ToolArg(description = "Fin de la collecte (AAAA-MM-JJ)", required = false) String fin,
@@ -106,6 +114,7 @@ public class DisponibiliteMcpTools {
     }
 
     @Tool(
+            name = "appliquer_declaration_disponibilite",
             description = "Applique une déclaration en attente sur la fiche de l'animateur : jours indisponibles "
                     + "et souhaits déclarés y remplacent ceux qui s'y trouvaient. Tout ou rien, comme dans l'interface. "
                     + "Les données de référence sont marquées modifiées : le planning déjà résolu devient périmé. "
@@ -116,7 +125,7 @@ public class DisponibiliteMcpTools {
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = false))
-    DeclarationAppliqueeMcpView appliquer_declaration_disponibilite(
+    DeclarationAppliqueeMcpView applyAvailabilityDeclaration(
             @ToolArg(description = "Id de la déclaration") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         DeclarationAppliquee appliquee = declarationService.apply(id);
@@ -125,6 +134,7 @@ public class DisponibiliteMcpTools {
     }
 
     @Tool(
+            name = "refuser_declaration_disponibilite",
             description = "Refuse une déclaration en attente : le référentiel n'est pas touché. Le commentaire "
                     + "est ce que l'animateur lira, et il peut renvoyer une version corrigée tant que la collecte est "
                     + "ouverte.",
@@ -134,7 +144,7 @@ public class DisponibiliteMcpTools {
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = false))
-    DeclarationMcpView refuser_declaration_disponibilite(
+    DeclarationMcpView refuseAvailabilityDeclaration(
             @ToolArg(description = "Id de la déclaration") String id,
             @ToolArg(description = "Commentaire pour l'animateur", required = false) String commentaire,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
@@ -175,17 +185,17 @@ public class DisponibiliteMcpTools {
                                 invitation.echecs().size()));
     }
 
+    /** The applied declaration and the coherence warnings, in codes (see {@link WarningCodes}). */
+    public record DeclarationAppliqueeMcpView(DeclarationMcpView declaration, List<String> avertissements) {}
+
     /**
-     * One declaration, by id.
+     * One declaration, by id. Whether each comment was written, never what it
+     * says: see {@link TextesLibres}.
      *
      * @param souhaits      ids of the wished typologies, as the tools name them
      * @param joursActuels  what the fiche says today, to compare with what was
      *                      declared before applying anything
      */
-    /** The applied declaration and the coherence warnings, in codes (see {@link WarningCodes}). */
-    public record DeclarationAppliqueeMcpView(DeclarationMcpView declaration, List<String> avertissements) {}
-
-    /** Whether each comment was written, never what it says: see {@link TextesLibres}. */
     public record DeclarationMcpView(
             String id,
             String animateurId,
