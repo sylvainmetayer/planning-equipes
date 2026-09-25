@@ -213,9 +213,9 @@ public class ReferentielCsvImportService {
      * @param refus  why the line designates nothing, {@code null} when it does
      * @param note   what the report should add about how the line was matched
      */
-    private record Cle(String id, String code, String cle, String refus, String note) {
+    private record RowKey(String id, String code, String cle, String refus, String note) {
 
-        static Cle of(
+        static RowKey of(
                 CsvParser.Row row,
                 Colonnes colonnes,
                 IdGenerator.Kind kind,
@@ -225,7 +225,7 @@ public class ReferentielCsvImportService {
             String codeLu = colonnes.valeur(row, "code");
             if (!idLu.isBlank() && codesParId.containsKey(idLu)) {
                 String code = codeLu.isBlank() ? codesParId.get(idLu) : codeLu;
-                return new Cle(idLu, code, idLu, null, null);
+                return new RowKey(idLu, code, idLu, null, null);
             }
             String code = codeLu.isBlank() && !kind.hasGeneratedShape(idLu) ? idLu : codeLu;
             String note = !idLu.isBlank() && !idLu.equals(code)
@@ -233,12 +233,12 @@ public class ReferentielCsvImportService {
                     : null;
             if (code.isBlank()) {
                 if (idLu.isBlank()) {
-                    return new Cle(
+                    return new RowKey(
                             null, null, null, "La colonne « code » est vide : c'est elle qui désigne la ligne.", null);
                 }
-                return new Cle(null, null, idLu, null, note);
+                return new RowKey(null, null, idLu, null, note);
             }
-            return new Cle(idsParCode.get(code), code, code, null, note);
+            return new RowKey(idsParCode.get(code), code, code, null, note);
         }
 
         /** The same row twice in one file is a mistake whichever way it is named. */
@@ -267,8 +267,8 @@ public class ReferentielCsvImportService {
             return new Coded<>(parId, codesParId, idsParCode);
         }
 
-        Cle key(CsvParser.Row row, Colonnes colonnes, IdGenerator.Kind kind) {
-            return Cle.of(row, colonnes, kind, codesParId, idsParCode);
+        RowKey key(CsvParser.Row row, Colonnes colonnes, IdGenerator.Kind kind) {
+            return RowKey.of(row, colonnes, kind, codesParId, idsParCode);
         }
     }
 
@@ -289,7 +289,7 @@ public class ReferentielCsvImportService {
             Coded<TypologieItem> existantes,
             Set<String> vus,
             List<Ecriture> ecritures) {
-        Cle cle = existantes.key(row, colonnes, IdGenerator.Kind.TYPOLOGIE);
+        RowKey cle = existantes.key(row, colonnes, IdGenerator.Kind.TYPOLOGIE);
         String libelle = colonnes.valeur(row, "libelle");
         List<String> raisons = new ArrayList<>();
         if (libelle.isBlank()) {
@@ -349,7 +349,7 @@ public class ReferentielCsvImportService {
             Coded<Emplacement> existants,
             Set<String> vus,
             List<Ecriture> ecritures) {
-        Cle cle = existants.key(row, colonnes, IdGenerator.Kind.EMPLACEMENT);
+        RowKey cle = existants.key(row, colonnes, IdGenerator.Kind.EMPLACEMENT);
         String nom = colonnes.valeur(row, "nom");
         Emplacement existant = cle.id() == null ? null : existants.parId().get(cle.id());
         List<String> raisons = new ArrayList<>();
@@ -429,7 +429,7 @@ public class ReferentielCsvImportService {
             Set<String> aCreer,
             Set<String> vus,
             List<Ecriture> ecritures) {
-        Cle cle = existants.key(row, colonnes, IdGenerator.Kind.STAND);
+        RowKey cle = existants.key(row, colonnes, IdGenerator.Kind.STAND);
         String nom = colonnes.valeur(row, "nom");
         Stand existant = cle.id() == null ? null : existants.parId().get(cle.id());
         List<String> raisons = new ArrayList<>();
@@ -782,7 +782,7 @@ public class ReferentielCsvImportService {
     }
 
     /** Why a line designates no row, or the same row as a line above. */
-    private static void checkKey(Cle cle, Set<String> vus, List<String> raisons) {
+    private static void checkKey(RowKey cle, Set<String> vus, List<String> raisons) {
         if (cle.refus() != null) {
             raisons.add(cle.refus());
         } else if (!vus.add(cle.cible())) {
@@ -791,7 +791,7 @@ public class ReferentielCsvImportService {
     }
 
     private static void checkKeyAndName(
-            Cle cle, String nom, boolean existe, String fiche, Set<String> vus, List<String> raisons) {
+            RowKey cle, String nom, boolean existe, String fiche, Set<String> vus, List<String> raisons) {
         checkKey(cle, vus, raisons);
         if (nom.isBlank() && !existe) {
             raisons.add("La colonne « nom » est vide, et " + fiche + " n'existe pas encore.");
@@ -799,7 +799,7 @@ public class ReferentielCsvImportService {
     }
 
     /** A code no file could cite, or shaped like an id of its referential, refuses the line. */
-    private static void checkCode(Cle cle, IdGenerator.Kind kind, List<String> raisons) {
+    private static void checkCode(RowKey cle, IdGenerator.Kind kind, List<String> raisons) {
         try {
             Codes.normalise(cle.code(), kind);
         } catch (BusinessError.Invalid e) {

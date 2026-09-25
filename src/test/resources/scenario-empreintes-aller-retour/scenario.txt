@@ -13,9 +13,9 @@
 .planning.ponderationsContraintes.constraintWeightMap = (vide)
 .planning.ponderationsScenario{appreciationIncompatible} = 3
 .planning.ponderationsScenario{maxJoursConsecutifsTravailles} = 5
-.planning.postes[0]  e8491dba11b0c7da
+.planning.postes[0]  b426629c222e9e40
 .planning.postes[1]  9d0fa7c90cc17bd5
-.planning.postes[2]  1403f745834285fa
+.planning.postes[2]  e9ba9be3326635e4
 .planning.quotasTypologies = (vide)
 .planning.score = null
 .planning.verrouillages = (vide)

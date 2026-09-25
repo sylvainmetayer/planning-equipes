@@ -38,7 +38,7 @@ class ConcurrentModificationGuardTest {
 
     @Test
     void staleStandWriteIsRefusedAndNothingIsWritten() {
-        Stand stand = referenceData.createStand(new Stand(null, "Stand", Set.of(strategie()), 1, 1, false));
+        Stand stand = referenceData.createStand(new Stand(null, "Stand", Set.of(strategyTypologie()), 1, 1, false));
         String id = stand.getId();
         try {
             assertThat(stand.getModifieLe()).isNotNull();
@@ -52,7 +52,7 @@ class ConcurrentModificationGuardTest {
             assertThat(ecritB.getModifieLe()).isAfter(stand.getModifieLe());
 
             // Session A still holds the stamp it loaded before B wrote.
-            Stand sessionA = new Stand(id, "Renommé par A", Set.of(strategie()), 1, 1, false);
+            Stand sessionA = new Stand(id, "Renommé par A", Set.of(strategyTypologie()), 1, 1, false);
             sessionA.setModifieLe(stand.getModifieLe());
             assertThatThrownBy(() -> referenceData.updateStand(id, sessionA))
                     .isInstanceOf(BusinessError.Stale.class)
@@ -82,8 +82,10 @@ class ConcurrentModificationGuardTest {
      */
     @Test
     void creatingTwiceWithTheSameIdCreatesTwoRows() {
-        Stand premier = referenceData.createStand(new Stand("CM-DUP", "Le premier", Set.of(strategie()), 1, 1, false));
-        Stand second = referenceData.createStand(new Stand("CM-DUP", "Le second", Set.of(strategie()), 2, 2, false));
+        Stand premier =
+                referenceData.createStand(new Stand("CM-DUP", "Le premier", Set.of(strategyTypologie()), 1, 1, false));
+        Stand second =
+                referenceData.createStand(new Stand("CM-DUP", "Le second", Set.of(strategyTypologie()), 2, 2, false));
         try {
             assertThat(premier.getId()).isNotEqualTo("CM-DUP").startsWith("S");
             assertThat(second.getId()).isNotEqualTo(premier.getId()).startsWith("S");
@@ -100,11 +102,11 @@ class ConcurrentModificationGuardTest {
      */
     @Test
     void creatingATakenCodeIsRefused() {
-        Stand premier = new Stand(null, "Le premier", Set.of(strategie()), 1, 1, false);
+        Stand premier = new Stand(null, "Le premier", Set.of(strategyTypologie()), 1, 1, false);
         premier.setCode("CM-CODE");
         String id = referenceData.createStand(premier).getId();
         try {
-            Stand second = new Stand(null, "Le second", Set.of(strategie()), 1, 1, false);
+            Stand second = new Stand(null, "Le second", Set.of(strategyTypologie()), 1, 1, false);
             second.setCode("CM-CODE");
             assertThatThrownBy(() -> referenceData.createStand(second))
                     .isInstanceOf(BusinessError.Conflict.class)
@@ -216,7 +218,7 @@ class ConcurrentModificationGuardTest {
     }
 
     /** The seeded typologie, under whatever id V100 gave it. */
-    private String strategie() {
+    private String strategyTypologie() {
         return referenceData.listTypologies().stream()
                 .filter(typologie -> "STRATEGIE".equals(typologie.code()))
                 .findFirst()
