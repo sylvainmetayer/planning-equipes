@@ -1,13 +1,13 @@
-identifiant;prénom;nom;date de naissance;email;manager;compétences;souhaits;jours indisponibles
-;Camille;Ferrand;1985-04-12;camille.ferrand@example.org;oui;ACCUEIL:REFERENT|LOGISTIQUE;;2026-09-01
-;Lou;Bastide;2009-03-14;lou.bastide@example.org;non;JEUX:DEBUTANT|ENF;ENF|DIV;2026-09-05|2026-09-06
-;Noa;Verdier;2010-05-02;;non;ENF:DEBUTANT;ENF;2026-09-12|2026-09-13
-;Théo;Marchal;1998-11-23;theo.marchal@example.org;non;DIV|REF:REFERENT|TROPH;REF;
-;Inès;Kaboré;1992-07-08;ines.kabore@example.org;non;LSF:REFERENT|ACCUEIL;;2026-09-02|2026-09-03|2026-09-04
-;Sacha;Delorme;2001-01-30;;non;NINJA:DEBUTANT|SPORT;NINJA;
-;Maëlle;Roussin;1979-09-15;maelle.roussin@example.org;non;ANIMATION:REFERENT|DIV|JEUX;;2026-09-16
-;Yanis;Cordier;2005-12-01;yanis.cordier@example.org;non;JV|HOMME_JEU:DEBUTANT;JV;2026-09-08
-;Elio;Santangelo;1968-03-03;elio.santangelo@example.org;non;CIRQUE:REFERENT|CARIOLE;;
-;Romane;Thibault;2003-06-17;;non;JEUX|DIV;JEUX|ANIMATION;2026-09-10|2026-09-11
-;Aurel;Nguyen-Dupas;1995-10-05;aurel.nguyen-dupas@example.org;non;LOGISTIQUE:REFERENT;;2026-09-14|2026-09-15|2026-09-16
-;Fatou;Berthelot;2008-09-20;fatou.berthelot@example.org;non;ENF|ACCUEIL:DEBUTANT;ENF;
+prénom;nom;date de naissance;email;manager;compétences;souhaits;jours indisponibles
+Camille;Ferrand;1985-04-12;camille.ferrand@example.org;oui;ACCUEIL:REFERENT|LOGISTIQUE;;2026-09-01
+Lou;Bastide;2009-03-14;lou.bastide@example.org;non;JEUX:DEBUTANT|ENF;ENF|DIV;2026-09-05|2026-09-06
+Noa;Verdier;2010-05-02;;non;ENF:DEBUTANT;ENF;2026-09-12|2026-09-13
+Théo;Marchal;1998-11-23;theo.marchal@example.org;non;DIV|REF:REFERENT|TROPH;REF;
+Inès;Kaboré;1992-07-08;ines.kabore@example.org;non;LSF:REFERENT|ACCUEIL;;2026-09-02|2026-09-03|2026-09-04
+Sacha;Delorme;2001-01-30;;non;NINJA:DEBUTANT|SPORT;NINJA;
+Maëlle;Roussin;1979-09-15;maelle.roussin@example.org;non;ANIMATION:REFERENT|DIV|JEUX;;2026-09-16
+Yanis;Cordier;2005-12-01;yanis.cordier@example.org;non;JV|HOMME_JEU:DEBUTANT;JV;2026-09-08
+Elio;Santangelo;1968-03-03;elio.santangelo@example.org;non;CIRQUE:REFERENT|CARIOLE;;
+Romane;Thibault;2003-06-17;;non;JEUX|DIV;JEUX|ANIMATION;2026-09-10|2026-09-11
+Aurel;Nguyen-Dupas;1995-10-05;aurel.nguyen-dupas@example.org;non;LOGISTIQUE:REFERENT;;2026-09-14|2026-09-15|2026-09-16
+Fatou;Berthelot;2008-09-20;fatou.berthelot@example.org;non;ENF|ACCUEIL:DEBUTANT;ENF;

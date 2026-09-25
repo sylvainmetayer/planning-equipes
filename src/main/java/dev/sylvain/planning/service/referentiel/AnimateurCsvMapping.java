@@ -17,13 +17,16 @@ import java.util.Map;
  * cosmetic: a file with no usable header at all is still mappable, column by
  * column, from the screen.</p>
  *
+ * <p>There is no id field: an id is drawn per edition (ADR 0050), so the same
+ * {@code A3} is somebody else in another edition, and a file matches its rows
+ * by e-mail, then by name. A column headed « identifiant » is left unmapped.</p>
+ *
  * <p>{@code null} means "this field is not in the file", which is not the same
  * as "this field is empty in the file": an unmapped field never touches an
  * animateur who already exists. That distinction is the whole safety of a
  * catch-up import — a file listing three columns must not blank the eight
  * others.</p>
  *
- * @param id                 the animateur's business id, when the file carries one
  * @param prenom             first name
  * @param nom                last name
  * @param dateNaissance      birth date — {@code JJ/MM/AAAA} or {@code AAAA-MM-JJ}
@@ -34,7 +37,6 @@ import java.util.Map;
  * @param joursIndisponibles multi-valued dates
  */
 public record AnimateurCsvMapping(
-        Integer id,
         Integer prenom,
         Integer nom,
         Integer dateNaissance,
@@ -45,7 +47,6 @@ public record AnimateurCsvMapping(
         Integer joursIndisponibles) {
 
     /* The field keys of ALIASES, as {@link #match} is asked for them. */
-    private static final String FIELD_ID = "id";
     private static final String FIELD_PRENOM = "prenom";
     private static final String FIELD_NOM = "nom";
     private static final String FIELD_DATE_NAISSANCE = "dateNaissance";
@@ -65,7 +66,6 @@ public record AnimateurCsvMapping(
      * « Date de naiss. ».</p>
      */
     private static final Map<String, List<String>> ALIASES = Map.of(
-            FIELD_ID, List.of("id", "identifiant", "matricule", "code"),
             FIELD_PRENOM, List.of("prenom", "firstname", "first name", "given name"),
             FIELD_NOM, List.of("nom", "nom de famille", "lastname", "last name", "surname", "name"),
             FIELD_DATE_NAISSANCE,
@@ -102,7 +102,7 @@ public record AnimateurCsvMapping(
      * <b>missing</b> mapping asks {@link #propose} for a guess.
      */
     public static AnimateurCsvMapping empty() {
-        return new AnimateurCsvMapping(null, null, null, null, null, null, null, null, null);
+        return new AnimateurCsvMapping(null, null, null, null, null, null, null, null);
     }
 
     /**
@@ -116,7 +116,6 @@ public record AnimateurCsvMapping(
                 columns.stream().map(AnimateurCsvMapping::normalise).toList();
         boolean[] taken = new boolean[normalised.size()];
         return new AnimateurCsvMapping(
-                match(normalised, taken, FIELD_ID),
                 match(normalised, taken, FIELD_PRENOM),
                 match(normalised, taken, FIELD_NOM),
                 match(normalised, taken, FIELD_DATE_NAISSANCE),

@@ -3324,7 +3324,6 @@ export interface AbsenceMarquee {
  * catch-up file safe.
  */
 export interface AnimateurCsvMapping {
-  id: number | null;
   prenom: number | null;
   nom: number | null;
   dateNaissance: number | null;

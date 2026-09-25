@@ -27,7 +27,6 @@ type PageInternals = {
 };
 
 const MAPPING: AnimateurCsvMapping = {
-  id: null,
   prenom: 0,
   nom: 1,
   dateNaissance: 2,

@@ -367,9 +367,9 @@ onglet chacun, l'onglet ouvert étant porté par `?onglet=` ; un huitième ongle
 **Scénario**, porte l'import du fichier YAML décrit plus haut — il ne complète
 pas l'édition, il la remplace. Cinq référentiels s'y
 remplissent d'un fichier de quelques colonnes : les **typologies** (`code` et `libelle`
-obligatoires, `id` et `ninja` facultatives), les **emplacements** (`code` et `nom`
-obligatoires, `id`, `latitude` et `longitude` facultatives), les **stands** (`code`,
-`nom` et `typologies` obligatoires, `id`, `effectifMin` et `effectifMax`
+obligatoires, `ninja` facultative), les **emplacements** (`code` et `nom`
+obligatoires, `latitude` et `longitude` facultatives), les **stands** (`code`,
+`nom` et `typologies` obligatoires, `effectifMin` et `effectifMax`
 facultatives), les **créneaux** (`date`, `heureDebut` et `heureFin`
 obligatoires, `couverturePause` facultative) et les **journées types** (`nom`
 et `vacations` obligatoires, `dates` facultative). Les en-têtes se
@@ -386,23 +386,30 @@ Trois règles valent pour les cinq :
   de l'ancien import de la grille des compétences ([0030](decisions/0030-grille-competences-import-additif.md))
   appliquée à une fiche : un fichier de trois colonnes qui renomme des stands ne
   touche ni leurs horaires, ni leur emplacement, ni leurs indicateurs.
-- **Une ligne se reconnaît à son `code`**, et une ligne connue est mise à jour,
-  pas refusée : réimporter un fichier corrigé est le geste normal. La colonne
-  `id`, quand le fichier en porte une — c'est la forme de l'export —, désigne
-  la ligne de cet identifiant attribué par l'application ; si l'édition n'en a
-  pas (un fichier venu d'une autre édition, qui numérote la sienne à partir de
-  1), elle est ignorée et l'aperçu le dit. Dans un fichier sans colonne
-  `code`, écrit avant que les identifiants ne soient attribués, la colonne `id`
-  est lue comme le code. Une ligne nouvelle reçoit son identifiant de
+- **Une ligne se reconnaît à son `code`, sinon à son nom**, et une ligne
+  connue est mise à jour, pas refusée : réimporter un fichier corrigé est le
+  geste normal. La colonne `code` est obligatoire mais une case peut rester
+  vide : la ligne désigne alors la seule ligne de l'édition qui porte ce nom
+  (ce libellé, pour une typologie), à la casse et aux accents près, et en
+  garde le code ; deux homonymes refusent la ligne en demandant un code ; un
+  nom inconnu crée une ligne. **Aucune colonne `id` n'est lue**, et l'export
+  n'en écrit plus : les identifiants sont numérotés dans chaque édition
+  ([ADR 0050](decisions/0050-identifiants-generes-par-edition.md), D7), si bien
+  que `S4` désigne un autre stand dans l'édition voisine. Un fichier qui porte
+  une colonne `id` sans colonne `code` — un export antérieur, où cette colonne
+  tenait ce qui est devenu le code — est refusé en disant de renommer
+  l'en-tête `id` en `code`. Une ligne nouvelle reçoit son identifiant de
   l'application.
 - **Une typologie qu'un stand cite sans qu'elle existe est créée**, libellé et
   code égaux à la valeur citée, et l'aperçu la nomme avant l'écriture. La
-  colonne `typologies` accepte le code comme l'identifiant. Un stand sans
-  effectif tient à une personne, ce que l'aperçu dit aussi.
+  colonne `typologies` cite une typologie par son code, ou par son libellé
+  quand elle n'en a pas — c'est ce que l'export écrit — et que ce libellé
+  n'est porté que par elle. Un stand sans effectif tient à une personne, ce
+  que l'aperçu dit aussi.
 - **Un code est unique dans l'édition**, ne contient ni virgule, ni
   point-virgule, ni barre verticale, et n'a pas la forme d'un identifiant de
-  son référentiel (`S4` pour un stand) : « un identifiant ou un code » n'est
-  ainsi jamais ambigu.
+  son référentiel (`S4` pour un stand) : un code ne se confond jamais avec
+  l'identifiant qu'affichent les écrans.
 
 ### Les créneaux et les journées types ne se reconnaissent pas à un identifiant
 
@@ -603,12 +610,11 @@ en place sur la date lue.
 
 ### Sur quoi une ligne reconnaît une fiche existante
 
-Trois clés, dans cet ordre : la colonne `id` quand le fichier en porte une et
-qu'elle nomme une fiche de l'édition, puis l'adresse e-mail, puis « prénom +
-nom » comparés sans casse ni accents. Un identifiant que l'édition ne connaît
-pas est ignoré, avec un avertissement : l'identifiant d'une fiche est
-attribué par l'application
-([ADR 0050](decisions/0050-identifiants-generes-par-edition.md)), jamais lu
+Deux clés, dans cet ordre : l'adresse e-mail, puis « prénom + nom » comparés
+sans casse ni accents. Aucune colonne d'identifiant n'est lue, et le fichier
+d'exemple comme l'export n'en portent pas : l'identifiant d'une fiche est
+attribué par l'application et numéroté dans chaque édition
+([ADR 0050](decisions/0050-identifiants-generes-par-edition.md), D7), jamais lu
 dans un fichier ni dérivé du nom. Une ligne qui ne reconnaît aucune fiche en
 crée une, sous le prochain identifiant de l'édition.
 
@@ -630,17 +636,17 @@ le CSV n'est pas une porte dérobée vers une fiche que l'écran refuserait. La
 date n'est pas négociable pour une raison qui lui est propre : tout le régime
 mineur / majeur s'en déduit à la date de chaque créneau, et la colonne est
 `NOT NULL`. Une ligne qui met à jour une fiche existante — reconnue par son
-identifiant ou son adresse — peut laisser l'un des trois vide : la fiche le
+adresse — peut laisser l'un des trois vide : la fiche le
 porte déjà, et le garde.
 
 Les cellules sont aussi bornées par la **largeur des colonnes de la base** :
-64 caractères pour l'identifiant, 128 pour le prénom et pour le nom, 255 pour
-l'adresse. Une valeur plus longue **rejette la ligne** en donnant sa longueur —
+128 caractères pour le prénom et pour le nom, 255 pour l'adresse. Une valeur plus longue **rejette la ligne** en donnant sa longueur —
 c'est la signature d'une colonne associée au mauvais champ (une colonne
 « Commentaires » posée sur `nom`), et sans ce contrôle l'aperçu serait tout
 vert avant que l'écriture n'échoue sur le fichier entier.
 
-Les typologies citées — par leur code ou leur identifiant — sont vérifiées
+Les typologies citées — par leur code, ou par leur libellé quand elles n'en
+ont pas — sont vérifiées
 contre le référentiel par **le même contrôle que la saisie d'une fiche**
 (`TypologieService.validateIds`), appelé ligne par ligne : une typologie
 inconnue coûte une ligne, pas le fichier.
@@ -710,7 +716,9 @@ créneaux en colonnes, un effectif par case. Il transpose les règles de l'impor
 des animateurs — deux appels, rejoué, en mémoire, sans suppression — et diffère
 sur trois points, écrits dans la
 [décision 0022](decisions/0022-import-de-la-grille-des-stands.md) : l'identité
-d'une ligne est l'identifiant, le code ou le nom exact du stand, une colonne sans
+d'une ligne est le code du stand, sinon son nom exact — jamais son
+identifiant, et le modèle téléchargé écrit le code, ou le nom d'un stand qui
+n'en a pas, une colonne sans
 créneau est ignorée et listée plutôt que refusée, et un créneau sans colonne
 garde la case actuelle du stand. Le bouton « Télécharger la grille actuelle
 comme modèle » rend l'édition telle qu'elle est, réimportable telle quelle.

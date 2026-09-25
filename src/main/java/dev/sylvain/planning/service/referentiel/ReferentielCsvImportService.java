@@ -200,13 +200,10 @@ public class ReferentielCsvImportService {
 
     /**
      * Which row of the referential a line designates, and under which code
-     * (ADR 0050). The {@code code} column is the key. The {@code id} column,
-     * when the file carries one, names a row by the id the application gave
-     * it — the shape of an export — and is ignored when this edition has no
-     * such row (a file exported from another edition): numbers are per
-     * edition, so the same id designates something else there. In a file
-     * written before ids were generated the {@code id} column holds what is
-     * now the code, and is read as one.
+     * (ADR 0050): its {@code code}, else — a row may have none — its name when
+     * exactly one row carries it. An {@code id} column is never read: ids are
+     * drawn per edition, so the same number designates another row in another
+     * edition, and an export no longer writes one.
      *
      * @param id     the existing row designated, {@code null} for a creation
      * @param code   the code to write, {@code null} for none
@@ -220,33 +217,35 @@ public class ReferentielCsvImportService {
         static RowKey of(
                 CsvParser.Row row,
                 Colonnes colonnes,
-                IdGenerator.Kind kind,
+                String colonneNom,
+                Map<String, String> idsParCode,
                 Map<String, String> codesParId,
-                Map<String, String> idsParCode) {
-            String idLu = colonnes.valeur(row, "id");
-            String codeLu = colonnes.valeur(row, "code");
-            if (!idLu.isBlank() && codesParId.containsKey(idLu)) {
-                String code = codeLu.isBlank() ? codesParId.get(idLu) : codeLu;
-                // Said on the preview rather than discovered by the write,
-                // which would stop the import halfway through the file.
-                String titulaire = code == null ? null : idsParCode.get(code);
-                String refus = titulaire != null && !titulaire.equals(idLu)
-                        ? "Le code « " + code + " » est déjà porté par " + titulaire + " dans cette édition."
-                        : null;
-                return new RowKey(idLu, code, idLu, refus, null);
+                Map<String, List<String>> idsParNom) {
+            String code = colonnes.valeur(row, "code");
+            if (!code.isBlank()) {
+                return new RowKey(idsParCode.get(code), code, code, null, null);
             }
-            String code = codeLu.isBlank() && !kind.hasGeneratedShape(idLu) ? idLu : codeLu;
-            String note = !idLu.isBlank() && !idLu.equals(code)
-                    ? "L'identifiant « " + idLu + " » n'existe pas dans cette édition : il est ignoré."
-                    : null;
-            if (code.isBlank()) {
-                if (idLu.isBlank()) {
-                    return new RowKey(
-                            null, null, null, "La colonne « code » est vide : c'est elle qui désigne la ligne.", null);
-                }
-                return new RowKey(null, null, idLu, null, note);
+            // No code: the row is found by its name when exactly one row
+            // carries it, and keeps the code it has; a new name is a creation.
+            String nom = colonnes.valeur(row, colonneNom);
+            if (nom.isBlank()) {
+                return new RowKey(null, null, null, "Ni code ni nom : la ligne ne désigne rien.", null);
             }
-            return new RowKey(idsParCode.get(code), code, code, null, note);
+            List<String> homonymes = idsParNom.getOrDefault(Colonnes.key(nom), List.of());
+            if (homonymes.size() > 1) {
+                return new RowKey(
+                        null,
+                        null,
+                        nom,
+                        "Plusieurs lignes de l'édition portent ce nom : donnez-leur un code, et citez-le dans "
+                                + "la colonne « code ».",
+                        null);
+            }
+            if (homonymes.size() == 1) {
+                String id = homonymes.getFirst();
+                return new RowKey(id, codesParId.get(id), nom, null, null);
+            }
+            return new RowKey(null, null, nom, null, null);
         }
 
         /**
@@ -265,6 +264,10 @@ public class ReferentielCsvImportService {
             if (code != null) {
                 cles.add("code:" + code);
             }
+            if (cles.isEmpty() && cle != null) {
+                // A creation by name only: the same name twice would create two rows.
+                cles.add("nom:" + Colonnes.key(cle));
+            }
             if (cles.stream().anyMatch(vus::contains)) {
                 return false;
             }
@@ -273,30 +276,51 @@ public class ReferentielCsvImportService {
         }
     }
 
-    /** A coded referential as the analysis matches lines on: its rows by id, their codes, and back. */
-    private record Coded<T>(Map<String, T> parId, Map<String, String> codesParId, Map<String, String> idsParCode) {
+    /**
+     * A coded referential as the analysis matches lines on: its rows by id,
+     * their ids by code, their codes by id, and their ids by name — the name a
+     * line falls back on when it gives no code.
+     */
+    private record Coded<T>(
+            Map<String, T> parId,
+            Map<String, String> idsParCode,
+            Map<String, String> codesParId,
+            Map<String, List<String>> idsParNom,
+            String colonneNom) {
 
-        static <T> Coded<T> of(List<T> rows, Function<T, String> id, Function<T, String> code) {
+        static <T> Coded<T> of(
+                List<T> rows,
+                Function<T, String> id,
+                Function<T, String> code,
+                Function<T, String> nom,
+                String colonneNom) {
             Map<String, T> parId = new LinkedHashMap<>();
-            Map<String, String> codesParId = new LinkedHashMap<>();
             Map<String, String> idsParCode = new LinkedHashMap<>();
+            Map<String, String> codesParId = new HashMap<>();
+            Map<String, List<String>> idsParNom = new HashMap<>();
             for (T row : rows) {
                 parId.put(id.apply(row), row);
                 codesParId.put(id.apply(row), code.apply(row));
                 if (code.apply(row) != null) {
                     idsParCode.put(code.apply(row), id.apply(row));
                 }
+                if (nom.apply(row) != null && !nom.apply(row).isBlank()) {
+                    idsParNom
+                            .computeIfAbsent(Colonnes.key(nom.apply(row)), cle -> new ArrayList<>())
+                            .add(id.apply(row));
+                }
             }
-            return new Coded<>(parId, codesParId, idsParCode);
+            return new Coded<>(parId, idsParCode, codesParId, idsParNom, colonneNom);
         }
 
-        RowKey key(CsvParser.Row row, Colonnes colonnes, IdGenerator.Kind kind) {
-            return RowKey.of(row, colonnes, kind, codesParId, idsParCode);
+        RowKey key(CsvParser.Row row, Colonnes colonnes) {
+            return RowKey.of(row, colonnes, colonneNom, idsParCode, codesParId, idsParNom);
         }
     }
 
     private Analyse analyseTypologies(CsvParser.Table table, Colonnes colonnes) {
-        Coded<TypologieItem> existantes = Coded.of(typologies.list(), TypologieItem::id, TypologieItem::code);
+        Coded<TypologieItem> existantes =
+                Coded.of(typologies.list(), TypologieItem::id, TypologieItem::code, TypologieItem::label, "libelle");
         List<LigneImportee> lignes = new ArrayList<>();
         List<Ecriture> ecritures = new ArrayList<>();
         Set<String> vus = new LinkedHashSet<>();
@@ -312,7 +336,7 @@ public class ReferentielCsvImportService {
             Coded<TypologieItem> existantes,
             Set<String> vus,
             List<Ecriture> ecritures) {
-        RowKey cle = existantes.key(row, colonnes, IdGenerator.Kind.TYPOLOGIE);
+        RowKey cle = existantes.key(row, colonnes);
         String libelle = colonnes.valeur(row, "libelle");
         List<String> raisons = new ArrayList<>();
         if (libelle.isBlank()) {
@@ -356,7 +380,8 @@ public class ReferentielCsvImportService {
     }
 
     private Analyse analyseEmplacements(CsvParser.Table table, Colonnes colonnes) {
-        Coded<Emplacement> existants = Coded.of(emplacements.list(), Emplacement::getId, Emplacement::getCode);
+        Coded<Emplacement> existants =
+                Coded.of(emplacements.list(), Emplacement::getId, Emplacement::getCode, Emplacement::getNom, "nom");
         List<LigneImportee> lignes = new ArrayList<>();
         List<Ecriture> ecritures = new ArrayList<>();
         Set<String> vus = new LinkedHashSet<>();
@@ -372,7 +397,7 @@ public class ReferentielCsvImportService {
             Coded<Emplacement> existants,
             Set<String> vus,
             List<Ecriture> ecritures) {
-        RowKey cle = existants.key(row, colonnes, IdGenerator.Kind.EMPLACEMENT);
+        RowKey cle = existants.key(row, colonnes);
         String nom = colonnes.valeur(row, "nom");
         Emplacement existant = cle.id() == null ? null : existants.parId().get(cle.id());
         List<String> raisons = new ArrayList<>();
@@ -426,8 +451,8 @@ public class ReferentielCsvImportService {
     }
 
     private Analyse analyseStands(CsvParser.Table table, Colonnes colonnes) {
-        Coded<Stand> existants = Coded.of(stands.list(), Stand::getId, Stand::getCode);
-        Map<String, String> typologiesParCle = typologies.idsByKey();
+        Coded<Stand> existants = Coded.of(stands.list(), Stand::getId, Stand::getCode, Stand::getNom, "nom");
+        Map<String, String> typologiesParCle = typologies.idsByCodeOrLabel();
         Set<String> aCreer = new TreeSet<>();
         // Read once, when the first stand is written: every typologie this
         // import creates is written before any stand (see apply).
@@ -454,7 +479,7 @@ public class ReferentielCsvImportService {
             Map<String, String> typologiesParCle,
             StandWrites ecritures,
             Set<String> vus) {
-        RowKey cle = existants.key(row, colonnes, IdGenerator.Kind.STAND);
+        RowKey cle = existants.key(row, colonnes);
         String nom = colonnes.valeur(row, "nom");
         Stand existant = cle.id() == null ? null : existants.parId().get(cle.id());
         List<String> raisons = new ArrayList<>();
@@ -518,7 +543,7 @@ public class ReferentielCsvImportService {
         Map<String, String> typologiesEcrites = ecritures.typologiesEcrites();
         ecritures.ecritures().add(service -> {
             if (typologiesEcrites.isEmpty()) {
-                typologiesEcrites.putAll(service.typologies.idsByKey());
+                typologiesEcrites.putAll(service.typologies.idsByCodeOrLabel());
             }
             ecrit.setTypologiesProposees(TypologieService.resolveIds(typologiesStand, typologiesEcrites));
             if (id == null) {
@@ -1008,11 +1033,11 @@ public class ReferentielCsvImportService {
     /** Where each awaited column sits, matched on its header whatever its case or accents. */
     private record Colonnes(Map<String, Integer> index) {
 
-        /** « code|id »: either column will do — {@code id} is what a file exported before ADR 0050 carries. */
+        /** The {@code code} is the key of a line (ADR 0050); an {@code id} column is not read. */
         private static final Map<ImportTarget, List<String>> REQUISES = Map.of(
-                ImportTarget.TYPOLOGIES, List.of("code|id", "libelle"),
-                ImportTarget.EMPLACEMENTS, List.of("code|id", "nom"),
-                ImportTarget.STANDS, List.of("code|id", "nom", "typologies"),
+                ImportTarget.TYPOLOGIES, List.of("code", "libelle"),
+                ImportTarget.EMPLACEMENTS, List.of("code", "nom"),
+                ImportTarget.STANDS, List.of("code", "nom", "typologies"),
                 ImportTarget.CRENEAUX, List.of("date", "heureDebut", "heureFin"),
                 ImportTarget.JOURNEES_TYPES, List.of("nom", "vacations"));
 
@@ -1028,6 +1053,13 @@ public class ReferentielCsvImportService {
                             .noneMatch(alternative -> index.containsKey(key(alternative))))
                     .map(colonne -> colonne.replace("|", " (ou ") + (colonne.contains("|") ? ")" : ""))
                     .toList();
+            if (manquantes.contains("code") && index.containsKey("id")) {
+                // A file exported before ADR 0050: its id column holds what is
+                // now the code, and renaming the header is all it takes.
+                throw new BusinessError.Invalid("La colonne « id » n'est plus lue : une ligne se désigne par son "
+                        + "code. Pour un fichier exporté avant cette version, renommez simplement la colonne "
+                        + "« id » en « code ».");
+            }
             if (!manquantes.isEmpty()) {
                 throw new BusinessError.Invalid(
                         "Colonne(s) absente(s) du fichier : " + String.join(", ", manquantes)
@@ -1042,7 +1074,7 @@ public class ReferentielCsvImportService {
         }
 
         /** `Effectif Min`, `effectif_min` and `EFFECTIFMIN` are the same column. */
-        private static String key(String entete) {
+        static String key(String entete) {
             return StandGrilleImportService.normalise(entete).replaceAll("[^a-z0-9]", "");
         }
     }

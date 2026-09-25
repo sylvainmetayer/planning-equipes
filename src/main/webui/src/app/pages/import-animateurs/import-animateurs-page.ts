@@ -137,8 +137,6 @@ export class ImportAnimateursPage {
   /** Human name of a target field — built here, never at module scope. */
   protected libelleChamp(champ: ChampImport): string {
     switch (champ) {
-      case 'id':
-        return $localize`:@@importCsv.champ.id:Identifiant`;
       case 'prenom':
         return $localize`:@@importCsv.champ.prenom:Prénom`;
       case 'nom':
@@ -163,7 +161,7 @@ export class ImportAnimateursPage {
   }
 
   /**
-   * Downloads the example roster the application ships with — the nine columns
+   * Downloads the example roster the application ships with — the eight columns
    * this screen reads, filled with the animateurs of the anonymised
    * `festival-realiste-canicule` scenario.
    *

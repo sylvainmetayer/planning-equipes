@@ -174,20 +174,19 @@ public class ReferentielCsvExportService {
 
     private String csvTypologies() {
         StringBuilder csv = new StringBuilder();
-        ligne(csv, "id", "code", "libelle", "ninja");
+        ligne(csv, "code", "libelle", "ninja");
         for (TypologieItem typologie : typologies.list()) {
-            ligne(csv, typologie.id(), text(typologie.code()), typologie.label(), typologie.ninja() ? "oui" : "");
+            ligne(csv, text(typologie.code()), typologie.label(), typologie.ninja() ? "oui" : "");
         }
         return csv.toString();
     }
 
     private String csvEmplacements() {
         StringBuilder csv = new StringBuilder();
-        ligne(csv, "id", "code", "nom", "latitude", "longitude");
+        ligne(csv, "code", "nom", "latitude", "longitude");
         for (Emplacement emplacement : emplacements.list()) {
             ligne(
                     csv,
-                    emplacement.getId(),
                     text(emplacement.getCode()),
                     emplacement.getNom(),
                     decimal(emplacement.getLatitude()),
@@ -198,12 +197,11 @@ public class ReferentielCsvExportService {
 
     private String csvStands() {
         StringBuilder csv = new StringBuilder();
-        ligne(csv, "id", "code", "nom", "typologies", "effectifMin", "effectifMax");
+        ligne(csv, "code", "nom", "typologies", "effectifMin", "effectifMax");
         Map<String, String> typologieParId = typologiesLisibles();
         for (Stand stand : stands.list()) {
             ligne(
                     csv,
-                    stand.getId(),
                     text(stand.getCode()),
                     stand.getNom(),
                     joint(new TreeSet<>(stand.getTypologiesProposees().stream()
@@ -271,15 +269,16 @@ public class ReferentielCsvExportService {
 
     /**
      * How a typologie is cited in a file: by its code when it has one — what
-     * a person reading the spreadsheet recognises — and by its id otherwise.
-     * Both read back (ADR 0050).
+     * a person reading the spreadsheet recognises — and by its label
+     * otherwise, never by its id, which is drawn per edition (ADR 0050). Both
+     * read back.
      */
     private Map<String, String> typologiesLisibles() {
         Map<String, String> parId = new LinkedHashMap<>();
         typologies
                 .list()
                 .forEach(typologie ->
-                        parId.put(typologie.id(), typologie.code() != null ? typologie.code() : typologie.id()));
+                        parId.put(typologie.id(), typologie.code() != null ? typologie.code() : typologie.label()));
         return parId;
     }
 
@@ -300,7 +299,6 @@ public class ReferentielCsvExportService {
         StringBuilder csv = new StringBuilder();
         ligne(
                 csv,
-                "identifiant",
                 "prénom",
                 "nom",
                 "date de naissance",
@@ -313,7 +311,6 @@ public class ReferentielCsvExportService {
         for (Animateur animateur : animateurs.list()) {
             ligne(
                     csv,
-                    animateur.getId(),
                     animateur.getPrenom(),
                     animateur.getNom(),
                     animateur.getDateNaissance() == null

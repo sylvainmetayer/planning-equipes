@@ -9,7 +9,6 @@ import { AnimateurCsvMapping, ImportCsvAction } from '../../core/models';
 export type ChampImport = keyof AnimateurCsvMapping;
 
 export const CHAMPS_IMPORT: readonly ChampImport[] = [
-  'id',
   'prenom',
   'nom',
   'dateNaissance',
@@ -23,7 +22,6 @@ export const CHAMPS_IMPORT: readonly ChampImport[] = [
 /** Nothing mapped — what a file whose headers say nothing recognisable starts from. */
 export function mappingVide(): AnimateurCsvMapping {
   return {
-    id: null,
     prenom: null,
     nom: null,
     dateNaissance: null,
@@ -66,12 +64,13 @@ export function mappingVideOuNul(mapping: AnimateurCsvMapping | null): boolean {
 }
 
 /**
- * A row can only name somebody through one of these three. Without any of
- * them, the server refuses the file, so the button is disabled first.
+ * A row can only name somebody through one of these three — an id is never
+ * read, the same number naming somebody else in another edition. Without any
+ * of them, the server refuses the file, so the button is disabled first.
  */
 export function mappingNommeQuelquun(mapping: AnimateurCsvMapping | null): boolean {
   return (
-    mapping !== null && (mapping.id !== null || mapping.prenom !== null || mapping.nom !== null)
+    mapping !== null && (mapping.prenom !== null || mapping.nom !== null || mapping.email !== null)
   );
 }
 

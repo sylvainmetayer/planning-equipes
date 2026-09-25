@@ -52,11 +52,11 @@ export class ImportsPage {
   protected readonly onglet = signal<OngletImports>('typologies');
 
   /* The words each referential tab needs, kept here so the shared card stays about the mechanism. */
-  protected readonly colonnesTypologies = $localize`:@@imports.typologies.colonnes:Colonnes « code » et « libelle », obligatoires ; « ninja » facultative pour la typologie polyvalente.`;
+  protected readonly colonnesTypologies = $localize`:@@imports.typologies.colonnes:Colonnes « code » et « libelle », obligatoires ; « ninja » facultative pour la typologie polyvalente. Un code vide désigne la ligne par son libellé.`;
   protected readonly aideTypologies = $localize`:@@imports.typologies.aide:Le code est ce que les stands et les compétences citeront : court et stable. Un code déjà connu voit son libellé mis à jour ; l'identifiant, lui, est attribué par l'application.`;
-  protected readonly colonnesEmplacements = $localize`:@@imports.emplacements.colonnes:Colonnes « code » et « nom », obligatoires ; « latitude » et « longitude » facultatives.`;
+  protected readonly colonnesEmplacements = $localize`:@@imports.emplacements.colonnes:Colonnes « code » et « nom », obligatoires ; « latitude » et « longitude » facultatives. Un code vide désigne la ligne par son nom.`;
   protected readonly aideEmplacements = $localize`:@@imports.emplacements.aide:Sans coordonnées, l'emplacement existe mais ne pèse pas sur les distances entre stands d'une même journée.`;
-  protected readonly colonnesStands = $localize`:@@imports.stands.colonnes:Colonnes « code », « nom » et « typologies » (par leur code), obligatoires ; « effectifMin » et « effectifMax » facultatives.`;
+  protected readonly colonnesStands = $localize`:@@imports.stands.colonnes:Colonnes « code », « nom » et « typologies » (par leur code, sinon leur libellé), obligatoires ; « effectifMin » et « effectifMax » facultatives. Un code vide désigne la ligne par son nom.`;
   protected readonly aideStands = $localize`:@@imports.stands.aide:Plusieurs typologies se séparent par « | ». Sans effectif, le stand tient à une personne. Une typologie inconnue est créée, et annoncée avant l'écriture.`;
   protected readonly colonnesCreneaux = $localize`:@@imports.creneaux.colonnes:Colonnes « date », « heureDebut » et « heureFin », obligatoires ; « couverturePause » facultative.`;
   protected readonly aideCreneaux = $localize`:@@imports.creneaux.aide:Un créneau se reconnaît à sa date et à ses deux heures : rejoué, le même fichier met à jour au lieu de doubler la grille. Une fin avant le début passe minuit.`;
