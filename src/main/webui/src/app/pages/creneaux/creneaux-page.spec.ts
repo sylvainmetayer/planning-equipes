@@ -373,7 +373,9 @@ describe('CreneauxPage', () => {
 
       await page.remove(creneau({ id: 1, jour: 1 }));
 
-      expect(crud.remove).toHaveBeenCalledWith('creneaux', 1, expect.anything());
+      expect(crud.remove).toHaveBeenCalledWith('creneaux', 1, expect.anything(), {
+        name: { text: '2026-08-01 10:00–12:00' },
+      });
       expect(crud.removeMany).not.toHaveBeenCalled();
     });
   });

@@ -8,7 +8,7 @@
 // blank. Typologies already have theirs in `typologie-colors.ts`
 // (`typologieLabels` / `typologieLabel`), which this file does not duplicate.
 
-import { Animateur, Emplacement, Stand } from './models';
+import { Animateur, Creneau, Emplacement, Stand } from './models';
 
 /** Display name by id; built once per list, read many times. */
 export type LabelIndex = ReadonlyMap<string, string>;
@@ -16,6 +16,14 @@ export type LabelIndex = ReadonlyMap<string, string>;
 /** « Prénom Nom », trimmed; empty when the fiche carries neither. */
 export function animateurName(animateur: Pick<Animateur, 'prenom' | 'nom'>): string {
   return `${animateur.prenom ?? ''} ${animateur.nom ?? ''}`.trim();
+}
+
+/**
+ * A créneau by its day and hours (« 2026-07-14 10:00–12:00 »): it has no name,
+ * and its numeric id tells a reader nothing.
+ */
+export function creneauName(creneau: Pick<Creneau, 'date' | 'heureDebut' | 'heureFin'>): string {
+  return `${creneau.date} ${creneau.heureDebut}–${creneau.heureFin}`;
 }
 
 /** Index of rows by id, keeping only the ones whose label is not blank. */

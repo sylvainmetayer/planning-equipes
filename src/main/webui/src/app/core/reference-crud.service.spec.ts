@@ -159,6 +159,31 @@ describe('ReferenceCrudService', () => {
       expect(notification.message).toContain('1');
     });
 
+    it('names the entity in the success notification', async () => {
+      store.save.mockResolvedValueOnce({ id: 'S1', avertissements: [] });
+
+      await service.save('stands', { id: 'S1' }, 'S1', 'Stand', { text: 'Grand jeu' });
+
+      const notification = notifications.notify.mock.calls[0][0] as { title: string };
+      expect(notification.title).toBe('Modification de Stand « Grand jeu » effectuée.');
+    });
+
+    it('keeps a personal name out of the notification of a save, warnings included', async () => {
+      store.save.mockResolvedValueOnce({
+        id: 'A1',
+        avertissements: [{ type: 'INDISPONIBILITE_HORS_EVENEMENT', message: 'le 2027-08-15' }],
+      });
+
+      await service.save('animateurs', { id: '' }, null, 'Animateur', {
+        text: 'Jean Dupont',
+        personal: true,
+      });
+
+      const notification = notifications.notify.mock.calls[0][0] as { title: string };
+      expect(notification.title).toContain('« A1 »');
+      expect(notification.title).not.toContain('Dupont');
+    });
+
     // No entity is keyed by a typed id any more: a creation goes out without
     // one, and the server draws it.
     it('sends a creation without its blank id', async () => {
@@ -449,13 +474,47 @@ describe('ReferenceCrudService', () => {
 
     // Précédent des typologies : la page calcule ses usages côté client et les
     // passe en `detail`. Ce chemin ne doit pas être doublé d'un appel serveur.
-    it('laisse le détail fourni par la page primer sur le décompte serveur', async () => {
+    it('lets the detail given by the page win over the server count', async () => {
       usages.phrase = 'décompte serveur';
 
-      await service.remove('typologies', 'T1', 'la typologie', 'détail de la page');
+      await service.remove('typologies', 'T1', 'la typologie', { detail: 'détail de la page' });
 
       expect(usages.describe).not.toHaveBeenCalled();
       await expect(confirm.demande().detail).resolves.toBe('détail de la page');
+    });
+
+    // An id drawn per edition names nothing: the confirmation and the
+    // notification say the stand's name, and so may the log — it is not
+    // personal data.
+    it('names the entity in the confirmation and the notification', async () => {
+      await service.remove('stands', 'S1', 'Stand', { name: { text: 'Grand jeu' } });
+
+      expect(confirm.demande().title).toBe('Supprimer Stand « Grand jeu » ?');
+      const notification = notifications.notify.mock.calls[0][0] as {
+        title: string;
+      };
+      expect(notification.title).toBe('Suppression de Stand « Grand jeu » effectuée.');
+    });
+
+    it('falls back to the id when the name is blank', async () => {
+      await service.remove('stands', 'S1', 'Stand', { name: { text: '  ' } });
+
+      expect(confirm.demande().title).toBe('Supprimer Stand « S1 » ?');
+    });
+
+    /**
+     * The confirmation is never logged, so it may name the person; the
+     * notification is copied into a `localStorage` log that outlives the
+     * logout, so it names the id instead (docs/rgpd.md §7).
+     */
+    it('keeps a personal name out of the notification of a deletion', async () => {
+      await service.remove('animateurs', 'A1', 'Animateur', {
+        name: { text: 'Jean Dupont', personal: true },
+      });
+
+      expect(confirm.demande().title).toContain('Jean Dupont');
+      const notification = notifications.notify.mock.calls[0][0] as { title: string };
+      expect(notification.title).toBe('Suppression de Animateur « A1 » effectuée.');
     });
 
     // Le décompte informe, il ne verrouille rien : sans phrase à afficher, la

@@ -48,6 +48,34 @@ const ROUTE_PAR_RESSOURCE: Readonly<Record<string, string>> = {
   'contraintes-ad-hoc': '/ad-hoc-constraints',
 };
 
+/**
+ * What the confirmation and the notifications call an entity instead of its
+ * id, which the server draws per edition and names nothing to a reader.
+ */
+export interface EntityName {
+  /** A stand's name, a typologie's label, an animateur's « Prénom Nom ». */
+  text: string;
+  /**
+   * The name is personal data (an animateur's identity): the confirmation
+   * shows it, but a notification names the id instead — every one is copied
+   * into a `localStorage` log that outlives the logout (`docs/rgpd.md` §7).
+   */
+  personal?: boolean;
+}
+
+/** Options of {@link ReferenceCrudService.remove}. */
+export interface RemoveOptions {
+  /**
+   * Extra sentence appended to the confirmation, for the entities whose
+   * deletion has consequences the user cannot see from the row itself (e.g.
+   * how many stands reference a typologie). Left out, the counters of the
+   * entity are asked to the server instead — see {@link ReferenceUsageService}.
+   */
+  detail?: string;
+  /** What to call the entity; the id when absent or blank. */
+  name?: EntityName;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ReferenceCrudService {
   private readonly store = inject(ReferenceDataStore);
@@ -79,12 +107,14 @@ export class ReferenceCrudService {
    * now holds the other session's version (see {@link resoudreConflit}).
    * No entity is keyed by an id the user types: on a creation the server
    * draws it, so an empty `id` is dropped from the payload rather than sent.
+   * `name` is what the notification calls the entity; the id when absent.
    */
   async save<T extends { id?: RecordId | null }>(
     resource: string,
     payload: T,
     editingId: RecordId | null,
     label: string,
+    name?: EntityName,
   ): Promise<boolean> {
     try {
       const { id, avertissements } = await this.persist(
@@ -101,11 +131,17 @@ export class ReferenceCrudService {
       // undefined" in a snack bar that stays until it is dismissed.
       const identifiant = id ?? payload.id ?? editingId ?? '';
       if (avertissements.length > 0) {
+        const count = avertissements.length;
         // Written all the same — the entity is in the list behind the snack
         // bar. No timeout: a warning nobody had time to read is a warning that
         // was not given, and this one names dates the user has to go and check.
         this.notifications.notify({
-          title: $localize`:@@crud.savedWithWarnings:Enregistrement de ${label}:label: ${identifiant}:id: effectué — ${avertissements.length}:count: point(s) à vérifier.`,
+          ...namedTitles(
+            identifiant,
+            name,
+            (shown) =>
+              $localize`:@@crud.savedWithWarnings:Enregistrement de ${label}:label: « ${shown}:nom: » effectué — ${count}:count: point(s) à vérifier.`,
+          ),
           message: detailler(avertissements),
           messageJournal: detailler(avertissements.filter(estJournalisable)),
           variant: 'warning',
@@ -121,9 +157,11 @@ export class ReferenceCrudService {
         return true;
       }
       this.notifications.notify({
-        title: editingId
-          ? $localize`:@@crud.updated:Modification de ${label}:label: ${identifiant}:id: effectuée.`
-          : $localize`:@@crud.created:Création de ${label}:label: ${identifiant}:id: effectuée.`,
+        ...namedTitles(identifiant, name, (shown) =>
+          editingId
+            ? $localize`:@@crud.updated:Modification de ${label}:label: « ${shown}:nom: » effectuée.`
+            : $localize`:@@crud.created:Création de ${label}:label: « ${shown}:nom: » effectuée.`,
+        ),
         variant: 'success',
         timeout: 4000,
       });
@@ -189,27 +227,26 @@ export class ReferenceCrudService {
     }
   }
 
-  /** Asks for a confirmation, then deletes. Returns true when deleted. */
   /**
+   * Asks for a confirmation, then deletes. Returns true when deleted.
+   *
    * The dialog opens on the click, and the impact figures land in it when the
    * server answers — never the other way round: awaiting the count first left
    * the delete button live with nothing on screen, and a double click then
    * stacked two dialogs and two deletions.
    *
-   * @param detail extra sentence appended to the confirmation, for the entities
-   *               whose deletion has consequences the user cannot see from the
-   *               row itself (e.g. how many stands reference a typologie).
-   *               Left empty, the counters of the entity are asked to the
-   *               server instead — see {@link ReferenceUsageService}.
+   * The confirmation always shows `name`, personal or not: a dialog is never
+   * logged. Only the notification that follows is, hence {@link namedTitles}.
    */
   async remove(
     resource: string,
     id: string | number,
     label: string,
-    detail = '',
+    { detail = '', name }: RemoveOptions = {},
   ): Promise<boolean> {
+    const shown = shownName(id, name);
     const confirmed = await this.confirm.ask({
-      title: $localize`:@@crud.deleteTitle:Supprimer ${label}:label: ${id}:id: ?`,
+      title: $localize`:@@crud.deleteTitle:Supprimer ${label}:label: « ${shown}:nom: » ?`,
       message: $localize`:@@crud.deleteMessage:Cette action est irréversible.`,
       detail: detail ? Promise.resolve(detail) : this.usages.describe(resource, [id]),
       confirmLabel: $localize`:@@crud.deleteConfirm:Supprimer`,
@@ -222,7 +259,12 @@ export class ReferenceCrudService {
       await this.store.remove(resource, id);
       this.refreshResolution();
       this.notifications.notify({
-        title: $localize`:@@crud.deleted:Suppression de ${label}:label: ${id}:id: effectuée.`,
+        ...namedTitles(
+          id,
+          name,
+          (named) =>
+            $localize`:@@crud.deleted:Suppression de ${label}:label: « ${named}:nom: » effectuée.`,
+        ),
         variant: 'success',
         timeout: 4000,
       });
@@ -399,6 +441,26 @@ export class ReferenceCrudService {
       variant: 'error',
     });
   }
+}
+
+/** What the screen calls the entity: its name, or its id when it has none. */
+function shownName(id: RecordId, name: EntityName | undefined): string {
+  return name?.text.trim() || String(id);
+}
+
+/**
+ * The notification's title naming the entity — by its id when that name is
+ * personal: a write-time notification never names a person (AGENTS.md), since
+ * the browser copies every one into a `localStorage` log that outlives the
+ * logout (docs/rgpd.md §7). Only the confirmation, which is never logged,
+ * shows the person's name.
+ */
+function namedTitles(
+  id: RecordId,
+  name: EntityName | undefined,
+  title: (shown: string) => string,
+): { title: string } {
+  return { title: title(name?.personal ? String(id) : shownName(id, name)) };
 }
 
 /** The payload without its `id` when it carries none worth sending. */

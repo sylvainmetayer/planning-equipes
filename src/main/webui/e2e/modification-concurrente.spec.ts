@@ -44,14 +44,16 @@ async function nomEnBase(): Promise<string> {
 }
 
 /** Opens the stand's form, then lets the other session write before this one saves. */
-async function ouvrirPuisSubirUneEcritureAilleurs(page: Page): Promise<void> {
+async function openThenLoseRaceToOtherSession(page: Page): Promise<void> {
+  // The form is titled after the stand's name, which an earlier test may have changed.
+  const standName = await nomEnBase();
   await page.goto('/stands');
   await page.getByLabel('Filtrer').fill(STAND_ID);
   const ligne = page.getByRole('row', { name: new RegExp(STAND_ID) });
   await expect(ligne).toBeVisible();
   await ligne.getByRole('button', { name: 'Modifier' }).click();
   await dialogueOuvert(page);
-  const formulaire = page.getByRole('dialog').filter({ hasText: `Modifier le stand ${STAND_ID}` });
+  const formulaire = page.getByRole('dialog').filter({ hasText: `Modifier le stand ${standName}` });
   await expect(formulaire).toBeVisible();
 
   await autreSessionRenomme('Renommé ailleurs');
@@ -70,12 +72,12 @@ test.describe('modification concurrente', () => {
     );
   });
 
-  test("« Recharger » n'écrit rien et referme le formulaire sur la version de l'autre session", async ({
+  test("« Recharger » writes nothing and closes the form over the other session's version", async ({
     browser,
   }) => {
     const page = await pageAdmin(browser, admin);
     try {
-      await ouvrirPuisSubirUneEcritureAilleurs(page);
+      await openThenLoseRaceToOtherSession(page);
 
       const conflit = page.getByRole('dialog').filter({ hasText: 'Modifiée entre-temps' });
       await expect(conflit).toBeVisible();
@@ -95,10 +97,10 @@ test.describe('modification concurrente', () => {
     }
   });
 
-  test('« Écraser quand même » impose la saisie de cet écran', async ({ browser }) => {
+  test('« Écraser quand même » imposes what this screen typed', async ({ browser }) => {
     const page = await pageAdmin(browser, admin);
     try {
-      await ouvrirPuisSubirUneEcritureAilleurs(page);
+      await openThenLoseRaceToOtherSession(page);
 
       const conflit = page.getByRole('dialog').filter({ hasText: 'Modifiée entre-temps' });
       await expect(conflit).toBeVisible();

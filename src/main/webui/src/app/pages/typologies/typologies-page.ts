@@ -186,6 +186,7 @@ export class TypologiesPage extends ReferenceTablePage<TypologieItem> {
       },
       ressource: 'typologies',
       libelle: () => $localize`:@@typologies.entityLabel:Typologie`,
+      name: (typologie) => typologie.label,
       libellePluriel: labelTypologiesPluriel,
       usages: (typologie, store) => referencesTypologie(typologie.id, store),
     });

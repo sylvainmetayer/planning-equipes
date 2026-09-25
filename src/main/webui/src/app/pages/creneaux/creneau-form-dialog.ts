@@ -9,6 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
+import { creneauName } from '../../core/reference-labels';
 import { SolverJobService } from '../../core/solver-job.service';
 import { Creneau } from '../../core/models';
 
@@ -132,6 +133,7 @@ export class CreneauFormDialog {
         creneau,
         editingId,
         $localize`:@@creneaux.entityLabel:Créneau`,
+        { text: creneauName(draft) },
       )
     ) {
       this.dialogRef.close(true);

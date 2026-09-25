@@ -51,6 +51,13 @@ export interface ReferenceTableConfig<T> {
   /** Singular label, in the confirmation of a single delete. */
   libelle: () => string;
 
+  /**
+   * What the confirmation and the notification of a single delete call the
+   * row — its nom or label, never its id, which is drawn per edition. None of
+   * the three pages' names is personal data, so the notifications log keeps it.
+   */
+  name: (row: T) => string;
+
   /** Plural label, in the confirmation of a bulk delete. */
   libellePluriel: () => string;
 
@@ -218,12 +225,13 @@ export abstract class ReferenceTablePage<T> {
     const id = this.config.id(ligne);
     const libelle = this.config.libelle();
     const usages = this.config.usages?.(ligne, this.store);
-    // The fourth argument is left off entirely when the entity has no usages to
-    // report, rather than passed as the empty string its default already is: a
-    // page with nothing to say must not look like one saying nothing.
+    const name = { text: this.config.name(ligne) };
+    // `detail` is left off entirely when the entity has no usages to report,
+    // rather than passed as the empty string its default already is: a page
+    // with nothing to say must not look like one saying nothing.
     await (usages === undefined
-      ? this.crud.remove(ressource, id, libelle)
-      : this.crud.remove(ressource, id, libelle, usages));
+      ? this.crud.remove(ressource, id, libelle, { name })
+      : this.crud.remove(ressource, id, libelle, { detail: usages, name }));
   }
 
   protected async removeSelection(): Promise<void> {

@@ -38,6 +38,7 @@ import { ProblemesStore } from '../../core/problemes.store';
 import { libelleDernierePublication } from '../../core/publication';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
+import { animateurName } from '../../core/reference-labels';
 import { SolverJobService } from '../../core/solver-job.service';
 import { TableNavigation } from '../../core/table-navigation';
 import { TableSelection } from '../../core/table-selection';
@@ -616,6 +617,8 @@ export class AnimateursPage implements OnInit {
       'animateurs',
       animateur.id,
       $localize`:@@animateurs.entityLabel:Animateur`,
+      // In the confirmation and the snack bar; the notifications log keeps the id.
+      { name: { text: animateurName(animateur), personal: true } },
     );
   }
 

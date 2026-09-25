@@ -11,6 +11,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
+import { animateurName } from '../../core/reference-labels';
 import { SolverJobService } from '../../core/solver-job.service';
 import { urlLegifrance } from '../../core/legifrance';
 import { Animateur, NiveauCompetence, TypologieItem } from '../../core/models';
@@ -95,10 +96,17 @@ export class AnimateurFormDialog {
     cancelResult: false,
   });
   protected readonly newJour = signal('');
+  /**
+   * Names the animateur as the fiche was loaded. A dialog title is never
+   * logged, so it may carry the identity the notifications keep out of their
+   * log (docs/rgpd.md §7).
+   */
   protected readonly formTitle = computed(() => {
     const id = this.editingId();
+    const animateur = this.data.animateur;
+    const name = (animateur && animateurName(animateur)) || id;
     return id
-      ? $localize`:@@animateurs.form.editTitle:Modifier l'animateur ${id}:id:`
+      ? $localize`:@@animateurs.form.editTitle:Modifier l'animateur ${name}:nom:`
       : $localize`:@@animateurs.form.newTitle:Nouvel animateur`;
   });
   protected readonly submitLabel = computed(() =>
@@ -173,6 +181,8 @@ export class AnimateurFormDialog {
         animateur,
         this.editingId(),
         $localize`:@@animateurs.entityLabel:Animateur`,
+        // Shown in the snack bar, replaced by the id in the notifications log.
+        { text: animateurName(animateur), personal: true },
       )
     ) {
       this.formDraft.complete();

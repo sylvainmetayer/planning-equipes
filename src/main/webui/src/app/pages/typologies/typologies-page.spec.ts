@@ -211,12 +211,10 @@ describe('TypologiesPage table', () => {
     action(0, 'Supprimer').click();
     await fixture.whenStable();
 
-    expect(crud.remove).toHaveBeenCalledWith(
-      'typologies',
-      'ambiance',
-      'Typologie',
-      '1 stand(s) et 1 animateur(s) la référencent.',
-    );
+    expect(crud.remove).toHaveBeenCalledWith('typologies', 'ambiance', 'Typologie', {
+      detail: '1 stand(s) et 1 animateur(s) la référencent.',
+      name: { text: 'Ambiance' },
+    });
   });
 
   it('says plainly when nothing references the typologie', async () => {
@@ -225,12 +223,10 @@ describe('TypologiesPage table', () => {
     action(0, 'Supprimer').click();
     await fixture.whenStable();
 
-    expect(crud.remove).toHaveBeenCalledWith(
-      'typologies',
-      'ambiance',
-      'Typologie',
-      'Aucun stand ni animateur ne la référence.',
-    );
+    expect(crud.remove).toHaveBeenCalledWith('typologies', 'ambiance', 'Typologie', {
+      detail: 'Aucun stand ni animateur ne la référence.',
+      name: { text: 'Ambiance' },
+    });
   });
 
   it('offers no bulk edit: a typologie carries nothing two rows could share', async () => {

@@ -53,10 +53,12 @@ export class EmplacementFormDialog {
 
   protected readonly editingId = signal<string | null>(this.data.emplacement?.id ?? null);
   protected readonly draft = signal<EmplacementDraft>(toDraft(this.data.emplacement));
+  /** Names the emplacement as it was loaded: its id is drawn per edition and tells a reader nothing. */
   protected readonly formTitle = computed(() => {
     const id = this.editingId();
+    const name = this.data.emplacement?.nom?.trim() || id;
     return id
-      ? $localize`:@@emplacements.form.editTitle:Modifier l'emplacement ${id}:id:`
+      ? $localize`:@@emplacements.form.editTitle:Modifier l'emplacement ${name}:nom:`
       : $localize`:@@emplacements.form.newTitle:Nouvel emplacement`;
   });
   protected readonly submitLabel = computed(() =>
@@ -102,6 +104,7 @@ export class EmplacementFormDialog {
         emplacement,
         this.editingId(),
         $localize`:@@emplacements.entityLabel:Emplacement`,
+        { text: emplacement.nom },
       )
     ) {
       this.dialogRef.close(true);

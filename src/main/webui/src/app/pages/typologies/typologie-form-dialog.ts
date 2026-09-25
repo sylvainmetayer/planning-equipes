@@ -41,10 +41,12 @@ export class TypologieFormDialog {
 
   protected readonly editingId = signal<string | null>(this.data.typologie?.id ?? null);
   protected readonly draft = signal<TypologieItem>(toDraft(this.data.typologie));
+  /** Names the typologie as it was loaded: its id is drawn per edition and tells a reader nothing. */
   protected readonly formTitle = computed(() => {
     const id = this.editingId();
+    const name = this.data.typologie?.label?.trim() || id;
     return id
-      ? $localize`:@@typologies.form.editTitle:Modifier la typologie ${id}:id:`
+      ? $localize`:@@typologies.form.editTitle:Modifier la typologie ${name}:nom:`
       : $localize`:@@typologies.form.newTitle:Nouvelle typologie`;
   });
   protected readonly submitLabel = computed(() =>
@@ -80,6 +82,7 @@ export class TypologieFormDialog {
         typologie,
         this.editingId(),
         $localize`:@@typologies.entityLabel:Typologie`,
+        { text: typologie.label },
       )
     ) {
       this.dialogRef.close(true);

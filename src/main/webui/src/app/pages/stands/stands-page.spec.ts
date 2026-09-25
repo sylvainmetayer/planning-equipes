@@ -301,9 +301,11 @@ describe('StandsPage', () => {
     it('deletes a single row on its own, without touching the selection', async () => {
       const page = createPage([stand({ id: 'tir' })]);
 
-      await page.remove(stand({ id: 'tir' }));
+      await page.remove(stand({ id: 'tir', nom: "Tir à l'arc" }));
 
-      expect(crud.remove).toHaveBeenCalledWith('stands', 'tir', expect.anything());
+      expect(crud.remove).toHaveBeenCalledWith('stands', 'tir', expect.anything(), {
+        name: { text: "Tir à l'arc" },
+      });
       expect(crud.removeMany).not.toHaveBeenCalled();
     });
   });

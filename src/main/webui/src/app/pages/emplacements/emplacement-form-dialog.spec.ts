@@ -111,7 +111,7 @@ describe('EmplacementFormDialog', () => {
     expect(champ(fixture, 'latitude').value).toBe('47.2');
     expect(champ(fixture, 'longitude').value).toBe('-1.55');
     expect(racine(fixture).querySelector('h2')!.textContent!.trim()).toBe(
-      "Modifier l'emplacement hall",
+      "Modifier l'emplacement Hall A",
     );
   });
 

@@ -149,6 +149,7 @@ describe('ParametresPage ninja picker', () => {
       { id: 'STRATEGIE', label: 'Stratégie', ninja: true },
       'STRATEGIE',
       expect.anything(),
+      { text: 'Stratégie' },
     );
   });
 
@@ -162,6 +163,7 @@ describe('ParametresPage ninja picker', () => {
       { id: 'JOKER', label: 'Joker', ninja: false },
       'JOKER',
       expect.anything(),
+      { text: 'Joker' },
     );
   });
 
