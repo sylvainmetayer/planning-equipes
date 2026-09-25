@@ -130,7 +130,8 @@ public class NotificationWriter {
             return Optional.empty();
         }
         MailContent content = RelanceConfirmationMail.render(templates, productName, n.prenom(), n.lienEspace());
-        return Optional.of(new MailDraft(n.email(), content.subject(), content.text(), content.html()));
+        return Optional.of(new MailDraft(
+                n.email(), content.subject(), content.text(), content.html(), RelanceConfirmationMail.TEMPLATE));
     }
 
     /**
@@ -280,7 +281,7 @@ public class NotificationWriter {
 
     private MailDraft draft(String destinataire, String template, String sujet, Map<String, Object> values) {
         MailContent content = templates.render(template, sujet, values);
-        return new MailDraft(destinataire, content.subject(), content.text(), content.html());
+        return new MailDraft(destinataire, content.subject(), content.text(), content.html(), template);
     }
 
     private static boolean withoutRecipient(String email) {

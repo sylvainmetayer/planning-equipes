@@ -4,8 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import dev.sylvain.planning.service.ProductName;
+import dev.sylvain.planning.service.mail.MailMetrics;
 import dev.sylvain.planning.service.mail.MailTemplates;
 import dev.sylvain.planning.service.mail.MailTemplates.MailContent;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.Mailer;
 import java.util.ArrayList;
@@ -29,6 +31,7 @@ class MailServiceTest {
 
     private final List<Mail> envoyes = new ArrayList<>();
     private final MailTemplates templates = MailTemplates.standalone(ProductName.neutral());
+    private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
     private MailService service;
 
     @BeforeEach
@@ -37,7 +40,7 @@ class MailServiceTest {
     }
 
     private MailService service(Mailer mailer, AdminAddress adminAddress) {
-        return new MailService(mailer, adminAddress, ProductName.neutral(), templates);
+        return new MailService(mailer, adminAddress, ProductName.neutral(), templates, new MailMetrics(registry));
     }
 
     /** A service whose SMTP refuses everything. */
@@ -47,6 +50,35 @@ class MailServiceTest {
                     throw new IllegalStateException("SMTP down");
                 },
                 new AdminAddress(Optional.of("admin@example.org")));
+    }
+
+    /** Each send is counted under the template that wrote it, never under a recipient. */
+    @Test
+    void aSentMailIsCountedUnderItsTemplate() {
+        service.sendAccessCode("alice@example.org", "Alice", "042137");
+
+        assertThat(registry.get("planning.mail.sent")
+                        .tag("template", "code-acces")
+                        .counter()
+                        .count())
+                .isEqualTo(1.0);
+        assertThat(registry.find("planning.mail.failures").counters()).isEmpty();
+    }
+
+    /** An SMTP failure is counted, and still reaches the caller. */
+    @Test
+    void aFailedSendIsCountedAndStillPropagates() {
+        MailService failing = failingService();
+
+        assertThatThrownBy(() -> failing.sendAccessCode("alice@example.org", "Alice", "042137"))
+                .isInstanceOf(IllegalStateException.class);
+
+        assertThat(registry.get("planning.mail.failures")
+                        .tag("template", "code-acces")
+                        .counter()
+                        .count())
+                .isEqualTo(1.0);
+        assertThat(registry.find("planning.mail.sent").counters()).isEmpty();
     }
 
     @Test

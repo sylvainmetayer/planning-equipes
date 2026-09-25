@@ -6,8 +6,10 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import dev.sylvain.planning.domain.DemandeEchange;
 import dev.sylvain.planning.service.ProductName;
 import dev.sylvain.planning.service.espace.ApplicationLinks;
+import dev.sylvain.planning.service.mail.MailMetrics;
 import dev.sylvain.planning.service.mail.MailTemplates;
 import dev.sylvain.planning.service.publication.AdminAddress;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.quarkus.mailer.Mail;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,11 +32,15 @@ class NotificationDispatcherTest {
             ProductName.neutral(),
             MailTemplates.standalone(ProductName.neutral()));
     private NotificationDispatcher expediteur;
+    private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
 
     @BeforeEach
     void buildDispatcher() {
         expediteur = new NotificationDispatcher(
-                mails -> envoyes.addAll(List.of(mails)), redacteur, MailTemplates.standalone(ProductName.neutral()));
+                mails -> envoyes.addAll(List.of(mails)),
+                redacteur,
+                MailTemplates.standalone(ProductName.neutral()),
+                new MailMetrics(registry));
     }
 
     private static Notification oneSubmission() {
@@ -73,9 +79,30 @@ class NotificationDispatcherTest {
                     throw new IllegalStateException("SMTP down");
                 },
                 redacteur,
-                MailTemplates.standalone(ProductName.neutral()));
+                MailTemplates.standalone(ProductName.neutral()),
+                new MailMetrics(registry));
 
         assertThatCode(() -> expediteur.surNotification(oneSubmission())).doesNotThrowAnyException();
+    }
+
+    /** Swallowed is not uncounted: the failure shows on the metrics, under the notification's template. */
+    @Test
+    void aSwallowedFailureIsStillCounted() {
+        expediteur = new NotificationDispatcher(
+                mails -> {
+                    throw new IllegalStateException("SMTP down");
+                },
+                redacteur,
+                MailTemplates.standalone(ProductName.neutral()),
+                new MailMetrics(registry));
+
+        expediteur.surNotification(oneSubmission());
+
+        assertThat(registry.get("planning.mail.failures")
+                        .tag("template", "demandes-soumises")
+                        .counter()
+                        .count())
+                .isEqualTo(1.0);
     }
 
     /** The {@code catch} covers the writing as much as the sending. */
@@ -88,7 +115,10 @@ class NotificationDispatcherTest {
             }
         };
         expediteur = new NotificationDispatcher(
-                mails -> envoyes.addAll(List.of(mails)), failing, MailTemplates.standalone(ProductName.neutral()));
+                mails -> envoyes.addAll(List.of(mails)),
+                failing,
+                MailTemplates.standalone(ProductName.neutral()),
+                new MailMetrics(registry));
 
         assertThatCode(() -> expediteur.surNotification(oneSubmission())).doesNotThrowAnyException();
         assertThat(envoyes).isEmpty();

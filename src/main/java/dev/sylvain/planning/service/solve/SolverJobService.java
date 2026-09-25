@@ -135,6 +135,10 @@ public class SolverJobService {
      */
     private final SolverScoreTrace scoreTrace;
 
+    /** Operating metrics — durations, outcomes, the queue (docs/observabilite.md). */
+    @Inject
+    SolverMetrics metrics;
+
     /**
      * Whether the queue is replayed at startup. On by default — that is the
      * whole point — but switched off under {@code %test}, where a job left
@@ -394,6 +398,15 @@ public class SolverJobService {
                 });
     }
 
+    /**
+     * Binds the queue and the solver lock to their gauges at startup, so a
+     * scrape before the first solve already reads them — and reads the queue
+     * replayed from the database like any other.
+     */
+    void bindMetrics(@Observes StartupEvent startup) {
+        metrics.bind(() -> fileAttente().size(), () -> findActive().isPresent());
+    }
+
     /** The jobs waiting for the solver, in the order they will run. */
     public synchronized List<SolverJob> fileAttente() {
         return file.stream().map(QueuedTask::job).toList();
@@ -475,6 +488,7 @@ public class SolverJobService {
         // stopped by hand.
         scoreTrace.finish(job.getId());
         SolvePipeline.Interruption interruption = interruptionOf(result);
+        boolean refused = false;
         if (failure != null) {
             if (job.isCancelRequested()) {
                 job.markCancelled(null);
@@ -490,12 +504,14 @@ public class SolverJobService {
                 // bug: the operator reads it on the job, and nobody is paged
                 // for it.
                 job.markFailed(failure);
+                refused = true;
                 LOG.infof(
                         "Solver job %s (%s, edition %s) refused: %s",
                         job.getId(), job.getType(), job.getEditionId(), failure.getMessage());
             } else {
                 job.markFailed(failure);
                 reportFailure(job, failure);
+                metrics.failed(job);
             }
         } else if (job.isCancelRequested()) {
             job.markCancelled(result);
@@ -506,6 +522,7 @@ public class SolverJobService {
         } else {
             job.markCompleted(result);
         }
+        metrics.finished(job, refused);
         persistence.store(job);
         startNext();
         // After startNext, not before: between "finished" and "the next one

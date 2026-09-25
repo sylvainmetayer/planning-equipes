@@ -32,12 +32,12 @@ Un composant sous double licence compte dans chacune des deux.
 | Licence | Dépendances Java | Paquets npm |
 | --- | ---: | ---: |
 | 0BSD | — | 1 |
-| Apache-2.0 | 188 | 4 |
+| Apache-2.0 | 197 | 4 |
 | BSD-2-Clause | 3 | 2 |
 | CC-BY-4.0 | — | 1 |
-| CC0-1.0 | 1 | — |
+| CC0-1.0 | 2 | — |
 | EDL-1.0 | 7 | — |
-| EPL-1.0 | 6 | — |
+| EPL-1.0 | 7 | — |
 | EPL-2.0 | 14 | — |
 | GPL-2.0-with-classpath-exception | 13 | — |
 | ISC | — | 10 |
@@ -46,7 +46,7 @@ Un composant sous double licence compte dans chacune des deux.
 | MIT-0 | 1 | — |
 | MPL-2.0 | 1 | — |
 | Public Domain | 1 | — |
-| **Total** | **216** | **89** |
+| **Total** | **226** | **89** |
 
 ## Dépendances Java
 
@@ -79,6 +79,7 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `io.micrometer:micrometer-commons` | 1.17.0 | Apache-2.0 |
 | `io.micrometer:micrometer-core` | 1.17.0 | Apache-2.0 |
 | `io.micrometer:micrometer-observation` | 1.17.0 | Apache-2.0 |
+| `io.micrometer:micrometer-registry-prometheus-simpleclient` | 1.17.0 | Apache-2.0 |
 | `io.netty:netty-buffer` | 4.1.137.Final | Apache-2.0 |
 | `io.netty:netty-codec` | 4.1.137.Final | Apache-2.0 |
 | `io.netty:netty-codec-dns` | 4.1.137.Final | Apache-2.0 |
@@ -100,6 +101,11 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `io.opentelemetry:opentelemetry-api-incubator` | 1.62.0-alpha | Apache-2.0 |
 | `io.opentelemetry:opentelemetry-common` | 1.62.0 | Apache-2.0 |
 | `io.opentelemetry:opentelemetry-context` | 1.62.0 | Apache-2.0 |
+| `io.prometheus:simpleclient` | 0.16.0 | Apache-2.0 |
+| `io.prometheus:simpleclient_common` | 0.16.0 | Apache-2.0 |
+| `io.prometheus:simpleclient_tracer_common` | 0.16.0 | Apache-2.0 |
+| `io.prometheus:simpleclient_tracer_otel` | 0.16.0 | Apache-2.0 |
+| `io.prometheus:simpleclient_tracer_otel_agent` | 0.16.0 | Apache-2.0 |
 | `io.quarkiverse.mcp:quarkus-mcp-server-core` | 1.13.2 | Apache-2.0 |
 | `io.quarkiverse.mcp:quarkus-mcp-server-http` | 1.13.2 | Apache-2.0 |
 | `io.quarkiverse.mcp:quarkus-mcp-server-sse-client` | 1.13.2 | Apache-2.0 |
@@ -134,6 +140,8 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `io.quarkus:quarkus-jdbc-postgresql` | 3.38.3 | Apache-2.0 |
 | `io.quarkus:quarkus-jsonp` | 3.38.3 | Apache-2.0 |
 | `io.quarkus:quarkus-mailer` | 3.38.3 | Apache-2.0 |
+| `io.quarkus:quarkus-micrometer` | 3.38.3 | Apache-2.0 |
+| `io.quarkus:quarkus-micrometer-registry-prometheus` | 3.38.3 | Apache-2.0 |
 | `io.quarkus:quarkus-mutiny` | 3.38.3 | Apache-2.0 |
 | `io.quarkus:quarkus-narayana-jta` | 3.38.3 | Apache-2.0 |
 | `io.quarkus:quarkus-netty` | 3.38.3 | Apache-2.0 |
@@ -206,6 +214,7 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `io.smallrye:smallrye-open-api-model` | 4.3.5 | Apache-2.0 |
 | `io.vertx:vertx-auth-common` | 4.5.32 | Apache-2.0 ou EPL-1.0 |
 | `io.vertx:vertx-bridge-common` | 4.5.32 | Apache-2.0 ou EPL-1.0 |
+| `io.vertx:vertx-codegen` | 4.5.32 | Apache-2.0 ou EPL-1.0 |
 | `io.vertx:vertx-core` | 4.5.32 | Apache-2.0 ou EPL-2.0 |
 | `io.vertx:vertx-mail-client` | 4.5.32 | Apache-2.0 ou EPL-1.0 |
 | `io.vertx:vertx-uri-template` | 4.5.32 | Apache-2.0 ou EPL-1.0 |
@@ -252,6 +261,7 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `org.jboss:jboss-transaction-spi` | 8.0.0.Final | Public Domain |
 | `org.jctools:jctools-core` | 4.0.5 | Apache-2.0 |
 | `org.jspecify:jspecify` | 1.0.0 | Apache-2.0 |
+| `org.latencyutils:LatencyUtils` | 2.0.3 | CC0-1.0 |
 | `org.postgresql:postgresql` | 42.7.13 | BSD-2-Clause |
 | `org.reactivestreams:reactive-streams` | 1.0.4 | MIT-0 |
 | `org.slf4j:slf4j-api` | 2.0.18 | MIT |

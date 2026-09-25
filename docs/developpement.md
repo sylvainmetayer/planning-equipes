@@ -16,6 +16,14 @@ cd src/main/webui && npm test          # Vitest
 `quarkus:dev` suffit : Quinoa démarre `ng serve` et le proxifie. Le frontend est
 désactivé sur le profil `%test`.
 
+Les métriques Prometheus sont sur un second port, l'interface de management :
+`http://localhost:9000/q/metrics` en dev. Sous `%test`, ce port est tiré au
+hasard (`quarkus.management.test-port=0`) pour que deux suites lancées côte à
+côte ne se le disputent pas ; un test l'atteint par
+`@TestHTTPResource(value = "metrics", management = true)` — chemin relatif à
+`/q`, la racine de management — ou lit directement le `MeterRegistry`. Voir
+[`observabilite.md`](observabilite.md) § Métriques.
+
 **Variables d'environnement locales.** `mise.toml` porte celles que tout le
 monde partage (`MAIL_ADMIN`). Celles qui sont propres à une machine vont dans
 `mise.local.toml`, à la racine, que mise charge par-dessus et que `.gitignore`

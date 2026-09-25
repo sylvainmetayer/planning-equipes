@@ -6,6 +6,8 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import io.quarkus.mailer.MockMailbox;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
@@ -136,6 +138,9 @@ class BackupServiceTest {
     @Inject
     MockMailbox mailbox;
 
+    @Inject
+    MeterRegistry registry;
+
     /** The {@code %test} value of {@code MAIL_ADMIN}. */
     private static final String ADMIN = "admin@example.org";
 
@@ -203,6 +208,39 @@ class BackupServiceTest {
         assertThat(run.message()).contains("connection refused");
         assertThat(entries()).isEmpty();
         assertThat(repository.lastRun().succeeded()).isFalse();
+    }
+
+    /** A success is timed, and dates and sizes the last good backup for the scraper. */
+    @Test
+    void aRunUpdatesTheDurationAndTheLastSuccessMetrics() {
+        long before = backupTimerCount("success");
+
+        BackupRun run = backupService.run();
+
+        assertThat(backupTimerCount("success")).isEqualTo(before + 1);
+        assertThat(registry.get(BackupMetrics.LAST_SUCCESS).gauge().value())
+                .isEqualTo((double) run.attemptedAt().getEpochSecond());
+        assertThat(registry.get(BackupMetrics.SIZE).gauge().value()).isEqualTo((double) "PGDMP stub".length());
+    }
+
+    /** A failure is timed under its own outcome and leaves the last success where it was. */
+    @Test
+    void aFailedRunIsTimedAsAFailureAndMovesNoSuccessGauge() {
+        BackupRun success = backupService.run();
+        long before = backupTimerCount("failure");
+        dumpFails = true;
+
+        backupService.run();
+
+        assertThat(backupTimerCount("failure")).isEqualTo(before + 1);
+        assertThat(registry.get(BackupMetrics.LAST_SUCCESS).gauge().value())
+                .isEqualTo((double) success.attemptedAt().getEpochSecond());
+    }
+
+    private long backupTimerCount(String outcome) {
+        Timer timer =
+                registry.find(BackupMetrics.DURATION).tag("outcome", outcome).timer();
+        return timer == null ? 0 : timer.count();
     }
 
     @Test

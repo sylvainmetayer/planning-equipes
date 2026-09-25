@@ -20,7 +20,7 @@ import dev.sylvain.planning.service.mail.MailTemplates.MailContent;
 public final class RelanceConfirmationMail {
 
     /** Template pair under {@code resources/templates/mail/}. */
-    static final String TEMPLATE = "mail/relance-confirmation";
+    public static final String TEMPLATE = "mail/relance-confirmation";
 
     private RelanceConfirmationMail() {}
 

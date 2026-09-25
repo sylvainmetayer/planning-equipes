@@ -99,6 +99,13 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-smallrye-health</artifactId>
         </dependency>
+        <!-- Operating metrics in the Prometheus format (solver, HTTP, SMTP,
+             backup), served on the management interface only — a port the
+             production stack never publishes. See docs/observabilite.md. -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-micrometer-registry-prometheus</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-jdbc-postgresql</artifactId>

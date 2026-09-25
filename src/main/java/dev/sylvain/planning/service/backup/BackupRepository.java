@@ -7,6 +7,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.Instant;
 import javax.sql.DataSource;
 
 /**
@@ -72,6 +73,25 @@ public class BackupRepository {
                     rows.getString("dernier_message"));
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to read the last automatic backup", e);
+        }
+    }
+
+    /**
+     * When the last successful backup ran, {@code null} when none ever did —
+     * the one date a restart must not lose from the metrics.
+     */
+    public Instant lastSuccessAt() {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement statement =
+                        connection.prepareStatement("SELECT dernier_succes_le FROM backup_settings WHERE id = TRUE");
+                ResultSet rows = statement.executeQuery()) {
+            if (!rows.next()) {
+                return null;
+            }
+            Timestamp lastSuccess = rows.getTimestamp("dernier_succes_le");
+            return lastSuccess == null ? null : lastSuccess.toInstant();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to read the last successful automatic backup", e);
         }
     }
 
