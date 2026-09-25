@@ -7,6 +7,7 @@ import {
   model,
   output,
   signal,
+  ViewEncapsulation,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
@@ -30,8 +31,8 @@ import {
   ExceptionComparee,
   MAX_STANDS_COMPARES,
   MIN_STANDS_COMPARES,
-  TypeEcart,
-  ajouterStands,
+  GapKind,
+  addStands,
   comparer,
   reglesComparees,
 } from './comparaison-ouvertures';
@@ -62,9 +63,12 @@ import {
     MatTooltipModule,
   ],
   templateUrl: './comparaison-vue.html',
+  styleUrl: './comparaison-vue.css',
+  // Global by design (AGENTS.md): loaded with the route, unscoped like the page's own sheet.
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ComparaisonOuverturesVue {
+export class OpeningsComparisonView {
   private readonly store = inject(ReferenceDataStore);
   private readonly consignes = inject(ConsignesStore);
   private readonly dialog = inject(MatDialog);
@@ -110,20 +114,20 @@ export class ComparaisonOuverturesVue {
   /** Stands of the report not yet compared, narrowed by what is typed. */
   protected readonly propositions = computed(() => {
     const pris = new Set(this.standIds());
-    const texte = this.recherche();
+    const text = this.recherche();
     return (this.rapport()?.stands ?? [])
       .filter((ligne) => !pris.has(ligne.standId))
-      .filter((ligne) => correspondAuFiltre(texte, [ligne.nom, ligne.standId]))
+      .filter((ligne) => correspondAuFiltre(text, [ligne.nom, ligne.standId]))
       .slice(0, 50);
   });
 
   /** The game categories at least one stand of the report offers. */
   protected readonly typologies = computed(() => {
-    const dansLeRapport = new Set((this.rapport()?.stands ?? []).map((ligne) => ligne.standId));
+    const inReport = new Set((this.rapport()?.stands ?? []).map((ligne) => ligne.standId));
     const offertes = new Set(
       this.store
         .stands()
-        .filter((stand) => dansLeRapport.has(stand.id))
+        .filter((stand) => inReport.has(stand.id))
         .flatMap((stand) => stand.typologiesProposees ?? []),
     );
     return this.store.typologies().filter((typologie) => offertes.has(typologie.id));
@@ -138,26 +142,26 @@ export class ComparaisonOuverturesVue {
       : $localize`:@@ouvertures.comparer.inconnus:${inconnus}:count: stand(s) de l'adresse n'existent plus : ignorés.`;
   });
 
-  protected ajouter(standId: string): void {
-    this.appliquerAjout([standId]);
+  protected addStand(standId: string): void {
+    this.applyAddition([standId]);
     this.recherche.set('');
   }
 
-  protected ajouterTypologie(typologieId: string): void {
-    const dansLeRapport = new Set((this.rapport()?.stands ?? []).map((ligne) => ligne.standId));
+  protected addGameCategory(typologieId: string): void {
+    const inReport = new Set((this.rapport()?.stands ?? []).map((ligne) => ligne.standId));
     const ids = this.store
       .stands()
       .filter(
         (stand) =>
-          dansLeRapport.has(stand.id) && (stand.typologiesProposees ?? []).includes(typologieId),
+          inReport.has(stand.id) && (stand.typologiesProposees ?? []).includes(typologieId),
       )
       .sort((left, right) => (left.nom || left.id).localeCompare(right.nom || right.id))
       .map((stand) => stand.id);
-    this.appliquerAjout(ids);
+    this.applyAddition(ids);
   }
 
-  private appliquerAjout(ids: string[]): void {
-    const { selection, refuses } = ajouterStands(this.standIds(), ids);
+  private applyAddition(ids: string[]): void {
+    const { selection, refuses } = addStands(this.standIds(), ids);
     this.standIds.set(selection);
     this.refusLabel.set(
       refuses === 0
@@ -190,13 +194,13 @@ export class ComparaisonOuverturesVue {
     return `${jour}/${mois}`;
   }
 
-  protected consigneDe(date: string): string {
+  protected consigneOf(date: string): string {
     return this.consignes.consigneOf(date)
       ? $localize`:@@ouvertures.comparer.sousConsigne:sous consigne`
       : '';
   }
 
-  protected libelleEcart(type: TypeEcart): string {
+  protected gapLabel(type: GapKind): string {
     switch (type) {
       case 'OUVERTURE':
         return $localize`:@@ouvertures.comparer.type.ouverture:ouverture`;
@@ -207,24 +211,24 @@ export class ComparaisonOuverturesVue {
     }
   }
 
-  protected libelleSynthese(joursEnEcart: number, premierEcart: string | null): string {
-    return joursEnEcart === 0 || premierEcart === null
+  protected libelleSynthese(daysWithGap: number, firstGap: string | null): string {
+    return daysWithGap === 0 || firstGap === null
       ? $localize`:@@ouvertures.comparer.synthese.identique:identique à la référence`
-      : $localize`:@@ouvertures.comparer.synthese.ecart:diffère sur ${joursEnEcart}:jours: jour(s) — d'abord ${premierEcart}:ecart:`;
+      : $localize`:@@ouvertures.comparer.synthese.ecart:diffère sur ${daysWithGap}:jours: jour(s) — d'abord ${firstGap}:ecart:`;
   }
 
   protected captionJour(jour: number, date: string): string {
-    const consigne = this.consigneDe(date);
+    const consigne = this.consigneOf(date);
     const libelle = this.libelleJour(date);
     return consigne
       ? $localize`:@@ouvertures.comparer.caption.consigne:J${jour}:jour: — ${libelle}:date: (${consigne}:consigne:)`
       : $localize`:@@ouvertures.comparer.caption:J${jour}:jour: — ${libelle}:date:`;
   }
 
-  protected readonly texteRegle = describeRule;
+  protected readonly ruleText = describeRule;
 
   /** The autocomplete leaves its field empty once a stand is picked: the stand is in the list below. */
-  protected readonly aucunTexte = (): string => '';
+  protected readonly noText = (): string => '';
 
   protected exception(entree: ExceptionComparee): string {
     const row = describeException(entree.exception, entree.ouverture);
@@ -236,11 +240,11 @@ export class ComparaisonOuverturesVue {
   /** The reference and the others, as the referential holds them: what the bulk edit needs. */
   private readonly copie = computed(() => {
     const comparaison = this.comparaison();
-    const parId = new Map(this.store.stands().map((stand) => [stand.id, stand]));
-    const modele = comparaison.referenceId ? parId.get(comparaison.referenceId) : undefined;
+    const byId = new Map(this.store.stands().map((stand) => [stand.id, stand]));
+    const modele = comparaison.referenceId ? byId.get(comparaison.referenceId) : undefined;
     const cibles = comparaison.stands
       .filter((stand) => stand.standId !== comparaison.referenceId)
-      .map((stand) => parId.get(stand.standId))
+      .map((stand) => byId.get(stand.standId))
       .filter((stand) => stand !== undefined);
     return modele && cibles.length > 0 ? { modele, cibles } : null;
   });
@@ -252,7 +256,7 @@ export class ComparaisonOuverturesVue {
    * what the copy brings, warns about a window beyond a maximum, and waits for
    * its own « Enregistrer ».
    */
-  protected copierReference(): void {
+  protected copyReference(): void {
     const copie = this.copie();
     if (!copie) {
       return;
