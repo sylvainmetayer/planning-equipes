@@ -26,9 +26,8 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class CompetencesGrilleResourceTest {
 
-    /** Ids of the scenario's three animateurs, of its two typologies, as this run's import gave them. */
+    // Ids of the scenario's three animateurs and of its two typologies, as this run's import gave them.
     private String a1;
-
     private String a2;
     private String a3;
     private String strategie;

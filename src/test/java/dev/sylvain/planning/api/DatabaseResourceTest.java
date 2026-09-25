@@ -242,15 +242,14 @@ class DatabaseResourceTest {
         // through the API would give it back its row without its typologies —
         // the referential the tests running next expect to find seeded.
         String etatInitial = exportDump();
+        // Every edition id is drawn by the application (ADR 0050): the default
+        // one is read, never assumed.
+        String defautInitial = defaultEdition();
 
         // Restored whatever happens below: every class running after this one
         // needs the database this one found. Letting an assertion escape
         // mid-flight leaves them all resolving to an edition that no longer
         // exists, and one failure here becomes forty elsewhere.
-        // Every edition id is drawn by the application (ADR 0050): the default
-        // one is read, never assumed.
-        String defautInitial = defaultEdition();
-
         try {
             given().when().post("/api/planning/reset").then().statusCode(200);
 
