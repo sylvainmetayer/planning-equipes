@@ -209,19 +209,19 @@ test.describe('piste 1 — la raison légale', () => {
   });
 });
 
-test.describe('piste 2 — l’emploi du temps verrouillé', () => {
-  /** Pose un verrou et rend la réponse, dans sa forme `{ verrouillage, avertissements }`. */
-  async function verrouiller(
-    data: Record<string, unknown>,
-  ): Promise<{ verrouillage: { id: string }; avertissements: Avertissement[] }> {
-    const reponse = await admin.post('/api/verrouillages', { data });
-    expect(reponse.ok(), await reponse.text()).toBe(true);
-    return (await reponse.json()) as {
-      verrouillage: { id: string };
-      avertissements: Avertissement[];
-    };
-  }
+/** Lays a lock down and returns the response, shaped `{ verrouillage, avertissements }`. */
+async function verrouiller(
+  data: Record<string, unknown>,
+): Promise<{ verrouillage: { id: string }; avertissements: Avertissement[] }> {
+  const reponse = await admin.post('/api/verrouillages', { data });
+  expect(reponse.ok(), await reponse.text()).toBe(true);
+  return (await reponse.json()) as {
+    verrouillage: { id: string };
+    avertissements: Avertissement[];
+  };
+}
 
+test.describe('piste 2 — l’emploi du temps verrouillé', () => {
   test('une affectation forcée sur un emploi du temps gelé est un blocage dit', async () => {
     const { verrouillage, avertissements } = await verrouiller({
       type: 'ANIMATEUR',

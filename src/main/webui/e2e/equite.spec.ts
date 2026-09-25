@@ -107,7 +107,7 @@ test('un clic sur un animateur ouvre sa timeline', async ({ browser }) => {
 
   await page.getByRole('link', { name: /Alice E2E/ }).click();
 
-  await expect(page).toHaveURL(new RegExp(`/timeline\\?animateur=${SEED.demandeur}`));
+  await expect(page).toHaveURL(new RegExp(String.raw`/timeline\?animateur=${SEED.demandeur}`));
   await expect(page.locator('#contenu')).toContainText('Timeline animateur');
   await expect(page.locator('#contenu')).toContainText('Stands à couvrir');
   await page.context().close();

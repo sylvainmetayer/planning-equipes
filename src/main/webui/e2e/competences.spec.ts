@@ -208,21 +208,21 @@ test("l'import : aperçu, écriture, une ligne rejetée, une case vide qui ne re
   }
 });
 
+/** Types Alice and Bruno, then lets the other session write Bruno before this one saves. */
+async function saisirPuisSubirUneEcritureAilleurs(page: Page): Promise<void> {
+  await ouvrirLaGrille(page);
+  await cellule(page, IDS.alice, TYPOLOGIE).click();
+  await expect(cellule(page, IDS.alice, TYPOLOGIE)).toHaveAttribute('data-niveau', 'DEBUTANT');
+  await cellule(page, IDS.bruno, TYPOLOGIE).focus();
+  await page.keyboard.press('3');
+  await expect(cellule(page, IDS.bruno, TYPOLOGIE)).toHaveAttribute('data-niveau', 'REFERENT');
+
+  await autreSessionEcrit(IDS.bruno, { [TYPOLOGIE]: 'AUTONOME' });
+
+  await page.getByRole('button', { name: /Enregistrer/ }).click();
+}
+
 test.describe('modification concurrente, ligne par ligne', () => {
-  /** Types Alice and Bruno, then lets the other session write Bruno before this one saves. */
-  async function saisirPuisSubirUneEcritureAilleurs(page: Page): Promise<void> {
-    await ouvrirLaGrille(page);
-    await cellule(page, IDS.alice, TYPOLOGIE).click();
-    await expect(cellule(page, IDS.alice, TYPOLOGIE)).toHaveAttribute('data-niveau', 'DEBUTANT');
-    await cellule(page, IDS.bruno, TYPOLOGIE).focus();
-    await page.keyboard.press('3');
-    await expect(cellule(page, IDS.bruno, TYPOLOGIE)).toHaveAttribute('data-niveau', 'REFERENT');
-
-    await autreSessionEcrit(IDS.bruno, { [TYPOLOGIE]: 'AUTONOME' });
-
-    await page.getByRole('button', { name: /Enregistrer/ }).click();
-  }
-
   test("« Recharger » n'écrit rien de la ligne périmée, les autres lignes sont écrites", async ({
     browser,
   }) => {
