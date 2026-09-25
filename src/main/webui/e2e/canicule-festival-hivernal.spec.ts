@@ -108,9 +108,11 @@ async function solveFromReferenceData(): Promise<JobTermine> {
  * the unlocked seats movable and fixes both.
  */
 async function lockDaysExcept(free: readonly string[]): Promise<void> {
-  const days = new Set((await creneaux()).map((creneau) => creneau.date).filter(Boolean));
-  for (const jour of [...days].sort()) {
-    if (free.includes(jour as string)) {
+  const days = new Set(
+    (await creneaux()).map((creneau) => creneau.date).filter((date): date is string => !!date),
+  );
+  for (const jour of [...days].sort((a, b) => a.localeCompare(b))) {
+    if (free.includes(jour)) {
       continue;
     }
     const lock = await admin.post('/api/verrouillages', {
@@ -162,14 +164,14 @@ function effectiveSpan(seat: Seat): string {
 function seatSpans(plan: Seat[], date: string): string[] {
   return seatsOf(plan, date)
     .map((seat) => `${seat.stand?.id}@${effectiveSpan(seat)}`)
-    .sort();
+    .sort((a, b) => a.localeCompare(b));
 }
 
 /** The shape of a day's seats — stand and hours, one entry per seat — regardless of who sits. */
 function seatShapes(plan: Seat[], date: string): string[] {
   return seatsOf(plan, date)
     .map((seat) => `${seat.stand?.id}@${seat.creneau?.heureDebut}-${seat.creneau?.heureFin}`)
-    .sort();
+    .sort((a, b) => a.localeCompare(b));
 }
 
 /* ------------------------------ consignes & grid ------------------------------ */
@@ -262,9 +264,8 @@ interface MailSearch {
 }
 
 async function searchMails(email: string): Promise<MailSearch> {
-  const response = await admin.get(
-    `${MAILPIT_URL}/api/v1/search?query=${encodeURIComponent(`to:"${email}"`)}`,
-  );
+  const query = encodeURIComponent(`to:"${email}"`);
+  const response = await admin.get(`${MAILPIT_URL}/api/v1/search?query=${query}`);
   expect(response.ok(), `Mailpit should answer at ${MAILPIT_URL}`).toBe(true);
   return (await response.json()) as MailSearch;
 }
@@ -312,7 +313,7 @@ test('la semaine de l’organisateur : canicule posée, résolue, publiée, puis
   const nominalGridDay3 = grid
     .filter((creneau) => creneau.date === DAY3)
     .map((creneau) => `${creneau.heureDebut}-${creneau.heureFin}`)
-    .sort();
+    .sort((a, b) => a.localeCompare(b));
   expect(nominalGridDay3.length).toBeGreaterThan(0);
   const animateurs = (await (await admin.get('/api/animateurs')).json()) as {
     id: string;
@@ -390,7 +391,7 @@ test('la semaine de l’organisateur : canicule posée, résolue, publiée, puis
   const ticked = preselection.stands
     .filter((stand) => stand.preCoche)
     .map((stand) => stand.standId)
-    .sort();
+    .sort((a, b) => a.localeCompare(b));
   expect(ticked.length).toBeGreaterThan(0);
   await expect(form.locator('.consigne-stand')).toHaveCount(preselection.stands.length);
   await expect(form).toContainText(`${ticked.length} coché(s) sur ${preselection.stands.length}`);
@@ -425,13 +426,17 @@ test('la semaine de l’organisateur : canicule posée, résolue, publiée, puis
   // What was written is what the preview read: three consignes, the evening
   // meal window on each, one opening per ticked stand on the window typed.
   const laid = await consignesState();
-  expect(laid.consignes.map((consigne) => consigne.date).sort()).toEqual([...DAYS].sort());
+  expect(
+    laid.consignes.map((consigne) => consigne.date).sort((a, b) => a.localeCompare(b)),
+  ).toEqual([...DAYS].sort((a, b) => a.localeCompare(b)));
   for (const consigne of laid.consignes) {
     expect(consigne.motif).toBe(MOTIF);
     expect(consigne.repas?.soirDebut).toBe('18:00:00');
     expect(consigne.repas?.soirFin).toBe('22:00:00');
     expect(consigne.repas?.justification).toBe('Les équipes mangent pendant la fermeture');
-    expect(consigne.ouvertures.map((ouverture) => ouverture.standId).sort()).toEqual(ticked);
+    expect(
+      consigne.ouvertures.map((ouverture) => ouverture.standId).sort((a, b) => a.localeCompare(b)),
+    ).toEqual(ticked);
     expect(consigne.ouvertures.every((ouverture) => ouverture.debut === '18:00:00')).toBe(true);
   }
   const addedByDay = new Map(
@@ -491,7 +496,9 @@ test('la semaine de l’organisateur : canicule posée, résolue, publiée, puis
   await expect(page.locator(`tr[data-date="${DAY2}"]`)).toHaveCount(1);
 
   const remaining = await consignesState();
-  expect(remaining.consignes.map((consigne) => consigne.date).sort()).toEqual([DAY1, DAY2]);
+  expect(
+    remaining.consignes.map((consigne) => consigne.date).sort((a, b) => a.localeCompare(b)),
+  ).toEqual([DAY1, DAY2]);
   // The créneaux the consigne added on that day are gone, the nominal grid of
   // the day is exactly what it was; the other days keep theirs.
   const gridAfterLifting = await creneaux();
@@ -506,7 +513,7 @@ test('la semaine de l’organisateur : canicule posée, résolue, publiée, puis
     gridAfterLifting
       .filter((creneau) => creneau.date === DAY3)
       .map((creneau) => `${creneau.heureDebut}-${creneau.heureFin}`)
-      .sort(),
+      .sort((a, b) => a.localeCompare(b)),
   ).toEqual(nominalGridDay3);
 
   // The two days still under consigne are published and validated: locked

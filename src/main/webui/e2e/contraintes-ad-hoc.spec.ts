@@ -143,7 +143,7 @@ test('une contradiction déjà en base est signalée avant toute résolution', a
   // contradiction sentence — which names *both* exceptions. A bare
   // `new RegExp(FORCEE)` therefore matches the INDISPO row too, and would match
   // `E2E-ADHOC-FORCEE-2` as well; `(?!\S)` closes both.
-  const ligneForcee = page.getByRole('row', { name: new RegExp(`^${FORCEE}(?!\\S)`) });
+  const ligneForcee = page.getByRole('row', { name: new RegExp(String.raw`^${FORCEE}(?!\S)`) });
   await expect(ligneForcee).toHaveCount(1);
   await expect(ligneForcee.getByText('warning')).toBeVisible();
   // The badge says what it means, rather than only showing a tooltip on hover.

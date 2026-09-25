@@ -35,9 +35,7 @@ test.afterAll(async () => {
 
 /** Index of the row holding the focus, read from the DOM rather than guessed. */
 async function ligneFocalisee(page: Page): Promise<string | null> {
-  return page.evaluate(
-    () => document.activeElement?.closest('tr')?.getAttribute('data-row-index') ?? null,
-  );
+  return page.evaluate(() => document.activeElement?.closest('tr')?.dataset['rowIndex'] ?? null);
 }
 
 /** Accessible name of whatever holds the focus, for a readable failure. */
@@ -71,7 +69,7 @@ async function tabulerJusquAUneLigne(page: Page): Promise<number> {
 
 /** Escapes a label read from the page before it is used as a pattern. */
 function motif(texte: string): RegExp {
-  return new RegExp(texte.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  return new RegExp(texte.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`));
 }
 
 /**

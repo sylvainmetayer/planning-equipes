@@ -127,12 +127,14 @@ test("la colonne d'actions ne remplace aucun bouton par « ... »", async ({ bro
   const etat = await cellule.evaluate((el) => {
     const style = getComputedStyle(el);
     const boutons = [...el.querySelectorAll('button')];
-    const dernier = boutons[boutons.length - 1];
+    const dernier = boutons.at(-1);
     return {
       textOverflow: style.textOverflow,
       overflow: style.overflow,
       boutons: boutons.length,
-      dernierDedans: dernier.getBoundingClientRect().right <= el.getBoundingClientRect().right + 1,
+      dernierDedans:
+        dernier !== undefined &&
+        dernier.getBoundingClientRect().right <= el.getBoundingClientRect().right + 1,
     };
   });
 

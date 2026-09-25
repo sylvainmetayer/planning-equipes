@@ -140,9 +140,9 @@ test('poser une consigne sur un jour à venir, la voir sur la grille, la lever',
   };
   const consigne = etat.consignes.find((each) => each.date === DATE);
   expect(consigne?.motif).toBe(MOTIF);
-  expect(consigne?.ouvertures.map((ouverture) => ouverture.standId).sort()).toEqual(
-    [...coches].sort(),
-  );
+  expect(
+    consigne?.ouvertures.map((ouverture) => ouverture.standId).sort((a, b) => a.localeCompare(b)),
+  ).toEqual([...coches].sort((a, b) => a.localeCompare(b)));
   expect(consigne?.ouvertures.every((ouverture) => ouverture.debut === '18:00:00')).toBe(true);
 
   // The grid says which date is under consigne.

@@ -163,11 +163,13 @@ test('les contraintes ad hoc sont respectées par le solve et visibles dans le f
   expect(occupantDe(planning, 'SOLV-S1', C2)).toBe('SOLV-Q');
   // INCOMPATIBILITE : Rita and Tom never share a créneau.
   for (const creneau of [C1, C2, C3, C4]) {
-    const surCreneau = planning.postes
-      .filter((poste) => poste.creneau?.id === creneau && poste.animateur)
-      .map((poste) => poste.animateur?.id);
+    const surCreneau = new Set(
+      planning.postes
+        .filter((poste) => poste.creneau?.id === creneau && poste.animateur)
+        .map((poste) => poste.animateur?.id),
+    );
     expect(
-      surCreneau.includes('SOLV-R') && surCreneau.includes('SOLV-T'),
+      surCreneau.has('SOLV-R') && surCreneau.has('SOLV-T'),
       `Rita et Tom tous deux sur le créneau ${creneau}`,
     ).toBe(false);
   }

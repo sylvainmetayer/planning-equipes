@@ -135,7 +135,7 @@ async function siegesPasses(): Promise<Record<string, string[]>> {
     tous
       .filter((siege) => siege.creneau?.date === date && filtre(siege))
       .map(forme)
-      .sort();
+      .sort((a, b) => a.localeCompare(b));
   return {
     [J1]: du(J1),
     [J2]: du(J2),

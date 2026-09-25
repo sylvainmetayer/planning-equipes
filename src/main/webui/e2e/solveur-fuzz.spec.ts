@@ -5,6 +5,7 @@
 // The seed is printed on every run; re-run a failure identically with
 //   E2E_FUZZ_SEED=<seed> npm run e2e -- e2e/solveur-fuzz.spec.ts
 
+import { randomInt } from 'node:crypto';
 import { APIRequestContext, expect, test } from '@playwright/test';
 import {
   AnimateurSeed,
@@ -184,7 +185,7 @@ function verifierInvariants(planning: PlanningPersiste, probleme: Genere): void 
 
 const graine = process.env['E2E_FUZZ_SEED']
   ? Number(process.env['E2E_FUZZ_SEED'])
-  : Math.floor(Math.random() * 2 ** 31);
+  : randomInt(2 ** 31);
 
 let admin: APIRequestContext;
 

@@ -31,7 +31,7 @@ test("l'archive ne tient que les référentiels cochés, et part au clic", async
   // avoir aucune : l'arithmétique reste vérifiable).
   const bouton = page.getByRole('button', { name: /Télécharger l'archive/ });
   // Le bouton écrit son compte entre parenthèses, une ligne le pose nu.
-  const compte = (texte: string | null) => Number(/(\d+) ligne/.exec(texte ?? '')?.[1] ?? -1);
+  const compte = (texte: string | null) => Number(/(\d{1,9}) ligne/.exec(texte ?? '')?.[1] ?? -1);
   const ligneAnimateurs = page.locator('.export-csv-liste li').filter({ hasText: 'Animateurs' });
   const totalAvant = compte(await bouton.textContent());
   const lignesAnimateurs = compte(await ligneAnimateurs.textContent());

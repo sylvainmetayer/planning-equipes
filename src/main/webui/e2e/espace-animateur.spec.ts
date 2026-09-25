@@ -39,6 +39,25 @@ test.afterAll(async () => {
   await admin.dispose();
 });
 
+/**
+ * The targeted colleague must agree before the admin sees the demande: this
+ * opens Bruno's espace (he gets an e-mail address here only — the shared
+ * seed deliberately leaves him without one) and clicks his agreement.
+ */
+async function accordDeBruno(browser: import('@playwright/test').Browser): Promise<void> {
+  const animateurs = (await (await admin.get('/api/animateurs')).json()) as { id: string }[];
+  const bruno = animateurs.find((animateur) => animateur.id === SEED.cible);
+  await admin.put(`/api/animateurs/${SEED.cible}`, { data: { ...bruno, email: EMAIL_BRUNO } });
+  const jetonBruno = await jetonDe(admin, SEED.cible);
+  const contexteBruno = await browser.newContext();
+  const pageBruno = await contexteBruno.newPage();
+  await ouvrirSessionEspace(pageBruno.request, jetonBruno, EMAIL_BRUNO);
+  await pageBruno.goto(`/animateur/${jetonBruno}/echanges`);
+  await pageBruno.getByRole('button', { name: "Je suis d'accord" }).first().click();
+  await expect(pageBruno.getByText('Votre accord est transmis', { exact: false })).toBeVisible();
+  await contexteBruno.close();
+}
+
 test.describe('espace animateur', () => {
   test('un jeton inconnu montre une impasse propre, sans chrome admin', async ({ page }) => {
     await page.goto('/animateur/jeton-invente');
@@ -134,25 +153,6 @@ test.describe('espace animateur', () => {
       '/declaration-accessibilite',
     );
   });
-
-  /**
-   * The targeted colleague must agree before the admin sees the demande: this
-   * opens Bruno's espace (he gets an e-mail address here only — the shared
-   * seed deliberately leaves him without one) and clicks his agreement.
-   */
-  async function accordDeBruno(browser: import('@playwright/test').Browser): Promise<void> {
-    const animateurs = (await (await admin.get('/api/animateurs')).json()) as { id: string }[];
-    const bruno = animateurs.find((animateur) => animateur.id === SEED.cible);
-    await admin.put(`/api/animateurs/${SEED.cible}`, { data: { ...bruno, email: EMAIL_BRUNO } });
-    const jetonBruno = await jetonDe(admin, SEED.cible);
-    const contexteBruno = await browser.newContext();
-    const pageBruno = await contexteBruno.newPage();
-    await ouvrirSessionEspace(pageBruno.request, jetonBruno, EMAIL_BRUNO);
-    await pageBruno.goto(`/animateur/${jetonBruno}/echanges`);
-    await pageBruno.getByRole('button', { name: "Je suis d'accord" }).first().click();
-    await expect(pageBruno.getByText('Votre accord est transmis', { exact: false })).toBeVisible();
-    await contexteBruno.close();
-  }
 
   test("soumettre un échange, le voir accepté par l'admin, retrouver le résultat", async ({
     page,

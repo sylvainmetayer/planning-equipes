@@ -61,7 +61,7 @@ test('une édition amorcée lit ses référentiels et sa publication, et chaque 
   const referentiels = page.locator('li[data-ligne="referentiels"]');
   await expect(referentiels).toContainText('Fait');
   // The reference database carries stands of its own; the seed adds its two animateurs.
-  await expect(referentiels).toContainText(/\d+ stands · 2 animateurs/);
+  await expect(referentiels).toContainText(/\d{1,6} stands · 2 animateurs/);
   // seedPlanning publishes what it seeds: nobody is left to warn.
   const publication = page.locator('li[data-ligne="publication"]');
   await expect(publication).toContainText('À jour');

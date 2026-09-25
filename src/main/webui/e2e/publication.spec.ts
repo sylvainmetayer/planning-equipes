@@ -74,9 +74,11 @@ test.describe('Publication du planning', () => {
 
     const etat = await apercu(admin);
     expect(etat.nombreConcernes).toBe(2);
-    expect(etat.destinataires.map((destinataire) => destinataire.animateurId).sort()).toEqual(
-      [SEED.cible, SEED.demandeur].sort(),
-    );
+    expect(
+      etat.destinataires
+        .map((destinataire) => destinataire.animateurId)
+        .sort((a, b) => a.localeCompare(b)),
+    ).toEqual([SEED.cible, SEED.demandeur].sort((a, b) => a.localeCompare(b)));
     const alice = etat.destinataires.find(
       (destinataire) => destinataire.animateurId === SEED.demandeur,
     );
@@ -163,13 +165,14 @@ test.describe('Publication du planning', () => {
     const trace = await admin.get('/api/planning/publication/destinataires');
     expect(trace.ok()).toBe(true);
     const destinataires = (await trace.json()) as { animateurId: string; statut: string }[];
-    expect(destinataires.map((destinataire) => destinataire.animateurId).sort()).toEqual(
-      [SEED.cible, SEED.demandeur].sort(),
-    );
-    expect(destinataires.map((destinataire) => destinataire.statut).sort()).toEqual([
-      'ENVOYE',
-      'SANS_EMAIL',
-    ]);
+    expect(
+      destinataires
+        .map((destinataire) => destinataire.animateurId)
+        .sort((a, b) => a.localeCompare(b)),
+    ).toEqual([SEED.cible, SEED.demandeur].sort((a, b) => a.localeCompare(b)));
+    expect(
+      destinataires.map((destinataire) => destinataire.statut).sort((a, b) => a.localeCompare(b)),
+    ).toEqual(['ENVOYE', 'SANS_EMAIL']);
   });
 
   /**
