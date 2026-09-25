@@ -118,7 +118,7 @@ class McpWarnsWhileSolvingTest {
 
     @Test
     void settingsAndWeightsWarnDuringASolve() {
-        int duree = referenceData.getParametresSolveur().dureeResolutionSecondes();
+        Integer duree = referenceData.getParametresSolveur().dureeResolutionSecondes();
         String contrainte = ConstraintCatalog.PAR_NOM.keySet().stream()
                 .filter(nom -> !ConstraintCatalog.NOMS_DURS.contains(nom))
                 .sorted()
@@ -126,8 +126,9 @@ class McpWarnsWhileSolvingTest {
                 .orElseThrow();
         solveHoldsTheEdition();
         try {
-            assertWarned(
-                    () -> parametresTools.updateParametresSolveur(duree, null).avertissements());
+            assertWarned(() -> parametresTools
+                    .updateParametresSolveur(duree, null, null, null)
+                    .avertissements());
             assertWarned(() ->
                     contrainteTools.updateContrainteWeight(contrainte, 3, null).avertissements());
             assertWarned(

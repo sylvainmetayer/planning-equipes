@@ -46,34 +46,33 @@ public class SolverJobTasks {
     }
 
     /** A one-off solve of a problem that came in the request body — never replayable, the body is not stored. */
-    JobTask solve(PlanningEvenement problem, Long secondsLimit, BooleanSupplier shutdownRequested) {
+    JobTask solve(PlanningEvenement problem, SolveBudget budget, BooleanSupplier shutdownRequested) {
         return job -> resultatSolve(
-                pipeline.execute(job.getEditionNom(), problem, secondsLimit, onSolverReady(job), shutdownRequested));
+                pipeline.execute(job.getEditionNom(), problem, budget, onSolverReady(job), shutdownRequested));
     }
 
     /** Rebuilds the work of a replayable job from its persisted intention. */
     JobTask replayable(
             JobType type,
-            Long secondsLimit,
+            SolveBudget budget,
             ReplanificationScope scope,
             Reamorcage reamorcage,
             BooleanSupplier shutdownRequested) {
         return switch (type) {
             case SOLVE ->
-                solveFromReferenceData(
-                        secondsLimit, reamorcage == null ? Reamorcage.AUTO : reamorcage, shutdownRequested);
-            case SOLVE_INCREMENTAL -> incremental(secondsLimit, scope, shutdownRequested);
+                solveFromReferenceData(budget, reamorcage == null ? Reamorcage.AUTO : reamorcage, shutdownRequested);
+            case SOLVE_INCREMENTAL -> incremental(budget, scope, shutdownRequested);
         };
     }
 
     private JobTask solveFromReferenceData(
-            Long secondsLimit, Reamorcage reamorcage, BooleanSupplier shutdownRequested) {
+            SolveBudget budget, Reamorcage reamorcage, BooleanSupplier shutdownRequested) {
         return job -> {
             SolvePipeline.Resolution<ProblemBuilder.ProblemeReamorce> resolution = pipeline.execute(
                     job.getEditionNom(),
                     () -> planningService.buildFromReferenceData(reamorcage),
                     ProblemBuilder.ProblemeReamorce::planning,
-                    secondsLimit,
+                    budget,
                     onSolverReady(job),
                     shutdownRequested);
             ProblemBuilder.ProblemeReamorce probleme = resolution.probleme();
@@ -92,13 +91,13 @@ public class SolverJobTasks {
         };
     }
 
-    private JobTask incremental(Long secondsLimit, ReplanificationScope scope, BooleanSupplier shutdownRequested) {
+    private JobTask incremental(SolveBudget budget, ReplanificationScope scope, BooleanSupplier shutdownRequested) {
         return job -> {
             SolvePipeline.Resolution<ProblemBuilder.ProblemeIncremental> resolution = pipeline.execute(
                     job.getEditionNom(),
                     () -> planningService.buildIncrementalFromReferenceData(scope),
                     ProblemBuilder.ProblemeIncremental::planning,
-                    secondsLimit,
+                    budget,
                     onSolverReady(job),
                     shutdownRequested);
             ProblemBuilder.ProblemeIncremental probleme = resolution.probleme();

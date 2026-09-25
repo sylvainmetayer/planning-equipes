@@ -372,7 +372,11 @@ final class ScenarioDtoAssembler {
     }
 
     private static ParametresSolveurDto parametresSolveur(ParametresSolveur parametres) {
-        return parametres == null ? null : new ParametresSolveurDto(parametres.dureeResolutionSecondes());
+        if (parametres == null
+                || (parametres.dureeResolutionSecondes() == null && parametres.plateauSecondes() == null)) {
+            return null;
+        }
+        return new ParametresSolveurDto(parametres.dureeResolutionSecondes(), parametres.plateauSecondes());
     }
 
     /** Only the fields a scenario file is read back with. */

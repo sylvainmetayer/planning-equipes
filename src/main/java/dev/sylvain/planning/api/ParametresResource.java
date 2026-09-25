@@ -5,6 +5,7 @@ import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.solve.SolverBudgetBounds;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -13,6 +14,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * The parameter sets the Données and Débogage tabs can tune. Several
@@ -72,18 +74,47 @@ public class ParametresResource {
                 .build();
     }
 
+    /** The edition's solve budget, with the instance's defaults and ceilings it is read against. */
     @GET
     @Path("/parametres-solveur")
-    public ParametresSolveur getParametresSolveur() {
-        return referenceDataService.getParametresSolveur();
+    public SolverSettingsView getParametresSolveur() {
+        return SolverSettingsView.of(
+                referenceDataService.getParametresSolveur(), referenceDataService.getSolverBudgetBounds());
     }
 
-    /** Saves the solver's default termination duration (Données tab). Returns 400 when the value isn't positive. */
+    /**
+     * Saves the edition's solve budget. Returns 400 — citing the ceiling — when
+     * a duration or a plateau exceeds what the operator allows, or when the
+     * plateau exceeds the duration.
+     */
     @PUT
     @Path("/parametres-solveur")
-    public Response updateParametresSolveur(ParametresSolveur parametres) {
-        return Response.ok(referenceDataService.updateParametresSolveur(parametres))
-                .build();
+    public SolverSettingsView updateParametresSolveur(ParametresSolveur parametres) {
+        return SolverSettingsView.of(
+                referenceDataService.updateParametresSolveur(parametres), referenceDataService.getSolverBudgetBounds());
+    }
+
+    /**
+     * {@link ParametresSolveur} as stored — a {@code null} half follows the
+     * deployment — plus {@code instance}, what the operator decided: the
+     * defaults a {@code null} resolves to and the ceilings nothing may exceed.
+     * Read-only: a {@code PUT} sends {@link ParametresSolveur} and nothing of
+     * {@code instance}.
+     */
+    @Schema(requiredProperties = {"mailFinResolution", "instance"})
+    public record SolverSettingsView(
+            Integer dureeResolutionSecondes,
+            Integer plateauSecondes,
+            boolean mailFinResolution,
+            SolverBudgetBounds instance) {
+
+        static SolverSettingsView of(ParametresSolveur parametres, SolverBudgetBounds bounds) {
+            return new SolverSettingsView(
+                    parametres.dureeResolutionSecondes(),
+                    parametres.plateauSecondes(),
+                    parametres.mailFinResolution(),
+                    bounds);
+        }
     }
 
     /**

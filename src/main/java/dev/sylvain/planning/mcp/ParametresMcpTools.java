@@ -9,6 +9,7 @@ import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.WrittenContrainteAdHoc;
+import dev.sylvain.planning.service.solve.SolverBudgetBounds;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -146,7 +147,9 @@ public class ParametresMcpTools {
 
     @Tool(
             name = "consulter_parametres_solveur",
-            description = "Consulte la durée de résolution par défaut du solveur, en secondes.",
+            description = "Consulte le budget de calcul de l'édition : durée maximale d'une résolution et arrêt "
+                    + "sur plateau (secondes sans amélioration d'un planning déjà faisable, 0 = jamais), null = défaut "
+                    + "de l'instance ; et, sous instance, les défauts et les plafonds fixés par l'exploitant.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -155,13 +158,15 @@ public class ParametresMcpTools {
                             openWorldHint = false))
     ParametresSolveurView getParametresSolveur(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return toView(referenceDataService.getParametresSolveur());
+        return toView(referenceDataService.getParametresSolveur(), referenceDataService.getSolverBudgetBounds());
     }
 
     @Tool(
             name = "modifier_parametres_solveur",
-            description =
-                    "Modifie la durée de résolution par défaut du solveur, en secondes (valeur strictement positive).",
+            description = "Modifie le budget de calcul de l'édition. Un argument absent garde sa valeur. Une "
+                    + "valeur changée au-dessus du plafond de l'instance est refusée (voir "
+                    + "consulter_parametres_solveur) ; une valeur gardée telle quelle ne l'est pas, même au-dessus, "
+                    + "et tourne au plafond. Refusé aussi si le plateau dépasse la durée.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -170,12 +175,29 @@ public class ParametresMcpTools {
                             openWorldHint = false))
     @WarnsWhileSolving
     ParametresSolveurView updateParametresSolveur(
-            @ToolArg(description = "Durée de résolution par défaut, en secondes") int dureeResolutionSecondes,
+            @ToolArg(
+                            description = "Durée maximale d'une résolution, en secondes (strictement positive)",
+                            required = false)
+                    Integer dureeResolutionSecondes,
+            @ToolArg(
+                            description = "Arrêt si le planning, déjà faisable, ne s'améliore plus depuis ce nombre "
+                                    + "de secondes ; 0 = jamais",
+                            required = false)
+                    Integer plateauSecondes,
+            @ToolArg(description = "true : durée et plateau reviennent au défaut de l'instance", required = false)
+                    Boolean revenirAuDefaut,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        // Only the duration is tunable here; the rest of the parameters is kept as is.
+        // The mail switch is not tunable here; it is kept as is.
         ParametresSolveur actuels = referenceDataService.getParametresSolveur();
-        return toView(referenceDataService.updateParametresSolveur(
-                new ParametresSolveur(dureeResolutionSecondes, actuels.mailFinResolution())));
+        boolean defaut = Boolean.TRUE.equals(revenirAuDefaut);
+        ParametresSolveur voulus = new ParametresSolveur(
+                defaut
+                        ? null
+                        : dureeResolutionSecondes != null ? dureeResolutionSecondes : actuels.dureeResolutionSecondes(),
+                defaut ? null : plateauSecondes != null ? plateauSecondes : actuels.plateauSecondes(),
+                actuels.mailFinResolution());
+        return toView(
+                referenceDataService.updateParametresSolveur(voulus), referenceDataService.getSolverBudgetBounds());
     }
 
     /* ------------------------- Notification parameters ---------------------- */
@@ -356,8 +378,9 @@ public class ParametresMcpTools {
                 parametres.getHeureDebutSoiree());
     }
 
-    static ParametresSolveurView toView(ParametresSolveur parametres) {
-        return new ParametresSolveurView(parametres.dureeResolutionSecondes());
+    static ParametresSolveurView toView(ParametresSolveur parametres, SolverBudgetBounds bounds) {
+        return new ParametresSolveurView(
+                parametres.dureeResolutionSecondes(), parametres.plateauSecondes(), bounds, List.of());
     }
 
     static ContrainteAdHocView toView(ContrainteAdHoc contrainte) {
@@ -434,18 +457,21 @@ public class ParametresMcpTools {
         }
     }
 
+    /**
+     * The edition's budget — {@code null} follows the instance — and the
+     * instance's defaults and ceilings.
+     */
     public record ParametresSolveurView(
-            int dureeResolutionSecondes,
+            Integer dureeResolutionSecondes,
+            Integer plateauSecondes,
+            SolverBudgetBounds instance,
             @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> avertissements)
             implements WarningCarrier<ParametresSolveurView> {
 
-        ParametresSolveurView(int dureeResolutionSecondes) {
-            this(dureeResolutionSecondes, List.of());
-        }
-
         @Override
         public ParametresSolveurView withWarning(String code) {
-            return new ParametresSolveurView(dureeResolutionSecondes, WarningCodes.with(avertissements, code));
+            return new ParametresSolveurView(
+                    dureeResolutionSecondes, plateauSecondes, instance, WarningCodes.with(avertissements, code));
         }
     }
 

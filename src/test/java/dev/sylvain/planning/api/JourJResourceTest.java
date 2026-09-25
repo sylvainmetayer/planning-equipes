@@ -280,7 +280,11 @@ class JourJResourceTest {
 
         List<Map<String, Object>> restantes = forcedUnavailabilities();
         assertThat(restantes).hasSize(1);
-        assertThat((String) restantes.getFirst().get("id")).doesNotContain(String.valueOf(afternoonCreneauId()));
+        // The remaining exception names the morning timeslot. Compared by id, not
+        // as a substring of the exception's id: generated ids like C2 and C20
+        // contain each other.
+        Map<?, ?> creneau = (Map<?, ?>) restantes.getFirst().get("creneau");
+        assertThat(((Number) creneau.get("id")).longValue()).isNotEqualTo(afternoonCreneauId());
     }
 
     @Test

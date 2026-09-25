@@ -82,11 +82,16 @@ final class SolveRunner {
      */
     public PlanningEvenement solve(
             PlanningEvenement problem, Long secondsLimitOverride, Consumer<Solver<PlanningEvenement>> onSolverReady) {
+        return solve(problem, SolveBudget.ofSeconds(secondsLimitOverride), onSolverReady);
+    }
+
+    /** The same, under a whole {@link SolveBudget} — duration and plateau — as a job resolves it. */
+    public PlanningEvenement solve(
+            PlanningEvenement problem, SolveBudget budget, Consumer<Solver<PlanningEvenement>> onSolverReady) {
         prepareProblem(problem);
         FrozenPast.pin(problem.getPostes());
-        Solver<PlanningEvenement> solver = configuration
-                .resolveSolverFactory(secondsLimitOverride, problem)
-                .buildSolver();
+        Solver<PlanningEvenement> solver =
+                configuration.resolveSolverFactory(budget, problem).buildSolver();
         if (onSolverReady != null) {
             onSolverReady.accept(solver);
         }

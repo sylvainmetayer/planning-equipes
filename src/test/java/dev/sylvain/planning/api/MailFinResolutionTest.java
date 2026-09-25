@@ -75,15 +75,16 @@ class MailFinResolutionTest {
     /* ------------------------------- Helpers ------------------------------- */
 
     private void reglerNotification(boolean actif) {
-        int duree = given().when()
+        io.restassured.path.json.JsonPath actuels = given().when()
                 .get("/api/parametres-solveur")
                 .then()
                 .statusCode(200)
                 .extract()
-                .jsonPath()
-                .getInt("dureeResolutionSecondes");
+                .jsonPath();
         given().contentType(ContentType.JSON)
-                .body("{\"dureeResolutionSecondes\":" + duree + ",\"mailFinResolution\":" + actif + "}")
+                .body("{\"dureeResolutionSecondes\":" + actuels.get("dureeResolutionSecondes")
+                        + ",\"plateauSecondes\":" + actuels.get("plateauSecondes") + ",\"mailFinResolution\":" + actif
+                        + "}")
                 .when()
                 .put("/api/parametres-solveur")
                 .then()

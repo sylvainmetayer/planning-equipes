@@ -183,7 +183,7 @@ class ChangementsJourneeResourceTest {
                                     throw new IllegalStateException("Problème invalide");
                                 },
                                 Function.identity(),
-                                1L,
+                                dev.sylvain.planning.service.solve.SolveBudget.ofSeconds(1L),
                                 null,
                                 () -> false)))
                 .hasMessage("Problème invalide");

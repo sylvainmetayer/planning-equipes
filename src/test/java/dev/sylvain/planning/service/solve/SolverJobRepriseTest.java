@@ -192,6 +192,8 @@ class SolverJobRepriseTest {
                     JobStatus.PENDING,
                     1L,
                     null,
+                    null,
+                    null,
                     demande,
                     true,
                     null,
@@ -207,6 +209,49 @@ class SolverJobRepriseTest {
         }
     }
 
+    /**
+     * A queued job's budget is part of what it was promised: replayed after a
+     * restart it runs the duration <b>and</b> the plateau it was launched with,
+     * not whatever the edition says by then.
+     */
+    @Test
+    void aQueuedJobKeepsItsDurationAndPlateauAcrossARestart() {
+        planImporte();
+        String id = UUID.randomUUID().toString();
+        jobRepository.save(new LigneJob(
+                id,
+                editionContext.editionIdCourant(),
+                "Édition de test",
+                JobType.SOLVE,
+                JobStatus.QUEUED,
+                2L,
+                1L,
+                new SolveBudget.CappedFrom(7200L, null),
+                null,
+                null,
+                true,
+                null,
+                Instant.now(),
+                null,
+                null));
+
+        assertThat(jobService.restaurer()).isEqualTo(1);
+
+        SolverJob job = jobService.find(id).orElseThrow();
+        assertThat(job.getSecondsLimit()).isEqualTo(2L);
+        assertThat(job.getPlateauSeconds()).isEqualTo(1L);
+        assertThat(job.getCappedFrom()).isEqualTo(new SolveBudget.CappedFrom(7200L, null));
+        assertThat(job.getBudgetWarning()).contains("2 h");
+        assertThat(pollUntilFinished(id).getLong("plateauSeconds")).isEqualTo(1L);
+        assertThat(jobRepository.list().stream().filter(ligne -> ligne.id().equals(id)))
+                .singleElement()
+                .satisfies(ligne -> {
+                    assertThat(ligne.secondsLimit()).isEqualTo(2L);
+                    assertThat(ligne.plateauSeconds()).isEqualTo(1L);
+                    assertThat(ligne.cappedFrom()).isEqualTo(new SolveBudget.CappedFrom(7200L, null));
+                });
+    }
+
     /* ------------------------------- Helpers ------------------------------- */
 
     /** Writes the row a server stopped in that state would have left behind. */
@@ -220,6 +265,8 @@ class SolverJobRepriseTest {
                 type,
                 statut,
                 1L,
+                null,
+                null,
                 scope,
                 null,
                 rejouable,

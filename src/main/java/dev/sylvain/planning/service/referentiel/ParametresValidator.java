@@ -6,6 +6,9 @@ import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlafondsLegauxMajeurs;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.solve.SolveBudgetPolicy;
+import dev.sylvain.planning.service.solve.SolverBudgetBounds;
+import java.util.Objects;
 
 /**
  * What the three admin-configurable parameter sets accept, as pure functions.
@@ -129,9 +132,65 @@ final class ParametresValidator {
         checkFenetre(parametres.heureServiceTardif(), parametres.heureServiceMatinal(), "Les heures de service");
     }
 
-    static void checkParametresSolveur(ParametresSolveur parametres) {
-        if (parametres.dureeResolutionSecondes() <= 0) {
-            throw new BusinessError.Invalid("dureeResolutionSecondes must be positive");
+    /**
+     * Refuses a budget the instance does not allow, rather than trimming it: an
+     * organiser who set three hours and silently got two would read an
+     * exhausted budget into a run that was simply cut. Either half may be
+     * {@code null}, which follows the deployment default.
+     *
+     * <p>The ceilings bind only the halves this write <b>changes</b>: a value
+     * equal to {@code stored} passes whatever it is. A duration saved before
+     * the operator lowered the ceiling is not the organiser's doing, and every
+     * launch already runs it capped with a warning (ADR 0051); refusing it here
+     * would make every other write of these settings fail — the mail switch,
+     * or a plateau changed on its own — until someone lowered it by hand.</p>
+     */
+    static void checkParametresSolveur(
+            ParametresSolveur parametres, ParametresSolveur stored, SolverBudgetBounds bounds) {
+        checkParametresSolveur(
+                parametres,
+                bounds,
+                !Objects.equals(parametres.dureeResolutionSecondes(), stored.dureeResolutionSecondes()),
+                !Objects.equals(parametres.plateauSecondes(), stored.plateauSecondes()));
+    }
+
+    /**
+     * The budget a scenario file carries: every rule but the ceilings. The file
+     * describes what it was verified against, the ceiling is how long this
+     * instance lets any edition hold the solver; a value above it is stored as
+     * the file says and runs capped with a warning, like a value saved before
+     * the ceiling was lowered — refusing the whole import over a termination
+     * duration would lose the referential it came with.
+     */
+    static void checkImportedParametresSolveur(ParametresSolveur parametres, SolverBudgetBounds bounds) {
+        checkParametresSolveur(parametres, bounds, false, false);
+    }
+
+    private static void checkParametresSolveur(
+            ParametresSolveur parametres, SolverBudgetBounds bounds, boolean durationCapped, boolean plateauCapped) {
+        Integer duree = parametres.dureeResolutionSecondes();
+        Integer plateau = parametres.plateauSecondes();
+        if (duree != null && duree <= 0) {
+            throw new BusinessError.Invalid("La durée de résolution doit être strictement positive.");
+        }
+        if (durationCapped && duree != null && duree > bounds.maxSecondsLimit()) {
+            throw new BusinessError.Invalid("La durée de résolution (" + SolveBudgetPolicy.humanDuration(duree)
+                    + ") dépasse le plafond de l'instance : au plus "
+                    + SolveBudgetPolicy.humanDuration(bounds.maxSecondsLimit()) + ", fixé par l'exploitant.");
+        }
+        if (plateau != null && plateau < 0) {
+            throw new BusinessError.Invalid("L'arrêt sur plateau ne peut pas être négatif : 0 signifie « jamais ».");
+        }
+        if (plateauCapped && plateau != null && plateau > bounds.maxPlateauSeconds()) {
+            throw new BusinessError.Invalid("L'arrêt sur plateau (" + SolveBudgetPolicy.humanDuration(plateau)
+                    + ") dépasse le plafond de l'instance : au plus "
+                    + SolveBudgetPolicy.humanDuration(bounds.maxPlateauSeconds()) + ", fixé par l'exploitant.");
+        }
+        long dureeEffective = duree != null ? duree : bounds.defaultSecondsLimit();
+        if (plateau != null && plateau > dureeEffective) {
+            throw new BusinessError.Invalid("L'arrêt sur plateau (" + SolveBudgetPolicy.humanDuration(plateau)
+                    + ") ne peut pas dépasser la durée de résolution ("
+                    + SolveBudgetPolicy.humanDuration(dureeEffective) + ").");
         }
     }
 

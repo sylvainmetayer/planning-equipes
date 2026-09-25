@@ -3,33 +3,38 @@ package dev.sylvain.planning.domain;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
- * Admin-configurable solver termination duration (Données tab). Never seen
- * by the solver as a problem fact — it is only read back by the frontend to
- * build the {@code ?seconds=} query param on a solve request, so
- * every browser sends the same value instead of a per-browser one.
+ * The solve budget an edition asks for (Solveur page), and whether a finished
+ * solve mails its outcome. Never seen by the solver as a problem fact: the
+ * server reads it when a job is launched and turns it into that job's
+ * termination, bounded by the ceiling the operator set for the whole instance.
  *
- * <p>A record: it is read, written whole, and never mutated field by field.
- * The JSON shape is unchanged — Jackson names a record's properties after its
- * components, which are exactly the former getters.</p>
+ * <p>A record: it is read, written whole, and never mutated field by field.</p>
  *
- * @param dureeResolutionSecondes how long a solve runs by default
+ * @param dureeResolutionSecondes how long a solve runs at most; {@code null}
+ *                                follows the deployment default
+ *                                ({@code planning.solver.seconds-limit}), which
+ *                                is what « Revenir au défaut » writes
+ * @param plateauSecondes         how long an <b>already feasible</b> planning
+ *                                may go without improving before the solve
+ *                                stops; {@code 0} never stops early, {@code null}
+ *                                follows the deployment default
+ *                                ({@code planning.solver.unimproved-seconds-limit})
  * @param mailFinResolution       whether a finished solve mails its outcome to
  *                                the admin address. Off by default — sending
  *                                mail is never something an application should
  *                                start doing on its own — and inert until
  *                                {@code MAIL_ADMIN} is configured
  */
-@Schema(requiredProperties = {"dureeResolutionSecondes", "mailFinResolution"})
-public record ParametresSolveur(int dureeResolutionSecondes, boolean mailFinResolution) {
+@Schema(requiredProperties = {"mailFinResolution"})
+public record ParametresSolveur(Integer dureeResolutionSecondes, Integer plateauSecondes, boolean mailFinResolution) {
 
-    /** Mirrors the default of `planning.solver.seconds-limit` in application.properties. */
-    public static final int DUREE_RESOLUTION_SECONDES_PAR_DEFAUT = 900;
-
+    /** Nothing set: the deployment's budget, no mail. */
     public ParametresSolveur() {
-        this(DUREE_RESOLUTION_SECONDES_PAR_DEFAUT, false);
+        this(null, null, false);
     }
 
-    public ParametresSolveur(int dureeResolutionSecondes) {
-        this(dureeResolutionSecondes, false);
+    /** A duration alone, as a scenario file of an older format carries it. */
+    public ParametresSolveur(Integer dureeResolutionSecondes) {
+        this(dureeResolutionSecondes, null, false);
     }
 }

@@ -98,6 +98,15 @@ export interface TrackedJob {
    * estimated finishing time; see {@link estimatedEndMs}.
    */
   secondsLimit: number | null;
+  /** The feasible-plateau bailout the server gave this job, 0 for none; `null` when it did not say. */
+  plateauSeconds?: number | null;
+  /**
+   * What the edition stored where the instance's ceiling cut it — a ceiling
+   * lowered since, or a scenario imported above it — `null` for a half that
+   * ran as stored. The ceiling is the job's own `secondsLimit` / `plateauSeconds`.
+   */
+  cappedFromSecondsLimit?: number | null;
+  cappedFromPlateauSeconds?: number | null;
 }
 
 /**
@@ -691,6 +700,11 @@ export class SolverJobService {
       editionId: job.editionId ?? null,
       editionNom: job.editionNom ?? null,
       secondsLimit: job.secondsLimit == null ? null : Number(job.secondsLimit),
+      plateauSeconds: job.plateauSeconds == null ? null : Number(job.plateauSeconds),
+      cappedFromSecondsLimit:
+        job.cappedFromSecondsLimit == null ? null : Number(job.cappedFromSecondsLimit),
+      cappedFromPlateauSeconds:
+        job.cappedFromPlateauSeconds == null ? null : Number(job.cappedFromPlateauSeconds),
     };
     this._activeJob.set(entry);
     // A submit() adopts its job without waiting for the next poll: start the

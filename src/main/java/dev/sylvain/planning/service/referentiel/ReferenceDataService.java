@@ -23,6 +23,7 @@ import dev.sylvain.planning.service.TokenOwner;
 import dev.sylvain.planning.service.consigne.ConsigneRepository;
 import dev.sylvain.planning.service.journal.ChampsModifies;
 import dev.sylvain.planning.service.journal.CurrentAction;
+import dev.sylvain.planning.service.solve.SolverBudgetBounds;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -808,6 +809,16 @@ public class ReferenceDataService implements ReferenceData {
 
     public ParametresSolveur updateParametresSolveur(ParametresSolveur valeurs) {
         return parametres.updateSolveur(valeurs);
+    }
+
+    /** @see ParametresService#importSolveur(ParametresSolveur) */
+    public ParametresSolveur importParametresSolveur(ParametresSolveur valeurs) {
+        return parametres.importSolveur(valeurs);
+    }
+
+    /** @see ParametresService#solverBudgetBounds() */
+    public SolverBudgetBounds getSolverBudgetBounds() {
+        return parametres.solverBudgetBounds();
     }
 
     public ParametresNotifications getParametresNotifications() {

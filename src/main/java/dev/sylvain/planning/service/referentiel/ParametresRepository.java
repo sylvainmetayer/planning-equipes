@@ -11,6 +11,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.time.LocalTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -178,13 +179,15 @@ public class ParametresRepository {
     public ParametresSolveur getParametresSolveur() {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, """
-                        SELECT duree_resolution_secondes, mail_fin_resolution
+                        SELECT duree_resolution_secondes, plateau_secondes, mail_fin_resolution
                         FROM parametres_solveur
                         WHERE edition_id = ?""");
                 ResultSet rs = ps.executeQuery()) {
             if (rs.next()) {
                 return new ParametresSolveur(
-                        rs.getInt("duree_resolution_secondes"), rs.getBoolean("mail_fin_resolution"));
+                        rs.getObject("duree_resolution_secondes", Integer.class),
+                        rs.getObject("plateau_secondes", Integer.class),
+                        rs.getBoolean("mail_fin_resolution"));
             }
             return new ParametresSolveur();
         } catch (SQLException e) {
@@ -195,13 +198,16 @@ public class ParametresRepository {
     public void saveParametresSolveur(ParametresSolveur parametres) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, """
-                        INSERT INTO parametres_solveur (edition_id, duree_resolution_secondes, mail_fin_resolution)
-                        VALUES (?, ?, ?)
+                        INSERT INTO parametres_solveur
+                            (edition_id, duree_resolution_secondes, plateau_secondes, mail_fin_resolution)
+                        VALUES (?, ?, ?, ?)
                         ON CONFLICT (edition_id)
                         DO UPDATE SET duree_resolution_secondes = EXCLUDED.duree_resolution_secondes,
+                        plateau_secondes = EXCLUDED.plateau_secondes,
                         mail_fin_resolution = EXCLUDED.mail_fin_resolution""")) {
-            ps.setInt(2, parametres.dureeResolutionSecondes());
-            ps.setBoolean(3, parametres.mailFinResolution());
+            ps.setObject(2, parametres.dureeResolutionSecondes(), Types.INTEGER);
+            ps.setObject(3, parametres.plateauSecondes(), Types.INTEGER);
+            ps.setBoolean(4, parametres.mailFinResolution());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save solver parameters", e);

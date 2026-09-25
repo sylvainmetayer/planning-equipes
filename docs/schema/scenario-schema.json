@@ -501,6 +501,11 @@
           "type" : "integer",
           "format" : "int32",
           "exclusiveMinimum" : 0
+        },
+        "plateauSecondes" : {
+          "type" : "integer",
+          "format" : "int32",
+          "minimum" : 0
         }
       }
     },

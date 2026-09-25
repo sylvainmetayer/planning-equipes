@@ -93,7 +93,10 @@ public class SolveurMcpTools {
                             idempotentHint = false,
                             openWorldHint = false))
     JobMcpView startSolver(
-            @ToolArg(description = "Durée max en secondes (défaut : configuration serveur)", required = false)
+            @ToolArg(
+                            description = "Durée max en secondes (défaut : le budget de l'édition, voir "
+                                    + "consulter_parametres_solveur) ; refusée au-dessus du plafond de l'instance",
+                            required = false)
                     Long secondes,
             @ToolArg(description = "Attendre son tour si le solveur est occupé, au lieu d'échouer", required = false)
                     Boolean enFile,
@@ -128,7 +131,11 @@ public class SolveurMcpTools {
                     List<String> jours,
             @ToolArg(description = "Ids de stands dont tous les postes sont rouverts", required = false)
                     List<String> standIds,
-            @ToolArg(description = "Durée max en secondes (défaut 60)", required = false) Long secondes,
+            @ToolArg(
+                            description = "Durée max en secondes (défaut 60) ; refusée au-dessus du plafond de "
+                                    + "l'instance. L'arrêt sur plateau de l'édition s'applique",
+                            required = false)
+                    Long secondes,
             @ToolArg(description = "Attendre son tour si le solveur est occupé, au lieu d'échouer", required = false)
                     Boolean enFile,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
@@ -372,12 +379,13 @@ public class SolveurMcpTools {
                 job.getType().name(),
                 job.getStatus().name(),
                 job.getSecondsLimit(),
+                job.getPlateauSeconds(),
                 job.getSubmittedAt(),
                 job.getStartedAt(),
                 job.getFinishedAt(),
                 job.getElapsedSeconds(),
                 job.getError(),
-                avertissement(job.getResult()),
+                avertissement(job.getBudgetWarning(), job.getResult()),
                 job.getEditionId(),
                 job.getEditionNom());
     }
@@ -388,7 +396,7 @@ public class SolveurMcpTools {
      * during the event would otherwise hide them. {@code null} when there is
      * nothing to warn about, on a job without a result included.
      */
-    private static String avertissement(Object result) {
+    private static String avertissement(String budgetWarning, Object result) {
         int vides =
                 switch (result) {
                     case SolverJobService.ResultatSolve solve ->
@@ -397,7 +405,11 @@ public class SolveurMcpTools {
                         incremental.statistiques().postesPassesVides();
                     case null, default -> 0;
                 };
-        return vides > 0 ? vides + " sièges passés sont restés vides." : null;
+        String sieges = vides > 0 ? vides + " sièges passés sont restés vides." : null;
+        if (budgetWarning == null) {
+            return sieges;
+        }
+        return sieges == null ? budgetWarning : budgetWarning + " " + sieges;
     }
 
     private static AffectationView toView(PosteAffectation poste) {
@@ -423,6 +435,8 @@ public class SolveurMcpTools {
             String type,
             String status,
             Long secondsLimit,
+            /** The feasible-plateau bailout the job runs under, 0 for none. */
+            Long plateauSeconds,
             Instant submittedAt,
             Instant startedAt,
             Instant finishedAt,

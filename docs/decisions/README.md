@@ -74,6 +74,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0048](0048-une-seule-regle-de-pause.md) | Une seule règle de pause : toute pause due est un trou dans la grille ou un relais du même stand, sinon un écart dur ; une seule durée, déduite partout | Accepté · révise 0006 et 0034, prolonge 0037 |
 | [0049](0049-la-regle-dure-des-jours-d-affilee-se-cherche-par-jours-entiers.md) | Sous la forme dure des jours d'affilée, la chaîne libère un jour de la série, les jours se regroupent et le *ruin and recreate* de la phase de faisabilité devient rare | Accepté · prolonge 0045, complète 0025 |
 | [0050](0050-identifiants-generes-par-edition.md) | Les identifiants métier sont générés par l'application, numérotés par édition ; un code lisible pour les stands, typologies et emplacements ; dans un scénario, un identifiant n'est qu'une référence locale | Accepté · prolonge 0001 |
+| [0051](0051-budget-de-calcul-par-edition-sous-plafond-d-exploitant.md) | Le budget de calcul — durée et arrêt sur plateau conditionné à la faisabilité — se règle par édition et s'applique côté serveur au lancement, sous deux plafonds d'exploitant qui refusent au lieu de rogner | Accepté |
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,

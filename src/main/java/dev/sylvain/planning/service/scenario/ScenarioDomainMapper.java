@@ -762,10 +762,10 @@ final class ScenarioDomainMapper {
     }
 
     private static Optional<ParametresSolveur> parametresSolveur(ParametresSolveurDto dto) {
-        if (dto == null || dto.dureeResolutionSecondes() == null) {
+        if (dto == null || (dto.dureeResolutionSecondes() == null && dto.plateauSecondes() == null)) {
             return Optional.empty();
         }
-        return Optional.of(new ParametresSolveur(dto.dureeResolutionSecondes()));
+        return Optional.of(new ParametresSolveur(dto.dureeResolutionSecondes(), dto.plateauSecondes(), false));
     }
 
     /**

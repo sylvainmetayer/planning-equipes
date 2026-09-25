@@ -90,8 +90,8 @@ export function buildSolverSections(): HelpSection[] {
           kind: 'definitions',
           items: [
             {
-              term: $localize`:@@aide.config.term.duree:Durée de résolution`,
-              text: $localize`:@@aide.config.def.duree:Temps maximal accordé à une résolution, réglé sur la page Solveur (15 min par défaut) et partagé par tous les navigateurs. C'est le réglage qui compte le plus. Commencez court — 1 à 3 min — pour révéler les blocages structurels, puis passez à 15 ou 30 min, voire davantage, pour la résolution finale.`,
+              term: $localize`:@@aide.config.term.duree:Budget de calcul`,
+              text: $localize`:@@aide.config.def.duree:Réglé par édition sur la page Solveur, partagé par tous les navigateurs et appliqué par le serveur à tout calcul lancé sur l'édition, depuis l'écran comme depuis l'assistant. Deux réglages. La durée maximale (15 min par défaut) est celui qui compte le plus : commencez court — 1 à 3 min — pour révéler les blocages structurels, puis passez à 15 ou 30 min, voire davantage, pour la résolution finale. L'arrêt sans amélioration (5 min par défaut, 0 pour jamais) écourte un calcul qui ne progresse plus ; il ne compte qu'une fois le score dur à zéro, de sorte qu'un calcul n'abandonne jamais tant que des places restent à pourvoir. Les deux sont bornés par un plafond que fixe l'exploitant de l'instance, affiché sur la carte : une valeur au-dessus est refusée. Si l'exploitant abaisse ce plafond sous une valeur déjà enregistrée, le calcul tourne au plafond et le dit. « Revenir au défaut » rend l'édition aux valeurs de l'instance.`,
             },
             {
               term: $localize`:@@aide.config.term.mailFin:Prévenir à la fin d'une résolution`,

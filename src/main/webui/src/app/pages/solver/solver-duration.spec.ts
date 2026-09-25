@@ -9,6 +9,8 @@ import {
   bestUnitFor,
   secondsToValue,
   valueToSeconds,
+  budgetToSend,
+  formatSeconds,
 } from './solver-duration';
 
 describe('valueToSeconds', () => {
@@ -98,5 +100,26 @@ describe('SOLVER_DURATION_UNIT_STEP', () => {
     for (const unit of units) {
       expect(Number.isInteger(valueToSeconds(SOLVER_DURATION_UNIT_STEP[unit], unit))).toBe(true);
     }
+  });
+});
+
+describe('formatSeconds', () => {
+  it('says a budget in the unit a person would say it in', () => {
+    expect(formatSeconds(7200)).toBe('2 h');
+    expect(formatSeconds(900)).toBe('15 min');
+    expect(formatSeconds(90)).toBe('90 s');
+    expect(formatSeconds(0)).toBe('0 s');
+  });
+});
+
+describe('budgetToSend', () => {
+  it('keeps following the instance while the draft still says its default', () => {
+    expect(budgetToSend(null, 300, 300)).toBeNull();
+  });
+
+  it('pins a value that differs from the default, or one the edition already owned', () => {
+    expect(budgetToSend(null, 120, 300)).toBe(120);
+    expect(budgetToSend(300, 300, 300)).toBe(300);
+    expect(budgetToSend(null, 299.6, null)).toBe(300);
   });
 });

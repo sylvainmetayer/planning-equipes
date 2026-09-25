@@ -111,7 +111,7 @@ class SolverJobArretTest {
                     edition,
                     () -> planningService.buildFromReferenceData(Reamorcage.AUCUN),
                     ProblemeReamorce::planning,
-                    30L,
+                    SolveBudget.ofSeconds(30L),
                     solver -> Thread.ofVirtual().start(() -> {
                         // Time passing is the point here, not a state to wait for.
                         await().pollDelay(Duration.ofMillis(500)).until(() -> true);
