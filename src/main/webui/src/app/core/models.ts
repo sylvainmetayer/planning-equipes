@@ -444,6 +444,47 @@ export interface RapportFragilite {
   message: string;
 }
 
+/* --------------------- Who to train (`/api/formation`) --------------------- */
+
+/** One candidate to train on a typologie: one step from mastering it. */
+export interface CandidatFormation {
+  animateurId: string;
+  nom?: string | null;
+  niveau: NiveauCompetence;
+  souhait: boolean;
+  /** Tension days of the typologie the candidate has not declared off. */
+  joursTensionDisponibles: number;
+}
+
+/**
+ * One typologie in shortage: the Besoin tab's shortfall and the Fragilité
+ * tab's scarce groups, never a third definition, and its ranked candidates.
+ */
+export interface TypologieAFormer {
+  typologie: string;
+  label?: string | null;
+  ninja: boolean;
+  /** The staffing need's shortfall for it; 0 when the Besoin tab signals none. */
+  manque: number;
+  specialistes: number;
+  /** Stand × créneau groups held by one specialist or none. */
+  competencesRares: number;
+  groupesSansSpecialiste: number;
+  postesIrremplacables: number;
+  joursTension: string[];
+  /** Ranked; empty means « recrutement ». */
+  candidats: CandidatFormation[];
+}
+
+/** What `GET /api/formation` returns — computed without any solve. */
+export interface PlanFormation {
+  typologies: TypologieAFormer[];
+  /** False: only the staffing need speaks, the fragility half needs a plan. */
+  planPersiste: boolean;
+  aucuneCompetence: boolean;
+  aucunAnimateur: boolean;
+}
+
 /* -------------------- Marge disponible (`/api/marge`) -------------------- */
 
 /**

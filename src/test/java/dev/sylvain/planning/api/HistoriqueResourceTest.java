@@ -226,6 +226,7 @@ class HistoriqueResourceTest {
         telechargements.put("/api/planning/publication/export", "EXPORT_RELECTURE");
         telechargements.put("/api/animateurs/competences/export", "EXPORT_COMPETENCES");
         telechargements.put("/api/pauses/intendance/export", "EXPORT_INTENDANCE");
+        telechargements.put("/api/formation/export", "EXPORT_FORMATION");
         telechargements.put("/api/database/export", "EXPORT_BASE");
 
         Map<String, Integer> statuts = new LinkedHashMap<>();
