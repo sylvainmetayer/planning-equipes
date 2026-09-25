@@ -31,14 +31,21 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @ApplicationScoped
 public class ConfirmationPlanningService {
 
-    @Inject
-    ConfirmationPlanningRepository repository;
+    private final ConfirmationPlanningRepository repository;
+
+    private final ReferenceDataService referenceDataService;
+
+    private final PlanPublieService planPublieService;
 
     @Inject
-    ReferenceDataService referenceDataService;
-
-    @Inject
-    PlanPublieService planPublieService;
+    public ConfirmationPlanningService(
+            ConfirmationPlanningRepository repository,
+            ReferenceDataService referenceDataService,
+            PlanPublieService planPublieService) {
+        this.repository = repository;
+        this.referenceDataService = referenceDataService;
+        this.planPublieService = planPublieService;
+    }
 
     /**
      * One animateur's answer, as the admin table shows it.

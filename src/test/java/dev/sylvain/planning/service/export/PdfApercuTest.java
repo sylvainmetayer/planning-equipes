@@ -77,7 +77,8 @@ class PdfApercuTest {
                 new AnimateurFeuillePdf(new PdfTheme(), TYPOLOGIES),
                 new GlobalPlanningPdf(new PdfTheme(), TYPOLOGIES),
                 new PlanningIcs(),
-                PROVENANCE);
+                PROVENANCE,
+                null);
         Path dossier = Path.of("target", "apercu");
         Files.createDirectories(dossier);
         Files.write(dossier.resolve("livret.pdf"), service.exportAnimateurPdf(planning, "A-1", FormatPlanning.LIVRET));

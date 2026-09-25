@@ -16,20 +16,29 @@ import java.util.List;
 @ApplicationScoped
 public class AnimateurService {
 
-    @Inject
-    AnimateurRepository repository;
+    private final AnimateurRepository repository;
+
+    private final TypologieService typologies;
+
+    private final ReferenceDataChangeTracker changeTracker;
+
+    private final ConcurrentModificationGuard staleWrites;
+
+    private final SolverJobService solverJobs;
 
     @Inject
-    TypologieService typologies;
-
-    @Inject
-    ReferenceDataChangeTracker changeTracker;
-
-    @Inject
-    ConcurrentModificationGuard staleWrites;
-
-    @Inject
-    SolverJobService solverJobs;
+    public AnimateurService(
+            AnimateurRepository repository,
+            TypologieService typologies,
+            ReferenceDataChangeTracker changeTracker,
+            ConcurrentModificationGuard staleWrites,
+            SolverJobService solverJobs) {
+        this.repository = repository;
+        this.typologies = typologies;
+        this.changeTracker = changeTracker;
+        this.staleWrites = staleWrites;
+        this.solverJobs = solverJobs;
+    }
 
     public List<Animateur> list() {
         return repository.listAnimateurs();

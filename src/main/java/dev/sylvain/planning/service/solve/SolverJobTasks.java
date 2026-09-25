@@ -32,14 +32,18 @@ public class SolverJobTasks {
         Object execute(SolverJob job);
     }
 
-    @Inject
-    SolvePipeline pipeline;
+    private final SolvePipeline pipeline;
+
+    private final PlanningService planningService;
+
+    private final SolverScoreTrace scoreTrace;
 
     @Inject
-    PlanningService planningService;
-
-    @Inject
-    SolverScoreTrace scoreTrace;
+    public SolverJobTasks(SolvePipeline pipeline, PlanningService planningService, SolverScoreTrace scoreTrace) {
+        this.pipeline = pipeline;
+        this.planningService = planningService;
+        this.scoreTrace = scoreTrace;
+    }
 
     /** A one-off solve of a problem that came in the request body — never replayable, the body is not stored. */
     JobTask solve(PlanningEvenement problem, Long secondsLimit, BooleanSupplier shutdownRequested) {

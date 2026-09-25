@@ -20,11 +20,15 @@ import javax.sql.DataSource;
 @ApplicationScoped
 public class ValidationJourneeRepository {
 
-    @Inject
-    DataSource dataSource;
+    private final DataSource dataSource;
+
+    private final JdbcEditionScope scope;
 
     @Inject
-    JdbcEditionScope scope;
+    public ValidationJourneeRepository(DataSource dataSource, JdbcEditionScope scope) {
+        this.dataSource = dataSource;
+        this.scope = scope;
+    }
 
     private static final String SELECT_VALIDATION_SQL = """
             SELECT id, jour, valide_le, valide_par, commentaire

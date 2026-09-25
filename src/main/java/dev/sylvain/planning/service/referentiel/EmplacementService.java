@@ -15,14 +15,21 @@ import java.util.List;
 @ApplicationScoped
 public class EmplacementService {
 
-    @Inject
-    EmplacementRepository repository;
+    private final EmplacementRepository repository;
+
+    private final ReferenceDataChangeTracker changeTracker;
+
+    private final ConcurrentModificationGuard staleWrites;
 
     @Inject
-    ReferenceDataChangeTracker changeTracker;
-
-    @Inject
-    ConcurrentModificationGuard staleWrites;
+    public EmplacementService(
+            EmplacementRepository repository,
+            ReferenceDataChangeTracker changeTracker,
+            ConcurrentModificationGuard staleWrites) {
+        this.repository = repository;
+        this.changeTracker = changeTracker;
+        this.staleWrites = staleWrites;
+    }
 
     public List<Emplacement> list() {
         return repository.listEmplacements();

@@ -105,9 +105,10 @@ class ConstraintAnalysisStoreRestartTest {
     @Test
     void aRecordedAnalysisIsServedWithoutTouchingTheDatabase() {
         PersistenceStub persistence = new PersistenceStub();
-        ConstraintAnalysisStore store = storeAfterRestart(persistence);
+        PlanningService planningService = planningService(persistence);
+        ConstraintAnalysisStore store = new ConstraintAnalysisStore(null, planningService, persistence);
 
-        store.store(store.planningService.diagnosePersistedPlan());
+        store.store(planningService.diagnosePersistedPlan());
         int loadsAfterRecording = persistence.loads.get();
         store.latest();
 
@@ -116,8 +117,11 @@ class ConstraintAnalysisStoreRestartTest {
 
     /** The store as a freshly started process holds it: empty, over a database that is not. */
     private static ConstraintAnalysisStore storeAfterRestart(PersistenceStub persistence) {
-        ConstraintAnalysisStore store = new ConstraintAnalysisStore();
-        store.planningService = new PlanningService(
+        return new ConstraintAnalysisStore(null, planningService(persistence), persistence);
+    }
+
+    private static PlanningService planningService(PersistenceStub persistence) {
+        return new PlanningService(
                 2L,
                 1L,
                 ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
@@ -126,12 +130,14 @@ class ConstraintAnalysisStoreRestartTest {
                 persistence,
                 null,
                 ConfigProviderResolver.instance().getBuilder().build());
-        store.persistenceService = persistence;
-        return store;
     }
 
     /** The database, reduced to the two questions this store asks it. */
     private static class PersistenceStub extends PlanningPersistenceService {
+
+        PersistenceStub() {
+            super(null, null, null, null);
+        }
 
         private final AtomicInteger loads = new AtomicInteger();
         private int sieges = 1;

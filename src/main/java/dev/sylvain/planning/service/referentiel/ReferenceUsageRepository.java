@@ -40,8 +40,12 @@ public class ReferenceUsageRepository {
 
     private static final String FAILURE = "Failed to count what references the selection";
 
+    private final JdbcEditionScope scope;
+
     @Inject
-    JdbcEditionScope scope;
+    public ReferenceUsageRepository(JdbcEditionScope scope) {
+        this.scope = scope;
+    }
 
     /**
      * Counters for a set of stands.

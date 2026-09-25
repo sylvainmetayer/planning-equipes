@@ -28,14 +28,21 @@ import java.util.List;
 @ApplicationScoped
 public class StaffingService {
 
-    @Inject
-    PlanningService planningService;
+    private final PlanningService planningService;
+
+    private final ReferenceDataService referenceDataService;
+
+    private final StaffingAnalyzer staffingAnalyzer;
 
     @Inject
-    ReferenceDataService referenceDataService;
-
-    @Inject
-    StaffingAnalyzer staffingAnalyzer;
+    public StaffingService(
+            PlanningService planningService,
+            ReferenceDataService referenceDataService,
+            StaffingAnalyzer staffingAnalyzer) {
+        this.planningService = planningService;
+        this.referenceDataService = referenceDataService;
+        this.staffingAnalyzer = staffingAnalyzer;
+    }
 
     /** Never fails on an empty edition: this feeds read-only views a new user opens before entering anything. */
     public StaffingSummary analyzeEdition() {

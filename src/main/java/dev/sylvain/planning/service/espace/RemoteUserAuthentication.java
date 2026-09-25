@@ -45,11 +45,15 @@ public class RemoteUserAuthentication {
     /** Principal name of the header-authenticated admin, distinct from the form login's {@code admin}. */
     public static final String PRINCIPAL_ADMIN = "admin";
 
-    @Inject
-    ConfigRemoteUser config;
+    private final ConfigRemoteUser config;
+
+    private final AnimateurRepository repository;
 
     @Inject
-    AnimateurRepository repository;
+    public RemoteUserAuthentication(ConfigRemoteUser config, AnimateurRepository repository) {
+        this.config = config;
+        this.repository = repository;
+    }
 
     public boolean actif() {
         return config.enabled();

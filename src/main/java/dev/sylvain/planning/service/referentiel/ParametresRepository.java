@@ -27,11 +27,15 @@ import javax.sql.DataSource;
 @ApplicationScoped
 public class ParametresRepository {
 
-    @Inject
-    DataSource dataSource;
+    private final DataSource dataSource;
+
+    private final JdbcEditionScope scope;
 
     @Inject
-    JdbcEditionScope scope;
+    public ParametresRepository(DataSource dataSource, JdbcEditionScope scope) {
+        this.dataSource = dataSource;
+        this.scope = scope;
+    }
 
     public ParametresLegaux getParametresLegaux() {
         try (Connection connection = dataSource.getConnection();

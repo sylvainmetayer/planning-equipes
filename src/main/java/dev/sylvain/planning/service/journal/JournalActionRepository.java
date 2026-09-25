@@ -29,8 +29,12 @@ public class JournalActionRepository {
     /** Hard ceiling on one page of history: a screen, not an export. */
     static final int LIMITE_MAX = 500;
 
+    private final JdbcEditionScope scope;
+
     @Inject
-    JdbcEditionScope scope;
+    public JournalActionRepository(JdbcEditionScope scope) {
+        this.scope = scope;
+    }
 
     /**
      * Appends one line. Never fails the caller: an action that happened must

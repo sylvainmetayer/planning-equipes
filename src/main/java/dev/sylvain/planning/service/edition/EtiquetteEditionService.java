@@ -18,11 +18,15 @@ import jakarta.inject.Inject;
 @ApplicationScoped
 public class EtiquetteEditionService {
 
-    @Inject
-    EditionService editions;
+    private final EditionService editions;
+
+    private final ReferenceDataService referenceData;
 
     @Inject
-    ReferenceDataService referenceData;
+    public EtiquetteEditionService(EditionService editions, ReferenceDataService referenceData) {
+        this.editions = editions;
+        this.referenceData = referenceData;
+    }
 
     /** The current edition's name and span, {@link EtiquetteEdition#INCONNUE} when it cannot be read. */
     public EtiquetteEdition courante() {

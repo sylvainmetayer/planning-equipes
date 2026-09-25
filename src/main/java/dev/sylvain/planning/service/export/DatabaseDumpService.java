@@ -207,22 +207,27 @@ public class DatabaseDumpService {
     private static final Pattern STATEMENT_PATTERN =
             Pattern.compile("^(insert\\s+into|delete\\s+from|truncate\\s+table|truncate)\\s+([a-z_][a-z0-9_]*)");
 
-    @Inject
-    DataSource dataSource;
+    private final DataSource dataSource;
 
-    @Inject
-    JdbcEditionScope scope;
+    private final JdbcEditionScope scope;
 
     /**
      * The dump rewrites the {@code edition} table itself, so the ids and the
      * default one this cache holds are those of the <i>previous</i> dataset.
      */
-    @Inject
-    EditionContext editionContext;
+    private final EditionContext editionContext;
 
     /** Named in the header of the dump, so a script found later says which instance produced it. */
+    private final ProductName productName;
+
     @Inject
-    ProductName productName;
+    public DatabaseDumpService(
+            DataSource dataSource, JdbcEditionScope scope, EditionContext editionContext, ProductName productName) {
+        this.dataSource = dataSource;
+        this.scope = scope;
+        this.editionContext = editionContext;
+        this.productName = productName;
+    }
 
     /**
      * Builds a self-contained SQL script that wipes and repopulates every

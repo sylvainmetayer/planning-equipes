@@ -21,11 +21,15 @@ import javax.sql.DataSource;
 @ApplicationScoped
 public class VerrouillageRepository {
 
-    @Inject
-    DataSource dataSource;
+    private final DataSource dataSource;
+
+    private final JdbcEditionScope scope;
 
     @Inject
-    JdbcEditionScope scope;
+    public VerrouillageRepository(DataSource dataSource, JdbcEditionScope scope) {
+        this.dataSource = dataSource;
+        this.scope = scope;
+    }
 
     /**
      * The créneau id is <b>re-resolved</b> on every read, by joining the grid

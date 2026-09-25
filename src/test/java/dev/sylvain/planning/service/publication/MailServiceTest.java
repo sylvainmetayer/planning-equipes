@@ -7,6 +7,7 @@ import dev.sylvain.planning.service.ProductName;
 import dev.sylvain.planning.service.mail.MailTemplates;
 import dev.sylvain.planning.service.mail.MailTemplates.MailContent;
 import io.quarkus.mailer.Mail;
+import io.quarkus.mailer.Mailer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -27,15 +28,25 @@ import org.junit.jupiter.api.Test;
 class MailServiceTest {
 
     private final List<Mail> envoyes = new ArrayList<>();
+    private final MailTemplates templates = MailTemplates.standalone(ProductName.neutral());
     private MailService service;
 
     @BeforeEach
-    void construireService() {
-        service = new MailService();
-        service.mailer = mails -> envoyes.addAll(List.of(mails));
-        service.adminAddress = new AdminAddress(Optional.of("admin@example.org"));
-        service.productName = ProductName.neutral();
-        service.templates = MailTemplates.standalone(ProductName.neutral());
+    void buildService() {
+        service = service(mails -> envoyes.addAll(List.of(mails)), new AdminAddress(Optional.of("admin@example.org")));
+    }
+
+    private MailService service(Mailer mailer, AdminAddress adminAddress) {
+        return new MailService(mailer, adminAddress, ProductName.neutral(), templates);
+    }
+
+    /** A service whose SMTP refuses everything. */
+    private MailService failingService() {
+        return service(
+                mails -> {
+                    throw new IllegalStateException("SMTP down");
+                },
+                new AdminAddress(Optional.of("admin@example.org")));
     }
 
     @Test
@@ -86,10 +97,8 @@ class MailServiceTest {
 
     /** No mail, no access: a failure to send the code must propagate. */
     @Test
-    void unEchecDEnvoiDeCodeRemonteALAppelant() {
-        service.mailer = mails -> {
-            throw new IllegalStateException("SMTP down");
-        };
+    void aFailedAccessCodeSendPropagatesToTheCaller() {
+        service = failingService();
 
         assertThatThrownBy(() -> service.sendAccessCode("alice@example.org", "Alice", "042137"))
                 .isInstanceOf(IllegalStateException.class);
@@ -100,10 +109,8 @@ class MailServiceTest {
      * action: a failure must propagate to be shown, not be swallowed.
      */
     @Test
-    void unEchecDEnvoiDePlanningRemonteALAppelant() {
-        service.mailer = mails -> {
-            throw new IllegalStateException("SMTP down");
-        };
+    void aFailedPlanningSendPropagatesToTheCaller() {
+        service = failingService();
 
         assertThatThrownBy(() -> service.sendIndividualPlanning(
                         "alice@example.org", "Alice", null, new byte[] {1}, "planning.pdf"))
@@ -116,9 +123,7 @@ class MailServiceTest {
      */
     @Test
     void aFailedManualReminderPropagates() {
-        service.mailer = mails -> {
-            throw new IllegalStateException("SMTP down");
-        };
+        service = failingService();
 
         assertThatThrownBy(() -> service.sendRelanceConfirmation("alice@example.org", "Alice", null))
                 .isInstanceOf(IllegalStateException.class);
@@ -133,7 +138,7 @@ class MailServiceTest {
     void theManualReminderIsTheSharedRenderingWithTheEspaceLink() {
         String lien = "https://planning.example.org/animateur/jeton-1";
         service.sendRelanceConfirmation("alice@example.org", "Alice", lien);
-        MailContent partage = RelanceConfirmationMail.render(service.templates, ProductName.neutral(), "Alice", lien);
+        MailContent partage = RelanceConfirmationMail.render(templates, ProductName.neutral(), "Alice", lien);
 
         assertThat(envoyes).hasSize(1);
         Mail mail = envoyes.get(0);
@@ -148,17 +153,15 @@ class MailServiceTest {
 
     /** The test mail of the Débogage screen exists to reveal a broken SMTP. */
     @Test
-    void leMailDeTestPropageSonEchec() {
-        service.mailer = mails -> {
-            throw new IllegalStateException("SMTP down");
-        };
+    void theTestMailPropagatesItsFailure() {
+        service = failingService();
 
         assertThatThrownBy(() -> service.sendTestMail()).isInstanceOf(IllegalStateException.class);
     }
 
     @Test
-    void sansAdresseAdminLeMailDeTestLeDitAuLieuDePartir() {
-        service.adminAddress = new AdminAddress(Optional.empty());
+    void withoutAnAdminAddressTheTestMailSaysSoInsteadOfLeaving() {
+        service = service(mails -> envoyes.addAll(List.of(mails)), new AdminAddress(Optional.empty()));
 
         assertThatThrownBy(() -> service.sendTestMail())
                 .isInstanceOf(IllegalStateException.class)

@@ -104,11 +104,15 @@ public class EquiteService {
 
     private static final int SECONDES_PAR_JOUR = 24 * 3600;
 
-    @Inject
-    PlanningPersistenceService persistenceService;
+    private final PlanningPersistenceService persistenceService;
+
+    private final ReferenceDataService referenceDataService;
 
     @Inject
-    ReferenceDataService referenceDataService;
+    public EquiteService(PlanningPersistenceService persistenceService, ReferenceDataService referenceDataService) {
+        this.persistenceService = persistenceService;
+        this.referenceDataService = referenceDataService;
+    }
 
     /** The table over the persisted plan, under the organiser's current parameters and toggles. */
     public RapportEquite rapport() {

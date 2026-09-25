@@ -77,29 +77,41 @@ public class ConsigneService {
     private static final java.time.format.DateTimeFormatter JOUR =
             java.time.format.DateTimeFormatter.ofPattern("EEEE dd/MM", java.util.Locale.FRENCH);
 
-    @Inject
-    ConsigneRepository repository;
+    private final ConsigneRepository repository;
+
+    private final JdbcEditionScope scope;
+
+    private final ReferenceDataService referenceDataService;
+
+    private final PlanningPersistenceService persistence;
+
+    private final ValidationJourneeService validations;
+
+    private final ReferenceDataChangeTracker changeTracker;
+
+    private final SolverJobService solverJobs;
+
+    private final JourJClock clock;
 
     @Inject
-    JdbcEditionScope scope;
-
-    @Inject
-    ReferenceDataService referenceDataService;
-
-    @Inject
-    PlanningPersistenceService persistence;
-
-    @Inject
-    ValidationJourneeService validations;
-
-    @Inject
-    ReferenceDataChangeTracker changeTracker;
-
-    @Inject
-    SolverJobService solverJobs;
-
-    @Inject
-    JourJClock clock;
+    public ConsigneService(
+            ConsigneRepository repository,
+            JdbcEditionScope scope,
+            ReferenceDataService referenceDataService,
+            PlanningPersistenceService persistence,
+            ValidationJourneeService validations,
+            ReferenceDataChangeTracker changeTracker,
+            SolverJobService solverJobs,
+            JourJClock clock) {
+        this.repository = repository;
+        this.scope = scope;
+        this.referenceDataService = referenceDataService;
+        this.persistence = persistence;
+        this.validations = validations;
+        this.changeTracker = changeTracker;
+        this.solverJobs = solverJobs;
+        this.clock = clock;
+    }
 
     /* --------------------------------- reads --------------------------------- */
 

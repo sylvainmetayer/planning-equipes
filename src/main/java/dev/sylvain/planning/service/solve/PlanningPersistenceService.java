@@ -49,17 +49,25 @@ import javax.sql.DataSource;
 @ApplicationScoped
 public class PlanningPersistenceService {
 
-    @Inject
-    DataSource dataSource;
+    private final DataSource dataSource;
+
+    private final JdbcEditionScope scope;
+
+    private final ReferenceDataService referenceDataService;
+
+    private final SolverJobService solverJobs;
 
     @Inject
-    JdbcEditionScope scope;
-
-    @Inject
-    ReferenceDataService referenceDataService;
-
-    @Inject
-    SolverJobService solverJobs;
+    public PlanningPersistenceService(
+            DataSource dataSource,
+            JdbcEditionScope scope,
+            ReferenceDataService referenceDataService,
+            SolverJobService solverJobs) {
+        this.dataSource = dataSource;
+        this.scope = scope;
+        this.referenceDataService = referenceDataService;
+        this.solverJobs = solverJobs;
+    }
 
     /**
      * The guard {@link #reaffecterPoste} holds, asked on its own: by a write

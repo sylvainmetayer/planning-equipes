@@ -64,8 +64,12 @@ public class JournalNotificationsRepository {
     public record Alerte(
             String type, String cle, Instant declencheLe, String libelle, String severite, String animateurId) {}
 
+    private final JdbcEditionScope scope;
+
     @Inject
-    JdbcEditionScope scope;
+    public JournalNotificationsRepository(JdbcEditionScope scope) {
+        this.scope = scope;
+    }
 
     /**
      * Claims {@code cle} for {@code type}, without leaving anything on the

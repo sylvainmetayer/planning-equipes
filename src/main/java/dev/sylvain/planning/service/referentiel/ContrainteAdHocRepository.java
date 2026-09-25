@@ -29,14 +29,19 @@ import javax.sql.DataSource;
 @ApplicationScoped
 public class ContrainteAdHocRepository {
 
-    @Inject
-    ConcurrentModificationGuard staleWrites;
+    private final ConcurrentModificationGuard staleWrites;
+
+    private final DataSource dataSource;
+
+    private final JdbcEditionScope scope;
 
     @Inject
-    DataSource dataSource;
-
-    @Inject
-    JdbcEditionScope scope;
+    public ContrainteAdHocRepository(
+            ConcurrentModificationGuard staleWrites, DataSource dataSource, JdbcEditionScope scope) {
+        this.staleWrites = staleWrites;
+        this.dataSource = dataSource;
+        this.scope = scope;
+    }
 
     public List<ContrainteAdHoc> listContraintes() {
         Map<String, ContrainteAdHoc> byId = new LinkedHashMap<>();

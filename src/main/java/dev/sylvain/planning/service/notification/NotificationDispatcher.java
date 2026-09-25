@@ -35,14 +35,18 @@ import jakarta.inject.Inject;
 @ApplicationScoped
 public class NotificationDispatcher {
 
-    @Inject
-    Mailer mailer;
+    private final Mailer mailer;
+
+    private final NotificationWriter redacteur;
+
+    private final MailTemplates templates;
 
     @Inject
-    NotificationWriter redacteur;
-
-    @Inject
-    MailTemplates templates;
+    public NotificationDispatcher(Mailer mailer, NotificationWriter redacteur, MailTemplates templates) {
+        this.mailer = mailer;
+        this.redacteur = redacteur;
+        this.templates = templates;
+    }
 
     /**
      * The single {@code catch} of the whole notification path, and it wraps

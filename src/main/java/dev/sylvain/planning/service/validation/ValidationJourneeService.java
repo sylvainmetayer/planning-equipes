@@ -34,14 +34,21 @@ public class ValidationJourneeService {
     /** Longest comment a reviewer may leave; past that it is a document, not a note. */
     static final int COMMENTAIRE_MAX = 500;
 
-    @Inject
-    ValidationJourneeRepository repository;
+    private final ValidationJourneeRepository repository;
+
+    private final ReferenceDataService referenceDataService;
+
+    private final JournalActionService journal;
 
     @Inject
-    ReferenceDataService referenceDataService;
-
-    @Inject
-    JournalActionService journal;
+    public ValidationJourneeService(
+            ValidationJourneeRepository repository,
+            ReferenceDataService referenceDataService,
+            JournalActionService journal) {
+        this.repository = repository;
+        this.referenceDataService = referenceDataService;
+        this.journal = journal;
+    }
 
     /**
      * What a validation request carries.

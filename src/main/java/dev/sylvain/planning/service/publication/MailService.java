@@ -43,22 +43,26 @@ public class MailService {
     /** Template value: the animateur's first name, which every mail to one of them opens with. */
     private static final String KEY_PRENOM = "prenom";
 
-    @Inject
-    Mailer mailer;
+    private final Mailer mailer;
 
-    @Inject
-    AdminAddress adminAddress;
+    private final AdminAddress adminAddress;
 
     /**
      * Every subject opens with the product name of this deployment: the first
      * thing an animateur reads in their inbox must be the service they signed
      * up with, not the software vendor's.
      */
-    @Inject
-    ProductName productName;
+    private final ProductName productName;
+
+    private final MailTemplates templates;
 
     @Inject
-    MailTemplates templates;
+    public MailService(Mailer mailer, AdminAddress adminAddress, ProductName productName, MailTemplates templates) {
+        this.mailer = mailer;
+        this.adminAddress = adminAddress;
+        this.productName = productName;
+        this.templates = templates;
+    }
 
     /**
      * Sends one animateur their individual planning: the PDF attached, the

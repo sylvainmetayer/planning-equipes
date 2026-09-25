@@ -94,11 +94,15 @@ public class JourJClock {
     /** Single row, mirroring how the manual solve budget is stored (V20). */
     private static final int LIGNE_UNIQUE = 1;
 
-    @Inject
-    JdbcEditionScope scope;
+    private final JdbcEditionScope scope;
+
+    private final SimulatedClockPermission permission;
 
     @Inject
-    SimulatedClockPermission permission;
+    public JourJClock(JdbcEditionScope scope, SimulatedClockPermission permission) {
+        this.scope = scope;
+        this.permission = permission;
+    }
 
     /**
      * The date the mode jour J screen treats as today: the mocked one when a

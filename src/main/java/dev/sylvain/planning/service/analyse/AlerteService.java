@@ -33,11 +33,15 @@ public class AlerteService {
 
     private static final int LIMITE_MAX = 500;
 
-    @Inject
-    JournalNotificationsRepository journal;
+    private final JournalNotificationsRepository journal;
+
+    private final ReferenceDataService referenceDataService;
 
     @Inject
-    ReferenceDataService referenceDataService;
+    public AlerteService(JournalNotificationsRepository journal, ReferenceDataService referenceDataService) {
+        this.journal = journal;
+        this.referenceDataService = referenceDataService;
+    }
 
     /**
      * One alert as the screen shows it.

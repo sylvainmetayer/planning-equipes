@@ -18,17 +18,25 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class ContrainteAdHocService {
 
-    @Inject
-    ContrainteAdHocRepository repository;
+    private final ContrainteAdHocRepository repository;
+
+    private final CreneauService creneauService;
+
+    private final ReferenceDataChangeTracker changeTracker;
+
+    private final ConcurrentModificationGuard staleWrites;
 
     @Inject
-    CreneauService creneauService;
-
-    @Inject
-    ReferenceDataChangeTracker changeTracker;
-
-    @Inject
-    ConcurrentModificationGuard staleWrites;
+    public ContrainteAdHocService(
+            ContrainteAdHocRepository repository,
+            CreneauService creneauService,
+            ReferenceDataChangeTracker changeTracker,
+            ConcurrentModificationGuard staleWrites) {
+        this.repository = repository;
+        this.creneauService = creneauService;
+        this.changeTracker = changeTracker;
+        this.staleWrites = staleWrites;
+    }
 
     public List<ContrainteAdHoc> list() {
         return repository.listContraintes();

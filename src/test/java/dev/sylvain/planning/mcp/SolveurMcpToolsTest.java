@@ -23,7 +23,9 @@ class SolveurMcpToolsTest {
 
     /** The three lists the anonymisation reads, and nothing else: no database behind them. */
     private static ReferenceDataService emptyReferential() {
-        return new ReferenceDataService() {
+        return new ReferenceDataService(
+                null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+                null, null, null) {
             @Override
             public List<Animateur> listAnimateurs() {
                 return List.of();
@@ -43,7 +45,7 @@ class SolveurMcpToolsTest {
 
     @Test
     void reportsOnlyTheHardConstraintsActuallyViolated() {
-        ConstraintAnalysisStore analysisStore = new ConstraintAnalysisStore();
+        ConstraintAnalysisStore analysisStore = new ConstraintAnalysisStore(null, null, null);
         SolveurMcpTools tools = new SolveurMcpTools(null, null, analysisStore, emptyReferential());
 
         ConstraintDiagnostic hardViole = new ConstraintDiagnostic(
@@ -80,7 +82,7 @@ class SolveurMcpToolsTest {
 
     @Test
     void returnsAnEmptyListWithoutAPriorAnalysis() {
-        SolveurMcpTools tools = new SolveurMcpTools(null, null, new ConstraintAnalysisStore(), null);
+        SolveurMcpTools tools = new SolveurMcpTools(null, null, new ConstraintAnalysisStore(null, null, null), null);
 
         assertThat(tools.explainHardContraintesFailure(null)).isEmpty();
     }

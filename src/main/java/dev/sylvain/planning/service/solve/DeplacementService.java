@@ -28,20 +28,29 @@ import java.util.Map;
 @ApplicationScoped
 public class DeplacementService {
 
-    @Inject
-    PlanningService planningService;
+    private final PlanningService planningService;
+
+    private final PlanningPersistenceService persistence;
+
+    private final ReferenceDataService referenceDataService;
+
+    private final ConstraintAnalysisStore analysisStore;
+
+    private final SolverJobService solverJobs;
 
     @Inject
-    PlanningPersistenceService persistence;
-
-    @Inject
-    ReferenceDataService referenceDataService;
-
-    @Inject
-    ConstraintAnalysisStore analysisStore;
-
-    @Inject
-    SolverJobService solverJobs;
+    public DeplacementService(
+            PlanningService planningService,
+            PlanningPersistenceService persistence,
+            ReferenceDataService referenceDataService,
+            ConstraintAnalysisStore analysisStore,
+            SolverJobService solverJobs) {
+        this.planningService = planningService;
+        this.persistence = persistence;
+        this.referenceDataService = referenceDataService;
+        this.analysisStore = analysisStore;
+        this.solverJobs = solverJobs;
+    }
 
     /**
      * Scores the gesture on the persisted plan, prepared as a solve prepares

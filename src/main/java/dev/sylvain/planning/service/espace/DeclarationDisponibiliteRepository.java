@@ -27,8 +27,12 @@ import java.util.Optional;
 @ApplicationScoped
 public class DeclarationDisponibiliteRepository {
 
+    private final JdbcEditionScope scope;
+
     @Inject
-    JdbcEditionScope scope;
+    public DeclarationDisponibiliteRepository(JdbcEditionScope scope) {
+        this.scope = scope;
+    }
 
     private static final String COLONNES = "id, animateur_id, jours_indisponibles, souhaits, commentaire, "
             + "statut, commentaire_admin, cree_le, decide_le";

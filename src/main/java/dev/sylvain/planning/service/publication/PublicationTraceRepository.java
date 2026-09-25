@@ -90,14 +90,18 @@ public class PublicationTraceRepository {
         }
     }
 
-    @Inject
-    DataSource dataSource;
+    private final DataSource dataSource;
+
+    private final JdbcEditionScope scope;
+
+    private final ObjectMapper objectMapper;
 
     @Inject
-    JdbcEditionScope scope;
-
-    @Inject
-    ObjectMapper objectMapper;
+    public PublicationTraceRepository(DataSource dataSource, JdbcEditionScope scope, ObjectMapper objectMapper) {
+        this.dataSource = dataSource;
+        this.scope = scope;
+        this.objectMapper = objectMapper;
+    }
 
     /** Records everyone a publication addressed, reached or not. */
     public void recordRecipients(long snapshotId, List<Destinataire> destinataires) {

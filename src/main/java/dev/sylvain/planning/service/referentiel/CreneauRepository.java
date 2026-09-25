@@ -30,14 +30,18 @@ import javax.sql.DataSource;
 @ApplicationScoped
 public class CreneauRepository {
 
-    @Inject
-    ConcurrentModificationGuard staleWrites;
+    private final ConcurrentModificationGuard staleWrites;
+
+    private final DataSource dataSource;
+
+    private final JdbcEditionScope scope;
 
     @Inject
-    DataSource dataSource;
-
-    @Inject
-    JdbcEditionScope scope;
+    public CreneauRepository(ConcurrentModificationGuard staleWrites, DataSource dataSource, JdbcEditionScope scope) {
+        this.staleWrites = staleWrites;
+        this.dataSource = dataSource;
+        this.scope = scope;
+    }
 
     private static final String SELECT_CRENEAU_SQL = """
             SELECT c.id, c.date_creneau, c.heure_debut, c.heure_fin, c.couverture_pause, c.modifie_le

@@ -126,7 +126,7 @@ class PlanningHardConstraintsTest {
                         null,
                         null))
                 .toList();
-        return new PlanSnapshotService() {
+        return new PlanSnapshotService(0, null, null, null, null, null, null, null, null) {
             @Override
             public SnapshotDetail loadLastPublication() {
                 return new SnapshotDetail(null, affectations);

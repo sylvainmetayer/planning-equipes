@@ -36,29 +36,41 @@ import javax.sql.DataSource;
 @ApplicationScoped
 public class ReferenceDataImportRepository {
 
-    @Inject
-    DataSource dataSource;
+    private final DataSource dataSource;
+
+    private final JdbcEditionScope scope;
+
+    private final StandRepository standRepository;
+
+    private final EmplacementRepository emplacementRepository;
+
+    private final CreneauRepository creneauRepository;
+
+    private final AnimateurRepository animateurRepository;
+
+    private final TypologieRepository typologieRepository;
+
+    private final ContrainteAdHocRepository contrainteRepository;
 
     @Inject
-    JdbcEditionScope scope;
-
-    @Inject
-    StandRepository standRepository;
-
-    @Inject
-    EmplacementRepository emplacementRepository;
-
-    @Inject
-    CreneauRepository creneauRepository;
-
-    @Inject
-    AnimateurRepository animateurRepository;
-
-    @Inject
-    TypologieRepository typologieRepository;
-
-    @Inject
-    ContrainteAdHocRepository contrainteRepository;
+    public ReferenceDataImportRepository(
+            DataSource dataSource,
+            JdbcEditionScope scope,
+            StandRepository standRepository,
+            EmplacementRepository emplacementRepository,
+            CreneauRepository creneauRepository,
+            AnimateurRepository animateurRepository,
+            TypologieRepository typologieRepository,
+            ContrainteAdHocRepository contrainteRepository) {
+        this.dataSource = dataSource;
+        this.scope = scope;
+        this.standRepository = standRepository;
+        this.emplacementRepository = emplacementRepository;
+        this.creneauRepository = creneauRepository;
+        this.animateurRepository = animateurRepository;
+        this.typologieRepository = typologieRepository;
+        this.contrainteRepository = contrainteRepository;
+    }
 
     public void importFromPlanning(PlanningEvenement planning) {
         if (planning == null) {

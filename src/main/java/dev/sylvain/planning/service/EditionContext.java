@@ -46,11 +46,15 @@ public class EditionContext {
      */
     private static final ThreadLocal<String> OVERRIDE = new ThreadLocal<>();
 
-    @Inject
-    EditionRepository editionRepository;
+    private final EditionRepository editionRepository;
+
+    private final EditionRequestScope requestScope;
 
     @Inject
-    EditionRequestScope requestScope;
+    public EditionContext(EditionRepository editionRepository, EditionRequestScope requestScope) {
+        this.editionRepository = editionRepository;
+        this.requestScope = requestScope;
+    }
 
     /**
      * Known edition ids and the default one, both cached: they are read on

@@ -38,23 +38,33 @@ public class SnapshotComparisonService {
     /** Value designating the currently persisted plan instead of a snapshot id. */
     public static final String COURANT = "courant";
 
-    @Inject
-    PlanSnapshotService snapshotService;
+    private final PlanSnapshotService snapshotService;
+
+    private final PlanningKpiService kpiService;
+
+    private final PlanningPersistenceService persistenceService;
+
+    private final EditionContext editionContext;
+
+    private final dev.sylvain.planning.service.consigne.ConsigneRepository consigneRepository;
+
+    private final EditionRepository editionRepository;
 
     @Inject
-    PlanningKpiService kpiService;
-
-    @Inject
-    PlanningPersistenceService persistenceService;
-
-    @Inject
-    EditionContext editionContext;
-
-    @Inject
-    dev.sylvain.planning.service.consigne.ConsigneRepository consigneRepository;
-
-    @Inject
-    EditionRepository editionRepository;
+    public SnapshotComparisonService(
+            PlanSnapshotService snapshotService,
+            PlanningKpiService kpiService,
+            PlanningPersistenceService persistenceService,
+            EditionContext editionContext,
+            dev.sylvain.planning.service.consigne.ConsigneRepository consigneRepository,
+            EditionRepository editionRepository) {
+        this.snapshotService = snapshotService;
+        this.kpiService = kpiService;
+        this.persistenceService = persistenceService;
+        this.editionContext = editionContext;
+        this.consigneRepository = consigneRepository;
+        this.editionRepository = editionRepository;
+    }
 
     /**
      * One side of the comparison.

@@ -43,14 +43,21 @@ import java.util.Optional;
 @ApplicationScoped
 public class PlanPublieService {
 
-    @Inject
-    PlanSnapshotService snapshotService;
+    private final PlanSnapshotService snapshotService;
+
+    private final PlanningPersistenceService persistenceService;
+
+    private final ReferenceDataService referenceDataService;
 
     @Inject
-    PlanningPersistenceService persistenceService;
-
-    @Inject
-    ReferenceDataService referenceDataService;
+    public PlanPublieService(
+            PlanSnapshotService snapshotService,
+            PlanningPersistenceService persistenceService,
+            ReferenceDataService referenceDataService) {
+        this.snapshotService = snapshotService;
+        this.persistenceService = persistenceService;
+        this.referenceDataService = referenceDataService;
+    }
 
     /** The last published snapshot's metadata, {@code null} when nothing was ever published. */
     public PlanSnapshotService.SnapshotMeta lastPublication() {

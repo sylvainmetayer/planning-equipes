@@ -22,8 +22,12 @@ import java.util.List;
 @ApplicationScoped
 public class ReferenceUsageService {
 
+    private final ReferenceUsageRepository repository;
+
     @Inject
-    ReferenceUsageRepository repository;
+    public ReferenceUsageService(ReferenceUsageRepository repository) {
+        this.repository = repository;
+    }
 
     public ReferenceUsage forStands(List<String> ids) {
         return repository.forStands(required(ids));

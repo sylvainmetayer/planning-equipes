@@ -48,17 +48,25 @@ public class PlanningKpiService {
 
     private static final Pattern SCORE_PATTERN = Pattern.compile("(-?\\d+)hard/(-?\\d+)medium/(-?\\d+)soft");
 
-    @Inject
-    PlanningPersistenceService persistenceService;
+    private final PlanningPersistenceService persistenceService;
+
+    private final ReferenceDataService referenceDataService;
+
+    private final ConstraintAnalysisStore analysisStore;
+
+    private final ConsigneService consigneService;
 
     @Inject
-    ReferenceDataService referenceDataService;
-
-    @Inject
-    ConstraintAnalysisStore analysisStore;
-
-    @Inject
-    ConsigneService consigneService;
+    public PlanningKpiService(
+            PlanningPersistenceService persistenceService,
+            ReferenceDataService referenceDataService,
+            ConstraintAnalysisStore analysisStore,
+            ConsigneService consigneService) {
+        this.persistenceService = persistenceService;
+        this.referenceDataService = referenceDataService;
+        this.analysisStore = analysisStore;
+        this.consigneService = consigneService;
+    }
 
     /**
      * Everything a plan is measured by. The nullable fields are the ones that

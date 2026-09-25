@@ -29,11 +29,15 @@ import java.time.ZoneOffset;
 @ApplicationScoped
 public class ReferenceDataChangeTracker {
 
-    @Inject
-    EditionContext editionContext;
+    private final EditionContext editionContext;
+
+    private final JdbcEditionScope scope;
 
     @Inject
-    JdbcEditionScope scope;
+    public ReferenceDataChangeTracker(EditionContext editionContext, JdbcEditionScope scope) {
+        this.editionContext = editionContext;
+        this.scope = scope;
+    }
 
     /**
      * Records that the current edition's referential just changed.

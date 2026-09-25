@@ -30,17 +30,25 @@ import javax.sql.DataSource;
 @ApplicationScoped
 public class JourneeTypeRepository {
 
-    @Inject
-    ConcurrentModificationGuard staleWrites;
+    private final ConcurrentModificationGuard staleWrites;
+
+    private final DataSource dataSource;
+
+    private final JdbcEditionScope scope;
+
+    private final CreneauRepository creneaux;
 
     @Inject
-    DataSource dataSource;
-
-    @Inject
-    JdbcEditionScope scope;
-
-    @Inject
-    CreneauRepository creneaux;
+    public JourneeTypeRepository(
+            ConcurrentModificationGuard staleWrites,
+            DataSource dataSource,
+            JdbcEditionScope scope,
+            CreneauRepository creneaux) {
+        this.staleWrites = staleWrites;
+        this.dataSource = dataSource;
+        this.scope = scope;
+        this.creneaux = creneaux;
+    }
 
     private static final String SELECT_JOURNEES_SQL = """
             SELECT j.id, j.nom, j.modifie_le

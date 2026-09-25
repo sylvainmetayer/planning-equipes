@@ -172,26 +172,37 @@ public class AnimateurCsvImportService {
 
     private static final Set<String> FALSE_CELLS = Set.of("0", "n", "non", "faux", "false", "no");
 
-    @Inject
-    AnimateurRepository animateurs;
+    private final AnimateurRepository animateurs;
+
+    private final TypologieService typologies;
+
+    private final DeclarationDisponibiliteService declarations;
+
+    private final DeclarationDisponibiliteRepository declarationRepository;
+
+    private final ReferenceDataChangeTracker changeTracker;
+
+    private final SolverJobService solverJobs;
+
+    private final ReferenceUsageService usages;
 
     @Inject
-    TypologieService typologies;
-
-    @Inject
-    DeclarationDisponibiliteService declarations;
-
-    @Inject
-    DeclarationDisponibiliteRepository declarationRepository;
-
-    @Inject
-    ReferenceDataChangeTracker changeTracker;
-
-    @Inject
-    SolverJobService solverJobs;
-
-    @Inject
-    ReferenceUsageService usages;
+    public AnimateurCsvImportService(
+            AnimateurRepository animateurs,
+            TypologieService typologies,
+            DeclarationDisponibiliteService declarations,
+            DeclarationDisponibiliteRepository declarationRepository,
+            ReferenceDataChangeTracker changeTracker,
+            SolverJobService solverJobs,
+            ReferenceUsageService usages) {
+        this.animateurs = animateurs;
+        this.typologies = typologies;
+        this.declarations = declarations;
+        this.declarationRepository = declarationRepository;
+        this.changeTracker = changeTracker;
+        this.solverJobs = solverJobs;
+        this.usages = usages;
+    }
 
     /** The report, plus what applying it would write — never leaves this class. */
     private record Analysis(AnimateurCsvImportReport report, List<Animateur> toWrite, List<String> toDelete) {}

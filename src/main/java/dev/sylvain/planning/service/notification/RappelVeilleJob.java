@@ -46,23 +46,33 @@ public class RappelVeilleJob {
 
     private static final Logger LOG = Logger.getLogger(RappelVeilleJob.class);
 
-    @Inject
-    PlanPublieService planPublieService;
+    private final PlanPublieService planPublieService;
+
+    private final ReferenceDataService referenceDataService;
+
+    private final PublicationDiffService diffService;
+
+    private final ApplicationLinks liens;
+
+    private final JournalNotificationsRepository journal;
+
+    private final Event<Notification> notifications;
 
     @Inject
-    ReferenceDataService referenceDataService;
-
-    @Inject
-    PublicationDiffService diffService;
-
-    @Inject
-    ApplicationLinks liens;
-
-    @Inject
-    JournalNotificationsRepository journal;
-
-    @Inject
-    Event<Notification> notifications;
+    public RappelVeilleJob(
+            PlanPublieService planPublieService,
+            ReferenceDataService referenceDataService,
+            PublicationDiffService diffService,
+            ApplicationLinks liens,
+            JournalNotificationsRepository journal,
+            Event<Notification> notifications) {
+        this.planPublieService = planPublieService;
+        this.referenceDataService = referenceDataService;
+        this.diffService = diffService;
+        this.liens = liens;
+        this.journal = journal;
+        this.notifications = notifications;
+    }
 
     /**
      * Sends tomorrow's reminders, if the edition's own sending time has passed.

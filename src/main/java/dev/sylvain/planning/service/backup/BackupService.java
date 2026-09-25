@@ -55,23 +55,33 @@ public class BackupService {
 
     private static final Logger LOG = Logger.getLogger(BackupService.class);
 
-    @Inject
-    BackupConfiguration configuration;
+    private final BackupConfiguration configuration;
+
+    private final BackupRepository repository;
+
+    private final PgDump pgDump;
+
+    private final Scheduler scheduler;
+
+    private final AdminAddress adminAddress;
+
+    private final Event<Notification> notifications;
 
     @Inject
-    BackupRepository repository;
-
-    @Inject
-    PgDump pgDump;
-
-    @Inject
-    Scheduler scheduler;
-
-    @Inject
-    AdminAddress adminAddress;
-
-    @Inject
-    Event<Notification> notifications;
+    public BackupService(
+            BackupConfiguration configuration,
+            BackupRepository repository,
+            PgDump pgDump,
+            Scheduler scheduler,
+            AdminAddress adminAddress,
+            Event<Notification> notifications) {
+        this.configuration = configuration;
+        this.repository = repository;
+        this.pgDump = pgDump;
+        this.scheduler = scheduler;
+        this.adminAddress = adminAddress;
+        this.notifications = notifications;
+    }
 
     /**
      * Failed attempts the database refused to record — the outage the alert

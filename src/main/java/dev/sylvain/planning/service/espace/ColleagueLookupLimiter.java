@@ -25,8 +25,12 @@ import jakarta.inject.Inject;
 @ApplicationScoped
 public class ColleagueLookupLimiter {
 
+    private final ConfigEspaceCollegues config;
+
     @Inject
-    ConfigEspaceCollegues config;
+    public ColleagueLookupLimiter(ConfigEspaceCollegues config) {
+        this.config = config;
+    }
 
     private final SlidingWindowCounter counter = new SlidingWindowCounter();
 

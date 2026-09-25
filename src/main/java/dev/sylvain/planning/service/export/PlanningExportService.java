@@ -51,6 +51,14 @@ public class PlanningExportService {
     private final ExportProvenance provenance;
 
     /**
+     * The consignes of the edition (issue #4). A unit test building this
+     * service by hand passes {@code null}: a document without any consigne is
+     * the ordinary case it exercises, and an unresolvable instance reads as
+     * « no consigne ».
+     */
+    private final Instance<ConsigneService> consignes;
+
+    /**
      * Constructor injection rather than field injection: the collaborators
      * are immutable, and a test outside CDI provides them explicitly — no
      * {@code liens == null} is written for it in production code any more.
@@ -62,13 +70,15 @@ public class PlanningExportService {
             AnimateurFeuillePdf feuilleAnimateur,
             GlobalPlanningPdf pdfGlobal,
             PlanningIcs ics,
-            ExportProvenance provenance) {
+            ExportProvenance provenance,
+            Instance<ConsigneService> consignes) {
         this.liens = liens;
         this.pdfAnimateur = pdfAnimateur;
         this.feuilleAnimateur = feuilleAnimateur;
         this.pdfGlobal = pdfGlobal;
         this.ics = ics;
         this.provenance = provenance;
+        this.consignes = consignes;
     }
 
     /**
@@ -133,15 +143,6 @@ public class PlanningExportService {
                 lien,
                 provenanceDuPlan);
     }
-
-    /**
-     * The consignes of the edition (issue #4), field-injected rather than a
-     * constructor parameter: the unit tests build this service by hand, and
-     * a document without any consigne is the ordinary case they exercise.
-     * Unresolvable there, it reads as « no consigne ».
-     */
-    @Inject
-    Instance<ConsigneService> consignes;
 
     private Map<LocalDate, ConsigneEdition> consignesByDate() {
         if (consignes == null || !consignes.isResolvable()) {

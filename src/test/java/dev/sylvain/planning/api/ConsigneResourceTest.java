@@ -557,6 +557,7 @@ class ConsigneResourceTest {
         private int saves;
 
         FailingOnThirdSave(ConsigneRepository real) {
+            super(null);
             this.real = real;
         }
 

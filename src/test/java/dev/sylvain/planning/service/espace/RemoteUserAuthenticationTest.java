@@ -76,10 +76,10 @@ class RemoteUserAuthenticationTest {
     }
 
     private static RemoteUserAuthentication configure(boolean actif, String secret, String emailAdmin) {
-        RemoteUserAuthentication remote = new RemoteUserAuthentication();
-        remote.config = new ConfigRemoteUserFixe(
-                actif, "Remote-Email", "Remote-Auth-Secret", Optional.of(secret), Optional.of(emailAdmin));
-        return remote;
+        return new RemoteUserAuthentication(
+                new ConfigRemoteUserFixe(
+                        actif, "Remote-Email", "Remote-Auth-Secret", Optional.of(secret), Optional.of(emailAdmin)),
+                null);
     }
 
     /**

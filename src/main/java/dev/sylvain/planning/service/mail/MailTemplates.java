@@ -9,7 +9,6 @@ import io.quarkus.qute.ReflectionValueResolver;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.qute.TemplateLocator;
 import io.quarkus.qute.Variant;
-import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.io.IOException;
@@ -51,28 +50,21 @@ public class MailTemplates {
     /** Content id of the inlined logo, referenced as {@code cid:} by the layout. */
     static final String LOGO_CID = "logo@planning-equipes";
 
-    @Inject
-    Engine engine;
+    private final Engine engine;
+
+    private final ProductName productName;
+
+    private final MailBranding branding;
 
     @Inject
-    ProductName productName;
-
-    @Inject
-    ConfigBranding config;
-
-    private MailBranding branding;
-
-    MailTemplates() {}
+    MailTemplates(Engine engine, ProductName productName, ConfigBranding config) {
+        this(engine, productName, MailBranding.of(config));
+    }
 
     private MailTemplates(Engine engine, ProductName productName, MailBranding branding) {
         this.engine = engine;
         this.productName = productName;
         this.branding = branding;
-    }
-
-    @PostConstruct
-    void init() {
-        branding = MailBranding.of(config);
     }
 
     /** The engine of a unit test: the same templates, read from the classpath, no branding image. */

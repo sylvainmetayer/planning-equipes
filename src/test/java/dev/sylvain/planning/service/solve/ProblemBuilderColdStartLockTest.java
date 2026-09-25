@@ -63,7 +63,7 @@ class ProblemBuilderColdStartLockTest {
 
     /** The persisted plan: Alice on the one seat. Nothing else of the bean is reached. */
     private static PlanningPersistenceService planWithAlice() {
-        return new PlanningPersistenceService() {
+        return new PlanningPersistenceService(null, null, null, null) {
             @Override
             public Map<String, List<String>> loadAnimateursByStandCreneau() {
                 return Map.of(PlanningPersistenceService.standCreneauKey("S1", 1L), List.of("A1"));

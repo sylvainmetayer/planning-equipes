@@ -37,12 +37,13 @@ class InstantaneMcpToolsTest {
             null);
 
     private static InstantaneMcpTools tools(SnapshotDetail detail) {
-        PlanSnapshotService snapshotService = new PlanSnapshotService() {
-            @Override
-            public SnapshotDetail load(long id) {
-                return id == META.id() ? detail : null;
-            }
-        };
+        PlanSnapshotService snapshotService =
+                new PlanSnapshotService(0, null, null, null, null, null, null, null, null) {
+                    @Override
+                    public SnapshotDetail load(long id) {
+                        return id == META.id() ? detail : null;
+                    }
+                };
         return new InstantaneMcpTools(snapshotService, null);
     }
 

@@ -16,21 +16,30 @@ import java.util.UUID;
 @ApplicationScoped
 public class VerrouillageService {
 
-    @Inject
-    VerrouillageRepository repository;
+    private final VerrouillageRepository repository;
 
     /** The three referentials a lock can point at — probed, never written, from here. */
-    @Inject
-    AnimateurRepository animateurs;
+    private final AnimateurRepository animateurs;
+
+    private final StandRepository stands;
+
+    private final CreneauRepository creneaux;
+
+    private final ReferenceDataChangeTracker changeTracker;
 
     @Inject
-    StandRepository stands;
-
-    @Inject
-    CreneauRepository creneaux;
-
-    @Inject
-    ReferenceDataChangeTracker changeTracker;
+    public VerrouillageService(
+            VerrouillageRepository repository,
+            AnimateurRepository animateurs,
+            StandRepository stands,
+            CreneauRepository creneaux,
+            ReferenceDataChangeTracker changeTracker) {
+        this.repository = repository;
+        this.animateurs = animateurs;
+        this.stands = stands;
+        this.creneaux = creneaux;
+        this.changeTracker = changeTracker;
+    }
 
     public List<VerrouillagePlanning> list() {
         return repository.listVerrouillages();

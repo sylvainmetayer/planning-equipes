@@ -28,8 +28,12 @@ import jakarta.inject.Inject;
 @ApplicationScoped
 public class DeclarationRateLimiter {
 
+    private final ConfigEspaceDeclaration config;
+
     @Inject
-    ConfigEspaceDeclaration config;
+    public DeclarationRateLimiter(ConfigEspaceDeclaration config) {
+        this.config = config;
+    }
 
     private final SlidingWindowCounter counter = new SlidingWindowCounter();
 

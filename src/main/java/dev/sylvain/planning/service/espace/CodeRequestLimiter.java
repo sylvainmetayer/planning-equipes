@@ -27,8 +27,12 @@ import jakarta.inject.Inject;
 @ApplicationScoped
 public class CodeRequestLimiter {
 
+    private final ConfigEspaceCode config;
+
     @Inject
-    ConfigEspaceCode config;
+    public CodeRequestLimiter(ConfigEspaceCode config) {
+        this.config = config;
+    }
 
     private final SlidingWindowCounter counter = new SlidingWindowCounter();
 

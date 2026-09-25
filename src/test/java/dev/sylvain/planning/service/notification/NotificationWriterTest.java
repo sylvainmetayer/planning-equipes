@@ -30,12 +30,13 @@ class NotificationWriterTest {
     private NotificationWriter redacteur;
 
     @BeforeEach
-    void construireRedacteur() {
-        redacteur = new NotificationWriter();
-        redacteur.adminAddress = adminAddress("admin@example.org");
-        redacteur.liens = linksTo("https://planning.example.org");
-        redacteur.productName = ProductName.neutral();
-        redacteur.templates = MailTemplates.standalone(ProductName.neutral());
+    void buildWriter() {
+        redacteur = writer(adminAddress("admin@example.org"), linksTo("https://planning.example.org"));
+    }
+
+    private static NotificationWriter writer(AdminAddress adminAddress, ApplicationLinks liens) {
+        return new NotificationWriter(
+                adminAddress, liens, ProductName.neutral(), MailTemplates.standalone(ProductName.neutral()));
     }
 
     private static AdminAddress adminAddress(String address) {
@@ -60,9 +61,9 @@ class NotificationWriterTest {
     // --- Demandes soumises (admin) -----------------------------------------
 
     @Test
-    void sansAdresseAdminAucuneNotificationDeSoumission() {
+    void withoutAnAdminAddressNoSubmissionIsNotified() {
         for (String address : new String[] {null, "  "}) {
-            redacteur.adminAddress = adminAddress(address);
+            redacteur = writer(adminAddress(address), linksTo("https://planning.example.org"));
 
             assertThat(redacteur.rediger(new Notification.DemandesSoumises("Alice Dupont", List.of(demande(true)))))
                     .isEmpty();
@@ -99,8 +100,8 @@ class NotificationWriterTest {
 
     /** With no public URL configured the mail still leaves — without the link. */
     @Test
-    void sansUrlPubliqueLeCourrierPartSansLien() {
-        redacteur.liens = linksTo(null);
+    void withoutAPublicUrlTheMailLeavesWithoutTheLink() {
+        redacteur = writer(adminAddress("admin@example.org"), linksTo(null));
 
         MailDraft courrier = rediger(new Notification.DemandesSoumises("Alice Dupont", List.of(demande(true))));
 
@@ -165,9 +166,9 @@ class NotificationWriterTest {
     }
 
     @Test
-    void sansAdresseAdminLaFinDeResolutionNEcritRien() {
+    void withoutAnAdminAddressTheEndOfSolveWritesNothing() {
         for (String address : new String[] {null, "   "}) {
-            redacteur.adminAddress = adminAddress(address);
+            redacteur = writer(adminAddress(address), linksTo("https://planning.example.org"));
 
             assertThat(redacteur.rediger(
                             new Notification.ResolutionTerminee("Année 2026", "0hard/0medium/0soft", true)))
@@ -209,8 +210,8 @@ class NotificationWriterTest {
     }
 
     @Test
-    void sansAdresseAdminAucuneNotificationDeDeclaration() {
-        redacteur.adminAddress = adminAddress(null);
+    void withoutAnAdminAddressNoDeclarationIsNotified() {
+        redacteur = writer(adminAddress(null), linksTo("https://planning.example.org"));
 
         assertThat(redacteur.rediger(new Notification.DeclarationSoumise("Alice Dupont", 1, 0)))
                 .isEmpty();
@@ -264,7 +265,7 @@ class NotificationWriterTest {
 
     @Test
     void withoutAnAdminAddressNoBackupAlertIsWritten() {
-        redacteur.adminAddress = adminAddress(null);
+        redacteur = writer(adminAddress(null), linksTo("https://planning.example.org"));
 
         assertThat(redacteur.rediger(new Notification.BackupFailed(NUIT, "boom", null, 1)))
                 .isEmpty();

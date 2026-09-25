@@ -54,47 +54,33 @@ import java.util.Set;
 @ApplicationScoped
 public class ReferenceDataService implements ReferenceData {
 
-    @Inject
-    ReferenceDataImportRepository imports;
+    private final ReferenceDataImportRepository imports;
 
-    @Inject
-    AnimateurService animateurs;
+    private final AnimateurService animateurs;
 
-    @Inject
-    StandService stands;
+    private final StandService stands;
 
-    @Inject
-    ConsigneRepository consignes;
+    private final ConsigneRepository consignes;
 
-    @Inject
-    EmplacementService emplacements;
+    private final EmplacementService emplacements;
 
-    @Inject
-    CreneauService creneaux;
+    private final CreneauService creneaux;
 
-    @Inject
-    TypologieService typologies;
+    private final TypologieService typologies;
 
-    @Inject
-    ContrainteAdHocService contraintesAdHoc;
+    private final ContrainteAdHocService contraintesAdHoc;
 
-    @Inject
-    VerrouillageService verrouillages;
+    private final VerrouillageService verrouillages;
 
-    @Inject
-    ParametresService parametres;
+    private final ParametresService parametres;
 
-    @Inject
-    ReferenceUsageService usages;
+    private final ReferenceUsageService usages;
 
-    @Inject
-    ReferenceDataChangeTracker changeTracker;
+    private final ReferenceDataChangeTracker changeTracker;
 
-    @Inject
-    SolverJobService solverJobs;
+    private final SolverJobService solverJobs;
 
-    @Inject
-    CoherenceService coherence;
+    private final CoherenceService coherence;
 
     /**
      * Where the fields an edit changed are deposited for the history
@@ -102,23 +88,61 @@ public class ReferenceDataService implements ReferenceData {
      * warnings, so this is the one place that can tell {@code nom} moved from
      * a write that merely re-sent it.
      */
-    @Inject
-    CurrentAction currentAction;
+    private final CurrentAction currentAction;
+
+    private final CreneauGridService grille;
+
+    private final JourneeTypeService journeesTypes;
+
+    private final ReferentielCsvImportService referentielCsvImport;
+
+    private final ReferentielCsvExportService referentielCsvExport;
+
+    private final JdbcEditionScope scope;
 
     @Inject
-    CreneauGridService grille;
-
-    @Inject
-    JourneeTypeService journeesTypes;
-
-    @Inject
-    ReferentielCsvImportService referentielCsvImport;
-
-    @Inject
-    ReferentielCsvExportService referentielCsvExport;
-
-    @Inject
-    JdbcEditionScope scope;
+    public ReferenceDataService(
+            ReferenceDataImportRepository imports,
+            AnimateurService animateurs,
+            StandService stands,
+            ConsigneRepository consignes,
+            EmplacementService emplacements,
+            CreneauService creneaux,
+            TypologieService typologies,
+            ContrainteAdHocService contraintesAdHoc,
+            VerrouillageService verrouillages,
+            ParametresService parametres,
+            ReferenceUsageService usages,
+            ReferenceDataChangeTracker changeTracker,
+            SolverJobService solverJobs,
+            CoherenceService coherence,
+            CurrentAction currentAction,
+            CreneauGridService grille,
+            JourneeTypeService journeesTypes,
+            ReferentielCsvImportService referentielCsvImport,
+            ReferentielCsvExportService referentielCsvExport,
+            JdbcEditionScope scope) {
+        this.imports = imports;
+        this.animateurs = animateurs;
+        this.stands = stands;
+        this.consignes = consignes;
+        this.emplacements = emplacements;
+        this.creneaux = creneaux;
+        this.typologies = typologies;
+        this.contraintesAdHoc = contraintesAdHoc;
+        this.verrouillages = verrouillages;
+        this.parametres = parametres;
+        this.usages = usages;
+        this.changeTracker = changeTracker;
+        this.solverJobs = solverJobs;
+        this.coherence = coherence;
+        this.currentAction = currentAction;
+        this.grille = grille;
+        this.journeesTypes = journeesTypes;
+        this.referentielCsvImport = referentielCsvImport;
+        this.referentielCsvExport = referentielCsvExport;
+        this.scope = scope;
+    }
 
     /* ------------------------------ Animateurs ----------------------------- */
 

@@ -23,15 +23,19 @@ import org.eclipse.microprofile.config.Config;
 @ApplicationScoped
 public class ParametresService {
 
-    @Inject
-    ParametresRepository repository;
+    private final ParametresRepository repository;
 
-    @Inject
-    ReferenceDataChangeTracker changeTracker;
+    private final ReferenceDataChangeTracker changeTracker;
 
     /** Only for the {@code planning.contraintes.*} block: the defaults an unconfigured edition solves with. */
+    private final Config config;
+
     @Inject
-    Config config;
+    public ParametresService(ParametresRepository repository, ReferenceDataChangeTracker changeTracker, Config config) {
+        this.repository = repository;
+        this.changeTracker = changeTracker;
+        this.config = config;
+    }
 
     public ParametresLegaux getLegaux() {
         return repository.getParametresLegaux();

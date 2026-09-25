@@ -52,20 +52,29 @@ public class ValidationPrerequisService {
     /** No seat of the day rests on somebody nobody could replace. */
     public static final String POSTES_IRREMPLACABLES = "POSTES_IRREMPLACABLES";
 
-    @Inject
-    PlanningPersistenceService persistenceService;
+    private final PlanningPersistenceService persistenceService;
+
+    private final ConstraintAnalysisStore analysisStore;
+
+    private final PauseAnalyzer pauseAnalyzer;
+
+    private final FragiliteAnalyzer fragiliteAnalyzer;
+
+    private final ValidationJourneeService validationService;
 
     @Inject
-    ConstraintAnalysisStore analysisStore;
-
-    @Inject
-    PauseAnalyzer pauseAnalyzer;
-
-    @Inject
-    FragiliteAnalyzer fragiliteAnalyzer;
-
-    @Inject
-    ValidationJourneeService validationService;
+    public ValidationPrerequisService(
+            PlanningPersistenceService persistenceService,
+            ConstraintAnalysisStore analysisStore,
+            PauseAnalyzer pauseAnalyzer,
+            FragiliteAnalyzer fragiliteAnalyzer,
+            ValidationJourneeService validationService) {
+        this.persistenceService = persistenceService;
+        this.analysisStore = analysisStore;
+        this.pauseAnalyzer = pauseAnalyzer;
+        this.fragiliteAnalyzer = fragiliteAnalyzer;
+        this.validationService = validationService;
+    }
 
     /**
      * One prerequisite, as a figure rather than a sentence: the wording is the
