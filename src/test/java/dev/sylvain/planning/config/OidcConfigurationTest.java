@@ -86,7 +86,7 @@ class OidcConfigurationTest {
 
             @Override
             public List<String> invitationActions() {
-                return List.of("VERIFY_EMAIL", "webauthn-register-passwordless");
+                return List.of("VERIFY_EMAIL");
             }
         };
     }

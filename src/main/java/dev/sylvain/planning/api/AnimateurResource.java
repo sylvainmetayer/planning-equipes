@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.keycloak.KeycloakUserProvisioning;
 import dev.sylvain.planning.service.profile.AnimateurProfile;
 import dev.sylvain.planning.service.profile.AnimateurProfileService;
 import dev.sylvain.planning.service.profile.DayOffService;
@@ -11,6 +12,7 @@ import dev.sylvain.planning.service.publication.RelanceManuelleService;
 import dev.sylvain.planning.service.referentiel.AnimateurCsvImportReport;
 import dev.sylvain.planning.service.referentiel.AnimateurCsvImportRequest;
 import dev.sylvain.planning.service.referentiel.AnimateurCsvImportService;
+import dev.sylvain.planning.service.referentiel.AnimateurService;
 import dev.sylvain.planning.service.referentiel.CompetencesGrilleService;
 import dev.sylvain.planning.service.referentiel.GrilleCompetences;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
@@ -55,6 +57,7 @@ public class AnimateurResource {
     private final AnimateurProfileService profileService;
 
     private final DayOffService dayOffService;
+    private final AnimateurService animateurs;
 
     @Inject
     public AnimateurResource(
@@ -64,7 +67,8 @@ public class AnimateurResource {
             AnimateurCsvImportService csvImport,
             CompetencesGrilleService competencesGrille,
             AnimateurProfileService profileService,
-            DayOffService dayOffService) {
+            DayOffService dayOffService,
+            AnimateurService animateurs) {
         this.referenceDataService = referenceDataService;
         this.confirmationService = confirmationService;
         this.relanceService = relanceService;
@@ -72,6 +76,7 @@ public class AnimateurResource {
         this.competencesGrille = competencesGrille;
         this.profileService = profileService;
         this.dayOffService = dayOffService;
+        this.animateurs = animateurs;
     }
 
     @GET
@@ -162,6 +167,30 @@ public class AnimateurResource {
     @Path("/relances")
     public RelanceManuelleService.RapportRelance relancer(RelanceDemande demande) {
         return relanceService.relancer(demande == null ? null : demande.animateurIds());
+    }
+
+    /**
+     * How many animateurs of the edition were never invited to their Keycloak
+     * account — the CSV import, a scenario import and duplicating an edition
+     * create the accounts but mail nobody. {@code actif} is false without
+     * provisioning, and the screen then shows nothing.
+     */
+    @GET
+    @Path("/invitations")
+    public KeycloakUserProvisioning.EtatInvitations invitationStatus() {
+        return animateurs.getInvitationStatus();
+    }
+
+    /**
+     * « Envoyer les invitations »: every animateur of the edition never
+     * invited receives Keycloak's invitation, the account created first when
+     * missing. {@code 409} when provisioning is off or Keycloak does not
+     * answer.
+     */
+    @POST
+    @Path("/invitations")
+    public KeycloakUserProvisioning.BilanComptes sendInvitations() {
+        return animateurs.sendInvitations();
     }
 
     /**

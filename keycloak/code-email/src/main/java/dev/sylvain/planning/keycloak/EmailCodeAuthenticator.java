@@ -130,6 +130,16 @@ public class EmailCodeAuthenticator implements Authenticator {
         }
 
         session.removeAuthNote(NOTE_CODE);
+        // Le bon code est arrivé dans cette boîte : c'est exactement l'aller-
+        // retour que prouve « adresse vérifiée ». Sans cela, un compte créé
+        // par le provisioning et dont l'invitation n'a pas été suivie se
+        // connectait bien, puis l'application refusait l'espace, faute de
+        // `email_verified` dans le jeton.
+        UserModel utilisateur = context.getUser();
+        if (!utilisateur.isEmailVerified()) {
+            utilisateur.setEmailVerified(true);
+            utilisateur.removeRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
+        }
         context.success();
     }
 
