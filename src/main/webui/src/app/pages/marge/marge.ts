@@ -207,14 +207,15 @@ export function buildSynthese(rapport: RapportMarge | null): SyntheseMarge[] {
     }));
 }
 
-/** Where a cell leads: the bench on a plan already solved, the openings before. */
+/** Where a cell leads: the Siège panel of the timeslot on a plan already solved, the openings before. */
 export interface LienCellule {
   route: string;
   queryParams: Record<string, string | number>;
 }
 
 /**
- * A cell answers « qui pourrait tenir ce moment-là » after a solve, and
+ * A cell answers « qui pourrait tenir ce moment-là » after a solve — the
+ * Journée opens the Siège panel on a free seat of the timeslot — and
  * « qu'ouvre-t-on à ce moment-là » before one: the bench cannot say anything
  * about a plan that does not exist yet, and the openings are what one closes to
  * move the margin before a solve.
@@ -225,9 +226,7 @@ export function lienCellule(
   date: string | null,
 ): LienCellule | null {
   if (mode === 'APRES') {
-    return creneauId === null
-      ? null
-      : { route: '/diagnostic', queryParams: { onglet: 'banc', creneau: creneauId } };
+    return creneauId === null ? null : { route: '/journee', queryParams: { creneau: creneauId } };
   }
   return date === null ? null : { route: '/ouvertures', queryParams: { vue: 'journee', date } };
 }

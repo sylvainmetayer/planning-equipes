@@ -96,18 +96,15 @@ test('« ?typologie= » filtre les animateurs sur la typologie nommée, et la pu
   await page.context().close();
 });
 
-/** The bench, reached from a break nobody can relay on the Journée page, is the same bench as ever. */
-test('le banc de touche répond à un créneau et un stand nommés dans l’adresse', async ({
-  browser,
-}) => {
+/** The bench's address, as a break nobody can relay used to link it, opens the seat's Siège panel. */
+test('l’adresse du banc de touche ouvre le panneau du siège nommé', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
   await page.goto(
     `/diagnostic?onglet=banc&creneau=${SEED.creneauId}&stand=${SEED.standDemandeur}`,
     { waitUntil: 'domcontentloaded' },
   );
-  await expect(page.locator('#contenu')).toContainText('Banc de touche');
-  await expect(page.locator('#contenu')).toContainText('Siège évalué');
+  await expect(page).toHaveURL(/\/journee\?.*siege=/);
   // The seat is named by its stand's name, not its id.
-  await expect(page.locator('#contenu')).toContainText('Stand E2E un');
+  await expect(page.getByRole('complementary', { name: /Siège/ })).toContainText('Stand E2E un');
   await page.context().close();
 });

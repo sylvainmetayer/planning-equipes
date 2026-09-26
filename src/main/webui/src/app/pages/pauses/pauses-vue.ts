@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   input,
+  output,
   model,
   signal,
   ViewEncapsulation,
@@ -11,7 +12,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { RouterLink } from '@angular/router';
 import { RapportPauses } from '../../core/models';
 import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
 import {
@@ -51,7 +51,6 @@ import {
     MatCheckboxModule,
     MatIconModule,
     MatTooltipModule,
-    RouterLink,
     WorkInProgressBanner,
   ],
   templateUrl: './pauses-vue.html',
@@ -72,6 +71,12 @@ export class PausesView {
   readonly withoutRelaisOnly = model(false);
   /** Narrows the meal-break section to the days that have no room for one. */
   readonly coupuresManquantesSeulement = model(false);
+  /** A break without relay was picked: the page opens the Siège panel on that person's seat. */
+  readonly seatRequested = output<{ creneauId: number; standId: string; animateurId: string }>();
+
+  protected openSeat(creneauId: number, standId: string, animateurId: string): void {
+    this.seatRequested.emit({ creneauId, standId, animateurId });
+  }
 
   protected readonly messageEssai = signal(
     $localize`:@@pauses.messageEssai:Les pauses sont lues sur le planning persisté et les paramètres légaux du jour ; l'outil ne les planifie pas, il dit où elles tombent et qui peut relayer.`,

@@ -323,14 +323,14 @@ describe('MargePage', () => {
     });
   });
 
-  it('opens the bench of the timeslot from a cell once a plan exists', async () => {
+  it('opens the Siège panel of the timeslot from a cell once a plan exists', async () => {
     await monter({ mode: 'apres' });
 
     toucher(0, 1, 'Enter');
     await fixture.whenStable();
 
-    expect(navigate).toHaveBeenCalledWith(['/diagnostic'], {
-      queryParams: { onglet: 'banc', creneau: 2 },
+    expect(navigate).toHaveBeenCalledWith(['/journee'], {
+      queryParams: { creneau: 2 },
     });
   });
 

@@ -9,7 +9,7 @@
 // bounded cost, one identifier on the wire.
 //
 // Applying a replacement deliberately reuses the assistant's existing write
-// (`AffectationExplanationService.appliquerReparation`), which is the surgical
+// (`AffectationExplanationService.applyRepair`), which is the surgical
 // UPDATE that starts no solve. There is no second write path.
 
 import { Injectable, inject } from '@angular/core';
@@ -53,7 +53,11 @@ export class JourJService {
     return this.api.delete(url);
   }
 
-  /** Viable replacements for one seat, best impact first. */
+  /**
+   * Viable replacements for one seat, best impact first — also what the
+   * Siège panel's « Remplacer » asks: the persisted plan, prepared under the
+   * edition's rules as the write that follows reads it.
+   */
   suggestions(posteId: string): Promise<SuggestionsReparation> {
     return this.api.post<SuggestionsReparation>(
       `/api/jour-j/postes/${encodeURIComponent(posteId)}/suggestions`,

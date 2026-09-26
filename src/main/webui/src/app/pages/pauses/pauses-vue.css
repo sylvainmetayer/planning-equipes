@@ -157,10 +157,15 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
-/* The bench, one word after a break nobody relays. */
-.pauses-banc {
+/* The seat's Siège panel, a few words after a break nobody relays. */
+.pauses-siege {
   margin-left: 0.5rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
   font: var(--mat-sys-label-medium);
   color: var(--app-accent);
+  text-decoration: underline;
   white-space: nowrap;
 }

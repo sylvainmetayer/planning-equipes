@@ -2109,6 +2109,12 @@ export interface BancDeTouche {
   standCibleId: string | null;
   /** Its current occupant, null when the seat is free. */
   animateurCibleId: string | null;
+  /**
+   * The seat's timeslot has started under the frozen past (ADR 0044), on the
+   * server's clock: nobody can be seated by hand, so « Placer » is offered to
+   * nobody. Always false while the freeze is off.
+   */
+  seatStarted: boolean;
   total: number;
   disponibles: number;
   /**
@@ -3374,7 +3380,8 @@ export interface ViolationDure {
 export interface DeplacementSimulation {
   posteSourceId: string;
   posteCibleId: string | null;
-  animateurSourceId: string;
+  /** Null on a placement (`/placement`): the seat held nobody. */
+  animateurSourceId: string | null;
   animateurCibleId: string | null;
   scoreAvant: HardMediumSoftScore;
   scoreApres: HardMediumSoftScore;

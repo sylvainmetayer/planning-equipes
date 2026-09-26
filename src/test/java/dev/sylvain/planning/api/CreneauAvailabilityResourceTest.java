@@ -44,6 +44,30 @@ class CreneauAvailabilityResourceTest {
         assertThat(banc.getList("animateurs.animateurId")).doesNotHaveDuplicates();
     }
 
+    /**
+     * The Siège panel spells both keys out on every call, empty when they do
+     * not apply — the frontend's contract check needs them literal — and names
+     * the seat it shows: a blank key reads as absent, and the named seat is
+     * the one evaluated.
+     */
+    @Test
+    void blankKeysReadAsAbsentAndANamedSeatIsTheOneEvaluated() {
+        long creneauId = persistedPlan();
+        String evaluated = given().when()
+                .get("/api/banc-de-touche/" + creneauId + "?standId=&posteId=")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("posteCibleId");
+        assertThat(evaluated).isNotBlank();
+
+        given().when()
+                .get("/api/banc-de-touche/" + creneauId + "?standId=&posteId=" + evaluated)
+                .then()
+                .statusCode(200)
+                .body("posteCibleId", org.hamcrest.Matchers.equalTo(evaluated));
+    }
+
     /** Every reason is a catalogued constraint, never a wording invented by the view. */
     @Test
     void chaqueMotifPorteLeNomEtLeLibelleDuneContrainteCataloguee() {
@@ -179,6 +203,8 @@ class CreneauAvailabilityResourceTest {
                 .jsonPath();
 
         assertThat(banc.getString("statut")).isEqualTo("EVALUATED");
+        // The freeze is off under %test: nothing is ever reported started.
+        assertThat(banc.getBoolean("seatStarted")).isFalse();
         assertThat(banc.<Object>get("creneauId")).isNotNull();
         assertThat(banc.getList("creneauxAvecSieges.id", Long.class)).contains(banc.getLong("creneauId"));
         assertThat(creneauId).isPositive();

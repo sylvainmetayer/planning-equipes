@@ -469,6 +469,7 @@ public final class CatalogueActions {
         route("SolverJobResource#deleteJob", JOB_SUPPRIME);
         route("AffectationExplanationResource#applyDeplacement", AFFECTATION_DEPLACEE);
         route("AffectationExplanationResource#applyReparation", AFFECTATION_POSEE);
+        route("AffectationExplanationResource#applyPlacement", AFFECTATION_POSEE);
         route("JourJResource#recordAbsence", ABSENCE_ENREGISTREE);
         route("JourJResource#cancelAbsence", ABSENCE_ANNULEE);
 

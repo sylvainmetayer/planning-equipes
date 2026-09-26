@@ -129,6 +129,10 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
+          text: $localize`:@@aide.jourJ.horsJour:Hors du jour même, pour un siège encore à venir, la Journée fait les mêmes gestes un par un : son panneau du siège remplace, libère, déplace, et « Placer » remplit un siège vide depuis « Qui peut tenir ce siège ? ». Le mode jour J reste l'écran de l'absence du jour, qui libère d'un coup tous les sièges restants de la personne.`,
+        },
+        {
+          kind: 'paragraph',
           text: $localize`:@@aide.jourJ.publication:Rien n'est envoyé aux animateurs depuis cet écran : leur espace continue d'afficher le planning publié tant que vous n'avez pas republié. Le bandeau rappelle combien de personnes attendent un changement et renvoie vers le bouton Publier, sur la page Publication.`,
         },
         {
@@ -204,11 +208,11 @@ export function buildOperationsSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.day:Calendrier journalier`,
-              text: $localize`:@@aide.views.def.day:Une journée, stand par stand et créneau par créneau. C'est là qu'on corrige à la main : le clic sur un nom ouvre « Pourquoi lui ? » et son assistant de réparation, qui propose qui mettre à sa place sans casser de règle dure. Si votre instance a activé le glisser-déposer, encore en test, un nom se glisse aussi, par la poignée à sa gauche, vers un autre stand de la journée — sur un siège libre la personne est déplacée, sur une personne les deux échangent. Au clavier, ou d'un simple clic, la même poignée ouvre « Déplacer … vers » : choisissez le siège libre ou la personne avec qui échanger ; sur le rail, Entrée sur une ligne fait de même. Le serveur simule le geste et le refuse, en nommant la règle, s'il cassait une règle dure ; un siège verrouillé ne bouge pas. Vérifiez le planning après un déplacement. Le glisser-déposer et son dialogue sont désactivés par défaut : sans poignée à gauche des noms, hors verrouillage et hors résolution en cours, votre instance ne les a pas activés — ou la page n'a pas pu lire sa configuration, et la recharger suffit.`,
+              text: $localize`:@@aide.views.def.day:Une journée, stand par stand et créneau par créneau. C'est là qu'on corrige à la main : un clic sur un nom ou sur un « siège libre » ouvre à droite le panneau du siège (voir Panneau Siège ci-dessous), qui explique le siège et porte tous les gestes. « Déplacer vers… » y est toujours proposé : choisissez le siège libre où aller ou la personne avec qui échanger ; le serveur simule le geste et le refuse, en nommant la règle, s'il cassait une règle dure, et un siège verrouillé ne bouge pas. Si votre instance a en plus activé le glisser-déposer, encore en test, un nom se glisse aussi, par la poignée à sa gauche, vers un autre stand de la journée — sur un siège libre la personne est déplacée, sur une personne les deux échangent. Le glisser-déposer est désactivé par défaut : il ne règle que ce geste à la souris, jamais le déplacement lui-même.`,
             },
             {
               term: $localize`:@@aide.views.term.railJour:Rail de la journée`,
-              text: $localize`:@@aide.views.def.railJour:La même journée vue par personne : une ligne par animateur, les vacations placées dans le temps. Les trous, les amplitudes et les enchaînements sautent aux yeux, et les lignes vides disent qui reste mobilisable — celles marquées « indisponible » disent de ne pas solliciter la personne. Quand l'instance a activé le glisser-déposer, une vacation se glisse vers une autre ligne, aux mêmes conditions que sur le calendrier journalier.`,
+              text: $localize`:@@aide.views.def.railJour:La même journée vue par personne : une ligne par animateur, les vacations placées dans le temps. Les trous, les amplitudes et les enchaînements sautent aux yeux, et les lignes vides disent qui reste mobilisable — celles marquées « indisponible » disent de ne pas solliciter la personne. Un clic sur une vacation ouvre le panneau de son siège ; au clavier, Espace sur une ligne l'ouvre sur sa vacation — sur la suivante, pressée à nouveau — et Entrée ouvre « Déplacer une vacation de … », que le glisser-déposer soit activé ou non. Quand il l'est, une vacation se glisse aussi vers une autre ligne, aux mêmes conditions que sur le calendrier journalier.`,
             },
             {
               term: $localize`:@@aide.views.term.carteJour:Carte de la journée`,
@@ -236,7 +240,7 @@ export function buildOperationsSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.tension:Tension`,
-              text: $localize`:@@aide.views.def.tension:Troisième lecture de la Marge, quand un planning est enregistré : la marge après résolution croisée avec la fragilité. Critique : des sièges vides que personne ne peut tenir, un siège qu'aucun autre ne pourrait reprendre, ou un stand sans spécialiste — la case est alors hachurée. Élevée : marge nulle avec des sièges vides, ou plus de sièges fragiles (un remplaçant au plus) que de monde à revendre. Surveillée : des sièges fragiles mais assez de marge, ou un stand à spécialiste unique sans polyvalent en renfort. Calme sinon. Le badge « 2 ⚠ » compte les sièges fragiles ; une case ouvre ses raisons, avec le banc de touche, la timeline de la personne irremplaçable et la fragilité du stand. Une tranche déjà commencée est grisée.`,
+              text: $localize`:@@aide.views.def.tension:Troisième lecture de la Marge, quand un planning est enregistré : la marge après résolution croisée avec la fragilité. Critique : des sièges vides que personne ne peut tenir, un siège qu'aucun autre ne pourrait reprendre, ou un stand sans spécialiste — la case est alors hachurée. Élevée : marge nulle avec des sièges vides, ou plus de sièges fragiles (un remplaçant au plus) que de monde à revendre. Surveillée : des sièges fragiles mais assez de marge, ou un stand à spécialiste unique sans polyvalent en renfort. Calme sinon. Le badge « 2 ⚠ » compte les sièges fragiles ; une case ouvre ses raisons, avec « Qui peut tenir un siège vide » — le panneau du siège, sur la Journée —, la timeline de la personne irremplaçable et la fragilité du stand. Une tranche déjà commencée est grisée.`,
             },
             {
               term: $localize`:@@aide.views.term.timeline:Timeline animateur`,
@@ -248,7 +252,7 @@ export function buildOperationsSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.fiche:Fiche animateur`,
-              text: $localize`:@@aide.views.def.fiche:Tout ce qu'on sait d'une personne sur une page, pour répondre à « qu'est-ce qu'on peut encore lui demander ? » sans ouvrir six écrans. Sept sections repliables : identité et régime légal (au premier et au dernier jour de l'événement, pour voir un mineur qui devient majeur en cours de route), disponibilités sur la frise des jours avec les indisponibilités forcées et la déclaration en attente, appréciations et souhaits côte à côte, sa ligne de l'écran Équité avec l'écart à la médiane, ses postes fragiles tels que l'écran Fragilité les lui attribue, ses affectations du planning enregistré (celles déjà commencées estompées), et le suivi — dernière publication, accusé de réception, échanges en cours, ajustements et verrous qui la visent. Les chiffres sont ceux des écrans spécialisés, jamais recalculés ; sans planning calculé, les sections qui en dépendent le disent. On y arrive depuis la ligne de la page Animateurs, la palette Ctrl+K et les noms des écrans Équité, Fragilité et Banc de touche. La fiche se lit ; « Modifier la fiche » ouvre le formulaire habituel, et chaque section mène à l'écran où l'on agit.`,
+              text: $localize`:@@aide.views.def.fiche:Tout ce qu'on sait d'une personne sur une page, pour répondre à « qu'est-ce qu'on peut encore lui demander ? » sans ouvrir six écrans. Sept sections repliables : identité et régime légal (au premier et au dernier jour de l'événement, pour voir un mineur qui devient majeur en cours de route), disponibilités sur la frise des jours avec les indisponibilités forcées et la déclaration en attente, appréciations et souhaits côte à côte, sa ligne de l'écran Équité avec l'écart à la médiane, ses postes fragiles tels que l'écran Fragilité les lui attribue, ses affectations du planning enregistré (celles déjà commencées estompées), et le suivi — dernière publication, accusé de réception, échanges en cours, ajustements et verrous qui la visent. Les chiffres sont ceux des écrans spécialisés, jamais recalculés ; sans planning calculé, les sections qui en dépendent le disent. On y arrive depuis la ligne de la page Animateurs, la palette Ctrl+K, les noms des écrans Équité et Fragilité, et « Ouvrir sa fiche » dans le panneau du siège. La fiche se lit ; « Modifier la fiche » ouvre le formulaire habituel, et chaque section mène à l'écran où l'on agit.`,
             },
             {
               term: $localize`:@@aide.views.term.equite:Équité`,
@@ -267,8 +271,8 @@ export function buildOperationsSections(): HelpSection[] {
               text: $localize`:@@aide.views.def.former:Qui former, typologie par typologie. Une typologie y figure quand le Besoin en animateurs la dit en manque, ou quand la Fragilité y trouve un stand tenu par un seul spécialiste ou aucun ; les chiffres sont ceux de ces deux onglets, jamais recalculés. Les candidats sont les débutants et les autonomes de la typologie — ni un référent, ni un polyvalent, ni quelqu'un sans la compétence —, classés par jours en tension où ils sont disponibles, puis souhait, puis niveau. Une typologie sans candidat relève du recrutement. Sans planning persisté, seul le besoin parle. L'onglet s'exporte en CSV ; monter un niveau reste un geste de la grille Compétences.`,
             },
             {
-              term: $localize`:@@aide.views.term.banc:Banc de touche`,
-              text: $localize`:@@aide.views.def.banc:Pour un créneau, qui n'est affecté nulle part — et, pour chacun, ce qui l'empêcherait de prendre la place libre : indisponible ce jour-là, repos légal, plafond d'heures atteint, appréciation manquante. Toutes les raisons applicables sont affichées, pas seulement la première : c'est ce qui dit si lever un obstacle suffirait. La vue est en lecture seule ; pour agir, passez par l'assistant de réparation.`,
+              term: $localize`:@@aide.views.term.banc:Panneau Siège`,
+              text: $localize`:@@aide.views.def.banc:Le panneau qui s'ouvre à droite de la Journée au clic sur une case — un nom ou un siège libre du calendrier, une vacation du rail, le bouton « Siège » d'un stand de la carte, « Ouvrir le siège » d'une pause sans relais, l'icône d'un siège dans les changements. Il dit le stand, le créneau, qui tient le siège et les verrous qui le figent ; sur un siège tenu, « Pourquoi lui ? » nomme les règles en défaut dans les mots de la page Contraintes, puis viennent « Remplacer » (les remplaçants viables, cherchés sur le planning enregistré avec les règles de l'édition, avec « Appliquer »), « Déplacer vers… », « Libérer », « Verrouiller » ou « Déverrouiller », « Qui peut tenir ce siège ? » en lecture seule, et « Ouvrir sa fiche ». « Libérer » demande confirmation et, tant que « La tenir à l'écart de ce créneau au prochain calcul » reste cochée, verrouille la personne hors de ce créneau : sans cela, « Corriger le reste » pourrait l'y remettre aussitôt. « Appliquer » et « Libérer » ne touchent le siège que s'il est encore tenu par la personne affichée. Sur un siège vide, « Qui peut tenir ce siège ? » ouvre l'ancien banc de touche, limité à ce siège : qui n'est de service nulle part à ce moment, et ce qui empêcherait chacun de le tenir — toutes les raisons, pas seulement la première. Les personnes disponibles viennent d'abord, avec « Placer » ; celles qu'une règle dure écarte se déplient à la demande. « Placer » affecte la personne et, tant que « La garder au prochain calcul » reste cochée, la verrouille sur ce créneau pour que la prochaine résolution la laisse en place ; le serveur refuse en nommant la règle un placement qui casserait une règle dure, et prévient quand il coûte en qualité. « Placer » n'est offert ni à une personne qu'un verrou tient hors de ce créneau — la ligne le dit —, ni sur un créneau déjà commencé. « Poser un ajustement » ouvre le formulaire d'ajustement manuel, prérempli avec ce stand et ce créneau. Après un geste, le panneau dit ce qui reste à faire : « Non publié : Prévenir » mène à la publication, et « Corriger le reste » lance une résolution incrémentale quand le geste a laissé un siège vide. Échap ou la croix le referment. Le panneau se retrouve depuis la palette en tapant « banc ».`,
             },
             {
               term: $localize`:@@aide.views.term.graphe:Graphe`,
@@ -328,11 +332,7 @@ export function buildOperationsSections(): HelpSection[] {
           queryParams: { onglet: 'former' },
           label: $localize`:@@aide.link.former:À former`,
         },
-        {
-          route: '/diagnostic',
-          queryParams: { onglet: 'banc' },
-          label: $localize`:@@aide.link.bancDeTouche:Banc de touche`,
-        },
+        { route: '/journee', label: $localize`:@@aide.link.siege:Panneau Siège (Journée)` },
         { route: '/graphe', label: $localize`:@@nav.link.graphe:Graphe` },
         { route: '/kpi', label: $localize`:@@nav.link.kpi:Autopsie du planning` },
         { route: '/comparateur', label: $localize`:@@nav.link.comparateur:Comparateur A/B` },
@@ -375,7 +375,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.shortcuts.onglets:La palette connaît aussi les onglets et les vues des pages : « problèmes », « banc » ou « mural » ouvrent directement le bon onglet. Sans rien taper, elle liste le menu dans son ordre.`,
+          text: $localize`:@@aide.shortcuts.onglets:La palette connaît aussi les onglets et les vues des pages : « problèmes » ou « mural » ouvrent directement le bon onglet ; « banc » mène à la Journée, dont le panneau du siège a repris le banc de touche. Sans rien taper, elle liste le menu dans son ordre.`,
         },
         {
           kind: 'paragraph',

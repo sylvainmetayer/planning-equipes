@@ -307,12 +307,9 @@ describe('CalendarDayView rendering', () => {
 
     const libres = Array.from(root(fixture).querySelectorAll<HTMLElement>('.siege-libre'));
     expect(libres.map((chip) => chip.dataset['posteId'])).toEqual(['p2', 'p3']);
-    // Each free seat is also the question « who could take it? », asked of the
-    // bench on that créneau and that stand (issue #489).
-    expect(libres.map((chip) => chip.getAttribute('href'))).toEqual([
-      '/diagnostic?onglet=banc&creneau=1&stand=Loup-Garou',
-      '/diagnostic?onglet=banc&creneau=1&stand=Loup-Garou',
-    ]);
+    // Each free seat is also the question « who could take it? », asked of
+    // the Siège panel on that very seat: a button, not a link leaving the day.
+    expect(libres.map((chip) => chip.tagName)).toEqual(['BUTTON', 'BUTTON']);
     // The seat id sits on the draggable wrapper, which contains the name: a
     // drop resolves it with closest(), from wherever the pointer landed.
     expect(
@@ -483,21 +480,33 @@ describe('CalendarDayView rendering', () => {
     expect(text(fixture)).toContain('Aucune ligne ne correspond aux filtres');
   });
 
-  it('opens the explanation dialog on the seat that was clicked', async () => {
+  // #711: a name opens the page's Siège panel on its seat — the view emits,
+  // the page opens; no dialog in front of the day any more.
+  it('asks the page to open the Siège panel on the seat that was clicked', async () => {
     const camille = animateur('a1', 'Camille');
-    const planningAffiche = planning([poste('p1', AMBIANCE, C1, camille)]);
-    const { fixture, open } = mount({ planning: planningAffiche });
+    const { fixture, open } = mount({
+      planning: planning([poste('p1', AMBIANCE, C1, camille), poste('p2', AMBIANCE, C1, null)]),
+    });
     await fixture.whenStable();
+    const opened: string[] = [];
+    fixture.componentInstance.seatSelected.subscribe((id) => opened.push(id));
 
     (root(fixture).querySelector('.affectation-link') as HTMLButtonElement).click();
+    (root(fixture).querySelector('.siege-libre') as HTMLButtonElement).click();
+
+    expect(opened).toEqual(['p1', 'p2']);
+    expect(open).not.toHaveBeenCalled();
+  });
+
+  it('marks the seat the panel is open on', async () => {
+    const camille = animateur('a1', 'Camille');
+    const { fixture } = mount({ planning: planning([poste('p1', AMBIANCE, C1, camille)]) });
+    fixture.componentRef.setInput('openSeatId', 'p1');
     await fixture.whenStable();
 
-    expect(open).toHaveBeenCalledOnce();
-    const config = open.mock.calls[0][1] as {
-      data: { poste: PosteAffectation; planning: PlanningEvenement };
-    };
-    expect(config.data.poste.id).toBe('p1');
-    expect(config.data.planning).toBe(planningAffiche);
+    const nom = root(fixture).querySelector('.affectation-link')!;
+    expect(nom.classList).toContain('siege-ouvert');
+    expect(nom.getAttribute('aria-pressed')).toBe('true');
   });
 
   it('reports how many assignments are persisted', async () => {
@@ -512,20 +521,6 @@ describe('CalendarDayView rendering', () => {
     await fixture.whenStable();
 
     expect(root(fixture).querySelector('.calendar-meta')!.textContent).toContain('n/d');
-  });
-
-  it('asks the page to re-read the plan once the repair assistant wrote to it', async () => {
-    const camille = animateur('a1', 'Camille');
-    const { fixture, open } = mount({ planning: planning([poste('p1', AMBIANCE, C1, camille)]) });
-    open.mockReturnValue({ afterClosed: () => of({ applique: true }) });
-    await fixture.whenStable();
-    const rechargements = vi.fn();
-    fixture.componentInstance.rechargement.subscribe(rechargements);
-
-    (root(fixture).querySelector('.affectation-link') as HTMLButtonElement).click();
-    await fixture.whenStable();
-
-    expect(rechargements).toHaveBeenCalledOnce();
   });
 
   it('explains its four markers in a legend', async () => {
@@ -616,8 +611,9 @@ describe('CalendarDayView rendering', () => {
       await vi.waitFor(() => expect(move).toHaveBeenCalledWith('P1', { posteId: 'P3' }, 'a1'));
     });
 
-    // Switched off with the drag: no handle to click, so no dialog either.
-    it('offers no move button when the instance has not switched drag and drop on', async () => {
+    // The flag governs the pointer gesture only: no handle without it, and
+    // the move is reached from the Siège panel instead (« Déplacer vers »).
+    it('offers no drag handle when the instance has not switched drag and drop on', async () => {
       const { fixture } = mount({ planning: plan });
       await fixture.whenStable();
 

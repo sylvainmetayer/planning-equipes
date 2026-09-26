@@ -79,6 +79,9 @@ export function buildNavGroups(): NavGroup[] {
           label: $localize`:@@nav.link.journee:Journée`,
           icon: 'view_day',
           shortcut: 'j',
+          // The bench left the Diagnostic for the Siège panel of this page:
+          // « banc » still finds where it went.
+          keywords: $localize`:@@nav.keywords.journee:banc de touche siège remplaçant placer`,
           tabs: [
             tab('vue', 'calendrier', $localize`:@@journee.vue.calendrier:Calendrier`),
             tab('vue', 'rail', $localize`:@@journee.vue.rail:Rail`),
@@ -267,12 +270,6 @@ export function buildNavGroups(): NavGroup[] {
               'former',
               $localize`:@@diagnostic.onglet.former:À former`,
               $localize`:@@nav.keywords.former:formation`,
-            ),
-            tab(
-              'onglet',
-              'banc',
-              $localize`:@@diagnostic.onglet.banc:Banc de touche`,
-              $localize`:@@nav.keywords.banc:remplaçant candidats`,
             ),
           ],
         },

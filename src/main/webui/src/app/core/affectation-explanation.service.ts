@@ -38,11 +38,6 @@ export class AffectationExplanationService {
   }
 
   /**
-   * Applies one suggestion to the persisted plan: that seat changes hands and
-   * nothing else does. The only call here that writes — hence its own method
-   * rather than a flag on the simulation.
-   */
-  /**
    * A seat dropped somewhere else (issue #308): on another seat, or on a
    * person. Simulated and refused server-side when it would break a hard
    * rule — one round trip, since the refusal names the rule; the day views
@@ -70,9 +65,29 @@ export class AffectationExplanationService {
     );
   }
 
-  appliquerReparation(posteId: string, animateurId: string): Promise<void> {
-    const url = `/api/postes/${encodeURIComponent(posteId)}/affectation?animateurId=${encodeURIComponent(animateurId)}`;
-    return this.api.post<void>(url, null);
+  /**
+   * Applies one suggestion to the persisted plan: that seat changes hands and
+   * nothing else does — or, `animateurId` null, the seat is emptied
+   * (« Libérer »). `occupant` is who the screen shows on the seat: the server
+   * refuses (409) and writes nothing if somebody else holds it by then.
+   */
+  applyRepair(
+    posteId: string,
+    animateurId: string | null,
+    occupant?: string | null,
+  ): Promise<void> {
+    const params = new URLSearchParams();
+    if (animateurId) {
+      params.set('animateurId', animateurId);
+    }
+    if (occupant) {
+      params.set('occupant', occupant);
+    }
+    const query = params.toString();
+    return this.api.post<void>(
+      `/api/postes/${encodeURIComponent(posteId)}/affectation${query ? `?${query}` : ''}`,
+      null,
+    );
   }
 }
 

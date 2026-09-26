@@ -100,7 +100,7 @@ describe('JourJPage', () => {
     suggestions: ReturnType<typeof vi.fn>;
     apercuPublication: ReturnType<typeof vi.fn>;
   };
-  let reparations: { appliquerReparation: ReturnType<typeof vi.fn> };
+  let reparations: { applyRepair: ReturnType<typeof vi.fn> };
   let notify: ReturnType<typeof vi.fn>;
 
   async function rendre(premierEtat: EtatJourJ, apresAbsence?: EtatJourJ): Promise<void> {
@@ -122,7 +122,7 @@ describe('JourJPage', () => {
         destinataires: [],
       })),
     };
-    reparations = { appliquerReparation: vi.fn(async () => undefined) };
+    reparations = { applyRepair: vi.fn(async () => undefined) };
     notify = vi.fn();
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -252,7 +252,7 @@ describe('JourJPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(reparations.appliquerReparation).toHaveBeenCalledWith('P2', 'A2');
+    expect(reparations.applyRepair).toHaveBeenCalledWith('P2', 'A2');
     expect(notify).toHaveBeenCalledWith(
       expect.objectContaining({ variant: 'success', message: expect.stringContaining('republié') }),
     );

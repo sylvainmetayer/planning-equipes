@@ -147,6 +147,32 @@
           }
         }
       },
+      "AffectationExplanation" : {
+        "type" : "object",
+        "properties" : {
+          "posteId" : {
+            "type" : "string"
+          },
+          "animateurId" : {
+            "type" : "string"
+          },
+          "score" : {
+            "$ref" : "#/components/schemas/HardMediumSoftScore"
+          },
+          "contraintesViolees" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ContrainteImpact"
+            }
+          },
+          "contraintesRespectees" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ContrainteImpact"
+            }
+          }
+        }
+      },
       "AffectationSnapshot" : {
         "type" : "object",
         "properties" : {
@@ -2372,7 +2398,7 @@
         }
       },
       "CreneauAvailability" : {
-        "required" : [ "disponibles", "total" ],
+        "required" : [ "disponibles", "seatStarted", "total" ],
         "type" : "object",
         "properties" : {
           "creneauId" : {
@@ -2390,6 +2416,9 @@
           },
           "animateurCibleId" : {
             "type" : "string"
+          },
+          "seatStarted" : {
+            "type" : "boolean"
           },
           "total" : {
             "type" : "integer",
@@ -2850,6 +2879,41 @@
           },
           "poserVerrou" : {
             "type" : "boolean"
+          }
+        }
+      },
+      "DeplacementSimulation" : {
+        "type" : "object",
+        "properties" : {
+          "posteSourceId" : {
+            "type" : "string"
+          },
+          "posteCibleId" : {
+            "type" : "string"
+          },
+          "animateurSourceId" : {
+            "type" : "string"
+          },
+          "animateurCibleId" : {
+            "type" : "string"
+          },
+          "scoreAvant" : {
+            "$ref" : "#/components/schemas/HardMediumSoftScore"
+          },
+          "scoreApres" : {
+            "$ref" : "#/components/schemas/HardMediumSoftScore"
+          },
+          "delta" : {
+            "$ref" : "#/components/schemas/HardMediumSoftScore"
+          },
+          "casseContrainteDure" : {
+            "type" : "boolean"
+          },
+          "nouvellesViolationsDures" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/HardViolation"
+            }
           }
         }
       },
@@ -4065,6 +4129,21 @@
           },
           "feasible" : {
             "type" : "boolean"
+          }
+        }
+      },
+      "HardViolation" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "matchesSupplementaires" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -14066,6 +14145,12 @@
           "schema" : {
             "type" : "string"
           }
+        }, {
+          "name" : "occupant",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
         } ],
         "responses" : {
           "200" : {
@@ -14160,6 +14245,30 @@
       }
     },
     "/api/postes/{posteId}/explication" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "posteId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AffectationExplanation"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Explain Persisted",
+        "tags" : [ "Affectation Explanation Resource" ]
+      },
       "post" : {
         "parameters" : [ {
           "name" : "posteId",
@@ -14193,6 +14302,38 @@
           }
         },
         "summary" : "Explain",
+        "tags" : [ "Affectation Explanation Resource" ]
+      }
+    },
+    "/api/postes/{posteId}/placement" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "posteId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "animateur",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DeplacementSimulation"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Apply Placement",
         "tags" : [ "Affectation Explanation Resource" ]
       }
     },

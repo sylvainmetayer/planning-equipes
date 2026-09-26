@@ -331,8 +331,9 @@ public class PlanningMcpTools {
 
     @Tool(
             name = "expliquer_affectation",
-            description = "Explique le score d'un poste du dernier planning persisté : contraintes violées et "
-                    + "contraintes respectées le concernant. Ne relance aucune résolution.",
+            description = "Explique le score d'un poste du dernier planning persisté, lu sous les règles de "
+                    + "l'édition (contraintes désactivées, poids) : contraintes violées et contraintes respectées le "
+                    + "concernant. Ne relance aucune résolution.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -342,7 +343,7 @@ public class PlanningMcpTools {
     ExplicationView explainAffectation(
             @ToolArg(description = "Id du poste") String posteId,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        AffectationExplanation explication = planningService.explainAffectation(persistedPlanning(), posteId);
+        AffectationExplanation explication = planningService.persistedExplainAffectation(posteId);
         return new ExplicationView(
                 explication.posteId(),
                 explication.animateurId(),

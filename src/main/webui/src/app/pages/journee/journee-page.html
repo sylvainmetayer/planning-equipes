@@ -159,87 +159,110 @@
   </div>
 }
 
-@if (!error() && !loading() && comparaisonActive()) {
-  @if (jourCourant(); as jourA) {
-    @if (jourCompare(); as jourB) {
-      <app-comparaison-vue
-        [planning]="planning()"
-        [pauses]="pauses()"
-        [jourA]="jourA"
-        [jourB]="jourB"
-        [view]="view() === 'rail' ? 'rail' : 'calendrier'"
-        [filtre]="filtre()"
-        [stand]="stand()"
-        [animateur]="animateur()"
-        [(seulementEcarts)]="seulementEcarts"
-      />
-    }
-  }
-} @else if (!error() && !loading()) {
-  @switch (view()) {
-    @case ('rail') {
-      <app-rail-jour-vue
-        [planning]="planning()"
-        [typologies]="typologies()"
-        [pauses]="pauses()"
-        [walks]="walks()"
-        [groupedArrivals]="groupedArrivals()"
-        [jour]="jourCourant()?.jour ?? null"
-        [filtre]="filtre()"
-        [stand]="stand()"
-        [animateur]="animateur()"
-        [(view)]="lignesRail"
-        (rechargement)="recharger()"
-      />
-    }
-    @case ('carte') {
-      <!-- Deferred, and that is not a style choice: Leaflet's 150 kB chunk is
-           loaded here and nowhere else, never with the three other renderings. -->
-      @defer (on immediate) {
-        <app-carte-jour-vue
-          [planning]="planning()"
-          [emplacements]="emplacements()"
-          [jour]="jourCourant()?.jour ?? null"
-          [stand]="stand()"
-          [(t)]="instantCarte"
-          [(charge)]="chargeCarte"
-          (jourDemande)="selectJourNumero($event)"
-        />
-      } @placeholder {
-        <mat-progress-bar mode="indeterminate" />
+<!-- The rendering, and beside it the Siège panel of the seat a click opened.
+     The panel stays mounted while the plan reloads after a gesture: what it
+     says was done, and what is left, must survive the re-read. -->
+<div class="journee-corps" [class.journee-corps-siege]="seatPanelShown()">
+  <div class="journee-rendu">
+    @if (!error() && !loading() && comparaisonActive()) {
+      @if (jourCourant(); as jourA) {
+        @if (jourCompare(); as jourB) {
+          <app-comparaison-vue
+            [planning]="planning()"
+            [pauses]="pauses()"
+            [jourA]="jourA"
+            [jourB]="jourB"
+            [view]="view() === 'rail' ? 'rail' : 'calendrier'"
+            [filtre]="filtre()"
+            [stand]="stand()"
+            [animateur]="animateur()"
+            [(seulementEcarts)]="seulementEcarts"
+          />
+        }
+      }
+    } @else if (!error() && !loading()) {
+      @switch (view()) {
+        @case ('rail') {
+          <app-rail-jour-vue
+            [planning]="planning()"
+            [typologies]="typologies()"
+            [pauses]="pauses()"
+            [walks]="walks()"
+            [groupedArrivals]="groupedArrivals()"
+            [jour]="jourCourant()?.jour ?? null"
+            [filtre]="filtre()"
+            [stand]="stand()"
+            [animateur]="animateur()"
+            [(view)]="lignesRail"
+            [openSeatId]="openSeatId()"
+            (seatSelected)="openSeat({ posteId: $event })"
+            (rechargement)="recharger()"
+          />
+        }
+        @case ('carte') {
+          <!-- Deferred, and that is not a style choice: Leaflet's 150 kB chunk is
+               loaded here and nowhere else, never with the three other renderings. -->
+          @defer (on immediate) {
+            <app-carte-jour-vue
+              [planning]="planning()"
+              [emplacements]="emplacements()"
+              [jour]="jourCourant()?.jour ?? null"
+              [stand]="stand()"
+              [(t)]="instantCarte"
+              [(charge)]="chargeCarte"
+              (jourDemande)="selectJourNumero($event)"
+              (seatRequested)="openSeat($event)"
+            />
+          } @placeholder {
+            <mat-progress-bar mode="indeterminate" />
+          }
+        }
+        @case ('changements') {
+          <app-changements-vue
+            [jour]="jourCourant()?.date ?? null"
+            [recherche]="filtre()"
+            [stand]="stand()"
+            [animateur]="animateur()"
+            [(reference)]="referenceChangements"
+            [(reading)]="lectureChangements"
+            (seatRequested)="openSeat($event)"
+          />
+        }
+        @case ('pauses') {
+          <app-pauses-vue
+            [rapport]="pauses()"
+            [date]="jourCourant()?.date ?? null"
+            [recherche]="filtre()"
+            [stand]="stand()"
+            [animateur]="animateur()"
+            [(withoutRelaisOnly)]="withoutRelais"
+            [(coupuresManquantesSeulement)]="coupuresManquantes"
+            (seatRequested)="openSeat($event)"
+          />
+        }
+        @default {
+          <app-calendar-day-vue
+            [planning]="planning()"
+            [jour]="jourCourant()?.jour ?? null"
+            [filtre]="filtre()"
+            [stand]="stand()"
+            [animateur]="animateur()"
+            [(seulementProblemes)]="seulementProblemes"
+            [openSeatId]="openSeatId()"
+            (seatSelected)="openSeat({ posteId: $event })"
+            (rechargement)="recharger()"
+          />
+        }
       }
     }
-    @case ('changements') {
-      <app-changements-vue
-        [jour]="jourCourant()?.date ?? null"
-        [recherche]="filtre()"
-        [stand]="stand()"
-        [animateur]="animateur()"
-        [(reference)]="referenceChangements"
-        [(reading)]="lectureChangements"
-      />
-    }
-    @case ('pauses') {
-      <app-pauses-vue
-        [rapport]="pauses()"
-        [date]="jourCourant()?.date ?? null"
-        [recherche]="filtre()"
-        [stand]="stand()"
-        [animateur]="animateur()"
-        [(withoutRelaisOnly)]="withoutRelais"
-        [(coupuresManquantesSeulement)]="coupuresManquantes"
-      />
-    }
-    @default {
-      <app-calendar-day-vue
-        [planning]="planning()"
-        [jour]="jourCourant()?.jour ?? null"
-        [filtre]="filtre()"
-        [stand]="stand()"
-        [animateur]="animateur()"
-        [(seulementProblemes)]="seulementProblemes"
-        (rechargement)="recharger()"
-      />
-    }
+  </div>
+  @if (seatPanelShown() && openSeatId(); as posteId) {
+    <app-siege-panel
+      class="journee-siege"
+      [planning]="planning()"
+      [posteId]="posteId"
+      (closed)="closeSeat()"
+      (planChanged)="recharger()"
+    />
   }
-}
+</div>

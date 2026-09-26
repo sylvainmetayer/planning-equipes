@@ -11,6 +11,7 @@
     "expose une autre forme — chacun avec sa raison."
   ],
   "renommes": {
+    "ViolationDure": "HardViolation",
     "ParametreContrainte": "ConstraintParameter",
     "PlancherContrainte": "ConstraintFloor",
     "CelluleCreneauOuverture": "CelluleCreneau",
@@ -81,7 +82,6 @@
   "horsContrat": {
     "ConstraintDiagnostic": "ConstraintResource réemballe le diagnostic dans ses propres vues ; ce type-ci est la forme du front, sans schéma équivalent.",
     "PlanningDiagnostic": "Même raison que ConstraintDiagnostic.",
-    "AffectationExplanation": "Idem : l'explication est réemballée par la resource.",
     "ScorePoint": "Construit côté front à partir des scores reçus, jamais reçu tel quel.",
     "ScoreTrace": "Idem ScorePoint.",
     "ImportSummary": "Forme interne au front pour agréger plusieurs rapports d'import.",
@@ -97,9 +97,7 @@
     "Interruption": "Détail d'un job, réemballé par la resource.",
     "RestaurationSnapshot": "Vue d'écran, pas une réponse serveur.",
     "CleMcp": "Clé MCP telle que l'écran l'affiche ; le serveur ne renvoie jamais la valeur.",
-    "ViolationDure": "Ligne de violation reconstruite depuis le diagnostic.",
-    "DeplacementSimulation": "Simulation de déplacement, réemballée par la resource.",
-    "EchangeSimulation": "Idem DeplacementSimulation.",
+    "EchangeSimulation": "Simulation d'échange, réemballée par la resource.",
     "ImpactValidations": "Charge utile d'un job de résolution, jamais exposée comme schéma REST — comme ImpactPublication juste au-dessus."
   }
 }

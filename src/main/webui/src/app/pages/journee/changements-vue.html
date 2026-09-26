@@ -118,7 +118,15 @@
                 @for (ligne of seatLines(); track $index) {
                   <tr>
                     <th scope="row">{{ ligne.standNom || ligne.standId }}</th>
-                    <td>{{ hours(ligne) }}</td>
+                    <td>
+                      {{ hours(ligne) }}
+                      <button matIconButton type="button" class="journee-changements-siege"
+                              [attr.data-siege-cle]="ligne.date + '|' + ligne.standId + '|' + ligne.heureDebut"
+                              [attr.aria-label]="seatLabel(ligne)" [title]="seatLabel(ligne)"
+                              (click)="openSeat(ligne)">
+                        <mat-icon>event_seat</mat-icon>
+                      </button>
+                    </td>
                     <td>
                       @if (ligne.avant; as avant) {
                         <a routerLink="/timeline" [queryParams]="{ animateur: avant.animateurId }">{{ avant.nomAffiche }}</a>
