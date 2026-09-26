@@ -94,6 +94,12 @@ are the `heavy-tests` skill. Four rules hold without it:
   `.html` files by `.prettierignore`, the inline `template:` literals by
   `embeddedLanguageFormatting: off` — since a blank between two inline
   elements is rendering there.
+- SonarCloud (organization `sylvainmetayer-github`) analyses every push
+  automatically; `.sonarcloud.properties` is its only configuration, and each
+  exclusion there is a decision with its reason. A new one goes in that file,
+  argued, never as a `// NOSONAR`; and a Sonar suggestion never outranks a rule
+  of this file. Reading findings, fixing one, the SonarQube plugin: the `sonar`
+  skill.
 - Frontend commands run from `src/main/webui` (the `package.json` scripts;
   `proxy.conf.json` forwards `/api/*` to `:8080`). `quarkus:dev` already
   starts and proxies the dev server — but a direct navigation (curl, F5, deep
