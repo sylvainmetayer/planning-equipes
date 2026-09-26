@@ -89,7 +89,6 @@ public final class BlockerPlaybook {
 
     // ---- routes -----------------------------------------------------------
 
-    static final String ROUTE_DIAGNOSTIC = "/diagnostic";
     static final String ROUTE_SKILLS = "/competences";
     static final String ROUTE_OPENINGS = "/ouvertures";
     static final String ROUTE_REST_DAYS = "/repos";
@@ -312,18 +311,23 @@ public final class BlockerPlaybook {
 
     // ---- the action types themselves ----------------------------------------
 
+    /**
+     * The Journée opened on the timeslot's day, its Siège panel on a free seat
+     * of it: « Qui peut tenir ce siège ? » lists who is off duty then, and
+     * places one of them. The page resolves {@code creneau} to a seat itself —
+     * the bench used to be a tab of the Diagnostic, reached with the same key.
+     */
     private static ActionType benchAction(Context context) {
         Map<String, String> params = new LinkedHashMap<>();
-        params.put("onglet", "banc");
         if (context.creneauId() != null) {
             params.put("creneau", String.valueOf(context.creneauId()));
         }
         return new ActionType(
                 CODE_BENCH,
                 "Voir qui pourrait venir",
-                "Le banc de touche liste qui n'est de service nulle part sur ce créneau, et ce qui l'empêche de"
-                        + " tenir la place.",
-                ROUTE_DIAGNOSTIC,
+                "Le panneau du siège liste qui n'est de service nulle part sur ce créneau, ce qui l'empêche de"
+                        + " tenir la place, et place la personne choisie.",
+                ROUTE_DAY,
                 params);
     }
 

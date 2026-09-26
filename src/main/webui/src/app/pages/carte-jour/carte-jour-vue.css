@@ -223,11 +223,16 @@
   }
 }
 
-/* The bench, one word after a stand with an empty seat. */
-.carte-jour-banc {
+/* The stand's Siège panel, one word after a stand open at that hour. */
+.carte-jour-siege {
   margin-left: 0.5rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
   font: var(--mat-sys-label-medium);
   color: var(--app-accent);
+  text-decoration: underline;
   white-space: nowrap;
 }
 

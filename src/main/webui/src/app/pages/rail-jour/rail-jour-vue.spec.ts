@@ -7,6 +7,7 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { APP_CONFIG } from '../../core/app-config';
 import { AffectationExplanationService } from '../../core/affectation-explanation.service';
@@ -274,18 +275,83 @@ describe('RailJourView', () => {
     );
   });
 
-  // Switched off with the drag: Enter on a line opens nothing and says nothing.
-  it('leaves Enter alone when the instance has not switched drag and drop on', async () => {
+  // #711: the flag governs the pointer gesture only — Enter still opens the
+  // move dialog when the instance has not switched drag and drop on.
+  it('opens the move on Enter even when the instance has not switched drag and drop on', async () => {
     await rendre(planningDeuxJours());
-    const open = vi.spyOn(TestBed.inject(MatDialog), 'open');
-    const ligneAlice = Array.from(racine().querySelectorAll<HTMLElement>('[data-ligne]')).find(
+    const open = vi
+      .spyOn(TestBed.inject(MatDialog), 'open')
+      .mockReturnValue({ afterClosed: () => of(undefined) } as never);
+    const lineOfAlice = Array.from(racine().querySelectorAll<HTMLElement>('[data-ligne]')).find(
       (each) => each.getAttribute('aria-label')!.includes('Alice'),
     )!;
 
-    ligneAlice.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    lineOfAlice.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
 
-    expect(open).not.toHaveBeenCalled();
-    expect(TestBed.inject(NotificationService).notify).not.toHaveBeenCalled();
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(racine().querySelector('.rail-bloc-poignee')).toBeNull();
+  });
+
+  // #711: a shift is a button opening the page's Siège panel on its seat.
+  it('asks the page to open the Siège panel on a shift that was clicked', async () => {
+    await rendre(planningDeuxJours());
+    const opened: string[] = [];
+    fixture.componentInstance.seatSelected.subscribe((id) => opened.push(id));
+
+    const shift = racine().querySelector<HTMLButtonElement>('button.rail-bloc-label')!;
+    shift.click();
+
+    expect(opened).toHaveLength(1);
+    expect(shift.closest('[data-poste-id]')!.getAttribute('data-poste-id')).toBe(opened[0]);
+  });
+
+  // The shift label is out of the tab order, inside a hidden track: Space on
+  // the line is the keyboard's way into the Siège panel, walking its shifts.
+  it('opens the Siège panel on a shift of the line with Space, the next one when pressed again', async () => {
+    const deuxVacations = planningDeuxJours();
+    deuxVacations.postes.push(
+      poste({
+        id: 'p4',
+        creneau: creneau({ id: 4, heureDebut: '14:00', heureFin: '16:00' }),
+        stand: stand('Dixit'),
+        animateur: ALICE,
+      }),
+    );
+    await rendre(deuxVacations);
+    const opened: string[] = [];
+    fixture.componentInstance.seatSelected.subscribe((id) => opened.push(id));
+    const ligneAlice = Array.from(racine().querySelectorAll<HTMLElement>('[data-ligne]')).find(
+      (each) => each.getAttribute('aria-label')!.includes('Alice'),
+    )!;
+    const espace = () =>
+      new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
+
+    const premier = espace();
+    ligneAlice.dispatchEvent(premier);
+    expect(premier.defaultPrevented).toBe(true);
+    expect(opened).toEqual(['p1']);
+
+    fixture.componentRef.setInput('openSeatId', 'p1');
+    await fixture.whenStable();
+    ligneAlice.dispatchEvent(espace());
+    expect(opened).toEqual(['p1', 'p4']);
+    expect(ligneAlice.getAttribute('aria-keyshortcuts')).toContain('Space');
+  });
+
+  it('says so on Space when the line holds no shift', async () => {
+    await rendre(planningDeuxJours());
+    const opened: string[] = [];
+    fixture.componentInstance.seatSelected.subscribe((id) => opened.push(id));
+    const ligneBob = Array.from(racine().querySelectorAll<HTMLElement>('[data-ligne]')).find(
+      (each) => each.getAttribute('aria-label')!.includes('Bob'),
+    )!;
+
+    ligneBob.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+
+    expect(opened).toEqual([]);
+    expect(TestBed.inject(NotificationService).notify).toHaveBeenCalledWith(
+      expect.objectContaining({ title: expect.stringContaining('pas de siège à ouvrir') }),
+    );
   });
 
   it('exposes exactly one tab stop for the whole rail', async () => {

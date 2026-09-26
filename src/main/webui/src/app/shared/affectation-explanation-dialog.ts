@@ -324,7 +324,7 @@ export class AffectationExplanationDialog implements OnInit {
     this.applicationEnCours.set(true);
     this.suggestionsError.set('');
     try {
-      await this.explanationService.appliquerReparation(this.data.poste.id, suggestion.animateurId);
+      await this.explanationService.applyRepair(this.data.poste.id, suggestion.animateurId);
       this.dialogRef.close({ posteId: this.data.poste.id, animateurId: suggestion.animateurId });
     } catch (error) {
       this.suggestionsError.set(errorPrefix(error));

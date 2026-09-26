@@ -148,10 +148,10 @@ describe('buildDestinationsNavigation', () => {
   });
 
   it('names a tab « Page › Tab » and opens it through its query param', () => {
-    const banc = destinations.find((destination) => destination.id.endsWith('onglet=banc'));
-    expect(banc?.label).toBe('Diagnostic › Banc de touche');
-    expect(banc?.route).toBe('/diagnostic');
-    expect(banc?.queryParams).toEqual({ onglet: 'banc' });
+    const former = destinations.find((destination) => destination.id.endsWith('onglet=former'));
+    expect(former?.label).toBe('Diagnostic › À former');
+    expect(former?.route).toBe('/diagnostic');
+    expect(former?.queryParams).toEqual({ onglet: 'former' });
   });
 
   it('offers the Quarkus Dev UI in development only, as an external address', () => {
@@ -188,7 +188,6 @@ describe('chercherCommandes', () => {
   it.each([
     ['problèmes', '/diagnostic', { onglet: 'problemes' }],
     ['probl', '/diagnostic', { onglet: 'problemes' }],
-    ['banc', '/diagnostic', { onglet: 'banc' }],
     ['mural', '/parametres', { onglet: 'mural' }],
     ['légaux', '/parametres', { onglet: 'legaux' }],
     ['yaml', '/imports', { onglet: 'scenario' }],
@@ -197,6 +196,14 @@ describe('chercherCommandes', () => {
       (commande) => commande.route === route && commande.queryParams !== undefined,
     );
     expect(trouve?.queryParams).toEqual(queryParams);
+  });
+
+  // The bench left the Diagnostic for the Siège panel of the Journée: the
+  // word a reader remembers still leads there, first.
+  it('finds the Journée on « banc », where the bench went', () => {
+    const resultats = chercherCommandes('banc', sources);
+    expect(resultats[0]?.route).toBe('/journee');
+    expect(resultats.some((commande) => commande.queryParams?.['onglet'] === 'banc')).toBe(false);
   });
 
   // Débogage sits in no group: served everywhere, found on a query.

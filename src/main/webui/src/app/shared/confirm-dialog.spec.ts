@@ -10,7 +10,7 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConfirmData, ConfirmDialog, ConfirmService } from './confirm-dialog';
 
@@ -131,6 +131,30 @@ describe('ConfirmDialog', () => {
   });
 });
 
+describe('ConfirmDialog with an option', () => {
+  it('shows the box ticked as the caller asked, and keeps what the user makes of it', async () => {
+    const { fixture, racine } = monter({
+      title: 't',
+      message: 'm',
+      option: { label: 'La tenir à l’écart', checked: true },
+    });
+    await fixture.whenStable();
+
+    const box = racine.querySelector<HTMLInputElement>('mat-checkbox input')!;
+    expect(racine.querySelector('mat-checkbox')!.textContent).toContain('La tenir à l’écart');
+    expect(box.checked).toBe(true);
+    box.click();
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.optionChecked()).toBe(false);
+  });
+
+  it('draws no box without an option', () => {
+    const { racine } = monter({ title: 't', message: 'm' });
+    expect(racine.querySelector('mat-checkbox')).toBeNull();
+  });
+});
+
 describe('ConfirmService', () => {
   let dialog: { open: ReturnType<typeof vi.fn> };
   let service: ConfirmService;
@@ -175,6 +199,42 @@ describe('ConfirmService', () => {
       title: 'Supprimer ?',
       message: 'Irréversible.',
       danger: true,
+    });
+  });
+
+  it('answers the state of the box once confirmed, and null otherwise', async () => {
+    const option = { label: 'l', checked: true };
+    dialog.open.mockReturnValue({
+      afterClosed: () => of(true),
+      componentInstance: { optionChecked: () => false },
+    });
+    await expect(service.askWithOption({ title: 't', message: 'm', option })).resolves.toEqual({
+      checked: false,
+    });
+
+    dialog.open.mockReturnValue({
+      afterClosed: () => of(undefined),
+      componentInstance: { optionChecked: () => true },
+    });
+    await expect(service.askWithOption({ title: 't', message: 'm', option })).resolves.toBeNull();
+  });
+
+  // MatDialogRef sets componentInstance to null once the dialog has closed:
+  // the box has to be read from the instance captured when it opened.
+  it('reads the box from the dialog as it opened, not from the closed ref', async () => {
+    const option = { label: 'l', checked: true };
+    const ref: { afterClosed: () => Observable<boolean>; componentInstance: unknown } = {
+      afterClosed: () => {
+        const closed = of(true);
+        ref.componentInstance = null;
+        return closed;
+      },
+      componentInstance: { optionChecked: () => true },
+    };
+    dialog.open.mockReturnValue(ref);
+
+    await expect(service.askWithOption({ title: 't', message: 'm', option })).resolves.toEqual({
+      checked: true,
     });
   });
 });

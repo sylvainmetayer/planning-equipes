@@ -4,10 +4,12 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.solve.DeplacementService;
 import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.AffectationExplanation;
+import dev.sylvain.planning.service.solve.PlanningWhatIf.DeplacementSimulation;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.SuggestionsReparation;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.SwapSimulation;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -53,6 +55,19 @@ public class AffectationExplanationResource {
     public Response explain(@PathParam("posteId") String posteId, PlanningEvenement planning) {
         AffectationExplanation explication = planningService.explainAffectation(planning, posteId);
         return Response.ok(explication).build();
+    }
+
+    /**
+     * The same explanation on the <b>persisted</b> plan, prepared server-side
+     * under this edition's rules — the constraints switched off, the weights,
+     * the quotas — which a plan posted by a screen does not carry. What the
+     * Siège panel's « Pourquoi lui ? » reads. Takes no body; 409 while nothing
+     * has been solved yet.
+     */
+    @GET
+    @Path("/{posteId}/explication")
+    public AffectationExplanation explainPersisted(@PathParam("posteId") String posteId) {
+        return planningService.persistedExplainAffectation(posteId);
     }
 
     /**
@@ -135,6 +150,28 @@ public class AffectationExplanationResource {
     }
 
     /**
+     * « Placer » (the Siège panel of the Journée): seats {@code animateur} on a
+     * seat nobody holds, answered like a move — who went where, the plan's
+     * score before and after — so the caller can warn when the medium or soft
+     * level drops.
+     *
+     * <p>The checks of {@code /affectation} apply, a hard rule the seating
+     * would break named in the 400, plus two a direct write does not make: the
+     * seat must still be free (409 otherwise — the panel shows a plan loaded
+     * earlier), and the person must not be under a lock that forbids them a
+     * new seat on that timeslot. Keeping the placement at the next solve is a
+     * lock the caller posts next, through {@code /verrouillages}: this call
+     * seats and nothing else.</p>
+     */
+    @POST
+    @Path("/{posteId}/placement")
+    @Consumes(MediaType.WILDCARD)
+    public DeplacementSimulation applyPlacement(
+            @PathParam("posteId") String posteId, @QueryParam("animateur") String animateurId) {
+        return deplacementService.place(posteId, animateurId);
+    }
+
+    /**
      * Applies one suggestion to the persisted plan: that seat changes hands and
      * nothing else does. The only endpoint here that writes by name — hence a
      * separate, explicit call rather than a flag on the simulation.
@@ -146,13 +183,20 @@ public class AffectationExplanationResource {
      * without a word. Emptying the seat is never refused.</p>
      *
      * @param animateurId omitted empties the seat
+     * @param occupant    who the caller believes holds the seat — the Siège
+     *                    panel sends the person it shows before freeing or
+     *                    handing over their seat. Held by the write itself: a
+     *                    seat somebody else holds by then is a 409 and nothing
+     *                    is written. Omitted, no precondition.
      */
     @POST
     @Path("/{posteId}/affectation")
     @Consumes(MediaType.WILDCARD)
     public Response applyReparation(
-            @PathParam("posteId") String posteId, @QueryParam("animateurId") String animateurId) {
-        planningService.applyReparation(posteId, animateurId);
+            @PathParam("posteId") String posteId,
+            @QueryParam("animateurId") String animateurId,
+            @QueryParam("occupant") String occupant) {
+        planningService.applyReparation(posteId, animateurId, occupant);
         return Response.noContent().build();
     }
 }

@@ -81,7 +81,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   },
   { path: '/ouvertures', marker: 'Ouvertures des stands', sheet: 'ouvertures-synthese' },
   { path: '/diagnostic?onglet=besoin', marker: 'Minimum retenu', sheet: 'staffing-summary' },
-  { path: '/diagnostic?onglet=banc', marker: 'Banc de touche', sheet: 'banc-controls' },
+  { path: '/diagnostic?onglet=former', marker: 'À former' },
   { path: '/diagnostic?onglet=fragilite', marker: 'Fragilité', sheet: 'fragilite-message' },
   { path: '/jour-j', marker: 'Mode jour J', sheet: 'jour-j-entete' },
   { path: '/repos', marker: 'Jours de repos', sheet: 'repos-toolbar' },
@@ -283,13 +283,16 @@ test('un seul menu par moment du cycle, Débogage hors menu mais servi', async (
     .click();
   await expect(page).toHaveURL(/\/debug/);
 
+  // The bench left the Diagnostic for the Siège panel of the Journée: the word
+  // a reader remembers still leads there.
   await page.keyboard.press('Control+k');
   await page.getByRole('dialog').getByRole('combobox').fill('banc');
   await page
     .getByRole('dialog')
-    .getByRole('option', { name: /Banc de touche/ })
+    .getByRole('option', { name: /^Journée/ })
+    .first()
     .click();
-  await expect(page).toHaveURL(/\/diagnostic\?onglet=banc/);
+  await expect(page).toHaveURL(/\/journee/);
 
   // A view of the page already on screen: the router reuses the page, which
   // must follow its address rather than keep the view it was built with.

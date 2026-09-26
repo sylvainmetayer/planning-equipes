@@ -94,14 +94,37 @@ public class DeplacementService {
             ecritures.put(simulation.posteCibleId(), simulation.animateurSourceId());
         }
         persistence.reaffecterPostes(ecritures);
-        // Best-effort like the restore of a snapshot: a stale analysis is an
-        // empty screen, never a reason to undo a move already written.
+        refreshAnalysis();
+        return simulation;
+    }
+
+    /**
+     * « Placer » from the Siège panel: somebody off duty seated on a seat
+     * nobody holds, a timeslot still ahead. The write and its checks are the
+     * ones {@code affecter_poste} makes — see
+     * {@link PlanningWhatIf#placeOnFreeSeat} — on the plan prepared as this
+     * service prepares it for a move, plus the two a move makes and a direct
+     * write does not: the seat still free, and no lock on the person
+     * receiving it. The solve guard is the write's own, first of its checks.
+     *
+     * @throws BusinessError.Conflict when the seat is no longer free
+     * @throws BusinessError.Invalid  when the seating would break a hard rule,
+     *                                naming it, or a lock covers the seat or
+     *                                the person
+     */
+    public DeplacementSimulation place(String posteId, String animateurId) {
+        DeplacementSimulation placement = planningService.placeOnFreeSeat(persistedPlan(), posteId, animateurId);
+        refreshAnalysis();
+        return placement;
+    }
+
+    /** Best-effort like the restore of a snapshot: a stale analysis is an empty screen, never a reason to undo a write. */
+    private void refreshAnalysis() {
         try {
             analysisStore.refreshFromPersistedPlan();
         } catch (RuntimeException _) {
             // Deliberately swallowed, see above.
         }
-        return simulation;
     }
 
     private PlanningEvenement persistedPlan() {
@@ -160,39 +183,8 @@ public class DeplacementService {
                         "Ce poste est verrouillé : déverrouillez-le avant de déplacer son affectation.");
             }
             if (poste.getId().equals(simulation.posteSourceId())) {
-                refuseIfReceiverLocked(verrouillages, simulation, poste);
+                PlanningWhatIf.refuseIfReceiverLocked(verrouillages, simulation.animateurCibleId(), poste);
             }
-        }
-    }
-
-    /**
-     * A lock on the <b>person receiving</b> the seat is read on nothing when
-     * they hold no seat on that créneau — which is the rail gesture's main
-     * case — so {@code couvre} cannot see it, and neither can the score: the
-     * persisted plan carries no lock facts. Yet « the solver may not give them
-     * an extra seat » is exactly what an ANIMATEUR lock says, and an
-     * ANIMATEUR_CRENEAU lock is what an accepted échange posts to keep the
-     * freed person free on that créneau.
-     */
-    private static void refuseIfReceiverLocked(
-            List<VerrouillagePlanning> verrouillages, DeplacementSimulation simulation, PosteAffectation source) {
-        String receveur = simulation.animateurCibleId();
-        if (receveur == null) {
-            return;
-        }
-        Long creneauId =
-                source.getCreneau() == null ? null : source.getCreneau().getId();
-        boolean verrouille = verrouillages.stream().anyMatch(verrouillage -> switch (verrouillage.getType()) {
-            case ANIMATEUR -> receveur.equals(verrouillage.getAnimateurId());
-            case ANIMATEUR_CRENEAU ->
-                receveur.equals(verrouillage.getAnimateurId())
-                        && creneauId != null
-                        && creneauId.equals(verrouillage.getCreneauId());
-            default -> false;
-        });
-        if (verrouille) {
-            throw new BusinessError.Invalid("L'emploi du temps de cette personne est verrouillé : déverrouillez-le "
-                    + "avant de lui donner ce siège.");
         }
     }
 }

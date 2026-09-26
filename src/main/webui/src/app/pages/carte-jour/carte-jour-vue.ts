@@ -17,7 +17,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSliderModule } from '@angular/material/slider';
-import { RouterLink } from '@angular/router';
 import { Emplacement, PlanningEvenement } from '../../core/models';
 import { CarteJourMap } from './carte-jour-map';
 import { JourneeCarte, buildJourneesCarte, formatMinutes, instantCarte } from './carte-jour';
@@ -51,7 +50,6 @@ const CADENCE_MS = 700;
     MatCardModule,
     MatIconModule,
     MatSliderModule,
-    RouterLink,
     CarteJourMap,
     ChargeGrille,
   ],
@@ -75,6 +73,8 @@ export class CarteJourView {
   readonly charge = model<PorteeCharge>('jour');
   /** A click on the event-wide grid asks the page for another day. */
   readonly jourDemande = output<number>();
+  /** A stand open at the cursor's hour was picked: the page opens the Siège panel on its seat. */
+  readonly seatRequested = output<{ creneauId: number; standId: string }>();
   protected readonly lecture = signal(false);
 
   /**
@@ -217,6 +217,14 @@ export class CarteJourView {
     }
     this.instantDemande = pic.minutes;
     this.jourDemande.emit(pic.jour);
+  }
+
+  protected openSeat(creneauId: number, standId: string): void {
+    this.seatRequested.emit({ creneauId, standId });
+  }
+
+  protected seatLabel(nom: string): string {
+    return $localize`:@@carteJour.siege.label:Ouvrir le siège de ${nom}:stand: à cette heure-là`;
   }
 
   protected choisirEmplacement(emplacementId: string): void {

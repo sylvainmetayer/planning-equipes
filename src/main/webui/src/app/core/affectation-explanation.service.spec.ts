@@ -48,9 +48,21 @@ describe('AffectationExplanationService', () => {
     await service.explique(planning(), 'poste with space');
     expect(api.post.mock.calls[0][0]).toBe('/api/postes/poste%20with%20space/explication');
 
-    await service.appliquerReparation('poste-1', 'id&with=chars');
+    await service.applyRepair('poste-1', 'id&with=chars');
     expect(api.post.mock.calls[1][0]).toBe(
       '/api/postes/poste-1/affectation?animateurId=id%26with%3Dchars',
     );
+  });
+
+  it('empties the seat without an animateur, the holder shown as its precondition', async () => {
+    await service.applyRepair('poste-1', null, 'a1');
+    await service.applyRepair('poste-1', 'b1', 'a1');
+    await service.applyRepair('poste-1', null);
+
+    expect(api.post.mock.calls.map((call) => call[0])).toEqual([
+      '/api/postes/poste-1/affectation?occupant=a1',
+      '/api/postes/poste-1/affectation?animateurId=b1&occupant=a1',
+      '/api/postes/poste-1/affectation',
+    ]);
   });
 });

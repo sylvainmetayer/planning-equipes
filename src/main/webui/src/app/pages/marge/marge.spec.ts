@@ -203,10 +203,10 @@ describe('buildSynthese', () => {
 });
 
 describe('lienCellule', () => {
-  it('opens the bench on the cell timeslot once a plan exists', () => {
+  it('opens the Siège panel of the cell timeslot once a plan exists', () => {
     expect(lienCellule('APRES', 42, '2026-07-10')).toEqual({
-      route: '/diagnostic',
-      queryParams: { onglet: 'banc', creneau: 42 },
+      route: '/journee',
+      queryParams: { creneau: 42 },
     });
   });
 

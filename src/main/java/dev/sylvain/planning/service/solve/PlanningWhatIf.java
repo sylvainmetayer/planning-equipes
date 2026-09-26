@@ -139,6 +139,29 @@ public final class PlanningWhatIf {
     }
 
     /**
+     * The same explanation, on the <b>persisted</b> plan prepared as a solve
+     * prepares it — what the Siège panel's « Pourquoi lui ? » and the MCP tool
+     * {@code expliquer_affectation} read. A plan read back from the database,
+     * or posted by a screen, carries seats and no rules: explained bare, it
+     * reproached the holder a constraint the operator switched off and weighed
+     * the rest with the catalogue's defaults, not this edition's. Same care as
+     * {@link #persistedSuggererReparations}, so the reasons « Pourquoi lui ? »
+     * gives are the ones « Remplacer » and the write read.
+     *
+     * @throws BusinessError.Conflict when no solve has been persisted yet
+     */
+    public AffectationExplanation persistedExplainAffectation(String posteId) {
+        PlanningEvenement persiste = persistence.loadPersistedPlanning();
+        if (persiste == null
+                || persiste.getPostes() == null
+                || persiste.getPostes().isEmpty()) {
+            throw new BusinessError.Conflict("Aucun planning persisté : lancez d'abord une résolution.");
+        }
+        preparation.accept(persiste);
+        return explainAffectation(persiste, posteId);
+    }
+
+    /**
      * Simulates giving {@code posteId} to {@code animateurCandidatId} instead
      * of its current occupant, and reports the resulting score delta plus how
      * that poste's own violated constraints change. The candidate substitution
@@ -433,7 +456,7 @@ public final class PlanningWhatIf {
                 : creneauxAvecSieges.stream().map(CreneauSiege::id).findFirst().orElse(null);
         if (cibleId == null) {
             return new CreneauAvailability(
-                    null, SeatStatus.NO_PLAN, null, null, null, 0, 0, creneauxAvecSieges, List.of());
+                    null, SeatStatus.NO_PLAN, null, null, null, false, 0, 0, creneauxAvecSieges, List.of());
         }
         List<PosteAffectation> postesDuCreneau = solved.getPostes().stream()
                 .filter(poste -> poste.getCreneau() != null
@@ -447,6 +470,7 @@ public final class PlanningWhatIf {
                     null,
                     null,
                     null,
+                    false,
                     0,
                     0,
                     creneauxAvecSieges,
@@ -499,6 +523,7 @@ public final class PlanningWhatIf {
                 cible.getId(),
                 cible.getStand() == null ? null : cible.getStand().getId(),
                 cible.getAnimateur() == null ? null : cible.getAnimateur().getId(),
+                FrozenPast.isPast(cible, horizon.get()),
                 lignes.size(),
                 disponibles,
                 creneauxAvecSieges,
@@ -694,13 +719,36 @@ public final class PlanningWhatIf {
      * @param animateurId {@code null} empties the seat
      */
     public void applyReparation(String posteId, String animateurId) {
+        applyReparation(posteId, animateurId, null);
+    }
+
+    /**
+     * The same write, with a precondition on who holds the seat: the Siège
+     * panel frees or hands over the seat of the person it shows, and a plan
+     * read earlier can name somebody who has left it since — an échange, a
+     * jour-J repair, another tab. Checked on the read, then held by the
+     * {@code UPDATE} itself, so nothing lands in between.
+     *
+     * @param animateurId      {@code null} empties the seat
+     * @param expectedHolderId who the caller believes holds the seat;
+     *                         {@code null} or blank means no precondition
+     * @throws BusinessError.Conflict when somebody else holds it
+     */
+    public void applyReparation(String posteId, String animateurId, String expectedHolderId) {
         PlanningEvenement persiste = persistence.loadPersistedPlanning();
         // Prepared like a solve prepares it (ad hoc rules, toggles, weights):
         // the hard verdict below has to be read on the rules this edition runs
         // under, not on the catalogue's defaults — the same care
         // {@code DeplacementService} takes before scoring a drag-and-drop.
         preparation.accept(persiste);
-        applyReparations(persiste, List.of(posteId), animateurId);
+        writeSeating(
+                persiste,
+                List.of(posteId),
+                animateurId,
+                expectedHolderId == null || expectedHolderId.isBlank()
+                        ? null
+                        : SeatPrecondition.heldBy(expectedHolderId),
+                false);
     }
 
     /**
@@ -739,6 +787,84 @@ public final class PlanningWhatIf {
      *                    blocked by the plan it is repairing
      */
     public void applyReparations(PlanningEvenement persiste, List<String> posteIds, String animateurId) {
+        writeSeating(persiste, posteIds, animateurId, null, false);
+    }
+
+    /**
+     * Seats somebody on a seat nobody holds (« Placer », from the Siège panel
+     * of the Journée): the write {@code affecter_poste} and the repair
+     * assistant already make, under the same checks — a solve in progress, a
+     * started timeslot, a lock, a hard rule the seating would break — and
+     * answered in the terms of a move, scores before and after included, so the
+     * caller can say what the placement cost on the medium and soft levels.
+     *
+     * <p>The seat must still be free: the panel shows a plan loaded earlier,
+     * and without this a placement on a seat somebody filled in the meantime
+     * would silently unseat them — the reason a move carries its
+     * {@code occupant} precondition. Checked on the plan, then held by the
+     * {@code UPDATE} itself ({@code animateur_id IS NULL}), which is what
+     * closes the window between the read and the write. And the person must
+     * not be under a lock forbidding them a new seat there, as for a move —
+     * see {@link #refuseIfReceiverLocked}.</p>
+     *
+     * @param persiste the persisted plan, {@code preparation} applied
+     */
+    public DeplacementSimulation placeOnFreeSeat(PlanningEvenement persiste, String posteId, String animateurId) {
+        findPoste(persiste, posteId);
+        if (animateurId == null || animateurId.isBlank()) {
+            throw new BusinessError.Invalid("Indiquez la personne à placer sur ce siège.");
+        }
+        SeatingScores scores = writeSeating(persiste, List.of(posteId), animateurId, SeatPrecondition.FREE, true);
+        return new DeplacementSimulation(
+                posteId,
+                null,
+                null,
+                animateurId,
+                scores.avant(),
+                scores.apres(),
+                scores.apres().subtract(scores.avant()),
+                false,
+                List.of());
+    }
+
+    /**
+     * Who a single-seat write expects to find on the seat: nobody for a
+     * placement ({@link #FREE}), the person shown for a release or a
+     * replacement. Checked on the plan read first, for a readable refusal
+     * before anything is scored, then enforced by the {@code UPDATE}.
+     */
+    private record SeatPrecondition(String holderId) {
+        static final SeatPrecondition FREE = new SeatPrecondition(null);
+
+        static SeatPrecondition heldBy(String holderId) {
+            return new SeatPrecondition(holderId);
+        }
+
+        BusinessError.Conflict refusal() {
+            return holderId == null
+                    ? new BusinessError.Conflict("Ce siège n'est plus libre : le planning a changé depuis l'ouverture "
+                            + "de cette vue. Rechargez-la avant d'y placer quelqu'un.")
+                    : new BusinessError.Conflict("Ce siège n'est plus tenu par la personne affichée : le planning a "
+                            + "changé depuis l'ouverture de cette vue. Rechargez-la avant de le modifier.");
+        }
+    }
+
+    /**
+     * The checks and the write shared by {@link #applyReparations},
+     * {@link #applyReparation} and {@link #placeOnFreeSeat}.
+     *
+     * @param precondition      who each seat must hold, {@code null} for none
+     * @param receiverLocksApply whether a lock on the person receiving the
+     *                          seat refuses it, as it refuses a move
+     * @return the plan's score before and after the seating, or {@code null}
+     *         when the seats are being emptied — nothing is scored then
+     */
+    private SeatingScores writeSeating(
+            PlanningEvenement persiste,
+            List<String> posteIds,
+            String animateurId,
+            SeatPrecondition precondition,
+            boolean receiverLocksApply) {
         // First of the pre-checks: a solve holding the edition would bring the
         // seats back on landing, so nothing is looked up, scored or written.
         if (persistence != null) {
@@ -746,6 +872,16 @@ public final class PlanningWhatIf {
         }
         List<PosteAffectation> postes =
                 posteIds.stream().map(id -> findPoste(persiste, id)).toList();
+        if (precondition != null) {
+            for (PosteAffectation poste : postes) {
+                String holder = poste.getAnimateur() == null
+                        ? null
+                        : poste.getAnimateur().getId();
+                if (!Objects.equals(holder, precondition.holderId())) {
+                    throw precondition.refusal();
+                }
+            }
+        }
         Animateur repreneur = animateurId == null ? null : findAnimateur(persiste, animateurId);
         refuseIfPast(postes.toArray(PosteAffectation[]::new));
         List<VerrouillagePlanning> verrouillages = referenceDataService.listVerrouillages();
@@ -754,10 +890,47 @@ public final class PlanningWhatIf {
                 throw new BusinessError.Invalid(
                         "Ce poste est verrouillé : déverrouillez-le avant d'y appliquer une réparation.");
             }
+            if (receiverLocksApply) {
+                refuseIfReceiverLocked(verrouillages, animateurId, poste);
+            }
         }
-        refuseIfBreaksHardRules(persiste, postes, repreneur);
+        SeatingScores scores = refuseIfBreaksHardRules(persiste, postes, repreneur);
         for (PosteAffectation poste : postes) {
-            persistence.reaffecterPoste(poste.getId(), animateurId);
+            if (precondition == null) {
+                persistence.reaffecterPoste(poste.getId(), animateurId);
+            } else if (!persistence.reassignSeatIfHeldBy(poste.getId(), animateurId, precondition.holderId())) {
+                throw precondition.refusal();
+            }
+        }
+        return scores;
+    }
+
+    /**
+     * A lock on the <b>person receiving</b> a seat is read on nothing when
+     * they hold no seat on that timeslot — which is the rail gesture's and
+     * « Placer »'s main case — so {@code couvre} cannot see it, and neither can
+     * the score: the persisted plan carries no lock facts. Yet « the solver
+     * may not give them an extra seat » is exactly what an ANIMATEUR lock
+     * says, and an ANIMATEUR_CRENEAU lock is what an accepted échange posts to
+     * keep the freed person free on that timeslot.
+     */
+    static void refuseIfReceiverLocked(
+            List<VerrouillagePlanning> verrouillages, String receveur, PosteAffectation siege) {
+        if (receveur == null) {
+            return;
+        }
+        Long creneauId = siege.getCreneau() == null ? null : siege.getCreneau().getId();
+        boolean verrouille = verrouillages.stream().anyMatch(verrouillage -> switch (verrouillage.getType()) {
+            case ANIMATEUR -> receveur.equals(verrouillage.getAnimateurId());
+            case ANIMATEUR_CRENEAU ->
+                receveur.equals(verrouillage.getAnimateurId())
+                        && creneauId != null
+                        && creneauId.equals(verrouillage.getCreneauId());
+            default -> false;
+        });
+        if (verrouille) {
+            throw new BusinessError.Invalid("L'emploi du temps de cette personne est verrouillé : déverrouillez-le "
+                    + "avant de lui donner ce siège.");
         }
     }
 
@@ -775,11 +948,14 @@ public final class PlanningWhatIf {
      * breaking a rule.</p>
      *
      * <p>Nothing to score when the seats are being emptied: see the caller.</p>
+     *
+     * @return the plan's score before and after, {@code null} when the seats
+     *         are being emptied
      */
-    private void refuseIfBreaksHardRules(
+    private SeatingScores refuseIfBreaksHardRules(
             PlanningEvenement persiste, List<PosteAffectation> postes, Animateur repreneur) {
         if (repreneur == null) {
-            return;
+            return null;
         }
         PlanningAnalysis avant = constraintDiagnosticService.analyze(persiste);
         List<Animateur> occupants =
@@ -814,7 +990,11 @@ public final class PlanningWhatIf {
                         + ".");
             }
         }
+        return new SeatingScores(avant.score(), apres.score());
     }
+
+    /** The plan's score on either side of a seating the checks accepted. */
+    private record SeatingScores(HardMediumSoftScore avant, HardMediumSoftScore apres) {}
 
     /**
      * The rules a refused gesture would break, as the sentence that names them.
@@ -1497,6 +1677,12 @@ public final class PlanningWhatIf {
      * @param animateurCibleId   its current occupant, {@code null} when the seat
      *                           is free — when it is not, the question answered is
      *                           « qui pourrait le remplacer ? »
+     * @param seatStarted        the seat's timeslot has started under the
+     *                           frozen past (ADR 0044), read on the server's
+     *                           clock: nobody can be seated on it by hand, so
+     *                           the screen offers no « Placer » whatever the
+     *                           rules say. Always {@code false} while the
+     *                           freeze is off
      * @param disponibles        how many of {@code animateurs} could take the
      *                           seat without breaking a hard rule
      * @param creneauId          the créneau actually answered on: the one asked
@@ -1510,13 +1696,14 @@ public final class PlanningWhatIf {
      *                           here means nothing is staffed at all, which is
      *                           exactly {@link SeatStatus#NO_PLAN}
      */
-    @Schema(requiredProperties = {"disponibles", "total"})
+    @Schema(requiredProperties = {"disponibles", "seatStarted", "total"})
     public record CreneauAvailability(
             Long creneauId,
             SeatStatus statut,
             String posteCibleId,
             String standCibleId,
             String animateurCibleId,
+            boolean seatStarted,
             int total,
             int disponibles,
             List<CreneauSiege> creneauxAvecSieges,

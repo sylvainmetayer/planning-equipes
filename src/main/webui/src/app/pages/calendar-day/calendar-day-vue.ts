@@ -27,22 +27,17 @@ import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { RouterLink } from '@angular/router';
 import { injectAppConfig } from '../../core/app-config';
 import { AffectationExplanationService } from '../../core/affectation-explanation.service';
 import { PlanningApi } from '../../core/api/planning-api';
 import { errorMessage } from '../../core/error-message';
 import { NotificationService } from '../../core/notification.service';
 import { SolverJobService } from '../../core/solver-job.service';
-import { cibleDepot, resumeDeplacement } from '../../shared/deplacement';
+import { cibleDepot, moveTargets, resumeDeplacement } from '../../shared/deplacement';
 import { openMoveDialog } from '../../shared/deplacement-dialog';
-import { OptionSelection } from '../../shared/selection-recherche';
 import { VerrouillageStore } from '../../core/verrouillage.store';
 import { Creneau, PlanningEvenement, PosteAffectation, Stand } from '../../core/models';
-import {
-  aUneAppreciationPour,
-  ouvrirExplication,
-} from '../../shared/affectation-explanation-dialog';
+import { aUneAppreciationPour } from '../../shared/affectation-explanation-dialog';
 import { correspondAuFiltre } from '../../core/text-filter';
 
 interface AssignedEntry {
@@ -126,7 +121,6 @@ interface DayCard {
     MatCheckboxModule,
     MatIconModule,
     MatTooltipModule,
-    RouterLink,
   ],
   templateUrl: './calendar-day-vue.html',
   styleUrls: ['../../../styles/calendar-day.css', '../../../styles/calendar-month.css'],
@@ -151,12 +145,16 @@ export class CalendarDayView {
   readonly seulementProblemes = model(false);
   /** The plan moved under this view (a drop, a repair): the page re-reads it. */
   readonly rechargement = output<void>();
+  /** The seat the page's Siège panel is open on, marked on screen; null when it is closed. */
+  readonly openSeatId = input<string | null>(null);
+  /** A seat was clicked: the page opens its panel on it. */
+  readonly seatSelected = output<string>();
 
   /** Bounds the repair-assistant callback to this view's life: it is lazy and rebuilt on every visit. */
   private readonly destroyRef = inject(DestroyRef);
   protected readonly persistedCount = signal<string>('?');
   protected readonly unassignedLabel = $localize`:@@calendarMonth.unassigned:(non assigné)`;
-  protected readonly pourquoiLuiLabel = $localize`:@@affectationExplanation.tooltip:Pourquoi lui ?`;
+  protected readonly seatLabel = $localize`:@@calendarDay.siege.ouvrir:Ouvrir ce siège : pourquoi lui, le remplacer, le déplacer, le libérer`;
 
   protected readonly verrous = inject(VerrouillageStore);
 
@@ -234,7 +232,7 @@ export class CalendarDayView {
 
   protected readonly verrouilleTooltip = $localize`:@@verrouillages.indicator:Verrouillé : ces affectations ne bougeront plus à la prochaine résolution`;
   protected readonly siegeLibreLabel = $localize`:@@calendarDay.siegeLibre:siège libre`;
-  protected readonly bancTooltip = $localize`:@@calendarDay.siegeLibre.banc:Qui pourrait prendre ce siège : ouvrir le banc de touche sur ce créneau et ce stand`;
+  protected readonly freeSeatTooltip = $localize`:@@calendarDay.siegeLibre.ouvrir:Ouvrir ce siège : qui peut le tenir, poser un ajustement`;
   protected readonly glisserTooltip = $localize`:@@calendarDay.glisser:Glisser vers un autre stand : sur un siège libre pour y déplacer la personne, sur une personne pour échanger leurs sièges. Refusé si une règle dure serait cassée.`;
 
   /* ----------------------------- Glisser-déposer (#308) ----------------------------- */
@@ -299,8 +297,9 @@ export class CalendarDayView {
     poste: PosteAffectation,
     nom: string,
   ): void {
+    // Not gated on `dragDropEnabled` any more: the flag governs the pointer
+    // gesture, and the dialog is the way every instance moves somebody.
     if (
-      !this.dragDropEnabled ||
       this.editingLocked() ||
       this.estLigneVerrouillee(slotSource, ligneSource) ||
       this.estJourVerrouille(day)
@@ -311,30 +310,16 @@ export class CalendarDayView {
     // destination is typed into the dialog, it need not be visible first. But
     // only the lines a drop would accept: a locked stand or timeslot refuses
     // the drag, and must refuse its keyboard twin just the same.
-    const cibles: OptionSelection[] = [];
-    for (const slot of (this.journee() ?? day).slots) {
-      const heures = `${slot.heureDebut.slice(0, 5)}–${slot.heureFin.slice(0, 5)}`;
-      for (const ligne of slot.stands) {
-        if (ligne === ligneSource || this.estLigneVerrouillee(slot, ligne)) {
-          continue;
-        }
-        for (const libre of ligne.postesLibres) {
-          cibles.push({
-            id: libre.id,
-            label: $localize`:@@calendarDay.deplacer.libre:${heures}:heures: · ${ligne.standNom}:stand: — siège libre`,
-          });
-        }
-        for (const entry of ligne.entries) {
-          cibles.push({
-            id: entry.poste.id,
-            label: $localize`:@@calendarDay.deplacer.echange:${heures}:heures: · ${ligne.standNom}:stand: — échanger avec ${entry.label}:nom:`,
-          });
-        }
-      }
-    }
+    const targets = moveTargets(
+      this.planning()?.postes ?? [],
+      poste,
+      (candidat) =>
+        this.verrous.estStandVerrouille(candidat.stand?.id) ||
+        this.verrous.estCreneauVerrouille(candidat.creneau?.id),
+    );
     openMoveDialog(this.dialog, {
       title: $localize`:@@calendarDay.deplacer.titre:Déplacer ${nom}:nom:`,
-      targets: cibles,
+      targets,
       targetLabel: $localize`:@@calendarDay.deplacer.cible:Vers quel siège ?`,
     })
       .afterClosed()
@@ -362,7 +347,7 @@ export class CalendarDayView {
         variant: 'success',
       });
       // The persisted plan moved under the cached one: the page drops the
-      // cache and re-reads — the same care openExplanation takes after a repair.
+      // cache and re-reads — the same care the Siège panel takes after a gesture.
       this.rechargement.emit();
     } catch (error) {
       this.notifications.notify({
@@ -420,26 +405,12 @@ export class CalendarDayView {
   protected readonly dayAppreciationMismatchTooltip = $localize`:@@calendarMonth.cellAppreciationMismatch:Au moins un stand avec un écart d'appréciation ce jour-là`;
 
   /**
-   * Opens the "Pourquoi lui ?" dialog for one filled seat, offering every other
-   * competent animateur as a swap candidate.
-   *
-   * When its repair assistant applied a suggestion, the persisted plan changed
-   * under the session's cached one: dropping the cache is what makes the
-   * reload show the repaired seat instead of the seat as it was solved.
+   * A seat was clicked — a name or a free seat: the page opens its Siège
+   * panel, which explains it and carries every gesture on it. The panel reads
+   * the plan this view was handed; nothing is fetched here.
    */
-  protected openExplanation(poste: PosteAffectation): void {
-    const planning = this.planning();
-    if (!planning) {
-      return;
-    }
-    ouvrirExplication(this.dialog, planning, poste)
-      .afterClosed()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((reparation) => {
-        if (reparation) {
-          this.rechargement.emit();
-        }
-      });
+  protected openSeat(posteId: string): void {
+    this.seatSelected.emit(posteId);
   }
 }
 

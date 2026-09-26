@@ -107,11 +107,13 @@
                     @for (stand of marqueur.stands; track stand.standId) {
                       <li [class]="'etat-' + stand.etat">
                         {{ stand.resume }}
-                        @if ((stand.etat === 'decouvert' || stand.etat === 'partiel') && stand.creneauId !== null) {
-                          <!-- A seat nobody holds: the bench says who could take it. -->
-                          <a class="carte-jour-banc" routerLink="/diagnostic"
-                             [queryParams]="{ onglet: 'banc', creneau: stand.creneauId, stand: stand.standId }"
-                             i18n="@@carteJour.banc">Banc de touche</a>
+                        @if (stand.creneauId !== null) {
+                          <!-- Open at that hour: its Siège panel, on the empty seat first. -->
+                          <button type="button" class="carte-jour-siege"
+                                  [attr.data-siege-cle]="stand.creneauId + '|' + stand.standId"
+                                  [attr.aria-label]="seatLabel(stand.nom)"
+                                  (click)="openSeat(stand.creneauId, stand.standId)"
+                                  i18n="@@carteJour.siege">Siège</button>
                         }
                       </li>
                     }

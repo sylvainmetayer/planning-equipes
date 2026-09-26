@@ -1,4 +1,4 @@
-// The page over the five analyses: which tab the URL names, that switching
+// The page over the four analyses: which tab the URL names, that switching
 // writes the tab back, and that a tab's own view state lives next to it.
 
 import { Location } from '@angular/common';
@@ -28,7 +28,6 @@ describe('DiagnosticPage', () => {
   const analysesApi = {
     staffing: vi.fn(async () => null),
     fragility: vi.fn(async () => null),
-    bench: vi.fn(async () => null),
     breaks: vi.fn(async () => null),
     walks: vi.fn(async () => null),
     groupedArrivals: vi.fn(async () => null),
@@ -106,14 +105,14 @@ describe('DiagnosticPage', () => {
   });
 
   it("opens on the tab the URL names, and keeps that tab's own state next to it", async () => {
-    const page = await monter({ onglet: 'banc', stand: 'tir' });
+    const page = await monter({ onglet: 'fragilite', q: 'Alice' });
 
-    expect(page.onglet()).toBe('banc');
-    expect(racine().querySelector('app-banc-de-touche-page')).not.toBeNull();
-    // The bench wrote its own key, the page its own: neither erased the other.
+    expect(page.onglet()).toBe('fragilite');
+    expect(racine().querySelector('app-fragilite-page')).not.toBeNull();
+    // The tab wrote its own key, the page its own: neither erased the other.
     const url = TestBed.inject(Location).path();
-    expect(url).toContain('onglet=banc');
-    expect(url).toContain('stand=tir');
+    expect(url).toContain('onglet=fragilite');
+    expect(url).toContain('q=Alice');
   });
 
   // A tab is destroyed when another is shown and built again on the way back.
@@ -121,20 +120,20 @@ describe('DiagnosticPage', () => {
   // effect wrote them over the address bar: the filter typed a moment earlier
   // was gone from the screen and from the URL.
   it("keeps a tab's own state when it is left and opened again", async () => {
-    const page = await monter({ onglet: 'banc', stand: 'tir' });
+    const page = await monter({ onglet: 'fragilite', q: 'Alice' });
 
     page.changerOnglet('besoin');
     TestBed.tick();
     await fixture.whenStable();
-    expect(TestBed.inject(Location).path()).toContain('stand=tir');
+    expect(TestBed.inject(Location).path()).toContain('q=Alice');
 
-    page.changerOnglet('banc');
+    page.changerOnglet('fragilite');
     TestBed.tick();
     await fixture.whenStable();
 
     const url = TestBed.inject(Location).path();
-    expect(url).toContain('onglet=banc');
-    expect(url).toContain('stand=tir');
+    expect(url).toContain('onglet=fragilite');
+    expect(url).toContain('q=Alice');
   });
 
   it('switches the tab and writes it back, nothing for the default one', async () => {

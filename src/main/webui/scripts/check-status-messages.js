@@ -86,6 +86,8 @@ const EXCEPTIONS_ASSUMEES = {
     "une ligne de la liste d'anomalies de l'écran, du contenu et non le résultat d'une action",
   'app/pages/notifications/notifications-page.html {{ notification.message }}':
     'une entrée du journal des notifications, du contenu ; chacune a été annoncée par le snack-bar en arrivant',
+  'app/shared/siege-panel/siege-panel.html {{ done.message }}':
+    'la première ligne du compte rendu d\'un geste, annoncé en bloc par le role="status" de `.siege-panel-outcome`',
   'app/shared/confirm-dialog.ts {{ data.message }}':
     "le contenu d'un MatDialog est lu à son ouverture : un role de plus ferait une double annonce",
   'app/shared/prompt-dialog.ts {{ data.message }}':

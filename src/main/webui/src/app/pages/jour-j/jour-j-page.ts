@@ -302,7 +302,7 @@ export class JourJPage implements OnInit {
   protected async affecter(posteId: string, animateurId: string): Promise<void> {
     this.affectationEnCours.set(posteId);
     try {
-      await this.reparations.appliquerReparation(posteId, animateurId);
+      await this.reparations.applyRepair(posteId, animateurId);
       // Every list on screen was computed against the plan as it was a moment
       // ago. Keeping the others would let the same person be assigned twice on
       // the same hour: the write is a surgical UPDATE that checks locks and

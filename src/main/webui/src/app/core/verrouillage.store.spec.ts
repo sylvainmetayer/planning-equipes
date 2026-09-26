@@ -89,4 +89,13 @@ describe('VerrouillageStore', () => {
     await store.remove('V1');
     expect(api.delete).toHaveBeenCalledWith('/api/verrouillages/V1');
   });
+
+  it('answers the warnings of a written lock even when the re-read fails', async () => {
+    api.post.mockResolvedValueOnce({
+      avertissements: [{ type: 'VERROU_SUR_VIOLATION', message: 'Un siège gelé casse une règle.' }],
+    } as never);
+    api.get.mockRejectedValueOnce(new Error('réseau'));
+
+    await expect(store.create({ type: 'JOUR', jour: '2026-07-08' })).resolves.toHaveLength(1);
+  });
 });

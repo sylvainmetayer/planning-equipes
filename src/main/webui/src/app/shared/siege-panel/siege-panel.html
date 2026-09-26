@@ -1,0 +1,193 @@
+<aside class="siege-panel" tabindex="-1" [attr.aria-labelledby]="headingId" (keydown.escape)="onEscape($event)">
+  <header class="siege-panel-head">
+    <h2 #heading class="siege-panel-title" tabindex="-1" [id]="headingId">
+      <mat-icon inline aria-hidden="true">event_seat</mat-icon>
+      <ng-container i18n="@@siege.titre">Siège</ng-container>
+      @if (standName()) {
+        · {{ standName() }}
+      }
+    </h2>
+    <button matIconButton type="button" (click)="close()" [attr.aria-label]="closeLabel" [title]="closeLabel">
+      <mat-icon>close</mat-icon>
+    </button>
+  </header>
+
+  @if (seat(); as seat) {
+    <p class="siege-panel-when">{{ when() }}</p>
+
+    @if (seat.animateur) {
+      <p class="siege-panel-holder">
+        <mat-icon inline aria-hidden="true">person</mat-icon>
+        <strong>{{ holder() }}</strong>
+      </p>
+    } @else {
+      <p class="siege-panel-hole">
+        <mat-icon inline aria-hidden="true">event_busy</mat-icon>
+        <ng-container i18n="@@siege.vide">Place vide : personne ne tient ce siège.</ng-container>
+      </p>
+    }
+
+    @for (lock of locks(); track lock.lock.id) {
+      <p class="siege-panel-lock">
+        <mat-icon inline aria-hidden="true">lock</mat-icon>
+        {{ lockText(lock) }}
+      </p>
+    }
+    @if (wideLock()) {
+      <p class="siege-panel-lock">
+        <a routerLink="/verrouillages" i18n="@@siege.verrous.gerer">Gérer les verrouillages</a>
+      </p>
+    }
+
+    @if (seat.animateur) {
+      <section class="siege-panel-section">
+        <h3 class="siege-panel-subtitle" i18n="@@siege.pourquoi">Pourquoi lui ?</h3>
+        @if (explanation.isLoading()) {
+          <mat-progress-bar mode="indeterminate" />
+        }
+        <app-status-message [text]="explanationError()" tone="error" />
+        @if (explanation.hasValue()) {
+          @if (explanation.value().contraintesViolees.length === 0) {
+            <p i18n="@@affectationExplanation.noViolation">Aucun écart détecté sur ce poste.</p>
+          } @else {
+            <ul class="siege-panel-rules">
+              @for (impact of explanation.value().contraintesViolees; track impact.name) {
+                <li>
+                  <span class="siege-panel-rule" [class.siege-panel-rule-hard]="impact.niveau === 'HARD'">{{ ruleText(impact) }}</span>
+                  <span class="siege-panel-level">{{ levelText(impact) }}</span>
+                  @if (impact.details.length > 0) {
+                    <ul>
+                      @for (detail of impact.details; track detail) {
+                        <li>{{ detail }}</li>
+                      }
+                    </ul>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        }
+      </section>
+    }
+
+    <div class="siege-panel-actions">
+      @if (seat.animateur) {
+        <button matButton="tonal" type="button" [disabled]="writesDisabled() || suggestionsLoading()" (click)="searchReplacements()">
+          <mat-icon>healing</mat-icon>
+          <ng-container i18n="@@siege.remplacer">Remplacer</ng-container>
+        </button>
+        <button matButton="tonal" type="button" [disabled]="writesDisabled()" (click)="move()">
+          <mat-icon>move_down</mat-icon>
+          <ng-container i18n="@@siege.deplacer">Déplacer vers…</ng-container>
+        </button>
+        <button matButton type="button" [disabled]="writesDisabled()" (click)="free()">
+          <mat-icon>person_remove</mat-icon>
+          <ng-container i18n="@@siege.liberer">Libérer</ng-container>
+        </button>
+        @if (ownLock()) {
+          <button matButton type="button" [disabled]="busy() || editingLocked()" (click)="unlock()">
+            <mat-icon>lock_open</mat-icon>
+            <ng-container i18n="@@siege.deverrouiller">Déverrouiller</ng-container>
+          </button>
+        } @else if (!wideLock()) {
+          <button matButton type="button" [disabled]="busy() || editingLocked()" (click)="lock()">
+            <mat-icon>lock</mat-icon>
+            <ng-container i18n="@@siege.verrouiller">Verrouiller</ng-container>
+          </button>
+        }
+        <!-- Read-only here: who could take over, without placing anyone — « Remplacer » hands the seat over. -->
+        <button matButton type="button" [disabled]="busy()" (click)="whoCanHold()">
+          <mat-icon>group_add</mat-icon>
+          <ng-container i18n="@@siege.quiPeut">Qui peut tenir ce siège ?</ng-container>
+        </button>
+        <a matButton [routerLink]="['/animateurs', seat.animateur.id]">
+          <mat-icon>badge</mat-icon>
+          <ng-container i18n="@@siege.fiche">Ouvrir sa fiche</ng-container>
+        </a>
+      } @else {
+        <button matButton="filled" type="button" [disabled]="writesDisabled()" (click)="whoCanHold()">
+          <mat-icon>group_add</mat-icon>
+          <ng-container i18n="@@siege.quiPeut">Qui peut tenir ce siège ?</ng-container>
+        </button>
+        <button matButton type="button" [disabled]="busy() || editingLocked()" (click)="addAdjustment()">
+          <mat-icon>rule</mat-icon>
+          <ng-container i18n="@@siege.ajustement">Poser un ajustement</ng-container>
+        </button>
+      }
+    </div>
+    @if (frozen()) {
+      <p class="siege-panel-muted" i18n="@@siege.fige">Un verrou tient ce siège : déverrouillez-le pour le modifier.</p>
+    } @else if (editingLocked()) {
+      <p class="siege-panel-muted" i18n="@@siege.resolutionEnCours">Une résolution est en cours : les gestes attendent qu'elle se termine.</p>
+    }
+    @if (busy() || suggestionsLoading()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    <app-status-message [text]="gestureError()" tone="error" />
+
+    @if (suggestions(); as found) {
+      <section class="siege-panel-section">
+        <h3 class="siege-panel-subtitle" i18n="@@siege.remplacants">Remplaçants viables</h3>
+        <p class="siege-panel-muted" i18n="@@affectationExplanation.repairCost">
+          {{ found.suggestions.length }} remplacement(s) viable(s), sur
+          {{ found.candidatsEvalues }} candidat(s) évalué(s) parmi
+          {{ found.candidatsEligibles }} éligible(s).
+        </p>
+        @if (truncated()) {
+          <p class="siege-panel-muted" i18n="@@affectationExplanation.repairTruncated">
+            Recherche arrêtée au plafond de {{ found.plafond }} candidats : ce sont les
+            meilleurs de ceux évalués, pas une réponse exhaustive.
+          </p>
+        }
+        @if (best().length === 0) {
+          <p i18n="@@affectationExplanation.repairNone">Aucun remplacement possible sans introduire d'écart dur.</p>
+        } @else {
+          <ul class="siege-panel-candidates">
+            @for (suggestion of best(); track suggestion.animateurId) {
+              <li>
+                <span class="siege-panel-candidate">
+                  <strong>{{ name(suggestion.animateurId) }}</strong>
+                  <span class="siege-panel-muted">{{ scoreText(suggestion) }}</span>
+                </span>
+                <button matButton="filled" type="button" [disabled]="writesDisabled()"
+                        [attr.aria-label]="applyLabel(suggestion)" (click)="applyReplacement(suggestion)">
+                  <ng-container i18n="@@affectationExplanation.repairApply">Appliquer</ng-container>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    }
+
+    @if (outcome(); as done) {
+      <section class="siege-panel-outcome" role="status">
+        <p><mat-icon inline aria-hidden="true">check_circle</mat-icon> {{ done.message }}</p>
+        @if (done.warning) {
+          <p class="siege-panel-warning"><mat-icon inline aria-hidden="true">warning</mat-icon> {{ done.warning }}</p>
+        }
+        @if (done.steps.notify) {
+          <p>
+            <ng-container i18n="@@siege.nonPublie">Non publié :</ng-container>
+            <a routerLink="/publication" i18n="@@siege.prevenir">Prévenir</a>
+          </p>
+        }
+        @if (done.steps.repair) {
+          @if (repairSent()) {
+            <p>
+              <ng-container i18n="@@siege.corriger.envoye">Résolution incrémentale lancée :</ng-container>
+              <a routerLink="/solveur" i18n="@@siege.corriger.suivre">la suivre sur le Solveur</a>
+            </p>
+          } @else {
+            <button matButton="tonal" type="button" [disabled]="editingLocked()" (click)="repairRest()">
+              <mat-icon>auto_fix_high</mat-icon>
+              <ng-container i18n="@@siege.corriger">Corriger le reste</ng-container>
+            </button>
+          }
+        }
+      </section>
+    }
+  } @else {
+    <p class="siege-panel-muted" i18n="@@siege.introuvable">Ce siège n'est plus dans le planning affiché.</p>
+  }
+</aside>

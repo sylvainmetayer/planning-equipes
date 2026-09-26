@@ -520,6 +520,38 @@ public class PlanningPersistenceService {
     }
 
     /**
+     * The same write, landing only if the seat still holds
+     * {@code expectedHolderId} — {@code null} meaning nobody — when the
+     * {@code UPDATE} runs. A screen shows a plan read earlier, and a check
+     * made on that read is not one made on the row: between the two, an
+     * échange, a jour-J repair or another tab can seat somebody, and the
+     * write would silently unseat them. The predicate is the precondition.
+     *
+     * @param animateurId      {@code null} empties the seat
+     * @param expectedHolderId who must hold the seat for the write to land;
+     *                         {@code null} for an empty seat
+     * @return false when the seat holds somebody else, or this edition holds
+     *         no such seat: nothing was written
+     */
+    public boolean reassignSeatIfHeldBy(String posteId, String animateurId, String expectedHolderId) {
+        solverJobs.refuseIfSolving();
+        return scope.writeAndReturn("Failed to reassign the poste", connection -> {
+                    // Not prepareScoped: the SET clause claims placeholder 1. IS NOT
+                    // DISTINCT FROM lets a null expected holder mean « still empty ».
+                    try (PreparedStatement ps = connection.prepareStatement("""
+                            UPDATE poste_affectation SET animateur_id = ?
+                            WHERE edition_id = ? AND id = ? AND animateur_id IS NOT DISTINCT FROM ?""")) {
+                        ps.setString(1, animateurId);
+                        ps.setString(2, editionId());
+                        ps.setString(3, posteId);
+                        ps.setString(4, expectedHolderId);
+                        return ps.executeUpdate();
+                    }
+                })
+                > 0;
+    }
+
+    /**
      * Several seats changing hands at once, one transaction (issue #308): a
      * movement rewrites two rows, and a swap half done would leave one person
      * in two places. {@code null} empties a seat, like {@link #reaffecterPoste}.
