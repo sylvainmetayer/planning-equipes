@@ -724,6 +724,45 @@ mesure ce qui a changé, pas ce qui a été délivré. Le rapport nomme les manq
 et `POST /api/planning/envoi/animateur/{id}` est le rattrapage — il renvoie le
 plan **publié**, refusé (`400`) tant que rien ne l'a été.
 
+L'échec n'est plus seulement une ligne du journal du serveur : chaque envoi —
+d'une publication ou d'un renvoi — laisse **son état** dans `envoi_planning`,
+des dates et des états seulement (`ENVOYE`, `ECHEC`, `SANS_EMAIL`, `EXCLU`),
+jamais de contenu, et sur un échec une **cause courte**
+(`ADRESSE_REFUSEE`, `BOITE_PLEINE`, `SERVEUR_INJOIGNABLE`, `AUTRE`) plutôt que
+le message du serveur de messagerie, qui cite volontiers l'adresse. L'aperçu en
+tire `envoisEnEchec` — les personnes dont le **dernier** envoi a échoué —, et
+`GET /api/editions/courant/etat` ne dit plus « fait » sur la ligne de
+publication tant qu'il en reste : rien n'a changé pour elles, elles n'ont
+simplement rien reçu.
+
+`GET /api/planning/publication/etat` — **qui a reçu quelle version**, une ligne
+par animateur de l'édition, qu'il reste ou non quelqu'un à prévenir : la
+version qu'on lui a annoncée (`version.numero`, le rang de la publication dans
+l'édition), son dernier envoi (`envoi` : nature, état, cause, date), le rappel
+de la veille et la relance lus dans `notification_planifiee`, l'accusé de
+réception, `aPrevenir`, `differe` et `joursAPrevenir`. Rien n'y est recalculé :
+chaque colonne lit le magasin qui répond déjà à sa question, le service ne fait
+que les joindre par personne. N'envoie rien.
+
+### Publier pour quelques personnes
+
+`{"cibles": ["id", …]}` restreint une publication aux personnes nommées —
+« Prévenir les 2 personnes » après un échange accepté, ou après un remplacement
+le jour J. Tous les autres concernés sont **différés**, exactement comme par
+`exclusions` : la capture reste globale, leur repère ne bouge pas, ils
+reviennent au décompte suivant. Des cibles qui ne nomment aucun concerné
+laissent la publication sans destinataire : `409`.
+
+### Le jour d'un changement
+
+Chaque ligne d'aperçu porte `jours`, les dates de ses changements — la date de
+la vacation annoncée, `ChangementVacation.touches`. C'est **la même règle** que
+l'onglet « Changements » de la Journée applique pour garder une personne sur un
+jour : l'écran Diffuser et la Journée comptent donc les mêmes personnes pour un
+même jour, et un test partagé
+(`ChangementsJourneeServiceTest#theDiffuserDayFilterAndTheChangesOfTheDayCountTheSamePeople`)
+le tient.
+
 ### Différer le message de quelqu'un
 
 Le `POST` prend un corps JSON — `{"exclusions": ["id", …]}` — et **demande
@@ -1343,9 +1382,20 @@ sont évalués en premier, pour que la troncature garde les plus prometteurs.
 Appliquer une suggestion réaffecte **ce seul siège** dans `poste_affectation`,
 sans relancer de solveur ni réécrire le reste du plan : le résultat est
 exactement le plan simulé. Un poste couvert par un verrouillage est refusé
-(400) — déverrouillez-le d'abord. Un poste dont le créneau est déjà commencé
+(400) — déverrouillez-le d'abord. Un poste dont le créneau est **terminé**
 l'est aussi, à la suggestion comme à l'application (400, « Ce créneau est
 déjà commencé : le passé ne se modifie plus », [ADR 0044](decisions/0044-le-passe-est-fige.md)).
+
+**Un poste dont le créneau est en cours est scindé, pas refusé**
+([ADR 0066](decisions/0066-le-passe-est-fige-a-la-minute.md)). L'écriture coupe
+le siège à la minute courante de l'horloge du jour J : l'origine garde son
+titulaire jusqu'à cette minute, et c'est la **suite** — un siège nouveau,
+d'identifiant `<id>~HHmm`, qui porte `suiteDe` — qui reçoit l'écriture. Le
+piège : l'identifiant écrit n'est pas celui qu'on a envoyé. Un appelant qui relit
+le siège après coup relit le plan (`GET /api/planning/persisted`) ou la réponse
+de `POST /api/jour-j/absences`, dont `postesLiberes` nomme les suites. Les
+suggestions d'un tel siège sont calculées sur sa suite, exactement comme
+l'écriture la fera.
 
 C'est un `UPDATE` nu : hors verrouillage, il ne revérifie rien. Une liste de
 suggestions calculée **avant** une autre écriture est donc périmée, et l'appliquer
@@ -1374,13 +1424,13 @@ aucune précondition : l'outil MCP `affecter_poste` et le mode jour J
 
 ## Mode « jour J »
 
-L'écran du jour même (`/jour-j`) : quelqu'un ne s'est pas présenté, et ses
+L'écran du jour même (`/aujourdhui` ; `/jour-j` y redirige) : quelqu'un ne s'est pas présenté, et ses
 sièges doivent changer de mains **maintenant**. Rien de neuf sous le capot — ce
 sont les briques ci-dessus, appelées dans l'ordre du geste.
 
 | Endpoint | Effet |
 | --- | --- |
-| `GET /api/jour-j?date=&maintenant=` | L'écran complet : créneaux restants, animateurs de service, places vides, absences du jour. Ne lit que. |
+| `GET /api/jour-j?date=&maintenant=` | L'écran complet : créneaux restants, animateurs de service, places vides — chacune `nouveau` (le plan publié avait quelqu'un dessus) ou connue, `resteDuCreneau` pour la suite d'un siège scindé —, absences du jour, signalements, rang du jour, stands ouverts, alertes de l'affichage mural (le même calcul, sur la journée en cours seulement), `aPrevenir` (les personnes dont le planning diffère du plan publié, cibles de « Prévenir les N personnes ») et échanges à arbitrer ; l'effectif nommé porte le téléphone de la fiche. Ne lit que. |
 | `POST /api/jour-j/absences?date=&maintenant=` | `{ "animateurId": "A1", "raison": "…" }` — une `INDISPONIBILITE_FORCEE` par créneau restant, et les sièges tenus sur ces créneaux vidés. Écrit. |
 | `DELETE /api/jour-j/absences/{animateurId}?date=&creneauId=` | Annule l'absence : un créneau si `creneauId` est donné, toute la journée sinon. |
 | `POST /api/jour-j/postes/{posteId}/suggestions?plafond=N` | L'assistant de réparation ci-dessus, sur le **plan enregistré** au lieu d'un plan envoyé dans le corps. |
@@ -2341,6 +2391,40 @@ une voiture qui n'existe plus. L'annulation est refusée en `409` pendant
 qu'une résolution tient l'édition : le calcul en cours note encore l'arrivée
 groupée qu'il a reçue, et le groupe serait prévenu d'un changement que le plan
 à venir ne reflète pas.
+
+## Empêchement signalé depuis l'espace
+
+« Je ne pourrai pas être là » : l'animateur signale depuis son espace qu'il sera
+absent **toute une journée** ou **sur un poste**. C'est la **deuxième route en
+écriture** de l'espace, après la déclaration de disponibilités, et elle reste
+ouverte **toute l'édition** — foire et collecte fermées comprises : c'est le cas
+principal. Rien n'est écrit au planning : l'organisation **constate** ou
+**classe** (ADR 0065).
+
+| Borne | Ce qu'elle empêche |
+| --- | --- |
+| Une journée de l'événement où l'animateur tient un poste **dans le planning communiqué**, pas encore terminée ; pour un poste, le sien et pas encore terminé (`400`) | Un signalement sur ce qu'il ne voit pas dans son espace, ou sur du passé |
+| **Un seul signalement ouvert** par personne et par objet (index unique partiel, V111) ; une journée déjà signalée entière couvre ses postes (`409`) | Le volume : renvoyer mille fois laisse une ligne |
+| `ESPACE_DECLARATION_MAX_ENVOIS` par animateur et par fenêtre, compté **à part** de la déclaration et avant toute validation | Le rythme : chaque signalement écrit à l'organisation. Au-delà, `429` + `Retry-After` |
+
+Le poste est désigné par sa **clé naturelle** — `creneauId` et `standId` —,
+jamais par l'identifiant du siège, qu'une résolution renumérote. Le motif est
+**facultatif et en liste fermée** (`PERSONNEL`, `TRANSPORT`, `AUTRE`) : aucun
+champ libre, c'est là qu'on écrirait une raison de santé que personne n'a
+demandée.
+
+| Route | Effet |
+| --- | --- |
+| `POST /api/espace-animateur/{jeton}/signalements` | Signale ; répond **mes** signalements, le nouveau compris. L'organisation est prévenue par courriel tout de suite, au mieux (`service/notification/`) |
+| `DELETE /api/espace-animateur/{jeton}/signalements/{id}` | Annule le sien tant qu'il est ouvert ; `409` une fois traité ou classé |
+| `GET /api/espace-animateur/{jeton}` | `signalements` : tout ce que j'ai signalé et où cela en est |
+| `GET /api/jour-j` | `signalements` : les signalements **ouverts**, du jour regardé à la fin de l'événement, nommés |
+| `POST /api/jour-j/signalements/{id}/traitement` | « Marquer absent et remplacer » : l'absence du jour J — la journée, ou le seul créneau du poste signalé —, puis le signalement `TRAITE`. Répond les sièges libérés, pour le remplacement |
+| `POST /api/jour-j/signalements/{id}/classement` | « Classer » : lu, rien ne change au planning |
+
+`POST /api/jour-j/absences` prend désormais un `creneauId` facultatif : l'absence
+porte alors sur ce créneau seul, au lieu du reste de la journée — le geste du
+poste signalé, et celui du panneau Siège.
 
 ## Marque et mentions légales
 

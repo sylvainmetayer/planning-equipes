@@ -6,6 +6,7 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.analyse.Dosage;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
@@ -384,8 +385,9 @@ public class PlanningService {
     }
 
     /** @see PlanningWhatIf#applyReparations */
-    public void applyReparations(PlanningEvenement persiste, List<String> posteIds, String animateurId) {
-        whatIf.applyReparations(persiste, posteIds, animateurId);
+    public List<PosteAffectation> applyReparations(
+            PlanningEvenement persiste, List<String> posteIds, String animateurId) {
+        return whatIf.applyReparations(persiste, posteIds, animateurId);
     }
 
     /** @see PlanningWhatIf#simulateEchange */

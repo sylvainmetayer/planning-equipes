@@ -309,14 +309,16 @@ test.describe('espace animateur', () => {
 
   test("l'espace propose l'abonnement, et le téléchargement en second", async ({ page }) => {
     await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
-    // La bande est portée sous les trois onglets : on la trouve là où l'on
+    // Un bouton-menu sur la rangée des onglets : on le trouve là où l'on
     // arrive, sans changer d'onglet pour emporter son planning.
     await page.goto(`/animateur/${jeton}`);
-    await expect(page.getByRole('heading', { name: 'Emporter mon planning' })).toBeVisible();
-    await expect(page.getByRole('link', { name: "S'abonner dans mon agenda" })).toBeVisible();
+    await page.getByRole('button', { name: 'Emporter mon planning' }).click();
+    const sorties = page.getByRole('menuitem');
+    await expect(sorties.first()).toHaveText(/S'abonner dans mon agenda/);
     // En complément, pas à la place : le PDF sous ses deux mises en page.
-    await expect(page.getByRole('link', { name: 'Livret PDF' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Feuille A4' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Livret PDF' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Feuille A4' })).toBeVisible();
+    await page.keyboard.press('Escape');
     // Le fichier ICS n'est pas une quatrième sortie : il attend dans le
     // dépliant, avec ce qu'il faut savoir avant de le prendre.
     await expect(page.getByRole('link', { name: 'Fichier ICS' })).toBeHidden();
@@ -360,11 +362,52 @@ test.describe('espace animateur', () => {
     expect(debordement).toBeLessThanOrEqual(0);
 
     await ongletEspace(page, 'Aperçu').click();
-    const abonnement = page.getByRole('link', { name: "S'abonner dans mon agenda" });
-    await expect(abonnement).toBeVisible();
-    const bande = await abonnement.boundingBox();
-    expect(bande, "le bouton d'abonnement n'a pas de boîte").not.toBeNull();
+    const emporter = page.getByRole('button', { name: 'Emporter mon planning' });
+    await expect(emporter).toBeVisible();
+    const bande = await emporter.boundingBox();
+    expect(bande, "le bouton « Emporter » n'a pas de boîte").not.toBeNull();
     expect(bande!.y + bande!.height).toBeLessThanOrEqual(hauteur);
+  });
+
+  /**
+   * Sur 390 px, le poste en cours ou le prochain est lisible sans défiler : en
+   * première ligne, au-dessus des onglets, et la première carte de la journée
+   * tient elle aussi dans l'écran — elle était à 735 px, sous la navigation, les
+   * onglets, trois boutons de téléchargement et la confirmation.
+   */
+  test('sur un téléphone de 390 px, le prochain poste se lit sans défiler', async ({ page }) => {
+    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/animateur/${jeton}`);
+
+    const carte = page.locator('.espace-poste-carte').first();
+    await expect(carte).toBeVisible();
+    const boite = await carte.boundingBox();
+    expect(boite, "la carte n'a pas de boîte").not.toBeNull();
+    expect(boite!.y).toBeLessThan(844);
+    // Hors collecte, ses deux guichets n'existent pas : une rangée, trois onglets.
+    const nav = page.getByRole('navigation', { name: 'Espace animateur' });
+    await expect(nav.getByRole('link')).toHaveCount(3);
+    await expect(nav.getByRole('link', { name: 'Mes disponibilités' })).toHaveCount(0);
+  });
+
+  /** Le bouton épinglé ne recouvre rien : en bas de page, le dernier contenu est au-dessus de lui. */
+  test('le bouton épinglé ne recouvre aucun contenu', async ({ page }) => {
+    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
+    await page.setViewportSize({ width: 390, height: 844 });
+    for (const onglet of ['Aperçu', 'Coéquipiers']) {
+      await page.goto(`/animateur/${jeton}`);
+      await ongletEspace(page, onglet).click();
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      const epingle = await page.locator('.espace-action-epinglee').boundingBox();
+      const dernier = await page
+        .locator('.espace-agenda-detail, .espace-equipe, .espace-apercu')
+        .last()
+        .boundingBox();
+      expect(epingle, 'le bouton épinglé est rendu').not.toBeNull();
+      expect(dernier, `onglet ${onglet} : un contenu est rendu`).not.toBeNull();
+      expect(dernier!.y + dernier!.height, `onglet ${onglet}`).toBeLessThanOrEqual(epingle!.y + 1);
+    }
   });
 
   /*
@@ -421,7 +464,7 @@ test.describe('espace animateur', () => {
       await page.goto(`/animateur/${jeton}`);
       for (const onglet of ['Jour', 'Aperçu', 'Coéquipiers']) {
         await ongletEspace(page, onglet).click();
-        await expect(page.getByRole('heading', { name: 'Emporter mon planning' })).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Emporter mon planning' })).toBeVisible();
         const debord = await page.evaluate(
           () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
         );

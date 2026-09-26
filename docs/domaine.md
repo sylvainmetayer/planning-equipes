@@ -116,7 +116,10 @@ fois par la collecte des disponibilités et par les avertissements de saisie
 ## Un poste = une place
 
 Un `PosteAffectation` est créé **par place à pourvoir**, jamais un par couple
-stand × créneau. Un poste non pourvu garde `animateur = null`.
+stand × créneau. Un poste non pourvu garde `animateur = null`. Le jour J, une
+place d'un créneau en cours peut être **scindée à « maintenant »** en deux
+sièges — l'origine écourtée et sa suite (`suiteDe`) — qui restent une seule
+place : voir [Le passé est figé](#le-passé-est-figé).
 
 `allowsUnassigned = true` : une place peut rester vide pendant la recherche, et
 c'est `posteDoitEtrePourvu` qui en fait une exigence dure. **Conséquence
@@ -396,9 +399,28 @@ réécrivent une place sans solveur — le glisser-déposer des vues journalièr
 (`deplacer_affectation`), l'acceptation d'un échange, une réparation
 appliquée ou suggérée — refusent une place dont le créneau est commencé, au
 même horizon, avec la même phrase : « Ce créneau est déjà commencé : le passé
-ne se modifie plus » (`400` en REST, refus métier en MCP). Le mode jour J
-continue d'agir sur les créneaux restants de la journée ; l'absence est
-enregistrée sur le créneau en cours, son siège n'est pas vidé.
+ne se modifie plus » (`400` en REST, refus métier en MCP).
+
+**Le passé est figé à la minute, pas au créneau**
+([ADR 0066](decisions/0066-le-passe-est-fige-a-la-minute.md), qui assouplit
+0044). Une réparation, un « Placer » ou un « Marquer absent » sur le siège d'un
+créneau **en cours** ne sont pas refusés : l'écriture **scinde le siège à
+« maintenant »** (la minute courante de l'horloge du jour J) en deux sièges
+réels. L'origine est écourtée à cette minute (`heureFinEffective`) et garde
+son titulaire — l'historique dit qui a tenu 9 h 00 – 9 h 20 ; la suite couvre
+le reste du créneau (`heureDebutEffective`), porte `suiteDe` (l'identifiant de
+son origine, persisté dans `poste_affectation.suite_de`) et reçoit
+l'écriture. Son identifiant est dérivé : `<origine>~HHmm`. Seul un siège déjà
+**terminé** reste refusé.
+
+| Où | Ce que la scission change |
+| --- | --- |
+| Génération par place | Aucune : le référentiel génère toujours un siège par place ; la suite n'est pas une place de plus |
+| Équipage d'un stand premium (`crewByStand`) | La suite n'est pas comptée : une place scindée reste une place |
+| Reconstruction (réamorçage, incrémental) | `SeatSplit.restore` rejoue les cellules scindées du plan persisté — fenêtres et titulaires — sur les sièges générés ; le solveur ne rouvre que la suite |
+| Instantanés | La suite et son `suiteDe` sont capturés et restaurés avec le plan |
+| Export de scénario | Les suites sont omises : un scénario décrit les places à pourvoir, et son siège ne porte pas de fenêtre |
+| « Nouveau depuis ce matin » (Aujourd'hui, affichage mural) | La suite est une cellule que le plan publié n'avait pas : sa place vide est nouvelle |
 
 **Rien à planifier.** Une résolution dont **toutes** les places sont passées
 — l'édition est terminée, ou la date simulée est après l'événement — est

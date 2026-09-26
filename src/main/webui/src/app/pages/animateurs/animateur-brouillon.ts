@@ -4,7 +4,7 @@
 //
 // The draft itself is persisted by `core/brouillon-formulaire.ts`, in
 // sessionStorage only (see `SESSION_DRAFT_STORAGE`): it carries an identity,
-// a birth date and an e-mail.
+// a birth date, an e-mail and a phone number.
 
 import { Animateur, NiveauCompetence } from '../../core/models';
 
@@ -27,6 +27,7 @@ export interface AnimateurDraft {
   dateNaissance: string;
   manager: boolean;
   email: string;
+  telephone: string;
   competences: CompetenceRow[];
   souhaits: string[];
   joursIndisponibles: string[];
@@ -44,6 +45,7 @@ export function toDraft(animateur: Animateur | null): AnimateurDraft {
       dateNaissance: '',
       manager: false,
       email: '',
+      telephone: '',
       competences: [],
       souhaits: [],
       joursIndisponibles: [],
@@ -58,6 +60,7 @@ export function toDraft(animateur: Animateur | null): AnimateurDraft {
     dateNaissance: animateur.dateNaissance ?? '',
     manager: animateur.manager ?? false,
     email: animateur.email ?? '',
+    telephone: animateur.telephone ?? '',
     competences: Object.entries(animateur.competences ?? {}).map(([typologie, niveau]) => ({
       typologie,
       niveau,
@@ -85,7 +88,7 @@ export function readAnimateurDraft(raw: unknown, recordId: string | null): Anima
     return null;
   }
   const draft = raw as Record<string, unknown>;
-  const textFields = ['id', 'prenom', 'nom', 'dateNaissance', 'email'] as const;
+  const textFields = ['id', 'prenom', 'nom', 'dateNaissance', 'email', 'telephone'] as const;
   if (!textFields.every((field) => typeof draft[field] === 'string')) {
     return null;
   }

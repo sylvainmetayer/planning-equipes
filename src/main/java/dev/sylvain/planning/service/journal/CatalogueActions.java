@@ -100,6 +100,10 @@ public final class CatalogueActions {
     private static final String AFFECTATION_POSEE = "AFFECTATION_POSEE";
     private static final String ABSENCE_ENREGISTREE = "ABSENCE_ENREGISTREE";
     private static final String ABSENCE_ANNULEE = "ABSENCE_ANNULEE";
+    private static final String EMPECHEMENT_SIGNALE = "EMPECHEMENT_SIGNALE";
+    private static final String EMPECHEMENT_RETIRE = "EMPECHEMENT_RETIRE";
+    private static final String EMPECHEMENT_TRAITE = "EMPECHEMENT_TRAITE";
+    private static final String EMPECHEMENT_CLASSE = "EMPECHEMENT_CLASSE";
     private static final String INSTANTANE_CAPTURE = "INSTANTANE_CAPTURE";
     private static final String INSTANTANE_RESTAURE = "INSTANTANE_RESTAURE";
     private static final String INSTANTANE_SUPPRIME = "INSTANTANE_SUPPRIME";
@@ -295,6 +299,10 @@ public final class CatalogueActions {
         action(AFFECTATION_POSEE, "Poste attribué à la main", Entite.PLANNING);
         action(ABSENCE_ENREGISTREE, "Absence déclarée en mode jour J", Entite.PLANNING);
         action(ABSENCE_ANNULEE, "Absence levée en mode jour J", Entite.PLANNING);
+        action(EMPECHEMENT_SIGNALE, "Empêchement signalé depuis l'espace", Entite.PLANNING);
+        action(EMPECHEMENT_RETIRE, "Empêchement retiré depuis l'espace", Entite.PLANNING);
+        action(EMPECHEMENT_TRAITE, "Empêchement constaté : absence marquée", Entite.PLANNING);
+        action(EMPECHEMENT_CLASSE, "Empêchement classé", Entite.PLANNING);
 
         /* -------------- Snapshots, publication, sends --------------- */
         action(INSTANTANE_CAPTURE, "Instantané du planning capturé", Entite.INSTANTANE);
@@ -485,6 +493,8 @@ public final class CatalogueActions {
         route("AffectationExplanationResource#applyPlacement", AFFECTATION_POSEE);
         route("JourJResource#recordAbsence", ABSENCE_ENREGISTREE);
         route("JourJResource#cancelAbsence", ABSENCE_ANNULEE);
+        route("JourJResource#treatAbsenceReport", EMPECHEMENT_TRAITE);
+        route("JourJResource#fileAbsenceReport", EMPECHEMENT_CLASSE);
 
         route("PlanSnapshotResource#capture", INSTANTANE_CAPTURE);
         route("PlanSnapshotResource#restore", INSTANTANE_RESTAURE);
@@ -546,6 +556,8 @@ public final class CatalogueActions {
         route("EspaceAnimateurResource#grantReceivedDemande", ECHANGE_ACCORDE);
         route("EspaceAnimateurResource#declineReceivedDemande", ECHANGE_DECLINE);
         route("EspaceAnimateurResource#declarer", DECLARATION_SOUMISE);
+        route("EspaceAnimateurResource#reportAbsence", EMPECHEMENT_SIGNALE);
+        route("EspaceAnimateurResource#withdrawAbsenceReport", EMPECHEMENT_RETIRE);
         route("EspaceAnimateurResource#requestCarpool", COVOITURAGE_DEMANDE);
         route("EspaceAnimateurResource#regenerateAbonnementToken", ABONNEMENT_CREE);
         route("EspaceAnimateurResource#cancel", ABONNEMENT_ANNULE);

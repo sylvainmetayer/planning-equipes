@@ -12,6 +12,7 @@ import { IMPORT_CARDS, readImportCard } from '../pages/imports/imports';
 import { JOURNEE_VIEWS, PLANNING_AXES, readAxe, readView } from '../pages/journee/journee';
 import { OPENINGS_VIEW_PARAMS, readOpeningsView } from '../pages/ouvertures/ouvertures';
 import { ONGLETS_PARAMETRES, readOngletParametres } from '../pages/parametres/parametres';
+import { readOngletDiffuser } from '../pages/publication/onglet';
 import { ONGLETS_REGLES, readOngletRegles } from '../pages/regles/regles';
 import { readOngletStands } from '../pages/stands/stands-onglet';
 import { NavLink, buildLegalLinks, buildNavGroups, buildOffMenuLinks } from './nav-groups';
@@ -63,6 +64,11 @@ const TAB_READERS: Record<string, TabReader | readonly TabReader[]> = {
     },
   ],
   '/diagnostic': { param: 'onglet', opens: (v) => readOnglet(v) === v, values: ONGLETS_DIAGNOSTIC },
+  '/publication': {
+    param: 'onglet',
+    opens: (v) => readOngletDiffuser(v) === v,
+    values: ['envoyer', 'documents'],
+  },
   '/consignes-solveur': {
     param: 'onglet',
     opens: (v) => readOngletConsignesSolveur(v) === v,

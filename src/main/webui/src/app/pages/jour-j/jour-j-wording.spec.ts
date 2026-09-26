@@ -1,25 +1,29 @@
 import { describe, expect, it } from 'vitest';
 import type {
   AnimateurAffecte,
-  ApercuPublication,
   CreneauJourJ,
   EtatJourJ,
   PosteAPourvoir,
   SuggestionsReparation,
 } from '../../core/models';
 import {
+  alerteLibelle,
   aucuneSuggestion,
   blocageDuPoste,
   chargeRestante,
+  searchPeople,
   dejaDeService,
+  dayHeader,
   heure,
   heureDe,
   libelleCreneau,
   nomDuCandidat,
+  nonPublieLibelle,
   plage,
   porteeDesSuggestions,
-  rappelPublication,
+  prevenirLibelle,
   resumeDuJour,
+  RESULTATS_MAX,
 } from './jour-j-wording';
 
 function etat(overrides: Partial<EtatJourJ> = {}): EtatJourJ {
@@ -33,6 +37,12 @@ function etat(overrides: Partial<EtatJourJ> = {}): EtatJourJ {
     absences: [],
     animateurs: [],
     consigne: null,
+    signalements: [],
+    jourNumero: 5,
+    standsOuverts: 60,
+    alertes: [],
+    aPrevenir: [],
+    echangesAArbitrer: 0,
     ...overrides,
   };
 }
@@ -67,6 +77,8 @@ function poste(overrides: Partial<PosteAPourvoir> = {}): PosteAPourvoir {
     heureDebut: '14:00:00',
     heureFin: '18:00:00',
     verrouille: false,
+    nouveau: false,
+    resteDuCreneau: false,
     ...overrides,
   };
 }
@@ -126,25 +138,72 @@ describe('resumeDuJour', () => {
   });
 });
 
-describe('rappelPublication', () => {
-  const apercu = (nombreConcernes: number): ApercuPublication => ({
-    jamaisPublie: false,
-    planVide: false,
-    solveEnCours: false,
-    dernierePublicationLe: null,
-    nombreConcernes,
-    journeesNonValidees: 0,
-    destinataires: [],
+describe('dayHeader', () => {
+  it('states the rank, the open stands and the shifts left', () => {
+    expect(dayHeader(etat({ creneauxRestants: [creneau(), creneau({ id: 3 })] }))).toBe(
+      'J5 · 60 stands ouverts · 2 vacations restantes',
+    );
   });
 
-  it('stays silent when nobody is waiting', () => {
-    expect(rappelPublication(apercu(0))).toBe('');
-    expect(rappelPublication(null)).toBe('');
+  it('drops the rank of a day before the event', () => {
+    expect(dayHeader(etat({ jourNumero: 0, standsOuverts: 1 }))).toBe(
+      '1 stand ouvert · 0 vacations restantes',
+    );
+  });
+});
+
+describe('prevenirLibelle / nonPublieLibelle', () => {
+  it('counts the people the targeted publication would write to', () => {
+    expect(prevenirLibelle(0)).toBe('');
+    expect(prevenirLibelle(2)).toBe('Prévenir les 2 personnes');
+    expect(nonPublieLibelle(0)).toContain('dernière version');
+    expect(nonPublieLibelle(3)).toContain('3 personnes');
+  });
+});
+
+describe('searchPeople', () => {
+  const roster = etat({
+    animateursDeService: [animateur({ animateurId: 'A87', nomAffiche: 'Hélène Martin' })],
+    animateurs: Array.from({ length: 153 }, (_, rang) => ({
+      animateurId: `A${rang + 1}`,
+      nomAffiche: rang === 86 ? 'Hélène Martin' : `Personne ${rang + 1}`,
+      telephone: rang === 86 ? '06 12 34 56 78' : null,
+    })),
   });
 
-  it('counts the people concerned', () => {
-    expect(rappelPublication(apercu(1))).toContain('1 personne');
-    expect(rappelPublication(apercu(3))).toContain('3');
+  /** Finding A87 among 153 on a phone: a search, never a list to scroll. */
+  it('finds one person among 153, accents and case aside', () => {
+    const trouves = searchPeople(roster, 'helene');
+    expect(trouves.map((personne) => personne.animateurId)).toEqual(['A87']);
+    expect(trouves[0].telephone).toBe('06 12 34 56 78');
+    expect(trouves[0].postesRestants).toBe(2);
+  });
+
+  it('reads the id too, and every word typed', () => {
+    expect(searchPeople(roster, 'a87').map((personne) => personne.animateurId)).toEqual(['A87']);
+    expect(searchPeople(roster, 'martin hel')).toHaveLength(1);
+  });
+
+  it('lists nothing below two characters, and never more than a screen', () => {
+    expect(searchPeople(roster, 'p')).toEqual([]);
+    expect(searchPeople(roster, 'personne')).toHaveLength(RESULTATS_MAX);
+  });
+});
+
+describe('alerteLibelle', () => {
+  it('words the three alerts of the wall display', () => {
+    const base = {
+      standNom: 'Cirque',
+      start: '2026-07-08T14:00:00',
+      end: '2026-07-08T18:00:00',
+      count: 2,
+      nom: null,
+    };
+    expect(alerteLibelle({ ...base, type: 'NEW_EMPTY_SEATS' })).toContain('depuis ce matin');
+    expect(alerteLibelle({ ...base, type: 'STARTING_SOON' })).toContain('14:00');
+    expect(alerteLibelle({ ...base, type: 'BREAK_WITHOUT_RELAY', nom: 'Léa M.' })).toContain(
+      'Léa M.',
+    );
   });
 });
 
@@ -200,6 +259,7 @@ describe('chargeRestante', () => {
   it('says how much of the day the person still holds', () => {
     expect(chargeRestante(animateur({ postesRestants: 1 }))).toContain('1 créneau restant');
     expect(chargeRestante(animateur({ postesRestants: 3 }))).toContain('3');
+    expect(chargeRestante({ postesRestants: 0 })).toContain('Pas de service');
   });
 });
 
@@ -207,8 +267,8 @@ describe('nomDuCandidat', () => {
   const charge = etat({
     animateursDeService: [animateur()],
     animateurs: [
-      { animateurId: 'A1', nomAffiche: 'Alice Referente' },
-      { animateurId: 'A2', nomAffiche: 'Bruno Autonome' },
+      { animateurId: 'A1', nomAffiche: 'Alice Referente', telephone: null },
+      { animateurId: 'A2', nomAffiche: 'Bruno Autonome', telephone: null },
     ],
   });
 

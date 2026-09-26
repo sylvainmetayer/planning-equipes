@@ -354,10 +354,15 @@ export function buildNavGroups(): NavGroup[] {
       links: [
         {
           path: '/publication',
-          label: $localize`:@@nav.link.publication:Publication`,
+          label: $localize`:@@nav.link.diffuser:Diffuser`,
           icon: 'outgoing_mail',
-          shortcut: 'p',
-          keywords: $localize`:@@nav.keywords.publication:publier envoyer pdf`,
+          // No `g`+letter: `d` is the Diagnostic's, and a letter that is not
+          // the label's initial is one nobody guesses. Ctrl+K finds it.
+          keywords: $localize`:@@nav.keywords.diffuser:publier publication envoyer renvoyer relancer accusés pdf documents`,
+          tabs: [
+            tab('onglet', 'envoyer', $localize`:@@diffuser.onglet.envoyer:Envoyer`),
+            tab('onglet', 'documents', $localize`:@@diffuser.onglet.documents:Documents`),
+          ],
         },
         {
           path: '/echanges',
@@ -373,11 +378,12 @@ export function buildNavGroups(): NavGroup[] {
       title: $localize`:@@nav.group.aujourdhui:Aujourd'hui`,
       links: [
         {
-          path: '/jour-j',
-          label: $localize`:@@nav.link.jourJ:Mode jour J`,
+          path: '/aujourdhui',
+          label: $localize`:@@nav.link.aujourdhui:Aujourd'hui`,
           icon: 'emergency',
-          shortcut: 'm',
-          keywords: $localize`:@@nav.keywords.jourJ:absent remplacer`,
+          // No `g`+letter: `a` is the Animateurs', and a letter that is not
+          // the label's initial is one nobody guesses. Ctrl+K finds it.
+          keywords: $localize`:@@nav.keywords.aujourdhui:jour J absent remplacer téléphone TV mural`,
         },
       ],
     },

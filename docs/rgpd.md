@@ -95,7 +95,7 @@ crochet.
 | Rubrique | Contenu |
 | --- | --- |
 | Catégories de personnes | Animateurs, **dont des mineurs** ; encadrants et managers |
-| Catégories de données | Nom, prénom, **date de naissance**, adresse électronique (facultative), compétences, souhaits d'affectation, jours d'indisponibilité, **deux jetons d'accès** — celui de l'espace animateur et celui de l'abonnement au calendrier —, **les liens d'affichage mural de l'organisation (jeton haché, libellé, date du dernier accès)**, affectations et échanges, **déclarations de disponibilités en libre-service — dont un commentaire en champ libre**, **demandes de covoiturage (coéquipiers nommés, et le motif libre que l'organisation peut joindre en les écartant)**, instantanés de planning, sessions et journaux d'accès, **historique des actions (identifiants et noms de champs, sans valeurs)** |
+| Catégories de données | Nom, prénom, **date de naissance**, adresse électronique (facultative), **numéro de téléphone (facultatif, pour appeler un remplaçant le jour J)**, compétences, souhaits d'affectation, jours d'indisponibilité, **deux jetons d'accès** — celui de l'espace animateur et celui de l'abonnement au calendrier —, **les liens d'affichage mural de l'organisation (jeton haché, libellé, date du dernier accès)**, affectations et échanges, **déclarations de disponibilités en libre-service — dont un commentaire en champ libre**, **demandes de covoiturage (coéquipiers nommés, et le motif libre que l'organisation peut joindre en les écartant)**, instantanés de planning, sessions et journaux d'accès, **historique des actions (identifiants et noms de champs, sans valeurs)** |
 | Traitements réalisés | Hébergement, planification et résolution, **affichage du planning de travail du jour sur un écran de la salle de contrôle (prénom et initiale par défaut)**, **import d'un fichier tabulaire d'animateurs fourni par l'organisation (traité en mémoire, jamais conservé)**, envoi d'e-mails (codes d'accès, plannings individuels, notifications d'échange, **rappels et relances automatiques de nuit**), sauvegarde, **journalisation des actions d'administration**, purge |
 | Destinataires | L'organisateur via l'interface d'administration ; l'animateur via son espace **et via l'application d'agenda à laquelle il communique son adresse d'abonnement** ; les autres animateurs pour la part visible du planning (voir `securite.md`) ; **toute personne présente devant un écran d'affichage mural** ; le relais SMTP |
 | Mesures de sécurité | TLS et HSTS ; en-têtes CSP et `Referrer-Policy` — **les jetons voyagent dans l'URL** ; chiffrement des sessions ; limitation de débit sur les codes d'espace et verrouillage du formulaire de connexion ; origine injoignable autrement que par le reverse proxy ; sauvegarde nocturne automatique par `pg_dump`, en rotation dans un volume dédié, dont l'**externalisation chiffrée hors machine reste à la charge de l'exploitant** (`exploitation.md` §5) |
@@ -291,6 +291,16 @@ complètes. Quatre points sont connus et se consignent :
   révocation ; la date du dernier accès, dans la liste des liens, est ce qui
   permet de le remarquer. Si l'écran est visible du public, la politique de
   confidentialité de l'instance doit le mentionner ;
+- **le numéro de téléphone est une donnée de l'organisation, pas un canal** :
+  facultatif, saisi sur la fiche ou importé d'une colonne du fichier
+  d'animateurs, il sert à une chose — appeler un remplaçant le jour J. Il est
+  affiché sur la fiche et sur l'écran Aujourd'hui (session d'administration),
+  et **nulle part ailleurs** : ni sur l'affichage mural, ni dans un planning
+  PDF, un flux ICS ou un export CSV de référentiel, ni par MCP — le test de
+  confidentialité MCP refuse toute vue qui le porterait. Il voyage en revanche
+  avec la fiche là où la fiche voyage entière : l'export SQL, les sauvegardes
+  et le scénario YAML de l'édition, qui se traitent déjà avec les égards d'un
+  dump. Aucun SMS n'est envoyé par l'application ;
 - **les sauvegardes sont un lieu de stockage à part entière** : depuis qu'elles
   sont automatiques, un dump complet — mineurs et jetons compris — existe en
   permanence sur le volume. L'export SQL de l'application est plus étroit — il
@@ -366,6 +376,25 @@ complètes. Quatre points sont connus et se consignent :
   alerte qui ne nomme plus personne. Ce journal n'a pas de purge propre : il
   disparaît avec son édition, en cascade sur `edition_id`, donc à la purge
   annuelle ;
+- **un empêchement signalé depuis l'espace** (`signalement_absence`) dit
+  qu'une personne ne sera pas là un jour donné, ou sur un poste. Il ne porte
+  **aucun texte libre** : le motif, facultatif, est une liste fermée — raison
+  personnelle, transport, autre —, choisie précisément pour qu'aucune raison
+  de santé ou de famille n'y soit jamais écrite. Le courriel qui prévient
+  l'organisation nomme la personne, la journée, le poste et ce motif, comme la
+  notification d'une déclaration de disponibilités. La ligne suit la fiche, le
+  créneau et le stand qu'elle nomme (suppression en cascade) et disparaît avec
+  l'édition ;
+- **l'état de chaque envoi du planning est conservé** (`envoi_planning`) :
+  pour chaque publication et chaque renvoi, une ligne par personne qui dit si
+  le courriel est parti, a échoué, n'a pas pu partir faute d'adresse ou a été
+  différé. Des **dates et des états seulement** : ni le contenu du message
+  (qui vit déjà dans `publication_destinataire`), ni l'adresse, ni le message
+  d'erreur du serveur de messagerie — il cite volontiers l'adresse refusée —,
+  remplacé par une cause courte (adresse refusée, boîte pleine, serveur
+  injoignable, autre). Comme la trace des publications, la ligne survit à la
+  fiche qu'elle concerne — c'est une preuve d'envoi — et cascade avec son
+  instantané et son édition, donc disparaît au plus tard à la purge annuelle ;
 - **l'historique des actions (`journal_action`) trace qui a fait quoi**, et
   c'est un traitement à consigner comme tel. Il suit la même règle que le
   journal ci-dessus, et deux de plus. Il ne stocke **ni nom, ni adresse, ni

@@ -1,20 +1,30 @@
-// The event-day screen, rendered. The wording is pinned down next door in
-// `jour-j-wording.spec.ts`; what is checked here is the flow the issue asks
-// for and the two promises it makes:
+// Aujourd'hui, the event day's hub, rendered. The wording is pinned down next
+// door in `jour-j-wording.spec.ts`; what is checked here is the flow the issue
+// asks for and the promises it makes:
 //
+//   - somebody is found by a search, never in a list of 86 full buttons;
 //   - marking somebody absent goes straight to the seats it freed and asks who
 //     can take them, without the operator navigating anywhere;
+//   - a new hole and a hole of the published plan are told apart;
 //   - applying a replacement reuses the repair assistant's own write, so no
-//     solve is ever started from this page.
+//     solve is ever started from this page;
+//   - « Prévenir les N personnes » publishes to those people and nobody else.
 
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AffectationExplanationService } from '../../core/affectation-explanation.service';
+import { AffichageMuralApi } from '../../core/api/affichage-mural-api';
 import { JourJService } from '../../core/jour-j.service';
 import { NotificationService } from '../../core/notification.service';
-import type { AbsenceMarquee, EtatJourJ, SuggestionsReparation } from '../../core/models';
+import type {
+  AbsenceMarquee,
+  EtatJourJ,
+  PosteAPourvoir,
+  SuggestionsReparation,
+} from '../../core/models';
+import { ConfirmService } from '../../shared/confirm-dialog';
 import { JourJPage } from './jour-j-page';
 import { SolverJobService } from '../../core/solver-job.service';
 
@@ -32,15 +42,21 @@ function etat(overrides: Partial<EtatJourJ> = {}): EtatJourJ {
     postesAPourvoir: [],
     absences: [],
     animateurs: [
-      { animateurId: 'A1', nomAffiche: 'Alice Referente' },
-      { animateurId: 'A2', nomAffiche: 'Bruno Autonome' },
+      { animateurId: 'A1', nomAffiche: 'Alice Referente', telephone: '06 11 22 33 44' },
+      { animateurId: 'A2', nomAffiche: 'Bruno Autonome', telephone: '06 55 66 77 88' },
     ],
     consigne: null,
+    signalements: [],
+    jourNumero: 5,
+    standsOuverts: 60,
+    alertes: [],
+    aPrevenir: [],
+    echangesAArbitrer: 0,
     ...overrides,
   };
 }
 
-const posteLibere = {
+const posteLibere: PosteAPourvoir = {
   posteId: 'P2',
   standId: 'STAND-STRAT',
   standNom: 'Stand stratégie',
@@ -48,6 +64,8 @@ const posteLibere = {
   heureDebut: '14:00:00',
   heureFin: '18:00:00',
   verrouille: false,
+  nouveau: true,
+  resteDuCreneau: false,
 };
 
 function marquee(): AbsenceMarquee {
@@ -98,7 +116,7 @@ describe('JourJPage', () => {
     marquerAbsent: ReturnType<typeof vi.fn>;
     annulerAbsence: ReturnType<typeof vi.fn>;
     suggestions: ReturnType<typeof vi.fn>;
-    apercuPublication: ReturnType<typeof vi.fn>;
+    prevenir: ReturnType<typeof vi.fn>;
   };
   let reparations: { applyRepair: ReturnType<typeof vi.fn> };
   let notify: ReturnType<typeof vi.fn>;
@@ -113,13 +131,13 @@ describe('JourJPage', () => {
       marquerAbsent: vi.fn(async () => marquee()),
       annulerAbsence: vi.fn(async () => undefined),
       suggestions: vi.fn(async () => suggestions()),
-      apercuPublication: vi.fn(async () => ({
-        jamaisPublie: false,
-        planVide: false,
-        solveEnCours: false,
-        dernierePublicationLe: null,
-        nombreConcernes: 3,
-        destinataires: [],
+      prevenir: vi.fn(async () => ({
+        snapshotId: 9,
+        publieLe: '2026-07-08T11:35:00Z',
+        envoyes: 2,
+        sansEmail: [],
+        echecs: [],
+        differes: [],
       })),
     };
     reparations = { applyRepair: vi.fn(async () => undefined) };
@@ -133,6 +151,8 @@ describe('JourJPage', () => {
         { provide: AffectationExplanationService, useValue: reparations },
         { provide: NotificationService, useValue: { notify } },
         { provide: SolverJobService, useValue: { editingLocked: signal(false) } },
+        { provide: ConfirmService, useValue: { ask: vi.fn(async () => true) } },
+        { provide: AffichageMuralApi, useValue: { list: vi.fn(async () => []) } },
       ],
     });
     fixture = TestBed.createComponent(JourJPage);
@@ -140,64 +160,67 @@ describe('JourJPage', () => {
     fixture.detectChanges();
   }
 
+  function racine(): HTMLElement {
+    return fixture.nativeElement as HTMLElement;
+  }
+
   function text(): string {
-    return (fixture.nativeElement as HTMLElement).textContent ?? '';
+    return racine().textContent ?? '';
+  }
+
+  function boutons(libelle: string): HTMLButtonElement[] {
+    return Array.from(racine().querySelectorAll('button')).filter((each) =>
+      (each.textContent ?? '').includes(libelle),
+    );
   }
 
   function bouton(libelle: string): HTMLButtonElement {
-    const trouve = Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll('button'),
-    ).find((each) => (each.textContent ?? '').includes(libelle));
+    const trouve = boutons(libelle)[0];
     expect(trouve, `bouton « ${libelle} » absent`).toBeDefined();
-    return trouve as HTMLButtonElement;
+    return trouve;
+  }
+
+  async function cliquer(libelle: string): Promise<void> {
+    bouton(libelle).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  /** Types in the search field, as a thumb would. */
+  async function search(texte: string): Promise<void> {
+    const champ = racine().querySelector('input[type=search]') as HTMLInputElement;
+    champ.value = texte;
+    champ.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+    fixture.detectChanges();
   }
 
   beforeEach(async () => {
     await rendre(etat());
   });
 
-  /**
-   * The screen is under development and, unlike the other screens on trial, it
-   * writes. The default banner wording ("data entered here may still change")
-   * would be too gentle: what is pinned here is that the warning says the screen
-   * acts, and on what.
-   */
-  it('warns that it writes to the saved plan, in its own words', () => {
-    const banniere = (fixture.nativeElement as HTMLElement).querySelector(
-      '.work-in-progress-banner',
-    );
-    expect(banniere).not.toBeNull();
-    expect(banniere!.textContent).toContain('il agit');
-    expect(banniere!.textContent).toContain('planning enregistré');
-    expect(banniere!.textContent).toContain('ne sont pas encore garantis');
+  /** The work-in-progress banner is gone: the screen is the day's hub now. */
+  it('states the day at a glance, with no work-in-progress banner', () => {
+    expect(racine().querySelector('.work-in-progress-banner')).toBeNull();
+    expect(text()).toContain('J5 · 60 stands ouverts · 1 vacation restante');
+    expect(text()).toContain('13:30');
   });
 
-  it('shows who is on duty over the remaining timeslots', () => {
+  /** 153 people are found by a search: nobody is listed, no button is shown, before one. */
+  it('lists nobody until a name is searched, then the person with their phone', async () => {
+    expect(boutons('Marquer absent')).toHaveLength(0);
+
+    await search('alice');
+
     expect(text()).toContain('Alice Referente');
-    expect(text()).toContain('14:00 – 18:00');
-  });
-
-  /** Issue #245: a reminder with a link, never a send button inside an emergency screen. */
-  it('reminds how many people are waiting for a publication, without offering to publish', () => {
-    expect(text()).toContain('3');
-    expect(text()).toContain('publi');
-    const send = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button')).find(
-      (each) => /publier|envoyer/i.test(each.textContent ?? ''),
-    );
-    expect(send).toBeUndefined();
-  });
-
-  it('points the publication reminder at the Publication screen', () => {
-    const lien = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('a')).find(
-      (each) => (each.textContent ?? '').includes('Aller à la publication'),
-    );
-    expect(lien?.getAttribute('href')).toBe('/publication');
+    const tel = racine().querySelector('a[href^="tel:"]');
+    expect(tel?.getAttribute('href')).toBe('tel:06 11 22 33 44');
+    expect(boutons('Marquer absent')).toHaveLength(1);
   });
 
   it('asks for a confirmation before writing an absence', async () => {
-    bouton('Marquer absent').click();
-    await fixture.whenStable();
-    fixture.detectChanges();
+    await search('alice');
+    await cliquer('Marquer absent');
 
     expect(jourJ.marquerAbsent).not.toHaveBeenCalled();
     expect(text()).toContain("Confirmer l'absence");
@@ -206,16 +229,56 @@ describe('JourJPage', () => {
   it('marks the absence and immediately looks for a replacement on each freed seat', async () => {
     await rendre(etat(), etat({ postesAPourvoir: [posteLibere] }));
 
-    bouton('Marquer absent').click();
-    await fixture.whenStable();
-    fixture.detectChanges();
-    bouton("Confirmer l'absence").click();
-    await fixture.whenStable();
-    fixture.detectChanges();
+    await search('alice');
+    await cliquer('Marquer absent');
+    await cliquer("Confirmer l'absence");
 
     expect(jourJ.marquerAbsent).toHaveBeenCalledWith('A1', '');
     expect(jourJ.suggestions).toHaveBeenCalledWith('P2');
     expect(text()).toContain('Stand stratégie');
+  });
+
+  /**
+   * The timeslot under way: the rest of the split seat is offered as such, and
+   * three taps — mark absent, confirm, assign — repair it.
+   */
+  it('repairs the rest of the timeslot under way in three taps', async () => {
+    const reste: PosteAPourvoir = {
+      ...posteLibere,
+      posteId: 'P2~0920',
+      heureDebut: '09:20:00',
+      heureFin: '12:00:00',
+      resteDuCreneau: true,
+    };
+    await rendre(etat(), etat({ postesAPourvoir: [reste] }));
+    jourJ.marquerAbsent = vi.fn(async () => ({ ...marquee(), postesLiberes: [reste] }));
+
+    await search('alice');
+    await cliquer('Marquer absent');
+    await cliquer("Confirmer l'absence");
+    expect(text()).toContain('Remplacer sur le reste du créneau');
+    await cliquer('Affecter');
+
+    expect(reparations.applyRepair).toHaveBeenCalledWith('P2~0920', 'A2');
+  });
+
+  /** « Nouveau depuis ce matin » vs « Places vides connues ». */
+  it('tells a hole opened this morning from a hole of the published plan', async () => {
+    const connu: PosteAPourvoir = {
+      ...posteLibere,
+      posteId: 'P9',
+      standNom: 'Homme-jeu',
+      nouveau: false,
+    };
+    await rendre(etat({ postesAPourvoir: [posteLibere, connu] }));
+
+    const nouveau = racine().querySelector('#aujourdhui-nouveau')?.textContent ?? '';
+    const connues = racine().querySelector('#aujourdhui-connues')?.textContent ?? '';
+    expect(nouveau).toContain('Stand stratégie');
+    expect(nouveau).not.toContain('Homme-jeu');
+    expect(connues).toContain('Homme-jeu');
+    expect(connues).toContain('Qui peut tenir ce siège ?');
+    expect(racine().querySelectorAll('.aujourdhui-connu')).toHaveLength(1);
   });
 
   /**
@@ -225,9 +288,7 @@ describe('JourJPage', () => {
   it('says the suggestion list is capped and not the whole pool', async () => {
     await rendre(etat({ postesAPourvoir: [posteLibere] }));
 
-    bouton('Trouver un remplaçant').click();
-    await fixture.whenStable();
-    fixture.detectChanges();
+    await cliquer('Remplacer');
 
     expect(text()).toContain('20');
     expect(text()).toContain('137');
@@ -235,27 +296,35 @@ describe('JourJPage', () => {
   });
 
   /**
-   * The acceptance criterion of the issue: one tap, one seat, and the write is
-   * the repair assistant's surgical UPDATE — nothing on this page ever posts to
-   * a solve endpoint.
+   * One tap, one seat, and the write is the repair assistant's surgical UPDATE
+   * — nothing on this page ever posts to a solve endpoint. The replacement is
+   * named from the roster, with the number to call them on.
    */
   it('applies a replacement through the repair assistant, starting no solve', async () => {
     await rendre(etat({ postesAPourvoir: [posteLibere] }));
-    bouton('Trouver un remplaçant').click();
-    await fixture.whenStable();
-    fixture.detectChanges();
-    // Named from the roster: A2 works nowhere on the remaining timeslots, which
-    // is exactly why they are the best replacement.
+    await cliquer('Remplacer');
     expect(text()).toContain('Bruno Autonome');
+    expect(text()).toContain('06 55 66 77 88');
 
-    bouton('Affecter').click();
-    await fixture.whenStable();
-    fixture.detectChanges();
+    await cliquer('Affecter');
 
     expect(reparations.applyRepair).toHaveBeenCalledWith('P2', 'A2');
-    expect(notify).toHaveBeenCalledWith(
-      expect.objectContaining({ variant: 'success', message: expect.stringContaining('republié') }),
-    );
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
+  });
+
+  /** After a replacement: « Prévenir les N personnes », to them and nobody else. */
+  it('warns the people whose schedule moved, and only them', async () => {
+    await rendre(etat({ aPrevenir: ['A1', 'A2'] }));
+
+    expect(text()).toContain('2 personnes ont un planning différent');
+    await cliquer('Prévenir les 2 personnes');
+
+    expect(jourJ.prevenir).toHaveBeenCalledWith(['A1', 'A2']);
+  });
+
+  it('offers no send when everybody has the last version', () => {
+    expect(boutons('Prévenir')).toHaveLength(0);
+    expect(text()).toContain('dernière version');
   });
 
   /**
@@ -267,18 +336,14 @@ describe('JourJPage', () => {
   it('never leaves a suggestion list that was computed before the write', async () => {
     const autrePoste = { ...posteLibere, posteId: 'P3', standNom: 'Homme-jeu' };
     await rendre(etat({ postesAPourvoir: [posteLibere, autrePoste] }));
-    for (const bloc of Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll('button'),
-    ).filter((each) => (each.textContent ?? '').includes('Trouver un remplaçant'))) {
+    for (const bloc of boutons('Remplacer')) {
       bloc.click();
       await fixture.whenStable();
       fixture.detectChanges();
     }
     expect(jourJ.suggestions).toHaveBeenCalledTimes(2);
 
-    bouton('Affecter').click();
-    await fixture.whenStable();
-    fixture.detectChanges();
+    await cliquer('Affecter');
 
     // The other seat's list was thrown away and asked for again — never shown
     // stale.
@@ -291,10 +356,7 @@ describe('JourJPage', () => {
     await rendre(etat({ postesAPourvoir: [{ ...posteLibere, verrouille: true }] }));
 
     expect(text()).toContain('verrou');
-    const find = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button')).find(
-      (each) => (each.textContent ?? '').includes('Trouver un remplaçant'),
-    );
-    expect(find).toBeUndefined();
+    expect(boutons('Remplacer')).toHaveLength(0);
   });
 
   /**
@@ -307,12 +369,9 @@ describe('JourJPage', () => {
       throw new Error('La contrainte FORCE-1 force A1 sur le créneau …');
     });
 
-    bouton('Marquer absent').click();
-    await fixture.whenStable();
-    fixture.detectChanges();
-    bouton("Confirmer l'absence").click();
-    await fixture.whenStable();
-    fixture.detectChanges();
+    await search('alice');
+    await cliquer('Marquer absent');
+    await cliquer("Confirmer l'absence");
 
     expect(notify).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -352,10 +411,7 @@ describe('JourJPage', () => {
       }),
     );
 
-    const cancel = Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll('button'),
-    ).find((each) => (each.textContent ?? '').includes("Annuler toute l'absence"));
-    expect(cancel).toBeUndefined();
+    expect(boutons("Annuler toute l'absence")).toHaveLength(0);
     expect(text()).toContain('Ajustement partagé');
   });
 

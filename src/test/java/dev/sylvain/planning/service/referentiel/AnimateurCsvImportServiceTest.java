@@ -536,7 +536,7 @@ class AnimateurCsvImportServiceTest {
     @Test
     void manualMappingOverridesHeaders() {
         String csv = "colonne A;colonne B;colonne C\nDurand;Amélie;12/03/1990\n";
-        AnimateurCsvMapping mapping = new AnimateurCsvMapping(1, 0, 2, null, null, null, null, null);
+        AnimateurCsvMapping mapping = new AnimateurCsvMapping(1, 0, 2, null, null, null, null, null, null);
         AnimateurCsvImportRequest demande = new AnimateurCsvImportRequest("a.csv", csv, mapping, false, false);
 
         AnimateurCsvImportReport rapport = inEdition(() -> csvImport.apply(demande));
@@ -554,7 +554,7 @@ class AnimateurCsvImportServiceTest {
      */
     @Test
     void mappingNamingNobodyReportsAndRefusesToWrite() {
-        AnimateurCsvMapping sansIdentite = new AnimateurCsvMapping(null, null, 0, null, null, null, null, null);
+        AnimateurCsvMapping sansIdentite = new AnimateurCsvMapping(null, null, 0, null, null, null, null, null, null);
         AnimateurCsvImportRequest demande =
                 new AnimateurCsvImportRequest("a.csv", "date de naissance\n01/01/1990\n", sansIdentite, false, false);
 

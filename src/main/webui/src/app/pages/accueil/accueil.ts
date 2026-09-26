@@ -378,8 +378,10 @@ function relecture(etat: EtatEdition): LigneEtat {
 }
 
 function publication(etat: EtatEdition): LigneEtat {
-  const { jamaisPublie, dernierePublicationLe, personnesAPrevenir, statut } = etat.publication;
+  const { jamaisPublie, dernierePublicationLe, personnesAPrevenir, statut, envoisEnEchec } =
+    etat.publication;
   let detail: string;
+  let queryParams: Record<string, string> | undefined;
   if (etat.resolution.solveEnCours) {
     // Publishing is refused while a solve runs, and the count is read off a
     // plan about to be rewritten: the line says wait, not « publish ».
@@ -388,6 +390,10 @@ function publication(etat: EtatEdition): LigneEtat {
     detail = $localize`:@@accueil.detail.publication.jamais:Jamais publié`;
   } else if (personnesAPrevenir > 0) {
     detail = $localize`:@@accueil.detail.publication.aPrevenir:${personnesAPrevenir}:count: personne(s) à prévenir`;
+  } else if (envoisEnEchec > 0) {
+    // Nothing changed for them, they simply never received it: never « à jour ».
+    detail = $localize`:@@accueil.detail.publication.echecs:${envoisEnEchec}:count: envoi(s) en échec`;
+    queryParams = { filtre: 'echec' };
   } else {
     const quand = formatInstant(dernierePublicationLe);
     detail = $localize`:@@accueil.detail.publication.aJour:À jour, publié le ${quand}:date:`;
@@ -400,7 +406,11 @@ function publication(etat: EtatEdition): LigneEtat {
     lien: {
       // Its own screen since issue #320, no longer a card of the solver's.
       route: '/publication',
-      libelle: $localize`:@@accueil.lien.publication:Publier`,
+      queryParams,
+      libelle:
+        queryParams === undefined
+          ? $localize`:@@accueil.lien.publication:Publier`
+          : $localize`:@@accueil.lien.publication.echecs:Voir les envois en échec`,
     },
   };
 }
@@ -442,9 +452,10 @@ function confirmations(etat: EtatEdition): LigneEtat {
     lien:
       relances + silencieux > 0
         ? {
-            route: '/animateurs',
-            // The filter #504 ships: only the people who have not answered.
-            queryParams: { confirmation: 'jamais' },
+            // Diffuser's table, on the people who have not answered: their
+            // reminder is one click away there.
+            route: '/publication',
+            queryParams: { filtre: 'silencieux' },
             libelle: $localize`:@@accueil.lien.confirmations.silencieux:Voir qui n'a pas répondu`,
           }
         : {

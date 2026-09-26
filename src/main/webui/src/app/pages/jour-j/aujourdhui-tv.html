@@ -1,0 +1,42 @@
+<button matButton="tonal" type="button" (click)="open()" [disabled]="busy()">
+  <mat-icon>tv</mat-icon>
+  <ng-container i18n="@@aujourdhui.tv.afficher">Afficher sur la TV</ng-container>
+</button>
+
+@if (ouvert()) {
+  <section class="aujourdhui-tv" aria-live="polite">
+    @if ((existingCount() ?? 0) > 0 && !lien()) {
+      <p i18n="@@aujourdhui.tv.existants">
+        Liens d'affichage mural actifs : {{ existingCount() }}. Une adresse n'est montrée qu'à sa création : pour un nouvel écran, créez un lien.
+      </p>
+      <button matButton="filled" type="button" (click)="create()" [disabled]="busy()">
+        <mat-icon>add_link</mat-icon>
+        <ng-container i18n="@@aujourdhui.tv.creer">Créer un lien pour la TV</ng-container>
+      </button>
+    }
+    @if (lien(); as lien) {
+      <p i18n="@@aujourdhui.tv.scanner">
+        Ouvrez cette adresse sur la TV, ou scannez le code avec l'appareil qui la pilote. Elle ne sera plus affichée.
+      </p>
+      <code class="aujourdhui-tv-adresse">{{ lien.url }}</code>
+      @if (lien.qr; as qr) {
+        <svg
+          class="aujourdhui-tv-qr"
+          role="img"
+          aria-label="QR code du lien"
+          i18n-aria-label="@@parametres.mural.qrLabel"
+          [attr.viewBox]="'-2 -2 ' + (qr.size + 4) + ' ' + (qr.size + 4)"
+          shape-rendering="crispEdges"
+        >
+          <rect x="-2" y="-2" [attr.width]="qr.size + 4" [attr.height]="qr.size + 4" fill="#fff" />
+          <path [attr.d]="lien.chemin" fill="#000" />
+        </svg>
+      }
+    }
+    <p>
+      <a routerLink="/parametres" [queryParams]="{ onglet: 'mural' }" i18n="@@aujourdhui.tv.gerer">Gérer les liens de l'affichage mural</a>
+      ·
+      <button matButton type="button" (click)="close()" i18n="@@common.close">Fermer</button>
+    </p>
+  </section>
+}

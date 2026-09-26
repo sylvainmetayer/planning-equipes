@@ -127,6 +127,9 @@ public class DatabaseDumpService {
             "animateur_souhait",
             "declaration_disponibilite",
             "declaration_coequipier",
+            // « Je ne pourrai pas être là » (issue #533): what they reported,
+            // and what the organisation decided about it.
+            "signalement_absence",
             "confirmation_planning",
             // The ledger of what the scheduled jobs have already sent. Read
             // JournalNotificationsRepository's javadoc for why this one is not
@@ -139,6 +142,9 @@ public class DatabaseDumpService {
             // the same thing.
             "plan_snapshot",
             "publication_destinataire",
+            // Which of those mails reached their recipient: without it, a
+            // restore says « envoyé » of nothing and hides every failure.
+            "envoi_planning",
             // Its edition_id carries no foreign key, so the dump's DELETE FROM
             // edition never reached it either: an operator restoring a dump
             // kept whatever history the target already had and lost the one
@@ -213,6 +219,10 @@ public class DatabaseDumpService {
             // BIGSERIAL too, V40 and V54, for the same reason.
             "plan_snapshot",
             "publication_destinataire",
+            // BIGSERIAL since V110.
+            "envoi_planning",
+            // BIGSERIAL since V111.
+            "signalement_absence",
             // BIGSERIAL since V103.
             "ponderation_contrainte_historique");
 

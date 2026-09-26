@@ -137,6 +137,14 @@
               <span class="detail-muted" i18n="@@fiche.email.absent">Aucun : ni planning ni code d'accès par e-mail</span>
             }
           </dd>
+          <dt i18n="@@animateurs.field.telephone">Téléphone</dt>
+          <dd>
+            @if (fiche.animateur.telephone) {
+              <a [href]="'tel:' + fiche.animateur.telephone">{{ fiche.animateur.telephone }}</a>
+            } @else {
+              <span class="detail-muted" i18n="@@fiche.telephone.absent">Aucun</span>
+            }
+          </dd>
           <dt i18n="@@animateurs.field.lienEspace">Lien espace animateur</dt>
           <dd>
             @if (espaceLink(); as lien) {

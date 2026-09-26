@@ -9,11 +9,14 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.mural.AffichageMuralService;
+import dev.sylvain.planning.service.mural.AffichageMuralView.MuralAlert;
+import dev.sylvain.planning.service.mural.AffichageMuralViewBuilder;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
-import dev.sylvain.planning.service.solve.FrozenPast;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.SuggestionsReparation;
+import dev.sylvain.planning.service.solve.SeatSplit;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -48,10 +51,12 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  *
  * <h2>Two rules the whole screen hangs on</h2>
  *
- * <p><b>A past timeslot is never touched.</b> The person really did hold it;
- * turning it into an unavailability would make the plan lie about what
- * happened. The cut is the timeslot's <em>end</em>, so the one running right
- * now counts as ahead — that is precisely the one nobody is standing at.</p>
+ * <p><b>The past is never touched, to the minute.</b> The person really did
+ * hold it; turning it into an unavailability would make the plan lie about
+ * what happened. The cut is the timeslot's <em>end</em>, so the one running
+ * right now counts as ahead — that is precisely the one nobody is standing
+ * at —, and its seat is split at « now » rather than left frozen until its
+ * end (ADR 0066): what was held stays, the rest is repaired.</p>
  *
  * <p><b>Nothing is applied by halves.</b> An absence spans several timeslots and
  * therefore several exceptions and several seats; a refusal on the third one
@@ -89,6 +94,12 @@ public class JourJService {
 
     private final JourJClock clock;
 
+    private final SignalementAbsenceRepository signalements;
+
+    private final AffichageMuralService muralService;
+
+    private final DemandeEchangeService demandeEchangeService;
+
     @Inject
     public JourJService(
             ReferenceDataService referenceDataService,
@@ -97,7 +108,10 @@ public class JourJService {
             PlanningService planningService,
             SolverJobService solverJobs,
             SecurityIdentity identity,
-            JourJClock clock) {
+            JourJClock clock,
+            SignalementAbsenceRepository signalements,
+            AffichageMuralService muralService,
+            DemandeEchangeService demandeEchangeService) {
         this.referenceDataService = referenceDataService;
         this.consigneService = consigneService;
         this.persistenceService = persistenceService;
@@ -105,6 +119,9 @@ public class JourJService {
         this.solverJobs = solverJobs;
         this.identity = identity;
         this.clock = clock;
+        this.signalements = signalements;
+        this.muralService = muralService;
+        this.demandeEchangeService = demandeEchangeService;
     }
 
     /* -------------------------------- Reads -------------------------------- */
@@ -131,10 +148,19 @@ public class JourJService {
         Set<Long> idsRestants =
                 restants.stream().map(Creneau::getId).collect(Collectors.toCollection(LinkedHashSet::new));
 
+        // A seat split this morning leaves its first part — already over —
+        // on a timeslot still under way: that part is history, not a seat.
         List<PosteAffectation> postesRestants = plan.getPostes().stream()
                 .filter(poste -> poste.getCreneau() != null
                         && idsRestants.contains(poste.getCreneau().getId()))
+                .filter(poste -> !isOver(poste, maintenant))
                 .toList();
+        // The wall display's own reading of the day: its alerts are the one
+        // calculation, and they only speak of the day under way.
+        AffichageMuralService.DayReading lecture = muralService.currentEditionReading(true);
+        List<MuralAlert> alertes =
+                jour.equals(lecture.view().jour()) ? lecture.view().alerts() : List.of();
+        Set<String> nouveaux = AffichageMuralViewBuilder.newHoles(postesRestants, lecture.published());
 
         Map<String, Identite> identites = identites();
         List<AbsenceJourJ> absences =
@@ -158,14 +184,81 @@ public class JourJService {
                         .map(creneau -> creneauJourJ(creneau, maintenant))
                         .toList(),
                 animateursAffectes(postesRestants, identites, absentIds),
-                postesAPourvoir(postesRestants),
+                postesAPourvoir(postesRestants, nouveaux),
                 absences,
                 nommes(identites),
                 consigneService
                         .find(jour)
                         .map(consigne ->
                                 new ConsigneJourJ(consigne.fermetureDebut(), consigne.fermetureFin(), consigne.motif()))
-                        .orElse(null));
+                        .orElse(null),
+                signalementsOuverts(jour, identites),
+                dayNumber(tousLesCreneaux, jour),
+                (int) postesRestants.stream()
+                        .map(poste -> poste.getStand().getId())
+                        .distinct()
+                        .count(),
+                alertes,
+                lecture.unpublishedPeople(),
+                demandeEchangeService.pendingDemandes().size());
+    }
+
+    /**
+     * « J5 »: the day's rank on the calendar from the event's first day, as
+     * the home screen counts it — a day without a timeslot in between still
+     * counts, as it does on a wall calendar. Zero when the edition has none.
+     */
+    private static int dayNumber(List<Creneau> creneaux, LocalDate jour) {
+        return creneaux.stream()
+                .map(Creneau::getDate)
+                .filter(Objects::nonNull)
+                .min(Comparator.naturalOrder())
+                .map(premier -> (int) java.time.temporal.ChronoUnit.DAYS.between(premier, jour) + 1)
+                .orElse(0);
+    }
+
+    /** Whether the seat's own window — a split one included — had ended at {@code reference}. */
+    private static boolean isOver(PosteAffectation poste, LocalDateTime reference) {
+        if (poste.getCreneau().getDate() == null
+                || poste.heureDebutEffectif() == null
+                || poste.heureFinEffectif() == null) {
+            return false;
+        }
+        return !TimeslotWindows.window(
+                poste.getCreneau().getDate(), poste.heureDebutEffectif(), poste.heureFinEffectif())[1]
+                .isAfter(reference);
+    }
+
+    /**
+     * The absences reported from the espaces and not settled yet, from the
+     * journée looked at onwards: tomorrow's report has to be read today (issue
+     * #533). By day, then by arrival.
+     */
+    private List<SignalementJourJ> signalementsOuverts(LocalDate depuis, Map<String, Identite> identites) {
+        Map<String, dev.sylvain.planning.domain.Stand> stands = new HashMap<>();
+        referenceDataService.listStands().forEach(stand -> stands.putIfAbsent(stand.getId(), stand));
+        Map<Long, Creneau> creneaux = creneauxById(referenceDataService.listCreneaux());
+        return signalements.list().stream()
+                .filter(dev.sylvain.planning.domain.SignalementAbsence::ouvert)
+                .filter(signalement -> !signalement.jour().isBefore(depuis))
+                .map(signalement -> {
+                    SignalementAbsenceService.SignalementView vue =
+                            SignalementAbsenceService.view(signalement, stands, creneaux);
+                    return new SignalementJourJ(
+                            vue.id(),
+                            signalement.animateurId(),
+                            nomAffiche(identites.get(signalement.animateurId()), signalement.animateurId()),
+                            vue.portee(),
+                            vue.date(),
+                            vue.creneauId(),
+                            vue.standId(),
+                            vue.standNom(),
+                            vue.heureDebut(),
+                            vue.heureFin(),
+                            vue.motif(),
+                            vue.signaleLe());
+                })
+                .toList();
     }
 
     /**
@@ -218,6 +311,19 @@ public class JourJService {
      */
     public AbsenceMarquee recordAbsence(
             String animateurId, String raison, LocalDate date, LocalDateTime maintenantDemande) {
+        return recordAbsence(animateurId, raison, date, maintenantDemande, null);
+    }
+
+    /**
+     * Same, narrowed to one timeslot when {@code creneauId} names one — the
+     * absence reported on a single seat (issue #533), or marked from the Siège
+     * panel on one shift rather than on the rest of the day.
+     *
+     * @throws BusinessError.Invalid when that timeslot is not among the ones
+     *         still ahead that day
+     */
+    public AbsenceMarquee recordAbsence(
+            String animateurId, String raison, LocalDate date, LocalDateTime maintenantDemande, Long creneauId) {
         List<Creneau> tousLesCreneaux = referenceDataService.listCreneaux();
         Journee journee = journee(tousLesCreneaux, date, maintenantDemande);
         LocalDate jour = journee.jour();
@@ -231,25 +337,31 @@ public class JourJService {
         }
         List<Creneau> restants = duJour.stream()
                 .filter(creneau -> isStillAhead(creneau, maintenant))
+                .filter(creneau -> creneauId == null || creneauId.equals(creneau.getId()))
                 .toList();
         if (restants.isEmpty()) {
-            throw new BusinessError.Invalid("Aucun créneau ne reste à couvrir le " + jour + " après "
-                    + maintenant.toLocalTime() + " : il n'y a rien à libérer.");
+            throw new BusinessError.Invalid(
+                    creneauId == null
+                            ? "Aucun créneau ne reste à couvrir le " + jour + " après " + maintenant.toLocalTime()
+                                    + " : il n'y a rien à libérer."
+                            : "Ce créneau est terminé, ou n'est pas du " + jour + " : il n'y a rien à libérer.");
         }
 
         PlanningEvenement plan = persistenceService.loadPersistedPlanning();
         Set<Long> idsRestants =
                 restants.stream().map(Creneau::getId).collect(Collectors.toCollection(LinkedHashSet::new));
-        // The seat of a timeslot already started stays as it is (ADR 0044):
-        // the absence is recorded on it all the same, but « le passé ne se
-        // modifie plus » — the freeze pins it, and the repair would be refused.
+        // The seat of the timeslot under way is freed too (ADR 0066): the
+        // write splits it at « now », the part already held stays the absent
+        // person's — they really were there at 09:00 — and the rest of the
+        // timeslot comes back empty, to repair. Only a seat already over is
+        // left as it is: the past does not change (ADR 0044).
         PastHorizon horizon = planningService.pastHorizon();
         List<PosteAffectation> aLiberer = plan.getPostes().stream()
                 .filter(poste -> poste.getAnimateur() != null
                         && animateurId.equals(poste.getAnimateur().getId()))
                 .filter(poste -> poste.getCreneau() != null
                         && idsRestants.contains(poste.getCreneau().getId()))
-                .filter(poste -> !FrozenPast.isPast(poste, horizon))
+                .filter(poste -> horizon == null || !SeatSplit.isOver(poste, horizon))
                 .sorted(Comparator.comparing(PosteAffectation::getId))
                 .toList();
         refuseLockedSeats(aLiberer);
@@ -279,7 +391,7 @@ public class JourJService {
         // reloads all of it on every call, and somebody holding five remaining
         // timeslots would pay five full loads of an 1 800-seat plan — on the one
         // screen whose reason to exist is answering fast on a phone.
-        planningService.applyReparations(
+        List<PosteAffectation> liberes = planningService.applyReparations(
                 plan, aLiberer.stream().map(PosteAffectation::getId).toList(), null);
 
         Map<Long, Creneau> byId = creneauxById(restants);
@@ -289,7 +401,7 @@ public class JourJService {
                 exceptions.stream()
                         .map(exception -> entree(exception, byId, true))
                         .toList(),
-                aLiberer.stream().map(JourJService::vacantSeat).toList());
+                liberes.stream().map(JourJService::vacantSeat).toList());
     }
 
     /**
@@ -604,12 +716,11 @@ public class JourJService {
                 .toList();
     }
 
-    private List<PosteAPourvoir> postesAPourvoir(List<PosteAffectation> postesRestants) {
+    private List<PosteAPourvoir> postesAPourvoir(List<PosteAffectation> postesRestants, Set<String> nouveaux) {
         List<VerrouillagePlanning> verrouillages = referenceDataService.listVerrouillages();
         return postesRestants.stream()
                 .filter(poste -> poste.getAnimateur() == null)
-                .sorted(Comparator.comparing(
-                                (PosteAffectation poste) -> poste.getCreneau().getHeureDebut())
+                .sorted(Comparator.comparing(PosteAffectation::heureDebutEffectif)
                         .thenComparing(PosteAffectation::getId))
                 .map(poste -> new PosteAPourvoir(
                         poste.getId(),
@@ -618,11 +729,17 @@ public class JourJService {
                         poste.getCreneau().getId(),
                         poste.heureDebutEffectif(),
                         poste.heureFinEffectif(),
-                        verrouillages.stream().anyMatch(verrouillage -> verrouillage.couvre(poste))))
+                        verrouillages.stream().anyMatch(verrouillage -> verrouillage.couvre(poste)),
+                        nouveaux.contains(poste.getId()),
+                        poste.getSuiteDe() != null))
                 .toList();
     }
 
-    /** A seat this very call has just emptied: it was reachable, so it is not locked. */
+    /**
+     * A seat this very call has just emptied: it was reachable, so it is not
+     * locked, and it is new by definition — the published plan had somebody
+     * on it.
+     */
     private static PosteAPourvoir vacantSeat(PosteAffectation poste) {
         return new PosteAPourvoir(
                 poste.getId(),
@@ -631,7 +748,9 @@ public class JourJService {
                 poste.getCreneau().getId(),
                 poste.heureDebutEffectif(),
                 poste.heureFinEffectif(),
-                false);
+                false,
+                true,
+                poste.getSuiteDe() != null);
     }
 
     /**
@@ -641,11 +760,15 @@ public class JourJService {
      * those are precisely the ones <em>not</em> working the remaining timeslots
      * — the best replacement is somebody free. Named from the on-duty list
      * alone, the main action button read « anim-73 ». Two short fields per
-     * animateur, on a screen that already lists names.</p>
+     * animateur, on a screen that already lists names — and the phone number:
+     * the replacement found here has to be called.</p>
      */
     private static List<AnimateurNomme> nommes(Map<String, Identite> identites) {
         return identites.entrySet().stream()
-                .map(entree -> new AnimateurNomme(entree.getKey(), nomAffiche(entree.getValue(), entree.getKey())))
+                .map(entree -> new AnimateurNomme(
+                        entree.getKey(),
+                        nomAffiche(entree.getValue(), entree.getKey()),
+                        entree.getValue().telephone()))
                 .sorted(Comparator.comparing(AnimateurNomme::nomAffiche))
                 .toList();
     }
@@ -653,7 +776,9 @@ public class JourJService {
     private Map<String, Identite> identites() {
         Map<String, Identite> identites = new HashMap<>();
         for (Animateur animateur : referenceDataService.listAnimateurs()) {
-            identites.put(animateur.getId(), new Identite(animateur.getPrenom(), animateur.getNom()));
+            identites.put(
+                    animateur.getId(),
+                    new Identite(animateur.getPrenom(), animateur.getNom(), animateur.getTelephone()));
         }
         return identites;
     }
@@ -668,7 +793,7 @@ public class JourJService {
         return complet.isBlank() ? fallback : complet;
     }
 
-    private record Identite(String prenom, String nom) {}
+    private record Identite(String prenom, String nom, String telephone) {}
 
     /* -------------------------------- Payloads ----------------------------- */
 
@@ -689,8 +814,25 @@ public class JourJService {
      *                        assistant proposes are by definition not in
      *                        {@code animateursDeService}, and they still have to
      *                        be named on the button that hands them a seat
+     * @param jourNumero      « J5 »: the day's rank from the event's first day
+     * @param standsOuverts   stands holding a seat over the remaining timeslots
+     * @param alertes         the wall display's alerts — the one calculation —,
+     *                        on the day under way only
+     * @param aPrevenir       the people whose schedule differs from the
+     *                        published plan: « Prévenir les N personnes »
+     *                        publishes to them and to nobody else
+     * @param echangesAArbitrer swap requests waiting for a decision
      */
-    @Schema(requiredProperties = {"creneauxDuJour"})
+    @Schema(
+            requiredProperties = {
+                "creneauxDuJour",
+                "signalements",
+                "jourNumero",
+                "standsOuverts",
+                "alertes",
+                "aPrevenir",
+                "echangesAArbitrer"
+            })
     public record EtatJourJ(
             LocalDate date,
             LocalDateTime maintenant,
@@ -700,14 +842,45 @@ public class JourJService {
             List<PosteAPourvoir> postesAPourvoir,
             List<AbsenceJourJ> absences,
             List<AnimateurNomme> animateurs,
-            ConsigneJourJ consigne) {}
+            ConsigneJourJ consigne,
+            List<SignalementJourJ> signalements,
+            int jourNumero,
+            int standsOuverts,
+            List<MuralAlert> alertes,
+            List<String> aPrevenir,
+            int echangesAArbitrer) {}
+
+    /**
+     * An absence reported from an espace and not settled yet (issue #533),
+     * with the reason when one was chosen — a closed list, never free text.
+     *
+     * @param creneauId with {@code standId}, the seat reported; {@code null}
+     *                  for a whole day
+     */
+    @Schema(requiredProperties = {"id", "portee", "date", "signaleLe"})
+    public record SignalementJourJ(
+            long id,
+            String animateurId,
+            String nomAffiche,
+            dev.sylvain.planning.domain.SignalementAbsence.Portee portee,
+            LocalDate date,
+            Long creneauId,
+            String standId,
+            String standNom,
+            LocalTime heureDebut,
+            LocalTime heureFin,
+            dev.sylvain.planning.domain.SignalementAbsence.Motif motif,
+            Instant signaleLe) {}
 
     /** The consigne governing the day (issue #4), {@code null} on an ordinary day. */
     @Schema(requiredProperties = {"fermetureDebut", "motif"})
     public record ConsigneJourJ(java.time.LocalTime fermetureDebut, java.time.LocalTime fermetureFin, String motif) {}
 
-    /** An animateur of the edition, named. */
-    public record AnimateurNomme(String animateurId, String nomAffiche) {}
+    /**
+     * An animateur of the edition, named, with the phone number to call them
+     * on when the fiche has one — an admin screen only, never over MCP.
+     */
+    public record AnimateurNomme(String animateurId, String nomAffiche, String telephone) {}
 
     /** One timeslot still ahead. */
     @Schema(requiredProperties = {"enCours", "id"})
@@ -726,8 +899,13 @@ public class JourJService {
      * @param verrouille a lock covers it: the repair assistant will refuse to
      *                   write here until it is lifted, and the screen has to say
      *                   so instead of offering a button that cannot work
+     * @param nouveau    the published plan had somebody on it — opened since,
+     *                   by an absence —, where the others are the holes
+     *                   everybody already knew
+     * @param resteDuCreneau the rest of a seat split at « now » (ADR 0066):
+     *                   repairing it covers what is left of the timeslot
      */
-    @Schema(requiredProperties = {"creneauId", "verrouille"})
+    @Schema(requiredProperties = {"creneauId", "verrouille", "nouveau", "resteDuCreneau"})
     public record PosteAPourvoir(
             String posteId,
             String standId,
@@ -735,7 +913,9 @@ public class JourJService {
             long creneauId,
             LocalTime heureDebut,
             LocalTime heureFin,
-            boolean verrouille) {}
+            boolean verrouille,
+            boolean nouveau,
+            boolean resteDuCreneau) {}
 
     /** Somebody missing today, and over which timeslots. */
     public record AbsenceJourJ(String animateurId, String nomAffiche, List<EntreeAbsence> entrees) {}

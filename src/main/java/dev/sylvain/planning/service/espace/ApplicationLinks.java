@@ -39,6 +39,12 @@ public class ApplicationLinks {
     private static final String ECRAN_DISPONIBILITES = "disponibilites";
 
     /**
+     * Admin screen of the day under way, where an absence reported from an
+     * espace is observed and repaired.
+     */
+    private static final String ECRAN_JOUR = "aujourdhui";
+
+    /**
      * Admin screen holding the instance-wide settings, the automatic backup
      * among them; the tab is URL state (ADR 0012).
      */
@@ -100,6 +106,11 @@ public class ApplicationLinks {
     public Optional<String> disponibilitesScreen() {
         return base.map(url ->
                 UriBuilder.fromUri(url).path(ECRAN_DISPONIBILITES).build().toString());
+    }
+
+    /** The day under way, where the absences reported from the espaces wait. */
+    public Optional<String> jourScreen() {
+        return base.map(url -> UriBuilder.fromUri(url).path(ECRAN_JOUR).build().toString());
     }
 
     /**

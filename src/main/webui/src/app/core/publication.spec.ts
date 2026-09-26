@@ -16,6 +16,7 @@ function apercu(patch: Partial<ApercuPublication> = {}): ApercuPublication {
     nombreConcernes: 0,
     journeesNonValidees: 0,
     destinataires: [],
+    envoisEnEchec: 0,
     ...patch,
   };
 }

@@ -1,4 +1,4 @@
-/* Mode « jour J » (issue #297).
+/* Aujourd'hui — the event day's hub, formerly « Mode jour J » (issue #297).
 
    Mobile first, and literally so: this screen is read standing up, on a phone,
    one-handed, while somebody waits. So the base rules are the phone ones and
@@ -15,20 +15,90 @@
   font-weight: 500;
 }
 
-.jour-j-creneaux {
+.aujourdhui-date {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The counters of the header: each one leads somewhere, so each is a control
+   — wrapped, never scrolled sideways on a phone. */
+.aujourdhui-compteurs {
   list-style: none;
-  margin: 0 0 0.75rem;
+  margin: 0.5rem 0;
   padding: 0;
   display: flex;
   flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+}
+
+.aujourdhui-compteurs button,
+.aujourdhui-compteurs a,
+.aujourdhui-actions > a,
+.aujourdhui-actions > button {
+  min-height: 48px;
+}
+
+.aujourdhui-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.aujourdhui-recherche {
+  width: 100%;
+  margin-bottom: 0.75rem;
+}
+
+/* The TV panel: the address shown once, and its code to scan. */
+.aujourdhui-tv {
+  flex-basis: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+}
+
+.aujourdhui-tv-adresse {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.aujourdhui-tv-qr {
+  display: block;
+  width: min(14rem, 100%);
+  margin-top: 0.5rem;
+}
+
+/* The wall display's alerts, read on a phone. */
+.aujourdhui-alertes li {
+  display: flex;
+  align-items: flex-start;
   gap: 0.5rem;
 }
 
-.jour-j-creneaux li {
-  padding: 0.25rem 0.6rem;
-  border-radius: 999px;
-  background: var(--mat-sys-surface-container-high);
-  font-variant-numeric: tabular-nums;
+.aujourdhui-alertes mat-icon {
+  flex: none;
+  color: var(--mat-sys-error);
+}
+
+/* A hole the published plan already had: known to everybody, so faded — the
+   new ones are the ones to read first. */
+.jour-j-poste.aujourdhui-connu {
+  opacity: 0.75;
+  border-style: dashed;
+}
+
+/* What is left unpublished, said where the replacement was made. */
+.aujourdhui-prevenir {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-top: 1rem;
+}
+
+.aujourdhui-prevenir p {
+  margin: 0;
 }
 
 /* The consigne of the day (issue #4): the hours everybody works today are not
@@ -50,24 +120,6 @@
 }
 
 .jour-j-consigne mat-icon {
-  flex: none;
-}
-
-/* The publication reminder. Deliberately not an alert colour: nothing is
-   broken, there is simply pending work — and no send button here on purpose. */
-.jour-j-rappel mat-card-content {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding-top: 1rem;
-}
-
-.jour-j-rappel p {
-  margin: 0 0 0.25rem;
-}
-
-.jour-j-rappel mat-icon {
-  color: var(--mat-sys-primary);
   flex: none;
 }
 
@@ -115,10 +167,6 @@
 .jour-j-cible {
   min-height: 48px;
   width: 100%;
-}
-
-.jour-j-action {
-  min-height: 48px;
 }
 
 .jour-j-confirmation {
@@ -240,4 +288,20 @@
   .jour-j-entrees {
     flex-basis: 100%;
   }
+}
+
+/* Reports from the espaces (#533): who, which day or seat, why, then the two
+   ways to settle it. */
+.jour-j-signalement {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+}
+
+.jour-j-signalement-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }

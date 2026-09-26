@@ -74,6 +74,11 @@ export interface Animateur {
   joursIndisponibles: string[];
   /** Contact address for the échange notifications (issue #165); null when not collected. */
   email?: string | null;
+  /**
+   * Phone number, to call a replacement on the day. Shown on the fiche and on
+   * Aujourd'hui only: never on the wall display, in a PDF or a CSV export.
+   */
+  telephone?: string | null;
   /** Access token of the espace animateur — the link printed on their PDF planning. Read-only: rotated via `/api/animateurs/{id}/token`. */
   accessToken?: string | null;
 }
@@ -874,6 +879,12 @@ export interface PosteAffectation {
    */
   heureDebutEffective?: string | null;
   heureFinEffective?: string | null;
+  /**
+   * The seat this one continues, when a seat of the timeslot under way was
+   * split at « now » (ADR 0066): the origin kept who held its first part, this
+   * one covers the rest. Null on every other seat.
+   */
+  suiteDe?: string | null;
 }
 
 export interface ContrainteAdHoc {
@@ -2875,10 +2886,72 @@ export interface EspaceAnimateurView {
   covoiturage?: CarpoolDayView[];
   /**
    * Who to call or write to about this edition, as Paramètres › Édition sets
-   * it; both halves `null` when the organisation published none. Shown by
-   * the espace from the next change on; optional for an older payload.
+   * it; both halves `null` when the organisation published none. Shown in
+   * the espace's footer and after its « rapprochez-vous de l'organisation »
+   * (`espace-contact.ts`); optional for an older payload.
    */
   contact?: ContactOrganisation;
+  /**
+   * The absences I reported from here (« je ne pourrai pas être là », issue
+   * #533), whatever their state — what I said and where it stands, by day.
+   */
+  signalements: SignalementView[];
+  /**
+   * The availability collection — and the covoiturage requests that live with
+   * it — is open today: the espace offers those two pages only then.
+   */
+  collecteOuverte: boolean;
+  /** The collection's last day, `null` when it is closed or has no end. */
+  collecteFermeLe: string | null;
+  /**
+   * The last time the organisation mailed me my planning, and how it went —
+   * « communiqué le » is only claimed when the mail left. `null` when nothing
+   * was ever sent.
+   */
+  dernierEnvoi: EnvoiEspaceView | null;
+}
+
+/** My latest planning delivery, as the Diffuser screen recorded it. */
+export interface EnvoiEspaceView {
+  statut: StatutEnvoi;
+  le: string;
+}
+
+/** What an absence reported from the espace is about: the whole day, or one seat. */
+export type PorteeSignalement = 'JOUR' | 'POSTE';
+
+/** Why, when the animateur says — a closed list, never free text. */
+export type MotifSignalement = 'PERSONNEL' | 'TRANSPORT' | 'AUTRE';
+
+/** Where a report stands: open, observed with the absence marked, filed, or withdrawn. */
+export type StatutSignalement = 'SIGNALE' | 'TRAITE' | 'CLASSE' | 'ANNULE';
+
+/** One absence I reported, as my espace shows it back. */
+export interface SignalementView {
+  id: number;
+  portee: PorteeSignalement;
+  /** ISO date. */
+  date: string;
+  /** With `standId`, the seat — for a `POSTE` report only. */
+  creneauId: number | null;
+  standId: string | null;
+  standNom: string | null;
+  /** `HH:mm:ss`. */
+  heureDebut: string | null;
+  heureFin: string | null;
+  motif: MotifSignalement | null;
+  statut: StatutSignalement;
+  signaleLe: string;
+  traiteLe: string | null;
+}
+
+/** Payload of `POST /api/espace-animateur/{jeton}/signalements`. */
+export interface NouveauSignalement {
+  portee: PorteeSignalement;
+  date: string;
+  creneauId: number | null;
+  standId: string | null;
+  motif: MotifSignalement | null;
 }
 
 /**
@@ -3379,6 +3452,8 @@ export interface DestinatairePublication {
   /** Where their « j'ai lu » stands on the plan they were last sent. */
   confirmation: string | null;
   confirmeLe: string | null;
+  /** The days their changes belong to (`AAAA-MM-JJ`) — the rule the Journée's « Changements » applies. */
+  jours: string[];
 }
 
 /** `/api/planning/publication`: who is concerned, and what publishing would say. */
@@ -3398,6 +3473,69 @@ export interface ApercuPublication {
    */
   journeesNonValidees: number;
   destinataires: DestinatairePublication[];
+  /** People whose latest planning mail failed: nothing changed for them, they never received it. */
+  envoisEnEchec: number;
+}
+
+/** Why a planning mail went out: a publication, or the resend of one person's planning. */
+export type NatureEnvoi = 'PUBLICATION' | 'RENVOI';
+
+/** How a planning mail went: sent, failed, no address, or deferred by the admin. */
+export type StatutEnvoi = 'ENVOYE' | 'ECHEC' | 'SANS_EMAIL' | 'EXCLU';
+
+/** Why a send failed — a short code, never the mail server's message. */
+export type CauseEchec = 'ADRESSE_REFUSEE' | 'BOITE_PLEINE' | 'SERVEUR_INJOIGNABLE' | 'AUTRE';
+
+/** One published version: « v3 · 01/09 ». */
+export interface VersionPubliee {
+  snapshotId: number;
+  numero: number;
+  publieLe: string | null;
+}
+
+/** The latest planning mail of one person. */
+export interface DernierEnvoi {
+  nature: NatureEnvoi;
+  statut: StatutEnvoi;
+  cause: CauseEchec | null;
+  envoyeLe: string;
+  /** The version it carried, when there was one. */
+  numero: number | null;
+}
+
+/** One person of the Diffuser table (`/api/planning/publication/etat`). */
+export interface LigneEnvoi {
+  animateurId: string;
+  nomAffiche: string;
+  /** An address is on their fiche; the address itself stays there. */
+  email: boolean;
+  /** The published plan gives them a seat: an acknowledgement is expected. */
+  affecte: boolean;
+  /** The version they were last told about, null when never told. */
+  version: VersionPubliee | null;
+  envoi: DernierEnvoi | null;
+  rappelVeilleLe: string | null;
+  rappelVeilleEchec: boolean;
+  relanceLe: string | null;
+  relanceEchec: boolean;
+  /** `NON_VU`, `CONFIRME` or `RELANCE`. */
+  confirmation: string;
+  confirmeLe: string | null;
+  /** The next publication would write to them. */
+  aPrevenir: boolean;
+  /** A publication deferred them and nothing has reached them since. */
+  differe: boolean;
+  /** The days their pending changes belong to. */
+  joursAPrevenir: string[];
+}
+
+/** « Qui a reçu quelle version » — the whole Diffuser table. */
+export interface EtatEnvois {
+  derniereVersion: VersionPubliee | null;
+  /** The night's sends are armed on this edition — off by default. */
+  relancesAutomatiques: boolean;
+  nombreConcernes: number;
+  personnes: LigneEnvoi[];
 }
 
 /** Outcome of a publication: display names, ready to show. */
@@ -3658,6 +3796,13 @@ export interface PosteAPourvoir {
   heureFin: string;
   /** A lock covers it: the repair assistant refuses to write here until it is lifted. */
   verrouille: boolean;
+  /**
+   * The published plan had somebody on it — opened since, by an absence:
+   * « nouveau depuis ce matin », where the others are holes everybody knew.
+   */
+  nouveau: boolean;
+  /** The rest of a seat split at « now »: repairing it covers what is left of the timeslot. */
+  resteDuCreneau: boolean;
 }
 
 /** One timeslot of an absence, with the trace the ad hoc exception carries. */
@@ -3684,6 +3829,8 @@ export interface AbsenceJourJ {
 export interface AnimateurNomme {
   animateurId: string;
   nomAffiche: string;
+  /** The fiche's phone number, `null` when it has none — the replacement has to be called. */
+  telephone: string | null;
 }
 
 /** `/api/jour-j`: the whole event-day screen in one answer. */
@@ -3709,6 +3856,37 @@ export interface EtatJourJ {
   animateurs: AnimateurNomme[];
   /** The consigne governing this day (issue #4), `null` on an ordinary day. */
   consigne: ConsigneJourJ | null;
+  /** Absences reported from the espaces and not settled yet, from this day on (issue #533). */
+  signalements: SignalementJourJ[];
+  /** « J5 »: the day's rank from the event's first day. */
+  jourNumero: number;
+  /** Stands holding a seat over the remaining timeslots. */
+  standsOuverts: number;
+  /** The wall display's alerts — one calculation for both screens —, on the day under way only. */
+  alertes: MuralAlert[];
+  /**
+   * The people whose schedule differs from the published plan: « Prévenir les
+   * N personnes » publishes to them and nobody else.
+   */
+  aPrevenir: string[];
+  /** Swap requests waiting for a decision. */
+  echangesAArbitrer: number;
+}
+
+/** An absence reported from an espace and not settled yet, named for the organisation. */
+export interface SignalementJourJ {
+  id: number;
+  animateurId: string;
+  nomAffiche: string;
+  portee: PorteeSignalement;
+  date: string;
+  creneauId: number | null;
+  standId: string | null;
+  standNom: string | null;
+  heureDebut: string | null;
+  heureFin: string | null;
+  motif: MotifSignalement | null;
+  signaleLe: string;
 }
 
 /** What one « marquer absent » wrote, so the screen goes straight to the holes it opened. */
@@ -3736,6 +3914,7 @@ export interface AnimateurCsvMapping {
   competences: number | null;
   souhaits: number | null;
   joursIndisponibles: number | null;
+  telephone: number | null;
 }
 
 /** What one row of the file does. */
@@ -4057,6 +4236,8 @@ export interface EtatPublication {
   dernierePublicationLe: string | null;
   personnesAPrevenir: number;
   statut: StatutEtat;
+  /** People whose latest planning mail failed: the line is never « à jour » while one is left. */
+  envoisEnEchec: number;
 }
 
 export interface EtatConfirmations {
@@ -4703,14 +4884,22 @@ export interface QrCodeView {
   rows: string[];
 }
 
-export type MuralAlertType = 'EMPTY_SEATS' | 'BREAK_WITHOUT_RELAY';
+/**
+ * What the band shouts about: seats opened since the publication, a shift
+ * starting within half an hour with a seat nobody holds, a break without relay
+ * within the hour. The holes the published plan already had stay in the tiles.
+ */
+export type MuralAlertType = 'NEW_EMPTY_SEATS' | 'STARTING_SOON' | 'BREAK_WITHOUT_RELAY';
 
 /** One shift of a stand; `end` falls on the next day for a shift crossing midnight. */
 export interface MuralShift {
   start: string;
   end: string;
+  /** Disambiguated among the day's holders: a second letter of the last name, then all of it. */
   noms: string[];
   emptySeats: number;
+  /** Among `emptySeats`, those the published plan had somebody on: « nouveau ». */
+  newEmptySeats: number;
 }
 
 export interface MuralStand {
@@ -4747,4 +4936,9 @@ export interface AffichageMuralView {
   stands: MuralStand[];
   alerts: MuralAlert[];
   consigne: MuralConsigne | null;
+  /**
+   * People whose schedule differs from the published plan: « peut différer de
+   * celui envoyé » is said only when this is not zero, with the number.
+   */
+  unpublishedChanges: number;
 }

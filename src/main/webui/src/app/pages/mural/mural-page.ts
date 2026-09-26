@@ -4,6 +4,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  ElementRef,
   inject,
   OnDestroy,
   OnInit,
@@ -19,6 +20,7 @@ import {
   DEAD_LINK_RETRY_MS,
   groupByEmplacement,
   heureOf,
+  ScreenMeasure,
   minutesSince,
   momentOf,
   nextPage,
@@ -30,6 +32,8 @@ import {
   secondsSince,
   shiftKey,
   StandMoment,
+  standsFermes,
+  tableauImpression,
   tilesPerPage,
 } from './mural';
 
@@ -46,7 +50,9 @@ import {
  * reads the server's moment is advanced by the time elapsed on this machine, so
  * a shift ends on screen at its minute; the television's own clock is never
  * read as a time of day. When the tiles do not fit, they turn by pages every
- * fifteen seconds. `?impression=1` lays the whole day out for print instead.
+ * fifteen seconds — as many as the tiles <b>measured</b> let fit, the stands
+ * closed at the moment kept out of the rotation on one line. `?impression=1`
+ * lays the whole day out for print instead, as a table of stands × shifts.
  *
  * <p>The same page serves « Imprimer cette journée » of the Planning page
  * (`/impression/:date`, route data `apercu`): the whole day for print, read
@@ -65,6 +71,7 @@ import {
 export class MuralPage implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(AffichageMuralApi);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   private jeton = '';
   /** `/impression/:date`: the admin's print of a day, read under the session. */
@@ -91,6 +98,8 @@ export class MuralPage implements OnInit, OnDestroy {
   private readonly tick = signal(performance.now());
   private readonly screen = signal({ largeur: window.innerWidth, hauteur: window.innerHeight });
   private readonly page = signal(0);
+  /** The layout as drawn, measured after each read and resize; `null` before the first. */
+  private readonly mesure = signal<ScreenMeasure | null>(null);
 
   /** The server's moment, advanced by what elapsed here since the read. */
   protected readonly now = computed(() => {
@@ -110,9 +119,17 @@ export class MuralPage implements OnInit, OnDestroy {
     return view && now ? view.stands.map((stand) => momentOf(stand, now)) : [];
   });
 
+  /** The stands with a shift under way: the only ones the pages turn over. */
+  private readonly ouverts = computed(() =>
+    this.moments().filter((moment) => moment.current.length > 0),
+  );
+
+  /** The others, on one line: « fermés jusqu'à 18:00 : … ». */
+  protected readonly fermes = computed(() => standsFermes(this.moments()));
+
   private readonly pages = computed(() => {
     const { largeur, hauteur } = this.screen();
-    return paginate(this.moments(), tilesPerPage(largeur, hauteur));
+    return paginate(this.ouverts(), tilesPerPage(this.mesure(), largeur, hauteur));
   });
 
   protected readonly groupes = computed(() => {
@@ -120,8 +137,8 @@ export class MuralPage implements OnInit, OnDestroy {
     return groupByEmplacement(pages[this.page() % pages.length]);
   });
 
-  /** Every stand, every shift of the day: the print version. */
-  protected readonly groupesJournee = computed(() => groupByEmplacement(this.moments()));
+  /** Every stand, every shift of the day: the print version, as a table. */
+  protected readonly tableau = computed(() => tableauImpression(this.view()?.stands ?? []));
 
   protected readonly pagination = computed(() =>
     pageLabel(this.page() % this.pages().length, this.pages().length),
@@ -173,24 +190,94 @@ export class MuralPage implements OnInit, OnDestroy {
 
   protected readonly shiftKey = shiftKey;
 
-  /** One entry per empty seat, so each one reads « Place libre » in red. */
-  protected placesLibres(shift: MuralShift): number[] {
-    return Array.from({ length: shift.emptySeats }, (_, index) => index);
+  /** One entry per seat opened since the publication: « Place libre », in red. */
+  protected placesNouvelles(shift: MuralShift): number[] {
+    return Array.from({ length: shift.newEmptySeats }, (_, index) => index);
+  }
+
+  /** One entry per hole the published plan already had: faded, known to all. */
+  protected placesConnues(shift: MuralShift): number[] {
+    return Array.from({ length: shift.emptySeats - shift.newEmptySeats }, (_, index) => index);
   }
 
   protected alertText(alerte: MuralAlert): string {
     const heures = `${heureOf(alerte.start)}–${heureOf(alerte.end)}`;
-    if (alerte.type === 'BREAK_WITHOUT_RELAY') {
-      return alerte.nom
-        ? $localize`:@@mural.alerte.pause:${alerte.standNom}:stand: : pause sans relais ${heures}:heures: (${alerte.nom}:nom:)`
-        : $localize`:@@mural.alerte.pauseAnonyme:${alerte.standNom}:stand: : pause sans relais ${heures}:heures:`;
+    switch (alerte.type) {
+      case 'BREAK_WITHOUT_RELAY':
+        return alerte.nom
+          ? $localize`:@@mural.alerte.pause:${alerte.standNom}:stand: : pause sans relais ${heures}:heures: (${alerte.nom}:nom:)`
+          : $localize`:@@mural.alerte.pauseAnonyme:${alerte.standNom}:stand: : pause sans relais ${heures}:heures:`;
+      case 'STARTING_SOON':
+        return $localize`:@@mural.alerte.bientot:${alerte.standNom}:stand: : commence à ${heureOf(alerte.start)}:heure: avec ${alerte.count}:nombre: × place libre`;
+      case 'NEW_EMPTY_SEATS':
+        return $localize`:@@mural.alerte.nouvelles:${alerte.standNom}:stand: : ${alerte.count}:nombre: × place libre depuis ce matin ${heures}:heures:`;
     }
-    return $localize`:@@mural.alerte.placesLibres:${alerte.standNom}:stand: : ${alerte.count}:nombre: × place libre ${heures}:heures:`;
+  }
+
+  /** « Peut différer », said only with a number: the people the working plan moved since the publication. */
+  protected peutDiffererText(nombre: number): string {
+    return nombre === 1
+      ? $localize`:@@mural.peutDiffere.une:Peut différer du planning envoyé : 1 personne concernée`
+      : $localize`:@@mural.peutDiffere:Peut différer du planning envoyé : ${nombre}:nombre: personnes concernées`;
+  }
+
+  /** The stands closed at the moment, by reopening hour. */
+  protected fermesText(fermes: { reouverture: string | null; noms: string[] }): string {
+    const noms = fermes.noms.join(', ');
+    return fermes.reouverture
+      ? $localize`:@@mural.fermesJusqua:Fermés jusqu'à ${fermes.reouverture}:heure: : ${noms}:noms:`
+      : $localize`:@@mural.fermesJournee:Fermés pour la journée : ${noms}:noms:`;
   }
 
   private readonly onResize = (): void => {
     this.screen.set({ largeur: window.innerWidth, hauteur: window.innerHeight });
+    this.measureSoon();
   };
+
+  /**
+   * Once the browser has drawn the tiles: measure them. A timer rather than an
+   * animation frame — a television whose tab the browser deems hidden may
+   * never paint one, and the pages must still turn.
+   */
+  private measureSoon(): void {
+    setTimeout(() => this.measure(), 100);
+  }
+
+  /**
+   * The tiles as drawn: the tallest one, one's width, the grid's width, and
+   * the height the header, the closed-stands line and the band leave. Written
+   * only when it changed, so a page turn does not loop on its own measure.
+   */
+  private measure(): void {
+    const racine = this.host.nativeElement;
+    const grille = racine.querySelector<HTMLElement>('.mural-grille');
+    const tuiles = Array.from(racine.querySelectorAll<HTMLElement>('.mural-tuile'));
+    if (!grille || tuiles.length === 0) {
+      return;
+    }
+    const gap = parseFloat(getComputedStyle(grille).rowGap) || 0;
+    const occupe = ['.mural-entete', '.mural-fermes', '.mural-bandeau']
+      .map((selecteur) => racine.querySelector<HTMLElement>(selecteur)?.offsetHeight ?? 0)
+      .reduce((somme, hauteur) => somme + hauteur, 0);
+    const titres = racine.querySelectorAll('.mural-groupe h2').length;
+    const mesure: ScreenMeasure = {
+      largeurGrille: grille.clientWidth + gap,
+      // The group headings of a page take a line each; kept aside.
+      hauteurDisponible: window.innerHeight - occupe - titres * 48 - 48,
+      hauteurTuile: Math.max(...tuiles.map((tuile) => tuile.offsetHeight)) + gap,
+      largeurTuile: tuiles[0].offsetWidth + gap,
+    };
+    const previous = this.mesure();
+    if (
+      !previous ||
+      previous.largeurGrille !== mesure.largeurGrille ||
+      previous.hauteurDisponible !== mesure.hauteurDisponible ||
+      previous.hauteurTuile !== mesure.hauteurTuile ||
+      previous.largeurTuile !== mesure.largeurTuile
+    ) {
+      this.mesure.set(mesure);
+    }
+  }
 
   /** Every minute — every five once the link is concluded dead. */
   private poll(): void {
@@ -221,6 +308,9 @@ export class MuralPage implements OnInit, OnDestroy {
       this.lueA.set(performance.now());
       this.tick.set(performance.now());
       this.echecDepuis.set(null);
+      if (!this.impression()) {
+        this.measureSoon();
+      }
     } catch (error) {
       if (sequence <= this.lastApplied) {
         return;

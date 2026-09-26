@@ -31,7 +31,12 @@ test.afterAll(async () => {
 const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/', marker: "État de l'édition", sheet: 'accueil-ligne' },
   { path: '/solveur', marker: 'Ce calcul tiendra compte de', sheet: 'solver-modes' },
-  { path: '/publication', marker: 'Diffusion du planning', sheet: 'publication-etat' },
+  { path: '/publication', marker: 'Qui a reçu quelle version', sheet: 'diffuser-onglets' },
+  {
+    path: '/publication?onglet=documents',
+    marker: "Le classeur de l'organisateur",
+    sheet: 'diffuser-documents',
+  },
   // The former Notifications page lands on « À traiter aujourd'hui ».
   { path: '/notifications', marker: "À traiter aujourd'hui", sheet: 'notification-jour' },
   // One page over four tabs, each visited: a tab's stylesheet travels with the
@@ -108,7 +113,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
     sheet: 'marge-synthese',
   },
   { path: '/diagnostic?onglet=fragilite', marker: 'Fragilité', sheet: 'fragilite-message' },
-  { path: '/jour-j', marker: 'Mode jour J', sheet: 'jour-j-entete' },
+  { path: '/aujourdhui', marker: "Aujourd'hui", sheet: 'jour-j-entete' },
   // The former Marge disponible lands on the Diagnostic's Tension tab.
   { path: '/marge?mode=tension', marker: 'Tension, tranche par tranche' },
   // The former timeline lands on a fiche's planning section; its own sheet is gone.

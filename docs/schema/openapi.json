@@ -202,6 +202,9 @@
           },
           "heureFinEffective" : {
             "type" : "string"
+          },
+          "suiteDe" : {
+            "type" : "string"
           }
         }
       },
@@ -254,7 +257,7 @@
         }
       },
       "AffichageMuralView" : {
-        "required" : [ "edition", "jour", "now", "stands", "alerts" ],
+        "required" : [ "edition", "jour", "now", "stands", "alerts", "unpublishedChanges" ],
         "type" : "object",
         "properties" : {
           "edition" : {
@@ -286,6 +289,10 @@
           },
           "consigne" : {
             "$ref" : "#/components/schemas/MuralConsigne"
+          },
+          "unpublishedChanges" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -335,6 +342,9 @@
             "type" : "boolean"
           },
           "email" : {
+            "type" : "string"
+          },
+          "telephone" : {
             "type" : "string"
           },
           "accessToken" : {
@@ -537,6 +547,10 @@
           "joursIndisponibles" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "telephone" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -609,6 +623,9 @@
             "type" : "string"
           },
           "nomAffiche" : {
+            "type" : "string"
+          },
+          "telephone" : {
             "type" : "string"
           }
         }
@@ -860,7 +877,7 @@
         }
       },
       "ApercuPublication" : {
-        "required" : [ "jamaisPublie", "journeesNonValidees", "nombreConcernes", "planVide", "solveEnCours" ],
+        "required" : [ "jamaisPublie", "journeesNonValidees", "nombreConcernes", "planVide", "solveEnCours", "envoisEnEchec" ],
         "type" : "object",
         "properties" : {
           "jamaisPublie" : {
@@ -888,6 +905,10 @@
             "items" : {
               "$ref" : "#/components/schemas/DestinatairePublication"
             }
+          },
+          "envoisEnEchec" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -1121,6 +1142,10 @@
             "type" : "string"
           }
         }
+      },
+      "CauseEchec" : {
+        "type" : "string",
+        "enum" : [ "ADRESSE_REFUSEE", "BOITE_PLEINE", "SERVEUR_INJOIGNABLE", "AUTRE" ]
       },
       "CauseInfaisabilite" : {
         "type" : "object",
@@ -2830,6 +2855,10 @@
           },
           "raison" : {
             "type" : "string"
+          },
+          "creneauId" : {
+            "type" : "integer",
+            "format" : "int64"
           }
         }
       },
@@ -2944,6 +2973,12 @@
             "items" : {
               "type" : "string"
             }
+          },
+          "cibles" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
           }
         }
       },
@@ -3027,6 +3062,28 @@
           }
         }
       },
+      "DernierEnvoi" : {
+        "required" : [ "nature", "statut", "envoyeLe" ],
+        "type" : "object",
+        "properties" : {
+          "nature" : {
+            "$ref" : "#/components/schemas/NatureEnvoi"
+          },
+          "statut" : {
+            "$ref" : "#/components/schemas/StatutEnvoi"
+          },
+          "cause" : {
+            "$ref" : "#/components/schemas/CauseEchec"
+          },
+          "envoyeLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "numero" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
       "Destinataire" : {
         "required" : [ "snapshotId", "premiereDiffusion" ],
         "type" : "object",
@@ -3069,7 +3126,7 @@
       },
       "DestinatairePublication" : {
         "type" : "object",
-        "required" : [ "premiereDiffusion", "ajouts", "retraits", "deplacements", "mineur", "reporte" ],
+        "required" : [ "premiereDiffusion", "ajouts", "retraits", "deplacements", "mineur", "reporte", "jours" ],
         "properties" : {
           "animateurId" : {
             "type" : "string"
@@ -3118,6 +3175,14 @@
           },
           "confirmeLe" : {
             "$ref" : "#/components/schemas/Instant"
+          },
+          "jours" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "date",
+              "examples" : [ "2022-03-10" ]
+            }
           }
         }
       },
@@ -3320,8 +3385,20 @@
           }
         }
       },
+      "EnvoiEspaceView" : {
+        "required" : [ "statut", "le" ],
+        "type" : "object",
+        "properties" : {
+          "statut" : {
+            "type" : "string"
+          },
+          "le" : {
+            "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
       "EspaceAnimateurView" : {
-        "required" : [ "foireOuverte", "contact" ],
+        "required" : [ "foireOuverte", "contact", "signalements", "collecteOuverte" ],
         "type" : "object",
         "properties" : {
           "animateurId" : {
@@ -3418,6 +3495,21 @@
           },
           "contact" : {
             "$ref" : "#/components/schemas/ContactOrganisation"
+          },
+          "signalements" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SignalementView"
+            }
+          },
+          "collecteOuverte" : {
+            "type" : "boolean"
+          },
+          "collecteFermeLe" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "dernierEnvoi" : {
+            "$ref" : "#/components/schemas/EnvoiEspaceView"
           }
         }
       },
@@ -3663,6 +3755,28 @@
           }
         }
       },
+      "EtatEnvois" : {
+        "required" : [ "relancesAutomatiques", "nombreConcernes", "personnes" ],
+        "type" : "object",
+        "properties" : {
+          "derniereVersion" : {
+            "$ref" : "#/components/schemas/VersionPubliee"
+          },
+          "relancesAutomatiques" : {
+            "type" : "boolean"
+          },
+          "nombreConcernes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "personnes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/LigneEnvoi"
+            }
+          }
+        }
+      },
       "EtatEvenement" : {
         "required" : [ "aujourdhui", "phase", "termine" ],
         "type" : "object",
@@ -3766,7 +3880,7 @@
         }
       },
       "EtatJourJ" : {
-        "required" : [ "creneauxDuJour" ],
+        "required" : [ "creneauxDuJour", "signalements", "jourNumero", "standsOuverts", "alertes", "aPrevenir", "echangesAArbitrer" ],
         "type" : "object",
         "properties" : {
           "date" : {
@@ -3811,6 +3925,36 @@
           },
           "consigne" : {
             "$ref" : "#/components/schemas/ConsigneJourJ"
+          },
+          "signalements" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SignalementJourJ"
+            }
+          },
+          "jourNumero" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "standsOuverts" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "alertes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/MuralAlert"
+            }
+          },
+          "aPrevenir" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "echangesAArbitrer" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -3898,7 +4042,7 @@
         }
       },
       "EtatPublication" : {
-        "required" : [ "jamaisPublie", "personnesAPrevenir", "statut" ],
+        "required" : [ "jamaisPublie", "personnesAPrevenir", "statut", "envoisEnEchec" ],
         "type" : "object",
         "properties" : {
           "jamaisPublie" : {
@@ -3913,6 +4057,10 @@
           },
           "statut" : {
             "$ref" : "#/components/schemas/Statut"
+          },
+          "envoisEnEchec" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -5236,6 +5384,62 @@
           }
         }
       },
+      "LigneEnvoi" : {
+        "type" : "object",
+        "required" : [ "animateurId", "nomAffiche", "email", "affecte", "rappelVeilleEchec", "relanceEchec", "confirmation", "aPrevenir", "differe", "joursAPrevenir" ],
+        "properties" : {
+          "animateurId" : {
+            "type" : "string"
+          },
+          "nomAffiche" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "boolean"
+          },
+          "affecte" : {
+            "type" : "boolean"
+          },
+          "version" : {
+            "$ref" : "#/components/schemas/VersionPubliee"
+          },
+          "envoi" : {
+            "$ref" : "#/components/schemas/DernierEnvoi"
+          },
+          "rappelVeilleLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "rappelVeilleEchec" : {
+            "type" : "boolean"
+          },
+          "relanceLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "relanceEchec" : {
+            "type" : "boolean"
+          },
+          "confirmation" : {
+            "type" : "string"
+          },
+          "confirmeLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "aPrevenir" : {
+            "type" : "boolean"
+          },
+          "differe" : {
+            "type" : "boolean"
+          },
+          "joursAPrevenir" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "date",
+              "examples" : [ "2022-03-10" ]
+            }
+          }
+        }
+      },
       "LigneEquite" : {
         "required" : [ "animateurId", "heuresTotal", "heuresSoiree", "heuresWeekEnd", "heuresJourFerie", "postes", "postesPenibles", "standsDistincts", "typologiesDistinctes", "emplacementsDistinctsParJourMax", "tauxSouhaits", "tauxAppreciation", "joursTravailles", "joursRepos", "plusLongueSerie" ],
         "type" : "object",
@@ -5628,6 +5832,10 @@
         "type" : "string",
         "enum" : [ "OUVERTURE", "FERMETURE" ]
       },
+      "Motif" : {
+        "type" : "string",
+        "enum" : [ "PERSONNEL", "TRANSPORT", "AUTRE" ]
+      },
       "MotifExclusion" : {
         "type" : "object",
         "properties" : {
@@ -5676,7 +5884,7 @@
       },
       "MuralAlertType" : {
         "type" : "string",
-        "enum" : [ "EMPTY_SEATS", "BREAK_WITHOUT_RELAY" ]
+        "enum" : [ "NEW_EMPTY_SEATS", "STARTING_SOON", "BREAK_WITHOUT_RELAY" ]
       },
       "MuralConsigne" : {
         "type" : "object",
@@ -5695,7 +5903,7 @@
       },
       "MuralShift" : {
         "type" : "object",
-        "required" : [ "start", "end", "noms", "emptySeats" ],
+        "required" : [ "start", "end", "noms", "emptySeats", "newEmptySeats" ],
         "properties" : {
           "start" : {
             "$ref" : "#/components/schemas/LocalDateTime"
@@ -5710,6 +5918,10 @@
             }
           },
           "emptySeats" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "newEmptySeats" : {
             "type" : "integer",
             "format" : "int32"
           }
@@ -5739,6 +5951,10 @@
           }
         }
       },
+      "NatureEnvoi" : {
+        "type" : "string",
+        "enum" : [ "PUBLICATION", "RENVOI" ]
+      },
       "NewCarpoolRequest" : {
         "type" : "object",
         "properties" : {
@@ -5757,6 +5973,27 @@
       "NiveauEffort" : {
         "type" : "string",
         "enum" : [ "NORMAL", "EPUISANT" ]
+      },
+      "NouveauSignalement" : {
+        "type" : "object",
+        "properties" : {
+          "portee" : {
+            "$ref" : "#/components/schemas/Portee"
+          },
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "creneauId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "standId" : {
+            "type" : "string"
+          },
+          "motif" : {
+            "$ref" : "#/components/schemas/Motif"
+          }
+        }
       },
       "NouvelleDeclaration" : {
         "type" : "object",
@@ -6350,9 +6587,13 @@
           }
         }
       },
+      "Portee" : {
+        "type" : "string",
+        "enum" : [ "JOUR", "POSTE" ]
+      },
       "PosteAPourvoir" : {
         "type" : "object",
-        "required" : [ "creneauId", "verrouille" ],
+        "required" : [ "creneauId", "verrouille", "nouveau", "resteDuCreneau" ],
         "properties" : {
           "posteId" : {
             "type" : "string"
@@ -6375,6 +6616,12 @@
           },
           "verrouille" : {
             "type" : "boolean"
+          },
+          "nouveau" : {
+            "type" : "boolean"
+          },
+          "resteDuCreneau" : {
+            "type" : "boolean"
           }
         }
       },
@@ -6395,6 +6642,9 @@
           },
           "heureFinEffective" : {
             "$ref" : "#/components/schemas/LocalTime"
+          },
+          "suiteDe" : {
+            "type" : "string"
           },
           "animateur" : {
             "$ref" : "#/components/schemas/Animateur"
@@ -7930,6 +8180,94 @@
         "type" : "string",
         "enum" : [ "CRITIQUE", "ELEVE" ]
       },
+      "SignalementJourJ" : {
+        "type" : "object",
+        "required" : [ "id", "portee", "date", "signaleLe" ],
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "animateurId" : {
+            "type" : "string"
+          },
+          "nomAffiche" : {
+            "type" : "string"
+          },
+          "portee" : {
+            "$ref" : "#/components/schemas/Portee"
+          },
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "creneauId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "standId" : {
+            "type" : "string"
+          },
+          "standNom" : {
+            "type" : "string"
+          },
+          "heureDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "heureFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "motif" : {
+            "$ref" : "#/components/schemas/Motif"
+          },
+          "signaleLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
+      "SignalementView" : {
+        "type" : "object",
+        "required" : [ "id", "portee", "date", "statut", "signaleLe" ],
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "portee" : {
+            "$ref" : "#/components/schemas/Portee"
+          },
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "creneauId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "standId" : {
+            "type" : "string"
+          },
+          "standNom" : {
+            "type" : "string"
+          },
+          "heureDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "heureFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "motif" : {
+            "$ref" : "#/components/schemas/Motif"
+          },
+          "statut" : {
+            "$ref" : "#/components/schemas/Statut1"
+          },
+          "signaleLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "traiteLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
       "SnapshotDetail" : {
         "type" : "object",
         "properties" : {
@@ -8298,6 +8636,10 @@
       "Statut" : {
         "type" : "string",
         "enum" : [ "A_FAIRE", "ATTENTION", "INFO", "FAIT" ]
+      },
+      "Statut1" : {
+        "type" : "string",
+        "enum" : [ "SIGNALE", "TRAITE", "CLASSE", "ANNULE" ]
       },
       "StatutEnvoi" : {
         "type" : "string",
@@ -8841,6 +9183,23 @@
           },
           "vacationMissing" : {
             "type" : "boolean"
+          }
+        }
+      },
+      "VersionPubliee" : {
+        "type" : "object",
+        "required" : [ "snapshotId", "numero" ],
+        "properties" : {
+          "snapshotId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "numero" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "publieLe" : {
+            "$ref" : "#/components/schemas/Instant"
           }
         }
       },
@@ -12170,6 +12529,65 @@
         "tags" : [ "Espace Animateur Resource" ]
       }
     },
+    "/api/espace-animateur/{jeton}/signalements" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/NouveauSignalement"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Report Absence",
+        "tags" : [ "Espace Animateur Resource" ]
+      }
+    },
+    "/api/espace-animateur/{jeton}/signalements/{signalementId}" : {
+      "delete" : {
+        "parameters" : [ {
+          "name" : "signalementId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/SignalementView"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Withdraw Absence Report",
+        "tags" : [ "Espace Animateur Resource" ]
+      }
+    },
     "/api/espace-animateur/{jeton}/suggestions-echange" : {
       "get" : {
         "parameters" : [ {
@@ -12793,6 +13211,58 @@
           }
         },
         "summary" : "Suggestions",
+        "tags" : [ "Jour J Resource" ]
+      }
+    },
+    "/api/jour-j/signalements/{signalementId}/classement" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "signalementId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          }
+        },
+        "summary" : "File Absence Report",
+        "tags" : [ "Jour J Resource" ]
+      }
+    },
+    "/api/jour-j/signalements/{signalementId}/traitement" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "signalementId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AbsenceMarquee"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Treat Absence Report",
         "tags" : [ "Jour J Resource" ]
       }
     },
@@ -14191,6 +14661,24 @@
           }
         },
         "summary" : "Destinataires",
+        "tags" : [ "Publication Resource" ]
+      }
+    },
+    "/api/planning/publication/etat" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EtatEnvois"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Etat",
         "tags" : [ "Publication Resource" ]
       }
     },

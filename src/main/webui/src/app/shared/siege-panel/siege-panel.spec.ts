@@ -58,7 +58,7 @@ describe('SeatPanel', () => {
     deplacer: vi.fn(),
   };
   const postesApi = { place: vi.fn(), explanation: vi.fn() };
-  const repairs = { suggestions: vi.fn() };
+  const jourJ = { suggestions: vi.fn(), marquerAbsent: vi.fn() };
   const verrous = {
     verrouillages: locks,
     reload: vi.fn(async () => undefined),
@@ -91,13 +91,14 @@ describe('SeatPanel', () => {
     for (const mock of [
       ...Object.values(explanations),
       ...Object.values(postesApi),
-      repairs.suggestions,
       verrous.create,
       verrous.remove,
       jobs.submitSolveIncremental,
       dialog.open,
       confirm.ask,
       confirm.askWithOption,
+      jourJ.suggestions,
+      jourJ.marquerAbsent,
     ]) {
       mock.mockReset();
     }
@@ -129,7 +130,6 @@ describe('SeatPanel', () => {
         provideRouter([]),
         { provide: AffectationExplanationService, useValue: explanations },
         { provide: PostesApi, useValue: postesApi },
-        { provide: JourJService, useValue: repairs },
         {
           provide: ConstraintsApi,
           useValue: {
@@ -143,6 +143,7 @@ describe('SeatPanel', () => {
         { provide: SolverJobService, useValue: jobs },
         { provide: MatDialog, useValue: dialog },
         { provide: ConfirmService, useValue: confirm },
+        { provide: JourJService, useValue: jourJ },
       ],
     });
     fixture = TestBed.createComponent(SeatPanel);
@@ -276,7 +277,7 @@ describe('SeatPanel', () => {
   // #711 review: the search reads the persisted plan prepared server-side,
   // and the write carries the holder shown as its precondition.
   it('searches the replacements on the persisted plan, and hands the seat over from the holder shown', async () => {
-    repairs.suggestions.mockResolvedValue({
+    jourJ.suggestions.mockResolvedValue({
       posteId: 'P1',
       animateurActuelId: 'a1',
       scoreAvant: ZERO,
@@ -298,7 +299,7 @@ describe('SeatPanel', () => {
     const root = await mount('P1');
 
     button(root, 'Remplacer').click();
-    await vi.waitFor(() => expect(repairs.suggestions).toHaveBeenCalledWith('P1'));
+    await vi.waitFor(() => expect(jourJ.suggestions).toHaveBeenCalledWith('P1'));
     await fixture.whenStable();
     expect(explanations.suggererReparations).not.toHaveBeenCalled();
     root
@@ -331,6 +332,27 @@ describe('SeatPanel', () => {
 
     expect(dialog.open.mock.calls[0][1].data.offerPlacement).toBe(false);
     expect(postesApi.place).not.toHaveBeenCalled();
+  });
+
+  /** The gesture of Aujourd'hui, from the seat: the same service, on this timeslot alone. */
+  it('marks the holder absent on this timeslot, then proposes to warn and repair', async () => {
+    jourJ.marquerAbsent.mockResolvedValue({
+      animateurId: 'a1',
+      nomAffiche: 'Alice Martin',
+      entrees: [],
+      postesLiberes: [{ posteId: 'P1' }],
+    });
+    const root = await mount('P1');
+
+    button(root, 'Marquer absent').click();
+    await vi.waitFor(() =>
+      expect(jourJ.marquerAbsent).toHaveBeenCalledWith('a1', '', '2026-07-18', undefined, 1),
+    );
+    await fixture.whenStable();
+
+    expect(root.textContent).toContain('marqué absent');
+    expect(root.querySelector('a[href="/publication"]')?.textContent).toContain('Prévenir');
+    expect(button(root, 'Corriger le reste')).toBeTruthy();
   });
 
   it('locks this person on this timeslot, and unlocks only that lock', async () => {

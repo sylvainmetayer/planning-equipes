@@ -71,6 +71,7 @@ public class NotificationWriter {
             case Notification.DemandeDeclinee n -> demandeDeclinee(n);
             case Notification.DemandesSoumises n -> demandesSoumises(n);
             case Notification.DeclarationSoumise n -> declarationSoumise(n);
+            case Notification.EmpechementSignale n -> empechementSignale(n);
             case Notification.CarpoolValidated n -> carpoolValidated(n);
             case Notification.CarpoolSetAside n -> carpoolSetAside(n);
             case Notification.CarpoolCancelled n -> carpoolCancelled(n);
@@ -98,6 +99,29 @@ public class NotificationWriter {
                         "joursIndisponibles", n.joursIndisponibles(),
                         "souhaits", n.souhaits(),
                         "lien", liens.disponibilitesScreen().orElse(null))));
+    }
+
+    /**
+     * An absence reported from an espace: the organisation hears it at once,
+     * with the day, the seat and the reason when one was chosen, and where to
+     * repair it.
+     */
+    private Optional<MailDraft> empechementSignale(Notification.EmpechementSignale n) {
+        Optional<String> admin = adminAddress.resolue();
+        if (admin.isEmpty()) {
+            return Optional.empty();
+        }
+        String sujet = productName.subject("empêchement signalé par " + n.animateurNomComplet());
+        return Optional.of(draft(
+                admin.get(),
+                "mail/empechement-signale",
+                sujet,
+                MailTemplates.values(
+                        "nom", n.animateurNomComplet(),
+                        "jour", JOUR.format(n.jour()),
+                        "poste", n.poste(),
+                        "motif", n.motif(),
+                        "lien", liens.jourScreen().orElse(null))));
     }
 
     /**

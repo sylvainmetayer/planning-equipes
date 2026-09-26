@@ -79,6 +79,10 @@ public class AffichageMuralService {
 
     private final EditionService editionService;
 
+    private final dev.sylvain.planning.service.publication.PlanPublieService planPublieService;
+
+    private final dev.sylvain.planning.service.publication.PublicationDiffService diffService;
+
     private final SecureRandom random = new SecureRandom();
 
     @Inject
@@ -90,7 +94,9 @@ public class AffichageMuralService {
             PauseAnalyzer pauseAnalyzer,
             ConsigneService consigneService,
             JourJClock clock,
-            EditionService editionService) {
+            EditionService editionService,
+            dev.sylvain.planning.service.publication.PlanPublieService planPublieService,
+            dev.sylvain.planning.service.publication.PublicationDiffService diffService) {
         this.repository = repository;
         this.editionContext = editionContext;
         this.referenceDataService = referenceDataService;
@@ -99,6 +105,8 @@ public class AffichageMuralService {
         this.consigneService = consigneService;
         this.clock = clock;
         this.editionService = editionService;
+        this.planPublieService = planPublieService;
+        this.diffService = diffService;
     }
 
     /* ------------------------------- Admin ------------------------------- */
@@ -240,6 +248,36 @@ public class AffichageMuralService {
     }
 
     /**
+     * The day under way as Aujourd'hui reads it: the wall view — its alerts,
+     * the one calculation —, the people the working plan has moved since the
+     * publication, and the published seats the « nouveau » holes are told
+     * from. One reading of each plan for the three. {@code fullNames} for an
+     * admin session, which may name.
+     */
+    public DayReading currentEditionReading(boolean fullNames) {
+        return read(null, null, null, AffichageMuralViewBuilder.Settings.wholeEdition(fullNames), true);
+    }
+
+    /**
+     * @param view             what the wall display would show
+     * @param unpublishedPeople the ids of the people whose schedule differs
+     *                          from the published plan
+     * @param published        the published plan's seats, {@code null} before
+     *                          the first publication
+     */
+    public record DayReading(
+            AffichageMuralView view, List<String> unpublishedPeople, List<PosteAffectation> published) {}
+
+    private AffichageMuralView build(
+            String editionNom,
+            String libelle,
+            LocalDate jourDemande,
+            AffichageMuralViewBuilder.Settings settings,
+            boolean withBand) {
+        return read(editionNom, libelle, jourDemande, settings, withBand).view();
+    }
+
+    /**
      * Reads the plan once and derives the rest from it: the timeslots are those
      * its seats stand on (a timeslot nobody could hold opens no stand), the
      * legal parameters and meal windows are the ones the persisted plan carries,
@@ -247,9 +285,11 @@ public class AffichageMuralService {
      * since a night seat of the eve or of the morning after can relay a break.
      *
      * @param jourDemande the day to show; null for the journée under way
-     * @param withBand whether to compute the band of alerts (breaks, consigne)
+     * @param withBand whether to compute the band of alerts (breaks, consigne,
+     *                 the holes the publication did not have, what may differ
+     *                 from it) — the home screen's counts need none of it
      */
-    private AffichageMuralView build(
+    private DayReading read(
             String editionNom,
             String libelle,
             LocalDate jourDemande,
@@ -264,7 +304,13 @@ public class AffichageMuralService {
                 .distinct()
                 .toList();
         LocalDate jour = jourDemande == null ? AffichageMuralViewBuilder.currentDay(creneaux, now) : jourDemande;
-        return AffichageMuralViewBuilder.build(
+        PlanningEvenement publie =
+                !withBand || planPublieService.jamaisPublie() ? null : planPublieService.planPublie();
+        List<PosteAffectation> published = publie == null ? null : publie.getPostes();
+        // The publication's own diff, so « peut différer » says the number
+        // the Diffuser screen would publish to.
+        List<String> unpublishedPeople = withBand ? diffService.changedPeople(plan, publie) : List.of();
+        AffichageMuralView view = AffichageMuralViewBuilder.build(
                 new AffichageMuralViewBuilder.Inputs(
                         editionNom,
                         libelle,
@@ -273,8 +319,11 @@ public class AffichageMuralService {
                         creneaux,
                         postes,
                         withBand ? breaksAround(plan, postes, jour) : null,
-                        withBand ? consigneService.find(jour).orElse(null) : null),
+                        withBand ? consigneService.find(jour).orElse(null) : null,
+                        published,
+                        unpublishedPeople.size()),
                 settings);
+        return new DayReading(view, unpublishedPeople, published);
     }
 
     /** The break report over the seats of {@code jour} and of the days either side of it. */

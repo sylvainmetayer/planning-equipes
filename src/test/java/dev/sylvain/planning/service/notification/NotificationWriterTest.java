@@ -210,6 +210,29 @@ class NotificationWriterTest {
     }
 
     @Test
+    void aReportedAbsenceSaysTheDayTheSeatAndTheReasonAndWhereToRepairIt() {
+        MailDraft courrier = rediger(new Notification.EmpechementSignale(
+                "Alice Dupont", java.time.LocalDate.of(2026, 7, 11), "Cirque 09:00-12:00", "transport"));
+
+        assertThat(courrier.destinataire()).isEqualTo("admin@example.org");
+        assertThat(courrier.sujet()).contains("empêchement signalé par Alice Dupont");
+        assertThat(courrier.corps())
+                .contains("samedi 11 juillet")
+                .contains("sur le poste Cirque 09:00-12:00")
+                .contains("(motif : transport)")
+                .contains("Rien n'est modifié au planning")
+                .contains("https://planning.example.org/aujourdhui");
+    }
+
+    @Test
+    void aReportedDayWithoutAReasonSaysTheWholeDay() {
+        MailDraft courrier = rediger(
+                new Notification.EmpechementSignale("Bruno Petit", java.time.LocalDate.of(2026, 7, 12), null, null));
+
+        assertThat(courrier.corps()).contains("toute la journée").doesNotContain("motif");
+    }
+
+    @Test
     void withoutAnAdminAddressNoDeclarationIsNotified() {
         redacteur = writer(adminAddress(null), linksTo("https://planning.example.org"));
 

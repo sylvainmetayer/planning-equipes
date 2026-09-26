@@ -24,10 +24,17 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * @param nextDay      the next day carrying a timeslot, {@code null} when none
  * @param stands       the stands holding at least one seat that day, by
  *                     location then name
- * @param alerts       empty seats within two hours, breaks without relay
+ * @param alerts       what is new since the plan was published — a seat
+ *                     opened by an absence —, the shift starting within half
+ *                     an hour with an empty seat, the break without relay
+ *                     within the hour. The holes the published plan already
+ *                     had stay in the tiles, faded, never in the band
  * @param consigne     the consigne of the day, {@code null} when none
+ * @param unpublishedChanges people whose schedule differs from the published
+ *                     plan: the screen says « peut différer de celui envoyé »
+ *                     only when this is not zero, with the number
  */
-@Schema(requiredProperties = {"edition", "jour", "now", "stands", "alerts"})
+@Schema(requiredProperties = {"edition", "jour", "now", "stands", "alerts", "unpublishedChanges"})
 public record AffichageMuralView(
         String edition,
         String libelle,
@@ -36,7 +43,8 @@ public record AffichageMuralView(
         LocalDate nextDay,
         List<MuralStand> stands,
         List<MuralAlert> alerts,
-        MuralConsigne consigne) {
+        MuralConsigne consigne,
+        int unpublishedChanges) {
 
     /** One stand of the day, and its shifts in start order. */
     @Schema(requiredProperties = {"standId", "standNom", "vacations"})
@@ -49,23 +57,32 @@ public record AffichageMuralView(
      * @param start      on the day it opens
      * @param end        the next day for a shift crossing midnight
      * @param noms       who holds a seat, as the link allows names to be shown
+     *                   — disambiguated among the day's holders: a second
+     *                   letter of the last name, then the whole of it
      * @param emptySeats seats nobody holds
+     * @param newEmptySeats among them, the seats the published plan had
+     *                   somebody on — opened since, by an absence: « nouveau »,
+     *                   where the others are the holes everybody already knew
      */
-    @Schema(requiredProperties = {"start", "end", "noms", "emptySeats"})
-    public record MuralShift(LocalDateTime start, LocalDateTime end, List<String> noms, int emptySeats) {}
+    @Schema(requiredProperties = {"start", "end", "noms", "emptySeats", "newEmptySeats"})
+    public record MuralShift(
+            LocalDateTime start, LocalDateTime end, List<String> noms, int emptySeats, int newEmptySeats) {}
 
     /** What the bottom band shouts about. */
     public enum MuralAlertType {
-        /** Seats nobody holds on a shift under way or starting within two hours. */
-        EMPTY_SEATS,
-        /** A break owed on a stand where nobody else can take the relay. */
+        /** Seats opened since the publication — an absence — on a shift not over yet. */
+        NEW_EMPTY_SEATS,
+        /** A shift starting within half an hour with a seat nobody holds, new or known. */
+        STARTING_SOON,
+        /** A break owed within the hour on a stand where nobody else can take the relay. */
         BREAK_WITHOUT_RELAY
     }
 
     /**
      * One alert.
      *
-     * @param count empty seats, for {@link MuralAlertType#EMPTY_SEATS}
+     * @param count empty seats, for {@link MuralAlertType#NEW_EMPTY_SEATS} and
+     *              {@link MuralAlertType#STARTING_SOON}
      * @param nom   who takes the break, for {@link MuralAlertType#BREAK_WITHOUT_RELAY}
      */
     @Schema(requiredProperties = {"type", "standNom", "start", "end", "count"})

@@ -13,7 +13,7 @@
 // UPDATE that starts no solve. There is no second write path.
 
 import { Injectable, inject } from '@angular/core';
-import { AbsenceMarquee, ApercuPublication, EtatJourJ, SuggestionsReparation } from './models';
+import { AbsenceMarquee, EtatJourJ, RapportPublication, SuggestionsReparation } from './models';
 import { ApiService } from './api.service';
 import { PlanningApi } from './api/planning-api';
 
@@ -31,17 +31,38 @@ export class JourJService {
     return this.api.get<EtatJourJ>(`/api/jour-j${query({ date, heure })}`);
   }
 
-  /** Forced unavailability on every remaining timeslot, and the seats it frees. */
+  /**
+   * Forced unavailability on every remaining timeslot — or on `creneauId`
+   * alone, the Siège panel's shift — and the seats it frees.
+   */
   marquerAbsent(
     animateurId: string,
     raison: string,
     date?: string,
     heure?: string,
+    creneauId?: number,
   ): Promise<AbsenceMarquee> {
     return this.api.post<AbsenceMarquee>(`/api/jour-j/absences${query({ date, heure })}`, {
       animateurId,
       raison: raison.trim() ? raison.trim() : null,
+      creneauId: creneauId ?? null,
     });
+  }
+
+  /**
+   * « Marquer absent et remplacer » on an absence reported from an espace
+   * (issue #533): the absence marked, the report settled, the freed seats back.
+   */
+  traiterSignalement(signalementId: number): Promise<AbsenceMarquee> {
+    return this.api.post<AbsenceMarquee>(
+      `/api/jour-j/signalements/${signalementId}/traitement`,
+      null,
+    );
+  }
+
+  /** « Classer »: the report read and filed, nothing touched in the plan. */
+  classerSignalement(signalementId: number): Promise<void> {
+    return this.api.post<void>(`/api/jour-j/signalements/${signalementId}/classement`, null);
   }
 
   /** Undoes an absence: one timeslot when `creneauId` is given, the whole day otherwise. */
@@ -66,13 +87,12 @@ export class JourJService {
   }
 
   /**
-   * How many people the next publication would write to — the count behind the
-   * "changements non publiés" banner. Read from the existing publication
-   * preview: this screen shows the number and links to the page that owns the
-   * button, it never sends anything itself.
+   * « Prévenir les N personnes »: the targeted publication of the Diffuser
+   * screen, to the people whose schedule moved and to nobody else — the one
+   * write path, never a mail of this screen's own.
    */
-  apercuPublication(): Promise<ApercuPublication> {
-    return this.planningApi.publicationPreview();
+  prevenir(animateurIds: readonly string[]): Promise<RapportPublication> {
+    return this.planningApi.publishTo(animateurIds);
   }
 }
 

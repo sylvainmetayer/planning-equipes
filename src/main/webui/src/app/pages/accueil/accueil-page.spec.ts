@@ -64,6 +64,7 @@ function etat(partial: Partial<EtatEdition> = {}): EtatEdition {
       jamaisPublie: true,
       dernierePublicationLe: null,
       personnesAPrevenir: 0,
+      envoisEnEchec: 0,
       statut: 'A_FAIRE',
     },
     confirmations: {
@@ -258,7 +259,7 @@ describe('AccueilPage', () => {
       '/diagnostic?onglet=problemes',
       '/journee',
       '/publication',
-      '/animateurs?confirmation=jamais',
+      '/publication?filtre=silencieux',
       '/echanges',
     ]);
   });
@@ -520,7 +521,7 @@ describe('AccueilPage', () => {
     await fixture.whenStable();
 
     const jour = element().querySelector<HTMLElement>('[data-bloc="jour"]')!;
-    expect(jour.querySelector('a.accueil-jour-lien')!.getAttribute('href')).toBe('/jour-j');
+    expect(jour.querySelector('a.accueil-jour-lien')!.getAttribute('href')).toBe('/aujourdhui');
     expect(jour.textContent).toContain('J5');
     expect(jour.textContent).toContain('Afficher sur la TV');
     expect(element().querySelectorAll('li.accueil-ligne')).toHaveLength(0);

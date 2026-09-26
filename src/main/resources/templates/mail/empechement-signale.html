@@ -1,0 +1,9 @@
+{#include mail/layout}
+{#body}
+<p style="margin:0 0 12px;">{nom} a signalé depuis son espace ne pas pouvoir être là {#if poste}le {jour}, sur le poste {poste}{#else}le {jour}, toute la journée{/if}{#if motif} (motif : {motif}){/if}.</p>
+<p style="margin:0 0 12px;">Rien n'est modifié au planning tant que vous n'avez pas constaté l'absence.</p>
+{#if lien}
+<p style="margin:0;">À traiter depuis l'écran du jour : <a href="{lien}" style="color:{accent};">{lien}</a></p>
+{/if}
+{/body}
+{/include}

@@ -123,6 +123,12 @@ describe('app.routes', () => {
     expect(TestBed.inject(Title).getTitle()).toBe('Titre résolu — Produit');
   });
 
+  /** « Mode jour J » became Aujourd'hui: its bookmarks land there, whatever they carried. */
+  it('sends the former event-day address to Aujourd’hui with its query params', () => {
+    expect(redirectTarget('jour-j', {})).toBe('/aujourdhui');
+    expect(redirectTarget('jour-j', { date: '2026-08-02' })).toBe('/aujourdhui?date=2026-08-02');
+  });
+
   /**
    * The former addresses of the day's renderings redirect to the page, query
    * params included: the key renamed when the rendering owns another one, and

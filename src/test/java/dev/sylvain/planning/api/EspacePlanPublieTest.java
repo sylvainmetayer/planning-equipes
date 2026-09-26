@@ -407,6 +407,38 @@ class EspacePlanPublieTest {
     }
 
     /**
+     * « Planning communiqué le … » only when the mail left: the espace reads the
+     * delivery the Diffuser screen recorded, and a fiche without an address
+     * says so instead of claiming a send. Before any send there is none to
+     * claim, and outside the collection its two pages are not offered.
+     */
+    @Test
+    void theEspaceSaysWhetherTheMailActuallyLeft() {
+        given().when()
+                .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
+                .then()
+                .statusCode(200)
+                .body("dernierEnvoi", nullValue())
+                .body("collecteOuverte", equalTo(false));
+
+        publication.publier();
+        given().when()
+                .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
+                .then()
+                .statusCode(200)
+                .body("dernierEnvoi.statut", equalTo("ENVOYE"));
+
+        donnerEmail("PUBESP-A", null);
+        persistPlan("PUBESP-B");
+        publication.publier();
+        given().when()
+                .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
+                .then()
+                .statusCode(200)
+                .body("dernierEnvoi.statut", equalTo("SANS_EMAIL"));
+    }
+
+    /**
      * Issue #534: the espace says where. The label comes from the referential
      * at read time — a renamed hall reads renamed — and the coordinates travel
      * only when both are set.

@@ -884,17 +884,27 @@ public class EtatEditionService {
             // figure — but the line is « à vérifier », and the screen words it
             // as a wait rather than as an invitation to publish.
             return new EtatPublication(
-                    apercu.jamaisPublie(), apercu.dernierePublicationLe(), apercu.nombreConcernes(), Statut.ATTENTION);
+                    apercu.jamaisPublie(),
+                    apercu.dernierePublicationLe(),
+                    apercu.nombreConcernes(),
+                    Statut.ATTENTION,
+                    apercu.envoisEnEchec());
         }
         if (apercu.planVide() || apercu.jamaisPublie()) {
             statut = Statut.A_FAIRE;
-        } else if (apercu.nombreConcernes() > 0) {
+        } else if (apercu.nombreConcernes() > 0 || apercu.envoisEnEchec() > 0) {
+            // A publication whose mails bounced is not « à jour »: nothing
+            // changed for those people, they simply never received it.
             statut = Statut.ATTENTION;
         } else {
             statut = Statut.FAIT;
         }
         return new EtatPublication(
-                apercu.jamaisPublie(), apercu.dernierePublicationLe(), apercu.nombreConcernes(), statut);
+                apercu.jamaisPublie(),
+                apercu.dernierePublicationLe(),
+                apercu.nombreConcernes(),
+                statut,
+                apercu.envoisEnEchec());
     }
 
     /**

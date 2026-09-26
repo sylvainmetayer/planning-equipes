@@ -42,6 +42,7 @@ describe('EspaceCovoituragePage', () => {
           provide: EspaceAnimateurService,
           useValue: {
             carpool,
+            view: signal(null),
             loadCarpool: vi.fn(async () => carpool.set(initial)),
             requestCarpool,
           },

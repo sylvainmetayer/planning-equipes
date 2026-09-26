@@ -28,6 +28,7 @@ import {
   toggleTeammate,
 } from './covoiturage-brouillon';
 import { StatusMessage } from '../../shared/status-message';
+import { EspaceContact } from './espace-contact';
 
 /**
  * « Covoiturage »: the animateur names up to three teammates they come with —
@@ -44,6 +45,7 @@ import { StatusMessage } from '../../shared/status-message';
 @Component({
   selector: 'app-espace-covoiturage-page',
   imports: [
+    EspaceContact,
     StatusMessage,
     DatePipe,
     FormsModule,

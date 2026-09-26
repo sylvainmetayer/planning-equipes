@@ -24,6 +24,10 @@ registerLocaleData(localeFr, 'fr');
 
 function view(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView {
   return {
+    signalements: [],
+    collecteOuverte: false,
+    collecteFermeLe: null,
+    dernierEnvoi: null,
     joursRepos: [],
     animateurId: 'alice',
     prenom: 'Alice',
@@ -134,6 +138,41 @@ describe('EspaceAnimateurShell — quelle édition', () => {
     await rendre(view({ editionNom: null, editionDebut: null, editionFin: null }));
 
     expect((fixture.nativeElement as HTMLElement).querySelector('.espace-edition')).toBeNull();
+  });
+
+  function liensNav(): string[] {
+    return Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('nav.espace-nav a'),
+    ).map((lien) =>
+      (lien.textContent ?? '')
+        .replace(lien.querySelector('mat-icon')?.textContent ?? '', '')
+        .trim(),
+    );
+  }
+
+  /** Out of the collection, two dead tabs were read all event long: they are gone. */
+  it('offers three tabs outside the collection, and the two collection pages only while it is open', async () => {
+    expect(liensNav()).toEqual(['Mon planning', 'Mes échanges', 'Aide']);
+    expect(textOf()).not.toContain('La collecte des disponibilités est ouverte');
+
+    await rendre(view({ collecteOuverte: true, collecteFermeLe: '2026-01-20' }));
+
+    expect(liensNav()).toHaveLength(5);
+    expect(textOf()).toContain("La collecte des disponibilités est ouverte jusqu'au 20 janvier");
+  });
+
+  /** Who to call, at the foot of every page — and nothing at all when the edition gave no contact. */
+  it("shows the organisation's contact at the foot of the page when there is one", async () => {
+    expect((fixture.nativeElement as HTMLElement).querySelector('.espace-contact')).toBeNull();
+
+    await rendre({
+      ...view(),
+      contact: { telephone: '04 00 00 00 00', email: null },
+    } as EspaceAnimateurView);
+
+    const contact = (fixture.nativeElement as HTMLElement).querySelector('.espace-contact-pied')!;
+    expect(contact.textContent).toContain('Organisation');
+    expect(contact.querySelector('a[href="tel:04 00 00 00 00"]')).not.toBeNull();
   });
 });
 

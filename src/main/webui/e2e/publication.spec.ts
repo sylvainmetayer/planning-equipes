@@ -96,8 +96,42 @@ test.describe('Publication du planning', () => {
     await expect(
       page.getByRole('button', { name: /Publier — 2 personnes concernées/ }),
     ).toBeVisible();
-    await page.getByRole('button', { name: /Voir qui est concerné/ }).click();
+    // Both effects of the button, said next to it rather than in a tooltip.
+    await expect(page.getByText(/met à jour leur espace/)).toBeVisible();
+    await page.getByRole('button', { name: /Voir ce qui change pour chacune/ }).click();
     await expect(page.getByText('Stand E2E deux', { exact: false }).first()).toBeVisible();
+
+    await page.close();
+  });
+
+  test('la table permanente dit qui a reçu quelle version, et se filtre sur les personnes à prévenir', async ({
+    browser,
+  }) => {
+    await deplacerUnSiege(admin);
+    const page = await pageAdmin(browser, admin);
+    await page.goto('/publication');
+
+    const table = page.locator('table.diffuser-table');
+    await expect(page.getByRole('heading', { name: 'Qui a reçu quelle version' })).toBeVisible();
+    await expect(table.locator('tbody tr').first()).toContainText(/v\d/);
+    await page.getByRole('button', { name: /À prévenir · 2/ }).click();
+    await expect(page).toHaveURL(/filtre=a-prevenir/);
+    await expect(table.locator('tbody tr')).toHaveCount(2);
+    // Deferring from the table moves the sentence of the button above it.
+    await table.getByRole('button', { name: 'Différer' }).first().click();
+    await expect(page.getByText(/aux 1 personne\(s\) dont il a changé/)).toBeVisible();
+    await expect(table.getByRole('button', { name: 'Réintégrer' })).toBeVisible();
+
+    await page.close();
+  });
+
+  test('l’onglet Documents dit pour qui est chaque fichier', async ({ browser }) => {
+    const page = await pageAdmin(browser, admin);
+    await page.goto('/publication?onglet=documents');
+
+    await expect(page.getByText('Une feuille par personne (PDF recto-verso)')).toBeVisible();
+    await expect(page.getByText("Le classeur de l'organisateur (PDF)")).toBeVisible();
+    await expect(page.locator('.diffuser-documents')).not.toContainText('Exporter');
 
     await page.close();
   });

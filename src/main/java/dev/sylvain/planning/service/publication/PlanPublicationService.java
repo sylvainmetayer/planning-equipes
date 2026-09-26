@@ -55,7 +55,10 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * <p>Failures are reported, not retried and not re-queued: an animateur whose
  * mail bounced does not come back in the next count — the count measures what
  * changed, not what was delivered. The report names them, and the individual
- * resend of the timeline screen is the way back.</p>
+ * resend of the Diffuser screen is the way back. What reached whom is no
+ * longer only a log line: every outcome is written to the delivery ledger
+ * ({@link EnvoiPlanningRepository}), which the Diffuser table and the home
+ * screen read.</p>
  */
 @ApplicationScoped
 public class PlanPublicationService {
@@ -95,6 +98,8 @@ public class PlanPublicationService {
 
     private final dev.sylvain.planning.service.journal.JournalActionService journal;
 
+    private final EnvoiPlanningRepository envois;
+
     @Inject
     public PlanPublicationService(
             PlanningPersistenceService persistenceService,
@@ -112,7 +117,8 @@ public class PlanPublicationService {
             EditionContext editionContext,
             ConfirmationPlanningService confirmationService,
             NotifiedPlanRepository notifiedPlans,
-            dev.sylvain.planning.service.journal.JournalActionService journal) {
+            dev.sylvain.planning.service.journal.JournalActionService journal,
+            EnvoiPlanningRepository envois) {
         this.persistenceService = persistenceService;
         this.planPublieService = planPublieService;
         this.snapshotService = snapshotService;
@@ -129,6 +135,7 @@ public class PlanPublicationService {
         this.confirmationService = confirmationService;
         this.notifiedPlans = notifiedPlans;
         this.journal = journal;
+        this.envois = envois;
     }
 
     /**
@@ -159,8 +166,20 @@ public class PlanPublicationService {
      * @param confirmation where their « j'ai lu » stands on the plan they were
      *                    last sent, {@code null} when they never answered
      * @param confirmeLe  when they answered it
+     * @param jours       the days their changes belong to — what the Diffuser
+     *                    screen's day filter reads, on the very rule the
+     *                    Journée's « Changements » applies
      */
-    @Schema(requiredProperties = {"premiereDiffusion", "ajouts", "retraits", "deplacements", "mineur", "reporte"})
+    @Schema(
+            requiredProperties = {
+                "premiereDiffusion",
+                "ajouts",
+                "retraits",
+                "deplacements",
+                "mineur",
+                "reporte",
+                "jours"
+            })
     public record DestinatairePublication(
             String animateurId,
             String nomAffiche,
@@ -174,7 +193,8 @@ public class PlanPublicationService {
             boolean mineur,
             boolean reporte,
             String confirmation,
-            Instant confirmeLe) {}
+            Instant confirmeLe,
+            List<java.time.LocalDate> jours) {}
 
     /**
      * What the screen shows before anything is sent.
@@ -190,8 +210,21 @@ public class PlanPublicationService {
      *                          accepté ». Said, never enforced: publishing an
      *                          unreviewed day is an ordinary thing to do — what
      *                          is not ordinary is doing it without knowing
+     * @param envoisEnEchec     people whose latest planning mail failed — a
+     *                          publication or a resend. Not counted in
+     *                          {@code nombreConcernes}: nothing changed for
+     *                          them, they simply never received it, and the
+     *                          way back is the resend of the Diffuser table
      */
-    @Schema(requiredProperties = {"jamaisPublie", "journeesNonValidees", "nombreConcernes", "planVide", "solveEnCours"})
+    @Schema(
+            requiredProperties = {
+                "jamaisPublie",
+                "journeesNonValidees",
+                "nombreConcernes",
+                "planVide",
+                "solveEnCours",
+                "envoisEnEchec"
+            })
     public record ApercuPublication(
             boolean jamaisPublie,
             boolean planVide,
@@ -199,7 +232,8 @@ public class PlanPublicationService {
             Instant dernierePublicationLe,
             int nombreConcernes,
             int journeesNonValidees,
-            List<DestinatairePublication> destinataires) {}
+            List<DestinatairePublication> destinataires,
+            int envoisEnEchec) {}
 
     /**
      * What the screen shows once the mails have left.
@@ -246,7 +280,11 @@ public class PlanPublicationService {
                 derniere == null ? null : derniere.publieLe(),
                 destinataires.size(),
                 relecture.journees() - relecture.journeesValidees(),
-                destinataires);
+                destinataires,
+                (int) envois.latestByAnimateur().values().stream()
+                        .filter(envoi -> envoi.statut() == StatutEnvoi.ECHEC)
+                        .filter(envoi -> identites.containsKey(envoi.animateurId()))
+                        .count());
     }
 
     /**
@@ -376,7 +414,8 @@ public class PlanPublicationService {
                 mineur,
                 differes.contains(animateurId),
                 confirmation == null ? null : confirmation.statut().name(),
-                confirmation == null ? null : confirmation.confirmeLe());
+                confirmation == null ? null : confirmation.confirmeLe(),
+                PublicationDiffService.joursTouches(changements));
     }
 
     private static int countOf(List<ChangementVacation> changements, PublicationDiffService.TypeChangement type) {
@@ -423,6 +462,22 @@ public class PlanPublicationService {
      * {@code exclusions} parameter below.
      */
     public RapportPublication publier(List<String> exclusions) {
+        return publier(exclusions, null);
+    }
+
+    /**
+     * A publication aimed at a few people: « Prévenir les 2 personnes » after
+     * an échange accepted, or after a replacement on the day. Everybody else
+     * concerned is deferred exactly as an exclusion defers them (ADR 0047): the
+     * capture is still global — the espace follows the published plan — and
+     * their marker stays where it was, so they come back in the next count.
+     *
+     * @param cibles the only recipients to write to; {@code null} or empty
+     *               means everybody concerned, minus {@code exclusions}. Ids
+     *               that are not recipients are ignored, and a publication
+     *               left with nobody to write to is refused like any other
+     */
+    public RapportPublication publier(List<String> exclusions, List<String> cibles) {
         ApercuPublication apercu = apercu();
         if (apercu.solveEnCours()) {
             throw new BusinessError.Conflict(
@@ -435,12 +490,14 @@ public class PlanPublicationService {
             throw new BusinessError.Conflict("Personne n'est concerné : le planning publié est déjà à jour.");
         }
         Set<String> demandes = exclusions == null ? Set.of() : new LinkedHashSet<>(exclusions);
-        List<DestinatairePublication> differes = apercu.destinataires().stream()
-                .filter(destinataire -> demandes.contains(destinataire.animateurId()))
-                .toList();
-        List<DestinatairePublication> retenus = apercu.destinataires().stream()
-                .filter(destinataire -> !demandes.contains(destinataire.animateurId()))
-                .toList();
+        Set<String> visees = cibles == null || cibles.isEmpty() ? null : new LinkedHashSet<>(cibles);
+        java.util.function.Predicate<DestinatairePublication> retenu =
+                destinataire -> !demandes.contains(destinataire.animateurId())
+                        && (visees == null || visees.contains(destinataire.animateurId()));
+        List<DestinatairePublication> differes =
+                apercu.destinataires().stream().filter(retenu.negate()).toList();
+        List<DestinatairePublication> retenus =
+                apercu.destinataires().stream().filter(retenu).toList();
         if (retenus.isEmpty()) {
             throw new BusinessError.Conflict(
                     "Tous les destinataires sont exclus : cette publication ne préviendrait personne.");
@@ -468,11 +525,20 @@ public class PlanPublicationService {
         PlanningEvenement planning = persistenceService.loadPersistedPlanning();
         Instant envoyeLe = Instant.now();
         List<Destinataire> trace = new ArrayList<>();
+        List<EnvoiPlanningRepository.Envoi> livraisons = new ArrayList<>();
         List<String> sansEmail = new ArrayList<>();
         List<String> echecs = new ArrayList<>();
         int envoyes = 0;
         for (DestinatairePublication destinataire : retenus) {
-            StatutEnvoi statut = send(planning, reference, referencesParAnimateur, destinataire);
+            Issue issue = send(planning, reference, referencesParAnimateur, destinataire);
+            StatutEnvoi statut = issue.statut();
+            livraisons.add(new EnvoiPlanningRepository.Envoi(
+                    destinataire.animateurId(),
+                    meta.id(),
+                    EnvoiPlanningRepository.NatureEnvoi.PUBLICATION,
+                    statut,
+                    issue.cause(),
+                    envoyeLe));
             switch (statut) {
                 case ENVOYE -> envoyes++;
                 case SANS_EMAIL -> sansEmail.add(destinataire.nomAffiche());
@@ -503,9 +569,17 @@ public class PlanPublicationService {
                     differe.changements(),
                     differe.demandes(),
                     differe.premiereDiffusion()));
+            livraisons.add(new EnvoiPlanningRepository.Envoi(
+                    differe.animateurId(),
+                    meta.id(),
+                    EnvoiPlanningRepository.NatureEnvoi.PUBLICATION,
+                    StatutEnvoi.EXCLU,
+                    null,
+                    envoyeLe));
             journal.recordAdminAction("PUBLICATION_DIFFEREE", differe.animateurId());
         }
         traceRepository.recordRecipients(meta.id(), trace);
+        envois.record(livraisons);
         // The marker moves for the people this publication addressed, and for
         // them only. Somebody it had nothing to say to was told nothing, so
         // claiming they know this plan would turn their next message from
@@ -538,13 +612,16 @@ public class PlanPublicationService {
                 differes.stream().map(DestinatairePublication::nomAffiche).toList());
     }
 
-    private StatutEnvoi send(
+    /** The outcome of one send, and why it failed when it did. */
+    private record Issue(StatutEnvoi statut, EnvoiPlanningRepository.CauseEchec cause) {}
+
+    private Issue send(
             PlanningEvenement planning,
             PlanningEvenement reference,
             Map<String, List<Vacation>> referencesParAnimateur,
             DestinatairePublication destinataire) {
         if (destinataire.email() == null || destinataire.email().isBlank()) {
-            return StatutEnvoi.SANS_EMAIL;
+            return new Issue(StatutEnvoi.SANS_EMAIL, null);
         }
         try {
             byte[] pdf = planningExportService.exportAnimateurPdfPublie(planning, destinataire.animateurId());
@@ -564,10 +641,10 @@ public class PlanPublicationService {
                                     reference,
                                     referencesParAnimateur.get(destinataire.animateurId()),
                                     destinataire.animateurId()))));
-            return StatutEnvoi.ENVOYE;
+            return new Issue(StatutEnvoi.ENVOYE, null);
         } catch (RuntimeException e) {
             Log.errorf(e, "Failed to mail the published planning of animateur %s", destinataire.animateurId());
-            return StatutEnvoi.ECHEC;
+            return new Issue(StatutEnvoi.ECHEC, EnvoiPlanningRepository.CauseEchec.of(e));
         }
     }
 
