@@ -1,3 +1,4 @@
+import { copyName } from '../../core/duplicate';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -24,6 +25,8 @@ interface EmplacementDraft {
 
 export interface EmplacementFormData {
   emplacement: Emplacement | null;
+  /** « Dupliquer »: a creation, prefilled from this row. */
+  modele?: Emplacement | null;
 }
 
 /** Add/edit dialog for an emplacement: name, code plus GPS coordinates, set via the map picker or typed directly. */
@@ -52,7 +55,17 @@ export class EmplacementFormDialog {
   private readonly crud = inject(ReferenceCrudService);
 
   protected readonly editingId = signal<string | null>(this.data.emplacement?.id ?? null);
-  protected readonly draft = signal<EmplacementDraft>(toDraft(this.data.emplacement));
+  protected readonly draft = signal<EmplacementDraft>(
+    this.data.emplacement || !this.data.modele
+      ? toDraft(this.data.emplacement)
+      : {
+          ...toDraft(this.data.modele),
+          id: '',
+          code: '',
+          nom: copyName(this.data.modele.nom),
+          modifieLe: null,
+        },
+  );
   /** Names the emplacement as it was loaded: its id is drawn per edition and tells a reader nothing. */
   protected readonly formTitle = computed(() => {
     const id = this.editingId();

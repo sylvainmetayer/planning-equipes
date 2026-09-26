@@ -48,6 +48,22 @@ describe('JourneeTypeDialog', () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
   });
 
+  it('lays the timeslots once without keeping a template, no name needed', async () => {
+    const { fixture, create, close } = monter(null);
+    await fixture.whenStable();
+
+    saisir(fixture, 'vacations', '9h-12h, 14:00-20:00');
+    await fixture.whenStable();
+    const bouton = Array.from(racine(fixture).querySelectorAll('button')).find((each) =>
+      each.textContent!.includes('Appliquer sans mémoriser'),
+    ) as HTMLButtonElement;
+    expect(bouton.disabled).toBe(false);
+    bouton.click();
+
+    expect(create).not.toHaveBeenCalled();
+    expect(close).toHaveBeenCalledWith({ fenetres: '09:00-12:00, 14:00-20:00' });
+  });
+
   it('creates a template from the name and the line, relay marker included', async () => {
     const { fixture, create, close } = monter(null);
     await fixture.whenStable();

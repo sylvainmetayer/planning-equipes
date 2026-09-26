@@ -57,7 +57,7 @@ interface RaccourciGeneral {
 
       <h3 class="raccourcis-titre" i18n="@@shortcuts.grille.title">Dans une grille de saisie</h3>
       <p class="raccourcis-intro" i18n="@@shortcuts.grille.intro">
-        Les grilles « Ouvertures des stands » et « Compétences ». Rien n'est enregistré avant
+        Les grilles « Horaires des stands » et « Compétences ». Rien n'est enregistré avant
         « Enregistrer » : une reprise de trop s'annule avec les modifications.
       </p>
       <dl class="raccourcis-liste">

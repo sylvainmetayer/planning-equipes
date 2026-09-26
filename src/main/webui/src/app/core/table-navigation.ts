@@ -39,6 +39,16 @@ import { SelectionId, TableSelection } from './table-selection';
 export const ROW_INDEX_ATTRIBUTE = 'data-row-index';
 
 /**
+ * `trackBy` of a navigable table: a row is its id, not its object. The store
+ * replaces every object on a reload — coming back to the list from a fiche
+ * triggers one — and a table tracking objects then rebuilds every row,
+ * dropping the focus the keyboard had put on one of them.
+ */
+export function trackRowById(_index: number, row: { id: SelectionId }): SelectionId {
+  return row.id;
+}
+
+/**
  * Index the given key moves the focus to, or `null` when the table has no
  * meaning for that key and must let it through.
  *

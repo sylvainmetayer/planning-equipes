@@ -10,6 +10,7 @@ import {
   dialogueOuvert,
   idCree,
   pageAdmin,
+  rowAction,
   seedReferentielSolveur,
 } from './support';
 import { repartirDeLaReference } from './reference';
@@ -135,7 +136,10 @@ test.describe('avertissements de saisie', () => {
     const page = await pageAdmin(browser, admin);
     await page.goto('/creneaux');
 
-    await page.getByRole('button', { name: 'Ajouter' }).click();
+    // A single timeslot is the exception on this screen, which builds the grid
+    // from day templates: it sits in the menu of the other ways.
+    await page.getByRole('button', { name: 'Autres façons de créer la grille' }).click();
+    await page.getByRole('menuitem', { name: 'Ajouter un créneau' }).click();
     const dialog = await dialogueOuvert(page);
     await dialog.getByLabel('Date').fill(JOUR);
     await dialog.getByLabel('Début').fill('10:00');
@@ -161,7 +165,10 @@ test.describe('avertissements de saisie', () => {
     const page = await pageAdmin(browser, admin);
     await page.goto('/creneaux');
 
-    await page.getByRole('button', { name: 'Ajouter' }).click();
+    // A single timeslot is the exception on this screen, which builds the grid
+    // from day templates: it sits in the menu of the other ways.
+    await page.getByRole('button', { name: 'Autres façons de créer la grille' }).click();
+    await page.getByRole('menuitem', { name: 'Ajouter un créneau' }).click();
     const dialog = await dialogueOuvert(page);
     await dialog.getByLabel('Date').fill(JOUR);
     await dialog.getByLabel('Début').fill('15:00');
@@ -215,8 +222,6 @@ test.describe('avertissements de saisie', () => {
     await dialog.getByLabel('Prénom').fill('Camille');
     await dialog.getByLabel('Nom', { exact: true }).fill(ANIMATEUR);
     await dialog.getByLabel('Date de naissance').fill(NAISSANCE_MINEURE);
-    await dialog.getByLabel('Jour').fill(JOUR_HORS_BORNES);
-    await dialog.getByRole('button', { name: 'Ajouter', exact: true }).click();
     await dialog.getByRole('button', { name: "Créer l'animateur" }).click();
     await expect(dialog).toBeHidden();
 
@@ -225,7 +230,6 @@ test.describe('avertissements de saisie', () => {
     // date de naissance qu'on vient de saisir.
     const bulle = page.locator('mat-snack-bar-container');
     await expect(bulle).toContainText(/mineur pendant tout l'événement/);
-    await expect(bulle).toContainText(JOUR_HORS_BORNES);
     // Le message dit qui par son identifiant — celui que l'application vient
     // d'attribuer —, jamais par son identité ni par sa date de naissance : il
     // finit dans un journal de navigateur.
@@ -236,23 +240,36 @@ test.describe('avertissements de saisie', () => {
     await expect(bulle).not.toContainText(ANIMATEUR);
     await expect(bulle).not.toContainText(NAISSANCE_MINEURE);
 
-    // La fiche existe, et l'indisponibilité hors bornes a bien été écrite.
+    // The form only marks the edition's own days — a day off outside them
+    // would be erased by the first declaration — so the out-of-bounds day
+    // comes the way an import or a script writes it, and is still written,
+    // with its warning.
+    const fiches = (await (await admin.get('/api/animateurs')).json()) as Record<string, unknown>[];
+    const fiche = fiches.find((candidat) => candidat['id'] === id);
+    const ecrit = await admin.put(`/api/animateurs/${id}`, {
+      data: { ...fiche, joursIndisponibles: [JOUR_HORS_BORNES] },
+    });
+    expect(ecrit.ok(), await ecrit.text()).toBe(true);
+    expect(await ecrit.text()).toContain("hors de l'événement");
+
+    // La fiche existe, et le formulaire montre le jour hors bornes à part.
     await page.getByRole('button', { name: 'Fermer' }).click();
+    await page.reload();
     await page.getByLabel('Filtrer').fill(ANIMATEUR);
     const ligne = page.getByRole('row', { name: new RegExp(ANIMATEUR) });
     await expect(ligne).toBeVisible();
-    await ligne.getByRole('button', { name: 'Consulter le détail' }).click();
+    await (await rowAction(ligne, 'Modifier')).click();
+    await expect(page.getByRole('dialog')).toContainText("Hors des jours de l'édition");
     await expect(page.getByRole('dialog')).toContainText(JOUR_HORS_BORNES);
 
     // Le journal du navigateur survit à la déconnexion et se relit dans les
     // messages récents de l'accueil : la phrase qui dit qu'une personne est
-    // mineure n'y est pas écrite (docs/rgpd.md §7), l'indisponibilité si.
+    // mineure n'y est pas écrite (docs/rgpd.md §7).
     await page.keyboard.press('Escape');
     await page.goto('/');
     await page.getByRole('button', { name: /Messages récents/ }).click();
     await expect(page.getByText(/point\(s\) à vérifier/).first()).toBeVisible();
     await expect(page.getByText(/est mineur pendant tout l'événement/)).toHaveCount(0);
-    await expect(page.getByText(/Indisponibilité hors de l'événement/).first()).toBeVisible();
 
     await page.context().close();
   });
@@ -271,7 +288,7 @@ test.describe('avertissements de saisie', () => {
     await page.getByLabel('Filtrer').fill(ANIMATEUR);
 
     const ligne = page.getByRole('row', { name: new RegExp(ANIMATEUR) });
-    await ligne.getByRole('button', { name: 'Modifier' }).click();
+    await (await rowAction(ligne, 'Modifier')).click();
     const dialog = await dialogueOuvert(page);
     await dialog.getByLabel('Prénom').fill('Camille-Marie');
     await dialog.getByRole('button', { name: "Modifier l'animateur" }).click();
@@ -289,7 +306,7 @@ test.describe('avertissements de saisie', () => {
     await page.getByLabel('Filtrer').fill(ANIMATEUR);
 
     const ligne = page.getByRole('row', { name: new RegExp(ANIMATEUR) });
-    await ligne.getByRole('button', { name: 'Modifier' }).click();
+    await (await rowAction(ligne, 'Modifier')).click();
     const dialog = await dialogueOuvert(page);
     await dialog.getByLabel('Date de naissance').fill('1990-01-01');
     await dialog.getByRole('button', { name: `Retirer ${JOUR_HORS_BORNES}` }).click();
@@ -298,7 +315,7 @@ test.describe('avertissements de saisie', () => {
 
     await expect(page.getByText(/Modification de Animateur/)).toBeVisible();
     // Le libellé de la bulle d'avertissement, qu'aucun autre texte de l'écran
-    // ne porte — contrairement au mot « mineur », que la colonne Majeur emploie.
+    // ne porte — contrairement au mot « mineur », que la colonne Âge / régime emploie.
     await expect(page.getByText(/point\(s\) à vérifier/)).toHaveCount(0);
 
     await page.context().close();

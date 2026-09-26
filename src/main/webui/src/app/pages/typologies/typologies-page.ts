@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  OnInit,
   ViewEncapsulation,
   computed,
   inject,
@@ -12,21 +13,21 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatSortModule, Sort } from '@angular/material/sort';
+import { MatSortModule } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { labelTypologiesPluriel } from '../../core/entity-labels';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { ReferenceTablePage } from '../../core/reference-table-page';
-import { TypologieItem } from '../../core/models';
-import {
-  NO_SORT,
-  keepViewInQueryParams,
-  readSort,
-  sortQueryParams,
-} from '../../core/view-query-params';
+import { LigneTypologie, TypologieItem } from '../../core/models';
+import { PlanningApi } from '../../core/api/planning-api';
+import { NO_SORT, keepViewInQueryParams } from '../../core/view-query-params';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
+import { EmptyState } from '../../shared/empty-state';
+import { FilterChip, FilterChips } from '../../shared/filter-chips';
+import { RowMenu } from '../../shared/row-menu';
+import { RowWarning } from '../../shared/row-warning';
 import { ImportedRowsFilter } from '../../shared/imported-rows-filter';
 import { TableFilter } from '../../shared/table-filter';
 import { buildTypologieDetail } from './typologie-detail';
@@ -64,8 +65,21 @@ function referencesTypologie(typologieId: string, store: ReferenceDataStore): st
   return $localize`:@@typologies.usages:${stands}:stands: stand(s) et ${animateurs}:animateurs: animateur(s) la référencent.`;
 }
 
-/** The columns a click on the header sorts by. */
-type ColonneTriable = 'id' | 'label' | 'competents' | 'souhaits' | 'stands';
+/** Where a state ranks when its column is sorted: what needs doing first. */
+const RANG_ETAT: Record<EtatTypologie, number> = {
+  ORPHELINE: 0,
+  FRAGILE: 1,
+  SANS_COMPETENT_INUTILISEE: 2,
+  INUTILISEE: 3,
+  NORMALE: 4,
+};
+
+/** What the plan made of a typologie, once one is computed. */
+export interface EffetPlan {
+  postes: number;
+  heures: number;
+  sansCompetence: number;
+}
 
 /** A typologie the usage map does not know yet reads as nothing at all. */
 function usageVide(typologieId: string): UsageTypologie {
@@ -112,6 +126,10 @@ function usageVide(typologieId: string): UsageTypologie {
     MatTooltipModule,
     RouterLink,
     BulkActionsBar,
+    EmptyState,
+    FilterChips,
+    RowMenu,
+    RowWarning,
     TableFilter,
     GelNotice,
   ],
@@ -120,14 +138,17 @@ function usageVide(typologieId: string): UsageTypologie {
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TypologiesPage extends ReferenceTablePage<TypologieItem> {
+export class TypologiesPage extends ReferenceTablePage<TypologieItem> implements OnInit {
   private readonly gel = injectGelReferentiel();
   /** Creating or deleting a typologie or an emplacement is what a TYPOLOGIES_EMPLACEMENTS freeze refuses (ADR 0052). */
   protected readonly creationLocked = computed(
     () => this.editingLocked() || this.gel.isFrozen('TYPOLOGIES_EMPLACEMENTS'),
   );
 
-  protected readonly columns = [
+  /** The columns after a solve: what the plan made of each typologie. */
+  private readonly colonnesPlan = ['postes', 'heures', 'sansCompetence'];
+
+  protected readonly columns = computed(() => [
     'select',
     'id',
     'code',
@@ -136,9 +157,15 @@ export class TypologiesPage extends ReferenceTablePage<TypologieItem> {
     'competents',
     'souhaits',
     'stands',
+    ...(this.effetsPlan() === null ? [] : this.colonnesPlan),
     'etat',
     'actions',
-  ];
+  ]);
+
+  private readonly planningApi = inject(PlanningApi);
+
+  /** Typologie id → what the persisted plan made of it; `null` while no plan holds a seat. */
+  protected readonly effetsPlan = signal<ReadonlyMap<string, EffetPlan> | null>(null);
 
   /** The template names the rows after the entity, as the other pages do. */
   protected readonly typologiesFiltrees = this.lignesFiltrees;
@@ -165,13 +192,26 @@ export class TypologiesPage extends ReferenceTablePage<TypologieItem> {
   /** `?etat=orpheline,fragile`: the states the table is narrowed to; empty = every row. */
   protected readonly etats = signal<EtatTypologie[]>([]);
 
-  protected readonly sort = signal<Sort>(NO_SORT);
-
   /** « Seulement les typologies à traiter » is ticked whenever a state filter holds. */
   protected readonly aTraiterSeulement = computed(() => this.etats().length > 0);
 
+  /** The state filter, as the chip above the table. */
+  protected readonly chips = computed<FilterChip[]>(() =>
+    this.etats().length === 0
+      ? []
+      : [
+          {
+            key: 'etat',
+            label: $localize`:@@typologies.chip.etat:État : ${this.etats().map(libelleEtat).join(', ')}:etats:`,
+          },
+        ],
+  );
+
   protected readonly viewChanged = computed(
-    () => this.etats().length > 0 || (this.sort().active !== '' && this.sort().direction !== ''),
+    () =>
+      this.etats().length > 0 ||
+      this.filtre().trim() !== '' ||
+      (this.sort().active !== '' && this.sort().direction !== ''),
   );
 
   constructor() {
@@ -202,50 +242,144 @@ export class TypologiesPage extends ReferenceTablePage<TypologieItem> {
       name: (typologie) => typologie.label,
       libellePluriel: labelTypologiesPluriel,
       usages: (typologie, store) => referencesTypologie(typologie.id, store),
+      sortValues: {
+        id: (typologie) => typologie.id,
+        code: (typologie) => typologie.code,
+        label: (typologie) => typologie.label || typologie.id,
+        ninja: (typologie) => Boolean(typologie.ninja),
+        competents: (typologie) => this.usage(typologie).competents,
+        souhaits: (typologie) => this.usage(typologie).souhaits,
+        stands: (typologie) => this.usage(typologie).stands,
+        etat: (typologie) => RANG_ETAT[this.usage(typologie).etat],
+        postes: (typologie) => this.effetsPlan()?.get(typologie.id)?.postes,
+        heures: (typologie) => this.effetsPlan()?.get(typologie.id)?.heures,
+        sansCompetence: (typologie) => this.effetsPlan()?.get(typologie.id)?.sansCompetence,
+      },
+      export: {
+        name: 'typologies',
+        columns: () => [
+          { title: $localize`:@@common.id:Id`, value: (typologie) => typologie.id },
+          {
+            title: $localize`:@@referentiel.field.code:Code`,
+            value: (typologie) => typologie.code,
+          },
+          {
+            title: $localize`:@@typologies.field.label:Libellé`,
+            value: (typologie) => typologie.label,
+          },
+          {
+            title: $localize`:@@typologies.field.ninja:Typologie ninja`,
+            value: (typologie) => (typologie.ninja ? $localize`:@@common.oui:Oui` : ''),
+          },
+          {
+            title: $localize`:@@typologies.column.competents:Compétents`,
+            value: (typologie) => this.usage(typologie).competents,
+          },
+          {
+            title: $localize`:@@typologies.column.souhaits:Souhaits`,
+            value: (typologie) => this.usage(typologie).souhaits,
+          },
+          {
+            title: $localize`:@@typologies.column.stands:Stands`,
+            value: (typologie) => this.usage(typologie).stands,
+          },
+          ...(this.effetsPlan() === null
+            ? []
+            : [
+                {
+                  title: $localize`:@@typologies.column.postes:Postes`,
+                  value: (typologie: TypologieItem) => this.effetsPlan()?.get(typologie.id)?.postes,
+                },
+                {
+                  title: $localize`:@@typologies.column.heures:Heures`,
+                  value: (typologie: TypologieItem) => this.effetsPlan()?.get(typologie.id)?.heures,
+                },
+                {
+                  title: $localize`:@@typologies.column.sansCompetence:Affectés sans la compétence`,
+                  value: (typologie: TypologieItem) =>
+                    this.effetsPlan()?.get(typologie.id)?.sansCompetence,
+                },
+              ]),
+          {
+            title: $localize`:@@typologies.column.etat:État`,
+            value: (typologie) => libelleEtat(this.usage(typologie).etat),
+          },
+        ],
+      },
+      paste: () => [
+        {
+          key: 'code',
+          title: $localize`:@@referentiel.field.code:Code`,
+          read: (typologie) => typologie.code ?? '',
+          write: (typologie, text) => ({ ...typologie, code: text }),
+        },
+        {
+          key: 'label',
+          title: $localize`:@@typologies.field.label:Libellé`,
+          read: (typologie) => typologie.label,
+          write: (typologie, text) => ({ ...typologie, label: text }),
+        },
+      ],
+      duplicate: (typologie, dialog: MatDialog) => {
+        dialog.open<TypologieFormDialog, TypologieFormData, boolean>(TypologieFormDialog, {
+          data: { typologie: null, modele: typologie },
+          width: '40rem',
+          maxWidth: '95vw',
+          autoFocus: 'first-tabbable',
+        });
+      },
     });
     const params = inject(ActivatedRoute).snapshot.queryParamMap;
     this.etats.set(readEtatsParam(params.get('etat')));
-    this.sort.set(readSort(params));
     keepViewInQueryParams(() => ({
       etat: etatsQueryParam(this.etats()),
-      ...sortQueryParams(this.sort()),
     }));
+  }
+
+  ngOnInit(): void {
+    void this.loadPlanEffects();
+  }
+
+  /**
+   * What the persisted plan made of each typologie — the seats and hours held
+   * on it, and the people sat there without the competence. Read once; a
+   * page that fails to read it simply shows no such columns, like an edition
+   * never solved.
+   */
+  private async loadPlanEffects(): Promise<void> {
+    try {
+      const rapport = await this.planningApi.typologiesReport();
+      this.effetsPlan.set(planEffects(rapport.typologies));
+    } catch {
+      this.effetsPlan.set(null);
+    }
+  }
+
+  /**
+   * « Typologie ninja », ticked in the table: the single holder changes, the
+   * server demoting the previous one in the same write. Unticked, nobody is.
+   */
+  protected async setNinja(typologie: TypologieItem, ninja: boolean): Promise<void> {
+    const label = $localize`:@@typologies.entityLabel:Typologie`;
+    await this.crud.save('typologies', { ...typologie, ninja }, typologie.id, label, {
+      text: typologie.label,
+    });
   }
 
   protected usage(typologie: TypologieItem): UsageTypologie {
     return this.usages().get(typologie.id) ?? usageVide(typologie.id);
   }
 
-  /** The state filter, then the sort — the quick filter already ran. */
+  /** The state filter — the quick filter already ran, the sort comes after. */
   protected override refine(lignes: readonly TypologieItem[]): readonly TypologieItem[] {
     const etats = this.etats();
-    const retenues =
-      etats.length === 0
-        ? lignes
-        : lignes.filter((ligne) => etats.includes(this.usage(ligne).etat));
-    const { active, direction } = this.sort();
-    if (!active || direction === '') {
-      return retenues;
-    }
-    const signe = direction === 'asc' ? 1 : -1;
-    return [...retenues].sort((gauche, droite) => signe * this.compare(active, gauche, droite));
+    return etats.length === 0
+      ? lignes
+      : lignes.filter((ligne) => etats.includes(this.usage(ligne).etat));
   }
 
-  private compare(colonne: string, gauche: TypologieItem, droite: TypologieItem): number {
-    switch (colonne as ColonneTriable) {
-      case 'id':
-        return gauche.id.localeCompare(droite.id);
-      case 'label':
-        return (gauche.label || gauche.id).localeCompare(droite.label || droite.id);
-      case 'competents':
-      case 'souhaits':
-      case 'stands': {
-        const key = colonne as 'competents' | 'souhaits' | 'stands';
-        return this.usage(gauche)[key] - this.usage(droite)[key];
-      }
-      default:
-        return 0;
-    }
+  protected removeChip(): void {
+    this.etats.set([]);
   }
 
   protected toggleATraiter(checked: boolean): void {
@@ -259,6 +393,7 @@ export class TypologiesPage extends ReferenceTablePage<TypologieItem> {
 
   protected resetView(): void {
     this.etats.set([]);
+    this.filtre.set('');
     this.sort.set(NO_SORT);
   }
 
@@ -274,7 +409,38 @@ export class TypologiesPage extends ReferenceTablePage<TypologieItem> {
     return explicationEtat(usage);
   }
 
+  protected ninjaLabel(typologie: TypologieItem): string {
+    return $localize`:@@typologies.ninja.cocher:Typologie ninja : ${typologie.label || typologie.id}:typologie:`;
+  }
+
+  protected ninjaHint(): string {
+    return $localize`:@@typologies.field.ninjaHint:Un animateur qui possède cette typologie sait s'adapter : il peut être affecté à n'importe quel stand.`;
+  }
+
+  protected grilleLabel(typologie: TypologieItem): string {
+    return $localize`:@@typologies.grille.lien:Saisir les appréciations de ${typologie.label || typologie.id}:typologie: dans la grille`;
+  }
+
   protected competentsHint(usage: UsageTypologie): string {
     return repartitionCompetents(usage);
   }
+}
+
+/** Typologie id → seats, hours and people sat without the competence; `null` when no seat is held. */
+export function planEffects(
+  lignes: readonly LigneTypologie[],
+): ReadonlyMap<string, EffetPlan> | null {
+  if (!lignes.some((ligne) => ligne.postes > 0)) {
+    return null;
+  }
+  return new Map(
+    lignes.map((ligne) => [
+      ligne.typologie,
+      {
+        postes: ligne.postes,
+        heures: Math.round(ligne.heures * 10) / 10,
+        sansCompetence: ligne.affectesSansCompetence.length,
+      },
+    ]),
+  );
 }

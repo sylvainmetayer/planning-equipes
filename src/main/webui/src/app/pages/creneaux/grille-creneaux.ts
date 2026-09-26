@@ -8,6 +8,7 @@ import {
   FenetreHoraire,
   JourSemaine,
   RapportGrille,
+  RapportOuvertures,
   RegleRecurrence,
   TypeJoursHoraire,
 } from '../../core/models';
@@ -222,4 +223,51 @@ export function gridAnomalyIcon(anomaly: AnomalieGrille): string {
     return 'event_busy';
   }
   return anomaly.severite === 'ERREUR' ? 'error' : 'warning';
+}
+
+/** What the stands make of one timeslot, before any solve: how many open on it, how many seats it yields. */
+export interface OuverturesCreneau {
+  stands: number;
+  postes: number;
+}
+
+/**
+ * Timeslot id → the stands open on it and the seats they generate, read off
+ * the openings report (`GET /api/ouvertures-stands`) — the very seats a solve
+ * would receive: every open stretch of a cell asks its headcount, halved and
+ * rounded up on a meal relay.
+ */
+export function openingsByCreneau(rapport: RapportOuvertures): Map<number, OuverturesCreneau> {
+  const relais = new Map<number, boolean>();
+  for (const jour of rapport.jours) {
+    for (const colonne of jour.creneaux) {
+      relais.set(colonne.id, colonne.couverturePause);
+    }
+  }
+  const perCreneau = new Map<number, { stands: Set<string>; postes: number }>();
+  for (const ligne of rapport.stands) {
+    for (const jour of ligne.jours) {
+      for (const cellule of jour.creneaux) {
+        if (cellule.segments.length === 0) {
+          continue;
+        }
+        const entree = perCreneau.get(cellule.creneauId) ?? {
+          stands: new Set<string>(),
+          postes: 0,
+        };
+        entree.stands.add(ligne.standId);
+        const demi = relais.get(cellule.creneauId) ?? false;
+        for (const segment of cellule.segments) {
+          entree.postes += demi ? Math.ceil(segment.effectif / 2) : segment.effectif;
+        }
+        perCreneau.set(cellule.creneauId, entree);
+      }
+    }
+  }
+  return new Map(
+    [...perCreneau].map(([id, entree]) => [
+      id,
+      { stands: entree.stands.size, postes: entree.postes },
+    ]),
+  );
 }

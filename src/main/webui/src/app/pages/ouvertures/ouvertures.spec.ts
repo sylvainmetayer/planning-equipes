@@ -7,11 +7,9 @@ import {
 } from '../../core/models';
 import {
   anomaliesParStand,
-  classeCellule,
   dureeCourte,
   filtrerStands,
   iconeAnomalie,
-  largeurPourcent,
   standsEnAnomalie,
   synthese,
 } from './ouvertures';
@@ -75,48 +73,12 @@ function rapport(patch: Partial<RapportOuvertures> = {}): RapportOuvertures {
   };
 }
 
-describe('largeurPourcent', () => {
-  it('rend la part d’amplitude couverte', () => {
-    expect(largeurPourcent(cellule({ minutesOuvertes: 300, minutesAmplitude: 600 }))).toBe(50);
-    expect(largeurPourcent(cellule())).toBe(100);
-  });
-
-  it('rend zéro pour un jour fermé', () => {
-    expect(largeurPourcent(cellule({ etat: 'FERME', minutesOuvertes: 0, fenetres: [] }))).toBe(0);
-  });
-
-  /**
-   * Le cas qui compte le plus visuellement : une ouverture d'une minute sur dix
-   * heures doit rester visible, sinon la case ressemble à un jour fermé — alors
-   * que c'est précisément l'anomalie à repérer.
-   */
-  it('garde un sliver visible pour une ouverture minuscule', () => {
-    expect(largeurPourcent(cellule({ minutesOuvertes: 1, minutesAmplitude: 840 }))).toBe(4);
-  });
-
-  it('ne dépasse jamais cent pour cent', () => {
-    expect(largeurPourcent(cellule({ minutesOuvertes: 900, minutesAmplitude: 600 }))).toBe(100);
-  });
-});
-
 describe('dureeCourte', () => {
   it('formate minutes et heures', () => {
     expect(dureeCourte(0, LIBELLES)).toBe('—');
     expect(dureeCourte(45, LIBELLES)).toBe('45 min');
     expect(dureeCourte(120, LIBELLES)).toBe('2 h');
     expect(dureeCourte(135, LIBELLES)).toBe('2 h 15');
-  });
-});
-
-describe('classeCellule', () => {
-  it('porte l’état, et la provenance seulement quand elle est explicite', () => {
-    expect(classeCellule(cellule())).toBe('ouverture-cellule etat-total');
-    expect(classeCellule(cellule({ etat: 'OUVERT_PARTIEL', source: 'REGLE' }))).toBe(
-      'ouverture-cellule etat-partiel source-regle',
-    );
-    expect(classeCellule(cellule({ etat: 'FERME', source: 'EXCEPTION' }))).toBe(
-      'ouverture-cellule etat-ferme source-exception',
-    );
   });
 });
 

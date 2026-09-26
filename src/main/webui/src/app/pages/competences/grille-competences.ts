@@ -10,7 +10,7 @@
 // animateur's appreciations in full, exactly as the fiche form does.
 
 import { AccesGrille } from '../../core/grille-saisie';
-import { correspondAuFiltre } from '../../core/text-filter';
+import { correspondAuFiltre, normaliserPourFiltre } from '../../core/text-filter';
 import { Animateur, NiveauCompetence, SaisieAnimateurCompetences } from '../../core/models';
 
 /** A cell's address: the animateur row, and the typologie column. */
@@ -241,3 +241,59 @@ export const accesGrilleCompetences: AccesGrille<CellulesCompetences, NiveauComp
   write: (cells, animateurId, typologieId, niveau) =>
     writeCell(cells, { animateurId, typologieId }, niveau),
 };
+
+/**
+ * A level as a spreadsheet writes it, for a pasted block: the key a cell
+ * takes (0 to 3), the letter the grid prints, or the word — accents and case
+ * aside. An empty cell, 0 or a dash is no appreciation; anything else is not
+ * a level, and `undefined` says so.
+ */
+export function levelFromText(text: string): NiveauCompetence | null | undefined {
+  const valeur = normaliserPourFiltre(text.trim());
+  if (valeur === '' || valeur === '0' || valeur === '-' || valeur === '—') {
+    return null;
+  }
+  const niveaux: Record<string, NiveauCompetence> = {
+    '1': 'DEBUTANT',
+    d: 'DEBUTANT',
+    debutant: 'DEBUTANT',
+    beginner: 'DEBUTANT',
+    '2': 'AUTONOME',
+    a: 'AUTONOME',
+    autonome: 'AUTONOME',
+    independent: 'AUTONOME',
+    '3': 'REFERENT',
+    r: 'REFERENT',
+    referent: 'REFERENT',
+    lead: 'REFERENT',
+  };
+  return niveaux[valeur];
+}
+
+/**
+ * The wishes as they stand once the toggled ones are applied: the roster's,
+ * except for the rows the user changed on screen.
+ */
+export function wishesOf(
+  animateur: Pick<Animateur, 'id' | 'souhaits'>,
+  toggled: ReadonlyMap<string, ReadonlySet<string>>,
+): ReadonlySet<string> {
+  return toggled.get(animateur.id) ?? new Set(animateur.souhaits ?? []);
+}
+
+/** The rows whose wishes, as toggled, differ from the roster's. */
+export function modifiedWishes(
+  animateurs: readonly Pick<Animateur, 'id' | 'souhaits'>[],
+  toggled: ReadonlyMap<string, ReadonlySet<string>>,
+): string[] {
+  return animateurs
+    .filter((animateur) => {
+      const local = toggled.get(animateur.id);
+      if (!local) {
+        return false;
+      }
+      const stored = new Set(animateur.souhaits ?? []);
+      return local.size !== stored.size || [...local].some((id) => !stored.has(id));
+    })
+    .map((animateur) => animateur.id);
+}

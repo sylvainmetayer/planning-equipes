@@ -175,3 +175,43 @@
   padding-left: 1.25rem;
   font-variant-numeric: tabular-nums;
 }
+
+/* The control of the grid, a band under the calendar: it runs by itself after
+   every write, so it reads as a state, not as a card with a button. */
+.controle-bandeau {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 1rem;
+  margin: 0 0 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--mat-sys-corner-small);
+  background: var(--mat-sys-surface-container-low);
+  font: var(--mat-sys-body-medium);
+}
+
+.controle-bandeau-alerte {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.controle-bandeau .controle-bandeau-titre {
+  font-weight: 600;
+}
+
+.controle-bandeau .synthese-alerte {
+  color: var(--mat-sys-error);
+}
+
+.controle-bandeau .synthese-partiel {
+  color: var(--mat-sys-tertiary);
+}
+
+.controle-details {
+  margin: -0.5rem 0 1rem;
+}
+
+.controle-details summary {
+  cursor: pointer;
+  font: var(--mat-sys-label-large);
+}

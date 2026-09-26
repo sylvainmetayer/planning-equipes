@@ -99,7 +99,7 @@ describe('CreneauDerivationDialog', () => {
     expect(racine(fixture).querySelector<HTMLInputElement>('input[name="dateDebut"]')!.value).toBe(
       '2026-07-06',
     );
-    expect(bouton(fixture, 'Écrire la grille').disabled).toBe(true);
+    expect(bouton(fixture, 'Ajouter à la grille').disabled).toBe(true);
 
     bouton(fixture, 'Prévisualiser').click();
     await fixture.whenStable();
@@ -114,7 +114,7 @@ describe('CreneauDerivationDialog', () => {
     expect(racine(fixture).querySelectorAll('.vacation-chip')).toHaveLength(2);
     expect(racine(fixture).textContent).toContain('2 coupure(s)');
     expect(racine(fixture).textContent).toContain('2026-07-07');
-    expect(bouton(fixture, 'Écrire la grille').disabled).toBe(false);
+    expect(bouton(fixture, 'Ajouter à la grille').disabled).toBe(false);
   });
 
   it('names the stands at a cut by their name, an unknown id kept as-is', async () => {
@@ -133,7 +133,7 @@ describe('CreneauDerivationDialog', () => {
     bouton(fixture, 'Prévisualiser').click();
     await fixture.whenStable();
 
-    bouton(fixture, 'Écrire la grille').click();
+    bouton(fixture, 'Ajouter à la grille').click();
     await fixture.whenStable();
 
     expect(ask).not.toHaveBeenCalled();
@@ -141,19 +141,31 @@ describe('CreneauDerivationDialog', () => {
     expect(close).toHaveBeenCalledWith(apercu());
   });
 
-  it('asks before replacing the grid, and writes nothing when refused', async () => {
+  it('replaces the grid only after the preview, on an explicit confirmation', async () => {
     const { fixture, post, ask } = monter({ confirme: false });
     await fixture.whenStable();
-    (fixture.componentInstance as unknown as { patch(p: object): void }).patch({ remplacer: true });
-    await fixture.whenStable();
+    // Nothing to replace with before a preview.
+    expect(bouton(fixture, 'Remplacer la grille').disabled).toBe(true);
     bouton(fixture, 'Prévisualiser').click();
     await fixture.whenStable();
 
-    bouton(fixture, 'Écrire la grille').click();
+    bouton(fixture, 'Remplacer la grille').click();
     await fixture.whenStable();
 
     expect(ask).toHaveBeenCalledOnce();
     expect(post).not.toHaveBeenCalled();
+  });
+
+  it('replaces the grid once confirmed, sending remplacer', async () => {
+    const { fixture, post } = monter();
+    await fixture.whenStable();
+    bouton(fixture, 'Prévisualiser').click();
+    await fixture.whenStable();
+
+    bouton(fixture, 'Remplacer la grille').click();
+    await fixture.whenStable();
+
+    expect(post).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ remplacer: true }));
   });
 
   it('keeps the write off on an empty derivation or a blocking verdict, and says why', async () => {
@@ -169,7 +181,7 @@ describe('CreneauDerivationDialog', () => {
     bouton(vide.fixture, 'Prévisualiser').click();
     await vide.fixture.whenStable();
     expect(racine(vide.fixture).textContent).toContain('rien à dériver');
-    expect(bouton(vide.fixture, 'Écrire la grille').disabled).toBe(true);
+    expect(bouton(vide.fixture, 'Ajouter à la grille').disabled).toBe(true);
 
     const bloquee = monter({
       reponse: apercu({
@@ -186,8 +198,10 @@ describe('CreneauDerivationDialog', () => {
     await bloquee.fixture.whenStable();
     bouton(bloquee.fixture, 'Prévisualiser').click();
     await bloquee.fixture.whenStable();
-    expect(racine(bloquee.fixture).textContent).toContain('Remplacer');
-    expect(bouton(bloquee.fixture, 'Écrire la grille').disabled).toBe(true);
+    expect(racine(bloquee.fixture).textContent).toContain('remplacez la grille');
+    expect(bouton(bloquee.fixture, 'Ajouter à la grille').disabled).toBe(true);
+    // Replacing stays possible: the doublon is the existing grid's.
+    expect(bouton(bloquee.fixture, 'Remplacer la grille').disabled).toBe(false);
   });
 
   it('refuses an empty range or a missing closing time before calling the server', async () => {

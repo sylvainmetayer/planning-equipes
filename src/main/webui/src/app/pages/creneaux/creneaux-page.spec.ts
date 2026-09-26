@@ -8,6 +8,8 @@
 // `jours-resume.spec.ts` owns the per-day summary; what is pinned here is the
 // page that drives it.
 
+import { StandsApi } from '../../core/api/stands-api';
+import { rowMenuItem } from '../../core/testing/row-menu';
 import { provideZonelessChangeDetection, Signal, WritableSignal, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
@@ -29,6 +31,7 @@ import { ConfirmService } from '../../shared/confirm-dialog';
 import { CauseInfaisabilite, Creneau } from '../../core/models';
 import { CreneauxPage } from './creneaux-page';
 import { seedStore } from '../../core/testing/seed-store';
+import { expectOnlyInEmptyState } from '../../core/testing/empty-state';
 
 function creneau(overrides: Partial<Creneau> & { id: number; jour: number }): Creneau {
   return { date: '2026-08-01', heureDebut: '10:00', heureFin: '12:00', ...overrides };
@@ -101,6 +104,55 @@ function brancher(
   );
 }
 
+/** One stand open 10-12 at 2 on timeslot 1, another at 1: two stands, three seats. */
+const OUVERTURES = {
+  jours: [
+    {
+      date: '2026-08-01',
+      jour: 1,
+      heureDebut: '10:00',
+      heureFin: '12:00',
+      minutes: 120,
+      nombreCreneaux: 1,
+      ferie: null,
+      creneaux: [
+        { id: 1, tranche: 0, heureDebut: '10:00', heureFin: '12:00', couverturePause: false },
+      ],
+    },
+  ],
+  stands: [2, 1].map((effectif, index) => ({
+    standId: `S${index + 1}`,
+    nom: `Stand ${index + 1}`,
+    effectifMin: 1,
+    jours: [
+      {
+        date: '2026-08-01',
+        etat: 'OUVERT_TOTAL' as const,
+        source: 'REGLE' as const,
+        fenetres: [],
+        minutesOuvertes: 120,
+        minutesAmplitude: 120,
+        postes: effectif,
+        creneaux: [
+          {
+            creneauId: 1,
+            tranche: 0,
+            effectif,
+            partiel: false,
+            segments: [{ heureDebut: '10:00', heureFin: '12:00', effectif }],
+          },
+        ],
+      },
+    ],
+    minutesOuvertes: 120,
+    postes: effectif,
+    modifieLe: null,
+  })),
+  standsJamaisOuverts: 0,
+  postesTotal: 3,
+  anomalies: [],
+};
+
 /** Reaches the protected members the template binds to. */
 type PageInternals = {
   columns: string[];
@@ -112,7 +164,7 @@ type PageInternals = {
   remove: (creneau: Creneau) => Promise<void>;
   removeSelection: () => Promise<void>;
   editSelection: () => void;
-  openSerie: () => void;
+  openSerie: (fenetres?: string) => void;
   openDerivation: () => void;
 };
 
@@ -123,6 +175,7 @@ describe('CreneauxPage', () => {
     remove: vi.fn(async () => true),
     removeMany: vi.fn(async () => 0),
     reportError: vi.fn(),
+    warningsOf: vi.fn(() => []),
   };
   const creneauxApi = {
     diagnostic: vi.fn(),
@@ -158,6 +211,7 @@ describe('CreneauxPage', () => {
         provideZonelessChangeDetection(),
         provideRouter([]),
         { provide: CreneauxApi, useValue: creneauxApi },
+        { provide: StandsApi, useValue: { openings: vi.fn(async () => OUVERTURES) } },
         {
           provide: ConsignesStore,
           useValue: {
@@ -432,6 +486,7 @@ describe('CreneauxPage rendering', () => {
     remove: vi.fn(async () => true),
     removeMany: vi.fn(async () => 0),
     reportError: vi.fn(),
+    warningsOf: vi.fn(() => []),
   };
 
   async function rendre(creneaux: Creneau[]): Promise<void> {
@@ -472,6 +527,7 @@ describe('CreneauxPage rendering', () => {
         provideZonelessChangeDetection(),
         provideRouter([]),
         { provide: CreneauxApi, useValue: creneauxApi },
+        { provide: StandsApi, useValue: { openings: vi.fn(async () => OUVERTURES) } },
         {
           provide: ConsignesStore,
           useValue: {
@@ -526,12 +582,22 @@ describe('CreneauxPage rendering', () => {
     expect(lignes()[1].at(-2)).toBe('Aucun');
   });
 
-  it('says the referential is empty rather than showing a bare table', async () => {
+  it('says the referential is empty, and where to begin, rather than showing a bare table', async () => {
     await rendre([]);
+    // Its actions are the empty state's alone: the header leaves them out.
+    expectOnlyInEmptyState(racine(), ['Ajouter', 'Importer']);
 
-    expect(racine().querySelector('.creneaux-liste-card .empty-hint')!.textContent!.trim()).toBe(
-      'Aucun créneau pour le moment.',
+    expect(racine().querySelector('.creneaux-liste-card .empty-state')!.textContent).toContain(
+      "Les créneaux donnent ses dates à l'édition : commencez ici",
     );
+  });
+
+  it('counts the stands open on each timeslot and its seats, linking to that day of their hours', async () => {
+    await renderAndRead([creneau({ id: 1, jour: 1, date: '2026-08-01' })]);
+
+    const lien = racine().querySelector('tbody td a[href^="/ouvertures"]')!;
+    expect(lien.textContent!.trim()).toBe('2 · 3');
+    expect(lien.getAttribute('href')).toBe('/ouvertures?du=2026-08-01&au=2026-08-01');
   });
 
   it('locks the writing actions, and says why, while a solve is running', async () => {
@@ -540,11 +606,25 @@ describe('CreneauxPage rendering', () => {
     await fixture.whenStable();
 
     expect(racine().querySelector('.locked-hint')).not.toBeNull();
-    const actions = racine().querySelectorAll('tbody .row-actions button');
-    expect(Array.from(actions).every((each) => (each as HTMLButtonElement).disabled)).toBe(true);
+    const ligne = racine().querySelector('tbody tr')!;
+    expect((await rowMenuItem(fixture, ligne, 'Modifier')).disabled).toBe(true);
+    expect((await rowMenuItem(fixture, ligne, 'Supprimer')).disabled).toBe(true);
     // The derivation can replace the whole grid: locked with the rest.
-    expect(bouton('Dériver des horaires des stands').disabled).toBe(true);
+    expect((await autreFacon('Dériver des horaires des stands')).disabled).toBe(true);
   });
+
+  /** Opens « Autres façons de créer la grille » and hands back one of its items. */
+  async function autreFacon(libelle: string): Promise<HTMLButtonElement> {
+    bouton('Autres façons de créer la grille').click();
+    await fixture.whenStable();
+    const item = Array.from(
+      Array.from(document.querySelectorAll('.mat-mdc-menu-panel'))
+        .at(-1)!
+        .querySelectorAll('button'),
+    ).find((each) => each.textContent!.includes(libelle));
+    expect(item, `entrée « ${libelle} »`).toBeDefined();
+    return item as HTMLButtonElement;
+  }
 
   /** The page's own reads are plain promises the zoneless fixture does not track: let them settle. */
   async function renderAndRead(creneaux: Creneau[]): Promise<void> {
@@ -599,8 +679,8 @@ describe('CreneauxPage rendering', () => {
       expect(messages[0]).toContain('Doublon');
       expect(messages[1]).toContain('Trou');
       expect(messages[2]).toContain('Stand un');
-      expect(text(racine(), '.controle-bilan')).toContain('1 erreur(s)');
-      expect(text(racine(), '.controle-bilan')).toContain('Il manque 2 animateurs.');
+      expect(text(racine(), '.controle-bandeau')).toContain('1 erreur(s)');
+      expect(text(racine(), '.controle-bandeau')).toContain('Il manque 2 animateurs.');
     });
 
     it('says so when there is nothing to report', async () => {
@@ -608,21 +688,25 @@ describe('CreneauxPage rendering', () => {
       expect(racine().textContent).toContain('Rien à signaler');
     });
 
-    it('opens the série dialog with the current verdict, locked with the rest', async () => {
+    it('opens the série dialog on the timeslots a day template handed over, with the current verdict', async () => {
       await renderAndRead([creneau({ id: 1, jour: 1 })]);
       const dialog = TestBed.inject(MatDialog) as unknown as { open: ReturnType<typeof vi.fn> };
+      const page = fixture.componentInstance as unknown as PageInternals;
 
-      bouton('Créer une série').click();
+      page.openSerie('09:00-12:00, 14:00-18:00');
       expect(dialog.open).toHaveBeenCalledOnce();
       expect((dialog.open.mock.calls[0] as unknown as [unknown, { data: object }])[1].data).toEqual(
         {
           controleActuel: { ...CONTROLE },
+          fenetres: '09:00-12:00, 14:00-18:00',
         },
       );
-
-      editingLocked.set(true);
-      await fixture.whenStable();
-      expect(bouton('Créer une série').disabled).toBe(true);
+      // No longer a button of its own: the day template's dialog carries it.
+      expect(
+        Array.from(racine().querySelectorAll('button')).some((each) =>
+          each.textContent!.includes('Créer une série'),
+        ),
+      ).toBe(false);
     });
 
     it('opens the derivation dialog prefilled with the span of the grid', async () => {
@@ -632,7 +716,7 @@ describe('CreneauxPage rendering', () => {
       ]);
       const dialog = TestBed.inject(MatDialog) as unknown as { open: ReturnType<typeof vi.fn> };
 
-      bouton('Dériver des horaires des stands').click();
+      (await autreFacon('Dériver des horaires des stands')).click();
 
       expect(dialog.open).toHaveBeenCalledOnce();
       expect((dialog.open.mock.calls[0] as unknown as [unknown, { data: object }])[1].data).toEqual(

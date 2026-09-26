@@ -50,7 +50,7 @@
                   [ngModel]="patch().competence.niveau"
                   (ngModelChange)="update({ competence: { mode: patch().competence.mode, typologie: patch().competence.typologie, niveau: $event } })">
         @for (niveau of niveaux; track niveau) {
-          <mat-option [value]="niveau">{{ niveau }}</mat-option>
+          <mat-option [value]="niveau">{{ libelleNiveau(niveau) }}</mat-option>
         }
       </mat-select>
     </mat-form-field>

@@ -19,6 +19,7 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { EditionsApi } from '../../core/api/editions-api';
 import { Animateur, EtatGel } from '../../core/models';
+import { provideRouter } from '@angular/router';
 import { AnimateurFormDialog } from './animateur-form-dialog';
 import { noDraftStorage, fakeDialogRef, memoryStorage } from '../../core/testing/brouillon';
 import {
@@ -57,6 +58,8 @@ function monter(
     storages?: { local: DraftStorage; session: DraftStorage };
     /** What the freeze read answers; nothing frozen by default. */
     gel?: EtatGel[];
+    /** The edition's days, as its timeslots give them; none by default. */
+    jours?: string[];
   } = {},
 ) {
   const save = vi.fn(async () => options.saveOk ?? true);
@@ -66,7 +69,14 @@ function monter(
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
-      { provide: ReferenceDataStore, useValue: { typologies: signal(TYPOLOGIES) } },
+      provideRouter([]),
+      {
+        provide: ReferenceDataStore,
+        useValue: {
+          typologies: signal(TYPOLOGIES),
+          creneaux: signal((options.jours ?? []).map((date) => ({ date }))),
+        },
+      },
       {
         provide: SolverJobService,
         useValue: { editingLocked: signal(options.editingLocked ?? false) },
@@ -214,16 +224,28 @@ describe('AnimateurFormDialog', () => {
     expect(racine(fixture).querySelector('.form-warning')).toBeNull();
   });
 
-  it('shows the appreciation rows of the animateur, one per typologie', async () => {
-    const { fixture } = monter(
+  it('shows the appreciations in words, read-only, and leads to the grid on that one row', async () => {
+    const { fixture, save } = monter(
       animateur({ competences: { ambiance: 'REFERENT', expert: 'DEBUTANT' } }),
     );
     await fixture.whenStable();
 
-    expect(racine(fixture).querySelectorAll('.competence-row')).toHaveLength(3); // 2 appréciations + la ligne « Jour »
-    expect(racine(fixture).querySelector('.empty-hint')!.textContent!).not.toContain(
-      'Aucune appréciation',
-    );
+    expect(
+      Array.from(
+        racine(fixture).querySelectorAll('.animateur-appreciations .animateur-pastille'),
+      ).map((each) => each.textContent!.trim()),
+    ).toEqual(['Ambiance · Référent', 'Expert · Débutant']);
+    // Never the enum's own name.
+    expect(racine(fixture).textContent).not.toContain('DEBUTANT');
+    const lien = Array.from(racine(fixture).querySelectorAll('a')).find((each) =>
+      each.textContent!.includes('Saisir dans la grille'),
+    )!;
+    expect(lien.getAttribute('href')).toBe('/competences?animateur=a1');
+
+    // Typed in the grid, not here: the save keeps them as they are.
+    submit(fixture);
+    await fixture.whenStable();
+    expect(payload(save).competences).toEqual({ ambiance: 'REFERENT', expert: 'DEBUTANT' });
   });
 
   it('says so when nothing is declared, instead of showing an empty block', async () => {
@@ -237,64 +259,35 @@ describe('AnimateurFormDialog', () => {
     expect(hints).toContain('Disponible tous les jours.');
   });
 
-  it('names the controls of each appreciation row uniquely, so a second row is really registered', async () => {
-    const { fixture } = monter(animateur());
+  it('ticks the days off on the frieze of the edition, and says « absent du 8 au 12 » in one range', async () => {
+    const { fixture, save } = monter(animateur(), {
+      jours: ['2026-07-08', '2026-07-09', '2026-07-10', '2026-07-12', '2026-07-20'],
+    });
     await fixture.whenStable();
 
-    cliquer(fixture, 'Ajouter une appréciation');
+    const jours = () =>
+      Array.from(racine(fixture).querySelectorAll<HTMLButtonElement>('.indispo-jour'));
+    expect(jours()).toHaveLength(5);
+    jours()[4].click();
     await fixture.whenStable();
-    cliquer(fixture, 'Ajouter une appréciation');
-    await fixture.whenStable();
+    expect(jours()[4].getAttribute('aria-pressed')).toBe('true');
 
-    const noms = nomsEnregistres(fixture);
-    expect(new Set(noms).size).toBe(noms.length);
-    expect(noms).toContain('typologie-0');
-    expect(noms).toContain('typologie-1');
-    expect(noms).toContain('niveau-1');
-  });
-
-  it('removes the appreciation row the user pointed at, not the last one', async () => {
-    const { fixture, save } = monter(
-      animateur({ competences: { ambiance: 'REFERENT', expert: 'DEBUTANT' } }),
-    );
+    saisir(fixture, 'rangeStart', '2026-07-08');
+    saisir(fixture, 'rangeEnd', '2026-07-12');
     await fixture.whenStable();
-
-    const remove = Array.from(
-      racine(fixture).querySelectorAll('.competence-row button.danger-action'),
-    );
-    (remove[0] as HTMLButtonElement).click();
+    cliquer(fixture, 'event_busyMarquer absent');
     await fixture.whenStable();
+    expect(racine(fixture).textContent).toContain("4 jour(s) de l'édition marqué(s) absent(s)");
+
     submit(fixture);
     await fixture.whenStable();
-
-    expect(payload(save).competences).toEqual({ expert: 'DEBUTANT' });
-  });
-
-  it('adds and removes an unavailable day, without ever duplicating one', async () => {
-    const { fixture, save } = monter(animateur());
-    await fixture.whenStable();
-
-    saisir(fixture, 'newJour', '2026-07-14');
-    await fixture.whenStable();
-    cliquer(fixture, 'Ajouter');
-    await fixture.whenStable();
-    // The field is emptied after the add, so a second click cannot re-add it.
-    expect(champ(fixture, 'newJour').value).toBe('');
-
-    saisir(fixture, 'newJour', '2026-07-14');
-    await fixture.whenStable();
-    cliquer(fixture, 'Ajouter');
-    await fixture.whenStable();
-
-    // One chip only: the trailing text is the remove button's icon ligature.
-    expect(
-      Array.from(racine(fixture).querySelectorAll('mat-chip')).map((each) =>
-        each.textContent!.replace('cancel', '').trim(),
-      ),
-    ).toEqual(['2026-07-14']);
-    submit(fixture);
-    await fixture.whenStable();
-    expect(payload(save).joursIndisponibles).toEqual(['2026-07-14']);
+    expect(payload(save).joursIndisponibles).toEqual([
+      '2026-07-08',
+      '2026-07-09',
+      '2026-07-10',
+      '2026-07-12',
+      '2026-07-20',
+    ]);
   });
 
   it('names each removal button after the day it removes', async () => {
@@ -389,59 +382,6 @@ describe('AnimateurFormDialog', () => {
 
   // The padlock's notice sits inside the frozen branch, so it cannot be what
   // reads the freeze: on a fresh reload the form itself has to.
-  it('reads the freeze itself and shows the competences read-only on a fresh reload', async () => {
-    const { fixture, gel } = monter(animateur({ competences: { ambiance: 'REFERENT' } }), {
-      gel: [
-        {
-          famille: 'COMPETENCES',
-          libelle: 'Compétences',
-          fige: true,
-          figeLe: '2026-07-01T08:00:00Z',
-        },
-      ],
-    });
-    await fixture.whenStable();
-
-    expect(gel).toHaveBeenCalledOnce();
-    expect(racine(fixture).querySelector('app-gel-notice .gel-notice')).not.toBeNull();
-    const addButton = Array.from(racine(fixture).querySelectorAll('button')).find((each) =>
-      each.textContent?.includes('Ajouter une appréciation'),
-    ) as HTMLButtonElement;
-    expect(addButton.disabled).toBe(true);
-  });
-
-  // An animateur holds ONE appreciation per typologie: two rows on the same one
-  // collapse into a single map key on save, the last silently overwriting the
-  // level the user had entered. The added row therefore takes a free typologie
-  // rather than the first of the referential.
-  it('adds an appreciation on a typologie that is still free', async () => {
-    const { fixture, save } = monter(animateur({ competences: { ambiance: 'REFERENT' } }));
-    await fixture.whenStable();
-
-    cliquer(fixture, 'Ajouter une appréciation');
-    await fixture.whenStable();
-    expect(racine(fixture).querySelectorAll('.competence-row')).toHaveLength(3); // 2 appréciations + la ligne « Jour »
-
-    submit(fixture);
-    await fixture.whenStable();
-
-    expect(payload(save).competences).toEqual({ ambiance: 'REFERENT', expert: 'AUTONOME' });
-  });
-
-  // The other half of the same rule: a typologie already appreciated is not
-  // offered again, and once they are all taken there is nothing left to add.
-  it('offers no taken typologie and stops adding once they are all used', async () => {
-    const { fixture } = monter(animateur({ competences: { ambiance: 'REFERENT' } }));
-    await fixture.whenStable();
-
-    cliquer(fixture, 'Ajouter une appréciation');
-    await fixture.whenStable();
-
-    const add = [...racine(fixture).querySelectorAll('button')].find((bouton) =>
-      bouton.textContent?.includes('Ajouter une appréciation'),
-    ) as HTMLButtonElement;
-    expect(add.disabled).toBe(true);
-  });
   describe('draft', () => {
     // The acceptance criterion of the whole feature for this form: an
     // identity, a birth date and an e-mail never land in localStorage.

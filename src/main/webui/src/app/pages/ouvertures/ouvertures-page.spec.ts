@@ -179,6 +179,8 @@ function mount(
     rapport?: RapportOuvertures;
     journeesTypes?: EtatJourneesTypes | null;
     couches?: string;
+    du?: string;
+    au?: string;
     /** What `GET /api/editions/courant/gel` answers; nothing frozen by default. */
     gel?: EtatGel[];
   } = {},
@@ -217,6 +219,8 @@ function mount(
     ...(options.stands ? { stands: options.stands } : {}),
     ...(options.ref ? { ref: options.ref } : {}),
     ...(options.couches ? { couches: options.couches } : {}),
+    ...(options.du ? { du: options.du } : {}),
+    ...(options.au ? { au: options.au } : {}),
   });
   TestBed.configureTestingModule({
     providers: [
@@ -318,15 +322,23 @@ describe('OuverturesPage — saisie', () => {
   });
   afterEach(() => vi.restoreAllMocks());
 
-  it('opens on the reading view, and on the entry view from ?vue=saisie', async () => {
-    const lecture = mount();
-    await lecture.fixture.whenStable();
-    expect(root(lecture.fixture).querySelector('.grille-saisie')).toBeNull();
-    expect(root(lecture.fixture).querySelector('.ouvertures-grille')).not.toBeNull();
+  it('opens on the one grid, read and typed in place, from no param as from the former ?vue=saisie', async () => {
+    const defaut = mount();
+    await defaut.fixture.whenStable();
+    expect(root(defaut.fixture).querySelector('.grille-saisie')).not.toBeNull();
+    expect(champ(defaut.fixture, 'A', 1).disabled).toBe(false);
 
     const saisie = mount({ vue: 'saisie' });
     await saisie.fixture.whenStable();
     expect(root(saisie.fixture).querySelector('.grille-saisie')).not.toBeNull();
+    const toggles = [...root(saisie.fixture).querySelectorAll('mat-button-toggle')].map((each) =>
+      each.textContent!.trim(),
+    );
+    expect(toggles.slice(0, 3)).toEqual([
+      'grid_onGrille',
+      'event_repeatPar journée type',
+      'compareComparer',
+    ]);
   });
 
   /*
@@ -384,7 +396,7 @@ describe('OuverturesPage — saisie', () => {
     expect(location.replaceState).toHaveBeenCalledWith(expect.stringContaining('date=2026-07-09'));
   });
 
-  it('focuses the first row on ?date= alone, and forgets the day on leaving the entry view', async () => {
+  it('focuses the first row on ?date= alone, and forgets the day on leaving the grid', async () => {
     const { fixture } = mount({ vue: 'saisie', date: '2026-07-09' });
     await fixture.whenStable();
     await new Promise((resolve) => setTimeout(resolve));
@@ -395,7 +407,7 @@ describe('OuverturesPage — saisie', () => {
       changeView: (view: string) => Promise<void>;
       saisieDate: () => string;
     };
-    await page.changeView('CONSULTER');
+    await page.changeView('COMPARER');
     expect(page.saisieDate()).toBe('');
   });
 
@@ -409,17 +421,16 @@ describe('OuverturesPage — saisie', () => {
 
     await page.changeView(undefined);
 
-    expect(page.view()).toBe('SAISIR');
+    expect(page.view()).toBe('GRILLE');
     expect(page.saisieDate()).toBe('2026-07-09');
   });
 
   it('wraps each grid in the scrolling box its sticky header needs', async () => {
     for (const [vue, grille] of [
-      ['lecture', '.ouvertures-grille'],
-      ['saisie', '.grille-saisie'],
+      ['grille', '.grille-saisie'],
       ['journees-types', '.grille-journees-types'],
     ] as const) {
-      const { fixture } = mount(vue === 'lecture' ? {} : { vue });
+      const { fixture } = mount(vue === 'grille' ? {} : { vue });
       await fixture.whenStable();
       const table = root(fixture).querySelector(grille);
       expect(table, `grille de la vue ${vue}`).not.toBeNull();
@@ -430,49 +441,62 @@ describe('OuverturesPage — saisie', () => {
     }
   });
 
-  // The third view (ADR 0032): the same report, laid on time for one day.
-  it('lays one day on the time axis from ?vue=journee, and jumps there from a day header', async () => {
-    const journee = mount({ vue: 'journee' });
-    await journee.fixture.whenStable();
-    const racine = root(journee.fixture);
-    expect(racine.querySelector('.axe-table')).not.toBeNull();
-    expect(racine.querySelectorAll('.axe-ligne')).toHaveLength(2);
-    // Stand A: two blocks on the first day, headcounts 2 and 4; stand B one partial hour.
-    const blocs = [...racine.querySelectorAll('.axe-ligne')].map((ligne) =>
-      [...ligne.querySelectorAll('.axe-bloc-label')].map((bloc) => bloc.textContent!.trim()),
-    );
-    expect(blocs).toEqual([['2', '4'], ['1']]);
-    expect(racine.querySelectorAll('.axe-bande')).toHaveLength(2);
+  it('explains a clicked cell in a sentence, with the screens that own its layers', async () => {
+    const { fixture } = mount();
+    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve));
+    await fixture.whenStable();
+    const panneau = () => root(fixture).querySelector('.ouvertures-explication')!;
+    expect(panneau().textContent).toContain('Cliquez une case');
 
-    const lecture = mount();
-    await lecture.fixture.whenStable();
-    (root(lecture.fixture).querySelectorAll('.voir-journee')[1] as HTMLButtonElement).click();
-    await lecture.fixture.whenStable();
-    expect(root(lecture.fixture).querySelector('.axe-table')).not.toBeNull();
-    expect(
-      (root(lecture.fixture).querySelector('.axe-jour-select mat-select') as HTMLElement)
-        .textContent,
-    ).toContain('09/07');
+    champ(fixture, 'A', 3).dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    await fixture.whenStable();
+
+    expect(panneau().textContent).toContain('Stand A · J2 09/07 · 10-12');
+    expect(panneau().textContent).toContain('Ouvert 10:00–20:00 : règle récurrente 10:00–20:00');
+    expect(panneau().textContent).toContain('2 poste(s) ce jour');
+    const liens = [...panneau().querySelectorAll('a')].map((lien) => lien.getAttribute('href'));
+    expect(liens).toEqual(['/stands?edit=A', '/creneaux']);
+    expect(panneau().textContent).toContain('Journée type « Jour normal »');
+    // Hovering says the same, on the field itself.
+    expect(champ(fixture, 'A', 3).title).toContain('règle récurrente 10:00–20:00');
   });
 
-  it('marks a public holiday by name in the four views, never only with a colour', async () => {
+  it('names every stand by a link to its fiche', async () => {
+    const { fixture } = mount();
+    await fixture.whenStable();
+    const noms = [...root(fixture).querySelectorAll<HTMLAnchorElement>('tbody .stand-nom')];
+    expect(noms.map((nom) => [nom.textContent!.trim(), nom.getAttribute('href')])).toEqual([
+      ['Stand A', '/stands?edit=A'],
+      ['Stand B', '/stands?edit=B'],
+    ]);
+  });
+
+  it('narrows the grid to the days of ?du= and ?au=, the moves walking those alone', async () => {
+    const { fixture } = mount({ du: '2026-07-09', au: '2026-07-09' });
+    await fixture.whenStable();
+
+    expect(root(fixture).querySelectorAll('.grille-saisie tbody input')).toHaveLength(4);
+    expect(root(fixture).querySelector(`[data-cellule="A#${colonne(1)}"]`)).toBeNull();
+    const location = TestBed.inject(Location) as unknown as {
+      replaceState: ReturnType<typeof vi.fn>;
+    };
+    const address = String(location.replaceState.mock.calls.at(-1)?.[0] ?? '');
+    expect(address).toContain('du=2026-07-09');
+    expect(address).toContain('au=2026-07-09');
+  });
+
+  it('marks a public holiday by name in both grids, never only with a colour', async () => {
     const withHoliday = rapport();
     withHoliday.jours[1].ferie = 'Assomption';
     const libelles = (racine: HTMLElement) =>
       [...racine.querySelectorAll('.pastille-ferie')].map((pastille) => pastille.textContent);
 
-    const lecture = mount({ rapport: withHoliday });
-    await lecture.fixture.whenStable();
-    const grille = root(lecture.fixture);
-    expect(libelles(grille)).toHaveLength(1);
-    expect(libelles(grille)[0]).toContain('Assomption — jour férié');
-    expect(grille.querySelectorAll('thead th.colonne-ferie')).toHaveLength(1);
-    // The column is tinted down its cells, one per stand.
-    expect(grille.querySelectorAll('tbody td.colonne-ferie')).toHaveLength(2);
-
     const saisie = mount({ vue: 'saisie', rapport: withHoliday });
     await saisie.fixture.whenStable();
     expect(libelles(root(saisie.fixture))).toHaveLength(1);
+    expect(libelles(root(saisie.fixture))[0]).toContain('Assomption — jour férié');
+    expect(root(saisie.fixture).querySelectorAll('thead th.colonne-ferie')).toHaveLength(3);
     expect(root(saisie.fixture).querySelectorAll('td.cellule-saisie.colonne-ferie')).toHaveLength(
       4,
     );
@@ -480,47 +504,37 @@ describe('OuverturesPage — saisie', () => {
     const byTemplate = mount({ vue: 'journees-types', rapport: withHoliday });
     await byTemplate.fixture.whenStable();
     expect(libelles(root(byTemplate.fixture))[0]).toContain('09/07 Assomption');
-
-    const journee = mount({ vue: 'journee', date: '2026-07-09', rapport: withHoliday });
-    await journee.fixture.whenStable();
-    expect(root(journee.fixture).querySelector('.ferie-bandeau')?.textContent).toContain(
-      'Assomption',
-    );
-    const ordinaire = mount({ vue: 'journee', date: '2026-07-08', rapport: withHoliday });
-    await ordinaire.fixture.whenStable();
-    expect(root(ordinaire.fixture).querySelector('.ferie-bandeau')).toBeNull();
   });
 
-  it('lays the combined calendar from ?vue=calendrier, its layers carried by the address', async () => {
-    const { fixture, layers } = mount({ vue: 'calendrier', couches: 'stand,resultat' });
+  it('draws the layers of ?couches= behind each field, and writes the ticked ones back', async () => {
+    const { fixture, layers } = mount({ couches: 'stand,resultat' });
     await fixture.whenStable();
     await new Promise((resolve) => setTimeout(resolve));
     await fixture.whenStable();
-    const racine = root(fixture);
+    const page = fixture.componentInstance as unknown as {
+      rowViews: () => { cellules: { rendu: { image: string | null } }[] }[];
+    };
 
     expect(layers).toHaveBeenCalledWith('2026-07-08', '2026-07-09');
-    expect(racine.querySelectorAll('.couches-table tbody tr')).toHaveLength(2);
-    // Two days of two stands, each cell one button explaining itself.
-    const cellules = racine.querySelectorAll<HTMLButtonElement>('.couches-axe');
-    expect(cellules).toHaveLength(4);
-    expect(cellules[0].getAttribute('aria-label')).toContain('règle récurrente 10:00–20:00');
-    // Only the layers of the address: the stand's hours and the seats, no timeslot band.
-    expect(racine.querySelectorAll('.couches-nominale')).toHaveLength(4);
-    expect(racine.querySelectorAll('.couches-vacation')).toHaveLength(0);
-    expect(racine.querySelectorAll('.couches-bloc').length).toBeGreaterThan(0);
+    // Stand A, 10-12: its rule (top lane) and its seats (bottom lane), no band.
+    const image = page.rowViews()[0].cellules[0].rendu.image!;
+    expect(image).toContain('var(--ouv-nominal)');
+    expect(image).toContain('var(--ouv-regle)');
+    expect(image).not.toContain('var(--ouv-bande)');
 
-    const creneaux = [
-      ...racine.querySelectorAll('.couches-choix mat-checkbox input'),
-    ][1] as HTMLInputElement;
-    creneaux.click();
+    const choix = [...root(fixture).querySelectorAll('.couches-choix mat-checkbox input')];
+    expect(choix).toHaveLength(4);
+    (choix[0] as HTMLInputElement).click();
     await fixture.whenStable();
-    expect(racine.querySelectorAll('.couches-vacation').length).toBeGreaterThan(0);
+    expect(page.rowViews()[0].cellules[0].rendu.image).not.toContain('var(--ouv-nominal)');
+    (choix[1] as HTMLInputElement).click();
+    await fixture.whenStable();
     const location = TestBed.inject(Location) as unknown as {
       replaceState: ReturnType<typeof vi.fn>;
     };
     const address = String(location.replaceState.mock.calls.at(-1)?.[0] ?? '');
-    expect(address).toContain('vue=calendrier');
-    expect(address).toMatch(/couches=stand(,|%2C)creneaux(,|%2C)resultat/);
+    expect(address).not.toContain('vue=');
+    expect(address).toMatch(/couches=creneaux(,|%2C)resultat/);
   });
 
   it('renders one field per stand and créneau, filled from the report, partial cells marked', async () => {
@@ -529,7 +543,7 @@ describe('OuverturesPage — saisie', () => {
 
     expect(root(fixture).querySelectorAll('.grille-saisie input')).toHaveLength(8);
     expect(champ(fixture, 'A', 2).value).toBe('4');
-    expect(champ(fixture, 'B', 2).value).toBe('-');
+    expect(champ(fixture, 'B', 2).value).toBe('');
     expect(champ(fixture, 'B', 2).closest('td')!.classList.contains('cellule-fermee')).toBe(true);
     expect(champ(fixture, 'B', 1).closest('td')!.classList.contains('cellule-partielle')).toBe(
       true,
@@ -561,24 +575,21 @@ describe('OuverturesPage — saisie', () => {
     expect(bouton(fixture, 'Enregistrer').disabled).toBe(false);
   });
 
-  it('keeps the value of a field emptied, shows it as the placeholder, and closes on a dash or a zero', async () => {
+  it('closes a cell emptied, dashed or zeroed: an empty cell has one meaning, closed', async () => {
     const { fixture, put } = mount({ vue: 'saisie' });
     await fixture.whenStable();
 
-    // Emptying says nothing: the cell keeps its 4, shown greyed, and nothing is modified.
     taper(champ(fixture, 'A', 2), '');
     await fixture.whenStable();
-    expect(champ(fixture, 'A', 2).placeholder).toBe('4');
-    expect(bouton(fixture, 'Enregistrer').disabled).toBe(true);
-    quitter(champ(fixture, 'A', 2));
-    expect(champ(fixture, 'A', 2).value).toBe('4');
-
-    // A dash closes, and the field then reads « - »; a zero closes too.
-    taper(champ(fixture, 'A', 2), '-');
-    await fixture.whenStable();
     expect(champ(fixture, 'A', 2).closest('td')!.classList.contains('cellule-modifiee')).toBe(true);
+    expect(champ(fixture, 'A', 2).placeholder).toBe('');
     quitter(champ(fixture, 'A', 2));
-    expect(champ(fixture, 'A', 2).value).toBe('-');
+    expect(champ(fixture, 'A', 2).value).toBe('');
+
+    // A dash closes, and the field then reads empty; a zero closes too.
+    taper(champ(fixture, 'A', 2), '-');
+    quitter(champ(fixture, 'A', 2));
+    expect(champ(fixture, 'A', 2).value).toBe('');
     taper(champ(fixture, 'A', 4), '0');
     await fixture.whenStable();
     bouton(fixture, 'Enregistrer').click();
@@ -640,7 +651,7 @@ describe('OuverturesPage — saisie', () => {
     root(fixture).querySelectorAll<HTMLButtonElement>('.recopier-jour')[1].click();
     await fixture.whenStable();
     expect(champ(fixture, 'A', 1).value).toBe('7');
-    expect(champ(fixture, 'B', 1).value).toBe('-');
+    expect(champ(fixture, 'B', 1).value).toBe('');
 
     champ(fixture, 'B', 4).focus();
     taper(champ(fixture, 'B', 4), '2');
@@ -686,7 +697,7 @@ describe('OuverturesPage — saisie', () => {
     expect(champ(fixture, 'B', 2).value).toBe('4');
     // The 10-12 column of the same day says what it always said.
     expect(champ(fixture, 'B', 1).value).toBe('1');
-    expect(champ(fixture, 'B', 4).value).toBe('-');
+    expect(champ(fixture, 'B', 4).value).toBe('');
   });
 
   it('applies a column from the keyboard, from the cell the focus is in', async () => {
@@ -709,7 +720,7 @@ describe('OuverturesPage — saisie', () => {
     await fixture.whenStable();
 
     expect(champ(fixture, 'B', 4).value).toBe('6');
-    expect(champ(fixture, 'B', 3).value).toBe('-');
+    expect(champ(fixture, 'B', 3).value).toBe('');
   });
 
   it('leaves AltGr+D alone: on an AZERTY keyboard it is a character, not a move', async () => {
@@ -727,7 +738,7 @@ describe('OuverturesPage — saisie', () => {
     );
     await fixture.whenStable();
 
-    expect(champ(fixture, 'B', 2).value).toBe('-');
+    expect(champ(fixture, 'B', 2).value).toBe('');
     expect(bouton(fixture, 'Enregistrer').disabled).toBe(true);
   });
 
@@ -835,7 +846,7 @@ describe('OuverturesPage — saisie', () => {
     expect(put).not.toHaveBeenCalled();
   });
 
-  it('discards the changes on demand, and asks before leaving the entry view with some', async () => {
+  it('discards the changes on demand, and asks before leaving the grids for « Comparer » with some', async () => {
     const { fixture, ask } = mount({ vue: 'saisie', confirme: false });
     await fixture.whenStable();
 
@@ -843,14 +854,14 @@ describe('OuverturesPage — saisie', () => {
     await fixture.whenStable();
     bouton(fixture, 'Annuler les modifications').click();
     await fixture.whenStable();
-    expect(champ(fixture, 'B', 2).value).toBe('-');
+    expect(champ(fixture, 'B', 2).value).toBe('');
     expect(bouton(fixture, 'Enregistrer').disabled).toBe(true);
 
     taper(champ(fixture, 'B', 2), '3');
     await fixture.whenStable();
     (
       fixture.componentInstance as unknown as { changeView(view: string): Promise<void> }
-    ).changeView('CONSULTER');
+    ).changeView('COMPARER');
     await fixture.whenStable();
     expect(ask).toHaveBeenCalledOnce();
     // Refused: still on the entry view, cells intact.
@@ -1111,7 +1122,7 @@ describe('OuverturesPage — grille par journée type', () => {
     expect(notify).toHaveBeenCalledWith(
       expect.objectContaining({ variant: 'warning', title: expect.stringContaining('propager') }),
     );
-    expect(champ(fixture, 'B', 0, 'jt:4@14:00-20:00').value).toBe('-');
+    expect(champ(fixture, 'B', 0, 'jt:4@14:00-20:00').value).toBe('');
   });
 
   it('closes the grid by kind of day too under a stands freeze: it writes the same hours', async () => {

@@ -104,7 +104,7 @@ export function buildReferenceDataSections(): HelpSection[] {
           items: [
             {
               term: $localize`:@@aide.data.term.animateurs:Animateurs`,
-              text: $localize`:@@aide.data.def.animateurs:Identité, date de naissance, compétences par typologie avec un niveau (débutant, autonome, référent), jours d'indisponibilité. Le régime légal — moins de 16 ans, 16-18 ans, majeur — ne se saisit jamais : il est recalculé à la date de chaque créneau. Par défaut un animateur est disponible, ne saisissez que les absences. Chaque colonne du tableau se trie, en remontant d'abord ce qui reste à faire.`,
+              text: $localize`:@@aide.data.def.animateurs:Identité, date de naissance, compétences par typologie avec un niveau (débutant, autonome, référent), jours d'indisponibilité. Le régime légal — moins de 16 ans, 16-18 ans, majeur — ne se saisit jamais : il est recalculé à la date de chaque créneau. Par défaut un animateur est disponible, ne saisissez que les absences : dans la fiche, un clic sur un jour de la frise le marque absent, et « Absent du » … « au » pose une plage d'un geste. Les appréciations se saisissent dans la grille des compétences, que « Saisir dans la grille (ligne pré-filtrée) » ouvre sur la personne. La colonne « Âge / régime » dit l'âge au premier jour de l'édition. Le nom mène à la fiche complète ; « Filtrer » réduit la liste aux mineurs, aux managers, à une compétence ou à un souhait, chaque filtre restant affiché au-dessus du tableau. Une fois un planning calculé, la colonne « Postes » compte les sièges de chacun.`,
             },
             {
               term: $localize`:@@aide.data.term.stands:Stands`,
@@ -112,17 +112,25 @@ export function buildReferenceDataSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.data.term.autres:Emplacements et typologies`,
-              text: $localize`:@@aide.data.def.autres:Un emplacement est un lieu géolocalisé auquel rattacher un stand : il sert à éviter les allers-retours d'un créneau à l'autre. Une typologie est le vocabulaire commun entre les compétences d'un animateur et les jeux d'un stand — sans typologie partagée, l'animateur ne peut pas tenir le stand. Désignez aussi, sur la page Paramètres, la typologie « ninja » : ses porteurs sont polyvalents, et le solveur essaie d'en garder un libre sur chaque créneau. Sans elle, cette réserve n'existe pas.`,
+              text: $localize`:@@aide.data.def.autres:Un emplacement est un lieu géolocalisé auquel rattacher un stand : il sert à éviter les allers-retours d'un créneau à l'autre. Une typologie est le vocabulaire commun entre les compétences d'un animateur et les jeux d'un stand — sans typologie partagée, l'animateur ne peut pas tenir le stand. Cochez aussi, dans la colonne « Typologie ninja » de l'écran Typologies, la typologie dont les porteurs sont polyvalents : le solveur essaie d'en garder un libre sur chaque créneau. Sans elle, cette réserve n'existe pas.`,
             },
           ],
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.data.typologiesOrphelines:L'écran Typologies compte, pour chacune, les animateurs qui la maîtrisent (les polyvalents à part), ceux qui l'ont souhaitée et les stands qui la proposent. Un badge « Orpheline » signale une typologie proposée par un stand que personne ne maîtrise : seul un polyvalent peut alors tenir ce stand. « Fragile » veut dire une seule personne, « Inutilisée » aucun stand. Depuis le badge, voyez qui l'a souhaitée ou saisissez des appréciations dans la grille Compétences. L'État de l'édition compte les orphelines, avant tout calcul.`,
+          text: $localize`:@@aide.data.typologiesOrphelines:L'écran Typologies compte, pour chacune, les animateurs qui la maîtrisent (les polyvalents à part), ceux qui l'ont souhaitée et les stands qui la proposent ; chaque chiffre mène à la liste qu'il compte, et l'icône de grille aux appréciations de cette typologie. Un badge « Orpheline » signale une typologie proposée par un stand que personne ne maîtrise : seul un polyvalent peut alors tenir ce stand. « Fragile » veut dire une seule personne, « Inutilisée » aucun stand. Une fois un planning calculé, trois colonnes disent ce qu'il en a fait : les postes, les heures, et les personnes « Affectés sans la compétence ». L'État de l'édition compte les orphelines, avant tout calcul.`,
         },
         {
           kind: 'paragraph',
           text: $localize`:@@aide.data.identifiants:Aucun identifiant ne se saisit : l'application en attribue un à chaque fiche qu'elle crée — A12 pour un animateur, S3 pour un stand, T2 pour une typologie, L1 pour un emplacement, C4 pour un ajustement. Un stand, une typologie ou un emplacement peut porter en plus un code, facultatif et unique dans l'édition, comme « STRATEGIE » ou « PAVILLON » : c'est la clé lisible que citent les fichiers d'import et qu'écrivent les exports, qui ne portent aucun identifiant — sans code, une ligne y est désignée par son nom.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.data.tableaux:Les tableaux gardent les réflexes du tableur. Chaque colonne se trie d'un clic sur son en-tête, et les identifiants suivent l'ordre naturel : T2 avant T10. Le nom d'une ligne l'ouvre ; son menu la modifie, la duplique ou la supprime. « Exporter cette liste » télécharge en CSV ce que le tableau montre, filtres et tri compris. Un bloc copié d'un tableur se colle sur une ligne (Ctrl+V) : les colonnes se remplissent dans l'ordre du tableau, ou selon la première ligne si elle les nomme — « Id » y désigne les lignes par leur identifiant —, et un aperçu montre chaque case avant qu'« Appliquer » n'enregistre. Un avertissement d'enregistrement reste marqué sur sa ligne tant qu'une nouvelle saisie ne l'a pas levé.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.data.ordre:Les référentiels se remplissent dans un ordre : les typologies d'abord, puis les créneaux qui donnent ses dates à l'édition, les stands qui proposent les typologies et ouvrent sur les créneaux, et les animateurs en dernier. Un tableau vide le rappelle, mène à l'étape précédente quand elle manque, et, sur une édition encore vide, propose « Charger un exemple ».`,
         },
         {
           kind: 'paragraph',
@@ -169,7 +177,7 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.creneaux.grille:Une grille de créneaux est toujours faite de vacations : des tranches de travail réelles. La page déclare ce que la grille contient — des amplitudes encore à découper, ou des vacations finales — parce que chaque verdict en dépend : un chevauchement est une erreur entre amplitudes, et la forme normale de vacations décalées. Le « Contrôle de la grille » relit ce verdict à chaque visite.`,
+          text: $localize`:@@aide.creneaux.grille:Une grille de créneaux est toujours faite de vacations : des tranches de travail réelles. La page déclare ce que la grille contient — des amplitudes encore à découper, ou des vacations finales — parce que chaque verdict en dépend : un chevauchement est une erreur entre amplitudes, et la forme normale de vacations décalées. Le « Contrôle de la grille » s'exécute seul, à chaque visite et après chaque écriture, et s'affiche en bandeau sous le calendrier, le détail à déplier. Chaque créneau de la liste compte ses « Stands ouverts · postes », un lien vers les horaires des stands ce jour-là.`,
         },
         {
           kind: 'definitions',
@@ -183,15 +191,15 @@ export function buildReferenceDataSections(): HelpSection[] {
               text: $localize`:@@aide.creneaux.def.appliquer:Écrit les créneaux, après un aperçu chiffré. Un créneau identique garde ses sièges, un créneau en trop sur une date gouvernée est supprimé, une date sans journée type n'est pas touchée. Une journée type modifiée après coup ne change rien tant qu'on ne réapplique pas : ses dates passent « en écart ».`,
             },
             {
-              term: $localize`:@@aide.creneaux.term.serie:Créer une série`,
-              text: $localize`:@@aide.creneaux.def.serie:La même chose sans mémoire, pour un besoin ponctuel : les créneaux sur une ligne, les jours couverts, un aperçu, puis l'écriture. Aucune journée type n'est créée.`,
+              term: $localize`:@@aide.creneaux.term.serie:Appliquer sans mémoriser`,
+              text: $localize`:@@aide.creneaux.def.serie:La même chose sans mémoire, pour un besoin ponctuel : dans le dialogue d'une journée type, ce bouton pose ses créneaux sur les jours choisis, après un aperçu, sans garder la journée type. Les relais repas ne suivent pas.`,
             },
             {
               term: $localize`:@@aide.creneaux.term.deriver:Dériver des horaires des stands`,
-              text: $localize`:@@aide.creneaux.def.deriver:Quand les stands ont déjà leurs horaires, la grille peut en découler : une coupure à chaque heure d'ouverture ou de fermeture, un créneau sur chaque tranche où au moins un stand est ouvert. Prévisualisé avant d'être ajouté ou mis à la place de la grille.`,
+              text: $localize`:@@aide.creneaux.def.deriver:Quand les stands ont déjà leurs horaires, la grille peut en découler : une coupure à chaque heure d'ouverture ou de fermeture, un créneau sur chaque tranche où au moins un stand est ouvert. Prévisualisé, puis ajouté à la grille ; « Remplacer la grille… » la met à la place de l'actuelle, après une confirmation qui dit que le planning calculé part avec elle. Avec la reconnaissance, il se trouve dans le menu « Autres façons de créer la grille », à côté de l'ajout d'un créneau isolé.`,
             },
             {
-              term: $localize`:@@aide.creneaux.term.reconnaitre:Reconnaître depuis les créneaux`,
+              term: $localize`:@@aide.creneaux.term.reconnaitre:Reconnaître les journées types depuis les créneaux`,
               text: $localize`:@@aide.creneaux.def.reconnaitre:Le chemin inverse, sur une grille déjà écrite : l'application en déduit les journées types et le calendrier qui les porte.`,
             },
           ],
@@ -212,43 +220,39 @@ export function buildReferenceDataSections(): HelpSection[] {
       ],
     },
     {
-      id: 'ouvertures-des-stands',
+      id: 'horaires-des-stands',
       icon: 'storefront',
-      title: $localize`:@@aide.ouvertures.title:Ouvertures des stands`,
-      summary: $localize`:@@aide.ouvertures.summary:Voir ce que le solveur lira vraiment, et saisir les effectifs comme dans un tableur.`,
+      title: $localize`:@@aide.ouvertures.title:Horaires des stands`,
+      summary: $localize`:@@aide.ouvertures.summary:Saisir l'effectif de chaque stand sur chaque créneau, comme dans un tableur, et voir aussitôt ce que le solveur lira.`,
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.ouvertures.intro:Ouvrez cet écran avant toute résolution. Il montre ce que le solveur lira une fois les règles étendues et les exceptions appliquées, et signale les trois erreurs de saisie habituelles : un stand finalement ouvert aucun jour, une fenêtre hors des heures du jour, une plage trop courte pour valoir une vacation. La fiche de chaque stand liste aussi ses propres anomalies.`,
+          text: $localize`:@@aide.ouvertures.intro:Ouvrez cet écran avant toute résolution. On y saisit et on y relit au même endroit : chaque case dit ce que le solveur lira une fois les règles étendues, les exceptions et la consigne du jour appliquées. La synthèse et les anomalies sont au-dessus de la grille : un stand finalement ouvert aucun jour, une fenêtre hors des heures du jour, une plage trop courte pour valoir une vacation. Chaque anomalie mène à la fiche du stand, ou à la grille des créneaux quand c'est elle qui est en cause.`,
         },
         {
           kind: 'definitions',
           items: [
             {
-              term: $localize`:@@aide.ouvertures.term.parDate:Par date`,
-              text: $localize`:@@aide.ouvertures.def.parDate:La vue de référence : une colonne par tranche de besoin, une case par stand. Les colonnes suivent les changements d'effectif, pas les vacations — un stand qui change d'effectif à 19 h scinde le créneau 14-20 en deux colonnes pour tout le monde.`,
+              term: $localize`:@@aide.ouvertures.term.grille:Grille`,
+              text: $localize`:@@aide.ouvertures.def.grille:Une ligne par stand, une colonne par tranche de besoin, l'effectif dans chaque case. Les colonnes suivent les changements d'effectif, pas les vacations — un stand qui change d'effectif à 19 h scinde le créneau 14-20 en deux colonnes pour tout le monde. Une case vide est fermée : on la vide, on tape « - » ou 0 pour fermer. Un chiffre en italique n'a pas été saisi : le stand, sans horaire déclaré, suit sa règle et ouvre par défaut. Les gestes d'un tableur — flèches, Entrée, collage d'un bloc, recopie d'un jour sur les autres jours affichés, reprise de la ligne du dessus, application d'une case à toute sa colonne. Ces deux-là ont chacune un bouton, qui apparaît au survol en tête de ligne et en tête de colonne, et un raccourci : Ctrl+D et Ctrl+Maj+Bas. Le nom d'un stand mène à sa fiche ; « Du » et « Au » réduisent la grille à quelques jours.`,
+            },
+            {
+              term: $localize`:@@aide.ouvertures.term.couches:Ce que dit une case`,
+              text: $localize`:@@aide.ouvertures.def.couches:Derrière le chiffre, des barres fines : en bas l'ouverture retenue, pleine pour une règle récurrente, rouge pour une exception datée ; en haut les horaires du stand avant la consigne ; sur toute la hauteur, teintée, la bande que la consigne du jour ferme ; en pointillé, un créneau que la consigne a ajouté. « Afficher dans les cases » masque chacune de ces couches, et l'adresse garde le choix. Une case modifiée montre tout de suite l'ouverture qu'elle écrira. Un clic sur une case l'explique en une phrase au-dessus de la grille, par exemple « Ouvert 14:00–18:00 : règle récurrente 14:00–20:00, amputé par la consigne « Plan canicule » 18:00–20:00 », avec les sièges du jour, une fenêtre hors de tout créneau s'il y en a une, et trois liens : la fiche du stand, la journée type du jour et la consigne du jour.`,
             },
             {
               term: $localize`:@@aide.ouvertures.term.parJourneeType:Par journée type`,
               text: $localize`:@@aide.ouvertures.def.parJourneeType:Disponible dès que l'édition a des journées types : une colonne par vacation, une case qui vaut d'un coup pour toutes les dates gouvernées. Soixante colonnes deviennent une quinzaine. Une case « ≠ » signale des dates qui ne disent pas la même chose ; la retaper les aligne. Tant qu'elle diverge, elle ne dit rien à propager : appliquer sa colonne est refusé plutôt que de trancher pour vous.`,
             },
             {
-              term: $localize`:@@aide.ouvertures.term.journee:Journée`,
-              text: $localize`:@@aide.ouvertures.def.journee:Une journée sur l'axe du temps : une ligne par stand, chaque ouverture en bloc avec son effectif. Une fenêtre déclarée à une heure qu'aucune vacation ne couvre apparaît hachurée — la seule erreur que les grilles ne montrent pas.`,
-            },
-            {
-              term: $localize`:@@aide.ouvertures.term.saisir:Saisir`,
-              text: $localize`:@@aide.ouvertures.def.saisir:La même grille en écriture : l'effectif à tenir dans chaque case, « - » ou 0 pour fermer, une case vidée gardant sa valeur. Les gestes d'un tableur — flèches, Entrée, collage d'un bloc, recopie d'un jour sur les autres, reprise de la ligne du dessus, application d'une case à toute sa colonne. Ces deux-là ont chacune un bouton, qui apparaît au survol en tête de ligne et en tête de colonne, et un raccourci : Ctrl+D et Ctrl+Maj+Bas. Les en-têtes et la colonne des stands restent en place pendant le défilement.`,
-            },
-            {
-              term: $localize`:@@aide.ouvertures.term.calendrier:Calendrier combiné`,
-              text: $localize`:@@aide.ouvertures.def.calendrier:Une semaine de l'événement, un stand par ligne, et dans chaque case les trois couches qui décident des sièges, avant tout calcul : les horaires du stand — une règle récurrente pleine, une exception datée en pointillés, un stand sans horaire ouvert par défaut —, les créneaux de la grille en fond (R pour un relais repas), la consigne du jour — sa bande hachurée, ses réouvertures encadrées — et, dessous, les sièges que le calcul recevra, les mêmes que dans la vue Journée. Chaque couche se masque par sa case à cocher, et l'adresse garde le choix. Le survol d'une case l'explique en une phrase, par exemple « ouvert 14:00–18:00 : règle récurrente 14:00–20:00, amputé par la consigne Plan canicule 18:00–20:00 » ; un clic mène à la fiche du stand, aux créneaux ou à la consigne. Une vacation qu'aucune ouverture ne couvre s'y voit seule sur sa ligne.`,
-            },
-            {
               term: $localize`:@@aide.ouvertures.term.comparer:Comparer`,
               text: $localize`:@@aide.ouvertures.def.comparer:Deux à huit stands posés sur les mêmes jours et les mêmes colonnes, par exemple les buvettes qui devraient avoir les mêmes horaires. On les choisit un par un ou par typologie ; le premier sert de référence, et un autre peut prendre ce rôle. Chaque case qui s'écarte de la référence est encadrée et dit la nature de l'écart — ouverture, heures ou effectif. La comparaison porte sur ce que le solveur lira : une règle et des exceptions datées qui ouvrent de la même façon ne font aucun écart. La synthèse compte, par stand, les jours en écart et dit le premier ; « Seulement les jours qui diffèrent » masque les autres. Sous la grille, les règles et exceptions de chaque stand côte à côte, une règle absente de la référence ou manquante étant signalée. Un jour sous consigne est marqué. Le comparateur n'écrit rien : « Copier les horaires de la référence vers… » ouvre la modification en masse des stands, réglée sur « Remplacer par ceux d'un stand », qui attend son propre enregistrement. On y arrive aussi depuis la page Stands, par la sélection ou par « Comparer avec… » dans la fiche d'un stand ; l'adresse garde la sélection.`,
             },
           ],
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.ouvertures.anciennesVues:La journée posée sur l'axe du temps est devenue la page Journée, une fois un planning calculé ; avant, une ancienne adresse de cette vue ouvre la grille sur ce seul jour. Le calendrier combiné est devenu le rendu des cases : son adresse ouvre la grille avec les mêmes couches.`,
         },
         {
           kind: 'paragraph',
@@ -260,7 +264,7 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.ouvertures.feries:Un jour férié porte la pastille « Férié » en tête de colonne, et sa colonne est teintée ; la vue Journée l'annonce en bandeau. Son nom et ce qu'il change — les mineurs n'y travaillent pas, les heures y sont comptées fériées — se lisent au survol ou au clavier. C'est une information : rien n'empêche d'ouvrir ce jour-là.`,
+          text: $localize`:@@aide.ouvertures.feries:Un jour férié porte la pastille « Férié » en tête de colonne, et sa colonne est teintée. Son nom et ce qu'il change — les mineurs n'y travaillent pas, les heures y sont comptées fériées — se lisent au survol ou au clavier. C'est une information : rien n'empêche d'ouvrir ce jour-là.`,
         },
         {
           kind: 'paragraph',
@@ -268,7 +272,7 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
       ],
       links: [
-        { route: '/ouvertures', label: $localize`:@@nav.link.ouvertures:Ouvertures des stands` },
+        { route: '/ouvertures', label: $localize`:@@nav.link.ouvertures:Horaires des stands` },
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
       ],
@@ -281,11 +285,11 @@ export function buildReferenceDataSections(): HelpSection[] {
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.competences.grille:La fiche animateur permet de saisir les appréciations une personne à la fois ; l'écran « Compétences » les montre toutes d'un coup, animateurs en lignes et typologies en colonnes. Une case se change d'un clic (les niveaux défilent) ou d'une touche : 0 vide la case, 1, 2 et 3 posent le niveau. Les flèches, Entrée, Début et Fin déplacent la sélection comme dans un tableur, et la flèche bas depuis le filtre entre dans la grille. Ctrl+D reprend la ligne du dessus, Ctrl+Maj+Bas applique la case courante à toute sa colonne ; les mêmes gestes ont un bouton, qui apparaît au survol en tête de ligne et en tête de colonne.`,
+          text: $localize`:@@aide.competences.grille:L'écran « Compétences » montre toutes les appréciations d'un coup, animateurs en lignes et typologies en colonnes ; le nom d'une personne mène à sa fiche, l'en-tête d'une colonne à sa typologie, et « Typologies affichées » réduit les colonnes. Une case se change d'un clic (les niveaux défilent) ou d'une touche : 0 vide la case, 1, 2 et 3 posent le niveau. Les flèches, Entrée, Début et Fin déplacent la sélection comme dans un tableur, et la flèche bas depuis le filtre entre dans la grille. Ctrl+D reprend la ligne du dessus, Ctrl+Maj+Bas applique la case courante à toute sa colonne ; les mêmes gestes ont un bouton, qui apparaît au survol en tête de ligne et en tête de colonne. Un bloc copié d'un tableur se colle depuis la case courante (Ctrl+V) — 0 à 3, D, A, R ou le niveau en toutes lettres —, et un aperçu montre chaque case avant de l'écrire dans la grille.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.competences.enregistrer:Rien n'est écrit avant « Enregistrer » : les cases changées sont encadrées, le bouton compte les fiches concernées, et quitter la page sans enregistrer demande confirmation. Un cœur dans une case signale que l'animateur souhaite cette typologie — l'appréciation se saisit en regard du souhait, sans que l'un décide de l'autre. Pendant une résolution, la saisie est verrouillée.`,
+          text: $localize`:@@aide.competences.enregistrer:Rien n'est écrit avant « Enregistrer » : les cases changées sont encadrées, le bouton compte les fiches concernées, et quitter la page sans enregistrer demande confirmation. Le cœur d'une case dit que l'animateur souhaite cette typologie : un clic, ou la touche S, le pose ou le retire, et il s'enregistre avec le reste — l'appréciation se saisit en regard du souhait, sans que l'un décide de l'autre. Pendant une résolution, la saisie est verrouillée.`,
         },
         {
           kind: 'paragraph',
@@ -399,7 +403,7 @@ export function buildReferenceDataSections(): HelpSection[] {
           label: $localize`:@@aide.lien.importGrille.fichiers:Fichiers — Grille des stands`,
         },
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
-        { route: '/ouvertures', label: $localize`:@@nav.link.ouvertures:Ouvertures des stands` },
+        { route: '/ouvertures', label: $localize`:@@nav.link.ouvertures:Horaires des stands` },
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
       ],
     },

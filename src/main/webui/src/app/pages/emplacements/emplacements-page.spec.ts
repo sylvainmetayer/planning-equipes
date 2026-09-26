@@ -9,6 +9,8 @@
 // `distance.spec.ts` owns the great-circle maths; what is pinned here is the
 // column built on top of it.
 
+import { Router, provideRouter } from '@angular/router';
+import { rowMenuItem } from '../../core/testing/row-menu';
 import { provideZonelessChangeDetection, signal, Signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
@@ -24,6 +26,7 @@ import { DetailDialog } from '../../shared/detail-dialog';
 import { EmplacementFormDialog } from './emplacement-form-dialog';
 import { EmplacementsPage } from './emplacements-page';
 import { seedStore } from '../../core/testing/seed-store';
+import { expectOnlyInEmptyState } from '../../core/testing/empty-state';
 
 // A degree of latitude is ~111 km, so 0.001° ≈ 111 m: near enough to place a
 // neighbour deliberately on either side of the 300 m threshold.
@@ -41,7 +44,7 @@ type PageInternals = {
   coordonneesLabel: (emplacement: Emplacement) => string;
   voisinLePlusProche: (emplacement: Emplacement) => string;
   /** Private to the component; reachable here because `private` is compile-time only. */
-  voisins: Signal<Map<string, string>>;
+  voisins: Signal<Map<string, { libelle: string; metres: number | null }>>;
   remove: (emplacement: Emplacement) => Promise<void>;
   removeSelection: () => Promise<void>;
   editSelection: () => void;
@@ -53,6 +56,7 @@ describe('EmplacementsPage', () => {
     reload: vi.fn(async () => undefined),
     remove: vi.fn(async () => true),
     removeMany: vi.fn(async () => 0),
+    warningsOf: vi.fn(() => []),
   };
   const dialog = { open: vi.fn(() => ({ afterClosed: () => ({ subscribe: vi.fn() }) })) };
 
@@ -91,7 +95,8 @@ describe('EmplacementsPage', () => {
     it('shows every emplacement while the filter is empty', () => {
       const page = createPage([emplacement('prairie'), emplacement('halle')]);
 
-      expect(page.emplacementsFiltres().map((row) => row.id)).toEqual(['prairie', 'halle']);
+      // The ids in their natural order, by default.
+      expect(page.emplacementsFiltres().map((row) => row.id)).toEqual(['halle', 'prairie']);
     });
 
     it('matches on the id and on the name', () => {
@@ -141,7 +146,7 @@ describe('EmplacementsPage', () => {
 
       expect(crud.removeMany).toHaveBeenCalledWith(
         'emplacements',
-        ['prairie', 'chapiteau'],
+        ['chapiteau', 'prairie'],
         expect.anything(),
       );
     });
@@ -236,8 +241,8 @@ describe('EmplacementsPage', () => {
       page.voisinLePlusProche(emplacement('halle', { latitude: 47.102, longitude: 1.5 }));
 
       expect(page.voisins()).toBe(voisins);
-      expect(voisins.get('prairie')).toContain('halle');
-      expect(voisins.get('halle')).toContain('prairie');
+      expect(voisins.get('prairie')?.libelle).toContain('halle');
+      expect(voisins.get('halle')?.libelle).toContain('prairie');
     });
 
     it('says nothing when there is no other located place to measure against', () => {
@@ -363,6 +368,7 @@ describe('EmplacementsPage table', () => {
     reload: vi.fn(async () => undefined),
     remove: vi.fn(async () => true),
     removeMany: vi.fn(async () => 0),
+    warningsOf: vi.fn(() => []),
   };
   const editingLocked = signal(false);
   /** What `GET /api/editions/courant/gel` answers; nothing frozen unless a test says so. */
@@ -384,12 +390,8 @@ describe('EmplacementsPage table', () => {
     );
   }
 
-  function action(indexLigne: number, nom: string): HTMLButtonElement {
-    const bouton = Array.from(
-      racine().querySelectorAll('tbody tr')[indexLigne].querySelectorAll('.row-actions button'),
-    ).find((each) => each.getAttribute('aria-label') === nom);
-    expect(bouton, `action « ${nom} » absente`).toBeDefined();
-    return bouton as HTMLButtonElement;
+  function action(indexLigne: number, nom: string): Promise<HTMLButtonElement> {
+    return rowMenuItem(fixture, racine().querySelectorAll('tbody tr')[indexLigne], nom);
   }
 
   beforeEach(() => {
@@ -406,6 +408,7 @@ describe('EmplacementsPage table', () => {
             get: vi.fn(async (url: string) => (url === '/api/editions/courant/gel' ? gel : [])),
           },
         },
+        provideRouter([]),
         { provide: ReferenceCrudService, useValue: crud },
         { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked } },
         { provide: MatDialog, useValue: dialog },
@@ -444,8 +447,10 @@ describe('EmplacementsPage table', () => {
 
   it('distinguishes an empty referential from a filter that matched nothing', async () => {
     await rendre([]);
-    expect(racine().querySelector('.empty-hint')!.textContent!.trim()).toBe(
-      'Aucun emplacement pour le moment. Créez-en un ci-dessus.',
+    // Its actions are the empty state's alone: the header leaves them out.
+    expectOnlyInEmptyState(racine(), ['Ajouter', 'Importer']);
+    expect(racine().querySelector('.empty-state')!.textContent).toContain(
+      'Un emplacement est le lieu où se tient un stand',
     );
 
     await rendre([emplacement('hall', { nom: 'Hall A' })]);
@@ -464,9 +469,9 @@ describe('EmplacementsPage table', () => {
     editingLocked.set(true);
     await fixture.whenStable();
 
-    expect(action(0, 'Modifier').disabled).toBe(true);
-    expect(action(0, 'Supprimer').disabled).toBe(true);
-    expect(action(0, 'Consulter le détail').disabled).toBe(false);
+    expect((await action(0, 'Modifier')).disabled).toBe(true);
+    expect((await action(0, 'Supprimer')).disabled).toBe(true);
+    expect((await action(0, 'Détail')).disabled).toBe(false);
   });
 
   it('greys out creating and deleting under an emplacements freeze, but not the edits', async () => {
@@ -483,8 +488,8 @@ describe('EmplacementsPage table', () => {
     await fixture.whenStable();
 
     expect(racine().querySelector('app-gel-notice .gel-notice')).not.toBeNull();
-    expect(action(0, 'Supprimer').disabled).toBe(true);
-    expect(action(0, 'Modifier').disabled).toBe(false);
+    expect((await action(0, 'Supprimer')).disabled).toBe(true);
+    expect((await action(0, 'Modifier')).disabled).toBe(false);
     const bulk = (libelle: string) =>
       Array.from(racine().querySelectorAll<HTMLButtonElement>('app-bulk-actions-bar button')).find(
         (each) => each.textContent!.includes(libelle),
@@ -494,11 +499,23 @@ describe('EmplacementsPage table', () => {
     expect(bulk('Supprimer la sélection').disabled).toBe(true);
   });
 
+  it('sorts every column, the neighbour by its distance rather than its wording', async () => {
+    await TestBed.inject(Router).navigateByUrl('/?sort=voisin&dir=desc');
+    await rendre([
+      emplacement('E1', { nom: 'Hall', latitude: 47.2, longitude: -1.55 }),
+      emplacement('E2', { nom: 'Salle', latitude: 47.201, longitude: -1.55 }),
+      emplacement('E10', { nom: 'Loin', latitude: 47.25, longitude: -1.55 }),
+    ]);
+
+    expect(lignes().map((row) => row[1])).toEqual(['E10', 'E1', 'E2']);
+    expect(racine().querySelectorAll('th[mat-sort-header]')).toHaveLength(5);
+  });
+
   it('opens the read-only detail, and hands over to the form when the user asks to edit', async () => {
     await rendre([emplacement('hall', { nom: 'Hall A' })]);
     dialog.open.mockReturnValue({ afterClosed: () => of('edit') });
 
-    action(0, 'Consulter le détail').click();
+    (await action(0, 'Détail')).click();
     await fixture.whenStable();
 
     expect(dialog.open.mock.calls[0][0]).toBe(DetailDialog);

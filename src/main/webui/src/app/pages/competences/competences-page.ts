@@ -18,12 +18,18 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AnimateursApi } from '../../core/api/animateurs-api';
 import {
   RecopieGrille,
+  applyPaste,
   hasLignePrecedente,
   applyColonne,
   copyLignePrecedente,
   ligneSourceColonne,
+  planCollage,
 } from '../../core/grille-saisie';
+import { labelAnimateursPluriel } from '../../core/entity-labels';
+import { animateurName } from '../../core/reference-labels';
+import { PastePreviewService } from '../../shared/paste-preview-dialog';
 import { intlLocale } from '../../core/locale';
+import { lettreNiveau, libelleNiveau } from '../../core/niveau-competence';
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { injectGelReferentiel } from '../../core/gel-referentiel.store';
@@ -51,7 +57,10 @@ import {
   keepLocalRows,
   levelAt,
   levelForKey,
+  levelFromText,
   modifiedAnimateurs,
+  modifiedWishes,
+  wishesOf,
   moveFrom,
   nextLevel,
   readTypologiesParam,
@@ -117,6 +126,18 @@ export class CompetencesPage implements OnInit {
   /* -------------------------------- view state ------------------------------- */
 
   protected readonly filtre = signal(this.route.snapshot.queryParamMap.get('q') ?? '');
+  /**
+   * `?animateur=<id>`: the one row the fiche's « Saisir dans la grille »
+   * opened the grid on, matched by its exact id — a search on « A1 » would
+   * also keep A10, A11… Empty means no narrowing.
+   */
+  protected readonly onlyAnimateur = signal(
+    this.route.snapshot.queryParamMap.get('animateur') ?? '',
+  );
+  protected readonly onlyAnimateurName = computed(() => {
+    const animateur = this.store.animateurs().find((each) => each.id === this.onlyAnimateur());
+    return animateur ? animateurName(animateur) || animateur.id : this.onlyAnimateur();
+  });
   private readonly typologiesParam = signal(this.route.snapshot.queryParamMap.get('typologies'));
   protected readonly typologies = computed<TypologieItem[]>(() => this.store.typologies());
   private readonly typologieIds = computed(() =>
@@ -132,12 +153,17 @@ export class CompetencesPage implements OnInit {
       ? this.typologies()
       : this.typologies().filter((typologie) => choisies.has(typologie.id));
   });
-  protected readonly lignes = computed<Animateur[]>(() =>
-    filterAnimateurs(this.store.animateurs(), this.filtre()),
-  );
+  protected readonly lignes = computed<Animateur[]>(() => {
+    const lignes = filterAnimateurs(this.store.animateurs(), this.filtre());
+    const seul = this.onlyAnimateur();
+    return seul ? lignes.filter((animateur) => animateur.id === seul) : lignes;
+  });
   protected readonly totalAnimateurs = computed(() => this.store.animateurs().length);
   protected readonly filteredView = computed(
-    () => this.filtre().trim() !== '' || this.typologiesChoisies().length > 0,
+    () =>
+      this.filtre().trim() !== '' ||
+      this.typologiesChoisies().length > 0 ||
+      this.onlyAnimateur() !== '',
   );
 
   /* -------------------------------- entry grid ------------------------------- */
@@ -153,14 +179,24 @@ export class CompetencesPage implements OnInit {
         this.store.animateurs().map((animateur) => [animateur.id, animateur.modifieLe ?? null]),
       ),
   );
+  /** The wishes toggled on screen, row by row: written with « Enregistrer », like the cells. */
+  private readonly souhaitsBascules = signal<ReadonlyMap<string, ReadonlySet<string>>>(new Map());
   private readonly souhaits = computed(
     () =>
       new Map(
         this.store
           .animateurs()
-          .map((animateur) => [animateur.id, new Set(animateur.souhaits ?? [])]),
+          .map((animateur) => [animateur.id, wishesOf(animateur, this.souhaitsBascules())]),
       ),
   );
+  /** The rows whose wishes changed on screen. */
+  private readonly souhaitsModifies = computed(() =>
+    modifiedWishes(this.store.animateurs(), this.souhaitsBascules()),
+  );
+  /** Every row « Enregistrer » would write: a cell or a wish changed. */
+  protected readonly lignesModifiees = computed(() => [
+    ...new Set([...this.animateursModifies(), ...this.souhaitsModifies()]),
+  ]);
   /** The cell carrying the roving tabindex: the way into the grid from the filter, and where the focus comes back. */
   protected readonly celluleActive = signal<CompetenceAddress | null>(null);
   protected readonly animateursModifies = computed(() =>
@@ -173,10 +209,13 @@ export class CompetencesPage implements OnInit {
     this.colonnes().map((typologie) => typologie.id),
   );
 
+  private readonly pastePreview = inject(PastePreviewService);
+
   constructor() {
     keepViewInQueryParams(() => ({
       q: optionalParam(this.filtre()),
       typologies: optionalParam(this.typologiesChoisies().join(',')),
+      animateur: optionalParam(this.onlyAnimateur()),
     }));
   }
 
@@ -234,30 +273,11 @@ export class CompetencesPage implements OnInit {
   }
 
   protected libelleNiveau(niveau: NiveauCompetence | null): string {
-    switch (niveau) {
-      case 'DEBUTANT':
-        return $localize`:@@competences.niveau.debutant:Débutant`;
-      case 'AUTONOME':
-        return $localize`:@@competences.niveau.autonome:Autonome`;
-      case 'REFERENT':
-        return $localize`:@@competences.niveau.referent:Référent`;
-      default:
-        return $localize`:@@competences.niveau.aucun:Aucune appréciation`;
-    }
+    return libelleNiveau(niveau);
   }
 
-  /** What the cell shows: one letter, the legend says which. */
   protected lettreNiveau(niveau: NiveauCompetence | null): string {
-    switch (niveau) {
-      case 'DEBUTANT':
-        return $localize`:@@competences.lettre.debutant:D`;
-      case 'AUTONOME':
-        return $localize`:@@competences.lettre.autonome:A`;
-      case 'REFERENT':
-        return $localize`:@@competences.lettre.referent:R`;
-      default:
-        return '';
-    }
+    return lettreNiveau(niveau);
   }
 
   protected classeNiveau(niveau: NiveauCompetence | null): string {
@@ -311,6 +331,75 @@ export class CompetencesPage implements OnInit {
     this.cells.update((cells) => writeCell(cells, { animateurId, typologieId }, niveau));
   }
 
+  /** The heart of a cell: the animateur's wish for that typologie, on or off — written with « Enregistrer ». */
+  protected basculerSouhait(animateurId: string, typologieId: string): void {
+    if (this.solving()) {
+      return;
+    }
+    const actuels = new Set(this.souhaits().get(animateurId) ?? []);
+    if (actuels.has(typologieId)) {
+      actuels.delete(typologieId);
+    } else {
+      actuels.add(typologieId);
+    }
+    this.souhaitsBascules.update((bascules) => new Map(bascules).set(animateurId, actuels));
+  }
+
+  protected souhaitLabel(animateur: Animateur, typologie: TypologieItem): string {
+    return this.isWished(animateur.id, typologie.id)
+      ? $localize`:@@competences.souhait.retirer:Retirer le souhait de ${animateurName(animateur)}:animateur: pour ${typologie.label || typologie.id}:typologie: (S)`
+      : $localize`:@@competences.souhait.ajouter:Noter que ${animateurName(animateur)}:animateur: souhaite ${typologie.label || typologie.id}:typologie: (S)`;
+  }
+
+  /**
+   * A block copied from a spreadsheet, pasted in a cell: laid from that cell
+   * over the displayed rows and typologies, shown in a preview, then written
+   * in the grid — locally: « Enregistrer » stays the only thing that reaches
+   * the server. A level reads as 0 to 3, its letter or its word.
+   */
+  protected async onPaste(event: ClipboardEvent): Promise<void> {
+    const active = this.celluleActive();
+    const text = event.clipboardData?.getData('text') ?? '';
+    if (!active || this.editingLocked() || text.trim() === '') {
+      return;
+    }
+    event.preventDefault();
+    const plan = planCollage(
+      this.cells(),
+      text,
+      { ligneId: active.animateurId, colonneId: active.typologieId },
+      this.animateurIdsAffiches(),
+      this.typologieIdsAffiches(),
+      levelFromText,
+      accesGrilleCompetences,
+    );
+    const noms = new Map(
+      this.store.animateurs().map((animateur) => [animateur.id, animateurName(animateur)]),
+    );
+    const typologies = new Map(
+      this.typologies().map((typologie) => [typologie.id, typologie.label || typologie.id]),
+    );
+    const colonne = $localize`:@@competences.collage.colonne:Appréciation`;
+    const confirme = await this.pastePreview.confirm({
+      changes: plan.cellules.map((cellule) => ({
+        row: noms.get(cellule.ligneId) || cellule.ligneId,
+        column: typologies.get(cellule.colonneId) ?? cellule.colonneId,
+        before: cellule.before ? this.libelleNiveau(cellule.before) : '',
+        after: cellule.after ? this.libelleNiveau(cellule.after) : '',
+      })),
+      refusals: plan.illisibles.map((value) => ({
+        row: '',
+        column: colonne,
+        value,
+        reason: $localize`:@@competences.collage.illisible:un niveau s'écrit 0 à 3, D, A, R ou en toutes lettres`,
+      })),
+      unplaced: plan.horsGrille,
+    });
+    if (confirme) {
+      this.cells.set(applyPaste(this.cells(), plan.cellules, accesGrilleCompetences).cellules);
+    }
+  }
+
   /** A click cycles the level; the button's own Enter and Space are handled on keydown. */
   protected cycler(animateurId: string, typologieId: string): void {
     this.write(animateurId, typologieId, nextLevel(this.niveau(animateurId, typologieId)));
@@ -338,6 +427,11 @@ export class CompetencesPage implements OnInit {
     if (event.key === ' ') {
       event.preventDefault();
       this.cycler(animateurId, typologieId);
+      return;
+    }
+    if (event.key === 's' || event.key === 'S') {
+      event.preventDefault();
+      this.basculerSouhait(animateurId, typologieId);
       return;
     }
     const target = moveFrom(
@@ -468,35 +562,58 @@ export class CompetencesPage implements OnInit {
   protected resetView(): void {
     this.filtre.set('');
     this.typologiesParam.set(null);
+    this.onlyAnimateur.set('');
   }
 
   /* ---------------------------------- save ----------------------------------- */
 
   protected discard(): void {
     this.cells.set(this.reference());
+    this.souhaitsBascules.set(new Map());
   }
 
   /** Leaving with unsaved cells asks first — they would silently survive, invisible, until the next reload. */
   async canLeave(): Promise<boolean> {
-    if (this.animateursModifies().length === 0) {
+    if (this.lignesModifiees().length === 0) {
       return true;
     }
     return this.confirm.ask({
       title: $localize`:@@competences.quitter.titre:Abandonner les modifications ?`,
-      message: $localize`:@@competences.quitter.message:${this.animateursModifies().length}:animateurs: fiche(s) ont des cases modifiées non enregistrées.`,
+      message: $localize`:@@competences.quitter.message:${this.lignesModifiees().length}:animateurs: fiche(s) ont des cases modifiées non enregistrées.`,
       confirmLabel: $localize`:@@competences.quitter.label:Abandonner`,
       danger: true,
     });
   }
 
-  /** Sends the modified animateurs, each with their whole map, and reads how each row ended. */
+  /**
+   * Sends the modified animateurs, each with their whole map, and reads how
+   * each row ended. The wishes toggled on screen go first, each with its
+   * fiche — the grid's own write carries the appreciations only — so the
+   * appreciations then go with the stamp that write left.
+   */
   protected async save(): Promise<void> {
     const modifies = this.animateursModifies();
-    if (modifies.length === 0 || this.enregistrement()) {
+    const souhaits = this.souhaitsModifies();
+    if ((modifies.length === 0 && souhaits.length === 0) || this.enregistrement()) {
       return;
     }
     this.enregistrement.set(true);
     try {
+      if (souhaits.length > 0) {
+        const bascules = this.souhaitsBascules();
+        const fiches = this.store
+          .animateurs()
+          .filter((animateur) => souhaits.includes(animateur.id))
+          .map((animateur) => ({
+            ...animateur,
+            souhaits: [...(bascules.get(animateur.id) ?? [])],
+          }));
+        await this.crud.saveMany('animateurs', fiches, labelAnimateursPluriel());
+        this.souhaitsBascules.set(new Map());
+      }
+      if (modifies.length === 0) {
+        return;
+      }
       const rapport = await this.animateursApi.saveCompetencesGrid(
         saisie(this.cells(), modifies, this.changedById()),
       );

@@ -1,7 +1,8 @@
-// « Journée » on the openings page: one day of the edition, one line per
-// stand, the hours on the x axis, the créneaux as bands and each open stretch
-// as a block carrying its headcount. Pure functions over the report the two
-// other views already read — the same numbers, laid on time.
+// One day of the openings report laid on time: one line per stand, the hours
+// on the x axis, the timeslots as bands and each open stretch as a block
+// carrying its headcount. Pure functions over the report the grid reads —
+// the grid's panel takes from it what a cell cannot show, a window declared
+// at an hour no timeslot covers — and the `minutesDe` `rendu-grille.ts` measures a cell with.
 
 import { formatHourTick } from '../../core/time-of-day';
 import {

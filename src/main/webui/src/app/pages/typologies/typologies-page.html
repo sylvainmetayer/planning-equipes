@@ -6,15 +6,19 @@
     <app-gel-notice family="TYPOLOGIES_EMPLACEMENTS" />
   </mat-card-content>
   <mat-card-actions class="card-actions">
-    <button matButton="filled" type="button" [disabled]="creationLocked()" (click)="openCreate()">
-      <mat-icon>add</mat-icon>
-      <ng-container i18n="@@common.add">Ajouter</ng-container>
+    <!-- On an empty referential the empty state below carries « Ajouter » and
+         « Importer »: one button of each name on the screen. -->
+    @if (store.typologies().length > 0) {
+      <button matButton="filled" type="button" [disabled]="creationLocked()" (click)="openCreate()">
+        <mat-icon>add</mat-icon>
+        <ng-container i18n="@@common.add">Ajouter</ng-container>
+      </button>
+      <app-import-button card="typologies" [disabled]="creationLocked()" />
+    }
+    <button matButton type="button" [disabled]="typologiesFiltrees().length === 0" (click)="exportList()">
+      <mat-icon>download</mat-icon>
+      <ng-container i18n="@@referentiel.exporterListe">Exporter cette liste</ng-container>
     </button>
-    <app-import-button card="typologies" [disabled]="creationLocked()" />
-    <a matButton routerLink="/parametres" [queryParams]="{ onglet: 'edition' }">
-      <mat-icon>settings</mat-icon>
-      <ng-container i18n="@@typologies.ninjaVersParametres">La typologie ninja se choisit dans les Paramètres</ng-container>
-    </a>
     <app-table-filter [(value)]="filtre" [matches]="typologiesFiltrees().length" [total]="store.typologies().length"
                       (enterTable)="navigation.focusCurrent()" />
     @if (importedIds(); as ids) {
@@ -37,14 +41,17 @@
     </output>
   }
   <mat-card-content class="table-wrapper">
+    <app-filter-chips [chips]="chips()" (remove)="removeChip()" (clear)="resetView()" />
     @if (selection.hasSelection()) {
       <app-bulk-actions-bar [count]="selection.count()" [disabled]="creationLocked()"
                             [filtre]="!!filtre()" [editable]="false"
                             (remove)="removeSelection()" (clear)="selection.clear()" />
     }
-    <table mat-table [dataSource]="typologiesFiltrees()" matSort [matSortActive]="sort().active"
-           [matSortDirection]="sort().direction" (matSortChange)="sort.set($event)">
-      <caption class="visually-hidden" i18n="@@typologies.table.caption">Typologies de jeu du référentiel : identifiant, code, libellé, compétents, souhaits, stands, état et actions</caption>
+    @if (store.typologies().length > 0) {
+    <p class="referentiel-collage-hint" i18n="@@referentiel.collageHint">Collez un bloc copié d'un tableur sur une ligne (Ctrl+V) : un aperçu montre les cases modifiées avant d'enregistrer.</p>
+    <table mat-table [dataSource]="typologiesFiltrees()" [trackBy]="trackById" matSort [matSortActive]="sort().active"
+           [matSortDirection]="sort().direction" (matSortChange)="sort.set($event)" (paste)="onPaste($event)">
+      <caption class="visually-hidden" i18n="@@typologies.table.caption">Typologies de jeu du référentiel : identifiant, code, libellé, typologie ninja, compétents, souhaits, stands, état et actions</caption>
       <ng-container matColumnDef="select">
         <th mat-header-cell scope="col" *matHeaderCellDef>
           <mat-checkbox i18n-aria-label="@@bulk.selectAll" aria-label="Tout sélectionner"
@@ -62,39 +69,66 @@
         <td mat-cell *matCellDef="let typologie">{{ typologie.id }}</td>
       </ng-container>
       <ng-container matColumnDef="code">
-        <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@referentiel.field.code">Code</th>
+        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@referentiel.field.code">Code</th>
         <td mat-cell *matCellDef="let typologie">{{ typologie.code }}</td>
       </ng-container>
       <ng-container matColumnDef="label">
         <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@typologies.field.label">Libellé</th>
-        <td mat-cell *matCellDef="let typologie">{{ typologie.label }}</td>
+        <td mat-cell *matCellDef="let typologie">
+          <button type="button" class="referentiel-nom" [disabled]="editingLocked()" (click)="openRow(typologie)">{{ typologie.label || typologie.id }}</button>
+          <app-row-warning [messages]="warnings(typologie)" />
+        </td>
       </ng-container>
       <ng-container matColumnDef="ninja">
-        <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@typologies.field.ninja">Typologie ninja</th>
+        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@typologies.field.ninja">Typologie ninja</th>
         <td mat-cell *matCellDef="let typologie">
-          @if (typologie.ninja) {
-            <mat-icon aria-hidden="false" i18n-matTooltip="@@typologies.field.ninjaHint"
-                      matTooltip="Un animateur qui possède cette typologie sait s'adapter : il peut être affecté à n'importe quel stand."
-                      i18n-aria-label="@@typologies.field.ninja" aria-label="Typologie ninja">bolt</mat-icon>
-          }
+          <mat-checkbox [checked]="!!typologie.ninja" [disabled]="creationLocked()"
+                        [aria-label]="ninjaLabel(typologie)" [matTooltip]="ninjaHint()"
+                        (change)="setNinja(typologie, $event.checked)"></mat-checkbox>
         </td>
       </ng-container>
       <ng-container matColumnDef="competents">
         <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@typologies.column.competents">Compétents</th>
         <td mat-cell *matCellDef="let typologie" class="typologies-compteur">
-          <span [matTooltip]="competentsHint(usage(typologie))">{{ usage(typologie).competents }}</span>
+          <a routerLink="/animateurs" [queryParams]="{ typologie: typologie.id }" [matTooltip]="competentsHint(usage(typologie))">{{ usage(typologie).competents }}</a>
+          <a matIconButton class="typologies-grille" routerLink="/competences" [queryParams]="{ typologies: typologie.id }"
+             [attr.aria-label]="grilleLabel(typologie)" [matTooltip]="grilleLabel(typologie)">
+            <mat-icon>grid_on</mat-icon>
+          </a>
         </td>
       </ng-container>
       <ng-container matColumnDef="souhaits">
         <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@typologies.column.souhaits">Souhaits</th>
-        <td mat-cell *matCellDef="let typologie" class="typologies-compteur">{{ usage(typologie).souhaits }}</td>
+        <td mat-cell *matCellDef="let typologie" class="typologies-compteur">
+          <a routerLink="/animateurs" [queryParams]="{ souhait: typologie.id }">{{ usage(typologie).souhaits }}</a>
+        </td>
       </ng-container>
       <ng-container matColumnDef="stands">
         <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@typologies.column.stands">Stands</th>
-        <td mat-cell *matCellDef="let typologie" class="typologies-compteur">{{ usage(typologie).stands }}</td>
+        <td mat-cell *matCellDef="let typologie" class="typologies-compteur">
+          <a routerLink="/stands" [queryParams]="{ typologie: typologie.id }">{{ usage(typologie).stands }}</a>
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="postes">
+        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@typologies.column.postes">Postes</th>
+        <td mat-cell *matCellDef="let typologie" class="typologies-compteur">{{ effetsPlan()?.get(typologie.id)?.postes ?? 0 }}</td>
+      </ng-container>
+      <ng-container matColumnDef="heures">
+        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@typologies.column.heures">Heures</th>
+        <td mat-cell *matCellDef="let typologie" class="typologies-compteur">{{ effetsPlan()?.get(typologie.id)?.heures ?? 0 }}</td>
+      </ng-container>
+      <ng-container matColumnDef="sansCompetence">
+        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@typologies.column.sansCompetence">Affectés sans la compétence</th>
+        <td mat-cell *matCellDef="let typologie" class="typologies-compteur">
+          @if (effetsPlan()?.get(typologie.id)?.sansCompetence; as sans) {
+            <a routerLink="/competences" [queryParams]="{ typologies: typologie.id }">{{ sans }}</a>
+          } @else {
+            0
+          }
+        </td>
       </ng-container>
       <ng-container matColumnDef="etat">
-        <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@typologies.column.etat">État</th>
+        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@typologies.column.etat">État</th>
         <td mat-cell *matCellDef="let typologie">
           @let u = usage(typologie);
           @if (u.etat !== 'NORMALE') {
@@ -110,26 +144,20 @@
       <ng-container matColumnDef="actions" stickyEnd>
         <th mat-header-cell scope="col" *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
         <td mat-cell *matCellDef="let typologie" class="row-actions">
-          <button matIconButton i18n-matTooltip="@@common.consult" matTooltip="Consulter le détail" i18n-aria-label="@@common.consult" aria-label="Consulter le détail" (click)="consult(typologie)">
-            <mat-icon>visibility</mat-icon>
-          </button>
-          <button matIconButton i18n-matTooltip="@@common.edit" matTooltip="Modifier" i18n-aria-label="@@common.edit" aria-label="Modifier" [disabled]="editingLocked()" (click)="edit(typologie)">
-            <mat-icon>edit</mat-icon>
-          </button>
-          <button matIconButton i18n-matTooltip="@@common.delete" matTooltip="Supprimer" i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action" [disabled]="creationLocked()"
-                  (click)="remove(typologie)">
-            <mat-icon>delete</mat-icon>
-          </button>
+          <app-row-menu [name]="typologie.label || typologie.id" [editDisabled]="editingLocked()"
+                        [duplicateDisabled]="creationLocked()" [removeDisabled]="creationLocked()"
+                        (edit)="edit(typologie)" (duplicate)="duplicate(typologie)" (remove)="remove(typologie)" />
         </td>
       </ng-container>
-      <tr mat-header-row *matHeaderRowDef="columns"></tr>
-      <tr mat-row *matRowDef="let row; columns: columns; let i = index"
+      <tr mat-header-row *matHeaderRowDef="columns()"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns(); let i = index"
           [attr.data-row-index]="i"
           [tabindex]="navigation.isCurrent(i) ? 0 : -1"
           [class.row-selected]="selection.isSelected(row.id)"
           (focus)="navigation.onFocus(i)"
           (keydown)="navigation.onKeydown($event, i)"></tr>
     </table>
+    }
     <mat-menu #etatMenu="matMenu">
       <ng-template matMenuContent let-typologie="typologie" let-etat="etat">
         @if (etat === 'ORPHELINE' || etat === 'FRAGILE') {
@@ -142,7 +170,7 @@
             <span i18n="@@typologies.etat.action.competences">Saisir des appréciations</span>
           </a>
         } @else {
-          <a mat-menu-item routerLink="/stands">
+          <a mat-menu-item routerLink="/stands" [queryParams]="{ typologie: typologie.id }">
             <mat-icon>storefront</mat-icon>
             <span i18n="@@typologies.etat.action.stands">Voir les stands</span>
           </a>
@@ -154,10 +182,12 @@
       </ng-template>
     </mat-menu>
     @if (store.typologies().length === 0) {
-      <p class="empty-hint" i18n="@@typologies.empty">Aucune typologie pour le moment.</p>
+      <app-empty-state [addDisabled]="creationLocked()" (add)="openCreate()">
+        <ng-container i18n="@@typologies.empty">Tout part des typologies : un stand en propose, un animateur en maîtrise. Commencez ici.</ng-container>
+        <app-import-button empty-state-import card="typologies" [disabled]="creationLocked()" />
+      </app-empty-state>
     } @else if (typologiesFiltrees().length === 0) {
       <p class="empty-hint" i18n="@@filter.noMatch">Aucune ligne ne correspond au filtre.</p>
     }
   </mat-card-content>
 </mat-card>
-

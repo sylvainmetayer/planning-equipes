@@ -4,6 +4,8 @@ import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatSortModule } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { labelEmplacementsPluriel } from '../../core/entity-labels';
@@ -16,7 +18,11 @@ import {
   WalkingSettings,
 } from '../../core/distance';
 import { Emplacement } from '../../core/models';
+import { PasteColumn } from '../../core/paste-rows';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
+import { EmptyState } from '../../shared/empty-state';
+import { RowMenu } from '../../shared/row-menu';
+import { RowWarning } from '../../shared/row-warning';
 import { ImportedRowsFilter } from '../../shared/imported-rows-filter';
 import { TableFilter } from '../../shared/table-filter';
 import { EmplacementBulkEditData, EmplacementBulkEditDialog } from './emplacement-bulk-edit-dialog';
@@ -47,9 +53,14 @@ const SEUIL_ELOIGNEMENT_METRES = 300;
     MatButtonModule,
     MatCheckboxModule,
     MatIconModule,
+    MatMenuModule,
+    MatSortModule,
     MatTableModule,
     MatTooltipModule,
     BulkActionsBar,
+    EmptyState,
+    RowMenu,
+    RowWarning,
     TableFilter,
     GelNotice,
   ],
@@ -104,6 +115,60 @@ export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
       libelle: () => $localize`:@@emplacements.entityLabel:Emplacement`,
       name: (emplacement) => emplacement.nom,
       libellePluriel: labelEmplacementsPluriel,
+      sortValues: {
+        id: (emplacement) => emplacement.id,
+        code: (emplacement) => emplacement.code,
+        nom: (emplacement) => emplacement.nom,
+        coordonnees: (emplacement) => emplacement.latitude,
+        voisin: (emplacement) => this.voisins().get(emplacement.id)?.metres,
+      },
+      export: {
+        name: 'emplacements',
+        columns: () => [
+          { title: $localize`:@@common.id:Id`, value: (emplacement) => emplacement.id },
+          {
+            title: $localize`:@@referentiel.field.code:Code`,
+            value: (emplacement) => emplacement.code,
+          },
+          { title: $localize`:@@common.nom:Nom`, value: (emplacement) => emplacement.nom },
+          {
+            title: $localize`:@@emplacements.field.latitude:Latitude`,
+            value: (emplacement) => emplacement.latitude,
+          },
+          {
+            title: $localize`:@@emplacements.field.longitude:Longitude`,
+            value: (emplacement) => emplacement.longitude,
+          },
+          {
+            title: $localize`:@@emplacements.column.voisin:Emplacement le plus proche`,
+            value: (emplacement) => this.voisinLePlusProche(emplacement),
+          },
+        ],
+      },
+      paste: () => [
+        {
+          key: 'code',
+          title: $localize`:@@referentiel.field.code:Code`,
+          read: (emplacement) => emplacement.code ?? '',
+          write: (emplacement, text) => ({ ...emplacement, code: text }),
+        },
+        {
+          key: 'nom',
+          title: $localize`:@@common.nom:Nom`,
+          read: (emplacement) => emplacement.nom,
+          write: (emplacement, text) => ({ ...emplacement, nom: text }),
+        },
+        coordinateColumn('latitude', $localize`:@@emplacements.field.latitude:Latitude`, 90),
+        coordinateColumn('longitude', $localize`:@@emplacements.field.longitude:Longitude`, 180),
+      ],
+      duplicate: (emplacement, dialog: MatDialog) => {
+        dialog.open<EmplacementFormDialog, EmplacementFormData, boolean>(EmplacementFormDialog, {
+          data: { emplacement: null, modele: emplacement },
+          width: '40rem',
+          maxWidth: '95vw',
+          autoFocus: 'first-tabbable',
+        });
+      },
     });
     const constraintsApi = inject(ConstraintsApi);
     void (async () => {
@@ -134,7 +199,7 @@ export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
    * penalised, and a day spread over too many of them too. Nobody can judge
    * that from two pairs of decimal coordinates, so the table says it.
    */
-  private readonly voisins = computed<Map<string, string>>(() => {
+  private readonly voisins = computed<Map<string, Voisin>>(() => {
     const emplacements = this.store.emplacements();
     return new Map(
       emplacements.map((emplacement) => [
@@ -145,7 +210,7 @@ export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
   });
 
   protected voisinLePlusProche(emplacement: Emplacement): string {
-    return this.voisins().get(emplacement.id) ?? '';
+    return this.voisins().get(emplacement.id)?.libelle ?? '';
   }
 
   protected editSelection(): void {
@@ -166,10 +231,16 @@ export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
   }
 }
 
+/** The nearest other emplacement, worded, and how far it is — what its column sorts on. */
+interface Voisin {
+  libelle: string;
+  metres: number | null;
+}
+
 function voisinLePlusProche(
   emplacement: Emplacement,
   emplacements: readonly Emplacement[],
-): string {
+): Voisin {
   let plusProche: { nom: string; metres: number } | null = null;
   for (const autre of emplacements) {
     if (autre.id === emplacement.id) {
@@ -184,11 +255,35 @@ function voisinLePlusProche(
     }
   }
   if (!plusProche) {
-    return '';
+    return { libelle: '', metres: null };
   }
   const distance = formatDistance(plusProche.metres);
   const nom = plusProche.nom;
-  return plusProche.metres > SEUIL_ELOIGNEMENT_METRES
-    ? $localize`:@@emplacements.voisin.loin:${distance}:distance: de ${nom}:nom: (au-delà du seuil d'éloignement)`
-    : $localize`:@@emplacements.voisin:${distance}:distance: de ${nom}:nom:`;
+  return {
+    metres: plusProche.metres,
+    libelle:
+      plusProche.metres > SEUIL_ELOIGNEMENT_METRES
+        ? $localize`:@@emplacements.voisin.loin:${distance}:distance: de ${nom}:nom: (au-delà du seuil d'éloignement)`
+        : $localize`:@@emplacements.voisin:${distance}:distance: de ${nom}:nom:`,
+  };
+}
+
+/** A pasted latitude or longitude: a decimal number within ±`limite`, a comma read as the point. */
+function coordinateColumn(
+  key: 'latitude' | 'longitude',
+  title: string,
+  limite: number,
+): PasteColumn<Emplacement> {
+  return {
+    key,
+    title,
+    read: (emplacement) => (emplacement[key] === null ? '' : String(emplacement[key])),
+    write: (emplacement, text) => {
+      const valeur = Number(text.replace(',', '.'));
+      if (!Number.isFinite(valeur) || Math.abs(valeur) > limite) {
+        return $localize`:@@emplacements.collage.coordonnee:un nombre décimal entre -${limite}:limite: et ${limite}:limite:`;
+      }
+      return { ...emplacement, [key]: valeur };
+    },
+  };
 }

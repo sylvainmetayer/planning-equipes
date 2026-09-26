@@ -490,3 +490,111 @@ a[target='_blank']:not(.mat-mdc-button-base):not(.mat-mdc-list-item):not(
   display: flex;
   gap: 0.5rem;
 }
+
+/* ---------------------- Referential tables (issue #717) ---------------------- */
+
+/* The name of a row: the first way into it — its fiche, or its form. A
+   button dressed as a link, so a table of names still reads as a table. */
+.referentiel-nom {
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  color: var(--mat-sys-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+a.referentiel-nom {
+  text-decoration: none;
+}
+
+.referentiel-nom:hover,
+.referentiel-nom:focus-visible {
+  text-decoration: underline;
+}
+
+.referentiel-nom:disabled {
+  color: inherit;
+  cursor: default;
+  text-decoration: none;
+}
+
+.referentiel-collage-hint {
+  margin: 0 0 0.25rem;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* A warning of the last save, kept on its row after the snack bar. */
+.row-warning-icon {
+  font-size: 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-left: 0.25rem;
+  vertical-align: -3px;
+  color: var(--mat-sys-tertiary);
+}
+
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+  margin: 0 0 0.5rem;
+}
+
+/* An empty referential says what to do and where one comes from. */
+.empty-state {
+  margin: 1rem 0;
+  padding: 1rem 1.25rem;
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-surface-container-low);
+}
+
+.empty-state-message {
+  margin: 0 0 0.75rem;
+  font: var(--mat-sys-body-large);
+}
+
+.empty-state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* The preview of a block pasted from a spreadsheet. */
+.paste-preview {
+  max-height: 50vh;
+}
+
+.paste-preview-table {
+  border-collapse: collapse;
+  width: 100%;
+  font: var(--mat-sys-body-medium);
+}
+
+.paste-preview-table th,
+.paste-preview-table td {
+  padding: 0.25rem 0.5rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  text-align: left;
+}
+
+.paste-preview-table .paste-before {
+  color: var(--mat-sys-on-surface-variant);
+  text-decoration: line-through;
+}
+
+.paste-preview-table .paste-after {
+  font-weight: 600;
+}
+
+.paste-refusals-title {
+  margin-bottom: 0.25rem;
+}
+
+.paste-refusals {
+  margin-top: 0;
+  color: var(--mat-sys-error);
+}

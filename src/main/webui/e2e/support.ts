@@ -596,6 +596,19 @@ function pageOf(root: Page | Locator): Page {
 }
 
 /**
+ * One action of a referential row — « Modifier », « Dupliquer », « Supprimer »,
+ * « Détail » —, which sits behind the row's « ⋯ » menu: opens that menu and
+ * answers the item, to click or to assert on. Press Escape to close the menu
+ * after an assertion that did not click.
+ */
+export async function rowAction(ligne: Locator, action: string): Promise<Locator> {
+  await ligne.locator('.row-menu-trigger').click();
+  const item = ligne.page().getByRole('menuitem', { name: action, exact: true });
+  await expect(item).toBeVisible();
+  return item;
+}
+
+/**
  * The dialog just opened, once it is ready to be typed in. Material focuses
  * the first field after the open animation: a `fill()` that lands in between
  * gets its text moved to that field — a spec that filled « Prénom » found the

@@ -116,7 +116,11 @@ test.describe('Relance manuelle des silencieux', () => {
     await page.goto('/animateurs?silence=1');
 
     await expect(page.getByText('Aucune ligne ne correspond au filtre.')).toBeVisible();
-    await expect(page.getByLabel('Jours')).toHaveValue('1');
+    await expect(page.getByRole('spinbutton', { name: 'Jours' })).toHaveValue('1');
+    // One day, in the singular.
+    await expect(
+      page.getByRole('button', { name: 'Retirer le filtre Silencieux depuis 1 jour', exact: true }),
+    ).toBeVisible();
 
     await page.reload();
     await expect(page.getByText('Aucune ligne ne correspond au filtre.')).toBeVisible();

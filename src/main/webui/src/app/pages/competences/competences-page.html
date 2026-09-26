@@ -10,18 +10,18 @@
   </mat-card-content>
   <mat-card-actions class="card-actions">
     <button matButton="filled" type="button" class="competences-enregistrer"
-            [disabled]="editingLocked() || enregistrement() || animateursModifies().length === 0" (click)="save()">
+            [disabled]="editingLocked() || enregistrement() || lignesModifiees().length === 0" (click)="save()">
       <mat-icon>save</mat-icon>
       <ng-container i18n="@@competences.enregistrer">Enregistrer</ng-container>
-      @if (animateursModifies().length > 0) {
-        <span class="competences-compteur">({{ animateursModifies().length }})</span>
+      @if (lignesModifiees().length > 0) {
+        <span class="competences-compteur">({{ lignesModifiees().length }})</span>
       }
     </button>
-    <button matButton type="button" [disabled]="animateursModifies().length === 0" (click)="discard()">
+    <button matButton type="button" [disabled]="lignesModifiees().length === 0" (click)="discard()">
       <mat-icon>undo</mat-icon>
       <ng-container i18n="@@competences.annuler">Annuler les modifications</ng-container>
     </button>
-    <button matButton type="button" [disabled]="chargement() || animateursModifies().length > 0" (click)="recharger()">
+    <button matButton type="button" [disabled]="chargement() || lignesModifiees().length > 0" (click)="recharger()">
       <mat-icon>refresh</mat-icon>
       <ng-container i18n="@@common.refresh">Actualiser</ng-container>
     </button>
@@ -59,13 +59,20 @@
         }
       </div>
 
+      @if (onlyAnimateur()) {
+        <p class="calendar-meta">
+          <ng-container i18n="@@competences.filtre.seul">Seul « {{ onlyAnimateurName() }} » est affiché.</ng-container>
+          <button matButton type="button" (click)="onlyAnimateur.set('')" i18n="@@ouvertures.filtre.toutAfficher">Tout afficher</button>
+        </p>
+      }
+
       <div class="competences-legende">
         <span><i class="pastille niveau-debutant">{{ lettreNiveau('DEBUTANT') }}</i>{{ libelleNiveau('DEBUTANT') }}</span>
         <span><i class="pastille niveau-autonome">{{ lettreNiveau('AUTONOME') }}</i>{{ libelleNiveau('AUTONOME') }}</span>
         <span><i class="pastille niveau-referent">{{ lettreNiveau('REFERENT') }}</i>{{ libelleNiveau('REFERENT') }}</span>
         <span><i class="pastille cellule-souhait"></i><ng-container i18n="@@competences.legende.souhait">Typologie souhaitée par l'animateur</ng-container></span>
         <span><mat-icon class="legende-icone">all_inclusive</mat-icon><ng-container i18n="@@competences.legende.ninja">Typologie ninja : la détenir rend polyvalent</ng-container></span>
-        <span class="legende-clavier" i18n="@@competences.legende.clavier">Clic ou touches 0 à 3 dans une case, flèches pour se déplacer</span>
+        <span class="legende-clavier" i18n="@@competences.legende.clavier">Clic ou touches 0 à 3 dans une case, S ou le cœur pour le souhait, flèches pour se déplacer, Ctrl+V pour coller un bloc</span>
       </div>
 
       <div class="table-wrapper grille-defilement">
@@ -80,7 +87,7 @@
                   @if (typologie.ninja) {
                     <mat-icon class="ninja-icone" aria-hidden="true">all_inclusive</mat-icon>
                   }
-                  <span>{{ typologie.label || typologie.code || typologie.id }}</span>
+                  <a class="colonne-typologie-lien" routerLink="/typologies" [queryParams]="{ edit: typologie.id }">{{ typologie.label || typologie.code || typologie.id }}</a>
                   @if (typologie.label && typologie.code) {
                     <span class="visually-hidden"> ({{ typologie.code }})</span>
                   }
@@ -94,11 +101,11 @@
               }
             </tr>
           </thead>
-          <tbody>
+          <tbody (paste)="onPaste($event)">
             @for (animateur of lignes(); track animateur.id) {
-              <tr [class.ligne-modifiee]="animateursModifies().includes(animateur.id)">
+              <tr [class.ligne-modifiee]="lignesModifiees().includes(animateur.id)">
                 <th scope="row" class="colonne-animateur">
-                  <span class="animateur-nom">{{ animateur.prenom }} {{ animateur.nom }}</span>
+                  <a class="animateur-nom" [routerLink]="['/animateurs', animateur.id]">{{ animateur.prenom }} {{ animateur.nom }}</a>
                   <span class="animateur-id">{{ animateur.id }}</span>
                   <button matIconButton type="button" class="dupliquer-ligne"
                           [disabled]="editingLocked() || animateur.id === firstLigne()"
@@ -123,6 +130,12 @@
                             (focus)="focaliser(animateur.id, typologie.id)"
                             (keydown)="onKey($event, animateur.id, typologie.id)">
                       {{ lettreNiveau(niveau(animateur.id, typologie.id)) }}
+                    </button>
+                    <button type="button" class="souhait-toggle" tabindex="-1" [disabled]="editingLocked()"
+                            [attr.aria-pressed]="isWished(animateur.id, typologie.id)"
+                            [attr.aria-label]="souhaitLabel(animateur, typologie)" [title]="souhaitLabel(animateur, typologie)"
+                            (click)="basculerSouhait(animateur.id, typologie.id)">
+                      <mat-icon>{{ isWished(animateur.id, typologie.id) ? 'favorite' : 'favorite_border' }}</mat-icon>
                     </button>
                   </td>
                 }

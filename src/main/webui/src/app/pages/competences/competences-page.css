@@ -234,3 +234,42 @@
     margin-left: 0;
   }
 }
+
+/* The wish of a cell, toggled by its heart (or S on the cell): shown faint
+   until hovered or set, so a grid of a hundred rows is not a field of hearts. */
+.cellule-competence-cadre {
+  position: relative;
+}
+
+.souhait-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--mat-sys-on-surface-variant);
+  opacity: 0.25;
+  cursor: pointer;
+}
+
+.souhait-toggle mat-icon {
+  font-size: 0.85rem;
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+.souhait-toggle[aria-pressed='true'] {
+  color: var(--mat-sys-error);
+  opacity: 1;
+}
+
+.cellule-competence-cadre:hover .souhait-toggle {
+  opacity: 1;
+}
+
+.colonne-typologie-lien,
+.competences-grille .animateur-nom {
+  color: inherit;
+}

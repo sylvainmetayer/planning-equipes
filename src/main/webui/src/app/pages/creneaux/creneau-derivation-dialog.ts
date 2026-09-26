@@ -31,7 +31,6 @@ export interface DerivationDraft {
   dateFin: string;
   heureFermeture: string;
   dureeMinimaleMinutes: number;
-  remplacer: boolean;
 }
 
 /**
@@ -76,7 +75,6 @@ export class CreneauDerivationDialog {
     dateFin: this.data.dateFin ?? '',
     heureFermeture: '20:00',
     dureeMinimaleMinutes: 15,
-    remplacer: false,
   });
   protected readonly apercu = signal<RapportDerivation | null>(null);
   private readonly signatureApercu = signal<string | null>(null);
@@ -118,14 +116,16 @@ export class CreneauDerivationDialog {
     trierAnomalies(this.apercu()?.controle.anomalies ?? []),
   );
   protected readonly bloquee = computed(() => grilleBloquee(this.apercu()?.controle ?? null));
-  protected readonly peutEcrire = computed(
+  /** Replacing the grid needs a fresh preview with something in it — a verdict on the existing grid does not stop it. */
+  protected readonly peutRemplacer = computed(
     () =>
       this.apercuAJour() &&
-      !this.bloquee() &&
       (this.apercu()?.nombreGeneres ?? 0) > 0 &&
       !this.ecriture() &&
       !this.editingLocked(),
   );
+  /** Adding to the grid also needs the grid it would give to carry no error. */
+  protected readonly canWrite = computed(() => this.peutRemplacer() && !this.bloquee());
   protected readonly gridAnomalyIcon = gridAnomalyIcon;
 
   /** The cuts of one day, `10:00 (Bourse, Quiz et 3 autres)`, for the preview. */
@@ -148,14 +148,14 @@ export class CreneauDerivationDialog {
     this.draft.update((draft) => ({ ...draft, ...patch }));
   }
 
-  private requete(): DerivationRequest {
+  private request(remplacer: boolean): DerivationRequest {
     const draft = this.draft();
     return {
       dateDebut: draft.dateDebut,
       dateFin: draft.dateFin,
       heureFermeture: draft.heureFermeture,
       dureeMinimaleMinutes: Number(draft.dureeMinimaleMinutes),
-      remplacer: draft.remplacer,
+      remplacer,
     };
   }
 
@@ -165,7 +165,7 @@ export class CreneauDerivationDialog {
     }
     this.chargement.set(true);
     try {
-      const apercu = await this.creneauxApi.previewDerivation(this.requete());
+      const apercu = await this.creneauxApi.previewDerivation(this.request(false));
       this.apercu.set(apercu);
       void this.feries.load(apercu.creneaux.map((creneau) => creneau.date));
       this.signatureApercu.set(JSON.stringify(this.draft()));
@@ -176,11 +176,17 @@ export class CreneauDerivationDialog {
     }
   }
 
-  protected async ecrire(): Promise<void> {
-    if (!this.peutEcrire()) {
+  /**
+   * Writes the derived timeslots: added to the grid, or — after the preview,
+   * and on an explicit confirmation that says what goes with it — in place of
+   * the grid. Replacing is a destructive gesture, never a box ticked before
+   * anything was seen.
+   */
+  protected async write(remplacer = false): Promise<void> {
+    if (!(remplacer ? this.peutRemplacer() : this.canWrite())) {
       return;
     }
-    if (this.draft().remplacer) {
+    if (remplacer) {
       const confirme = await this.confirm.ask({
         title: $localize`:@@creneaux.derivation.remplacer.title:Remplacer la grille ?`,
         message: $localize`:@@creneaux.derivation.remplacer.confirm:Les créneaux actuels de l'édition seront remplacés par les créneaux dérivés, et le planning résolu sera effacé avec eux.`,
@@ -193,7 +199,7 @@ export class CreneauDerivationDialog {
     }
     this.ecriture.set(true);
     try {
-      const rapport = await this.creneauxApi.derive(this.requete());
+      const rapport = await this.creneauxApi.derive(this.request(remplacer));
       this.dialogRef.close(rapport);
     } catch (error) {
       this.crud.reportError(error);
