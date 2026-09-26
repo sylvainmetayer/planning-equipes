@@ -48,7 +48,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   fills it — `core/branding.ts` writes it as a pair, the configured colour on
   light and an OKLCH-lightened twin on dark, because it is a *text* colour on
   `--mat-sys-surface` in a dozen partials. Deliberately outside the switch: the
-  brand toolbar, the OpenStreetMap tiles of `/emplacements`, and the
+  brand toolbar, the OpenStreetMap tiles of the maps, and the
   server-side PDFs — see `docs/architecture.md`.
 - Shell: `app/app.ts` is a bare `<router-outlet/>`; the admin chrome
   (`mat-toolbar` + `mat-sidenav`, the solver `app-job-monitor`, the logout
@@ -123,7 +123,41 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   shortcuts of this browser, and « Date et heure simulées »
   (`pages/parametres/horloge-simulee-card`, over `PUT /api/horloge`), shown
   only where the server allows a simulated clock, which the toolbar's
-  hourglass links to; `?onglet=globaux`, its former name, is still read), `/stands`, `/emplacements`,
+  hourglass links to; `?onglet=globaux`, its former name, is still read),
+  `/stands` (« Stands » — two tabs chosen by `?onglet=`: the table, filtered
+  by `q` and by the `?typologie=` and `?emplacement=` chips, every column
+  sorted by `?sort=&dir=`, a name — or Entrée — leading to the fiche with
+  that sort, a game category to `/typologies`, a location to the other tab,
+  « Ouvert » the open days and seats read from the openings report and, once
+  a plan holds somebody, « Couverture »; « Ajouter » the guided creation
+  `stand-creation-dialog.ts` over the pure `stand-creation.ts`, whose last step
+  writes the stand's row through the Horaires des stands grid's save — a
+  failure of that second call keeping the stand, a retry sending the hours
+  alone —, « Édition groupée » the bulk edit of the ticked stands or else of
+  the rows shown, « Saisir en grille », « Importer la grille » and « Compacter
+  les horaires » in a « Plus » menu, and « Dupliquer » the stand form on a
+  copy; and `?onglet=lieux`, « Lieux », the
+  former `/emplacements` — the `pages/emplacements` component drawn in a
+  `@defer`, a map of every located place drawn by `lieux-map.ts`, whose
+  dragged marker saves the position with no dialog, a sorted table with the
+  stands attached. The two tables write the same `q`, `sort` and `dir`, each
+  only while it is on screen (`viewParams` of `core/reference-table-page.ts`);
+  the page follows `queryParamMap`, a link to the Lieux tab from the table
+  reusing it. `?edit=<id>` is sent by the route's `standEditToFiche` guard —
+  run again on a query-only change (`runGuardsAndResolvers`) — to
+  `/stands/<id>?modifier=1`, the Lieux tab keeping its own `edit`),
+  `/stands/:id` (« Fiche stand » — the
+  head of one stand, « Modifier l'identité » the stand form cut down to its
+  identity, `?modifier=1` opening it on arrival; its grid day × timeslot edited
+  in place in `stand-grid-editor.ts` over the pure `stand-grid.ts`, built on
+  `pages/ouvertures/grille-horaires.ts` and saved by the same body as the
+  Horaires des stands grid — the route's `canDeactivate` asks before unsaved
+  cells are dropped —; its opening anomalies; its seats after a solve, an
+  empty one opened in the Siège panel of the Journée; « Comparer avec… »; its
+  history; « Règles », folded, the condensed form, and the whole stand form
+  behind « Modifier les règles ». « précédent / suivant » walk the table in
+  the order of its `?sort=`, over the pure `pages/stands/stand-order.ts` the
+  table reads too),
   `/animateurs` (every name a link to the fiche, Entrée on a row too,
   carrying the list's view — `q`, `sort`/`dir`, the acknowledgement,
   category, wish, minor and manager filters — in the fiche's URL; the
@@ -297,7 +331,8 @@ and `?dosage=` in the URL), `/comparateur`
   `/export-csv` and `/validateur-yaml` redirect to `/fichiers` with their
   params; `/data-transfer` and `/data-setup` are
   legacy redirects too, `/decoupage` now landing on `/creneaux` since the
-  slicing was removed, kept for old bookmarks/links; so is `/timeline`, the
+  slicing was removed, kept for old bookmarks/links; so are `/emplacements`,
+  landing on `/stands?onglet=lieux` with its params, and `/timeline`, the
   former « Timeline animateur » — `?animateur=X` lands on
   `/animateurs/X?section=timeline`, no person on `/animateurs` —, and so
   are the eight former screens `/day-calendar`, `/rail-jour`, `/carte-jour`,
@@ -501,7 +536,8 @@ and `?dosage=` in the URL), `/comparateur`
   + its CLI + Angular Material + `@angular/localize` (the stack proper);
   `@sentry/angular` (error reporting, loaded by a dynamic `import()` only when a
   DSN is configured — see `core/observability.ts`); `leaflet` + `@types/leaflet`
-  (the maps, reached only by the lazy `/emplacements` and `/graphe` routes and
+  (the maps, reached only by the `@defer` of the Lieux tab of `/stands`, by
+  the location form a stand form loads with `import()`, by the lazy `/graphe` route and
   by the `@defer` block of `/journee` around its map rendering — it is a
   150 kB chunk of its own and **must stay out of the initial bundle** and out
   of the chunk of the three other renderings of the day, so nothing eagerly

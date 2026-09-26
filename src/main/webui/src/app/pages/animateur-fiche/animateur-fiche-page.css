@@ -1,29 +1,7 @@
 /* Fiche animateur: a head of actions, then seven foldable sections, each a native <details> so the
    keyboard and the screen reader get the disclosure for free. */
 
-.fiche-section {
-  border-top: 1px solid var(--mat-sys-outline-variant);
-  padding: 0.5rem 0 0.75rem;
-}
-
-.fiche-section > summary {
-  cursor: pointer;
-  list-style-position: outside;
-}
-
-.fiche-section > summary h2 {
-  display: inline;
-  font: var(--mat-sys-title-medium);
-  color: var(--app-accent);
-}
-
-.fiche-section h3 {
-  font: var(--mat-sys-title-small);
-  margin: 1rem 0 0.25rem;
-}
-
-.fiche-introuvable,
-.fiche-alerte {
+.fiche-introuvable {
   color: var(--mat-sys-error);
 }
 
@@ -88,11 +66,6 @@
 /* A seat already started: still listed, dimmed. */
 .fiche-passe {
   opacity: 0.55;
-}
-
-.fiche-liste {
-  margin: 0.25rem 0;
-  padding-left: 1.25rem;
 }
 
 .fiche-severite {

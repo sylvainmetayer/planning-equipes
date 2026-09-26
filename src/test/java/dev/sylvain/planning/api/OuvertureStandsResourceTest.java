@@ -152,6 +152,130 @@ class OuvertureStandsResourceTest {
     }
 
     /**
+     * The fiche stand saves one stand's row alone, where Ouvertures › Saisir
+     * sends every stand it shows: both must leave the same openings behind —
+     * that stand's row as typed, and every other row as it was.
+     */
+    @Test
+    void aStandSavedAloneFromItsFicheLeavesTheSameOpeningsAsTheWholeGrid() {
+        seedScenario();
+        JsonPath avant = readOpenings();
+        String standId = avant.getString("stands[0].standId");
+        // Ids are drawn anew by every import: a stand is followed by its name.
+        String standNom = avant.getString("stands[0].nom");
+
+        given().contentType("application/json")
+                .body(Map.of("stands", List.of(Map.of("standId", standId, "cellules", cellsClosedOnFirst(avant)))))
+                .when()
+                .put("/api/ouvertures-stands/grille")
+                .then()
+                .statusCode(200);
+        JsonPath seul = readOpenings();
+
+        seedScenario();
+        JsonPath relu = readOpenings();
+        List<Map<String, Object>> tous = new java.util.ArrayList<>();
+        int nombreStands = relu.getList("stands").size();
+        for (int index = 0; index < nombreStands; index++) {
+            boolean saisi = standNom.equals(relu.getString("stands[" + index + "].nom"));
+            tous.add(Map.of(
+                    "standId",
+                    relu.getString("stands[" + index + "].standId"),
+                    "cellules",
+                    saisi ? cellsClosedOnFirst(relu) : cellsAsRead(relu, index)));
+        }
+        given().contentType("application/json")
+                .body(Map.of("stands", tous))
+                .when()
+                .put("/api/ouvertures-stands/grille")
+                .then()
+                .statusCode(200);
+        JsonPath grille = readOpenings();
+
+        assertThat(openingsOf(seul)).isEqualTo(openingsOf(grille));
+        assertThat(seul.getInt("postesTotal")).isEqualTo(grille.getInt("postesTotal"));
+        // The stand's row moved, and the other rows are those its save found.
+        Map<String, List<Object>> apresSeul = openingsOf(seul);
+        assertThat(apresSeul.get(standNom)).isNotEqualTo(openingsOf(avant).get(standNom));
+        openingsOf(avant).forEach((nom, cellules) -> {
+            if (!nom.equals(standNom)) {
+                assertThat(apresSeul.get(nom)).as(nom).isEqualTo(cellules);
+            }
+        });
+    }
+
+    private static JsonPath readOpenings() {
+        return given().when()
+                .get("/api/ouvertures-stands")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
+    }
+
+    /** Closed on the first timeslot, three people on every other one. */
+    private static List<Map<String, Object>> cellsClosedOnFirst(JsonPath rapport) {
+        List<Integer> creneauIds = rapport.getList("jours.creneaux.id.flatten()", Integer.class).stream()
+                .distinct()
+                .toList();
+        List<Map<String, Object>> cellules = new java.util.ArrayList<>();
+        for (int index = 0; index < creneauIds.size(); index++) {
+            Map<String, Object> cellule = new java.util.LinkedHashMap<>();
+            cellule.put("creneauId", creneauIds.get(index));
+            cellule.put("effectif", index == 0 ? null : 3);
+            cellules.add(cellule);
+        }
+        return cellules;
+    }
+
+    /**
+     * One stand's cells as the grid read them, the way the Saisir screen sends
+     * a row: each with its column's bounds, since a timeslot a stand's windows
+     * cut is several columns.
+     */
+    private static List<Map<String, Object>> cellsAsRead(JsonPath rapport, int standIndex) {
+        Map<String, Map<String, Object>> colonnes = new java.util.HashMap<>();
+        List<Map<String, Object>> joursGrille = rapport.getList("jours");
+        for (Map<String, Object> jour : joursGrille) {
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> creneaux = (List<Map<String, Object>>) jour.get("creneaux");
+            for (Map<String, Object> colonne : creneaux) {
+                colonnes.put(jour.get("date") + "#" + colonne.get("id") + "#" + colonne.get("tranche"), colonne);
+            }
+        }
+        List<Map<String, Object>> cellules = new java.util.ArrayList<>();
+        List<Map<String, Object>> jours = rapport.getList("stands[" + standIndex + "].jours");
+        for (Map<String, Object> jour : jours) {
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> creneaux = (List<Map<String, Object>>) jour.get("creneaux");
+            for (Map<String, Object> cellule : creneaux) {
+                Map<String, Object> colonne =
+                        colonnes.get(jour.get("date") + "#" + cellule.get("creneauId") + "#" + cellule.get("tranche"));
+                Map<String, Object> saisie = new java.util.LinkedHashMap<>();
+                saisie.put("creneauId", cellule.get("creneauId"));
+                saisie.put(
+                        "heureDebut", String.valueOf(colonne.get("heureDebut")).substring(0, 5));
+                saisie.put("heureFin", String.valueOf(colonne.get("heureFin")).substring(0, 5));
+                saisie.put("effectif", cellule.get("effectif"));
+                cellules.add(saisie);
+            }
+        }
+        return cellules;
+    }
+
+    /** Each stand's effective headcounts, cell by cell and by name: what a solve would be given. */
+    private static Map<String, List<Object>> openingsOf(JsonPath rapport) {
+        Map<String, List<Object>> parStand = new java.util.TreeMap<>();
+        int nombreStands = rapport.getList("stands").size();
+        for (int index = 0; index < nombreStands; index++) {
+            parStand.put(
+                    rapport.getString("stands[" + index + "].nom"),
+                    rapport.getList("stands[" + index + "].jours.creneaux.effectif.flatten()"));
+        }
+        return parStand;
+    }
+
+    /**
      * The grid rewrites a stand's whole schedule, so it carries the same
      * precondition as its fiche (issue #362): a stand written since the grid
      * was read is refused alone, and nothing of it is written.

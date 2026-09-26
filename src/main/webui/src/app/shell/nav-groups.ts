@@ -169,11 +169,19 @@ export function buildNavGroups(): NavGroup[] {
           shortcut: 'c',
         },
         {
-          path: '/emplacements',
-          label: $localize`:@@nav.link.emplacements:Emplacements`,
-          icon: 'place',
+          path: '/stands',
+          label: $localize`:@@nav.link.stands:Stands`,
+          icon: 'storefront',
+          // The locations became a tab of the stands, map included.
+          tabs: [
+            tab(
+              'onglet',
+              'lieux',
+              $localize`:@@stands.onglet.lieuxCourt:Lieux`,
+              $localize`:@@nav.keywords.lieux:emplacements carte`,
+            ),
+          ],
         },
-        { path: '/stands', label: $localize`:@@nav.link.stands:Stands`, icon: 'storefront' },
         {
           path: '/ouvertures',
           label: $localize`:@@nav.link.ouvertures:Horaires des stands`,

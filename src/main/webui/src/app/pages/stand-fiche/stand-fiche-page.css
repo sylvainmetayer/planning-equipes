@@ -1,0 +1,112 @@
+/* Fiche stand: the head of a stand, its grid day × timeslot edited in place,
+   then what the openings and the plan say of it. */
+
+.stand-fiche-fil {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 1rem;
+  font: var(--mat-sys-body-medium);
+}
+
+.stand-fiche-voisin {
+  display: inline-flex;
+  align-items: center;
+}
+
+.stand-fiche-actions {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.stand-fiche-comparer {
+  width: 16rem;
+  max-width: 100%;
+}
+
+.stand-fiche-introuvable {
+  color: var(--mat-sys-error);
+}
+
+/* The grid of the stand: a day per line, a window per column. */
+.stand-grille-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin: 0.5rem 0;
+}
+
+.stand-grille-modifie {
+  font: var(--mat-sys-label-large);
+  color: var(--mat-sys-tertiary);
+}
+
+.stand-grille-defilement {
+  overflow-x: auto;
+}
+
+.stand-grille {
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.stand-grille th,
+.stand-grille td {
+  padding: 0.15rem 0.5rem 0.15rem 0;
+  text-align: left;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  white-space: nowrap;
+}
+
+.stand-grille thead th {
+  font: var(--mat-sys-label-large);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.stand-grille-jour {
+  font-weight: 500;
+}
+
+.stand-grille-type {
+  font-weight: 400;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.stand-grille-ferie .stand-grille-jour {
+  color: var(--mat-sys-tertiary);
+}
+
+.stand-grille-case {
+  width: 3.25rem;
+  padding: 0.25rem;
+  font: inherit;
+  text-align: center;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-extra-small);
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+}
+
+.stand-grille-case-modifiee {
+  border-color: var(--mat-sys-tertiary);
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+}
+
+/* A cell whose stretches cover part of the column only: kept as they are unless retyped. */
+.stand-grille-case-partielle {
+  border-style: dashed;
+}
+
+.stand-grille-absent {
+  display: inline-block;
+  width: 3.25rem;
+  text-align: center;
+  color: var(--mat-sys-outline);
+}
+
+.stand-grille-apercu {
+  color: var(--mat-sys-on-surface-variant);
+}

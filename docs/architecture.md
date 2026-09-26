@@ -418,10 +418,14 @@ sans qu'on ait pensé à l'y inscrire.
 
 ### `leaflet` reste hors du bundle initial
 
-Trois écrans affichent une carte — `/emplacements` (saisie d'un point),
-`/graphe` (le même sélecteur en lecture seule) et le rendu « Carte » de
-`/journee` (le rejeu d'une journée, dans un bloc `@defer` de la page pour que
-les trois autres rendus ne l'embarquent pas). Tous trois sont en lazy loading, et `leaflet` pèse à lui seul un
+Trois écrans affichent une carte — l'onglet « Lieux » de `/stands` (tous les
+lieux, un marqueur déplacé à la souris enregistrant sa position, et la saisie
+d'un point dans le formulaire d'un lieu — le tout dans un bloc `@defer`, pour
+que le tableau des stands ne l'embarque pas, et le formulaire d'un lieu chargé
+par un `import()` quand un stand propose « Nouveau lieu… »), `/graphe` (le
+sélecteur en lecture seule) et le rendu « Carte » de `/journee` (le rejeu
+d'une journée, dans un bloc `@defer` de la page pour que les trois autres
+rendus ne l'embarquent pas). Tous trois sont en lazy loading, et `leaflet` pèse à lui seul un
 morceau de 150 ko : **rien de chargé au démarrage ne doit l'importer**, sinon
 ce poids passe dans le bundle initial de tout le monde, y compris de la page de
 connexion. Ce qu'elles partagent — les tuiles OpenStreetMap, leur attribution,

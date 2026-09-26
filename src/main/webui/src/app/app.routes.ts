@@ -3,6 +3,7 @@ import { CanActivateFn, Params, RedirectFunction, Router, Routes } from '@angula
 import { TODAY_ANCHOR } from './core/date-mock.service';
 import type { CompetencesPage } from './pages/competences/competences-page';
 import { retiredOpeningsViews } from './pages/ouvertures/vues-retirees';
+import type { StandFichePage } from './pages/stand-fiche/stand-fiche-page';
 
 /**
  * One route per functional block; every page is lazy-loaded. A `title` names
@@ -96,6 +97,25 @@ export function timelineToFiche(queryParams: Params): string {
   const id = typeof animateur === 'string' ? animateur.trim() : '';
   return id ? `/animateurs/${encodeURIComponent(id)}?section=timeline` : '/animateurs';
 }
+
+/**
+ * `/stands?edit=S1` — the eight links that name a stand to fix (a problem, a
+ * warning, the combined calendar…): the stand has a page of its own, which
+ * the link opens with its identity form. The locations tab keeps its own
+ * `edit`, which names a location.
+ */
+export function standEditToFicheUrl(queryParams: Params): string | null {
+  const edit = queryParams['edit'];
+  if (typeof edit !== 'string' || edit.trim() === '' || queryParams['onglet'] === 'lieux') {
+    return null;
+  }
+  return `/stands/${encodeURIComponent(edit.trim())}?modifier=1`;
+}
+
+export const standEditToFiche: CanActivateFn = (route) => {
+  const url = standEditToFicheUrl(route.queryParams);
+  return url ? inject(Router).parseUrl(url) : true;
+};
 
 /**
  * `/equite?vue=fiche&animateur=X`: the « Fiche » reading of the Équité screen
@@ -319,13 +339,21 @@ const adminRoutes: Routes = [
     path: 'stands',
     title: () => $localize`:@@route.stands:Stands`,
     loadComponent: () => import('./pages/stands/stands-page').then((m) => m.StandsPage),
+    canActivate: [standEditToFiche],
+    // A « Voir la fiche » link names `?edit=` while the table is on screen: a
+    // query-only change, on which the guard must run again to open the fiche.
+    runGuardsAndResolvers: 'paramsOrQueryParamsChange',
   },
   {
-    path: 'emplacements',
-    title: () => $localize`:@@route.emplacements:Emplacements`,
+    path: 'stands/:id',
+    title: () => $localize`:@@route.standFiche:Fiche stand`,
     loadComponent: () =>
-      import('./pages/emplacements/emplacements-page').then((m) => m.EmplacementsPage),
+      import('./pages/stand-fiche/stand-fiche-page').then((m) => m.StandFichePage),
+    // Unsaved cells of its grid would vanish with the page: it asks first.
+    canDeactivate: [(page: StandFichePage) => page.canLeave()],
   },
+  // The locations became the « Lieux » tab of the Stands page, map included.
+  { path: 'emplacements', redirectTo: redirectToOnglet('stands', 'lieux') },
   {
     path: 'animateurs',
     title: () => $localize`:@@route.animateurs:Animateurs`,

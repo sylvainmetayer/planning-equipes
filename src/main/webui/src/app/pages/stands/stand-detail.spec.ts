@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { Stand, TypologieItem } from '../../core/models';
-import { buildStandDetail } from './stand-detail';
+import { AnomalieOuverture, Stand } from '../../core/models';
+import { anomalyLabel, scheduleRows } from './stand-detail';
 
 function stand(overrides: Partial<Stand> = {}): Stand {
   return {
@@ -20,43 +20,13 @@ function stand(overrides: Partial<Stand> = {}): Stand {
   };
 }
 
-function rowValue(
-  sections: ReturnType<typeof buildStandDetail>,
-  label: string,
-): string | undefined {
-  return sections.flatMap((section) => section.rows).find((row) => row.label === label)?.value;
+function rowValue(rows: ReturnType<typeof scheduleRows>, label: string): string | undefined {
+  return rows.find((row) => row.label === label)?.value;
 }
 
-describe('buildStandDetail', () => {
-  it('resolves typologie ids to their human label', () => {
-    const typologies: TypologieItem[] = [{ id: 'ENF', label: 'Enfance', ninja: false }];
-    const sections = buildStandDetail(stand({ typologiesProposees: ['ENF', 'DIV'] }), typologies);
-
-    const chips = sections.flatMap((section) => section.rows).find((row) => row.chips)?.chips;
-    // Unknown ids fall back to the id itself rather than disappearing.
-    expect(chips).toEqual(['Enfance', 'DIV']);
-  });
-
-  it('spells out an absent emplacement instead of leaving the row blank', () => {
-    const sections = buildStandDetail(stand());
-
-    const row = sections.flatMap((section) => section.rows).find((r) => r.label === 'Emplacement');
-    expect(row?.value).toBe('Aucun');
-    expect(row?.muted).toBe(true);
-  });
-
-  it('shows the emplacement with its coordinates when it is geocoded', () => {
-    const sections = buildStandDetail(
-      stand({
-        emplacement: { id: 'PLACE', nom: 'Place du Drapeau', latitude: 46.6487, longitude: 2.2503 },
-      }),
-    );
-
-    expect(rowValue(sections, 'Emplacement')).toBe('Place du Drapeau (46.64870, 2.25030)');
-  });
-
+describe('scheduleRows', () => {
   it('spells out each recurring rule: mode, days and windows', () => {
-    const sections = buildStandDetail(
+    const sections = scheduleRows(
       stand({
         horaires: [
           {
@@ -95,7 +65,7 @@ describe('buildStandDetail', () => {
   });
 
   it('names the weekdays of a JOURS_SEMAINE rule', () => {
-    const sections = buildStandDetail(
+    const sections = scheduleRows(
       stand({
         horaires: [
           {
@@ -117,7 +87,7 @@ describe('buildStandDetail', () => {
   });
 
   it('lists each dated exception with its window and reason', () => {
-    const sections = buildStandDetail(
+    const sections = scheduleRows(
       stand({
         ouvertures: [
           { id: 1, date: '2026-07-08', heureDebut: '20:00', heureFin: null, motif: 'Nocturne' },
@@ -133,7 +103,7 @@ describe('buildStandDetail', () => {
   });
 
   it('shows the seats a dated opening names, next to its window', () => {
-    const sections = buildStandDetail(
+    const sections = scheduleRows(
       stand({
         effectifMin: 1,
         ouvertures: [
@@ -158,7 +128,7 @@ describe('buildStandDetail', () => {
   });
 
   it('summarises how many rules and exceptions the stand carries', () => {
-    const sections = buildStandDetail(
+    const sections = scheduleRows(
       stand({
         ouvertures: [
           { id: 1, date: '2026-07-08', heureDebut: '10:00', heureFin: '12:00', motif: null },
@@ -172,81 +142,33 @@ describe('buildStandDetail', () => {
 
     expect(rowValue(sections, 'Horaires')).toBe('3 exception(s)');
   });
+});
 
-  // Two windows without effect on the same day give two rows sharing a label:
-  // tracked on it, one of the two would be dropped instead of shown.
-  it('keeps both anomalies of a day rather than folding them into one row', () => {
-    const anomalie = (heures: string) => ({
-      type: 'FENETRE_SANS_EFFET' as const,
-      standId: 'S1',
-      standNom: 'Stand',
-      date: '2027-07-12',
-      message: `Fenêtre ${heures} hors de tout créneau`,
-    });
-
-    const section = buildStandDetail(
-      stand({}),
-      [],
-      [anomalie('07:00-08:00'), anomalie('22:00-23:00')],
-    ).find((s) => s.title === 'Ouvertures effectives')!;
-
-    expect(section.rows).toHaveLength(2);
-    expect(section.rows.map((row) => row.label)).toEqual(['12/07', '12/07']);
+describe('anomalyLabel', () => {
+  const anomaly = (partial: Partial<AnomalieOuverture>): AnomalieOuverture => ({
+    type: 'FENETRE_SANS_EFFET',
+    standId: 'S1',
+    standNom: 'Stand',
+    date: '2027-07-12',
+    message: 'Fenêtre 07:00-08:00 hors de tout créneau',
+    ...partial,
   });
 
-  // The openings analysis, read on the fiche: a window at an hour the grid
-  // does not have is the mistake a hand-typed schedule makes and never sees.
-  it("lists the stand's opening anomalies in the error colour, and says « aucune » once the report is in", () => {
-    const avec = buildStandDetail(
-      stand({}),
-      [],
-      [
-        {
-          type: 'FENETRE_SANS_EFFET',
-          standId: 'S1',
-          standNom: 'Stand',
-          date: '2027-07-12',
-          message: 'Fenêtre 07:00-08:00 hors de tout créneau',
-        },
-      ],
-    );
-    const section = avec.find((s) => s.title === 'Ouvertures effectives')!;
-    expect(section.rows).toEqual([
-      { label: '12/07', value: 'Fenêtre 07:00-08:00 hors de tout créneau', alerte: true },
-    ]);
-
-    const sans = buildStandDetail(stand({}), [], []);
-    expect(sans.find((s) => s.title === 'Ouvertures effectives')!.rows[0]).toMatchObject({
-      muted: true,
-    });
-    // No report yet: no section, rather than a false « aucune ».
-    expect(buildStandDetail(stand({}), []).some((s) => s.title === 'Ouvertures effectives')).toBe(
-      false,
+  it('names a dated anomaly by its day, and an undated one by the whole edition', () => {
+    expect(anomalyLabel(anomaly({}))).toBe('12/07');
+    expect(anomalyLabel(anomaly({ type: 'STAND_JAMAIS_OUVERT', date: null }))).toBe(
+      "Toute l'édition",
     );
   });
 
-  // How the rules are written is said beside the other anomalies, named by its
-  // kind rather than a day, and never in the error colour: saving stays possible.
-  it('lists the rule overlaps by kind and for information only', () => {
-    const section = buildStandDetail(
-      stand({}),
-      [],
-      [
-        {
-          type: 'REGLES_CHEVAUCHANTES',
-          standId: 'S1',
-          standNom: 'Stand',
-          date: null,
-          message: 'Deux règles se recouvrent',
-          horaireId: 7,
-        },
-        { type: 'REGLE_MASQUEE', standId: 'S1', standNom: 'Stand', date: null, message: 'Masquée' },
-      ],
-    ).find((s) => s.title === 'Ouvertures effectives')!;
-
-    expect(section.rows).toEqual([
-      { label: 'Règles qui se recouvrent', value: 'Deux règles se recouvrent', alerte: false },
-      { label: 'Règle sans effet', value: 'Masquée', alerte: false },
-    ]);
+  // How the rules are written is named by its kind rather than a day.
+  it('names the rule overlaps by their kind', () => {
+    expect(anomalyLabel(anomaly({ type: 'REGLES_CHEVAUCHANTES', date: null }))).toBe(
+      'Règles qui se recouvrent',
+    );
+    expect(anomalyLabel(anomaly({ type: 'REGLE_MASQUEE', date: null }))).toBe('Règle sans effet');
+    expect(anomalyLabel(anomaly({ type: 'FENETRES_CHEVAUCHANTES' }))).toBe(
+      'Fenêtres qui se recouvrent, 12/07',
+    );
   });
 });

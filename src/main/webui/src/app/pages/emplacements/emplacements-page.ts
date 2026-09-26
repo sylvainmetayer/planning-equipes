@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ViewEncapsulation,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -18,6 +25,9 @@ import {
   WalkingSettings,
 } from '../../core/distance';
 import { Emplacement } from '../../core/models';
+import { compareNatural } from '../../core/table-sort';
+import { currentViewParams, readSort } from '../../core/view-query-params';
+import { LieuMarker, LieuMove, LieuxMap } from './lieux-map';
 import { PasteColumn } from '../../core/paste-rows';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
 import { EmptyState } from '../../shared/empty-state';
@@ -36,10 +46,15 @@ import { ImportButton } from '../../shared/import-button';
 const SEUIL_ELOIGNEMENT_METRES = 300;
 
 /**
- * Emplacements CRUD: named, GPS-located places a stand can be tied to.
+ * The « Lieux » tab of the Stands page (`/stands?onglet=lieux`, the former
+ * `/emplacements`): named, GPS-located places a stand can be tied to.
  *
- * Rows are multi-selectable, for a bulk delete or to put several places on the
- * same GPS point at once.
+ * A map of every located place, its stands in the tooltip, where a marker
+ * dragged elsewhere saves the new position at once — no dialog. Below, the
+ * table, every column sortable, with the stands standing on each place. Rows
+ * are multi-selectable, for a bulk delete or to put several places on the
+ * same GPS point at once. Drawn inside the tab's `@defer`: the map pulls
+ * Leaflet, which the Stands table's chunk must not carry.
  *
  * Everything shared with the other referential tables is in
  * {@link ReferenceTablePage}; what is below is what this one does differently.
@@ -63,8 +78,12 @@ const SEUIL_ELOIGNEMENT_METRES = 300;
     RowWarning,
     TableFilter,
     GelNotice,
+    LieuxMap,
   ],
   templateUrl: './emplacements-page.html',
+  styleUrl: './emplacements-page.css',
+  // Global by design (AGENTS.md): loaded with the tab, unscoped like a partial.
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
@@ -74,12 +93,57 @@ export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
     () => this.editingLocked() || this.gel.isFrozen('TYPOLOGIES_EMPLACEMENTS'),
   );
 
-  protected readonly columns = ['select', 'id', 'code', 'nom', 'coordonnees', 'voisin', 'actions'];
+  protected readonly columns = [
+    'select',
+    'id',
+    'code',
+    'nom',
+    'stands',
+    'coordonnees',
+    'voisin',
+    'actions',
+  ];
+
+  /** Each place's stands, by name: the column, the map's tooltips and the sort read it. */
+  protected readonly standsByLocation = computed(() => {
+    const byLocation = new Map<string, string[]>();
+    for (const stand of this.store.stands()) {
+      const lieu = stand.emplacement?.id;
+      if (lieu) {
+        byLocation.set(lieu, [...(byLocation.get(lieu) ?? []), stand.nom || stand.id]);
+      }
+    }
+    for (const noms of byLocation.values()) {
+      noms.sort(compareNatural);
+    }
+    return byLocation;
+  });
+
+  /** The located places, as the map draws them. */
+  protected readonly markers = computed<LieuMarker[]>(() =>
+    this.store
+      .emplacements()
+      .filter((emplacement) => emplacement.latitude != null && emplacement.longitude != null)
+      .map((emplacement) => ({
+        id: emplacement.id,
+        nom: emplacement.nom || emplacement.id,
+        latitude: emplacement.latitude!,
+        longitude: emplacement.longitude!,
+        stands: this.standsByLocation().get(emplacement.id) ?? [],
+      })),
+  );
+  /** Places the map cannot draw: no coordinates yet. */
+  protected readonly unlocated = computed(
+    () => this.store.emplacements().length - this.markers().length,
+  );
 
   /** The template names the rows after the entity, as the other pages do. */
   protected readonly emplacementsFiltres = this.lignesFiltrees;
 
   constructor() {
+    // The address bar as it is now, not the router's snapshot: this tab is
+    // created and destroyed as the reader moves between the page's tabs.
+    const params = currentViewParams();
     // Read by the detail's walking times: the defaults until the edition's own
     // settings arrive, and for good if they cannot be read.
     const walking = signal<WalkingSettings>(WALKING_DEFAULTS);
@@ -119,6 +183,7 @@ export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
         id: (emplacement) => emplacement.id,
         code: (emplacement) => emplacement.code,
         nom: (emplacement) => emplacement.nom,
+        stands: (emplacement) => this.standsByLocation().get(emplacement.id)?.length ?? 0,
         coordonnees: (emplacement) => emplacement.latitude,
         voisin: (emplacement) => this.voisins().get(emplacement.id)?.metres,
       },
@@ -132,6 +197,10 @@ export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
           },
           { title: $localize`:@@common.nom:Nom`, value: (emplacement) => emplacement.nom },
           {
+            title: $localize`:@@lieux.column.stands:Stands rattachés`,
+            value: (emplacement) => this.standsByLocation().get(emplacement.id) ?? [],
+          },
+          {
             title: $localize`:@@emplacements.field.latitude:Latitude`,
             value: (emplacement) => emplacement.latitude,
           },
@@ -140,7 +209,7 @@ export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
             value: (emplacement) => emplacement.longitude,
           },
           {
-            title: $localize`:@@emplacements.column.voisin:Emplacement le plus proche`,
+            title: $localize`:@@lieux.column.voisin:Lieu le plus proche`,
             value: (emplacement) => this.voisinLePlusProche(emplacement),
           },
         ],
@@ -170,6 +239,9 @@ export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
         });
       },
     });
+    // A link naming a place (the stand fiche's location) lands filtered on it.
+    this.filtre.set(params.get('q') ?? '');
+    this.sort.set(readSort(params));
     const constraintsApi = inject(ConstraintsApi);
     void (async () => {
       try {
@@ -181,6 +253,28 @@ export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
         // The defaults stay: a walking time slightly off beats no walking time.
       }
     })();
+  }
+
+  /** Bumped when a dragged marker's position could not be saved: the map lays it back. */
+  protected readonly mapRevision = signal(0);
+
+  /** A marker dropped elsewhere: the place's new position, saved at once — no dialog. */
+  protected async move(move: LieuMove): Promise<void> {
+    const emplacement = this.store.emplacements().find((each) => each.id === move.id);
+    if (!emplacement) {
+      return;
+    }
+    const saved = await this.crud.save(
+      'emplacements',
+      { ...emplacement, latitude: move.latitude, longitude: move.longitude },
+      emplacement.id,
+      $localize`:@@emplacements.entityLabel:Emplacement`,
+      { text: emplacement.nom || emplacement.id },
+    );
+    if (!saved) {
+      // Refused: the marker goes back where the place still is.
+      this.mapRevision.update((revision) => revision + 1);
+    }
   }
 
   protected coordonneesLabel(emplacement: Emplacement): string {

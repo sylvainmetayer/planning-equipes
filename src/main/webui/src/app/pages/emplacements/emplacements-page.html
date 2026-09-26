@@ -1,9 +1,13 @@
-<mat-card appearance="outlined" class="page-card">
+<mat-card appearance="outlined" class="page-card lieux-onglet">
   <mat-card-header>
-    <h1 mat-card-title i18n="@@emplacements.list.title">Emplacements ({{ store.emplacements().length }})</h1>
+    <h2 mat-card-title i18n="@@lieux.list.title">Lieux ({{ store.emplacements().length }})</h2>
   </mat-card-header>
   <mat-card-content>
     <app-gel-notice family="TYPOLOGIES_EMPLACEMENTS" />
+    <app-lieux-map [lieux]="markers()" [disabled]="editingLocked()" [revision]="mapRevision()" (moved)="move($event)" />
+    @if (unlocated() > 0) {
+      <p class="lieux-sans-position" i18n="@@lieux.carte.sansPosition">{{ unlocated() }} lieu(x) sans position ne figurent pas sur la carte : ouvrez-les pour la poser.</p>
+    }
   </mat-card-content>
   <mat-card-actions class="card-actions">
     <!-- On an empty referential the empty state below carries « Ajouter » and
@@ -36,7 +40,7 @@
     <p class="referentiel-collage-hint" i18n="@@referentiel.collageHint">Collez un bloc copié d'un tableur sur une ligne (Ctrl+V) : un aperçu montre les cases modifiées avant d'enregistrer.</p>
     <table mat-table [dataSource]="emplacementsFiltres()" [trackBy]="trackById" matSort [matSortActive]="sort().active"
            [matSortDirection]="sort().direction" (matSortChange)="sort.set($event)" (paste)="onPaste($event)">
-      <caption class="visually-hidden" i18n="@@emplacements.table.caption">Emplacements du référentiel : identifiant, code, nom, coordonnées et actions</caption>
+      <caption class="visually-hidden" i18n="@@lieux.table.caption">Lieux du référentiel : identifiant, code, nom, stands rattachés, coordonnées et actions</caption>
       <ng-container matColumnDef="select">
         <th mat-header-cell scope="col" *matHeaderCellDef>
           <mat-checkbox i18n-aria-label="@@bulk.selectAll" aria-label="Tout sélectionner"
@@ -64,12 +68,22 @@
           <app-row-warning [messages]="warnings(emplacement)" />
         </td>
       </ng-container>
+      <ng-container matColumnDef="stands">
+        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@lieux.column.stands">Stands rattachés</th>
+        <td mat-cell *matCellDef="let emplacement">
+          @for (nom of standsByLocation().get(emplacement.id) ?? []; track $index; let last = $last) {
+            {{ nom }}@if (!last) {, }
+          } @empty {
+            —
+          }
+        </td>
+      </ng-container>
       <ng-container matColumnDef="coordonnees">
         <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@emplacements.column.coordonnees">Coordonnées</th>
         <td mat-cell *matCellDef="let emplacement">{{ coordonneesLabel(emplacement) }}</td>
       </ng-container>
       <ng-container matColumnDef="voisin">
-        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@emplacements.column.voisin">Emplacement le plus proche</th>
+        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@lieux.column.voisin">Lieu le plus proche</th>
         <td mat-cell *matCellDef="let emplacement">{{ voisinLePlusProche(emplacement) || '—' }}</td>
       </ng-container>
       <ng-container matColumnDef="actions" stickyEnd>

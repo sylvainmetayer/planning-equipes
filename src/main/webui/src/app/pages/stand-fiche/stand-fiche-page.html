@@ -1,0 +1,154 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <nav class="stand-fiche-fil" i18n-aria-label="@@standFiche.fil" aria-label="Parcours des stands">
+      <a routerLink="/stands" [queryParams]="listParams" i18n="@@nav.link.stands">Stands</a>
+      @if (neighbours().previous; as previous) {
+        <a class="stand-fiche-voisin" [routerLink]="['/stands', previous.id]" [queryParams]="listParams" rel="prev">
+          <mat-icon aria-hidden="true">chevron_left</mat-icon>
+          <ng-container i18n="@@standFiche.precedent">Précédent : {{ previous.nom }}</ng-container>
+        </a>
+      }
+      @if (neighbours().next; as next) {
+        <a class="stand-fiche-voisin" [routerLink]="['/stands', next.id]" [queryParams]="listParams" rel="next">
+          <ng-container i18n="@@standFiche.suivant">Suivant : {{ next.nom }}</ng-container>
+          <mat-icon aria-hidden="true">chevron_right</mat-icon>
+        </a>
+      }
+    </nav>
+    <h1 mat-card-title>
+      @if (stand(); as current) {
+        {{ current.nom || current.id }}
+      } @else {
+        <ng-container i18n="@@standFiche.title">Fiche stand</ng-container>
+      }
+    </h1>
+    @if (stand(); as current) {
+      <mat-card-subtitle class="stand-fiche-resume">
+        @for (typologie of typologies(); track typologie.id; let last = $last) {
+          <a routerLink="/typologies" [queryParams]="{ q: typologie.label }">{{ typologie.label }}</a>@if (!last) {, }
+        }
+        ·
+        @if (current.emplacement; as lieu) {
+          <a routerLink="/stands" [queryParams]="{ onglet: 'lieux', q: lieu.nom || lieu.id }">{{ lieu.nom || lieu.id }}</a>
+        } @else {
+          <ng-container i18n="@@standFiche.sansLieu">sans lieu</ng-container>
+        }
+        · <ng-container i18n="@@standFiche.effectif">{{ current.effectifMin }} à {{ current.effectifMax }} personne(s)</ng-container>
+        @if (current.reserveMajeurs) {
+          · <ng-container i18n="@@standFiche.majeurs">réservé aux majeurs</ng-container>
+        }
+        @if (current.premium) {
+          · <ng-container i18n="@@standFiche.premium">premium</ng-container>
+        }
+        @if (current.niveauEffort === 'EPUISANT') {
+          · <ng-container i18n="@@standFiche.epuisant">épuisant</ng-container>
+        }
+        @if (ligne(); as row) {
+          · <ng-container i18n="@@standFiche.ouverture">{{ joursOuverts() }} jour(s) ouvert(s) · {{ row.postes }} poste(s)</ng-container>
+        }
+      </mat-card-subtitle>
+    }
+  </mat-card-header>
+  @if (stand()) {
+    <mat-card-actions class="card-actions stand-fiche-actions">
+      <button matButton="filled" type="button" [disabled]="editingLocked()" (click)="editIdentity()">
+        <mat-icon>edit</mat-icon>
+        <ng-container i18n="@@standFiche.modifierIdentite">Modifier l'identité</ng-container>
+      </button>
+      <mat-form-field appearance="outline" class="stand-fiche-comparer" subscriptSizing="dynamic">
+        <mat-label i18n="@@stands.comparerAvec">Comparer avec…</mat-label>
+        <mat-select [value]="null" (valueChange)="compareWith($event)">
+          @for (autre of others(); track autre.id) {
+            <mat-option [value]="autre.id">{{ autre.nom || autre.id }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <a matButton routerLink="/historique" [queryParams]="{ entite: 'STAND', q: standId() }">
+        <mat-icon>history</mat-icon>
+        <ng-container i18n="@@standFiche.historique">Historique de ses modifications</ng-container>
+      </a>
+    </mat-card-actions>
+  }
+  <mat-card-content>
+    @if (storeLoading() && !stand()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (notFound()) {
+      <p class="stand-fiche-introuvable" role="alert" i18n="@@standFiche.notFound">
+        Aucun stand ne porte l'identifiant « {{ standId() }} » dans cette édition : il a peut-être été supprimé.
+      </p>
+    }
+
+    @if (stand(); as current) {
+      <!-- 1. The grid, edited in place: its row of the Horaires des stands grid, day by day -->
+      <details class="fiche-section" id="stand-section-horaires" open>
+        <summary><h2 i18n="@@standFiche.section.horaires">Horaires et effectifs</h2></summary>
+        <app-status-message [text]="openingsError()" tone="error" />
+        @if (rapport(); as report) {
+          <app-stand-grid-editor [standId]="current.id" [rapport]="report" [templates]="templates()"
+                                 [locked]="gridLocked()" (saved)="onGridSaved()" />
+        } @else if (!openingsError()) {
+          <mat-progress-bar mode="indeterminate" />
+        }
+      </details>
+
+      <!-- 2. What the openings analysis says of this stand -->
+      <details class="fiche-section" id="stand-section-anomalies" open>
+        <summary><h2 i18n="@@standFiche.section.anomalies">Anomalies d'ouverture</h2></summary>
+        @if (anomalies().length === 0) {
+          <p class="empty-hint" i18n="@@detail.stand.aucuneAnomalie">Aucune : les fenêtres tombent toutes dans une vacation</p>
+        } @else {
+          <ul class="fiche-liste">
+            @for (anomalie of anomalies(); track $index) {
+              <li [class.fiche-alerte]="!isInformationalAnomaly(anomalie.type)">
+                <strong>{{ anomalyLabel(anomalie) }}</strong> — {{ anomalie.message }}
+              </li>
+            }
+          </ul>
+        }
+      </details>
+
+      <!-- 3. Once a plan is computed: its seats, the empty ones in the Siège panel -->
+      <details class="fiche-section" id="stand-section-plan" open>
+        <summary><h2 i18n="@@standFiche.section.plan">Après calcul</h2></summary>
+        @if (cause(); as probleme) {
+          <p class="fiche-alerte">{{ probleme.message }}</p>
+        }
+        @if (!planComputed()) {
+          <p class="empty-hint" i18n="@@fiche.aucunPlan">Aucun planning calculé : rien à lire tant qu'une résolution n'a pas été enregistrée.</p>
+        } @else {
+          <p>
+            <ng-container i18n="@@standFiche.plan.resume">{{ filled() + emptySeats().length }} poste(s) · {{ filled() }} pourvu(s) · {{ emptySeats().length }} vide(s)</ng-container>
+            ·
+            <a routerLink="/journee" [queryParams]="{ stand: current.id }" i18n="@@standFiche.plan.voir">Voir dans Planning</a>
+          </p>
+          @if (emptySeats().length > 0) {
+            <ul class="fiche-liste">
+              @for (seat of emptySeats(); track seat.posteId) {
+                <li>
+                  <a routerLink="/journee" [queryParams]="seatQuery(seat)">{{ seat.date }} {{ seat.heureDebut }}–{{ seat.heureFin }}</a>
+                </li>
+              }
+            </ul>
+          }
+        }
+      </details>
+
+      <!-- 4. The condensed form of the grid, for whoever reads or writes it -->
+      <details class="fiche-section" id="stand-section-regles">
+        <summary><h2 i18n="@@standFiche.section.regles">Règles</h2></summary>
+        <p class="empty-hint" i18n="@@standFiche.regles.aide">La forme condensée de la grille : les règles et exceptions qu'elle enregistre.</p>
+        <dl class="detail-rows">
+          @for (row of rules(); track $index) {
+            <dt>{{ row.label }}</dt>
+            <dd>{{ row.value }}</dd>
+          }
+        </dl>
+        <button matButton="tonal" type="button" [disabled]="editingLocked()" (click)="editRules()">
+          <mat-icon>rule</mat-icon>
+          <ng-container i18n="@@standFiche.regles.modifier">Modifier les règles</ng-container>
+        </button>
+      </details>
+    }
+  </mat-card-content>
+</mat-card>

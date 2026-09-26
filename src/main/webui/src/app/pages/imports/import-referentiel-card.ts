@@ -32,19 +32,26 @@ import { PASTE_FILE_NAME } from './collage';
 import { importedRowIds } from './imported-rows';
 import { IMPORTED_IDS_PARAM } from '../../core/imported-rows';
 
-/** The referential screen a file of this target fills: where « Voir les lignes importées » leads. */
+/**
+ * The referential screen a file of this target fills: where « Voir les lignes
+ * importées » leads — with {@link referentialParamsOf}, the tab it is on.
+ */
 export function referentialRouteOf(target: ReferentielImportTarget): string {
   switch (target) {
     case 'TYPOLOGIES':
       return '/typologies';
     case 'EMPLACEMENTS':
-      return '/emplacements';
     case 'STANDS':
       return '/stands';
     case 'CRENEAUX':
     case 'JOURNEES_TYPES':
       return '/creneaux';
   }
+}
+
+/** The tab of that screen the rows are on: the locations are the « Lieux » tab of the Stands page. */
+export function referentialParamsOf(target: ReferentielImportTarget): Record<string, string> {
+  return target === 'EMPLACEMENTS' ? { onglet: 'lieux' } : {};
 }
 
 /** « Voir les stands »: the link when the imported rows cannot be singled out on that screen. */
@@ -175,13 +182,14 @@ export class ImportReferentielCard {
       stands: this.store.stands(),
       creneaux: this.store.creneaux(),
     });
+    const tab = referentialParamsOf(target);
     if (ids === null || ids.length === 0) {
-      return { route, queryParams: null, libelle: referentialLinkLabel(target) };
+      return { route, queryParams: tab, libelle: referentialLinkLabel(target) };
     }
     const count = ids.length;
     return {
       route,
-      queryParams: { [IMPORTED_IDS_PARAM]: ids.join(',') },
+      queryParams: { ...tab, [IMPORTED_IDS_PARAM]: ids.join(',') },
       libelle: $localize`:@@importRef.voirLignes:Voir les ${count}:count: lignes importées`,
     };
   });

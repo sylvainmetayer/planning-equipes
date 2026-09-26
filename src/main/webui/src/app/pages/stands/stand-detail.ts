@@ -1,9 +1,10 @@
-// What the "consultation" view of a stand shows. Kept out of the dialog (and
-// out of the page) so the content is unit-tested without rendering anything —
-// same split as `stand-bulk-edit.ts`.
+// The words of a stand's schedule — its rules, its dated exceptions, its
+// anomalies —, read on the fiche stand and by the openings comparator. Kept out
+// of the components so they are unit-tested without rendering anything — same
+// split as `stand-bulk-edit.ts`.
 
-import { DetailRow, DetailSection } from '../../shared/detail-dialog';
-import { isInformationalAnomaly, decrireFenetre, resumerHoraires } from '../../core/horaire-stand';
+import { DetailRow } from '../../shared/detail-dialog';
+import { decrireFenetre, resumerHoraires } from '../../core/horaire-stand';
 import {
   AnomalieOuverture,
   HoraireStand,
@@ -11,132 +12,39 @@ import {
   JourSemaine,
   OuvertureStand,
   Stand,
-  TypologieItem,
 } from '../../core/models';
 
 /**
- * Identity, staffing, schedule and — the reason a detail view is worth more
- * than re-opening the edit form — the things the form does not show: the
- * resolved location, the human labels of the typologies, and how many dated
- * exceptions actually override the recurring rules.
+ * The schedule of a stand in lines: the summary, then each recurring rule
+ * spelled out and each dated exception — what the « Règles » section of the
+ * fiche stand shows, the condensed form of its grid.
  */
-export function buildStandDetail(
-  stand: Stand,
-  typologies: readonly TypologieItem[] = [],
-  anomalies: readonly AnomalieOuverture[] | null = null,
-): DetailSection[] {
-  const labels = new Map(
-    typologies.map((typologie) => [typologie.id, typologie.label || typologie.id]),
-  );
-  const aucun = $localize`:@@detail.none:Aucun`;
-
+export function scheduleRows(stand: Stand): DetailRow[] {
   return [
     {
-      title: $localize`:@@detail.section.identity:Identité`,
-      rows: [
-        { label: $localize`:@@common.id:Id`, value: stand.id },
-        {
-          label: $localize`:@@referentiel.field.code:Code`,
-          value: stand.code || $localize`:@@detail.none:Aucun`,
-          muted: !stand.code,
-        },
-        { label: $localize`:@@common.nom:Nom`, value: stand.nom },
-        {
-          label: $localize`:@@stands.field.emplacement:Emplacement`,
-          value: stand.emplacement ? emplacementLabel(stand) : aucun,
-          muted: !stand.emplacement,
-        },
-      ],
+      label: $localize`:@@stands.column.horaires:Horaires`,
+      value: resumerHoraires(stand, {
+        aucun: $localize`:@@detail.stand.horairesAucun:Ouvert par défaut, aucune règle`,
+        regles: (n) => $localize`:@@stands.horaires.summary.regles:${n}:count: règle(s)`,
+        exceptions: (n) =>
+          $localize`:@@stands.horaires.summary.exceptions:${n}:count: exception(s)`,
+      }),
     },
-    {
-      title: $localize`:@@detail.section.staffing:Effectif`,
-      rows: [
-        {
-          label: $localize`:@@stands.column.effectif:Effectif`,
-          value: $localize`:@@detail.stand.effectifRange:${stand.effectifMin}:min: à ${stand.effectifMax}:max: animateur(s)`,
-        },
-        {
-          label: $localize`:@@stands.field.reserveMajeurs:Réservé aux majeurs`,
-          value: ouiNon(stand.reserveMajeurs),
-        },
-        {
-          label: $localize`:@@stands.field.premium:Premium (stand éditeur)`,
-          value: ouiNon(stand.premium),
-        },
-        {
-          label: $localize`:@@stands.field.niveauEffort:Épuisant physiquement`,
-          value: ouiNon(stand.niveauEffort === 'EPUISANT'),
-        },
-      ],
-    },
-    {
-      title: $localize`:@@detail.section.typologies:Typologies proposées`,
-      rows: [
-        (stand.typologiesProposees ?? []).length > 0
-          ? {
-              label: $localize`:@@stands.column.typologies:Typologies`,
-              chips: (stand.typologiesProposees ?? []).map((id) => labels.get(id) ?? id),
-            }
-          : { label: $localize`:@@stands.column.typologies:Typologies`, value: aucun, muted: true },
-      ],
-    },
-    {
-      title: $localize`:@@detail.section.horaires:Horaires`,
-      rows: [
-        {
-          label: $localize`:@@stands.column.horaires:Horaires`,
-          value: resumerHoraires(stand, {
-            aucun: $localize`:@@detail.stand.horairesAucun:Ouvert par défaut, aucune règle`,
-            regles: (n) => $localize`:@@stands.horaires.summary.regles:${n}:count: règle(s)`,
-            exceptions: (n) =>
-              $localize`:@@stands.horaires.summary.exceptions:${n}:count: exception(s)`,
-          }),
-        },
-        // Each rule spelled out, not just counted: "2 règles" says nothing
-        // about when the stand is actually open, which is the one thing this
-        // view is opened to check.
-        ...(stand.horaires ?? []).map((horaire, index) => ({
-          label: $localize`:@@detail.stand.regle:Règle ${index + 1}:numero:`,
-          value: describeRule(horaire),
-        })),
-        ...(stand.ouvertures ?? []).map((ouverture) => describeException(ouverture, true)),
-        ...(stand.indisponibilites ?? []).map((indisponibilite) =>
-          describeException(indisponibilite, false),
-        ),
-      ],
-    },
-    // What the openings analysis says of this stand, read where the schedule
-    // is typed rather than only on the Ouvertures screen: a window at an hour
-    // the grid does not have produces nothing, and nobody sees it otherwise.
-    // `null` = the report is not in; the section then says nothing rather
-    // than a false « aucune ».
-    ...(anomalies === null ? [] : [sectionAnomalies(anomalies)]),
+    // Each rule spelled out, not just counted: "2 règles" says nothing about
+    // when the stand is actually open.
+    ...(stand.horaires ?? []).map((horaire, index) => ({
+      label: $localize`:@@detail.stand.regle:Règle ${index + 1}:numero:`,
+      value: describeRule(horaire),
+    })),
+    ...(stand.ouvertures ?? []).map((ouverture) => describeException(ouverture, true)),
+    ...(stand.indisponibilites ?? []).map((indisponibilite) =>
+      describeException(indisponibilite, false),
+    ),
   ];
 }
 
-function sectionAnomalies(anomalies: readonly AnomalieOuverture[]): DetailSection {
-  return {
-    title: $localize`:@@detail.section.ouvertures:Ouvertures effectives`,
-    rows:
-      anomalies.length === 0
-        ? [
-            {
-              label: $localize`:@@detail.stand.anomalies:Anomalies`,
-              value: $localize`:@@detail.stand.aucuneAnomalie:Aucune : les fenêtres tombent toutes dans une vacation`,
-              muted: true,
-            },
-          ]
-        : anomalies.map((anomalie) => ({
-            label: anomalyLabel(anomalie),
-            value: anomalie.message,
-            // How the rules are written is said, not alarmed about: the
-            // resolver settles it, and saving stays possible.
-            alerte: !isInformationalAnomaly(anomalie.type),
-          })),
-  };
-}
-
-function anomalyLabel(anomalie: AnomalieOuverture): string {
+/** What an anomaly of the openings is about: the day it falls on, or how the rules are written. */
+export function anomalyLabel(anomalie: AnomalieOuverture): string {
   switch (anomalie.type) {
     case 'REGLES_CHEVAUCHANTES':
       return $localize`:@@detail.stand.anomalie.reglesChevauchantes:Règles qui se recouvrent`;
@@ -230,17 +138,4 @@ function libelleJourSemaine(jour: JourSemaine): string {
     default:
       return $localize`:@@common.weekday.sunday:Dimanche`;
   }
-}
-
-function emplacementLabel(stand: Stand): string {
-  const emplacement = stand.emplacement!;
-  const nom = emplacement.nom || emplacement.id;
-  if (emplacement.latitude == null || emplacement.longitude == null) {
-    return nom;
-  }
-  return `${nom} (${emplacement.latitude.toFixed(5)}, ${emplacement.longitude.toFixed(5)})`;
-}
-
-function ouiNon(value: boolean): string {
-  return value ? $localize`:@@common.oui:Oui` : $localize`:@@common.non:Non`;
 }
