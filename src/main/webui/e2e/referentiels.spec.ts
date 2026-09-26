@@ -13,6 +13,7 @@ import {
   idCree,
   ouvrirSelect,
   pageAdmin,
+  rowAction,
   seedPlanning,
 } from './support';
 import { repartirDeLaReference } from './reference';
@@ -57,24 +58,25 @@ test.describe('fiche animateur', () => {
 
     // The espace link exists right away: the store reload brought the
     // database-generated token back, so the copy button is enabled.
-    await expect(
-      ligne.getByRole('button', { name: 'Copier le lien de son espace animateur' }),
-    ).toBeEnabled();
-
-    // The consultation dialog shows the new fields.
-    await ligne.getByRole('button', { name: 'Consulter le détail' }).click();
-    await expect(page.getByRole('dialog')).toContainText('uma@example.org');
-    await expect(page.getByRole('dialog')).toContainText('Lien espace animateur');
+    await expect(await rowAction(ligne, 'Copier le lien de son espace animateur')).toBeEnabled();
     await page.keyboard.press('Escape');
-    await expect(page.getByRole('dialog')).toBeHidden();
+
+    // The name opens the fiche, which shows the new fields.
+    await ligne.getByRole('link', { name: /E2E-UI/ }).click();
+    await expect(page).toHaveURL(/\/animateurs\/[^/?]+/);
+    await expect(page.getByText('uma@example.org')).toBeVisible();
+    await expect(page.getByText('Lien espace animateur')).toBeVisible();
+    await page.goBack();
+    await page.getByLabel('Filtrer').fill('E2E-UI');
+    await expect(ligne).toBeVisible();
 
     // Regenerating the token rotates the espace link.
-    await ligne.getByRole('button', { name: 'Régénérer le lien de son espace' }).click();
+    await (await rowAction(ligne, 'Régénérer le lien de son espace')).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Régénérer' }).click();
     await expect(page.getByText('Nouveau lien généré.')).toBeVisible();
 
     // Delete, behind its confirmation.
-    await ligne.getByRole('button', { name: 'Supprimer' }).click();
+    await (await rowAction(ligne, 'Supprimer')).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Supprimer' }).click();
     await page.getByLabel('Filtrer').fill('');
     await expect(page.getByRole('row', { name: /E2E-UI/ })).toHaveCount(0);
@@ -133,7 +135,7 @@ test.describe('typologies', () => {
     const ligne = page.getByRole('row', { name: /E2E-TYPO/ });
     await expect(ligne).toBeVisible();
 
-    await ligne.getByRole('button', { name: 'Supprimer' }).click();
+    await (await rowAction(ligne, 'Supprimer')).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Supprimer' }).click();
     await expect(page.getByRole('row', { name: /E2E-TYPO/ })).toHaveCount(0);
     await page.context().close();
@@ -173,7 +175,7 @@ test.describe('typologies', () => {
     // does not silently clear it.
     await page.reload();
     const ligne = page.getByRole('row', { name: /E2E-TYPO-CAP/ });
-    await ligne.getByRole('button', { name: 'Modifier' }).click();
+    await (await rowAction(ligne, 'Modifier')).click();
     const edition = await dialogueOuvert(page);
     await expect(edition.getByLabel('Créneaux maximum par animateur')).toHaveValue('4');
     await edition.getByLabel('Créneaux maximum par animateur').fill('2');
@@ -218,7 +220,7 @@ test.describe('typologies', () => {
     // Reopening the form shows it, and a save that touches nothing else keeps it.
     await page.reload();
     const ligne = page.getByRole('row', { name: /E2E-TYPO-NOTE/ });
-    await ligne.getByRole('button', { name: 'Modifier' }).click();
+    await (await rowAction(ligne, 'Modifier')).click();
     const edition = await dialogueOuvert(page);
     await expect(edition.getByLabel('Description')).toHaveValue("Nécessite d'apprendre 45 jeux");
     await edition.getByRole('button', { name: /Modifier la typologie/ }).click();
@@ -328,7 +330,7 @@ test.describe('horaires de stand', () => {
     await page.getByLabel('Filtrer').fill(SEED.standCible);
     const ligne = page.getByRole('row', { name: new RegExp(SEED.standCible) });
     await expect(ligne).toBeVisible();
-    await ligne.getByRole('button', { name: 'Modifier' }).click();
+    await (await rowAction(ligne, 'Modifier')).click();
     const formulaire = page
       .getByRole('dialog')
       .filter({ hasText: 'Modifier le stand Stand E2E deux' });

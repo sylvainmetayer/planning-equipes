@@ -188,7 +188,7 @@ describe('AnimateurBulkEditDialog', () => {
 
     await choisir(fixture, 'competenceMode', 'Ajouter');
     await choisir(fixture, 'competenceTypologie', 'Ambiance');
-    await choisir(fixture, 'competenceNiveau', 'REFERENT');
+    await choisir(fixture, 'competenceNiveau', 'Référent');
     submit(fixture);
     await fixture.whenStable();
 

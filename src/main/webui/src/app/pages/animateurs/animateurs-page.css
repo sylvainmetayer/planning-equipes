@@ -14,3 +14,29 @@
 .accuses-jours {
   width: 6rem;
 }
+
+/* The appreciations of a row as pastilles: the game category, and the
+   letter of its level — the word is in the title and for screen readers. */
+.animateur-pastilles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+}
+
+.animateur-pastille {
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  font: var(--mat-sys-label-small);
+  white-space: nowrap;
+}
+
+.animateur-manager {
+  margin-left: 0.4rem;
+  padding: 0 0.35rem;
+  border-radius: var(--mat-sys-corner-extra-small);
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+  font: var(--mat-sys-label-small);
+}

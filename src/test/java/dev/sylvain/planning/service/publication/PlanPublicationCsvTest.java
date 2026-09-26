@@ -64,4 +64,13 @@ class PlanPublicationCsvTest {
 
         assertThat(csv.split("\n")[1]).isEqualTo("a2;\"Roy; Dominique\";;true;false;0;0;0;false;;;");
     }
+
+    /** A name a spreadsheet would run goes out behind a quote; a negative number stays a number. */
+    @Test
+    void aFormulaNameIsQuotedButANegativeNumberIsLeftAlone() {
+        String csv = PlanPublicationService.generateCsv(apercu(new DestinatairePublication(
+                "a1", "=1+1", "camille@example.org", false, List.of(), List.of(), 0, 0, -1, false, false, null, null)));
+
+        assertThat(csv.split("\n")[1]).isEqualTo("a1;'=1+1;camille@example.org;false;false;0;0;-1;false;;;");
+    }
 }

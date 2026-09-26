@@ -111,7 +111,7 @@ async function entetesQuiNeVolentPasLeurNom(page: Page): Promise<number> {
 }
 
 test.describe('navigation clavier des tables de référence', () => {
-  test('descend au clavier, ouvre le détail, sélectionne pour une action groupée', async ({
+  test('walks down by keyboard, opens the fiche, selects for a bulk action', async ({
     browser,
   }) => {
     test.slow();
@@ -133,12 +133,13 @@ test.describe('navigation clavier des tables de référence', () => {
     expect(await ligneFocalisee(page)).toBe('0');
 
     // Tab still works, and how far away the first row sits is measured rather
-    // than assumed. Eleven stops, in order: « Effacer le filtre »,
-    // « Réinitialiser la vue », « Tout sélectionner », the six sortable
-    // headers (Id, Nom, Majeur, Manager, Indisponibilités, Accusé de
+    // than assumed. Thirteen stops, in order: « Effacer le filtre »,
+    // « Filtrer », « Exporter cette liste », « Réinitialiser la vue »,
+    // « Tout sélectionner », the six sortable headers (Nom, Âge / régime,
+    // Compétences, Indispos, Postes — the seeded plan shows it —, Accusé de
     // réception), the acknowledgement help button, then the row.
     await page.getByLabel('Filtrer').focus();
-    expect(await tabulerJusquAUneLigne(page), 'tabulations depuis le filtre').toBe(11);
+    expect(await tabulerJusquAUneLigne(page), 'tabulations depuis le filtre').toBe(13);
     expect(await ligneFocalisee(page)).toBe('0');
 
     // Arrows walk the rows, and stop at the ends rather than wrapping.
@@ -153,19 +154,23 @@ test.describe('navigation clavier des tables de référence', () => {
     await page.keyboard.press('ArrowUp');
     expect(await ligneFocalisee(page)).toBe('0');
 
-    // Entrée opens the consultation dialog of the focused row.
+    // Entrée opens the fiche of the focused row, the page its name links to.
     await page.keyboard.press('ArrowDown');
-    const identifiant = await page.locator('tr[data-row-index="1"] td').nth(1).innerText();
+    const fiche = await page
+      .locator('tr[data-row-index="1"] a.referentiel-nom')
+      .getAttribute('href');
     await page.keyboard.press('Enter');
-    const detail = page.getByRole('dialog');
-    await expect(detail).toBeVisible();
-    await expect(detail).toContainText(identifiant.trim());
-    await page.keyboard.press('Escape');
-    await expect(detail).toBeHidden();
+    await expect(page).toHaveURL(new RegExp(`${fiche}$`));
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await page.goBack();
+    await expect(page.locator('tr[data-row-index]')).toHaveCount(4);
+    // The Postes column lands with the plan, and a new column set rebuilds the
+    // rows: the focus is put on one once the table has its final shape.
+    await expect(page.getByRole('columnheader', { name: 'Postes' })).toBeVisible();
 
-    // Escape gave the focus back to the row it was opened from, so Espace
-    // lands on that same row and the bulk actions bar follows.
-    expect(await ligneFocalisee(page)).toBe('1');
+    // Back on the list, Espace on that same row ticks it and the bulk actions
+    // bar follows.
+    await page.locator('tr[data-row-index="1"]').focus();
     await page.keyboard.press(' ');
     await expect(page.getByText('1 élément(s) sélectionné(s)')).toBeVisible();
     await expect(page.locator('tr[data-row-index="1"]')).toHaveClass(/row-selected/);
@@ -290,17 +295,19 @@ test.describe('navigation clavier des tables de référence', () => {
     await page.context().close();
   });
 
-  test('trie les cinq colonnes ajoutées, et met le tri dans l’URL', async ({ browser }) => {
+  test('sorts every column, and keeps the sort in the URL', async ({ browser }) => {
     const page = await pageAdmin(browser, admin);
     await page.goto('/animateurs');
     await page.getByLabel('Filtrer').fill('E2E-');
     await expect(page.locator('tr[data-row-index]')).toHaveCount(4);
 
     for (const [entete, colonne] of [
-      ['Id', 'id'],
       ['Nom', 'nom'],
-      ['Manager', 'manager'],
-      ['Indisponibilités', 'indisponibilites'],
+      ['Âge / régime', 'age'],
+      ['Compétences', 'competences'],
+      ['Indispos', 'indisponibilites'],
+      // The seeded plan holds seats: the column is shown.
+      ['Postes', 'postes'],
       ['Accusé de réception', 'confirmation'],
     ] as const) {
       await page.getByRole('button', { name: new RegExp(`^${entete}`) }).click();

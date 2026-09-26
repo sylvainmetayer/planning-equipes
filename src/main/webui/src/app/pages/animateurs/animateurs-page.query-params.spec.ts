@@ -47,9 +47,7 @@ type PageInternals = {
   typologiesFiltrees: Signal<string[]>;
   typologieLabel: Signal<string>;
   souhaitLabel: Signal<string>;
-  clearTypologie(): void;
-  clearSouhait(): void;
-  clearImportedIds(): void;
+  removeChip(key: string): void;
   resetView(): void;
 };
 
@@ -102,7 +100,10 @@ async function setUpRoute(url: string) {
           })),
         },
       },
-      { provide: ReferenceCrudService, useValue: { reload: vi.fn(async () => undefined) } },
+      {
+        provide: ReferenceCrudService,
+        useValue: { reload: vi.fn(async () => undefined), warningsOf: vi.fn(() => []) },
+      },
       {
         provide: SolverJobService,
         useValue: { solverBusy: () => false, editingLocked: () => false },
@@ -159,7 +160,10 @@ function setUp(
           })),
         },
       },
-      { provide: ReferenceCrudService, useValue: { reload: vi.fn(async () => undefined) } },
+      {
+        provide: ReferenceCrudService,
+        useValue: { reload: vi.fn(async () => undefined), warningsOf: vi.fn(() => []) },
+      },
       {
         provide: SolverJobService,
         useValue: { solverBusy: () => false, editingLocked: () => false },
@@ -246,7 +250,7 @@ describe('AnimateursPage query-param sync', () => {
       await fixture.whenStable();
       expect(replaceState).toHaveBeenLastCalledWith('/animateurs?typologie=ESCAPE');
 
-      page.clearTypologie();
+      page.removeChip('typologie');
       await fixture.whenStable();
 
       expect(page.animateursFiltres().map((each) => each.id)).toEqual(['alice', 'bob']);
@@ -265,7 +269,7 @@ describe('AnimateursPage query-param sync', () => {
       expect(page.viewChanged()).toBe(true);
       expect(replaceState).toHaveBeenLastCalledWith('/animateurs?ids=bob');
 
-      page.clearImportedIds();
+      page.removeChip('ids');
       await fixture.whenStable();
 
       expect(page.animateursFiltres().map((each) => each.id)).toEqual(['alice', 'bob']);
@@ -291,7 +295,7 @@ describe('AnimateursPage query-param sync', () => {
       expect(page.viewChanged()).toBe(true);
       expect(replaceState).toHaveBeenLastCalledWith('/animateurs?souhait=ESCAPE');
 
-      page.clearSouhait();
+      page.removeChip('souhait');
       await fixture.whenStable();
 
       expect(page.animateursFiltres().map((each) => each.id)).toEqual(['alice', 'bob']);

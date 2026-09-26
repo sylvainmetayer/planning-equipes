@@ -67,6 +67,56 @@ class StandGrilleImportResourceTest {
         assertThat(rapport.getList("columns.creneauId", Long.class)).doesNotContainNull();
     }
 
+    /**
+     * A stand name a spreadsheet would run goes out behind a quote, and the
+     * import takes it off: the example still re-imports without a rejection.
+     */
+    @Test
+    void aFormulaStandNameIsQuotedInTheExampleAndReadBackAsIs() {
+        seedScenario();
+        String typologie = given().when()
+                .get("/api/typologies")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getString("[0].id");
+        given().contentType("application/json")
+                .body(Map.of(
+                        "id",
+                        "STAND-FORMULE",
+                        "nom",
+                        "=1+1",
+                        "typologiesProposees",
+                        List.of(typologie),
+                        "effectifMin",
+                        1,
+                        "effectifMax",
+                        2,
+                        "reserveMajeurs",
+                        false))
+                .when()
+                .post("/api/stands")
+                .then()
+                .statusCode(200);
+
+        String exemple = given().when()
+                .get("/api/stands/import-grille/exemple")
+                .then()
+                .statusCode(200)
+                .extract()
+                .asString();
+        assertThat(exemple.lines()).anyMatch(ligne -> ligne.startsWith("'=1+1;"));
+
+        given().contentType("application/json")
+                .body(request(exemple))
+                .when()
+                .post("/api/stands/import-grille/analyse")
+                .then()
+                .statusCode(200)
+                .body("rejected", equalTo(0));
+    }
+
     @Test
     void anEditedCellIsWrittenAndReadBackInTheGrid() {
         seedScenario();

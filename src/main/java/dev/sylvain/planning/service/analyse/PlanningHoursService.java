@@ -7,6 +7,7 @@ import dev.sylvain.planning.domain.JoursFeries;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.service.referentiel.CsvFormulaGuard;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -251,14 +252,19 @@ public class PlanningHoursService {
         return String.format(Locale.ROOT, "%.2f", heures).replace('.', ',');
     }
 
+    /**
+     * A text cell, behind a quote first when a spreadsheet would run it as a
+     * formula ({@link CsvFormulaGuard}); never called on a number.
+     */
     private String echapper(String valeur) {
         if (valeur == null) {
             return "";
         }
-        if (valeur.contains(";") || valeur.contains("\"") || valeur.contains("\n")) {
-            return "\"" + valeur.replace("\"", "\"\"") + "\"";
+        String cellule = CsvFormulaGuard.neutralise(valeur);
+        if (cellule.contains(";") || cellule.contains("\"") || cellule.contains("\n")) {
+            return "\"" + cellule.replace("\"", "\"\"") + "\"";
         }
-        return valeur;
+        return cellule;
     }
 
     /**

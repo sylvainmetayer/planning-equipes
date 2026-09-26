@@ -388,4 +388,17 @@ class EquiteServiceTest {
                         + "tauxSouhaits;tauxAppreciation;joursTravailles;joursRepos;plusLongueSerie\n")
                 .endsWith("Ada Lovelace;4,00;4,00;2,00;4,00;0,00;1;0;1;0;0;0,00;0,00;1;0;1\n");
     }
+
+    /** A name a spreadsheet would run goes out behind a quote; a negative number stays a number. */
+    @Test
+    void csvQuotesAFormulaNameButLeavesANegativeNumberAlone() {
+        LigneEquite ligne =
+                new LigneEquite("A-1", "=1+1", -1.5, Map.of("2026-W29", -1.5), 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1);
+        RapportEquite rapport =
+                new RapportEquite(LocalTime.of(20, 0), List.of("2026-W29"), List.of(ligne), Map.of(), List.of());
+
+        String csv = EquiteService.generateCsv(rapport);
+
+        assertThat(csv).endsWith("\n'=1+1;-1,50;-1,50;0,00;0,00;0,00;1;0;1;0;0;0,00;0,00;1;0;1\n");
+    }
 }

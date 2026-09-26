@@ -32,6 +32,8 @@ import {
 export interface CreneauSerieData {
   /** The grid's current verdict, so only the errors the rule introduces block it. */
   controleActuel: RapportGrille | null;
+  /** The day's timeslots, already typed in a day template's dialog (« Appliquer sans mémoriser »). */
+  fenetres?: string;
 }
 
 /**
@@ -79,7 +81,10 @@ export class CreneauSerieDialog {
     'SUNDAY',
   ];
 
-  protected readonly draft = signal<SerieDraft>(serieVide());
+  protected readonly draft = signal<SerieDraft>({
+    ...serieVide(),
+    fenetres: this.data.fenetres ?? '',
+  });
   protected readonly apercu = signal<RapportRecurrence | null>(null);
   /** The rule the preview was taken on: an edit since sends the user back to « Prévisualiser ». */
   private readonly signatureApercu = signal<string | null>(null);

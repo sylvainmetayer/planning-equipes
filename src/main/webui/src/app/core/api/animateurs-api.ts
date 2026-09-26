@@ -32,6 +32,15 @@ export class AnimateursApi {
     return this.api.post<void>(`/api/animateurs/${encodeURIComponent(animateurId)}/token`, null);
   }
 
+  /**
+   * Announces « Exporter cette liste » before the browser saves the file: the
+   * CSV is built on screen and never reaches the server, so this call is what
+   * leaves the history its export line.
+   */
+  recordListExport(): Promise<void> {
+    return this.api.post<void>('/api/animateurs/export-liste', null);
+  }
+
   /** Who confirmed their planning, and when. */
   confirmations(): Promise<ConfirmationView[]> {
     return this.api.get<ConfirmationView[]>('/api/animateurs/confirmations');

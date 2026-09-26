@@ -13,6 +13,7 @@ import dev.sylvain.planning.service.analyse.PlanningHoursService.HeuresRapport;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class PlanningHoursServiceTest {
@@ -229,5 +230,15 @@ class PlanningHoursServiceTest {
         assertThat(csv.lines().findFirst().orElseThrow())
                 .endsWith(";total;dimanche;jours feries;dont dimanches feries;apres 22h");
         assertThat(csv).contains("Ada Lovelace;3,00;3,00;3,00;0,00;0,00;1,00");
+    }
+
+    /** A name a spreadsheet would run goes out behind a quote; a negative number stays a number. */
+    @Test
+    void csvQuotesAFormulaNameButLeavesANegativeNumberAlone() {
+        HeuresAnimateur ligne = new HeuresAnimateur("A-1", "=1+1", Map.of("2026-W33", -1.5), -1.5, 0, 0, 0, 0);
+
+        String csv = service.generateCsv(new HeuresRapport(List.of("2026-W33"), List.of(ligne)));
+
+        assertThat(csv).endsWith("\n'=1+1;-1,50;-1,50;0,00;0,00;0,00;0,00\n");
     }
 }

@@ -9,7 +9,13 @@
 // ConcurrentModificationGuardTest, far more cheaply than here.
 
 import { APIRequestContext, Page, expect, test } from '@playwright/test';
-import { contexteAdmin, dialogueOuvert, pageAdmin, seedReferentielSolveur } from './support';
+import {
+  contexteAdmin,
+  dialogueOuvert,
+  pageAdmin,
+  rowAction,
+  seedReferentielSolveur,
+} from './support';
 import { repartirDeLaReference } from './reference';
 
 const STAND_ID = 'SOLV-CC1';
@@ -51,7 +57,7 @@ async function openThenLoseRaceToOtherSession(page: Page): Promise<void> {
   await page.getByLabel('Filtrer').fill(STAND_ID);
   const ligne = page.getByRole('row', { name: new RegExp(STAND_ID) });
   await expect(ligne).toBeVisible();
-  await ligne.getByRole('button', { name: 'Modifier' }).click();
+  await (await rowAction(ligne, 'Modifier')).click();
   await dialogueOuvert(page);
   const formulaire = page.getByRole('dialog').filter({ hasText: `Modifier le stand ${standName}` });
   await expect(formulaire).toBeVisible();
@@ -121,10 +127,9 @@ test.describe('modification concurrente', () => {
     try {
       await page.goto('/stands');
       await page.getByLabel('Filtrer').fill(STAND_ID);
-      await page
-        .getByRole('row', { name: new RegExp(STAND_ID) })
-        .getByRole('button', { name: 'Modifier' })
-        .click();
+      await (
+        await rowAction(page.getByRole('row', { name: new RegExp(STAND_ID) }), 'Modifier')
+      ).click();
       const formulaire = await dialogueOuvert(page);
       await formulaire.getByLabel('Nom', { exact: true }).fill('Renommé tranquillement');
       await formulaire.getByRole('button', { name: 'Modifier le stand' }).click();

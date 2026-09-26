@@ -224,6 +224,20 @@ public class AnimateurResource {
         return csvImport.apply(request);
     }
 
+    /**
+     * Records that the list of animateurs left the application as the CSV
+     * the Animateurs screen builds from what it displays (« Exporter cette
+     * liste »). The file never passes through the server, so this call, made
+     * before the browser saves it, is what writes the line every nominative
+     * export owes the history. Nothing is read and nothing is returned: what
+     * left is the screen's business, never the journal's.
+     */
+    @POST
+    @Path("/export-liste")
+    public Response recordListExport() {
+        return Response.noContent().build();
+    }
+
     /* ---------------------------- Competences grid ---------------------------- */
 
     /** The grid as submitted: only the animateurs that were edited, each with their whole map of appreciations. */

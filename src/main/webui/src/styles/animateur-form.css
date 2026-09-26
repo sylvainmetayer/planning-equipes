@@ -16,3 +16,48 @@
     flex-wrap: wrap;
   }
 }
+
+/* The edition's days as a frieze: a click marks one away (or back). The
+   state is carried by the fill and by aria-pressed, never the colour alone. */
+.indispo-frise {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.indispo-jour {
+  padding: 0.2rem 0.45rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-small);
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-label-medium);
+  cursor: pointer;
+}
+
+.indispo-jour-absent {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  border-color: var(--mat-sys-error);
+  text-decoration: line-through;
+}
+
+.indispo-jour:focus-visible {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 1px;
+}
+
+.animateur-appreciations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.animateur-appreciations .animateur-pastille {
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  font: var(--mat-sys-label-small);
+}

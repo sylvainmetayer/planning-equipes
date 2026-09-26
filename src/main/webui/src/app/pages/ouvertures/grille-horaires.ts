@@ -17,7 +17,7 @@
 // are sent back — each with all its cells, since a save replaces the stand's
 // whole schedule.
 
-import { AccesGrille } from '../../core/grille-saisie';
+import { AccesGrille, blockRows } from '../../core/grille-saisie';
 import { formatHeure } from '../../core/time-of-day';
 import {
   CelluleCreneauOuverture,
@@ -465,17 +465,12 @@ export function collerBloc(
     return cellules;
   }
   let resultat = cellules;
-  const lignes = text.replaceAll('\r', '').split('\n');
-  // A trailing newline, which every spreadsheet copy carries, is not a row.
-  if (lignes.length > 1 && lignes.at(-1) === '') {
-    lignes.pop();
-  }
-  lignes.forEach((ligneTexte, i) => {
+  blockRows(text).forEach((valeurs, i) => {
     const standId = standIds[ligne0 + i];
     if (standId === undefined) {
       return;
     }
-    ligneTexte.split('\t').forEach((valeur, j) => {
+    valeurs.forEach((valeur, j) => {
       const colonne = colonnesGrille[colonne0 + j];
       if (colonne === undefined) {
         return;

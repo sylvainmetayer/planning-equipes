@@ -5,10 +5,13 @@
 import { parseFenetres } from '../../core/horaire-stand';
 import {
   AnomalieGrille,
+  CelluleCreneauOuverture,
   FenetreHoraire,
   JourSemaine,
   RapportGrille,
+  RapportOuvertures,
   RegleRecurrence,
+  SegmentCellule,
   TypeJoursHoraire,
 } from '../../core/models';
 
@@ -222,4 +225,80 @@ export function gridAnomalyIcon(anomaly: AnomalieGrille): string {
     return 'event_busy';
   }
   return anomaly.severite === 'ERREUR' ? 'error' : 'warning';
+}
+
+/** What the stands make of one timeslot, before any solve: how many open on it, how many seats it yields. */
+export interface OuverturesCreneau {
+  stands: number;
+  postes: number;
+}
+
+/**
+ * Timeslot id → the stands open on it and the seats they generate, read off
+ * the openings report (`GET /api/ouvertures-stands`) — the very seats a solve
+ * would receive: every open segment of a stand asks its headcount, at least
+ * one, halved and rounded up on a meal relay (`Creneau.siegesSegment`).
+ *
+ * A timeslot cut into several columns (a window of some stand ends inside it)
+ * hands each column the stand's segment clipped to it, so one segment shows
+ * in several cells: the clipped pieces are joined back — contiguous, same
+ * headcount, which is how the server merges them too — and counted once.
+ */
+export function openingsByCreneau(rapport: RapportOuvertures): Map<number, OuverturesCreneau> {
+  const relays = new Map<number, boolean>();
+  for (const jour of rapport.jours) {
+    for (const colonne of jour.creneaux) {
+      relays.set(colonne.id, colonne.couverturePause);
+    }
+  }
+  const perCreneau = new Map<number, { stands: Set<string>; postes: number }>();
+  for (const ligne of rapport.stands) {
+    for (const jour of ligne.jours) {
+      const cellsByCreneau = new Map<number, CelluleCreneauOuverture[]>();
+      for (const cellule of jour.creneaux) {
+        if (cellule.segments.length > 0) {
+          cellsByCreneau.set(cellule.creneauId, [
+            ...(cellsByCreneau.get(cellule.creneauId) ?? []),
+            cellule,
+          ]);
+        }
+      }
+      for (const [creneauId, cells] of cellsByCreneau) {
+        const entry = perCreneau.get(creneauId) ?? { stands: new Set<string>(), postes: 0 };
+        entry.stands.add(ligne.standId);
+        const halved = relays.get(creneauId) ?? false;
+        for (const effectif of joinedSegments(cells)) {
+          const seats = Math.max(1, effectif);
+          entry.postes += halved ? Math.ceil(seats / 2) : seats;
+        }
+        perCreneau.set(creneauId, entry);
+      }
+    }
+  }
+  return new Map(
+    [...perCreneau].map(([id, entry]) => [id, { stands: entry.stands.size, postes: entry.postes }]),
+  );
+}
+
+/**
+ * The headcount of each segment of one stand on one timeslot, its pieces in
+ * the successive columns joined back: a piece continuing the previous one —
+ * starting where it ends, asking the same headcount — is the same segment.
+ */
+function joinedSegments(cells: readonly CelluleCreneauOuverture[]): number[] {
+  const effectifs: number[] = [];
+  let previous: SegmentCellule | null = null;
+  for (const cell of [...cells].sort((a, b) => a.tranche - b.tranche)) {
+    for (const segment of cell.segments) {
+      const continues =
+        previous !== null &&
+        previous.heureFin === segment.heureDebut &&
+        previous.effectif === segment.effectif;
+      if (!continues) {
+        effectifs.push(segment.effectif);
+      }
+      previous = segment;
+    }
+  }
+  return effectifs;
 }

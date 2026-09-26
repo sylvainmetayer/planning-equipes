@@ -47,11 +47,15 @@ import {
   retirerDe,
   toDraft,
   typologiesVides,
+  duplicateDraft,
   versStand,
 } from './stand-draft';
+import { copyName } from '../../core/duplicate';
 
 export interface StandFormData {
   stand: Stand | null;
+  /** « Dupliquer »: a creation, prefilled from this stand. */
+  modele?: Stand | null;
 }
 
 /**
@@ -121,7 +125,10 @@ export class StandFormDialog {
   protected readonly editingId = signal<string | null>(this.data.stand?.id ?? null);
   /** A new stand is a creation, which a STANDS freeze refuses whole. */
   protected readonly creationFrozen = computed(() => this.standsFrozen() && !this.editingId());
-  private readonly initial = toDraft(this.data.stand);
+  private readonly initial =
+    this.data.stand || !this.data.modele
+      ? toDraft(this.data.stand)
+      : duplicateDraft(this.data.modele, copyName(this.data.modele.nom));
   protected readonly draft = signal<StandDraft>(this.initial);
 
   /** The interrupted entry, in localStorage: a stand carries no personal data. */

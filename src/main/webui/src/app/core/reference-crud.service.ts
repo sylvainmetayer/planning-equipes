@@ -1,7 +1,7 @@
 // Shared CRUD plumbing of the reference pages: persistence through the store,
 // snack bar feedback and delete confirmation, so each page only owns its form.
 
-import { Injectable, Injector, inject } from '@angular/core';
+import { Injectable, Injector, inject, signal } from '@angular/core';
 import { ApiError, SessionExpireeError } from './api.service';
 import { Avertissement, estJournalisable } from './models';
 import { NotificationService } from './notification.service';
@@ -87,6 +87,42 @@ export class ReferenceCrudService {
   private readonly usages = inject(ReferenceUsageService);
 
   /**
+   * The warnings the last save of each row raised, keyed `resource:id`: the
+   * snack bar goes, the mark on the row stays until a save of that row raises
+   * none. In memory only — a warning may say somebody is a minor, and that is
+   * shown, never logged (`docs/rgpd.md` §7).
+   */
+  private readonly _rowWarnings = signal<ReadonlyMap<string, readonly string[]>>(new Map());
+  readonly rowWarnings = this._rowWarnings.asReadonly();
+
+  /** What the last save of that row asked to check; empty when nothing. */
+  warningsOf(resource: string, id: RecordId): readonly string[] {
+    return this._rowWarnings().get(`${resource}:${id}`) ?? [];
+  }
+
+  private recordWarnings(
+    resource: string,
+    id: RecordId,
+    avertissements: readonly Avertissement[],
+  ): void {
+    const key = `${resource}:${id}`;
+    const current = this._rowWarnings();
+    if (avertissements.length === 0 && !current.has(key)) {
+      return;
+    }
+    const next = new Map(current);
+    if (avertissements.length === 0) {
+      next.delete(key);
+    } else {
+      next.set(
+        key,
+        avertissements.map((avertissement) => avertissement.message),
+      );
+    }
+    this._rowWarnings.set(next);
+  }
+
+  /**
    * Loads every collection; failures are reported but never thrown to the
    * view. Answers whether the store now holds what the server has — a caller
    * about to reason on an absence (a draft whose fiche is gone) must not do it
@@ -132,6 +168,7 @@ export class ReferenceCrudService {
       // created without one, and echoing the payload printed "Créneau
       // undefined" in a snack bar that stays until it is dismissed.
       const identifiant = id ?? payload.id ?? editingId ?? '';
+      this.recordWarnings(resource, identifiant, avertissements);
       if (avertissements.length > 0) {
         const count = avertissements.length;
         // Written all the same — the entity is in the list behind the snack
@@ -331,11 +368,27 @@ export class ReferenceCrudService {
     payloads: readonly T[],
     labelPluriel: string,
   ): Promise<number> {
+    return (await this.saveManyWritten(resource, payloads, labelPluriel)).length;
+  }
+
+  /**
+   * {@link saveMany}, answering the ids of the rows actually saved rather
+   * than their count: a caller keeping something per row — the wishes a
+   * grid toggled — drops it for those rows alone and keeps the refused ones.
+   */
+  async saveManyWritten<T extends { id: string | number }>(
+    resource: string,
+    payloads: readonly T[],
+    labelPluriel: string,
+  ): Promise<readonly (string | number)[]> {
     if (payloads.length === 0) {
-      return 0;
+      return [];
     }
     try {
       const result = await this.store.saveMany(resource, payloads);
+      for (const id of result.succes) {
+        this.recordWarnings(resource, id, result.avertissementsParId?.get(id) ?? []);
+      }
       this.refreshResolution();
       this.reportBulk(
         result,
@@ -344,10 +397,10 @@ export class ReferenceCrudService {
         (count) =>
           $localize`:@@crud.updateManyFailed:${count}:count: ${labelPluriel}:label: n'ont pas pu être modifiés.`,
       );
-      return result.succes.length;
+      return result.succes;
     } catch (error) {
       this.reportError(error);
-      return 0;
+      return [];
     }
   }
 

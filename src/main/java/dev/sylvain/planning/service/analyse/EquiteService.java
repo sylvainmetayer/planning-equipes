@@ -9,6 +9,7 @@ import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.referentiel.CsvFormulaGuard;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -370,14 +371,19 @@ public class EquiteService {
         return String.format(Locale.ROOT, "%.2f", valeur).replace('.', ',');
     }
 
+    /**
+     * A text cell, behind a quote first when a spreadsheet would run it as a
+     * formula ({@link CsvFormulaGuard}); never called on a number.
+     */
     private static String escape(String valeur) {
         if (valeur == null) {
             return "";
         }
-        if (valeur.contains(";") || valeur.contains("\"") || valeur.contains("\n")) {
-            return "\"" + valeur.replace("\"", "\"\"") + "\"";
+        String cellule = CsvFormulaGuard.neutralise(valeur);
+        if (cellule.contains(";") || cellule.contains("\"") || cellule.contains("\n")) {
+            return "\"" + cellule.replace("\"", "\"\"") + "\"";
         }
-        return valeur;
+        return cellule;
     }
 
     /* ---------------------------- Per-poste rules --------------------------- */

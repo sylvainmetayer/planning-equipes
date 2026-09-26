@@ -85,14 +85,19 @@ test('« ?typologie= » filtre les animateurs sur la typologie nommée, et la pu
   const page = await pageAdmin(browser, admin);
   await page.goto(`/animateurs?typologie=${strategie}`, { waitUntil: 'domcontentloaded' });
 
-  const puce = page.locator('.animateurs-typologie-filtre');
-  await expect(puce).toContainText('Typologie :');
+  const puce = page.locator('.filter-chips mat-chip', { hasText: 'Typologie :' });
+  await expect(puce).toBeVisible();
   await expect(page.locator('#contenu')).toContainText('Aucune ligne ne correspond au filtre.');
 
-  await puce.getByRole('button', { name: 'Retirer le filtre par typologie' }).click();
+  await puce.getByRole('button', { name: /^Retirer le filtre Typologie/ }).click();
   await expect(puce).toHaveCount(0);
   await expect(page).not.toHaveURL(/typologie=/);
-  await expect(page.locator('table tbody tr').filter({ hasText: 'E2E-A' })).toHaveCount(1);
+  // The row names the animateur, not their id: its link to the fiche carries the id.
+  await expect(
+    page
+      .locator('table tbody tr')
+      .filter({ has: page.locator(`a[href$="/animateurs/${SEED.demandeur}"]`) }),
+  ).toHaveCount(1);
   await page.context().close();
 });
 

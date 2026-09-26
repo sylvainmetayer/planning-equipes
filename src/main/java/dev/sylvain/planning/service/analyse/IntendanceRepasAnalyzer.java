@@ -8,6 +8,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.analyse.PauseAnalyzer.CoupureRepasView;
 import dev.sylvain.planning.service.analyse.PauseAnalyzer.JourneeAnimateurView;
+import dev.sylvain.planning.service.referentiel.CsvFormulaGuard;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.LocalDate;
@@ -344,14 +345,19 @@ public class IntendanceRepasAnalyzer {
         return csv.toString();
     }
 
+    /**
+     * A text cell, behind a quote first when a spreadsheet would run it as a
+     * formula ({@link CsvFormulaGuard}); never called on a number.
+     */
     private static String echapper(String valeur) {
         if (valeur == null) {
             return "";
         }
-        if (valeur.contains(";") || valeur.contains("\"") || valeur.contains("\n")) {
-            return "\"" + valeur.replace("\"", "\"\"") + "\"";
+        String cellule = CsvFormulaGuard.neutralise(valeur);
+        if (cellule.contains(";") || cellule.contains("\"") || cellule.contains("\n")) {
+            return "\"" + cellule.replace("\"", "\"\"") + "\"";
         }
-        return valeur;
+        return cellule;
     }
 
     /** One emplacement's tally for one window of one day, filled break by break. */
