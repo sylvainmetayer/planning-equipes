@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.compte;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.edition.EditionRepository;
+import dev.sylvain.planning.service.keycloak.KeycloakUserProvisioning;
 import dev.sylvain.planning.service.referentiel.StandRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -51,6 +52,9 @@ public class CompteService {
 
     @Inject
     StandRepository stands;
+
+    @Inject
+    KeycloakUserProvisioning provisioning;
 
     private final Map<String, Lu> cache = new ConcurrentHashMap<>();
 
@@ -158,6 +162,29 @@ public class CompteService {
         if (!repository.insertIfAbsent(newId(), cle, blankToNull(nom), null, null)) {
             throw new BusinessError.Conflict("Un compte existe déjà pour " + cle + ".");
         }
+        return repository.findByEmail(cle).orElseThrow();
+    }
+
+    /**
+     * Makes {@code email} an administrator (see
+     * {@link KeycloakUserProvisioning#grantAdmin}): Keycloak first, so a
+     * refusal there leaves nothing behind here; then the account of this
+     * application, when the person has none yet, so the list shows them
+     * before their first sign-in. An account deactivated here is refused —
+     * reactivating it is a decision of its own.
+     */
+    public Compte inviteAdministrator(String email, String nom) {
+        String cle = normalize(email);
+        if (!cle.matches("[^@\\s]+@[^@\\s]+")) {
+            throw new BusinessError.Invalid("Adresse e-mail invalide : " + email);
+        }
+        repository.findByEmail(cle).filter(compte -> !compte.actif()).ifPresent(compte -> {
+            throw new BusinessError.Conflict(
+                    "Le compte de " + cle + " est désactivé ici : réactivez-le avant d'en faire un administrateur.");
+        });
+        provisioning.grantAdmin(cle, blankToNull(nom));
+        repository.insertIfAbsent(newId(), cle, blankToNull(nom), null, null);
+        cache.clear();
         return repository.findByEmail(cle).orElseThrow();
     }
 
