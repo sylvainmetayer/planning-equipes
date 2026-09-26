@@ -21,60 +21,66 @@ test.afterAll(async () => {
   await admin.dispose();
 });
 
-test('la heatmap retrouve sa vue et sa recherche après un rechargement', async ({ browser }) => {
+test('le planning par stand retrouve sa densité et sa recherche après un rechargement', async ({
+  browser,
+}) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/heatmap');
+  await page.goto('/journee?axe=stand');
+  const lignes = page.locator('.planning-grille tbody th a.planning-grille-lien');
 
-  await page.locator('mat-button-toggle').filter({ hasText: 'Par animateur' }).click();
-  await page.getByLabel('Filtrer par nom').fill('Alice');
-  await expect(page.locator('.heatmap-row-label')).toHaveText([/Alice E2E/]);
-  await expect(page).toHaveURL(/[?&]view=animateur/);
-  await expect(page).toHaveURL(/[?&]q=Alice/);
+  await page.locator('mat-button-toggle').filter({ hasText: 'Compteurs' }).click();
+  await page.getByLabel('Filtrer par nom').fill('deux');
+  await expect(lignes).toHaveText([/Stand E2E deux/]);
+  await expect(page).toHaveURL(/[?&]densite=compteurs/);
+  await expect(page).toHaveURL(/[?&]q=deux/);
 
   // Le rechargement complet : c'est lui, et non un simple re-rendu, qui
   // distingue un état porté par l'URL d'un état gardé en mémoire.
   await page.reload();
 
-  await expect(page.getByLabel('Filtrer par nom')).toHaveValue('Alice');
-  await expect(page.locator('.heatmap-row-label')).toHaveText([/Alice E2E/]);
+  await expect(page.getByLabel('Filtrer par nom')).toHaveValue('deux');
+  await expect(lignes).toHaveText([/Stand E2E deux/]);
   await page.context().close();
 });
 
-test('la heatmap se remet à zéro en une action, et l’URL avec elle', async ({ browser }) => {
-  const page = await pageAdmin(browser, admin);
-  await page.goto('/heatmap?view=animateur&q=Alice');
-  await expect(page.locator('.heatmap-row-label')).toHaveText([/Alice E2E/]);
-
-  await page.getByRole('button', { name: 'Réinitialiser la vue' }).click();
-
-  await expect(page).not.toHaveURL(/[?&]view=/);
-  await expect(page).not.toHaveURL(/[?&]q=/);
-  // Retour à la vue d'ouverture : les stands, pas les animateurs.
-  await expect(page.locator('.heatmap-row-label').first()).toHaveText(/Stand E2E/);
-  await page.context().close();
-});
-
-test('une vue inconnue dans l’URL laisse la heatmap sur sa vue d’ouverture', async ({
+test('le planning par stand se remet à zéro en une action, sans quitter son axe', async ({
   browser,
 }) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/heatmap?view=par-jour');
+  await page.goto('/journee?axe=stand&densite=compteurs&q=deux');
+  const lignes = page.locator('.planning-grille tbody th a.planning-grille-lien');
+  await expect(lignes).toHaveText([/Stand E2E deux/]);
 
-  await expect(page.locator('.heatmap-row-label').first()).toHaveText(/Stand E2E/);
+  await page.getByRole('button', { name: 'Réinitialiser la vue' }).click();
+
+  await expect(page).not.toHaveURL(/[?&]densite=/);
+  await expect(page).not.toHaveURL(/[?&]q=/);
+  await expect(page).toHaveURL(/[?&]axe=stand/);
+  await expect(lignes).toHaveCount(2);
   await page.context().close();
 });
 
-test('le tri des heures survit au rechargement, dans les deux sens', async ({ browser }) => {
+test('une densité inconnue dans l’URL laisse le planning par stand sur les noms', async ({
+  browser,
+}) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/hours');
-  // `tbody` explicitement : la ligne de pied « Tous les animateurs » porte la
-  // même classe de colonne, et compterait comme une ligne de plus.
-  const noms = page.locator('table tbody td.mat-column-animateur');
-  const entete = page.getByRole('button', { name: 'Animateur' });
+  // The Heatmap's former key, as a bookmark still carries it.
+  await page.goto('/heatmap?view=par-jour');
+
+  await expect(page).toHaveURL(/[?&]axe=stand/);
+  await expect(page.locator('.planning-grille tbody th').first()).toHaveText(/Stand E2E/);
+  await page.context().close();
+});
+
+test('le tri par personne survit au rechargement, dans les deux sens', async ({ browser }) => {
+  const page = await pageAdmin(browser, admin);
+  await page.goto('/journee?axe=personne');
+  const noms = page.locator('.planning-grille tbody th a.planning-grille-lien');
+  const entete = page.getByRole('button', { name: 'Animateur', exact: true });
 
   await entete.click();
   await expect(noms).toHaveText([/Alice E2E/, /Bruno E2E/]);
-  await expect(page).toHaveURL(/[?&]sort=animateur/);
+  await expect(page).toHaveURL(/[?&]sort=nom/);
   await expect(page).toHaveURL(/[?&]dir=asc/);
 
   await entete.click();
@@ -86,20 +92,23 @@ test('le tri des heures survit au rechargement, dans les deux sens', async ({ br
   await expect(noms).toHaveText([/Bruno E2E/, /Alice E2E/]);
   // L'en-tête aussi : une flèche de tri qui ne suit pas les lignes restaurées
   // affiche un tableau trié en le disant non trié.
-  await expect(page.getByRole('columnheader', { name: 'Animateur' })).toHaveAttribute(
+  await expect(page.locator('th.planning-grille-entete').first()).toHaveAttribute(
     'aria-sort',
     'descending',
   );
   await page.context().close();
 });
 
-test('une colonne de semaine disparue ne casse pas le tableau des heures', async ({ browser }) => {
-  // Exactement ce que porte un lien mis en favori sur l'édition précédente.
+test('une colonne de semaine disparue ne casse pas le planning par personne', async ({
+  browser,
+}) => {
+  // Exactement ce que porte un lien vers les Heures mis en favori sur
+  // l'édition précédente.
   const page = await pageAdmin(browser, admin);
   await page.goto('/hours?sort=2019-W01&dir=asc');
 
-  await expect(page.locator('#contenu')).toContainText('Heures planifiées par animateur');
-  await expect(page.locator('table tbody td.mat-column-animateur')).toHaveCount(2);
+  await expect(page).toHaveURL(/[?&]axe=personne/);
+  await expect(page.locator('.planning-grille tbody th a.planning-grille-lien')).toHaveCount(2);
   await page.context().close();
 });
 
@@ -195,7 +204,7 @@ test('le bouton Retour quitte l’écran au lieu de rejouer chaque frappe du fil
   // `replaceUrl` : sans lui, filtrer sur cinq caractères laisserait cinq
   // entrées d'historique, et il faudrait cinq retours pour sortir de la page.
   const page = await pageAdmin(browser, admin);
-  await page.goto('/hours');
+  await page.goto('/journee');
   await page.goto('/animateurs');
 
   await page.getByRole('searchbox').fill('Alice');
@@ -203,6 +212,6 @@ test('le bouton Retour quitte l’écran au lieu de rejouer chaque frappe du fil
 
   await page.goBack();
 
-  await expect(page).toHaveURL(/\/hours/);
+  await expect(page).toHaveURL(/\/journee/);
   await page.context().close();
 });

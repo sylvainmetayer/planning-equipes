@@ -188,7 +188,7 @@ sur un produit stands × créneaux :
 | `animateurCount` | les valeurs possibles d'un poste, au sens Timefold |
 | `posteCount` | les entités : un poste par siège à pourvoir |
 | `contrainteAdHocCount` | les ajustements manuels appliqués par-dessus |
-| `hoursToFill` | la somme des durées effectives des postes, fermetures de stands déduites — la base de l'écran Heures |
+| `hoursToFill` | la somme des durées effectives des postes, fermetures de stands déduites — la base du rapport des heures |
 | `hoursAvailable` | le plafond légal de ce que les animateurs peuvent travailler sur les jours de l'événement : par animateur et par semaine ISO, les jours où il n'est pas indisponible (six au plus), chacun au plafond quotidien de son âge ce jour-là, le tout borné par le plafond hebdomadaire des paramètres légaux |
 
 Le rapport des deux dernières est un taux de remplissage. C'est un plafond,
@@ -2644,7 +2644,7 @@ lorsqu'il la remplace.
 vide.** `animateur_id` est nullable, et un poste sans animateur *est* la
 représentation d'une place non pourvue dans ce modèle. Chaque siège qu'il tenait
 redevient donc une place à pourvoir, visible et comptée comme telle — par
-`postesNonPourvus`, par la heatmap, par les écrans de couverture — au lieu de
+`postesNonPourvus`, par le Planning par stand, par les écrans de couverture — au lieu de
 disparaître et de faire paraître le plan mieux couvert qu'il ne l'est. Des trous
 apparaissent ainsi dans un plan que personne n'a redemandé de résoudre : c'est
 voulu, ils sont réels, et c'est précisément ce qu'on veut voir avant de

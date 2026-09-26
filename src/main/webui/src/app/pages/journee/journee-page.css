@@ -20,6 +20,11 @@
   margin-right: 0.35rem;
 }
 
+/* The four axes read as the page's tabs: the one on screen in bold. */
+.planning-axes .mat-button-toggle-checked {
+  font-weight: 600;
+}
+
 .planning-barre {
   display: flex;
   flex-wrap: wrap;
@@ -49,6 +54,42 @@
     width: 100%;
     min-width: 100%;
   }
+}
+
+/* The switches and legend of an axis (Par stand, Par personne, Par typologie),
+   above its grid: in the page's sheet, which every axis is drawn under. */
+.planning-axe-barre {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+  margin: 0.25rem 0 0.5rem;
+}
+
+/* The legend of an axis: one swatch per state a cell can be in. */
+.planning-grille-legende {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  list-style: none;
+  margin: 0.25rem 0;
+  padding: 0;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.planning-grille-legende li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.planning-grille-pastille {
+  display: inline-block;
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: var(--mat-sys-corner-extra-small);
+  border: 1px solid var(--mat-sys-outline-variant);
 }
 
 /* The relecture chips and the consigne, one line under the bar. */

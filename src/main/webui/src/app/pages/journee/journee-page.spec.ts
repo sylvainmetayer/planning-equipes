@@ -12,6 +12,7 @@ import { AffectationExplanationService } from '../../core/affectation-explanatio
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { ConstraintsApi } from '../../core/api/constraints-api';
 import { JourneesApi } from '../../core/api/journees-api';
+import { PlanningApi } from '../../core/api/planning-api';
 import { PostesApi } from '../../core/api/postes-api';
 import { ConsignesStore } from '../../core/consignes.store';
 import { ApiService } from '../../core/api.service';
@@ -84,6 +85,11 @@ type PageInternals = {
   viewChanged: Signal<boolean>;
   changeView: (vue: JourneeView) => void;
   selectJour: (key: string) => void;
+  axe: Signal<string>;
+  changeAxe: (axe: 'jour' | 'stand' | 'personne' | 'typologie') => void;
+  animateur: Signal<string>;
+  stand: Signal<string>;
+  filtreActif: Signal<boolean>;
   applyChip: (pastille: 'aucune' | 'vides' | 'pauses' | 'verrous' | 'changements') => void;
   resetView: () => void;
   recharger: () => Promise<void>;
@@ -103,6 +109,21 @@ describe('JourneePage', () => {
     walks: vi.fn(async () => null),
     groupedArrivals: vi.fn(async () => null),
     intendance: vi.fn(async () => ({ pasMinutes: 60, journees: [], message: '' })),
+  };
+  const planningApi = {
+    equityReport: vi.fn(async () => ({
+      heureDebutSoiree: '20:00:00',
+      semaines: [],
+      lignes: [],
+      syntheses: {},
+      colonnesSolveur: [],
+    })),
+    hoursReport: vi.fn(async () => ({
+      heureDebutSoiree: '20:00:00',
+      semaines: [],
+      animateurs: [],
+    })),
+    typologiesReport: vi.fn(async () => ({ typologies: [], jours: [] })),
   };
   const journeesApi = {
     changements: vi.fn(
@@ -164,6 +185,7 @@ describe('JourneePage', () => {
         { provide: PlanningStateService, useValue: { loadForDisplay, set } },
         { provide: AnalysesApi, useValue: analysesApi },
         { provide: JourneesApi, useValue: journeesApi },
+        { provide: PlanningApi, useValue: planningApi },
         {
           provide: ConsignesStore,
           useValue: {
@@ -176,7 +198,15 @@ describe('JourneePage', () => {
             consigneOf: () => null,
           },
         },
-        { provide: ApiService, useValue: { get: vi.fn(async () => ({ assignments: 2 })) } },
+        {
+          provide: ApiService,
+          useValue: {
+            // Lists for the referentials the treemap reads, a volumetry for the rest.
+            get: vi.fn(async (url: string) =>
+              url === '/api/typologies' || url === '/api/stands' ? [] : { assignments: 2 },
+            ),
+          },
+        },
         { provide: SolverJobService, useValue: { editingLocked: () => false } },
         { provide: NotificationService, useValue: { notify: vi.fn() } },
         {
@@ -358,6 +388,34 @@ describe('JourneePage', () => {
     expect(loadForDisplay).toHaveBeenCalledOnce();
   });
 
+  // The palette's stand and timeslot land on this very route: the stand, the
+  // day and the seat they name used to wait for a reload.
+  it('follows a navigation to itself naming a stand, a day or a seat', async () => {
+    const page = await monter();
+
+    queryParams$.next(convertToParamMap({ stand: 'Dixit', date: '2026-08-02' }));
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(page.stand()).toBe('Dixit');
+    expect(page.jourCourant()?.jour).toBe(2);
+
+    queryParams$.next(convertToParamMap({ animateur: 'alice', jour: '1' }));
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(page.animateur()).toBe('alice');
+    expect(page.jourCourant()?.jour).toBe(1);
+    // A key the address leaves out keeps what is on screen.
+    expect(page.stand()).toBe('Dixit');
+
+    queryParams$.next(convertToParamMap({ siege: 'p2' }));
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(page.openSeatId()).toBe('p2');
+    expect(page.jourCourant()?.jour).toBe(2);
+    expect(racine().querySelector('app-siege-panel')).not.toBeNull();
+    expect(loadForDisplay).toHaveBeenCalledOnce();
+  });
+
   it('opens on the rendering and the day the URL names, by date or by the older day number', async () => {
     const byDate = await monter({ vue: 'rail', date: '2026-08-02' });
     expect(byDate.view()).toBe('rail');
@@ -395,7 +453,8 @@ describe('JourneePage', () => {
     expect(racine().querySelector('h1')?.textContent?.trim()).toBe('Planning');
     expect(racine().querySelector('app-mini-mois')).not.toBeNull();
     expect(racine().querySelector('mat-select')).toBeNull();
-    expect(racine().querySelectorAll('app-selection-recherche')).toHaveLength(2);
+    // Stand, animateur, location, game category: the four filters every axis keeps.
+    expect(racine().querySelectorAll('app-selection-recherche')).toHaveLength(4);
     expect(racine().querySelector('app-relecture-barre')).not.toBeNull();
     expect(racine().querySelector('app-consigne-ligne')).not.toBeNull();
   });
@@ -411,6 +470,122 @@ describe('JourneePage', () => {
       '/parametres?onglet=mural',
     ]);
     expect(liens[0].getAttribute('target')).toBe('_blank');
+  });
+
+  // #713: the same page, four axes, the filters kept from one to the other.
+  it('draws each axis under the same filters, and keeps the person from one to the other', async () => {
+    const page = await monter({
+      axe: 'personne',
+      animateur: 'alice',
+      sort: 'heuresTotal',
+      dir: 'desc',
+    });
+    expect(page.axe()).toBe('personne');
+    expect(racine().querySelector('app-planning-personne-vue')).not.toBeNull();
+    expect(racine().querySelector('app-relecture-barre')).toBeNull();
+    expect(TestBed.inject(Location).path()).toContain('sort=heuresTotal');
+
+    page.changeAxe('jour');
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(racine().querySelector('app-calendar-day-vue')).not.toBeNull();
+    const url = TestBed.inject(Location).path();
+    expect(url).toContain('animateur=alice');
+    expect(url).not.toContain('axe=');
+    // The sort is the person axis's own: it leaves the address with it.
+    expect(url).not.toContain('sort=');
+
+    page.changeAxe('stand');
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(racine().querySelector('app-planning-stand-vue')).not.toBeNull();
+    expect(TestBed.inject(Location).path()).toContain('axe=stand');
+
+    page.changeAxe('typologie');
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(racine().querySelector('app-planning-typologie-vue')).not.toBeNull();
+    expect(page.animateur()).toBe('alice');
+  });
+
+  // A filter drawn over a rendering that ignores it narrows nothing while
+  // saying it does, and the relecture panel then warned of a filter hiding
+  // nothing.
+  it('shows only the filters the rendering on screen reads, and counts only those', async () => {
+    const page = (await monter({ emplacement: 'aucun' })) as PageInternals & {
+      standView: { set: (view: 'grille' | 'treemap') => void };
+    };
+    const filtres = () =>
+      Array.from(racine().querySelectorAll('.planning-barre .planning-filtre')).map((filtre) =>
+        filtre.querySelector('mat-label')?.textContent?.trim(),
+      );
+    const redraw = async () => {
+      TestBed.tick();
+      await fixture.whenStable();
+    };
+
+    expect(filtres()).toEqual([
+      'Stand',
+      'Animateur',
+      'Emplacement',
+      'Typologie',
+      'Filtrer par nom',
+    ]);
+    expect(page.filtreActif()).toBe(true);
+
+    page.changeView('rail');
+    await redraw();
+    expect(filtres()).toEqual(['Stand', 'Animateur', 'Filtrer par nom']);
+    expect(page.filtreActif()).toBe(false);
+
+    page.changeView('carte');
+    await redraw();
+    expect(filtres()).toEqual(['Stand']);
+
+    page.changeAxe('typologie');
+    await redraw();
+    expect(filtres()).toEqual(['Typologie', 'Filtrer par nom']);
+
+    page.changeAxe('stand');
+    page.standView.set('treemap');
+    await redraw();
+    expect(filtres()).toEqual(['Emplacement']);
+  });
+
+  it('clears the keys of the treemap once it leaves the screen', async () => {
+    const page = (await monter({ axe: 'stand' })) as PageInternals & {
+      standView: { set: (view: 'grille' | 'treemap') => void };
+    };
+    // The treemap restores its state from the address bar, as a link gives it.
+    const location = TestBed.inject(Location);
+    location.replaceState('/journee', 'axe=stand&regroupement=typologie&semaine=2026-07-27');
+    page.standView.set('treemap');
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(location.path()).toContain('regroupement=typologie');
+    expect(location.path()).toContain('semaine=2026-07-27');
+
+    page.changeAxe('personne');
+    TestBed.tick();
+    await fixture.whenStable();
+
+    const url = TestBed.inject(Location).path();
+    expect(url).not.toContain('regroupement=');
+    expect(url).not.toContain('semaine=');
+  });
+
+  it('opens the Siège panel from a cell of a grid, on its day', async () => {
+    const page = (await monter({ axe: 'stand' })) as PageInternals & {
+      openSeatOnDay: (request: { posteId: string; jour: string }) => void;
+    };
+
+    page.openSeatOnDay({ posteId: 'p2', jour: '2026-08-02' });
+    TestBed.tick();
+    await fixture.whenStable();
+
+    expect(page.openSeatId()).toBe('p2');
+    expect(page.jourCourant()?.jour).toBe(2);
+    expect(racine().querySelector('app-siege-panel')).not.toBeNull();
   });
 
   it('narrows the rendering on what a relecture chip counts, and widens it back', async () => {

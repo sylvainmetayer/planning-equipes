@@ -227,51 +227,43 @@ test.describe('typologies', () => {
     await edition.getByRole('button', { name: /Modifier la typologie/ }).click();
     await expect(edition).toBeHidden();
 
-    await page.goto('/typologies-planning');
+    await page.goto('/journee?axe=typologie');
     await expect(page.getByText("Nécessite d'apprendre 45 jeux").first()).toBeVisible();
     await page.context().close();
   });
 
-  // The four renderings, the filters and the links out: the screen is the whole
-  // point of the rework, and a tab that throws on an empty axis would only show
-  // up here.
-  test('la vue par typologie propose ses quatre rendus, ses filtres et ses liens', async ({
+  // « Par typologie » of the Planning page: one table, the page's filters, and
+  // every figure a way to where it is acted on.
+  test('la vue par typologie filtre et renvoie chaque chiffre là où on agit', async ({
     browser,
   }) => {
     const page = await pageAdmin(browser, admin);
+    // The former address lands on the axis, which draws the table.
     await page.goto('/typologies-planning');
+    await expect(page).toHaveURL(/\/journee\?.*axe=typologie/);
+    const table = page.locator('.planning-typologie-table');
+    await expect(table).toBeVisible();
 
-    await expect(page.getByRole('heading', { name: 'Planning par typologie' })).toBeVisible();
+    // A text nothing matches empties it and says so, rather than looking like
+    // an edition with no typologies at all.
+    await page.getByLabel('Filtrer par nom').fill('zzz-aucune-typologie');
+    await expect(page.getByText('Aucune typologie ne correspond aux filtres.')).toBeVisible();
+    await page.getByLabel('Filtrer par nom').fill('');
+    await expect(table).toBeVisible();
 
-    // `mat-button-toggle` renders radios in a radiogroup, not buttons — same
-    // reading as the Diagnostic tabs. Each rendering is asserted on what only
-    // it draws, so a tab that switches without rendering fails here.
-    const onglets = page.getByRole('radiogroup', { name: 'Rendu du planning par typologie' });
-    await onglets.getByText('Barres comparées').click();
-    await expect(page.locator('.typologies-barres')).toBeVisible();
+    // The vetted go to the Animateurs list filtered on the category.
+    const competents = table.locator('tbody tr').first().getByRole('link').first();
+    await expect(competents).toHaveAttribute('href', /\/animateurs\?typologie=/);
 
-    await onglets.getByText('Typologie × jour').click();
-    // Une édition sans jour tenu dit pourquoi elle ne dessine rien plutôt que
-    // de montrer une grille vide : les deux sont des succès.
-    await expect(page.locator('.typologies-heatmap, .empty-hint').first()).toBeVisible();
-
-    await onglets.getByText('Cartes').click();
-    await expect(page.locator('.typologies-cartes')).toBeVisible();
-
-    await onglets.getByText('Tableau').click();
-    await expect(page.locator('.typologies-table')).toBeVisible();
-
-    // A search nothing matches empties the table and says so, rather than
-    // looking like an edition with no typologies at all.
-    await page.getByLabel('Rechercher').fill('zzz-aucune-typologie');
-    await expect(page.getByText('Aucune ligne ne correspond au filtre.')).toBeVisible();
-    await page.getByRole('button', { name: 'Tout afficher' }).click();
-
-    // Every animateur name is a link to that person's fiche, planning open.
-    const lien = page.locator('a.typologies-lien').first();
-    if (await lien.count()) {
-      await expect(lien).toHaveAttribute('href', /\/animateurs\/[^?]+\?section=timeline/);
-    }
+    // The seats open « Par stand », narrowed to the category.
+    await table
+      .locator('tbody tr')
+      .first()
+      .locator('button.planning-typologie-lien')
+      .first()
+      .click();
+    await expect(page).toHaveURL(/axe=stand/);
+    await expect(page).toHaveURL(/typologie=/);
     await page.context().close();
   });
 });

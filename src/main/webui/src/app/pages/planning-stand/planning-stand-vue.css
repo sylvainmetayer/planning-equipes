@@ -1,0 +1,54 @@
+/* « Par stand » of the Planning page (issue #713): the colour of a cell is its
+   coverage, whatever the density — the names, the counters or the colour
+   alone. Closed is not empty: a closed stand is hatched grey, an empty one red. */
+
+.planning-stand-pourvu {
+  background: color-mix(in srgb, var(--app-positive) 16%, var(--mat-sys-surface));
+}
+
+.planning-stand-partiel {
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+}
+
+.planning-stand-vide {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font-weight: 600;
+}
+
+.planning-stand-ferme {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--mat-sys-surface-container),
+    var(--mat-sys-surface-container) 4px,
+    var(--mat-sys-surface-container-low) 4px,
+    var(--mat-sys-surface-container-low) 8px
+  );
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* One name per line: a cell is read down, like the column of a spreadsheet. */
+.planning-stand-nom,
+.planning-stand-manquants {
+  display: block;
+  line-height: 1.3;
+}
+
+.planning-stand-manquants {
+  color: var(--mat-sys-error);
+  font-weight: 600;
+}
+
+.planning-stand-manque {
+  color: var(--mat-sys-error);
+  font-weight: 600;
+}
+
+.planning-stand-densite-compteurs .planning-grille-case {
+  text-align: center;
+}
+
+.planning-stand-densite-couverture .planning-grille-case {
+  min-width: 1.75rem;
+}

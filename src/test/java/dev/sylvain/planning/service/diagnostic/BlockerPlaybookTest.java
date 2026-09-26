@@ -133,7 +133,9 @@ class BlockerPlaybookTest {
         assertThat(actions)
                 .filteredOn(action -> action.code().equals(BlockerPlaybook.CODE_REVIEW_DAYS_OFF))
                 .singleElement()
-                .satisfies(action -> assertThat(action.parametres()).containsEntry("date", "2026-07-12"));
+                .satisfies(action -> assertThat(action.parametres())
+                        .containsEntry("axe", "personne")
+                        .containsEntry("date", "2026-07-12"));
     }
 
     /** A shortfall over several stands names no stand: the grid opens on the day, not on a guess. */

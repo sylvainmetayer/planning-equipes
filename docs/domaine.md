@@ -38,7 +38,7 @@ ad hoc.
 Une typologie porte aussi une **description** libre : la note que l'organisateur
 écrit pour lui-même — « cette typologie nécessite d'apprendre 45 jeux ». Elle se
 saisit dans le formulaire de l'écran Typologies, se lit dans la fiche et dans la
-vue « Planning par typologie », et nulle part ailleurs : ni sur un PDF, ni dans
+vue « Planning, par typologie », et nulle part ailleurs : ni sur un PDF, ni dans
 l'espace animateur.
 
 ## Les bornes de l'édition se dérivent
@@ -927,7 +927,7 @@ une pause qu'un autre ne doit pas.
 
 **La déduction est inconditionnelle.** Une pause due est du repos, pas du
 travail effectif (art. L3121-1), donc elle est retranchée de l'amplitude —
-plafonds quotidien et hebdomadaires, écran Heures, équité, Besoin, KPI. Rien
+plafonds quotidien et hebdomadaires, rapport des heures, équité, Besoin, KPI. Rien
 n'est caché par là : dans un plan sans écart dur, toute pause déduite a bien
 été prise, et c'est exactement ce que les deux règles dures garantissent. Une
 journée 14 h-minuit vaut ainsi 9 h 30 de travail effectif ; 13 h-minuit en vaut

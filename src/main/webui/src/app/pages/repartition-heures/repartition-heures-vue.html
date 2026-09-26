@@ -1,8 +1,4 @@
 <mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h1 mat-card-title i18n="@@nav.link.repartitionHeures">Répartition des heures</h1>
-    <mat-card-subtitle i18n="@@repartitionHeures.subtitle">Ce qui pèse dans l'édition, et où la couverture coince.</mat-card-subtitle>
-  </mat-card-header>
   <mat-card-content>
     <div class="repartition-toolbar">
       <mat-button-toggle-group
@@ -34,16 +30,6 @@
         </mat-select>
       </mat-form-field>
 
-      <mat-form-field appearance="outline" class="repartition-select" subscriptSizing="dynamic">
-        <mat-label i18n="@@repartitionHeures.emplacement">Emplacement</mat-label>
-        <mat-select [value]="emplacementFilter()" (valueChange)="setEmplacement($event)">
-          <mat-option value="" i18n="@@repartitionHeures.emplacement.all">Tous</mat-option>
-          @for (option of emplacementOptions(); track option.value) {
-            <mat-option [value]="option.value">{{ option.label }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-
       @if (viewChanged()) {
         <button matButton type="button" (click)="resetView()">
           <mat-icon>filter_alt_off</mat-icon>
@@ -59,7 +45,7 @@
     @if (grouping() === 'typologie') {
       <p class="empty-hint">
         <ng-container i18n="@@repartitionHeures.combinationNote">Un stand à plusieurs typologies compte une fois, sous leur combinaison.</ng-container>
-        <a routerLink="/typologies-planning" i18n="@@repartitionHeures.combinationLink">Un poste par typologie : Planning par typologie</a>
+        <ng-container i18n="@@repartitionHeures.combinationAxe">Un poste par typologie : l'onglet Par typologie.</ng-container>
       </p>
     }
 

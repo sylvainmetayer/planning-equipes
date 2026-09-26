@@ -298,7 +298,7 @@ sans écart dur, toute pause déduite a bien été prise — c'est exactement ce
 | `dureeQuotidienneMaxMajeur`, `dureeQuotidienneMaxMineur` | travail effectif : amplitude moins les pauses dues |
 | `dureeHebdomadaireMax`, `dureeHebdomadaireMaxMineur` | idem, sommé sur la semaine ISO |
 | `dureeHebdomadaireMaxDeuxSemaines` | idem : une semaine est pleine en effectif |
-| écran Heures (`PlanningHoursService`), outil `heures_travaillees` | idem : total et colonnes hebdomadaires |
+| page Planning, par personne, et CSV « Heures pour la paie » (`PlanningHoursService`), outil `heures_travaillees` | idem : total et colonnes hebdomadaires |
 | tableau d'équité (`EquiteService`) | idem : c'est cette grandeur qu'on répartit |
 | KPI (`PlanningKpiService`) | idem, sauf les instantanés anciens (voir plus bas) |
 | volumétrie (`ProblemScaleService`) | idem pour les sièges tenus ; un siège vide compte son amplitude |
@@ -330,9 +330,13 @@ contredire le quotidien.
 
 **Ce qui compte encore l'amplitude, et pourquoi.** Trois cas, tous nommés :
 
-- **les trois compteurs de prime** de l'écran Heures — dimanche, jour férié,
-  heures après 22 h — et leurs équivalents du tableau d'équité. Une prime se
-  paie sur la présence, et une pause ne se range pas d'un côté de minuit ni
+- **les trois compteurs de prime** de la paie — dimanche, jour férié,
+  « Nuit (paie) » après 22 h — et leurs équivalents du tableau d'équité.
+  La soirée, elle, n'est pas une prime : il n'y en a qu'une dans
+  l'application, l'heure réglable des paramètres légaux, que le rapport des
+  heures et celui de l'équité lisent de la même façon
+  ([`decisions/0055`](decisions/0055-une-seule-soiree-la-nuit-de-la-paie-a-part.md)).
+  Une prime se paie sur la présence, et une pause ne se range pas d'un côté de minuit ni
   dans l'une de deux fenêtres sans inventer quand elle a été prise. Les trois
   colonnes ne s'additionnent donc pas au total, et ne l'ont jamais fait ;
 - **un siège vide**, dans la volumétrie (`hoursToFill`) : ce qu'il coûtera en
@@ -709,7 +713,8 @@ l'organisateur qui saisit la donnée, baisse le poids, ou éteint la règle en
 connaissance de cause — voir
 [`decisions/0031`](decisions/0031-signaler-le-plancher-sans-le-decider.md).
 
-Ce que ces règles mesurent se lit sur l'écran Équité (`GET /api/planning/equite`),
+Ce que ces règles mesurent se lit sur la page Planning, par personne (le
+rapport `GET /api/planning/equite`),
 qui dit colonne par colonne si une règle du solveur la pèse et si elle est
 active : les heures de soirée, de week-end ou de jour férié n'y sont mesurées
 par aucune règle, et l'écran le dit plutôt que de le laisser croire. Les deux
@@ -1461,7 +1466,7 @@ listées pour que leur absence soit un choix écrit, pas un oubli.
 couvre quelques semaines ISO au plus : **le solveur ne peut pas calculer cette
 moyenne**, il ne connaît ni les semaines précédentes ni les suivantes. Limite
 structurelle du périmètre, pas manque d'implémentation. Le contrôle relève du
-service RH, à partir du cumul par semaine que la page Heures expose déjà.
+service RH, à partir du cumul par semaine que le Planning par personne expose déjà.
 
 **Travail de nuit des majeurs ([L3122-1] et suivants).** `chevaucheNuit()` n'est
 consulté que par les contraintes mineurs, alors que les scénarios livrés
