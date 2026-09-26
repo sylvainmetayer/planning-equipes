@@ -18,7 +18,7 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 
 /**
  * Joins the identity Quarkus built to the account this application keeps for
- * the person (ADR 0049), on every authenticated request.
+ * the person (ADR 0054), on every authenticated request.
  *
  * <ul>
  *   <li><b>A Keycloak session with a verified address</b> is attached to its

@@ -1,4 +1,4 @@
-# 0049 — Keycloak obligatoire, un compte par personne, les droits fins dans l'application
+# 0054 — Keycloak obligatoire, un compte par personne, les droits fins dans l'application
 
 - **Statut** : accepté, implémenté (socle)
 - **Date** : septembre 2026

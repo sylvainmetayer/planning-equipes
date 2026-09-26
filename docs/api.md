@@ -40,7 +40,7 @@ Le verrou « un solveur à la fois » reste, lui, **global à l'instance**.
 
 ## Authentification
 
-L'authentification passe par **Keycloak** ([ADR 0049](decisions/0049-keycloak-obligatoire-comptes-nominatifs.md),
+L'authentification passe par **Keycloak** ([ADR 0054](decisions/0054-keycloak-obligatoire-comptes-nominatifs.md),
 [`keycloak.md`](keycloak.md)). Toute l'API exige le rôle de realm **`admin`**,
 avec six exceptions volontaires : l'espace animateur (voir plus bas),
 l'abonnement ICS (`/api/abonnements/*`, voir plus bas), l'affichage mural
@@ -1929,7 +1929,7 @@ PDF individuel — résout à lui seul l'animateur **et** son édition :
 **Le lien ne suffit pas.** L'espace sert le planning en téléchargement, donc
 toutes ses routes exigent aussi une **session Keycloak** qui porte le rôle
 `animateur` et dont l'adresse, vérifiée par le realm, est celle de la fiche que
-le jeton désigne ([ADR 0049](decisions/0049-keycloak-obligatoire-comptes-nominatifs.md)).
+le jeton désigne ([ADR 0054](decisions/0054-keycloak-obligatoire-comptes-nominatifs.md)).
 Un compte Keycloak est une personne : le même compte ouvre les fiches de cette
 personne dans chaque édition, jamais celle d'un collègue. Sans adresse sur la
 fiche, l'espace ne s'ouvre pas. Le code à six chiffres envoyé par e-mail

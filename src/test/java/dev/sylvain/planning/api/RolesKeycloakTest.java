@@ -21,7 +21,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 /**
- * Who opens {@code /api} once Keycloak signs people in (ADR 0049): the realm
+ * Who opens {@code /api} once Keycloak signs people in (ADR 0054): the realm
  * role {@code admin}, and nobody else. The default {@code %test} profile opens
  * the API so the functional suites need no session; this one restores the real
  * policy.

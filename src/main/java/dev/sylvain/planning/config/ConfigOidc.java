@@ -5,7 +5,7 @@ import io.smallrye.config.WithDefault;
 import java.util.Optional;
 
 /**
- * Keycloak-backed authentication (see {@code docs/keycloak.md}, ADR 0049).
+ * Keycloak-backed authentication (see {@code docs/keycloak.md}, ADR 0054).
  *
  * <p>Mandatory in production: the administrator, the espace animateur and
  * {@code /mcp} all authenticate through the realm. Turning it off is only

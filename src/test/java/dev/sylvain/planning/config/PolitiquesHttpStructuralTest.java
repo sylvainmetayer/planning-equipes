@@ -13,7 +13,7 @@ import java.util.TreeMap;
 import org.junit.jupiter.api.Test;
 
 /**
- * The deny-by-default layer of ADR 0049, read off {@code application.properties}
+ * The deny-by-default layer of ADR 0054, read off {@code application.properties}
  * rather than trusted to review: a public route added "for the time being" and
  * a role that grants more than it names are the two ways this kind of model
  * rots, and neither shows in a diff of the route itself.

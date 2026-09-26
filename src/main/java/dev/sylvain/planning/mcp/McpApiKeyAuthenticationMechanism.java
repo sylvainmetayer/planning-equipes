@@ -22,7 +22,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * header basic auth par exemple"): a shared API key compared against a
  * configurable header.
  *
- * <p>Since ADR 0049, {@code /mcp} is also an OAuth2 resource server — the
+ * <p>Since ADR 0054, {@code /mcp} is also an OAuth2 resource server — the
  * {@code mcp} OIDC tenant, validating bearer tokens and their audience. The two
  * coexist on purpose: the key stays the road for a deployment behind an access
  * proxy that consumes {@code Authorization} for its own account, where a bearer

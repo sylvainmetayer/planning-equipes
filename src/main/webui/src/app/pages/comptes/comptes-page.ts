@@ -67,7 +67,7 @@ interface RightRow {
 const STATE_ORDER: Record<RightState, number> = { active: 0, expired: 1, withdrawn: 2 };
 
 /**
- * Named accounts and the rights delegated to them (ADR 0049): who can sign in,
+ * Named accounts and the rights delegated to them (ADR 0054): who can sign in,
  * who was deactivated, and which RH or stand-manager right each one holds, in
  * which edition, until when.
  *

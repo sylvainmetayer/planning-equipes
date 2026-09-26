@@ -23,7 +23,7 @@ import jakarta.ws.rs.ext.Provider;
  * {@link EditionRequestScope}: that, and not the token, is what lets the
  * history name the animateur as the author of what follows.
  *
- * <p>Neither half is enough alone, and that is the whole design (ADR 0049).
+ * <p>Neither half is enough alone, and that is the whole design (ADR 0054).
  * One Keycloak account is one <b>person</b>, who may hold a fiche in several
  * editions: the account says who is knocking, the token says which espace
  * opens. An animateur who picks up a colleague's link is authenticated — and it

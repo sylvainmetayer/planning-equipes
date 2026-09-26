@@ -1,4 +1,4 @@
--- Comptes nominatifs et habilitations (issues #294 et #295, ADR 0049).
+-- Comptes nominatifs et habilitations (issues #294 et #295, ADR 0054).
 --
 -- Keycloak dit QUI appelle — une adresse vérifiée, un second facteur pour les
 -- administrateurs — et porte les rôles globaux du realm (admin, mcp,

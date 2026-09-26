@@ -6,7 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
-/** The boot checks of the authentication setup (ADR 0049), without booting. */
+/** The boot checks of the authentication setup (ADR 0054), without booting. */
 class OidcConfigurationTest {
 
     private static final String SECRET_32 = "0123456789abcdef0123456789abcdef";

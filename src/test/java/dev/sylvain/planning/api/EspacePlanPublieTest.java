@@ -392,7 +392,7 @@ class EspacePlanPublieTest {
      * A fiche without an address is precisely the case this feature exists
      * for: the mail never left, so the espace is the only place those
      * sentences can still be read — once the address is added and the person
-     * signs in (the espace itself needs the address since ADR 0049).
+     * signs in (the espace itself needs the address since ADR 0054).
      */
     @Test
     void unePublicationQuiNAPasPuPartirResteLisibleDansLEspace() {

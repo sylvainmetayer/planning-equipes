@@ -312,7 +312,7 @@ Single Quarkus service, no separate solver microservice. Package root:
   the order its sections are applied in lives in `ScenarioImportService`, and
   `ReferenceDataResource` is left turning the outcome into a body. The endpoint
   list is the published OpenAPI.
-- HTTP security (issue #165, ADR 0049, `docs/keycloak.md`): **Keycloak is
+- HTTP security (issue #165, ADR 0054, `docs/keycloak.md`): **Keycloak is
   mandatory in production** (`OIDC_ENABLED`, two OIDC tenants: `web-app` for
   browsers, `mcp` service tenant for `/mcp` bearer tokens). Everything under
   `/api` requires the realm role **`admin`** (policy `role-admin`, deny by

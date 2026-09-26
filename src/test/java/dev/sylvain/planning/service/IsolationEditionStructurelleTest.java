@@ -152,7 +152,7 @@ class IsolationEditionStructurelleTest {
      *       them {@code edition_id}. It cannot hold the predicate, so asking
      *       one of it would only push the statement into the exception
      *       list.</li>
-     *   <li>{@code compte} — a person, not a fiche (ADR 0049): one Keycloak
+     *   <li>{@code compte} — a person, not a fiche (ADR 0054): one Keycloak
      *       identity serves every edition, so the table has no edition to be
      *       partitioned by.</li>
      *   <li>{@code habilitation}, {@code habilitation_stand} — what that person

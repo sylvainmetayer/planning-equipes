@@ -4,7 +4,7 @@ import java.util.Locale;
 
 /**
  * The roles an administrator grants <b>in this application</b>, per edition,
- * with an expiry (issues #294, #295, ADR 0049).
+ * with an expiry (issues #294, #295, ADR 0054).
  *
  * <p>The global roles — {@code admin}, {@code mcp}, {@code animateur} — are
  * Keycloak realm roles, granted in the realm. These are the delegated ones,

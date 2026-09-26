@@ -31,7 +31,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * is not their value but that somebody chose it.</p>
  *
  * <p>{@code ADMIN_PASSWORD} is checked even while the break-glass door is
- * closed ({@link ConfigSecours}, ADR 0049). Closed, {@code /j_security_check}
+ * closed ({@link ConfigSecours}, ADR 0054). Closed, {@code /j_security_check}
  * answers 409 whatever the password — but the door is a filter in front of a
  * mechanism that stays compiled in, and the day a path slips past it (a prefix
  * did once), the shipped {@code admin} must not be what is waiting behind.</p>

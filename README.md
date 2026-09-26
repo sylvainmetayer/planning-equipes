@@ -107,7 +107,7 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `PLANNING_MCP_LOCKOUT_DURATION` | `PT10M` | Durée de ce blocage, comptée depuis le dernier échec |
 | `PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID` | *(vide)* | Identifiant du jeton d'accès Pangolin, révélable depuis la page MCP (menu avancé ; même contrôle par mot de passe admin que la clé API) |
 | `PLANNING_MCP_PANGOLIN_ACCESS_TOKEN` | *(vide)* | Jeton d'accès Pangolin correspondant, révélable de la même façon |
-| `OIDC_ENABLED` | `true` (`false` sous `quarkus:dev`) | Authentification par Keycloak de l'administration, de l'espace animateur et de MCP — **obligatoire en production**, voir [`keycloak.md`](docs/keycloak.md) et l'[ADR 0049](docs/decisions/0049-keycloak-obligatoire-comptes-nominatifs.md) |
+| `OIDC_ENABLED` | `true` (`false` sous `quarkus:dev`) | Authentification par Keycloak de l'administration, de l'espace animateur et de MCP — **obligatoire en production**, voir [`keycloak.md`](docs/keycloak.md) et l'[ADR 0054](docs/decisions/0054-keycloak-obligatoire-comptes-nominatifs.md) |
 | `OIDC_AUTH_SERVER_URL` | `http://keycloak:8081/realms/planning` | URL du realm, identique vue du navigateur et du conteneur |
 | `OIDC_CLIENT_ID` / `OIDC_CLIENT_SECRET` | `planning-app` / — | Client confidentiel du realm ; en production, un secret d'au moins 32 caractères, sinon le démarrage échoue |
 | `OIDC_MCP_AUDIENCE` | `planning-mcp` | Audience exigée des jetons OAuth2 présentés à `/mcp` |

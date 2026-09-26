@@ -43,7 +43,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * model — not an anonymous attacker, who never gets this far.</p>
  *
  * <p>A Keycloak session has no password this application could re-ask
- * (ADR 0049). The same fact — someone at the keyboard, just now — is read off
+ * (ADR 0054). The same fact — someone at the keyboard, just now — is read off
  * the token instead: its {@code auth_time}, the moment the person last proved
  * who they are to the realm, second factor included, must be less than
  * {@link #FRAICHEUR_CONNEXION} old. A session older than that is told to sign

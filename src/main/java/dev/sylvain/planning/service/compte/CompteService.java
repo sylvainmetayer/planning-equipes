@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
- * Named accounts and what they may do (issues #294, #295, ADR 0049).
+ * Named accounts and what they may do (issues #294, #295, ADR 0054).
  *
  * <p>Keycloak says who is calling; this service remembers the person
  * ({@code compte}, created on their first sign-in or in advance by an

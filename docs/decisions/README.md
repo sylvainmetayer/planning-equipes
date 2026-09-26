@@ -77,7 +77,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0051](0051-budget-de-calcul-par-edition-sous-plafond-d-exploitant.md) | Le budget de calcul — durée et arrêt sur plateau conditionné à la faisabilité — se règle par édition et s'applique côté serveur au lancement, sous deux plafonds d'exploitant qui refusent au lieu de rogner | Accepté |
 | [0052](0052-gel-du-referentiel-distinct-du-verrou.md) | Le gel du référentiel fige par familles (stands, créneaux, typologies et emplacements, compétences) les fiches d'une préparation terminée, refusé au service par annotation sur tous les chemins ; distinct du verrou de planning, il laisse ouvertes les consignes et les données des personnes | Accepté · voisine de 0003, 0039 et 0043 |
 | [0053](0053-affichage-mural-par-jeton-dedie.md) | L'affichage mural de la salle de contrôle s'ouvre par un jeton dédié, haché et révocable, sur un préfixe à lui — jamais par une session admin laissée sur une TV | Accepté · prolonge 0019 |
-| [0049](0049-keycloak-obligatoire-comptes-nominatifs.md) | Keycloak obligatoire pour l'administration, l'espace animateur et MCP ; le compte embarqué devient une porte de secours fermée ; un compte par personne ; les droits fins (par édition, datés) dans l'application | Accepté · socle implémenté |
+| [0054](0054-keycloak-obligatoire-comptes-nominatifs.md) | Keycloak obligatoire pour l'administration, l'espace animateur et MCP ; le compte embarqué devient une porte de secours fermée ; un compte par personne ; les droits fins (par édition, datés) dans l'application | Accepté · socle implémenté |
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,
