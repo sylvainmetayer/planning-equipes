@@ -34,7 +34,7 @@
               <li i18n="@@accueil.consignes.ligne">{{ consigne.libelleDate }} : fermé de {{ consigne.bande }} — {{ consigne.motif }}</li>
             }
           </ul>
-          <a routerLink="/consignes" i18n="@@accueil.consignes.lien">Voir les consignes</a>
+          <a routerLink="/consignes-solveur" [queryParams]="{ onglet: 'consignes' }" i18n="@@accueil.consignes.lien">Voir les consignes</a>
         </div>
       </div>
     }

@@ -25,6 +25,23 @@ import { compareCodeUnits } from '../../core/string-order';
 /* ---------------------------------- dates ---------------------------------- */
 
 /**
+ * The `?date=` of a link, `demain` read as the day after the server's today:
+ * the Solveur and the Mode jour J offer « Fermer des stands demain » without
+ * reading the server's day themselves. Anything else is kept as it came.
+ */
+export function resolveDateParam(date: string | null, aujourdhui: string | null): string | null {
+  if (date !== 'demain') {
+    return date;
+  }
+  if (!aujourdhui) {
+    return null;
+  }
+  const [annee, mois, jour] = aujourdhui.split('-').map(Number);
+  const lendemain = new Date(Date.UTC(annee, mois - 1, jour + 1));
+  return lendemain.toISOString().slice(0, 10);
+}
+
+/**
  * The dates a consigne may still be laid on: the grid's dates strictly after
  * the server's today. A date already begun keeps for good the consigne that
  * governed it, so it is never offered. Nothing before the first read: without

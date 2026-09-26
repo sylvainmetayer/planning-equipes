@@ -89,7 +89,7 @@ describe('VerrouillagesPage lock form', () => {
     }
   });
 
-  it('opens on the JOUR type and names its day field "Journée"', async () => {
+  it('opens on the ANIMATEUR type and names its target field "Animateur"', async () => {
     const fixture = mount();
     await fixture.whenStable();
     const root = fixture.nativeElement as HTMLElement;
@@ -98,7 +98,7 @@ describe('VerrouillagesPage lock form', () => {
     // reaches this very select by its label.
     const selects = Array.from(root.querySelectorAll('form.form-grid mat-select'));
     const names = selects.map((select) => accessibleName(root, select));
-    expect(names).toEqual(['Type', 'Journée']);
+    expect(names).toEqual(['Type', 'Animateur']);
   });
 
   it('binds each control to a named form control, which is what makes the label render', async () => {
@@ -208,7 +208,9 @@ describe('VerrouillagesPage impact and list', () => {
   }
 
   function message(): string {
-    return racine().querySelector('app-status-message')!.textContent!.replace(/\s+/g, ' ').trim();
+    return (racine().querySelector('.verrouillages-apercu')?.textContent ?? '')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   function boutonVerrouiller(): HTMLButtonElement {
@@ -227,6 +229,8 @@ describe('VerrouillagesPage impact and list', () => {
   it('counts the already-staffed seats a day-wide lock would freeze', async () => {
     await rendre(planning());
 
+    await choisir('type', 'Journée');
+
     await choisir('jour', '2026-07-10');
 
     // "Je verrouille" turns into "je fige deux sièges", before the solve.
@@ -242,6 +246,9 @@ describe('VerrouillagesPage impact and list', () => {
 
     // Two staffed seats for Amélie; the unstaffed one of day 2 counts for nobody.
     expect(message()).toContain('2 affectation(s)');
+    // The count is a preview; who and when are read on Journée.
+    const lien = racine().querySelector('.verrouillages-apercu a') as HTMLAnchorElement;
+    expect(lien.getAttribute('href')).toMatch(/^\/journee\?animateur=/);
   });
 
   it('says plainly when the target covers nothing yet, instead of showing a bare zero', async () => {
@@ -252,6 +259,7 @@ describe('VerrouillagesPage impact and list', () => {
     expect(message()).toContain('3 affectation(s)');
 
     await rendre({ postes: [] } as unknown as PlanningEvenement);
+    await choisir('type', 'Journée');
     await choisir('jour', '2026-07-10');
     // No plan at all: silence rather than a misleading "0 affectation".
     expect(message()).toBe('');
@@ -294,6 +302,8 @@ describe('VerrouillagesPage impact and list', () => {
       },
     ]);
 
+    await choisir('type', 'Journée');
+
     await choisir('jour', '2026-07-10');
     boutonVerrouiller().click();
     await fixture.whenStable();
@@ -307,6 +317,8 @@ describe('VerrouillagesPage impact and list', () => {
   it('reports a refused lock instead of pretending it was saved', async () => {
     await rendre(planning());
     verrous.create.mockRejectedValue(new Error('déjà verrouillé'));
+
+    await choisir('type', 'Journée');
 
     await choisir('jour', '2026-07-10');
     boutonVerrouiller().click();
@@ -476,6 +488,7 @@ describe('VerrouillagesPage impact and list', () => {
         raison: null,
       },
     ] as unknown as VerrouillagePlanning[]);
+    await choisir('type', 'Journée');
     await choisir('jour', '2026-07-10');
     editingLocked.set(true);
     await fixture.whenStable();

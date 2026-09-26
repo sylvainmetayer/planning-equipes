@@ -35,7 +35,7 @@
     }
     @if (wideLock()) {
       <p class="siege-panel-lock">
-        <a routerLink="/verrouillages" i18n="@@siege.verrous.gerer">Gérer les verrouillages</a>
+        <a routerLink="/consignes-solveur" [queryParams]="{ onglet: 'verrouillages' }" i18n="@@siege.verrous.gerer">Gérer les verrouillages</a>
       </p>
     }
 

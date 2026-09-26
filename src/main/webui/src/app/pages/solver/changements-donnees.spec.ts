@@ -1,7 +1,7 @@
-// The panel under « des données de référence ont été modifiées » : it says
-// how much moved, of what kind, and shows the last lines. `changements.spec.ts`
-// pins the wording; what is checked here is that it asks the history from the
-// moment the plan was solved, and shows nothing when nothing moved.
+// The panel « Corriger après un changement » opens on: it says how much moved,
+// of what kind, and shows the last lines. `changements.spec.ts` pins the
+// wording; what is checked here is that it asks the history from the moment
+// the plan was solved, and says so when nothing moved.
 
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -83,10 +83,11 @@ describe('ChangementsDonneesPanel', () => {
     expect(rendu).toContain("Voir l'historique");
   });
 
-  it('shows nothing at all when the history reports no change', async () => {
+  it('says that nothing changed, and what the correction will then do', async () => {
     const rendu = await monter({ total: 0, parEntite: [], dernieres: [] });
 
-    expect(rendu.trim()).toBe('');
+    expect(rendu).toContain('Aucune donnée modifiée depuis ce plan');
+    expect(rendu).not.toContain("Voir l'historique");
   });
 
   it("says the history could not be read rather than passing for « rien n'a changé »", async () => {

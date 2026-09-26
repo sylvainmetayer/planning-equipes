@@ -6,7 +6,7 @@ import {
   ViewEncapsulation,
   computed,
   inject,
-  signal,
+  output,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
@@ -16,7 +16,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ActivatedRoute } from '@angular/router';
 import { ConsignesApi } from '../../core/api/consignes-api';
 import {
   bandeLabel,
@@ -37,14 +36,14 @@ import { NotificationService } from '../../core/notification.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
-import { consumeQueryParam } from '../../core/view-query-params';
+import { consumeQueryParam, currentViewParams } from '../../core/view-query-params';
 import { LOCAL_DRAFT_STORAGE } from '../../core/brouillon-formulaire';
 import { reportOrphanDrafts } from '../../shared/brouillon-dialog';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { consigneDateOf } from './consigne-brouillon';
 import { ConsigneFormData, ConsigneFormDialog, ModeConsigne } from './consigne-form-dialog';
 import { ConsigneLeveeData, ConsigneLeveeDialog } from './consigne-levee-dialog';
-import { datesCandidates, isPast, openedStandsCount } from './consignes';
+import { datesCandidates, isPast, openedStandsCount, resolveDateParam } from './consignes';
 import { PrereglageDialog, PrereglageDialogData } from './prereglage-dialog';
 
 /** One row of the table: the consigne, its figures, and whether it can still move. */
@@ -90,6 +89,9 @@ interface LigneConsigne {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ConsignesPage implements OnInit {
+  /** A consigne was laid down, changed or lifted: the next solve has something new to respect. */
+  readonly changed = output<void>();
+
   private readonly destroyRef = inject(DestroyRef);
   private readonly store = inject(ConsignesStore);
   private readonly api = inject(ConsignesApi);
@@ -98,7 +100,6 @@ export class ConsignesPage implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly confirm = inject(ConfirmService);
   private readonly notifications = inject(NotificationService);
-  private readonly route = inject(ActivatedRoute);
   private readonly draftStorage = inject(LOCAL_DRAFT_STORAGE);
   /** Editing is disabled while a solve runs, like every referential screen. */
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
@@ -120,8 +121,16 @@ export class ConsignesPage implements OnInit {
   protected readonly erreur = this.store.error;
   protected readonly aujourdhui = this.store.aujourdhui;
   protected readonly prereglages = computed(() => this.store.etat()?.prereglages ?? []);
+  /**
+   * `?date=` as the address says it when the tab opens — read from the
+   * location, not the route's snapshot: as a tab of « Consignes au solveur »
+   * the address is rewritten in place (ADR 0018), which the snapshot never sees.
+   */
+  private readonly dateParam = currentViewParams().get('date');
   /** The date a link named (`?date=`), highlighted in the table. */
-  protected readonly targetDate = signal(this.route.snapshot.queryParamMap.get('date'));
+  protected readonly targetDate = computed(() =>
+    resolveDateParam(this.dateParam, this.aujourdhui()),
+  );
 
   protected readonly lignes = computed<LigneConsigne[]>(() => {
     const aujourdhui = this.aujourdhui();
@@ -162,9 +171,12 @@ export class ConsignesPage implements OnInit {
     // open on that date. Obeyed once, then dropped — see `view-query-params.ts`.
     // A day already begun is not ticked: the server would refuse it, and the
     // form says so rather than letting « Enregistrer » find out.
+    // `date=demain` is what « Fermer des stands demain » sends from the Solveur
+    // and the Mode jour J, which do not read the server's day: resolved here,
+    // against the day the server says it is (simulated date included).
     consumeQueryParam('nouvelle', async () => {
       await Promise.all([referentiel, this.store.reload()]);
-      const date = this.route.snapshot.queryParamMap.get('date');
+      const date = resolveDateParam(this.dateParam, this.aujourdhui());
       const existante = date ? this.store.consigneOf(date) : null;
       this.openForm(
         existante ? 'modifier' : 'poser',
@@ -299,6 +311,7 @@ export class ConsignesPage implements OnInit {
 
   /** A consigne adds or removes créneaux: the grid the rest of the page reads has moved too. */
   private async afterWrite(): Promise<void> {
+    this.changed.emit();
     await Promise.all([this.store.reload(), this.crud.reload()]);
   }
 

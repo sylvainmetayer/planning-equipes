@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
@@ -9,6 +9,12 @@ import { intlLocale } from '../../core/locale';
 import { PerimetreReplanification } from '../../core/models';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { compareCodeUnits } from '../../core/string-order';
+import { ChangementsDonneesPanel } from './changements-donnees';
+
+/** When the persisted plan was solved, `''` without one: the changes are counted from there. */
+export interface ReplanificationData {
+  depuis: string;
+}
 
 /**
  * Perimeter of an incremental re-solve (issue #86).
@@ -18,10 +24,14 @@ import { compareCodeUnits } from '../../core/string-order';
  * which is why this dialog can be validated empty. The three lists below are
  * the other half of the real workflow: "untel se désiste, refais sa journée",
  * where the operator knows what must move before the referential says so.</p>
+ *
+ * <p>What changed since the plan comes first (issue #719): the perimeter is
+ * chosen knowing it, rather than from three lists that do not say why.</p>
  */
 @Component({
   selector: 'app-replanification-dialog',
   imports: [
+    ChangementsDonneesPanel,
     FormsModule,
     MatButtonModule,
     MatDialogModule,
@@ -37,6 +47,7 @@ export class ReplanificationDialog {
     inject<MatDialogRef<ReplanificationDialog, PerimetreReplanification>>(MatDialogRef);
 
   protected readonly store = inject(ReferenceDataStore);
+  protected readonly data = inject<ReplanificationData | null>(MAT_DIALOG_DATA, { optional: true });
 
   protected readonly animateurIds = signal<string[]>([]);
   protected readonly jours = signal<string[]>([]);

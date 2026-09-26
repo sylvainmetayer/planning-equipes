@@ -14,11 +14,12 @@ import { SolverJobService } from '../core/solver-job.service';
  * #719, #720).
  *
  * <p>`correction` asks for the incremental re-solve when it suffices: a plan
- * exists, and only what the change invalidated re-opens — the rest is
- * guaranteed unchanged, which is what a lock or a consigne wants. Without a
- * plan there is nothing to correct, and the full solve runs. `calcul` always
- * asks for the full solve, starting from the plan: a reweighted rule concerns
- * every seat.</p>
+ * exists, and only what the change invalidated re-opens — every seat still
+ * valid is pinned, which is what a consigne wants (the seats its band removed
+ * or added are the ones to re-fill). Without a plan there is nothing to
+ * correct, and the full solve runs. `calcul` always asks for the full solve,
+ * starting from the plan: a reweighted rule, a forced assignment or a lock
+ * lifted concerns seats the correction would keep pinned.</p>
  *
  * <p>A busy solver plans the run rather than refusing it, as on the Solveur.
  * `blocked` says why the button waits — changes not saved yet, which the

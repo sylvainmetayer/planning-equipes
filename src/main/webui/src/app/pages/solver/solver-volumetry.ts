@@ -4,7 +4,10 @@ import { MatCardModule } from '@angular/material/card';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 
 /**
- * Volumetry of the problem Timefold is about to explore, recomputed live as
+ * Volumetry of the problem the next solve is given, folded under its title
+ * (issue #719): read when a solve surprises, not before each one. The
+ * « problem scale » it used to print (10^N) said nothing an organiser could
+ * act on and is gone. Recomputed live as
  * `referenceData`'s signals change (a CRUD edit, a sample load, a CSV/SQL
  * import...). `animateurCount`/`posteCount`/`adHocConstraintCount` come from
  * `/api/planning/volumetrie`, built server-side the exact same way an actual
@@ -41,24 +44,5 @@ export class SolverVolumetry {
   protected readonly fillRatio = computed(() => {
     const available = this.hoursAvailable();
     return available > 0 ? this.hoursToFill() / available : null;
-  });
-
-  /**
-   * Timefold's own "approximate problem scale": log10 of the search space size,
-   * i.e. `entityCount * log10(valueCount)` (valueCount ^ entityCount, not a
-   * product of the counts above — a plain product would be off by thousands of
-   * orders of magnitude and isn't worth displaying as a number).
-   *
-   * This is a naive upper bound: it counts every assignment, including the ones
-   * no constraint would ever allow (an animateur on several postes of the same
-   * créneau, or on a day they are not available). Narrowing it does not help —
-   * one-poste-per-créneau exclusivity only removes ~44 orders of magnitude, and
-   * even assuming 10 eligible animateurs per poste still leaves 10^2823. Hence
-   * the wording in the template: "espace de recherche", not "combinaisons".
-   */
-  protected readonly problemScale = computed(() => {
-    const animateurs = this.animateurCount();
-    const postes = this.posteCount();
-    return animateurs > 1 && postes > 0 ? Math.round(postes * Math.log10(animateurs)) : 0;
   });
 }

@@ -478,7 +478,7 @@ describe('AnimateurFichePage', () => {
     const link = Array.from(root().querySelectorAll<HTMLAnchorElement>('a')).find(
       (each) => each.textContent!.trim() === 'Gérer les verrous',
     );
-    expect(link?.getAttribute('href')).toBe('/verrouillages?animateur=a1');
+    expect(link?.getAttribute('href')).toBe('/consignes-solveur?onglet=verrouillages&animateur=a1');
   });
 
   it('drops the answer of a day marked for the previous person once « Suivant » was pressed', async () => {

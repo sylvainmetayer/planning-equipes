@@ -97,7 +97,9 @@ public final class ScoreReading {
 
     private static final String ROUTE_RULES = "/regles";
     private static final String ROUTE_DAY = "/journee";
-    private static final String ROUTE_ADJUSTMENTS = "/ad-hoc-constraints";
+    /** « Consignes au solveur », whose default tab is the adjustments. */
+    private static final String ROUTE_ADJUSTMENTS = "/consignes-solveur";
+
     private static final String SEATS_RULE = "posteDoitEtrePourvu";
     private static final String ECART = "écart";
     private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("EEEE dd/MM", Locale.FRENCH);

@@ -202,7 +202,7 @@
                     @for (seat of outcome.lockedSeatsKept; track seat.posteId; let last = $last) {
                       {{ seatLabel(seat) }}@if (!last) {, }
                     }
-                    <a [routerLink]="['/verrouillages']" [queryParams]="{ animateur: fiche.animateur.id }" i18n="@@fiche.jour.gererVerrous">Gérer les verrous</a>
+                    <a routerLink="/consignes-solveur" [queryParams]="{ onglet: 'verrouillages', animateur: fiche.animateur.id }" i18n="@@fiche.jour.gererVerrous">Gérer les verrous</a>
                   </p>
                 }
                 @if (freedLines().length > 0) {
@@ -570,7 +570,7 @@
             }
           </ul>
           <p>
-            <a routerLink="/ad-hoc-constraints" [queryParams]="{ vue: 'reseau', personne: fiche.animateur.id }" i18n="@@fiche.suivi.reseau">Voir ses paires dans le réseau</a>
+            <a routerLink="/consignes-solveur" [queryParams]="{ personne: fiche.animateur.id }" i18n="@@fiche.suivi.ajustements">Voir tous ses ajustements</a>
           </p>
         }
 
@@ -592,7 +592,7 @@
               </li>
             }
           </ul>
-          <p><a routerLink="/verrouillages" i18n="@@fiche.suivi.lienVerrous">Ouvrir les verrouillages</a></p>
+          <p><a routerLink="/consignes-solveur" [queryParams]="{ onglet: 'verrouillages' }" i18n="@@fiche.suivi.lienVerrous">Ouvrir les verrouillages</a></p>
         }
       </details>
     }

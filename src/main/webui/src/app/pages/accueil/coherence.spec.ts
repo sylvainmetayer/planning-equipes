@@ -37,8 +37,8 @@ describe('coherenceLink', () => {
       queryParams: { edit: 'A1' },
     });
     expect(coherenceLink(issue({ objet: 'CONTRAINTE_AD_HOC', objetId: 'C1' }))).toMatchObject({
-      route: '/ad-hoc-constraints',
-      queryParams: { edit: 'C1' },
+      route: '/consignes-solveur',
+      queryParams: { onglet: 'ajustements', edit: 'C1' },
     });
   });
 

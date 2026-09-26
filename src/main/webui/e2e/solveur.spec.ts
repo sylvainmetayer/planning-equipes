@@ -100,6 +100,16 @@ test('un solve lancé depuis la page Solveur pourvoit tous les postes', async ({
   expect(postesSolv).toHaveLength(12);
   expect(postesSolv.every((poste) => poste.animateur !== null)).toBe(true);
 
+  // After the run, its result reads in sentences and the next steps are one
+  // click away (issue #719).
+  await expect(page.getByRole('heading', { name: 'Résultat du dernier calcul' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Publier', exact: true })).toHaveAttribute(
+    'href',
+    '/publication',
+  );
+  await expect(page.getByRole('link', { name: 'Relire', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Voir le planning', exact: true })).toBeVisible();
+
   // And the result is visible in the frontend right away.
   await page.goto('/journee?axe=personne');
   await expect(page.locator('#contenu')).toContainText('Solve');
@@ -144,10 +154,18 @@ test('les contraintes ad hoc sont respectées par le solve et visibles dans le f
 
   // Visible on the admin screen before any solve.
   const page = await pageAdmin(browser, admin);
-  await page.goto('/ad-hoc-constraints');
+  await page.goto('/consignes-solveur');
   await expect(page.locator('#contenu')).toContainText('Paula indisponible le matin');
   await expect(page.locator('#contenu')).toContainText('Quentin imposé sur Stand Solve un');
   await expect(page.locator('#contenu')).toContainText('Rita et Tom incompatibles');
+
+  // The Solveur announces them before the click, each count a link to its tab
+  // (issues #704, #719).
+  await page.goto('/solveur');
+  await expect(page.getByRole('link', { name: /ajustement\(s\) manuel\(s\)/ })).toHaveAttribute(
+    'href',
+    '/consignes-solveur?onglet=ajustements',
+  );
 
   const job = await lancerSolve(admin, 6);
   expect(job.result?.diagnostic.hardScore, 'the constrained problem must stay feasible').toBe(0);
@@ -254,7 +272,7 @@ test('un échange accepté survit à la régénération du planning', async ({ b
 
   // The two ANIMATEUR_CRENEAU pins are visible on the verrouillages screen.
   const page = await pageAdmin(browser, admin);
-  await page.goto('/verrouillages');
+  await page.goto('/consignes-solveur?onglet=verrouillages');
   await expect(page.getByText('Animateur sur un créneau').first()).toBeVisible();
   await expect(page.locator('#contenu')).toContainText(`Échange validé (demande ${demandeId})`);
   await page.context().close();
