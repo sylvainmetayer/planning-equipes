@@ -450,6 +450,20 @@ class RealmPlanningStructuralTest {
                 .isTrue();
     }
 
+    /** An invitation link lasts two days: animateurs do not always read their mail the same day. */
+    @Test
+    void anInvitationLinkLastsTwoDays() {
+        assertThat(realm.path("actionTokenGeneratedByAdminLifespan").asInt()).isEqualTo(48 * 3600);
+    }
+
+    /** Without a default locale Keycloak writes in English — the invitation and the sign-in code alike. */
+    @Test
+    void mailsAndPagesAreInFrenchByDefault() {
+        assertThat(realm.path("internationalizationEnabled").asBoolean()).isTrue();
+        assertThat(realm.path("defaultLocale").asText()).isEqualTo("fr");
+        assertThat(realm.path("supportedLocales").toString()).contains("\"fr\"");
+    }
+
     /**
      * Google must not be believed about who owns an address: with
      * {@code trustEmail} on, anyone able to create a Google account bearing an

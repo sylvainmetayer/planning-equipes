@@ -6,8 +6,10 @@ import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
 import {
   AnimateurProfile,
+  BilanComptes,
   ConfirmationView,
   DayOff,
+  EtatInvitations,
   ImportCsvDemande,
   ImportCsvRapport,
   RapportRelance,
@@ -74,6 +76,16 @@ export class AnimateursApi {
   remind(animateurIds: string[]): Promise<RapportRelance> {
     const demande: RelanceDemande = { animateurIds };
     return this.api.post<RapportRelance>('/api/animateurs/relances', demande);
+  }
+
+  /** How many animateurs of the edition were never invited to their account. */
+  invitationStatus(): Promise<EtatInvitations> {
+    return this.api.get<EtatInvitations>('/api/animateurs/invitations');
+  }
+
+  /** « Envoyer les invitations »: mails everyone of the edition never invited. */
+  sendInvitations(): Promise<BilanComptes> {
+    return this.api.post<BilanComptes>('/api/animateurs/invitations', {});
   }
 
   downloadCsvExample(): Promise<string> {
