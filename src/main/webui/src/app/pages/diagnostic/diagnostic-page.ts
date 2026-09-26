@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   signal,
   ViewEncapsulation,
@@ -10,19 +11,21 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
+import { ProblemesStore } from '../../core/problemes.store';
 import { keepViewInQueryParams } from '../../core/view-query-params';
-import { FormationPage } from '../formation/formation-page';
 import { FragilitePage } from '../fragilite/fragilite-page';
+import { TensionTab } from '../marge/tension-tab';
 import { ProblemesPage } from '../problemes/problemes-page';
 import { StaffingPage } from '../staffing/staffing-page';
 import { OngletDiagnostic, readOnglet } from './diagnostic';
 
 /**
- * « Diagnostic » : why the plan does not hold, and what would happen if — the
- * problems, the staffing need, the fragility and who to train, as four tabs of
- * one screen instead of four screens with four headings and four
- * « Actualiser ». The bench, once a fifth, is the Siège panel's « Qui peut
- * tenir ce siège ? » on the Journée.
+ * « Diagnostic » : what blocks, what is missing, where it is tight, what is
+ * fragile — four tabs of one screen instead of the six screens they were.
+ * The bench, once a tab, is the Siège panel's « Qui peut tenir ce siège ? »;
+ * « À former » is the foot of Besoin, whose « avant » margin is a column; the
+ * former Marge disponible screen's « après » and « tension » readings are
+ * the Tension tab.
  *
  * <p>Each tab is the screen it was, hosted without its heading; its own view
  * state (the fragility filters) still lives in
@@ -38,8 +41,8 @@ import { OngletDiagnostic, readOnglet } from './diagnostic';
     MatIconModule,
     ProblemesPage,
     StaffingPage,
+    TensionTab,
     FragilitePage,
-    FormationPage,
   ],
   templateUrl: './diagnostic-page.html',
   styleUrl: './diagnostic-page.css',
@@ -49,8 +52,12 @@ import { OngletDiagnostic, readOnglet } from './diagnostic';
 })
 export class DiagnosticPage {
   private readonly route = inject(ActivatedRoute);
+  private readonly problemes = inject(ProblemesStore);
 
   protected readonly onglet = signal<OngletDiagnostic>('problemes');
+
+  /** « Problèmes · 8 », once the list has been read by the tab; nothing before. */
+  protected readonly problemCount = computed(() => this.problemes.comptage().total);
 
   constructor() {
     // Followed rather than read once: a link inside the page — « Besoin en

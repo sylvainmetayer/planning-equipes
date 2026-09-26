@@ -879,7 +879,9 @@ export class JourneePage implements OnInit {
       this.pendingSeat = { posteId: siege };
     } else if (Number.isFinite(creneau) && creneau > 0) {
       this.creneauParam.set(query.get('creneau'));
-      this.pendingSeat = { creneauId: creneau, standId: stand };
+      // `animateur` names whose seat it is — « Qui peut remplacer » from the
+      // Diagnostic's fragility — else the first free seat is the one meant.
+      this.pendingSeat = { creneauId: creneau, standId: stand, animateurId: animateur };
     }
     // Once the plan is on screen, the seat is resolved now; before, the first
     // read resolves it.

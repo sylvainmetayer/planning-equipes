@@ -1,9 +1,7 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
     <h1 mat-card-title i18n="@@diagnostic.title">Diagnostic</h1>
-    <mat-card-subtitle i18n="@@diagnostic.subtitle">
-      Pourquoi le planning ne tient pas, et ce qui se passerait si : problèmes, besoin, fragilité, qui former.
-    </mat-card-subtitle>
+    <mat-card-subtitle i18n="@@diagnostic.subtitle">Ce qui bloque, ce qui manque, ce qui est fragile</mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
     <mat-button-toggle-group class="diagnostic-onglets" [value]="onglet()" (change)="changerOnglet($event.value)"
@@ -11,18 +9,21 @@
       <mat-button-toggle value="problemes">
         <mat-icon>report_problem</mat-icon>
         <ng-container i18n="@@diagnostic.onglet.problemes">Problèmes</ng-container>
+        @if (problemCount() > 0) {
+          <span class="diagnostic-compte"> · {{ problemCount() }}</span>
+        }
       </mat-button-toggle>
       <mat-button-toggle value="besoin">
         <mat-icon>engineering</mat-icon>
         <ng-container i18n="@@diagnostic.onglet.besoin">Besoin en animateurs</ng-container>
       </mat-button-toggle>
+      <mat-button-toggle value="tension">
+        <mat-icon>exposure</mat-icon>
+        <ng-container i18n="@@diagnostic.onglet.tension">Tension</ng-container>
+      </mat-button-toggle>
       <mat-button-toggle value="fragilite">
         <mat-icon>personal_injury</mat-icon>
         <ng-container i18n="@@diagnostic.onglet.fragilite">Fragilité</ng-container>
-      </mat-button-toggle>
-      <mat-button-toggle value="former">
-        <mat-icon>school</mat-icon>
-        <ng-container i18n="@@diagnostic.onglet.former">À former</ng-container>
       </mat-button-toggle>
     </mat-button-toggle-group>
   </mat-card-content>
@@ -32,11 +33,11 @@
   @case ('besoin') {
     <app-staffing-page [entete]="false" />
   }
+  @case ('tension') {
+    <app-tension-tab />
+  }
   @case ('fragilite') {
     <app-fragilite-page [entete]="false" />
-  }
-  @case ('former') {
-    <app-formation-page [entete]="false" />
   }
   @default {
     <app-problemes-page [entete]="false" />

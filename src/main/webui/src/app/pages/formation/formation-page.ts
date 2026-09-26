@@ -3,7 +3,6 @@ import {
   Component,
   ViewEncapsulation,
   inject,
-  input,
   resource,
   signal,
 } from '@angular/core';
@@ -20,8 +19,9 @@ import { StatusMessage } from '../../shared/status-message';
 import { libelleJour, libelleNiveau, resumeDeficit } from './formation';
 
 /**
- * « À former » : who to train, typologie by typologie — the fifth tab of the
- * Diagnostic.
+ * « À former » : who to train, typologie by typologie — the foot of the
+ * Diagnostic's Besoin tab, which carries its heading; once a tab of its own,
+ * `?onglet=former` now lands there.
  *
  * The shortage shown is the Besoin tab's and the Fragilité tab's, read from
  * `GET /api/formation`, which reuses both reports rather than defining a
@@ -48,9 +48,6 @@ import { libelleJour, libelleNiveau, resumeDeficit } from './formation';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FormationPage {
-  /** False when the Diagnostic page hosts this screen as one of its tabs. */
-  readonly entete = input(true);
-
   private readonly analysesApi = inject(AnalysesApi);
 
   private readonly plan = resource({ loader: () => this.analysesApi.trainingPlan() });

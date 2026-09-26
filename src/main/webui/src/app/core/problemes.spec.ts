@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { actionsOfRule, compterProblemes, construireProblemes, causeLinks } from './problemes';
+import {
+  actionsOfRule,
+  compterProblemes,
+  construireProblemes,
+  causeLinks,
+  mostNamed,
+  rankedPlaces,
+} from './problemes';
 import type {
   CauseInfaisabilite,
   ConstraintView,
@@ -293,10 +300,11 @@ describe('construireProblemes', () => {
     // The sentence now lives with its links, not a second time among the details.
     expect(probleme.details).toEqual([]);
     expect(probleme.references.map((reference) => reference.texte)).toEqual(['Alice : 52 h']);
+    // A person opens their fiche — the one place a name leads to.
     expect(
       probleme.references[0].liens.map((lien) => [lien.route, lien.queryParams?.['edit']]),
     ).toEqual([
-      ['/animateurs', 'alice'],
+      ['/animateurs/alice', undefined],
       ['/creneaux', '7'],
     ]);
   });
@@ -367,7 +375,106 @@ describe('construireProblemes', () => {
 
     expect(probleme.details).toEqual(['Alice : 52 h semaine 2026-W28']);
     expect(probleme.liens.map((lien) => lien.route)).toEqual(['/regles']);
-    expect(probleme.liens[0].queryParams).toEqual({ regle: 'dureeHebdomadaireMax' });
+  });
+
+  // « Voir la règle » opens the rule's own line on « Règles du planning » —
+  // never the top of a page of every rule. The page picks the tab of its level
+  // from the rule itself: the link names the rule and nothing it could contradict.
+  it('opens the rule on its line of the rules screen, the page choosing its tab', () => {
+    const [dur, moyen] = construireProblemes(null, [
+      contrainte({ name: 'dureeHebdomadaireMax' }),
+      contrainte({ name: 'equilibrerCharge', niveau: 'MEDIUM', violations: [] }),
+    ]);
+
+    expect(dur.liens[0]).toMatchObject({
+      route: '/regles',
+      queryParams: { regle: 'dureeHebdomadaireMax' },
+    });
+    expect(moyen.liens[0].queryParams).toEqual({ regle: 'equilibrerCharge' });
+    expect(moyen.regle).toBe('equilibrerCharge');
+  });
+
+  // « Où » and « Qui »: the places the rule bites hardest, each opening the
+  // Journée on that stand and that timeslot, and the people it names most,
+  // each opening their fiche.
+  it('says where a rule bites and on whom, from its hotspots and the pivot', () => {
+    const [probleme] = construireProblemes(
+      null,
+      [
+        contrainte({
+          name: 'standComplexeAvecReferent',
+          niveau: 'MEDIUM',
+          violations: [],
+          hotspots: [
+            { standId: 'S7', date: '2026-07-10', creneauId: 12, ecarts: 3 },
+            { standId: 'S33', date: '2026-07-13', creneauId: 40, ecarts: 1 },
+          ],
+        }),
+      ],
+      [],
+      null,
+      new Map([
+        ['S7', 'Stand 07'],
+        ['S33', 'Stand 33'],
+      ]),
+      new Map([
+        ['a1', 'Hugo T.'],
+        ['a2', 'Lina F.'],
+        ['a3', 'Zoé A.'],
+        ['a4', 'Marc L.'],
+      ]),
+      null,
+      null,
+      {
+        pivot: [
+          { contrainte: 'standComplexeAvecReferent', axe: 'ANIMATEUR', cle: 'a2', ecarts: 1 },
+          { contrainte: 'standComplexeAvecReferent', axe: 'ANIMATEUR', cle: 'a1', ecarts: 4 },
+          { contrainte: 'standComplexeAvecReferent', axe: 'ANIMATEUR', cle: 'a3', ecarts: 1 },
+          { contrainte: 'standComplexeAvecReferent', axe: 'ANIMATEUR', cle: 'a4', ecarts: 1 },
+          { contrainte: 'autreRegle', axe: 'ANIMATEUR', cle: 'a9', ecarts: 9 },
+        ],
+        creneaux: new Map([
+          [12, { date: '2026-07-10', heureDebut: '18:00:00', heureFin: '22:00:00' }],
+        ]),
+      },
+    );
+
+    expect(probleme.ou).toEqual([
+      {
+        route: '/journee',
+        queryParams: { creneau: '12', stand: 'S7' },
+        libelle: 'Stand 07 · 2026-07-10 · 18:00–22:00',
+      },
+      {
+        route: '/journee',
+        queryParams: { creneau: '40', stand: 'S33' },
+        libelle: 'Stand 33 · 2026-07-13',
+      },
+    ]);
+    expect(probleme.qui.map((personne) => [personne.route, personne.libelle])).toEqual([
+      ['/animateurs/a1', 'Hugo T.'],
+      ['/animateurs/a2', 'Lina F.'],
+      ['/animateurs/a3', 'Zoé A.'],
+    ]);
+    expect(probleme.quiRestants).toBe(1);
+  });
+
+  it('falls back on the most breached stands when the rule has no hotspot', () => {
+    const [probleme] = construireProblemes(
+      null,
+      [contrainte({ name: 'equilibrerCharge', niveau: 'MEDIUM', violations: [] })],
+      [],
+      null,
+      new Map(),
+      new Map(),
+      null,
+      null,
+      { pivot: [{ contrainte: 'equilibrerCharge', axe: 'STAND', cle: 'S1', ecarts: 2 }] },
+    );
+
+    expect(probleme.ou).toEqual([
+      { route: '/journee', queryParams: { stand: 'S1' }, libelle: 'S1' },
+    ]);
   });
 
   it('gives every problem a distinct track key', () => {
@@ -398,11 +505,81 @@ describe('compterProblemes', () => {
 describe('actionsOfRule', () => {
   const banc = {
     code: 'VOIR_BANC',
-    libelle: 'Voir qui pourrait venir',
+    libelle: 'Qui peut tenir ce siège ?',
     explication: 'La remédiation de la règle.',
     route: '/diagnostic',
     parametres: { onglet: 'banc' },
   };
+  const poids = {
+    code: 'BAISSER_POIDS',
+    libelle: "Baisser l'importance",
+    explication: 'En dernier recours.',
+    route: '/regles',
+    parametres: { onglet: 'qualite', regle: 'standComplexeAvecReferent' },
+  };
+
+  // The one gesture the Diagnostic makes in place: the bench of a seat of the
+  // timeslot, of its stand when the rule names one.
+  it('marks the bench on a timeslot as asked in place, on its stand', () => {
+    const [action] = actionsOfRule(
+      contrainte({
+        actions: [{ ...banc, route: '/journee', parametres: { creneau: '12', stand: 'S1' } }],
+      }),
+      [],
+    );
+
+    expect(action.seat).toEqual({ creneauId: 12, standId: 'S1', animateurId: null });
+  });
+
+  // A breach on one person's seat: the question is who takes it over, so the
+  // target names the holder and the seat resolved is theirs, not a free one.
+  it('carries the holder of the seat the bench is asked about', () => {
+    const [action] = actionsOfRule(
+      contrainte({
+        actions: [
+          {
+            ...banc,
+            libelle: 'Qui peut remplacer ?',
+            route: '/journee',
+            parametres: { creneau: '12', stand: 'S1', animateur: 'a7' },
+          },
+        ],
+      }),
+      [],
+    );
+
+    expect(action.seat).toEqual({ creneauId: 12, standId: 'S1', animateurId: 'a7' });
+    expect(action.queryParams).toEqual({ creneau: '12', stand: 'S1', animateur: 'a7' });
+  });
+
+  it('leaves the bench a navigation when it names no timeslot', () => {
+    const [action] = actionsOfRule(contrainte({ actions: [banc] }), []);
+
+    expect(action.seat).toBeUndefined();
+  });
+
+  it('keeps the lowering of the weight last, after the exceptions added here', () => {
+    const actions = actionsOfRule(
+      contrainte({ niveau: 'MEDIUM', poids: 5, actions: [banc, poids] }),
+      [contribution({ contrainteId: 'C1' })],
+    );
+
+    expect(actions.map((action) => action.code)).toEqual([
+      'VOIR_BANC',
+      'REVOIR_AJUSTEMENTS',
+      'BAISSER_POIDS',
+    ]);
+  });
+
+  // A button that can lower nothing lies: at the lowest weight it goes.
+  it('hides the lowering of the weight once the weight is at its floor', () => {
+    const actions = actionsOfRule(
+      contrainte({ niveau: 'MEDIUM', poids: 1, actions: [banc, poids] }),
+      [],
+    );
+
+    expect(actions.map((action) => action.code)).toEqual(['VOIR_BANC']);
+  });
 
   it("keeps the server's positioning on the rule's first breach as sent", () => {
     const reparation = {
@@ -487,6 +664,42 @@ describe('construireProblemes — tight walks', () => {
     ]);
   });
 
+  // Three walks into the same seat are one place of « Où », ranked first;
+  // the walker named most comes first in « Qui ».
+  it('says each place and each walker once, the most named first', () => {
+    const walk = (animateurId: string, toStandId: string, toCreneauId: number) => ({
+      animateurId,
+      date: '2026-08-01',
+      fromStandId: 'S1',
+      toStandId,
+      toCreneauId,
+      end: '14:00:00',
+      start: '14:10:00',
+      distanceMetres: 1000,
+      walkMinutes: 20,
+      gapMinutes: 10,
+      missingMinutes: 5,
+      walkOnBreak: false,
+    });
+    const [probleme] = construireProblemes(null, [], [], null, new Map(), new Map(), {
+      walkingSpeedKmH: 4,
+      detourFactor: 1.3,
+      toleranceMinutes: 5,
+      geolocated: true,
+      walks: [walk('a1', 'S2', 7), walk('a2', 'S3', 9), walk('a2', 'S3', 9), walk('a3', 'S3', 9)],
+    });
+
+    expect(probleme.ou.map((lieu) => lieu.queryParams)).toEqual([
+      { creneau: '9', stand: 'S3' },
+      { creneau: '7', stand: 'S2' },
+    ]);
+    expect(probleme.qui.map((personne) => personne.route)).toEqual([
+      '/animateurs/a2',
+      '/animateurs/a1',
+      '/animateurs/a3',
+    ]);
+  });
+
   it('adds nothing when no walk is tight', () => {
     expect(
       construireProblemes(null, [], [], null, new Map(), new Map(), {
@@ -546,5 +759,29 @@ describe('construireProblemes — covoiturages', () => {
       { onglet: 'ajustements', ids: 'G1' },
       { vue: 'rail', date: '2026-08-01' },
     ]);
+  });
+});
+
+describe('rankedPlaces', () => {
+  it('counts each place once, most named first, then by day, stand and timeslot', () => {
+    expect(
+      rankedPlaces([
+        { standId: 'S2', date: '2026-08-02', creneauId: 5, ecarts: 0 },
+        { standId: 'S1', date: '2026-08-01', creneauId: 3, ecarts: 0 },
+        { standId: 'S2', date: '2026-08-02', creneauId: 5, ecarts: 0 },
+        { standId: null, date: '2026-08-01', creneauId: null, ecarts: 0 },
+        { standId: 'S9', date: '2026-08-03', creneauId: 8, ecarts: 0 },
+      ]),
+    ).toEqual([
+      { standId: 'S2', date: '2026-08-02', creneauId: 5, ecarts: 2 },
+      { standId: 'S1', date: '2026-08-01', creneauId: 3, ecarts: 1 },
+      { standId: null, date: '2026-08-01', creneauId: null, ecarts: 1 },
+    ]);
+  });
+});
+
+describe('mostNamed', () => {
+  it('lists each person once, the most named first, a tie in order of first mention', () => {
+    expect(mostNamed(['a3', 'a1', 'a2', 'a1', 'a2', 'a2'])).toEqual(['a2', 'a1', 'a3']);
   });
 });

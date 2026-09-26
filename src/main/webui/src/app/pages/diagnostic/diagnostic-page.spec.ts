@@ -11,8 +11,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { ApiService } from '../../core/api.service';
 import { ConstraintsApi } from '../../core/api/constraints-api';
+import { PlanningApi } from '../../core/api/planning-api';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
+import { VerrouillageStore } from '../../core/verrouillage.store';
 import { OngletDiagnostic } from './diagnostic';
 import { DiagnosticPage } from './diagnostic-page';
 
@@ -32,6 +34,8 @@ describe('DiagnosticPage', () => {
     walks: vi.fn(async () => null),
     groupedArrivals: vi.fn(async () => null),
     trainingPlan: vi.fn(async () => null),
+    margin: vi.fn(async () => null),
+    tension: vi.fn(async () => null),
   };
 
   beforeEach(() => {
@@ -50,15 +54,30 @@ describe('DiagnosticPage', () => {
         { provide: ApiService, useValue: { get: vi.fn(async () => null) } },
         { provide: AnalysesApi, useValue: analysesApi },
         { provide: ConstraintsApi, useValue: { catalogue: vi.fn(async () => null) } },
+        { provide: PlanningApi, useValue: { persistedCount: vi.fn(async () => null) } },
         {
           provide: SolverJobService,
-          useValue: { onResult: () => () => undefined, activeJob: () => null },
+          useValue: {
+            onResult: () => () => undefined,
+            activeJob: () => null,
+            editingLocked: () => false,
+          },
         },
         {
           provide: ReferenceDataStore,
           useValue: {
             stands: () => [],
             animateurs: () => [],
+            creneaux: () => [],
+            typologies: () => [],
+            reload: vi.fn(async () => undefined),
+          },
+        },
+        {
+          provide: VerrouillageStore,
+          useValue: {
+            verrouillages: () => [],
+            estAnimateurVerrouille: () => false,
             reload: vi.fn(async () => undefined),
           },
         },
@@ -95,13 +114,32 @@ describe('DiagnosticPage', () => {
     expect(analysesApi.staffing).not.toHaveBeenCalled();
   });
 
-  it('opens the « À former » tab from ?onglet=former, under the page heading alone', async () => {
-    const page = await monter({ onglet: 'former' });
+  it('opens the Tension tab from ?onglet=tension, under the page heading alone', async () => {
+    const page = await monter({ onglet: 'tension' });
 
-    expect(page.onglet()).toBe('former');
-    expect(racine().querySelector('app-formation-page')).not.toBeNull();
+    expect(page.onglet()).toBe('tension');
+    expect(racine().querySelector('app-tension-tab')).not.toBeNull();
     expect(racine().querySelectorAll('h1')).toHaveLength(1);
+    expect(analysesApi.tension).toHaveBeenCalled();
+  });
+
+  // « À former » is no tab any more: it is the foot of Besoin, with the
+  // « avant » margin a column of the same tab.
+  it('shows « À former » and the « avant » margin on the Besoin tab', async () => {
+    await monter({ onglet: 'besoin' });
+
+    expect(racine().querySelector('app-staffing-page app-formation-page')).not.toBeNull();
     expect(analysesApi.trainingPlan).toHaveBeenCalled();
+    expect(analysesApi.margin).toHaveBeenCalledWith('AVANT');
+  });
+
+  it('offers four tabs, and neither « À former » nor the bench among them', async () => {
+    await monter();
+
+    const onglets = [...racine().querySelectorAll('mat-button-toggle')].map((toggle) =>
+      toggle.getAttribute('value'),
+    );
+    expect(onglets).toEqual(['problemes', 'besoin', 'tension', 'fragilite']);
   });
 
   it("opens on the tab the URL names, and keeps that tab's own state next to it", async () => {
