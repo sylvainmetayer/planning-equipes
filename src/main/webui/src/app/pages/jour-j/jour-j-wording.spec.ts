@@ -33,6 +33,7 @@ function etat(overrides: Partial<EtatJourJ> = {}): EtatJourJ {
     absences: [],
     animateurs: [],
     consigne: null,
+    signalements: [],
     ...overrides,
   };
 }

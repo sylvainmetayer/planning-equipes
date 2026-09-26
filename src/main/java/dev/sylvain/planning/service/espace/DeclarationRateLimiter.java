@@ -51,4 +51,16 @@ public class DeclarationRateLimiter {
     public RateLimitVerdict submitCarpool(String animateurId) {
         return carpoolCounter.use(animateurId, config.maxEnvois(), config.fenetre());
     }
+
+    /**
+     * The absences reported from the espace (« je ne pourrai pas être là »),
+     * the second write the espace opened, counted apart on the same ceiling:
+     * each report mails the organisation, and a loop of them is exactly the
+     * churn this counter exists for.
+     */
+    private final SlidingWindowCounter reportCounter = new SlidingWindowCounter();
+
+    public RateLimitVerdict submitReport(String animateurId) {
+        return reportCounter.use(animateurId, config.maxEnvois(), config.fenetre());
+    }
 }

@@ -14,7 +14,9 @@ import {
   NewCarpoolRequest,
   NouvelleDeclaration,
   NouvelleDemandeEchange,
+  NouveauSignalement,
   PosteAnimateurView,
+  SignalementView,
   SuggestionsEchangeView,
 } from './models';
 
@@ -183,6 +185,36 @@ export class EspaceAnimateurService {
     );
     this._demandes.set([...soumises, ...this.demandes()]);
     return soumises;
+  }
+
+  /**
+   * « Je ne pourrai pas être là » (issue #533): reports an absence on a day or
+   * on one seat. Changes nothing in the plan — the organisation observes it.
+   * The answer is my reports, the new one included, folded into the view.
+   */
+  async signaler(nouveau: NouveauSignalement): Promise<void> {
+    const jeton = this.requireJeton();
+    const signalements = await this.api.post<SignalementView[]>(
+      `/api/espace-animateur/${jeton}/signalements`,
+      nouveau,
+    );
+    this.foldSignalements(signalements);
+  }
+
+  /** Withdraws one of my reports while the organisation has not settled it. */
+  async retirerSignalement(signalementId: number): Promise<void> {
+    const jeton = this.requireJeton();
+    const signalements = await this.api.deleteReturning<SignalementView[]>(
+      `/api/espace-animateur/${jeton}/signalements/${signalementId}`,
+    );
+    this.foldSignalements(signalements);
+  }
+
+  private foldSignalements(signalements: SignalementView[]): void {
+    const view = this.view();
+    if (view) {
+      this._view.set({ ...view, signalements });
+    }
   }
 
   /** Withdraws one still-pending demande, then refreshes the list. */

@@ -145,6 +145,10 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
+          text: $localize`:@@aide.jourJ.signalements:Un animateur peut signaler depuis son espace qu'il ne pourra pas venir, sur une journée ou sur un poste, même foire et collecte fermées ; vous en êtes prévenu par e-mail. Le signalement ne change rien au planning : « Empêchements signalés » les liste, du jour affiché à la fin de l'événement, avec le motif choisi — raison personnelle, transport ou autre, jamais un texte libre. « Marquer absent et remplacer » fait le geste du jour J sur la journée ou sur le seul créneau du poste, puis cherche les remplaçants ; « Classer » le range sans rien toucher. Tant que vous n'avez rien décidé, l'animateur peut l'annuler.`,
+        },
+        {
+          kind: 'paragraph',
           text: $localize`:@@aide.jourJ.publication:Rien n'est envoyé aux animateurs depuis cet écran : leur espace continue d'afficher le planning publié tant que vous n'avez pas republié. Le bandeau rappelle combien de personnes attendent un changement et renvoie vers le bouton Publier, sur la page Publication.`,
         },
         {

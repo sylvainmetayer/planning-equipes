@@ -73,6 +73,39 @@
   </mat-card>
 }
 
+@if (signalements().length > 0) {
+  <!-- Les empêchements signalés depuis les espaces (#533) : une information,
+       jamais une écriture — l'organisation constate et répare, ou classe. -->
+  <mat-card appearance="outlined" class="page-card jour-j-signalements">
+    <mat-card-header>
+      <h2 mat-card-title i18n="@@jourJ.signalements.titre">Empêchements signalés</h2>
+    </mat-card-header>
+    <mat-card-content>
+      <ul class="jour-j-liste">
+        @for (signalement of signalements(); track signalement.id) {
+          <li class="jour-j-signalement">
+            <span>
+              <strong>{{ signalement.nomAffiche }}</strong>
+              · {{ signalement.date }} · {{ signalement.objet }}
+              @if (signalement.motifLibelle) {
+                · {{ signalement.motifLibelle }}
+              }
+            </span>
+            <span class="jour-j-signalement-actions">
+              <button matButton="filled" [disabled]="editingLocked() || reportBusy() === signalement.id"
+                      (click)="traiterSignalement(signalement.id)"
+                      i18n="@@jourJ.signalement.traiter">Marquer absent et remplacer</button>
+              <button matButton [disabled]="reportBusy() === signalement.id"
+                      (click)="classerSignalement(signalement.id)"
+                      i18n="@@jourJ.signalement.classer">Classer</button>
+            </span>
+          </li>
+        }
+      </ul>
+    </mat-card-content>
+  </mat-card>
+}
+
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
     <h2 mat-card-title i18n="@@jourJ.absents.titre">Qui manque ?</h2>

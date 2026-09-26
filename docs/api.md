@@ -2381,6 +2381,40 @@ qu'une résolution tient l'édition : le calcul en cours note encore l'arrivée
 groupée qu'il a reçue, et le groupe serait prévenu d'un changement que le plan
 à venir ne reflète pas.
 
+## Empêchement signalé depuis l'espace
+
+« Je ne pourrai pas être là » : l'animateur signale depuis son espace qu'il sera
+absent **toute une journée** ou **sur un poste**. C'est la **deuxième route en
+écriture** de l'espace, après la déclaration de disponibilités, et elle reste
+ouverte **toute l'édition** — foire et collecte fermées comprises : c'est le cas
+principal. Rien n'est écrit au planning : l'organisation **constate** ou
+**classe** (ADR 0065).
+
+| Borne | Ce qu'elle empêche |
+| --- | --- |
+| Une journée de l'événement où l'animateur tient un poste **dans le planning communiqué**, pas encore terminée ; pour un poste, le sien et pas encore terminé (`400`) | Un signalement sur ce qu'il ne voit pas dans son espace, ou sur du passé |
+| **Un seul signalement ouvert** par personne et par objet (index unique partiel, V111) ; une journée déjà signalée entière couvre ses postes (`409`) | Le volume : renvoyer mille fois laisse une ligne |
+| `ESPACE_DECLARATION_MAX_ENVOIS` par animateur et par fenêtre, compté **à part** de la déclaration et avant toute validation | Le rythme : chaque signalement écrit à l'organisation. Au-delà, `429` + `Retry-After` |
+
+Le poste est désigné par sa **clé naturelle** — `creneauId` et `standId` —,
+jamais par l'identifiant du siège, qu'une résolution renumérote. Le motif est
+**facultatif et en liste fermée** (`PERSONNEL`, `TRANSPORT`, `AUTRE`) : aucun
+champ libre, c'est là qu'on écrirait une raison de santé que personne n'a
+demandée.
+
+| Route | Effet |
+| --- | --- |
+| `POST /api/espace-animateur/{jeton}/signalements` | Signale ; répond **mes** signalements, le nouveau compris. L'organisation est prévenue par courriel tout de suite, au mieux (`service/notification/`) |
+| `DELETE /api/espace-animateur/{jeton}/signalements/{id}` | Annule le sien tant qu'il est ouvert ; `409` une fois traité ou classé |
+| `GET /api/espace-animateur/{jeton}` | `signalements` : tout ce que j'ai signalé et où cela en est |
+| `GET /api/jour-j` | `signalements` : les signalements **ouverts**, du jour regardé à la fin de l'événement, nommés |
+| `POST /api/jour-j/signalements/{id}/traitement` | « Marquer absent et remplacer » : l'absence du jour J — la journée, ou le seul créneau du poste signalé —, puis le signalement `TRAITE`. Répond les sièges libérés, pour le remplacement |
+| `POST /api/jour-j/signalements/{id}/classement` | « Classer » : lu, rien ne change au planning |
+
+`POST /api/jour-j/absences` prend désormais un `creneauId` facultatif : l'absence
+porte alors sur ce créneau seul, au lieu du reste de la journée — le geste du
+poste signalé, et celui du panneau Siège.
+
 ## Marque et mentions légales
 
 `/api/branding` et `/api/mentions-legales` sont **publics**, comme

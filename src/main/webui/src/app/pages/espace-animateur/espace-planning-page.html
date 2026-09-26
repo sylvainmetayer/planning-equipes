@@ -243,6 +243,32 @@
           </output>
         }
 
+        <!--
+          « Je ne pourrai pas venir » (#533) : ce que j'ai signalé ce jour-là et
+          où cela en est, puis le geste, tant qu'un poste reste à venir. Rien ne
+          change au planning : l'organisation est prévenue et décide.
+        -->
+        @for (signalement of reportsOf(jour.date); track signalement.id) {
+          <output class="espace-signalement status-paragraph">
+            <mat-icon inline>event_busy</mat-icon>
+            <span>{{ reportObject(signalement) }} — {{ reportState(signalement) }}</span>
+            @if (signalement.statut === 'SIGNALE') {
+              <button matButton type="button" [disabled]="reportBusy()" (click)="retirer(signalement)"
+                      i18n="@@espace.signalement.annuler">Annuler</button>
+            }
+          </output>
+        }
+        @if (canReportDay(jour)) {
+          <button matButton="outlined" type="button" class="espace-signaler" [disabled]="reportBusy()"
+                  (click)="signaler(jour)">
+            <mat-icon>event_busy</mat-icon>
+            <span i18n="@@espace.signalement.bouton">Je ne pourrai pas venir</span>
+          </button>
+        }
+        @if (erreurSignalement(); as erreur) {
+          <app-status-message [text]="erreur" tone="error" />
+        }
+
         @if (jour.repos || jour.postes.length === 0) {
           <p class="espace-repos">
             <mat-icon inline>self_improvement</mat-icon>
@@ -294,6 +320,13 @@
                     <span>{{ poste.coequipiers.join(', ') }}</span>
                   }
                 </p>
+              }
+              @if (canReportSeat(jour, poste)) {
+                <button matButton type="button" class="espace-poste-signaler" [disabled]="reportBusy()"
+                        (click)="signaler(jour, poste)">
+                  <mat-icon>event_busy</mat-icon>
+                  <span i18n="@@espace.signalement.boutonPoste">Je ne pourrai pas venir sur ce poste</span>
+                </button>
               }
             </mat-card-content>
           </mat-card>

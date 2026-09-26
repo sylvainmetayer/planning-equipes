@@ -9,6 +9,7 @@ import { seedStore } from '../core/testing/seed-store';
 
 function view(): EspaceAnimateurView {
   return {
+    signalements: [],
     animateurId: 'A1',
     prenom: 'Alice',
     nom: 'Martin',
@@ -69,6 +70,7 @@ class FakeApi {
   get = vi.fn(async (_url: string): Promise<unknown> => null);
   getPreservingHttpError = vi.fn(async (_url: string): Promise<unknown> => null);
   post = vi.fn(async (_url: string, _body: unknown): Promise<unknown> => null);
+  deleteReturning = vi.fn(async (_url: string): Promise<unknown> => null);
 }
 
 describe('EspaceAnimateurService', () => {
@@ -224,5 +226,56 @@ describe('EspaceAnimateurService', () => {
     ).rejects.toThrow('Espace animateur non chargé');
     await expect(service.annuler('D1')).rejects.toThrow('Espace animateur non chargé');
     expect(api.post).not.toHaveBeenCalled();
+  });
+
+  describe('reports of an absence (« je ne pourrai pas venir »)', () => {
+    const signale = {
+      id: 5,
+      portee: 'JOUR',
+      date: '2026-07-11',
+      creneauId: null,
+      standId: null,
+      standNom: null,
+      heureDebut: null,
+      heureFin: null,
+      motif: 'TRANSPORT',
+      statut: 'SIGNALE',
+      signaleLe: '2026-07-10T08:00:00Z',
+      traiteLe: null,
+    };
+
+    it('posts the report and folds my reports into the view', async () => {
+      seedStore(service, 'jeton', 'tok');
+      seedStore(service, 'view', view());
+      api.post.mockResolvedValue([signale]);
+
+      await service.signaler({
+        portee: 'JOUR',
+        date: '2026-07-11',
+        creneauId: null,
+        standId: null,
+        motif: 'TRANSPORT',
+      });
+
+      expect(api.post).toHaveBeenCalledWith('/api/espace-animateur/tok/signalements', {
+        portee: 'JOUR',
+        date: '2026-07-11',
+        creneauId: null,
+        standId: null,
+        motif: 'TRANSPORT',
+      });
+      expect(service.view()?.signalements).toEqual([signale]);
+    });
+
+    it('withdraws one and reads back what is left', async () => {
+      seedStore(service, 'jeton', 'tok');
+      seedStore(service, 'view', { ...view(), signalements: [] });
+      api.deleteReturning.mockResolvedValue([{ ...signale, statut: 'ANNULE' }]);
+
+      await service.retirerSignalement(5);
+
+      expect(api.deleteReturning).toHaveBeenCalledWith('/api/espace-animateur/tok/signalements/5');
+      expect(service.view()?.signalements[0].statut).toBe('ANNULE');
+    });
   });
 });

@@ -25,6 +25,7 @@ import { EspacePlanningPage } from './espace-planning-page';
 
 function view(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView {
   return {
+    signalements: [],
     joursRepos: [],
     animateurId: 'alice',
     prenom: 'Alice',

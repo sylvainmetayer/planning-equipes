@@ -94,6 +94,8 @@ public class EspaceAnimateurService {
 
     private final TeammateRequestService teammateRequestService;
 
+    private final SignalementAbsenceService signalementService;
+
     @Inject
     public EspaceAnimateurService(
             ReferenceDataService referenceDataService,
@@ -109,7 +111,8 @@ public class EspaceAnimateurService {
             ColleagueLookupLimiter colleagueLookups,
             PublicationTraceRepository traceRepository,
             JourJClock clock,
-            TeammateRequestService teammateRequestService) {
+            TeammateRequestService teammateRequestService,
+            SignalementAbsenceService signalementService) {
         this.referenceDataService = referenceDataService;
         this.planPublieService = planPublieService;
         this.consigneService = consigneService;
@@ -124,6 +127,7 @@ public class EspaceAnimateurService {
         this.traceRepository = traceRepository;
         this.clock = clock;
         this.teammateRequestService = teammateRequestService;
+        this.signalementService = signalementService;
     }
 
     /**
@@ -265,8 +269,11 @@ public class EspaceAnimateurService {
      * @param contact  who to call or write to about this edition, as
      *                 Paramètres › Édition sets it; both halves {@code null}
      *                 when the organisation published none
+     * @param signalements the absences I reported from here (« je ne pourrai
+     *                 pas être là », issue #533), whatever their state — what I
+     *                 said and where it stands, by day
      */
-    @Schema(requiredProperties = {"foireOuverte", "contact"})
+    @Schema(requiredProperties = {"foireOuverte", "contact", "signalements"})
     public record EspaceAnimateurView(
             String animateurId,
             String prenom,
@@ -291,7 +298,8 @@ public class EspaceAnimateurService {
             LocalDate editionDebut,
             LocalDate editionFin,
             List<CarpoolDayView> covoiturage,
-            ContactOrganisation contact) {}
+            ContactOrganisation contact,
+            List<SignalementAbsenceService.SignalementView> signalements) {}
 
     /**
      * One day of my grouped arrival, as the espace says it: whether the car
@@ -446,7 +454,8 @@ public class EspaceAnimateurService {
                 edition.debut(),
                 edition.fin(),
                 carpoolDaysOf(planning, animateurId),
-                referenceDataService.getContactOrganisation());
+                referenceDataService.getContactOrganisation(),
+                signalementService.ofAnimateur(animateurId));
     }
 
     /**

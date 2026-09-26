@@ -89,6 +89,8 @@ public class JourJService {
 
     private final JourJClock clock;
 
+    private final SignalementAbsenceRepository signalements;
+
     @Inject
     public JourJService(
             ReferenceDataService referenceDataService,
@@ -97,7 +99,8 @@ public class JourJService {
             PlanningService planningService,
             SolverJobService solverJobs,
             SecurityIdentity identity,
-            JourJClock clock) {
+            JourJClock clock,
+            SignalementAbsenceRepository signalements) {
         this.referenceDataService = referenceDataService;
         this.consigneService = consigneService;
         this.persistenceService = persistenceService;
@@ -105,6 +108,7 @@ public class JourJService {
         this.solverJobs = solverJobs;
         this.identity = identity;
         this.clock = clock;
+        this.signalements = signalements;
     }
 
     /* -------------------------------- Reads -------------------------------- */
@@ -165,7 +169,40 @@ public class JourJService {
                         .find(jour)
                         .map(consigne ->
                                 new ConsigneJourJ(consigne.fermetureDebut(), consigne.fermetureFin(), consigne.motif()))
-                        .orElse(null));
+                        .orElse(null),
+                signalementsOuverts(jour, identites));
+    }
+
+    /**
+     * The absences reported from the espaces and not settled yet, from the
+     * journée looked at onwards: tomorrow's report has to be read today (issue
+     * #533). By day, then by arrival.
+     */
+    private List<SignalementJourJ> signalementsOuverts(LocalDate depuis, Map<String, Identite> identites) {
+        Map<String, dev.sylvain.planning.domain.Stand> stands = new HashMap<>();
+        referenceDataService.listStands().forEach(stand -> stands.putIfAbsent(stand.getId(), stand));
+        Map<Long, Creneau> creneaux = creneauxById(referenceDataService.listCreneaux());
+        return signalements.list().stream()
+                .filter(dev.sylvain.planning.domain.SignalementAbsence::ouvert)
+                .filter(signalement -> !signalement.jour().isBefore(depuis))
+                .map(signalement -> {
+                    SignalementAbsenceService.SignalementView vue =
+                            SignalementAbsenceService.view(signalement, stands, creneaux);
+                    return new SignalementJourJ(
+                            vue.id(),
+                            signalement.animateurId(),
+                            nomAffiche(identites.get(signalement.animateurId()), signalement.animateurId()),
+                            vue.portee(),
+                            vue.date(),
+                            vue.creneauId(),
+                            vue.standId(),
+                            vue.standNom(),
+                            vue.heureDebut(),
+                            vue.heureFin(),
+                            vue.motif(),
+                            vue.signaleLe());
+                })
+                .toList();
     }
 
     /**
@@ -218,6 +255,19 @@ public class JourJService {
      */
     public AbsenceMarquee recordAbsence(
             String animateurId, String raison, LocalDate date, LocalDateTime maintenantDemande) {
+        return recordAbsence(animateurId, raison, date, maintenantDemande, null);
+    }
+
+    /**
+     * Same, narrowed to one timeslot when {@code creneauId} names one — the
+     * absence reported on a single seat (issue #533), or marked from the Siège
+     * panel on one shift rather than on the rest of the day.
+     *
+     * @throws BusinessError.Invalid when that timeslot is not among the ones
+     *         still ahead that day
+     */
+    public AbsenceMarquee recordAbsence(
+            String animateurId, String raison, LocalDate date, LocalDateTime maintenantDemande, Long creneauId) {
         List<Creneau> tousLesCreneaux = referenceDataService.listCreneaux();
         Journee journee = journee(tousLesCreneaux, date, maintenantDemande);
         LocalDate jour = journee.jour();
@@ -231,10 +281,14 @@ public class JourJService {
         }
         List<Creneau> restants = duJour.stream()
                 .filter(creneau -> isStillAhead(creneau, maintenant))
+                .filter(creneau -> creneauId == null || creneauId.equals(creneau.getId()))
                 .toList();
         if (restants.isEmpty()) {
-            throw new BusinessError.Invalid("Aucun créneau ne reste à couvrir le " + jour + " après "
-                    + maintenant.toLocalTime() + " : il n'y a rien à libérer.");
+            throw new BusinessError.Invalid(
+                    creneauId == null
+                            ? "Aucun créneau ne reste à couvrir le " + jour + " après " + maintenant.toLocalTime()
+                                    + " : il n'y a rien à libérer."
+                            : "Ce créneau est terminé, ou n'est pas du " + jour + " : il n'y a rien à libérer.");
         }
 
         PlanningEvenement plan = persistenceService.loadPersistedPlanning();
@@ -690,7 +744,7 @@ public class JourJService {
      *                        {@code animateursDeService}, and they still have to
      *                        be named on the button that hands them a seat
      */
-    @Schema(requiredProperties = {"creneauxDuJour"})
+    @Schema(requiredProperties = {"creneauxDuJour", "signalements"})
     public record EtatJourJ(
             LocalDate date,
             LocalDateTime maintenant,
@@ -700,7 +754,30 @@ public class JourJService {
             List<PosteAPourvoir> postesAPourvoir,
             List<AbsenceJourJ> absences,
             List<AnimateurNomme> animateurs,
-            ConsigneJourJ consigne) {}
+            ConsigneJourJ consigne,
+            List<SignalementJourJ> signalements) {}
+
+    /**
+     * An absence reported from an espace and not settled yet (issue #533),
+     * with the reason when one was chosen — a closed list, never free text.
+     *
+     * @param creneauId with {@code standId}, the seat reported; {@code null}
+     *                  for a whole day
+     */
+    @Schema(requiredProperties = {"id", "portee", "date", "signaleLe"})
+    public record SignalementJourJ(
+            long id,
+            String animateurId,
+            String nomAffiche,
+            dev.sylvain.planning.domain.SignalementAbsence.Portee portee,
+            LocalDate date,
+            Long creneauId,
+            String standId,
+            String standNom,
+            LocalTime heureDebut,
+            LocalTime heureFin,
+            dev.sylvain.planning.domain.SignalementAbsence.Motif motif,
+            Instant signaleLe) {}
 
     /** The consigne governing the day (issue #4), {@code null} on an ordinary day. */
     @Schema(requiredProperties = {"fermetureDebut", "motif"})

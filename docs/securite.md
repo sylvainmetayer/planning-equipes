@@ -160,6 +160,15 @@ mais un **compteur à part** — se corriger d'un côté n'épuise pas l'autre. 
 volume est borné de la même façon, par une seule demande en attente par
 animateur.
 
+Le signalement d'un empêchement (« je ne pourrai pas être là »,
+`POST /api/espace-animateur/{jeton}/signalements`) est ouvert **toute
+l'édition**, collecte et foire fermées comprises, et chaque envoi écrit à
+l'organisation : même plafond, même fenêtre, **un troisième compteur**, compté
+avant toute validation pour qu'une boucle de signalements refusés s'arrête
+aussi. Son volume est borné par un seul signalement ouvert par personne et par
+objet (index unique partiel, `V111`). Il n'écrit rien au planning : l'annuler,
+le constater ou le classer sont les seuls gestes qui le suivent.
+
 Au-delà, `429` avec un `Retry-After`, comme pour les codes. Le compte est tenu
 **par animateur** et non par adresse IP : la session nomme déjà l'animateur, et
 une IP est ce qu'un téléphone change entre deux cellules. Les deux compteurs

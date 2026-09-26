@@ -2879,6 +2879,48 @@ export interface EspaceAnimateurView {
    * the espace from the next change on; optional for an older payload.
    */
   contact?: ContactOrganisation;
+  /**
+   * The absences I reported from here (« je ne pourrai pas être là », issue
+   * #533), whatever their state — what I said and where it stands, by day.
+   */
+  signalements: SignalementView[];
+}
+
+/** What an absence reported from the espace is about: the whole day, or one seat. */
+export type PorteeSignalement = 'JOUR' | 'POSTE';
+
+/** Why, when the animateur says — a closed list, never free text. */
+export type MotifSignalement = 'PERSONNEL' | 'TRANSPORT' | 'AUTRE';
+
+/** Where a report stands: open, observed with the absence marked, filed, or withdrawn. */
+export type StatutSignalement = 'SIGNALE' | 'TRAITE' | 'CLASSE' | 'ANNULE';
+
+/** One absence I reported, as my espace shows it back. */
+export interface SignalementView {
+  id: number;
+  portee: PorteeSignalement;
+  /** ISO date. */
+  date: string;
+  /** With `standId`, the seat — for a `POSTE` report only. */
+  creneauId: number | null;
+  standId: string | null;
+  standNom: string | null;
+  /** `HH:mm:ss`. */
+  heureDebut: string | null;
+  heureFin: string | null;
+  motif: MotifSignalement | null;
+  statut: StatutSignalement;
+  signaleLe: string;
+  traiteLe: string | null;
+}
+
+/** Payload of `POST /api/espace-animateur/{jeton}/signalements`. */
+export interface NouveauSignalement {
+  portee: PorteeSignalement;
+  date: string;
+  creneauId: number | null;
+  standId: string | null;
+  motif: MotifSignalement | null;
 }
 
 /**
@@ -3774,6 +3816,24 @@ export interface EtatJourJ {
   animateurs: AnimateurNomme[];
   /** The consigne governing this day (issue #4), `null` on an ordinary day. */
   consigne: ConsigneJourJ | null;
+  /** Absences reported from the espaces and not settled yet, from this day on (issue #533). */
+  signalements: SignalementJourJ[];
+}
+
+/** An absence reported from an espace and not settled yet, named for the organisation. */
+export interface SignalementJourJ {
+  id: number;
+  animateurId: string;
+  nomAffiche: string;
+  portee: PorteeSignalement;
+  date: string;
+  creneauId: number | null;
+  standId: string | null;
+  standNom: string | null;
+  heureDebut: string | null;
+  heureFin: string | null;
+  motif: MotifSignalement | null;
+  signaleLe: string;
 }
 
 /** What one « marquer absent » wrote, so the screen goes straight to the holes it opened. */

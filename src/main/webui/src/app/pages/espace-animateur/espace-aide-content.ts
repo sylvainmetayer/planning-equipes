@@ -409,6 +409,27 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
       ],
     },
     {
+      id: 'empechement',
+      icon: 'event_busy',
+      question: $localize`:@@espace.aide.empechement.question:Je ne pourrai pas venir : comment prévenir ?`,
+      resume: $localize`:@@espace.aide.empechement.resume:« Je ne pourrai pas venir », sur la journée ou sur un poste, toute l'édition.`,
+      cible: 'planning',
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.empechement.geste:Dans « Mon planning », ouvrez la journée concernée : « Je ne pourrai pas venir » signale toute la journée, et le même bouton sur la carte d'un poste ne signale que celui-là. Un motif est proposé — raison personnelle, transport, autre — et vous pouvez ne pas le préciser. Le geste reste ouvert toute l'édition, même quand la collecte et la foire sont fermées.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.empechement.suite:L'organisation est prévenue aussitôt. Votre planning ne change pas tout seul : c'est elle qui constate votre absence et vous remplace, ou qui classe le signalement. Sa ligne sous la journée dit où il en est ; tant qu'il est en attente, « Annuler » le retire.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.empechement.urgence:Le jour même, pour un poste qui commence dans l'heure, appelez aussi l'organisation : un signalement se lit, un appel s'entend.`,
+        },
+      ],
+    },
+    {
       id: 'foire-fermee',
       icon: 'lock',
       question: $localize`:@@espace.aide.foire.question:Pourquoi je ne peux pas proposer d'échange ?`,
@@ -424,7 +445,7 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@espace.aide.foire.suite:Un empêchement après la fermeture ? Prévenez directement l'organisation : elle peut encore agir, pas cet espace.`,
+          text: $localize`:@@espace.aide.foire.suite:Un empêchement après la fermeture ? « Je ne pourrai pas venir », dans « Mon planning », reste ouvert : l'organisation est prévenue aussitôt.`,
         },
       ],
     },
@@ -455,7 +476,7 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
           kind: 'list',
           items: [
             $localize`:@@espace.aide.contact.item1:Une affectation vous semble fausse, ou une indisponibilité annoncée n'a pas été prise en compte : signalez-le. Hors période de collecte, vous ne pouvez pas corriger vos données vous-même.`,
-            $localize`:@@espace.aide.contact.item2:Empêchement de dernière minute : prévenez tout de suite, sans attendre qu'une demande d'échange soit validée.`,
+            $localize`:@@espace.aide.contact.item2:Empêchement de dernière minute : signalez-le avec « Je ne pourrai pas venir » et, pour un poste qui commence bientôt, appelez aussi l'organisation.`,
             $localize`:@@espace.aide.contact.item3:Ce que l'application sait de vous et ce qu'elle en fait est décrit dans la politique de confidentialité, dans le menu en haut à droite.`,
           ],
         },
