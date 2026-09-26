@@ -7,3 +7,8 @@
 .diagnostic-onglets .mat-icon {
   margin-right: 0.35rem;
 }
+
+/* « Problèmes · 8 »: the count reads as part of the tab's name, a little quieter. */
+.diagnostic-compte {
+  color: var(--mat-sys-on-surface-variant);
+}

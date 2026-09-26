@@ -1140,15 +1140,13 @@ que le serveur envoie.
 
 C'est la question qu'on se pose *avant* de décider quoi corriger : les six
 journées d'amplitude excessive sont-elles le week-end, les référents manquants
-sont-ils tous sur le même pavillon. L'écran Règles du planning la croise sous son tableau,
-dans un bloc replié par défaut, avec un sélecteur d'axe.
+sont-ils tous sur le même pavillon. L'onglet Problèmes du Diagnostic la croise
+sous ses cartes, ouverte, avec un sélecteur d'axe, et la restreint à la règle
+qu'une carte a désignée.
 
-Cliquer une case l'ouvre sur **quoi faire**, pas seulement sur combien : la
-consigne de correction de la règle (`remediation`, ci-dessous), le lien vers
-l'écran où cet axe se corrige — la journée, le planning du stand, la fiche
-de la personne, section « Planning » —, le poids actuel et ce qu'un
-assouplissement changerait, puis les lignes de violation quand le serveur les
-envoie.
+Cliquer une case mène à l'écran où cet axe se corrige : la journée sur la page
+Planning, le stand sur la même page filtrée sur lui, la fiche de la personne.
+Ce qu'il faut faire de la règle elle-même, ce sont les gestes de sa carte.
 
 `remediation` accompagne chaque contrainte de `contraintes[]` : le levier que
 l'organisateur a réellement sur cette règle — recruter, ouvrir un stand plus

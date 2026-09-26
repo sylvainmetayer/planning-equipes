@@ -176,6 +176,52 @@ describe('buildTable', () => {
 
     expect(table.lignes[0].cellules[1].tooltip).toContain('aucun siège');
   });
+
+  // An evening ending at 22:00 on weekdays and at midnight on Saturday is one
+  // evening: one column, not two columns with a hole every other row.
+  it('lays the timeslots on regular columns, one per start hour', () => {
+    const table = buildTable(
+      rapport({
+        tranches: [
+          { debut: '18:00:00', fin: '00:00:00' },
+          { debut: '09:00:00', fin: '12:00:00' },
+          { debut: '18:00:00', fin: '22:00:00' },
+        ],
+        jours: [
+          jour('2026-07-10', 1, [cellule({ debut: '18:00:00', fin: '22:00:00', marge: -1 })]),
+          jour('2026-07-11', 2, [cellule({ debut: '18:00:00', fin: '00:00:00', marge: 2 })]),
+        ],
+      }),
+    );
+
+    expect(table.colonnes.map((colonne) => colonne.label)).toEqual([
+      '09:00-12:00',
+      '18:00-22:00/00:00',
+    ]);
+    expect(table.lignes.map((ligne) => ligne.cellules[1].label)).toEqual(['-1', '+2']);
+    // The cell says its own hours, not the column's.
+    expect(table.lignes[1].cellules[1].tooltip).toContain('18:00-00:00');
+  });
+
+  it('keeps the tighter of two timeslots of one day that share a start hour', () => {
+    const table = buildTable(
+      rapport({
+        tranches: [
+          { debut: '18:00:00', fin: '20:00:00' },
+          { debut: '18:00:00', fin: '22:00:00' },
+        ],
+        jours: [
+          jour('2026-07-10', 1, [
+            cellule({ debut: '18:00:00', fin: '20:00:00', marge: 3 }),
+            cellule({ debut: '18:00:00', fin: '22:00:00', marge: -2, creneauId: 9 }),
+          ]),
+        ],
+      }),
+    );
+
+    expect(table.lignes[0].cellules).toHaveLength(1);
+    expect(table.lignes[0].cellules[0]).toMatchObject({ label: '-2', creneauId: 9 });
+  });
 });
 
 describe('buildSynthese', () => {

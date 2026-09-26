@@ -1,0 +1,33 @@
+/* « Où se concentrent les écarts » on the Problèmes tab: the cross-table is
+   drawn with the shared heatmap stylesheet; this only lays out its controls. */
+
+/* A card's « Où se concentrent ces écarts » scrolls here: clear of the toolbar. */
+.ecarts-pivot {
+  display: block;
+  scroll-margin-top: 5rem;
+}
+
+.ecarts-pivot-controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.ecarts-pivot-filtre {
+  font: var(--mat-sys-label-large);
+}
+
+/* The rule names scroll under their column headings on a long table. */
+.ecarts-pivot-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--mat-sys-surface);
+}
+
+/* A cell with breaches opens a screen: it has to look like it can be clicked. */
+.ecarts-pivot-lien {
+  cursor: pointer;
+}

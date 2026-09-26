@@ -104,6 +104,57 @@
   font: var(--mat-sys-body-small);
 }
 
+/* Où and Qui on the left, the gestures on the right; stacked on a narrow screen. */
+.probleme-corps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.probleme-ou-qui {
+  flex: 1 1 20rem;
+  display: grid;
+  gap: 0.25rem;
+  margin: 0.5rem 0;
+}
+
+.probleme-ou-qui-ligne {
+  display: flex;
+  gap: 0.5rem;
+  font: var(--mat-sys-body-medium);
+}
+
+.probleme-ou-qui-ligne dt {
+  flex: 0 0 2.5rem;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-label-large);
+}
+
+.probleme-ou-qui-ligne dd {
+  margin: 0;
+}
+
+.probleme-lieu,
+.probleme-personne {
+  color: var(--app-accent);
+}
+
+.probleme-autres {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.probleme-corps .probleme-que-faire {
+  flex: 1 1 24rem;
+}
+
+/* The score in figures, one hover away from the sentence that dates it. */
+.probleme-score {
+  cursor: help;
+  vertical-align: middle;
+  color: var(--mat-sys-on-surface-variant);
+}
+
 /* The fiche a violation line names, as a link right after the sentence. */
 .probleme-violation-lien {
   margin-left: 0.5rem;

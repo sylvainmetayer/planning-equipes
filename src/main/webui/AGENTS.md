@@ -323,17 +323,29 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   It reads the plan the page loaded, never one per cell, and asks for the
   candidates on demand; the seat is `?siege=<poste id>`, and `?creneau=` (with
   `stand=`), the bench's old keys, is resolved to a seat once the plan is read),
-  `/diagnostic` (« Diagnostic » — the four analyses as tabs chosen by
-  `?onglet=problemes|besoin|fragilite|former`: the problems, the staffing
-  need, the fragility, who to train; the tab components under
-  `pages/problemes`, `pages/staffing`, `pages/fragilite` and `pages/formation`
-  keep their own view state in the URL next to the page's key; the bench, once
-  a fifth tab, is the Siège panel's dialog, and `?onglet=banc` is sent to the
-  Journée by the route's `benchTabToJournee` guard), `/echanges`, `/jour-j` (« Mode jour J » — the day-of screen:
-  mark somebody absent, repair the seats they held), `/marge` (« Marge
-  disponible » — the day × timeslot grid of what is left: the animateurs
-  available then minus the seats to staff, read either on the seats a solve
-  would have to fill or on the plan persisted), `/versions` (« Versions du
+  `/diagnostic` (« Diagnostic » — what blocks, what is missing, where it is
+  tight, what is fragile, as tabs chosen by
+  `?onglet=problemes|besoin|tension|fragilite`. Problèmes: each card says
+  « Où » (its hotspots, each opening the Planning page's Siège panel on that
+  stand and timeslot), « Qui » (each name opening `/animateurs/:id`) and the
+  gestures `ConstraintCatalog` gives the rule, in its order, « Baisser
+  l'importance » last and hidden at the lowest importance
+  (`core/importance.ts`); « Qui peut tenir ce siège ? » opens the bench dialog
+  in place (`shared/siege-panel/seat-placement.ts`) and its « Placer » fills
+  the seat without leaving; « Où se concentrent les écarts »
+  (`pages/problemes/ecarts-pivot*`) sits under the cards, open, narrowed by
+  `?regle=` and read along `?axe=`. Besoin: every bound and every day links to
+  the screen that changes it, the « avant » margin is a column and a grid
+  (`pages/marge/margin-before-grid.ts`), « À former » (`pages/formation`) its
+  last section. Tension (`pages/marge/tension-tab.ts`): the « après » margin
+  crossed with the fragility, one column per start hour of the grid, the fill
+  the margin's sign and the grade a frame, each cell opening the Siège panel
+  of its timeslot. Fragilité: « Verrouiller », « Qui peut remplacer »,
+  « Former » per person. The tab components keep their own view state in the
+  URL next to the page's key; `?onglet=banc` is sent to the Planning page by
+  `benchTabToJournee`, `?onglet=former` to `?onglet=besoin&section=former` by
+  `trainingTabToNeed`), `/echanges`, `/jour-j` (« Mode jour J » — the day-of screen:
+  mark somebody absent, repair the seats they held), `/versions` (« Versions du
   plan » — the finished solves and the snapshots of the edition in one
   chronology over the pure `versions.ts`, `?editions=toutes` for every
   edition's; two ticked rows, or one and « Plan en place », open the A/B
@@ -379,7 +391,8 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `/pauses`, `/problemes`, `/staffing`, `/fragilite` and `/banc-de-touche`,
   whose redirects carry their query params along, renamed where the page now
   owns the key — `/banc-de-touche` landing on `/journee` with its `creneau`
-  and `stand` — and the three the Planning page absorbed in issue #712:
+  and `stand` —, `/marge`, landing on `/diagnostic?onglet=besoin`, or on
+  `?onglet=tension` for its `mode=apres|tension`, and the three the Planning page absorbed in issue #712:
   `/calendar` (its `date`, `stand` and `animateur`; the `month` it showed is
   the day's own), `/intendance` (`?vue=pauses`) and `/graphe` (`?vue=carte`),
   through `redirectToPlanning` of `app.routes.ts`, and the six its axes

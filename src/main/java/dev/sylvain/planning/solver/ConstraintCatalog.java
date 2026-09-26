@@ -228,6 +228,86 @@ public final class ConstraintCatalog {
                     + "elle compte plus que les autres du même niveau.";
 
     /**
+     * The gestures that actually move a rule in default, as types the screens
+     * render — never a sentence to parse. {@code BlockerPlaybook} turns each
+     * one into a navigation positioned on the rule's breaches; this catalogue
+     * only says which, and in what order.
+     *
+     * <p>The weight is deliberately absent: lowering a rule's importance is
+     * the last resort of every medium and soft rule, appended after these by
+     * the playbook, and never a lever of its own — a card offering only that
+     * tells the organiser to stop caring rather than what to fix.</p>
+     */
+    public enum Lever {
+        /** Who could hold the seat in question — the bench, and « Placer ». */
+        SEAT,
+        /** Enter or raise a competence on the stand's game category. */
+        SKILL,
+        /** The stand's own fiche: its staffing, its premium or exhausting flag, its referent requirement. */
+        STAND_PROFILE,
+        /** Fewer seats opened that day on that stand. */
+        STAFFING,
+        /** The cap the rule is named after, on its line of the rules screen. */
+        CAP,
+        /** The thresholds the rule measures against, on its line of the rules screen. */
+        THRESHOLD,
+        /** Hand the seat to somebody else, on the Journée. */
+        REPAIR,
+        /** The cap of a game category. */
+        GAME_CATEGORY_CAP,
+        /** The animateurs' fiches: their declared days off, their wishes. */
+        ANIMATEUR_PROFILES,
+        /** Who works how much: the workload screen. */
+        WORKLOAD,
+        /** Freeze what must hold. */
+        LOCK,
+        /** The hand-written adjustments the rule reads. */
+        ADJUSTMENTS,
+        /** The meal window of the legal settings. */
+        MEAL_WINDOW,
+        /** A shorter shift. */
+        SHIFT,
+        /** The rule's own line, where it is described and set. */
+        RULE
+    }
+
+    /**
+     * The levers of each rule with a gesture of its own, most useful first.
+     * Every MEDIUM and SOFT rule is listed — {@code BlockerPlaybookTest} fails
+     * on one that is not, since its card would otherwise offer nothing but its
+     * weight. The HARD rules absent from this table fall back on the lever of
+     * their category, which for a legal rule is always « change the plan ».
+     */
+    private static final Map<String, List<Lever>> LEVERS = Map.ofEntries(
+            Map.entry("posteDoitEtrePourvu", List.of(Lever.SEAT, Lever.SKILL, Lever.STAFFING)),
+            Map.entry("animateurDisponible", List.of(Lever.ANIMATEUR_PROFILES, Lever.REPAIR)),
+            Map.entry("pasDeChevauchementHoraire", List.of(Lever.REPAIR)),
+            Map.entry("plafondCreneauxParTypologie", List.of(Lever.GAME_CATEGORY_CAP, Lever.SKILL)),
+            Map.entry("coupureRepasObligatoire", List.of(Lever.MEAL_WINDOW, Lever.SHIFT)),
+            Map.entry(MAX_JOURS_CONSECUTIFS_DUR, List.of(Lever.SEAT, Lever.RULE)),
+            Map.entry("coupureRepasPlacementPrefere", List.of(Lever.MEAL_WINDOW)),
+            Map.entry("affiniteAdHoc", List.of(Lever.ADJUSTMENTS)),
+            Map.entry("arriveeGroupee", List.of(Lever.ADJUSTMENTS, Lever.THRESHOLD)),
+            Map.entry("standComplexeAvecReferent", List.of(Lever.SEAT, Lever.SKILL, Lever.STAND_PROFILE)),
+            Map.entry("equilibrerCharge", List.of(Lever.WORKLOAD, Lever.REPAIR)),
+            Map.entry("stabiliteDuPlanPublie", List.of(Lever.LOCK)),
+            Map.entry("repartitionMineursParCreneau", List.of(Lever.SEAT, Lever.REPAIR)),
+            Map.entry("experienceRequisePourStandsPremium", List.of(Lever.SEAT, Lever.SKILL, Lever.STAND_PROFILE)),
+            Map.entry("eviterRoulementStandsPremium", List.of(Lever.REPAIR, Lever.STAND_PROFILE)),
+            Map.entry("eviterChangementEmplacementEloigne", List.of(Lever.REPAIR)),
+            Map.entry("trajetInsuffisantEntrePostes", List.of(Lever.THRESHOLD, Lever.REPAIR)),
+            Map.entry("limiterEmplacementsParJour", List.of(Lever.CAP, Lever.REPAIR)),
+            Map.entry("eviterEnchainementStandsEpuisants", List.of(Lever.REPAIR, Lever.STAND_PROFILE)),
+            Map.entry("eviterFermeturePuisOuverture", List.of(Lever.THRESHOLD, Lever.REPAIR)),
+            Map.entry("appreciationIncompatible", List.of(Lever.SKILL, Lever.REPAIR)),
+            Map.entry("souhaitsIncompatibles", List.of(Lever.ANIMATEUR_PROFILES, Lever.REPAIR)),
+            Map.entry("limiterTypologiesDistinctesParAnimateur", List.of(Lever.CAP, Lever.REPAIR)),
+            Map.entry("maxJoursConsecutifsTravailles", List.of(Lever.CAP, Lever.REPAIR)),
+            Map.entry("favoriserMixiteDesNiveaux", List.of(Lever.SKILL, Lever.REPAIR)),
+            Map.entry("equilibrerCreneauxPenibles", List.of(Lever.WORKLOAD, Lever.REPAIR)),
+            Map.entry("preserverBufferPolyvalents", List.of(Lever.SKILL, Lever.REPAIR)));
+
+    /**
      * @param libelleCourt the rule named in a few words of the organiser's
      *                     own language — what a sentence written for somebody
      *                     who never heard of {@code posteDoitEtrePourvu} says
@@ -290,6 +370,14 @@ public final class ConstraintCatalog {
          */
         public boolean activeByDefault() {
             return !DESACTIVEES_PAR_DEFAUT.contains(name);
+        }
+
+        /**
+         * The gestures that move this rule, most useful first — see
+         * {@link Lever}. Empty for a hard rule whose category answers for it.
+         */
+        public List<Lever> levers() {
+            return LEVERS.getOrDefault(name, List.of());
         }
     }
 

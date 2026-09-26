@@ -537,7 +537,13 @@ export class JourneePage implements OnInit {
       this.openSeatId.set(siege);
       this.pendingSeat = { posteId: siege };
     } else if (Number.isFinite(creneau) && creneau > 0) {
-      this.pendingSeat = { creneauId: creneau, standId: params.get('stand') };
+      // `animateur` names whose seat it is — « Qui peut remplacer » from the
+      // Diagnostic's fragility — else the first free seat is the one meant.
+      this.pendingSeat = {
+        creneauId: creneau,
+        standId: params.get('stand'),
+        animateurId: params.get('animateur'),
+      };
     }
     // Every key of the screen, written by the one component that is always
     // mounted. The renderings hold their own state through `model()`, but a

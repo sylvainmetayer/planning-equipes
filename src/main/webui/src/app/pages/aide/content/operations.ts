@@ -260,12 +260,12 @@ export function buildOperationsSections(): HelpSection[] {
               text: $localize`:@@aide.views.def.repartitionHeures:Le second rendu de « Par stand » : ce qui pèse dans l'édition, en une image. Chaque rectangle est un stand, sa surface les heures-sièges à pourvoir sur la période — sièges pourvus et vides confondus, sur la fenêtre réelle du siège : la pause d'une personne ne réduit pas le besoin de son stand. Sa couleur dit la part de ces heures réellement tenue, sur des seuils propres : critique sous 80 %, rayé en plus d'être rouge, partiel jusqu'à 99 %, pourvu à 100 % — la grille, elle, ne dit vide qu'une case que personne ne tient. Les stands se regroupent par emplacement, ou par typologie : un stand qui propose plusieurs typologies est rangé une seule fois, sous leur combinaison (« Ambiance + Stratégie »), pour que les surfaces s'additionnent au total de l'édition — l'axe Par typologie, lui, compte un poste pour chaque typologie. Quand un groupe écrase les autres, les plus petits se rangent sous « Autres ». Le filtre Emplacement de la page s'y applique. Un clic agrandit un groupe, le fil d'Ariane ramène en arrière, et un clic sur un stand ouvre sa journée, par jour. Le tableau replié sous l'image donne les mêmes chiffres, stands à 0 h compris. Le sur-effectif n'y apparaît pas : le planning ne crée aucun siège au-delà du besoin.`,
             },
             {
-              term: $localize`:@@aide.views.term.marge:Marge disponible`,
-              text: $localize`:@@aide.views.def.marge:Journée croisée avec la tranche horaire, et dans chaque case les animateurs disponibles moins les sièges à pourvoir. Rouge en dessous de zéro, vert au-dessus. « Avant résolution » compare la capacité brute aux sièges à pourvoir et répond donc sans aucun calcul ; « après résolution » ne compte libre que celui qui n'est pas déjà en poste et qu'aucune règle dure n'écarte, face aux seuls sièges restés vides. La lecture est optimiste : une case négative l'est vraiment, une case confortable ne garantit rien.`,
+              term: $localize`:@@aide.views.term.diagnostic:Diagnostic`,
+              text: $localize`:@@aide.views.def.diagnostic:Ce qui bloque, ce qui manque, ce qui est fragile, en quatre onglets : Problèmes, Besoin en animateurs, Tension et Fragilité. Sous Problèmes, chaque carte dit où la règle mord — les trois stands ou jours les plus touchés, chacun ouvrant la page Planning sur ce stand et ce créneau, panneau du siège ouvert —, qui elle vise — chaque nom ouvre sa fiche —, puis les gestes qui la corrigent, dans l'ordre utile : « Qui peut tenir ce siège ? » s'ouvre sur place, et son « Placer » remplit le siège sans quitter le Diagnostic ; « Saisir la compétence » ouvre la grille filtrée sur la typologie ; « Ouvrir la fiche du stand » mène à son effectif et à ses drapeaux ; « Régler le plafond » ouvre la ligne de la règle. « Baisser l'importance » vient toujours en dernier, et disparaît quand l'importance est déjà au plus bas : ce n'est pas un geste qui corrige. La lecture du score reste en tête, en phrases, et ses chiffres sont au survol. Sous les cartes, « Où se concentrent les écarts » croise les écarts avec les journées, les stands ou les personnes, filtré sur la règle choisie par « Où se concentrent ces écarts ».`,
             },
             {
               term: $localize`:@@aide.views.term.tension:Tension`,
-              text: $localize`:@@aide.views.def.tension:Troisième lecture de la Marge, quand un planning est enregistré : la marge après résolution croisée avec la fragilité. Critique : des sièges vides que personne ne peut tenir, un siège qu'aucun autre ne pourrait reprendre, ou un stand sans spécialiste — la case est alors hachurée. Élevée : marge nulle avec des sièges vides, ou plus de sièges fragiles (un remplaçant au plus) que de monde à revendre. Surveillée : des sièges fragiles mais assez de marge, ou un stand à spécialiste unique sans polyvalent en renfort. Calme sinon. Le badge « 2 ⚠ » compte les sièges fragiles ; une case ouvre ses raisons, avec « Qui peut tenir un siège vide » — le panneau du siège, sur la page Planning —, la fiche de la personne irremplaçable et la fragilité du stand. Une tranche déjà commencée est grisée.`,
+              text: $localize`:@@aide.views.def.tensionOnglet:Onglet du Diagnostic, quand un planning est enregistré : journée croisée avec la tranche horaire, et dans chaque case les personnes réellement libres moins les sièges restés vides, croisées avec la fragilité. Une colonne par heure de début de la grille : un soir qui finit à 22 h en semaine et à minuit le samedi reste une seule colonne. La couleur suit le signe de la marge — rouge en dessous de zéro, vert au-dessus — et le cadre dit la gravité : double pour critique (des sièges vides que personne ne peut tenir, un siège qu'aucun autre ne pourrait reprendre, un stand sans spécialiste), épais pour élevée, pointillé pour surveillée. Une case peut donc être verte et critique : du monde à revendre, mais une personne irremplaçable. Le badge « 2 ⚠ » compte les sièges fragiles ; une case ouvre le panneau du siège de sa tranche sur la page Planning, et la pire tranche de chaque journée donne ses raisons. Une tranche déjà commencée est grisée.`,
             },
             {
               term: $localize`:@@aide.views.term.fiche:Fiche animateur`,
@@ -273,15 +273,15 @@ export function buildOperationsSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.hours:Besoin en animateurs`,
-              text: $localize`:@@aide.views.def.hours:L'estimation du nombre minimum d'animateurs à recruter — les heures de chacun, elles, sont sur « Par personne ». Elle se calcule avant toute résolution, à partir des seuls stands et créneaux : quatre bornes, dont la plus grande est retenue — le pic de sièges simultanés, ce pic prolongé de la pause légale, la charge de la semaine la plus lourde, et la rotation sur les jours. Chacune est un plancher prouvé, jamais une cible. Elle se lit aussi typologie par typologie : une typologie dont le minimum dépasse le nombre d'animateurs qui la déclarent est le goulot.`,
+              text: $localize`:@@aide.views.def.hoursBesoin:L'onglet Besoin du Diagnostic : l'estimation du nombre minimum d'animateurs à recruter — les heures de chacun, elles, sont sur « Par personne ». Elle se calcule avant toute résolution, à partir des seuls stands et créneaux : des bornes dont la plus grande est retenue — le pic de sièges simultanés, ce pic prolongé de la pause légale, la charge de la semaine la plus lourde, la coupure repas et la rotation sur les jours. Chacune est un plancher prouvé, jamais une cible, et chacune mène à l'écran qui la change : les horaires des stands du jour le plus chargé, la ligne de la règle dans Règles du planning. Chaque journée du tableau porte sa marge avant résolution — les disponibles moins les sièges, sur sa tranche la plus serrée — et le lien vers les horaires des stands de ce jour ; la grille complète, tranche par tranche, se déplie dessous. Elle se lit aussi typologie par typologie : une typologie dont le minimum dépasse le nombre d'animateurs qui la déclarent est le goulot, avec « Saisir la compétence ». Une fois les animateurs saisis, la faisabilité se vérifie sur le Solveur.`,
             },
             {
               term: $localize`:@@aide.views.term.fragilite:Fragilité du planning`,
-              text: $localize`:@@aide.views.def.fragilite:Qui est irremplaçable. Pour chaque personne, les créneaux qui passeraient sous l'effectif minimum si elle se désiste — et, colonne décisive, ceux que personne d'autre ne pourrait reprendre ce jour-là. La seconde vue liste les stands tenus par une seule personne compétente, ce qui désigne où recruter ou former. Les polyvalents « ninja » y sont comptés à part, en renforts.`,
+              text: $localize`:@@aide.views.def.fragiliteGestes:Qui est irremplaçable. Pour chaque personne, les créneaux qui passeraient sous l'effectif minimum si elle se désiste — et, colonne décisive, ceux que personne d'autre ne pourrait reprendre ce jour-là — puis trois gestes : « Verrouiller » garde tout son planning tel quel au prochain calcul, « Qui peut remplacer » ouvre le panneau du siège qu'elle laisserait le plus difficile à tenir, « Former » ouvre la grille des compétences sur les typologies de ses stands. Son nom mène à sa fiche. La seconde vue liste les stands tenus par une seule personne compétente, ce qui désigne où recruter ou former. Les polyvalents « ninja » y sont comptés à part, en renforts.`,
             },
             {
               term: $localize`:@@aide.views.term.former:À former`,
-              text: $localize`:@@aide.views.def.former:Qui former, typologie par typologie. Une typologie y figure quand le Besoin en animateurs la dit en manque, ou quand la Fragilité y trouve un stand tenu par un seul spécialiste ou aucun ; les chiffres sont ceux de ces deux onglets, jamais recalculés. Les candidats sont les débutants et les autonomes de la typologie — ni un référent, ni un polyvalent, ni quelqu'un sans la compétence —, classés par jours en tension où ils sont disponibles, puis souhait, puis niveau. Une typologie sans candidat relève du recrutement. Sans planning persisté, seul le besoin parle. L'onglet s'exporte en CSV ; monter un niveau reste un geste de la grille Compétences.`,
+              text: $localize`:@@aide.views.def.formerSection:La dernière section de l'onglet Besoin : qui former, typologie par typologie. Une typologie y figure quand le besoin la dit en manque, ou quand la Fragilité y trouve un stand tenu par un seul spécialiste ou aucun ; les chiffres sont ceux de ces deux lectures, jamais recalculés. Chaque typologie mène à la grille des compétences filtrée sur elle. Les candidats sont les débutants et les autonomes de la typologie — ni un référent, ni un polyvalent, ni quelqu'un sans la compétence —, classés par jours en tension où ils sont disponibles, puis souhait, puis niveau. Une typologie sans candidat relève du recrutement. Sans planning persisté, seul le besoin parle. La section s'exporte en CSV.`,
             },
             {
               term: $localize`:@@aide.views.term.banc:Panneau Siège`,
@@ -311,7 +311,12 @@ export function buildOperationsSections(): HelpSection[] {
           queryParams: { axe: 'typologie' },
           label: $localize`:@@aide.link.parTypologie:Planning, par typologie`,
         },
-        { route: '/marge', label: $localize`:@@nav.link.marge:Marge disponible` },
+        { route: '/diagnostic', label: $localize`:@@nav.link.diagnostic:Diagnostic` },
+        {
+          route: '/diagnostic',
+          queryParams: { onglet: 'tension' },
+          label: $localize`:@@diagnostic.onglet.tension:Tension`,
+        },
         {
           route: '/journee',
           queryParams: { vue: 'rail' },
@@ -335,7 +340,7 @@ export function buildOperationsSections(): HelpSection[] {
         { route: '/publication', label: $localize`:@@nav.link.publication:Publication` },
         {
           route: '/diagnostic',
-          queryParams: { onglet: 'former' },
+          queryParams: { onglet: 'besoin', section: 'former' },
           label: $localize`:@@aide.link.former:À former`,
         },
         { route: '/journee', label: $localize`:@@aide.link.siege:Panneau Siège (Planning)` },

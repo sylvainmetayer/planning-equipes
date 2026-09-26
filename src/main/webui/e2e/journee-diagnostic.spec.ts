@@ -105,6 +105,32 @@ test('les adresses des anciens écrans mènent au bon rendu, paramètres compris
   await page.goto('/problemes');
   await expect(page).toHaveURL(/\/diagnostic/);
   await expect(page.locator('#contenu')).toContainText('Diagnostic');
+
+  // The margin became two tabs: its « avant » reading a column of Besoin, its
+  // « après » and « tension » readings the Tension tab.
+  await page.goto('/marge');
+  await expect(page).toHaveURL(/\/diagnostic\?onglet=besoin/);
+  await expect(page.locator('#contenu')).toContainText('Disponibles − sièges');
+  await page.goto('/marge?mode=tension');
+  await expect(page).toHaveURL(/\/diagnostic\?onglet=tension/);
+  await expect(page.locator('#contenu')).toContainText('Tension, tranche par tranche');
+
+  // « À former » is the foot of Besoin.
+  await page.goto('/diagnostic?onglet=former');
+  await expect(page).toHaveURL(/onglet=besoin/);
+  await expect(page.locator('#a-former')).toContainText('À former');
+  await page.context().close();
+});
+
+test('le diagnostic ne mène à aucune timeline et ne se dit plus à l’essai', async ({ browser }) => {
+  const page = await pageAdmin(browser, admin);
+  for (const onglet of ['problemes', 'besoin', 'tension', 'fragilite']) {
+    await page.goto(`/diagnostic?onglet=${onglet}`);
+    await expect(page.locator('#contenu h1')).toHaveCount(1);
+    await expect(page.locator('#contenu a[href^="/timeline"]')).toHaveCount(0);
+    await expect(page.locator('#contenu')).not.toContainText('livré à l’essai');
+    await expect(page.locator('#contenu')).not.toContainText("livré à l'essai");
+  }
   await page.context().close();
 });
 
@@ -176,5 +202,9 @@ test('le diagnostic ouvre ses onglets sans changer de page, chacun avec son éta
   await onglets.getByText('Besoin en animateurs').click();
   await expect(page).toHaveURL(/onglet=besoin/);
   await expect(page.locator('#contenu')).toContainText('Minimum retenu');
+
+  await onglets.getByText('Tension').click();
+  await expect(page).toHaveURL(/onglet=tension/);
+  await expect(page.locator('#contenu')).toContainText('Tension, tranche par tranche');
   await page.context().close();
 });

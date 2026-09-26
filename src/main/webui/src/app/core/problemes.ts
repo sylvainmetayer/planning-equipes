@@ -11,11 +11,15 @@
 // Every function here is pure and called at runtime (never at module scope), so
 // the `$localize` labels resolve after `main.ts` has loaded the translations.
 
+import { importanceAtMinimum } from './importance';
 import {
   ActionType,
   CauseInfaisabilite,
+  CellulePivot,
   ConstraintView,
   ContributionAdHoc,
+  Creneau,
+  Hotspot,
   ViolationReference,
   FeasibilityReport,
   NiveauContrainte,
@@ -54,11 +58,29 @@ export interface Probleme {
   /** The matches of a rule in default, each with the fiche it names — read by the Problèmes page next to `details`. */
   references: LinkedViolation[];
   /**
-   * « Que faire ? » — the gestures that solve it, most likely first. Each one
-   * is a navigation to the screen that makes the gesture, positioned on the
-   * problem's object; none writes anything.
+   * « Que faire ? » — the gestures that solve it, in the catalogue's order.
+   * Each one is a navigation to the screen that makes the gesture, positioned
+   * on the problem's object — but « Qui peut tenir ce siège ? », which the
+   * Diagnostic asks in place when it names a timeslot (see `seat`).
    */
   actions: ActionProbleme[];
+  /**
+   * Où — the places the problem bites hardest, three at most, each opening
+   * the Journée on that stand and that day, its Siège panel on the timeslot.
+   */
+  ou: LienProbleme[];
+  /** Qui — the people it names most, three at most, each opening their fiche. */
+  qui: LienProbleme[];
+  /** How many more people the problem names beyond `qui`. */
+  quiRestants: number;
+  /** The rule in default, by name, when the problem is one: the pivot below the cards filters on it. */
+  regle: string | null;
+}
+
+/** The seat a « Qui peut tenir ce siège ? » is asked about: a timeslot, and its stand when the problem names one. */
+export interface SeatTarget {
+  creneauId: number;
+  standId: string | null;
 }
 
 /** One action of the playbook, ready for a `routerLink`. */
@@ -74,11 +96,23 @@ export interface ActionProbleme {
    * null on one written here, translated like the rest of the page.
    */
   lang: 'fr' | null;
+  /**
+   * Set on « Qui peut tenir ce siège ? » when it names a timeslot: the
+   * Diagnostic asks the question in place, on a free seat of it, instead of
+   * leaving for the Journée.
+   */
+  seat?: SeatTarget;
 }
+
+/** The bench's action code: the one gesture the Diagnostic makes in place. */
+export const CODE_BANC = 'VOIR_BANC';
+
+/** The lowering of a rule's weight: always last, and hidden once the weight is at its floor. */
+export const CODE_BAISSER_POIDS = 'BAISSER_POIDS';
 
 /** A server action as the page links it. */
 export function actionOf(action: ActionType): ActionProbleme {
-  return {
+  const link: ActionProbleme = {
     code: action.code,
     libelle: action.libelle,
     explication: action.explication,
@@ -86,6 +120,11 @@ export function actionOf(action: ActionType): ActionProbleme {
     queryParams: { ...action.parametres },
     lang: 'fr',
   };
+  const creneauId = Number(action.parametres['creneau']);
+  if (action.code === CODE_BANC && Number.isInteger(creneauId) && creneauId > 0) {
+    link.seat = { creneauId, standId: action.parametres['stand'] ?? null };
+  }
+  return link;
 }
 
 /**
@@ -95,6 +134,10 @@ export function actionOf(action: ActionType): ActionProbleme {
  * which hand-entered exceptions the rule failed on, and those are added here.
  * A rule whose matches name nothing — an aggregate like the balance of the
  * workload — keeps its screens bare.
+ *
+ * « Baisser l'importance » stays last whatever is added here, and goes once
+ * the weight is already at its floor: a button that can lower nothing is a
+ * button that lies.
  */
 export function actionsOfRule(
   contrainte: ConstraintView,
@@ -123,7 +166,117 @@ export function actionsOfRule(
       lang: null,
     });
   }
-  return actions;
+  const gestures = actions.filter((action) => action.code !== CODE_BAISSER_POIDS);
+  const weight = actions.find((action) => action.code === CODE_BAISSER_POIDS);
+  return weight && !importanceAtMinimum(contrainte) ? [...gestures, weight] : gestures;
+}
+
+/** Où and Qui show three each: past that, the pivot under the cards says where the rest is. */
+const MAX_WHERE_WHO = 3;
+
+/** What names a place on screen, beside the stands' names: the hours of a timeslot. */
+export type TimeslotIndex = ReadonlyMap<number, Pick<Creneau, 'date' | 'heureDebut' | 'heureFin'>>;
+
+/** The keys of one axis of the pivot for one rule, most breaches first. */
+export function topKeys(
+  pivot: readonly CellulePivot[],
+  contrainte: string,
+  axe: CellulePivot['axe'],
+): string[] {
+  return pivot
+    .filter((cellule) => cellule.contrainte === contrainte && cellule.axe === axe)
+    .sort((a, b) => b.ecarts - a.ecarts || compareCodeUnits(a.cle, b.cle))
+    .map((cellule) => cellule.cle);
+}
+
+/**
+ * The Journée on one place of a rule: the timeslot's Siège panel when the
+ * place names one — the page resolves it to a seat of that stand — else the
+ * day and the stand as filters.
+ */
+export function placeLink(
+  hotspot: Hotspot,
+  nomsStands: LabelIndex,
+  creneaux: TimeslotIndex,
+): LienProbleme {
+  const queryParams: Record<string, string> = {};
+  const parts: string[] = [];
+  if (hotspot.standId) {
+    parts.push(labelOf(nomsStands, hotspot.standId));
+  }
+  const creneau =
+    hotspot.creneauId === null || hotspot.creneauId === undefined
+      ? undefined
+      : creneaux.get(hotspot.creneauId);
+  const date = hotspot.date ?? creneau?.date ?? null;
+  if (date) {
+    parts.push(date);
+  }
+  if (creneau?.heureDebut && creneau.heureFin) {
+    parts.push(`${formatHeure(creneau.heureDebut)}–${formatHeure(creneau.heureFin)}`);
+  }
+  if (hotspot.creneauId !== null && hotspot.creneauId !== undefined) {
+    queryParams['creneau'] = String(hotspot.creneauId);
+  } else if (date) {
+    queryParams['date'] = date;
+  }
+  if (hotspot.standId) {
+    queryParams['stand'] = hotspot.standId;
+  }
+  return { route: '/journee', queryParams, libelle: parts.join(' · ') };
+}
+
+/**
+ * Où a rule bites: its hotspots when the server crossed stand and timeslot,
+ * else its most breached stands, else its most breached days — whatever the
+ * breaches name, as long as it is a place.
+ */
+export function placesOfRule(
+  contrainte: ConstraintView,
+  pivot: readonly CellulePivot[],
+  nomsStands: LabelIndex,
+  creneaux: TimeslotIndex,
+): LienProbleme[] {
+  const hotspots = contrainte.hotspots ?? [];
+  if (hotspots.length > 0) {
+    return hotspots
+      .slice(0, MAX_WHERE_WHO)
+      .map((hotspot) => placeLink(hotspot, nomsStands, creneaux));
+  }
+  const stands = topKeys(pivot, contrainte.name, 'STAND');
+  if (stands.length > 0) {
+    return stands
+      .slice(0, MAX_WHERE_WHO)
+      .map((standId) => placeLink({ standId, ecarts: 0 }, nomsStands, creneaux));
+  }
+  return topKeys(pivot, contrainte.name, 'JOUR')
+    .slice(0, MAX_WHERE_WHO)
+    .map((date) => placeLink({ date, ecarts: 0 }, nomsStands, creneaux));
+}
+
+/** Qui: each person's fiche, the first three of `ids` — already ranked by the caller. */
+export function peopleLinks(ids: readonly string[], nomsAnimateurs: LabelIndex): LienProbleme[] {
+  return [...new Set(ids)].slice(0, MAX_WHERE_WHO).map((id) => ({
+    route: `/animateurs/${id}`,
+    libelle: labelOf(nomsAnimateurs, id),
+  }));
+}
+
+/** How many people `ids` names beyond the three shown. */
+function remainingPeople(ids: readonly string[]): number {
+  return Math.max(0, new Set(ids).size - MAX_WHERE_WHO);
+}
+
+/** The line of a rule on « Règles du planning », on the tab of its level. */
+export function ruleLink(contrainte: ConstraintView): LienProbleme {
+  return {
+    route: '/regles',
+    queryParams: {
+      onglet: contrainte.niveau === 'HARD' ? 'legal' : 'qualite',
+      regle: contrainte.name,
+    },
+    libelle: $localize`:@@problemes.lien.contraintes:Voir la règle`,
+  };
 }
 
 /**
@@ -264,8 +417,7 @@ export function linksOfViolation(violation: ViolationReference): LienProbleme[] 
   const liens: LienProbleme[] = [];
   if (violation.animateurId) {
     liens.push({
-      route: '/animateurs',
-      queryParams: { edit: violation.animateurId },
+      route: `/animateurs/${violation.animateurId}`,
       libelle: $localize`:@@problemes.lien.animateur:Fiche animateur`,
     });
   }
@@ -402,6 +554,11 @@ function relatedDetails(contributions: ContributionAdHoc[]): string[] {
  * ad hoc rules' violations to the exceptions that caused them. `nomsStands`
  * names the stands a cause lists by id, `nomsAnimateurs` the animateurs a
  * reading lists by id; an unknown one keeps its id.
+ *
+ * `lieux` says where each rule in default bites and on whom: the pivot of the
+ * same analysis ranks its stands, days and people, and the timeslots name the
+ * hours of its hotspots. Every card then carries « Où » and « Qui » when its
+ * source names a place or a person.
  */
 export function construireProblemes(
   report: FeasibilityReport | null,
@@ -412,8 +569,11 @@ export function construireProblemes(
   nomsAnimateurs: LabelIndex = new Map(),
   walks: WalkSequenceReport | null = null,
   groupedArrivals: GroupedArrivalReport | null = null,
+  lieux: { pivot?: readonly CellulePivot[]; creneaux?: TimeslotIndex } = {},
 ): Probleme[] {
   const problemes: Probleme[] = [];
+  const pivot = lieux.pivot ?? [];
+  const creneaux: TimeslotIndex = lieux.creneaux ?? new Map();
 
   // The days a covoiturage does not hold, group by group: a soft rule the
   // solver may have traded away, and the organiser decides whether to act.
@@ -427,8 +587,15 @@ export function construireProblemes(
         ),
       ),
     ].sort(compareCodeUnits);
+    const membres = misaligned.flatMap((groupe) => groupe.animateurIds);
     problemes.push({
       id: 'arrivees-groupees-desalignees',
+      ou: days
+        .slice(0, MAX_WHERE_WHO)
+        .map((date) => placeLink({ date, ecarts: 0 }, nomsStands, creneaux)),
+      qui: peopleLinks(membres, nomsAnimateurs),
+      quiRestants: remainingPeople(membres),
+      regle: null,
       niveau: 'MINEUR',
       source: 'COVOITURAGE',
       titre: $localize`:@@problemes.covoiturage.titre:Covoiturages désalignés`,
@@ -470,8 +637,24 @@ export function construireProblemes(
     const days = [...new Set(tightWalks.map((walk) => walk.date ?? ''))]
       .filter(Boolean)
       .sort(compareCodeUnits);
+    const marcheurs = tightWalks.flatMap((walk) => (walk.animateurId ? [walk.animateurId] : []));
     problemes.push({
       id: 'enchainements-serres',
+      ou: tightWalks.slice(0, MAX_WHERE_WHO).map((walk) =>
+        placeLink(
+          {
+            standId: walk.toStandId ?? null,
+            date: walk.date ?? null,
+            creneauId: walk.toCreneauId ?? null,
+            ecarts: 0,
+          },
+          nomsStands,
+          creneaux,
+        ),
+      ),
+      qui: peopleLinks(marcheurs, nomsAnimateurs),
+      quiRestants: remainingPeople(marcheurs),
+      regle: null,
       niveau: 'AVERTISSEMENT',
       source: 'TRAJETS',
       titre: $localize`:@@problemes.trajets.titre:Enchaînements serrés`,
@@ -494,8 +677,30 @@ export function construireProblemes(
   // held — but it is one person alone on a stand for twenty minutes, and the
   // organiser must know before the day, not during it.
   if (pauses && pauses.relaisManquants > 0) {
+    const seuls = pauses.journees.flatMap((journee) =>
+      journee.sequences
+        .flatMap((sequence) => sequence.pausesDues)
+        .filter((pause) => !pause.relaisDisponible)
+        .map((pause) => ({ journee, pause })),
+    );
+    const personnes = seuls.map(({ journee }) => journee.animateurId);
     problemes.push({
       id: 'pauses-sans-relais',
+      ou: seuls.slice(0, MAX_WHERE_WHO).map(({ journee, pause }) =>
+        placeLink(
+          {
+            standId: pause.standId,
+            date: journee.date,
+            creneauId: pause.creneauId ?? null,
+            ecarts: 0,
+          },
+          nomsStands,
+          creneaux,
+        ),
+      ),
+      qui: peopleLinks(personnes, nomsAnimateurs),
+      quiRestants: remainingPeople(personnes),
+      regle: null,
       niveau: 'AVERTISSEMENT',
       source: 'PAUSES',
       titre: $localize`:@@problemes.pauses.titre:Pauses sans relais`,
@@ -514,8 +719,24 @@ export function construireProblemes(
   }
 
   (report?.causes ?? []).forEach((cause, index) => {
+    // A cause is a shortfall of capacity: it names stands and a timeslot, and nobody.
     problemes.push({
       id: `cause-${index}`,
+      ou: cause.standIds.slice(0, MAX_WHERE_WHO).map((standId) =>
+        placeLink(
+          {
+            standId,
+            date: cause.date ?? null,
+            creneauId: cause.creneauId ? Number(cause.creneauId) : null,
+            ecarts: 0,
+          },
+          nomsStands,
+          creneaux,
+        ),
+      ),
+      qui: [],
+      quiRestants: 0,
+      regle: null,
       niveau: niveauDeCause(cause.severite),
       source: 'FAISABILITE',
       titre: typeCauseLabel(cause.type),
@@ -552,11 +773,9 @@ export function construireProblemes(
                 $localize`:@@problemes.detail.matches:${matchCount}:count: correspondance(s) sur la dernière analyse.`,
               ];
       }
-      const liens: LienProbleme[] = [
-        // A violated rule is acted upon on the constraints screen: that is where
-        // its weight is explained and where it can be relaxed.
-        { route: '/constraints', libelle: $localize`:@@problemes.lien.contraintes:Voir la règle` },
-      ];
+      // The rule's own line on « Règles du planning »: what it measures and
+      // what sets it — never the first gesture, which is on the plan.
+      const liens: LienProbleme[] = [ruleLink(contrainte)];
       if (enCause.length > 0) {
         liens.push({
           route: '/consignes-solveur',
@@ -564,8 +783,13 @@ export function construireProblemes(
           libelle: $localize`:@@problemes.lien.adHoc:Voir les ajustements manuels`,
         });
       }
+      const personnes = topKeys(pivot, contrainte.name, 'ANIMATEUR');
       problemes.push({
         id: `contrainte-${contrainte.name}`,
+        ou: placesOfRule(contrainte, pivot, nomsStands, creneaux),
+        qui: peopleLinks(personnes, nomsAnimateurs),
+        quiRestants: remainingPeople(personnes),
+        regle: contrainte.name,
         niveau: niveauDeContrainte(contrainte.niveau),
         source: 'CONTRAINTE',
         // The short label, not the camelCase name: this list is read by

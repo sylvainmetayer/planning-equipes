@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
+import dev.sylvain.planning.service.analyse.BreachHotspots;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityReport;
 import dev.sylvain.planning.service.analyse.PivotEcarts;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintDiagnostic;
@@ -228,7 +229,8 @@ public class ConstraintResource {
                         diagnostic == null || diagnostic.plancher() == null
                                 ? null
                                 : diagnostic.plancher().lien(),
-                        diagnostic == null ? BlockerPlaybook.Context.NONE : diagnostic.position()));
+                        diagnostic == null ? BlockerPlaybook.Context.NONE : diagnostic.position()),
+                diagnostic == null ? List.of() : diagnostic.hotspots());
     }
 
     /**
@@ -294,6 +296,10 @@ public class ConstraintResource {
      *                    navigations, never a write. The first one's
      *                    explanation is {@code remediation} word for word; a
      *                    floor puts the entry of its missing data first
+     * @param hotspots    the three stands and timeslots gathering most of the
+     *                    rule's breaches on the last analysis — ids only, the
+     *                    screen names them; empty when never analysed or when
+     *                    the breaches name no place (see {@code BreachHotspots})
      */
     @Schema(requiredProperties = {"actif", "activeByDefault", "dosable", "legale", "poids", "protegee"})
     public record ConstraintView(
@@ -316,7 +322,8 @@ public class ConstraintResource {
             ConstraintFloor plancher,
             List<ViolationFormatter.ViolationReference> references,
             List<ConstraintParameter> parametres,
-            List<BlockerPlaybook.ActionType> actions) {}
+            List<BlockerPlaybook.ActionType> actions,
+            List<BreachHotspots.Hotspot> hotspots) {}
 
     /**
      * @param actif whether the constraint is applied on the next solve

@@ -7,7 +7,9 @@ import dev.sylvain.planning.service.diagnostic.BlockerPlaybook.ActionType;
 import dev.sylvain.planning.service.diagnostic.BlockerPlaybook.Context;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.ConstraintCatalog.ConstraintDefinition;
+import dev.sylvain.planning.solver.ConstraintCatalog.Lever;
 import dev.sylvain.planning.solver.ConstraintFloorRules;
+import dev.sylvain.planning.solver.ConstraintParameters;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -76,27 +78,103 @@ class BlockerPlaybookTest {
         assertThat(actions).hasSizeBetween(1, 4);
         ActionType first = actions.getFirst();
         assertThat(first.code()).isEqualTo(BlockerPlaybook.CODE_BENCH);
-        assertThat(first.libelle()).isEqualTo("Voir qui pourrait venir");
+        assertThat(first.libelle()).isEqualTo("Qui peut tenir ce siège ?");
         assertThat(first.route()).isEqualTo("/journee");
-        assertThat(first.parametres()).containsEntry("creneau", "42").doesNotContainKey("onglet");
+        assertThat(first.parametres())
+                .containsEntry("creneau", "42")
+                .containsEntry("stand", "S1")
+                .doesNotContainKey("onglet");
     }
 
     @Test
-    void aQualityRuleProposesToLowerItsWeightOnItsHighlightedLine() {
-        List<ConstraintDefinition> dosables = ConstraintCatalog.definitions().stream()
-                .filter(ConstraintDefinition::dosable)
+    void aWeighedRuleEndsOnLoweringItsImportanceOnItsLine() {
+        List<ConstraintDefinition> weighed = ConstraintCatalog.definitions().stream()
+                .filter(definition -> definition.niveau() != ConstraintCatalog.Niveau.HARD)
                 .toList();
 
-        assertThat(dosables)
+        assertThat(weighed)
                 .isNotEmpty()
-                .allSatisfy(definition -> assertThat(BlockerPlaybook.forRule(definition, null))
+                .allSatisfy(definition -> assertThat(
+                                BlockerPlaybook.forRule(definition, null).getLast())
                         .as(definition.name())
-                        .anySatisfy(action -> {
+                        .satisfies(action -> {
                             assertThat(action.code()).isEqualTo(BlockerPlaybook.CODE_LOWER_WEIGHT);
-                            assertThat(action.libelle()).isEqualTo("Baisser son poids");
+                            assertThat(action.libelle()).isEqualTo("Baisser l'importance");
                             assertThat(action.route()).isEqualTo("/regles");
-                            assertThat(action.parametres()).containsEntry("regle", definition.name());
+                            assertThat(action.parametres())
+                                    .containsEntry("onglet", "qualite")
+                                    .containsEntry("regle", definition.name());
                         }));
+    }
+
+    /**
+     * The Problèmes screen renders what the catalogue says: a medium or soft
+     * rule whose only gesture is its weight is a card telling the organiser to
+     * stop caring, never what to fix. Every one of them names a lever that
+     * changes the plan or the referential, and that lever comes first.
+     */
+    @Test
+    void noWeighedRuleOffersItsWeightAsItsOnlyGesture() {
+        assertThat(ConstraintCatalog.definitions())
+                .filteredOn(definition -> definition.niveau() != ConstraintCatalog.Niveau.HARD)
+                .allSatisfy(definition -> {
+                    assertThat(definition.levers()).as(definition.name()).isNotEmpty();
+                    List<ActionType> actions = BlockerPlaybook.forRule(definition, null, SHORTFALL);
+                    assertThat(actions.getFirst().code())
+                            .as(definition.name())
+                            .isNotEqualTo(BlockerPlaybook.CODE_LOWER_WEIGHT);
+                    assertThat(actions)
+                            .as(definition.name())
+                            .filteredOn(action -> action.code().equals(BlockerPlaybook.CODE_LOWER_WEIGHT))
+                            .hasSize(1);
+                });
+    }
+
+    /** « Régler le plafond » and « Régler les seuils » open a line that has something to set. */
+    @Test
+    void aCapOrThresholdLeverOnlyOnARuleThatReadsASetting() {
+        assertThat(ConstraintCatalog.definitions())
+                .filteredOn(definition -> definition.levers().contains(Lever.CAP)
+                        || definition.levers().contains(Lever.THRESHOLD))
+                .isNotEmpty()
+                .allSatisfy(definition -> assertThat(ConstraintParameters.declarations())
+                        .as(definition.name())
+                        .containsKey(definition.name()));
+    }
+
+    /** The missing referent: the seat first, then the competence, then the stand's fiche, the weight last. */
+    @Test
+    void theMissingReferentOffersTheSeatTheSkillAndTheStandBeforeTheWeight() {
+        ConstraintDefinition referent = ConstraintCatalog.PAR_NOM.get("standComplexeAvecReferent");
+
+        assertThat(BlockerPlaybook.forRule(referent, null, SHORTFALL))
+                .extracting(ActionType::code)
+                .containsExactly(
+                        BlockerPlaybook.CODE_BENCH,
+                        BlockerPlaybook.CODE_ADD_SKILL,
+                        BlockerPlaybook.CODE_STAND_PROFILE,
+                        BlockerPlaybook.CODE_LOWER_WEIGHT);
+        assertThat(BlockerPlaybook.forRule(referent, null, SHORTFALL))
+                .filteredOn(action -> action.code().equals(BlockerPlaybook.CODE_STAND_PROFILE))
+                .singleElement()
+                .satisfies(action -> {
+                    assertThat(action.route()).isEqualTo("/stands");
+                    assertThat(action.parametres()).containsEntry("edit", "S1");
+                });
+    }
+
+    /** A hard rule is held, not weighed: its rule link opens the legal tab, and nothing lowers it. */
+    @Test
+    void aHardRuleNeverOffersItsWeight() {
+        ConstraintDefinition dur = ConstraintCatalog.PAR_NOM.get("maxJoursConsecutifsTravaillesDur");
+
+        assertThat(BlockerPlaybook.forRule(dur, null))
+                .extracting(ActionType::code)
+                .doesNotContain(BlockerPlaybook.CODE_LOWER_WEIGHT);
+        assertThat(BlockerPlaybook.forRule(dur, null))
+                .filteredOn(action -> action.code().equals(BlockerPlaybook.CODE_SEE_RULE))
+                .singleElement()
+                .satisfies(action -> assertThat(action.parametres()).containsEntry("onglet", "legal"));
     }
 
     @Test

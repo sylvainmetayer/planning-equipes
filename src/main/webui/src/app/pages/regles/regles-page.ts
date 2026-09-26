@@ -51,7 +51,6 @@ import { LegalText } from '../../shared/legal-text';
 import { RelancerCalcul } from '../../shared/relancer-calcul';
 import { StatusMessage } from '../../shared/status-message';
 import { ViolationDetailsDialog } from '../../shared/violation-details-dialog';
-import { EcartsPivotCard } from './ecarts-pivot-card';
 import { LegalDisableConfirmService } from './legal-disable-dialog';
 import {
   OngletRegles,
@@ -119,7 +118,6 @@ function importanceLabel(importance: Importance): string {
 @Component({
   selector: 'app-regles-page',
   imports: [
-    EcartsPivotCard,
     FeasibilityBanner,
     LegalText,
     MatButtonModule,
@@ -136,7 +134,7 @@ function importanceLabel(importance: Importance): string {
     WeightHistoryView,
   ],
   templateUrl: './regles-page.html',
-  styleUrls: ['../../../styles/heatmap.css', './regles-page.css'],
+  styleUrls: ['./regles-page.css'],
   // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -258,7 +256,7 @@ export class ReglesPage {
 
   constructor() {
     // Followed rather than read once: a link to another rule of this page — the
-    // pivot's « Régler cette contrainte » — reuses the component.
+    // Diagnostic's « Voir la règle » while this page is open — reuses the component.
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
       this.ongletChoisi.set(readOngletRegles(params.get('onglet')));
       this.regle.set(params.get('regle'));
@@ -281,7 +279,7 @@ export class ReglesPage {
       ),
     );
     void this.load();
-    // The pivot names stands and animateurs, « Calcul » lists the typologies.
+    // « Calcul » lists the typologies.
     void inject(ReferenceDataStore)
       .reload()
       .catch(() => undefined);

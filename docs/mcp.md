@@ -782,7 +782,7 @@ gravité. La réponse change de forme avec le mode : en `tension`, une case port
 
 ## Le plan de formation se lit par id
 
-`plan_formation` rend l'onglet « À former » du Diagnostic : pour chaque
+`plan_formation` rend la section « À former » de l'onglet Besoin du Diagnostic : pour chaque
 typologie que `analyser_effectifs` dit en manque ou que la fragilité du planning
 persisté montre tenue par un seul spécialiste ou aucun, les chiffres de ces deux
 analyses — `manque`, `competencesRares`, `groupesSansSpecialiste`,

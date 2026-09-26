@@ -2107,6 +2107,12 @@
             "items" : {
               "$ref" : "#/components/schemas/ActionType"
             }
+          },
+          "hotspots" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Hotspot"
+            }
           }
         }
       },
@@ -4416,6 +4422,26 @@
           },
           "motif" : {
             "type" : "string"
+          }
+        }
+      },
+      "Hotspot" : {
+        "type" : "object",
+        "required" : [ "ecarts" ],
+        "properties" : {
+          "standId" : {
+            "type" : "string"
+          },
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "creneauId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "ecarts" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },

@@ -1,5 +1,6 @@
 import { DecimalPipe } from '@angular/common';
 import {
+  afterNextRender,
   computed,
   inject,
   input,
@@ -16,13 +17,37 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import {
+  CelluleMarge,
   CompetenceStaffing,
   JourStaffing,
   StaffingSummary,
   TypologieStaffing,
 } from '../../core/models';
 import { errorText, retainedValue } from '../../core/resource-state';
+import { currentViewParams } from '../../core/view-query-params';
 import { StatusMessage } from '../../shared/status-message';
+import { FormationPage } from '../formation/formation-page';
+import { libelleJour as jourCourt } from '../formation/formation';
+import { libelleTranche, NiveauMarge, niveauMarge, signe } from '../marge/marge';
+import { MarginBeforeGrid } from '../marge/margin-before-grid';
+
+/** The tightest timeslot of one day before a solve, as the per-day table prints it. */
+export interface MargeJour {
+  label: string;
+  tranche: string;
+  niveau: NiveauMarge;
+}
+
+/** `-2` at `18:00-22:00`: the tightest cell of one day, from the « avant » margin. */
+export function margeJour(cellule: CelluleMarge | null | undefined): MargeJour | null {
+  return cellule
+    ? {
+        label: signe(cellule.marge),
+        tranche: libelleTranche(cellule.debut, cellule.fin),
+        niveau: niveauMarge(cellule.marge),
+      }
+    : null;
+}
 
 /**
  * Staffing-need calculator: how many animateurs the stands and créneaux
@@ -46,6 +71,13 @@ import { StatusMessage } from '../../shared/status-message';
  * the "le ninja est un renfort, jamais un spécialiste" decision settles for the
  * fragilité screen, so two neighbouring screens do not answer the same question
  * two different ways.
+ *
+ * Every figure leads to the screen that changes it: a bound to the opening
+ * hours or the legal settings it is proved on, a day to its stands' hours. The
+ * « avant » margin — who has not declared the date unavailable, minus the seats
+ * — is a column of the per-day table, its grid one fold below; « À former »,
+ * once a tab of its own, is the foot of this one (`section=former` scrolls to
+ * it).
  */
 @Component({
   selector: 'app-staffing-page',
@@ -58,9 +90,12 @@ import { StatusMessage } from '../../shared/status-message';
     MatTableModule,
     MatTooltipModule,
     DecimalPipe,
+    FormationPage,
+    MarginBeforeGrid,
   ],
   templateUrl: './staffing-page.html',
-  styleUrl: './staffing-page.css',
+  // The margin's scale colours its column here as it does its grid.
+  styleUrls: ['./staffing-page.css', '../marge/marge.css'],
   // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -80,6 +115,8 @@ export class StaffingPage {
     'picSimultane',
     'picAvecPause',
     'minimumJour',
+    'marge',
+    'horaires',
   ];
   protected readonly competenceColumns = [
     'typologie',
@@ -95,6 +132,29 @@ export class StaffingPage {
   protected readonly summary = retainedValue(this.staffing);
   protected readonly loading = this.staffing.isLoading;
   protected readonly error = errorText(this.staffing);
+
+  /** The margin before any solve: a column of the per-day table, and the grid behind it. */
+  private readonly margin = resource({ loader: () => this.analysesApi.margin('AVANT') });
+  protected readonly rapportMarge = retainedValue(this.margin);
+  /** ISO date → the tightest timeslot of that day; a day the margin does not know gets a dash. */
+  protected readonly marginByDay = computed(
+    () =>
+      new Map(
+        (this.rapportMarge()?.jours ?? []).map((jour) => [jour.date, margeJour(jour.pireCellule)]),
+      ),
+  );
+
+  /** `2026-09-01` → `01/09`, the way the links to a day's opening hours name it. */
+  protected readonly jourCourt = jourCourt;
+
+  constructor() {
+    // `?onglet=former` lands here with `section=former`: « À former » is at the foot.
+    if (currentViewParams().get('section') === 'former') {
+      afterNextRender(() =>
+        document.getElementById('a-former')?.scrollIntoView({ block: 'start' }),
+      );
+    }
+  }
 
   /**
    * What one animateur may work during the week the workload bound was proved

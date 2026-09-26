@@ -10,7 +10,6 @@ import { readDisponibilitesTab } from '../pages/disponibilites/declarations-filt
 import { ONGLETS_FICHIERS, readOngletFichiers } from '../pages/fichiers/fichiers';
 import { IMPORT_CARDS, readImportCard } from '../pages/imports/imports';
 import { JOURNEE_VIEWS, PLANNING_AXES, readAxe, readView } from '../pages/journee/journee';
-import { MARGIN_VIEW_PARAMS, readMarginView } from '../pages/marge/marge';
 import { OPENINGS_VIEW_PARAMS, readOpeningsView } from '../pages/ouvertures/ouvertures';
 import { ONGLETS_PARAMETRES, readOngletParametres } from '../pages/parametres/parametres';
 import { ONGLETS_REGLES, readOngletRegles } from '../pages/regles/regles';
@@ -48,11 +47,6 @@ const TAB_READERS: Record<string, TabReader | readonly TabReader[]> = {
     param: 'vue',
     opens: (v) => OPENINGS_VIEW_PARAMS[readOpeningsView(v)] === v,
     values: written(OPENINGS_VIEW_PARAMS),
-  },
-  '/marge': {
-    param: 'mode',
-    opens: (v) => MARGIN_VIEW_PARAMS[readMarginView(v)] === v,
-    values: written(MARGIN_VIEW_PARAMS),
   },
   '/disponibilites': {
     param: 'onglet',

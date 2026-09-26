@@ -1,6 +1,7 @@
-/* « Marge disponible » (issue #499): what this page adds to the shared heatmap
-   grid is a *divergent* scale — the reading is signed, so it runs from red
-   through a neutral zero to green, where the load heatmap only ever gets worse.
+/* The margin grids of the Diagnostic — the « avant » margin of Besoin and the
+   Tension tab (issue #499): what they add to the shared heatmap grid is a
+   *divergent* scale — the reading is signed, so it runs from red through a
+   neutral zero to green, where the load heatmap only ever gets worse.
 
    The five steps are written as `light-dark()` pairs rather than `--mat-sys-*`
    tokens, for the same reason `typologie-colors.css` is: the Material palette
@@ -117,47 +118,40 @@
   }
 }
 
-/* The « Tension » reading: four grades, worst in the error colour with a
-   hatching on top, so a critical cell is told apart without the colour
-   (WCAG 1.4.1) — its label, read by the tooltip and the screen reader, says
-   the grade in words too. */
+/* The Tension tab: the fill is the margin's, on the scale above, and the
+   grade is a frame drawn inside the cell — a double line for critical, a thick
+   one for high, a dashed one for watched — so a cell with people to spare that
+   rests on one irreplaceable seat reads green *and* critical, and a grade is
+   told apart without its colour (WCAG 1.4.1). The label, read by the tooltip
+   and the screen reader, says the grade and its reasons in words. */
 
-.tension-cell-critique {
-  background:
-    repeating-linear-gradient(
-      45deg,
-      transparent 0 4px,
-      light-dark(rgb(0 0 0 / 12%), rgb(255 255 255 / 14%)) 4px 6px
-    ),
-    var(--mat-sys-error-container);
-  color: var(--mat-sys-on-error-container);
+.tension-marque-critique {
+  outline: 4px double var(--mat-sys-error);
+  outline-offset: -4px;
   font-weight: 700;
 }
 
-.tension-cell-elevee {
-  background: light-dark(#fbdee2, #4a1820);
-  color: light-dark(#68202b, #f1cad0);
+.tension-marque-elevee {
+  outline: 3px solid var(--mat-sys-error);
+  outline-offset: -3px;
   font-weight: 600;
 }
 
-.tension-cell-surveillee {
-  background: var(--mat-sys-tertiary-container);
-  color: var(--mat-sys-on-tertiary-container);
+.tension-marque-surveillee {
+  outline: 2px dashed var(--mat-sys-tertiary);
+  outline-offset: -2px;
 }
 
-.tension-cell-calme {
-  background: var(--mat-sys-surface-container-high);
-  color: var(--mat-sys-on-surface);
+/* A calm cell and a hole carry no frame. */
+.tension-marque-calme,
+.tension-marque-vide {
+  outline: none;
 }
 
+.tension-marque-passee,
 .tension-cell-passee {
   color: var(--mat-sys-on-surface-variant);
   opacity: 0.45;
-}
-
-.tension-cell-vide {
-  color: var(--mat-sys-on-surface-variant);
-  opacity: 0.5;
 }
 
 .tension-badge {
@@ -182,14 +176,4 @@
 .tension-liens {
   margin: 0 0 0.5rem;
   padding-left: 1.1rem;
-}
-
-.tension-lien {
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--mat-sys-primary);
-  font: inherit;
-  text-decoration: underline;
-  cursor: pointer;
 }

@@ -155,11 +155,19 @@ function createPage(): PageInternals {
 }
 
 describe('StaffingPage', () => {
-  const analysesApi = { staffing: vi.fn() };
+  const analysesApi = {
+    staffing: vi.fn(),
+    // The « avant » margin column and the « À former » section, read beside the need.
+    margin: vi.fn(),
+    trainingPlan: vi.fn(async () => null),
+    exportTrainingPlan: vi.fn(),
+  };
 
   beforeEach(() => {
     analysesApi.staffing.mockReset();
     analysesApi.staffing.mockResolvedValue(summary());
+    analysesApi.margin.mockReset();
+    analysesApi.margin.mockResolvedValue(null);
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
@@ -560,14 +568,80 @@ describe('StaffingPage', () => {
       await fixture.whenStable();
       fixture.detectChanges();
 
+      const root = fixture.nativeElement as HTMLElement;
       const liens = Array.from(
-        (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>(
-          'a.staffing-lien',
-        ),
+        root.querySelectorAll<HTMLAnchorElement>('tr.staffing-goulot a.staffing-lien'),
       );
       expect(liens.map((lien) => lien.getAttribute('href'))).toEqual([
         '/animateurs?typologie=ESCAPE',
+        '/competences?typologies=ESCAPE',
       ]);
+      expect(root.querySelectorAll('tr.staffing-goulot')).toHaveLength(1);
+    });
+  });
+
+  /**
+   * Every figure leads to the screen that changes it: a day to its stands'
+   * opening hours, a bound to the settings it is proved on, the feasibility
+   * check to the Solveur — and the « avant » margin is a column of the days.
+   */
+  describe('the links from each figure to the screen that changes it', () => {
+    it('links each day to its opening hours, and prints its tightest margin', async () => {
+      analysesApi.margin.mockResolvedValue({
+        mode: 'AVANT',
+        tranches: [{ debut: '18:00:00', fin: '22:00:00' }],
+        jours: [
+          {
+            date: '2026-09-01',
+            jour: 1,
+            cellules: [],
+            pireCellule: {
+              date: '2026-09-01',
+              jour: 1,
+              debut: '18:00:00',
+              fin: '22:00:00',
+              creneauId: 4,
+              sieges: 6,
+              siegesPourvus: 0,
+              besoin: 6,
+              disponibles: 4,
+              marge: -2,
+            },
+          },
+        ],
+        animateursTotal: 4,
+        cellulesDeficitaires: 1,
+        pireCellule: null,
+        referentielsManquants: [],
+        message: '',
+      });
+      analysesApi.staffing.mockResolvedValue(
+        summary({ parJour: [jour({ date: '2026-09-01', jour: 1 })] }),
+      );
+      const fixture = TestBed.createComponent(StaffingPage);
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const root = fixture.nativeElement as HTMLElement;
+      const hrefs = Array.from(root.querySelectorAll<HTMLAnchorElement>('a')).map((lien) =>
+        lien.getAttribute('href'),
+      );
+      expect(hrefs).toContain('/ouvertures?vue=journee&date=2026-09-01');
+      expect(hrefs).toContain('/regles?onglet=legal&regle=coupureRepasObligatoire');
+      expect(hrefs).toContain('/solveur');
+      expect(root.querySelector('.staffing-marge')?.textContent).toBe('-2');
+      expect(root.querySelector('.staffing-marge-tranche')?.textContent).toBe('18:00-22:00');
+      expect(root.textContent).toContain('Horaires des stands du 01/09');
+    });
+
+    it('ends on « À former », the section `?onglet=former` lands on', async () => {
+      const fixture = TestBed.createComponent(StaffingPage);
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const section = (fixture.nativeElement as HTMLElement).querySelector('#a-former')!;
+      expect(section.querySelector('h2')?.textContent).toContain('À former');
+      expect(section.querySelector('app-formation-page')).not.toBeNull();
     });
   });
 });
