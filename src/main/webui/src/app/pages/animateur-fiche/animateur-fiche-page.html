@@ -302,7 +302,7 @@
         @if (!fiche.planCalcule) {
           <p class="empty-hint" i18n="@@fiche.aucunPlan">Aucun planning calculé : rien à lire tant qu'une résolution n'a pas été enregistrée.</p>
         } @else if (!equityLine()) {
-          <p class="empty-hint" i18n="@@fiche.equite.nonAffecte">Aucun poste dans le planning enregistré : l'écran Équité ne liste que les animateurs affectés.</p>
+          <p class="empty-hint" i18n="@@fiche.equite.nonAffecte">Aucun poste dans le planning enregistré : l'équité ne se mesure que sur les animateurs affectés.</p>
         } @else if (isOpen('equite')) {
           @let ligne = equityLine()!;
           <div class="fiche-equite-corps">
@@ -366,6 +366,11 @@
               <app-equite-radar [report]="fiche.equite" [row]="ligne" [second]="comparedRow()" [optionalAxes]="radarAxes()" />
             </div>
           </div>
+        }
+        @if (fiche.planCalcule) {
+          <p>
+            <a routerLink="/journee" [queryParams]="{ axe: 'personne', animateur: fiche.animateur.id }" i18n="@@fiche.equite.lien">Voir sa ligne dans Planning, par personne</a>
+          </p>
         }
       </details>
 

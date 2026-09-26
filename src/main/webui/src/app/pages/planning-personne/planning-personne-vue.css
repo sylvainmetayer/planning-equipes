@@ -1,0 +1,169 @@
+/* « Par personne » of the Planning page (issue #713): a cell is coloured by
+   what the person does that day — works, rests, is unavailable — with the
+   evening and the anomaly of a seat held on a day declared unavailable on top;
+   the frise draws the same days as proportional runs. */
+
+.planning-personne-espace {
+  flex: 1 1 0;
+}
+
+.planning-personne-travaille {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+/* Rest is what the weekly-rest rules are about: it is the cell that stands out. */
+.planning-personne-repos {
+  background: var(--mat-sys-surface-container);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.planning-personne-indisponible {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--mat-sys-surface-container),
+    var(--mat-sys-surface-container) 4px,
+    var(--mat-sys-surface-container-low) 4px,
+    var(--mat-sys-surface-container-low) 8px
+  );
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* A worked day running into the evening: a band along the cell, the one evening of the application. */
+.planning-personne-soiree {
+  box-shadow: inset 0 -4px 0 var(--mat-sys-tertiary);
+}
+
+/* Assigned on a day declared unavailable: an anomaly of the plan, not a state. */
+.planning-personne-conflit {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font-weight: 600;
+}
+
+.planning-personne-sans-repos .planning-grille-entete,
+.planning-personne-sans-repos .personne-frise-nom {
+  color: var(--mat-sys-error);
+}
+
+.planning-personne-alerte {
+  margin-left: 0.25rem;
+  vertical-align: middle;
+  color: var(--mat-sys-error);
+}
+
+.planning-personne-stand,
+.planning-personne-heures {
+  display: block;
+  line-height: 1.25;
+}
+
+.planning-personne-heures {
+  font: var(--mat-sys-label-small);
+}
+
+.planning-personne-densite-compact .planning-grille-case {
+  min-width: 1.75rem;
+}
+
+/* Above the median and below it: the hours and their distance. */
+.planning-personne-au-dessus {
+  color: var(--mat-sys-error);
+  font-weight: 600;
+}
+
+.planning-personne-en-dessous {
+  color: var(--mat-sys-tertiary);
+  font-weight: 600;
+}
+
+/* --- The frise ------------------------------------------------------------ */
+
+.personne-frise-entete,
+.personne-frise-ligne {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.personne-frise-lignes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.personne-frise-ligne {
+  padding: 0.1875rem 0;
+}
+
+.personne-frise-nom {
+  flex: 0 0 11rem;
+  font: var(--mat-sys-label-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+a.personne-frise-nom {
+  color: var(--app-accent);
+}
+
+.personne-frise-compteurs {
+  flex: 0 0 3.5rem;
+  text-align: right;
+  font: var(--mat-sys-body-small);
+  font-variant-numeric: tabular-nums;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* Ruler and bars are two flex rows over the same width: the totals match, so a
+   boundary drawn on the ruler falls exactly where a run changes. */
+.personne-frise-regle,
+.personne-frise-barre {
+  flex: 1 1 0;
+  display: flex;
+  min-width: 0;
+}
+
+.personne-frise-regle {
+  height: 1rem;
+}
+
+.personne-frise-graduation {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.personne-frise-weekend {
+  background: var(--mat-sys-surface-container-high);
+}
+
+.personne-frise-semaine {
+  box-shadow: inset 1px 0 0 var(--mat-sys-outline);
+}
+
+.personne-frise-graduation-label {
+  position: absolute;
+  left: 0.125rem;
+  bottom: 0;
+  font: var(--mat-sys-label-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.personne-frise-barre {
+  height: 1.25rem;
+  border-radius: var(--mat-sys-corner-extra-small);
+  overflow: hidden;
+}
+
+.personne-frise-segment {
+  flex-basis: 0;
+  min-width: 2px;
+}
+
+@media (max-width: 60rem) {
+  .personne-frise-nom {
+    flex-basis: 8.5rem;
+  }
+}

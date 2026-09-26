@@ -101,7 +101,7 @@ test('un solve lancé depuis la page Solveur pourvoit tous les postes', async ({
   expect(postesSolv.every((poste) => poste.animateur !== null)).toBe(true);
 
   // And the result is visible in the frontend right away.
-  await page.goto('/hours');
+  await page.goto('/journee?axe=personne');
   await expect(page.locator('#contenu')).toContainText('Solve');
   await page.context().close();
 });

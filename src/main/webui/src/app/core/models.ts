@@ -2139,11 +2139,15 @@ export interface HeuresAnimateur {
   heuresJourFerie: number;
   /** The overlap of the two above: a Sunday that is also a holiday counts in both columns. */
   heuresDimancheFerie: number;
-  /** Hours past 22:00, prorated — not the whole vacation. */
+  /** Hours past 22:00, prorated — not the whole vacation: the payroll's « Nuit (paie) », never the evening. */
   heuresNuit: number;
+  /** Hours past the edition's one settable start of the evening — the Équité report's figure for the same person. */
+  heuresSoiree: number;
 }
 
 export interface HeuresRapport {
+  /** The evening the lines were read under, HH:MM:SS. */
+  heureDebutSoiree: string;
   semaines: string[];
   animateurs: HeuresAnimateur[];
 }

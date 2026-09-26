@@ -72,7 +72,8 @@ export function buildNavGroups(): NavGroup[] {
       ],
     },
     {
-      // The plan read from every angle, until the Planning page gathers them.
+      // The plan read from every angle: the Planning page and its axes, and
+      // the one reading its chantiers have not absorbed yet, the margin.
       id: 'planning',
       title: $localize`:@@nav.group.planning:Planning`,
       links: [
@@ -108,21 +109,28 @@ export function buildNavGroups(): NavGroup[] {
               $localize`:@@nav.keywords.journeePauses:relais intendance sandwichs`,
             ),
             tab('vue', 'changements', $localize`:@@journee.vue.changements:Changements`),
+            // The two grids and the table (issue #713), where the Heures, the
+            // Équité, the Jours de repos, the Heatmap, the Répartition des
+            // heures and the Planning par typologie went.
+            tab(
+              'axe',
+              'stand',
+              $localize`:@@planning.axe.stand:Par stand`,
+              $localize`:@@nav.keywords.axeStand:heatmap couverture répartition des heures treemap`,
+            ),
+            tab(
+              'axe',
+              'personne',
+              $localize`:@@planning.axe.personne:Par personne`,
+              $localize`:@@nav.keywords.axePersonne:heures paie équité jours de repos soirées frise`,
+            ),
+            tab(
+              'axe',
+              'typologie',
+              $localize`:@@planning.axe.typologie:Par typologie`,
+              $localize`:@@nav.keywords.axeTypologie:planning par typologie compétents`,
+            ),
           ],
-        },
-        {
-          path: '/hours',
-          label: $localize`:@@nav.link.hours:Heures`,
-          icon: 'timer',
-          shortcut: 'h',
-          keywords: $localize`:@@nav.keywords.hours:paie`,
-        },
-        { path: '/equite', label: $localize`:@@nav.link.equite:Équité`, icon: 'balance' },
-        { path: '/repos', label: $localize`:@@nav.link.repos:Jours de repos`, icon: 'weekend' },
-        {
-          path: '/heatmap',
-          label: $localize`:@@nav.link.heatmap:Heatmap de charge`,
-          icon: 'grid_view',
         },
         {
           path: '/marge',
@@ -132,16 +140,6 @@ export function buildNavGroups(): NavGroup[] {
             tab('mode', 'apres', $localize`:@@marge.mode.apres:Après résolution`),
             tab('mode', 'tension', $localize`:@@nav.tab.margeTension:Tension`),
           ],
-        },
-        {
-          path: '/repartition-heures',
-          label: $localize`:@@nav.link.repartitionHeures:Répartition des heures`,
-          icon: 'dashboard',
-        },
-        {
-          path: '/typologies-planning',
-          label: $localize`:@@nav.link.typologiesPlanning:Planning par typologie`,
-          icon: 'donut_small',
         },
       ],
     },

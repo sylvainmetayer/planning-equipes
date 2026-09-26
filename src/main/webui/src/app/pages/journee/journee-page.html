@@ -1,5 +1,40 @@
 <div class="planning-entete">
   <h1 class="planning-titre" i18n="@@planning.title">Planning</h1>
+  <mat-button-toggle-group class="planning-axes" [value]="axe()" (change)="changeAxe($event.value)"
+                           aria-label="Axe du planning" i18n-aria-label="@@planning.axe.label">
+    <mat-button-toggle value="jour" i18n="@@planning.axe.jour">Par jour</mat-button-toggle>
+    <mat-button-toggle value="stand" i18n="@@planning.axe.stand">Par stand</mat-button-toggle>
+    <mat-button-toggle value="personne" i18n="@@planning.axe.personne">Par personne</mat-button-toggle>
+    <mat-button-toggle value="typologie" i18n="@@planning.axe.typologie">Par typologie</mat-button-toggle>
+  </mat-button-toggle-group>
+  @switch (axe()) {
+  @case ('stand') {
+  <mat-button-toggle-group class="journee-vues" [value]="standView()" (change)="standView.set($event.value)"
+                           aria-label="Rendu par stand" i18n-aria-label="@@planningStand.vue.label">
+    <mat-button-toggle value="grille">
+      <mat-icon>grid_on</mat-icon>
+      <ng-container i18n="@@repos.vue.grille">Grille</ng-container>
+    </mat-button-toggle>
+    <mat-button-toggle value="treemap">
+      <mat-icon>dashboard</mat-icon>
+      <ng-container i18n="@@planningStand.vue.treemap">Répartition des heures</ng-container>
+    </mat-button-toggle>
+  </mat-button-toggle-group>
+  }
+  @case ('personne') {
+  <mat-button-toggle-group class="journee-vues" [value]="personView()" (change)="personView.set($event.value)"
+                           aria-label="Rendu par personne" i18n-aria-label="@@planningPersonne.vue.label">
+    <mat-button-toggle value="grille">
+      <mat-icon>grid_on</mat-icon>
+      <ng-container i18n="@@repos.vue.grille">Grille</ng-container>
+    </mat-button-toggle>
+    <mat-button-toggle value="frise">
+      <mat-icon>view_timeline</mat-icon>
+      <ng-container i18n="@@repos.vue.frise">Frise</ng-container>
+    </mat-button-toggle>
+  </mat-button-toggle-group>
+  }
+  @case ('jour') {
   <mat-button-toggle-group class="journee-vues" [value]="view()" (change)="changeView($event.value)"
                            aria-label="Rendu de la journée" i18n-aria-label="@@journee.vue.label">
     <mat-button-toggle value="calendrier">
@@ -23,6 +58,8 @@
       <ng-container i18n="@@journee.vue.changements">Changements</ng-container>
     </mat-button-toggle>
   </mat-button-toggle-group>
+  }
+  }
 </div>
 
 <div class="planning-barre">
@@ -36,6 +73,16 @@
                            (valeursChange)="choisirAnimateur($event)"
                            label="Animateur" i18n-label="@@journee.filter.animateur"
                            placeholder="Tous" i18n-placeholder="@@journee.filter.tous" />
+  @if (filtresLieuTypologie()) {
+    <app-selection-recherche class="planning-filtre" [compact]="true" [options]="emplacementsOptions()"
+                             [valeurs]="emplacementChoisi()" (valeursChange)="choisirEmplacement($event)"
+                             label="Emplacement" i18n-label="@@planning.filter.emplacement"
+                             placeholder="Tous" i18n-placeholder="@@journee.filter.tous" />
+    <app-selection-recherche class="planning-filtre" [compact]="true" [options]="typologiesOptions()"
+                             [valeurs]="typologieChoisie()" (valeursChange)="choisirTypologie($event)"
+                             label="Typologie" i18n-label="@@planning.filter.typologie"
+                             placeholder="Toutes" i18n-placeholder="@@planning.filter.toutes" />
+  }
   <app-table-filter
     class="planning-filtre"
     [(value)]="filtre"
@@ -111,7 +158,7 @@
   </output>
 }
 
-@if (!error() && dateCourante(); as jour) {
+@if (!error() && axe() === 'jour' && dateCourante(); as jour) {
   <div class="planning-relecture">
     <!-- A reading covers one whole day, never a pair: hidden while two are on screen. -->
     @if (!comparaisonActive() && jourCourant(); as courant) {
@@ -136,7 +183,46 @@
      says was done, and what is left, must survive the re-read. -->
 <div class="journee-corps" [class.journee-corps-siege]="seatPanelShown()">
   <div class="journee-rendu">
-    @if (!error() && !loading() && comparaisonActive()) {
+    @if (!error() && !loading() && axe() !== 'jour') {
+      @switch (axe()) {
+        @case ('stand') {
+          @if (standView() === 'treemap') {
+            <app-repartition-heures-vue [emplacementFilter]="emplacement()" (standOuvert)="openStand($event)" />
+          } @else {
+            <app-planning-stand-vue
+              [planning]="planning()"
+              [jours]="jours()"
+              [jourMarque]="jourCourant()?.key ?? null"
+              [standsRetenus]="gridStands()"
+              [animateur]="animateur()"
+              [filtre]="filtre()"
+              [(densite)]="densiteStand"
+              (seatRequested)="openSeatOnDay($event)"
+            />
+          }
+        }
+        @case ('personne') {
+          <app-planning-personne-vue
+            [planning]="planning()"
+            [jours]="jours()"
+            [jourMarque]="jourCourant()?.key ?? null"
+            [standsRetenus]="gridStands()"
+            [animateur]="animateur()"
+            [filtre]="filtre()"
+            [view]="personView()"
+            [(densite)]="densitePersonne"
+            [(tri)]="triPersonne"
+            [(allColumns)]="allColumns"
+            [(noRestOnly)]="noRestOnly"
+            (seatRequested)="openSeatOnDay($event)"
+          />
+        }
+        @default {
+          <app-planning-typologie-vue [typologie]="typologie()" [filtre]="filtre()"
+                                      (standsDemandes)="showCategoryStands($event)" />
+        }
+      }
+    } @else if (!error() && !loading() && comparaisonActive()) {
       @if (jourCourant(); as jourA) {
         @if (jourCompare(); as jourB) {
           <app-comparaison-vue
@@ -219,6 +305,7 @@
             [filtre]="filtre()"
             [stand]="stand()"
             [animateur]="animateur()"
+            [standsRetenus]="standsRetenus()"
             [(seulementProblemes)]="seulementProblemes"
             [(sieges)]="sieges"
             [openSeatId]="openSeatId()"

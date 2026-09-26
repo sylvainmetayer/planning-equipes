@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Creneau, PosteAffectation } from '../../core/models';
-import { requestedKey, dayKey, jourDemande, planningDays, readView } from './journee';
+import { requestedKey, dayKey, jourDemande, planningDays, readAxe, readView } from './journee';
 
 function creneau(overrides: Partial<Creneau> & { id: number }): Creneau {
   return { jour: 1, date: '2026-08-01', heureDebut: '10:00', heureFin: '12:00', ...overrides };
@@ -40,6 +40,16 @@ describe('readView', () => {
     expect(readView('changements')).toBe('changements');
     expect(readView('libres')).toBe('calendrier');
     expect(readView(null)).toBe('calendrier');
+  });
+});
+
+describe('readAxe', () => {
+  it('names one of the four axes, the day otherwise', () => {
+    expect(readAxe('stand')).toBe('stand');
+    expect(readAxe('personne')).toBe('personne');
+    expect(readAxe('typologie')).toBe('typologie');
+    expect(readAxe('animateur')).toBe('jour');
+    expect(readAxe(null)).toBe('jour');
   });
 });
 

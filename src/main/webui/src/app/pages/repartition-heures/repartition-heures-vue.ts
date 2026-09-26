@@ -6,6 +6,8 @@ import {
   effect,
   ElementRef,
   inject,
+  input,
+  output,
   resource,
   signal,
   viewChild,
@@ -19,19 +21,17 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { parseDateKey } from '../../core/date-utils';
 import { intlLocale } from '../../core/locale';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { errorText } from '../../core/resource-state';
 import { typologieLabels } from '../../core/typologie-colors';
-import { keepViewInQueryParams } from '../../core/view-query-params';
+import { currentViewParams, keepViewInQueryParams } from '../../core/view-query-params';
 import { StatusMessage } from '../../shared/status-message';
 import {
   GROUP_HEADER,
   HoursNode,
-  NO_EMPLACEMENT,
   Rect,
   Tile,
   TreemapGrouping,
@@ -39,7 +39,6 @@ import {
   aggregateHours,
   coverageLevel,
   findPath,
-  knownStands,
   layoutTiles,
   mondayOf,
   periodChoices,
@@ -73,14 +72,19 @@ interface PeriodOption {
 /**
  * « Répartition des heures »: what weighs in the edition, and where it
  * stalls, in one picture. A treemap of the seat-hours to staff — size is the
- * need, colour its coverage in the Heatmap's colours on thresholds of its
- * own (critique under 80 %) — grouped by emplacement
- * or by typologie combination, over the plan persisted. The geometry and the
- * aggregation are the pure `treemap.ts`; this component puts labels, a zoom
- * and a table around them.
+ * need, colour its coverage on thresholds of its own (critique under 80 %) —
+ * grouped by emplacement or by typologie combination, over the plan
+ * persisted. The geometry and the aggregation are the pure `treemap.ts`; this
+ * component puts labels, a zoom and a table around them.
+ *
+ * <p>Once a screen of its own, it is the optional rendering of the Planning
+ * page's « Par stand » axis (issue #713, `?axe=stand&vue=treemap`): the
+ * location filter is the page's, the period, the grouping and the zoom stay
+ * its own keys — the day of its period under `jourTreemap`, since `date` is
+ * the page's day. A stand's tile opens that stand on « Par jour ».</p>
  */
 @Component({
-  selector: 'app-repartition-heures-page',
+  selector: 'app-repartition-heures-vue',
   imports: [
     MatButtonModule,
     MatButtonToggleModule,
@@ -90,21 +94,23 @@ interface PeriodOption {
     MatProgressBarModule,
     MatSelectModule,
     MatTooltipModule,
-    RouterLink,
     StatusMessage,
   ],
-  templateUrl: './repartition-heures-page.html',
-  styleUrl: './repartition-heures-page.css',
+  templateUrl: './repartition-heures-vue.html',
+  styleUrl: './repartition-heures-vue.css',
   // Global by design (AGENTS.md): loaded with the route, unscoped like a partial.
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class RepartitionHeuresPage {
+export class RepartitionHeuresView {
   private readonly planningState = inject(PlanningStateService);
   private readonly reference = inject(ReferenceDataStore);
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
   private readonly document = inject(DOCUMENT);
+
+  /** The page's location filter: an emplacement id, `aucun`, or `''` for every place. */
+  readonly emplacementFilter = input('');
+  /** A stand's tile was opened: the page shows that stand on « Par jour », on the period's day when it is one. */
+  readonly standOuvert = output<{ standId: string; date: string | null }>();
   private readonly treemapBox = viewChild<ElementRef<HTMLElement>>('treemap');
   /** The treemap's rendered size and the root font size, once measured; null before. */
   private readonly measured = signal<{ width: number; height: number; rem: number } | null>(null);
@@ -112,17 +118,11 @@ export class RepartitionHeuresPage {
   protected readonly grouping = signal<TreemapGrouping>('stand');
   /** `all`, `w:<monday>` or `d:<date>` — the value of the period selector. */
   protected readonly periodValue = signal('all');
-  /** An emplacement id, `aucun`, or `''` for every place. */
-  protected readonly emplacementFilter = signal('');
   /** Id of the node the treemap is zoomed on; the root when empty or unknown. */
   protected readonly zoomId = signal('');
 
   protected readonly viewChanged = computed(
-    () =>
-      this.grouping() !== 'stand' ||
-      this.periodValue() !== 'all' ||
-      this.emplacementFilter() !== '' ||
-      this.zoomId() !== '',
+    () => this.grouping() !== 'stand' || this.periodValue() !== 'all' || this.zoomId() !== '',
   );
 
   /**
@@ -214,33 +214,12 @@ export class RepartitionHeuresPage {
     };
   });
 
-  /** The emplacements the stands sit on, and « Sans emplacement » when some sit on none. */
-  protected readonly emplacementOptions = computed(() => {
-    const options = new Map<string, string>();
-    let orphans = false;
-    for (const stand of knownStands(this.reference.stands(), this.postes())) {
-      if (stand.emplacement) {
-        options.set(stand.emplacement.id, stand.emplacement.nom || stand.emplacement.id);
-      } else {
-        orphans = true;
-      }
-    }
-    const sorted = [...options.entries()]
-      .map(([value, label]) => ({ value, label }))
-      .sort((left, right) => left.label.localeCompare(right.label));
-    if (orphans) {
-      sorted.push({
-        value: NO_EMPLACEMENT,
-        label: $localize`:@@repartitionHeures.noEmplacement:Sans emplacement`,
-      });
-    }
-    return sorted;
-  });
-
   constructor() {
-    const params = this.route.snapshot.queryParamMap;
+    // The address bar, not the router's snapshot: the rendering is created and
+    // destroyed as the page switches, after the navigation that built it.
+    const params = currentViewParams();
     this.grouping.set(params.get('regroupement') === 'typologie' ? 'typologie' : 'stand');
-    const date = params.get('date');
+    const date = params.get('jourTreemap');
     const week = params.get('semaine');
     if (date && isDateKey(date)) {
       this.periodValue.set(`d:${date}`);
@@ -248,15 +227,13 @@ export class RepartitionHeuresPage {
       // Any date of the week selects it: the selector only knows Mondays.
       this.periodValue.set(`w:${mondayOf(week)}`);
     }
-    this.emplacementFilter.set(params.get('emplacement') ?? '');
     this.zoomId.set(params.get('zoom') ?? '');
     keepViewInQueryParams(() => {
       const period = this.period();
       return {
         regroupement: this.grouping() === 'stand' ? null : this.grouping(),
         semaine: period.kind === 'week' ? period.monday : null,
-        date: period.kind === 'day' ? period.date : null,
-        emplacement: this.emplacementFilter() || null,
+        jourTreemap: period.kind === 'day' ? period.date : null,
         // The zoom asked for, not the one resolved: a link keeps it while the
         // plan loads or fails to, instead of losing it to the root fallback.
         zoom: this.zoomId() || null,
@@ -321,15 +298,9 @@ export class RepartitionHeuresPage {
     this.periodValue.set(value);
   }
 
-  protected setEmplacement(value: string): void {
-    this.emplacementFilter.set(value);
-    this.zoomId.set('');
-  }
-
   protected resetView(): void {
     this.grouping.set('stand');
     this.periodValue.set('all');
-    this.emplacementFilter.set('');
     this.zoomId.set('');
   }
 
@@ -349,8 +320,9 @@ export class RepartitionHeuresPage {
       return;
     }
     const period = this.period();
-    void this.router.navigate(['/journee'], {
-      queryParams: { stand: node.standId, date: period.kind === 'day' ? period.date : null },
+    this.standOuvert.emit({
+      standId: node.standId,
+      date: period.kind === 'day' ? period.date : null,
     });
   }
 

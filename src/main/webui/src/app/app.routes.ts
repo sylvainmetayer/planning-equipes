@@ -69,6 +69,47 @@ function redirectToJournee(
   return redirectToPlanning({ vue }, renames);
 }
 
+/**
+ * The Heatmap drew stands × days, or animateurs × days under `view=animateur`:
+ * the two grids of the Planning page (issue #713).
+ */
+const heatmapToPlanning: RedirectFunction = (route) =>
+  redirectToPlanning(
+    { axe: route.queryParams['view'] === 'animateur' ? 'personne' : 'stand' },
+    { view: '' },
+  )(route);
+
+/**
+ * The Heures screen sorted by its payroll columns, under names of its own:
+ * « Par personne » sorts by the fields of the reports it joins.
+ */
+const HOURS_SORT = {
+  key: 'sort',
+  values: {
+    animateur: 'nom',
+    total: 'heuresTotal',
+    dimanche: 'heuresDimanche',
+    jourFerie: 'heuresJourFerie',
+    nuit: 'heuresNuit',
+  },
+};
+
+/**
+ * The Équité table is « Par personne » now, sorted by the same fields; its
+ * « fiche » reading of one person — the radar with it — is that person's fiche.
+ */
+const equiteToPlanning: RedirectFunction = (route) =>
+  equityFicheUrl(route.queryParams) ??
+  redirectToPlanning(
+    { axe: 'personne' },
+    {
+      vue: '',
+      axes: '',
+      comparer: '',
+      sort: { key: 'sort', values: { animateur: 'nom' } },
+    },
+  )(route);
+
 function redirectToDiagnostic(onglet: string): RedirectFunction {
   return redirectToOnglet('diagnostic', onglet);
 }
@@ -138,43 +179,24 @@ export const standEditToFiche: CanActivateFn = (route) => {
  * `/equite?vue=fiche&animateur=X`: the « Fiche » reading of the Équité screen
  * — one person's indicators and the radar — lives on the fiche animateur now,
  * in its « Charge et équité » section, the radar's `axes` and `comparer`
- * kept. Without a person, the address lands on the table, its other keys
- * kept.
+ * kept. Null for any other address of `/equite`, which is the person axis of
+ * the Planning page.
  */
 export function equityFicheUrl(queryParams: Params): string | null {
-  if (queryParams['vue'] !== 'fiche') {
-    return null;
-  }
   const animateur = queryParams['animateur'];
   const id = typeof animateur === 'string' ? animateur.trim() : '';
-  const params = new URLSearchParams();
-  if (id) {
-    params.set('section', 'equite');
-    for (const key of ['axes', 'comparer']) {
-      const value = queryParams[key];
-      if (value !== undefined && value !== null && value !== '') {
-        params.set(key, paramText(value as string | readonly string[]));
-      }
-    }
-    return `/animateurs/${encodeURIComponent(id)}?${params.toString()}`;
+  if (queryParams['vue'] !== 'fiche' || !id) {
+    return null;
   }
-  for (const [key, value] of Object.entries(queryParams)) {
-    if (
-      !['vue', 'animateur', 'axes', 'comparer'].includes(key) &&
-      value !== undefined &&
-      value !== null
-    ) {
+  const params = new URLSearchParams({ section: 'equite' });
+  for (const key of ['axes', 'comparer']) {
+    const value = queryParams[key];
+    if (value !== undefined && value !== null && value !== '') {
       params.set(key, paramText(value as string | readonly string[]));
     }
   }
-  const query = params.toString();
-  return query ? `/equite?${query}` : '/equite';
+  return `/animateurs/${encodeURIComponent(id)}?${params.toString()}`;
 }
-
-export const equityFicheToAnimateur: CanActivateFn = (route) => {
-  const url = equityFicheUrl(route.queryParams);
-  return url ? inject(Router).parseUrl(url) : true;
-};
 
 /** `/diagnostic?onglet=banc…`: the tab is gone, its address goes to the Journée. */
 export const benchTabToJournee: CanActivateFn = (route) =>
@@ -416,16 +438,6 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/typologies/typologies-page').then((m) => m.TypologiesPage),
   },
   {
-    // The referential screen manages the typologies; this one reads the plan
-    // through them (issue #590). Two questions, two addresses.
-    path: 'typologies-planning',
-    title: () => $localize`:@@route.typologiesPlanning:Planning par typologie`,
-    loadComponent: () =>
-      import('./pages/typologies-planning/typologies-planning-page').then(
-        (m) => m.TypologiesPlanningPage,
-      ),
-  },
-  {
     path: 'ad-hoc-constraints',
     title: () => $localize`:@@route.adHocConstraints:Ajustements manuels`,
     loadComponent: () =>
@@ -459,6 +471,18 @@ const adminRoutes: Routes = [
   // emplacement → stand → timeslot → animateur is the map's.
   { path: 'intendance', redirectTo: redirectToJournee('pauses') },
   { path: 'graphe', redirectTo: redirectToJournee('carte') },
+  // The six screens the two grids and the table of the Planning page gathered
+  // (issue #713), their view state carried along — the treemap's day under a
+  // key of its own, `date` being the page's day.
+  { path: 'heatmap', redirectTo: heatmapToPlanning },
+  { path: 'repos', redirectTo: redirectToPlanning({ axe: 'personne' }) },
+  { path: 'hours', redirectTo: redirectToPlanning({ axe: 'personne' }, { sort: HOURS_SORT }) },
+  { path: 'equite', redirectTo: equiteToPlanning },
+  {
+    path: 'repartition-heures',
+    redirectTo: redirectToPlanning({ axe: 'stand', vue: 'treemap' }, { date: 'jourTreemap' }),
+  },
+  { path: 'typologies-planning', redirectTo: redirectToPlanning({ axe: 'typologie' }) },
   // The four screens the Journée page gathers, kept for the bookmarks. The
   // rail's `vue` (which lines) and the breaks' `vue` (only those without a
   // relay) are renamed to the keys the views own now.
@@ -479,42 +503,12 @@ const adminRoutes: Routes = [
       import('./pages/constraints/constraints-page').then((m) => m.ConstraintsPage),
   },
   {
-    path: 'hours',
-    title: () => $localize`:@@route.hours:Heures`,
-    loadComponent: () => import('./pages/hours/hours-page').then((m) => m.HoursPage),
-  },
-  {
-    path: 'equite',
-    title: () => $localize`:@@route.equite:Équité`,
-    loadComponent: () => import('./pages/equite/equite-page').then((m) => m.EquitePage),
-    // Its « Fiche » reading moved to the fiche animateur: the address follows it.
-    canActivate: [equityFicheToAnimateur],
-  },
-  {
-    path: 'repos',
-    title: () => $localize`:@@route.repos:Jours de repos`,
-    loadComponent: () => import('./pages/repos/repos-page').then((m) => m.ReposPage),
-  },
-  {
     path: 'ouvertures',
     title: () => $localize`:@@route.ouvertures:Horaires des stands`,
     // `?vue=journee` and `?vue=calendrier` were folded into the grid: their
     // addresses land where the same question is now answered.
     canActivate: [retiredOpeningsViews],
     loadComponent: () => import('./pages/ouvertures/ouvertures-page').then((m) => m.OuverturesPage),
-  },
-  {
-    path: 'heatmap',
-    title: () => $localize`:@@route.heatmap:Heatmap de charge`,
-    loadComponent: () => import('./pages/heatmap/heatmap-page').then((m) => m.HeatmapPage),
-  },
-  {
-    path: 'repartition-heures',
-    title: () => $localize`:@@route.repartitionHeures:Répartition des heures`,
-    loadComponent: () =>
-      import('./pages/repartition-heures/repartition-heures-page').then(
-        (m) => m.RepartitionHeuresPage,
-      ),
   },
   {
     path: 'marge',

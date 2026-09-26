@@ -248,9 +248,13 @@ describe('chercherCommandes', () => {
     expect(found?.queryParams).toEqual({ date: '2026-07-19' });
   });
 
-  it('finds a page by its label', () => {
+  it('finds a former page by its keyword, on the Planning axis that absorbed it', () => {
     const resultats = chercherCommandes('heatmap', sources);
-    expect(resultats.some((commande) => commande.route === '/heatmap')).toBe(true);
+    expect(
+      resultats.some(
+        (commande) => commande.route === '/journee' && commande.queryParams?.['axe'] === 'stand',
+      ),
+    ).toBe(true);
   });
 
   it('caps each family, so a one-letter query stays a list and not a table', () => {

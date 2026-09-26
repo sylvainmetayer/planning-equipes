@@ -1,16 +1,16 @@
-// The treemap page over a small plan: the tiles, the zoom and its breadcrumb,
-// the table, and the view state it keeps in the URL. The geometry itself is
-// tested in treemap.spec.ts.
+// The treemap over a small plan — the optional rendering of the Planning
+// page's « Par stand » axis: the tiles, the zoom and its breadcrumb, the
+// table, and the view state it keeps in the URL next to the page's keys. The
+// geometry itself is tested in treemap.spec.ts.
 
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { Location } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Creneau, Emplacement, PosteAffectation, Stand } from '../../core/models';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
-import { RepartitionHeuresPage } from './repartition-heures-page';
+import { RepartitionHeuresView } from './repartition-heures-vue';
 
 const PLACE: Emplacement = { id: 'PLACE', nom: 'Place', latitude: null, longitude: null };
 
@@ -65,10 +65,13 @@ function seat(id: string, of: Stand, filled: boolean): PosteAffectation {
 async function setUp(
   queryParams: Record<string, string> = {},
   postes?: PosteAffectation[],
-  options: { pending?: boolean } = {},
+  options: { pending?: boolean; emplacement?: string } = {},
 ) {
   const replaceState = vi.fn();
-  const navigate = vi.fn(async () => true);
+  // Created as the page switches renderings, the treemap reads the address
+  // bar, not the router's snapshot of the navigation that built the page.
+  const query = new URLSearchParams(queryParams).toString();
+  const chemin = query ? `/journee?${query}` : '/journee';
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
@@ -101,22 +104,22 @@ async function setUp(
           ]),
         },
       },
-      { provide: Location, useValue: { path: () => '/repartition-heures', replaceState } },
-      { provide: Router, useValue: { navigate } },
-      {
-        provide: ActivatedRoute,
-        useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } },
-      },
+      { provide: Location, useValue: { path: () => chemin, replaceState } },
     ],
   });
-  const fixture = TestBed.createComponent(RepartitionHeuresPage);
+  const fixture = TestBed.createComponent(RepartitionHeuresView);
+  const opened: { standId: string; date: string | null }[] = [];
+  fixture.componentInstance.standOuvert.subscribe((demande) => opened.push(demande));
+  if (options.emplacement) {
+    fixture.componentRef.setInput('emplacementFilter', options.emplacement);
+  }
   fixture.detectChanges();
   if (!options.pending) {
     await fixture.whenStable();
   }
   fixture.detectChanges();
   const page = fixture.componentInstance as unknown as { setPeriod(value: string): void };
-  return { fixture, page, replaceState, navigate, element: fixture.nativeElement as HTMLElement };
+  return { fixture, page, replaceState, opened, element: fixture.nativeElement as HTMLElement };
 }
 
 /** Where a tile sits, in percentages of the treemap, as its inline style says. */
@@ -130,7 +133,7 @@ function tileLabels(element: HTMLElement): string[] {
   );
 }
 
-describe('RepartitionHeuresPage', () => {
+describe('RepartitionHeuresView', () => {
   beforeEach(() => TestBed.resetTestingModule());
   afterEach(() => vi.unstubAllGlobals());
 
@@ -159,12 +162,16 @@ describe('RepartitionHeuresPage', () => {
     expect(tileLabels(element)).toHaveLength(1);
   });
 
-  it("opens a stand's day on a click once zoomed", async () => {
-    const { element, navigate } = await setUp({ zoom: 'e:PLACE', date: '2026-07-08' });
+  it("asks the page for a stand's day on a click once zoomed", async () => {
+    const { element, opened } = await setUp({ zoom: 'e:PLACE', jourTreemap: '2026-07-08' });
     element.querySelector<HTMLButtonElement>('button.repartition-tile')!.click();
-    expect(navigate).toHaveBeenCalledWith(['/journee'], {
-      queryParams: { stand: 'Tir', date: '2026-07-08' },
-    });
+    expect(opened).toEqual([{ standId: 'Tir', date: '2026-07-08' }]);
+  });
+
+  it("narrows to the page's location filter, and owns no location key of its own", async () => {
+    const { element, replaceState } = await setUp({}, undefined, { emplacement: 'ailleurs' });
+    expect(element.textContent).toContain('Aucun siège à pourvoir');
+    expect(replaceState).toHaveBeenLastCalledWith('/journee');
   });
 
   it('files the multi-typologie stand under its combination', async () => {
@@ -181,42 +188,43 @@ describe('RepartitionHeuresPage', () => {
     expect(rows).toEqual(['Place', 'Tir', 'Dixit', 'Idle']);
   });
 
-  it('keeps the grouping, the period, the place and the zoom in the URL', async () => {
+  it("keeps the grouping, the period and the zoom in the URL, next to the page's keys", async () => {
     const { replaceState } = await setUp({
+      axe: 'stand',
       regroupement: 'typologie',
       semaine: '2026-07-06',
-      emplacement: 'PLACE',
       zoom: 't:AMB',
     });
     expect(replaceState).toHaveBeenLastCalledWith(
-      '/repartition-heures?regroupement=typologie&semaine=2026-07-06&emplacement=PLACE&zoom=t%3AAMB',
+      '/journee?axe=stand&regroupement=typologie&semaine=2026-07-06&zoom=t%3AAMB',
     );
   });
 
   it('reads a mid-week date in ?semaine= as its week', async () => {
     const { element, replaceState } = await setUp({ semaine: '2026-07-08' });
-    expect(replaceState).toHaveBeenLastCalledWith('/repartition-heures?semaine=2026-07-06');
+    expect(replaceState).toHaveBeenLastCalledWith('/journee?semaine=2026-07-06');
     expect(tileLabels(element)).toHaveLength(1);
   });
 
   it('keeps the zoom asked for in the URL while the plan loads', async () => {
     const { replaceState } = await setUp({ zoom: 'e:PLACE' }, undefined, { pending: true });
-    expect(replaceState).toHaveBeenLastCalledWith('/repartition-heures?zoom=e%3APLACE');
+    expect(replaceState).toHaveBeenLastCalledWith('/journee?zoom=e%3APLACE');
   });
 
   it('drops a zoom the new period empties, and does not revive it afterwards', async () => {
     const { fixture, page, replaceState } = await setUp({ zoom: 'e:PLACE' });
-    expect(replaceState).toHaveBeenLastCalledWith('/repartition-heures?zoom=e%3APLACE');
+    expect(replaceState).toHaveBeenLastCalledWith('/journee?zoom=e%3APLACE');
 
+    // The day of its period under a key of its own: `date` is the page's day.
     page.setPeriod('d:2026-07-09');
     await fixture.whenStable();
     fixture.detectChanges();
-    expect(replaceState).toHaveBeenLastCalledWith('/repartition-heures?date=2026-07-09');
+    expect(replaceState).toHaveBeenLastCalledWith('/journee?jourTreemap=2026-07-09');
 
     page.setPeriod('all');
     await fixture.whenStable();
     fixture.detectChanges();
-    expect(replaceState).toHaveBeenLastCalledWith('/repartition-heures');
+    expect(replaceState).toHaveBeenLastCalledWith('/journee');
   });
 
   it('lays the tiles out at their rendered size: title room and labels in real pixels', async () => {
@@ -257,7 +265,7 @@ describe('RepartitionHeuresPage', () => {
     const empty = await setUp({}, []);
     expect(empty.element.textContent).toContain('Aucun planning enregistré');
     TestBed.resetTestingModule();
-    const otherDay = await setUp({ date: '2026-07-09' });
+    const otherDay = await setUp({ jourTreemap: '2026-07-09' });
     expect(otherDay.element.textContent).toContain('Aucun siège à pourvoir');
   });
 });

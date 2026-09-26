@@ -17,7 +17,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, ParamMap, RouterLink } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { ReferenceChangementsParam } from '../../core/api/journees-api';
 import { dayNavigation } from '../../core/day-navigation';
@@ -31,7 +31,14 @@ import {
   TypologieItem,
 } from '../../core/models';
 import { PlanningStateService } from '../../core/planning-state.service';
-import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
+import {
+  keepViewInQueryParams,
+  NO_SORT,
+  optionalParam,
+  readSort,
+  SortState,
+  sortQueryParams,
+} from '../../core/view-query-params';
 import { ValidationsStore } from '../../core/validations.store';
 import { ConsignesStore } from '../../core/consignes.store';
 import { TableFilter } from '../../shared/table-filter';
@@ -47,6 +54,22 @@ import { ConsigneLigne } from './consigne-ligne';
 import { MiniMois } from './mini-mois';
 import { PastilleRelecture, RelectureBarre } from './relecture-barre';
 import { RailJourView, RailVue } from '../rail-jour/rail-jour-vue';
+import {
+  DensiteStand,
+  readDensiteStand,
+  readStandView,
+  StandView,
+} from '../planning-stand/planning-stand';
+import { PlanningStandView } from '../planning-stand/planning-stand-vue';
+import {
+  DensitePersonne,
+  readDensitePersonne,
+  readPersonView,
+  PersonView,
+} from '../planning-personne/planning-personne';
+import { PlanningPersonneView } from '../planning-personne/planning-personne-vue';
+import { PlanningTypologieView } from '../planning-typologie/planning-typologie-vue';
+import { RepartitionHeuresView } from '../repartition-heures/repartition-heures-vue';
 import { ComparaisonView } from './comparaison-vue';
 import {
   isComparable,
@@ -55,6 +78,8 @@ import {
   defaultComparisonDay,
   JourneeView,
   jourSemaineVoisine,
+  PlanningAxe,
+  readAxe,
   requestedKey,
   jourDemande,
   planningDays,
@@ -65,6 +90,9 @@ import { StatusMessage } from '../../shared/status-message';
 import { NewWindowLink } from '../../shared/new-window-link';
 import { SeatPanel } from '../../shared/siege-panel/siege-panel';
 import { resolveSeat, SeatRequest } from '../../shared/siege-panel/seat';
+
+/** « Sans emplacement »: the stands that sit on none, as the location filter and the treemap name them. */
+const NO_LOCATION = 'aucun';
 
 /** A stand or an animateur of the plan, as the two filter selectors list them. */
 interface Option {
@@ -110,6 +138,10 @@ interface Option {
     CalendarDayView,
     RailJourView,
     PausesView,
+    PlanningStandView,
+    PlanningPersonneView,
+    PlanningTypologieView,
+    RepartitionHeuresView,
     SeatPanel,
     // Rendered inside a `@defer` block only: `leaflet` travels with this
     // component and must not enter the chunk of the three other renderings.
@@ -142,10 +174,23 @@ export class JourneePage implements OnInit {
   /** Emplacement referential, for the map; empty when it could not be read. */
   protected readonly emplacements = signal<Emplacement[]>([]);
 
+  /** The axis (issue #713): the day, the stands, the people, the game categories. */
+  protected readonly axe = signal<PlanningAxe>('jour');
   protected readonly view = signal<JourneeView>('calendrier');
   protected readonly filtre = signal('');
   protected readonly stand = signal('');
   protected readonly animateur = signal('');
+  /** The two filters every axis keeps: a location (or `aucun`), a game category. */
+  protected readonly emplacement = signal('');
+  protected readonly typologie = signal('');
+  /* The two grids' own state, owned here since the page writes every key it shows. */
+  protected readonly standView = signal<StandView>('grille');
+  protected readonly densiteStand = signal<DensiteStand>('noms');
+  protected readonly personView = signal<PersonView>('grille');
+  protected readonly densitePersonne = signal<DensitePersonne>('detail');
+  protected readonly triPersonne = signal<SortState>(NO_SORT);
+  protected readonly allColumns = signal(false);
+  protected readonly noRestOnly = signal(false);
   /* The views' own state, read from the URL here and handed over two-way. */
   protected readonly lignesRail = signal<RailVue>('tous');
   protected readonly instantCarte = signal<number | null>(null);
@@ -196,7 +241,9 @@ export class JourneePage implements OnInit {
   /** The second day, when it names a day of the plan other than the one on screen. */
   protected readonly jourCompare = computed(() => this.comparaison().jour);
   /** True when the rendering on screen can compare. */
-  protected readonly comparableView = computed(() => isComparable(this.view()));
+  protected readonly comparableView = computed(
+    () => this.axe() === 'jour' && isComparable(this.view()),
+  );
   /** True when two days are on screen: the renderings, and their drag and drop, give way to the comparison. */
   protected readonly comparaisonActive = computed(
     () => this.comparableView() && this.jourCompare() !== null,
@@ -257,9 +304,115 @@ export class JourneePage implements OnInit {
       .sort((gauche, droite) => gauche.label.localeCompare(droite.label)),
   );
 
+  /** The locations of the plan's stands, and « Sans emplacement » when some sit on none. */
+  protected readonly emplacementsOptions = computed<Option[]>(() => {
+    const options = new Map<string, string>();
+    let orphelins = false;
+    for (const poste of this.planning()?.postes ?? []) {
+      const emplacement = poste.stand?.emplacement;
+      if (emplacement) {
+        options.set(emplacement.id, emplacement.nom || emplacement.id);
+      } else if (poste.stand) {
+        orphelins = true;
+      }
+    }
+    const triees = [...options.entries()]
+      .map(([id, label]) => ({ id, label }))
+      .sort((gauche, droite) => gauche.label.localeCompare(droite.label));
+    return orphelins
+      ? [
+          ...triees,
+          {
+            id: NO_LOCATION,
+            label: $localize`:@@repartitionHeures.noEmplacement:Sans emplacement`,
+          },
+        ]
+      : triees;
+  });
+  /** The game categories the plan's stands offer, labelled from the referential. */
+  protected readonly typologiesOptions = computed<Option[]>(() => {
+    const labels = new Map(this.typologies().map((typologie) => [typologie.id, typologie.label]));
+    const ids = new Set(
+      (this.planning()?.postes ?? []).flatMap((poste) => poste.stand?.typologiesProposees ?? []),
+    );
+    return [...ids]
+      .map((id) => ({ id, label: labels.get(id) ?? id }))
+      .sort((gauche, droite) => gauche.label.localeCompare(droite.label));
+  });
+
+  /**
+   * The stands the location and game-category filters leave, resolved once
+   * for every axis; null when neither is set.
+   */
+  protected readonly standsRetenus = computed<ReadonlySet<string> | null>(() => {
+    const emplacement = this.emplacement();
+    const typologie = this.typologie();
+    if (!emplacement && !typologie) {
+      return null;
+    }
+    const retenus = new Set<string>();
+    for (const poste of this.planning()?.postes ?? []) {
+      const stand = poste.stand;
+      if (
+        stand &&
+        (!emplacement ||
+          (emplacement === NO_LOCATION
+            ? !stand.emplacement
+            : stand.emplacement?.id === emplacement)) &&
+        (!typologie || (stand.typologiesProposees ?? []).includes(typologie))
+      ) {
+        retenus.add(stand.id);
+      }
+    }
+    return retenus;
+  });
+  /** The stand filter folded into the location and category ones, for the two grids. */
+  protected readonly gridStands = computed<ReadonlySet<string> | null>(() => {
+    const stand = this.stand();
+    const retenus = this.standsRetenus();
+    if (!stand) {
+      return retenus;
+    }
+    return new Set(retenus === null || retenus.has(stand) ? [stand] : []);
+  });
+  /** Whether the location and category filters apply to what is on screen: every axis but the day's other renderings. */
+  protected readonly filtresLieuTypologie = computed(
+    () => this.axe() !== 'jour' || this.view() === 'calendrier',
+  );
+
   /** The autocompletes speak in lists of ids; the page keeps one id, or none. */
   protected readonly standChoisi = computed(() => (this.stand() ? [this.stand()] : []));
   protected readonly animateurChoisi = computed(() => (this.animateur() ? [this.animateur()] : []));
+  protected readonly emplacementChoisi = computed(() =>
+    this.emplacement() ? [this.emplacement()] : [],
+  );
+  protected readonly typologieChoisie = computed(() =>
+    this.typologie() ? [this.typologie()] : [],
+  );
+
+  /** What the `vue` param carries: the rendering of the axis on screen, nothing on its default. */
+  private readonly viewParam = computed(() => {
+    switch (this.axe()) {
+      case 'stand':
+        return this.standView() === 'grille' ? null : this.standView();
+      case 'personne':
+        return this.personView() === 'grille' ? null : this.personView();
+      case 'typologie':
+        return null;
+      default:
+        return this.view() === 'calendrier' ? null : this.view();
+    }
+  });
+  /** What the `densite` param carries, on the two grids only. */
+  private readonly densiteParam = computed(() => {
+    if (this.axe() === 'stand') {
+      return this.densiteStand() === 'noms' ? null : this.densiteStand();
+    }
+    if (this.axe() === 'personne') {
+      return this.densitePersonne() === 'detail' ? null : this.densitePersonne();
+    }
+    return null;
+  });
 
   /** The chip of the relecture bar the rendering is narrowed by, read back from the state it set. */
   protected readonly pastilleActive = computed<PastilleRelecture>(() => {
@@ -279,6 +432,13 @@ export class JourneePage implements OnInit {
       this.filtre().trim() !== '' ||
       this.stand() !== '' ||
       this.animateur() !== '' ||
+      this.emplacement() !== '' ||
+      this.typologie() !== '' ||
+      this.densiteStand() !== 'noms' ||
+      this.densitePersonne() !== 'detail' ||
+      this.triPersonne().active !== '' ||
+      this.allColumns() ||
+      this.noRestOnly() ||
       this.lignesRail() !== 'tous' ||
       this.instantCarte() !== null ||
       this.chargeCarte() !== 'jour' ||
@@ -294,7 +454,11 @@ export class JourneePage implements OnInit {
 
   /** Whether a filter hides part of the day — which the relecture panel, accepting it whole, has to say. */
   protected readonly filtreActif = computed(
-    () => this.filtre().trim() !== '' || this.stand() !== '' || this.animateur() !== '',
+    () =>
+      this.filtre().trim() !== '' ||
+      this.stand() !== '' ||
+      this.animateur() !== '' ||
+      this.standsRetenus() !== null,
   );
 
   /** The ISO date of the day on screen, which is what a reading names; null on an undated day. */
@@ -334,16 +498,27 @@ export class JourneePage implements OnInit {
   protected readonly tvLabel = $localize`:@@planning.tv.aide:Créer le lien de la télévision de la salle de contrôle, et son QR code`;
 
   constructor() {
-    // The rendering is followed rather than read once: the palette's
-    // « Journée › Rail » navigates to this very route with another `vue`, and
-    // the router reuses the component instead of building it again.
+    // The axis and its rendering are followed rather than read once: the
+    // palette's « Planning › Rail » or « Par personne » navigates to this very
+    // route with another `axe` or `vue`, and the router reuses the component
+    // instead of building it again.
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((query) => {
-      this.view.set(readView(query.get('vue')));
+      this.readRendering(query);
     });
     const params = this.route.snapshot.queryParamMap;
+    if (this.axe() === 'stand') {
+      this.densiteStand.set(readDensiteStand(params.get('densite')));
+    } else if (this.axe() === 'personne') {
+      this.densitePersonne.set(readDensitePersonne(params.get('densite')));
+    }
+    this.triPersonne.set(readSort(params));
+    this.allColumns.set(params.get('colonnes') === 'toutes');
+    this.noRestOnly.set(params.get('sansRepos') === '1');
     this.filtre.set(params.get('q') ?? '');
     this.stand.set(params.get('stand') ?? '');
     this.animateur.set(params.get('animateur') ?? '');
+    this.emplacement.set(params.get('emplacement') ?? '');
+    this.typologie.set(params.get('typologie') ?? '');
     this.lignesRail.set(RailJourView.readLignes(params.get('lignes')));
     this.instantCarte.set(readInstant(params.get('t')));
     this.chargeCarte.set(readPorteeCharge(params.get('charge')));
@@ -373,12 +548,19 @@ export class JourneePage implements OnInit {
     // `jour`, the key of the four former screens, is retired once the day is
     // known by its date.
     keepViewInQueryParams(() => ({
+      axe: this.axe() === 'jour' ? null : this.axe(),
       date: this.dateParam(),
       jour: this.jours().length > 0 ? null : this.route.snapshot.queryParamMap.get('jour'),
-      vue: this.view() === 'calendrier' ? null : this.view(),
+      vue: this.viewParam(),
+      densite: this.densiteParam(),
+      ...sortQueryParams(this.axe() === 'personne' ? this.triPersonne() : NO_SORT),
+      colonnes: this.axe() === 'personne' && this.allColumns() ? 'toutes' : null,
+      sansRepos: this.axe() === 'personne' && this.noRestOnly() ? '1' : null,
       q: optionalParam(this.filtre()),
       stand: optionalParam(this.stand()),
       animateur: optionalParam(this.animateur()),
+      emplacement: optionalParam(this.emplacement()),
+      typologie: optionalParam(this.typologie()),
       lignes: this.lignesRail() === 'tous' ? null : this.lignesRail(),
       t: this.instantCarte() === null ? null : String(this.instantCarte()),
       charge: this.chargeCarte() === 'jour' ? null : this.chargeCarte(),
@@ -581,6 +763,61 @@ export class JourneePage implements OnInit {
     this.stand.set(ids[0] ?? '');
   }
 
+  protected choisirEmplacement(ids: string[]): void {
+    this.emplacement.set(ids[0] ?? '');
+  }
+
+  protected choisirTypologie(ids: string[]): void {
+    this.typologie.set(ids[0] ?? '');
+  }
+
+  /**
+   * The axis and the rendering an address names. One `vue` key, read by the
+   * axis it lands on: the other axes keep their own.
+   */
+  private readRendering(query: ParamMap): void {
+    this.axe.set(readAxe(query.get('axe')));
+    const requestedView = query.get('vue');
+    if (this.axe() === 'stand') {
+      this.standView.set(readStandView(requestedView));
+    } else if (this.axe() === 'personne') {
+      this.personView.set(readPersonView(requestedView));
+    } else if (this.axe() === 'jour') {
+      this.view.set(readView(requestedView));
+    }
+  }
+
+  /** Another axis: the filters, the day and the open seat stay, each axis keeps its own view. */
+  protected changeAxe(axe: PlanningAxe): void {
+    this.axe.set(axe);
+  }
+
+  /**
+   * A cell of a grid was opened: the page moves to its day — so « Par jour »
+   * lands there — and opens the Siège panel on its seat.
+   */
+  protected openSeatOnDay(request: { posteId: string; jour: string }): void {
+    this.navigation.select(request.jour);
+    this.openSeat({ posteId: request.posteId });
+  }
+
+  /** A tile of the treemap: that stand, on « Par jour », on the treemap's day when it had one. */
+  protected openStand(demande: { standId: string; date: string | null }): void {
+    this.stand.set(demande.standId);
+    if (demande.date) {
+      this.navigation.select(demande.date);
+    }
+    this.view.set('calendrier');
+    this.axe.set('jour');
+  }
+
+  /** The seats or hours of a game category: « Par stand », narrowed to it. */
+  protected showCategoryStands(typologie: string): void {
+    this.typologie.set(typologie);
+    this.standView.set('grille');
+    this.axe.set('stand');
+  }
+
   protected choisirAnimateur(ids: string[]): void {
     this.animateur.set(ids[0] ?? '');
   }
@@ -603,6 +840,13 @@ export class JourneePage implements OnInit {
     this.filtre.set('');
     this.stand.set('');
     this.animateur.set('');
+    this.emplacement.set('');
+    this.typologie.set('');
+    this.densiteStand.set('noms');
+    this.densitePersonne.set('detail');
+    this.triPersonne.set(NO_SORT);
+    this.allColumns.set(false);
+    this.noRestOnly.set(false);
     this.lignesRail.set('tous');
     this.instantCarte.set(null);
     this.chargeCarte.set('jour');

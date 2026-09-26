@@ -84,21 +84,23 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   // Same for the Planning page and its renderings of the day.
   { path: '/journee', marker: 'Planning', sheet: 'planning-barre' },
   { path: '/journee?vue=calendrier', sheet: 'jour-table' },
-  { path: '/hours', marker: 'Heures planifiées par animateur', sheet: 'hours-total-row' },
-  { path: '/equite', marker: 'Équité par animateur', sheet: 'equite-synthese-row' },
+  // Its three other axes, where six former screens went: each brings its own
+  // stylesheet, the shared grid's included.
+  { path: '/journee?axe=stand', marker: 'Couverture', sheet: 'planning-grille' },
+  { path: '/journee?axe=stand', sheet: 'planning-stand-pourvu' },
+  { path: '/journee?axe=stand&vue=treemap', sheet: 'repartition-toolbar' },
   {
-    path: '/typologies-planning',
-    marker: 'Qui tient quoi, et pour quel volume',
-    sheet: 'typologies-barre-piste',
+    path: '/journee?axe=personne',
+    marker: 'Heures pour la paie (CSV)',
+    sheet: 'planning-personne-travaille',
   },
+  { path: '/journee?axe=personne&vue=frise', sheet: 'personne-frise-ligne' },
+  { path: '/journee?axe=typologie', marker: 'Compétents', sheet: 'planning-typologie-table' },
   { path: '/ouvertures', marker: 'Horaires des stands', sheet: 'ouvertures-synthese' },
   { path: '/diagnostic?onglet=besoin', marker: 'Minimum retenu', sheet: 'staffing-summary' },
   { path: '/diagnostic?onglet=former', marker: 'À former' },
   { path: '/diagnostic?onglet=fragilite', marker: 'Fragilité', sheet: 'fragilite-message' },
   { path: '/jour-j', marker: 'Mode jour J', sheet: 'jour-j-entete' },
-  { path: '/repos', marker: 'Jours de repos', sheet: 'repos-toolbar' },
-  { path: '/heatmap', sheet: 'heatmap-toolbar' },
-  { path: '/repartition-heures', marker: 'Répartition des heures', sheet: 'repartition-toolbar' },
   { path: '/marge', marker: 'Marge disponible', sheet: 'marge-synthese' },
   // The former timeline lands on a fiche's planning section; its own sheet is gone.
   { path: '/animateurs/E2E-A?section=timeline', marker: 'Planning', sheet: 'timeline-day' },
@@ -280,7 +282,7 @@ test('un seul menu par moment du cycle, Débogage hors menu mais servi', async (
     await expect(navigation.getByRole('button', { name: new RegExp(`^${groupe}`) })).toBeVisible();
   }
   // Once hidden by the simple mode, now listed down their group.
-  await expect(navigation.getByRole('link', { name: 'Heatmap de charge' })).toBeVisible();
+  await expect(navigation.getByRole('link', { name: 'Compétences' })).toBeVisible();
   await expect(navigation.getByRole('link', { name: 'Historique' })).toBeVisible();
   await expect(navigation.getByRole('button', { name: /Menu simple|Menu avancé/ })).toHaveCount(0);
   await expect(navigation.getByRole('link', { name: 'Débogage' })).toHaveCount(0);

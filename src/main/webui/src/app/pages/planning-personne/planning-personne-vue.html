@@ -1,0 +1,123 @@
+<div class="planning-axe-barre">
+  @if (view() === 'grille') {
+    <mat-button-toggle-group [value]="densite()" (change)="densite.set($event.value)"
+                             aria-label="Contenu des cases" i18n-aria-label="@@planningPersonne.densite.label">
+      <mat-button-toggle value="detail" i18n="@@planningPersonne.densite.detail">Stand et heures</mat-button-toggle>
+      <mat-button-toggle value="compact" i18n="@@planningPersonne.densite.compact">Couleur seule</mat-button-toggle>
+    </mat-button-toggle-group>
+  }
+  <mat-checkbox [checked]="noRestOnly()" (change)="noRestOnly.set($event.checked)"
+                i18n="@@repos.filter.sansRepos">Seulement sans jour de repos</mat-checkbox>
+  @if (view() === 'grille' && tableau().vides.length > 0) {
+    <mat-checkbox [checked]="allColumns()" (change)="allColumns.set($event.checked)"
+                  i18n="@@planningPersonne.colonnesVides">Colonnes toujours vides ({{ tableau().vides.length }})</mat-checkbox>
+  }
+  <span class="planning-personne-espace"></span>
+  <button matButton type="button" [disabled]="exportBusy() || !planning()" (click)="exporterHeures()">
+    <mat-icon>download</mat-icon>
+    <ng-container i18n="@@planningPersonne.csvHeures">Heures pour la paie (CSV)</ng-container>
+  </button>
+  <button matButton type="button" [disabled]="exportBusy()" (click)="exporterEquite()">
+    <mat-icon>download</mat-icon>
+    <ng-container i18n="@@planningPersonne.csvEquite">Équité (CSV)</ng-container>
+  </button>
+</div>
+
+<ul class="planning-grille-legende">
+  <li><span class="planning-grille-pastille planning-personne-travaille"></span><ng-container i18n="@@planningPersonne.legende.travaille">travaille</ng-container></li>
+  <li><span class="planning-grille-pastille planning-personne-soiree"></span>
+    @if (heureSoiree()) {
+      <a routerLink="/parametres" i18n="@@planningPersonne.legende.soiree">soirée, dès {{ heureSoiree() }}</a>
+    } @else {
+      <ng-container i18n="@@planningPersonne.legende.soireeSansHeure">soirée</ng-container>
+    }
+  </li>
+  <li><span class="planning-grille-pastille planning-personne-repos"></span><ng-container i18n="@@repos.legend.repos">Jour de repos</ng-container></li>
+  <li><span class="planning-grille-pastille planning-personne-indisponible"></span><ng-container i18n="@@repos.legend.indisponible">Indisponible</ng-container></li>
+  <li><span class="planning-grille-pastille planning-personne-conflit"></span><ng-container i18n="@@planningPersonne.legende.conflit">affecté un jour déclaré indisponible</ng-container></li>
+</ul>
+
+@if (chargement()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+<app-status-message [text]="erreur()" tone="error" />
+<app-output-panel [text]="output()" />
+
+@if (tableau().lignes.length === 0) {
+  @if (planning()?.postes?.length) {
+    <p class="empty-hint" i18n="@@repos.emptyFiltre">Aucun animateur ne correspond au filtre.</p>
+  } @else {
+    <p class="empty-hint" i18n="@@repos.empty">Aucune donnée de planning disponible pour le moment. Lancez une résolution depuis la page Solveur.</p>
+  }
+} @else if (view() === 'frise') {
+  <div class="personne-frise">
+    <div class="personne-frise-entete" aria-hidden="true">
+      <span class="personne-frise-nom"></span>
+      <span class="personne-frise-compteurs"></span>
+      <span class="personne-frise-regle">
+        @for (jour of colonnesJours(); track jour.key) {
+          <span class="personne-frise-graduation" [class.personne-frise-semaine]="jour.debutSemaine"
+                [class.personne-frise-weekend]="jour.weekEnd">
+            @if ($first || jour.debutSemaine) {
+              <span class="personne-frise-graduation-label">{{ jour.label }}</span>
+            }
+          </span>
+        }
+      </span>
+    </div>
+    <ul class="personne-frise-lignes">
+      @for (ligne of tableau().lignes; track ligne.id) {
+        <li class="personne-frise-ligne" [class.planning-personne-sans-repos]="ligne.repos.sansRepos">
+          <a class="personne-frise-nom" [routerLink]="['/animateurs', ligne.animateurId]"
+             [title]="ficheLabel">{{ ligne.nom }}</a>
+          <span class="personne-frise-compteurs">{{ ligne.repos.joursRepos }} / {{ ligne.repos.serieMax }}</span>
+          <span class="personne-frise-barre" role="img" [attr.aria-label]="ligne.repos.resume">
+            @for (segment of ligne.repos.segments; track segment.premierJour) {
+              <span
+                class="personne-frise-segment"
+                [class.planning-personne-travaille]="segment.statut === 'travaille'"
+                [class.planning-personne-repos]="segment.statut === 'repos'"
+                [class.planning-personne-indisponible]="segment.statut === 'indisponible'"
+                [class.planning-personne-conflit]="segment.conflit"
+                [style.flex-grow]="segment.jours"
+                [title]="segment.tooltip"
+              ></span>
+            }
+          </span>
+        </li>
+      }
+    </ul>
+  </div>
+} @else {
+  <app-planning-grille
+    [class]="'planning-personne-densite-' + densite()"
+    caption="Par personne : une ligne par animateur, une colonne par journée, le stand et les heures de chaque jour, puis ce que chacun a reçu"
+    i18n-caption="@@planningPersonne.caption"
+    header="Animateur"
+    i18n-header="@@repos.column.animateur"
+    [jours]="colonnesJours()"
+    [lignes]="tableau().lignes"
+    [syntheses]="tableau().colonnes"
+    [pied]="tableau().pied"
+    [jourMarque]="jourMarque()"
+    [triable]="true"
+    [(tri)]="tri"
+    (caseActivee)="open($event)"
+  >
+    <ng-template appGrilleEntete let-ligne>
+      <a class="planning-grille-lien" [routerLink]="['/animateurs', personne(ligne).animateurId]"
+         [title]="ficheLabel">{{ personne(ligne).nom }}</a>
+      @if (personne(ligne).repos.sansRepos) {
+        <mat-icon inline class="planning-personne-alerte" aria-hidden="false" [attr.aria-label]="noRestLabel"
+                  [title]="noRestLabel">priority_high</mat-icon>
+      }
+    </ng-template>
+    <ng-template appGrilleCase let-ligne let-index="index">
+      @let cellule = cellOf(ligne, index);
+      @if (densite() === 'detail' && cellule.stands) {
+        <span class="planning-personne-stand">{{ cellule.stands }}</span>
+        <span class="planning-personne-heures">{{ cellule.heures }}</span>
+      }
+    </ng-template>
+  </app-planning-grille>
+}
