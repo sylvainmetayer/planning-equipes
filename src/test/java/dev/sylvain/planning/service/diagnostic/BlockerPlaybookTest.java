@@ -7,12 +7,15 @@ import dev.sylvain.planning.service.diagnostic.BlockerPlaybook.ActionType;
 import dev.sylvain.planning.service.diagnostic.BlockerPlaybook.Context;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.ConstraintCatalog.ConstraintDefinition;
+import dev.sylvain.planning.solver.ConstraintCatalog.Lever;
 import dev.sylvain.planning.solver.ConstraintFloorRules;
+import dev.sylvain.planning.solver.ConstraintParameters;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -33,6 +36,13 @@ class BlockerPlaybookTest {
 
     private static final Context SHORTFALL = new Context(
             42L, LocalDate.of(2026, 7, 12), List.of("S1"), List.of("STRATEGIE"), List.of(), List.of(), false);
+
+    /** A breach on a seat somebody holds: a referent missing where A1 stands alone. */
+    private static final Context HELD = new Context(
+            42L, LocalDate.of(2026, 7, 12), List.of("S1"), List.of("STRATEGIE"), List.of(), List.of("A1"), false);
+
+    /** What a sentence says when it speaks of a rule's weight, in the organiser's words or the technical ones. */
+    private static final Pattern WEIGHT = Pattern.compile("\\b(importance|poids)\\b", Pattern.CASE_INSENSITIVE);
 
     @Test
     void everyCauseTypeHasAtLeastOneAction() {
@@ -55,18 +65,102 @@ class BlockerPlaybookTest {
                         .isNotEmpty());
     }
 
+    /**
+     * The rule's own advice on its first gesture, word for word — unless that
+     * advice offers the weight as a way out, which the first gesture never is:
+     * the button then keeps its own sentence rather than another one's.
+     */
     @Test
-    void theExplanationOfARuleIsItsRemediationWordForWord() {
+    void theFirstGestureCarriesTheRulesAdviceUnlessItSpeaksOfTheWeight() {
         assertThat(ConstraintCatalog.definitions()).allSatisfy(definition -> {
-            assertThat(BlockerPlaybook.forRule(definition, null).getFirst().explication())
-                    .as(definition.name())
-                    .isEqualTo(definition.remediation());
-            assertThat(BlockerPlaybook.forRule(definition, "/animateurs")
-                            .getFirst()
-                            .explication())
-                    .as(definition.name() + " as a floor")
-                    .isEqualTo(definition.remediation());
+            for (String floor : new String[] {null, "/animateurs"}) {
+                ActionType first = BlockerPlaybook.forRule(definition, floor).getFirst();
+                if (WEIGHT.matcher(definition.remediation()).find()) {
+                    assertThat(first.explication())
+                            .as(definition.name() + " / " + floor)
+                            .isNotEqualTo(definition.remediation());
+                } else {
+                    assertThat(first.explication())
+                            .as(definition.name() + " / " + floor)
+                            .isEqualTo(definition.remediation());
+                }
+            }
         });
+    }
+
+    /** No gesture but the lowering is explained by the lowering: whatever a rule's advice says, « poids » stays on its button. */
+    @Test
+    void onlyTheLoweringSpeaksOfTheWeight() {
+        assertThat(ConstraintCatalog.definitions()).allSatisfy(definition -> {
+            for (String floor : new String[] {null, "/animateurs"}) {
+                for (Context context : List.of(Context.NONE, SHORTFALL, HELD)) {
+                    for (Integer weight : new Integer[] {null, ConstraintCatalog.POIDS_NORMAL}) {
+                        assertThat(BlockerPlaybook.forRule(definition, floor, context, weight))
+                                .as(definition.name())
+                                .filteredOn(action ->
+                                        WEIGHT.matcher(action.explication()).find())
+                                .allSatisfy(action ->
+                                        assertThat(action.code()).isEqualTo(BlockerPlaybook.CODE_LOWER_WEIGHT));
+                    }
+                }
+            }
+        });
+    }
+
+    /** At the lowest weight there is nothing left to lower: the button that led to a field reading 1 is not offered. */
+    @Test
+    void aRuleAlreadyAtTheLowestImportanceIsNotOfferedToLowerIt() {
+        List<ConstraintDefinition> weighed = ConstraintCatalog.definitions().stream()
+                .filter(definition -> definition.niveau() != ConstraintCatalog.Niveau.HARD)
+                .toList();
+
+        assertThat(weighed).isNotEmpty().allSatisfy(definition -> {
+            assertThat(BlockerPlaybook.forRule(definition, null, SHORTFALL, ConstraintCatalog.POIDS_FAIBLE))
+                    .as(definition.name())
+                    .isNotEmpty()
+                    .extracting(ActionType::code)
+                    .doesNotContain(BlockerPlaybook.CODE_LOWER_WEIGHT);
+            assertThat(BlockerPlaybook.forRule(definition, null, SHORTFALL, ConstraintCatalog.POIDS_NORMAL)
+                            .getLast())
+                    .as(definition.name())
+                    .satisfies(action -> {
+                        assertThat(action.code()).isEqualTo(BlockerPlaybook.CODE_LOWER_WEIGHT);
+                        assertThat(action.explication()).contains("cède devant les autres");
+                    });
+        });
+    }
+
+    /** Every lever of the catalogue has a screen: one added to the enum without its line would be a card offering nothing. */
+    @Test
+    void everyLeverOpensAScreen() {
+        assertThat(BlockerPlaybook.leversWithAScreen()).isEqualTo(EnumSet.allOf(Lever.class));
+    }
+
+    /**
+     * A breach on a seat one person holds is about handing that seat over:
+     * the panel opens on their place, never on a free one of the timeslot.
+     * Several holders name no one, and the question stays about a hole.
+     */
+    @Test
+    void aBreachOnAHeldSeatOffersToReplaceItsHolder() {
+        ConstraintDefinition referent = ConstraintCatalog.PAR_NOM.get("standComplexeAvecReferent");
+
+        assertThat(BlockerPlaybook.forRule(referent, null, HELD).getFirst()).satisfies(action -> {
+            assertThat(action.code()).isEqualTo(BlockerPlaybook.CODE_BENCH);
+            assertThat(action.libelle()).isEqualTo("Qui peut remplacer ?");
+            assertThat(action.route()).isEqualTo("/journee");
+            assertThat(action.parametres())
+                    .containsEntry("creneau", "42")
+                    .containsEntry("stand", "S1")
+                    .containsEntry("animateur", "A1");
+        });
+        Context twoHolders = new Context(
+                42L, LocalDate.of(2026, 7, 12), List.of("S1"), List.of(), List.of(), List.of("A1", "A2"), false);
+        assertThat(BlockerPlaybook.forRule(referent, null, twoHolders).getFirst())
+                .satisfies(action -> {
+                    assertThat(action.libelle()).isEqualTo("Qui peut tenir ce siège ?");
+                    assertThat(action.parametres()).doesNotContainKey("animateur");
+                });
     }
 
     @Test
@@ -76,27 +170,103 @@ class BlockerPlaybookTest {
         assertThat(actions).hasSizeBetween(1, 4);
         ActionType first = actions.getFirst();
         assertThat(first.code()).isEqualTo(BlockerPlaybook.CODE_BENCH);
-        assertThat(first.libelle()).isEqualTo("Voir qui pourrait venir");
+        assertThat(first.libelle()).isEqualTo("Qui peut tenir ce siège ?");
         assertThat(first.route()).isEqualTo("/journee");
-        assertThat(first.parametres()).containsEntry("creneau", "42").doesNotContainKey("onglet");
+        assertThat(first.parametres())
+                .containsEntry("creneau", "42")
+                .containsEntry("stand", "S1")
+                .doesNotContainKey("onglet");
     }
 
     @Test
-    void aQualityRuleProposesToLowerItsWeightOnItsHighlightedLine() {
-        List<ConstraintDefinition> dosables = ConstraintCatalog.definitions().stream()
-                .filter(ConstraintDefinition::dosable)
+    void aWeighedRuleEndsOnLoweringItsImportanceOnItsLine() {
+        List<ConstraintDefinition> weighed = ConstraintCatalog.definitions().stream()
+                .filter(definition -> definition.niveau() != ConstraintCatalog.Niveau.HARD)
                 .toList();
 
-        assertThat(dosables)
+        assertThat(weighed)
                 .isNotEmpty()
-                .allSatisfy(definition -> assertThat(BlockerPlaybook.forRule(definition, null))
+                .allSatisfy(definition -> assertThat(
+                                BlockerPlaybook.forRule(definition, null).getLast())
                         .as(definition.name())
-                        .anySatisfy(action -> {
+                        .satisfies(action -> {
                             assertThat(action.code()).isEqualTo(BlockerPlaybook.CODE_LOWER_WEIGHT);
-                            assertThat(action.libelle()).isEqualTo("Baisser son poids");
+                            assertThat(action.libelle()).isEqualTo("Baisser l'importance");
                             assertThat(action.route()).isEqualTo("/regles");
-                            assertThat(action.parametres()).containsEntry("regle", definition.name());
+                            assertThat(action.parametres())
+                                    .containsEntry("onglet", "qualite")
+                                    .containsEntry("regle", definition.name());
                         }));
+    }
+
+    /**
+     * The Problèmes screen renders what the catalogue says: a medium or soft
+     * rule whose only gesture is its weight is a card telling the organiser to
+     * stop caring, never what to fix. Every one of them names a lever that
+     * changes the plan or the referential, and that lever comes first.
+     */
+    @Test
+    void noWeighedRuleOffersItsWeightAsItsOnlyGesture() {
+        assertThat(ConstraintCatalog.definitions())
+                .filteredOn(definition -> definition.niveau() != ConstraintCatalog.Niveau.HARD)
+                .allSatisfy(definition -> {
+                    assertThat(definition.levers()).as(definition.name()).isNotEmpty();
+                    List<ActionType> actions = BlockerPlaybook.forRule(definition, null, SHORTFALL);
+                    assertThat(actions.getFirst().code())
+                            .as(definition.name())
+                            .isNotEqualTo(BlockerPlaybook.CODE_LOWER_WEIGHT);
+                    assertThat(actions)
+                            .as(definition.name())
+                            .filteredOn(action -> action.code().equals(BlockerPlaybook.CODE_LOWER_WEIGHT))
+                            .hasSize(1);
+                });
+    }
+
+    /** « Régler le plafond » and « Régler les seuils » open a line that has something to set. */
+    @Test
+    void aCapOrThresholdLeverOnlyOnARuleThatReadsASetting() {
+        assertThat(ConstraintCatalog.definitions())
+                .filteredOn(definition -> definition.levers().contains(Lever.CAP)
+                        || definition.levers().contains(Lever.THRESHOLD))
+                .isNotEmpty()
+                .allSatisfy(definition -> assertThat(ConstraintParameters.declarations())
+                        .as(definition.name())
+                        .containsKey(definition.name()));
+    }
+
+    /** The missing referent: the seat first, then the competence, then the stand's fiche, the weight last. */
+    @Test
+    void theMissingReferentOffersTheSeatTheSkillAndTheStandBeforeTheWeight() {
+        ConstraintDefinition referent = ConstraintCatalog.PAR_NOM.get("standComplexeAvecReferent");
+
+        assertThat(BlockerPlaybook.forRule(referent, null, SHORTFALL))
+                .extracting(ActionType::code)
+                .containsExactly(
+                        BlockerPlaybook.CODE_BENCH,
+                        BlockerPlaybook.CODE_ADD_SKILL,
+                        BlockerPlaybook.CODE_STAND_PROFILE,
+                        BlockerPlaybook.CODE_LOWER_WEIGHT);
+        assertThat(BlockerPlaybook.forRule(referent, null, SHORTFALL))
+                .filteredOn(action -> action.code().equals(BlockerPlaybook.CODE_STAND_PROFILE))
+                .singleElement()
+                .satisfies(action -> {
+                    assertThat(action.route()).isEqualTo("/stands");
+                    assertThat(action.parametres()).containsEntry("edit", "S1");
+                });
+    }
+
+    /** A hard rule is held, not weighed: its rule link opens the legal tab, and nothing lowers it. */
+    @Test
+    void aHardRuleNeverOffersItsWeight() {
+        ConstraintDefinition dur = ConstraintCatalog.PAR_NOM.get("maxJoursConsecutifsTravaillesDur");
+
+        assertThat(BlockerPlaybook.forRule(dur, null))
+                .extracting(ActionType::code)
+                .doesNotContain(BlockerPlaybook.CODE_LOWER_WEIGHT);
+        assertThat(BlockerPlaybook.forRule(dur, null))
+                .filteredOn(action -> action.code().equals(BlockerPlaybook.CODE_SEE_RULE))
+                .singleElement()
+                .satisfies(action -> assertThat(action.parametres()).containsEntry("onglet", "legal"));
     }
 
     @Test

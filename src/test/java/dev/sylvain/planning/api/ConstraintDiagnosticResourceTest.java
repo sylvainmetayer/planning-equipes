@@ -135,11 +135,14 @@ class ConstraintDiagnosticResourceTest {
         assertThat(diagnostic.getString(souhaits + ".plancher.lien")).isEqualTo("/animateurs");
         assertThat(diagnostic.getBoolean(souhaits + ".actif")).isTrue();
         // « Que faire ? » starts with the data to enter, on the screen that
-        // enters it, and explains itself with the rule's own advice.
+        // enters it, and explains itself in its own words: the rule's advice
+        // ends on lowering its importance, which is the last button's to say.
         assertThat(diagnostic.getString(souhaits + ".actions[0].code")).isEqualTo("SAISIR_DONNEE_MANQUANTE");
         assertThat(diagnostic.getString(souhaits + ".actions[0].route")).isEqualTo("/animateurs");
+        assertThat(diagnostic.getString(souhaits + ".remediation")).contains("importance");
         assertThat(diagnostic.getString(souhaits + ".actions[0].explication"))
-                .isEqualTo(diagnostic.getString(souhaits + ".remediation"));
+                .contains("faute de donnée")
+                .doesNotContain("importance");
         assertThat(diagnostic.getList(souhaits + ".actions.code", String.class)).contains("BAISSER_POIDS");
 
         String equilibre = "contraintes.find { it.name == 'equilibrerCharge' }";

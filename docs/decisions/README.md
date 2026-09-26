@@ -81,6 +81,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0055](0055-une-seule-soiree-la-nuit-de-la-paie-a-part.md) | Une seule soirée dans l'application, l'heure réglable que lisent les rapports des heures et d'équité ; la borne fixe de 22 h ne survit que comme la « Nuit (paie) » | Accepté · voisine de 0048 |
 | [0056](0056-indisponible-ce-jour-ecrit-toujours-le-jour-indisponible.md) | « Indisponible ce jour », un clic sur la frise de la fiche animateur, écrit toujours le jour indisponible et libère dans le même appel ses sièges de ce jour dans le planning enregistré — un siège commencé ou verrouillé gardé en place, et nommé ; l'annulation ne rend aucun siège | Accepté · voisine de 0044 et 0054 |
 | [0057](0057-importance-d-une-regle-en-trois-positions.md) | L'importance d'une règle de qualité se règle en trois positions — faible 1, normale 5, forte 25 — et l'échelle des poids est multipliée par cinq, défauts, poids stockés et scénarios livrés compris | Accepté · révise l'échelle de 0025 et 0045 |
+| [0064](0064-le-geste-d-une-regle-en-defaut-vient-du-catalogue.md) | Le geste qui corrige une règle en défaut est un levier typé porté par `ConstraintCatalog` et traduit en écran par le playbook ; la baisse du poids n'est jamais un levier, seulement le dernier geste de toute règle pesée, masqué au plus bas | Accepté · voisine de 0054 |
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,

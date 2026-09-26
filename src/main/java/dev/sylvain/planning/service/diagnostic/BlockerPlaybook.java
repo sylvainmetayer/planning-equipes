@@ -2,31 +2,44 @@ package dev.sylvain.planning.service.diagnostic;
 
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.ConstraintCatalog.ConstraintDefinition;
+import dev.sylvain.planning.solver.ConstraintCatalog.Lever;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 
 /**
  * What to do about a blocking problem — the playbook between « this timeslot
  * is short » and « the screen where everything is fixed ».
  *
  * <p>Each kind of blocking cause found before a solve, and each rule of the
- * catalogue found in default after one, is tied to one to four <b>action
+ * catalogue found in default after one, is tied to a few <b>action
  * types</b>, ordered from the most likely gesture to the least. An action is a
  * <b>navigation, never a write</b>: its button opens the screen that makes the
  * gesture, already positioned on the object in question through the query
  * parameters that screen reads (ADR 0012), and that screen keeps its own
  * previews and guards. The playbook advises; the organiser decides.</p>
  *
- * <p>The order is fixed and reads in this file — no relevance score, no
- * heuristic. The explanation of a rule's first action is its
+ * <p>Which gestures move a rule is the catalogue's to say
+ * ({@link ConstraintDefinition#levers()}); this class says where each gesture
+ * is made. A medium or soft rule always ends on the lowering of its weight —
+ * after the gestures that change the plan, never instead of them, and never
+ * once that weight is already at its lowest.</p>
+ *
+ * <p>The order is fixed and reads in the catalogue and in this file — no
+ * relevance score, no heuristic. The explanation of a rule's first action is its
  * {@link ConstraintDefinition#remediation()} word for word, so the same rule
- * never gets two different pieces of advice on two screens.</p>
+ * never gets two different pieces of advice on two screens — unless that
+ * advice offers the weight as a way out: the first gesture is never the
+ * lowering, and a sentence telling it to lower the importance would explain a
+ * gesture the button does not make. It then keeps its own sentence.</p>
  *
  * <p>The tables are complete by test ({@code BlockerPlaybookTest}): a cause
  * type or a rule without an action fails the build, the mechanism
@@ -43,6 +56,17 @@ public final class BlockerPlaybook {
 
     /** Query parameter naming the rule an action opens its screen on. */
     private static final String PARAM_REGLE = "regle";
+
+    /** Query parameter naming the tab of the rules screen a rule sits on. */
+    private static final String PARAM_ONGLET = "onglet";
+
+    /**
+     * What a sentence says when it speaks of a rule's weight — the organiser's
+     * « importance », the technical « poids ». Only the lowering's own button
+     * may be explained that way.
+     */
+    private static final Pattern SPEAKS_OF_WEIGHT =
+            Pattern.compile("\\b(importance|poids)\\b", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
 
     /**
      * One action type, instantiated on a problem.
@@ -99,8 +123,11 @@ public final class BlockerPlaybook {
     static final String ROUTE_LOCKS = "/consignes-solveur";
 
     static final String TAB_LOCKS = "verrouillages";
-    static final String ROUTE_CONSTRAINTS = "/regles";
+    /** « Règles du planning »: one line per rule, on the tab of its level. */
+    static final String ROUTE_RULES = "/regles";
+
     static final String ROUTE_DAY = "/journee";
+    static final String ROUTE_STANDS = "/stands";
     static final String ROUTE_TIMESLOTS = "/creneaux";
     static final String ROUTE_TYPOLOGIES = "/typologies";
 
@@ -116,7 +143,11 @@ public final class BlockerPlaybook {
     public static final String CODE_LIFT_LOCK = "LEVER_VERROU";
     public static final String CODE_REPAIR = "PROPOSER_REPARATION";
     public static final String CODE_LOWER_WEIGHT = "BAISSER_POIDS";
-    public static final String CODE_ADJUST_WEIGHT = "AJUSTER_POIDS";
+    public static final String CODE_STAND_PROFILE = "OUVRIR_FICHE_STAND";
+    public static final String CODE_CAP = "REGLER_PLAFOND";
+    public static final String CODE_THRESHOLD = "REGLER_SEUILS";
+    public static final String CODE_WORKLOAD = "VOIR_CHARGE";
+    public static final String CODE_LOCK = "VERROUILLER";
     public static final String CODE_ENTER_MISSING_DATA = "SAISIR_DONNEE_MANQUANTE";
     public static final String CODE_REVIEW_ADJUSTMENTS = "REVOIR_AJUSTEMENTS";
     public static final String CODE_REVIEW_PROFILES = "REVOIR_FICHES";
@@ -192,27 +223,44 @@ public final class BlockerPlaybook {
 
     // ---- rules found in default after a solve -----------------------------
 
-    /** The rules whose lever is specific, first gesture first. */
-    private static final Map<String, List<BiFunction<ConstraintDefinition, Context, ActionType>>> BY_RULE = Map.of(
-            "posteDoitEtrePourvu",
-            List.of(
-                    (definition, context) -> benchAction(context),
-                    (definition, context) -> addSkillAction(context),
-                    (definition, context) -> lowerStaffingAction(context)),
-            "animateurDisponible",
-            List.of((definition, context) -> reviewProfilesAction(), (definition, context) -> repairAction(context)),
-            "pasDeChevauchementHoraire",
-            List.of((definition, context) -> repairAction(context)),
-            "plafondCreneauxParTypologie",
-            List.of((definition, context) -> typologieCapAction(), (definition, context) -> addSkillAction(context)),
-            "coupureRepasObligatoire",
-            List.of((definition, context) -> mealWindowAction(), (definition, context) -> shortenVacationAction()),
-            "maxJoursConsecutifsTravaillesDur",
-            List.of((definition, context) -> benchAction(context), (definition, context) -> ruleAction(definition)));
+    /**
+     * What each lever of the catalogue ({@link Lever}) opens. The catalogue
+     * says which gestures move a rule and in what order; this says where each
+     * one is made, positioned on the rule's breaches. Every lever has its
+     * line ({@code BlockerPlaybookTest}): a lever added to the enum without
+     * one would be a gesture no card can render.
+     */
+    private static final Map<Lever, BiFunction<ConstraintDefinition, Context, ActionType>> BY_LEVER = byLever();
+
+    private static Map<Lever, BiFunction<ConstraintDefinition, Context, ActionType>> byLever() {
+        Map<Lever, BiFunction<ConstraintDefinition, Context, ActionType>> byLever = new EnumMap<>(Lever.class);
+        byLever.put(Lever.SEAT, (definition, context) -> benchAction(context));
+        byLever.put(Lever.SKILL, (definition, context) -> addSkillAction(context));
+        byLever.put(Lever.STAND_PROFILE, (definition, context) -> standProfileAction(context));
+        byLever.put(Lever.STAFFING, (definition, context) -> lowerStaffingAction(context));
+        byLever.put(Lever.CAP, (definition, context) -> capAction(definition));
+        byLever.put(Lever.THRESHOLD, (definition, context) -> thresholdAction(definition));
+        byLever.put(Lever.REPAIR, (definition, context) -> repairAction(context));
+        byLever.put(Lever.GAME_CATEGORY_CAP, (definition, context) -> typologieCapAction());
+        byLever.put(Lever.ANIMATEUR_PROFILES, (definition, context) -> reviewProfilesAction(context));
+        byLever.put(Lever.WORKLOAD, (definition, context) -> workloadAction());
+        byLever.put(Lever.LOCK, (definition, context) -> lockAction(context));
+        byLever.put(Lever.ADJUSTMENTS, (definition, context) -> reviewAdjustmentsAction(List.of()));
+        byLever.put(Lever.MEAL_WINDOW, (definition, context) -> mealWindowAction());
+        byLever.put(Lever.SHIFT, (definition, context) -> shortenVacationAction());
+        byLever.put(Lever.RULE, (definition, context) -> ruleAction(definition));
+        return Collections.unmodifiableMap(byLever);
+    }
+
+    /** The levers the playbook knows where to make, for the exhaustiveness test. */
+    static Set<Lever> leversWithAScreen() {
+        return BY_LEVER.keySet();
+    }
 
     /**
-     * The rules without a lever of their own, by category. Every category of
-     * the catalogue has a line; none proposes switching a protected rule off.
+     * The rules the catalogue gives no lever of their own, by category — hard
+     * rules all, whose category answers for them. Every category holding such
+     * a rule has a line; none proposes switching a protected rule off.
      */
     private static final Map<String, List<BiFunction<ConstraintDefinition, Context, ActionType>>> BY_CATEGORY = Map.of(
             "Affectation",
@@ -228,15 +276,21 @@ public final class BlockerPlaybook {
             "Contraintes ad hoc",
             List.of((definition, context) -> reviewAdjustmentsAction(List.of())),
             "Verrouillage du planning",
-            List.of((definition, context) -> liftLockAction(context)),
-            ConstraintCatalog.CATEGORIE_QUALITE,
-            List.of((definition, context) -> lowerWeightAction(definition)),
-            "Préférences",
-            List.of((definition, context) -> adjustWeightAction(definition)));
+            List.of((definition, context) -> liftLockAction(context)));
 
     /** The actions of one rule of the catalogue in default, on breaches still to come, positioned on nothing. */
     public static List<ActionType> forRule(ConstraintDefinition definition, String floorLink) {
         return forRule(definition, floorLink, Context.NONE);
+    }
+
+    /**
+     * The actions of one rule of the catalogue in default, its weight not
+     * known — the lowering is then offered to a weighed rule whatever it
+     * weighs. A hard rule, the only kind the assistant is told about, has
+     * none to offer.
+     */
+    public static List<ActionType> forRule(ConstraintDefinition definition, String floorLink, Context position) {
+        return forRule(definition, floorLink, position, null);
     }
 
     /**
@@ -252,17 +306,19 @@ public final class BlockerPlaybook {
      *                  {@code frozenPast} says every breach sits on seats
      *                  already started (ADR 0044), and the one action offered
      *                  is then the one that says so
-     * @return empty for a rule of a category the playbook has no line for
+     * @param weight    what the rule weighs in this edition; at
+     *                  {@link ConstraintCatalog#POIDS_FAIBLE} — the lowest
+     *                  weight there is — nothing is left to lower, and the
+     *                  lowering is not offered. {@code null} when not known
+     * @return the catalogue's levers of the rule, then — for a medium or soft
+     *         rule above the lowest weight — the lowering of its weight,
+     *         always last; empty for a rule neither the catalogue nor its
+     *         category gives a gesture
      */
-    public static List<ActionType> forRule(ConstraintDefinition definition, String floorLink, Context position) {
-        // Map.of refuses a null key even on get(): a definition missing its
-        // name or category finds no line rather than throwing.
-        List<BiFunction<ConstraintDefinition, Context, ActionType>> templates =
-                definition.name() == null ? null : BY_RULE.get(definition.name());
-        if (templates == null && definition.categorie() != null) {
-            templates = BY_CATEGORY.get(definition.categorie());
-        }
-        if (templates == null) {
+    public static List<ActionType> forRule(
+            ConstraintDefinition definition, String floorLink, Context position, Integer weight) {
+        List<BiFunction<ConstraintDefinition, Context, ActionType>> templates = templatesOf(definition, weight);
+        if (templates.isEmpty()) {
             return List.of();
         }
         Context target = position == null ? Context.NONE : position;
@@ -286,13 +342,47 @@ public final class BlockerPlaybook {
             }
         }
         // The rule's own advice, word for word, on its first gesture: never two
-        // different pieces of advice for the same rule on two screens.
+        // different pieces of advice for the same rule on two screens. Unless
+        // it offers the weight as a way out — the first gesture never lowers
+        // it, and its button would then be explained by another one's words.
         ActionType first = actions.getFirst();
-        actions.set(
-                0,
-                new ActionType(
-                        first.code(), first.libelle(), definition.remediation(), first.route(), first.parametres()));
+        String advice = definition.remediation();
+        if (fitsTheGesture(advice, first)) {
+            actions.set(0, new ActionType(first.code(), first.libelle(), advice, first.route(), first.parametres()));
+        }
         return List.copyOf(actions);
+    }
+
+    /** Whether a sentence may explain this gesture: only the lowering's own button speaks of the weight. */
+    static boolean fitsTheGesture(String explanation, ActionType action) {
+        return action.code().equals(CODE_LOWER_WEIGHT)
+                || explanation == null
+                || !SPEAKS_OF_WEIGHT.matcher(explanation).find();
+    }
+
+    /**
+     * The gestures of a rule, in order: its levers from the catalogue, or its
+     * category's line when it has none; then, for a rule that is weighed
+     * rather than held and still above the lowest weight, the lowering of
+     * that weight — the last resort, never the only one
+     * ({@code BlockerPlaybookTest}).
+     */
+    private static List<BiFunction<ConstraintDefinition, Context, ActionType>> templatesOf(
+            ConstraintDefinition definition, Integer weight) {
+        List<BiFunction<ConstraintDefinition, Context, ActionType>> templates = new ArrayList<>();
+        for (Lever lever : definition.levers()) {
+            templates.add(BY_LEVER.get(lever));
+        }
+        // Map.of refuses a null key even on get(): a definition missing its
+        // category finds no line rather than throwing.
+        if (templates.isEmpty() && definition.categorie() != null) {
+            templates.addAll(BY_CATEGORY.getOrDefault(definition.categorie(), List.of()));
+        }
+        boolean lowerable = weight == null || weight > ConstraintCatalog.POIDS_FAIBLE;
+        if (!templates.isEmpty() && definition.niveau() != ConstraintCatalog.Niveau.HARD && lowerable) {
+            templates.add((rule, context) -> lowerWeightAction(rule));
+        }
+        return templates;
     }
 
     /** Every action the playbook can produce, bare — what the route test reads. */
@@ -315,19 +405,34 @@ public final class BlockerPlaybook {
     // ---- the action types themselves ----------------------------------------
 
     /**
-     * The Journée opened on the timeslot's day, its Siège panel on a free seat
-     * of it: « Qui peut tenir ce siège ? » lists who is off duty then, and
-     * places one of them. The page resolves {@code creneau} to a seat itself —
-     * the bench used to be a tab of the Diagnostic, reached with the same key.
+     * The Journée opened on the timeslot's day, its Siège panel on the seat in
+     * question: « Qui peut tenir ce siège ? » lists who is off duty then. The
+     * page resolves {@code creneau} to a seat itself — the bench used to be a
+     * tab of the Diagnostic, reached with the same key. When the breach names
+     * one holder, {@code animateur} says it is that person's seat, to be
+     * handed over, and the panel opens on it rather than on a free one;
+     * without, the question is about a hole. The Diagnostic itself opens the
+     * same question in place, from these very parameters.
      */
     private static ActionType benchAction(Context context) {
         Map<String, String> params = new LinkedHashMap<>();
         if (context.creneauId() != null) {
             params.put("creneau", String.valueOf(context.creneauId()));
+            putStand(params, context);
+            if (context.animateurIds().size() == 1) {
+                params.put("animateur", context.animateurIds().getFirst());
+                return new ActionType(
+                        CODE_BENCH,
+                        "Qui peut remplacer ?",
+                        "Le panneau du siège s'ouvre sur la place que cette personne tient : « Remplacer » y liste"
+                                + " qui pourrait la reprendre.",
+                        ROUTE_DAY,
+                        params);
+            }
         }
         return new ActionType(
                 CODE_BENCH,
-                "Voir qui pourrait venir",
+                "Qui peut tenir ce siège ?",
                 "Le panneau du siège liste qui n'est de service nulle part sur ce créneau, ce qui l'empêche de"
                         + " tenir la place, et place la personne choisie.",
                 ROUTE_DAY,
@@ -337,7 +442,7 @@ public final class BlockerPlaybook {
     private static ActionType addSkillAction(Context context) {
         return new ActionType(
                 CODE_ADD_SKILL,
-                "Ajouter une compétence",
+                "Saisir la compétence",
                 "Faire apprécier la typologie du stand par d'autres animateurs élargit le vivier de qui peut le"
                         + " tenir.",
                 ROUTE_SKILLS,
@@ -422,22 +527,20 @@ public final class BlockerPlaybook {
                 params);
     }
 
+    /**
+     * The last resort of every weighed rule, after the gestures that fix the
+     * plan — offered only while the weight is above the lowest one
+     * ({@link #forRule(ConstraintDefinition, String, Context, Integer)}): at
+     * the bottom, nothing is left to lower.
+     */
     private static ActionType lowerWeightAction(ConstraintDefinition definition) {
         return new ActionType(
                 CODE_LOWER_WEIGHT,
-                "Baisser son poids",
-                "Une règle de qualité se dose : à 1, elle cède devant les autres.",
-                ROUTE_CONSTRAINTS,
-                Map.of(PARAM_REGLE, definition.name()));
-    }
-
-    private static ActionType adjustWeightAction(ConstraintDefinition definition) {
-        return new ActionType(
-                CODE_ADJUST_WEIGHT,
-                "Ajuster son poids",
-                "Une préférence départage deux plannings valides : baissez son poids si l'écart vous convient.",
-                ROUTE_CONSTRAINTS,
-                Map.of(PARAM_REGLE, definition.name()));
+                "Baisser l'importance",
+                "En dernier recours : moins importante, la règle cède devant les autres au prochain calcul — ses"
+                        + " écarts restent, ils comptent moins.",
+                ROUTE_RULES,
+                ruleParams(definition));
     }
 
     private static ActionType ruleAction(ConstraintDefinition definition) {
@@ -445,8 +548,69 @@ public final class BlockerPlaybook {
                 CODE_SEE_RULE,
                 "Voir la règle",
                 "Sa ligne sur l'écran Règles du planning dit ce qu'elle mesure et ce qui la règle.",
-                ROUTE_CONSTRAINTS,
-                Map.of(PARAM_REGLE, definition.name()));
+                ROUTE_RULES,
+                ruleParams(definition));
+    }
+
+    /** The cap the rule is named after, on its own line: the screen lists the settings each rule reads. */
+    private static ActionType capAction(ConstraintDefinition definition) {
+        return new ActionType(
+                CODE_CAP,
+                "Régler le plafond",
+                "Le plafond de la règle se règle sur sa ligne : relevé, il laisse passer ce que le plan" + " demande.",
+                ROUTE_RULES,
+                ruleParams(definition));
+    }
+
+    private static ActionType thresholdAction(ConstraintDefinition definition) {
+        return new ActionType(
+                CODE_THRESHOLD,
+                "Régler les seuils",
+                "Les seuils que la règle mesure se règlent sur sa ligne : ce sont eux qui disent où l'écart"
+                        + " commence.",
+                ROUTE_RULES,
+                ruleParams(definition));
+    }
+
+    /** The fiche of the stand in cause, open for editing: its staffing, its flags, what it requires. */
+    private static ActionType standProfileAction(Context context) {
+        return new ActionType(
+                CODE_STAND_PROFILE,
+                "Ouvrir la fiche du stand",
+                "Ce que le stand exige — effectif, drapeau premium ou épuisant, référent — se change sur sa"
+                        + " fiche.",
+                ROUTE_STANDS,
+                context.standIds().size() == 1
+                        ? Map.of("edit", context.standIds().getFirst())
+                        : Map.of());
+    }
+
+    private static ActionType workloadAction() {
+        return new ActionType(
+                CODE_WORKLOAD,
+                "Voir la charge par personne",
+                "Qui travaille le plus, et de combien : c'est là qu'on choisit qui alléger.",
+                ROUTE_DAY,
+                Map.of("axe", "personne"));
+    }
+
+    private static ActionType lockAction(Context context) {
+        return new ActionType(
+                CODE_LOCK,
+                "Verrouiller ce qui doit tenir",
+                "Un verrou garde une personne, un stand ou une journée tels quels au prochain calcul.",
+                ROUTE_LOCKS,
+                context.animateurIds().isEmpty()
+                        ? Map.of("onglet", TAB_LOCKS)
+                        : Map.of("onglet", TAB_LOCKS, "animateur", String.join(",", context.animateurIds())));
+    }
+
+    /** {@code onglet} and {@code regle}: the rule's own line, on the tab of its level. */
+    private static Map<String, String> ruleParams(ConstraintDefinition definition) {
+        Map<String, String> params = new LinkedHashMap<>();
+        params.put(PARAM_ONGLET, definition.niveau() == ConstraintCatalog.Niveau.HARD ? "legal" : "qualite");
+        params.put(PARAM_REGLE, definition.name());
+        return params;
     }
 
     private static ActionType reviewAdjustmentsAction(List<String> contrainteIds) {
@@ -459,13 +623,16 @@ public final class BlockerPlaybook {
                 idsParam(contrainteIds));
     }
 
-    private static ActionType reviewProfilesAction() {
+    private static ActionType reviewProfilesAction(Context context) {
         return new ActionType(
                 CODE_REVIEW_PROFILES,
                 "Revoir les fiches",
-                "Une déclaration d'indisponibilité a peut-être changé : la fiche de la personne fait foi.",
+                "Une déclaration d'indisponibilité ou un souhait a peut-être changé : la fiche de la personne"
+                        + " fait foi.",
                 ROUTE_ANIMATEURS,
-                Map.of());
+                context.animateurIds().size() == 1
+                        ? Map.of("edit", context.animateurIds().getFirst())
+                        : Map.of());
     }
 
     private static ActionType typologieCapAction() {
@@ -483,8 +650,8 @@ public final class BlockerPlaybook {
                 "Régler la fenêtre repas",
                 "La fenêtre repas et sa durée se règlent sur la ligne de la coupure repas, dans Règles du"
                         + " planning.",
-                ROUTE_CONSTRAINTS,
-                Map.of("onglet", "legal", PARAM_REGLE, "coupureRepasObligatoire"));
+                ROUTE_RULES,
+                Map.of(PARAM_ONGLET, "legal", PARAM_REGLE, "coupureRepasObligatoire"));
     }
 
     private static ActionType shortenVacationAction() {
