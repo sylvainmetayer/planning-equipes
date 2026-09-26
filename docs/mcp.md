@@ -696,7 +696,7 @@ doit à un mineur s'appliquent à la lecture, pas au réglage : une édition à 
 donne 25 à ses majeurs et 30 à ses mineurs.
 
 C'est cette durée que les plafonds quotidien **et hebdomadaires** déduisent, et
-que déduisent aussi l'écran Heures, `heures_travaillees`, l'équité et les KPI :
+que déduisent aussi le rapport des heures, `heures_travaillees`, l'équité et les KPI :
 il n'y a plus qu'une grandeur (ADR 0048). C'est aussi la longueur du trou qui
 sépare deux vacations au lieu de les souder en une seule séquence. Elle sort
 dans la vue de `consulter_parametres_legaux`. Trois clés ont disparu de ces
@@ -742,7 +742,7 @@ départs ; la tolérance se règle par `modifier_parametres_qualite`.
 
 ## L'équité se lit par id
 
-`equite_planning` rend le tableau de l'écran Équité sur le planning persisté :
+`equite_planning` rend le tableau d'équité (la page Planning, par personne) sur le planning persisté :
 une ligne par animateur affecté — heures totales et par semaine ISO, heures de
 soirée (après l'heure `heureDebutSoiree` des paramètres légaux), de week-end et
 de jour férié, postes et postes pénibles, stands, typologies et emplacements

@@ -1,162 +1,181 @@
-<app-validation-banner />
+<div class="planning-entete">
+  <h1 class="planning-titre" i18n="@@planning.title">Planning</h1>
+  <mat-button-toggle-group class="planning-axes" [value]="axe()" (change)="changeAxe($event.value)"
+                           aria-label="Axe du planning" i18n-aria-label="@@planning.axe.label">
+    <mat-button-toggle value="jour" i18n="@@planning.axe.jour">Par jour</mat-button-toggle>
+    <mat-button-toggle value="stand" i18n="@@planning.axe.stand">Par stand</mat-button-toggle>
+    <mat-button-toggle value="personne" i18n="@@planning.axe.personne">Par personne</mat-button-toggle>
+    <mat-button-toggle value="typologie" i18n="@@planning.axe.typologie">Par typologie</mat-button-toggle>
+  </mat-button-toggle-group>
+  @switch (axe()) {
+  @case ('stand') {
+  <mat-button-toggle-group class="journee-vues" [value]="standView()" (change)="standView.set($event.value)"
+                           aria-label="Rendu par stand" i18n-aria-label="@@planningStand.vue.label">
+    <mat-button-toggle value="grille">
+      <mat-icon>grid_on</mat-icon>
+      <ng-container i18n="@@repos.vue.grille">Grille</ng-container>
+    </mat-button-toggle>
+    <mat-button-toggle value="treemap">
+      <mat-icon>dashboard</mat-icon>
+      <ng-container i18n="@@planningStand.vue.treemap">Répartition des heures</ng-container>
+    </mat-button-toggle>
+  </mat-button-toggle-group>
+  }
+  @case ('personne') {
+  <mat-button-toggle-group class="journee-vues" [value]="personView()" (change)="personView.set($event.value)"
+                           aria-label="Rendu par personne" i18n-aria-label="@@planningPersonne.vue.label">
+    <mat-button-toggle value="grille">
+      <mat-icon>grid_on</mat-icon>
+      <ng-container i18n="@@repos.vue.grille">Grille</ng-container>
+    </mat-button-toggle>
+    <mat-button-toggle value="frise">
+      <mat-icon>view_timeline</mat-icon>
+      <ng-container i18n="@@repos.vue.frise">Frise</ng-container>
+    </mat-button-toggle>
+  </mat-button-toggle-group>
+  }
+  @case ('jour') {
+  <mat-button-toggle-group class="journee-vues" [value]="view()" (change)="changeView($event.value)"
+                           aria-label="Rendu de la journée" i18n-aria-label="@@journee.vue.label">
+    <mat-button-toggle value="calendrier">
+      <mat-icon>table_rows</mat-icon>
+      <ng-container i18n="@@journee.vue.calendrier">Tableau</ng-container>
+    </mat-button-toggle>
+    <mat-button-toggle value="rail">
+      <mat-icon>view_timeline</mat-icon>
+      <ng-container i18n="@@journee.vue.rail">Rail</ng-container>
+    </mat-button-toggle>
+    <mat-button-toggle value="carte">
+      <mat-icon>map</mat-icon>
+      <ng-container i18n="@@journee.vue.carte">Carte</ng-container>
+    </mat-button-toggle>
+    <mat-button-toggle value="pauses">
+      <mat-icon>free_breakfast</mat-icon>
+      <ng-container i18n="@@journee.vue.pauses">Pauses et repas</ng-container>
+    </mat-button-toggle>
+    <mat-button-toggle value="changements">
+      <mat-icon>difference</mat-icon>
+      <ng-container i18n="@@journee.vue.changements">Changements</ng-container>
+    </mat-button-toggle>
+  </mat-button-toggle-group>
+  }
+  }
+</div>
 
-<mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h1 mat-card-title i18n="@@journee.title">Journée</h1>
-    <mat-card-subtitle i18n="@@journee.subtitle">
-      Une journée du planning, sous cinq rendus : par stand, par animateur, sur la carte, par ses pauses, ou par ses changements.
-    </mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-content>
-    <div class="journee-toolbar">
-      <button matIconButton type="button" [disabled]="isPremierJour()" (click)="decalerJour(-1)"
-              [attr.aria-label]="jourPrecedentLabel" [title]="jourPrecedentLabel">
-        <mat-icon>chevron_left</mat-icon>
-      </button>
-      <mat-form-field appearance="outline" class="journee-jour">
-        <mat-label i18n="@@journee.day.label">Journée</mat-label>
-        <mat-select [value]="jourCourant()?.key ?? null" (valueChange)="selectJour($event)">
-          @for (jour of jours(); track jour.key) {
+<div class="planning-barre">
+  <app-mini-mois [jours]="jours()" [courant]="jourCourant()" [postes]="planning()?.postes ?? []"
+                 (choisi)="selectJour($event)" />
+  <app-selection-recherche class="planning-filtre" [compact]="true" [options]="stands()" [valeurs]="standChoisi()"
+                           (valeursChange)="choisirStand($event)"
+                           label="Stand" i18n-label="@@journee.filter.stand"
+                           placeholder="Tous" i18n-placeholder="@@journee.filter.tous" />
+  <app-selection-recherche class="planning-filtre" [compact]="true" [options]="animateurs()" [valeurs]="animateurChoisi()"
+                           (valeursChange)="choisirAnimateur($event)"
+                           label="Animateur" i18n-label="@@journee.filter.animateur"
+                           placeholder="Tous" i18n-placeholder="@@journee.filter.tous" />
+  @if (filtresLieuTypologie()) {
+    <app-selection-recherche class="planning-filtre" [compact]="true" [options]="emplacementsOptions()"
+                             [valeurs]="emplacementChoisi()" (valeursChange)="choisirEmplacement($event)"
+                             label="Emplacement" i18n-label="@@planning.filter.emplacement"
+                             placeholder="Tous" i18n-placeholder="@@journee.filter.tous" />
+    <app-selection-recherche class="planning-filtre" [compact]="true" [options]="typologiesOptions()"
+                             [valeurs]="typologieChoisie()" (valeursChange)="choisirTypologie($event)"
+                             label="Typologie" i18n-label="@@planning.filter.typologie"
+                             placeholder="Toutes" i18n-placeholder="@@planning.filter.toutes" />
+  }
+  <app-table-filter
+    class="planning-filtre"
+    [(value)]="filtre"
+    label="Filtrer par nom"
+    i18n-label="@@journee.filter.label"
+    placeholder="Nom, stand…"
+    i18n-placeholder="@@journee.filter.placeholder"
+  />
+  <span class="planning-barre-espace"></span>
+  @if (comparableView() && jours().length > 1 && comparerDemande() === null) {
+    <button matButton type="button" (click)="openComparison()">
+      <mat-icon>compare_arrows</mat-icon>
+      <ng-container i18n="@@journee.comparaison.ouvrir">Comparer avec…</ng-container>
+    </button>
+  }
+  @if (dateCourante(); as date) {
+    <a matButton [routerLink]="['/impression', date]" target="_blank" [title]="imprimerLabel">
+      <mat-icon>print</mat-icon>
+      <ng-container i18n="@@planning.imprimer">Imprimer cette journée</ng-container>
+    </a>
+  }
+  <a matButton routerLink="/parametres" [queryParams]="{ onglet: 'mural' }" [title]="tvLabel">
+    <mat-icon>tv</mat-icon>
+    <ng-container i18n="@@planning.tv">Afficher sur la TV</ng-container>
+  </a>
+  @if (viewChanged()) {
+    <button matButton type="button" (click)="resetView()">
+      <mat-icon>filter_alt_off</mat-icon>
+      <ng-container i18n="@@common.resetView">Réinitialiser la vue</ng-container>
+    </button>
+  }
+  <button matIconButton type="button" [disabled]="loading()" (click)="refresh()"
+          aria-label="Actualiser" i18n-aria-label="@@common.refresh" title="Actualiser" i18n-title="@@common.refresh">
+    <mat-icon>refresh</mat-icon>
+  </button>
+</div>
+
+<!-- A requested comparison always keeps its way out, even on a plan of one day where it can only be ignored. -->
+@if (comparableView() && comparerDemande() !== null) {
+  <div class="journee-comparaison-barre">
+    @if (jours().length > 1) {
+      <mat-form-field appearance="outline" class="journee-jour" subscriptSizing="dynamic">
+        <mat-label i18n="@@journee.comparaison.jourB">Comparer avec</mat-label>
+        <mat-select [value]="jourCompare()?.key ?? null" (valueChange)="compareWith($event)">
+          @for (jour of joursComparables(); track jour.key) {
             <mat-option [value]="jour.key">{{ jour.title }}</mat-option>
           }
         </mat-select>
       </mat-form-field>
-      <button matIconButton type="button" [disabled]="isDernierJour()" (click)="decalerJour(1)"
-              [attr.aria-label]="jourSuivantLabel" [title]="jourSuivantLabel">
-        <mat-icon>chevron_right</mat-icon>
-      </button>
-      @if (sousConsigne()) {
-        <span class="journee-badge-consigne">
-          <mat-icon inline>gavel</mat-icon>
-          <ng-container i18n="@@journee.badge.sousConsigne">sous consigne</ng-container>
-        </span>
-      }
-      <mat-button-toggle-group class="journee-vues" [value]="view()" (change)="changeView($event.value)"
-                               aria-label="Rendu de la journée" i18n-aria-label="@@journee.vue.label">
-        <mat-button-toggle value="calendrier">
-          <mat-icon>view_day</mat-icon>
-          <ng-container i18n="@@journee.vue.calendrier">Calendrier</ng-container>
-        </mat-button-toggle>
-        <mat-button-toggle value="rail">
-          <mat-icon>view_timeline</mat-icon>
-          <ng-container i18n="@@journee.vue.rail">Rail</ng-container>
-        </mat-button-toggle>
-        <mat-button-toggle value="carte">
-          <mat-icon>map</mat-icon>
-          <ng-container i18n="@@journee.vue.carte">Carte</ng-container>
-        </mat-button-toggle>
-        <mat-button-toggle value="pauses">
-          <mat-icon>free_breakfast</mat-icon>
-          <ng-container i18n="@@journee.vue.pauses">Pauses</ng-container>
-        </mat-button-toggle>
-        <mat-button-toggle value="changements">
-          <mat-icon>difference</mat-icon>
-          <ng-container i18n="@@journee.vue.changements">Changements</ng-container>
-        </mat-button-toggle>
-      </mat-button-toggle-group>
-      @if (viewChanged()) {
-        <button matButton type="button" (click)="resetView()">
-          <mat-icon>filter_alt_off</mat-icon>
-          <ng-container i18n="@@common.resetView">Réinitialiser la vue</ng-container>
+      @if (semainePrecedente(); as jour) {
+        <button matButton type="button" (click)="compareWith(jour.key)">
+          <mat-icon>keyboard_double_arrow_left</mat-icon>
+          <ng-container i18n="@@journee.comparaison.semainePrecedente">Même jour, semaine précédente</ng-container>
         </button>
       }
-      <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">
-        <mat-icon>refresh</mat-icon>
-        <ng-container i18n="@@common.refresh">Actualiser</ng-container>
-      </button>
-    </div>
-
-    <!-- A requested comparison always keeps its way out, even on a plan of one day where it can only be ignored. -->
-    @if (comparableView() && (jours().length > 1 || comparerDemande() !== null)) {
-      <div class="journee-comparaison-barre">
-        @if (comparerDemande() === null) {
-          <button matButton type="button" (click)="openComparison()">
-            <mat-icon>compare_arrows</mat-icon>
-            <ng-container i18n="@@journee.comparaison.ouvrir">Comparer avec…</ng-container>
-          </button>
-        } @else {
-          @if (jours().length > 1) {
-            <mat-form-field appearance="outline" class="journee-jour">
-              <mat-label i18n="@@journee.comparaison.jourB">Comparer avec</mat-label>
-              <mat-select [value]="jourCompare()?.key ?? null" (valueChange)="compareWith($event)">
-                @for (jour of joursComparables(); track jour.key) {
-                  <mat-option [value]="jour.key">{{ jour.title }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-            @if (semainePrecedente(); as jour) {
-              <button matButton type="button" (click)="compareWith(jour.key)">
-                <mat-icon>keyboard_double_arrow_left</mat-icon>
-                <ng-container i18n="@@journee.comparaison.semainePrecedente">Même jour, semaine précédente</ng-container>
-              </button>
-            }
-            @if (semaineSuivante(); as jour) {
-              <button matButton type="button" (click)="compareWith(jour.key)">
-                <ng-container i18n="@@journee.comparaison.semaineSuivante">Même jour, semaine suivante</ng-container>
-                <mat-icon iconPositionEnd>keyboard_double_arrow_right</mat-icon>
-              </button>
-            }
-          }
-          <button matButton="tonal" type="button" (click)="quitterComparaison()">
-            <mat-icon>close</mat-icon>
-            <ng-container i18n="@@journee.comparaison.quitter">Quitter la comparaison</ng-container>
-          </button>
-        }
-      </div>
+      @if (semaineSuivante(); as jour) {
+        <button matButton type="button" (click)="compareWith(jour.key)">
+          <ng-container i18n="@@journee.comparaison.semaineSuivante">Même jour, semaine suivante</ng-container>
+          <mat-icon iconPositionEnd>keyboard_double_arrow_right</mat-icon>
+        </button>
+      }
     }
-    @if (comparableView() && comparaisonIgnoree()) {
-      <output class="journee-comparaison-ignoree status-paragraph">
-        <mat-icon inline aria-hidden="true">info</mat-icon>
-        {{ comparaisonIgnoree() }}
-      </output>
-    }
-
-    <div class="journee-filtres">
-      <mat-form-field appearance="outline" class="journee-filtre">
-        <mat-label i18n="@@journee.filter.stand">Stand</mat-label>
-        <mat-select [value]="stand()" (valueChange)="stand.set($event)">
-          <mat-option value="" i18n="@@journee.filter.tous">Tous</mat-option>
-          @for (option of stands(); track option.id) {
-            <mat-option [value]="option.id">{{ option.label }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-      <mat-form-field appearance="outline" class="journee-filtre">
-        <mat-label i18n="@@journee.filter.animateur">Animateur</mat-label>
-        <mat-select [value]="animateur()" (valueChange)="animateur.set($event)">
-          <mat-option value="" i18n="@@journee.filter.tous">Tous</mat-option>
-          @for (option of animateurs(); track option.id) {
-            <mat-option [value]="option.id">{{ option.label }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-      <app-table-filter
-        [(value)]="filtre"
-        label="Filtrer par nom"
-        i18n-label="@@journee.filter.label"
-        placeholder="Nom, stand…"
-        i18n-placeholder="@@journee.filter.placeholder"
-      />
-    </div>
-
-    @if (loading()) {
-      <mat-progress-bar mode="indeterminate" />
-    }
-    <app-status-message [text]="error()" tone="error" />
-    @if (message()) {
-      <p class="calendar-meta" aria-live="polite">{{ message() }}</p>
-    }
-  </mat-card-content>
-</mat-card>
-
-@if (!error() && dateCourante(); as jour) {
-  <div class="journee-panneaux">
-    <!-- A reading covers one whole day, never a pair: hidden while two are on screen. -->
-    @if (!comparaisonActive()) {
-      <app-validation-panel [jour]="jour" [filtre]="filtreActif()" (reported)="message.set($event)" />
-    }
-    <app-consigne-card [jour]="jour" />
+    <button matButton="tonal" type="button" (click)="quitterComparaison()">
+      <mat-icon>close</mat-icon>
+      <ng-container i18n="@@journee.comparaison.quitter">Quitter la comparaison</ng-container>
+    </button>
   </div>
+}
+@if (comparableView() && comparaisonIgnoree()) {
+  <output class="journee-comparaison-ignoree status-paragraph">
+    <mat-icon inline aria-hidden="true">info</mat-icon>
+    {{ comparaisonIgnoree() }}
+  </output>
+}
+
+@if (!error() && axe() === 'jour' && dateCourante(); as jour) {
+  <div class="planning-relecture">
+    <!-- A reading covers one whole day, never a pair: hidden while two are on screen. -->
+    @if (!comparaisonActive() && jourCourant(); as courant) {
+      <app-relecture-barre [jour]="jour" [numero]="courant.jour" [postes]="planning()?.postes ?? []"
+                           [pauses]="pauses()" [filtre]="filtreActif()" [active]="pastilleActive()"
+                           (pastille)="applyChip($event)" (reported)="message.set($event)" />
+    }
+    <app-consigne-ligne [jour]="jour" />
+  </div>
+}
+
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+<app-status-message [text]="error()" tone="error" />
+@if (message()) {
+  <p class="calendar-meta" aria-live="polite">{{ message() }}</p>
 }
 
 <!-- The rendering, and beside it the Siège panel of the seat a click opened.
@@ -164,7 +183,46 @@
      says was done, and what is left, must survive the re-read. -->
 <div class="journee-corps" [class.journee-corps-siege]="seatPanelShown()">
   <div class="journee-rendu">
-    @if (!error() && !loading() && comparaisonActive()) {
+    @if (!error() && !loading() && axe() !== 'jour') {
+      @switch (axe()) {
+        @case ('stand') {
+          @if (standView() === 'treemap') {
+            <app-repartition-heures-vue [emplacementFilter]="emplacement()" (standOuvert)="openStand($event)" />
+          } @else {
+            <app-planning-stand-vue
+              [planning]="planning()"
+              [jours]="jours()"
+              [jourMarque]="jourCourant()?.key ?? null"
+              [standsRetenus]="gridStands()"
+              [animateur]="animateur()"
+              [filtre]="filtre()"
+              [(densite)]="densiteStand"
+              (seatRequested)="openSeatOnDay($event)"
+            />
+          }
+        }
+        @case ('personne') {
+          <app-planning-personne-vue
+            [planning]="planning()"
+            [jours]="jours()"
+            [jourMarque]="jourCourant()?.key ?? null"
+            [standsRetenus]="gridStands()"
+            [animateur]="animateur()"
+            [filtre]="filtre()"
+            [view]="personView()"
+            [(densite)]="densitePersonne"
+            [(tri)]="triPersonne"
+            [(allColumns)]="allColumns"
+            [(noRestOnly)]="noRestOnly"
+            (seatRequested)="openSeatOnDay($event)"
+          />
+        }
+        @default {
+          <app-planning-typologie-vue [typologie]="typologie()" [filtre]="filtre()"
+                                      (standsDemandes)="showCategoryStands($event)" />
+        }
+      }
+    } @else if (!error() && !loading() && comparaisonActive()) {
       @if (jourCourant(); as jourA) {
         @if (jourCompare(); as jourB) {
           <app-comparaison-vue
@@ -247,7 +305,9 @@
             [filtre]="filtre()"
             [stand]="stand()"
             [animateur]="animateur()"
+            [standsRetenus]="standsRetenus()"
             [(seulementProblemes)]="seulementProblemes"
+            [(sieges)]="sieges"
             [openSeatId]="openSeatId()"
             (seatSelected)="openSeat({ posteId: $event })"
             (rechargement)="recharger()"

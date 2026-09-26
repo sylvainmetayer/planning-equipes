@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Creneau, PosteAffectation } from '../../core/models';
-import { requestedKey, dayKey, jourDemande, planningDays, readView } from './journee';
+import { requestedKey, dayKey, jourDemande, planningDays, readAxe, readView } from './journee';
 
 function creneau(overrides: Partial<Creneau> & { id: number }): Creneau {
   return { jour: 1, date: '2026-08-01', heureDebut: '10:00', heureFin: '12:00', ...overrides };
@@ -43,6 +43,16 @@ describe('readView', () => {
   });
 });
 
+describe('readAxe', () => {
+  it('names one of the four axes, the day otherwise', () => {
+    expect(readAxe('stand')).toBe('stand');
+    expect(readAxe('personne')).toBe('personne');
+    expect(readAxe('typologie')).toBe('typologie');
+    expect(readAxe('animateur')).toBe('jour');
+    expect(readAxe(null)).toBe('jour');
+  });
+});
+
 describe('the day a link asks for', () => {
   const jours = planningDays([
     poste('p1', creneau({ id: 1 })),
@@ -52,6 +62,7 @@ describe('the day a link asks for', () => {
   it('reads the date first, then the day number of the four former screens', () => {
     expect(requestedKey('2026-08-02', null)).toBe('2026-08-02');
     expect(requestedKey(null, '2')).toBe('J2');
+    expect(requestedKey(null, '2026-08-02')).toBe('2026-08-02');
     expect(requestedKey(null, 'deux')).toBeNull();
     expect(requestedKey(null, null)).toBeNull();
   });

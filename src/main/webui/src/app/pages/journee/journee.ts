@@ -17,6 +17,22 @@ export const JOURNEE_VIEWS: readonly JourneeView[] = [
   'changements',
 ];
 
+/**
+ * The axes of the Planning page (issue #713), and the values of the `axe`
+ * query param: one day under its five renderings (the default), the stands ×
+ * days grid, the people × days grid, the table by game category.
+ */
+export type PlanningAxe = 'jour' | 'stand' | 'personne' | 'typologie';
+
+export const PLANNING_AXES: readonly PlanningAxe[] = ['jour', 'stand', 'personne', 'typologie'];
+
+/** Reads the `axe` query param; anything unknown is the day. */
+export function readAxe(value: string | null): PlanningAxe {
+  return (PLANNING_AXES as readonly string[]).includes(value ?? '')
+    ? (value as PlanningAxe)
+    : 'jour';
+}
+
 /** One event day of the plan, as the shared selector lists it. */
 export interface JourEvenement {
   jour: number;
@@ -68,11 +84,15 @@ export function planningDays(postes: readonly PosteAffectation[]): JourEvenement
 /**
  * Which day a URL asks for: `date` names it by its key; the older `jour`
  * param of the four screens this page replaced named it by its number, and a
- * bookmark carrying one still lands on the right day.
+ * bookmark carrying one still lands on the right day. `jour` may name it by
+ * its date too — the natural thing to type, once ignored in silence.
  */
 export function requestedKey(date: string | null, jour: string | null): string | null {
   if (date) {
     return date;
+  }
+  if (jour && /^\d{4}-\d{2}-\d{2}$/.test(jour)) {
+    return jour;
   }
   const numero = Number(jour);
   return Number.isFinite(numero) && numero > 0 ? `J${numero}` : null;

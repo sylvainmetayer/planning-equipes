@@ -75,7 +75,6 @@ interface Options {
   jour?: number;
   stand?: string;
   animateur?: string;
-  countRejects?: boolean;
   dragDropEnabled?: boolean;
   verrous?: Partial<{
     estJourVerrouille: (date: string | null) => boolean;
@@ -91,12 +90,7 @@ function mount(options: Options = {}) {
   const open = vi.fn((..._args: unknown[]) => {
     return { afterClosed: () => of<unknown>(undefined) };
   });
-  const get = vi.fn(async () => {
-    if (options.countRejects) {
-      throw new Error('hors service');
-    }
-    return { assignments: 42 };
-  });
+  const get = vi.fn(async () => ({}));
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
@@ -137,6 +131,13 @@ function text(fixture: ComponentFixture<CalendarDayView>): string {
   return root(fixture).textContent!.replace(/\s+/g, ' ').trim();
 }
 
+/** The stands the table has a row for, in order. */
+function rangees(fixture: ComponentFixture<CalendarDayView>): string[] {
+  return Array.from(root(fixture).querySelectorAll('tbody th')).map((each) =>
+    each.querySelector('a')!.textContent!.trim(),
+  );
+}
+
 /** The stand lines currently on screen, with the markers that make them stand out. */
 function lignes(fixture: ComponentFixture<CalendarDayView>) {
   return Array.from(root(fixture).querySelectorAll('.day-stand')).map((ligne) => ({
@@ -168,10 +169,10 @@ describe('CalendarDayView rendering', () => {
 
     expect(root(fixture).querySelector('.empty-hint')).not.toBeNull();
     expect(text(fixture)).toContain('Aucune donnée de planning disponible');
-    expect(root(fixture).querySelectorAll('.day-card')).toHaveLength(0);
+    expect(root(fixture).querySelectorAll('.jour-table')).toHaveLength(0);
   });
 
-  it('renders the one day the page hands it, titled and dated, the first by default', async () => {
+  it('renders the one day the page hands it as a table, its timeslots without seconds', async () => {
     const deuxJours = planning([
       poste(
         'p1',
@@ -182,22 +183,59 @@ describe('CalendarDayView rendering', () => {
       poste(
         'p2',
         AMBIANCE,
-        creneau({ id: 2, jour: 2, date: '2026-07-15' }),
+        creneau({
+          id: 2,
+          jour: 2,
+          date: '2026-07-15',
+          heureDebut: '14:00:00',
+          heureFin: '16:00:00',
+        }),
         animateur('a1', 'Camille'),
       ),
     ]);
     const { fixture } = mount({ planning: deuxJours });
     await fixture.whenStable();
 
-    const titres = () =>
-      Array.from(root(fixture).querySelectorAll('.day-card h2')).map((each) =>
+    const entetes = () =>
+      Array.from(root(fixture).querySelectorAll('thead th')).map((each) =>
         each.textContent!.replace(/\s+/g, ' ').trim(),
       );
-    expect(titres()).toEqual(['Jour 1 — 2026-07-14']);
+    expect(entetes()).toEqual(['Stand', '10:00–12:00']);
+    expect(rangees(fixture)).toEqual(['Loup-Garou']);
 
     fixture.componentRef.setInput('jour', 2);
     await fixture.whenStable();
-    expect(titres()).toEqual(['Jour 2 — 2026-07-15']);
+    expect(entetes()).toEqual(['Stand', '14:00–16:00']);
+  });
+
+  // #712: a stand shut for a timeslot is its schedule, not a gap — a neutral
+  // « fermé », where an empty seat is a red chip.
+  it('says fermé where a stand does not open, in a neutral cell', async () => {
+    const afternoon = creneau({ id: 2, heureDebut: '14:00', heureFin: '16:00' });
+    const { fixture } = mount({
+      planning: planning([
+        poste('p1', AMBIANCE, C1, animateur('a1', 'Camille')),
+        poste('p2', stand('Dixit'), afternoon, animateur('a2', 'Alex')),
+      ]),
+    });
+    await fixture.whenStable();
+
+    const fermees = Array.from(root(fixture).querySelectorAll('td.jour-table-ferme'));
+    expect(fermees).toHaveLength(2);
+    expect(fermees.map((cellule) => cellule.textContent!.trim())).toEqual(['fermé', 'fermé']);
+    expect(rangees(fixture)).toEqual(['Dixit', 'Loup-Garou']);
+  });
+
+  it('links each stand to its fiche and names its location under it', async () => {
+    const place = { ...AMBIANCE, emplacement: { id: 'E1', nom: 'Grande halle' } } as Stand;
+    const { fixture } = mount({
+      planning: planning([poste('p1', place, C1, animateur('a1', 'Camille'))]),
+    });
+    await fixture.whenStable();
+
+    const entete = root(fixture).querySelector('tbody th')!;
+    expect(entete.querySelector('a')!.getAttribute('href')).toBe('/stands/Loup-Garou');
+    expect(entete.querySelector('.jour-table-emplacement')!.textContent).toContain('Grande halle');
   });
 
   it('keeps only the lines the shared filters name: a stand, a person', async () => {
@@ -209,28 +247,20 @@ describe('CalendarDayView rendering', () => {
       stand: 'Dixit',
     });
     await fixture.whenStable();
-    expect(
-      lignes(fixture)
-        .map((ligne) => ligne.texte)
-        .join(' '),
-    ).not.toContain('Loup-Garou');
+    expect(rangees(fixture)).toEqual(['Dixit']);
 
     fixture.componentRef.setInput('stand', '');
     fixture.componentRef.setInput('animateur', 'a1');
     await fixture.whenStable();
-    expect(
-      lignes(fixture)
-        .map((ligne) => ligne.texte)
-        .join(' '),
-    ).toContain('Loup-Garou');
-    expect(
-      lignes(fixture)
-        .map((ligne) => ligne.texte)
-        .join(' '),
-    ).not.toContain('Dixit');
+    expect(rangees(fixture)).toEqual(['Loup-Garou']);
+
+    fixture.componentRef.setInput('animateur', '');
+    fixture.componentRef.setInput('standsRetenus', new Set(['Dixit']));
+    await fixture.whenStable();
+    expect(rangees(fixture)).toEqual(['Dixit']);
   });
 
-  it('lists the animateurs of a line, comma-separated, each one clickable', async () => {
+  it('lists the animateurs of a line, one chip per name, each one clickable', async () => {
     const { fixture } = mount({
       planning: planning([
         poste('p1', AMBIANCE, C1, animateur('a1', 'Camille')),
@@ -241,9 +271,8 @@ describe('CalendarDayView rendering', () => {
 
     const boutons = Array.from(root(fixture).querySelectorAll('.affectation-link'));
     expect(boutons.map((each) => each.textContent!.trim())).toEqual(['Camille X', 'Alex X']);
-    // The ⠿ handle sits between the names: the drag surface is not the name
-    // itself, so the row's raw text carries it (issue #308, review).
-    expect(lignes(fixture)[0].texte.replaceAll('⠿', '')).toContain('Camille X, Alex X');
+    // One name per chip, never a comma-separated run.
+    expect(lignes(fixture)[0].texte).not.toContain(',');
   });
 
   // The drag-and-drop is announced as under test on the screen that carries
@@ -289,7 +318,7 @@ describe('CalendarDayView rendering', () => {
 
     const ligne = lignes(fixture)[0];
     expect(ligne.vide).toBe(true);
-    expect(ligne.texte).toContain('(non assigné)');
+    expect(ligne.texte).toContain('siège libre');
     // Nobody is on it, so there is nothing to explain.
     expect(root(fixture).querySelectorAll('.affectation-link')).toHaveLength(0);
   });
@@ -305,7 +334,9 @@ describe('CalendarDayView rendering', () => {
     });
     await fixture.whenStable();
 
-    const libres = Array.from(root(fixture).querySelectorAll<HTMLElement>('.siege-libre'));
+    const libres = Array.from(
+      root(fixture).querySelectorAll<HTMLElement>('.jour-table .siege-libre'),
+    );
     expect(libres.map((chip) => chip.dataset['posteId'])).toEqual(['p2', 'p3']);
     // Each free seat is also the question « who could take it? », asked of
     // the Siège panel on that very seat: a button, not a link leaving the day.
@@ -390,9 +421,6 @@ describe('CalendarDayView rendering', () => {
     const ligne = lignes(fixture)[0];
     expect(ligne.ecartAppreciation).toBe(true);
     expect(ligne.icones).toContain('psychology');
-    expect(root(fixture).querySelector('.day-card')!.classList).toContain(
-      'has-appreciation-mismatch',
-    );
   });
 
   it('says when a line only covers part of its créneau', async () => {
@@ -406,9 +434,11 @@ describe('CalendarDayView rendering', () => {
     });
     await fixture.whenStable();
 
-    expect(
-      root(fixture).querySelector('.day-stand-partial')!.textContent!.replace(/\s+/g, ' '),
-    ).toContain('ouvert 10:00 – 11:00 seulement');
+    // The ordinary case of a stand opening later than the timeslot: a plain
+    // window, never the alarm it used to be on fifty lines.
+    expect(root(fixture).querySelector('.day-stand-partial')!.textContent!.trim()).toBe(
+      '10:00–11:00',
+    );
   });
 
   it('shows no partial-closure note when the line covers the whole créneau', async () => {
@@ -427,9 +457,9 @@ describe('CalendarDayView rendering', () => {
     });
     await fixture.whenStable();
 
-    const cadenas = root(fixture).querySelector('.day-card h2 .verrouille-icon')!;
-    expect(cadenas.textContent!.trim()).toBe('lock');
-    expect(cadenas.getAttribute('aria-label')).toContain('Verrouillé');
+    const cadenas = root(fixture).querySelector('.jour-table-verrou')!;
+    expect(cadenas.textContent).toContain('lock');
+    expect(cadenas.textContent).toContain('Journée verrouillée');
   });
 
   it('padlocks a single line frozen by its stand', async () => {
@@ -440,7 +470,7 @@ describe('CalendarDayView rendering', () => {
     await fixture.whenStable();
 
     expect(lignes(fixture)[0].icones).toContain('lock');
-    expect(root(fixture).querySelector('.day-card h2 .verrouille-icon')).toBeNull();
+    expect(root(fixture).querySelector('.jour-table-verrou')).toBeNull();
   });
 
   it('narrows the day to the lines needing attention when the filter is ticked', async () => {
@@ -459,23 +489,39 @@ describe('CalendarDayView rendering', () => {
     filterProblems(fixture, true);
     await fixture.whenStable();
 
-    const restantes = lignes(fixture);
-    expect(restantes).toHaveLength(1);
-    expect(restantes[0].texte).toContain('Loup-Garou');
-    expect(restantes[0].texte).not.toContain('Dixit');
+    expect(lignes(fixture)).toHaveLength(1);
+    expect(rangees(fixture)).toEqual(['Loup-Garou']);
   });
 
-  it('drops a whole day from the grid when the filter leaves nothing on it', async () => {
+  // #712: the relecture chips narrow the table to what they count.
+  it('narrows the table to the seats a relecture chip counts: empty, then locked', async () => {
+    const { fixture } = mount({
+      planning: planning([
+        poste('p1', stand('Dixit'), C1, animateur('a1', 'Camille')),
+        poste('p2', AMBIANCE, C1, null),
+      ]),
+      verrous: { estStandVerrouille: (id) => id === 'Dixit' },
+    });
+    fixture.componentRef.setInput('sieges', 'vides');
+    await fixture.whenStable();
+    expect(rangees(fixture)).toEqual(['Loup-Garou']);
+
+    fixture.componentRef.setInput('sieges', 'verrous');
+    await fixture.whenStable();
+    expect(rangees(fixture)).toEqual(['Dixit']);
+  });
+
+  it('drops every row when the filter leaves nothing on the day', async () => {
     const { fixture } = mount({
       planning: planning([poste('p1', stand('Dixit'), C1, animateur('a1', 'Camille'))]),
     });
     await fixture.whenStable();
-    expect(root(fixture).querySelectorAll('.day-card')).toHaveLength(1);
+    expect(rangees(fixture)).toHaveLength(1);
 
     filterProblems(fixture, true);
     await fixture.whenStable();
 
-    expect(root(fixture).querySelectorAll('.day-card')).toHaveLength(0);
+    expect(root(fixture).querySelectorAll('.jour-table')).toHaveLength(0);
     // The plan is not empty, the filters are: the wording says so.
     expect(text(fixture)).toContain('Aucune ligne ne correspond aux filtres');
   });
@@ -509,32 +555,28 @@ describe('CalendarDayView rendering', () => {
     expect(nom.getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('reports how many assignments are persisted', async () => {
-    const { fixture } = mount({ planning: planning([]) });
+  // #712: « Affectations enregistrées en base » was a technical count, not an answer.
+  it('prints no technical count of persisted assignments', async () => {
+    const { fixture } = mount({
+      planning: planning([poste('p1', AMBIANCE, C1, animateur('a1', 'Camille'))]),
+    });
     await fixture.whenStable();
 
-    expect(root(fixture).querySelector('.calendar-meta')!.textContent).toContain('42');
+    expect(text(fixture)).not.toContain('enregistrées en base');
   });
 
-  it('says the persisted count is unavailable rather than showing a stale one', async () => {
-    const { fixture } = mount({ planning: planning([]), countRejects: true });
-    await fixture.whenStable();
-
-    expect(root(fixture).querySelector('.calendar-meta')!.textContent).toContain('n/d');
-  });
-
-  it('explains its four markers in a legend', async () => {
-    const { fixture } = mount({ planning: planning([]) });
+  it('explains the free seat and its four markers in a legend', async () => {
+    const { fixture } = mount({
+      planning: planning([poste('p1', AMBIANCE, C1, animateur('a1', 'Camille'))]),
+    });
     await fixture.whenStable();
 
     const legende = Array.from(root(fixture).querySelectorAll('.calendar-legende li'));
-    expect(legende).toHaveLength(4);
-    expect(legende.map((each) => each.querySelector('mat-icon')!.textContent!.trim())).toEqual([
-      'warning',
-      'restaurant',
-      'psychology',
-      'lock',
-    ]);
+    expect(legende).toHaveLength(5);
+    expect(legende[0].textContent).toContain('siège libre');
+    expect(
+      legende.slice(1).map((each) => each.querySelector('mat-icon')!.textContent!.trim()),
+    ).toEqual(['warning', 'restaurant', 'psychology', 'lock']);
   });
 
   // RGAA 7.3 / WCAG 2.5.7: the drag has a twin a keyboard and a single click

@@ -231,26 +231,30 @@ describe('chercherCommandes', () => {
     expect(found?.queryParams).toBeUndefined();
   });
 
-  it('finds a stand ignoring accents, and opens the calendar filtered on it', () => {
+  it('finds a stand ignoring accents, and opens the Planning page filtered on it', () => {
     const found = chercherCommandes('mediatheque', sources).find(
       (commande) => commande.famille === 'stand',
     );
     expect(found?.label).toBe('Médiathèque');
-    expect(found?.route).toBe('/calendar');
+    expect(found?.route).toBe('/journee');
     expect(found?.queryParams).toEqual({ stand: 's2' });
   });
 
-  it('finds a créneau by its date, and opens the calendar on that day', () => {
+  it('finds a créneau by its date, and opens the Planning page on that day', () => {
     const found = chercherCommandes('2026-07-19', sources).find(
       (commande) => commande.famille === 'creneau',
     );
-    expect(found?.route).toBe('/calendar');
-    expect(found?.queryParams).toEqual({ month: '2026-07', date: '2026-07-19' });
+    expect(found?.route).toBe('/journee');
+    expect(found?.queryParams).toEqual({ date: '2026-07-19' });
   });
 
-  it('finds a page by its label', () => {
+  it('finds a former page by its keyword, on the Planning axis that absorbed it', () => {
     const resultats = chercherCommandes('heatmap', sources);
-    expect(resultats.some((commande) => commande.route === '/heatmap')).toBe(true);
+    expect(
+      resultats.some(
+        (commande) => commande.route === '/journee' && commande.queryParams?.['axe'] === 'stand',
+      ),
+    ).toBe(true);
   });
 
   it('caps each family, so a one-letter query stays a list and not a table', () => {

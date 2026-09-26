@@ -83,7 +83,7 @@ describe('app.routes', () => {
     // Le compte exact plutôt qu'un plancher : un plancher laisse supprimer six
     // titres sans rien dire, et c'est ce chiffre-là que les descriptions de PR
     // annonçaient de travers.
-    expect(titrees).toHaveLength(52);
+    expect(titrees).toHaveLength(44);
     for (const route of titrees) {
       // Une fonction, et non une chaîne : c'est ce qui permet au titre de
       // passer par $localize sans être évalué au chargement du module, avant
@@ -137,6 +137,52 @@ describe('app.routes', () => {
       expect(redirectTarget('day-calendar', {})).toBe('/journee?vue=calendrier');
     });
 
+    // #712: the month calendar, the intendance and the graph became the
+    // Planning page's day selector, its breaks and meals, and its map.
+    it('sends the three screens the Planning page absorbed there, params kept', () => {
+      expect(
+        redirectTarget('calendar', { date: '2026-09-05', month: '2026-09', stand: 'S1' }),
+      ).toBe('/journee?date=2026-09-05&stand=S1');
+      expect(redirectTarget('calendar', {})).toBe('/journee');
+      expect(redirectTarget('intendance', {})).toBe('/journee?vue=pauses');
+      expect(redirectTarget('graphe', { q: 'x' })).toBe('/journee?vue=carte&q=x');
+    });
+
+    // #713: six screens became the two grids and the table of the page.
+    it('sends the Heatmap to the stand or the person axis, as its mode said', () => {
+      expect(redirectTarget('heatmap', { q: 'tir' })).toBe('/journee?axe=stand&q=tir');
+      expect(redirectTarget('heatmap', { view: 'animateur' })).toBe('/journee?axe=personne');
+    });
+
+    it('sends the rest days, the hours and the equity to the person axis, their state kept', () => {
+      expect(
+        redirectTarget('repos', { vue: 'frise', densite: 'confort', date: '2026-09-05', q: 'a' }),
+      ).toBe('/journee?axe=personne&vue=frise&densite=confort&date=2026-09-05&q=a');
+      expect(redirectTarget('hours', { sort: 'nuit', dir: 'desc' })).toBe(
+        '/journee?axe=personne&sort=heuresNuit&dir=desc',
+      );
+      expect(redirectTarget('equite', { q: 'ali', sort: 'heuresSoiree', dir: 'asc' })).toBe(
+        '/journee?axe=personne&q=ali&sort=heuresSoiree&dir=asc',
+      );
+    });
+
+    it("sends one person's equity to their fiche, where the radar went", () => {
+      expect(
+        redirectTarget('equite', { vue: 'fiche', animateur: 'A7', axes: 'x', comparer: 'B2' }),
+      ).toBe('/animateurs/A7?section=equite&axes=x&comparer=B2');
+      expect(redirectTarget('equite', { vue: 'fiche', animateur: 'A7' })).toBe(
+        '/animateurs/A7?section=equite',
+      );
+      expect(redirectTarget('equite', { vue: 'fiche' })).toBe('/journee?axe=personne');
+    });
+
+    it('sends the treemap to the stand axis, its day under a key of its own', () => {
+      expect(
+        redirectTarget('repartition-heures', { date: '2026-09-05', regroupement: 'typologie' }),
+      ).toBe('/journee?axe=stand&vue=treemap&jourTreemap=2026-09-05&regroupement=typologie');
+      expect(redirectTarget('typologies-planning', {})).toBe('/journee?axe=typologie');
+    });
+
     // The two addresses carrying the most params: the map's cursor, and the
     // créneau and stand pair of the bench.
     it('garde le jour et le curseur de la carte', () => {
@@ -184,7 +230,7 @@ describe('app.routes', () => {
     });
 
     // The « Fiche » reading of Équité became the fiche's « Charge et équité » section.
-    it('sends the Fiche reading of Équité to the fiche, its radar kept, and the table without a person', () => {
+    it('sends the Fiche reading of Équité to the fiche, its radar kept, and nothing else', () => {
       expect(
         equityFicheUrl({
           vue: 'fiche',
@@ -197,10 +243,8 @@ describe('app.routes', () => {
       expect(equityFicheUrl({ vue: 'fiche', animateur: 'a1' })).toBe(
         '/animateurs/a1?section=equite',
       );
-      expect(equityFicheUrl({ vue: 'fiche', sort: 'heuresTotal', dir: 'desc' })).toBe(
-        '/equite?sort=heuresTotal&dir=desc',
-      );
-      expect(equityFicheUrl({ vue: 'fiche' })).toBe('/equite');
+      expect(equityFicheUrl({ vue: 'fiche', sort: 'heuresTotal', dir: 'desc' })).toBeNull();
+      expect(equityFicheUrl({ vue: 'fiche', animateur: ' ' })).toBeNull();
       expect(equityFicheUrl({ q: 'Alice' })).toBeNull();
     });
 
@@ -266,7 +310,8 @@ describe('app.routes', () => {
                 ...route,
                 loadComponent: undefined,
                 canDeactivate: undefined,
-                component: PageVide,
+                // A redirect keeps its target and takes no component.
+                component: route.redirectTo ? undefined : PageVide,
               })),
           ),
         ],
@@ -282,12 +327,12 @@ describe('app.routes', () => {
       expect(TestBed.inject(Router).url).toBe('/stands/S1?modifier=1');
     });
 
-    it('lands a former Fiche address of Équité on the fiche animateur', async () => {
-      const router = await harness(['equite', 'animateurs/:id']);
+    it('lands a former Fiche address of Équité on the fiche animateur, any other on the person axis', async () => {
+      const router = await harness(['equite', 'animateurs/:id', 'journee']);
       await router.navigateByUrl('/equite?vue=fiche&animateur=a1&comparer=a2');
       expect(TestBed.inject(Router).url).toBe('/animateurs/a1?section=equite&comparer=a2');
       await router.navigateByUrl('/equite?q=Alice');
-      expect(TestBed.inject(Router).url).toBe('/equite?q=Alice');
+      expect(TestBed.inject(Router).url).toBe('/journee?axe=personne&q=Alice');
     });
   });
 

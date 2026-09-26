@@ -351,8 +351,8 @@ n'ont ni palette ni ces destinations. **N'en ajoutez pas un second** — deux
 écouteurs globaux se disputent la même frappe sans que rien ne le signale.
 
 Une exception volontaire : le code Konami du shell (une séquence, son propre
-état). Les flèches des calendriers, de la heatmap et des tables de données de
-référence n'en sont pas : elles sont posées sur l'élément du composant, ne
+état). Les flèches des calendriers, de la grille du Planning et des tables de
+données de référence n'en sont pas : elles sont posées sur l'élément du composant, ne
 consomment que les touches qu'elles utilisent, et laissent tout le reste
 remonter jusqu'à l'écouteur global — qui s'arrête sur un événement déjà
 consommé. C'est ainsi qu'on ajoute un comportement clavier ici. Échap n'est
@@ -408,8 +408,7 @@ il alimente `aria-describedby`, qui décrit l'action et laisse le nom
 intact ; masquer le bouton du calcul le rendrait invisible au lecteur d'écran
 alors qu'il est focalisable.
 
-Les trois grilles à deux axes (calendrier mensuel, heatmap, jours de repos)
-gardent leur navigation propre : leur géométrie n'est pas celle d'une liste.
+La grille à deux axes du Planning (par stand, par personne) garde leur navigation propre : leur géométrie n'est pas celle d'une liste.
 
 La table `g`+lettre et les libellés de la palette vivent dans
 `core/keyboard-shortcuts.ts` ; les destinations, elles, sont **dérivées de
@@ -418,14 +417,14 @@ sans qu'on ait pensé à l'y inscrire.
 
 ### `leaflet` reste hors du bundle initial
 
-Trois écrans affichent une carte — l'onglet « Lieux » de `/stands` (tous les
+Deux écrans affichent une carte — l'onglet « Lieux » de `/stands` (tous les
 lieux, un marqueur déplacé à la souris enregistrant sa position, et la saisie
 d'un point dans le formulaire d'un lieu — le tout dans un bloc `@defer`, pour
 que le tableau des stands ne l'embarque pas, et le formulaire d'un lieu chargé
-par un `import()` quand un stand propose « Nouveau lieu… »), `/graphe` (le
-sélecteur en lecture seule) et le rendu « Carte » de `/journee` (le rejeu
-d'une journée, dans un bloc `@defer` de la page pour que les trois autres
-rendus ne l'embarquent pas). Tous trois sont en lazy loading, et `leaflet` pèse à lui seul un
+par un `import()` quand un stand propose « Nouveau lieu… ») et le rendu
+« Carte » de `/journee` (le rejeu d'une journée, dans un bloc `@defer` de la
+page pour que les autres rendus ne l'embarquent pas ; il a repris la descente
+lieu → stand → personne de l'ancien `/graphe`). Tous deux sont en lazy loading, et `leaflet` pèse à lui seul un
 morceau de 150 ko : **rien de chargé au démarrage ne doit l'importer**, sinon
 ce poids passe dans le bundle initial de tout le monde, y compris de la page de
 connexion. Ce qu'elles partagent — les tuiles OpenStreetMap, leur attribution,

@@ -188,7 +188,7 @@ sur un produit stands × créneaux :
 | `animateurCount` | les valeurs possibles d'un poste, au sens Timefold |
 | `posteCount` | les entités : un poste par siège à pourvoir |
 | `contrainteAdHocCount` | les ajustements manuels appliqués par-dessus |
-| `hoursToFill` | la somme des durées effectives des postes, fermetures de stands déduites — la base de l'écran Heures |
+| `hoursToFill` | la somme des durées effectives des postes, fermetures de stands déduites — la base du rapport des heures |
 | `hoursAvailable` | le plafond légal de ce que les animateurs peuvent travailler sur les jours de l'événement : par animateur et par semaine ISO, les jours où il n'est pas indisponible (six au plus), chacun au plafond quotidien de son âge ce jour-là, le tout borné par le plafond hebdomadaire des paramètres légaux |
 
 Le rapport des deux dernières est un taux de remplissage. C'est un plafond,
@@ -1243,7 +1243,7 @@ un siège dont le créneau est déjà commencé — à l'une ou l'autre extrémi
 geste — refuse (`400`, « Ce créneau est déjà commencé : le passé ne se
 modifie plus »), simulation comprise, tant que `PASSE_FIGE` est allumé.
 
-Le clic sur un nom ouvre le panneau du siège de la Journée : « Pourquoi lui ? »,
+Le clic sur un nom ouvre le panneau du siège de la page Planning : « Pourquoi lui ? »,
 l'assistant de réparation ci-dessous et « Déplacer vers… ».
 
 ### Placer quelqu'un sur un siège vide
@@ -1649,6 +1649,14 @@ derrière la session admin.
   écoulé depuis la lecture — une vacation se termine à l'écran à sa minute, sans
   attendre la lecture suivante, et l'horloge de la TV n'est jamais lue. La
   version imprimable (`?impression=1`) montre la journée entière.
+- **« Imprimer cette journée », côté admin, ne passe par aucun jeton** :
+  `GET /api/affichage-mural/apercu?date=AAAA-MM-JJ` rend la même vue pour le
+  jour demandé (la journée en cours sans `date`), sous la session admin, avec
+  tous les stands et les noms complets — ceux que la page Planning montre déjà.
+  Elle vit sous `/api/affichage-mural`, **jamais** sous `/api/mural/` : ce
+  préfixe est ce qu'un proxy laisse passer sans authentification, et il ne
+  nomme qu'une route. Aucun lien n'est créé ni touché ; une date qui n'en est
+  pas une répond `400`.
 - **Une vacation, ce sont les sièges d'un stand qui partagent la même fenêtre**
   (les heures effectives du siège) ; une fin qui n'est pas après le début tombe
   le lendemain.
@@ -1945,9 +1953,10 @@ deux obligations là où il n'y a qu'un moment.
 
 `GET /api/pauses/intendance` est la **même** lecture, comptée au lieu d'être
 nommée (issue #598) : pour chaque jour et chaque fenêtre, combien de personnes
-sont en coupure, heure pleine par heure pleine et par emplacement. La page
-Journée dit qui sort et quand — la bonne lecture pour organiser une relève ;
-celle-ci dit combien de sandwichs préparer et où les porter.
+sont en coupure, heure pleine par heure pleine et par emplacement. Le rendu
+« Pauses et repas » de la page Planning dit d'abord qui sort et quand — la bonne
+lecture pour organiser une relève ; celle-ci, dessous et réduite au jour
+affiché, dit combien de sandwichs préparer et où les porter.
 
 - `journees[].fenetres[]` — une table par fenêtre déclarée : `tranches[]` (le
   début de chaque bande, **calé sur l'heure** et non sur le début de la fenêtre
@@ -2635,7 +2644,7 @@ lorsqu'il la remplace.
 vide.** `animateur_id` est nullable, et un poste sans animateur *est* la
 représentation d'une place non pourvue dans ce modèle. Chaque siège qu'il tenait
 redevient donc une place à pourvoir, visible et comptée comme telle — par
-`postesNonPourvus`, par la heatmap, par les écrans de couverture — au lieu de
+`postesNonPourvus`, par le Planning par stand, par les écrans de couverture — au lieu de
 disparaître et de faire paraître le plan mieux couvert qu'il ne l'est. Des trous
 apparaissent ainsi dans un plan que personne n'a redemandé de résoudre : c'est
 voulu, ils sont réels, et c'est précisément ce qu'on veut voir avant de

@@ -81,26 +81,26 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   // The former addresses land on their tab.
   { path: '/imports?onglet=animateurs', marker: 'date de naissance est obligatoire' },
   { path: '/exports', marker: 'Export CSV' },
-  { path: '/calendar', marker: 'Calendrier des affectations', sheet: 'calendar-nav' },
-  // Same for the day and its four renderings.
-  { path: '/journee', marker: 'Journée', sheet: 'journee-toolbar' },
-  { path: '/journee?vue=calendrier', sheet: 'day-calendar-grid' },
-  { path: '/hours', marker: 'Heures planifiées par animateur', sheet: 'hours-total-row' },
-  { path: '/equite', marker: 'Équité par animateur', sheet: 'equite-synthese-row' },
-  { path: '/intendance', marker: 'Intendance des repas', sheet: 'intendance-total' },
+  // Same for the Planning page and its renderings of the day.
+  { path: '/journee', marker: 'Planning', sheet: 'planning-barre' },
+  { path: '/journee?vue=calendrier', sheet: 'jour-table' },
+  // Its three other axes, where six former screens went: each brings its own
+  // stylesheet, the shared grid's included.
+  { path: '/journee?axe=stand', marker: 'Couverture', sheet: 'planning-grille' },
+  { path: '/journee?axe=stand', sheet: 'planning-stand-pourvu' },
+  { path: '/journee?axe=stand&vue=treemap', sheet: 'repartition-toolbar' },
   {
-    path: '/typologies-planning',
-    marker: 'Qui tient quoi, et pour quel volume',
-    sheet: 'typologies-barre-piste',
+    path: '/journee?axe=personne',
+    marker: 'Heures pour la paie (CSV)',
+    sheet: 'planning-personne-travaille',
   },
+  { path: '/journee?axe=personne&vue=frise', sheet: 'personne-frise-ligne' },
+  { path: '/journee?axe=typologie', marker: 'Compétents', sheet: 'planning-typologie-table' },
   { path: '/ouvertures', marker: 'Horaires des stands', sheet: 'ouvertures-synthese' },
   { path: '/diagnostic?onglet=besoin', marker: 'Minimum retenu', sheet: 'staffing-summary' },
   { path: '/diagnostic?onglet=former', marker: 'À former' },
   { path: '/diagnostic?onglet=fragilite', marker: 'Fragilité', sheet: 'fragilite-message' },
   { path: '/jour-j', marker: 'Mode jour J', sheet: 'jour-j-entete' },
-  { path: '/repos', marker: 'Jours de repos', sheet: 'repos-toolbar' },
-  { path: '/heatmap', sheet: 'heatmap-toolbar' },
-  { path: '/repartition-heures', marker: 'Répartition des heures', sheet: 'repartition-toolbar' },
   { path: '/marge', marker: 'Marge disponible', sheet: 'marge-synthese' },
   // The former timeline lands on a fiche's planning section; its own sheet is gone.
   { path: '/animateurs/E2E-A?section=timeline', marker: 'Planning', sheet: 'timeline-day' },
@@ -113,6 +113,12 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/comparateur', sheet: 'comparateur-selection' },
   { path: '/historique', sheet: 'historique-controles' },
   { path: '/journee?vue=pauses', sheet: 'pauses-message' },
+  // The meal intendance, under the breaks since the Planning page absorbed it.
+  {
+    path: '/journee?vue=pauses',
+    marker: 'Combien de personnes mangent',
+    sheet: 'intendance-jour-entete',
+  },
   {
     path: '/journee?vue=changements',
     marker: 'Changements de la journée',
@@ -120,7 +126,6 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   },
   { path: '/disponibilites', sheet: 'espace-dispo-intro' },
   { path: '/kpi' },
-  { path: '/graphe', sheet: 'graphe-corps' },
   { path: '/ad-hoc-constraints' },
   { path: '/verrouillages', marker: 'Verrouiller une partie du planning' },
   { path: '/consignes', marker: 'Consignes', sheet: 'consigne-prereglage' },
@@ -277,7 +282,7 @@ test('un seul menu par moment du cycle, Débogage hors menu mais servi', async (
     await expect(navigation.getByRole('button', { name: new RegExp(`^${groupe}`) })).toBeVisible();
   }
   // Once hidden by the simple mode, now listed down their group.
-  await expect(navigation.getByRole('link', { name: 'Heatmap de charge' })).toBeVisible();
+  await expect(navigation.getByRole('link', { name: 'Compétences' })).toBeVisible();
   await expect(navigation.getByRole('link', { name: 'Historique' })).toBeVisible();
   await expect(navigation.getByRole('button', { name: /Menu simple|Menu avancé/ })).toHaveCount(0);
   await expect(navigation.getByRole('link', { name: 'Débogage' })).toHaveCount(0);
@@ -301,13 +306,13 @@ test('un seul menu par moment du cycle, Débogage hors menu mais servi', async (
     .click();
   await expect(page).toHaveURL(/\/debug/);
 
-  // The bench left the Diagnostic for the Siège panel of the Journée: the word
-  // a reader remembers still leads there.
+  // The bench left the Diagnostic for the Siège panel of the Planning page:
+  // the word a reader remembers still leads there.
   await page.keyboard.press('Control+k');
   await page.getByRole('dialog').getByRole('combobox').fill('banc');
   await page
     .getByRole('dialog')
-    .getByRole('option', { name: /^Journée/ })
+    .getByRole('option', { name: /^Planning/ })
     .first()
     .click();
   await expect(page).toHaveURL(/\/journee/);

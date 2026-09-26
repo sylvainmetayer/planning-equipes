@@ -141,7 +141,7 @@ C'est la raison d'être de l'export : **réimporter le fichier reproduit
 exactement le même problème**. Un champ oublié dans la section n'est pas « non
 surchargeable », il est **remis au défaut** : l'import écrit un objet neuf, si
 bien que `heureDebutSoiree`, absente du DTO, ramenait une édition réglée à 22 h
-à 20 h et déplaçait toutes les heures de soirée de l'écran Équité sans un mot. Un fichier sans ces sections retombait
+à 20 h et déplaçait toutes les heures de soirée de l'équité sans un mot. Un fichier sans ces sections retombait
 silencieusement sur les réglages de l'instance qui l'importe — sa durée de
 résolution, ses plafonds légaux — et le « même »
 scénario rejoué ailleurs résolvait un autre problème.
@@ -897,8 +897,13 @@ fichier entier à chaque appel, soit sept parses complets pour un seul clic.
 
 ## Export des heures
 
-`POST /api/planning/hours/export` rend `heures-planning.csv` : une ligne par
-animateur, une colonne par semaine ISO (`2026-W33`), plus un total. Les heures
+`POST /api/planning/hours/export` rend `heures-planning.csv` — « Heures pour la
+paie (CSV) » de la page Planning, par personne : une ligne par animateur, une
+colonne par semaine ISO (`2026-W33`), plus un total, puis dimanche, jours
+fériés, dimanches fériés et `nuit paie (apres 22h)`. Cette dernière colonne est
+la **seule** trace de la borne fixe de 22 h dans l'application : la soirée est
+l'heure réglable des paramètres légaux, et la paie garde sa nuit à part
+([décision 0055](decisions/0055-une-seule-soiree-la-nuit-de-la-paie-a-part.md)). Les heures
 s'écrivent avec une **virgule** (`4,00`), et le séparateur de champs reste `;` —
 la paire qu'attend un tableur français. Avec un point, la cellule y était lue
 comme du texte : la colonne s'alignait à gauche et `=SOMME()` répondait zéro,
@@ -906,8 +911,9 @@ ce qui est pire qu'un total faux, parce que ça ressemble à une réponse.
 
 ## Export de l'équité
 
-`GET /api/planning/equite/export` rend `equite-planning.csv`, le tableau de
-l'écran Équité lu sur le planning persisté : une ligne par animateur affecté,
+`GET /api/planning/equite/export` rend `equite-planning.csv` — « Équité (CSV) »
+de la page Planning, par personne —, le tableau d'équité lu sur le planning
+persisté : une ligne par animateur affecté,
 les colonnes dans l'ordre de l'écran — `heuresTotal`, une colonne par semaine
 ISO, puis `heuresSoiree`, `heuresWeekEnd`, `heuresJourFerie`, `postes`,
 `postesPenibles`, `standsDistincts`, `typologiesDistinctes`,

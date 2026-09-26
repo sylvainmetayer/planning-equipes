@@ -4269,7 +4269,7 @@
         }
       },
       "HeuresAnimateur" : {
-        "required" : [ "total", "heuresDimanche", "heuresJourFerie", "heuresDimancheFerie", "heuresNuit" ],
+        "required" : [ "total", "heuresDimanche", "heuresJourFerie", "heuresDimancheFerie", "heuresNuit", "heuresSoiree" ],
         "type" : "object",
         "properties" : {
           "animateurId" : {
@@ -4304,12 +4304,20 @@
           "heuresNuit" : {
             "type" : "number",
             "format" : "double"
+          },
+          "heuresSoiree" : {
+            "type" : "number",
+            "format" : "double"
           }
         }
       },
       "HeuresRapport" : {
+        "required" : [ "heureDebutSoiree", "semaines", "animateurs" ],
         "type" : "object",
         "properties" : {
+          "heureDebutSoiree" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
           "semaines" : {
             "type" : "array",
             "items" : {
@@ -9034,6 +9042,31 @@
           }
         },
         "summary" : "Create",
+        "tags" : [ "Affichage Mural Resource" ]
+      }
+    },
+    "/api/affichage-mural/apercu" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "date",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AffichageMuralView"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Preview",
         "tags" : [ "Affichage Mural Resource" ]
       }
     },

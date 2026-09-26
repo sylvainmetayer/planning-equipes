@@ -233,6 +233,39 @@ class AffichageMuralResourceTest {
         assertThat(emptySeats(view(token))).isGreaterThan(libresAvant);
     }
 
+    /**
+     * « Imprimer cette journée » (issue #712): the day the admin asks for, under
+     * the session and without any link — full names, every stand, never
+     * cached — and a date that is not one is refused rather than guessed.
+     */
+    @Test
+    void theAdminPrintsAnyDayWithoutALink() {
+        solveScenario();
+        freezeClock(JOUR, "13:30");
+
+        JsonPath apercu = given().queryParam("date", JOUR)
+                .when()
+                .get("/api/affichage-mural/apercu")
+                .then()
+                .statusCode(200)
+                .header("Cache-Control", "no-store")
+                .extract()
+                .jsonPath();
+
+        assertThat(apercu.getString("jour")).isEqualTo(JOUR);
+        assertThat(apercu.getList("stands")).isNotEmpty();
+        assertThat(apercu.getList("stands.vacations.flatten().noms.flatten()", String.class))
+                .isNotEmpty()
+                .noneSatisfy(nom -> assertThat(nom).matches(".+ \\p{Lu}\\."));
+        assertThat(given().when().get("/api/affichage-mural").jsonPath().getList("id"))
+                .isEmpty();
+        given().queryParam("date", "demain")
+                .when()
+                .get("/api/affichage-mural/apercu")
+                .then()
+                .statusCode(400);
+    }
+
     @Test
     void deletingTheEditionTakesItsLinksAlong() {
         String edition = given().contentType(ContentType.JSON)

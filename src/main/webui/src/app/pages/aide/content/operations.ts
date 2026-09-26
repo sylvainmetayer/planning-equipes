@@ -18,7 +18,7 @@ export function buildOperationsSections(): HelpSection[] {
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.relecture.intro:Entre le premier planning qui tient et l'envoi aux animateurs, il y a une relecture : on ouvre les journées une par une, on regarde, on corrige. Sur douze journées, la vraie question est « où en étais-je ? ». Sur la page Journée, « Marquer relu et accepté » enregistre votre passage, avec la date et un commentaire si vous en laissez un. Un bandeau dit ensuite « 3 journées sur 12 ».`,
+          text: $localize`:@@aide.relecture.intro:Entre le premier planning qui tient et l'envoi aux animateurs, il y a une relecture : on ouvre les journées une par une, on regarde, on corrige. Sur douze journées, la vraie question est « où en étais-je ? ». Sur la page Planning, le menu de la barre de relecture ouvre « Relu et accepté… », dont « Marquer relu et accepté » enregistre votre passage, avec la date et un commentaire si vous en laissez un. Le sélecteur de jour marque ensuite les journées relues, et la page Solveur dit « 3 journées sur 12 ».`,
         },
         {
           kind: 'paragraph',
@@ -30,7 +30,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.relecture.prerequis:Avant d'accepter, l'écran affiche ce qu'il sait de cette journée : écarts durs, sièges sans animateur, pauses sans relais, postes reposant sur quelqu'un d'irremplaçable. Ce sont les chiffres des écrans Problèmes, Pauses et Fragilité, filtrés sur la date. Aucun ne bloque : si vous savez pourquoi un siège reste vide, acceptez et écrivez-le dans le commentaire.`,
+          text: $localize`:@@aide.relecture.prerequis:La barre de relecture, sous le sélecteur de jour, compte ce qu'il faut regarder : sièges vides, pauses sans relais, sièges verrouillés, changements depuis la publication. Un clic sur une pastille filtre le rendu sur ce qu'elle compte — le tableau sur ses sièges vides ou verrouillés, les pauses sur celles sans relais, les changements — et un second clic le rend entier. Avant d'accepter, « Relu et accepté… » affiche aussi les écarts durs et les postes reposant sur quelqu'un d'irremplaçable : les chiffres des écrans Problèmes, Pauses et Fragilité, filtrés sur la date. Aucun ne bloque : si vous savez pourquoi un siège reste vide, acceptez et écrivez-le dans le commentaire.`,
         },
         {
           kind: 'paragraph',
@@ -38,11 +38,11 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.relecture.changements:Le rendu « Changements » de la page Journée liste ce qui a bougé ce jour-là : siège par siège (stand, créneau, qui était là, qui y est maintenant) ou personne par personne, dans les phrases mêmes du courriel de publication. Deux références : depuis la dernière publication — ce que les gens ont reçu — ou depuis la dernière résolution, pour voir ce que le calcul vient de réécrire. La dernière résolution est celle qui a réellement remplacé le planning enregistré : un calcul interrompu ou refusé ne déplace pas ce repère, et une restauration ou un import faits entre deux calculs comptent dans les changements. Une personne gardée sur son stand avec des horaires rognés se lit « horaires modifiés », pas retirée puis nouvelle. Les compteurs suivent les filtres de la page et le disent. Tant qu'aucune référence n'existe, l'onglet le dit plutôt que de compter zéro changement.`,
+          text: $localize`:@@aide.relecture.changements:Le rendu « Changements » de la page Planning liste ce qui a bougé ce jour-là : siège par siège (stand, créneau, qui était là, qui y est maintenant) ou personne par personne, dans les phrases mêmes du courriel de publication. Deux références : depuis la dernière publication — ce que les gens ont reçu — ou depuis la dernière résolution, pour voir ce que le calcul vient de réécrire. La dernière résolution est celle qui a réellement remplacé le planning enregistré : un calcul interrompu ou refusé ne déplace pas ce repère, et une restauration ou un import faits entre deux calculs comptent dans les changements. Une personne gardée sur son stand avec des horaires rognés se lit « horaires modifiés », pas retirée puis nouvelle. Les compteurs suivent les filtres de la page et le disent. Tant qu'aucune référence n'existe, l'onglet le dit plutôt que de compter zéro changement.`,
         },
       ],
       links: [
-        { route: '/journee', label: $localize`:@@nav.link.journee:Journée` },
+        { route: '/journee', label: $localize`:@@nav.link.journee:Planning` },
         {
           route: '/journee',
           queryParams: { vue: 'changements' },
@@ -92,7 +92,7 @@ export function buildOperationsSections(): HelpSection[] {
       ],
       links: [
         { route: '/consignes', label: $localize`:@@nav.link.consignes:Consignes` },
-        { route: '/journee', label: $localize`:@@nav.link.journee:Journée` },
+        { route: '/journee', label: $localize`:@@nav.link.journee:Planning` },
         { route: '/solveur', label: $localize`:@@nav.link.solver:Solveur` },
       ],
     },
@@ -129,7 +129,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.jourJ.horsJour:Hors du jour même, pour un siège encore à venir, la Journée fait les mêmes gestes un par un : son panneau du siège remplace, libère, déplace, et « Placer » remplit un siège vide depuis « Qui peut tenir ce siège ? ». Le mode jour J reste l'écran de l'absence du jour, qui libère d'un coup tous les sièges restants de la personne.`,
+          text: $localize`:@@aide.jourJ.horsJour:Hors du jour même, pour un siège encore à venir, la page Planning fait les mêmes gestes un par un : son panneau du siège remplace, libère, déplace, et « Placer » remplit un siège vide depuis « Qui peut tenir ce siège ? ». Le mode jour J reste l'écran de l'absence du jour, qui libère d'un coup tous les sièges restants de la personne.`,
         },
         {
           kind: 'paragraph',
@@ -177,7 +177,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.mural.securite:Le lien n'ouvre que cet écran, pour cette édition, en lecture seule. La liste des liens donne la date du dernier accès ; révoquer un lien coupe l'écran à sa lecture suivante, et supprimer l'édition emporte ses liens. Pour une affiche grand format de la journée entière, ajoutez ?impression=1 à l'adresse et imprimez la page.`,
+          text: $localize`:@@aide.mural.securite:Le lien n'ouvre que cet écran, pour cette édition, en lecture seule. La liste des liens donne la date du dernier accès ; révoquer un lien coupe l'écran à sa lecture suivante, et supprimer l'édition emporte ses liens. Pour une affiche grand format de la journée entière, ajoutez ?impression=1 à l'adresse et imprimez la page — ou, sans lien, « Imprimer cette journée » sur la page Planning, derrière votre session.`,
         },
       ],
       links: [
@@ -203,16 +203,16 @@ export function buildOperationsSections(): HelpSection[] {
           kind: 'definitions',
           items: [
             {
-              term: $localize`:@@aide.views.term.calendar:Calendrier des affectations`,
-              text: $localize`:@@aide.views.def.calendar:Vue mensuelle avec filtres par animateur et par stand, détail au clic sur une journée. Pour se repérer dans l'ensemble de l'événement.`,
+              term: $localize`:@@aide.views.term.planning:La page Planning`,
+              text: $localize`:@@aide.views.def.planning:Le planning d'abord : le titre sur une ligne, puis le jour, les filtres et le rendu. Le jour se choisit sur un mini-mois dépliable, chaque case marquée de ses sièges vides, de sa relecture, de son verrou et de sa consigne ; « aujourd'hui » y est la date du serveur, jamais celle de votre ordinateur. Les filtres Stand et Animateur se tapent : deux lettres suffisent. Dessous, la barre de relecture et la consigne du jour, en une ligne chacune. « Imprimer cette journée » ouvre la journée entière mise en page pour le papier, celle de l'affichage mural, sans lien à créer ; « Afficher sur la TV » mène à Paramètres, onglet Affichage mural, où se crée le lien de la télévision et son QR code. « Par jour », « Par stand », « Par personne » et « Par typologie » choisissent l'axe : la journée, ou tout l'événement lu stand par stand, personne par personne ou typologie par typologie ; les filtres Stand, Animateur, Emplacement et Typologie suivent d'un axe à l'autre. Le mois, la charge des repas, le graphe des emplacements, les Heures, l'Équité, les Jours de repos, la Heatmap, la Répartition des heures et le Planning par typologie, autrefois des écrans à part, sont là : leurs anciennes adresses y mènent.`,
             },
             {
-              term: $localize`:@@aide.views.term.day:Calendrier journalier`,
-              text: $localize`:@@aide.views.def.day:Une journée, stand par stand et créneau par créneau. C'est là qu'on corrige à la main : un clic sur un nom ou sur un « siège libre » ouvre à droite le panneau du siège (voir Panneau Siège ci-dessous), qui explique le siège et porte tous les gestes. « Déplacer vers… » y est toujours proposé : choisissez le siège libre où aller ou la personne avec qui échanger ; le serveur simule le geste et le refuse, en nommant la règle, s'il cassait une règle dure, et un siège verrouillé ne bouge pas. Si votre instance a en plus activé le glisser-déposer, encore en test, un nom se glisse aussi, par la poignée à sa gauche, vers un autre stand de la journée — sur un siège libre la personne est déplacée, sur une personne les deux échangent. Le glisser-déposer est désactivé par défaut : il ne règle que ce geste à la souris, jamais le déplacement lui-même.`,
+              term: $localize`:@@aide.views.term.day:Tableau de la journée`,
+              text: $localize`:@@aide.views.def.day:Une journée en tableau sur toute la largeur : un stand par ligne, son emplacement sous son nom, un créneau par colonne, un nom par étiquette et chaque siège vide en rouge. Un stand fermé sur un créneau le dit en gris, et une ouverture partielle donne simplement ses heures. Le nom d'un stand mène à sa fiche. C'est là qu'on corrige à la main : un clic sur un nom ou sur un « siège libre » ouvre à droite le panneau du siège (voir Panneau Siège ci-dessous), qui explique le siège et porte tous les gestes. « Déplacer vers… » y est toujours proposé : choisissez le siège libre où aller ou la personne avec qui échanger ; le serveur simule le geste et le refuse, en nommant la règle, s'il cassait une règle dure, et un siège verrouillé ne bouge pas. Si votre instance a en plus activé le glisser-déposer, encore en test, un nom se glisse aussi, par la poignée à sa gauche, vers un autre stand de la journée — sur un siège libre la personne est déplacée, sur une personne les deux échangent. Le glisser-déposer est désactivé par défaut : il ne règle que ce geste à la souris, jamais le déplacement lui-même.`,
             },
             {
               term: $localize`:@@aide.views.term.railJour:Rail de la journée`,
-              text: $localize`:@@aide.views.def.railJour:La même journée vue par personne : une ligne par animateur, les vacations placées dans le temps. Les trous, les amplitudes et les enchaînements sautent aux yeux, et les lignes vides disent qui reste mobilisable — celles marquées « indisponible » disent de ne pas solliciter la personne. Un clic sur une vacation ouvre le panneau de son siège ; au clavier, Espace sur une ligne l'ouvre sur sa vacation — sur la suivante, pressée à nouveau — et Entrée ouvre « Déplacer une vacation de … », que le glisser-déposer soit activé ou non. Quand il l'est, une vacation se glisse aussi vers une autre ligne, aux mêmes conditions que sur le calendrier journalier.`,
+              text: $localize`:@@aide.views.def.railJour:La même journée vue par personne : une ligne par animateur, les vacations placées dans le temps. Les trous, les amplitudes et les enchaînements sautent aux yeux, et les lignes vides disent qui reste mobilisable — celles marquées « indisponible » disent de ne pas solliciter la personne. Un clic sur une vacation ouvre le panneau de son siège ; au clavier, Espace sur une ligne l'ouvre sur sa vacation — sur la suivante, pressée à nouveau — et Entrée ouvre « Déplacer une vacation de … », que le glisser-déposer soit activé ou non. Quand il l'est, une vacation se glisse aussi vers une autre ligne, aux mêmes conditions que sur le tableau de la journée.`,
             },
             {
               term: $localize`:@@aide.views.term.carteJour:Carte de la journée`,
@@ -220,19 +220,27 @@ export function buildOperationsSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.comparaisonJours:Comparer deux journées`,
-              text: $localize`:@@aide.views.def.comparaisonJours:Sur le calendrier et le rail de la page Journée, « Comparer avec… » pose un second jour à côté du premier — deux samedis, par exemple. Un bandeau donne pour chaque jour les sièges à pourvoir, pourvus et vides, les pauses sans relais, les animateurs mobilisés et les stands ouverts, avec l'écart du second jour sur le premier. Dessous, une ligne par stand (ou par animateur sur le rail), dans le même ordre des deux côtés : un stand fermé l'un des deux jours y est grisé, et les lignes qui diffèrent — horaires, sièges ou nombre de sièges pourvus — portent la mention « écart ». « Seulement les différences » masque le reste, les filtres de la page s'appliquent aux deux jours — le bandeau ne compte alors que les lignes retenues et porte la mention « filtré » —, et deux raccourcis proposent le même jour la semaine précédente ou suivante. La comparaison est en lecture seule : le glisser-déposer revient en la quittant. Le panneau de relecture est masqué, une relecture portant sur une journée entière ; chaque colonne dit seulement si son jour est relu. Sur un téléphone, les deux jours se lisent par onglets A et B. L'adresse garde les deux jours : la recharger ou la partager rouvre la même comparaison.`,
+              text: $localize`:@@aide.views.def.comparaisonJours:Sur le tableau et le rail de la page Planning, « Comparer avec… » pose un second jour à côté du premier — deux samedis, par exemple. Un bandeau donne pour chaque jour les sièges à pourvoir, pourvus et vides, les pauses sans relais, les animateurs mobilisés et les stands ouverts, avec l'écart du second jour sur le premier. Dessous, une ligne par stand (ou par animateur sur le rail), dans le même ordre des deux côtés : un stand fermé l'un des deux jours y est grisé, et les lignes qui diffèrent — horaires, sièges ou nombre de sièges pourvus — portent la mention « écart ». « Seulement les différences » masque le reste, les filtres de la page s'appliquent aux deux jours — le bandeau ne compte alors que les lignes retenues et porte la mention « filtré » —, et deux raccourcis proposent le même jour la semaine précédente ou suivante. La comparaison est en lecture seule : le glisser-déposer revient en la quittant. Le panneau de relecture est masqué, une relecture portant sur une journée entière ; chaque colonne dit seulement si son jour est relu. Sur un téléphone, les deux jours se lisent par onglets A et B. L'adresse garde les deux jours : la recharger ou la partager rouvre la même comparaison.`,
             },
             {
-              term: $localize`:@@aide.views.term.pauses:Pauses`,
-              text: $localize`:@@aide.views.def.pauses:La rotation des pauses légales, jour par jour et stand par stand : qui sort de quelle heure à quelle heure, une personne à la fois, et qui relaie. Le solveur exige qu'une pause due soit prenable — un trou, ou un collègue sur le stand — sans dire à quelle minute elle est prise ; l'écran la pose au plus tard possible. Une seconde section liste les coupures repas et combien de minutes manquent quand la grille ne laisse pas de place — les journées en rouge sont celles que le solveur refuse.`,
+              term: $localize`:@@aide.views.term.pauses:Pauses et repas`,
+              text: $localize`:@@aide.views.def.pauses:La rotation des pauses légales, jour par jour et stand par stand : qui sort de quelle heure à quelle heure, une personne à la fois, et qui relaie. Le solveur exige qu'une pause due soit prenable — un trou, ou un collègue sur le stand — sans dire à quelle minute elle est prise ; l'écran la pose au plus tard possible. Une seconde section liste les coupures repas et combien de minutes manquent quand la grille ne laisse pas de place — les journées en rouge sont celles que le solveur refuse. Dessous, l'intendance du jour : combien de personnes sont en coupure repas, heure par heure et par emplacement, midi et soir — combien de sandwichs préparer, et où les porter. Personne n'y est nommé, les mineurs y sont comptés à part ; « Tout l'événement en CSV » exporte tous les jours d'un coup.`,
             },
             {
-              term: $localize`:@@aide.views.term.heatmap:Heatmap de charge`,
-              text: $localize`:@@aide.views.def.heatmap:Jour croisé avec le stand (places pourvues sur places requises : les trous de couverture) ou avec l'animateur (postes par jour : les surcharges). Pour repérer un déséquilibre d'un coup d'œil.`,
+              term: $localize`:@@aide.views.term.parStand:Par stand`,
+              text: $localize`:@@aide.views.def.parStand:Le deuxième axe de la page Planning : une ligne par stand, une colonne par journée, et dans chaque case les personnes qui tiennent ses sièges — la feuille qu'on tient d'habitude dans un tableur, avec ce qu'un tableur ne calcule pas. La case est colorée selon sa couverture : pourvue, partielle, vide en rouge ; un stand fermé ce jour-là est grisé et hachuré, ce qui n'est pas un manque. « Noms », « Compteurs » (2/2) ou « Couverture » (la couleur seule) choisissent ce que dit la case. À droite, les sièges à pourvoir, les pourvus, la part des heures-sièges tenue et les heures à pourvoir ; en pied, pour chaque journée, les sièges pourvus sur les sièges à pourvoir. Un clic ou Entrée sur une case ouvre le panneau du siège sur ce stand ce jour-là — son premier siège vide, sinon son premier siège —, le nom du stand mène à sa fiche, et les flèches parcourent la grille.`,
             },
             {
-              term: $localize`:@@aide.views.term.repartitionHeures:Répartition des heures`,
-              text: $localize`:@@aide.views.def.repartitionHeures:Ce qui pèse dans l'édition, en une image. Chaque rectangle est un stand, sa surface les heures-sièges à pourvoir sur la période — sièges pourvus et vides confondus, sur la fenêtre réelle du siège : la pause d'une personne ne réduit pas le besoin de son stand. Sa couleur dit la part de ces heures réellement tenue, avec les couleurs de la Heatmap mais des seuils propres : critique sous 80 %, rayé en plus d'être rouge, partiel jusqu'à 99 %, pourvu à 100 % — la Heatmap, elle, ne dit critique qu'une case que personne ne tient. Les stands se regroupent par emplacement, ou par typologie : un stand qui propose plusieurs typologies est rangé une seule fois, sous leur combinaison (« Ambiance + Stratégie »), pour que les surfaces s'additionnent au total de l'édition — le Planning par typologie, lui, compte un poste pour chaque typologie. Quand un groupe écrase les autres, les plus petits se rangent sous « Autres ». Un clic agrandit un groupe, le fil d'Ariane ramène en arrière, et un clic sur un stand ouvre sa journée. Le tableau replié sous l'image donne les mêmes chiffres, stands à 0 h compris. Le sur-effectif n'y apparaît pas : le planning ne crée aucun siège au-delà du besoin.`,
+              term: $localize`:@@aide.views.term.parPersonne:Par personne`,
+              text: $localize`:@@aide.views.def.parPersonne:Le troisième axe : une ligne par animateur, une colonne par journée, et dans chaque case le stand et les heures de la journée, colorée selon ce que fait la personne — elle travaille, elle se repose, elle était indisponible ; un liseré marque une journée qui court jusqu'en soirée, et une case rouge une affectation posée sur une journée déclarée indisponible. À droite, ce que chacun a reçu : heures et écart à la médiane, heures par semaine, soirée, week-end, jours fériés, dimanche, « Nuit (paie) », postes, postes exigeants, stands, typologies et emplacements distincts, souhaits et appréciations satisfaits, jours travaillés, jours de repos, plus longue série. Chaque colonne se trie d'un clic sur son titre ; les colonnes où tout le monde est à zéro sont masquées tant que « Colonnes toujours vides » n'est pas cochée. Il n'y a qu'une soirée dans l'application : l'heure réglée dans les paramètres légaux, que la légende rappelle ; la borne fixe de 22 h ne sert qu'à « Nuit (paie) », pour la paie. « Frise » dessine une barre proportionnelle par personne, qui tient un événement d'un mois sur un écran. « Heures pour la paie (CSV) » et « Équité (CSV) » exportent les deux fichiers de toujours. Un clic sur une case ouvre le panneau du siège sur le premier poste de la personne ce jour-là ; son nom mène à sa fiche, dont la section « Charge et équité » lit ses indicateurs l'un sous l'autre à côté d'un radar : un axe par indicateur — heures, soirées, week-ends, postes pénibles, souhaits satisfaits, et au choix jours fériés, appréciations, jours travaillés, plus longue série. Chaque axe va du minimum de l'édition, au centre, à son maximum, au bord ; le polygone plein est la personne, le pointillé la médiane, la zone grisée l'étendue. Plus loin veut dire plus chargé, sauf sur les axes marqués « ↑ mieux ». Un axe où tout le monde a la même valeur est dessiné au centre et dit « aucune dispersion ». « Comparer avec… » pose une seconde personne sur le même radar, pour arbitrer entre deux.`,
+            },
+            {
+              term: $localize`:@@aide.views.term.parTypologie:Par typologie`,
+              text: $localize`:@@aide.views.def.parTypologie:Le quatrième axe : le planning enregistré lu par typologie de jeu, en un tableau — postes, heures, plafond par animateur, personnes affectées, compétents, compétents jamais affectés, affectés sans la compétence. Chaque chiffre mène à l'écran où l'on agit : les postes et les heures à « Par stand » restreint à la typologie, les compétents à la page Animateurs filtrée sur elle, les affectés sans la compétence à la grille Compétences sur sa colonne. Un stand qui propose plusieurs typologies compte un poste dans chacune.`,
+            },
+            {
+              term: $localize`:@@aide.views.term.repartitionHeures:Par stand, Répartition des heures`,
+              text: $localize`:@@aide.views.def.repartitionHeures:Le second rendu de « Par stand » : ce qui pèse dans l'édition, en une image. Chaque rectangle est un stand, sa surface les heures-sièges à pourvoir sur la période — sièges pourvus et vides confondus, sur la fenêtre réelle du siège : la pause d'une personne ne réduit pas le besoin de son stand. Sa couleur dit la part de ces heures réellement tenue, sur des seuils propres : critique sous 80 %, rayé en plus d'être rouge, partiel jusqu'à 99 %, pourvu à 100 % — la grille, elle, ne dit vide qu'une case que personne ne tient. Les stands se regroupent par emplacement, ou par typologie : un stand qui propose plusieurs typologies est rangé une seule fois, sous leur combinaison (« Ambiance + Stratégie »), pour que les surfaces s'additionnent au total de l'édition — l'axe Par typologie, lui, compte un poste pour chaque typologie. Quand un groupe écrase les autres, les plus petits se rangent sous « Autres ». Le filtre Emplacement de la page s'y applique. Un clic agrandit un groupe, le fil d'Ariane ramène en arrière, et un clic sur un stand ouvre sa journée, par jour. Le tableau replié sous l'image donne les mêmes chiffres, stands à 0 h compris. Le sur-effectif n'y apparaît pas : le planning ne crée aucun siège au-delà du besoin.`,
             },
             {
               term: $localize`:@@aide.views.term.marge:Marge disponible`,
@@ -240,23 +248,15 @@ export function buildOperationsSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.tension:Tension`,
-              text: $localize`:@@aide.views.def.tension:Troisième lecture de la Marge, quand un planning est enregistré : la marge après résolution croisée avec la fragilité. Critique : des sièges vides que personne ne peut tenir, un siège qu'aucun autre ne pourrait reprendre, ou un stand sans spécialiste — la case est alors hachurée. Élevée : marge nulle avec des sièges vides, ou plus de sièges fragiles (un remplaçant au plus) que de monde à revendre. Surveillée : des sièges fragiles mais assez de marge, ou un stand à spécialiste unique sans polyvalent en renfort. Calme sinon. Le badge « 2 ⚠ » compte les sièges fragiles ; une case ouvre ses raisons, avec « Qui peut tenir un siège vide » — le panneau du siège, sur la Journée —, la fiche de la personne irremplaçable et la fragilité du stand. Une tranche déjà commencée est grisée.`,
-            },
-            {
-              term: $localize`:@@aide.views.term.repos:Jours de repos`,
-              text: $localize`:@@aide.views.def.repos:L'inverse des autres vues : non pas qui est où, mais qui souffle. Une ligne par animateur, une colonne par journée, trois états — journée travaillée, jour de repos, indisponible. Un jour de repos est une journée que la personne pouvait faire et sur laquelle le planning ne l'a pas affectée. Les lignes les plus tendues remontent en haut, la colonne « Série » donne la plus longue série travaillée, et l'histogramme dit jour par jour quelle part de l'effectif se repose. Une case rouge signale une affectation posée sur une journée déclarée indisponible : une anomalie à corriger.`,
+              text: $localize`:@@aide.views.def.tension:Troisième lecture de la Marge, quand un planning est enregistré : la marge après résolution croisée avec la fragilité. Critique : des sièges vides que personne ne peut tenir, un siège qu'aucun autre ne pourrait reprendre, ou un stand sans spécialiste — la case est alors hachurée. Élevée : marge nulle avec des sièges vides, ou plus de sièges fragiles (un remplaçant au plus) que de monde à revendre. Surveillée : des sièges fragiles mais assez de marge, ou un stand à spécialiste unique sans polyvalent en renfort. Calme sinon. Le badge « 2 ⚠ » compte les sièges fragiles ; une case ouvre ses raisons, avec « Qui peut tenir un siège vide » — le panneau du siège, sur la page Planning —, la fiche de la personne irremplaçable et la fragilité du stand. Une tranche déjà commencée est grisée.`,
             },
             {
               term: $localize`:@@aide.views.term.fiche:Fiche animateur`,
-              text: $localize`:@@aide.views.def.fiche:Tout ce qu'on sait d'une personne sur une page, et tout ce qu'on fait pour elle depuis cette page. En tête, les gestes : « Copier le lien d'espace », « Envoyer son planning » (le même e-mail que la publication, pour elle seule, après confirmation), « Relancer », le PDF et l'ICS de son planning, « Verrouiller tout son planning » ou « Libérer tout son planning », « Poser un ajustement » (le formulaire, déjà à son nom) et « Modifier la fiche ». Précédent et suivant parcourent la liste de la page Animateurs telle que vous l'aviez filtrée et triée. Sept sections repliables, les trois premières ouvertes : identité et contact ; disponibilités, sur une frise des jours — un clic sur un jour, puis « Indisponible ce jour » : le jour est écrit dans ses indisponibilités et, si le planning enregistré la place ce jour-là, ses sièges de ce jour sont libérés dans le même geste (un siège déjà commencé reste tel quel ; un siège verrouillé aussi, et la fiche le nomme avec le lien « Gérer les verrous ») ; chaque siège libéré propose « Qui peut tenir ce siège ? », et « Annuler l'absence » rend le jour disponible sans rendre les sièges ; le planning, jour par jour — amplitude, vacations, coupures, pauses et trajets —, chaque vacation menant à la Journée, son siège ouvert ; la charge et l'équité, sa ligne de l'écran Équité avec l'écart à la médiane et le radar, « Comparer avec… » posant une seconde personne dessus ; compétences et souhaits, modifiables sur place ; fragilité, avec « Verrouiller » et « Former » sur chaque poste fragile ; échanges et suivi — publication, accusé, demandes, ajustements, verrous. Les chiffres sont ceux des écrans spécialisés, jamais recalculés. Tout nom d'animateur de l'application mène ici.`,
+              text: $localize`:@@aide.views.def.fiche:Tout ce qu'on sait d'une personne sur une page, et tout ce qu'on fait pour elle depuis cette page. En tête, les gestes : « Copier le lien d'espace », « Envoyer son planning » (le même e-mail que la publication, pour elle seule, après confirmation), « Relancer », le PDF et l'ICS de son planning, « Verrouiller tout son planning » ou « Libérer tout son planning », « Poser un ajustement » (le formulaire, déjà à son nom) et « Modifier la fiche ». Précédent et suivant parcourent la liste de la page Animateurs telle que vous l'aviez filtrée et triée. Sept sections repliables, les trois premières ouvertes : identité et contact ; disponibilités, sur une frise des jours — un clic sur un jour, puis « Indisponible ce jour » : le jour est écrit dans ses indisponibilités et, si le planning enregistré la place ce jour-là, ses sièges de ce jour sont libérés dans le même geste (un siège déjà commencé reste tel quel ; un siège verrouillé aussi, et la fiche le nomme avec le lien « Gérer les verrous ») ; chaque siège libéré propose « Qui peut tenir ce siège ? », et « Annuler l'absence » rend le jour disponible sans rendre les sièges ; le planning, jour par jour — amplitude, vacations, coupures, pauses et trajets —, chaque vacation menant à la page Planning, son siège ouvert ; la charge et l'équité, sa ligne de « Par personne » avec l'écart à la médiane et le radar, « Comparer avec… » posant une seconde personne dessus ; compétences et souhaits, modifiables sur place ; fragilité, avec « Verrouiller » et « Former » sur chaque poste fragile ; échanges et suivi — publication, accusé, demandes, ajustements, verrous. Les chiffres sont ceux des écrans spécialisés, jamais recalculés. Tout nom d'animateur de l'application mène ici.`,
             },
             {
-              term: $localize`:@@aide.views.term.equite:Équité`,
-              text: $localize`:@@aide.views.def.equite:Ce que chacun a reçu, pour arbitrer avant de publier et répondre après — « j'ai trois nocturnes et lui aucune ». Une ligne par animateur affecté : heures totales et par semaine, heures de soirée, de week-end et de jour férié, postes et postes pénibles, stands, typologies et emplacements distincts, part des postes sur une typologie souhaitée, jours travaillés, jours de repos, plus longue série. À côté de chaque valeur, son écart à la médiane. Le tableau se trie, se filtre et s'exporte en CSV. La légende dit quelles colonnes une règle du solveur mesure vraiment : les heures de soirée, de week-end et de jour férié ne sont pesées par aucune — l'écran les montre, il ne les corrige pas. Chaque nom mène à la fiche de la personne, dont la section « Charge et équité » lit ses indicateurs l'un sous l'autre à côté d'un radar : un axe par indicateur — heures, soirées, week-ends, postes pénibles, souhaits satisfaits, et au choix jours fériés, appréciations, jours travaillés, plus longue série. Chaque axe va du minimum de l'édition, au centre, à son maximum, au bord ; le polygone plein est la personne, le pointillé la médiane, la zone grisée l'étendue. Plus loin veut dire plus chargé, sauf sur les axes marqués « ↑ mieux ». Un axe où tout le monde a la même valeur est dessiné au centre et dit « aucune dispersion ». « Comparer avec… » pose une seconde personne sur le même radar, pour arbitrer entre deux.`,
-            },
-            {
-              term: $localize`:@@aide.views.term.hours:Heures et besoin en animateurs`,
-              text: $localize`:@@aide.views.def.hours:Les heures travaillées par animateur d'un côté, l'estimation du nombre minimum d'animateurs à recruter de l'autre. La seconde se calcule avant toute résolution, à partir des seuls stands et créneaux : quatre bornes, dont la plus grande est retenue — le pic de sièges simultanés, ce pic prolongé de la pause légale, la charge de la semaine la plus lourde, et la rotation sur les jours. Chacune est un plancher prouvé, jamais une cible. Elle se lit aussi typologie par typologie : une typologie dont le minimum dépasse le nombre d'animateurs qui la déclarent est le goulot.`,
+              term: $localize`:@@aide.views.term.hours:Besoin en animateurs`,
+              text: $localize`:@@aide.views.def.hours:L'estimation du nombre minimum d'animateurs à recruter — les heures de chacun, elles, sont sur « Par personne ». Elle se calcule avant toute résolution, à partir des seuls stands et créneaux : quatre bornes, dont la plus grande est retenue — le pic de sièges simultanés, ce pic prolongé de la pause légale, la charge de la semaine la plus lourde, et la rotation sur les jours. Chacune est un plancher prouvé, jamais une cible. Elle se lit aussi typologie par typologie : une typologie dont le minimum dépasse le nombre d'animateurs qui la déclarent est le goulot.`,
             },
             {
               term: $localize`:@@aide.views.term.fragilite:Fragilité du planning`,
@@ -268,11 +268,7 @@ export function buildOperationsSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.banc:Panneau Siège`,
-              text: $localize`:@@aide.views.def.banc:Le panneau qui s'ouvre à droite de la Journée au clic sur une case — un nom ou un siège libre du calendrier, une vacation du rail, le bouton « Siège » d'un stand de la carte, « Ouvrir le siège » d'une pause sans relais, l'icône d'un siège dans les changements. Il dit le stand, le créneau, qui tient le siège et les verrous qui le figent ; sur un siège tenu, « Pourquoi lui ? » nomme les règles en défaut dans les mots de la page Contraintes, puis viennent « Remplacer » (les remplaçants viables, cherchés sur le planning enregistré avec les règles de l'édition, avec « Appliquer »), « Déplacer vers… », « Libérer », « Verrouiller » ou « Déverrouiller », « Qui peut tenir ce siège ? » en lecture seule, et « Ouvrir sa fiche ». « Libérer » demande confirmation et, tant que « La tenir à l'écart de ce créneau au prochain calcul » reste cochée, verrouille la personne hors de ce créneau : sans cela, « Corriger le reste » pourrait l'y remettre aussitôt. « Appliquer » et « Libérer » ne touchent le siège que s'il est encore tenu par la personne affichée. Sur un siège vide, « Qui peut tenir ce siège ? » ouvre l'ancien banc de touche, limité à ce siège : qui n'est de service nulle part à ce moment, et ce qui empêcherait chacun de le tenir — toutes les raisons, pas seulement la première. Les personnes disponibles viennent d'abord, avec « Placer » ; celles qu'une règle dure écarte se déplient à la demande. « Placer » affecte la personne et, tant que « La garder au prochain calcul » reste cochée, la verrouille sur ce créneau pour que la prochaine résolution la laisse en place ; le serveur refuse en nommant la règle un placement qui casserait une règle dure, et prévient quand il coûte en qualité. « Placer » n'est offert ni à une personne qu'un verrou tient hors de ce créneau — la ligne le dit —, ni sur un créneau déjà commencé. « Poser un ajustement » ouvre le formulaire d'ajustement manuel, prérempli avec ce stand et ce créneau. Après un geste, le panneau dit ce qui reste à faire : « Non publié : Prévenir » mène à la publication, et « Corriger le reste » lance une résolution incrémentale quand le geste a laissé un siège vide. Échap ou la croix le referment. Le panneau se retrouve depuis la palette en tapant « banc ».`,
-            },
-            {
-              term: $localize`:@@aide.views.term.graphe:Graphe`,
-              text: $localize`:@@aide.views.def.graphe:La même donnée prise par le terrain : un emplacement, les stands qui s'y trouvent, les créneaux où ils sont armés, qui y est affecté. Une colonne par niveau, on clique pour ouvrir la suivante. Les emplacements et leurs stands se parcourent tout de suite ; les deux dernières colonnes attendent une résolution.`,
+              text: $localize`:@@aide.views.def.banc:Le panneau qui s'ouvre à droite de la page Planning au clic sur une case — un nom ou un siège libre du tableau, une vacation du rail, le bouton « Siège » d'un stand de la carte, « Ouvrir le siège » d'une pause sans relais, l'icône d'un siège dans les changements. Il dit le stand, le créneau, qui tient le siège et les verrous qui le figent ; sur un siège tenu, « Pourquoi lui ? » nomme les règles en défaut dans les mots de la page Contraintes, puis viennent « Remplacer » (les remplaçants viables, cherchés sur le planning enregistré avec les règles de l'édition, avec « Appliquer »), « Déplacer vers… », « Libérer », « Verrouiller » ou « Déverrouiller », « Qui peut tenir ce siège ? » en lecture seule, et « Ouvrir sa fiche ». « Libérer » demande confirmation et, tant que « La tenir à l'écart de ce créneau au prochain calcul » reste cochée, verrouille la personne hors de ce créneau : sans cela, « Corriger le reste » pourrait l'y remettre aussitôt. « Appliquer » et « Libérer » ne touchent le siège que s'il est encore tenu par la personne affichée. Sur un siège vide, « Qui peut tenir ce siège ? » ouvre l'ancien banc de touche, limité à ce siège : qui n'est de service nulle part à ce moment, et ce qui empêcherait chacun de le tenir — toutes les raisons, pas seulement la première. Les personnes disponibles viennent d'abord, avec « Placer » ; celles qu'une règle dure écarte se déplient à la demande. « Placer » affecte la personne et, tant que « La garder au prochain calcul » reste cochée, la verrouille sur ce créneau pour que la prochaine résolution la laisse en place ; le serveur refuse en nommant la règle un placement qui casserait une règle dure, et prévient quand il coûte en qualité. « Placer » n'est offert ni à une personne qu'un verrou tient hors de ce créneau — la ligne le dit —, ni sur un créneau déjà commencé. « Poser un ajustement » ouvre le formulaire d'ajustement manuel, prérempli avec ce stand et ce créneau. Après un geste, le panneau dit ce qui reste à faire : « Non publié : Prévenir » mène à la publication, et « Corriger le reste » lance une résolution incrémentale quand le geste a laissé un siège vide. Échap ou la croix le referment. Le panneau se retrouve depuis la palette en tapant « banc ».`,
             },
             {
               term: $localize`:@@aide.views.term.comparateur:Comparateur A/B`,
@@ -286,11 +282,21 @@ export function buildOperationsSections(): HelpSection[] {
         },
       ],
       links: [
-        { route: '/calendar', label: $localize`:@@nav.link.calendar:Calendrier des affectations` },
-        { route: '/heatmap', label: $localize`:@@nav.link.heatmap:Heatmap de charge` },
+        { route: '/journee', label: $localize`:@@nav.link.journee:Planning` },
         {
-          route: '/repartition-heures',
-          label: $localize`:@@nav.link.repartitionHeures:Répartition des heures`,
+          route: '/journee',
+          queryParams: { axe: 'stand' },
+          label: $localize`:@@aide.link.parStand:Planning, par stand`,
+        },
+        {
+          route: '/journee',
+          queryParams: { axe: 'personne' },
+          label: $localize`:@@aide.link.parPersonne:Planning, par personne`,
+        },
+        {
+          route: '/journee',
+          queryParams: { axe: 'typologie' },
+          label: $localize`:@@aide.link.parTypologie:Planning, par typologie`,
         },
         { route: '/marge', label: $localize`:@@nav.link.marge:Marge disponible` },
         {
@@ -303,13 +309,6 @@ export function buildOperationsSections(): HelpSection[] {
           queryParams: { vue: 'carte' },
           label: $localize`:@@aide.link.carteJour:Carte de la journée`,
         },
-        { route: '/hours', label: $localize`:@@nav.link.hours:Heures` },
-        {
-          route: '/typologies-planning',
-          label: $localize`:@@nav.link.typologiesPlanning:Planning par typologie`,
-        },
-        { route: '/equite', label: $localize`:@@nav.link.equite:Équité` },
-        { route: '/repos', label: $localize`:@@nav.link.repos:Jours de repos` },
         {
           route: '/diagnostic',
           queryParams: { onglet: 'fragilite' },
@@ -318,17 +317,15 @@ export function buildOperationsSections(): HelpSection[] {
         {
           route: '/journee',
           queryParams: { vue: 'pauses' },
-          label: $localize`:@@aide.link.pauses:Pauses`,
+          label: $localize`:@@aide.link.pauses:Pauses et repas`,
         },
-        { route: '/intendance', label: $localize`:@@nav.link.intendance:Intendance des repas` },
         { route: '/publication', label: $localize`:@@nav.link.publication:Publication` },
         {
           route: '/diagnostic',
           queryParams: { onglet: 'former' },
           label: $localize`:@@aide.link.former:À former`,
         },
-        { route: '/journee', label: $localize`:@@aide.link.siege:Panneau Siège (Journée)` },
-        { route: '/graphe', label: $localize`:@@nav.link.graphe:Graphe` },
+        { route: '/journee', label: $localize`:@@aide.link.siege:Panneau Siège (Planning)` },
         { route: '/kpi', label: $localize`:@@nav.link.kpi:Autopsie du planning` },
         { route: '/comparateur', label: $localize`:@@nav.link.comparateur:Comparateur A/B` },
       ],
@@ -370,7 +367,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.shortcuts.onglets:La palette connaît aussi les onglets et les vues des pages : « problèmes » ou « mural » ouvrent directement le bon onglet ; « banc » mène à la Journée, dont le panneau du siège a repris le banc de touche. Sans rien taper, elle liste le menu dans son ordre.`,
+          text: $localize`:@@aide.shortcuts.onglets:La palette connaît aussi les onglets et les vues des pages : « problèmes » ou « mural » ouvrent directement le bon onglet ; « banc » mène à la page Planning, dont le panneau du siège a repris le banc de touche. Sans rien taper, elle liste le menu dans son ordre.`,
         },
         {
           kind: 'paragraph',
@@ -440,7 +437,7 @@ export function buildOperationsSections(): HelpSection[] {
       ],
       links: [
         { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
-        { route: '/calendar', label: $localize`:@@nav.link.calendar:Calendrier des affectations` },
+        { route: '/journee', label: $localize`:@@nav.link.journee:Planning` },
       ],
     },
   ];

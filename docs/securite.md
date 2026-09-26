@@ -518,6 +518,15 @@ emporte ses liens. Un jeton inconnu et un jeton révoqué reçoivent le même `4
 avec la même phrase. Création et révocation sont journalisées ; les lectures ne
 le sont pas — une par minute et par écran n'est pas une trace.
 
+### L'impression d'une journée par l'administrateur
+
+« Imprimer cette journée », sur la page Planning, ouvre la même mise en page
+(`/impression/:date`) sans aucun jeton : elle lit
+`GET /api/affichage-mural/apercu`, **sous la session admin**, comme la gestion
+des liens. Rien ne s'ajoute donc sous `/api/mural/`, et le périmètre du jeton
+reste une seule route — `AffichageMuralSecurityTest` vérifie que l'aperçu refuse
+une requête sans session, jeton en en-tête ou en paramètre compris.
+
 Les liens ne voyagent ni dans l'export SQL ni dans la duplication d'une édition :
 ce sont des accès de cette instance, pas des données du jeu. Revers attendu :
 **importer un dump SQL les supprime tous**, puisque l'import vide les éditions et

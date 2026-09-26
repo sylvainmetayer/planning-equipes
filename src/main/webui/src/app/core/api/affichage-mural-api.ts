@@ -41,4 +41,15 @@ export class AffichageMuralApi {
       `/api/mural/${encodeURIComponent(jeton)}`,
     );
   }
+
+  /**
+   * The wall view of one day, for the admin's « Imprimer cette journée »: the
+   * same read a link opens, under the admin session instead of a token. Rejects
+   * with the untouched HTTP error, like {@link view}.
+   */
+  preview(date: string): Promise<AffichageMuralView> {
+    return this.api.getPreservingHttpError<AffichageMuralView>(
+      `/api/affichage-mural/apercu?date=${encodeURIComponent(date)}`,
+    );
+  }
 }

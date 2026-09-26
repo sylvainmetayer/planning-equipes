@@ -132,9 +132,10 @@ export interface LienPivot {
  *
  * A cell used to open on a count and stop there — a dead end. Each axis has
  * exactly one screen where its breaches are looked at and fixed: a day is read
- * on the Journée screen, a stand on the assignment calendar filtered on it, a
- * person on their fiche, its planning section open. The label names the target rather than the
- * screen, because that is what the reader was looking at when they clicked.
+ * on the Planning page, a stand on the same page filtered on it, a person on
+ * their fiche, its planning section open. The label names the target rather
+ * than the screen, because that is what the reader was looking at when they
+ * clicked.
  */
 export function cellLink(axe: AxePivot, cle: string, libelle: string): LienPivot {
   if (axe === 'ANIMATEUR') {
@@ -146,14 +147,14 @@ export function cellLink(axe: AxePivot, cle: string, libelle: string): LienPivot
   }
   if (axe === 'STAND') {
     return {
-      route: '/calendar',
+      route: '/journee',
       queryParams: { stand: cle },
       label: $localize`:@@constraints.pivot.detail.versStand:Voir le planning de ${libelle}:stand:`,
     };
   }
   return {
     route: '/journee',
-    queryParams: { jour: cle },
+    queryParams: { date: cle },
     label: $localize`:@@constraints.pivot.detail.versJournee:Voir la journée du ${libelle}:jour:`,
   };
 }

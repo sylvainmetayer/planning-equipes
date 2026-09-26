@@ -56,17 +56,23 @@ describe('MuralPage', () => {
   let fixture: ComponentFixture<MuralPage>;
   let view: ReturnType<typeof vi.fn>;
 
-  async function rendre(query: Record<string, string> = {}): Promise<void> {
+  let preview: ReturnType<typeof vi.fn>;
+
+  async function rendre(
+    query: Record<string, string> = {},
+    route: { params?: Record<string, string>; data?: Record<string, unknown> } = {},
+  ): Promise<void> {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
-        { provide: AffichageMuralApi, useValue: { view } },
+        { provide: AffichageMuralApi, useValue: { view, preview } },
         {
           provide: ActivatedRoute,
           useValue: {
             snapshot: {
-              paramMap: convertToParamMap({ jeton: 'abc' }),
+              paramMap: convertToParamMap(route.params ?? { jeton: 'abc' }),
               queryParamMap: convertToParamMap(query),
+              data: route.data ?? {},
             },
           },
         },
@@ -88,6 +94,7 @@ describe('MuralPage', () => {
       toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout', 'performance'],
     });
     view = vi.fn(async () => VIEW);
+    preview = vi.fn(async () => VIEW);
   });
 
   afterEach(() => {
@@ -235,5 +242,16 @@ describe('MuralPage', () => {
     expect(text()).toContain('15:00–19:00');
     expect((fixture.nativeElement as HTMLElement).querySelector('.mural-horloge')).toBeNull();
     expect((fixture.nativeElement as HTMLElement).querySelector('.mural-bandeau')).toBeNull();
+  });
+
+  // #712: « Imprimer cette journée » of the Planning page — the same print
+  // layout, read under the admin session for the day asked, no token at all.
+  it("prints the admin's day through the session, never through a token", async () => {
+    await rendre({}, { params: { date: '2026-07-08' }, data: { apercu: true } });
+
+    expect(preview).toHaveBeenCalledWith('2026-07-08');
+    expect(view).not.toHaveBeenCalled();
+    expect(text()).toContain('09:00–13:00');
+    expect((fixture.nativeElement as HTMLElement).querySelector('.mural-horloge')).toBeNull();
   });
 });

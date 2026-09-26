@@ -90,7 +90,7 @@ class PlanningHoursServiceTest {
         // Comma, not dot: a French spreadsheet reads « 4.00 » as text, and the
         // column an organiser wants to sum then sums to zero.
         assertThat(csv).isEqualTo("""
-                        animateur;2026-W33;total;dimanche;jours feries;dont dimanches feries;apres 22h
+                        animateur;2026-W33;total;dimanche;jours feries;dont dimanches feries;nuit paie (apres 22h)
                         Ada Lovelace;4,00;4,00;0,00;0,00;0,00;0,00
                         """);
     }
@@ -216,9 +216,12 @@ class PlanningHoursServiceTest {
         assertThat(ligne.heuresNuit()).isZero();
     }
 
-    /** The CSV carries the four payroll columns, in the order the screen shows them. */
+    /**
+     * The CSV carries the four payroll columns, in the order the screen shows
+     * them; the 22:00 one says it is the payroll's night, not the evening.
+     */
     @Test
-    void leCsvPorteLesColonnesDeLaPaie() {
+    void csvCarriesThePayrollColumns() {
         Animateur ada = new Animateur("A-ADA", "Ada", "Lovelace", LocalDate.of(1990, 1, 1), false);
         PosteAffectation dimancheSoir = poste("DS", ada, LocalDate.of(2026, 8, 16), 20, 23);
 
@@ -227,7 +230,7 @@ class PlanningHoursServiceTest {
         String csv = service.generateCsv(rapport);
 
         assertThat(csv.lines().findFirst().orElseThrow())
-                .endsWith(";total;dimanche;jours feries;dont dimanches feries;apres 22h");
+                .endsWith(";total;dimanche;jours feries;dont dimanches feries;nuit paie (apres 22h)");
         assertThat(csv).contains("Ada Lovelace;3,00;3,00;3,00;0,00;0,00;1,00");
     }
 }

@@ -286,7 +286,7 @@ test.describe('navigation clavier des tables de référence', () => {
     // Le balayage vaut pour toutes les tables triables, pas seulement celle
     // qui a cassé : la prochaine colonne à recevoir une icône ou une case à
     // cocher est celle qui ramènerait le défaut.
-    for (const route of ['/creneaux', '/hours']) {
+    for (const route of ['/creneaux', '/typologies']) {
       await page.goto(route);
       await expect(page.locator('table')).toBeVisible();
       verifies += await entetesQuiNeVolentPasLeurNom(page);

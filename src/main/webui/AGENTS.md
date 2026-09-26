@@ -77,7 +77,11 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `pages/mural/mural.ts`; it reads the server every minute and keeps its last
   state offline, turns its pages every fifteen seconds, and `?impression=1`
   lays the whole day out for print) render outside it — no admin navigation,
-  no admin polling. The espace has
+  no admin polling. So does `/impression/:date` (« Impression de la journée »
+  — « Imprimer cette journée » of the Planning page: the same print layout of
+  `pages/mural`, route data `apercu`, read under the admin session from
+  `GET /api/affichage-mural/apercu`, never through a token; a 401 sends to
+  `/login` like any admin call). The espace has
   five child routes of its own: `/animateur/:jeton` (« Mon planning » — three
   tabs chosen by `?onglet=jour|apercu|coequipiers`, the day on screen carried by
   `?jour=`: the day with its strip, its state band and its seat cards; the
@@ -153,7 +157,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `pages/ouvertures/grille-horaires.ts` and saved by the same body as the
   Horaires des stands grid — the route's `canDeactivate` asks before unsaved
   cells are dropped —; its opening anomalies; its seats after a solve, an
-  empty one opened in the Siège panel of the Journée; « Comparer avec… »; its
+  empty one opened in the Siège panel of the Planning page; « Comparer avec… »; its
   history; « Règles », folded, the condensed form, and the whole stand form
   behind « Modifier les règles ». « précédent / suivant » walk the table in
   the order of its `?sort=`, over the pure `pages/stands/stand-order.ts` the
@@ -228,19 +232,49 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   renamed; two readings chosen by `?vue=liste|reseau` — the table, and the
   network of the AFFINITE / INCOMPATIBILITE pairs drawn by hand in SVG over
   the pure `reseau-paires.ts`, filtered by `?personne=` and `?paires=`),
-  `/calendar`, `/journee` (« Journée » — one day under five
-  renderings chosen by `?vue=calendrier|rail|carte|pauses|changements`: the
-  calendar stand by stand, the rail animateur by animateur, the day replayed on
+  `/journee` (« Planning », the former Journée, issue #712 — the plan at the
+  top: the title on one line with the renderings beside it; the day chosen on
+  a foldable mini-month, `pages/journee/mini-mois.ts` over the pure `mois.ts`,
+  each day marked with its empty seats, its reading, its lock and its
+  consigne, « aujourd'hui » being the server's date from `ConsignesStore`;
+  the stand and animateur filters as `shared/selection-recherche` autocompletes;
+  the relecture as one line of four chips (`relecture-barre.ts`) — empty
+  seats, breaks without relay, locked seats, changes — each **narrowing** the
+  rendering on what it counts (`?sieges=vides|verrous` on the table,
+  `?relais=sans` on the breaks, the Changements rendering), the comment and
+  « Relu et accepté » in its menu (`relecture-dialog.ts` over the former
+  panel); the consigne in one line (`consigne-ligne.ts`); « Imprimer cette
+  journée » (`/impression/:date`) and « Afficher sur la TV » (Paramètres ›
+  Affichage mural). One day under five renderings chosen by
+  `?vue=calendrier|rail|carte|pauses|changements`: the table stands ×
+  timeslots across the whole width (`calendar-day-vue`, one name per chip,
+  empty seats in red, a closed timeslot in a neutral « fermé », a partial
+  opening as its hours), the rail animateur by animateur, the day replayed on
   the emplacement map with one time cursor — and under it the load per
   emplacement, place × span or `?charge=evenement` place × day, over the pure
-  `carte-jour/charge-emplacement.ts` —, the breaks, and what changed since
+  `carte-jour/charge-emplacement.ts` —, the breaks and meals (the intendance of
+  the day under them, `pages/intendance/intendance-jour`), and what changed since
   the last publication or the last solve (`?reference=publication|resolution`,
   absent = the publication when one exists; `?lecture=animateurs` for the
   per-person reading); `?comparer=<day>` puts a second day beside the first
   on the calendar and the rail — aligned lines, a banner of écarts, read-only,
   `?ecarts=1` for the differences only — in `pages/journee/comparaison-vue`;
-  one day selector and the
-  same `stand`, `animateur` and `q` filters in the URL, the plan and the breaks
+  one day selector (`date`, and `jour` read as a date or as the number of the
+  former screens) and the
+  same `stand`, `animateur` and `q` filters in the URL — with `emplacement`
+  and `typologie`, the four kept across the axes: `?axe=stand|personne|typologie`
+  turns the page from one day to the whole event (absent = the day). « Par
+  stand » and « Par personne » are two readings of the shared
+  `pages/planning-grille` (a frozen first column, one tab stop moved by the
+  arrows, templates for the header and the cell, a sort asked of the caller):
+  per stand, a density in `?densite=noms|compteurs|couverture`, closed told
+  from empty, a total per day, and the treemap of the former Répartition des
+  heures as `?vue=treemap` (`pages/repartition-heures`, its day in
+  `?jourTreemap=`); per person, the Équité and payroll columns, all sortable,
+  the always-empty ones hidden until `?colonnes=toutes`, the frise as
+  `?vue=frise`, and the two CSV files. « Par typologie » is a table whose
+  figures are links. The one evening is `EquiteService`'s settable start; the
+  fixed 22:00 is the payroll's night alone (ADR 0055). The plan and the breaks
   read once by the page and handed to the rendering on screen — the views under
   `pages/calendar-day`, `pages/rail-jour`, `pages/carte-jour` and
   `pages/pauses`, and `pages/journee/changements-vue`, are its components, not
@@ -269,27 +303,8 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `pages/problemes`, `pages/staffing`, `pages/fragilite` and `pages/formation`
   keep their own view state in the URL next to the page's key; the bench, once
   a fifth tab, is the Siège panel's dialog, and `?onglet=banc` is sent to the
-  Journée by the route's `benchTabToJournee` guard), `/echanges`, `/hours`, `/intendance` (« Intendance des repas » — the meal
-  breaks counted rather than named: how many people are out, hour by hour and
-  per emplacement, « combien de sandwichs et où les porter »), `/typologies-planning` (« Planning par typologie » — the persisted plan read
-  by typologie of jeu, under four renderings chosen on the page: the table, the
-  compared bars, the typologie × jour heatmap and the cards; four filters narrow
-  the rows and every animateur is a link to their fiche, planning open), `/equite` (« Équité » — one line per assigned animateur: evening, week-end and holiday hours, demanding seats, variety, honoured wishes, rest days, each with its distance to the median, every name leading to the fiche; its former `?vue=fiche&animateur=` reading — one person and the radar — is the fiche's « Charge et équité » section, where the route's `equityFicheToAnimateur` guard sends it, `axes` and `comparer` kept),
-  `/repos` (« Jours de repos » — who works, who
-  rests, who was unavailable, under two renderings chosen by `?vue=grille|frise`:
-  the animateur × day grid, whose cells print their hours only under
-  `?densite=confort`, and the frise, one proportional bar per animateur that
-  fits a month-long edition on a screen; `?date=` marks one day's column and
-  puts the grid's tab stop on it), `/jour-j` (« Mode jour J » — the day-of screen:
-  mark somebody absent, repair the seats they held), `/heatmap` (« Heatmap de charge »), `/repartition-heures`
-  (« Répartition des heures » — a treemap of the seat-hours to staff, sized by
-  the need and coloured by its coverage in the Heatmap's colours but on
-  thresholds of its own (critique under 80 %, partiel 80–99 %, pourvu 100 %),
-  hand-squarified
-  over the pure `treemap.ts`; `?regroupement=typologie` files a stand offering
-  several typologies under their combination so the surfaces still add up,
-  `?semaine=`/`?date=` and `?emplacement=` narrow it, `?zoom=` keeps the group
-  on screen), `/marge` (« Marge
+  Journée by the route's `benchTabToJournee` guard), `/echanges`, `/jour-j` (« Mode jour J » — the day-of screen:
+  mark somebody absent, repair the seats they held), `/marge` (« Marge
   disponible » — the day × timeslot grid of what is left: the animateurs
   available then minus the seats to staff, read either on the seats a solve
   would have to fill or on the plan persisted), `/kpi` (« Autopsie du
@@ -339,7 +354,15 @@ and `?dosage=` in the URL), `/comparateur`
   `/pauses`, `/problemes`, `/staffing`, `/fragilite` and `/banc-de-touche`,
   whose redirects carry their query params along, renamed where the page now
   owns the key — `/banc-de-touche` landing on `/journee` with its `creneau`
-  and `stand`).
+  and `stand` — and the three the Planning page absorbed in issue #712:
+  `/calendar` (its `date`, `stand` and `animateur`; the `month` it showed is
+  the day's own), `/intendance` (`?vue=pauses`) and `/graphe` (`?vue=carte`),
+  through `redirectToPlanning` of `app.routes.ts`, and the six its axes
+  absorbed in issue #713: `/heatmap`, `/repartition-heures` (`?vue=treemap`,
+  its `date` becoming `jourTreemap`) and `/typologies-planning`, then `/hours`,
+  `/repos` and `/equite` on `?axe=personne` — `/equite?vue=fiche&animateur=`
+  landing on the fiche's « Charge et équité » section,
+  `/animateurs/:id?section=equite`, its `axes` and `comparer` kept).
   Adding a functional block means adding a route, a `app/pages/<block>/`
   folder and its line in `shell/nav-groups.ts` (a group, or the off-menu
   list), never a new section inside an existing page.
@@ -435,7 +458,7 @@ and `?dosage=` in the URL), `/comparateur`
   away — through the dialog's own `keydownEvents()`, never a `document`
   listener. Do not add a second `document`-level
   `keydown`; the Konami easter egg of the shell is the one accepted exception.
-  Arrow navigation inside a widget — the calendars, the heatmap, the reference
+  Arrow navigation inside a widget — the calendars, the planning grid, the reference
   tables through `core/table-navigation.ts` — is *not* an exception: it is
   bound to that widget's own element, consumes only the keys it uses, and
   leaves everything else travelling up to the global listener, which stops at a
@@ -537,8 +560,8 @@ and `?dosage=` in the URL), `/comparateur`
   `@sentry/angular` (error reporting, loaded by a dynamic `import()` only when a
   DSN is configured — see `core/observability.ts`); `leaflet` + `@types/leaflet`
   (the maps, reached only by the `@defer` of the Lieux tab of `/stands`, by
-  the location form a stand form loads with `import()`, by the lazy `/graphe` route and
-  by the `@defer` block of `/journee` around its map rendering — it is a
+  the location form a stand form loads with `import()` and by the `@defer`
+  block of `/journee` around its map rendering — it is a
   150 kB chunk of its own and **must stay out of the initial bundle** and out
   of the chunk of the three other renderings of the day, so nothing eagerly
   loaded may import it and the map view is never referenced outside that
