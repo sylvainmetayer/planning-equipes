@@ -1,0 +1,55 @@
+<h2 mat-dialog-title class="legal-disable-title">
+  <mat-icon color="warn">gavel</mat-icon>
+  @if (data.legale) {
+    <span i18n="@@constraints.legalDisable.title">Désactiver une règle qui fonde le planning en droit ?</span>
+  } @else {
+    <span i18n="@@constraints.legalDisable.titreOrganisation">Désactiver une règle que l'organisation s'est donnée ?</span>
+  }
+</h2>
+
+<mat-dialog-content>
+  <p class="legal-disable-rule">
+    <strong>{{ data.libelle }}</strong>
+    <span class="legal-disable-categorie">{{ data.categorie }}</span>
+  </p>
+  <p class="legal-disable-description"><app-legal-text [text]="data.description" /></p>
+
+  @if (data.legale) {
+    <p i18n="@@constraints.legalDisable.effet">
+      Désactivée, la règle n'est plus évaluée : le solveur peut produire un planning
+      <strong>contraire au Code du travail avec un score dur à zéro</strong>, sans que rien le signale.
+    </p>
+  } @else {
+    <p i18n="@@constraints.legalDisable.effetOrganisation">
+      Cette règle n'est pas une obligation du Code du travail mais une règle que l'organisation s'est donnée.
+      Désactivée, elle n'est plus évaluée : le solveur peut produire un planning
+      <strong>qui l'ignore avec un score dur à zéro</strong>, sans que rien le signale.
+    </p>
+  }
+  <p i18n="@@constraints.legalDisable.responsabilite">
+    L'organisation qui exploite l'application demeure <strong>l'employeur ou le donneur d'ordre</strong> des personnes
+    planifiées, et reste seule responsable du respect de la réglementation applicable — durées maximales et repos,
+    encadrement du travail des mineurs — ainsi que du planning produit et diffusé.
+  </p>
+  <p i18n="@@constraints.legalDisable.aideDecision">
+    Les contrôles intégrés à l'application sont une <strong>aide à la décision</strong> : ils ne valent ni validation
+    juridique, ni certification de conformité, et ne dispensent d'aucune vérification.
+  </p>
+  <p class="legal-disable-trace" i18n="@@constraints.legalDisable.trace">
+    Cette décision n'est ni motivée ni journalisée : elle reste visible ici, et sur la page Solveur, tant que la règle
+    est désactivée.
+  </p>
+  <p>
+    <a routerLink="/conditions-utilisation" target="_blank" rel="noopener" i18n="@@constraints.legalDisable.versCgu">
+      Lire les conditions générales d'utilisation
+    </a>
+  </p>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton (click)="dialogRef.close(false)" i18n="@@common.cancel">Annuler</button>
+  <button matButton="filled" color="warn" (click)="dialogRef.close(true)"
+          i18n="@@constraints.legalDisable.confirmer">
+    Désactiver quand même
+  </button>
+</mat-dialog-actions>

@@ -13,9 +13,9 @@ festival:
 
 contraintes:
   poids:
-    appreciationIncompatible: 3
-    repartitionMineursParCreneau: 2
-    maxJoursConsecutifsTravailles: 5
+    appreciationIncompatible: 15
+    repartitionMineursParCreneau: 10
+    maxJoursConsecutifsTravailles: 25
 
 typologies:
   - id: JEUX_DE_SOCIETE

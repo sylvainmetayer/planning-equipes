@@ -3,7 +3,7 @@
 // through the real handler and not called directly), the three ways of
 // launching a solve, and `raisonVerrou`, the sentence that says why the
 // buttons are dead. The cards test themselves next door — `score-curve-card`,
-// `publication-panel`, `solve-recap`, `solver-queue`, `solver-duration-card`,
+// `publication-panel`, `solve-recap`, `solver-queue`,
 // `solver-volumetry`, `incremental-result` — and render here for real, on the
 // same mocks.
 
@@ -12,7 +12,9 @@ import { provideRouter } from '@angular/router';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AnalysesApi } from '../../core/api/analyses-api';
 import { PlanningApi } from '../../core/api/planning-api';
+import { PlanSnapshotStore } from '../../core/plan-snapshot.store';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
@@ -199,6 +201,15 @@ describe('SolverPage', () => {
     }),
   };
   const planningApi = {
+    solveInputs: vi.fn(async () => ({
+      locks: 2,
+      adjustments: 0,
+      consignes: [{ date: '2026-08-02', motif: 'Canicule' }],
+      pendingDeclarations: 1,
+      disabledRules: 0,
+      changesSinceSolve: 3,
+      solvedAt: null,
+    })),
     persistedCount: vi.fn(),
     publicationPreview: vi.fn(),
     publish: vi.fn(),
@@ -290,6 +301,12 @@ describe('SolverPage', () => {
         { provide: ReferenceCrudService, useValue: crud },
         { provide: PlanningResolutionStore, useValue: resolution },
         { provide: ProblemesStore, useValue: problemes },
+        // « Dernières versions du plan » reads the history and the snapshots.
+        { provide: AnalysesApi, useValue: { kpiHistory: vi.fn(async () => []) } },
+        {
+          provide: PlanSnapshotStore,
+          useValue: { snapshots: signal([]), reload: vi.fn(async () => undefined) },
+        },
       ],
     });
   });
@@ -312,6 +329,78 @@ describe('SolverPage', () => {
   function stored(analysedAt: string, texte: string): ConstraintsView {
     return { analysedAt, lecture: [phrase(texte)] } as unknown as ConstraintsView;
   }
+
+  /** The order of the page, and the words on it (issue #719). */
+  describe('the page as it reads', () => {
+    function racine(): HTMLElement {
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    it('puts the feasibility first, then what the solve receives, then the buttons', async () => {
+      createPage();
+      await fixture.whenStable();
+
+      const order = Array.from(
+        racine().querySelectorAll('app-feasibility-banner, app-solve-inputs, .solver-modes'),
+      ).map((element) => element.tagName.toLowerCase());
+      expect(order).toEqual(['app-feasibility-banner', 'app-solve-inputs', 'ul']);
+    });
+
+    it('says what each of the three buttons does on the page, not in a tooltip', async () => {
+      createPage();
+      await fixture.whenStable();
+
+      const modes = Array.from(racine().querySelectorAll('.solver-modes li'));
+      expect(modes).toHaveLength(3);
+      for (const mode of modes) {
+        const button = mode.querySelector('button')!;
+        const phrase = racine().querySelector(`#${button.getAttribute('aria-describedby')}`);
+        expect(phrase?.textContent?.trim()).not.toBe('');
+        expect(button.hasAttribute('mattooltip')).toBe(false);
+      }
+      expect(modes[1].textContent).toContain('Ne rouvre que ce que les changements ont invalidé');
+    });
+
+    it('writes « Solveur » once, and no search space', async () => {
+      createPage();
+      await fixture.whenStable();
+
+      expect(racine().textContent!.match(/Solveur/g) ?? []).toHaveLength(1);
+      expect(racine().textContent).not.toContain('espace de recherche');
+    });
+
+    it('puts the plan, its reading and its publication one click away after a run', async () => {
+      jobs.listJobs.mockResolvedValue([jobView()]);
+      createPage();
+      await vi.waitFor(async () => {
+        await fixture.whenStable();
+        expect(racine().querySelector('a[href="/publication"]')).not.toBeNull();
+      });
+
+      const labels = Array.from(racine().querySelectorAll('mat-card-actions a')).map((each) =>
+        each.textContent!.trim(),
+      );
+      expect(labels).toEqual(
+        expect.arrayContaining([
+          'view_dayVoir le planning',
+          'fact_checkRelire',
+          'outgoing_mailPublier',
+        ]),
+      );
+    });
+
+    it('shows « Corriger » what changed since the plan before asking for a perimeter', async () => {
+      const page = createPage() as unknown as { onSolveIncremental: () => Promise<void> };
+      dialog.open.mockClear();
+
+      // The dialog never closes here: only what it was opened with matters.
+      void page.onSolveIncremental();
+      await vi.waitFor(() => expect(dialog.open).toHaveBeenCalledOnce());
+
+      const [, config] = dialog.open.mock.calls[0] as unknown as [unknown, { data: unknown }];
+      expect(config.data).toEqual({ depuis: '' });
+    });
+  });
 
   describe("the solve's reading", () => {
     it('stands over its own stored analysis, and gives way to the next one', async () => {

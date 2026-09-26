@@ -298,52 +298,62 @@ export function buildNavGroups(): NavGroup[] {
           ],
         },
         {
-          path: '/ad-hoc-constraints',
-          label: $localize`:@@nav.link.adHocConstraints:Ajustements manuels`,
-          icon: 'rule',
+          // What the next solve must respect (issue #719): the adjustments,
+          // the locks and the consignes (ADR 0043), one page in three tabs.
+          // No shortcut: its initial is Créneaux's.
+          path: '/consignes-solveur',
+          label: $localize`:@@nav.link.consignesSolveur:Consignes au solveur`,
+          icon: 'assignment_late',
+          keywords: $localize`:@@nav.keywords.consignesSolveur:ajustements manuels verrouillages consignes arrêté canicule fermeture`,
           tabs: [
             tab(
-              'vue',
-              'reseau',
-              $localize`:@@nav.tab.reseau:Réseau`,
-              $localize`:@@nav.keywords.reseau:affinités incompatibilités paires`,
+              'onglet',
+              'ajustements',
+              $localize`:@@consignesSolveur.onglet.ajustements:Ajustements`,
+              $localize`:@@nav.keywords.ajustements:affinités incompatibilités affectation forcée`,
+            ),
+            tab(
+              'onglet',
+              'verrouillages',
+              $localize`:@@consignesSolveur.onglet.verrouillages:Verrouillages`,
+              $localize`:@@nav.keywords.verrouillages:figer geler`,
+            ),
+            tab(
+              'onglet',
+              'consignes',
+              $localize`:@@consignesSolveur.onglet.consignes:Consignes`,
+              $localize`:@@nav.keywords.consignes:arrêté canicule fermeture`,
             ),
           ],
         },
         {
-          path: '/verrouillages',
-          label: $localize`:@@nav.link.verrouillages:Verrouillages`,
-          icon: 'lock',
-          shortcut: 'v',
-        },
-        {
-          // Closing every stand on a band of one date, by decision (ADR 0043).
-          path: '/consignes',
-          label: $localize`:@@nav.link.consignes:Consignes`,
-          icon: 'policy',
-          keywords: $localize`:@@nav.keywords.consignes:arrêté canicule fermeture`,
-        },
-        {
-          path: '/constraints',
-          label: $localize`:@@nav.link.constraints:Contraintes`,
+          // Every setting that decides the plan (issue #720): the hard rules
+          // and their thresholds, the quality rules and their importance, the
+          // solve budget.
+          path: '/regles',
+          label: $localize`:@@nav.link.regles:Règles du planning`,
           icon: 'fact_check',
-          keywords: $localize`:@@nav.keywords.constraints:règles poids`,
+          shortcut: 'r',
+          keywords: $localize`:@@nav.keywords.regles:contraintes poids importance paramètres légaux seuils`,
+          tabs: [
+            tab('onglet', 'legal', $localize`:@@regles.onglet.legal:Légal`),
+            tab('onglet', 'qualite', $localize`:@@regles.onglet.qualite:Qualité`),
+            tab(
+              'onglet',
+              'calcul',
+              $localize`:@@regles.onglet.calcul:Calcul`,
+              $localize`:@@nav.keywords.reglesCalcul:budget durée ninja soirée`,
+            ),
+          ],
         },
         {
-          path: '/instantanes',
-          label: $localize`:@@nav.link.snapshots:Instantanés`,
+          // The finished solves and the snapshots in one chronology, the
+          // comparator beside it (issue #702).
+          path: '/versions',
+          label: $localize`:@@nav.link.versions:Versions du plan`,
           icon: 'history',
-          shortcut: 'i',
-        },
-        {
-          path: '/comparateur',
-          label: $localize`:@@nav.link.comparateur:Comparateur A/B`,
-          icon: 'compare_arrows',
-        },
-        {
-          path: '/kpi',
-          label: $localize`:@@nav.link.kpi:Autopsie du planning`,
-          icon: 'query_stats',
+          shortcut: 'v',
+          keywords: $localize`:@@nav.keywords.versions:instantanés comparateur autopsie restaurer historique résolutions`,
         },
       ],
     },
@@ -392,21 +402,9 @@ export function buildNavGroups(): NavGroup[] {
           tabs: [
             tab(
               'onglet',
-              'legaux',
-              $localize`:@@parametres.onglet.legaux:Légaux`,
-              $localize`:@@nav.keywords.legaux:paramètres légaux durée repos`,
-            ),
-            tab(
-              'onglet',
               'edition',
               $localize`:@@parametres.onglet.edition:Édition`,
-              $localize`:@@nav.keywords.parametresEdition:ninja seuils`,
-            ),
-            tab(
-              'onglet',
-              'emails',
-              $localize`:@@parametres.onglet.emails:E-mails automatiques`,
-              $localize`:@@nav.keywords.emails:relances rappels`,
+              $localize`:@@nav.keywords.parametresEdition:gel guichets collecte foire covoiturage e-mails contact`,
             ),
             tab(
               'onglet',
@@ -418,7 +416,7 @@ export function buildNavGroups(): NavGroup[] {
               'onglet',
               'instance',
               $localize`:@@parametres.onglet.instance:Instance`,
-              $localize`:@@nav.keywords.instance:sauvegarde sql raccourcis date simulée horloge`,
+              $localize`:@@nav.keywords.instance:sauvegarde sql raccourcis date simulée horloge globaux`,
             ),
           ],
         },

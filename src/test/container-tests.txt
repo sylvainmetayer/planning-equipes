@@ -39,6 +39,7 @@ dev/sylvain/planning/api/ConfirmationPlanningTest.java
 dev/sylvain/planning/api/ConsigneResourceTest.java
 dev/sylvain/planning/api/ConstraintDiagnosticResourceTest.java
 dev/sylvain/planning/api/ConstraintPoidsResourceTest.java
+dev/sylvain/planning/api/ContactOrganisationResourceTest.java
 dev/sylvain/planning/api/CreneauAvailabilityResourceTest.java
 dev/sylvain/planning/api/CreneauResourceTest.java
 dev/sylvain/planning/api/DatabaseResourceTest.java
@@ -95,6 +96,7 @@ dev/sylvain/planning/api/RequestSizeCapTest.java
 dev/sylvain/planning/api/SecurityHeadersTest.java
 dev/sylvain/planning/api/SolveFileAttenteResourceTest.java
 dev/sylvain/planning/api/SolveIncrementalResourceTest.java
+dev/sylvain/planning/api/SolveInputsResourceTest.java
 dev/sylvain/planning/api/SolveSynchronePipelineTest.java
 dev/sylvain/planning/api/SolverBudgetResourceTest.java
 dev/sylvain/planning/api/SolverJobResourceTest.java

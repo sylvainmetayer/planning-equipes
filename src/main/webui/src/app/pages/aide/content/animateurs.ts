@@ -45,7 +45,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.foire.term.ouverture:Ouverture et fermeture`,
-              text: $localize`:@@aide.foire.def.ouverture:L'interrupteur en tête de l'écran Échanges ouvre ou ferme la foire pour l'édition courante ; elle est ouverte par défaut. Fermée, les espaces passent en consultation seule : le planning reste visible et téléchargeable, mais plus aucune demande n'est acceptée, et le refus vient du serveur. Vous pouvez aussi borner la foire par deux dates — l'interrupteur reste maître. Avant la date d'ouverture, l'espace annonce « pas encore ouverte » et la date de retour, jamais « fermée ».`,
+              text: $localize`:@@aide.foire.def.ouverture:L'interrupteur de la foire, sur la page Paramètres, onglet Édition, carte Guichets, l'ouvre ou la ferme pour l'édition courante ; elle est ouverte par défaut. L'écran Échanges en garde une ligne d'état, avec un bouton pour la fermer. Fermée, les espaces passent en consultation seule : le planning reste visible et téléchargeable, mais plus aucune demande n'est acceptée, et le refus vient du serveur. Vous pouvez aussi borner la foire par deux dates — l'interrupteur reste maître. Avant la date d'ouverture, l'espace annonce « pas encore ouverte » et la date de retour, jamais « fermée ».`,
             },
             {
               term: $localize`:@@aide.foire.term.envoi:Publier le planning`,
@@ -69,7 +69,11 @@ export function buildAnimateurSideSections(): HelpSection[] {
       links: [
         { route: '/echanges', label: $localize`:@@nav.link.echanges:Échanges` },
         { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
-        { route: '/verrouillages', label: $localize`:@@nav.link.verrouillages:Verrouillages` },
+        {
+          route: '/consignes-solveur',
+          queryParams: { onglet: 'verrouillages' },
+          label: $localize`:@@consignesSolveur.onglet.verrouillages:Verrouillages`,
+        },
       ],
     },
     {
@@ -87,7 +91,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
           items: [
             {
               term: $localize`:@@aide.dispo.term.fenetre:Ouvrir la collecte`,
-              text: $localize`:@@aide.dispo.def.fenetre:Le bandeau en tête de la page Disponibilités porte les boutons « Ouvrir » et « Fermer ». Contrairement à la foire au planning, la collecte est fermée tant que vous ne l'ouvrez pas. Les deux dates sont facultatives et bornent la période ; l'interrupteur reste maître. Fermée, l'espace refuse toute déclaration côté serveur, mais l'animateur garde l'accès à ce qu'il a déclaré et à vos réponses.`,
+              text: $localize`:@@aide.dispo.def.fenetre:La collecte s'ouvre et se ferme sur la page Paramètres, onglet Édition, carte Guichets ; la page Disponibilités en garde une ligne d'état, avec un bouton pour la fermer. Le covoiturage la suit : il s'ouvre et se ferme avec elle. Contrairement à la foire au planning, la collecte est fermée tant que vous ne l'ouvrez pas. Les deux dates sont facultatives et bornent la période ; l'interrupteur reste maître. Fermée, l'espace refuse toute déclaration côté serveur, mais l'animateur garde l'accès à ce qu'il a déclaré et à vos réponses.`,
             },
             {
               term: $localize`:@@aide.dispo.term.prevenir:Prévenir les animateurs`,
@@ -107,11 +111,11 @@ export function buildAnimateurSideSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.dispo.term.covoiturageDecision:Valider ou écarter un covoiturage`,
-              text: $localize`:@@aide.dispo.def.covoiturageDecision:Chaque demande se décide seule. « Valider l'arrivée groupée » crée un ajustement manuel « Arrivée groupée » qui nomme le demandeur et ses coéquipiers ; les demandes des autres membres qui nomment le même groupe sont validées avec elle, et un groupe identique déjà présent est rejoint plutôt que doublé. Le planning n'en tient compte qu'à la prochaine résolution. « Écarter » n'écrit rien : un motif facultatif (500 caractères au plus) est lu par l'animateur dans son espace, et il peut envoyer une nouvelle demande tant que la collecte est ouverte. Dans les deux cas, les personnes concernées reçoivent un e-mail — chaque membre pour une validation, le demandeur pour un écart ; un envoi qui échoue n'annule pas la décision. Une fois validé, le groupe ne se modifie plus depuis l'espace, ni depuis la page Ajustements manuels : il s'annule d'ici.`,
+              text: $localize`:@@aide.dispo.def.covoiturageDecision:Chaque demande se décide seule. « Valider l'arrivée groupée » crée un ajustement manuel « Arrivée groupée » qui nomme le demandeur et ses coéquipiers ; les demandes des autres membres qui nomment le même groupe sont validées avec elle, et un groupe identique déjà présent est rejoint plutôt que doublé. Le planning n'en tient compte qu'à la prochaine résolution. « Écarter » n'écrit rien : un motif facultatif (500 caractères au plus) est lu par l'animateur dans son espace, et il peut envoyer une nouvelle demande tant que la collecte est ouverte. Dans les deux cas, les personnes concernées reçoivent un e-mail — chaque membre pour une validation, le demandeur pour un écart ; un envoi qui échoue n'annule pas la décision. Une fois validé, le groupe ne se modifie plus depuis l'espace, ni depuis l'onglet Ajustements de Consignes au solveur : il s'annule d'ici.`,
             },
             {
               term: $localize`:@@aide.dispo.term.covoiturageAnnulation:Annuler une arrivée groupée validée`,
-              text: $localize`:@@aide.dispo.def.covoiturageAnnulation:Dans « Déjà traitées », un groupe validé porte « Annuler l'arrivée groupée ». Un motif facultatif (500 caractères au plus, jamais recopié dans le journal ni rendu à l'assistant) est lu par chaque membre dans son espace. L'ajustement « Arrivée groupée » est supprimé, toutes les demandes validées avec lui passent « Annulée » et restent dans l'historique avec le motif, et chaque membre reçoit un e-mail qui nomme les autres : il peut envoyer une nouvelle demande si la collecte est ouverte, sinon il est invité à s'adresser à vous. Un envoi qui échoue n'annule pas l'annulation. Le planning n'en tient compte qu'à la prochaine résolution. Tant qu'une demande validée s'appuie sur une arrivée groupée, la page Ajustements manuels la montre sans permettre de la modifier ni de la supprimer : c'est ici que le groupe est prévenu.`,
+              text: $localize`:@@aide.dispo.def.covoiturageAnnulation:Dans « Déjà traitées », un groupe validé porte « Annuler l'arrivée groupée ». Un motif facultatif (500 caractères au plus, jamais recopié dans le journal ni rendu à l'assistant) est lu par chaque membre dans son espace. L'ajustement « Arrivée groupée » est supprimé, toutes les demandes validées avec lui passent « Annulée » et restent dans l'historique avec le motif, et chaque membre reçoit un e-mail qui nomme les autres : il peut envoyer une nouvelle demande si la collecte est ouverte, sinon il est invité à s'adresser à vous. Un envoi qui échoue n'annule pas l'annulation. Le planning n'en tient compte qu'à la prochaine résolution. Tant qu'une demande validée s'appuie sur une arrivée groupée, l'onglet Ajustements de Consignes au solveur la montre sans permettre de la modifier ni de la supprimer : c'est ici que le groupe est prévenu.`,
             },
             {
               term: $localize`:@@aide.dispo.term.competences:Ce qui ne se déclare pas`,
@@ -125,8 +129,9 @@ export function buildAnimateurSideSections(): HelpSection[] {
         { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
         {
-          route: '/ad-hoc-constraints',
-          label: $localize`:@@nav.link.adHocConstraints:Ajustements manuels`,
+          route: '/consignes-solveur',
+          queryParams: { onglet: 'ajustements' },
+          label: $localize`:@@consignesSolveur.onglet.ajustements:Ajustements`,
         },
       ],
     },
@@ -153,7 +158,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.rappels.term.activation:Activer l'édition`,
-              text: $localize`:@@aide.rappels.def.activation:Les envois de nuit sont désactivés tant que vous ne les activez pas, édition par édition, sur la page Paramètres. C'est le seul garde-fou : une édition passée porte les mêmes fiches, et rien ne distingue les animateurs de cette année de ceux de l'an dernier. Dupliquer une édition ne recopie pas ce réglage.`,
+              text: $localize`:@@aide.rappels.def.activation:Les envois de nuit sont désactivés tant que vous ne les activez pas, édition par édition, sur la page Paramètres, onglet Édition. C'est le seul garde-fou : une édition passée porte les mêmes fiches, et rien ne distingue les animateurs de cette année de ceux de l'an dernier. Dupliquer une édition ne recopie pas ce réglage.`,
             },
             {
               term: $localize`:@@aide.rappels.term.delais:Les trois délais`,
@@ -186,8 +191,8 @@ export function buildAnimateurSideSections(): HelpSection[] {
         { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
         {
           route: '/parametres',
-          queryParams: { onglet: 'emails' },
-          label: $localize`:@@aide.lien.parametresEmails:Paramètres — onglet E-mails automatiques`,
+          queryParams: { onglet: 'edition' },
+          label: $localize`:@@aide.lien.parametresEmails:Paramètres — e-mails automatiques`,
         },
         {
           route: '/',

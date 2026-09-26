@@ -112,10 +112,10 @@ Les quatre façons de lancer un solve — synchrone, asynchrone depuis un probl�
 envoyé, asynchrone depuis le référentiel, incrémentale — passent toutes par
 `SolvePipeline` et font donc **toujours** la même chose : capturer le plan sur
 le point d'être écrasé, construire le problème, résoudre, persister,
-diagnostiquer, alimenter l'écran Contraintes, écrire la ligne de KPI, annoncer
+diagnostiquer, alimenter l'écran Règles du planning, écrire la ligne de KPI, annoncer
 la fin si l'édition l'a demandé.
 
-Un chemin qui s'arrêterait avant la fin laisserait l'écran Contraintes sur
+Un chemin qui s'arrêterait avant la fin laisserait l'écran Règles du planning sur
 l'analyse du solve précédent, sans lever d'erreur : le seul symptôme serait un
 écran qui ment. `SolveSynchronePipelineTest` verrouille les deux bouts.
 
@@ -206,6 +206,26 @@ créneau** et une édition dont **aucun stand n'ouvre** sur les créneaux : rien
 pourvoir n'est pas un feu vert. Et sa capacité par créneau ne compte un mineur
 qu'aux côtés d'un majeur, hors de sa nuit légale, d'un jour férié et des stands
 réservés aux majeurs — une équipe de mineurs seuls n'y couvre plus rien.
+
+### Ce que la prochaine résolution recevra
+
+`GET /api/solve/entrees` compte, en une lecture, ce que la page Solveur annonce
+sous « Ce calcul tiendra compte de ». Tout y est lu dans l'édition telle
+qu'elle est stockée — les lignes mêmes dont le problème est construit —, rien
+n'est calculé par le solveur. Deux compteurs demandent une lecture attentive :
+
+- `pendingDeclarations` compte les déclarations de disponibilité **en
+  attente** : une résolution lit les fiches, jamais les déclarations, donc ce
+  chiffre dit ce que le calcul **ne verra pas** tant qu'elles ne sont pas
+  appliquées ;
+- `changesSinceSolve` compte les actions journalisées depuis le plan
+  persisté, avec le même filtre que `GET /api/historique/changements` (seules
+  celles qui changent ce qu'un solve reçoit) ; il vaut 0 sans plan, et
+  `solvedAt` est alors absent.
+
+`disabledRules` ne compte que les règles que le catalogue livre actives et que
+l'édition a éteintes : une règle livrée éteinte n'est pas une décision de
+l'organisateur.
 
 ### File d'attente
 
@@ -513,7 +533,7 @@ Une édition publie autant de fois qu'elle en a besoin, et les publications
 qu'une autre a remplacées ne sont plus lues par personne : elles se suppriment
 comme n'importe quel instantané. Les protéger toutes — ce que faisait le
 prédicat `publie_le IS NULL` — rendait l'écran inutilisable dès la deuxième
-publication (issue #34). L'écran Instantanés le dit avant le clic : badge
+publication (issue #34). L'écran Versions du plan le dit avant le clic : badge
 « plan publié » sur celle en cours, bouton *Supprimer* désactivé avec le motif,
 badge « publié, remplacé » sur les précédentes.
 
@@ -962,6 +982,18 @@ trace, avec leur motif : les fichiers d'exemple, qui ne portent personne, et
 `/api/abonnements/{token}/planning.ics`, relu seul par l'agenda toutes les
 quelques heures — une ligne par relecture serait du bruit.
 
+## Contact de l'organisation
+
+`GET` / `PUT /api/parametres-contact` — le téléphone et l'adresse que l'espace
+animateur affiche, **par édition**, tous deux facultatifs. Le serveur les
+enregistre sans leurs blancs de bord, et une moitié vide comme `null` : `null`
+veut dire « non publié », pas « effacé par erreur ». Refusé en `400` : un
+téléphone qui porte autre chose que des chiffres, des espaces et `+ - . ( )`,
+une adresse sans `@`, ou plus longs que 40 et 254 caractères. La vue de
+l'espace (`GET /api/espace-animateur/{jeton}`) le porte dans `contact`. Il suit
+la duplication d'une édition : une organisation change rarement de numéro d'une
+année à l'autre.
+
 ## Notifications planifiées
 
 `GET` / `PUT /api/parametres-notifications` — ce que les envois de nuit ont le
@@ -1007,7 +1039,12 @@ des mineurs : l'IHM confirme avant désactivation) et `dosable` (les MEDIUM de
 « Qualité d'organisation », les seules dont l'importance relative varie
 réellement d'un organisateur à l'autre).
 
-Le poids va de **1 à 100** ; `0` est refusé. Une règle pesée zéro serait éteinte
+Le poids va de **1 à 500** ; `0` est refusé. L'écran Règles du planning n'offre
+que trois positions — faible 1, normale 5 (le défaut d'une règle moyenne ou
+souple), forte 25 — et le poids exact dans le panneau d'une règle ; l'API
+accepte tout entier de la plage, et `500` garde stockable ce qu'une édition
+avait réglé avant que l'échelle soit multipliée par cinq
+([0057](decisions/0057-importance-d-une-regle-en-trois-positions.md)). Une règle pesée zéro serait éteinte
 *en fait* tout en s'affichant active — et, pour une règle légale, sans passer
 par la confirmation. Éteindre passe par l'interrupteur. `poids: null` supprime
 la surcharge et rend la règle à la valeur du déploiement.
@@ -1055,14 +1092,14 @@ Trois pièges :
   réglage, sans prétendre isoler son effet : le référentiel a pu bouger entre
   deux résolutions.
 
-### Couverture par jour de l'Autopsie
+### Couverture par jour de l'historique des résolutions
 
 Chaque ligne de `GET /api/kpi/historique` écrite depuis cette version porte
 `kpi.couvertureParJour` : par date ISO, `{ postes, pourvus }` — des sièges,
 jamais des personnes, ce qui garde la ligne compatible avec la conservation
-illimitée de l'Autopsie. Les sommes des jours valent `postesTotal` et
-`postesPourvus`. Une ligne antérieure n'a pas la clé (`null`) : le rejeu de
-la page Autopsie affiche alors « non mesurée », jamais une journée vide. Un
+illimitée de l'historique des résolutions. Les sommes des jours valent `postesTotal` et
+`postesPourvus`. Une ligne antérieure n'a pas la clé (`null`) : qui la lit doit dire « non
+mesurée », jamais une journée vide. Un
 instantané recalculé en mode dégradé ne la porte pas non plus. Aucune
 migration : la colonne `kpi` est un `jsonb`, et `lister_kpi_historique` (MCP)
 la rend telle quelle — une trentaine de petits objets par ligne pour une
@@ -1103,7 +1140,7 @@ que le serveur envoie.
 
 C'est la question qu'on se pose *avant* de décider quoi corriger : les six
 journées d'amplitude excessive sont-elles le week-end, les référents manquants
-sont-ils tous sur le même pavillon. L'écran Contraintes la croise sous sa liste,
+sont-ils tous sur le même pavillon. L'écran Règles du planning la croise sous son tableau,
 dans un bloc replié par défaut, avec un sélecteur d'axe.
 
 Cliquer une case l'ouvre sur **quoi faire**, pas seulement sur combien : la

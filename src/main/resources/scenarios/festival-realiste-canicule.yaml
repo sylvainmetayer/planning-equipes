@@ -35,12 +35,12 @@ contraintes:
   poids:
     # "Privilégier le réel sur le souhaité": an appreciation mismatch is
     # eliminated before wish satisfaction is optimised, which is what the 3:1
-    # ratio against souhaitsIncompatibles (left at 1) buys.
-    appreciationIncompatible: 3
+    # ratio against souhaitsIncompatibles (left at 5) buys.
+    appreciationIncompatible: 15
     # Well above the other medium constraints: past six consecutive worked
     # days the fatigue/burnout risk outweighs the rest of the "Qualité
     # d'organisation" family.
-    maxJoursConsecutifsTravailles: 5
+    maxJoursConsecutifsTravailles: 25
 
 creneaux:
 - id: J6-MATIN

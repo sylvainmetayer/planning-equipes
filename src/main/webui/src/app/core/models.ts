@@ -836,6 +836,29 @@ export interface PlanningResolution {
   derniereModificationDonnees: string | null;
 }
 
+/** A consigne as the Solveur's summary names it: its date and its motif. */
+export interface ConsigneInput {
+  date: string;
+  motif: string;
+}
+
+/**
+ * « Ce calcul tiendra compte de » (issues #704, #719): the inputs of the next
+ * solve, counted in one read (`GET /api/solve/entrees`).
+ * `pendingDeclarations` are the declarations of availability awaiting a
+ * decision — what the solve will not see; `changesSinceSolve` counts the
+ * changes journalled since the persisted plan, 0 without one.
+ */
+export interface SolveInputs {
+  locks: number;
+  adjustments: number;
+  consignes: ConsigneInput[];
+  pendingDeclarations: number;
+  disabledRules: number;
+  changesSinceSolve: number;
+  solvedAt?: string | null;
+}
+
 /** One seat to fill: a stand on a timeslot, with its animator once solved. */
 export interface PosteAffectation {
   dureeEffectiveMinutes?: number;
@@ -1427,8 +1450,13 @@ export interface ParametreContrainte {
   valeur: string;
   /** Angular route of the form. */
   lien: string;
-  /** Which tab of it, as the `onglet` query parameter spells it. */
+  /** Which tab of it, as the `onglet` query parameter spells it: the tab of the rule. */
   onglet: string;
+  /**
+   * The setting's key — its field in `ParametresLegaux` or `ParametresQualite`
+   * — which « Règles du planning » edits on the rule's row. Absent on an older payload.
+   */
+  cle?: string;
 }
 
 /**
@@ -2827,6 +2855,12 @@ export interface EspaceAnimateurView {
    * others' seats. Empty when I belong to no group.
    */
   covoiturage?: CarpoolDayView[];
+  /**
+   * Who to call or write to about this edition, as Paramètres › Édition sets
+   * it; both halves `null` when the organisation published none. Shown by
+   * the espace from the next change on; optional for an older payload.
+   */
+  contact?: ContactOrganisation;
 }
 
 /**
@@ -3864,6 +3898,16 @@ export interface ImportCsvDemande {
   mapping: AnimateurCsvMapping | null;
   replaceAnimateurs: boolean;
   replaceJoursIndisponibles: boolean;
+}
+
+/**
+ * The organisation's contact (`/api/parametres-contact`), shown in the espace
+ * animateur: a phone number and an address, both optional — `null` when not
+ * published.
+ */
+export interface ContactOrganisation {
+  telephone: string | null;
+  email: string | null;
 }
 
 /** Per-edition settings of the scheduled notifications (`/api/parametres-notifications`). */

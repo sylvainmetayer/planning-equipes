@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { pageRoutes } from '../core/testing/page-routes';
-import { readAdjustmentsView } from '../pages/ad-hoc-constraints/reseau-paires';
+import {
+  ONGLETS_CONSIGNES_SOLVEUR,
+  readOngletConsignesSolveur,
+} from '../pages/consignes-solveur/consignes-solveur';
 import { ONGLETS_DEBUG, readOngletDebug } from '../pages/debug/debug';
 import { ONGLETS_DIAGNOSTIC, readOnglet } from '../pages/diagnostic/diagnostic';
 import { readDisponibilitesTab } from '../pages/disponibilites/declarations-filter';
@@ -10,6 +13,7 @@ import { JOURNEE_VIEWS, PLANNING_AXES, readAxe, readView } from '../pages/journe
 import { MARGIN_VIEW_PARAMS, readMarginView } from '../pages/marge/marge';
 import { OPENINGS_VIEW_PARAMS, readOpeningsView } from '../pages/ouvertures/ouvertures';
 import { ONGLETS_PARAMETRES, readOngletParametres } from '../pages/parametres/parametres';
+import { ONGLETS_REGLES, readOngletRegles } from '../pages/regles/regles';
 import { readOngletStands } from '../pages/stands/stands-onglet';
 import { NavLink, buildLegalLinks, buildNavGroups, buildOffMenuLinks } from './nav-groups';
 
@@ -65,16 +69,17 @@ const TAB_READERS: Record<string, TabReader | readonly TabReader[]> = {
     },
   ],
   '/diagnostic': { param: 'onglet', opens: (v) => readOnglet(v) === v, values: ONGLETS_DIAGNOSTIC },
-  '/ad-hoc-constraints': {
-    param: 'vue',
-    opens: (v) => readAdjustmentsView(v) === v,
-    values: ['reseau'],
+  '/consignes-solveur': {
+    param: 'onglet',
+    opens: (v) => readOngletConsignesSolveur(v) === v,
+    values: ONGLETS_CONSIGNES_SOLVEUR,
   },
   '/parametres': {
     param: 'onglet',
     opens: (v) => readOngletParametres(v) === v,
     values: ONGLETS_PARAMETRES,
   },
+  '/regles': { param: 'onglet', opens: (v) => readOngletRegles(v) === v, values: ONGLETS_REGLES },
   '/debug': { param: 'onglet', opens: (v) => readOngletDebug(v) === v, values: ONGLETS_DEBUG },
   // The stands are the default tab: only the locations are named.
   '/stands': { param: 'onglet', opens: (v) => readOngletStands(v) === v, values: ['lieux'] },

@@ -20,9 +20,7 @@
 
 /* ---------- Demande cards & statut chips ---------- */
 
-.espace-demande-entete,
-/* Interrupteur admin d'ouverture/fermeture de la foire (issue #165). */
-.echanges-foire {
+.espace-demande-entete {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -31,43 +29,6 @@
   padding: 0.6rem 1rem;
   border-radius: 0.75rem;
   background: var(--mat-sys-surface-container-high);
-}
-
-.echanges-foire-fermee {
-  background: var(--mat-sys-error-container);
-  color: var(--mat-sys-on-error-container);
-}
-
-.echanges-foire-etat {
-  font-size: 0.9rem;
-}
-
-/*
- * Bornes datées de la foire. La grille passe à la ligne sous l'interrupteur —
- * elle les complète, elle ne les remplace pas : l'interrupteur reste maître.
- */
-.echanges-foire-fenetre {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem;
-  flex-basis: 100%;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.echanges-foire-fenetre legend {
-  padding: 0;
-  font-size: 0.9rem;
-  color: var(--mat-sys-on-surface-variant);
-}
-
-.echanges-foire-aide {
-  flex-basis: 100%;
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--mat-sys-on-surface-variant);
 }
 
 .echanges-demande-entete {

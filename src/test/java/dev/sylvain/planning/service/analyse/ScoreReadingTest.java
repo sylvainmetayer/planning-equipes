@@ -125,8 +125,8 @@ class ScoreReadingTest {
                 .startsWith("2 règles impératives ne sont pas respectées")
                 .contains("surtout « Places pourvues », 3 écarts");
         assertThat(verdict.liens())
-                .containsExactly(
-                        new ReadingLink("Places pourvues", "/constraints", java.util.Map.of(), "posteDoitEtrePourvu"));
+                .containsExactly(new ReadingLink(
+                        "Places pourvues", "/regles", java.util.Map.of("regle", "posteDoitEtrePourvu"), null));
         assertThat(verdict.texte()).contains(verdict.liens().getFirst().texte());
     }
 
@@ -146,7 +146,7 @@ class ScoreReadingTest {
                 phrase(ScoreReading.read(busy()), ReadingSubject.ORGANISATION).orElseThrow();
 
         assertThat(organisation.liens())
-                .extracting(ReadingLink::fragment)
+                .extracting(link -> link.parametres().get("regle"))
                 .containsExactly("equilibrerCharge", "eviterChangementEmplacementEloigne", "standComplexeAvecReferent");
         // 300 + 200 + 80 + 20 = 600 outside the floor: 50 %, 33 %, 13 %.
         assertThat(organisation.texte())

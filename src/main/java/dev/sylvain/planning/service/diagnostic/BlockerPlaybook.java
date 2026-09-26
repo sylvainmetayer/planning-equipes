@@ -97,11 +97,10 @@ public final class BlockerPlaybook {
     static final String ROUTE_ADJUSTMENTS = "/ad-hoc-constraints";
     static final String ROUTE_ANIMATEURS = "/animateurs";
     static final String ROUTE_LOCKS = "/verrouillages";
-    static final String ROUTE_CONSTRAINTS = "/constraints";
+    static final String ROUTE_CONSTRAINTS = "/regles";
     static final String ROUTE_DAY = "/journee";
     static final String ROUTE_TIMESLOTS = "/creneaux";
     static final String ROUTE_TYPOLOGIES = "/typologies";
-    static final String ROUTE_SETTINGS = "/parametres";
 
     // ---- action codes -----------------------------------------------------
 
@@ -440,7 +439,7 @@ public final class BlockerPlaybook {
         return new ActionType(
                 CODE_SEE_RULE,
                 "Voir la règle",
-                "Sa ligne sur l'écran Contraintes dit ce qu'elle mesure et ce qui la règle.",
+                "Sa ligne sur l'écran Règles du planning dit ce qu'elle mesure et ce qui la règle.",
                 ROUTE_CONSTRAINTS,
                 Map.of(PARAM_REGLE, definition.name()));
     }
@@ -477,9 +476,10 @@ public final class BlockerPlaybook {
         return new ActionType(
                 CODE_MEAL_WINDOW,
                 "Régler la fenêtre repas",
-                "La fenêtre repas et sa durée se règlent dans les paramètres légaux de l'édition.",
-                ROUTE_SETTINGS,
-                Map.of("onglet", "legaux"));
+                "La fenêtre repas et sa durée se règlent sur la ligne de la coupure repas, dans Règles du"
+                        + " planning.",
+                ROUTE_CONSTRAINTS,
+                Map.of("onglet", "legal", PARAM_REGLE, "coupureRepasObligatoire"));
     }
 
     private static ActionType shortenVacationAction() {

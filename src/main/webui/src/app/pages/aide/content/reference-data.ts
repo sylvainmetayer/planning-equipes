@@ -42,8 +42,7 @@ export function buildReferenceDataSections(): HelpSection[] {
       links: [
         { route: '/editions', label: $localize`:@@nav.link.editions:Éditions` },
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
-        { route: '/instantanes', label: $localize`:@@nav.link.snapshots:Instantanés` },
-        { route: '/comparateur', label: $localize`:@@nav.link.comparateur:Comparateur A/B` },
+        { route: '/versions', label: $localize`:@@nav.link.versions:Versions du plan` },
       ],
     },
     {
@@ -89,8 +88,16 @@ export function buildReferenceDataSections(): HelpSection[] {
       ],
       links: [
         { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
-        { route: '/verrouillages', label: $localize`:@@nav.link.verrouillages:Verrouillages` },
-        { route: '/consignes', label: $localize`:@@nav.link.consignes:Consignes` },
+        {
+          route: '/consignes-solveur',
+          queryParams: { onglet: 'verrouillages' },
+          label: $localize`:@@consignesSolveur.onglet.verrouillages:Verrouillages`,
+        },
+        {
+          route: '/consignes-solveur',
+          queryParams: { onglet: 'consignes' },
+          label: $localize`:@@consignesSolveur.onglet.consignes:Consignes`,
+        },
       ],
     },
     {
@@ -220,7 +227,11 @@ export function buildReferenceDataSections(): HelpSection[] {
       links: [
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
-        { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
+        {
+          route: '/regles',
+          queryParams: { onglet: 'legal' },
+          label: $localize`:@@nav.link.regles:Règles du planning`,
+        },
       ],
     },
     {

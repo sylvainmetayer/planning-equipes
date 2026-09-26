@@ -7,6 +7,7 @@ import {
   inject,
   Injector,
   OnInit,
+  output,
   signal,
   viewChild,
 } from '@angular/core';
@@ -37,8 +38,6 @@ import {
   estJournalisable,
 } from '../../core/models';
 import { ConfirmService } from '../../shared/confirm-dialog';
-import { StatusMessage } from '../../shared/status-message';
-import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
 import { RouterLink } from '@angular/router';
 import { errorMessage } from '../../core/error-message';
 import { compareCodeUnits } from '../../core/string-order';
@@ -84,17 +83,21 @@ interface VerrouillageRow extends VerrouillagePlanning {
   actif: boolean;
 }
 
-/**
- * Management of the partial planning locks (issue #87). Freezing a target
- * pins, on the next solve, every seat it covers that the last persisted solve
- * had staffed — empty seats are never frozen, so a lock can't make a hole
- * permanent.
- */
 /** The sentences of a batch of warnings, as one paragraph. */
 function phrases(avertissements: readonly Avertissement[]): string {
   return avertissements.map((avertissement) => avertissement.message).join(' ');
 }
 
+/**
+ * Management of the partial planning locks (issue #87). Freezing a target
+ * pins, on the next solve, every seat it covers that the last persisted solve
+ * had staffed — empty seats are never frozen, so a lock can't make a hole
+ * permanent.
+ *
+ * <p>The « Verrouillages » tab of « Consignes au solveur » (issue #719): the
+ * page carries the title. The preview counts what the target would freeze and
+ * links to Journée, where the reader sees who and when.</p>
+ */
 @Component({
   selector: 'app-verrouillages-page',
   imports: [
@@ -107,14 +110,15 @@ function phrases(avertissements: readonly Avertissement[]): string {
     MatSelectModule,
     MatTableModule,
     MatTooltipModule,
-    StatusMessage,
-    WorkInProgressBanner,
     RouterLink,
   ],
   templateUrl: './verrouillages-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class VerrouillagesPage implements OnInit {
+  /** A lock was laid down or lifted: the next solve has something new to respect. */
+  readonly changed = output<void>();
+
   protected readonly columns = ['type', 'cible', 'etat', 'raison', 'actions'];
   protected readonly types = TYPE_VALUES.map((value) => ({ value, label: typeLabel(value) }));
   protected readonly store = inject(ReferenceDataStore);
@@ -123,7 +127,7 @@ export class VerrouillagesPage implements OnInit {
   /** Locking is disabled while a solve runs: it would not be taken into account by the run in progress. */
   protected readonly editingLocked = this.jobs.editingLocked;
 
-  protected readonly type = signal<TypeVerrouillageManuel>('JOUR');
+  protected readonly type = signal<TypeVerrouillageManuel>('ANIMATEUR');
   protected readonly animateurId = signal('');
   protected readonly standId = signal('');
   protected readonly creneauId = signal<number | ''>('');
@@ -274,6 +278,30 @@ export class VerrouillagesPage implements OnInit {
     }
   });
 
+  /**
+   * Where the Journée page shows what the target covers: the person or the
+   * stand across the days, the day itself, or the day of the vacation. The
+   * preview counts; this is where the reader sees who and when.
+   */
+  protected readonly journeeParams = computed<Record<string, string> | null>(() => {
+    if (!this.impact()) {
+      return null;
+    }
+    const param = (key: string, value: string): Record<string, string> => ({ [key]: value });
+    switch (this.type()) {
+      case 'ANIMATEUR':
+        return param('animateur', this.animateurId());
+      case 'STAND':
+        return param('stand', this.standId());
+      case 'JOUR':
+        return param('date', this.jour());
+      case 'CRENEAU': {
+        const creneau = this.store.creneaux().find((c) => c.id === Number(this.creneauId()));
+        return creneau ? param('date', creneau.date) : null;
+      }
+    }
+  });
+
   protected readonly impactMessage = computed(() => {
     const sieges = this.impact();
     if (sieges === null) {
@@ -299,6 +327,7 @@ export class VerrouillagesPage implements OnInit {
         raison: this.raison() || null,
       });
       this.raison.set('');
+      this.changed.emit();
       if (avertissements.length > 0) {
         // Stays until dismissed, like every write-time warning: the lock is
         // recorded, and what it froze is what the next solve will report as a
@@ -337,6 +366,7 @@ export class VerrouillagesPage implements OnInit {
     }
     try {
       await this.verrous.remove(row.id);
+      this.changed.emit();
       this.notifications.notify({
         title: $localize`:@@verrouillages.deleted:Verrouillage supprimé.`,
         variant: 'success',

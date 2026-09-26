@@ -1,9 +1,11 @@
 // The administrator's plumbing: backups, the SQL dump, the mail checks of the
-// Débogage page, the legal notice, the scheduled notifications, the session.
+// Débogage page, the legal notice, the scheduled notifications, the
+// organisation's contact, the session.
 
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
 import {
+  ContactOrganisation,
   EtatSauvegarde,
   ImportSummary,
   MentionsLegales,
@@ -68,6 +70,16 @@ export class AdminApi {
 
   saveNotificationSettings(parametres: ParametresNotifications): Promise<ParametresNotifications> {
     return this.api.put<ParametresNotifications>('/api/parametres-notifications', parametres);
+  }
+
+  /** Who the animateurs of this edition call: shown in their espace. */
+  organisationContact(): Promise<ContactOrganisation> {
+    return this.api.get<ContactOrganisation>('/api/parametres-contact');
+  }
+
+  /** The contact as the server kept it: trimmed, a blank half stored as `null`. */
+  saveOrganisationContact(contact: ContactOrganisation): Promise<ContactOrganisation> {
+    return this.api.put<ContactOrganisation>('/api/parametres-contact', contact);
   }
 
   /* -------------------------------- session ------------------------------- */

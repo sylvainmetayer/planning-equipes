@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.domain.ContactOrganisation;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresQualite;
@@ -23,8 +24,12 @@ import java.util.Objects;
  */
 final class ParametresValidator {
 
-    /** Highest weight an edition may give one constraint — see {@link #checkConstraintWeight}. */
-    static final int CONSTRAINT_WEIGHT_MAX = 100;
+    /**
+     * Highest weight an edition may give one constraint — see
+     * {@link #checkConstraintWeight}. 500 rather than 100 since the scale was
+     * multiplied by five (ADR 0057): what an edition had stored stays storable.
+     */
+    static final int CONSTRAINT_WEIGHT_MAX = 500;
 
     private ParametresValidator() {}
 
@@ -309,6 +314,37 @@ final class ParametresValidator {
         if (poids > CONSTRAINT_WEIGHT_MAX) {
             throw new BusinessError.Invalid(
                     "Le poids d'une contrainte ne peut pas dépasser " + CONSTRAINT_WEIGHT_MAX + ".");
+        }
+    }
+
+    /**
+     * Refuses a contact nobody could use: a number or an address too long to
+     * be one, an address without its {@code @}, a number holding letters.
+     * Blank halves are fine — they mean « not published » — and are stored as
+     * {@code null} by the service.
+     */
+    static void checkContactOrganisation(ContactOrganisation contact) {
+        String telephone = contact.telephone();
+        if (telephone != null) {
+            if (telephone.length() > ContactOrganisation.TELEPHONE_MAX) {
+                throw new BusinessError.Invalid(
+                        "Le téléphone ne peut pas dépasser " + ContactOrganisation.TELEPHONE_MAX + " caractères.");
+            }
+            if (!telephone.matches("[0-9+().\\s-]+")) {
+                throw new BusinessError.Invalid(
+                        "Le téléphone ne contient que des chiffres, des espaces, et les signes + - . ( ).");
+            }
+        }
+        String email = contact.email();
+        if (email != null) {
+            if (email.length() > ContactOrganisation.EMAIL_MAX) {
+                throw new BusinessError.Invalid(
+                        "L'adresse e-mail ne peut pas dépasser " + ContactOrganisation.EMAIL_MAX + " caractères.");
+            }
+            if (!email.matches("[^@\\s]+@[^@\\s]+")) {
+                throw new BusinessError.Invalid(
+                        "L'adresse e-mail du contact n'est pas une adresse : il y manque un @.");
+            }
         }
     }
 

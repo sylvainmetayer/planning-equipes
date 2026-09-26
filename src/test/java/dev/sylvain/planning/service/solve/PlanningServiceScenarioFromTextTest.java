@@ -94,7 +94,7 @@ class PlanningServiceScenarioFromTextTest {
      * happened, and the "same" scenario solved a different problem.
      */
     @Test
-    void appliqueLaSectionContraintesDuFichierQuandPresente() {
+    void appliesTheConstraintsSectionOfTheFileWhenPresent() {
         PlanningService service = service();
         String yaml = scenarioYamlText("scenario-contraintes.yaml");
 
@@ -104,8 +104,8 @@ class PlanningServiceScenarioFromTextTest {
         assertThat(sections.contraintes()).isPresent();
         assertThat(sections.contraintes().orElseThrow().desactivees()).containsExactly("eviterRoulementStandsPremium");
         assertThat(sections.contraintes().orElseThrow().poids())
-                .containsEntry("equilibrerCharge", 7)
-                .containsEntry("maxJoursConsecutifsTravailles", 3);
+                .containsEntry("equilibrerCharge", 35)
+                .containsEntry("maxJoursConsecutifsTravailles", 15);
     }
 
     /**

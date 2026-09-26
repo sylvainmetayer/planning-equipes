@@ -1,5 +1,6 @@
 package dev.sylvain.planning.api;
 
+import dev.sylvain.planning.domain.ContactOrganisation;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresQualite;
@@ -134,5 +135,23 @@ public class ParametresResource {
     public Response updateParametresNotifications(ParametresNotifications parametres) {
         return Response.ok(referenceDataService.updateParametresNotifications(parametres))
                 .build();
+    }
+
+    /**
+     * The organisation's contact shown in the espace animateur — a phone
+     * number and an address, both optional. An edition that never set one
+     * answers two {@code null}s.
+     */
+    @GET
+    @Path("/parametres-contact")
+    public ContactOrganisation getContactOrganisation() {
+        return referenceDataService.getContactOrganisation();
+    }
+
+    /** Saves it; 400 with an explanation when a half cannot be a number or an address. */
+    @PUT
+    @Path("/parametres-contact")
+    public ContactOrganisation updateContactOrganisation(ContactOrganisation contact) {
+        return referenceDataService.updateContactOrganisation(contact);
     }
 }

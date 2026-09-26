@@ -11,6 +11,18 @@
   <input matInput name="id" readonly [ngModel]="draft().id" />
 </mat-form-field>
 }
+<!-- The person first: an organiser thinks « A10 », then what to do about them (issue #719). -->
+<mat-form-field appearance="outline" class="span-2">
+  <mat-label i18n="@@adHoc.field.animateurs">Animateurs concernés</mat-label>
+  <mat-select name="animateurIds" multiple [disabled]="editingLocked()"
+              [ngModel]="draft().animateurIds" (ngModelChange)="patch({ animateurIds: $event })">
+    @for (animateur of store.animateurs(); track animateur.id) {
+      <mat-option [value]="animateur.id">
+        {{ animateur.prenom }} {{ animateur.nom }} ({{ animateur.id }})
+      </mat-option>
+    }
+  </mat-select>
+</mat-form-field>
 <mat-form-field appearance="outline">
   <mat-label i18n="@@adHoc.field.type">Type</mat-label>
   <mat-select name="type" [disabled]="editingLocked()" [ngModel]="draft().type" (ngModelChange)="changeType($event)">
@@ -21,7 +33,7 @@
 </mat-form-field>
 @if (draft().type === 'ARRIVEE_GROUPEE') {
 <p class="span-2" i18n="@@adHoc.arriveeGroupee.aide">
-  De 2 à 4 animateurs qui arrivent et repartent ensemble, aux mêmes jours et à la tolérance près (page Paramètres).
+  De 2 à 4 animateurs qui arrivent et repartent ensemble, aux mêmes jours et à la tolérance près (Règles du planning).
   Ni créneau ni stand : chacun peut tenir un stand différent.
 </p>
 } @else {
@@ -47,17 +59,6 @@
   </mat-select>
 </mat-form-field>
 }
-<mat-form-field appearance="outline" class="span-2">
-  <mat-label i18n="@@adHoc.field.animateurs">Animateurs concernés</mat-label>
-  <mat-select name="animateurIds" multiple [disabled]="editingLocked()"
-              [ngModel]="draft().animateurIds" (ngModelChange)="patch({ animateurIds: $event })">
-    @for (animateur of store.animateurs(); track animateur.id) {
-      <mat-option [value]="animateur.id">
-        {{ animateur.prenom }} {{ animateur.nom }} ({{ animateur.id }})
-      </mat-option>
-    }
-  </mat-select>
-</mat-form-field>
 <mat-form-field appearance="outline" class="span-2">
   <mat-label i18n="@@adHoc.field.raison">Raison</mat-label>
   <textarea matInput name="raison" rows="2"

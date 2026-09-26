@@ -1,0 +1,155 @@
+<!-- The comparator of « Versions du plan », opened beside the table (issue
+     #702): A is the older side, B the newer — « what changed since ». -->
+<aside class="versions-panneau" aria-labelledby="versions-panneau-titre">
+  <div class="versions-panneau-entete">
+    <h2 id="versions-panneau-titre" class="versions-panneau-titre" i18n="@@versions.comparaison.titre">Comparaison</h2>
+    <button matIconButton type="button" (click)="closed.emit()"
+            i18n-aria-label="@@common.close" aria-label="Fermer">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <app-status-message [text]="error()" tone="error" />
+  @if (chargement()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+  @if (comparaison(); as resultat) {
+    @if (resultat.editionsDifferentes) {
+      <p class="locked-hint" i18n="@@comparateur.warning.editions">
+        Ces deux plans appartiennent à des éditions différentes, donc à des référentiels différents (stands,
+        animateurs, créneaux) : les écarts ne sont pas « toutes choses égales par ailleurs ».
+      </p>
+    }
+    @if (resultat.volumetriesDifferentes) {
+      <p class="locked-hint" i18n="@@comparateur.warning.volumetries">
+        Les deux plans n'ont pas le même nombre de postes : une partie des écarts reflète la volumétrie, pas la
+        qualité de la résolution.
+      </p>
+    }
+    @if (resultat.consignesDifferentes) {
+      <p class="locked-hint" i18n="@@comparateur.warning.consignes">
+        Les deux côtés n'ont pas été capturés sous les mêmes consignes : une partie des écarts vient des bandes
+        fermées, pas de la résolution.
+      </p>
+      <div class="comparateur-consignes">
+        @for (cote of [resultat.base, resultat.variante]; track $index) {
+          <div>
+            <strong>{{ libelleCote(cote) }}</strong>
+            @if (consignesOf(cote); as consignes) {
+              @if (consignes.length === 0) {
+                <p i18n="@@comparateur.consignes.aucune">Aucune consigne.</p>
+              } @else {
+                <ul>
+                  @for (consigne of consignes; track consigne) {
+                    <li>{{ consigne }}</li>
+                  }
+                </ul>
+              }
+            } @else {
+              <p i18n="@@comparateur.consignes.inconnues">Consignes inconnues : instantané antérieur à leur capture.</p>
+            }
+          </div>
+        }
+      </div>
+    }
+    @if (resultat.dosagesDifferents) {
+      <p class="locked-hint" i18n="@@comparateur.warning.dosages">
+        Les deux plans ont été calculés sous des dosages différents : leurs scores ne se comparent pas à poids
+        égaux.
+      </p>
+      @if (dosageDifferences().length > 0) {
+        <ul class="comparateur-dosages">
+          @for (difference of dosageDifferences(); track difference.name) {
+            <li>
+              <strong>{{ difference.name }}</strong> : {{ difference.base }} → {{ difference.variante }}
+            </li>
+          }
+        </ul>
+      }
+    }
+    @if (cotesPerimes().length > 0) {
+      <p class="locked-hint" i18n="@@comparateur.warning.perimes">
+        Instantané(s) périmé(s) ici : {{ cotesPerimes().join(', ') }}. Leur référentiel a changé depuis la capture :
+        ces chiffres décrivent un problème qui n'est plus celui d'aujourd'hui.
+      </p>
+    }
+    @if (kpiRecalcule()) {
+      <p class="locked-hint" i18n="@@comparateur.warning.recalcule">
+        Au moins un instantané est antérieur à l'enregistrement des KPI : ses métriques sont recalculées depuis son
+        contenu. Couverture et volumétrie exactes, écarts non mesurés (mode dégradé).
+      </p>
+    }
+    <div class="table-wrapper">
+      <table mat-table [dataSource]="lignes()">
+        <caption class="visually-hidden" i18n="@@comparateur.table.caption">
+          Métriques des deux plans côte à côte, avec le sens de chaque écart
+        </caption>
+        <ng-container matColumnDef="metrique">
+          <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@comparateur.column.metrique">Métrique</th>
+          <td mat-cell *matCellDef="let ligne">{{ ligne.label }}</td>
+        </ng-container>
+        <ng-container matColumnDef="base">
+          <th mat-header-cell scope="col" *matHeaderCellDef>{{ libelleCote(resultat.base) }}</th>
+          <td mat-cell *matCellDef="let ligne">{{ ligne.base }}</td>
+        </ng-container>
+        <ng-container matColumnDef="variante">
+          <th mat-header-cell scope="col" *matHeaderCellDef>{{ libelleCote(resultat.variante) }}</th>
+          <td mat-cell *matCellDef="let ligne">{{ ligne.variante }}</td>
+        </ng-container>
+        <ng-container matColumnDef="delta">
+          <th
+            mat-header-cell scope="col"
+            *matHeaderCellDef
+            i18n-matTooltip="@@comparateur.delta.tooltip"
+            matTooltip="Les scores sont des pénalités négatives : se rapprocher de zéro est une amélioration."
+            i18n="@@comparateur.column.delta"
+          >
+            Écart (B − A)
+          </th>
+          <td mat-cell *matCellDef="let ligne" [class]="'comparateur-' + (ligne.tendance ?? 'neutre')">
+            {{ deltaLabel(ligne) }}
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="columns"></tr>
+        <tr mat-row *matRowDef="let row; columns: columns"></tr>
+      </table>
+    </div>
+
+    <div class="comparateur-lectures">
+      @for (side of readings(); track $index) {
+        <details class="comparateur-lecture">
+          <summary>{{ side.heading }}</summary>
+          @if (side.sentences.length > 0) {
+            <app-lecture-score [sentences]="side.sentences" [hideHeading]="true" />
+          } @else {
+            <p class="empty-hint" i18n="@@comparateur.lecture.absente">Aucune lecture enregistrée pour ce plan : il a été capturé avant elle, ou sans analyse.</p>
+          }
+        </details>
+      }
+    </div>
+
+    @if (resultat.diffViolations.length > 0) {
+      <h3 class="comparateur-sous-titre" i18n="@@comparateur.violations.title">Écarts par contrainte</h3>
+      <div class="table-wrapper">
+        <table mat-table [dataSource]="resultat.diffViolations">
+          <caption class="visually-hidden" i18n="@@comparateur.violations.caption">
+            Nombre d'écarts par contrainte, pour chacun des deux plans
+          </caption>
+          <ng-container matColumnDef="contrainte">
+            <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@comparateur.column.contrainte">Contrainte</th>
+            <td mat-cell *matCellDef="let diff">{{ diff.contrainte }}</td>
+          </ng-container>
+          <ng-container matColumnDef="baseViolations">
+            <th mat-header-cell scope="col" *matHeaderCellDef>{{ libelleCote(resultat.base) }}</th>
+            <td mat-cell *matCellDef="let diff">{{ violationsLabel(diff.base) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="varianteViolations">
+            <th mat-header-cell scope="col" *matHeaderCellDef>{{ libelleCote(resultat.variante) }}</th>
+            <td mat-cell *matCellDef="let diff">{{ violationsLabel(diff.variante) }}</td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="columnsViolations"></tr>
+          <tr mat-row *matRowDef="let row; columns: columnsViolations"></tr>
+        </table>
+      </div>
+    }
+  }
+</aside>

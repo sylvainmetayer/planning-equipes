@@ -9,15 +9,27 @@ Trois niveaux, alignés sur le `HardMediumSoftScore` de Timefold : **dur**
 
 **La liste des 43 contraintes, leur niveau, leur catégorie, leur description
 métier et l'article de loi qui les fonde vivent dans `ConstraintCatalog`** — et
-sont servies par `GET /api/constraints`, affichées sur la page Contraintes. Ce
-document ne les recopie pas : il porte les mécanismes et les arbitrages.
+sont servies par `GET /api/constraints`, affichées sur la page « Règles du
+planning » (`/regles`). Ce document ne les recopie pas : il porte les
+mécanismes et les arbitrages.
 
-L'écran les range une par ligne, par catégorie, et **le nom d'une règle est son
-ancre** : `/constraints#coupureRepasObligatoire` ouvre la page sur cette
-règle-là, `/constraints#categorie-legal-mineurs` sur sa catégorie. C'est le nom
-servi par l'API, donc l'adresse d'une règle ne bouge que si la règle est
-renommée — auquel cas le lien partagé cesse de désigner quoi que ce soit, et
-c'est la même rupture que pour tout client de l'API.
+L'écran les range en tableau, une ligne par règle : l'onglet **Légal** porte
+les règles dures — la loi, la sécurité des mineurs, le repas, l'affectation —,
+l'onglet **Qualité** les règles moyennes et souples. Une ligne nomme la règle
+par son **libellé court** (`libelleCourt` du catalogue, « Places pourvues »,
+« Coupure repas ») et jamais par son nom technique, que
+`ConstraintCatalogShortLabelTest` tient à l'écart de tout ce qu'un
+organisateur lit. Chaque réglage qu'une règle lit (`ConstraintParameters`,
+avec sa clé `cle`) se modifie **sur la ligne de cette règle**, et rien ne
+s'écrit avant « Enregistrer ». Le détail — texte long, conseil en cas d'écart,
+poids exact, historique des réglages — s'ouvre dans un panneau.
+
+**Le nom d'une règle reste son adresse** : `/regles?regle=coupureRepasObligatoire`
+ouvre le panneau de cette règle-là, sur son onglet. C'est le nom servi par
+l'API, donc l'adresse d'une règle ne bouge que si la règle est renommée —
+auquel cas le lien partagé cesse de désigner quoi que ce soit, et c'est la même
+rupture que pour tout client de l'API. L'ancienne adresse
+`/constraints#coupureRepasObligatoire` redirige vers celle-ci.
 
 Les descriptions restent du **texte brut** côté serveur : la même chaîne part
 vers les outils MCP et se range dans une demande d'échange. C'est le frontend
@@ -179,19 +191,19 @@ niveau du catalogue, et `ConstraintToggle` ne porte que `actif`) :
 
 | Règle | Niveau | Par défaut |
 |---|---|---|
-| `maxJoursConsecutifsTravailles` | MEDIUM, dosable | **active**, poids 1 |
+| `maxJoursConsecutifsTravailles` | MEDIUM, dosable | **active**, importance normale (poids 5) |
 | `maxJoursConsecutifsTravaillesDur` | HARD | **éteinte** |
 
 Les deux partagent leur corps **et leur seuil**, donc ne peuvent pas diverger
 sur ce qu'elles comptent ni sur combien de jours elles laissent passer ; les
 deux peuvent être actives en même temps, ce qui dit « jamais plus de N, et de
-préférence moins ». La forme dure s'allume par l'écran Contraintes, par
+préférence moins ». La forme dure s'allume par l'écran Règles du planning, par
 `activer_contrainte` ou par `contraintes.activees` d'un scénario — aucune
 migration, même mécanisme que
 [0041](decisions/0041-encadrement-des-mineurs-eteint-par-defaut.md).
 
-Le seuil lui-même se règle par édition : page Paramètres, carte « Qualité
-d'organisation », champ « Jours travaillés d'affilée » (`joursConsecutifsMax`,
+Le seuil lui-même se règle par édition, sur la ligne de la règle dans Règles
+du planning — champ « Jours travaillés d'affilée » (`joursConsecutifsMax`,
 **huit par défaut**). Il a quitté la constante du code parce qu'il ne décide pas
 du confort mais de la **faisabilité** : la règle exige un jour de repos dans
 *chaque* fenêtre de (seuil + 1) jours, donc un jour de plus ou de moins change
@@ -245,15 +257,16 @@ Au dosage livré, la même grille pourvoit tout mais place **48 personnes
 au-delà de six jours, jusqu'à onze d'affilée** — ce n'est pas un défaut du
 solveur, c'est ce que l'événement demande à effectif constant, et l'écran
 Équité le montre colonne « plus longue série » avant la publication. Monter le
-poids à 100 en retire un tiers, sans rien coûter aux autres règles de qualité,
+poids à 100 (500 sur l'échelle actuelle, [0057](decisions/0057-importance-d-une-regle-en-trois-positions.md)) en retire un tiers, sans rien coûter aux autres règles de qualité,
 et ne règle pas le fond. Le protocole complet, la fixture à l'aise (`festival-realiste-canicule`, où la
 forme dure ne coûte rien) et la décision sont dans
 [0045](decisions/0045-le-niveau-de-la-regle-des-jours-d-affilee.md).
 
 ## La durée des pauses
 
-La pause qui coupe une période de travail continu se règle sur la page
-Paramètres, carte « Paramètres légaux » : **une seule durée pour l'édition**,
+La pause qui coupe une période de travail continu se règle sur la page Règles
+du planning, onglet Légal, sur la ligne de chaque règle qui la lit : **une
+seule durée pour l'édition**,
 `dureePauseMinutes` (issue #592, fusionnée par l'[ADR 0048](decisions/0048-une-seule-regle-de-pause.md)).
 Elle est lue par `travailContinuMaxMajeur`, `travailContinuMaxMineur`,
 `PauseSurPoste`, le filtre d'éligibilité, tous les compteurs d'heures et
@@ -414,7 +427,7 @@ chaque paire du groupe et chaque jour :
 - un membre travaille, l'autre non : **forfait de 120** (deux heures) — « les
   mêmes jours » pèse autant que « les mêmes heures » ;
 - tous deux travaillent : les minutes d'écart entre leurs **premiers débuts**
-  au-delà de la tolérance (30 min par défaut, réglable sur la page Paramètres),
+  au-delà de la tolérance (30 min par défaut, réglable sur la ligne de la règle),
   plus celles entre leurs **dernières fins** — les fenêtres effectives, lues sur
   le même pliage (animateur, jour) que `eviterFermeturePuisOuverture`, si bien
   qu'une pause ou une coupure repas au milieu de la journée ne change rien.
@@ -424,7 +437,7 @@ minutes : une pente, pas un mur. **SOFT et non MEDIUM**, parce que c'est un
 confort qui doit céder devant `equilibrerCharge`, les souhaits et toutes les
 règles légales — un mineur qui doit partir avant 22 h désaligne le groupe, pas
 l'inverse. Un jour entièrement passé n'est plus facturé. La règle se dose et
-s'éteint depuis l'écran Contraintes comme les autres.
+s'éteint depuis l'écran Règles du planning comme les autres.
 
 Des indisponibilités déclarées différentes rendent certains jours
 inévitablement désalignés : l'onglet Covoiturage de l'écran Disponibilités les
@@ -453,9 +466,9 @@ Les règles de « Qualité d'organisation » lisent leurs seuils dans
 | Tolérance d'une arrivée groupée | 30 min | `arriveeGroupee`, et la lecture des arrivées groupées |
 
 Ils sont **persistés par édition** depuis l'issue #591 et se règlent sur la
-page Paramètres, carte « Qualité d'organisation » ; le bloc
-`planning.contraintes.*` de la configuration donne les valeurs d'une édition
-qui n'a jamais ouvert cette carte. Un scénario les emporte dans sa section
+page Règles du planning, onglet Qualité, chacun sur la ligne de la règle qui le
+lit ; le bloc `planning.contraintes.*` de la configuration donne les valeurs
+d'une édition qui ne les a jamais réglés. Un scénario les emporte dans sa section
 `parametresQualite:`, comme il emporte déjà `parametresLegaux:`.
 
 Aucun n'a de plancher d'ordre public : ce sont des conforts que l'organisateur
@@ -475,10 +488,13 @@ consécutifs que le plafond réglé sur la page Paramètres » laissait le lecte
 ouvrir un autre écran, y chercher le bon onglet, et parier que le champ trouvé
 était bien celui que la phrase désignait.
 
-Chaque règle porte donc, sous sa description, les **réglages qu'elle lit** :
-le libellé du champ mot pour mot, la valeur de cette édition, et un lien vers
-le formulaire qui la change. Le libellé *est* le lien — cliquer « Jours
-travaillés d'affilée » ouvre le champ de ce nom.
+Chaque règle porte donc, **sur sa propre ligne**, les **réglages qu'elle lit** :
+le libellé du champ mot pour mot, et le champ lui-même, à la valeur de cette
+édition (issue #720). Un réglage lu par plusieurs règles — la pause, la
+fenêtre repas — apparaît sur chacune de leurs lignes et se modifie à
+n'importe laquelle : c'est une seule valeur, enregistrée une fois. Le serveur
+envoie la clé du réglage (`cle`) avec son libellé, l'écran n'a donc pas à
+reconnaître un libellé pour savoir quel champ il édite.
 
 Une règle liste **tous** les réglages qu'elle lit, pas seulement son seuil
 vedette. `dureeHebdomadaireMax` est le cas qui le justifie : son plafond est
@@ -489,8 +505,8 @@ propre.
 
 Trois choses n'y figurent pas, et aucune par oubli :
 
-- **le poids**, qui a son propre champ sur cet écran et arbitre entre règles
-  d'un même niveau plutôt que de dire ce qu'une règle mesure ;
+- **le poids**, qui a sa propre colonne — l'importance — et arbitre entre
+  règles d'un même niveau plutôt que de dire ce qu'une règle mesure ;
 - **une constante du Code du travail** — les 10 h quotidiennes, les 11 h de
   repos, les six jours de repos hebdomadaire. Aucun formulaire ne les change,
   il n'y a donc nulle part où renvoyer, et la description est l'endroit où
@@ -579,7 +595,7 @@ passer par la modale. La garde est ergonomique, pas contractuelle.
 **Confirmation seule, décision assumée** : pas de motif, pas de journal, pas de
 colonne d'auteur. Sans notion d'utilisateur, une trace ne serait **pas
 imputable** — l'auteur ne vaudrait que la constante `ui` ou `mcp`. Ce qui reste,
-c'est **l'état** : l'écran Contraintes montre en permanence ce qui est
+c'est **l'état** : l'écran Règles du planning montre en permanence ce qui est
 désactivé, et le bandeau partagé le répète partout où un solve se lance ou se
 juge.
 
@@ -593,20 +609,47 @@ règle légale.
 Chaque contrainte pénalise d'un poids littéral dans son code ; ce défaut est
 surchargeable par `ConstraintWeightOverrides` sans toucher au Java. Trois
 couches, la plus proche l'emportant : le déploiement
-(`planning.constraint-weights.*`, **1 partout**), l'édition
+(`planning.constraint-weights.*` : **1 pour une règle dure, 5 pour une règle
+moyenne ou souple**, 25 pour la stabilité du plan publié), l'édition
 (`ponderation_contrainte`), et le scénario quand le fichier épingle son dosage.
 
-Valeurs de 1 à 100 ; `0` est refusé — voir [`api.md`](api.md#contraintes).
+Valeurs de 1 à 500 ; `0` est refusé — voir [`api.md`](api.md#contraintes).
+
+### L'importance en trois positions
+
+L'écran ne demande pas un nombre : l'onglet Qualité de Règles du planning offre
+à chaque règle moyenne ou souple **trois positions — faible, normale, forte —
+qui écrivent un poids de 1, 5 et 25** (`core/importance.ts`,
+`ConstraintCatalog.POIDS_FAIBLE/NORMAL/FORT`). Le défaut livré est la position
+du milieu : « baisser l'importance » a toujours un sens, alors que l'ancien
+défaut, 1, était déjà le minimum — le bouton « Baisser son poids » du
+Diagnostic menait douze fois sur douze à un champ qui valait 1. Un facteur
+cinq entre deux positions voisines est assez pour qu'une règle forte passe
+avant une normale, pas assez pour écraser les autres de son niveau.
+
+Un poids qui n'est pas l'une des trois valeurs reste permis — le panneau de la
+règle porte le champ numérique — et s'affiche « personnalisée ». Une règle dure
+ne s'offre pas en trois positions : un écart dur se compte, il ne se dose pas.
+
+Passer de 1 à 5 par défaut a multiplié l'échelle par cinq : la migration V108
+multiplie d'autant les poids **moyens et souples** que chaque édition avait
+stockés et leur historique, et les scénarios livrés portent leurs poids à la
+nouvelle échelle. Le classement des plans ne change pas ; leurs scores medium
+et soft sont multipliés par cinq. Le dosage mémorisé par une résolution passée
+et son score, eux, ne sont pas touchés : ils disent sous quels poids ce plan a
+été calculé, et la comparaison de Versions du plan dit à juste titre qu'un plan d'avant et un plan
+d'après ne se comparent pas à poids égaux. Voir
+[0057](decisions/0057-importance-d-une-regle-en-trois-positions.md).
 
 ### Garder la trace d'un dosage
 
 Un dosage se règle à tâtons, et le tâtonnement ne vaut que si l'on peut
 relire ce qu'il a donné. Chaque changement effectif de poids ou d'activation
 est donc historisé par édition, valeurs comprises, et chaque résolution
-mémorise le dosage sous lequel elle a été **lancée** : la page Contraintes
-pose, règle par règle, les changements et les scores qui ont suivi, l'Autopsie
-filtre les résolutions calculées sous le même dosage, et le Comparateur signale
-deux plans que des poids différents rendent incomparables. Ce rapprochement est
+mémorise le dosage sous lequel elle a été **lancée** : le panneau d'une règle,
+dans Règles du planning, pose les changements et les scores qui ont suivi, et
+la comparaison de Versions du plan signale deux plans que des poids
+différents rendent incomparables. Ce rapprochement est
 une juxtaposition, pas une mesure d'effet — voir
 [`api.md`](api.md#historique-des-réglages-de-pondération).
 
@@ -616,16 +659,19 @@ Les règles qui varient réellement d'un organisateur à l'autre sont les
 **MEDIUM de « Qualité d'organisation »** (`dosable()`) : elles arbitrent du
 confort contre du confort — la continuité sur un stand premium contre
 l'équilibre des charges, les souhaits contre l'expérience. La règle dont on se
-moque descend à 1 et se fait battre, celle qui compte monte.
+moque passe en importance faible et se fait battre, celle qui compte passe en
+forte.
 
 Les autres ne se dosent pas dans le même sens : une contrainte dure est
 respectée ou le planning est invalide, son poids ne change que la vitesse de
 convergence. **Repondérer une règle légale ne la rend ni plus ni moins
 obligatoire.**
 
-Le contrôle, lui, est le **même pour les 43 règles** : un champ « Poids » de 1
-à 100. Deux contrôles différents selon la famille laissaient croire à deux
-mécanismes ; il n'y en a qu'un, seul le sens de la valeur change.
+Le contrôle, lui, est le **même pour toutes les règles moyennes et souples** :
+trois positions, et le poids exact dans le panneau. Les règles dures n'ont que
+leur interrupteur : leur poids ne change que la vitesse de convergence, et
+l'offrir à l'écran laissait croire qu'il rendait une règle légale plus ou moins
+obligatoire.
 
 ### Le cas des contraintes d'équité
 
@@ -682,8 +728,8 @@ l'inverse d'un plancher.
 
 **À partir de 95 %** (`FLOOR_THRESHOLD`, pas 100 % : une poignée de sièges
 échappe toujours, et une règle qui en pénalise 98 % est tout aussi
-constante), la règle est signalée : badge « mesure une donnée absente » sur
-la page Contraintes, ratio, et la donnée nommée avec un lien vers l'écran de
+constante), la règle est signalée : une marque dans la colonne Écarts de
+Règles du planning, et dans son panneau le ratio et la donnée nommée avec un lien vers l'écran de
 saisie quand le référentiel n'en contient effectivement aucune — souhaits,
 appréciations, référents, ou aucune appréciation au-dessus de débutant. Un
 plancher que rien de tel n'explique est signalé quand même, sans lien : une
@@ -703,8 +749,8 @@ rien, elle ne coûte rien, et « satisfaite » est exact.
 
 Le **score hors plancher** — le score brut moins, niveau par niveau, ce que
 coûtent les règles signalées — est la part qu'une résolution peut faire
-bouger : il s'affiche à côté du score brut sur Contraintes, sur le
-récapitulatif du Solveur, dans le Comparateur A/B et l'Autopsie (`kpi`
+bouger : il s'affiche à côté du score brut sur le
+récapitulatif du Solveur, dans la comparaison de Versions du plan (`kpi`
 d'un instantané ; absent, jamais zéro, sur un instantané pris avant la
 mesure). Le plancher est signé comme le score dont il vient.
 
@@ -758,13 +804,16 @@ indisponibilité l'emporte toujours (`PlanningHardConstraintsTest`
 figer, il y a les verrouillages et la replanification incrémentale ; elle
 arbitre, au poids près, entre le dérangement et le gain.
 
-**Le poids : 5 par défaut.** Un point par siège déplacé, contre les autres
-règles medium à leur poids : `equilibrerCharge` produit des milliers de
-points sur une édition réelle, donc à poids 1 la stabilité pèse peu (74
-personnes bougent encore pour trois absences sur la fixture, 10 à poids 5).
-Le défaut `planning.constraint-weights.stabiliteDuPlanPublie=5` sort du banc
-décrit ci-dessous ; il se dose par édition sur l'écran Contraintes comme les
-autres règles de qualité, et se désactive par l'interrupteur.
+**Le poids : l'importance forte (25) par défaut.** Un point par siège déplacé,
+contre les autres règles medium à leur poids : `equilibrerCharge` produit des
+milliers de points sur une édition réelle, donc à poids égal la stabilité pèse
+peu (74 personnes bougent encore pour trois absences sur la fixture, 10 au
+quintuple). Le banc décrit ci-dessous a été mesuré sur l'ancienne échelle,
+autres règles à 1 et stabilité à 5 ; l'échelle ayant été multipliée par cinq
+([0057](decisions/0057-importance-d-une-regle-en-trois-positions.md)), le même
+rapport donne `planning.constraint-weights.stabiliteDuPlanPublie=25`. Elle se
+dose par édition sur l'écran Règles du planning comme les autres règles de
+qualité, et se désactive par l'interrupteur.
 
 **Le mur des heures pleines, et comment le solveur le franchit.** Quand le
 changement ajoute des sièges (un stand nouveau ouvert toute la journée),
@@ -824,7 +873,8 @@ chiffres.
 ## Contraintes ad hoc : les contradictions refusées à la saisie
 
 `ContrainteAdHoc` dans le domaine et sur le fil, **« Ajustements manuels »** à
-l'écran (route `/ad-hoc-constraints`, groupe *Planning* du menu) : ce qu'un
+l'écran (onglet Ajustements de « Consignes au solveur », `/consignes-solveur`,
+groupe *Construire* du menu) : ce qu'un
 organisateur saisit là est une exception au plan, pas une règle du catalogue, et
 les deux se lisaient comme la même chose à côté de l'écran Contraintes. Les cas
 limites côté utilisateur — sémantique « l'un de ces animateurs », périmètre
@@ -1245,7 +1295,7 @@ Sur une grille dont **un seul créneau couvre toute la fenêtre** — une vacati
 10 h-20 h d'un bloc — son titulaire ne peut pas s'absenter, et le siège doit
 être pourvu (`posteDoitEtrePourvu`, dure aussi). Aucune affectation n'atteint
 alors zéro dur. La réponse est de retailler la grille, ou d'éteindre la règle
-depuis l'écran Contraintes (ses valeurs se règlent sur l'écran Paramètres). Une fenêtre **plus courte que la coupure qu'elle
+depuis l'écran Règles du planning (ses valeurs se règlent sur sa ligne). Une fenêtre **plus courte que la coupure qu'elle
 exige** est en revanche écartée d'office (`FenetreRepas.depuis`) : personne ne
 pourrait la satisfaire, et sanctionner une saisie n'est pas le rôle du score.
 
@@ -1413,7 +1463,7 @@ paire ne facture pas une paire dont les deux places sont passées ; une règle
 groupée par animateur et jour ou semaine compte tout mais ne facture le groupe
 que s'il tient encore une place à venir ; la récompense d'affinité suit la
 même lecture. Le tableau règle par règle est dans l'ADR. Les diagnostics qui
-rejouent le score sur le plan enregistré — écran Contraintes,
+rejouent le score sur le plan enregistré — écran Règles du planning,
 `expliquer_echec_contraintes_dures`, planchers, simulations — passent par le
 même fournisseur de contraintes et lisent donc la même chose. Les analyses
 qui comptent hors du solveur (Pauses, Besoin, contrôle de grille, Heures)
@@ -1500,7 +1550,7 @@ ci-dessus ; ceci est la liste, complète par construction.
 | `pasDeChevauchementHoraire` | HARD | Affectation | Un animateur ne peut pas tenir deux postes dont les créneaux se chevauchent dans le temps (y compris deux créneaux distincts qui se recouvrent, et pas seulement deux postes sur le même créneau). |
 | `plafondCreneauxParTypologie` | HARD | Affectation | Sur une typologie qui porte un plafond, un animateur ne tient pas plus que ce nombre de créneaux sur l'ensemble de l'édition. Un poste compte pour chaque typologie que son stand propose. Une typologie sans plafond n'impose rien. |
 | `standReserveAuxMajeurs` | HARD | Légal (mineurs) | Les stands réservés aux majeurs ne peuvent accueillir aucun mineur. |
-| `mineurNecessiteEncadrementMajeur` | HARD | Sécurité (mineurs) | Éteinte par défaut. Un mineur doit toujours être accompagné d'au moins un majeur sur le même stand et le même créneau. Règle de sécurité posée par l'organisateur, pas une obligation du Code du travail : l'organisateur de l'évènement la remplit par ses managers, qui ne sont pas planifiés, et ne la demande donc pas au solveur. Une organisation sans encadrant hors planning l'allume depuis l'écran Contraintes. |
+| `mineurNecessiteEncadrementMajeur` | HARD | Sécurité (mineurs) | Éteinte par défaut. Un mineur doit toujours être accompagné d'au moins un majeur sur le même stand et le même créneau. Règle de sécurité posée par l'organisateur, pas une obligation du Code du travail : l'organisateur de l'évènement la remplit par ses managers, qui ne sont pas planifiés, et ne la demande donc pas au solveur. Une organisation sans encadrant hors planning l'allume depuis l'écran Règles du planning. |
 | `travailDeNuitInterditPourMineur` | HARD | Légal (mineurs) | Un mineur ne peut pas être affecté sur un créneau qui empiète sur sa nuit légale : 20 h-6 h avant 16 ans, 22 h-6 h de 16 à 18 ans (Code du travail art. L3163-1). |
 | `dureeQuotidienneMaxMineur` | HARD | Légal (mineurs) | Un mineur ne peut pas dépasser 8 heures de travail effectif sur une même journée (Code du travail art. L3162-1), ramenées à 7 heures avant 16 ans (art. D4153-3). Les pauses dues sont déduites : une pause, relayée ou prise comme un trou, est du repos et non du travail effectif. |
 | `travailInterditJourFerieMineur` | HARD | Légal (mineurs) | Un mineur ne peut pas travailler un jour férié légal (Code du travail art. L3164-6, liste de l'art. L3133-1). Aucune dérogation sectorielle n'est appliquée : celle de l'art. R3164-2 reste à instruire. |
@@ -1520,7 +1570,7 @@ ci-dessus ; ceci est la liste, complète par construction.
 | `incompatibiliteAdHoc` | HARD | Contraintes ad hoc | Deux animateurs déclarés incompatibles ne doivent jamais travailler sur le même créneau. |
 | `affectationForcee` | HARD | Contraintes ad hoc | Affectation imposée par l'administrateur : l'animateur doit être présent sur le créneau ou le stand visé. |
 | `affiniteAdHoc` | SOFT | Contraintes ad hoc | Paire d'animateurs à privilégier : chaque créneau où les deux sont affectés au même stand est récompensé. Contrainte souple : elle favorise la co-affectation quand c'est possible, sans jamais la forcer. |
-| `arriveeGroupee` | SOFT | Contraintes ad hoc | Groupe d'arrivée (covoiturage, 2 à 4 animateurs) : les membres travaillent les mêmes jours, arrivent et repartent ensemble, à la tolérance près (30 min par défaut, réglable sur la page Paramètres). Chaque jour et chaque paire du groupe coûtent les minutes d'écart au-delà de la tolérance, à l'arrivée comme au départ, et un forfait de deux heures quand l'un travaille et l'autre non. Aucune contrainte de stand : les membres peuvent tenir des stands différents. Contrainte souple : elle cède devant les règles légales et l'équilibre de charge. |
+| `arriveeGroupee` | SOFT | Contraintes ad hoc | Groupe d'arrivée (covoiturage, 2 à 4 animateurs) : les membres travaillent les mêmes jours, arrivent et repartent ensemble, à la tolérance près (30 min par défaut, réglable sur la ligne de la règle). Chaque jour et chaque paire du groupe coûtent les minutes d'écart au-delà de la tolérance, à l'arrivée comme au départ, et un forfait de deux heures quand l'un travaille et l'autre non. Aucune contrainte de stand : les membres peuvent tenir des stands différents. Contrainte souple : elle cède devant les règles légales et l'équilibre de charge. |
 | `animateurVerrouilleFige` | HARD | Verrouillage du planning | Le planning d'un animateur verrouillé ne bouge plus : ses postes validés sont figés et le solveur ne peut plus lui en attribuer de nouveaux. |
 | `animateurVerrouilleCreneauFige` | HARD | Verrouillage du planning | Un échange validé est figé sur son créneau : ce que chacun des deux animateurs y tient après l'échange ne bouge plus, sans geler le reste de leur planning. |
 | `standComplexeAvecReferent` | MEDIUM | Qualité d'organisation | Chaque stand devrait compter au moins un référent sur chaque créneau. |
@@ -1537,8 +1587,8 @@ ci-dessus ; ceci est la liste, complète par construction.
 | `appreciationIncompatible` | MEDIUM | Qualité d'organisation | L'appréciation de l'administrateur ne couvre aucune typologie de jeu proposée par le stand. |
 | `souhaitsIncompatibles` | MEDIUM | Qualité d'organisation | Aucune des typologies de jeu proposées par le stand ne figure dans les souhaits déclarés de l'animateur. |
 | `limiterTypologiesDistinctesParAnimateur` | MEDIUM | Qualité d'organisation | Un animateur devrait intervenir sur un petit nombre de typologies de jeu (plafond réglable, 2 par défaut) sur l'ensemble de l'édition, et pas seulement sur une journée : deux typologies le même après-midi et deux à une semaine d'écart comptent pareil. |
-| `maxJoursConsecutifsTravailles` | MEDIUM | Qualité d'organisation | Un animateur ne devrait pas travailler plus de jours consécutifs que le plafond réglé sur la page Paramètres (huit par défaut) sans au moins un jour de repos : moins est possible, plus ne devrait pas l'être. Règle d'organisation, dosable : aucun article du Code du travail n'impose un décompte glissant (L3132-1 se lit sur la semaine civile, Cass. soc. 13 nov. 2025, n° 24-10.733). |
-| `maxJoursConsecutifsTravaillesDur` | HARD | Qualité d'organisation | Éteinte par défaut. Le même plafond de jours consécutifs, tenu en dur : au-delà, le plan est refusé au lieu d'être pénalisé. Le seuil est celui de l'édition, réglable sur la page Paramètres : les deux formes le lisent au même endroit. Un poids ne change jamais le niveau d'une règle, d'où une contrainte séparée, qu'une édition allume depuis l'écran Contraintes, par activer_contrainte ou par contraintes.activees d'un scénario. Reste rangée en « Qualité d'organisation » et non en « Légal » : c'est une politique de l'organisateur, pas une obligation du Code du travail. |
+| `maxJoursConsecutifsTravailles` | MEDIUM | Qualité d'organisation | Un animateur ne devrait pas travailler plus de jours consécutifs que le plafond réglé sur la ligne de la règle (huit par défaut) sans au moins un jour de repos : moins est possible, plus ne devrait pas l'être. Règle d'organisation, dosable : aucun article du Code du travail n'impose un décompte glissant (L3132-1 se lit sur la semaine civile, Cass. soc. 13 nov. 2025, n° 24-10.733). |
+| `maxJoursConsecutifsTravaillesDur` | HARD | Qualité d'organisation | Éteinte par défaut. Le même plafond de jours consécutifs, tenu en dur : au-delà, le plan est refusé au lieu d'être pénalisé. Le seuil est celui de l'édition, réglable sur la ligne de la règle : les deux formes le lisent au même endroit. Un poids ne change jamais le niveau d'une règle, d'où une contrainte séparée, qu'une édition allume depuis l'écran Règles du planning, par activer_contrainte ou par contraintes.activees d'un scénario. Reste rangée en « Qualité d'organisation » et non en « Légal » : c'est une politique de l'organisateur, pas une obligation du Code du travail. |
 | `favoriserMixiteDesNiveaux` | SOFT | Préférences | Quand un référent est présent sur un créneau, y associer un débutant pour favoriser la montée en compétence. |
 | `equilibrerCreneauxPenibles` | SOFT | Préférences | Répartir équitablement entre animateurs les créneaux pénibles (stands épuisants ou premium). |
 | `preserverBufferPolyvalents` | SOFT | Préférences | Garder au moins un animateur polyvalent (typologie ninja) libre sur chaque créneau, pour pouvoir réparer le planning en cas d'absence de dernière minute. |

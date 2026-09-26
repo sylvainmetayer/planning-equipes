@@ -48,7 +48,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0022](0022-import-de-la-grille-des-stands.md) | La matrice des stands s'importe sous le contrat de 0021 | Accepté · transpose 0021 |
 | [0023](0023-modification-concurrente-par-horodatage.md) | Détecter une modification concurrente par horodatage, sans verrou | Accepté |
 | [0024](0024-repartir-du-plan-enregistre-par-defaut.md) | Une résolution complète repart du plan enregistré par défaut, sans l'épingler | Accepté |
-| [0025](0025-stabilite-du-plan-publie.md) | La stabilité après publication est une règle dosée, pas un gel | Accepté · prolonge 0024 |
+| [0025](0025-stabilite-du-plan-publie.md) | La stabilité après publication est une règle dosée, pas un gel | Accepté · prolonge 0024 · échelle révisée par 0057 |
 | [0026](0026-famille-de-relais-attribut-du-stand.md) | La famille de relais est un attribut du stand | Remplacé par 0029 · issue #390 |
 | [0027](0027-pas-de-compilation-native.md) | Pas de compilation native | Accepté · issue #392 |
 | [0028](0028-transactions-declaratives-narayana.md) | Transactions déclaratives (`@Transactional`, Narayana) pour les unités de travail composées | **Proposé** · mesuré, non tranché · issue #448 |
@@ -68,7 +68,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0042](0042-quota-par-typologie-sur-la-typologie.md) | Le quota par typologie se pose sur la typologie, pas sur une contrainte ad hoc | Accepté |
 | [0043](0043-consigne-d-edition-fermer-une-bande-sans-rien-detruire.md) | Une consigne d'édition ferme une bande horaire pour tous les stands, en quatrième couche du résolveur d'horaires, sans rien détruire de la grille | Accepté · révise 0001 § 6 bis, complète 0033 |
 | [0044](0044-le-passe-est-fige.md) | Le passé est figé : les places des créneaux déjà commencés sont reprises du plan enregistré et épinglées par toute résolution, comptées par les règles et reprochées par aucune | Accepté · prolonge 0003 et 0024, complète 0043 |
-| [0045](0045-le-niveau-de-la-regle-des-jours-d-affilee.md) | Les jours d'affilée restent une règle dosée, avec une forme dure éteinte et un seuil réglable | Accepté · prolonge 0006 et 0041 |
+| [0045](0045-le-niveau-de-la-regle-des-jours-d-affilee.md) | Les jours d'affilée restent une règle dosée, avec une forme dure éteinte et un seuil réglable | Accepté · prolonge 0006 et 0041 · échelle révisée par 0057 |
 | [0046](0046-un-placement-intenable-est-dit-avant-le-calcul.md) | Un placement intenable est dit au moment du geste et reporté avant le calcul ; seule l'écriture directe d'un siège, qui n'attend plus rien, est refusée | Accepté · complète 0003 |
 | [0047](0047-differer-le-message-d-une-personne-sans-la-perdre-de-vue.md) | Exclure quelqu'un d'une publication diffère son message sans l'oublier : la référence de comparaison devient une propriété de la personne, la capture reste commune | Accepté · complète 0011 |
 | [0048](0048-une-seule-regle-de-pause.md) | Une seule règle de pause : toute pause due est un trou dans la grille ou un relais du même stand, sinon un écart dur ; une seule durée, déduite partout | Accepté · révise 0006 et 0034, prolonge 0037 |
@@ -80,6 +80,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0054](0054-placer-sur-un-siege-vide-ecrit-le-siege-puis-le-verrou.md) | « Placer » sur un siège vide passe par les contrôles de l'écriture directe plus les gardes du déplacement (siège encore vide, personne non verrouillée), puis l'écran pose un verrou `ANIMATEUR_CRENEAU` tant que « La garder au prochain calcul » reste cochée | Accepté · voisine de 0044 et 0046 |
 | [0055](0055-une-seule-soiree-la-nuit-de-la-paie-a-part.md) | Une seule soirée dans l'application, l'heure réglable que lisent les rapports des heures et d'équité ; la borne fixe de 22 h ne survit que comme la « Nuit (paie) » | Accepté · voisine de 0048 |
 | [0056](0056-indisponible-ce-jour-ecrit-toujours-le-jour-indisponible.md) | « Indisponible ce jour », un clic sur la frise de la fiche animateur, écrit toujours le jour indisponible et libère dans le même appel ses sièges de ce jour dans le planning enregistré — un siège commencé ou verrouillé gardé en place, et nommé ; l'annulation ne rend aucun siège | Accepté · voisine de 0044 et 0054 |
+| [0057](0057-importance-d-une-regle-en-trois-positions.md) | L'importance d'une règle de qualité se règle en trois positions — faible 1, normale 5, forte 25 — et l'échelle des poids est multipliée par cinq, défauts, poids stockés et scénarios livrés compris | Accepté · révise l'échelle de 0025 et 0045 |
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,

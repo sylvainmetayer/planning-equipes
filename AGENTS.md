@@ -155,7 +155,7 @@ Single Quarkus service, no separate solver microservice. Package root:
     `SolverJobRepository` and replayed at startup, so a restart no longer loses
     the planned runs; `SolverJobTasks` and `SolverJobPersistence` carry what
     does not hold the lock), `ConstraintAnalysisStore` (the score breakdown the
-    Contraintes screen shows, written by every solve and re-derivable from the
+    Règles du planning screen shows, written by every solve and re-derivable from the
     persisted plan alone — **nothing analyses by solving a plan it then throws
     away**; in memory, so the first read after a restart re-derives it from that
     plan instead of answering "never analysed"), `PlanningPersistenceService`,
@@ -635,9 +635,11 @@ scenario workflow are the `dependency-update` skill.
 - **Commit messages are short.** Subject under 72 characters, conventional
   prefix, no trailing period. Subjects become the body of the GitHub release
   (git-cliff, `cliff.toml`, written by `release.yml`), so write them for the
-  operator who will read those notes; two things file an entry under « ⚠️ Attention » — a `!` after the
-  prefix, which means a MAJOR rupture, and the reserved
-  `contraintes-legales` scope, which warns without bumping the major. See
+  operator who will read those notes; three things file an entry under « ⚠️ Attention » — a `!` after the
+  prefix, which means a MAJOR rupture, and the two reserved scopes that warn
+  without bumping the major: `contraintes-legales` for a new or hardened legal
+  constraint, `attention` for any other change an operator must act on at
+  upgrade time (a rescaled setting, a value to convert by hand). See
   `docs/versioning.md`. A body only when it carries what the diff
   cannot — the why, an option rejected on the way, a consequence at
   deployment — and then three to five lines, not thirty. No body at all is a

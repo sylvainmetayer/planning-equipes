@@ -1,23 +1,39 @@
-/* Paramètres page: the tabs, the ninja warning, the backup facts and the dumps on disk. */
+/* Paramètres page: the tabs, the guichets, the backup facts and the dumps on disk. */
 
-/* Ninja typologie picker sits inline with the "Ajouter" button on the Typologies page. */
-.ninja-select {
-  min-width: 18rem;
+/* Where the settings that decide the plan went: one line under the tabs. */
+.parametres-renvoi-regles {
+  margin: 0 0 1rem;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
 }
 
-/* Paramètres: the "no ninja designated" warning reads as a soft banner, not a
-   bare line squeezed under the toolbar row — the missing reserve is a real
-   operational risk, it deserves a surface of its own. */
-.parametres-alerte-ninja {
-  margin: 0 1rem 0.75rem;
-  padding: 0.25rem 1rem 0.75rem;
-  background: var(--mat-sys-tertiary-container);
-  color: var(--mat-sys-on-tertiary-container);
-  border-radius: 0.75rem;
+.parametres-nom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
 }
 
-.parametres-alerte-ninja .status-message-warning {
-  color: var(--mat-sys-on-tertiary-container);
+/* One guichet per section of the card: its switch, its dates, its actions. */
+.parametres-guichet {
+  padding: 0.5rem 0 1rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.parametres-guichet:last-of-type {
+  border-bottom: 0;
+}
+
+.parametres-guichet h3 {
+  font: var(--mat-sys-title-small);
+  margin: 0.5rem 0;
+}
+
+.parametres-guichet-dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin: 0.75rem 0 0.25rem;
 }
 
 /* Paramètres: the tabs replaced the two section headings — the tab names what
@@ -30,13 +46,6 @@
 
 .parametres-onglets .mat-icon {
   margin-right: 0.35rem;
-}
-
-.parametres-renvois {
-  margin: 0;
-  padding-left: 1.25rem;
-  display: grid;
-  gap: 0.5rem;
 }
 
 /* Paramètres, automatic backup: the deployment's own facts (where the dumps
@@ -99,27 +108,6 @@
   font-weight: normal;
   text-align: left;
   font-family: var(--mat-sys-body-medium-font, monospace);
-}
-
-/* Paramètres légaux and Coupure repas: every field carries a hint, and most
-   of them wrap on two lines, so the rows need the vertical air the generic
-   form-grid does not give (row-gap 0, one subscript line reserved). The guide
-   link and the notes under the fields span the whole width instead of sitting
-   in a grid cell next to a field, which would halve them. */
-.parametres-legaux-form {
-  row-gap: 1rem;
-}
-
-.parametres-legaux-form .legal-guide {
-  grid-column: 1 / -1;
-  margin: 0;
-}
-
-.parametres-legaux-form .legal-note {
-  grid-column: 1 / -1;
-  margin: 0.25rem 0 0;
-  color: var(--mat-sys-on-surface-variant);
-  font: var(--mat-sys-body-small);
 }
 
 /* Paramètres, tab « Affichage mural »: the address of a link just created,

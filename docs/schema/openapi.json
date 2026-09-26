@@ -1870,6 +1870,18 @@
           }
         }
       },
+      "ConsigneInput" : {
+        "required" : [ "date", "motif" ],
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "motif" : {
+            "type" : "string"
+          }
+        }
+      },
       "ConsigneJourJ" : {
         "required" : [ "fermetureDebut", "motif" ],
         "type" : "object",
@@ -1981,6 +1993,9 @@
             "type" : "string"
           },
           "onglet" : {
+            "type" : "string"
+          },
+          "cle" : {
             "type" : "string"
           }
         }
@@ -2149,6 +2164,17 @@
             "items" : {
               "$ref" : "#/components/schemas/ScoreSentence"
             }
+          }
+        }
+      },
+      "ContactOrganisation" : {
+        "type" : "object",
+        "properties" : {
+          "telephone" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
           }
         }
       },
@@ -3289,7 +3315,7 @@
         }
       },
       "EspaceAnimateurView" : {
-        "required" : [ "foireOuverte" ],
+        "required" : [ "foireOuverte", "contact" ],
         "type" : "object",
         "properties" : {
           "animateurId" : {
@@ -3383,6 +3409,9 @@
             "items" : {
               "$ref" : "#/components/schemas/CarpoolDayView"
             }
+          },
+          "contact" : {
+            "$ref" : "#/components/schemas/ContactOrganisation"
           }
         }
       },
@@ -7936,6 +7965,41 @@
             "items" : {
               "$ref" : "#/components/schemas/ConsigneSnapshot"
             }
+          }
+        }
+      },
+      "SolveInputs" : {
+        "required" : [ "locks", "adjustments", "consignes", "pendingDeclarations", "disabledRules", "changesSinceSolve" ],
+        "type" : "object",
+        "properties" : {
+          "locks" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "adjustments" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "consignes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ConsigneInput"
+            }
+          },
+          "pendingDeclarations" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "disabledRules" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "changesSinceSolve" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "solvedAt" : {
+            "$ref" : "#/components/schemas/Instant"
           }
         }
       },
@@ -13346,6 +13410,53 @@
         "tags" : [ "Ouverture Stands Resource" ]
       }
     },
+    "/api/parametres-contact" : {
+      "put" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ContactOrganisation"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ContactOrganisation"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Update Contact Organisation",
+        "tags" : [ "Parametres Resource" ]
+      },
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ContactOrganisation"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Get Contact Organisation",
+        "tags" : [ "Parametres Resource" ]
+      }
+    },
     "/api/parametres-legaux" : {
       "put" : {
         "requestBody" : {
@@ -14976,6 +15087,24 @@
         },
         "summary" : "Solve From Reference Data",
         "tags" : [ "Solver Job Resource" ]
+      }
+    },
+    "/api/solve/entrees" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SolveInputs"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Current",
+        "tags" : [ "Solve Inputs Resource" ]
       }
     },
     "/api/solve/incremental/async" : {

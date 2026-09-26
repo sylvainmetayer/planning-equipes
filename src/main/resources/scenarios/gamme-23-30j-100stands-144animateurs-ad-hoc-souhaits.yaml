@@ -11,8 +11,8 @@ festival:
 
 contraintes:
   poids:
-    souhaitsIncompatibles: 2
-    appreciationIncompatible: 3
+    souhaitsIncompatibles: 10
+    appreciationIncompatible: 15
 
 creneaux:
   - id: J1-MATIN

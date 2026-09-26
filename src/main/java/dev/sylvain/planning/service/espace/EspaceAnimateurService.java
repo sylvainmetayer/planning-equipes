@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.espace;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ConsigneEdition;
+import dev.sylvain.planning.domain.ContactOrganisation;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.DeclarationDisponibilite;
@@ -261,8 +262,11 @@ public class EspaceAnimateurService {
      *                 on screen saying so
      * @param heureDuJourFigee the time of day frozen with it, {@code null} while
      *                 the phone's own time is the one to read
+     * @param contact  who to call or write to about this edition, as
+     *                 Paramètres › Édition sets it; both halves {@code null}
+     *                 when the organisation published none
      */
-    @Schema(requiredProperties = {"foireOuverte"})
+    @Schema(requiredProperties = {"foireOuverte", "contact"})
     public record EspaceAnimateurView(
             String animateurId,
             String prenom,
@@ -286,7 +290,8 @@ public class EspaceAnimateurService {
             String editionNom,
             LocalDate editionDebut,
             LocalDate editionFin,
-            List<CarpoolDayView> covoiturage) {}
+            List<CarpoolDayView> covoiturage,
+            ContactOrganisation contact) {}
 
     /**
      * One day of my grouped arrival, as the espace says it: whether the car
@@ -440,7 +445,8 @@ public class EspaceAnimateurService {
                 edition.nom(),
                 edition.debut(),
                 edition.fin(),
-                carpoolDaysOf(planning, animateurId));
+                carpoolDaysOf(planning, animateurId),
+                referenceDataService.getContactOrganisation());
     }
 
     /**

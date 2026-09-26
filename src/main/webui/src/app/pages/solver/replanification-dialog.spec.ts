@@ -7,7 +7,9 @@
 
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { provideRouter } from '@angular/router';
+import { AnalysesApi } from '../../core/api/analyses-api';
 import { describe, expect, it, vi } from 'vitest';
 import { Animateur, Creneau, PerimetreReplanification, Stand } from '../../core/models';
 import { ReferenceDataStore } from '../../core/reference-data.store';
@@ -49,8 +51,9 @@ const CRENEAUX: Creneau[] = [
   { id: 3, jour: 1, date: '2026-07-14', heureDebut: '10:00', heureFin: '12:00' },
 ];
 
-function monter() {
+function monter(depuis: string | null = null) {
   const close = vi.fn();
+  const changesSince = vi.fn(async () => ({ total: 0, parEntite: [], dernieres: [] }));
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
@@ -67,9 +70,12 @@ function monter() {
         },
       },
       { provide: MatDialogRef, useValue: { close } },
+      provideRouter([]),
+      { provide: AnalysesApi, useValue: { changesSince } },
+      ...(depuis === null ? [] : [{ provide: MAT_DIALOG_DATA, useValue: { depuis } }]),
     ],
   });
-  return { fixture: TestBed.createComponent(ReplanificationDialog), close };
+  return { fixture: TestBed.createComponent(ReplanificationDialog), close, changesSince };
 }
 
 function racine(fixture: ComponentFixture<ReplanificationDialog>): HTMLElement {
@@ -176,5 +182,25 @@ describe('ReplanificationDialog', () => {
     // needs is only that it is falsy, so it starts nothing.
     expect(close).toHaveBeenCalledOnce();
     expect(close.mock.calls[0][0]).toBeFalsy();
+  });
+
+  // « Corriger » shows what changed before it asks what else to re-open.
+  it('opens on what changed since the plan, read from the moment it was solved', async () => {
+    const { fixture, changesSince } = monter('2026-07-10T08:00:00Z');
+    await vi.waitFor(async () => {
+      await fixture.whenStable();
+      expect(racine(fixture).textContent).toContain('Aucune donnée modifiée depuis ce plan');
+    });
+
+    expect(changesSince).toHaveBeenCalledWith('2026-07-10T08:00:00Z');
+    expect(racine(fixture).textContent).toContain('Ce qui a changé depuis le plan');
+  });
+
+  it('says nothing of changes without a plan to count them from', async () => {
+    const { fixture, changesSince } = monter('');
+    await fixture.whenStable();
+
+    expect(changesSince).not.toHaveBeenCalled();
+    expect(racine(fixture).textContent).not.toContain('Ce qui a changé');
   });
 });

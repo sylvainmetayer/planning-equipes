@@ -1,0 +1,431 @@
+/* « Règles du planning »: one compact table per tab, a detail panel beside it. */
+
+.regles-onglets {
+  margin-bottom: 1rem;
+}
+
+.regles-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.regles-sous-titre {
+  margin: 0;
+  flex: 1 1 24rem;
+  font: var(--mat-sys-body-medium);
+}
+
+/* The table and, once a rule is open, its panel: side by side on a wide
+   screen, the panel under the table on a narrow one. */
+.regles-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (min-width: 1100px) {
+  .regles-layout-panneau {
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 26rem);
+  }
+}
+
+/* Dense on purpose: twenty-five satisfied hard rules fit on one screen. */
+.regles-table {
+  width: 100%;
+  border-collapse: collapse;
+  font: var(--mat-sys-body-medium);
+}
+
+.regles-table th,
+.regles-table td {
+  padding: 0.125rem 0.5rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.regles-table thead th {
+  font: var(--mat-sys-label-medium);
+  color: var(--mat-sys-on-surface-variant);
+  padding-block: 0.375rem;
+}
+
+.regles-table th[scope='row'] {
+  font-weight: normal;
+}
+
+.regles-row-inactive {
+  opacity: 0.6;
+}
+
+.regles-row-selected {
+  background: var(--mat-sys-secondary-container);
+}
+
+/* The rule's name opens its panel: a link-looking button, the whole cell wide. */
+.regles-nom {
+  all: unset;
+  cursor: pointer;
+  color: var(--mat-sys-primary);
+}
+
+.regles-nom:hover,
+.regles-nom:focus-visible {
+  text-decoration: underline;
+}
+
+.regles-nom:focus-visible {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+}
+
+.regles-article,
+.regles-categorie,
+.regles-personnalise {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.regles-actif {
+  white-space: nowrap;
+}
+
+.regles-importance {
+  white-space: nowrap;
+}
+
+.regles-importance .mat-button-toggle-appearance-standard .mat-button-toggle-label-content {
+  line-height: 1.75rem;
+  padding: 0 0.625rem;
+}
+
+.regles-seuils {
+  font: var(--mat-sys-body-small);
+}
+
+/* One setting: its label, its field, its unit — wrapping as a whole. */
+.regles-seuil {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-right: 0.75rem;
+  white-space: nowrap;
+}
+
+.regles-seuil-libelle {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.regles-seuil-input {
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface);
+  background: var(--mat-sys-surface);
+  border: 1px solid var(--mat-sys-outline);
+  border-radius: 4px;
+  padding: 0.125rem 0.25rem;
+}
+
+.regles-seuil-nombre {
+  width: 4.5rem;
+  text-align: right;
+}
+
+.regles-ecarts {
+  white-space: nowrap;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.regles-ecarts-hit {
+  color: var(--mat-sys-error);
+  font-weight: 500;
+}
+
+.regles-plancher {
+  color: var(--mat-sys-on-surface-variant);
+  vertical-align: middle;
+}
+
+.regles-panneau {
+  position: sticky;
+  top: 0.5rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  background: var(--mat-sys-surface-container-low);
+  padding: 0.75rem 1rem;
+  max-height: calc(100vh - 6rem);
+  overflow: auto;
+}
+
+.regles-panneau-entete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.regles-panneau-entete h2 {
+  margin: 0;
+  font: var(--mat-sys-title-medium);
+}
+
+.regles-panneau h3 {
+  font: var(--mat-sys-title-small);
+  margin: 1rem 0 0.25rem;
+}
+
+.regles-panneau-niveau {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.regles-panneau-poids {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.regles-grille {
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+  margin: 1rem 0 0;
+  padding: 0.5rem 1rem;
+}
+
+.regles-grille legend {
+  font: var(--mat-sys-title-small);
+  padding: 0 0.25rem;
+}
+
+.regles-save-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin: 1rem 0;
+}
+
+.regles-calcul-mail {
+  display: block;
+  margin-top: 1rem;
+}
+
+/* Solve budget fields, moved here from the Solveur page. */
+.solver-duration {
+  display: block;
+  width: 14rem;
+  max-width: 100%;
+  margin-bottom: 1rem;
+}
+
+.solver-duration-unit {
+  display: block;
+  width: 9rem;
+  max-width: 100%;
+  margin-bottom: 1rem;
+}
+
+.constraint-protegee-icon {
+  color: var(--mat-sys-error);
+  font-size: 1.125rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  vertical-align: middle;
+}
+
+.legal-disable-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legal-disable-rule {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0 0 0.25rem;
+}
+
+.legal-disable-categorie,
+.legal-disable-description {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.legal-disable-trace {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.constraint-plancher {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+  margin: 0.5rem 0 0;
+}
+
+.constraint-plancher-ratio {
+  display: block;
+  font: var(--mat-sys-label-large);
+  color: var(--mat-sys-on-surface);
+}
+
+/* « Où se concentrent les écarts » — see `ecarts-pivot-card.ts`. */
+.constraint-pivot-detail {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--app-accent);
+  background: var(--mat-sys-surface-container-low);
+  border-radius: 0 8px 8px 0;
+}
+
+.constraint-pivot-detail h3 {
+  margin: 0 0 0.5rem;
+  font: var(--mat-sys-title-small);
+}
+
+.constraint-pivot-detail ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
+/* The cells open a detail, so they have to look like they can be clicked. */
+.heatmap-cell:not(.heatmap-cell-none) {
+  cursor: pointer;
+}
+
+/* « Où se concentrent les écarts » (issue #496), folded until asked for. A
+   <details> rather than an expansion panel: the card is already the frame, and
+   a panel inside a card inside a card was exactly the stack the review
+   objected to. */
+.constraint-pivot {
+  padding: 1rem;
+}
+
+.constraint-pivot-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.75rem;
+  cursor: pointer;
+  list-style-position: outside;
+}
+
+.constraint-pivot-summary:focus-visible {
+  outline: 3px solid var(--app-accent);
+  outline-offset: 2px;
+}
+
+.constraint-pivot-titre {
+  font: var(--mat-sys-title-medium);
+}
+
+.constraint-pivot-compte {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.constraint-pivot-sous-titre {
+  margin: 0.5rem 0 1rem;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-medium);
+}
+
+/* The rule names scroll under their column headings on a long table. */
+.constraint-pivot-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--mat-sys-surface);
+}
+
+.constraint-pivot-remediation {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--mat-sys-corner-small);
+  background: var(--mat-sys-surface-container-high);
+}
+
+.constraint-pivot-liens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+/*
+ * The settings a rule reads. Each one is a link to the field that changes it,
+ * so the value and its label stay together: a chip whose label says what it is
+ * and whose tail says what it is set to.
+ */
+
+.weight-history-note {
+  color: var(--mat-sys-on-surface-variant);
+  margin-top: 0;
+}
+
+.weight-history-chart {
+  display: block;
+  width: 100%;
+  max-width: 30rem;
+  height: auto;
+  margin-block: 0.5rem 1rem;
+}
+
+.weight-history-axis {
+  stroke: var(--mat-sys-outline-variant);
+  stroke-width: 1;
+}
+
+.weight-history-tick {
+  fill: var(--mat-sys-on-surface-variant);
+  font-size: 9px;
+}
+
+.weight-history-marker {
+  stroke: var(--mat-sys-tertiary);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+}
+
+.weight-history-line {
+  fill: none;
+  stroke: var(--mat-sys-primary);
+  stroke-width: 2;
+}
+
+.weight-history-point {
+  fill: var(--mat-sys-primary);
+}
+
+.weight-history-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  max-height: 45vh;
+  overflow-y: auto;
+  font: var(--mat-sys-body-medium);
+}
+
+.weight-history-list li {
+  margin-bottom: 0.35rem;
+}
+
+.weight-history-date,
+.weight-history-origin,
+.weight-history-instance {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.weight-history-date {
+  margin-right: 0.5rem;
+}
+
+.ninja-select {
+  min-width: 18rem;
+}

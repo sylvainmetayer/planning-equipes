@@ -149,7 +149,9 @@ public class ContrainteMcpTools {
     @Tool(
             name = "modifier_poids_contrainte",
             description = "Change le poids d'une contrainte pour la prochaine résolution, dans cette édition "
-                    + "seulement : à niveau égal, une contrainte de poids 3 pèse trois fois une contrainte de poids 1. "
+                    + "seulement : à niveau égal, une contrainte de poids 10 pèse deux fois une contrainte de poids 5. "
+                    + "L'écran propose trois positions (faible 1, normale 5 — le défaut d'une règle moyenne ou "
+                    + "souple —, forte 25), tout entier de 1 à 500 est accepté. "
                     + "Sans poids, l'édition revient au poids configuré par défaut. Ne touche pas au niveau "
                     + "HARD/MEDIUM/SOFT, qui n'est pas réglable.",
             annotations =

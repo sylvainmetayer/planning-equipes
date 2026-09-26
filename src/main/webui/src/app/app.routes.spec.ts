@@ -10,12 +10,20 @@ import {
   Router,
   Routes,
   TitleStrategy,
+  UrlTree,
   provideRouter,
 } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { describe, expect, it } from 'vitest';
 
-import { benchTabToJournee, equityFicheUrl, standEditToFicheUrl, routes } from './app.routes';
+import {
+  benchTabToJournee,
+  equityFicheUrl,
+  parametresOngletsDeplaces,
+  redirectConstraintsToRegles,
+  standEditToFicheUrl,
+  routes,
+} from './app.routes';
 import { BRANDING } from './core/branding';
 import { BrandingTitleStrategy } from './core/branding-title.strategy';
 
@@ -83,7 +91,7 @@ describe('app.routes', () => {
     // Le compte exact plutôt qu'un plancher : un plancher laisse supprimer six
     // titres sans rien dire, et c'est ce chiffre-là que les descriptions de PR
     // annonçaient de travers.
-    expect(titrees).toHaveLength(44);
+    expect(titrees).toHaveLength(40);
     for (const route of titrees) {
       // Une fonction, et non une chaîne : c'est ce qui permet au titre de
       // passer par $localize sans être évalué au chargement du module, avant
@@ -373,6 +381,89 @@ describe('app.routes', () => {
 
     it('sert le Débogage pour tout le reste', async () => {
       expect(await naviguer('/debug?onglet=verifications')).toBe('/debug?onglet=verifications');
+    });
+  });
+
+  /** Three screens became the tabs of « Consignes au solveur » (issue #719). */
+  describe('les anciennes adresses des consignes au solveur', () => {
+    it('mène aux ajustements filtrés sur la personne que nommait le réseau, sans le réseau', () => {
+      expect(
+        redirectTarget('ad-hoc-constraints', {
+          vue: 'reseau',
+          personne: 'Alice',
+          paires: 'AFFINITE',
+        }),
+      ).toBe('/consignes-solveur?onglet=ajustements&personne=Alice');
+      expect(redirectTarget('ad-hoc-constraints', { ids: 'A1,A2' })).toBe(
+        '/consignes-solveur?onglet=ajustements&ids=A1%2CA2',
+      );
+    });
+
+    it('garde les paramètres des verrouillages et des consignes', () => {
+      expect(redirectTarget('verrouillages', { animateur: 'a1' })).toBe(
+        '/consignes-solveur?onglet=verrouillages&animateur=a1',
+      );
+      expect(redirectTarget('consignes', { date: '2026-08-02', nouvelle: '1' })).toBe(
+        '/consignes-solveur?onglet=consignes&date=2026-08-02&nouvelle=1',
+      );
+    });
+  });
+
+  /** The Autopsie, the Instantanés and the Comparateur became « Versions du plan » (issue #702). */
+  it('mène les trois anciennes adresses des versions à la nouvelle page', () => {
+    for (const path of ['kpi', 'instantanes', 'comparateur']) {
+      expect(allRoutes(routes).find((route) => route.path === path)?.redirectTo).toBe('/versions');
+    }
+  });
+
+  /** `/constraints` became « Règles du planning » (issue #720). */
+  describe("l'ancienne adresse des contraintes", () => {
+    function target(queryParams: Record<string, string>, fragment: string | null): string {
+      return redirectConstraintsToRegles({
+        queryParams,
+        fragment,
+      } as unknown as ActivatedRouteSnapshot) as string;
+    }
+
+    it('garde la règle demandée, que la page ouvre sur son onglet', () => {
+      expect(target({ regle: 'equilibrerCharge' }, null)).toBe('/regles?regle=equilibrerCharge');
+    });
+
+    it("fait de l'ancre d'une règle la règle à ouvrir, et oublie celle d'une catégorie", () => {
+      expect(target({}, 'coupureRepasObligatoire')).toBe('/regles?regle=coupureRepasObligatoire');
+      expect(target({}, 'categorie-legal-mineurs')).toBe('/regles');
+    });
+  });
+
+  /** Two tabs of Paramètres left the page (issue #720): the guard sends their bookmarks on. */
+  describe('les onglets déplacés des paramètres', () => {
+    function garde(queryParams: Record<string, string>): string | boolean {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [provideZonelessChangeDetection(), provideRouter([])],
+      });
+      const resultat = TestBed.runInInjectionContext(() =>
+        parametresOngletsDeplaces(
+          { queryParamMap: convertToParamMap(queryParams) } as ActivatedRouteSnapshot,
+          {} as RouterStateSnapshot,
+        ),
+      );
+      return typeof resultat === 'boolean'
+        ? resultat
+        : TestBed.inject(Router).serializeUrl(resultat as UrlTree);
+    }
+
+    it('envoie les paramètres légaux vers l’onglet Légal des règles', () => {
+      expect(garde({ onglet: 'legaux', x: '1' })).toBe('/regles?x=1&onglet=legal');
+    });
+
+    it('envoie les e-mails automatiques vers leur section de l’onglet Édition', () => {
+      expect(garde({ onglet: 'emails' })).toBe('/parametres?onglet=edition#emails');
+    });
+
+    it('laisse passer les onglets qui existent', () => {
+      expect(garde({ onglet: 'instance' })).toBe(true);
+      expect(garde({})).toBe(true);
     });
   });
 });

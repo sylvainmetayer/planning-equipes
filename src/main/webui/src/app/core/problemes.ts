@@ -115,8 +115,11 @@ export function actionsOfRule(
       code: 'REVOIR_AJUSTEMENTS',
       libelle: $localize`:@@problemes.action.revoirAjustements:Revoir l'ajustement`,
       explication: $localize`:@@problemes.action.revoirAjustements.explication:La règle a buté sur des ajustements écrits à la main : revoyez-les ou supprimez-les.`,
-      route: '/ad-hoc-constraints',
-      queryParams: { ids: enCause.map((contribution) => contribution.contrainteId).join(',') },
+      route: '/consignes-solveur',
+      queryParams: {
+        onglet: 'ajustements',
+        ids: enCause.map((contribution) => contribution.contrainteId).join(','),
+      },
       lang: null,
     });
   }
@@ -323,7 +326,8 @@ export function causeLinks(
   }
   if ((cause.contrainteIds ?? []).length > 0) {
     liens.push({
-      route: '/ad-hoc-constraints',
+      route: '/consignes-solveur',
+      queryParams: { onglet: 'ajustements' },
       libelle: $localize`:@@problemes.lien.adHoc:Voir les ajustements manuels`,
     });
   }
@@ -331,7 +335,8 @@ export function causeLinks(
   // on the Ajustements screen, the lock that blocks it on the other.
   if (cause.type === 'AFFECTATION_FORCEE_SIEGE_VERROUILLE') {
     liens.push({
-      route: '/verrouillages',
+      route: '/consignes-solveur',
+      queryParams: { onglet: 'verrouillages' },
       libelle: $localize`:@@problemes.lien.verrouillages:Voir les verrouillages`,
     });
   }
@@ -440,8 +445,11 @@ export function construireProblemes(
       actions: [],
       liens: [
         {
-          route: '/ad-hoc-constraints',
-          queryParams: { ids: misaligned.map((groupe) => groupe.contrainteId).join(',') },
+          route: '/consignes-solveur',
+          queryParams: {
+            onglet: 'ajustements',
+            ids: misaligned.map((groupe) => groupe.contrainteId).join(','),
+          },
           libelle: $localize`:@@problemes.lien.adHoc:Voir les ajustements manuels`,
         },
         ...days.map((date) => ({
@@ -551,7 +559,8 @@ export function construireProblemes(
       ];
       if (enCause.length > 0) {
         liens.push({
-          route: '/ad-hoc-constraints',
+          route: '/consignes-solveur',
+          queryParams: { onglet: 'ajustements' },
           libelle: $localize`:@@problemes.lien.adHoc:Voir les ajustements manuels`,
         });
       }

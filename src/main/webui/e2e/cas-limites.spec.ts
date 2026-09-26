@@ -171,16 +171,18 @@ test.describe('cas limites', () => {
     const jeton = await jetonDe(admin, SEED.demandeur);
     await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
 
-    // The admin closes the foire from the Échanges screen.
+    // The admin closes the foire from the Échanges screen: its state line
+    // carries « Fermer » while it is open (configured on Paramètres › Édition).
     const pageEchanges = await pageAdmin(browser, admin);
     await pageEchanges.goto('/echanges');
-    const interrupteur = pageEchanges.getByRole('switch');
-    await expect(interrupteur).toBeVisible();
-    if ((await interrupteur.getAttribute('aria-checked')) === 'true') {
-      await interrupteur.click();
+    const etat = pageEchanges.locator('.guichet-etat');
+    await expect(etat).toBeVisible();
+    const fermer = etat.getByRole('button', { name: 'Fermer' });
+    if ((await fermer.count()) > 0) {
+      await fermer.click();
     }
     // The status line, not the transient snack bar carrying the same words.
-    await expect(pageEchanges.locator('.echanges-foire-etat')).toContainText('Fermée');
+    await expect(etat).toContainText('Foire au planning fermée');
 
     // The animateur can still browse — but not submit: no form, a clear banner.
     await page.goto(`/animateur/${jeton}/echanges`);

@@ -3,6 +3,7 @@ import { CanActivateFn, Params, RedirectFunction, Router, Routes } from '@angula
 import { TODAY_ANCHOR } from './core/date-mock.service';
 import type { CompetencesPage } from './pages/competences/competences-page';
 import { retiredOpeningsViews } from './pages/ouvertures/vues-retirees';
+import type { ReglesPage } from './pages/regles/regles-page';
 import type { StandFichePage } from './pages/stand-fiche/stand-fiche-page';
 
 /**
@@ -114,13 +115,21 @@ function redirectToDiagnostic(onglet: string): RedirectFunction {
   return redirectToOnglet('diagnostic', onglet);
 }
 
-/** A former screen that became a tab: its address keeps its own query params and gains the `onglet`. */
-function redirectToOnglet(page: string, onglet: string): RedirectFunction {
+/**
+ * A former screen that became a tab: its address keeps its own query params
+ * and gains the `onglet`; `dropped` names the params of a view that did not
+ * survive the move.
+ */
+function redirectToOnglet(
+  page: string,
+  onglet: string,
+  dropped: readonly string[] = [],
+): RedirectFunction {
   return ({ queryParams }) => {
     const params = new URLSearchParams();
     params.set('onglet', onglet);
     for (const [key, valeur] of Object.entries(queryParams)) {
-      if (key !== 'onglet' && valeur !== undefined && valeur !== null) {
+      if (key !== 'onglet' && !dropped.includes(key) && valeur !== undefined && valeur !== null) {
         params.set(key, paramText(valeur));
       }
     }
@@ -255,6 +264,54 @@ function redirectFormerDebugTabs(route: { queryParamMap: { get(name: string): st
       });
 }
 
+/**
+ * `/constraints` became « Règles du planning » (`/regles`). The rule a link
+ * named — `?regle=` from a « Que faire ? » action, or the `#rule` anchor the
+ * card of a rule used to carry — becomes the `regle` the page opens its panel
+ * on; the page picks the tab from the rule itself, which a redirection cannot
+ * know. A `#categorie-…` anchor named a card that no longer exists: dropped.
+ */
+export const redirectConstraintsToRegles: RedirectFunction = ({ queryParams, fragment }) => {
+  const params = new URLSearchParams();
+  for (const [key, valeur] of Object.entries(queryParams)) {
+    if (valeur !== undefined && valeur !== null) {
+      params.set(key, paramText(valeur));
+    }
+  }
+  if (!params.has('regle') && fragment && !fragment.startsWith('categorie-')) {
+    params.set('regle', fragment);
+  }
+  const query = params.toString();
+  return query ? `/regles?${query}` : '/regles';
+};
+
+/**
+ * Two tabs of Paramètres left the page (issue #720): the legal parameters are
+ * now the « Légal » tab of Règles du planning, on the row of each rule that
+ * reads them, and the automatic e-mails a section of « Édition », reached by
+ * its anchor. A bookmark on either lands where the setting went, the other
+ * query params kept; `globaux` is read as `instance` by the page itself.
+ */
+export const parametresOngletsDeplaces: CanActivateFn = (route) => {
+  const onglet = route.queryParamMap.get('onglet');
+  if (onglet !== 'legaux' && onglet !== 'emails') {
+    return true;
+  }
+  const router = inject(Router);
+  const queryParams: Record<string, string> = {};
+  for (const key of route.queryParamMap.keys) {
+    if (key !== 'onglet') {
+      queryParams[key] = route.queryParamMap.getAll(key).join(',');
+    }
+  }
+  return onglet === 'legaux'
+    ? router.createUrlTree(['/regles'], { queryParams: { ...queryParams, onglet: 'legal' } })
+    : router.createUrlTree(['/parametres'], {
+        queryParams: { ...queryParams, onglet: 'edition' },
+        fragment: 'emails',
+      });
+};
+
 const adminRoutes: Routes = [
   {
     // The home: where the edition stands in its cycle, before any screen
@@ -316,6 +373,7 @@ const adminRoutes: Routes = [
   {
     path: 'parametres',
     title: () => $localize`:@@route.parametres:Paramètres`,
+    canActivate: [parametresOngletsDeplaces],
     loadComponent: () => import('./pages/parametres/parametres-page').then((m) => m.ParametresPage),
   },
   {
@@ -336,21 +394,18 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/aide/aide-page').then((m) => m.AidePage),
   },
   {
-    path: 'kpi',
-    title: () => $localize`:@@route.kpi:KPI`,
-    loadComponent: () => import('./pages/kpi/kpi-page').then((m) => m.KpiPage),
+    // The finished solves and the snapshots of the edition in one chronology,
+    // the comparator as a panel beside it (issue #702).
+    path: 'versions',
+    title: () => $localize`:@@route.versions:Versions du plan`,
+    loadComponent: () => import('./pages/versions/versions-page').then((m) => m.VersionsPage),
   },
-  {
-    path: 'comparateur',
-    title: () => $localize`:@@route.comparateur:Comparateur A/B`,
-    loadComponent: () =>
-      import('./pages/comparateur/comparateur-page').then((m) => m.ComparateurPage),
-  },
-  {
-    path: 'instantanes',
-    title: () => $localize`:@@route.instantanes:Instantanés`,
-    loadComponent: () => import('./pages/snapshots/snapshots-page').then((m) => m.SnapshotsPage),
-  },
+  // The Autopsie, the Instantanés and the Comparateur became that one page.
+  // Their params named the replay (`edition`, `rang`) and a dosage filter,
+  // neither of which survived: the address alone is kept.
+  { path: 'kpi', redirectTo: '/versions' },
+  { path: 'instantanes', redirectTo: '/versions' },
+  { path: 'comparateur', redirectTo: '/versions' },
   {
     path: 'editions',
     title: () => $localize`:@@route.editions:Éditions`,
@@ -438,25 +493,23 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/typologies/typologies-page').then((m) => m.TypologiesPage),
   },
   {
-    path: 'ad-hoc-constraints',
-    title: () => $localize`:@@route.adHocConstraints:Ajustements manuels`,
+    // What the next solve must respect, in three tabs (issue #719): the
+    // adjustments, the locks and the consignes, which were three screens.
+    path: 'consignes-solveur',
+    title: () => $localize`:@@route.consignesSolveur:Consignes au solveur`,
     loadComponent: () =>
-      import('./pages/ad-hoc-constraints/ad-hoc-constraints-page').then(
-        (m) => m.AdHocConstraintsPage,
+      import('./pages/consignes-solveur/consignes-solveur-page').then(
+        (m) => m.ConsignesSolveurPage,
       ),
   },
+  // The network of pairs (`?vue=reseau`, `?paires=`) is gone: its `?personne=`
+  // narrows the list of adjustments instead.
   {
-    path: 'verrouillages',
-    title: () => $localize`:@@route.verrouillages:Verrouillages`,
-    loadComponent: () =>
-      import('./pages/verrouillages/verrouillages-page').then((m) => m.VerrouillagesPage),
+    path: 'ad-hoc-constraints',
+    redirectTo: redirectToOnglet('consignes-solveur', 'ajustements', ['vue', 'paires']),
   },
-  {
-    // A band every stand is shut on for one date, by decision (issue #4).
-    path: 'consignes',
-    title: () => $localize`:@@route.consignes:Consignes`,
-    loadComponent: () => import('./pages/consignes/consignes-page').then((m) => m.ConsignesPage),
-  },
+  { path: 'verrouillages', redirectTo: redirectToOnglet('consignes-solveur', 'verrouillages') },
+  { path: 'consignes', redirectTo: redirectToOnglet('consignes-solveur', 'consignes') },
   {
     // « Planning » (issue #712): the Journée became the page every reading of
     // the plan starts from; the address stayed, for the links already out.
@@ -497,11 +550,16 @@ const adminRoutes: Routes = [
     }),
   },
   {
-    path: 'constraints',
-    title: () => $localize`:@@route.constraints:Contraintes`,
-    loadComponent: () =>
-      import('./pages/constraints/constraints-page').then((m) => m.ConstraintsPage),
+    // Every setting that decides the plan, in one place (issue #720): the
+    // hard rules with the thresholds they read, the quality rules with their
+    // importance, and the solve budget.
+    path: 'regles',
+    title: () => $localize`:@@route.regles:Règles du planning`,
+    loadComponent: () => import('./pages/regles/regles-page').then((m) => m.ReglesPage),
+    // A row edited and not saved would silently survive, invisible, until the next reload.
+    canDeactivate: [(page: ReglesPage) => page.canLeave()],
   },
+  { path: 'constraints', redirectTo: redirectConstraintsToRegles },
   {
     path: 'ouvertures',
     title: () => $localize`:@@route.ouvertures:Horaires des stands`,

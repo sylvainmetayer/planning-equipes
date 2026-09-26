@@ -1,0 +1,247 @@
+<h1 class="page-title" i18n="@@nav.link.regles">Règles du planning</h1>
+
+<app-feasibility-banner [report]="feasibility()" [hardScore]="hardScore()" [hardIssues]="hardIssues()" />
+<app-status-message [text]="alerteReglesLegales()" tone="error" />
+
+<mat-button-toggle-group class="regles-onglets" [value]="onglet()" (change)="changerOnglet($event.value)"
+                         aria-label="Onglet des règles" i18n-aria-label="@@regles.onglet.label">
+  <mat-button-toggle value="legal">
+    <mat-icon>gavel</mat-icon>
+    <ng-container i18n="@@regles.onglet.legal">Légal</ng-container>
+  </mat-button-toggle>
+  <mat-button-toggle value="qualite">
+    <mat-icon>tune</mat-icon>
+    <ng-container i18n="@@regles.onglet.qualite">Qualité</ng-container>
+  </mat-button-toggle>
+  <mat-button-toggle value="calcul">
+    <mat-icon>timer</mat-icon>
+    <ng-container i18n="@@regles.onglet.calcul">Calcul</ng-container>
+  </mat-button-toggle>
+</mat-button-toggle-group>
+
+@if (onglet() === 'calcul') {
+  <app-regles-calcul />
+} @else {
+  <div class="regles-toolbar">
+    @if (onglet() === 'legal') {
+      <p class="regles-sous-titre" i18n="@@regles.legal.subtitle">Ce que tout plan doit tenir : la loi, la sécurité des mineurs, l'affectation elle-même.</p>
+    } @else {
+      <p class="regles-sous-titre" i18n="@@regles.qualite.subtitle">Ce qui départage deux plans valables : plus l'importance est forte, plus le calcul y tient.</p>
+    }
+    <span class="calendar-meta">
+      @if (analysedAt(); as quand) {
+        <ng-container i18n="@@regles.analyse.date">Écarts de la dernière analyse, le {{ quand }}.</ng-container>
+      } @else {
+        <ng-container i18n="@@regles.analyse.aucune">Aucune analyse : les écarts s'afficheront après un calcul.</ng-container>
+      }
+    </span>
+    <button matButton type="button" [disabled]="loading()" (click)="refresh()">
+      <mat-icon>refresh</mat-icon>
+      <ng-container i18n="@@common.refresh">Actualiser</ng-container>
+    </button>
+  </div>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <div class="regles-layout" [class.regles-layout-panneau]="selectedRule() !== null">
+    <div class="table-wrapper">
+      <table class="regles-table">
+        <caption class="visually-hidden">
+          @if (onglet() === 'legal') {
+            <ng-container i18n="@@regles.legal.caption">Règles obligatoires, leur fondement, leur état et leurs réglages</ng-container>
+          } @else {
+            <ng-container i18n="@@regles.qualite.caption">Règles de qualité et préférences, leur importance et leurs réglages</ng-container>
+          }
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col" i18n="@@regles.col.regle">Règle</th>
+            @if (onglet() === 'legal') {
+              <th scope="col" i18n="@@regles.col.article">Article</th>
+            }
+            <th scope="col" i18n="@@regles.col.active">Active</th>
+            @if (onglet() === 'qualite') {
+              <th scope="col" i18n="@@regles.col.importance">Importance</th>
+            }
+            <th scope="col" i18n="@@regles.col.reglages">Réglages</th>
+            <th scope="col" i18n="@@regles.col.ecarts">Écarts</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (rule of rows(); track rule.name) {
+            <tr [class.regles-row-inactive]="!isActif(rule)" [class.regles-row-selected]="rule.name === regle()">
+              <th scope="row">
+                <button type="button" class="regles-nom" [attr.aria-expanded]="rule.name === regle()"
+                        (click)="select(rule)">{{ libelle(rule) }}</button>
+              </th>
+              @if (onglet() === 'legal') {
+                <td class="regles-article">
+                  @for (article of articles(rule); track article) {
+                    <app-legal-text [text]="article" />
+                  } @empty {
+                    <span class="regles-categorie">{{ rule.categorie }}</span>
+                  }
+                </td>
+              }
+              <td class="regles-actif">
+                <mat-slide-toggle [checked]="isActif(rule)" [disabled]="saving() || jobs.editingLocked()"
+                                  [aria-label]="libelle(rule)" (change)="toggle(rule, $event)" />
+                @if (protectionApplies(rule)) {
+                  <mat-icon class="constraint-protegee-icon" aria-hidden="false"
+                            matTooltip="Règle légale ou de sécurité : la désactiver demande une confirmation."
+                            i18n-matTooltip="@@constraints.protegee.tooltip"
+                            aria-label="Règle légale ou de sécurité : la désactiver demande une confirmation."
+                            i18n-aria-label="@@constraints.protegee.tooltip">gavel</mat-icon>
+                }
+              </td>
+              @if (onglet() === 'qualite') {
+                <td class="regles-importance">
+                  <mat-button-toggle-group hideSingleSelectionIndicator [value]="importanceOf(rule)"
+                                           [disabled]="saving() || jobs.editingLocked()"
+                                           [attr.aria-label]="libelle(rule)"
+                                           (change)="setImportance(rule, $event.value)">
+                    @for (option of importances; track option.value) {
+                      <mat-button-toggle [value]="option.value">{{ option.label }}</mat-button-toggle>
+                    }
+                  </mat-button-toggle-group>
+                  @if (importanceOf(rule) === null) {
+                    <span class="regles-personnalise" i18n="@@regles.importance.personnalisee">personnalisée ({{ poidsOf(rule) }})</span>
+                  }
+                </td>
+              }
+              <td class="regles-seuils">
+                @for (parametre of rule.parametres ?? []; track parametre.libelle) {
+                  <span class="regles-seuil">
+                    <span class="regles-seuil-libelle">{{ parametre.libelle }}</span>
+                    @if (editable(parametre)) {
+                      @switch (seuil(parametre).kind) {
+                        @case ('plage') {
+                          <input type="time" class="regles-seuil-input" [disabled]="saving()"
+                                 [attr.aria-label]="seuilLabel(parametre, rule, 0)"
+                                 [value]="valeurSeuil(parametre, seuil(parametre).fields[0])"
+                                 (input)="onSeuilTyped(parametre, seuil(parametre).fields[0], $any($event.target).value)" />
+                          –
+                          <input type="time" class="regles-seuil-input" [disabled]="saving()"
+                                 [attr.aria-label]="seuilLabel(parametre, rule, 1)"
+                                 [value]="valeurSeuil(parametre, seuil(parametre).fields[1])"
+                                 (input)="onSeuilTyped(parametre, seuil(parametre).fields[1], $any($event.target).value)" />
+                        }
+                        @case ('heure') {
+                          <input type="time" class="regles-seuil-input" [disabled]="saving()"
+                                 [attr.aria-label]="seuilLabel(parametre, rule, 0)"
+                                 [value]="valeurSeuil(parametre, seuil(parametre).fields[0])"
+                                 (input)="onSeuilTyped(parametre, seuil(parametre).fields[0], $any($event.target).value)" />
+                        }
+                        @default {
+                          <input type="number" class="regles-seuil-input regles-seuil-nombre" [disabled]="saving()"
+                                 [attr.aria-label]="seuilLabel(parametre, rule, 0)"
+                                 [attr.min]="seuil(parametre).min ?? null" [attr.max]="seuil(parametre).max ?? null"
+                                 [attr.step]="seuil(parametre).step ?? null"
+                                 [value]="valeurSeuil(parametre, seuil(parametre).fields[0])"
+                                 (input)="onSeuilTyped(parametre, seuil(parametre).fields[0], $any($event.target).value)" />
+                          {{ uniteSeuil(parametre) }}
+                        }
+                      }
+                    } @else {
+                      <span class="regles-seuil-valeur">{{ parametre.valeur }}</span>
+                    }
+                  </span>
+                }
+              </td>
+              <td class="regles-ecarts" [class.regles-ecarts-hit]="(rule.matchCount ?? 0) > 0">
+                {{ ecartsLabel(rule) }}
+                @if (rule.plancher) {
+                  <mat-icon class="regles-plancher" inline aria-hidden="false"
+                            [matTooltip]="plancherLabel(rule)" [attr.aria-label]="plancherLabel(rule)">info</mat-icon>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (selectedRule(); as rule) {
+      <aside class="regles-panneau" aria-labelledby="regles-panneau-titre">
+        <header class="regles-panneau-entete">
+          <h2 id="regles-panneau-titre">{{ libelle(rule) }}</h2>
+          <button matIconButton type="button" (click)="fermer()"
+                  aria-label="Fermer le détail" i18n-aria-label="@@regles.panneau.fermer">
+            <mat-icon>close</mat-icon>
+          </button>
+        </header>
+        <p class="regles-panneau-niveau">{{ niveauLabel(rule.niveau) }} · {{ rule.categorie }}</p>
+        <p><app-legal-text [text]="rule.description" /></p>
+        @if (rule.remediation) {
+          <h3 i18n="@@regles.panneau.quoiFaire">En cas d'écart</h3>
+          <p>{{ rule.remediation }}</p>
+        }
+        @if (rule.plancher; as plancher) {
+          <p class="constraint-plancher">
+            <span class="constraint-plancher-ratio">{{ plancherLabel(rule) }}</span>
+            {{ plancher.libelle }}
+            @if (plancher.lien) {
+              <a [routerLink]="plancher.lien" i18n="@@constraints.plancher.lien">Saisir la donnée</a>
+            }
+          </p>
+        }
+        @if (rule.violations.length > 0) {
+          <button matButton type="button" (click)="showViolations(rule)" i18n="@@constraints.showViolations">
+            Voir le détail ({{ rule.violations.length }})
+          </button>
+        }
+        @if (rule.niveau !== 'HARD') {
+          <h3 i18n="@@regles.panneau.poids">Poids exact</h3>
+          <label class="regles-panneau-poids">
+            <input #poids type="number" class="regles-seuil-input regles-seuil-nombre" step="1"
+                   [min]="poidsMin" [max]="poidsMax" [value]="poidsOf(rule)"
+                   [disabled]="saving() || jobs.editingLocked()"
+                   (change)="onPoidsTyped(rule, poids)" />
+            <span i18n="@@regles.panneau.poidsHint">Faible 1, normale 5, forte 25 ; tout autre nombre, de 1 à 500, reste possible.</span>
+          </label>
+        }
+        <h3 i18n="@@regles.panneau.historique">Historique des réglages</h3>
+        <app-weight-history-view [name]="rule.name" />
+      </aside>
+    }
+  </div>
+
+  @if (onglet() === 'legal') {
+    <fieldset class="regles-grille">
+      <legend i18n="@@regles.grille.legend">Contrôle de la grille des créneaux</legend>
+      <label class="regles-seuil">
+        <span class="regles-seuil-libelle" i18n="@@constraints.legal.field.reposQuotidien">Repos quotidien minimal (heures)</span>
+        <input type="number" class="regles-seuil-input regles-seuil-nombre" min="0" step="0.5" [disabled]="saving()"
+               [value]="valeurGrille('reposQuotidienMinimalMinutes')"
+               (input)="onGrilleTyped('reposQuotidienMinimalMinutes', $any($event.target).value)" />
+      </label>
+      <label class="regles-seuil">
+        <span class="regles-seuil-libelle" i18n="@@constraints.legal.field.dureeVacationMax">Durée maximale d'une vacation (heures)</span>
+        <input type="number" class="regles-seuil-input regles-seuil-nombre" min="0.5" step="0.5" [disabled]="saving()"
+               [value]="valeurGrille('dureeVacationMaxMinutes')"
+               (input)="onGrilleTyped('dureeVacationMaxMinutes', $any($event.target).value)" />
+      </label>
+      <p class="calendar-meta" i18n="@@regles.grille.hint">Aucune règle ne les lit : le contrôle de la grille avertit quand un créneau ne les laisse pas tenir.</p>
+    </fieldset>
+  }
+
+  <div class="regles-save-bar">
+    <button matButton="filled" type="button" [disabled]="!dirty() || saving()" (click)="save()">
+      <mat-icon>save</mat-icon>
+      @if (pendingCount() > 0) {
+        <ng-container i18n="@@regles.enregistrerN">Enregistrer ({{ pendingCount() }})</ng-container>
+      } @else {
+        <ng-container i18n="@@common.save">Enregistrer</ng-container>
+      }
+    </button>
+    <button matButton type="button" [disabled]="!dirty() || saving()" (click)="cancel()">
+      <ng-container i18n="@@regles.annuler">Annuler les modifications</ng-container>
+    </button>
+    <app-relancer-calcul [blocked]="dirty() ? saveFirst : ''" />
+  </div>
+  <app-status-message [text]="error()" tone="error" />
+
+  <app-ecarts-pivot-card [view]="view()" />
+}

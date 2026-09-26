@@ -11,7 +11,7 @@ festival:
 
 contraintes:
   poids:
-    maxJoursConsecutifsTravailles: 5
+    maxJoursConsecutifsTravailles: 25
 
 creneaux:
   - id: J1-MATIN

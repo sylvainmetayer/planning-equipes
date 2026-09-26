@@ -10,50 +10,9 @@
   </button>
 </div>
 
-@if (foireOpen() !== null) {
-  <div class="echanges-foire" [class.echanges-foire-fermee]="foireOpen() === false">
-    <mat-slide-toggle [checked]="foireOpen() === true" [disabled]="foireEnCours()"
-                      (change)="basculerFoire($event.checked)">
-      <ng-container i18n="@@echanges.foireToggle">Foire au planning ouverte</ng-container>
-    </mat-slide-toggle>
-    @if (foireOpen() === false) {
-      <span class="echanges-foire-etat" i18n="@@echanges.foireEtatFerme">
-        Fermée : les animateurs ne peuvent ni proposer ni annuler d'échange.
-      </span>
-    } @else if (horsFenetre()) {
-      <!-- L'interrupteur est sur « ouverte » mais les dates disent le
-           contraire : l'écran doit le dire, plutôt que d'afficher « ouverte »
-           pendant que le serveur refuse tout. -->
-      <span class="echanges-foire-etat" i18n="@@echanges.foireEtatHorsFenetre">
-        Ouverte, mais hors de la période ci-dessous : les animateurs ne peuvent rien proposer
-        aujourd'hui.
-      </span>
-    } @else {
-      <span class="echanges-foire-etat" i18n="@@echanges.foireEtatOuvert">
-        Ouverte : les animateurs peuvent proposer des échanges depuis leur espace.
-      </span>
-    }
-    <fieldset class="echanges-foire-fenetre" [disabled]="foireEnCours()">
-      <legend i18n="@@echanges.foireFenetre.legend">Période d'ouverture (facultative)</legend>
-      <mat-form-field appearance="outline" subscriptSizing="dynamic">
-        <mat-label i18n="@@echanges.foireFenetre.debut">À partir du</mat-label>
-        <input matInput type="date" [value]="debut() ?? ''" (change)="majDebut($any($event.target).value)" />
-      </mat-form-field>
-      <mat-form-field appearance="outline" subscriptSizing="dynamic">
-        <mat-label i18n="@@echanges.foireFenetre.fin">Jusqu'au</mat-label>
-        <input matInput type="date" [value]="fin() ?? ''" (change)="majFin($any($event.target).value)" />
-      </mat-form-field>
-      <button matButton="filled" type="button" [disabled]="foireEnCours()" (click)="saveWindow()">
-        <mat-icon>save</mat-icon>
-        <ng-container i18n="@@common.save">Enregistrer</ng-container>
-      </button>
-    </fieldset>
-    <p class="echanges-foire-aide" i18n="@@echanges.foireFenetre.aide">
-      Une date vide ne borne pas ce côté. L'interrupteur reste maître : une période renseignée
-      n'ouvre jamais une foire fermée.
-    </p>
-  </div>
-}
+<!-- The foire opens, closes and takes its dates on Paramètres › Édition: this
+     screen keeps one line of its state and the gesture made from here, closing. -->
+<app-guichet-etat guichet="foire" />
 
 @if (chargement()) {
   <mat-progress-bar mode="indeterminate" />

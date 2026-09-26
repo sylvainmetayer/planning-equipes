@@ -11,10 +11,10 @@ festival:
 
 contraintes:
   poids:
-    eviterChangementEmplacementEloigne: 2
-    limiterEmplacementsParJour: 2
-    repartitionMineursParCreneau: 2
-    maxJoursConsecutifsTravailles: 5
+    eviterChangementEmplacementEloigne: 10
+    limiterEmplacementsParJour: 10
+    repartitionMineursParCreneau: 10
+    maxJoursConsecutifsTravailles: 25
 
 emplacements:
   - id: EMP-01

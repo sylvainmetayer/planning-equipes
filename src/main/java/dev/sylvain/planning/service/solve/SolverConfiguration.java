@@ -155,9 +155,9 @@ final class SolverConfiguration {
 
     /**
      * Reads {@code planning.constraint-weights.<constraintName>} for every
-     * constraint in {@link ConstraintCatalog}, defaulting to 1 — the
-     * {@code ONE_HARD}/{@code ONE_MEDIUM}/{@code ONE_SOFT} literal already
-     * baked into each constraint. Computed once at startup since
+     * constraint in {@link ConstraintCatalog}, defaulting to
+     * {@link ConstraintCatalog#defaultWeight}: 1 for a hard rule, the
+     * « normale » position (5) for a medium or soft one. Computed once at startup since
      * {@code application.properties} does not change at runtime; the edition's
      * own overrides are read at solve time instead (see
      * {@link #effectiveConstraintWeights()}).
@@ -168,7 +168,7 @@ final class SolverConfiguration {
             poids.put(
                     definition.name(),
                     config.getOptionalValue("planning.constraint-weights." + definition.name(), Integer.class)
-                            .orElse(1));
+                            .orElse(ConstraintCatalog.defaultWeight(definition.name())));
         }
         return Map.copyOf(poids);
     }
