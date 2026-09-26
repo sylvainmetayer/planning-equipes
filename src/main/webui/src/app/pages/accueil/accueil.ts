@@ -456,7 +456,9 @@ function confirmations(etat: EtatEdition): LigneEtat {
   if (!relancesAutomatiques && silencieux > 0) {
     ligne.lienSecondaire = {
       route: '/parametres',
-      queryParams: { onglet: 'emails' },
+      // The automatic e-mails are a section of the Édition tab.
+      queryParams: { onglet: 'edition' },
+      fragment: 'emails',
       libelle: $localize`:@@accueil.lien.confirmations.activer:Activer`,
     };
   }

@@ -8,29 +8,22 @@ import {
   signal,
   ViewEncapsulation,
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { DisponibilitesApi } from '../../core/api/disponibilites-api';
 import { errorMessage } from '../../core/error-message';
-import {
-  ConfigurationCollecte,
-  DeclarationAdminView,
-  TeammateRequestView,
-} from '../../core/models';
+import { DeclarationAdminView, TeammateRequestView } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { GuichetEtat } from '../../shared/guichet-etat';
 import { PromptDialog } from '../../shared/prompt-dialog';
 import { keepViewInQueryParams } from '../../core/view-query-params';
 import {
@@ -45,8 +38,9 @@ import {
 const REASON_MAX = 500;
 
 /**
- * Admin review of the self-service declarations (issue #291): the collection
- * window on top, then two tabs chosen by `?onglet=` — the declarations of
+ * Admin review of the self-service declarations (issue #291): one line of the
+ * collection's state on top — it is configured on Paramètres › Édition (issue
+ * #720) —, then two tabs chosen by `?onglet=` — the declarations of
  * availability, and the covoiturage requests (« Je viens avec… »), sent from
  * their own tab of the espace and decided one by one, never with a
  * declaration.
@@ -61,16 +55,13 @@ const REASON_MAX = 500;
   selector: 'app-disponibilites-page',
   imports: [
     DatePipe,
-    FormsModule,
+    GuichetEtat,
     MatButtonModule,
     MatButtonToggleModule,
     MatCardModule,
     MatCheckboxModule,
-    MatFormFieldModule,
     MatIconModule,
-    MatInputModule,
     MatProgressBarModule,
-    MatSlideToggleModule,
   ],
   templateUrl: './disponibilites-page.html',
   styleUrls: ['../../../styles/espace-disponibilites.css', '../../../styles/demandes.css'],
@@ -92,20 +83,7 @@ export class DisponibilitesPage implements OnInit {
 
   protected readonly chargement = signal(false);
   protected readonly declarations = signal<DeclarationAdminView[]>([]);
-  /** `null` while the configuration has not been fetched yet. */
-  protected readonly configuration = signal<ConfigurationCollecte | null>(null);
-  protected readonly fenetreEnCours = signal(false);
   protected readonly decisionEnCours = signal<string | null>(null);
-
-  /** Form state of the window, edited before being sent in one go. */
-  protected readonly debut = signal('');
-  protected readonly fin = signal('');
-  /**
-   * Ticked per opening, never stored: the invitation is indispensable on the
-   * first round and merely tiresome when the window is reopened after a
-   * correction.
-   */
-  protected readonly prevenir = signal(false);
 
   /**
    * « En attente seulement »: the declarations waiting for a decision — the
@@ -183,14 +161,7 @@ export class DisponibilitesPage implements OnInit {
       // The covoiturages are a tab of their own, read beside: without them
       // the declarations still read.
       void this.loadCarpools();
-      const [declarations, configuration] = await Promise.all([
-        this.disponibilitesApi.declarations(),
-        this.disponibilitesApi.configuration(),
-      ]);
-      this.declarations.set(declarations);
-      this.configuration.set(configuration);
-      this.debut.set(configuration.debut ?? '');
-      this.fin.set(configuration.fin ?? '');
+      this.declarations.set(await this.disponibilitesApi.declarations());
     } catch (error) {
       this.report(error);
     } finally {
@@ -204,47 +175,6 @@ export class DisponibilitesPage implements OnInit {
       this.carpools.set(Array.isArray(carpools) ? carpools : []);
     } catch {
       this.carpools.set([]);
-    }
-  }
-
-  /**
-   * Opens or closes the window. Closing is enforced server-side: the espaces
-   * refuse a declaration, they do not merely hide the form.
-   */
-  protected async saveWindow(open: boolean): Promise<void> {
-    this.fenetreEnCours.set(true);
-    try {
-      const reponse = await this.disponibilitesApi.saveConfiguration({
-        collecteOuverte: open,
-        debut: this.debut() || null,
-        fin: this.fin() || null,
-        prevenirAnimateurs: open && this.prevenir(),
-      });
-      this.configuration.set(reponse);
-      this.prevenir.set(false);
-      this.notifications.notify({
-        title: reponse.collecteOuverte
-          ? $localize`:@@dispo.ouverteNotif:Collecte ouverte : les animateurs peuvent déclarer leurs disponibilités.`
-          : $localize`:@@dispo.fermeeNotif:Collecte fermée : les espaces animateurs n'acceptent plus de déclaration.`,
-        variant: 'success',
-      });
-      if (reponse.invitation) {
-        this.notifications.notify({
-          title: $localize`:@@dispo.invitationNotif:${reponse.invitation.envoyes}:envoyes: invitation(s) envoyée(s).`,
-          message:
-            reponse.invitation.sansEmail.length + reponse.invitation.echecs.length === 0
-              ? undefined
-              : $localize`:@@dispo.invitationRestes:Sans adresse : ${reponse.invitation.sansEmail.join(', ')}:sansEmail:. Échecs : ${reponse.invitation.echecs.join(', ')}:echecs:.`,
-          variant: reponse.invitation.echecs.length > 0 ? 'error' : 'success',
-          timeout: 8000,
-        });
-      }
-    } catch (error) {
-      this.report(error);
-      // Re-read the truth rather than guessing what the toggle should show.
-      void this.reload();
-    } finally {
-      this.fenetreEnCours.set(false);
     }
   }
 

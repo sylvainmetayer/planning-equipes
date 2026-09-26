@@ -214,10 +214,18 @@ c'est une faute de frappe ou un fichier écrit contre une autre version du
 catalogue, et l'ignorer laisserait l'opérateur convaincu qu'une règle est
 éteinte alors qu'elle ne l'est pas.
 
-Les scénarios livrés portent tous cette section, avec les deux seuls poids non
-neutres du produit — `appreciationIncompatible: 3` et
-`maxJoursConsecutifsTravailles: 5`. Le défaut du déploiement est 1 partout : le
-dosage voyage avec le scénario.
+Les scénarios livrés portent tous cette section, avec les deux seuls poids qui
+s'écartent du défaut — `appreciationIncompatible: 15` et
+`maxJoursConsecutifsTravailles: 25`. Le défaut du déploiement est 1 pour une
+règle dure et 5 pour une règle moyenne ou souple : le dosage voyage avec le
+scénario.
+
+**Les poids d'un fichier se lisent sur l'échelle actuelle** (faible 1,
+normale 5, forte 25 — [0057](decisions/0057-importance-d-une-regle-en-trois-positions.md)).
+Un fichier écrit avant ce changement portait ses poids sur l'échelle où le
+défaut valait 1 : réimporté tel quel, il ferait peser ses règles citées cinq
+fois moins que les autres. Multipliez par cinq les poids des règles moyennes et
+souples d'un tel fichier avant de l'importer ; les scénarios livrés l'ont été.
 
 `contraintesAdHoc` **remplace** les contraintes ad hoc de l'édition ; absente,
 le fichier n'en installe aucune. Elle désigne animateurs, stands et créneaux par

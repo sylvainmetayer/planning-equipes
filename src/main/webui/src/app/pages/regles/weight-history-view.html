@@ -1,0 +1,59 @@
+<!-- The weight history of one rule, in the panel of its row: see `WeightHistoryView`. -->
+<p class="weight-history-note" i18n="@@weightHistory.note">
+  Les résolutions qui ont suivi chaque réglage, côte à côte : le référentiel a pu changer entre deux.
+</p>
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+<app-status-message [text]="error()" tone="error" />
+@if (chart(); as chart) {
+  <svg
+    class="weight-history-chart"
+    [attr.viewBox]="'0 0 ' + chart.width + ' ' + chart.height"
+    role="img"
+    [attr.aria-label]="chartLabel()"
+  >
+    <line class="weight-history-axis" x1="28" [attr.y1]="chart.height - 16" [attr.x2]="chart.width - 8" [attr.y2]="chart.height - 16" />
+    <text class="weight-history-tick" x="24" y="12" text-anchor="end">{{ chart.maxViolations }}</text>
+    <text class="weight-history-tick" x="24" [attr.y]="chart.height - 16" text-anchor="end">0</text>
+    @for (marker of chart.markers; track $index) {
+      <line class="weight-history-marker" [attr.x1]="marker.x" y1="8" [attr.x2]="marker.x" [attr.y2]="chart.height - 16">
+        <title>{{ dateLabel(marker.at) }} — {{ marker.label }}</title>
+      </line>
+    }
+    <polyline class="weight-history-line" [attr.points]="chart.polyline" />
+    @for (point of chart.points; track $index) {
+      <circle class="weight-history-point" [attr.cx]="point.x" [attr.cy]="point.y" r="3">
+        <title>{{ dateLabel(point.at) }} — {{ point.violations }}</title>
+      </circle>
+    }
+  </svg>
+}
+@if (!loading() && items().length === 0) {
+  <p class="empty-hint" i18n="@@weightHistory.empty">
+    Aucun changement ni résolution sur cette édition : la règle suit le dosage par défaut.
+  </p>
+} @else if (!loading() && !hasChanges()) {
+  <p class="empty-hint" i18n="@@weightHistory.noChange">Aucun changement : la règle suit le dosage par défaut.</p>
+}
+<ol class="weight-history-list">
+  @for (item of items(); track $index) {
+    @if (item.kind === 'change') {
+      <li class="weight-history-change">
+        <span class="weight-history-date">{{ dateLabel(item.at) }}</span>
+        <strong>{{ changeLabel(item.change) }}</strong>
+        <span class="weight-history-origin">({{ originLabel(item.change) }})</span>
+      </li>
+    } @else {
+      <li class="weight-history-resolution">
+        <span class="weight-history-date">{{ dateLabel(item.at) }}</span>
+        <span i18n="@@weightHistory.resolution">Résolution</span> {{ item.resolution.score ?? '—' }} ·
+        {{ violationsLabel(item.resolution) }} ·
+        <span [title]="dosageDetail(item.resolution)" i18n="@@weightHistory.dosage">réglages : {{ dosageLabel(item.resolution) }}</span>
+        @if (item.instanceChanged) {
+          <span class="weight-history-instance" i18n="@@weightHistory.instanceChanged">— le défaut de l'instance a changé</span>
+        }
+      </li>
+    }
+  }
+</ol>

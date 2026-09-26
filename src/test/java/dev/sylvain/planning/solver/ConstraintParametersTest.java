@@ -26,8 +26,9 @@ class ConstraintParametersTest {
         assertThat(parametres).singleElement().satisfies(parametre -> {
             assertThat(parametre.libelle()).isEqualTo("Jours travaillés d'affilée");
             assertThat(parametre.valeur()).isEqualTo("8 jours");
-            assertThat(parametre.lien()).isEqualTo("/parametres");
-            assertThat(parametre.onglet()).isEqualTo("edition");
+            assertThat(parametre.lien()).isEqualTo("/regles");
+            assertThat(parametre.onglet()).isEqualTo("qualite");
+            assertThat(parametre.cle()).isEqualTo("joursConsecutifsMax");
         });
     }
 
@@ -36,8 +37,17 @@ class ConstraintParametersTest {
         ParametresLegaux legaux = new ParametresLegaux();
         ParametresQualite qualite = new ParametresQualite();
 
-        assertThat(ConstraintParameters.of("maxJoursConsecutifsTravaillesDur", legaux, qualite))
-                .isEqualTo(ConstraintParameters.of("maxJoursConsecutifsTravailles", legaux, qualite));
+        List<ConstraintParameter> dur = ConstraintParameters.of("maxJoursConsecutifsTravaillesDur", legaux, qualite);
+        List<ConstraintParameter> medium = ConstraintParameters.of("maxJoursConsecutifsTravailles", legaux, qualite);
+        assertThat(dur)
+                .extracting(ConstraintParameter::cle)
+                .isEqualTo(medium.stream().map(ConstraintParameter::cle).toList());
+        assertThat(dur)
+                .extracting(ConstraintParameter::valeur)
+                .isEqualTo(medium.stream().map(ConstraintParameter::valeur).toList());
+        // Each on the row of its own rule: the hard form on the legal tab, the dosed one on quality.
+        assertThat(dur).extracting(ConstraintParameter::onglet).containsOnly("legal");
+        assertThat(medium).extracting(ConstraintParameter::onglet).containsOnly("qualite");
     }
 
     @Test

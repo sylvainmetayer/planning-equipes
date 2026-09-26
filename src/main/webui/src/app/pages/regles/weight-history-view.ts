@@ -1,13 +1,18 @@
-// The weight history of one rule, opened from its card on the Contraintes
-// page: every change of its weight or activation, the solves that followed
-// with their score and this rule's violations, and a small chart of those
-// violations with the changes as vertical markers. Juxtaposition, not
+// The weight history of one rule, in the panel of its row on « Règles du
+// planning »: every change of its weight or activation, the solves that
+// followed with their score and this rule's violations, and a small chart of
+// those violations with the changes as vertical markers. Juxtaposition, not
 // causality — the referential may have moved between two solves as much as
-// the weight did, and the dialog says so.
+// the weight did, and the view says so.
 
-import { ChangeDetectionStrategy, Component, computed, inject, resource } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  resource,
+} from '@angular/core';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ConstraintsApi } from '../../core/api/constraints-api';
 import { dosageLines, dosageSummary } from '../../core/dosage';
@@ -18,24 +23,20 @@ import { errorText } from '../../core/resource-state';
 import { StatusMessage } from '../../shared/status-message';
 import { changeLabel, historyChart, historyItems, originLabel } from './weight-history';
 
-export interface WeightHistoryData {
-  /** Technical name of the rule, as its card shows it. */
-  name: string;
-}
-
 @Component({
-  selector: 'app-weight-history-dialog',
-  imports: [MatDialogModule, MatButtonModule, MatProgressBarModule, StatusMessage],
-  templateUrl: './weight-history-dialog.html',
+  selector: 'app-weight-history-view',
+  imports: [MatProgressBarModule, StatusMessage],
+  templateUrl: './weight-history-view.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class WeightHistoryDialog {
-  protected readonly dialogRef = inject<MatDialogRef<WeightHistoryDialog>>(MatDialogRef);
-  protected readonly data = inject<WeightHistoryData>(MAT_DIALOG_DATA);
+export class WeightHistoryView {
+  /** Technical name of the rule — the key of the API, never shown. */
+  readonly name = input.required<string>();
+
   private readonly constraintsApi = inject(ConstraintsApi);
 
   private readonly history = resource({
-    params: () => ({ name: this.data.name }),
+    params: () => ({ name: this.name() }),
     loader: ({ params }) => this.constraintsApi.history(params.name),
   });
   protected readonly loading = this.history.isLoading;

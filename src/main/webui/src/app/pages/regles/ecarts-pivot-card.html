@@ -1,0 +1,104 @@
+<!-- Où se concentrent les écarts : règles en lignes, jours, stands ou
+     animateurs en colonnes. Le tableau des règles dit combien de fois une règle
+     est en défaut ; celui-ci dit où. Replié par défaut. -->
+@if (pivot().lignes.length > 0) {
+  <mat-card appearance="outlined" class="page-card">
+    <details class="constraint-pivot" [open]="ouvert()" (toggle)="ouvert.set($any($event.target).open)">
+      <summary class="constraint-pivot-summary">
+        <span class="constraint-pivot-titre" i18n="@@constraints.pivot.title">Où se concentrent les écarts</span>
+        <span class="constraint-pivot-compte" i18n="@@constraints.pivot.compte">{{ pivot().lignes.length }} règle(s) en défaut</span>
+      </summary>
+      <p class="constraint-pivot-sous-titre" i18n="@@constraints.pivot.subtitle">
+        Les écarts de la dernière analyse, croisés avec l'axe choisi. Une case sombre est un point de
+        concentration : c'est là qu'une correction rapporte le plus. Cliquez une case pour voir quoi faire.
+      </p>
+      <mat-chip-listbox [value]="axe()" (change)="changerAxe($any($event).value)"
+                        i18n-aria-label="@@constraints.pivot.axeLabel" aria-label="Axe du tableau croisé">
+        @for (option of axes; track option.value) {
+          <mat-chip-option [value]="option.value" [selected]="option.value === axe()">{{ option.label }}</mat-chip-option>
+        }
+      </mat-chip-listbox>
+      <div class="table-wrapper">
+        <table class="heatmap-table" role="grid">
+          <caption class="visually-hidden" i18n="@@constraints.pivot.caption">
+            Écarts par contrainte et par journée, stand ou animateur
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col" class="heatmap-row-header constraint-pivot-sticky" i18n="@@constraints.pivot.column.contrainte">Contrainte</th>
+              @for (colonne of pivot().colonnes; track colonne.cle) {
+                <th scope="col" class="heatmap-day-header constraint-pivot-sticky">{{ colonne.libelle }}</th>
+              }
+              <th scope="col" class="heatmap-day-header constraint-pivot-sticky" i18n="@@constraints.pivot.column.total">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (ligne of pivot().lignes; track ligne.contrainte; let indexLigne = $index) {
+              <tr>
+                <th scope="row" class="heatmap-row-header">{{ libelleRegle(ligne.contrainte) }}</th>
+                <!-- A grid in earnest (RGAA 7.1): one tab stop, the arrows move
+                     inside, Enter or Space opens the cell. -->
+                @for (ecarts of ligne.ecarts; track $index; let indexColonne = $index) {
+                  <td [class]="classeCellule(ecarts, pivot().maximum)"
+                      [attr.data-ligne]="indexLigne"
+                      [attr.data-colonne]="indexColonne"
+                      [tabindex]="isFocusedCell(indexLigne, indexColonne) ? 0 : -1"
+                      [attr.aria-label]="cellLabel(ligne.contrainte, pivot().colonnes[indexColonne], ecarts)"
+                      (focus)="focusedCell.set({ ligne: indexLigne, colonne: indexColonne })"
+                      (keydown)="onCellKeydown($event, indexLigne, indexColonne)"
+                      (click)="openCell(ligne.contrainte, pivot().colonnes[indexColonne], ecarts)">
+                    {{ ecarts > 0 ? ecarts : '—' }}
+                  </td>
+                }
+                <td class="heatmap-cell">{{ ligne.total }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (pivot().colonnesMasquees > 0) {
+        <p class="hint" i18n="@@constraints.pivot.masquees">
+          {{ pivot().colonnesMasquees }} colonne(s) de plus, avec moins d'écarts, ne sont pas affichées.
+        </p>
+      }
+      @if (detailCellule(); as detail) {
+        <div class="constraint-pivot-detail">
+          <h3>{{ detail.libelle }} — {{ detail.colonne }}</h3>
+          <p i18n="@@constraints.pivot.detail.count">{{ detail.ecarts }} écart(s) ici.</p>
+          <p class="constraint-pivot-remediation">
+            <mat-icon inline aria-hidden="true">lightbulb</mat-icon>
+            {{ detail.remediation }}
+          </p>
+          <p class="constraint-pivot-liens">
+            <a matButton="tonal" [routerLink]="detail.lien.route" [queryParams]="detail.lien.queryParams">
+              <mat-icon>open_in_new</mat-icon>
+              {{ detail.lien.label }}
+            </a>
+            <a matButton routerLink="/regles" [queryParams]="{ regle: detail.contrainte }">
+              <mat-icon>tune</mat-icon>
+              <ng-container i18n="@@constraints.pivot.detail.reglage">Régler cette contrainte</ng-container>
+            </a>
+          </p>
+          @if (detail.listable) {
+            <ul>
+              @for (ligne of detail.lignes; track ligne) {
+                <li>{{ ligne }}</li>
+              }
+            </ul>
+            @if (detail.lignes.length === 0) {
+              <p class="empty-hint" i18n="@@constraints.pivot.detail.aucuneLigne">
+                Aucune ligne détaillée pour cette case : l'écart nomme plusieurs cibles à la fois, ou la liste
+                du serveur s'arrête aux cent premières occurrences.
+              </p>
+            }
+          } @else {
+            <p class="empty-hint" i18n="@@constraints.pivot.detail.nonListable">
+              Les lignes ne sont détaillées que pour les règles dures : une règle moyenne ou souple se compte
+              par milliers, et le serveur ne les envoie pas. Le compte, lui, reste juste.
+            </p>
+          }
+        </div>
+      }
+    </details>
+  </mat-card>
+}

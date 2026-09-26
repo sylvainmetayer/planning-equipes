@@ -1,0 +1,120 @@
+<!-- « Règles du planning › Calcul »: one form, one « Enregistrer » — see `ReglesCalcul`. -->
+<form class="regles-calcul" (ngSubmit)="save()">
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-header>
+      <h2 mat-card-title i18n="@@solverBudget.title">Budget de calcul</h2>
+      @if (ceilingText()) {
+        <mat-card-subtitle>{{ ceilingText() }}</mat-card-subtitle>
+      }
+    </mat-card-header>
+    <mat-card-content>
+      <div class="calendar-toolbar">
+        <mat-form-field appearance="outline" class="solver-duration">
+          <mat-label i18n="@@solverBudget.duration.label">Durée maximale</mat-label>
+          <input matInput type="number" [attr.min]="step()" [step]="step()" name="solverDurationValue"
+                 [disabled]="loading() || saving()"
+                 [ngModel]="valueDraft()" (ngModelChange)="onValueDraftChange($event)" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="solver-duration-unit">
+          <mat-label i18n="@@dataSetup.solverDuration.unit.label">Unité</mat-label>
+          <mat-select name="solverDurationUnit" [disabled]="loading() || saving()"
+                      [ngModel]="unit()" (ngModelChange)="onUnitChange($event)">
+            <mat-option value="SECONDES" i18n="@@dataSetup.solverDuration.unit.secondes">Secondes</mat-option>
+            <mat-option value="MINUTES" i18n="@@dataSetup.solverDuration.unit.minutes">Minutes</mat-option>
+            <mat-option value="HEURES" i18n="@@dataSetup.solverDuration.unit.heures">Heures</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <div class="calendar-toolbar">
+        <mat-form-field appearance="outline" class="solver-duration">
+          <mat-label i18n="@@solverBudget.plateau.label">Arrêt sans amélioration depuis</mat-label>
+          <input matInput type="number" min="0" [step]="plateauStep()" name="solverPlateauValue"
+                 [disabled]="loading() || saving()"
+                 [ngModel]="plateauDraft()" (ngModelChange)="onPlateauDraftChange($event)" />
+          <mat-hint i18n="@@solverBudget.plateau.hint">0 = jamais. Compte seulement une fois le planning faisable.</mat-hint>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="solver-duration-unit">
+          <mat-label i18n="@@solverBudget.plateau.unit">Unité du plateau</mat-label>
+          <mat-select name="solverPlateauUnit" [disabled]="loading() || saving()"
+                      [ngModel]="plateauUnit()" (ngModelChange)="onPlateauUnitChange($event)">
+            <mat-option value="SECONDES" i18n="@@dataSetup.solverDuration.unit.secondes">Secondes</mat-option>
+            <mat-option value="MINUTES" i18n="@@dataSetup.solverDuration.unit.minutes">Minutes</mat-option>
+            <mat-option value="HEURES" i18n="@@dataSetup.solverDuration.unit.heures">Heures</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+      @if (defaultsText()) {
+        <p class="calendar-meta">{{ defaultsText() }}</p>
+      }
+      @if (runningText()) {
+        <p class="calendar-meta">{{ runningText() }}</p>
+      }
+      <button matButton type="button" [disabled]="!customised() || loading() || saving()"
+              (click)="resetToDefault()">
+        <mat-icon>restart_alt</mat-icon>
+        <ng-container i18n="@@solverBudget.reset">Revenir au défaut</ng-container>
+      </button>
+      <app-status-message [text]="draftError()" tone="error" />
+
+      <mat-slide-toggle name="mailFinResolution" class="regles-calcul-mail"
+                        [checked]="mailFinResolution()"
+                        [disabled]="loading() || saving() || adminEmail() === null"
+                        (change)="mailDraft.set($event.checked)">
+        <ng-container i18n="@@parametres.mailFin.toggle">M'écrire à la fin de chaque résolution de cette édition</ng-container>
+      </mat-slide-toggle>
+      @if (adminEmail(); as adresse) {
+        <p class="calendar-meta" i18n="@@parametres.mailFin.destinataire">Destinataire : {{ adresse }}</p>
+      } @else {
+        <p class="locked-hint" i18n="@@parametres.mailFin.sansAdresse">
+          Aucune adresse administrateur n'est configurée (variable MAIL_ADMIN) : aucun e-mail ne peut partir.
+        </p>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-header>
+      <h2 mat-card-title i18n="@@regles.calcul.lecture.title">Lecture du planning</h2>
+    </mat-card-header>
+    <mat-card-content class="form-grid">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label i18n="@@regles.calcul.soiree">Début de la soirée</mat-label>
+        <input matInput type="time" name="heureDebutSoiree" required
+               [disabled]="loading() || saving()"
+               [ngModel]="heureDebutSoiree()" (ngModelChange)="soireeDraft.set($event)" />
+        <mat-hint i18n="@@constraints.legal.hint.heureDebutSoiree">Les heures d'un poste après cette heure comptent en soirée.</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="ninja-select">
+        <mat-label i18n="@@typologies.field.ninja">Typologie ninja</mat-label>
+        <mat-select name="ninja" [disabled]="loading() || saving() || locked() || typologiesFrozen()"
+                    [ngModel]="typologieNinjaId()" (ngModelChange)="ninjaDraft.set($event)">
+          <mat-option [value]="null" i18n="@@typologies.field.noNinja">Aucune</mat-option>
+          @for (typologie of store.typologies(); track typologie.id) {
+            <mat-option [value]="typologie.id">{{ typologie.label || typologie.id }}</mat-option>
+          }
+        </mat-select>
+        <mat-hint i18n="@@regles.calcul.ninjaHint">Ses animateurs peuvent tenir n'importe quel stand.</mat-hint>
+      </mat-form-field>
+    </mat-card-content>
+    <mat-card-content>
+      <app-gel-notice family="TYPOLOGIES_EMPLACEMENTS" />
+      <app-status-message [text]="alerteNinjaManquant()" tone="warning" />
+      <a matButton routerLink="/typologies">
+        <mat-icon>category</mat-icon>
+        <ng-container i18n="@@parametres.versTypologies">Gérer les typologies</ng-container>
+      </a>
+    </mat-card-content>
+  </mat-card>
+
+  <div class="regles-save-bar">
+    <button matButton="filled" type="submit" [disabled]="!dirty() || !!draftError() || saving()">
+      <mat-icon>save</mat-icon>
+      <ng-container i18n="@@common.save">Enregistrer</ng-container>
+    </button>
+    <button matButton type="button" [disabled]="!dirty() || saving()" (click)="cancel()">
+      <ng-container i18n="@@regles.annuler">Annuler les modifications</ng-container>
+    </button>
+  </div>
+  <app-status-message [text]="error()" tone="error" />
+</form>

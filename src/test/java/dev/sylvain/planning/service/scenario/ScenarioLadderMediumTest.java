@@ -184,8 +184,8 @@ class ScenarioLadderMediumTest {
     void rung13PremiumAndExhaustingStandsUnderTheirDosage() {
         Loaded loaded = load("gamme-13-7j-12stands-30animateurs-premium-epuisants");
         assertThat(loaded.problem().getPonderationsScenario())
-                .containsEntry("experienceRequisePourStandsPremium", 3)
-                .containsEntry("eviterEnchainementStandsEpuisants", 2);
+                .containsEntry("experienceRequisePourStandsPremium", 15)
+                .containsEntry("eviterEnchainementStandsEpuisants", 10);
 
         PlanningEvenement solved = solveUntilFeasible(loaded, CEILING_SECONDS);
 

@@ -45,7 +45,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.foire.term.ouverture:Ouverture et fermeture`,
-              text: $localize`:@@aide.foire.def.ouverture:L'interrupteur en tête de l'écran Échanges ouvre ou ferme la foire pour l'édition courante ; elle est ouverte par défaut. Fermée, les espaces passent en consultation seule : le planning reste visible et téléchargeable, mais plus aucune demande n'est acceptée, et le refus vient du serveur. Vous pouvez aussi borner la foire par deux dates — l'interrupteur reste maître. Avant la date d'ouverture, l'espace annonce « pas encore ouverte » et la date de retour, jamais « fermée ».`,
+              text: $localize`:@@aide.foire.def.ouverture:L'interrupteur de la foire, sur la page Paramètres, onglet Édition, carte Guichets, l'ouvre ou la ferme pour l'édition courante ; elle est ouverte par défaut. L'écran Échanges en garde une ligne d'état, avec un bouton pour la fermer. Fermée, les espaces passent en consultation seule : le planning reste visible et téléchargeable, mais plus aucune demande n'est acceptée, et le refus vient du serveur. Vous pouvez aussi borner la foire par deux dates — l'interrupteur reste maître. Avant la date d'ouverture, l'espace annonce « pas encore ouverte » et la date de retour, jamais « fermée ».`,
             },
             {
               term: $localize`:@@aide.foire.term.envoi:Publier le planning`,
@@ -87,7 +87,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
           items: [
             {
               term: $localize`:@@aide.dispo.term.fenetre:Ouvrir la collecte`,
-              text: $localize`:@@aide.dispo.def.fenetre:Le bandeau en tête de la page Disponibilités porte les boutons « Ouvrir » et « Fermer ». Contrairement à la foire au planning, la collecte est fermée tant que vous ne l'ouvrez pas. Les deux dates sont facultatives et bornent la période ; l'interrupteur reste maître. Fermée, l'espace refuse toute déclaration côté serveur, mais l'animateur garde l'accès à ce qu'il a déclaré et à vos réponses.`,
+              text: $localize`:@@aide.dispo.def.fenetre:La collecte s'ouvre et se ferme sur la page Paramètres, onglet Édition, carte Guichets ; la page Disponibilités en garde une ligne d'état, avec un bouton pour la fermer. Le covoiturage la suit : il s'ouvre et se ferme avec elle. Contrairement à la foire au planning, la collecte est fermée tant que vous ne l'ouvrez pas. Les deux dates sont facultatives et bornent la période ; l'interrupteur reste maître. Fermée, l'espace refuse toute déclaration côté serveur, mais l'animateur garde l'accès à ce qu'il a déclaré et à vos réponses.`,
             },
             {
               term: $localize`:@@aide.dispo.term.prevenir:Prévenir les animateurs`,
@@ -153,7 +153,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.rappels.term.activation:Activer l'édition`,
-              text: $localize`:@@aide.rappels.def.activation:Les envois de nuit sont désactivés tant que vous ne les activez pas, édition par édition, sur la page Paramètres. C'est le seul garde-fou : une édition passée porte les mêmes fiches, et rien ne distingue les animateurs de cette année de ceux de l'an dernier. Dupliquer une édition ne recopie pas ce réglage.`,
+              text: $localize`:@@aide.rappels.def.activation:Les envois de nuit sont désactivés tant que vous ne les activez pas, édition par édition, sur la page Paramètres, onglet Édition. C'est le seul garde-fou : une édition passée porte les mêmes fiches, et rien ne distingue les animateurs de cette année de ceux de l'an dernier. Dupliquer une édition ne recopie pas ce réglage.`,
             },
             {
               term: $localize`:@@aide.rappels.term.delais:Les trois délais`,
@@ -186,8 +186,8 @@ export function buildAnimateurSideSections(): HelpSection[] {
         { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
         {
           route: '/parametres',
-          queryParams: { onglet: 'emails' },
-          label: $localize`:@@aide.lien.parametresEmails:Paramètres — onglet E-mails automatiques`,
+          queryParams: { onglet: 'edition' },
+          label: $localize`:@@aide.lien.parametresEmails:Paramètres — e-mails automatiques`,
         },
         {
           route: '/',

@@ -111,6 +111,7 @@ class IsolationEditionStructurelleTest {
             "parametres_collecte",
             "confirmation_planning",
             "parametres_notifications",
+            "contact_organisation",
             "notification_planifiee",
             "journal_action",
             "consigne_edition",

@@ -80,56 +80,28 @@ describe('SolverSettingsService', () => {
     await expect(service.refresh()).rejects.toThrow('boom');
   });
 
-  it('setBudget() rounds, saves via PUT, and updates the signals', async () => {
+  it('setSettings() rounds, saves via PUT, and updates the signals', async () => {
     const service = configure(api);
-    await service.setBudget(90.4, 30.2);
+    await service.setSettings(90.4, 30.2, true);
     expect(api.put).toHaveBeenCalledWith('/api/parametres-solveur', {
       dureeResolutionSecondes: 90,
       plateauSecondes: 30,
-      mailFinResolution: false,
+      mailFinResolution: true,
     });
     expect(service.secondsLimit()).toBe(90);
     expect(service.plateauSecondes()).toBe(30);
+    expect(service.mailFinResolution()).toBe(true);
   });
 
-  it('setBudget(null, null) goes back to the instance default', async () => {
+  it('setSettings(null, null, …) goes back to the instance default', async () => {
     const service = configure(api);
-    await service.setBudget(1200, 60);
-    await service.setBudget(null, null);
+    await service.setSettings(1200, 60, false);
+    await service.setSettings(null, null, false);
     expect(api.put).toHaveBeenLastCalledWith('/api/parametres-solveur', {
       dureeResolutionSecondes: null,
       plateauSecondes: null,
       mailFinResolution: false,
     });
     expect(service.secondsLimit()).toBe(900);
-  });
-
-  it('always sends every setting, or writing one would erase the others', async () => {
-    // The server persists a whole object: a PUT carrying one field only would
-    // silently reset the others to their default.
-    api.get = vi.fn(async () => ({
-      dureeResolutionSecondes: 600,
-      plateauSecondes: 0,
-      mailFinResolution: true,
-      instance: INSTANCE,
-    }));
-    const service = configure(api);
-    await service.refresh();
-
-    await service.setBudget(300, 0);
-    expect(api.put).toHaveBeenLastCalledWith('/api/parametres-solveur', {
-      dureeResolutionSecondes: 300,
-      plateauSecondes: 0,
-      mailFinResolution: true,
-    });
-
-    await service.setMailFinResolution(false);
-    expect(api.put).toHaveBeenLastCalledWith('/api/parametres-solveur', {
-      dureeResolutionSecondes: 300,
-      plateauSecondes: 0,
-      mailFinResolution: false,
-    });
-    expect(service.secondsLimit()).toBe(300);
-    expect(service.mailFinResolution()).toBe(false);
   });
 });

@@ -1,188 +1,34 @@
-// Two halves. The ninja picker logic (component created, never rendered), then
-// the rendered page — this screen holds the most destructive button of the
-// application (replay a SQL dump, every edition included) and the one switch
-// whose whole point is that it must *not* be usable when the server has no
-// admin address: a toggle that silently does nothing is worse than no toggle.
+// The rendered page — this screen holds the most destructive button of the
+// application (replay a SQL dump, every edition included). The ninja picker and
+// the end-of-solve mail moved to « Règles du planning › Calcul » and are tested
+// in `regles-calcul.spec.ts`.
 //
 // The scenario operations left this screen: they are covered by
 // `scenario-preenregistre.spec.ts` (Débogage), `import-scenario-card.spec.ts`
 // (Imports) and `exports-page.spec.ts`.
 
-import { provideZonelessChangeDetection, signal, Signal } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
 import { AdminApi } from '../../core/api/admin-api';
-import { ConstraintsApi } from '../../core/api/constraints-api';
+import { DisponibilitesApi } from '../../core/api/disponibilites-api';
+import { EchangesApi } from '../../core/api/echanges-api';
+import { EditionsApi } from '../../core/api/editions-api';
 import { EditionStore } from '../../core/edition.store';
 import { NotificationService } from '../../core/notification.service';
 import { PlanSnapshotStore } from '../../core/plan-snapshot.store';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ProblemesStore } from '../../core/problemes.store';
-import { ReferenceCrudService } from '../../core/reference-crud.service';
-import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
-import { SolverSettingsService } from '../../core/solver-settings.service';
 import { ConfirmationRecopie } from '../../shared/confirmation-recopie';
 import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
 import { ScenarioImportService } from '../../core/scenario-import.service';
 import { REPLACE_KEYWORD, ParametresPage } from './parametres-page';
 import type { DemandeRecopie } from '../../shared/confirmation-recopie';
-import type { EtatSauvegarde, TypologieItem } from '../../core/models';
-import { seedStore } from '../../core/testing/seed-store';
-
-/** Reaches the protected members the template binds to. */
-type PageInternals = {
-  typologieNinjaId: Signal<string | null>;
-  alerteNinjaManquant: Signal<string>;
-  setNinja: (id: string | null) => Promise<void>;
-};
-
-/** What the legal card reads on entry — the page under test only has to host it. */
-const LEGAUX = {
-  dureeHebdomadaireMaxMinutes: 48 * 60,
-  dureeHebdomadaireMaxMineurMinutes: 35 * 60,
-  reposQuotidienMinimalMinutes: 660,
-  coupureRepasMinutes: 60,
-  coupureRepasMidiDebut: '12:00:00',
-  coupureRepasMidiFin: '14:00:00',
-  coupureRepasSoirDebut: '19:00:00',
-  coupureRepasSoirFin: '21:00:00',
-  heureDebutSoiree: '20:00:00',
-};
-
-describe('ParametresPage ninja picker', () => {
-  let referenceData: ReferenceDataStore;
-  const crud = {
-    reload: vi.fn(async () => undefined),
-    save: vi.fn(async () => true),
-    reportError: vi.fn(),
-  };
-
-  beforeEach(() => {
-    crud.reload.mockClear();
-    crud.save.mockClear();
-    TestBed.configureTestingModule({
-      providers: [
-        provideZonelessChangeDetection(),
-        provideRouter([]),
-        // The legal card loads its parameters on entry; the answer is
-        // irrelevant to the picker under test.
-        { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
-        {
-          provide: AdminApi,
-          useValue: {
-            mailConfig: vi.fn(async () => ({ adminEmail: null })),
-            backups: vi.fn(async () => null),
-          },
-        },
-        { provide: ConstraintsApi, useValue: { legalParameters: vi.fn(async () => LEGAUX) } },
-        { provide: ReferenceCrudService, useValue: crud },
-        { provide: EditionStore, useValue: { courant: () => null } },
-        {
-          provide: ProblemesStore,
-          useValue: { report: () => null, reloadFeasibility: vi.fn(async () => undefined) },
-        },
-        { provide: PlanningStateService, useValue: { set: vi.fn() } },
-        { provide: PlanningResolutionStore, useValue: { reload: vi.fn(async () => undefined) } },
-        {
-          provide: SolverJobService,
-          useValue: {
-            solverBusy: () => false,
-            editingLocked: () => false,
-            activeJobDescription: () => '',
-          },
-        },
-        { provide: SolverSettingsService, useValue: { refresh: vi.fn(async () => undefined) } },
-        { provide: NotificationService, useValue: { notify: vi.fn() } },
-        { provide: PlanSnapshotStore, useValue: { capturer: vi.fn(async () => undefined) } },
-        { provide: InstantaneAvantAction, useValue: { proposer: vi.fn(async () => undefined) } },
-        { provide: ConfirmationRecopie, useValue: { demander: vi.fn(async () => true) } },
-      ],
-    });
-    referenceData = TestBed.inject(ReferenceDataStore);
-  });
-
-  function createPage(typologies: TypologieItem[]): PageInternals {
-    seedStore(referenceData, 'typologies', typologies);
-    return TestBed.createComponent(ParametresPage).componentInstance as unknown as PageInternals;
-  }
-
-  it('reads the current ninja typologie from the store', () => {
-    const page = createPage([
-      { id: 'STRATEGIE', label: 'Stratégie' },
-      { id: 'JOKER', label: 'Joker', ninja: true },
-    ]);
-    expect(page.typologieNinjaId()).toBe('JOKER');
-  });
-
-  it('reports no ninja when the referential has none', () => {
-    const page = createPage([{ id: 'STRATEGIE', label: 'Stratégie' }]);
-    expect(page.typologieNinjaId()).toBeNull();
-  });
-
-  it('warns when the referential has typologies but no ninja', () => {
-    const page = createPage([{ id: 'STRATEGIE', label: 'Stratégie' }]);
-    expect(page.alerteNinjaManquant()).not.toBe('');
-  });
-
-  it('stays silent on an empty referential and once a ninja is designated', () => {
-    expect(createPage([]).alerteNinjaManquant()).toBe('');
-    expect(createPage([{ id: 'JOKER', label: 'Joker', ninja: true }]).alerteNinjaManquant()).toBe(
-      '',
-    );
-  });
-
-  it('promotes the selected typologie, letting the server demote the previous one', async () => {
-    const page = createPage([
-      { id: 'STRATEGIE', label: 'Stratégie' },
-      { id: 'JOKER', label: 'Joker', ninja: true },
-    ]);
-
-    await page.setNinja('STRATEGIE');
-
-    expect(crud.save).toHaveBeenCalledTimes(1);
-    expect(crud.save).toHaveBeenCalledWith(
-      'typologies',
-      { id: 'STRATEGIE', label: 'Stratégie', ninja: true },
-      'STRATEGIE',
-      expect.anything(),
-      { text: 'Stratégie' },
-    );
-  });
-
-  it('clears the flag on the current holder when "Aucune" is picked', async () => {
-    const page = createPage([{ id: 'JOKER', label: 'Joker', ninja: true }]);
-
-    await page.setNinja(null);
-
-    expect(crud.save).toHaveBeenCalledWith(
-      'typologies',
-      { id: 'JOKER', label: 'Joker', ninja: false },
-      'JOKER',
-      expect.anything(),
-      { text: 'Joker' },
-    );
-  });
-
-  it('does nothing when the selection did not change', async () => {
-    const page = createPage([{ id: 'JOKER', label: 'Joker', ninja: true }]);
-
-    await page.setNinja('JOKER');
-
-    expect(crud.save).not.toHaveBeenCalled();
-  });
-
-  it('does nothing when clearing a referential that has no ninja', async () => {
-    const page = createPage([{ id: 'STRATEGIE', label: 'Stratégie' }]);
-
-    await page.setNinja(null);
-
-    expect(crud.save).not.toHaveBeenCalled();
-  });
-});
+import type { EtatSauvegarde } from '../../core/models';
 
 function text(element: HTMLElement): string {
   return element.textContent!.replace(/\s+/g, ' ').trim();
@@ -204,13 +50,15 @@ describe('ParametresPage rendering', () => {
     setBackupsActive: ReturnType<typeof vi.fn>;
     exportDatabase: ReturnType<typeof vi.fn>;
     importDatabase: ReturnType<typeof vi.fn>;
+    notificationSettings: ReturnType<typeof vi.fn>;
+    organisationContact: ReturnType<typeof vi.fn>;
+    saveOrganisationContact: ReturnType<typeof vi.fn>;
   };
-  let constraintsApi: { legalParameters: ReturnType<typeof vi.fn> };
   let recopie: { demander: ReturnType<typeof vi.fn> };
   let instantane: { proposer: ReturnType<typeof vi.fn> };
   let notify: ReturnType<typeof vi.fn>;
-  let setMailFinResolution: ReturnType<typeof vi.fn>;
-  const mailFinResolution = signal(false);
+  let rename: ReturnType<typeof vi.fn>;
+  let saveFoire: ReturnType<typeof vi.fn>;
   const editingLocked = signal(false);
 
   const SAUVEGARDE: EtatSauvegarde = {
@@ -247,15 +95,19 @@ describe('ParametresPage rendering', () => {
     options: {
       adminEmail?: string | null;
       sauvegarde?: EtatSauvegarde;
-      /** Which tab to open; the page opens on « Légaux » (issue #606). */
-      onglet?: 'Édition' | 'E-mails automatiques' | 'Instance';
+      /** Which tab to open; the page opens on « Édition » (issue #720). */
+      onglet?: 'Instance' | 'Affichage mural';
     } = {},
   ): Promise<void> {
     editingLocked.set(false);
-    mailFinResolution.set(false);
     notify = vi.fn();
-    setMailFinResolution = vi.fn(async (actif: boolean) => mailFinResolution.set(actif));
-    constraintsApi = { legalParameters: vi.fn(async () => LEGAUX) };
+    rename = vi.fn(async () => undefined);
+    saveFoire = vi.fn(async (configuration: { foireOuverte: boolean }) => ({
+      ...configuration,
+      debut: null,
+      fin: null,
+      ouverteAujourdhui: configuration.foireOuverte,
+    }));
     recopie = { demander: vi.fn(async () => true) };
     instantane = { proposer: vi.fn(async () => undefined) };
     api = { get: vi.fn(async () => []) };
@@ -270,6 +122,14 @@ describe('ParametresPage rendering', () => {
       })),
       exportDatabase: vi.fn(async () => 'Téléchargement démarré.'),
       importDatabase: vi.fn(async () => ({ message: 'Base remplacée.' })),
+      notificationSettings: vi.fn(async () => ({
+        actives: false,
+        heureRappelVeille: '18:00:00',
+        delaiRelanceHeures: 72,
+        ancienneteEchangeJours: 3,
+      })),
+      organisationContact: vi.fn(async () => ({ telephone: '01 23 45 67 89', email: null })),
+      saveOrganisationContact: vi.fn(async (contact: unknown) => contact),
     };
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -278,16 +138,33 @@ describe('ParametresPage rendering', () => {
         provideRouter([]),
         { provide: ApiService, useValue: api },
         { provide: AdminApi, useValue: adminApi },
-        { provide: ConstraintsApi, useValue: constraintsApi },
         {
-          provide: ReferenceCrudService,
+          provide: EditionStore,
           useValue: {
+            courant: () => ({ id: 'E1', nom: 'Festival 2026' }),
             reload: vi.fn(async () => undefined),
-            save: vi.fn(async () => true),
-            reportError: vi.fn(),
           },
         },
-        { provide: EditionStore, useValue: { courant: () => null } },
+        { provide: EditionsApi, useValue: { rename } },
+        {
+          provide: DisponibilitesApi,
+          useValue: {
+            configuration: vi.fn(async () => ({ collecteOuverte: false, debut: null, fin: null })),
+            saveConfiguration: vi.fn(),
+          },
+        },
+        {
+          provide: EchangesApi,
+          useValue: {
+            configuration: vi.fn(async () => ({
+              foireOuverte: false,
+              debut: null,
+              fin: null,
+              ouverteAujourdhui: false,
+            })),
+            saveConfiguration: saveFoire,
+          },
+        },
         {
           provide: ProblemesStore,
           useValue: { report: () => null, reloadFeasibility: vi.fn(async () => undefined) },
@@ -300,14 +177,6 @@ describe('ParametresPage rendering', () => {
             solverBusy: () => editingLocked(),
             editingLocked,
             activeJobDescription: () => 'Une résolution est en cours.',
-          },
-        },
-        {
-          provide: SolverSettingsService,
-          useValue: {
-            refresh: vi.fn(async () => undefined),
-            mailFinResolution,
-            setMailFinResolution,
           },
         },
         { provide: NotificationService, useValue: { notify } },
@@ -352,16 +221,6 @@ describe('ParametresPage rendering', () => {
     return trouve as HTMLButtonElement;
   }
 
-  /**
-   * The end-of-solve mail switch — Material renders it as a `role="switch"`
-   * button; found in its own card, since the legal card carries a switch too.
-   */
-  function interrupteur(): HTMLButtonElement {
-    return carte('Prévenir par e-mail').querySelector(
-      'mat-slide-toggle button[role="switch"]',
-    ) as HTMLButtonElement;
-  }
-
   /** One card of the page, found by its heading — several now carry a switch. */
   function carte(titre: string): HTMLElement {
     const trouve = Array.from(racine().querySelectorAll('mat-card')).find((each) =>
@@ -379,35 +238,55 @@ describe('ParametresPage rendering', () => {
     expect(bouton('Importer un dump SQL').disabled).toBe(true);
   });
 
-  it('sends the reader to the screens the scenario operations moved to', async () => {
-    await rendre({ onglet: 'Édition' });
+  it('points to « Règles du planning » for what decides the plan', async () => {
+    await rendre();
 
-    const renvois = text(carte('Sur leur propre écran'));
-    expect(renvois).toContain('page Fichiers, onglet Importer');
-    expect(renvois).toContain('page Fichiers, onglet Exporter');
-    expect(renvois).toContain("Chargement d'un exemple");
-    expect(renvois).not.toContain('Débogage');
+    const lien = racine().querySelector('a[href="/regles"]');
+    expect(lien?.textContent).toContain('Règles du planning');
   });
 
-  it('offers the end-of-solve mail when the server has an admin address', async () => {
-    await rendre({ adminEmail: 'admin@exemple.test', onglet: 'E-mails automatiques' });
+  it('renames the edition from its own tab, once the name changed', async () => {
+    await rendre();
+    const champ = racine().querySelector('input[name="nomEdition"]') as HTMLInputElement;
+    expect(champ.value).toBe('Festival 2026');
 
-    const toggle = interrupteur();
-    expect(toggle.disabled).toBe(false);
-    expect(racine().textContent!).toContain('Destinataire : admin@exemple.test');
-
-    toggle.click();
+    champ.value = 'Festival 2027';
+    champ.dispatchEvent(new Event('input'));
     await fixture.whenStable();
-    expect(setMailFinResolution).toHaveBeenCalledWith(true);
-    expect(notify.mock.calls.at(-1)![0].variant).toBe('success');
+    carte("Nom de l'édition").querySelector('form')!.dispatchEvent(new Event('submit'));
+    await fixture.whenStable();
+
+    expect(rename).toHaveBeenCalledExactlyOnceWith('E1', 'Festival 2027');
   });
 
-  it('disables the mail switch, and explains why, when no admin address is configured', async () => {
-    await rendre({ adminEmail: null, onglet: 'E-mails automatiques' });
+  /** Échanges keeps one line of the foire's state: its switch and its dates live here. */
+  it('opens the foire from the guichets, with its dates', async () => {
+    await rendre();
+    const guichets = carte('Guichets');
+    const foire = guichets.querySelector('section[aria-labelledby="guichet-foire"]') as HTMLElement;
+    (foire.querySelector('mat-slide-toggle button[role="switch"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    (
+      Array.from(foire.querySelectorAll('button')).find((each) =>
+        each.textContent!.includes('Enregistrer'),
+      ) as HTMLButtonElement
+    ).click();
+    await fixture.whenStable();
 
-    // A switch that flips and sends nothing is the failure this guards.
-    expect(interrupteur().disabled).toBe(true);
-    expect(racine().textContent!).toContain("Aucune adresse administrateur n'est configurée");
+    expect(saveFoire).toHaveBeenCalledExactlyOnceWith({
+      foireOuverte: true,
+      debut: null,
+      fin: null,
+    });
+  });
+
+  it("shows the organisation's contact the espace will display", async () => {
+    await rendre();
+
+    const telephone = carte("Contact de l'organisation").querySelector(
+      'input[name="telephone"]',
+    ) as HTMLInputElement;
+    expect(telephone.value).toBe('01 23 45 67 89');
   });
 
   /** Picks the dump file the SQL card's hidden input reacts to. */

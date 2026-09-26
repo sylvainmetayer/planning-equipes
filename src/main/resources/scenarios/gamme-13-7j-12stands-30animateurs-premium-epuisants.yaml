@@ -10,11 +10,11 @@ festival:
 
 contraintes:
   poids:
-    experienceRequisePourStandsPremium: 3
-    eviterRoulementStandsPremium: 2
-    eviterEnchainementStandsEpuisants: 2
-    appreciationIncompatible: 3
-    maxJoursConsecutifsTravailles: 5
+    experienceRequisePourStandsPremium: 15
+    eviterRoulementStandsPremium: 10
+    eviterEnchainementStandsEpuisants: 10
+    appreciationIncompatible: 15
+    maxJoursConsecutifsTravailles: 25
 
 creneaux:
   - id: J1-MATIN

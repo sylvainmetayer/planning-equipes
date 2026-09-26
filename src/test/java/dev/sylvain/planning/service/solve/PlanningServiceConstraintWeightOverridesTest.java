@@ -103,8 +103,9 @@ class PlanningServiceConstraintWeightOverridesTest {
 
         assertThat(planningService.effectiveConstraintWeights())
                 .containsEntry("standComplexeAvecReferent", 7)
-                // Untouched by the edition: still the configured default.
-                .containsEntry("equilibrerCharge", 1);
+                // Untouched by the edition and absent from this configuration:
+                // the catalogue's default, the « normale » position of a medium rule.
+                .containsEntry("equilibrerCharge", 5);
 
         PlanningEvenement solved = planningService.solve(problemWithoutReferent());
 

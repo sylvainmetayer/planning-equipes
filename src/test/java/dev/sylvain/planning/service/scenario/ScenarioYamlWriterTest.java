@@ -21,6 +21,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
+import dev.sylvain.planning.scenario.ScenarioValidator;
 import dev.sylvain.planning.service.EmptyReferenceData;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.referentiel.ReferenceData;
@@ -265,6 +266,37 @@ class ScenarioYamlWriterTest {
         Map<String, Object> contraintes = (Map<String, Object>) parsed.get("contraintes");
         assertThat((List<String>) contraintes.get("desactivees")).containsExactly("equilibrerCharge");
         assertThat((Map<String, Object>) contraintes.get("poids")).containsEntry("maxJoursConsecutifsTravailles", 5);
+    }
+
+    /**
+     * A weight above the former ceiling of 100 — the ×5 scale of ADR 0057
+     * makes « forte » 25 and lets an edition store up to 500 — goes out and
+     * comes back as it was, and the schema's validator accepts it.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void aWeightAboveTheFormerCeilingSurvivesTheRoundTrip() {
+        String yaml = ScenarioYamlWriter.buildScenarioYaml(new ScenarioYamlWriter.ScenarioExport(
+                List.of(animateur),
+                List.of(stand),
+                List.of(creneau),
+                List.of(),
+                List.of(new TypologieItem("STRATEGIE", "Stratégie", false)),
+                List.of(),
+                new ParametresLegaux(),
+                null,
+                null,
+                Map.of(),
+                Map.of("equilibrerCharge", 125),
+                List.of()));
+
+        assertThat((Map<String, Object>) ((Map<String, Object>)
+                                new Yaml().<Map<String, Object>>load(yaml).get("contraintes"))
+                        .get("poids"))
+                .containsEntry("equilibrerCharge", 125);
+        assertThat(ScenarioValidator.validate(yaml)).isEmpty();
+        ScenarioYamlReader.ScenarioImporte relu = ScenarioYamlReader.buildFromScenarioText(yaml, ParametresLegaux::new);
+        assertThat(relu.planning().getPonderationsScenario()).containsEntry("equilibrerCharge", 125);
     }
 
     /**

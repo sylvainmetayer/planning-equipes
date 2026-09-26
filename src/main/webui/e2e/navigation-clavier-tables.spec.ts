@@ -330,7 +330,7 @@ test.describe('navigation clavier des tables de référence', () => {
   });
 
   /*
-   * The pivot of /constraints (RGAA 7.1): a table carrying `role="grid"` must
+   * The pivot of « Règles du planning » (RGAA 7.1): a table carrying `role="grid"` must
    * keep that promise — one tab stop, arrows inside, Enter opens the cell. The
    * breaches are grafted onto the real catalogue: the seeded plan breaks
    * nothing, and what is under test is the grid, not the analysis.
@@ -348,7 +348,7 @@ test.describe('navigation clavier des tables de référence', () => {
       ];
       await route.fulfill({ response: reponse, json: vue });
     });
-    await page.goto('/constraints');
+    await page.goto('/regles');
     await page.getByText('Où se concentrent les écarts').click();
     const cellules = page.locator('td[data-ligne]');
     await expect(cellules).toHaveCount(4);

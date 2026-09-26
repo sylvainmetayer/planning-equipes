@@ -146,8 +146,8 @@ class ImportScenarioContraintesTest {
 
         assertThat(contrainte("equilibrerCharge")).containsEntry("poids", 7);
         assertThat(contrainte("maxJoursConsecutifsTravailles")).containsEntry("poids", 3);
-        // A rule the section does not weigh keeps the deployment default.
-        assertThat(contrainte("limiterEmplacementsParJour")).containsEntry("poids", 1);
+        // A rule the section does not weigh keeps the deployment default: the « normale » position.
+        assertThat(contrainte("limiterEmplacementsParJour")).containsEntry("poids", 5);
     }
 
     @Test
@@ -174,10 +174,10 @@ class ImportScenarioContraintesTest {
 
         // Back to the *deployment* default: the edition's own row is deleted,
         // not overwritten with a literal, so the weight is whatever
-        // application.properties says — a uniformly neutral 1 since the two
-        // business ratios moved to the scenarios that need them.
-        assertThat(contrainte("equilibrerCharge")).containsEntry("poids", 1);
-        assertThat(contrainte("maxJoursConsecutifsTravailles")).containsEntry("poids", 1);
+        // application.properties says — a uniform « normale » 5 for a quality
+        // rule since the two business ratios moved to the scenarios that need them.
+        assertThat(contrainte("equilibrerCharge")).containsEntry("poids", 5);
+        assertThat(contrainte("maxJoursConsecutifsTravailles")).containsEntry("poids", 5);
     }
 
     @Test

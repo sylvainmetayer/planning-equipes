@@ -11,8 +11,8 @@
 .planning.parametresQualite[0]  b88694d9f3a53d10
 .planning.pastHorizon = null
 .planning.ponderationsContraintes.constraintWeightMap = (vide)
-.planning.ponderationsScenario{appreciationIncompatible} = 3
-.planning.ponderationsScenario{maxJoursConsecutifsTravailles} = 5
+.planning.ponderationsScenario{appreciationIncompatible} = 15
+.planning.ponderationsScenario{maxJoursConsecutifsTravailles} = 25
 .planning.postes[0]  b426629c222e9e40
 .planning.postes[1]  9d0fa7c90cc17bd5
 .planning.postes[2]  e9ba9be3326635e4
@@ -22,8 +22,8 @@
 .sections.consignes = null
 .sections.contraintes.activees = (vide)
 .sections.contraintes.desactivees = (vide)
-.sections.contraintes.poids{appreciationIncompatible} = 3
-.sections.contraintes.poids{maxJoursConsecutifsTravailles} = 5
+.sections.contraintes.poids{appreciationIncompatible} = 15
+.sections.contraintes.poids{maxJoursConsecutifsTravailles} = 25
 .sections.edition = null
 .sections.journeesTypes = null
 .sections.parametresLegaux = null
