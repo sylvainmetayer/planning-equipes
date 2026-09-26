@@ -13,12 +13,11 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { ReferenceChangementsParam } from '../../core/api/journees-api';
 import { dayNavigation } from '../../core/day-navigation';
@@ -36,16 +35,17 @@ import { keepViewInQueryParams, optionalParam } from '../../core/view-query-para
 import { ValidationsStore } from '../../core/validations.store';
 import { ConsignesStore } from '../../core/consignes.store';
 import { TableFilter } from '../../shared/table-filter';
-import { ValidationBanner } from '../../shared/validation-banner';
-import { CalendarDayView } from '../calendar-day/calendar-day-vue';
+import { SelectionRecherche } from '../../shared/selection-recherche';
+import { CalendarDayView, FiltreSieges, readFiltreSieges } from '../calendar-day/calendar-day-vue';
 import { readInstant } from '../carte-jour/carte-jour';
 import { CarteJourView } from '../carte-jour/carte-jour-vue';
 import { PorteeCharge, readPorteeCharge } from '../carte-jour/charge-emplacement';
 import { PausesView } from '../pauses/pauses-vue';
 import { ChangementsReading, readReading, readReference } from './changements';
 import { ChangementsView } from './changements-vue';
-import { ConsigneCard } from './consigne-card';
-import { ValidationPanel } from './validation-panel';
+import { ConsigneLigne } from './consigne-ligne';
+import { MiniMois } from './mini-mois';
+import { PastilleRelecture, RelectureBarre } from './relecture-barre';
 import { RailJourView, RailVue } from '../rail-jour/rail-jour-vue';
 import { ComparaisonView } from './comparaison-vue';
 import {
@@ -62,6 +62,7 @@ import {
   resolveComparison,
 } from './journee';
 import { StatusMessage } from '../../shared/status-message';
+import { NewWindowLink } from '../../shared/new-window-link';
 import { SeatPanel } from '../../shared/siege-panel/siege-panel';
 import { resolveSeat, SeatRequest } from '../../shared/siege-panel/seat';
 
@@ -72,12 +73,16 @@ interface Option {
 }
 
 /**
- * « Journée » : one day of the persisted plan, under five renderings — the
- * calendar stand by stand, the rail animateur by animateur, the map hour by
- * hour, the breaks, what changed since a reference — sharing one day selector and the same filters, all
- * carried by the URL. Switching the rendering changes nothing but the
- * rendering: the plan, the breaks, the typologies and the emplacements are
- * read once here and handed to whichever view is on screen.
+ * « Planning » (issue #712, the former Journée): one day of the persisted plan
+ * under five renderings — the table stands × timeslots, the rail animateur by
+ * animateur, the map hour by hour, the breaks and meals, what changed since a
+ * reference — with the plan at the top: the title on one line, the day chosen
+ * on a foldable month, the stand and animateur filters as autocompletes, the
+ * relecture as four chips that narrow the rendering, the consigne in a line,
+ * « Imprimer » and « Afficher sur la TV ». Everything is carried by the URL.
+ * Switching the rendering changes nothing but the rendering: the plan, the
+ * breaks, the typologies and the emplacements are read once here and handed
+ * to whichever view is on screen.
  *
  * <p>Each view keeps the view state that is its own (which lines the rail
  * shows, the map's cursor…) and writes it to the URL next to the page's keys:
@@ -89,15 +94,17 @@ interface Option {
     StatusMessage,
     MatButtonModule,
     MatButtonToggleModule,
-    MatCardModule,
     MatFormFieldModule,
     MatIconModule,
     MatProgressBarModule,
     MatSelectModule,
+    RouterLink,
+    NewWindowLink,
     TableFilter,
-    ValidationBanner,
-    ValidationPanel,
-    ConsigneCard,
+    SelectionRecherche,
+    MiniMois,
+    RelectureBarre,
+    ConsigneLigne,
     ChangementsView,
     ComparaisonView,
     CalendarDayView,
@@ -146,6 +153,8 @@ export class JourneePage implements OnInit {
   protected readonly withoutRelais = signal(false);
   protected readonly coupuresManquantes = signal(false);
   protected readonly seulementProblemes = signal(false);
+  /** The table's seat filter, set by the relecture chips (`sieges`). */
+  protected readonly sieges = signal<FiltreSieges>('tous');
   /** The Changements rendering's own state: the reference nobody chose stays null, the server picks. */
   protected readonly referenceChangements = signal<ReferenceChangementsParam | null>(null);
   protected readonly lectureChangements = signal<ChangementsReading>('vacations');
@@ -172,12 +181,6 @@ export class JourneePage implements OnInit {
     const premier = this.jours()[0];
     return courant && premier && courant.key !== premier.key ? courant.key : null;
   });
-  protected readonly isPremierJour = computed(
-    () => this.jourCourant()?.key === this.jours()[0]?.key,
-  );
-  protected readonly isDernierJour = computed(
-    () => this.jourCourant()?.key === this.jours().at(-1)?.key,
-  );
 
   /*
    * The comparison mode: a second day, named by the `comparer` param in the
@@ -254,6 +257,22 @@ export class JourneePage implements OnInit {
       .sort((gauche, droite) => gauche.label.localeCompare(droite.label)),
   );
 
+  /** The autocompletes speak in lists of ids; the page keeps one id, or none. */
+  protected readonly standChoisi = computed(() => (this.stand() ? [this.stand()] : []));
+  protected readonly animateurChoisi = computed(() => (this.animateur() ? [this.animateur()] : []));
+
+  /** The chip of the relecture bar the rendering is narrowed by, read back from the state it set. */
+  protected readonly pastilleActive = computed<PastilleRelecture>(() => {
+    const view = this.view();
+    if (view === 'calendrier' && this.sieges() !== 'tous') {
+      return this.sieges() === 'vides' ? 'vides' : 'verrous';
+    }
+    if (view === 'pauses' && this.withoutRelais()) {
+      return 'pauses';
+    }
+    return view === 'changements' ? 'changements' : 'aucune';
+  });
+
   /** True as soon as a filter or a view's own switch narrows the day; the day and the rendering are navigation. */
   protected readonly viewChanged = computed(
     () =>
@@ -266,6 +285,7 @@ export class JourneePage implements OnInit {
       this.withoutRelais() ||
       this.coupuresManquantes() ||
       this.seulementProblemes() ||
+      this.sieges() !== 'tous' ||
       this.seulementEcarts() ||
       this.comparerDemande() !== null ||
       this.referenceChangements() !== null ||
@@ -279,10 +299,6 @@ export class JourneePage implements OnInit {
 
   /** The ISO date of the day on screen, which is what a reading names; null on an undated day. */
   protected readonly dateCourante = computed(() => this.jourCourant()?.date ?? null);
-  /** True when the day on screen is under a consigne (issue #4): the selector says so. */
-  protected readonly sousConsigne = computed(
-    () => this.consignes.consigneOf(this.dateCourante()) !== null,
-  );
   /** What the page says after a reading was recorded or withdrawn. */
   protected readonly message = signal('');
 
@@ -314,8 +330,8 @@ export class JourneePage implements OnInit {
   private readonly injector = inject(Injector);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  protected readonly jourPrecedentLabel = $localize`:@@journee.previousDay:Jour précédent`;
-  protected readonly jourSuivantLabel = $localize`:@@journee.nextDay:Jour suivant`;
+  protected readonly imprimerLabel = $localize`:@@planning.imprimer.aide:La journée entière sur papier : la mise en page de l'affichage mural`;
+  protected readonly tvLabel = $localize`:@@planning.tv.aide:Créer le lien de la télévision de la salle de contrôle, et son QR code`;
 
   constructor() {
     // The rendering is followed rather than read once: the palette's
@@ -334,6 +350,7 @@ export class JourneePage implements OnInit {
     this.withoutRelais.set(params.get('relais') === 'sans');
     this.coupuresManquantes.set(params.get('repas') === 'manquantes');
     this.seulementProblemes.set(params.get('problemes') === '1');
+    this.sieges.set(readFiltreSieges(params.get('sieges')));
     this.referenceChangements.set(readReference(params.get('reference')));
     this.lectureChangements.set(readReading(params.get('lecture')));
     this.comparerDemande.set(params.get('comparer') || null);
@@ -368,6 +385,7 @@ export class JourneePage implements OnInit {
       relais: this.withoutRelais() ? 'sans' : null,
       repas: this.coupuresManquantes() ? 'manquantes' : null,
       problemes: this.seulementProblemes() ? '1' : null,
+      sieges: this.sieges() === 'tous' ? null : this.sieges(),
       reference: this.referenceChangements(),
       lecture: this.lectureChangements() === 'vacations' ? null : this.lectureChangements(),
       comparer: this.comparerParam(),
@@ -531,6 +549,42 @@ export class JourneePage implements OnInit {
     this.view.set(view);
   }
 
+  /**
+   * A relecture chip: the rendering narrowed to what it counts — the table on
+   * its empty or locked seats, the breaks without relay, the changes — or
+   * widened back when the active chip is pressed again.
+   */
+  protected applyChip(pastille: PastilleRelecture): void {
+    this.sieges.set('tous');
+    this.withoutRelais.set(false);
+    switch (pastille) {
+      case 'vides':
+      case 'verrous':
+        this.sieges.set(pastille);
+        this.view.set('calendrier');
+        break;
+      case 'pauses':
+        this.withoutRelais.set(true);
+        this.view.set('pauses');
+        break;
+      case 'changements':
+        this.view.set('changements');
+        break;
+      default:
+        if (this.view() === 'changements') {
+          this.view.set('calendrier');
+        }
+    }
+  }
+
+  protected choisirStand(ids: string[]): void {
+    this.stand.set(ids[0] ?? '');
+  }
+
+  protected choisirAnimateur(ids: string[]): void {
+    this.animateur.set(ids[0] ?? '');
+  }
+
   protected selectJour(key: string): void {
     this.navigation.select(key);
     this.openSeatId.set(null);
@@ -545,16 +599,6 @@ export class JourneePage implements OnInit {
     }
   }
 
-  protected decalerJour(delta: number): void {
-    const jours = this.jours();
-    const index = jours.findIndex((jour) => jour.key === this.jourCourant()?.key);
-    const target = jours[index + delta];
-    if (target) {
-      this.navigation.select(target.key);
-      this.openSeatId.set(null);
-    }
-  }
-
   protected resetView(): void {
     this.filtre.set('');
     this.stand.set('');
@@ -565,6 +609,7 @@ export class JourneePage implements OnInit {
     this.withoutRelais.set(false);
     this.coupuresManquantes.set(false);
     this.seulementProblemes.set(false);
+    this.sieges.set('tous');
     this.comparerDemande.set(null);
     this.seulementEcarts.set(false);
     this.referenceChangements.set(null);

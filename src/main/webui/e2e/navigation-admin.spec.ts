@@ -81,13 +81,11 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   // The former addresses land on their tab.
   { path: '/imports?onglet=animateurs', marker: 'date de naissance est obligatoire' },
   { path: '/exports', marker: 'Export CSV' },
-  { path: '/calendar', marker: 'Calendrier des affectations', sheet: 'calendar-nav' },
-  // Same for the day and its four renderings.
-  { path: '/journee', marker: 'Journée', sheet: 'journee-toolbar' },
-  { path: '/journee?vue=calendrier', sheet: 'day-calendar-grid' },
+  // Same for the Planning page and its renderings of the day.
+  { path: '/journee', marker: 'Planning', sheet: 'planning-barre' },
+  { path: '/journee?vue=calendrier', sheet: 'jour-table' },
   { path: '/hours', marker: 'Heures planifiées par animateur', sheet: 'hours-total-row' },
   { path: '/equite', marker: 'Équité par animateur', sheet: 'equite-synthese-row' },
-  { path: '/intendance', marker: 'Intendance des repas', sheet: 'intendance-total' },
   {
     path: '/typologies-planning',
     marker: 'Qui tient quoi, et pour quel volume',
@@ -113,6 +111,12 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/comparateur', sheet: 'comparateur-selection' },
   { path: '/historique', sheet: 'historique-controles' },
   { path: '/journee?vue=pauses', sheet: 'pauses-message' },
+  // The meal intendance, under the breaks since the Planning page absorbed it.
+  {
+    path: '/journee?vue=pauses',
+    marker: 'Combien de personnes mangent',
+    sheet: 'intendance-jour-entete',
+  },
   {
     path: '/journee?vue=changements',
     marker: 'Changements de la journée',
@@ -120,7 +124,6 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   },
   { path: '/disponibilites', sheet: 'espace-dispo-intro' },
   { path: '/kpi' },
-  { path: '/graphe', sheet: 'graphe-corps' },
   { path: '/ad-hoc-constraints' },
   { path: '/verrouillages', marker: 'Verrouiller une partie du planning' },
   { path: '/consignes', marker: 'Consignes', sheet: 'consigne-prereglage' },
@@ -301,13 +304,13 @@ test('un seul menu par moment du cycle, Débogage hors menu mais servi', async (
     .click();
   await expect(page).toHaveURL(/\/debug/);
 
-  // The bench left the Diagnostic for the Siège panel of the Journée: the word
-  // a reader remembers still leads there.
+  // The bench left the Diagnostic for the Siège panel of the Planning page:
+  // the word a reader remembers still leads there.
   await page.keyboard.press('Control+k');
   await page.getByRole('dialog').getByRole('combobox').fill('banc');
   await page
     .getByRole('dialog')
-    .getByRole('option', { name: /^Journée/ })
+    .getByRole('option', { name: /^Planning/ })
     .first()
     .click();
   await expect(page).toHaveURL(/\/journee/);

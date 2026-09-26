@@ -1,46 +1,35 @@
-<h1 class="page-title" i18n="@@nav.link.intendance">Intendance des repas</h1>
-
-<mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h2 mat-card-title i18n="@@intendance.title">Combien de personnes mangent, quand et où</h2>
-    <mat-card-subtitle i18n="@@intendance.subtitle">
-      Les coupures repas du planning enregistré, comptées heure par heure et par emplacement : combien de
-      sandwichs préparer, et où les porter. Personne n'est nommé.
-    </mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-actions class="card-actions">
-    <button matButton="tonal" [disabled]="busy()" (click)="load()">
-      <mat-icon>refresh</mat-icon>
-      <ng-container i18n="@@common.refresh">Actualiser</ng-container>
-    </button>
-    <button matButton="filled" [disabled]="busy() || exportBusy() || tableaux().length === 0" (click)="exporter()">
+<section class="intendance-jour" aria-labelledby="intendance-jour-titre">
+  <div class="intendance-jour-entete">
+    <h2 id="intendance-jour-titre" class="pauses-stand-titre">
+      <mat-icon inline aria-hidden="true">restaurant</mat-icon>
+      <ng-container i18n="@@intendance.title">Combien de personnes mangent, quand et où</ng-container>
+    </h2>
+    <button matButton type="button" [disabled]="busy() || exportBusy() || aucuneDonnee()" (click)="exporter()">
       <mat-icon>download</mat-icon>
-      <ng-container i18n="@@hours.exportCsv">Exporter en CSV</ng-container>
+      <ng-container i18n="@@intendance.exportEvenement">Tout l'événement en CSV</ng-container>
     </button>
-  </mat-card-actions>
+  </div>
   @if (busy()) {
     <mat-progress-bar mode="indeterminate" />
   }
-  <mat-card-content>
-    <app-output-panel [text]="output()" />
-    @if (!busy() && message()) {
-      <output class="empty-hint status-paragraph">{{ message() }}</output>
-    }
-  </mat-card-content>
-</mat-card>
+  <app-output-panel [text]="erreur() || output()" />
+  @if (!busy() && aucuneDonnee() && message()) {
+    <output class="empty-hint status-paragraph">{{ message() }}</output>
+  } @else if (!busy() && tableaux().length === 0) {
+    <p class="empty-hint" i18n="@@intendance.jourSansRepas">Personne n'est en coupure repas ce jour-là.</p>
+  }
 
-@for (tableau of tableaux(); track tableau.titre + tableau.fenetre) {
-  <mat-card appearance="outlined" class="page-card">
-    <mat-card-header>
-      <h2 mat-card-title>{{ tableau.titre }} — {{ tableau.fenetre }}</h2>
-      <mat-card-subtitle>
+  @for (tableau of tableaux(); track tableau.fenetre) {
+    <h3 class="intendance-fenetre">
+      {{ tableau.fenetre }}
+      <span class="intendance-fenetre-total">
         <ng-container i18n="@@intendance.fenetreTotal">{{ tableau.total }} personne(s) en coupure sur cette fenêtre</ng-container>
         @if (tableau.totalMineurs > 0) {
           <ng-container i18n="@@intendance.fenetreMineurs">, dont {{ tableau.totalMineurs }} mineur(s)</ng-container>
         }
-      </mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content class="table-wrapper">
+      </span>
+    </h3>
+    <div class="table-wrapper">
       <table class="heatmap-table intendance-table">
         <caption class="visually-hidden" i18n="@@intendance.caption">
           Personnes en coupure repas, par emplacement et par heure
@@ -88,10 +77,12 @@
           </tr>
         </tfoot>
       </table>
-      <p class="hint" i18n="@@intendance.legende">
-        Entre parenthèses : les mineurs, comptés pour l'encadrement à l'heure du repas. Une personne compte
-        dans chaque heure que sa coupure traverse ; la colonne Total ne la compte qu'une fois.
-      </p>
-    </mat-card-content>
-  </mat-card>
-}
+    </div>
+  }
+  @if (tableaux().length > 0) {
+    <p class="hint" i18n="@@intendance.legende">
+      Entre parenthèses : les mineurs, comptés pour l'encadrement à l'heure du repas. Une personne compte
+      dans chaque heure que sa coupure traverse ; la colonne Total ne la compte qu'une fois.
+    </p>
+  }
+</section>

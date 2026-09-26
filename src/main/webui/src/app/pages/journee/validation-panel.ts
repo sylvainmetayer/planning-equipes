@@ -25,7 +25,8 @@ import { StatusMessage } from '../../shared/status-message';
 
 /**
  * « Relu et accepté » on the day on screen: what to check before accepting it,
- * and the one action that records the reading.
+ * and the one action that records the reading. Opened from the relecture
+ * bar's menu, in `RelectureDialog`.
  *
  * <p>The four prerequisites are the Problèmes, Pauses and Fragilité screens
  * narrowed to this date — read from the server so this panel can never disagree
@@ -64,6 +65,8 @@ export class ValidationPanel {
    * so rather than let a filtered screen pass for what is being accepted.
    */
   readonly filtre = input(false);
+  /** False inside the relecture dialog, whose own title already names the day. */
+  readonly entete = input(true);
 
   /** A sentence for the page's feedback: the reading was recorded, or withdrawn. */
   readonly reported = output<string>();

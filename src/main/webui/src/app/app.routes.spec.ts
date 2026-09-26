@@ -83,7 +83,7 @@ describe('app.routes', () => {
     // Le compte exact plutôt qu'un plancher : un plancher laisse supprimer six
     // titres sans rien dire, et c'est ce chiffre-là que les descriptions de PR
     // annonçaient de travers.
-    expect(titrees).toHaveLength(52);
+    expect(titrees).toHaveLength(50);
     for (const route of titrees) {
       // Une fonction, et non une chaîne : c'est ce qui permet au titre de
       // passer par $localize sans être évalué au chargement du module, avant
@@ -135,6 +135,17 @@ describe('app.routes', () => {
 
     it('mène au calendrier sans paramètre superflu', () => {
       expect(redirectTarget('day-calendar', {})).toBe('/journee?vue=calendrier');
+    });
+
+    // #712: the month calendar, the intendance and the graph became the
+    // Planning page's day selector, its breaks and meals, and its map.
+    it('sends the three screens the Planning page absorbed there, params kept', () => {
+      expect(
+        redirectTarget('calendar', { date: '2026-09-05', month: '2026-09', stand: 'S1' }),
+      ).toBe('/journee?date=2026-09-05&stand=S1');
+      expect(redirectTarget('calendar', {})).toBe('/journee');
+      expect(redirectTarget('intendance', {})).toBe('/journee?vue=pauses');
+      expect(redirectTarget('graphe', { q: 'x' })).toBe('/journee?vue=carte&q=x');
     });
 
     // The two addresses carrying the most params: the map's cursor, and the

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RapportIntendance } from '../../core/models';
-import { tableauxIntendance } from './intendance-page';
+import { tableauxIntendance } from './intendance-jour';
 
 /**
  * The screen's only computation: turning the report into one table per window

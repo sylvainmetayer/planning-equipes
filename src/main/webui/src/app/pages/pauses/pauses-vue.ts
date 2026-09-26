@@ -14,6 +14,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RapportPauses } from '../../core/models';
 import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
+import { IntendanceJour } from '../intendance/intendance-jour';
 import {
   coupuresRepasJournee,
   GroupeStand,
@@ -30,8 +31,10 @@ import {
 import { RouterLink } from '@angular/router';
 
 /**
- * « Pauses » : where the legal breaks fall, day by day and stand by stand —
- * who steps out at the latest when, and who is there to cover.
+ * « Pauses et repas » : where the legal breaks fall, day by day and stand by
+ * stand — who steps out at the latest when, and who is there to cover — and,
+ * under them, the meal breaks counted per emplacement for the intendance
+ * (`pages/intendance/intendance-jour`, the former `/intendance` screen).
  *
  * One rendering of the Journée page (`pages/journee`) rather than a column of
  * `/repos`: that screen answers « who gets a day off », over the whole event;
@@ -54,6 +57,7 @@ import { RouterLink } from '@angular/router';
     MatTooltipModule,
     WorkInProgressBanner,
     RouterLink,
+    IntendanceJour,
   ],
   templateUrl: './pauses-vue.html',
   styleUrl: './pauses-vue.css',

@@ -77,35 +77,38 @@ export function buildNavGroups(): NavGroup[] {
       title: $localize`:@@nav.group.planning:Planning`,
       links: [
         {
+          // The page every reading of the plan starts from (issue #712): the
+          // former Journée, which absorbed the month calendar, the intendance
+          // and the graph. No letter: its initial, `p`, is Publication's, and
+          // `j` no longer reads from its label.
           path: '/journee',
-          label: $localize`:@@nav.link.journee:Journée`,
+          label: $localize`:@@nav.link.journee:Planning`,
           icon: 'view_day',
-          shortcut: 'j',
           // The bench left the Diagnostic for the Siège panel of this page:
-          // « banc » still finds where it went.
-          keywords: $localize`:@@nav.keywords.journee:banc de touche siège remplaçant placer`,
+          // « banc » still finds where it went; the screens it absorbed too.
+          keywords: $localize`:@@nav.keywords.journee:journée calendrier banc de touche siège remplaçant placer imprimer`,
           tabs: [
-            tab('vue', 'calendrier', $localize`:@@journee.vue.calendrier:Calendrier`),
+            tab(
+              'vue',
+              'calendrier',
+              $localize`:@@journee.vue.calendrier:Tableau`,
+              $localize`:@@nav.keywords.journeeTableau:calendrier des affectations`,
+            ),
             tab('vue', 'rail', $localize`:@@journee.vue.rail:Rail`),
             tab(
               'vue',
               'carte',
               $localize`:@@journee.vue.carte:Carte`,
-              $localize`:@@nav.keywords.journeeCarte:plan emplacements`,
+              $localize`:@@nav.keywords.journeeCarte:plan emplacements graphe`,
             ),
             tab(
               'vue',
               'pauses',
-              $localize`:@@journee.vue.pauses:Pauses`,
-              $localize`:@@nav.keywords.journeePauses:relais repas`,
+              $localize`:@@journee.vue.pauses:Pauses et repas`,
+              $localize`:@@nav.keywords.journeePauses:relais intendance sandwichs`,
             ),
             tab('vue', 'changements', $localize`:@@journee.vue.changements:Changements`),
           ],
-        },
-        {
-          path: '/calendar',
-          label: $localize`:@@nav.link.calendar:Calendrier des affectations`,
-          icon: 'calendar_month',
         },
         {
           path: '/hours',
@@ -129,12 +132,6 @@ export function buildNavGroups(): NavGroup[] {
             tab('mode', 'apres', $localize`:@@marge.mode.apres:Après résolution`),
             tab('mode', 'tension', $localize`:@@nav.tab.margeTension:Tension`),
           ],
-        },
-        { path: '/graphe', label: $localize`:@@nav.link.graphe:Graphe`, icon: 'hub' },
-        {
-          path: '/intendance',
-          label: $localize`:@@nav.link.intendance:Intendance des repas`,
-          icon: 'restaurant',
         },
         {
           path: '/repartition-heures',

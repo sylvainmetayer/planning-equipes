@@ -87,14 +87,14 @@ describe('classeCellule', () => {
  * axis now leads to the one screen where its breaches are actually corrected.
  */
 describe('cellLink', () => {
-  it('sends a day to the Journée screen, a stand to its calendar, a person to their fiche', () => {
+  it('sends a day and a stand to the Planning page, a person to their fiche', () => {
     expect(cellLink('JOUR', '2026-07-06', '2026-07-06')).toEqual({
       route: '/journee',
-      queryParams: { jour: '2026-07-06' },
+      queryParams: { date: '2026-07-06' },
       label: 'Voir la journée du 2026-07-06',
     });
     expect(cellLink('STAND', 'BLEU', 'Pavillon Bleu')).toEqual({
-      route: '/calendar',
+      route: '/journee',
       queryParams: { stand: 'BLEU' },
       label: 'Voir le planning de Pavillon Bleu',
     });

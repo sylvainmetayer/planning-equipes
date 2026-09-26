@@ -52,6 +52,7 @@ describe('the day a link asks for', () => {
   it('reads the date first, then the day number of the four former screens', () => {
     expect(requestedKey('2026-08-02', null)).toBe('2026-08-02');
     expect(requestedKey(null, '2')).toBe('J2');
+    expect(requestedKey(null, '2026-08-02')).toBe('2026-08-02');
     expect(requestedKey(null, 'deux')).toBeNull();
     expect(requestedKey(null, null)).toBeNull();
   });

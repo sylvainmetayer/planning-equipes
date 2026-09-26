@@ -68,11 +68,15 @@ export function planningDays(postes: readonly PosteAffectation[]): JourEvenement
 /**
  * Which day a URL asks for: `date` names it by its key; the older `jour`
  * param of the four screens this page replaced named it by its number, and a
- * bookmark carrying one still lands on the right day.
+ * bookmark carrying one still lands on the right day. `jour` may name it by
+ * its date too — the natural thing to type, once ignored in silence.
  */
 export function requestedKey(date: string | null, jour: string | null): string | null {
   if (date) {
     return date;
+  }
+  if (jour && /^\d{4}-\d{2}-\d{2}$/.test(jour)) {
+    return jour;
   }
   const numero = Number(jour);
   return Number.isFinite(numero) && numero > 0 ? `J${numero}` : null;

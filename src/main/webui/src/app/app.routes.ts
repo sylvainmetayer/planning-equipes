@@ -29,13 +29,22 @@ function paramText(value: string | readonly string[]): string {
   return typeof value === 'string' ? value : value.join(',');
 }
 
-function redirectToJournee(
-  vue: string,
+/**
+ * A former screen the Planning page (`/journee`) absorbed: its address lands
+ * there with the params that name the axis and the rendering, and carries
+ * every other param along — renamed where the page owns the key under another
+ * name, dropped where it names nothing any more (`''`). A param the former
+ * screen gave never overrides the ones that say where it landed.
+ */
+function redirectToPlanning(
+  fixed: Record<string, string>,
   renames: Record<string, ParamRename> = {},
 ): RedirectFunction {
   return ({ queryParams }) => {
     const params = new URLSearchParams();
-    params.set('vue', vue);
+    for (const [key, value] of Object.entries(fixed)) {
+      params.set(key, value);
+    }
     for (const [key, value] of Object.entries(queryParams)) {
       if (value === undefined || value === null) {
         continue;
@@ -44,12 +53,20 @@ function redirectToJournee(
       const renamedKey = typeof rename === 'string' ? rename : (rename?.key ?? key);
       const text = paramText(value);
       const renamedValue = typeof rename === 'object' ? (rename.values[text] ?? text) : text;
-      if (renamedKey !== 'vue') {
+      if (renamedKey !== '' && !(renamedKey in fixed)) {
         params.set(renamedKey, renamedValue);
       }
     }
-    return `/journee?${params.toString()}`;
+    const query = params.toString();
+    return query ? `/journee?${query}` : '/journee';
   };
+}
+
+function redirectToJournee(
+  vue: string,
+  renames: Record<string, ParamRename> = {},
+): RedirectFunction {
+  return redirectToPlanning({ vue }, renames);
 }
 
 function redirectToDiagnostic(onglet: string): RedirectFunction {
@@ -297,11 +314,6 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/aide/aide-page').then((m) => m.AidePage),
   },
   {
-    path: 'graphe',
-    title: () => $localize`:@@route.graphe:Graphe`,
-    loadComponent: () => import('./pages/graphe/graphe-page').then((m) => m.GraphePage),
-  },
-  {
     path: 'kpi',
     title: () => $localize`:@@route.kpi:KPI`,
     loadComponent: () => import('./pages/kpi/kpi-page').then((m) => m.KpiPage),
@@ -434,16 +446,19 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/consignes/consignes-page').then((m) => m.ConsignesPage),
   },
   {
-    path: 'calendar',
-    title: () => $localize`:@@route.calendar:Calendrier des affectations`,
-    loadComponent: () =>
-      import('./pages/calendar-month/calendar-month-page').then((m) => m.CalendarMonthPage),
-  },
-  {
+    // « Planning » (issue #712): the Journée became the page every reading of
+    // the plan starts from; the address stayed, for the links already out.
     path: 'journee',
-    title: () => $localize`:@@route.journee:Journée`,
+    title: () => $localize`:@@route.journee:Planning`,
     loadComponent: () => import('./pages/journee/journee-page').then((m) => m.JourneePage),
   },
+  // The month calendar is the Planning page's day selector now: its day, its
+  // stand and its animateur land there; the month it showed is the day's own.
+  { path: 'calendar', redirectTo: redirectToPlanning({}, { month: '' }) },
+  // The intendance of the meals sits under the breaks, the graph's descent
+  // emplacement → stand → timeslot → animateur is the map's.
+  { path: 'intendance', redirectTo: redirectToJournee('pauses') },
+  { path: 'graphe', redirectTo: redirectToJournee('carte') },
   // The four screens the Journée page gathers, kept for the bookmarks. The
   // rail's `vue` (which lines) and the breaks' `vue` (only those without a
   // relay) are renamed to the keys the views own now.
@@ -456,11 +471,6 @@ const adminRoutes: Routes = [
       vue: { key: 'relais', values: { 'sans-relais': 'sans' } },
       jour: 'date',
     }),
-  },
-  {
-    path: 'intendance',
-    title: () => $localize`:@@route.intendance:Intendance des repas`,
-    loadComponent: () => import('./pages/intendance/intendance-page').then((m) => m.IntendancePage),
   },
   {
     path: 'constraints',
@@ -604,6 +614,15 @@ export const routes: Routes = [
     // session — the token in the URL opens this one read and nothing else.
     path: 'mural/:jeton',
     title: () => $localize`:@@route.mural:Affichage mural`,
+    loadComponent: () => import('./pages/mural/mural-page').then((m) => m.MuralPage),
+  },
+  {
+    // « Imprimer cette journée » of the Planning page: the wall display's
+    // print layout, outside the admin chrome, read under the admin session
+    // (`GET /api/affichage-mural/apercu`) — never through a token.
+    path: 'impression/:date',
+    title: () => $localize`:@@route.impression:Impression de la journée`,
+    data: { apercu: true },
     loadComponent: () => import('./pages/mural/mural-page').then((m) => m.MuralPage),
   },
   {

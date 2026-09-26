@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.mural;
 
 import com.google.zxing.common.BitMatrix;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlanningEvenement;
@@ -11,6 +12,7 @@ import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.analyse.PauseAnalyzer;
 import dev.sylvain.planning.service.analyse.PauseAnalyzer.RapportPauses;
 import dev.sylvain.planning.service.consigne.ConsigneService;
+import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.espace.JourJClock;
 import dev.sylvain.planning.service.export.QrCodeEspace;
 import dev.sylvain.planning.service.mural.AffichageMuralRepository.ResolvedLink;
@@ -75,6 +77,8 @@ public class AffichageMuralService {
 
     private final JourJClock clock;
 
+    private final EditionService editionService;
+
     private final SecureRandom random = new SecureRandom();
 
     @Inject
@@ -85,7 +89,8 @@ public class AffichageMuralService {
             PlanningPersistenceService persistenceService,
             PauseAnalyzer pauseAnalyzer,
             ConsigneService consigneService,
-            JourJClock clock) {
+            JourJClock clock,
+            EditionService editionService) {
         this.repository = repository;
         this.editionContext = editionContext;
         this.referenceDataService = referenceDataService;
@@ -93,6 +98,7 @@ public class AffichageMuralService {
         this.pauseAnalyzer = pauseAnalyzer;
         this.consigneService = consigneService;
         this.clock = clock;
+        this.editionService = editionService;
     }
 
     /* ------------------------------- Admin ------------------------------- */
@@ -162,6 +168,26 @@ public class AffichageMuralService {
         return new QrCodeView(matrix.getWidth(), List.copyOf(rows));
     }
 
+    /**
+     * The wall view of one day of the current edition, for the admin's
+     * « Imprimer cette journée »: the page a token opens, laid out for print,
+     * read through the admin session instead of a token — no link is created,
+     * touched or needed, and {@code /api/mural/*} keeps naming its one route.
+     *
+     * <p>Every stand and every full name: the admin already reads them all on
+     * the Planning page, which is where this is asked from. {@code jour} null
+     * is the journée under way at the server's « now ».</p>
+     */
+    public AffichageMuralView preview(LocalDate jour) {
+        Edition edition = editionService.editionCourante();
+        return build(
+                edition == null ? "" : edition.getNom(),
+                "",
+                jour,
+                AffichageMuralViewBuilder.Settings.wholeEdition(true),
+                true);
+    }
+
     /* ------------------------------- Public ------------------------------ */
 
     /**
@@ -182,16 +208,14 @@ public class AffichageMuralService {
     }
 
     /**
-     * Reads the plan once and derives the rest from it: the timeslots are those
-     * its seats stand on (a timeslot nobody could hold opens no stand), the
-     * legal parameters and meal windows are the ones the persisted plan carries,
-     * and the break report covers the day under way alone — with its neighbours,
-     * since a night seat of the eve or of the morning after can relay a break.
+     * The token's view: the day under way, with its band of alerts, laid out
+     * for the stands and the names the link opens.
      */
     private AffichageMuralView build(ResolvedLink link) {
         return build(
                 link.editionNom(),
                 link.libelle(),
+                null,
                 new AffichageMuralViewBuilder.Settings(
                         link.fullNames(),
                         link.restricted(),
@@ -212,11 +236,25 @@ public class AffichageMuralService {
      * would be paid on every read of it for nothing.</p>
      */
     public AffichageMuralView currentEditionView() {
-        return build(null, null, AffichageMuralViewBuilder.Settings.wholeEdition(false), false);
+        return build(null, null, null, AffichageMuralViewBuilder.Settings.wholeEdition(false), false);
     }
 
+    /**
+     * Reads the plan once and derives the rest from it: the timeslots are those
+     * its seats stand on (a timeslot nobody could hold opens no stand), the
+     * legal parameters and meal windows are the ones the persisted plan carries,
+     * and the break report covers the day shown alone — with its neighbours,
+     * since a night seat of the eve or of the morning after can relay a break.
+     *
+     * @param jourDemande the day to show; null for the journée under way
+     * @param withBand whether to compute the band of alerts (breaks, consigne)
+     */
     private AffichageMuralView build(
-            String editionNom, String libelle, AffichageMuralViewBuilder.Settings settings, boolean withBand) {
+            String editionNom,
+            String libelle,
+            LocalDate jourDemande,
+            AffichageMuralViewBuilder.Settings settings,
+            boolean withBand) {
         LocalDateTime now = clock.dateTime();
         PlanningEvenement plan = persistenceService.loadPersistedPlanning();
         List<PosteAffectation> postes = plan.getPostes() == null ? List.of() : plan.getPostes();
@@ -225,7 +263,7 @@ public class AffichageMuralService {
                 .filter(Objects::nonNull)
                 .distinct()
                 .toList();
-        LocalDate jour = AffichageMuralViewBuilder.currentDay(creneaux, now);
+        LocalDate jour = jourDemande == null ? AffichageMuralViewBuilder.currentDay(creneaux, now) : jourDemande;
         return AffichageMuralViewBuilder.build(
                 new AffichageMuralViewBuilder.Inputs(
                         editionNom,
