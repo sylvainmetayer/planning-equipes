@@ -27,10 +27,20 @@
        pour l'ouverture en onglet à la main : l'URL de cet espace porte le jeton
        d'accès, elle ne doit pas partir dans le Referer. -->
   <button matIconButton [matMenuTriggerFor]="menuLegal"
-          i18n-aria-label="@@espace.menuLegal" aria-label="Informations légales">
+          i18n-aria-label="@@espace.menuLegal" aria-label="Mon compte et informations légales">
     <mat-icon>more_vert</mat-icon>
   </button>
   <mat-menu #menuLegal="matMenu">
+    <!-- Keycloak's own page, the whole window: a passkey is registered
+         there, on this phone, and replaced there once lost — after signing
+         back in with the code by e-mail. Only once the espace opened, which
+         means under Keycloak with a session. -->
+    @if (modeOidc && espace.view()) {
+      <a mat-menu-item href="/api/auth/oidc/compte">
+        <mat-icon>key</mat-icon>
+        <span i18n="@@espace.menu.moyensConnexion">Ma passkey et mes moyens de connexion</span>
+      </a>
+    }
     <a mat-menu-item routerLink="/mentions-legales" rel="noopener noreferrer">
       <mat-icon>gavel</mat-icon>
       <span i18n="@@nav.link.mentionsLegales">Mentions légales</span>
