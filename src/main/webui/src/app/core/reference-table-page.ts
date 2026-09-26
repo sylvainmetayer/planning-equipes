@@ -1,16 +1,21 @@
 import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { ElementRef, Signal, computed, inject, signal } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
+import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { reportOrphanDrafts } from '../shared/brouillon-dialog';
 import { DetailData, DetailDialog } from '../shared/detail-dialog';
+import { PastePreviewService } from '../shared/paste-preview-dialog';
+import { ApiService } from './api.service';
 import { LOCAL_DRAFT_STORAGE, DraftFormType } from './brouillon-formulaire';
 import { NotificationService } from './notification.service';
 import { ReferenceCrudService } from './reference-crud.service';
 import { ReferenceDataStore } from './reference-data.store';
 import { SolverJobService } from './solver-job.service';
-import { TableNavigation } from './table-navigation';
+import { TableNavigation, trackRowById } from './table-navigation';
 import { TableSelection } from './table-selection';
+import { CSV_CONTENT_TYPE, CsvColumn, csvFileName, toCsv } from './csv-export';
+import { PasteColumn, pastedText, planPaste } from './paste-rows';
 import { correspondAuFiltre } from './text-filter';
 import {
   IMPORTED_IDS_PARAM,
@@ -18,7 +23,17 @@ import {
   keptByImportedIds,
   readImportedIds,
 } from './imported-rows';
-import { consumeQueryParam, currentViewParams, keepViewInQueryParams } from './view-query-params';
+import { SortValue, sortRows } from './table-sort';
+import {
+  NO_SORT,
+  SortState,
+  consumeQueryParam,
+  currentViewParams,
+  keepViewInQueryParams,
+  optionalParam,
+  readSort,
+  sortQueryParams,
+} from './view-query-params';
 
 /** What `correspondAuFiltre` knows how to compare. */
 type ChampFiltrable = string | number | null | undefined;
@@ -79,6 +94,28 @@ export interface ReferenceTableConfig<T> {
    * and `describe` names them in the notice.
    */
   drafts?: { type: DraftFormType; describe: (ids: string) => string };
+
+  /**
+   * What each sortable column is sorted on — the value its cell shows. With
+   * no column chosen, the rows run in the natural order of their ids (T1, T2,
+   * T10), never the string order that files T10 before T2.
+   */
+  sortValues?: Record<string, (row: T, store: ReferenceDataStore) => SortValue>;
+
+  /** « Exporter cette liste »: the file's name, and its columns in the table's order. */
+  export?: { name: string; columns: (store: ReferenceDataStore) => CsvColumn<T>[] };
+
+  /** The columns a block copied from a spreadsheet can fill, previewed before anything is saved. */
+  paste?: (store: ReferenceDataStore) => PasteColumn<T>[];
+
+  /** « Dupliquer »: the create form, opened on a copy of the row. */
+  duplicate?: (row: T, dialog: MatDialog) => void;
+
+  /**
+   * Where the name of a row — and Entrée on it — leads: its fiche, when the
+   * entity has one; the edit form otherwise.
+   */
+  open?: (row: T) => void;
 }
 
 /**
@@ -115,7 +152,7 @@ export abstract class ReferenceTablePage<T> {
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
   protected readonly editingLocked = this.jobs.editingLocked;
 
-  /** Quick filter of the table, on the fields the config names. */
+  /** Quick filter of the table, on the fields the config names; `?q=` in the URL. */
   protected readonly filtre = signal('');
 
   /**
@@ -124,6 +161,9 @@ export abstract class ReferenceTablePage<T> {
    * afficher » ({@link showAllRows}). `null` when the address names none.
    */
   protected readonly importedIds = signal<ReadonlySet<string> | null>(null);
+
+  /** The column the rows are sorted on; `?sort=` and `?dir=` in the URL. */
+  protected readonly sort = signal<SortState>(NO_SORT);
 
   protected readonly lignesFiltrees: Signal<readonly T[]>;
 
@@ -136,22 +176,42 @@ export abstract class ReferenceTablePage<T> {
    * mechanism.
    */
   protected readonly navigation: TableNavigation<T, string>;
+  /** Rows kept across a reload of the store, and the focus with them. */
+  protected readonly trackById = trackRowById;
 
   protected readonly crud = inject(ReferenceCrudService);
   protected readonly dialog = inject(MatDialog);
 
   private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
 
+  private readonly api = inject(ApiService);
+  private readonly pastePreview = inject(PastePreviewService);
+  private readonly notifier = inject(NotificationService);
+
   constructor(private readonly config: ReferenceTableConfig<T>) {
+    const params = inject(ActivatedRoute, { optional: true })?.snapshot?.queryParamMap;
+    if (params) {
+      this.filtre.set(params.get('q') ?? '');
+      this.sort.set(readSort(params));
+    }
+    keepViewInQueryParams(() => ({
+      q: optionalParam(this.filtre()),
+      ...sortQueryParams(this.sort()),
+    }));
     this.lignesFiltrees = computed(() =>
-      this.refine(
-        config
-          .rows(this.store)
-          .filter(
-            (ligne) =>
-              keptByImportedIds(this.importedIds(), config.id(ligne)) &&
-              correspondAuFiltre(this.filtre(), config.champsFiltre(ligne, this.store)),
-          ),
+      sortRows(
+        this.refine(
+          config
+            .rows(this.store)
+            .filter(
+              (ligne) =>
+                keptByImportedIds(this.importedIds(), config.id(ligne)) &&
+                correspondAuFiltre(this.filtre(), config.champsFiltre(ligne, this.store)),
+            ),
+        ),
+        this.sort(),
+        (ligne, colonne) => config.sortValues?.[colonne]?.(ligne, this.store),
+        config.id,
       ),
     );
     this.selection = new TableSelection<string>(
@@ -163,7 +223,7 @@ export abstract class ReferenceTablePage<T> {
       host: () => this.hote.nativeElement,
       selection: this.selection,
       open: (ligne: T) => {
-        void this.consult(ligne);
+        this.openRow(ligne);
         return true;
       },
       announcer: inject(LiveAnnouncer),
@@ -206,13 +266,74 @@ export abstract class ReferenceTablePage<T> {
   }
 
   /**
-   * What a page does to its rows after the quick filter — a filter of its own,
-   * a sort. The selection and the keyboard navigation follow the result, as
-   * they follow the quick filter. Called lazily, from the computed rows, so an
-   * override may read the subclass's own signals.
+   * What a page does to its rows after the quick filter — a filter of its own;
+   * the sort comes after. The selection and the keyboard navigation follow the
+   * result, as they follow the quick filter. Called lazily, from the computed
+   * rows, so an override may read the subclass's own signals.
    */
   protected refine(lignes: readonly T[]): readonly T[] {
     return lignes;
+  }
+
+  /** The name of a row, clicked: its fiche when it has one, the edit form otherwise. */
+  protected openRow(ligne: T): void {
+    if (this.config.open) {
+      this.config.open(ligne);
+    } else {
+      this.edit(ligne);
+    }
+  }
+
+  protected duplicate(ligne: T): void {
+    this.config.duplicate?.(ligne, this.dialog);
+  }
+
+  /** The warnings the last save of this row raised, kept on it once the snack bar is gone. */
+  protected warnings(ligne: T): readonly string[] {
+    return this.crud.warningsOf(this.config.ressource, this.config.id(ligne));
+  }
+
+  /** « Exporter cette liste »: the rows as displayed — filtered, sorted — in the columns shown. */
+  protected exportList(): void {
+    const exportConfig = this.config.export;
+    if (!exportConfig) {
+      return;
+    }
+    const status = this.api.saveText(
+      toCsv(this.lignesFiltrees(), exportConfig.columns(this.store)),
+      csvFileName(exportConfig.name),
+      CSV_CONTENT_TYPE,
+    );
+    this.notifier.notify({ title: status, variant: 'success', timeout: 4000 });
+  }
+
+  /**
+   * A block copied from a spreadsheet, pasted on a row (Ctrl+V): laid over the
+   * displayed rows from the focused one, previewed, and saved only on
+   * « Appliquer » — each changed row once, through the bulk save.
+   */
+  protected async onPaste(event: ClipboardEvent): Promise<void> {
+    const columns = this.config.paste?.(this.store);
+    const text = pastedText(event);
+    if (!columns || text === null || this.editingLocked()) {
+      return;
+    }
+    event.preventDefault();
+    const plan = planPaste(text, {
+      rows: this.lignesFiltrees(),
+      id: (ligne) => this.config.id(ligne),
+      label: (ligne) => this.config.name(ligne) || this.config.id(ligne),
+      columns,
+      startRow: Math.max(0, this.navigation.index()),
+    });
+    if (!(await this.pastePreview.confirm(plan))) {
+      return;
+    }
+    await this.crud.saveMany(
+      this.config.ressource,
+      plan.rows as unknown as { id: string }[],
+      this.config.libellePluriel(),
+    );
   }
 
   /**

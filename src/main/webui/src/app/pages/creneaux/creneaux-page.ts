@@ -9,6 +9,7 @@ import {
   inject,
   OnInit,
   signal,
+  viewChild,
   ViewEncapsulation,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -21,17 +22,32 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSortModule, Sort } from '@angular/material/sort';
+import { MatSortModule } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import {
+  NO_SORT,
+  SortState,
   consumeQueryParam,
   currentViewParams,
   keepViewInQueryParams,
+  readSort,
+  sortQueryParams,
 } from '../../core/view-query-params';
+import { ApiService } from '../../core/api.service';
+import { StandsApi } from '../../core/api/stands-api';
+import { CSV_CONTENT_TYPE, CsvColumn, csvFileName, toCsv } from '../../core/csv-export';
+import { PasteColumn, pastedText, planPaste } from '../../core/paste-rows';
+import { SortValue, compareSortValues } from '../../core/table-sort';
+import { EmptyState } from '../../shared/empty-state';
+import { PastePreviewService } from '../../shared/paste-preview-dialog';
+import { RowMenu } from '../../shared/row-menu';
+import { RowWarning } from '../../shared/row-warning';
 import {
   IMPORTED_IDS_PARAM,
   importedIdsParam,
@@ -54,7 +70,7 @@ import { GelNotice } from '../../shared/gel-notice';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { creneauName } from '../../core/reference-labels';
 import { SolverJobService } from '../../core/solver-job.service';
-import { TableNavigation } from '../../core/table-navigation';
+import { TableNavigation, trackRowById } from '../../core/table-navigation';
 import { TableSelection } from '../../core/table-selection';
 import {
   CauseInfaisabilite,
@@ -70,7 +86,13 @@ import { CreneauFormData, CreneauFormDialog } from './creneau-form-dialog';
 import { CreneauDerivationData, CreneauDerivationDialog } from './creneau-derivation-dialog';
 import { CreneauSerieData, CreneauSerieDialog } from './creneau-serie-dialog';
 import { JourneesTypesCard } from './journees-types-card';
-import { bilanGrille, gridAnomalyIcon, trierAnomalies } from './grille-creneaux';
+import {
+  OuverturesCreneau,
+  bilanGrille,
+  gridAnomalyIcon,
+  openingsByCreneau,
+  trierAnomalies,
+} from './grille-creneaux';
 import { ImportButton } from '../../shared/import-button';
 
 /**
@@ -95,6 +117,7 @@ import { ImportButton } from '../../shared/import-button';
     MatCheckboxModule,
     MatFormFieldModule,
     MatInputModule,
+    MatMenuModule,
     MatSelectModule,
     MatSortModule,
     MatTableModule,
@@ -105,8 +128,11 @@ import { ImportButton } from '../../shared/import-button';
     MatTooltipModule,
     RouterLink,
     BulkActionsBar,
+    EmptyState,
     JourneesTypesCard,
     PastilleFerie,
+    RowMenu,
+    RowWarning,
     GelNotice,
   ],
   templateUrl: './creneaux-page.html',
@@ -142,10 +168,18 @@ export class CreneauxPage implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly resolution = inject(PlanningResolutionStore);
 
-  protected readonly columns = ['select', 'jour', 'date', 'horaires', 'probleme', 'actions'];
+  protected readonly columns = [
+    'select',
+    'jour',
+    'date',
+    'horaires',
+    'ouvertures',
+    'probleme',
+    'actions',
+  ];
 
-  /** Sorting, so the slots at fault can be grouped instead of hunted for. */
-  protected readonly sort = signal<Sort>({ active: '', direction: '' });
+  /** Sorting, so the slots at fault can be grouped instead of hunted for; `?sort=` in the URL. */
+  protected readonly sort = signal<SortState>(NO_SORT);
 
   /**
    * `?ids=`: the timeslots an import just wrote, which its « Voir les N lignes
@@ -157,8 +191,9 @@ export class CreneauxPage implements OnInit {
   );
 
   /**
-   * `store.creneaux()` is already chronological (jour, heureDebut); the sort
-   * below is stable, so an unsorted view keeps that order.
+   * `store.creneaux()` is already chronological (jour, heureDebut), which is
+   * the order of a list of timeslots: an unsorted view keeps it, and so do
+   * the ties of a sorted column.
    */
   protected readonly creneauxAffiches = computed(() => {
     const ids = this.importedIds();
@@ -167,18 +202,52 @@ export class CreneauxPage implements OnInit {
     if (!active || !direction) {
       return creneaux;
     }
-    const facteur = direction === 'asc' ? 1 : -1;
-    return creneaux.sort((a, b) => facteur * this.comparer(a, b, active));
+    const rang = new Map(creneaux.map((creneau, index) => [creneau.id, index]));
+    const signe = direction === 'asc' ? 1 : -1;
+    return creneaux.sort((a, b) => {
+      const gauche = this.valeurTri(a, active);
+      const droite = this.valeurTri(b, active);
+      const vide = (valeur: SortValue) => valeur === null || valeur === undefined;
+      const compare =
+        vide(gauche) || vide(droite)
+          ? compareSortValues(gauche, droite)
+          : signe * compareSortValues(gauche, droite);
+      // Ties in the order of a list of timeslots: day, start, then the store's.
+      return (
+        compare ||
+        a.jour - b.jour ||
+        (a.heureDebut ?? '').localeCompare(b.heureDebut ?? '') ||
+        (rang.get(a.id) ?? 0) - (rang.get(b.id) ?? 0)
+      );
+    });
   });
 
-  /** `probleme` sorts on the shortfall, so the worst slots come first. */
-  private comparer(a: Creneau, b: Creneau, colonne: string): number {
-    if (colonne === 'probleme') {
-      const manque = (creneau: Creneau) => this.causeParCreneau().get(creneau.id)?.manque ?? 0;
-      return manque(a) - manque(b);
+  /** What each column sorts on: `probleme` on the shortfall, so the worst slots come first. */
+  private valeurTri(creneau: Creneau, colonne: string): SortValue {
+    switch (colonne) {
+      case 'jour':
+        // The day, then its start: « J1 09:00 » before « J1 14:00 », both ways.
+        return (
+          creneau.jour * 10000 + Number((creneau.heureDebut ?? '').slice(0, 5).replace(':', ''))
+        );
+      case 'date':
+        return creneau.date;
+      case 'horaires':
+        return creneau.heureDebut;
+      case 'ouvertures':
+        return this.ouvertures().get(creneau.id)?.postes ?? 0;
+      case 'probleme':
+        return this.causeParCreneau().get(creneau.id)?.manque ?? 0;
+      default:
+        return undefined;
     }
-    return a.jour - b.jour || (a.heureDebut ?? '').localeCompare(b.heureDebut ?? '');
   }
+
+  /** Timeslot id → the stands open on it and the seats they yield, from the openings report. */
+  protected readonly ouvertures = signal<ReadonlyMap<number, OuverturesCreneau>>(new Map());
+
+  /** The day templates' card: « Reconnaître » lives in this page's menu, and acts on the card. */
+  private readonly journeesTypesCard = viewChild(JourneesTypesCard);
 
   /**
    * Keyed on the displayed slots, so "select all" only ever reaches what the
@@ -198,6 +267,8 @@ export class CreneauxPage implements OnInit {
    * row, Espace ticks it. `core/table-navigation.ts` holds the whole mechanism,
    * shared with the other reference-data tables.
    */
+  /** Rows kept across a reload of the store, and the focus with them. */
+  protected readonly trackById = trackRowById;
   protected readonly navigation = new TableNavigation({
     rows: this.creneauxAffiches,
     id: (creneau: Creneau) => creneau.id,
@@ -226,6 +297,21 @@ export class CreneauxPage implements OnInit {
     return true;
   }
 
+  /** « 08/07 10:00–12:00 »: what a row's menu is named after. */
+  protected creneauLabel(creneau: Creneau): string {
+    return creneauName(creneau);
+  }
+
+  protected ouverturesLabel(creneau: Creneau): string {
+    const ouvert = this.ouvertures().get(creneau.id);
+    return $localize`:@@creneaux.ouvertures.lien:${ouvert?.stands ?? 0}:stands: stand(s) ouvert(s), ${ouvert?.postes ?? 0}:postes: poste(s) : voir les horaires des stands ce jour`;
+  }
+
+  /** The date and hours of a row, clicked: its form, as Entrée does. */
+  protected openRow(creneau: Creneau): void {
+    this.ouvrirLigne(creneau);
+  }
+
   /**
    * Créneau id → the feasibility cause naming it, re-keyed on the numeric id so
    * a row is a plain map lookup. The report carries `creneauId` as a string
@@ -249,6 +335,11 @@ export class CreneauxPage implements OnInit {
 
   constructor() {
     keepViewInQueryParams(() => ({ [IMPORTED_IDS_PARAM]: importedIdsParam(this.importedIds()) }));
+    const params = inject(ActivatedRoute, { optional: true })?.snapshot?.queryParamMap;
+    if (params) {
+      this.sort.set(readSort(params));
+    }
+    keepViewInQueryParams(() => ({ ...sortQueryParams(this.sort()) }));
     const chargement = this.crud.reload();
     void this.problemes.reloadFeasibility();
     void this.consignes.reload();
@@ -296,7 +387,11 @@ export class CreneauxPage implements OnInit {
     await this.rechargerVerdict();
   }
 
-  /** The diagnostic and the verdict, read again after anything that changes the grid. */
+  /**
+   * The diagnostic, the verdict and the openings, read again after anything
+   * that changes the grid: the control runs by itself, it is never a button
+   * to remember.
+   */
   protected async rechargerVerdict(): Promise<void> {
     this.controleLoading.set(true);
     try {
@@ -311,17 +406,36 @@ export class CreneauxPage implements OnInit {
     } finally {
       this.controleLoading.set(false);
     }
+    await this.loadOpenings();
   }
 
-  /** « Créer une série » : the dialog previews and writes; the page only has to read again. */
-  protected openSerie(): void {
+  /** The openings report, for the « stands ouverts · postes » of each timeslot; a failure leaves the column empty. */
+  private async loadOpenings(): Promise<void> {
+    try {
+      this.ouvertures.set(openingsByCreneau(await this.standsApi.openings()));
+    } catch {
+      this.ouvertures.set(new Map());
+    }
+  }
+
+  /** « Reconnaître les journées types », from the page's menu: the card owns the gesture. */
+  protected reconnaitre(): void {
+    void this.journeesTypesCard()?.reconnaitre();
+  }
+
+  /**
+   * « Appliquer sans mémoriser » from a day template's dialog: the series
+   * dialog, prefilled with that day's timeslots, previews and writes; the page
+   * only has to read again.
+   */
+  protected openSerie(fenetres?: string): void {
     if (this.editingLocked()) {
       return;
     }
     const ref = this.dialog.open<CreneauSerieDialog, CreneauSerieData, RapportRecurrence | null>(
       CreneauSerieDialog,
       {
-        data: { controleActuel: this.controle() },
+        data: { controleActuel: this.controle(), fenetres },
         width: '44rem',
         autoFocus: 'first-tabbable',
       },
@@ -458,7 +572,108 @@ export class CreneauxPage implements OnInit {
       });
   }
 
+  /** « Dupliquer »: the form, on a copy of the timeslot — the same hours on another date. */
+  protected duplicate(creneau: Creneau): void {
+    const ref = this.dialog.open<CreneauFormDialog, CreneauFormData, boolean>(CreneauFormDialog, {
+      data: { creneau: null, modele: creneau },
+      width: '36rem',
+      maxWidth: '95vw',
+      autoFocus: 'first-tabbable',
+    });
+    ref
+      .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((ecrit) => {
+        if (ecrit) {
+          void this.rechargerVerdict();
+        }
+      });
+  }
+
+  protected warnings(creneau: Creneau): readonly string[] {
+    return this.crud.warningsOf('creneaux', creneau.id);
+  }
+
+  /** What « Exporter cette liste » writes: the columns the table shows. */
+  private colonnesExport(): CsvColumn<Creneau>[] {
+    return [
+      { title: $localize`:@@creneaux.column.jour:Jour`, value: (creneau) => `J${creneau.jour}` },
+      { title: $localize`:@@creneaux.column.date:Date`, value: (creneau) => creneau.date },
+      {
+        title: $localize`:@@creneaux.field.heureDebut:Début`,
+        value: (creneau) => creneau.heureDebut,
+      },
+      { title: $localize`:@@creneaux.field.heureFin:Fin`, value: (creneau) => creneau.heureFin },
+      {
+        title: $localize`:@@creneaux.field.couverturePause:Relais repas (effectif divisé par deux)`,
+        value: (creneau) => (creneau.couverturePause ? $localize`:@@common.oui:Oui` : ''),
+      },
+      {
+        title: $localize`:@@creneaux.column.standsOuverts:Stands ouverts`,
+        value: (creneau) => this.ouvertures().get(creneau.id)?.stands ?? 0,
+      },
+      {
+        title: $localize`:@@creneaux.column.postes:Postes`,
+        value: (creneau) => this.ouvertures().get(creneau.id)?.postes ?? 0,
+      },
+    ];
+  }
+
+  /** « Exporter cette liste »: the timeslots as displayed, sorted as they are. */
+  protected exportList(): void {
+    const status = this.api.saveText(
+      toCsv(this.creneauxAffiches(), this.colonnesExport()),
+      csvFileName('creneaux'),
+      CSV_CONTENT_TYPE,
+    );
+    this.notifications.notify({ title: status, variant: 'success', timeout: 4000 });
+  }
+
+  /** The hours a block pasted from a spreadsheet can fill: `HH:mm`, as the form types them. */
+  private colonnesCollage(): PasteColumn<Creneau>[] {
+    const heure = (key: 'heureDebut' | 'heureFin', title: string): PasteColumn<Creneau> => ({
+      key,
+      title,
+      read: (creneau) => (creneau[key] ?? '').slice(0, 5),
+      write: (creneau, text) => {
+        const lu = /^(\d{1,2})[:h](\d{2})$/.exec(text.trim());
+        if (!lu || Number(lu[1]) > 23 || Number(lu[2]) > 59) {
+          return $localize`:@@creneaux.collage.heure:une heure s'écrit 09:00 ou 9h30`;
+        }
+        return { ...creneau, [key]: `${lu[1].padStart(2, '0')}:${lu[2]}` };
+      },
+    });
+    return [
+      heure('heureDebut', $localize`:@@creneaux.field.heureDebut:Début`),
+      heure('heureFin', $localize`:@@creneaux.field.heureFin:Fin`),
+    ];
+  }
+
+  /** A block copied from a spreadsheet, pasted on a row: previewed, then saved on « Appliquer ». */
+  protected async onPaste(event: ClipboardEvent): Promise<void> {
+    const text = pastedText(event);
+    if (text === null || this.gridLocked()) {
+      return;
+    }
+    event.preventDefault();
+    const plan = planPaste(text, {
+      rows: this.creneauxAffiches(),
+      id: (creneau) => String(creneau.id),
+      label: (creneau) => creneauName(creneau),
+      columns: this.colonnesCollage(),
+      startRow: Math.max(0, this.navigation.index()),
+    });
+    if (!(await this.pastePreview.confirm(plan))) {
+      return;
+    }
+    await this.crud.saveMany('creneaux', plan.rows, labelCreneauxPluriel());
+    await this.rechargerVerdict();
+  }
+
   private readonly creneauxApi = inject(CreneauxApi);
+  private readonly standsApi = inject(StandsApi);
+  private readonly api = inject(ApiService);
+  private readonly pastePreview = inject(PastePreviewService);
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
 }

@@ -64,41 +64,24 @@
 <div class="span-2 subform">
   <div class="subform-header">
     <h3 i18n="@@animateurs.appreciation.title">Appréciation</h3>
-    <button matButton type="button" [disabled]="toutesTypologiesPrises() || competencesFrozen()" (click)="addCompetence()">
-      <mat-icon>add</mat-icon>
-      <ng-container i18n="@@animateurs.appreciation.add">Ajouter une appréciation</ng-container>
-    </button>
+    @if (editingId(); as id) {
+      <a matButton [routerLink]="['/competences']" [queryParams]="{ animateur: id }" (click)="dialogRef.close(false)">
+        <mat-icon>grid_on</mat-icon>
+        <ng-container i18n="@@animateurs.appreciation.grille">Saisir dans la grille (ligne pré-filtrée)</ng-container>
+      </a>
+    }
   </div>
-  @if (competencesFrozen()) {
-    <app-gel-notice family="COMPETENCES" />
-  }
-  @for (competence of draft().competences; track $index) {
-    <div class="competence-row">
-      <mat-form-field appearance="outline">
-        <mat-label i18n="@@animateurs.competences.typologie">Typologie</mat-label>
-        <mat-select [name]="'typologie-' + $index" [disabled]="editingLocked() || competencesFrozen()" [ngModel]="competence.typologie"
-                    (ngModelChange)="updateCompetence($index, { typologie: $event })">
-          @for (typologie of typologiesDisponibles($index); track typologie.id) {
-            <mat-option [value]="typologie.id">{{ typologie.label }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label i18n="@@animateurs.competences.niveau">Niveau</mat-label>
-        <mat-select [name]="'niveau-' + $index" [disabled]="editingLocked() || competencesFrozen()" [ngModel]="competence.niveau"
-                    (ngModelChange)="updateCompetence($index, { niveau: $event })">
-          @for (niveau of niveaux; track niveau) {
-            <mat-option [value]="niveau">{{ niveau }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-      <button matIconButton type="button" i18n-matTooltip="@@animateurs.appreciation.remove" matTooltip="Retirer cette appréciation" i18n-aria-label="@@animateurs.appreciation.remove" aria-label="Retirer cette appréciation" class="danger-action"
-              [disabled]="competencesFrozen()" (click)="removeCompetence($index)">
-        <mat-icon>delete</mat-icon>
-      </button>
-    </div>
-  } @empty {
+  @if (appreciations().length > 0) {
+    <p class="animateur-appreciations">
+      @for (appreciation of appreciations(); track appreciation.label) {
+        <span class="animateur-pastille">{{ appreciation.label }} · {{ appreciation.niveau }}</span>
+      }
+    </p>
+  } @else {
     <p class="empty-hint" i18n="@@animateurs.appreciation.empty">Aucune appréciation déclarée.</p>
+  }
+  @if (!editingId()) {
+    <p class="empty-hint" i18n="@@animateurs.appreciation.apresCreation">Les appréciations se saisissent dans la grille des compétences, une fois la fiche enregistrée.</p>
   }
 </div>
 
@@ -122,20 +105,36 @@
   <div class="subform-header">
     <h3 i18n="@@animateurs.indispo.title">Jours d'indisponibilité</h3>
   </div>
-  <div class="competence-row">
+  @if (frise().length > 0) {
+    <div class="indispo-frise" role="group" i18n-aria-label="@@animateurs.indispo.frise" aria-label="Jours de l'édition : cliquez un jour pour le marquer absent">
+      @for (jour of frise(); track jour.date) {
+        <button type="button" class="indispo-jour" [class.indispo-jour-absent]="jour.absent"
+                [attr.aria-pressed]="jour.absent" [attr.aria-label]="jourLabel(jour)" [disabled]="editingLocked()"
+                (click)="basculer(jour.date)">{{ jour.libelle }}</button>
+      }
+    </div>
+  }
+  <div class="competence-row indispo-plage">
     <mat-form-field appearance="outline">
-      <mat-label i18n="@@animateurs.indispo.jour">Jour</mat-label>
-      <input matInput name="newJour" type="date"
-             [ngModel]="newJour()" (ngModelChange)="newJour.set($event)" />
+      <mat-label i18n="@@animateurs.indispo.du">Absent du</mat-label>
+      <input matInput name="rangeStart" type="date" [ngModel]="rangeStart()" (ngModelChange)="rangeStart.set($event)" />
     </mat-form-field>
-    <button matButton type="button" (click)="addJour()">
-      <mat-icon>add</mat-icon>
-      <ng-container i18n="@@common.add">Ajouter</ng-container>
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@animateurs.indispo.au">au</mat-label>
+      <input matInput name="rangeEnd" type="date" [ngModel]="rangeEnd()" (ngModelChange)="rangeEnd.set($event)" />
+    </mat-form-field>
+    <button matButton type="button" [disabled]="!rangeStart()" (click)="addRange()">
+      <mat-icon>event_busy</mat-icon>
+      <ng-container i18n="@@animateurs.indispo.marquer">Marquer absent</ng-container>
     </button>
   </div>
-  @if (draft().joursIndisponibles.length) {
+  @if (plageResultat(); as resultat) {
+    <p class="empty-hint" role="status">{{ resultat }}</p>
+  }
+  @if (joursHorsEdition().length) {
+    <p class="empty-hint" i18n="@@animateurs.indispo.horsEdition">Hors des jours de l'édition :</p>
     <mat-chip-set>
-      @for (jour of draft().joursIndisponibles; track jour) {
+      @for (jour of joursHorsEdition(); track jour) {
         <mat-chip (removed)="removeJour(jour)">
           {{ jour }}
           <button matChipRemove [attr.aria-label]="removeJourLabel(jour)">
@@ -144,7 +143,8 @@
         </mat-chip>
       }
     </mat-chip-set>
-  } @else {
+  }
+  @if (draft().joursIndisponibles.length === 0) {
     <p class="empty-hint" i18n="@@animateurs.indispo.empty">Disponible tous les jours.</p>
   }
 </div>

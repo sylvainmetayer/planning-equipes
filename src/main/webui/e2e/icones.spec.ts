@@ -1,6 +1,6 @@
 // The icon font, checked where it actually fails: in a browser.
 //
-// `<mat-icon>delete</mat-icon>` is the word "delete" until the Material Icons
+// `<mat-icon>download</mat-icon>` is the word "download" until the Material Icons
 // font turns it into one glyph. When that font does not arrive — a 404 the SPA
 // fallback dresses up as an HTML page, a cache holding a truncated file, a
 // stylesheet that stopped applying `.material-icons` — nothing throws: the
@@ -13,8 +13,9 @@
 //   1. the file is served, and is a font rather than a page pretending to be one;
 //   2. the browser reports the face as loaded and usable;
 //   3. the rendered icons are single square glyphs, not clipped words — asserted
-//      on a one-word ligature (`delete`) and on a two-word one (`grid_view`),
-//      whose underscore is its own failure mode.
+//      on a one-word ligature (`download`, the icon of « Exporter cette liste »)
+//      and on a two-word one (`grid_view`), whose underscore is its own failure
+//      mode.
 // A screenshot of the toolbar is attached either way, so the report shows what
 // the assertions claim.
 
@@ -70,7 +71,7 @@ test('le navigateur charge la police et rend les icônes en glyphes, pas en mots
 
   // 3. What the user actually sees. A ligature that formed is one square glyph;
   // the un-ligatured word is far wider than the button and gets clipped.
-  const icone = page.locator('mat-icon', { hasText: 'delete' }).first();
+  const icone = page.locator('mat-icon', { hasText: 'download' }).first();
   await expect(icone).toBeVisible();
   const mesure = await icone.evaluate((el) => {
     const rect = el.getBoundingClientRect();
@@ -85,7 +86,7 @@ test('le navigateur charge la police et rend les icônes en glyphes, pas en mots
 
   // Attached before the assertions, never after: on a failure the report must
   // show what was actually drawn, which is the whole point of a screenshot here.
-  await testInfo.attach('icone-supprimer.png', {
+  await testInfo.attach('icone-exporter.png', {
     body: await icone.screenshot(),
     contentType: 'image/png',
   });

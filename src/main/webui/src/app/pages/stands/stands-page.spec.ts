@@ -28,6 +28,8 @@ import { DetailDialog } from '../../shared/detail-dialog';
 import { StandFormDialog } from './stand-form-dialog';
 import { StandsPage } from './stands-page';
 import { seedStore } from '../../core/testing/seed-store';
+import { rowMenuItem } from '../../core/testing/row-menu';
+import { expectOnlyInEmptyState } from '../../core/testing/empty-state';
 
 function stand(overrides: Partial<Stand> & { id: string }): Stand {
   return {
@@ -97,6 +99,7 @@ describe('StandsPage', () => {
     remove: vi.fn(async () => true),
     removeMany: vi.fn(async () => 0),
     reportError: vi.fn(),
+    warningsOf: vi.fn(() => []),
   };
   const api = { get: vi.fn() };
   const standsApi = {
@@ -233,7 +236,8 @@ describe('StandsPage', () => {
     it('shows every stand while the filter is empty', () => {
       const page = createPage([stand({ id: 'tir' }), stand({ id: 'quilles' })]);
 
-      expect(page.standsFiltres().map((row) => row.id)).toEqual(['tir', 'quilles']);
+      // The ids in their natural order, by default.
+      expect(page.standsFiltres().map((row) => row.id)).toEqual(['quilles', 'tir']);
     });
 
     it('matches on the id and on the name', () => {
@@ -292,7 +296,7 @@ describe('StandsPage', () => {
       page.selection.toggle('palet');
       await page.removeSelection();
 
-      expect(crud.removeMany).toHaveBeenCalledWith('stands', ['tir', 'palet'], expect.anything());
+      expect(crud.removeMany).toHaveBeenCalledWith('stands', ['palet', 'tir'], expect.anything());
     });
 
     // The referential is reloaded after every write: a row that vanished must
@@ -530,6 +534,7 @@ describe('StandsPage table', () => {
     remove: vi.fn(async () => true),
     removeMany: vi.fn(async () => 0),
     reportError: vi.fn(),
+    warningsOf: vi.fn(() => []),
   };
 
   async function rendre(stands: Stand[]): Promise<void> {
@@ -548,12 +553,8 @@ describe('StandsPage table', () => {
     );
   }
 
-  function action(indexLigne: number, nom: string): HTMLButtonElement {
-    const bouton = Array.from(
-      racine().querySelectorAll('tbody tr')[indexLigne].querySelectorAll('.row-actions button'),
-    ).find((each) => each.getAttribute('aria-label') === nom);
-    expect(bouton, `action « ${nom} » absente`).toBeDefined();
-    return bouton as HTMLButtonElement;
+  function action(indexLigne: number, nom: string): Promise<HTMLButtonElement> {
+    return rowMenuItem(fixture, racine().querySelectorAll('tbody tr')[indexLigne], nom);
   }
 
   function boutonCarte(libelle: string): HTMLButtonElement {
@@ -668,8 +669,13 @@ describe('StandsPage table', () => {
 
   it('distinguishes an empty referential from a filter that matched nothing', async () => {
     await rendre([]);
-    expect(racine().querySelector('.empty-hint')!.textContent!).toContain(
-      'Aucun stand pour le moment',
+    // Its actions are the empty state's alone: the header leaves them out.
+    expectOnlyInEmptyState(racine(), ['Ajouter', 'Importer']);
+    // The step before the stands is named, and still to do.
+    const vide = racine().querySelector('.empty-state')!;
+    expect(vide.textContent).toContain('Un stand propose des typologies');
+    expect(vide.querySelector('a[href="/typologies"]')!.textContent).toContain(
+      'Saisir les typologies',
     );
 
     await rendre([stand({ id: 's1', nom: 'Loup-Garou' })]);
@@ -688,9 +694,9 @@ describe('StandsPage table', () => {
     editingLocked.set(true);
     await fixture.whenStable();
 
-    expect(action(0, 'Modifier').disabled).toBe(true);
-    expect(action(0, 'Supprimer').disabled).toBe(true);
-    expect(action(0, 'Consulter le détail').disabled).toBe(false);
+    expect((await action(0, 'Modifier')).disabled).toBe(true);
+    expect((await action(0, 'Supprimer')).disabled).toBe(true);
+    expect((await action(0, 'Détail')).disabled).toBe(false);
     // The compaction rewrites every stand's horaires: it is a write like any other.
     expect(boutonCarte('Compacter les horaires').disabled).toBe(true);
     expect(boutonCarte('Ajouter').disabled).toBe(true);
@@ -706,9 +712,9 @@ describe('StandsPage table', () => {
     expect(racine().querySelector('app-gel-notice .gel-notice')).not.toBeNull();
     expect(boutonCarte('Ajouter').disabled).toBe(true);
     expect(boutonCarte('Compacter les horaires').disabled).toBe(true);
-    expect(action(0, 'Supprimer').disabled).toBe(true);
+    expect((await action(0, 'Supprimer')).disabled).toBe(true);
     // A rename or a new location stays open: the form shows the frozen fields read-only.
-    expect(action(0, 'Modifier').disabled).toBe(false);
+    expect((await action(0, 'Modifier')).disabled).toBe(false);
     const bulk = Array.from(racine().querySelectorAll('app-bulk-actions-bar button')).filter(
       (bouton) => (bouton as HTMLButtonElement).disabled,
     );
@@ -720,14 +726,38 @@ describe('StandsPage table', () => {
 
     expect(racine().querySelector('app-gel-notice .gel-notice')).toBeNull();
     expect(boutonCarte('Ajouter').disabled).toBe(false);
-    expect(action(0, 'Supprimer').disabled).toBe(false);
+    expect((await action(0, 'Supprimer')).disabled).toBe(false);
+  });
+
+  it('narrows to the stands of ?typologie=, named in a chip that lets them all back', async () => {
+    await TestBed.inject(Router).navigateByUrl('/?typologie=ambiance');
+    seedStore(referenceData, 'typologies', [{ id: 'ambiance', label: 'Ambiance' }]);
+    await rendre([
+      stand({ id: 's1', nom: 'Loup-Garou', typologiesProposees: ['ambiance'] }),
+      stand({ id: 's2', nom: 'Dixit', typologiesProposees: ['expert'] }),
+    ]);
+
+    expect(lignes().map((row) => row[1])).toEqual(['s1']);
+    const chip = racine().querySelector('app-filter-chips mat-chip')!;
+    expect(chip.textContent).toContain('Typologie : Ambiance');
+    (chip.querySelector('button') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    expect(lignes().map((row) => row[1])).toEqual(['s1', 's2']);
+  });
+
+  it('sorts on every column, the ids in their natural order', async () => {
+    await TestBed.inject(Router).navigateByUrl('/?sort=nom&dir=asc');
+    await rendre([stand({ id: 'S10', nom: 'Belote' }), stand({ id: 'S2', nom: 'Awalé' })]);
+
+    expect(lignes().map((row) => row[1])).toEqual(['S2', 'S10']);
+    expect(racine().querySelectorAll('th[mat-sort-header]')).toHaveLength(7);
   });
 
   it('opens the read-only detail, and hands over to the form when the user asks to edit', async () => {
     await rendre([stand({ id: 's1', nom: 'Loup-Garou' })]);
     dialog.open.mockReturnValue({ afterClosed: () => of('edit') });
 
-    action(0, 'Consulter le détail').click();
+    (await action(0, 'Détail')).click();
     await fixture.whenStable();
 
     expect(dialog.open.mock.calls[0][0]).toBe(DetailDialog);

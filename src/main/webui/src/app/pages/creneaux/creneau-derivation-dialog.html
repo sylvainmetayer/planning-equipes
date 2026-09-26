@@ -26,18 +26,12 @@
   <input matInput type="number" min="0" step="5" name="dureeMinimaleMinutes" [ngModel]="draft().dureeMinimaleMinutes" (ngModelChange)="patch({ dureeMinimaleMinutes: $event })" />
   <mat-hint i18n="@@creneaux.derivation.dureeMinimale.hint">En deçà, la tranche rejoint sa voisine et le trou est refermé</mat-hint>
 </mat-form-field>
-<mat-checkbox name="remplacer" class="span-2" [disabled]="editingLocked()" [ngModel]="draft().remplacer" (ngModelChange)="patch({ remplacer: $event })"
-              i18n="@@creneaux.derivation.remplacer">Remplacer la grille actuelle (efface le planning résolu) plutôt que d'y ajouter</mat-checkbox>
 @if (erreur(); as message) {
   <p class="field-error span-2" role="alert">{{ message }}</p>
 }
 @if (apercu(); as apercu) {
   <div class="span-2 serie-apercu" [class.serie-apercu-perimee]="!apercuAJour()">
-    @if (draft().remplacer) {
-      <h3 i18n="@@creneaux.derivation.apercu.titleRemplacer">{{ apercu.nombreGeneres }} créneau(x) formeraient la grille</h3>
-    } @else {
-      <h3 i18n="@@creneaux.derivation.apercu.title">{{ apercu.nombreGeneres }} créneau(x) seraient ajoutés</h3>
-    }
+    <h3 i18n="@@creneaux.derivation.apercu.title">{{ apercu.nombreGeneres }} créneau(x) seraient ajoutés</h3>
     @if (!apercuAJour()) {
       <p class="empty-hint" i18n="@@creneaux.serie.apercu.perime">La règle a changé depuis cet aperçu : prévisualisez à nouveau avant de créer.</p>
     }
@@ -72,7 +66,7 @@
       </p>
     }
     @if (bloquee()) {
-      <p class="field-error" role="alert" i18n="@@creneaux.derivation.bloquee">La grille obtenue porterait une erreur (souvent un doublon) : cochez « Remplacer », ou corrigez avant d'écrire.</p>
+      <p class="field-error" role="alert" i18n="@@creneaux.derivation.bloquee">Ajoutée à la grille actuelle, elle porterait une erreur (souvent un doublon) : remplacez la grille, ou corrigez avant d'écrire.</p>
     }
     @if (anomalies().length > 0) {
       <ul class="ouvertures-anomalies serie-anomalies">
@@ -101,9 +95,13 @@
     }
     <ng-container i18n="@@creneaux.serie.previsualiser">Prévisualiser</ng-container>
   </button>
-  <button matButton="filled" type="button" [disabled]="!peutEcrire()" (click)="ecrire()">
+  <button matButton type="button" class="danger-action" [disabled]="!peutRemplacer()" (click)="write(true)">
+    <mat-icon>swap_horiz</mat-icon>
+    <ng-container i18n="@@creneaux.derivation.remplacerAction">Remplacer la grille…</ng-container>
+  </button>
+  <button matButton="filled" type="button" [disabled]="!canWrite()" (click)="write()">
     <mat-icon>auto_awesome</mat-icon>
-    <ng-container i18n="@@creneaux.derivation.ecrire">Écrire la grille</ng-container>
+    <ng-container i18n="@@creneaux.derivation.ecrire">Ajouter à la grille</ng-container>
   </button>
 </mat-dialog-actions>
 </form>

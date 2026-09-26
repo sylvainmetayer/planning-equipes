@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { copyName } from '../../core/duplicate';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -13,6 +14,8 @@ import { TypologieItem } from '../../core/models';
 
 export interface TypologieFormData {
   typologie: TypologieItem | null;
+  /** « Dupliquer »: a creation, prefilled from this row. */
+  modele?: TypologieItem | null;
 }
 
 /**
@@ -50,7 +53,19 @@ export class TypologieFormDialog {
   );
   /** A creation, which the freeze refuses whole. */
   protected readonly creationFrozen = computed(() => this.typologiesFrozen() && !this.editingId());
-  protected readonly draft = signal<TypologieItem>(toDraft(this.data.typologie));
+  protected readonly draft = signal<TypologieItem>(
+    this.data.typologie || !this.data.modele
+      ? toDraft(this.data.typologie)
+      : {
+          ...toDraft(this.data.modele),
+          id: '',
+          code: '',
+          // A single holder: the copy never takes the flag from its model.
+          ninja: false,
+          label: copyName(this.data.modele.label),
+          modifieLe: null,
+        },
+  );
   /** Names the typologie as it was loaded: its id is drawn per edition and tells a reader nothing. */
   protected readonly formTitle = computed(() => {
     const id = this.editingId();

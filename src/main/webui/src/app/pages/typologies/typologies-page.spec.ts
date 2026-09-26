@@ -4,7 +4,7 @@
 // animateur that named it, so the confirmation must carry that count. A
 // confirmation that says "irréversible" without saying *what* it takes down is
 // the same as no confirmation.
-// The ninja picker moved to the Paramètres page, and its tests with it.
+// The ninja flag is ticked in the table itself, one holder at a time.
 
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -20,6 +20,8 @@ import { TableSelection } from '../../core/table-selection';
 import { TypologiesPage } from './typologies-page';
 import type { Animateur, EtatGel, Stand, TypologieItem } from '../../core/models';
 import { seedStore } from '../../core/testing/seed-store';
+import { rowMenuItem } from '../../core/testing/row-menu';
+import { expectOnlyInEmptyState } from '../../core/testing/empty-state';
 
 /** Reaches the protected members the template binds to. */
 type PageInternals = {
@@ -33,6 +35,7 @@ describe('TypologiesPage', () => {
     reload: vi.fn(async () => undefined),
     save: vi.fn(async () => true),
     removeMany: vi.fn(async () => 0),
+    warningsOf: vi.fn(() => []),
   };
 
   beforeEach(() => {
@@ -72,9 +75,10 @@ describe('TypologiesPage', () => {
       page.selection.toggle('AMBIANCE');
       await page.removeSelection();
 
+      // In the order the table shows them: the ids, naturally sorted.
       expect(crud.removeMany).toHaveBeenCalledWith(
         'typologies',
-        ['STRATEGIE', 'AMBIANCE'],
+        ['AMBIANCE', 'STRATEGIE'],
         expect.anything(),
       );
     });
@@ -103,6 +107,9 @@ describe('TypologiesPage table', () => {
     reload: vi.fn(async () => undefined),
     remove: vi.fn(async (..._args: unknown[]) => true),
     removeMany: vi.fn(async () => 0),
+    save: vi.fn(async (..._args: unknown[]) => true),
+    saveMany: vi.fn(async (..._args: unknown[]) => 1),
+    warningsOf: vi.fn((): string[] => []),
   };
   const editingLocked = signal(false);
   /** What `GET /api/editions/courant/gel` answers; nothing frozen unless a test says so. */
@@ -124,13 +131,8 @@ describe('TypologiesPage table', () => {
     );
   }
 
-  function action(indexLigne: number, nom: string): HTMLButtonElement {
-    const boutons = Array.from(
-      racine().querySelectorAll('tbody tr')[indexLigne].querySelectorAll('.row-actions button'),
-    );
-    const bouton = boutons.find((each) => each.getAttribute('aria-label') === nom);
-    expect(bouton, `action « ${nom} » absente`).toBeDefined();
-    return bouton as HTMLButtonElement;
+  function action(indexLigne: number, nom: string): Promise<HTMLButtonElement> {
+    return rowMenuItem(fixture, racine().querySelectorAll('tbody tr')[indexLigne], nom);
   }
 
   beforeEach(() => {
@@ -171,18 +173,77 @@ describe('TypologiesPage table', () => {
     ]);
   });
 
-  it('marks the ninja typologie, and only it', async () => {
+  it('ticks the ninja typologie, and only it, and moves the flag from the table', async () => {
     await rendre([
       { id: 'ambiance', label: 'Ambiance' },
       { id: 'ninja', label: 'Ninja', ninja: true },
     ]);
 
-    const cellules = Array.from(racine().querySelectorAll('tbody tr')).map((row) =>
-      row.querySelectorAll('td')[4].querySelector('mat-icon'),
+    const cases = Array.from(racine().querySelectorAll('tbody tr')).map(
+      (row) => row.querySelectorAll('td')[4].querySelector('input') as HTMLInputElement,
     );
-    expect(cellules[0]).toBeNull();
-    // Announced, not just drawn: the icon carries the whole meaning of the cell.
-    expect(cellules[1]!.getAttribute('aria-label')).toBe('Typologie ninja');
+    expect(cases.map((each) => each.checked)).toEqual([false, true]);
+    // Named by its row: a column of bare checkboxes says nothing to a screen reader.
+    expect(cases[0].getAttribute('aria-label')).toBe('Typologie ninja : Ambiance');
+
+    cases[0].click();
+    await fixture.whenStable();
+    expect(crud.save).toHaveBeenCalledWith(
+      'typologies',
+      expect.objectContaining({ id: 'ambiance', ninja: true }),
+      'ambiance',
+      'Typologie',
+      { text: 'Ambiance' },
+    );
+  });
+
+  it('sorts the ids in their natural order, T2 before T10', async () => {
+    await rendre([
+      { id: 'T10', label: 'Dix' },
+      { id: 'T2', label: 'Deux' },
+      { id: 'T1', label: 'Un' },
+    ]);
+
+    expect(lignes().map((row) => row[1])).toEqual(['T1', 'T2', 'T10']);
+  });
+
+  it('lays a block pasted from a spreadsheet over the rows, after a preview', async () => {
+    await rendre([
+      { id: 'T1', label: 'Un' },
+      { id: 'T2', label: 'Deux' },
+    ]);
+    dialog.open.mockReturnValue({ afterClosed: () => of(true) });
+    const collage = new Event('paste', { bubbles: true, cancelable: true }) as ClipboardEvent;
+    Object.defineProperty(collage, 'clipboardData', {
+      value: { getData: () => 'Code\tLibellé\nUN\tUno\nDEUX\t\n' },
+    });
+    racine().querySelector('tbody tr')!.dispatchEvent(collage);
+    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve));
+
+    expect(collage.defaultPrevented).toBe(true);
+    const [, options] = dialog.open.mock.calls.at(-1) as [
+      unknown,
+      { data: { changes: unknown[] } },
+    ];
+    expect(options.data.changes).toHaveLength(3);
+    expect(crud.saveMany).toHaveBeenCalledWith(
+      'typologies',
+      [
+        expect.objectContaining({ id: 'T1', code: 'UN', label: 'Uno' }),
+        expect.objectContaining({ id: 'T2', code: 'DEUX', label: 'Deux' }),
+      ],
+      expect.anything(),
+    );
+  });
+
+  it('keeps the warning of the last save on its row', async () => {
+    crud.warningsOf.mockImplementation(() => ['Aucun stand ne la propose.']);
+    await rendre([{ id: 'T1', label: 'Un' }]);
+
+    const icone = racine().querySelector('tbody app-row-warning mat-icon')!;
+    expect(icone.getAttribute('aria-label')).toContain('Aucun stand ne la propose.');
+    crud.warningsOf.mockImplementation(() => []);
   });
 
   it('tells the user how many rows reference the typologie before deleting it', async () => {
@@ -216,7 +277,7 @@ describe('TypologiesPage table', () => {
     ]);
     await rendre([{ id: 'ambiance', label: 'Ambiance' }]);
 
-    action(0, 'Supprimer').click();
+    (await action(0, 'Supprimer')).click();
     await fixture.whenStable();
 
     expect(crud.remove).toHaveBeenCalledWith('typologies', 'ambiance', 'Typologie', {
@@ -228,7 +289,7 @@ describe('TypologiesPage table', () => {
   it('says plainly when nothing references the typologie', async () => {
     await rendre([{ id: 'ambiance', label: 'Ambiance' }]);
 
-    action(0, 'Supprimer').click();
+    (await action(0, 'Supprimer')).click();
     await fixture.whenStable();
 
     expect(crud.remove).toHaveBeenCalledWith('typologies', 'ambiance', 'Typologie', {
@@ -248,14 +309,14 @@ describe('TypologiesPage table', () => {
     expect(barre.textContent!).toContain('Supprimer la sélection');
   });
 
-  it('greys out the writing actions while a solve is running, but not the consultation', async () => {
+  it('greys out the writing actions while a solve is running', async () => {
     await rendre([{ id: 'ambiance', label: 'Ambiance' }]);
     editingLocked.set(true);
     await fixture.whenStable();
 
-    expect(action(0, 'Modifier').disabled).toBe(true);
-    expect(action(0, 'Supprimer').disabled).toBe(true);
-    expect(action(0, 'Consulter le détail').disabled).toBe(false);
+    expect((await action(0, 'Modifier')).disabled).toBe(true);
+    expect((await action(0, 'Dupliquer')).disabled).toBe(true);
+    expect((await action(0, 'Supprimer')).disabled).toBe(true);
   });
 
   it('greys out creating and deleting under a typologies freeze, with its padlock, but not the edit', async () => {
@@ -272,9 +333,9 @@ describe('TypologiesPage table', () => {
     await fixture.whenStable();
 
     expect(racine().querySelector('app-gel-notice .gel-notice')).not.toBeNull();
-    expect(action(0, 'Supprimer').disabled).toBe(true);
+    expect((await action(0, 'Supprimer')).disabled).toBe(true);
     // A label or a note stays open: the form shows the frozen fields read-only.
-    expect(action(0, 'Modifier').disabled).toBe(false);
+    expect((await action(0, 'Modifier')).disabled).toBe(false);
     const deleteSelection = Array.from(
       racine().querySelectorAll<HTMLButtonElement>('app-bulk-actions-bar button'),
     ).find((each) => each.textContent!.includes('Supprimer la sélection'))!;
@@ -283,8 +344,14 @@ describe('TypologiesPage table', () => {
 
   it('distinguishes an empty referential from a filter that matched nothing', async () => {
     await rendre([]);
-    expect(racine().querySelector('.empty-hint')!.textContent!.trim()).toBe(
-      'Aucune typologie pour le moment.',
+    // Its actions are the empty state's alone: the header leaves them out.
+    expectOnlyInEmptyState(racine(), ['Ajouter', 'Importer']);
+    // An empty referential says where to begin, and offers to.
+    expect(racine().querySelector('.empty-state')!.textContent).toContain('Commencez ici');
+    expect(racine().querySelector('.empty-state')!.textContent).toContain('Ajouter');
+    // An edition with nothing at all offers an example.
+    expect(racine().querySelector('.empty-state a[href^="/fichiers"]')!.textContent).toContain(
+      'Charger un exemple',
     );
 
     await rendre([{ id: 'ambiance', label: 'Ambiance' }]);
@@ -311,14 +378,18 @@ describe('TypologiesPage table', () => {
     expect(lignes().map((row) => row[1])).toEqual(['T1']);
   });
 
-  it('points at the Paramètres page for the ninja choice instead of editing it here', async () => {
+  it('turns every count into a link to the list it counts', async () => {
     await rendre([{ id: 'ambiance', label: 'Ambiance' }]);
 
-    const lien = Array.from(racine().querySelectorAll('a')).find((each) =>
-      each.textContent!.includes('ninja'),
-    )!;
-    // The tab the ninja picker lives on, not the page's default one (issue #606).
-    expect(lien.getAttribute('href')).toBe('/parametres?onglet=edition');
+    const cellules = racine().querySelectorAll('tbody tr td');
+    const liens = (index: number) =>
+      Array.from(cellules[index].querySelectorAll('a')).map((lien) => lien.getAttribute('href'));
+    expect(liens(5)).toEqual([
+      '/animateurs?typologie=ambiance',
+      '/competences?typologies=ambiance',
+    ]);
+    expect(liens(6)).toEqual(['/animateurs?souhait=ambiance']);
+    expect(liens(7)).toEqual(['/stands?typologie=ambiance']);
   });
 
   describe('usage of each typologie', () => {
@@ -348,11 +419,12 @@ describe('TypologiesPage table', () => {
       seedUsage();
       await rendre(typologies);
 
+      // The ids in their natural order, by default.
       expect(lignes().map((row) => [row[1], row[5], row[6], row[7], row[8]])).toEqual([
-        ['echecs', '0', '2', '1', 'error Orpheline'],
-        ['cartes', '1', '0', '1', 'warning Fragile'],
-        ['des', '2', '0', '1', ''],
-        ['vide', '0', '0', '0', 'info Sans compétent, inutilisée'],
+        ['cartes', '1grid_on', '0', '1', 'warning Fragile'],
+        ['des', '2grid_on', '0', '1', ''],
+        ['echecs', '0grid_on', '2', '1', 'error Orpheline'],
+        ['vide', '0grid_on', '0', '0', 'info Sans compétent, inutilisée'],
       ]);
       expect(racine().querySelector('.typologies-orphelines')!.textContent).toContain(
         'maîtrisées par personne : 1',
@@ -372,7 +444,7 @@ describe('TypologiesPage table', () => {
       seedUsage();
       await rendre(typologies);
 
-      expect(lignes().map((row) => row[1])).toEqual(['echecs', 'cartes']);
+      expect(lignes().map((row) => row[1])).toEqual(['cartes', 'echecs']);
     });
 
     it('sorts by the number of competent people', async () => {

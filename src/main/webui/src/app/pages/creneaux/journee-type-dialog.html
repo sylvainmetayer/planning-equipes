@@ -35,6 +35,12 @@
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button matButton type="button" (click)="dialogRef.close(null)" i18n="@@common.cancel">Annuler</button>
+  <button matButton type="button" [disabled]="oneOffImpossible() || editingLocked()" (click)="applyWithoutKeeping()"
+          i18n-matTooltip="@@journeesTypes.form.sansMemoriser.tooltip"
+          matTooltip="Pose ces créneaux sur des dates choisies, sans garder la journée type ; les relais repas ne suivent pas.">
+    <mat-icon>playlist_add</mat-icon>
+    <ng-container i18n="@@journeesTypes.form.sansMemoriser">Appliquer sans mémoriser</ng-container>
+  </button>
   <button matButton="filled" type="submit" [disabled]="invalide() || enregistrement() || editingLocked()">
     <mat-icon>save</mat-icon>
     @if (editingId !== null) {

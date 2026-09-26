@@ -11,11 +11,15 @@
     <output class="confirmations-synthese status-paragraph">{{ synthese }}</output>
   }
   <mat-card-actions class="card-actions">
-    <button matButton="filled" type="button" [disabled]="editingLocked()" (click)="openCreate()">
-      <mat-icon>add</mat-icon>
-      <ng-container i18n="@@common.add">Ajouter</ng-container>
-    </button>
-    <app-import-button card="animateurs" [disabled]="editingLocked()" />
+    <!-- On an empty referential the empty state below carries « Ajouter » and
+         « Importer »: one button of each name on the screen. -->
+    @if (store.animateurs().length > 0) {
+      <button matButton="filled" type="button" [disabled]="editingLocked()" (click)="openCreate()">
+        <mat-icon>add</mat-icon>
+        <ng-container i18n="@@common.add">Ajouter</ng-container>
+      </button>
+      <app-import-button card="animateurs" [disabled]="editingLocked()" />
+    }
     <mat-form-field appearance="outline" subscriptSizing="dynamic" class="accuses-filter">
       <mat-label i18n="@@animateurs.accuses.label">Accusés</mat-label>
       <mat-select [ngModel]="accuses()" (ngModelChange)="accuses.set($event)">
@@ -38,36 +42,42 @@
     }
     <app-table-filter [(value)]="filtre" [matches]="animateursFiltres().length" [total]="store.animateurs().length"
                       (enterTable)="navigation.focusCurrent()" />
-    @if (typologiesFiltrees().length > 0) {
-      <mat-chip-set class="animateurs-typologie-filtre" aria-label="Typologie filtrée" i18n-aria-label="@@animateurs.filtreTypologie.label">
-        <mat-chip (removed)="clearTypologie()" [removable]="true">
-          <ng-container i18n="@@animateurs.filtreTypologie">Typologie : {{ typologieLabel() }}</ng-container>
-          <button matChipRemove i18n-aria-label="@@animateurs.filtreTypologie.clear" aria-label="Retirer le filtre par typologie">
-            <mat-icon>cancel</mat-icon>
-          </button>
-        </mat-chip>
-      </mat-chip-set>
-    }
-    @if (importedIds(); as ids) {
-      <mat-chip-set class="animateurs-typologie-filtre" aria-label="Lignes importées" i18n-aria-label="@@animateurs.filtreImport.label">
-        <mat-chip (removed)="clearImportedIds()" [removable]="true">
-          <ng-container i18n="@@animateurs.filtreImport">Lignes importées ({{ ids.size }})</ng-container>
-          <button matChipRemove i18n-aria-label="@@animateurs.filtreImport.clear" aria-label="Retirer le filtre des lignes importées">
-            <mat-icon>cancel</mat-icon>
-          </button>
-        </mat-chip>
-      </mat-chip-set>
-    }
-    @if (souhait()) {
-      <mat-chip-set class="animateurs-typologie-filtre" aria-label="Souhait filtré" i18n-aria-label="@@animateurs.filtreSouhait.label">
-        <mat-chip (removed)="clearSouhait()" [removable]="true">
-          <ng-container i18n="@@animateurs.filtreSouhait">Souhait : {{ souhaitLabel() }}</ng-container>
-          <button matChipRemove i18n-aria-label="@@animateurs.filtreSouhait.clear" aria-label="Retirer le filtre par souhait">
-            <mat-icon>cancel</mat-icon>
-          </button>
-        </mat-chip>
-      </mat-chip-set>
-    }
+    <button matButton type="button" [matMenuTriggerFor]="menuFiltres">
+      <mat-icon>filter_list</mat-icon>
+      <ng-container i18n="@@animateurs.filtrer">Filtrer</ng-container>
+    </button>
+    <mat-menu #menuFiltres="matMenu">
+      <button mat-menu-item type="button" [matMenuTriggerFor]="menuTypologies" [disabled]="store.typologies().length === 0">
+        <mat-icon>category</mat-icon>
+        <span i18n="@@animateurs.filtrer.typologie">Par compétence</span>
+      </button>
+      <button mat-menu-item type="button" [matMenuTriggerFor]="menuSouhaits" [disabled]="store.typologies().length === 0">
+        <mat-icon>favorite</mat-icon>
+        <span i18n="@@animateurs.filtrer.souhait">Par souhait</span>
+      </button>
+      <button mat-menu-item type="button" (click)="mineurs.set(true)">
+        <mat-icon>child_care</mat-icon>
+        <span i18n="@@animateurs.chip.mineurs">Mineurs</span>
+      </button>
+      <button mat-menu-item type="button" (click)="managers.set(true)">
+        <mat-icon>supervisor_account</mat-icon>
+        <span i18n="@@animateurs.chip.managers">Managers</span>
+      </button>
+    </mat-menu>
+    <mat-menu #menuTypologies="matMenu">
+      @for (typologie of store.typologies(); track typologie.id) {
+        <button mat-menu-item type="button" (click)="filterByTypologie(typologie.id)">{{ typologie.label || typologie.id }}</button>
+      }
+    </mat-menu>
+    <mat-menu #menuSouhaits="matMenu">
+      @for (typologie of store.typologies(); track typologie.id) {
+        <button mat-menu-item type="button" (click)="filterByWish(typologie.id)">{{ typologie.label || typologie.id }}</button>
+      }
+    </mat-menu>
+    <button matButton type="button" [disabled]="sortedAnimateurs().length === 0" (click)="exportList()">
+      <mat-icon>download</mat-icon>
+      <ng-container i18n="@@referentiel.exporterListe">Exporter cette liste</ng-container>
+    </button>
     @if (viewChanged()) {
       <button matButton type="button" (click)="resetView()">
         <mat-icon>filter_alt_off</mat-icon>
@@ -76,14 +86,18 @@
     }
   </mat-card-actions>
   <mat-card-content class="table-wrapper">
+    <app-filter-chips [chips]="chips()" (remove)="removeChip($event)" (clear)="clearChips()" />
     @if (selection.hasSelection()) {
       <app-bulk-actions-bar [count]="selection.count()" [disabled]="editingLocked()"
                             [filtre]="!!filtre() || accuses() !== 'tous'" [reminder]="true"
                             (edit)="editSelection()" (remove)="removeSelection()" (remind)="remindSelection()"
                             (clear)="selection.clear()" />
     }
-    <table mat-table [dataSource]="sortedAnimateurs()" matSort [matSortActive]="sort().active" [matSortDirection]="sort().direction" (matSortChange)="sort.set($event)">
-      <caption class="visually-hidden" i18n="@@animateurs.table.caption">Animateurs du référentiel : identité, statut, indisponibilités, accusé de réception et actions</caption>
+    @if (store.animateurs().length > 0) {
+    <p class="referentiel-collage-hint" i18n="@@animateurs.collageHint">Collez un bloc copié d'un tableur sur une ligne (Ctrl+V) : prénom, nom, e-mail, manager — ou une première ligne qui nomme les colonnes. Un aperçu précède l'enregistrement.</p>
+    <table mat-table [dataSource]="sortedAnimateurs()" [trackBy]="trackById" matSort [matSortActive]="sort().active" [matSortDirection]="sort().direction" (matSortChange)="sort.set($event)"
+           (paste)="onPaste($event)">
+      <caption class="visually-hidden" i18n="@@animateurs.table.caption">Animateurs du référentiel : nom, âge et régime, compétences, indisponibilités, postes, accusé de réception et actions</caption>
       <ng-container matColumnDef="select">
         <th mat-header-cell scope="col" *matHeaderCellDef>
           <mat-checkbox i18n-aria-label="@@bulk.selectAll" aria-label="Tout sélectionner"
@@ -96,30 +110,44 @@
                         (change)="selection.toggle(animateur.id)"></mat-checkbox>
         </td>
       </ng-container>
-      <ng-container matColumnDef="id">
-        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@common.id">Id</th>
-        <td mat-cell *matCellDef="let animateur">{{ animateur.id }}</td>
-      </ng-container>
       <ng-container matColumnDef="nom">
         <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@common.nom">Nom</th>
-        <td mat-cell *matCellDef="let animateur">{{ animateur.prenom }} {{ animateur.nom }}</td>
+        <td mat-cell *matCellDef="let animateur">
+          <a class="referentiel-nom" [routerLink]="['/animateurs', animateur.id]">{{ nom(animateur) }}</a>
+          @if (animateur.manager) {
+            <span class="animateur-manager" i18n="@@animateurs.field.manager">Manager</span>
+          }
+          <app-row-warning [messages]="warnings(animateur)" />
+        </td>
       </ng-container>
-      <ng-container matColumnDef="majorite">
-        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@animateurs.column.majorite">Majeur</th>
-        <td mat-cell *matCellDef="let animateur">{{ majoriteLabel(animateur) }}</td>
+      <ng-container matColumnDef="age">
+        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@animateurs.column.ageRegime">Âge / régime</th>
+        <td mat-cell *matCellDef="let animateur">{{ ageLabel(animateur) }}</td>
       </ng-container>
-      <ng-container matColumnDef="manager">
-        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@animateurs.column.manager">Manager</th>
-        <td mat-cell *matCellDef="let animateur">{{ ouiNon(animateur.manager) }}</td>
+      <ng-container matColumnDef="competences">
+        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@animateurs.column.competences">Compétences</th>
+        <td mat-cell *matCellDef="let animateur">
+          <span class="animateur-pastilles">
+            @for (pastille of pastilles(animateur); track pastille.label) {
+              <span class="animateur-pastille" [title]="pastille.titre">{{ pastille.label }} <b aria-hidden="true">{{ pastille.lettre }}</b><span class="visually-hidden"> — {{ pastille.titre }}</span></span>
+            } @empty {
+              —
+            }
+          </span>
+        </td>
       </ng-container>
       <ng-container matColumnDef="indisponibilites">
-        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@animateurs.column.indisponibilites">Indisponibilités</th>
+        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@animateurs.column.indispos">Indispos</th>
         <td mat-cell *matCellDef="let animateur">
           {{ animateur.joursIndisponibles.length }}
           @if (alerteParAnimateurId().get(animateur.id); as alerte) {
             <mat-icon aria-hidden="false" class="row-problem-icon" [matTooltip]="alerte" [attr.aria-label]="alerte">warning</mat-icon>
           }
         </td>
+      </ng-container>
+      <ng-container matColumnDef="postes">
+        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@animateurs.column.postes">Postes</th>
+        <td mat-cell *matCellDef="let animateur">{{ seatsByAnimateur()?.get(animateur.id) ?? 0 }}</td>
       </ng-container>
       <ng-container matColumnDef="confirmation">
         <!-- `appSortHeaderName` : l'en-tête triable se nomme par son titre, et
@@ -164,39 +192,35 @@
       <ng-container matColumnDef="actions" stickyEnd>
         <th mat-header-cell scope="col" *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
         <td mat-cell *matCellDef="let animateur" class="row-actions">
-          <a matIconButton [routerLink]="['/animateurs', animateur.id]" i18n-matTooltip="@@animateurs.ouvrirFiche" matTooltip="Ouvrir sa fiche complète" i18n-aria-label="@@animateurs.ouvrirFiche" aria-label="Ouvrir sa fiche complète">
-            <mat-icon>badge</mat-icon>
-          </a>
-          <button matIconButton i18n-matTooltip="@@common.consult" matTooltip="Consulter le détail" i18n-aria-label="@@common.consult" aria-label="Consulter le détail" (click)="consult(animateur)">
-            <mat-icon>visibility</mat-icon>
-          </button>
-          <button matIconButton i18n-matTooltip="@@common.edit" matTooltip="Modifier" i18n-aria-label="@@common.edit" aria-label="Modifier" [disabled]="editingLocked()" (click)="edit(animateur)">
-            <mat-icon>edit</mat-icon>
-          </button>
-          <button matIconButton i18n-matTooltip="@@animateurs.copierLien" matTooltip="Copier le lien de son espace animateur" i18n-aria-label="@@animateurs.copierLien" aria-label="Copier le lien de son espace animateur"
-                  [disabled]="!animateur.accessToken" (click)="copierLienEspace(animateur)">
-            <mat-icon>link</mat-icon>
-          </button>
-          <button matIconButton i18n-matTooltip="@@animateurs.regenererJeton" matTooltip="Régénérer le lien de son espace" i18n-aria-label="@@animateurs.regenererJeton" aria-label="Régénérer le lien de son espace"
-                  [disabled]="editingLocked()" (click)="regenererJeton(animateur)">
-            <mat-icon>autorenew</mat-icon>
-          </button>
-          <button matIconButton i18n-matTooltip="@@common.delete" matTooltip="Supprimer" i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action" [disabled]="editingLocked()"
-                  (click)="remove(animateur)">
-            <mat-icon>delete</mat-icon>
-          </button>
+          <app-row-menu [name]="nom(animateur)" [editDisabled]="editingLocked()" [duplicateDisabled]="editingLocked()"
+                        [removeDisabled]="editingLocked()"
+                        (edit)="edit(animateur)" (duplicate)="duplicate(animateur)" (remove)="remove(animateur)">
+            <button mat-menu-item type="button" [disabled]="!animateur.accessToken" (click)="copierLienEspace(animateur)">
+              <mat-icon>link</mat-icon>
+              <span i18n="@@animateurs.copierLien">Copier le lien de son espace animateur</span>
+            </button>
+            <button mat-menu-item type="button" [disabled]="editingLocked()" (click)="regenererJeton(animateur)">
+              <mat-icon>autorenew</mat-icon>
+              <span i18n="@@animateurs.regenererJeton">Régénérer le lien de son espace</span>
+            </button>
+          </app-row-menu>
         </td>
       </ng-container>
-      <tr mat-header-row *matHeaderRowDef="columns"></tr>
-      <tr mat-row *matRowDef="let row; columns: columns; let i = index"
+      <tr mat-header-row *matHeaderRowDef="columns()"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns(); let i = index"
           [attr.data-row-index]="i"
           [tabindex]="navigation.isCurrent(i) ? 0 : -1"
           [class.row-selected]="selection.isSelected(row.id)"
           (focus)="navigation.onFocus(i)"
           (keydown)="navigation.onKeydown($event, i)"></tr>
     </table>
+    }
     @if (store.animateurs().length === 0) {
-      <p class="empty-hint" i18n="@@animateurs.empty">Aucun animateur pour le moment.</p>
+      <app-empty-state [addDisabled]="editingLocked()" (add)="openCreate()"
+                       [previous]="{ route: '/typologies', label: previousStepLabel(), missing: store.typologies().length === 0 }">
+        <ng-container i18n="@@animateurs.referentiel.vide">Un animateur maîtrise des typologies et s'absente certains jours de l'édition : saisissez d'abord les typologies et les créneaux, puis les animateurs ici.</ng-container>
+        <app-import-button empty-state-import card="animateurs" [disabled]="editingLocked()" />
+      </app-empty-state>
     } @else if (animateursFiltres().length === 0) {
       <p class="empty-hint" i18n="@@filter.noMatch">Aucune ligne ne correspond au filtre.</p>
     }

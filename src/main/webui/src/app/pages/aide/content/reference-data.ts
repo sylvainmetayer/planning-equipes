@@ -104,7 +104,7 @@ export function buildReferenceDataSections(): HelpSection[] {
           items: [
             {
               term: $localize`:@@aide.data.term.animateurs:Animateurs`,
-              text: $localize`:@@aide.data.def.animateurs:Identité, date de naissance, compétences par typologie avec un niveau (débutant, autonome, référent), jours d'indisponibilité. Le régime légal — moins de 16 ans, 16-18 ans, majeur — ne se saisit jamais : il est recalculé à la date de chaque créneau. Par défaut un animateur est disponible, ne saisissez que les absences. Chaque colonne du tableau se trie, en remontant d'abord ce qui reste à faire.`,
+              text: $localize`:@@aide.data.def.animateurs:Identité, date de naissance, compétences par typologie avec un niveau (débutant, autonome, référent), jours d'indisponibilité. Le régime légal — moins de 16 ans, 16-18 ans, majeur — ne se saisit jamais : il est recalculé à la date de chaque créneau. Par défaut un animateur est disponible, ne saisissez que les absences : dans la fiche, un clic sur un jour de la frise le marque absent, et « Absent du » … « au » pose une plage d'un geste. Les appréciations se saisissent dans la grille des compétences, que « Saisir dans la grille (ligne pré-filtrée) » ouvre sur la personne. La colonne « Âge / régime » dit l'âge au premier jour de l'édition. Le nom mène à la fiche complète ; « Filtrer » réduit la liste aux mineurs, aux managers, à une compétence ou à un souhait, chaque filtre restant affiché au-dessus du tableau. Une fois un planning calculé, la colonne « Postes » compte les sièges de chacun.`,
             },
             {
               term: $localize`:@@aide.data.term.stands:Stands`,
@@ -112,17 +112,25 @@ export function buildReferenceDataSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.data.term.autres:Emplacements et typologies`,
-              text: $localize`:@@aide.data.def.autres:Un emplacement est un lieu géolocalisé auquel rattacher un stand : il sert à éviter les allers-retours d'un créneau à l'autre. Une typologie est le vocabulaire commun entre les compétences d'un animateur et les jeux d'un stand — sans typologie partagée, l'animateur ne peut pas tenir le stand. Désignez aussi, sur la page Paramètres, la typologie « ninja » : ses porteurs sont polyvalents, et le solveur essaie d'en garder un libre sur chaque créneau. Sans elle, cette réserve n'existe pas.`,
+              text: $localize`:@@aide.data.def.autres:Un emplacement est un lieu géolocalisé auquel rattacher un stand : il sert à éviter les allers-retours d'un créneau à l'autre. Une typologie est le vocabulaire commun entre les compétences d'un animateur et les jeux d'un stand — sans typologie partagée, l'animateur ne peut pas tenir le stand. Cochez aussi, dans la colonne « Typologie ninja » de l'écran Typologies, la typologie dont les porteurs sont polyvalents : le solveur essaie d'en garder un libre sur chaque créneau. Sans elle, cette réserve n'existe pas.`,
             },
           ],
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.data.typologiesOrphelines:L'écran Typologies compte, pour chacune, les animateurs qui la maîtrisent (les polyvalents à part), ceux qui l'ont souhaitée et les stands qui la proposent. Un badge « Orpheline » signale une typologie proposée par un stand que personne ne maîtrise : seul un polyvalent peut alors tenir ce stand. « Fragile » veut dire une seule personne, « Inutilisée » aucun stand. Depuis le badge, voyez qui l'a souhaitée ou saisissez des appréciations dans la grille Compétences. L'État de l'édition compte les orphelines, avant tout calcul.`,
+          text: $localize`:@@aide.data.typologiesOrphelines:L'écran Typologies compte, pour chacune, les animateurs qui la maîtrisent (les polyvalents à part), ceux qui l'ont souhaitée et les stands qui la proposent ; chaque chiffre mène à la liste qu'il compte, et l'icône de grille aux appréciations de cette typologie. Un badge « Orpheline » signale une typologie proposée par un stand que personne ne maîtrise : seul un polyvalent peut alors tenir ce stand. « Fragile » veut dire une seule personne, « Inutilisée » aucun stand. Une fois un planning calculé, trois colonnes disent ce qu'il en a fait : les postes, les heures, et les personnes « Affectés sans la compétence ». L'État de l'édition compte les orphelines, avant tout calcul.`,
         },
         {
           kind: 'paragraph',
           text: $localize`:@@aide.data.identifiants:Aucun identifiant ne se saisit : l'application en attribue un à chaque fiche qu'elle crée — A12 pour un animateur, S3 pour un stand, T2 pour une typologie, L1 pour un emplacement, C4 pour un ajustement. Un stand, une typologie ou un emplacement peut porter en plus un code, facultatif et unique dans l'édition, comme « STRATEGIE » ou « PAVILLON » : c'est la clé lisible que citent les fichiers d'import et qu'écrivent les exports, qui ne portent aucun identifiant — sans code, une ligne y est désignée par son nom.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.data.tableaux:Les tableaux gardent les réflexes du tableur. Chaque colonne se trie d'un clic sur son en-tête, et les identifiants suivent l'ordre naturel : T2 avant T10. Le nom d'une ligne l'ouvre ; son menu la modifie, la duplique ou la supprime. « Exporter cette liste » télécharge en CSV ce que le tableau montre, filtres et tri compris. Un bloc copié d'un tableur se colle sur une ligne (Ctrl+V) : les colonnes se remplissent dans l'ordre du tableau, ou selon la première ligne si elle les nomme — « Id » y désigne les lignes par leur identifiant —, et un aperçu montre chaque case avant qu'« Appliquer » n'enregistre. Un avertissement d'enregistrement reste marqué sur sa ligne tant qu'une nouvelle saisie ne l'a pas levé.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.data.ordre:Les référentiels se remplissent dans un ordre : les typologies d'abord, puis les créneaux qui donnent ses dates à l'édition, les stands qui proposent les typologies et ouvrent sur les créneaux, et les animateurs en dernier. Un tableau vide le rappelle, mène à l'étape précédente quand elle manque, et, sur une édition encore vide, propose « Charger un exemple ».`,
         },
         {
           kind: 'paragraph',
@@ -169,7 +177,7 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.creneaux.grille:Une grille de créneaux est toujours faite de vacations : des tranches de travail réelles. La page déclare ce que la grille contient — des amplitudes encore à découper, ou des vacations finales — parce que chaque verdict en dépend : un chevauchement est une erreur entre amplitudes, et la forme normale de vacations décalées. Le « Contrôle de la grille » relit ce verdict à chaque visite.`,
+          text: $localize`:@@aide.creneaux.grille:Une grille de créneaux est toujours faite de vacations : des tranches de travail réelles. La page déclare ce que la grille contient — des amplitudes encore à découper, ou des vacations finales — parce que chaque verdict en dépend : un chevauchement est une erreur entre amplitudes, et la forme normale de vacations décalées. Le « Contrôle de la grille » s'exécute seul, à chaque visite et après chaque écriture, et s'affiche en bandeau sous le calendrier, le détail à déplier. Chaque créneau de la liste compte ses « Stands ouverts · postes », un lien vers les horaires des stands ce jour-là.`,
         },
         {
           kind: 'definitions',
@@ -183,15 +191,15 @@ export function buildReferenceDataSections(): HelpSection[] {
               text: $localize`:@@aide.creneaux.def.appliquer:Écrit les créneaux, après un aperçu chiffré. Un créneau identique garde ses sièges, un créneau en trop sur une date gouvernée est supprimé, une date sans journée type n'est pas touchée. Une journée type modifiée après coup ne change rien tant qu'on ne réapplique pas : ses dates passent « en écart ».`,
             },
             {
-              term: $localize`:@@aide.creneaux.term.serie:Créer une série`,
-              text: $localize`:@@aide.creneaux.def.serie:La même chose sans mémoire, pour un besoin ponctuel : les créneaux sur une ligne, les jours couverts, un aperçu, puis l'écriture. Aucune journée type n'est créée.`,
+              term: $localize`:@@aide.creneaux.term.serie:Appliquer sans mémoriser`,
+              text: $localize`:@@aide.creneaux.def.serie:La même chose sans mémoire, pour un besoin ponctuel : dans le dialogue d'une journée type, ce bouton pose ses créneaux sur les jours choisis, après un aperçu, sans garder la journée type. Les relais repas ne suivent pas.`,
             },
             {
               term: $localize`:@@aide.creneaux.term.deriver:Dériver des horaires des stands`,
-              text: $localize`:@@aide.creneaux.def.deriver:Quand les stands ont déjà leurs horaires, la grille peut en découler : une coupure à chaque heure d'ouverture ou de fermeture, un créneau sur chaque tranche où au moins un stand est ouvert. Prévisualisé avant d'être ajouté ou mis à la place de la grille.`,
+              text: $localize`:@@aide.creneaux.def.deriver:Quand les stands ont déjà leurs horaires, la grille peut en découler : une coupure à chaque heure d'ouverture ou de fermeture, un créneau sur chaque tranche où au moins un stand est ouvert. Prévisualisé, puis ajouté à la grille ; « Remplacer la grille… » la met à la place de l'actuelle, après une confirmation qui dit que le planning calculé part avec elle. Avec la reconnaissance, il se trouve dans le menu « Autres façons de créer la grille », à côté de l'ajout d'un créneau isolé.`,
             },
             {
-              term: $localize`:@@aide.creneaux.term.reconnaitre:Reconnaître depuis les créneaux`,
+              term: $localize`:@@aide.creneaux.term.reconnaitre:Reconnaître les journées types depuis les créneaux`,
               text: $localize`:@@aide.creneaux.def.reconnaitre:Le chemin inverse, sur une grille déjà écrite : l'application en déduit les journées types et le calendrier qui les porte.`,
             },
           ],
@@ -277,11 +285,11 @@ export function buildReferenceDataSections(): HelpSection[] {
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.competences.grille:La fiche animateur permet de saisir les appréciations une personne à la fois ; l'écran « Compétences » les montre toutes d'un coup, animateurs en lignes et typologies en colonnes. Une case se change d'un clic (les niveaux défilent) ou d'une touche : 0 vide la case, 1, 2 et 3 posent le niveau. Les flèches, Entrée, Début et Fin déplacent la sélection comme dans un tableur, et la flèche bas depuis le filtre entre dans la grille. Ctrl+D reprend la ligne du dessus, Ctrl+Maj+Bas applique la case courante à toute sa colonne ; les mêmes gestes ont un bouton, qui apparaît au survol en tête de ligne et en tête de colonne.`,
+          text: $localize`:@@aide.competences.grille:L'écran « Compétences » montre toutes les appréciations d'un coup, animateurs en lignes et typologies en colonnes ; le nom d'une personne mène à sa fiche, l'en-tête d'une colonne à sa typologie, et « Typologies affichées » réduit les colonnes. Une case se change d'un clic (les niveaux défilent) ou d'une touche : 0 vide la case, 1, 2 et 3 posent le niveau. Les flèches, Entrée, Début et Fin déplacent la sélection comme dans un tableur, et la flèche bas depuis le filtre entre dans la grille. Ctrl+D reprend la ligne du dessus, Ctrl+Maj+Bas applique la case courante à toute sa colonne ; les mêmes gestes ont un bouton, qui apparaît au survol en tête de ligne et en tête de colonne. Un bloc copié d'un tableur se colle depuis la case courante (Ctrl+V) — 0 à 3, D, A, R ou le niveau en toutes lettres —, et un aperçu montre chaque case avant de l'écrire dans la grille.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.competences.enregistrer:Rien n'est écrit avant « Enregistrer » : les cases changées sont encadrées, le bouton compte les fiches concernées, et quitter la page sans enregistrer demande confirmation. Un cœur dans une case signale que l'animateur souhaite cette typologie — l'appréciation se saisit en regard du souhait, sans que l'un décide de l'autre. Pendant une résolution, la saisie est verrouillée.`,
+          text: $localize`:@@aide.competences.enregistrer:Rien n'est écrit avant « Enregistrer » : les cases changées sont encadrées, le bouton compte les fiches concernées, et quitter la page sans enregistrer demande confirmation. Le cœur d'une case dit que l'animateur souhaite cette typologie : un clic, ou la touche S, le pose ou le retire, et il s'enregistre avec le reste — l'appréciation se saisit en regard du souhait, sans que l'un décide de l'autre. Pendant une résolution, la saisie est verrouillée.`,
         },
         {
           kind: 'paragraph',

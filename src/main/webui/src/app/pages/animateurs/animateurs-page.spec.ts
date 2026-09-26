@@ -11,7 +11,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
+import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
+import { rowMenuItem } from '../../core/testing/row-menu';
 import { ApiService } from '../../core/api.service';
 import { AnimateursApi } from '../../core/api/animateurs-api';
 import { ProblemesStore } from '../../core/problemes.store';
@@ -20,7 +21,6 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { NotificationService } from '../../core/notification.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
-import { DetailDialog } from '../../shared/detail-dialog';
 import { AnimateurFormDialog } from './animateur-form-dialog';
 import { AnimateursPage } from './animateurs-page';
 import type {
@@ -30,6 +30,7 @@ import type {
   TypologieItem,
 } from '../../core/models';
 import { seedStore } from '../../core/testing/seed-store';
+import { expectOnlyInEmptyState } from '../../core/testing/empty-state';
 
 function animateur(id: string, joursIndisponibles: string[]): Animateur {
   return {
@@ -111,7 +112,10 @@ describe('AnimateursPage alert badges', () => {
         },
         { provide: ApiService, useValue: api },
         { provide: AnimateursApi, useValue: animateursApi },
-        { provide: ReferenceCrudService, useValue: { reload: vi.fn(async () => undefined) } },
+        {
+          provide: ReferenceCrudService,
+          useValue: { reload: vi.fn(async () => undefined), warningsOf: vi.fn(() => []) },
+        },
         {
           provide: SolverJobService,
           useValue: { solverBusy: () => false, editingLocked: () => false },
@@ -194,6 +198,8 @@ describe('AnimateursPage table', () => {
     remind: ReturnType<typeof vi.fn>;
   };
   const editingLocked = signal(false);
+  /** What the address carries when the page is built; nothing by default. */
+  let queryParams: Record<string, string> = {};
 
   async function rendre(animateurs: Animateur[]): Promise<void> {
     seedStore(referenceData, 'animateurs', animateurs);
@@ -212,21 +218,14 @@ describe('AnimateursPage table', () => {
     );
   }
 
-  /** Action buttons of one row, by their accessible name. */
-  function action(indexLigne: number, nom: string): HTMLButtonElement {
-    const boutons = Array.from(
-      racine().querySelectorAll('tbody tr')[indexLigne].querySelectorAll('.row-actions button'),
-    );
-    const bouton = boutons.find((each) => each.getAttribute('aria-label') === nom);
-    expect(bouton, `action « ${nom} » absente`).toBeDefined();
-    return bouton as HTMLButtonElement;
+  /** An item of one row's « ⋯ » menu, by its label. */
+  function action(indexLigne: number, nom: string): Promise<HTMLButtonElement> {
+    return rowMenuItem(fixture, racine().querySelectorAll('tbody tr')[indexLigne], nom);
   }
 
-  /** Header cell texts, in display order. */
-  function entetes(): string[] {
-    return Array.from(racine().querySelectorAll('thead th')).map((cell) =>
-      cell.textContent!.trim(),
-    );
+  /** The id of each displayed row, read off its name (« alice ALICE »). */
+  function ids(): string[] {
+    return lignes().map((row) => row[1].split(' ')[0]);
   }
 
   /** Clicks the sort header whose label starts with `libelle`. */
@@ -249,6 +248,7 @@ describe('AnimateursPage table', () => {
   beforeEach(() => {
     TestBed.resetTestingModule();
     editingLocked.set(false);
+    queryParams = {};
     dialog = { open: vi.fn(() => ({ afterClosed: () => of(undefined) })) };
     confirm = { ask: vi.fn(async () => false) };
     notify = vi.fn();
@@ -272,10 +272,16 @@ describe('AnimateursPage table', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
-        { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
+        provideRouter([]),
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { queryParamMap: convertToParamMap({}) } },
+          useValue: {
+            snapshot: {
+              get queryParamMap() {
+                return convertToParamMap(queryParams);
+              },
+            },
+          },
         },
         { provide: ApiService, useValue: api },
         { provide: AnimateursApi, useValue: animateursApi },
@@ -285,6 +291,7 @@ describe('AnimateursPage table', () => {
             reload: vi.fn(async () => undefined),
             remove: vi.fn(async () => true),
             removeMany: vi.fn(async () => 0),
+            warningsOf: vi.fn(() => []),
           },
         },
         { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked } },
@@ -296,7 +303,8 @@ describe('AnimateursPage table', () => {
     referenceData = TestBed.inject(ReferenceDataStore);
   });
 
-  it('renders one row per animateur, with the derived majority and no appreciation column', async () => {
+  it('renders one row per animateur: name, age and regime, appreciations in words', async () => {
+    seedStore(referenceData, 'typologies', [{ id: 'ambiance', label: 'Ambiance' }]);
     await rendre([
       person('alice', {
         prenom: 'Amélie',
@@ -309,40 +317,43 @@ describe('AnimateursPage table', () => {
     ]);
 
     expect(racine().querySelector('h1')!.textContent!).toContain('Animateurs (2)');
-    // Majority is derived from the birth date, never stored.
-    expect(lignes()[0].slice(1, 5)).toEqual(['alice', 'Amélie Nothomb', 'Oui', 'Oui']);
-    expect(lignes()[1].slice(1, 5)).toEqual(['bob', 'Bob Ados', 'Non', 'Non']);
-    // The appreciation is a list per row: unreadable in a cell, and read in the
-    // detail dialog instead. No cell may spell it out again.
+    expect(lignes()[0][1]).toBe('Amélie NothombManager');
+    // The regime is derived from the birth date, never stored — and said, not a yes/no.
+    expect(lignes()[0][2]).toMatch(/^\d+ ans$/);
+    expect(lignes()[1][2]).toMatch(/^\d+ ans · mineur$/);
+    // The level in words, never the enum's own name.
+    expect(racine().querySelector('.animateur-pastille')!.textContent).toContain('Référent');
     expect(lignes().flat().join(' ')).not.toContain('REFERENT');
-    expect(entetes()).not.toContain('Appréciation');
+    // The name leads to the fiche: the consultation dialog is gone.
+    expect(racine().querySelector('tbody a.referentiel-nom')!.getAttribute('href')).toBe(
+      '/animateurs/alice',
+    );
   });
 
-  it('says the majority is unknown rather than guessing it without a birth date', async () => {
+  it('says the age is unknown rather than guessing it without a birth date', async () => {
     await rendre([person('alice', { dateNaissance: '' })]);
 
-    expect(lignes()[0][3]).toBe('—');
+    expect(lignes()[0][2]).toBe('—');
   });
 
-  it('sorts on the majority column, both ways', async () => {
+  it('sorts on the age, the youngest first, both ways', async () => {
     await rendre([
       person('mineur', { dateNaissance: '2015-01-01' }),
       person('inconnu', { dateNaissance: '' }),
       person('majeur', { dateNaissance: '1990-01-01' }),
     ]);
 
-    await sort('Majeur');
-    expect(lignes().map((row) => row[1])).toEqual(['majeur', 'mineur', 'inconnu']);
+    await sort('Âge / régime');
+    expect(ids()).toEqual(['mineur', 'majeur', 'inconnu']);
 
-    await sort('Majeur');
-    expect(lignes().map((row) => row[1])).toEqual(['inconnu', 'mineur', 'majeur']);
+    await sort('Âge / régime');
+    expect(ids()).toEqual(['inconnu', 'majeur', 'mineur']);
   });
 
-  it('sorts the identifiers as numbers where they carry one, not as text', async () => {
+  it('keeps the identifiers in their natural order by default, not as text', async () => {
     await rendre([person('A10'), person('A2'), person('A1')]);
 
-    await sort('Id');
-    expect(lignes().map((row) => row[1])).toEqual(['A1', 'A2', 'A10']);
+    expect(ids()).toEqual(['A1', 'A2', 'A10']);
   });
 
   it('sorts the name column on what the cell shows, first name included', async () => {
@@ -353,14 +364,22 @@ describe('AnimateursPage table', () => {
     ]);
 
     await sort('Nom');
-    expect(lignes().map((row) => row[2])).toEqual(['Adrien Costa', 'Élodie Blanc', 'Zoé Abadie']);
+    expect(lignes().map((row) => row[1])).toEqual(['Adrien Costa', 'Élodie Blanc', 'Zoé Abadie']);
   });
 
-  it('brings the managers up first, like the majority column', async () => {
-    await rendre([person('a', { manager: false }), person('b', { manager: true })]);
+  it('narrows to the managers and the minors from the URL, each filter shown as a chip', async () => {
+    queryParams = { manager: '1', mineurs: '1' };
+    await rendre([
+      person('a', { manager: true, dateNaissance: '2015-01-01' }),
+      person('b', { manager: true }),
+      person('c', { dateNaissance: '2015-01-01' }),
+    ]);
 
-    await sort('Manager');
-    expect(lignes().map((row) => row[1])).toEqual(['b', 'a']);
+    expect(ids()).toEqual(['a']);
+    const chips = Array.from(racine().querySelectorAll('app-filter-chips mat-chip')).map((chip) =>
+      chip.textContent!.replace('cancel', '').trim(),
+    );
+    expect(chips).toEqual(['Mineurs', 'Managers']);
   });
 
   it('sorts the unavailability column on the number of days', async () => {
@@ -370,8 +389,8 @@ describe('AnimateursPage table', () => {
       person('une', { joursIndisponibles: ['2026-07-01'] }),
     ]);
 
-    await sort('Indisponibilités');
-    expect(lignes().map((row) => row[1])).toEqual(['aucune', 'une', 'trois']);
+    await sort('Indispos');
+    expect(ids()).toEqual(['aucune', 'une', 'trois']);
   });
 
   it('puts what is left to chase on top of the acknowledgement sort', async () => {
@@ -415,12 +434,7 @@ describe('AnimateursPage table', () => {
 
     await sort('Accusé de réception');
     // Silencieux, relancé, confirmé — and last the person nothing was asked of.
-    expect(lignes().map((row) => row[1])).toEqual([
-      'silencieux',
-      'relance',
-      'confirme',
-      'sansPoste',
-    ]);
+    expect(ids()).toEqual(['silencieux', 'relance', 'confirme', 'sansPoste']);
   });
 
   // « Relancer maintenant » (issue #504): mails leave, so the gesture is
@@ -525,7 +539,7 @@ describe('AnimateursPage table', () => {
     ]);
 
     await filter('nothomb');
-    expect(lignes().map((row) => row[1])).toEqual(['alice']);
+    expect(lignes().map((row) => row[1])).toEqual(['Amélie Nothomb']);
 
     await filter('zzz');
     expect(lignes()).toEqual([]);
@@ -544,18 +558,20 @@ describe('AnimateursPage table', () => {
     ]);
 
     await filter('societe');
-    expect(lignes().map((row) => row[1])).toEqual(['alice']);
+    expect(lignes().map((row) => row[1])).toEqual(['Amélie Nothomb']);
 
     await filter('T1');
-    expect(lignes().map((row) => row[1])).toEqual(['alice']);
+    expect(lignes().map((row) => row[1])).toEqual(['Amélie Nothomb']);
   });
 
-  it('says the referential is empty, not that the filter matched nothing', async () => {
+  it('says the referential is empty, what comes first, not that the filter matched nothing', async () => {
     await rendre([]);
+    // Its actions are the empty state's alone: the header leaves them out.
+    expectOnlyInEmptyState(racine(), ['Ajouter', 'Importer']);
 
-    expect(racine().querySelector('.empty-hint')!.textContent!.trim()).toBe(
-      'Aucun animateur pour le moment.',
-    );
+    const vide = racine().querySelector('.empty-state')!;
+    expect(vide.textContent).toContain('Un animateur maîtrise des typologies');
+    expect(vide.querySelector('a[href="/typologies"]')).not.toBeNull();
   });
 
   it('ticks only the displayed rows on "tout sélectionner", and warns that the scope is filtered', async () => {
@@ -570,6 +586,23 @@ describe('AnimateursPage table', () => {
       racine().querySelector('app-bulk-actions-bar .bulk-bar-count')!.textContent!.trim(),
     ).toBe('1 élément(s) sélectionné(s)');
     expect(racine().querySelector('.bulk-bar-scope')).not.toBeNull();
+  });
+
+  it('keeps the focused row across a reload of the store, whose objects are all new', async () => {
+    await rendre([person('alice', { nom: 'Nothomb' }), person('bob', { nom: 'Ados' })]);
+    const ligne = racine().querySelector<HTMLElement>('tr[data-row-index="1"]')!;
+    ligne.focus();
+
+    seedStore(referenceData, 'animateurs', [
+      person('alice', { nom: 'Nothomb' }),
+      person('bob', { nom: 'Adossé' }),
+    ]);
+    await fixture.whenStable();
+
+    expect(racine().querySelector('tr[data-row-index="1"]')).toBe(ligne);
+    expect(document.activeElement).toBe(ligne);
+    // The row is kept, its content is not: a rename still shows.
+    expect(ligne.textContent).toContain('Adossé');
   });
 
   it('shows no bulk bar until something is ticked', async () => {
@@ -595,8 +628,8 @@ describe('AnimateursPage table', () => {
   it('offers the espace link only to the animateurs who have one', async () => {
     await rendre([person('alice', { accessToken: 'jeton-1' }), person('bob')]);
 
-    expect(action(0, 'Copier le lien de son espace animateur').disabled).toBe(false);
-    expect(action(1, 'Copier le lien de son espace animateur').disabled).toBe(true);
+    expect((await action(0, 'Copier le lien de son espace animateur')).disabled).toBe(false);
+    expect((await action(1, 'Copier le lien de son espace animateur')).disabled).toBe(true);
   });
 
   it('greys out every writing action while a solve is running, but not the read-only ones', async () => {
@@ -604,41 +637,43 @@ describe('AnimateursPage table', () => {
     editingLocked.set(true);
     await fixture.whenStable();
 
-    expect(action(0, 'Modifier').disabled).toBe(true);
-    expect(action(0, 'Supprimer').disabled).toBe(true);
-    expect(action(0, 'Régénérer le lien de son espace').disabled).toBe(true);
+    expect((await action(0, 'Modifier')).disabled).toBe(true);
+    expect((await action(0, 'Supprimer')).disabled).toBe(true);
+    expect((await action(0, 'Régénérer le lien de son espace')).disabled).toBe(true);
     expect((racine().querySelector('mat-card-actions button') as HTMLButtonElement).disabled).toBe(
       true,
     );
-    // Reading a row and copying a link change nothing: locking them would only
-    // punish the user for the solver's duration.
-    expect(action(0, 'Consulter le détail').disabled).toBe(false);
-    expect(action(0, 'Copier le lien de son espace animateur').disabled).toBe(false);
+    // Copying a link changes nothing: locking it would only punish the user
+    // for the solver's duration.
+    expect((await action(0, 'Copier le lien de son espace animateur')).disabled).toBe(false);
   });
 
-  it('opens the read-only detail, and hands over to the form when the user asks to edit', async () => {
+  it('opens the form from the menu, and a blank copy on « Dupliquer »', async () => {
     await rendre([person('alice', { prenom: 'Amélie', nom: 'Nothomb' })]);
-    dialog.open.mockReturnValue({ afterClosed: () => of('edit') });
 
-    action(0, 'Consulter le détail').click();
+    (await action(0, 'Modifier')).click();
     await fixture.whenStable();
+    expect(dialog.open.mock.calls[0][0]).toBe(AnimateurFormDialog);
+    expect(dialog.open.mock.calls[0][1].data.animateur.id).toBe('alice');
 
-    expect(dialog.open.mock.calls[0][0]).toBe(DetailDialog);
-    expect(dialog.open.mock.calls[0][1].data.title).toBe('Amélie Nothomb');
-    expect(dialog.open.mock.calls[1][0]).toBe(AnimateurFormDialog);
-    expect(dialog.open.mock.calls[1][1].data.animateur.id).toBe('alice');
+    (await action(0, 'Dupliquer')).click();
+    await fixture.whenStable();
+    expect(dialog.open.mock.calls[1][1].data).toEqual({
+      animateur: null,
+      modele: expect.objectContaining({ id: 'alice' }),
+    });
   });
 
   it('regenerates an espace token only after an explicit confirmation', async () => {
     await rendre([person('alice', { accessToken: 'jeton-1' })]);
 
-    action(0, 'Régénérer le lien de son espace').click();
+    (await action(0, 'Régénérer le lien de son espace')).click();
     await fixture.whenStable();
     // Refused: the already-printed PDFs must keep working.
     expect(animateursApi.regenerateToken).not.toHaveBeenCalled();
 
     confirm.ask.mockResolvedValue(true);
-    action(0, 'Régénérer le lien de son espace').click();
+    (await action(0, 'Régénérer le lien de son espace')).click();
     await fixture.whenStable();
     expect(animateursApi.regenerateToken).toHaveBeenCalledExactlyOnceWith('alice');
     expect(notify.mock.calls.at(-1)![0].variant).toBe('success');
@@ -655,7 +690,7 @@ describe('AnimateursPage table', () => {
       },
     });
 
-    action(0, 'Copier le lien de son espace animateur').click();
+    (await action(0, 'Copier le lien de son espace animateur')).click();
     await fixture.whenStable();
 
     // A silent failure would leave the user thinking the link is in their buffer.

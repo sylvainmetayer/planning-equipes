@@ -11,7 +11,6 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { firstValueFrom } from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
@@ -19,6 +18,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
@@ -29,15 +29,27 @@ import {
   keptByImportedIds,
   readImportedIds,
 } from '../../core/imported-rows';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AnimateursApi } from '../../core/api/animateurs-api';
 import { intlLocale } from '../../core/locale';
 import {
   Animateur,
   ConfirmationView,
+  NiveauCompetence,
   StatutConfirmation,
   SyntheseConfirmations,
 } from '../../core/models';
+import { ApiService } from '../../core/api.service';
+import { CSV_CONTENT_TYPE, CsvColumn, csvFileName, toCsv } from '../../core/csv-export';
+import { lettreNiveau, libelleNiveau } from '../../core/niveau-competence';
+import { PasteColumn, pastedText, planPaste } from '../../core/paste-rows';
+import { PlanningStateService } from '../../core/planning-state.service';
+import { compareNatural } from '../../core/table-sort';
+import { EmptyState } from '../../shared/empty-state';
+import { FilterChip, FilterChips } from '../../shared/filter-chips';
+import { PastePreviewService } from '../../shared/paste-preview-dialog';
+import { RowMenu } from '../../shared/row-menu';
+import { RowWarning } from '../../shared/row-warning';
 import { NotificationService } from '../../core/notification.service';
 import { labelAnimateursPluriel } from '../../core/entity-labels';
 import { ProblemesStore } from '../../core/problemes.store';
@@ -46,7 +58,7 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { animateurName } from '../../core/reference-labels';
 import { SolverJobService } from '../../core/solver-job.service';
-import { TableNavigation } from '../../core/table-navigation';
+import { TableNavigation, trackRowById } from '../../core/table-navigation';
 import { TableSelection } from '../../core/table-selection';
 import { correspondAuFiltre } from '../../core/text-filter';
 import {
@@ -61,11 +73,9 @@ import { SESSION_DRAFT_STORAGE } from '../../core/brouillon-formulaire';
 import { reportOrphanDrafts } from '../../shared/brouillon-dialog';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
 import { ConfirmService } from '../../shared/confirm-dialog';
-import { DetailData, DetailDialog } from '../../shared/detail-dialog';
 import { SortHeaderName } from '../../shared/sort-header-name';
 import { TableFilter } from '../../shared/table-filter';
 import { AnimateurBulkEditData, AnimateurBulkEditDialog } from './animateur-bulk-edit-dialog';
-import { buildAnimateurDetail } from './animateur-detail';
 import { AnimateurFormData, AnimateurFormDialog } from './animateur-form-dialog';
 import { errorMessage } from '../../core/error-message';
 import {
@@ -109,12 +119,17 @@ import { ImportButton } from '../../shared/import-button';
     MatChipsModule,
     MatIconModule,
     MatInputModule,
+    MatMenuModule,
     MatSelectModule,
     FormsModule,
     MatTableModule,
     MatSortModule,
     MatTooltipModule,
     BulkActionsBar,
+    EmptyState,
+    FilterChips,
+    RowMenu,
+    RowWarning,
     SortHeaderName,
     TableFilter,
     RouterLink,
@@ -126,16 +141,19 @@ import { ImportButton } from '../../shared/import-button';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AnimateursPage implements OnInit {
-  protected readonly columns = [
+  /** The seats of the persisted plan, by animateur; `null` while no plan holds anybody. */
+  protected readonly seatsByAnimateur = signal<ReadonlyMap<string, number> | null>(null);
+
+  protected readonly columns = computed(() => [
     'select',
-    'id',
     'nom',
-    'majorite',
-    'manager',
+    'age',
+    'competences',
     'indisponibilites',
+    ...(this.seatsByAnimateur() === null ? [] : ['postes']),
     'confirmation',
     'actions',
-  ];
+  ]);
   protected readonly sort = signal<Sort>(NO_SORT);
   /** Quick filter of the table: id, identity and compétences. Applied before the sort. */
   protected readonly filtre = signal('');
@@ -186,13 +204,73 @@ export class AnimateursPage implements OnInit {
    * importées » opens the list on — a chip, removed like the others.
    */
   protected readonly importedIds = signal<ReadonlySet<string> | null>(null);
+  /** `?mineurs=1`: only the people who are minors on the edition's first day. */
+  protected readonly mineurs = signal(false);
+  /** `?manager=1`: only the managers. */
+  protected readonly managers = signal(false);
+
+  /** The edition's first day, from its timeslots: the day a minor is a minor on; today when there is none. */
+  private readonly premierJour = computed(() => {
+    const dates = this.store.creneaux().map((creneau) => creneau.date);
+    return dates.length === 0 ? null : dates.reduce((min, date) => (date < min ? date : min));
+  });
+
+  /** Every filter in force, as a chip above the table: a filter that narrows a list must be seen doing it. */
+  protected readonly chips = computed<FilterChip[]>(() => {
+    const chips: FilterChip[] = [];
+    const ids = this.importedIds();
+    if (ids !== null) {
+      chips.push({
+        key: 'ids',
+        label: $localize`:@@animateurs.filtreImport:Lignes importées (${ids.size}:count:)`,
+      });
+    }
+    if (this.typologiesFiltrees().length > 0) {
+      chips.push({
+        key: 'typologie',
+        label: $localize`:@@animateurs.filtreTypologie:Typologie : ${this.typologieLabel()}:INTERPOLATION:`,
+      });
+    }
+    if (this.souhait()) {
+      chips.push({
+        key: 'souhait',
+        label: $localize`:@@animateurs.filtreSouhait:Souhait : ${this.souhaitLabel()}:INTERPOLATION:`,
+      });
+    }
+    if (this.mineurs()) {
+      chips.push({ key: 'mineurs', label: $localize`:@@animateurs.chip.mineurs:Mineurs` });
+    }
+    if (this.managers()) {
+      chips.push({ key: 'manager', label: $localize`:@@animateurs.chip.managers:Managers` });
+    }
+    if (this.accuses() === 'jamais') {
+      chips.push({
+        key: 'accuses',
+        label: $localize`:@@animateurs.accuses.jamais:Jamais confirmés`,
+      });
+    } else if (this.accuses() === 'silence') {
+      const jours = this.silenceJours();
+      chips.push({
+        key: 'accuses',
+        label:
+          jours > 1
+            ? $localize`:@@animateurs.chip.silence:Silencieux depuis ${jours}:jours: jours`
+            : $localize`:@@animateurs.chip.silence.un:Silencieux depuis ${jours}:jours: jour`,
+      });
+    }
+    if (this.accuses() !== 'tous' && this.neverReminded()) {
+      chips.push({
+        key: 'relance',
+        label: $localize`:@@animateurs.accuses.jamaisRelances:Jamais relancés`,
+      });
+    }
+    return chips;
+  });
+
   protected readonly viewChanged = computed(
     () =>
       this.filtre().trim() !== '' ||
-      this.importedIds() !== null ||
-      this.accuses() !== 'tous' ||
-      this.typologiesFiltrees().length > 0 ||
-      this.souhait() !== '' ||
+      this.chips().length > 0 ||
       (this.sort().active !== '' && this.sort().direction !== ''),
   );
   protected readonly animateursFiltres = computed(() => {
@@ -217,6 +295,8 @@ export class AnimateursPage implements OnInit {
         ) &&
         this.matchesTypologieFilter(animateur) &&
         (this.souhait() === '' || (animateur.souhaits ?? []).includes(this.souhait())) &&
+        (!this.mineurs() || majorite(animateur, this.premierJour()) === 'mineur') &&
+        (!this.managers() || animateur.manager) &&
         correspondAuFiltre(this.filtre(), [
           animateur.id,
           animateur.prenom,
@@ -258,15 +338,26 @@ export class AnimateursPage implements OnInit {
     return $localize`:@@animateurs.synthese:Confirmés ${synthese.confirmes}:confirmes: · Relancés ${synthese.relances}:relances: · Silencieux ${synthese.silencieux}:silencieux: — ${publication}:publication:`;
   });
 
+  /**
+   * The rows in the order of the chosen column, ties and the unsorted table
+   * in the natural order of the ids (A2 before A10).
+   */
   protected readonly sortedAnimateurs = computed(() => {
     const animateurs = this.animateursFiltres();
     const { active, direction } = this.sort();
+    const byId = (a: Animateur, b: Animateur) => compareNatural(a.id, b.id);
     if (!active || !direction) {
-      return animateurs;
+      return [...animateurs].sort(byId);
     }
-    const confirmations = this.confirmations();
+    const contexte: ContexteTri = {
+      confirmations: this.confirmations(),
+      premierJour: this.premierJour(),
+      postes: this.seatsByAnimateur(),
+    };
     const factor = direction === 'asc' ? 1 : -1;
-    return [...animateurs].sort((a, b) => factor * compareByColumn(a, b, active, confirmations));
+    return [...animateurs].sort(
+      (a, b) => factor * compareByColumn(a, b, active, contexte) || byId(a, b),
+    );
   });
 
   protected readonly store = inject(ReferenceDataStore);
@@ -286,13 +377,15 @@ export class AnimateursPage implements OnInit {
    * detail, Espace ticks the row. `core/table-navigation.ts` holds the whole
    * mechanism, shared with the other reference-data tables.
    */
+  /** Rows kept across a reload of the store, and the focus with them. */
+  protected readonly trackById = trackRowById;
   protected readonly navigation = new TableNavigation({
     rows: this.sortedAnimateurs,
     id: (animateur: Animateur) => animateur.id,
     host: () => this.hote.nativeElement,
     selection: this.selection,
     open: (animateur: Animateur) => {
-      void this.consult(animateur);
+      void this.router.navigate(['/animateurs', animateur.id]);
       return true;
     },
     announcer: inject(LiveAnnouncer),
@@ -306,6 +399,10 @@ export class AnimateursPage implements OnInit {
   private readonly draftStorage = inject(SESSION_DRAFT_STORAGE);
   private readonly confirmDialog = inject(ConfirmService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly api = inject(ApiService);
+  private readonly pastePreview = inject(PastePreviewService);
+  private readonly planningState = inject(PlanningStateService);
 
   /** Copies the animateur's personal espace link (issue #165) — what the PDF prints. */
   protected async copierLienEspace(animateur: Animateur): Promise<void> {
@@ -391,6 +488,8 @@ export class AnimateursPage implements OnInit {
     this.typologie.set(params.get('typologie') ?? '');
     this.souhait.set(params.get('souhait')?.trim() ?? '');
     this.importedIds.set(readImportedIds(params.get(IMPORTED_IDS_PARAM)));
+    this.mineurs.set(params.get('mineurs') === '1');
+    this.managers.set(params.get('manager') === '1');
     const chargement = this.crud.reload();
     void chargement.then((loaded) => {
       if (loaded) {
@@ -413,6 +512,8 @@ export class AnimateursPage implements OnInit {
       typologie: optionalParam(this.typologie()),
       souhait: optionalParam(this.souhait()),
       [IMPORTED_IDS_PARAM]: importedIdsParam(this.importedIds()),
+      mineurs: this.mineurs() ? '1' : null,
+      manager: this.managers() ? '1' : null,
     }));
     // `?edit=<id>`: a link from a symptom (a problem, a warning) lands here
     // with the fiche to open. Followed rather than read once — the link often
@@ -428,6 +529,27 @@ export class AnimateursPage implements OnInit {
 
   ngOnInit(): void {
     void this.chargerConfirmations();
+    void this.loadSeats();
+  }
+
+  /**
+   * The seats of the persisted plan, counted by animateur — the « Postes »
+   * column, shown once a plan sits somebody. A plan that cannot be read
+   * leaves the column out, as an edition never solved does.
+   */
+  private async loadSeats(): Promise<void> {
+    try {
+      const planning = await this.planningState.loadForDisplay();
+      const postes = new Map<string, number>();
+      for (const poste of planning?.postes ?? []) {
+        if (poste.animateur) {
+          postes.set(poste.animateur.id, (postes.get(poste.animateur.id) ?? 0) + 1);
+        }
+      }
+      this.seatsByAnimateur.set(postes.size === 0 ? null : postes);
+    } catch {
+      this.seatsByAnimateur.set(null);
+    }
   }
 
   /**
@@ -550,31 +672,60 @@ export class AnimateursPage implements OnInit {
     return null;
   }
 
-  /** The chip's cross: the list widens back to everyone, the rest of the view untouched. */
-  protected clearTypologie(): void {
-    this.typologie.set('');
+  /** A chip's cross: that filter goes, the rest of the view stays. */
+  protected removeChip(key: string): void {
+    switch (key) {
+      case 'typologie':
+        this.typologie.set('');
+        break;
+      case 'souhait':
+        this.souhait.set('');
+        break;
+      case 'mineurs':
+        this.mineurs.set(false);
+        break;
+      case 'manager':
+        this.managers.set(false);
+        break;
+      case 'ids':
+        this.importedIds.set(null);
+        break;
+      case 'accuses':
+        this.accuses.set('tous');
+        this.neverReminded.set(false);
+        break;
+      case 'relance':
+        this.neverReminded.set(false);
+        break;
+    }
   }
 
-  /** The wish chip's cross, the same way. */
-  protected clearSouhait(): void {
-    this.souhait.set('');
-  }
-
-  /** The imported rows' chip, the same way. */
-  protected clearImportedIds(): void {
+  /** Every chip at once; the quick filter and the sort stay. */
+  protected clearChips(): void {
     this.importedIds.set(null);
-  }
-
-  /** Back to the whole referential, in the order the store holds it. */
-  protected resetView(): void {
-    this.filtre.set('');
-    this.importedIds.set(null);
     this.typologie.set('');
     this.souhait.set('');
-    this.sort.set(NO_SORT);
+    this.mineurs.set(false);
+    this.managers.set(false);
     this.accuses.set('tous');
     this.silenceJours.set(SILENCE_JOURS_DEFAUT);
     this.neverReminded.set(false);
+  }
+
+  /** « Filtrer » menu: narrow to the people holding a typologie, or wishing for one. */
+  protected filterByTypologie(id: string): void {
+    this.typologie.set(id);
+  }
+
+  protected filterByWish(id: string): void {
+    this.souhait.set(id);
+  }
+
+  /** Back to the whole referential, in the natural order of the ids. */
+  protected resetView(): void {
+    this.filtre.set('');
+    this.clearChips();
+    this.sort.set(NO_SORT);
   }
 
   private matchesTypologieFilter(animateur: Animateur): boolean {
@@ -586,37 +737,173 @@ export class AnimateursPage implements OnInit {
     return $localize`:@@animateurs.alerte.indisponibiliteCritique:Indisponible le ${jour}:date:, un jour où l'effectif est structurellement insuffisant : ${cause}:cause:`;
   }
 
-  protected ouiNon(value: boolean): string {
-    return value ? $localize`:@@common.oui:Oui` : $localize`:@@common.non:Non`;
+  /**
+   * « 34 ans » or « 16 ans · mineur », at the edition's first day: the legal
+   * regime is what the column exists for, never a bare yes/no.
+   */
+  protected ageLabel(animateur: Animateur): string {
+    const age = ageOn(animateur, this.premierJour());
+    if (age === null) {
+      return '—';
+    }
+    return age < 18
+      ? $localize`:@@animateurs.age.mineur:${age}:age: ans · mineur`
+      : $localize`:@@animateurs.age.majeur:${age}:age: ans`;
   }
 
-  protected majoriteLabel(animateur: Animateur): string {
-    const statut = majorite(animateur);
-    if (statut === 'majeur') {
-      return $localize`:@@animateurs.majorite.majeur:Oui`;
-    }
-    if (statut === 'mineur') {
-      return $localize`:@@animateurs.majorite.mineur:Non`;
-    }
-    return '—';
+  /** The appreciations as pastilles, by game category label, each with its level's letter and word. */
+  protected pastilles(animateur: Animateur): { label: string; lettre: string; titre: string }[] {
+    const typologies = typologieLabels(this.store.typologies());
+    return Object.entries(animateur.competences ?? {})
+      .map(([id, niveau]) => ({
+        label: typologieLabel(typologies, id),
+        lettre: lettreNiveau(niveau as NiveauCompetence),
+        titre: `${typologieLabel(typologies, id)} · ${libelleNiveau(niveau as NiveauCompetence)}`,
+      }))
+      .sort((a, b) => compareNatural(a.label, b.label));
+  }
+
+  /** The step before the animateurs, named on the empty state. */
+  protected previousStepLabel(): string {
+    return $localize`:@@stands.empty.typologies:Saisir les typologies`;
+  }
+
+  protected warnings(animateur: Animateur): readonly string[] {
+    return this.crud.warningsOf('animateurs', animateur.id);
+  }
+
+  /** The name of a row names the person; the menu is named after them too. */
+  protected nom(animateur: Animateur): string {
+    return animateurName(animateur) || animateur.id;
+  }
+
+  /** « Dupliquer »: a new fiche with the same appreciations, wishes and days off — a new person, identity left blank. */
+  protected duplicate(animateur: Animateur): void {
+    this.dialog.open<AnimateurFormDialog, AnimateurFormData, boolean>(AnimateurFormDialog, {
+      data: { animateur: null, modele: animateur },
+      width: '44rem',
+      maxWidth: '95vw',
+      autoFocus: 'first-tabbable',
+    });
+  }
+
+  /** What « Exporter cette liste » writes: the people as displayed, never their birth date. */
+  private colonnesExport(): CsvColumn<Animateur>[] {
+    const typologies = typologieLabels(this.store.typologies());
+    return [
+      { title: $localize`:@@common.id:Id`, value: (animateur) => animateur.id },
+      {
+        title: $localize`:@@animateurs.field.prenom:Prénom`,
+        value: (animateur) => animateur.prenom,
+      },
+      { title: $localize`:@@stands.field.nom:Nom`, value: (animateur) => animateur.nom },
+      {
+        title: $localize`:@@animateurs.column.age:Âge`,
+        value: (animateur) => this.ageLabel(animateur),
+      },
+      {
+        title: $localize`:@@animateurs.field.manager:Manager`,
+        value: (animateur) => (animateur.manager ? $localize`:@@common.oui:Oui` : ''),
+      },
+      {
+        title: $localize`:@@animateurs.column.competences:Compétences`,
+        value: (animateur) =>
+          Object.entries(animateur.competences ?? {}).map(
+            ([id, niveau]) =>
+              `${typologieLabel(typologies, id)} (${libelleNiveau(niveau as NiveauCompetence)})`,
+          ),
+      },
+      {
+        title: $localize`:@@animateurs.souhaits.title:Souhaits`,
+        value: (animateur) =>
+          (animateur.souhaits ?? []).map((id) => typologieLabel(typologies, id)),
+      },
+      {
+        title: $localize`:@@animateurs.column.indisponibilites:Indisponibilités`,
+        value: (animateur) => animateur.joursIndisponibles ?? [],
+      },
+      ...(this.seatsByAnimateur() === null
+        ? []
+        : [
+            {
+              title: $localize`:@@animateurs.column.postes:Postes`,
+              value: (animateur: Animateur) => this.seatsByAnimateur()?.get(animateur.id) ?? 0,
+            },
+          ]),
+      {
+        title: $localize`:@@animateurs.column.confirmation:Accusé de réception`,
+        value: (animateur) => this.confirmationLabel(animateur),
+      },
+    ];
+  }
+
+  /** « Exporter cette liste »: the rows as displayed — filtered, sorted — built in the browser. */
+  protected exportList(): void {
+    const status = this.api.saveText(
+      toCsv(this.sortedAnimateurs(), this.colonnesExport()),
+      csvFileName('animateurs'),
+      CSV_CONTENT_TYPE,
+    );
+    this.notifications.notify({ title: status, variant: 'success', timeout: 4000 });
+  }
+
+  /** The simple fields a block pasted from a spreadsheet can fill. */
+  private colonnesCollage(): PasteColumn<Animateur>[] {
+    const textColumn = (key: 'prenom' | 'nom', title: string): PasteColumn<Animateur> => ({
+      key,
+      title,
+      read: (animateur) => animateur[key] ?? '',
+      write: (animateur, text) => ({ ...animateur, [key]: text }),
+    });
+    return [
+      textColumn('prenom', $localize`:@@animateurs.field.prenom:Prénom`),
+      textColumn('nom', $localize`:@@stands.field.nom:Nom`),
+      {
+        key: 'email',
+        title: $localize`:@@animateurs.field.email:E-mail`,
+        read: (animateur) => animateur.email ?? '',
+        write: (animateur, text) =>
+          /^[^@\s]+@[^@\s]+$/.test(text)
+            ? { ...animateur, email: text }
+            : $localize`:@@animateurs.collage.email:une adresse e-mail`,
+      },
+      {
+        key: 'manager',
+        title: $localize`:@@animateurs.field.manager:Manager`,
+        read: (animateur) =>
+          animateur.manager ? $localize`:@@common.oui:Oui` : $localize`:@@common.non:Non`,
+        write: (animateur, text) => {
+          const valeur = readYesNo(text);
+          return valeur === null
+            ? $localize`:@@animateurs.collage.manager:oui ou non`
+            : { ...animateur, manager: valeur };
+        },
+      },
+    ];
   }
 
   /**
-   * Read-only detail of one row, with an "Modifier" button handing over to the
-   * usual form dialog — locked, there as here, while a solve is running.
+   * A block copied from a spreadsheet, pasted on a row (Ctrl+V): laid over
+   * the displayed rows from the focused one, previewed, then saved on
+   * « Appliquer » — each changed fiche once.
    */
-  protected async consult(animateur: Animateur): Promise<void> {
-    const data: DetailData = {
-      title: `${animateur.prenom ?? ''} ${animateur.nom ?? ''}`.trim() || animateur.id,
-      subtitle: animateur.id,
-      sections: buildAnimateurDetail(animateur, this.store.typologies()),
-    };
-    const result = await firstValueFrom(
-      this.dialog.open(DetailDialog, { data, width: '40rem', maxWidth: '95vw' }).afterClosed(),
-    );
-    if (result === 'edit') {
-      this.edit(animateur);
+  protected async onPaste(event: ClipboardEvent): Promise<void> {
+    const text = pastedText(event);
+    if (text === null || this.editingLocked()) {
+      return;
     }
+    event.preventDefault();
+    const plan = planPaste(text, {
+      rows: this.sortedAnimateurs(),
+      id: (animateur) => animateur.id,
+      label: (animateur) => this.nom(animateur),
+      columns: this.colonnesCollage(),
+      startRow: Math.max(0, this.navigation.index()),
+    });
+    if (!(await this.pastePreview.confirm(plan))) {
+      return;
+    }
+    await this.crud.saveMany('animateurs', plan.rows, labelAnimateursPluriel());
   }
 
   protected openCreate(): void {
@@ -680,16 +967,23 @@ const CONFIRMATION_LABELS: Record<StatutConfirmation, () => string> = {
   RELANCE: () => $localize`:@@animateurs.confirmation.relance:Relancé`,
 };
 
+/** What a column is sorted against, beside the rows themselves. */
+interface ContexteTri {
+  confirmations: Map<string, ConfirmationView>;
+  premierJour: string | null;
+  postes: ReadonlyMap<string, number> | null;
+}
+
 /**
  * Order of one column, ascending. Every column here is sorted on something the
  * cell actually shows, so the result reads as sorted rather than shuffled — and
  * where the value is not a text, the ranking is chosen to put what still needs
  * doing on top of the ascending order:
  *
- *   - `majorite` and `manager` are booleans: "Oui" first, so the people the
- *     column exists to spot come up on the first click;
- *   - `indisponibilites` is a list, and its cell shows a count, so the count is
- *     what is compared;
+ *   - `age` on the age at the edition's first day, the youngest — the minors
+ *     the regime protects — first;
+ *   - `competences`, `indisponibilites` and `postes` show a list or a count,
+ *     so the count is what is compared;
  *   - `confirmation` is a status with no natural order: silencieux, then
  *     relancé, then confirmé, and last the people who were asked nothing —
  *     ascending is then "who is left to chase".
@@ -702,7 +996,7 @@ function compareByColumn(
   a: Animateur,
   b: Animateur,
   column: string,
-  confirmations: Map<string, ConfirmationView>,
+  contexte: ContexteTri,
 ): number {
   switch (column) {
     case 'id':
@@ -711,14 +1005,24 @@ function compareByColumn(
       // On the string the cell shows, not on the family name: the column reads
       // « Prénom Nom », and sorting on anything else looks broken on screen.
       return compareTexte(nomAffiche(a), nomAffiche(b));
+    case 'age':
+      return (
+        (ageOn(a, contexte.premierJour) ?? Infinity) - (ageOn(b, contexte.premierJour) ?? Infinity)
+      );
     case 'majorite':
       return rankMajorite(a) - rankMajorite(b);
     case 'manager':
       return rankBooleen(a.manager) - rankBooleen(b.manager);
+    case 'competences':
+      return Object.keys(a.competences ?? {}).length - Object.keys(b.competences ?? {}).length;
     case 'indisponibilites':
       return (a.joursIndisponibles?.length ?? 0) - (b.joursIndisponibles?.length ?? 0);
+    case 'postes':
+      return (contexte.postes?.get(a.id) ?? 0) - (contexte.postes?.get(b.id) ?? 0);
     case 'confirmation':
-      return rankConfirmation(a, confirmations) - rankConfirmation(b, confirmations);
+      return (
+        rankConfirmation(a, contexte.confirmations) - rankConfirmation(b, contexte.confirmations)
+      );
     default:
       return 0;
   }
@@ -774,19 +1078,50 @@ function rankMajorite(animateur: Animateur): number {
   return 2;
 }
 
-function majorite(animateur: Animateur): 'majeur' | 'mineur' | 'inconnu' {
+/**
+ * Age in whole years on `date` (`AAAA-MM-JJ`, today when `null`), `null`
+ * without a readable birth date. Derived, never stored: the legal regime
+ * hangs on the day, and the edition's first day is when it starts to apply.
+ */
+function ageOn(animateur: Animateur, date: string | null): number | null {
   const dateNaissance = animateur.dateNaissance;
   if (!dateNaissance) {
-    return 'inconnu';
+    return null;
   }
   const [year, month, day] = dateNaissance.split('-').map(Number);
   if (!year || !month || !day) {
-    return 'inconnu';
+    return null;
   }
   const now = new Date();
-  let age = now.getFullYear() - year;
-  if (now.getMonth() + 1 < month || (now.getMonth() + 1 === month && now.getDate() < day)) {
+  const [refYear, refMonth, refDay] = date
+    ? date.split('-').map(Number)
+    : [now.getFullYear(), now.getMonth() + 1, now.getDate()];
+  let age = refYear - year;
+  if (refMonth < month || (refMonth === month && refDay < day)) {
     age -= 1;
   }
+  return age;
+}
+
+function majorite(
+  animateur: Animateur,
+  date: string | null = null,
+): 'majeur' | 'mineur' | 'inconnu' {
+  const age = ageOn(animateur, date);
+  if (age === null) {
+    return 'inconnu';
+  }
   return age >= 18 ? 'majeur' : 'mineur';
+}
+
+/** A pasted yes or no, in the words a spreadsheet uses; `null` for anything else. */
+function readYesNo(text: string): boolean | null {
+  const valeur = text.trim().toLowerCase();
+  if (['oui', 'o', 'x', '1', 'vrai', 'true', 'yes', 'y'].includes(valeur)) {
+    return true;
+  }
+  if (['non', 'n', '0', 'faux', 'false', 'no', ''].includes(valeur)) {
+    return false;
+  }
+  return null;
 }

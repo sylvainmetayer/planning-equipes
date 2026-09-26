@@ -14,9 +14,11 @@ import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatSortModule } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { StandsApi } from '../../core/api/stands-api';
 import { labelStandsPluriel } from '../../core/entity-labels';
 import { resumerHoraires } from '../../core/horaire-stand';
@@ -25,6 +27,12 @@ import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceTablePage } from '../../core/reference-table-page';
 import { RapportOuvertures, Stand, TypologieItem } from '../../core/models';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
+import { EmptyState } from '../../shared/empty-state';
+import { FilterChip, FilterChips } from '../../shared/filter-chips';
+import { RowMenu } from '../../shared/row-menu';
+import { RowWarning } from '../../shared/row-warning';
+import { PasteColumn } from '../../core/paste-rows';
+import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 import { GelNotice } from '../../shared/gel-notice';
 import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 import { ImportedRowsFilter } from '../../shared/imported-rows-filter';
@@ -55,10 +63,16 @@ import { ImportButton } from '../../shared/import-button';
     MatButtonModule,
     MatCheckboxModule,
     MatIconModule,
+    MatMenuModule,
+    MatSortModule,
     MatTableModule,
     MatTooltipModule,
     RouterLink,
     BulkActionsBar,
+    EmptyState,
+    FilterChips,
+    RowMenu,
+    RowWarning,
     TableFilter,
     GelNotice,
   ],
@@ -94,6 +108,38 @@ export class StandsPage extends ReferenceTablePage<Stand> implements OnInit {
 
   /** The template names the rows after the entity, as the other pages do. */
   protected readonly standsFiltres = this.lignesFiltrees;
+
+  /**
+   * `?typologie=` and `?emplacement=`: the stands proposing that game
+   * category, or standing on that location — where the counts of the
+   * Typologies screen and the fiche of a location lead.
+   */
+  protected readonly typologieFiltre = signal('');
+  protected readonly emplacementFiltre = signal('');
+
+  /** The two filters as chips above the table, named rather than by their ids. */
+  protected readonly chips = computed<FilterChip[]>(() => {
+    const chips: FilterChip[] = [];
+    const typologie = this.typologieFiltre();
+    if (typologie) {
+      const label =
+        this.store.typologies().find((each) => each.id === typologie)?.label ?? typologie;
+      chips.push({
+        key: 'typologie',
+        label: $localize`:@@stands.chip.typologie:Typologie : ${label}:typologie:`,
+      });
+    }
+    const emplacement = this.emplacementFiltre();
+    if (emplacement) {
+      const nom =
+        this.store.emplacements().find((each) => each.id === emplacement)?.nom ?? emplacement;
+      chips.push({
+        key: 'emplacement',
+        label: $localize`:@@stands.chip.emplacement:Emplacement : ${nom}:emplacement:`,
+      });
+    }
+    return chips;
+  });
 
   /** True while the compaction round-trip is in flight, to keep it from being fired twice. */
   protected readonly compactageEnCours = signal(false);
@@ -171,8 +217,103 @@ export class StandsPage extends ReferenceTablePage<Stand> implements OnInit {
       libelle: () => $localize`:@@stands.entityLabel:Stand`,
       name: (stand) => stand.nom,
       libellePluriel: labelStandsPluriel,
+      sortValues: {
+        id: (stand) => stand.id,
+        code: (stand) => stand.code,
+        nom: (stand) => stand.nom,
+        effectif: (stand) => stand.effectifMin * 1000 + stand.effectifMax,
+        typologies: (stand, store) => libellesTypologies(stand, store.typologies()).join(', '),
+        emplacement: (stand) => stand.emplacement?.nom,
+        horaires: (stand) =>
+          (stand.horaires ?? []).length * 1000 +
+          (stand.ouvertures ?? []).length +
+          (stand.indisponibilites ?? []).length,
+      },
+      export: {
+        name: 'stands',
+        columns: (store) => [
+          { title: $localize`:@@common.id:Id`, value: (stand) => stand.id },
+          { title: $localize`:@@referentiel.field.code:Code`, value: (stand) => stand.code },
+          { title: $localize`:@@common.nom:Nom`, value: (stand) => stand.nom },
+          {
+            title: $localize`:@@stands.field.effectifMin:Effectif minimum`,
+            value: (stand) => stand.effectifMin,
+          },
+          {
+            title: $localize`:@@stands.field.effectifMax:Effectif maximum`,
+            value: (stand) => stand.effectifMax,
+          },
+          {
+            title: $localize`:@@stands.column.typologies:Typologies`,
+            value: (stand) => libellesTypologies(stand, store.typologies()),
+          },
+          {
+            title: $localize`:@@stands.field.emplacement:Emplacement`,
+            value: (stand) => stand.emplacement?.nom,
+          },
+          {
+            title: $localize`:@@stands.column.horaires:Horaires`,
+            value: (stand) => this.horairesLabel(stand),
+          },
+        ],
+      },
+      paste: () => [
+        {
+          key: 'code',
+          title: $localize`:@@referentiel.field.code:Code`,
+          read: (stand) => stand.code ?? '',
+          write: (stand, text) => ({ ...stand, code: text }),
+        },
+        {
+          key: 'nom',
+          title: $localize`:@@common.nom:Nom`,
+          read: (stand) => stand.nom,
+          write: (stand, text) => ({ ...stand, nom: text }),
+        },
+        effectifColumn('effectifMin', $localize`:@@stands.field.effectifMin:Effectif minimum`),
+        effectifColumn('effectifMax', $localize`:@@stands.field.effectifMax:Effectif maximum`),
+      ],
+      duplicate: (stand, dialog: MatDialog) => {
+        dialog.open<StandFormDialog, StandFormData, boolean>(StandFormDialog, {
+          data: { stand: null, modele: stand },
+          width: '40rem',
+          maxWidth: '95vw',
+          autoFocus: 'first-tabbable',
+        });
+      },
     });
+    const params = inject(ActivatedRoute, { optional: true })?.snapshot?.queryParamMap;
+    this.typologieFiltre.set(params?.get('typologie') ?? '');
+    this.emplacementFiltre.set(params?.get('emplacement') ?? '');
+    keepViewInQueryParams(() => ({
+      typologie: optionalParam(this.typologieFiltre()),
+      emplacement: optionalParam(this.emplacementFiltre()),
+    }));
     void this.problemes.reloadFeasibility();
+  }
+
+  /** The chip filters — the quick filter already ran, the sort comes after. */
+  protected override refine(lignes: readonly Stand[]): readonly Stand[] {
+    const typologie = this.typologieFiltre();
+    const emplacement = this.emplacementFiltre();
+    return lignes.filter(
+      (stand) =>
+        (!typologie || (stand.typologiesProposees ?? []).includes(typologie)) &&
+        (!emplacement || stand.emplacement?.id === emplacement),
+    );
+  }
+
+  protected removeChip(key: string): void {
+    if (key === 'typologie') {
+      this.typologieFiltre.set('');
+    } else {
+      this.emplacementFiltre.set('');
+    }
+  }
+
+  protected clearChips(): void {
+    this.typologieFiltre.set('');
+    this.emplacementFiltre.set('');
   }
 
   ngOnInit(): void {
@@ -187,6 +328,11 @@ export class StandsPage extends ReferenceTablePage<Stand> implements OnInit {
       // The fiche simply omits its openings section; the Ouvertures page reports the failure itself.
       this.ouvertures.set(null);
     }
+  }
+
+  /** The step before the stands, named on the empty state. */
+  protected previousStepLabel(): string {
+    return $localize`:@@stands.empty.typologies:Saisir les typologies`;
   }
 
   /** The stand's game categories by label: its ids are generated (T1, T2…) and read as nothing. */
@@ -291,4 +437,23 @@ export class StandsPage extends ReferenceTablePage<Stand> implements OnInit {
 function libellesTypologies(stand: Stand, typologies: readonly TypologieItem[]): string[] {
   const labels = new Map(typologies.map((typologie) => [typologie.id, typologie.label]));
   return (stand.typologiesProposees ?? []).map((id) => labels.get(id) ?? id);
+}
+
+/** A pasted headcount: a whole number of at least one, the minimum never above the maximum. */
+function effectifColumn(key: 'effectifMin' | 'effectifMax', title: string): PasteColumn<Stand> {
+  return {
+    key,
+    title,
+    read: (stand) => String(stand[key]),
+    write: (stand, text) => {
+      const valeur = Number(text);
+      if (!Number.isInteger(valeur) || valeur < 1) {
+        return $localize`:@@stands.collage.effectif:un nombre entier d'au moins 1`;
+      }
+      const patched = { ...stand, [key]: valeur };
+      return patched.effectifMin > patched.effectifMax
+        ? $localize`:@@stands.collage.bornes:le minimum dépasserait le maximum`
+        : patched;
+    },
+  };
 }

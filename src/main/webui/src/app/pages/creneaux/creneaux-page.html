@@ -2,7 +2,69 @@
 
 <app-gel-notice family="CRENEAUX" />
 
-<app-journees-types [verrouille]="editingLocked()" (applique)="apresJourneesTypes()" />
+<app-journees-types [verrouille]="editingLocked()" (applique)="apresJourneesTypes()" (serie)="openSerie($event)" />
+
+<!-- The control of the grid runs by itself after every write, and reads as a
+     band under the calendar rather than as a card with a button to remember. -->
+<output class="controle-bandeau" [class.controle-bandeau-alerte]="(bilan()?.erreurs ?? 0) > 0">
+  @if (bilan(); as bilan) {
+    <mat-icon aria-hidden="true">{{ bilan.erreurs > 0 ? 'error' : 'fact_check' }}</mat-icon>
+    <span class="controle-bandeau-titre" i18n="@@creneaux.controle.title">Contrôle de la grille</span>
+    <span [class.synthese-alerte]="bilan.erreurs > 0"><strong>{{ bilan.erreurs }}</strong>&nbsp;<ng-container i18n="@@creneaux.controle.erreurs">erreur(s)</ng-container></span>
+    <span [class.synthese-partiel]="bilan.avertissements > 0"><strong>{{ bilan.avertissements }}</strong>&nbsp;<ng-container i18n="@@creneaux.controle.avertissements">avertissement(s)</ng-container></span>
+    <span><strong>{{ bilan.ouvertures }}</strong>&nbsp;<ng-container i18n="@@creneaux.controle.ouvertures">anomalie(s) d'ouverture de stand</ng-container></span>
+    @if (controle()!.faisabilite; as faisabilite) {
+      <span [class.synthese-alerte]="!faisabilite.feasible">{{ faisabilite.message }}</span>
+    }
+    @if (anomaliesGrille().length === 0 && controle()!.ouvertures.length === 0) {
+      <span i18n="@@creneaux.controle.rien">Rien à signaler sur la grille.</span>
+    }
+    @if (controleLoading()) {
+      <mat-progress-spinner diameter="16" mode="indeterminate" />
+    }
+  } @else if (controleLoading()) {
+    <mat-progress-spinner diameter="16" mode="indeterminate" />
+    <span i18n="@@creneaux.controle.loading">Contrôle en cours…</span>
+  }
+</output>
+@if (bilan(); as bilan) {
+  @if (anomaliesGrille().length > 0 || controle()!.ouvertures.length > 0) {
+    <details class="controle-details">
+      <summary i18n="@@creneaux.controle.details">Voir le détail</summary>
+      @if (anomaliesGrille().length > 0) {
+        <ul class="ouvertures-anomalies controle-anomalies">
+          @for (anomalie of anomaliesGrille(); track $index) {
+            <li [class.anomalie-avertissement]="anomalie.severite === 'AVERTISSEMENT'">
+              <mat-icon>{{ gridAnomalyIcon(anomalie) }}</mat-icon>
+              @if (anomalie.date) {
+                <span class="anomalie-date">{{ anomalie.date }}</span>
+              }
+              <span>{{ anomalie.message }}</span>
+            </li>
+          }
+        </ul>
+      }
+      @if (controle()!.ouvertures.length > 0) {
+        <ul class="ouvertures-anomalies controle-anomalies">
+          @for (anomalie of controle()!.ouvertures; track $index) {
+            <li class="anomalie-avertissement">
+              <mat-icon>storefront</mat-icon>
+              <span class="anomalie-stand">{{ anomalie.standNom || anomalie.standId }}</span>
+              @if (anomalie.date) {
+                <span class="anomalie-date">{{ anomalie.date }}</span>
+              }
+              <span>{{ anomalie.message }}</span>
+            </li>
+          }
+        </ul>
+        <a matButton routerLink="/ouvertures">
+          <mat-icon>storefront</mat-icon>
+          <ng-container i18n="@@creneaux.controle.versOuvertures">Voir les horaires des stands</ng-container>
+        </a>
+      }
+    </details>
+  }
+}
 
 <mat-card appearance="outlined" class="page-card creneaux-liste-card">
   <mat-card-header>
@@ -10,22 +72,37 @@
     <mat-card-subtitle i18n="@@creneaux.form.description">Chaque stand est ouvert sur chaque créneau par défaut ; les fermetures se déclarent depuis la fiche du stand.</mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
-    <button matButton="filled" type="button" [disabled]="gridLocked()" (click)="openCreate()">
-      <mat-icon>add</mat-icon>
-      <ng-container i18n="@@common.add">Ajouter</ng-container>
+    <button matButton type="button" [matMenuTriggerFor]="autresFacons">
+      <mat-icon>more_time</mat-icon>
+      <ng-container i18n="@@creneaux.autresFacons">Autres façons de créer la grille</ng-container>
+      <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
     </button>
-    <app-import-button card="creneaux" [disabled]="gridLocked()" />
-    <button matButton type="button" [disabled]="gridLocked()" (click)="openSerie()"
-            i18n-matTooltip="@@creneaux.serie.tooltip"
-            matTooltip="Tous les créneaux d'une journée type, répétés sur les jours choisis, en une règle prévisualisée avant d'écrire.">
-      <mat-icon>playlist_add</mat-icon>
-      <ng-container i18n="@@creneaux.serie.action">Créer une série</ng-container>
-    </button>
-    <button matButton type="button" [disabled]="gridLocked()" (click)="openDerivation()"
-            i18n-matTooltip="@@creneaux.derivation.tooltip"
-            matTooltip="La grille que les horaires des stands impliquent, prévisualisée avant d'écrire.">
-      <mat-icon>storefront</mat-icon>
-      <ng-container i18n="@@creneaux.derivation.action">Dériver des horaires des stands</ng-container>
+    <mat-menu #autresFacons="matMenu">
+      <button mat-menu-item type="button" [disabled]="gridLocked()" (click)="openCreate()">
+        <mat-icon>add</mat-icon>
+        <span i18n="@@creneaux.ajouterUn">Ajouter un créneau</span>
+      </button>
+      <button mat-menu-item type="button" [disabled]="gridLocked()" (click)="openDerivation()"
+              i18n-matTooltip="@@creneaux.derivation.tooltip"
+              matTooltip="La grille que les horaires des stands impliquent, prévisualisée avant d'écrire.">
+        <mat-icon>storefront</mat-icon>
+        <span i18n="@@creneaux.derivation.action">Dériver des horaires des stands</span>
+      </button>
+      <button mat-menu-item type="button" [disabled]="editingLocked()" (click)="reconnaitre()"
+              i18n-matTooltip="@@journeesTypes.reconnaitre.tooltip"
+              matTooltip="Lit les journées types que les créneaux actuels impliquent : chaque date aux mêmes vacations est la même journée.">
+        <mat-icon>auto_fix_high</mat-icon>
+        <span i18n="@@journeesTypes.reconnaitre.action">Reconnaître les journées types depuis les créneaux</span>
+      </button>
+    </mat-menu>
+    <!-- On an empty grid the empty state below carries « Importer »: one
+         button of that name on the screen. -->
+    @if (creneauxAffiches().length > 0) {
+      <app-import-button card="creneaux" [disabled]="gridLocked()" />
+    }
+    <button matButton type="button" [disabled]="creneauxAffiches().length === 0" (click)="exportList()">
+      <mat-icon>download</mat-icon>
+      <ng-container i18n="@@referentiel.exporterListe">Exporter cette liste</ng-container>
     </button>
     @if (importedIds(); as ids) {
       <app-imported-rows-filter [count]="ids.size" (cleared)="showAllRows()" />
@@ -42,9 +119,11 @@
     @if (editingLocked()) {
       <p class="locked-hint" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
     }
+    @if (creneauxAffiches().length > 0) {
+    <p class="referentiel-collage-hint" i18n="@@referentiel.collageHint">Collez un bloc copié d'un tableur sur une ligne (Ctrl+V) : un aperçu montre les cases modifiées avant d'enregistrer.</p>
     <div class="table-wrapper">
-      <table mat-table class="creneaux-table" [dataSource]="creneauxAffiches()" matSort [matSortActive]="sort().active"
-             [matSortDirection]="sort().direction" (matSortChange)="sort.set($event)">
+      <table mat-table class="creneaux-table" [dataSource]="creneauxAffiches()" [trackBy]="trackById" matSort [matSortActive]="sort().active"
+             [matSortDirection]="sort().direction" (matSortChange)="sort.set($event)" (paste)="onPaste($event)">
         <caption class="visually-hidden" i18n="@@creneaux.table.caption">Créneaux de l’édition : jour, date, horaires et actions</caption>
         <ng-container matColumnDef="select">
           <th mat-header-cell scope="col" *matHeaderCellDef>
@@ -79,9 +158,10 @@
           </td>
         </ng-container>
         <ng-container matColumnDef="date">
-          <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@creneaux.column.date">Date</th>
+          <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@creneaux.column.date">Date</th>
           <td mat-cell *matCellDef="let creneau">
-            {{ creneau.date }}
+            <button type="button" class="referentiel-nom" [disabled]="editingLocked()" (click)="openRow(creneau)">{{ creneau.date }}</button>
+            <app-row-warning [messages]="warnings(creneau)" />
             @if (feries.label(creneau.date); as ferie) {
               <app-pastille-ferie class="creneau-ferie" [libelle]="ferie" />
             }
@@ -91,7 +171,7 @@
           </td>
         </ng-container>
         <ng-container matColumnDef="horaires">
-          <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@creneaux.column.horaires">Horaires</th>
+          <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@creneaux.column.horaires">Horaires</th>
           <td mat-cell *matCellDef="let creneau">
             {{ creneau.heureDebut }}–{{ creneau.heureFin }}
             @if (creneau.couverturePause) {
@@ -102,17 +182,20 @@
             }
           </td>
         </ng-container>
+        <ng-container matColumnDef="ouvertures">
+          <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@creneaux.column.ouvertures">Stands ouverts · postes</th>
+          <td mat-cell *matCellDef="let creneau">
+            @let ouvert = ouvertures().get(creneau.id);
+            <a routerLink="/ouvertures" [queryParams]="{ du: creneau.date, au: creneau.date }"
+               [attr.aria-label]="ouverturesLabel(creneau)">{{ ouvert?.stands ?? 0 }} · {{ ouvert?.postes ?? 0 }}</a>
+          </td>
+        </ng-container>
         <ng-container matColumnDef="actions" stickyEnd>
           <th mat-header-cell scope="col" *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
           <td mat-cell *matCellDef="let creneau" class="row-actions">
-            <button matIconButton i18n-matTooltip="@@common.edit" matTooltip="Modifier" i18n-aria-label="@@common.edit" aria-label="Modifier" [disabled]="editingLocked()"
-                    (click)="edit(creneau)">
-              <mat-icon>edit</mat-icon>
-            </button>
-            <button matIconButton i18n-matTooltip="@@common.delete" matTooltip="Supprimer" i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action" [disabled]="gridLocked()"
-                    (click)="remove(creneau)">
-              <mat-icon>delete</mat-icon>
-            </button>
+            <app-row-menu [name]="creneauLabel(creneau)" [editDisabled]="editingLocked()"
+                          [duplicateDisabled]="gridLocked()" [removeDisabled]="gridLocked()"
+                          (edit)="edit(creneau)" (duplicate)="duplicate(creneau)" (remove)="remove(creneau)" />
           </td>
         </ng-container>
         <tr mat-header-row *matHeaderRowDef="columns"></tr>
@@ -124,75 +207,12 @@
           (keydown)="navigation.onKeydown($event, i)"></tr>
       </table>
     </div>
-    @if (creneauxAffiches().length === 0) {
-      <p class="empty-hint" i18n="@@creneaux.empty">Aucun créneau pour le moment.</p>
     }
-  </mat-card-content>
-</mat-card>
-
-<mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h2 mat-card-title i18n="@@creneaux.controle.title">Contrôle de la grille</h2>
-    <mat-card-subtitle i18n="@@creneaux.controle.hint">
-      Ce que le serveur trouve à redire à la grille : une erreur bloque la résolution, un avertissement mérite un regard.
-    </mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-content>
-    <div class="card-actions">
-      <button matButton type="button" [disabled]="controleLoading()" (click)="rechargerVerdict()">
-        @if (controleLoading()) {
-          <mat-progress-spinner diameter="18" mode="indeterminate" />
-        } @else {
-          <mat-icon>fact_check</mat-icon>
-        }
-        <ng-container i18n="@@creneaux.controle.verifier">Vérifier la grille</ng-container>
-      </button>
-    </div>
-    @if (bilan(); as bilan) {
-      <output class="ouvertures-synthese controle-bilan">
-        <span [class.synthese-alerte]="bilan.erreurs > 0"><strong>{{ bilan.erreurs }}</strong>&nbsp;<ng-container i18n="@@creneaux.controle.erreurs">erreur(s)</ng-container></span>
-        <span [class.synthese-partiel]="bilan.avertissements > 0"><strong>{{ bilan.avertissements }}</strong>&nbsp;<ng-container i18n="@@creneaux.controle.avertissements">avertissement(s)</ng-container></span>
-        <span><strong>{{ bilan.ouvertures }}</strong>&nbsp;<ng-container i18n="@@creneaux.controle.ouvertures">anomalie(s) d'ouverture de stand</ng-container></span>
-        @if (controle()!.faisabilite; as faisabilite) {
-          <span [class.synthese-alerte]="!faisabilite.feasible">{{ faisabilite.message }}</span>
-        }
-      </output>
-      @if (anomaliesGrille().length === 0 && controle()!.ouvertures.length === 0) {
-        <p class="empty-hint" i18n="@@creneaux.controle.rien">Rien à signaler sur la grille.</p>
-      }
-      @if (anomaliesGrille().length > 0) {
-        <ul class="ouvertures-anomalies controle-anomalies">
-          @for (anomalie of anomaliesGrille(); track $index) {
-            <li [class.anomalie-avertissement]="anomalie.severite === 'AVERTISSEMENT'">
-              <mat-icon>{{ gridAnomalyIcon(anomalie) }}</mat-icon>
-              @if (anomalie.date) {
-                <span class="anomalie-date">{{ anomalie.date }}</span>
-              }
-              <span>{{ anomalie.message }}</span>
-            </li>
-          }
-        </ul>
-      }
-      @if (controle()!.ouvertures.length > 0) {
-        <ul class="ouvertures-anomalies controle-anomalies">
-          @for (anomalie of controle()!.ouvertures; track $index) {
-            <li class="anomalie-avertissement">
-              <mat-icon>storefront</mat-icon>
-              <span class="anomalie-stand">{{ anomalie.standNom || anomalie.standId }}</span>
-              @if (anomalie.date) {
-                <span class="anomalie-date">{{ anomalie.date }}</span>
-              }
-              <span>{{ anomalie.message }}</span>
-            </li>
-          }
-        </ul>
-        <a matButton routerLink="/ouvertures">
-          <mat-icon>storefront</mat-icon>
-          <ng-container i18n="@@creneaux.controle.versOuvertures">Voir les ouvertures des stands</ng-container>
-        </a>
-      }
-    } @else if (controleLoading()) {
-      <p class="empty-hint" i18n="@@creneaux.controle.loading">Contrôle en cours…</p>
+    @if (creneauxAffiches().length === 0) {
+      <app-empty-state [addDisabled]="gridLocked()" (add)="openCreate()">
+        <ng-container i18n="@@creneaux.empty">Les créneaux donnent ses dates à l'édition : commencez ici, par une journée type posée sur le calendrier ci-dessus.</ng-container>
+        <app-import-button empty-state-import card="creneaux" [disabled]="gridLocked()" />
+      </app-empty-state>
     }
   </mat-card-content>
 </mat-card>

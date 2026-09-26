@@ -128,9 +128,13 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   page, seven foldable sections read in one call from
   `GET /api/animateurs/{id}/fiche`, which narrows the Équité and Fragilité
   reports to that person rather than recomputing them; a read-out, the edit
-  stays the Animateurs page's form), `/competences` (« Compétences » — the animateur × typologie
-  grid of appreciations, saved row by row — the only bulk entry, with no CSV
-  export or import),
+  stays the Animateurs page's form — the list's names and Entrée on a row lead
+  here, there is no consultation dialog any more), `/competences` (« Compétences » — the animateur × typologie
+  grid of appreciations and wishes — the heart of a cell, or S —, saved row by
+  row; a spreadsheet block pastes from the current cell after a preview,
+  `?animateur=` narrows it to the person the Animateurs form sent — the only
+  entry of appreciations, the form shows them read-only, with no CSV export or
+  import),
   `/fichiers` (« Fichiers » — the two halves of one gesture, export, correct
   in the spreadsheet, import back, and what closes an edition: three tabs
   chosen by `?onglet=importer|exporter|archive`. « Importer » is
@@ -156,7 +160,14 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   solver page only solves. Before sending, the review table — one row per
   person, ordered by `?tri=nom|ampleur`, minor changes folded by
   `?mineurs=masques`, each row a checkbox that **defers** that person's message
-  rather than dropping it, ADR 0047), `/export-csv`, `/creneaux`, `/typologies`,
+  rather than dropping it, ADR 0047), `/export-csv`, `/creneaux` (one path
+  first — day templates laid on the calendar, or applied without being kept;
+  a single timeslot, recognition and derivation from the stands' hours sit in
+  one « Autres façons de créer la grille » menu; the grid check is a band read
+  by itself on every visit and after every write), `/typologies` (every count
+  links to the list it counts, the ninja category is ticked in the table, and
+  three columns read the computed plan: seats, hours, assigned without the
+  skill),
   `/ad-hoc-constraints` (« Ajustements manuels » on screen — the route, the API
   path and the domain type keep the `ContrainteAdHoc` name, only the label was
   renamed; two readings chosen by `?vue=liste|reseau` — the table, and the
@@ -290,13 +301,19 @@ and `?dosage=` in the URL), `/comparateur`
   `reference-data.store.ts`; `reference-crud.service.ts` — save/delete, single
   or in bulk, plus snack-bar feedback shared by the five reference pages;
   `reference-table-page.ts` — the shared half of a referential page: filter,
-  selection keyed on the filtered rows, roving tabindex, reload,
-  detail-then-edit, the two deletes. `typologies`, `emplacements` and `stands`
+  sort kept in the URL (`?sort=&dir=`, over `table-sort.ts`: every column, ids
+  in natural order, empty cells last), selection keyed on the sorted rows,
+  roving tabindex, reload, open by the row's name, duplicate (`duplicate.ts`
+  names the copy), « Exporter cette liste » (`csv-export.ts`, the server's CSV
+  dialect, what the table shows), paste of a spreadsheet block
+  (`paste-rows.ts`, then `shared/paste-preview-dialog.ts`, then one bulk save),
+  the two deletes. `typologies`, `emplacements` and `stands`
   extend it and keep only a `ReferenceTableConfig` plus what they do
   differently; TypeScript only, the templates stay per page since that is what
-  genuinely differs. `animateurs` stays out because it keys its selection on the
-  **sorted** rows rather than the filtered ones, `creneaux` because it generates
-  and groups its own;
+  genuinely differs. `animateurs` stays out — its acknowledgement filters,
+  chips and plan column go beyond a config — and `creneaux` because it
+  generates and groups its own; both still use `table-sort.ts`, `csv-export.ts`,
+  `paste-rows.ts` and the shared row menu, so the five tables behave alike;
   `table-selection.ts` — multi-row selection of those pages, always intersected
   with the displayed rows; `table-navigation.ts` — their keyboard navigation
   (roving tabindex over the rows: arrows, Home/End, Enter to open, Space to
@@ -311,7 +328,8 @@ and `?dosage=` in the URL), `/comparateur`
   "contains every term" matching behind those pages' quick filter; `bulk-edit.ts` — the "leave unchanged / add / remove
   / replace" modes a bulk edit applies to one row; `grille-saisie.ts` — the two
   moves of repetitive entry the two entry grids share (take the row above,
-  apply one value down a column), generic over the cell so a grid only says how
+  apply one value down a column) and the paste of a spreadsheet block, planned
+  then previewed then applied (`planCollage`, `appliquerCollage`), generic over the cell so a grid only says how
   it reads and writes one, and pure so the moves are tested once instead of
   twice; `entity-labels.ts` — plural
   entity labels of the bulk actions;
@@ -326,8 +344,15 @@ and `?dosage=` in the URL), `/comparateur`
   `help-blocks.ts` — the one block model and renderer of the two user guides
   (`pages/aide/content/*` and `espace-aide-content.ts` only choose their sections),
   `bulk-actions-bar.ts`, `table-filter.ts` — the reference pages' quick-filter
-  field, `detail-dialog.ts` — their read-only "consultation" view, whose
-  content each page builds in a plain `<entity>-detail.ts` next to it,
+  field, `row-menu.ts` — the « ⋯ » of a row (modify, duplicate, delete, plus
+  the page's own items), `filter-chips.ts` — the active filters as removable
+  chips, `empty-state.ts` — an empty referential: what it holds, the previous
+  step when it is missing, « Charger un exemple » on an empty edition,
+  `row-warning.ts` — a save's warning kept on its row
+  (`ReferenceCrudService.warningsOf`), `paste-preview-dialog.ts`,
+  `detail-dialog.ts` — the read-only "consultation" view left to emplacements
+  and stands (their « Détail » menu item), whose content each page builds in a
+  plain `<entity>-detail.ts` next to it — animateurs have their fiche instead,
   `command-palette-dialog.ts` and `keyboard-shortcuts-dialog.ts` — Ctrl+K and
   `?`, `sort-header-name.ts` — the one directive: a `mat-sort-header` holding a
   control must name itself, or the generated sort button borrows that control's

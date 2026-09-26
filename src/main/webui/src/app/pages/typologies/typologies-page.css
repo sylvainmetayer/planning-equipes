@@ -39,3 +39,19 @@
 .typologie-etat.typologie-etat-sans_competent_inutilisee {
   color: var(--mat-sys-on-surface-variant);
 }
+
+/* The shortcut to the appreciations of the typologie, beside its count. */
+.typologies-grille {
+  --mat-icon-button-state-layer-size: 1.75rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  margin-left: 0.25rem;
+  vertical-align: middle;
+}
+
+.typologies-grille mat-icon {
+  font-size: 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+}

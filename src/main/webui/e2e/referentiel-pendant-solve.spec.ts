@@ -27,6 +27,7 @@ import {
   contexteAdmin,
   shiftDate,
   pageAdmin,
+  rowAction,
   seedReferentielSolveur,
 } from './support';
 import { repartirDeLaReference } from './reference';
@@ -120,13 +121,15 @@ test.describe('écriture du référentiel pendant une résolution', () => {
       const ligne = page.getByRole('row', { name: /SOLV-GS1/ });
       await expect(ligne).toBeVisible();
       // Editable before anything runs — otherwise the assertion below proves nothing.
-      await expect(ligne.getByRole('button', { name: 'Modifier' })).toBeEnabled();
+      await expect(await rowAction(ligne, 'Modifier')).toBeEnabled();
+      await page.keyboard.press('Escape');
 
       jobId = await demarrerSolve();
 
       // 1. The screen prevents the geste, without the user having to try it.
-      await expect(ligne.getByRole('button', { name: 'Modifier' })).toBeDisabled();
-      await expect(ligne.getByRole('button', { name: 'Supprimer' })).toBeDisabled();
+      await expect(await rowAction(ligne, 'Modifier')).toBeDisabled();
+      await expect(page.getByRole('menuitem', { name: 'Supprimer', exact: true })).toBeDisabled();
+      await page.keyboard.press('Escape');
       await expect(page.getByRole('button', { name: 'Ajouter' })).toBeDisabled();
       await expect(page.getByRole('button', { name: 'Compacter les horaires' })).toBeDisabled();
 
@@ -173,7 +176,7 @@ test.describe('écriture du référentiel pendant une résolution', () => {
 
       jobId = await demarrerSolve();
 
-      await ligne.getByRole('button', { name: 'Modifier' }).click();
+      await (await rowAction(ligne, 'Modifier')).click();
       const dialog = page.getByRole('dialog');
       await expect(dialog).toBeVisible();
       await dialog.getByLabel('Nom', { exact: true }).fill('Nom qui ne doit pas tenir');
@@ -211,9 +214,7 @@ test.describe('écriture du référentiel pendant une résolution', () => {
       await page.getByLabel('Filtrer').fill('SOLV-GS1');
       const ligne = page.getByRole('row', { name: /SOLV-GS1/ });
       await expect(ligne).toBeVisible();
-      await expect(ligne.getByRole('button', { name: 'Modifier' })).toBeEnabled();
-
-      await ligne.getByRole('button', { name: 'Modifier' }).click();
+      await (await rowAction(ligne, 'Modifier')).click();
       const dialog = page.getByRole('dialog');
       await dialog.getByLabel('Nom', { exact: true }).fill('Stand garde renommé');
       await dialog.getByRole('button', { name: 'Modifier le stand' }).click();
