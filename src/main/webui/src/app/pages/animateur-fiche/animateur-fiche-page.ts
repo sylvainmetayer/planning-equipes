@@ -153,7 +153,11 @@ interface FreedSeatLine {
     EquiteRadar,
   ],
   templateUrl: './animateur-fiche-page.html',
-  styleUrls: ['../../../styles/animateur-form.css', './animateur-fiche-page.css'],
+  styleUrls: [
+    '../../../styles/animateur-form.css',
+    '../../../styles/fiche.css',
+    './animateur-fiche-page.css',
+  ],
   // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,

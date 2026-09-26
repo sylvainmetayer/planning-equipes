@@ -45,7 +45,8 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/nouveautes', marker: 'Nouveautés', sheet: 'news-release' },
   { path: '/editions', marker: 'Nouvelle édition', sheet: 'edition-nom-input' },
   { path: '/stands', marker: 'Stands (' },
-  { path: '/emplacements' },
+  { path: '/stands?onglet=lieux', marker: 'Lieux (', sheet: 'lieux-map-host' },
+  { path: '/stands/E2E-S1', marker: 'Horaires et effectifs', sheet: 'stand-grille' },
   { path: '/animateurs', marker: 'Animateurs (', sheet: 'competence-row' },
   { path: '/animateurs/E2E-A', marker: 'Identité et contact', sheet: 'fiche-section' },
   { path: '/competences', marker: 'Compétences', sheet: 'competences-legende' },
@@ -172,7 +173,12 @@ test('chaque page du menu admin se charge et affiche son contenu', async ({ brow
       await expect(contenu, `page ${route.path}`).toContainText(/\S/);
     }
     if (route.sheet) {
-      expect(await feuilleChargee(page, route.sheet), `feuille de ${route.path}`).toBe(true);
+      // Polled: a tab drawn under `@defer` (Stands › Lieux) shows its label
+      // before its chunk — and the sheet it carries — has arrived.
+      const sheet = route.sheet;
+      await expect
+        .poll(() => feuilleChargee(page, sheet), { message: `feuille de ${route.path}` })
+        .toBe(true);
     }
   }
   await page.context().close();

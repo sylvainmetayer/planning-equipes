@@ -358,6 +358,27 @@ describe('EmplacementsPage', () => {
     expect(page.columns[0]).toBe('select');
     expect(page.columns.at(-1)).toBe('actions');
   });
+
+  // A marker dropped and refused: the map is asked to lay it back where the place still is.
+  it('asks the map to lay a marker back when its new position could not be saved', async () => {
+    const page = createPage([
+      emplacement('hall', { nom: 'Hall A', latitude: 47.2, longitude: -1.5 }),
+    ]);
+    const internals = page as unknown as {
+      move: (move: { id: string; latitude: number; longitude: number }) => Promise<void>;
+      mapRevision: Signal<number>;
+    };
+    const save = vi.fn(async () => false);
+    (crud as unknown as { save: typeof save }).save = save;
+
+    await internals.move({ id: 'hall', latitude: 48, longitude: 2 });
+    expect(save).toHaveBeenCalled();
+    expect(internals.mapRevision()).toBe(1);
+
+    save.mockResolvedValue(true);
+    await internals.move({ id: 'hall', latitude: 48, longitude: 2 });
+    expect(internals.mapRevision()).toBe(1);
+  });
 });
 
 describe('EmplacementsPage table', () => {
@@ -423,11 +444,11 @@ describe('EmplacementsPage table', () => {
       emplacement('salle', { nom: 'Salle B', latitude: 47.201, longitude: -1.55 }),
     ]);
 
-    expect(racine().querySelector('h1')!.textContent!).toContain('Emplacements (2)');
+    expect(racine().querySelector('h2')!.textContent!).toContain('Lieux (2)');
     expect(lignes()[0][1]).toBe('hall');
-    expect(lignes()[0][4]).toContain('47.2');
+    expect(lignes()[0][5]).toContain('47.2');
     // 0.001° of latitude is ~111 m: under the solver's 300 m threshold.
-    expect(lignes()[0][5]).toBe('111 m de Salle B');
+    expect(lignes()[0][6]).toBe('111 m de Salle B');
   });
 
   it('warns in the neighbour cell when the closest place is past the threshold', async () => {
@@ -436,13 +457,13 @@ describe('EmplacementsPage table', () => {
       emplacement('loin', { nom: 'Chapiteau', latitude: 47.21, longitude: -1.55 }),
     ]);
 
-    expect(lignes()[0][5]).toContain("au-delà du seuil d'éloignement");
+    expect(lignes()[0][6]).toContain("au-delà du seuil d'éloignement");
   });
 
   it('writes an em dash rather than an empty cell for a place with no coordinates', async () => {
     await rendre([emplacement('hall', { nom: 'Hall A' })]);
 
-    expect(lignes()[0][5]).toBe('—');
+    expect(lignes()[0][6]).toBe('—');
   });
 
   it('distinguishes an empty referential from a filter that matched nothing', async () => {
@@ -508,7 +529,8 @@ describe('EmplacementsPage table', () => {
     ]);
 
     expect(lignes().map((row) => row[1])).toEqual(['E10', 'E1', 'E2']);
-    expect(racine().querySelectorAll('th[mat-sort-header]')).toHaveLength(5);
+    // « Stands rattachés » sorts too, on how many stand there.
+    expect(racine().querySelectorAll('th[mat-sort-header]')).toHaveLength(6);
   });
 
   it('opens the read-only detail, and hands over to the form when the user asks to edit', async () => {
