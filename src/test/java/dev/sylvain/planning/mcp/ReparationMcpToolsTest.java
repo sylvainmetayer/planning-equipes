@@ -65,7 +65,7 @@ class ReparationMcpToolsTest {
     void suggestsCandidatesThenAppliesOne() {
         AffectationView poste = premierPostePourvu();
 
-        SuggestionsView suggestions = planningTools.suggestRepairs(poste.posteId(), 5, null);
+        SuggestionsView suggestions = planningTools.suggestRepairs(poste.posteId(), 5, null, null);
 
         assertThat(suggestions.posteId()).isEqualTo(poste.posteId());
         assertThat(suggestions.animateurActuelId()).isEqualTo(poste.animateurId());
@@ -111,7 +111,7 @@ class ReparationMcpToolsTest {
     void suggestingOnAnUnknownPosteIsRefused() {
         premierPostePourvu();
 
-        assertThatThrownBy(() -> planningTools.suggestRepairs("POSTE-INCONNU", null, null))
+        assertThatThrownBy(() -> planningTools.suggestRepairs("POSTE-INCONNU", null, null, null))
                 .isInstanceOf(RuntimeException.class);
     }
 
@@ -124,7 +124,7 @@ class ReparationMcpToolsTest {
     void suggestingWithoutAPersistedPlanningSaysSo() {
         scenarioTools.resetData(null);
 
-        assertThatThrownBy(() -> planningTools.suggestRepairs("P1", null, null))
+        assertThatThrownBy(() -> planningTools.suggestRepairs("P1", null, null, null))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Conflict.class)
                 .hasMessageContaining("résolution");

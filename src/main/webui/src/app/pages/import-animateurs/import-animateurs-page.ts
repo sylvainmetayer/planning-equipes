@@ -192,6 +192,8 @@ export class ImportAnimateursPage {
         return $localize`:@@importCsv.champ.competences:Compétences`;
       case 'souhaits':
         return $localize`:@@importCsv.champ.souhaits:Souhaits`;
+      case 'telephone':
+        return $localize`:@@importCsv.champ.telephone:Téléphone`;
       default:
         return $localize`:@@importCsv.champ.joursIndisponibles:Jours d'indisponibilité`;
     }

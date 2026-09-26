@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -56,6 +57,27 @@ class LegalConstraintsTest extends ConstraintTestBase {
                 .given(
                         poste(standStrat, creneauMatin, mineurDebutant("M1")),
                         poste(standStrat, creneauMatin, referentMajeur("A1")),
+                        ENCADREMENT_DEMANDE)
+                .penalizesBy(0);
+    }
+
+    /**
+     * A minor on the rest of a timeslot split at 09:20 (ADR 0066): the adult
+     * who held its first twenty minutes left then, and supervises nobody
+     * after it. An adult holding the whole timeslot does.
+     */
+    @Test
+    void anAdultWhoLeftAtTheSplitDoesNotSuperviseTheMinorOnTheRest() {
+        PosteAffectation[] scinde = splitAt0920(standStrat, creneauMatin, referentMajeur("A1"), mineurDebutant("M1"));
+
+        verify("mineurNecessiteEncadrementMajeur")
+                .given(scinde[0], scinde[1], ENCADREMENT_DEMANDE)
+                .penalizesBy(ExclusionEligibilite.FORFAIT);
+        verify("mineurNecessiteEncadrementMajeur")
+                .given(
+                        scinde[0],
+                        scinde[1],
+                        postePasse(standStrat, creneauMatin, referentMajeur("A2")),
                         ENCADREMENT_DEMANDE)
                 .penalizesBy(0);
     }

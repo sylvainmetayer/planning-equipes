@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.SeatPlaces;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.ReferentielManquant;
 import dev.sylvain.planning.solver.EligibleAnimateurMoveFilter;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -230,7 +231,9 @@ public class MargeAnalyzer {
             List<ReferentielManquant> referentielsManquants) {
         Mode retenu = mode == null ? Mode.AVANT : mode;
         List<Animateur> connus = animateurs == null ? List.of() : animateurs;
-        Map<CelluleKey, Cellule> cellules = groupSeats(postes == null ? List.of() : postes);
+        // A seat split on the day (ADR 0066) is one place, counted on its
+        // continuation; its origin still makes its holder busy, below.
+        Map<CelluleKey, Cellule> cellules = groupSeats(SeatPlaces.places(postes));
         Map<String, List<Interval>> occupation = retenu == Mode.APRES ? busyIntervals(postes) : Map.of();
 
         List<TrancheMarge> tranches = cellules.keySet().stream()

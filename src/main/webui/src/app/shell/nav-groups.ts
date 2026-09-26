@@ -29,7 +29,10 @@ export interface NavLink {
    * produce a client-side 404. Listed in no group, so the drawer never draws one.
    */
   externe?: boolean;
-  /** The letter pressed after `g` to reach it: the initial of the label wherever it was free. */
+  /**
+   * The letter pressed after `g` to reach it: a letter of its label, the
+   * initial wherever it was free, and never one another destination holds.
+   */
   shortcut?: string;
   /** Its tabs or views, indexed by the palette. */
   tabs?: NavTab[];
@@ -80,11 +83,11 @@ export function buildNavGroups(): NavGroup[] {
         {
           // The page every reading of the plan starts from (issue #712): the
           // former Journée, which absorbed the month calendar, the intendance
-          // and the graph. No letter: its initial, `p`, is Publication's, and
-          // `j` no longer reads from its label.
+          // and the graph.
           path: '/journee',
           label: $localize`:@@nav.link.journee:Planning`,
           icon: 'view_day',
+          shortcut: 'p',
           // The bench left the Diagnostic for the Siège panel of this page:
           // « banc » still finds where it went; the screens it absorbed too.
           keywords: $localize`:@@nav.keywords.journee:journée calendrier banc de touche siège remplaçant placer imprimer`,
@@ -172,6 +175,7 @@ export function buildNavGroups(): NavGroup[] {
           path: '/ouvertures',
           label: $localize`:@@nav.link.ouvertures:Horaires des stands`,
           icon: 'door_front',
+          shortcut: 'h',
           keywords: $localize`:@@nav.keywords.ouvertures:ouvertures saisie calendrier combiné`,
           tabs: [
             tab(
@@ -186,7 +190,8 @@ export function buildNavGroups(): NavGroup[] {
           path: '/animateurs',
           label: $localize`:@@nav.link.animateurs:Animateurs`,
           icon: 'groups',
-          shortcut: 'a',
+          // `a` is Aujourd'hui's, the page of the day of the event.
+          shortcut: 'n',
         },
         {
           path: '/competences',
@@ -270,7 +275,8 @@ export function buildNavGroups(): NavGroup[] {
           path: '/diagnostic',
           label: $localize`:@@nav.link.diagnostic:Diagnostic`,
           icon: 'report_problem',
-          shortcut: 'd',
+          // `d` is Diffuser's.
+          shortcut: 'i',
           tabs: [
             tab('onglet', 'problemes', $localize`:@@diagnostic.onglet.problemes:Problèmes`),
             tab(
@@ -356,8 +362,7 @@ export function buildNavGroups(): NavGroup[] {
           path: '/publication',
           label: $localize`:@@nav.link.diffuser:Diffuser`,
           icon: 'outgoing_mail',
-          // No `g`+letter: `d` is the Diagnostic's, and a letter that is not
-          // the label's initial is one nobody guesses. Ctrl+K finds it.
+          shortcut: 'd',
           keywords: $localize`:@@nav.keywords.diffuser:publier publication envoyer renvoyer relancer accusés pdf documents`,
           tabs: [
             tab('onglet', 'envoyer', $localize`:@@diffuser.onglet.envoyer:Envoyer`),
@@ -378,11 +383,11 @@ export function buildNavGroups(): NavGroup[] {
       title: $localize`:@@nav.group.aujourdhui:Aujourd'hui`,
       links: [
         {
-          path: '/jour-j',
-          label: $localize`:@@nav.link.jourJ:Mode jour J`,
+          path: '/aujourdhui',
+          label: $localize`:@@nav.link.aujourdhui:Aujourd'hui`,
           icon: 'emergency',
-          shortcut: 'm',
-          keywords: $localize`:@@nav.keywords.jourJ:absent remplacer`,
+          shortcut: 'a',
+          keywords: $localize`:@@nav.keywords.aujourdhui:jour J absent remplacer téléphone TV mural`,
         },
       ],
     },

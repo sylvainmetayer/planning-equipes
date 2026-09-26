@@ -1,6 +1,9 @@
 # 0044 — Le passé est figé
 
-- **Statut** : accepté, implémenté
+- **Statut** : accepté, implémenté · **assoupli par
+  [0066](0066-le-passe-est-fige-a-la-minute.md)** pour le créneau en cours :
+  le passé est figé à la minute, le siège du créneau commencé est scindé à
+  « maintenant »
 - **Date** : septembre 2026
 - **Portée** : construction du problème (résolution complète, réamorçage,
   replanification incrémentale), préparation des analyses, toutes les

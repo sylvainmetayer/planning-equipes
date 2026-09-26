@@ -66,6 +66,7 @@ public final class GrilleCompetences {
         Animateur copie = new Animateur(
                 source.getId(), source.getPrenom(), source.getNom(), source.getDateNaissance(), source.isManager());
         copie.setEmail(source.getEmail());
+        copie.setTelephone(source.getTelephone());
         copie.setAccessToken(source.getAccessToken());
         copie.setJoursIndisponibles(
                 source.getJoursIndisponibles() == null

@@ -10,6 +10,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.mcp.PlanningMcpTools.AffectationsView;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.SplitSeatFixture;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -76,6 +77,22 @@ class PlanningMcpToolsSyntheseTest {
         assertThat(synthese.parJour())
                 .extracting(ligne -> ligne.date() + ":" + ligne.nonPourvus())
                 .containsExactly(SAMEDI + ":1", DIMANCHE + ":0");
+    }
+
+    /** A seat split on the day (ADR 0066) is one place staffed, a narrowed one a place to fill. */
+    @Test
+    void theSummaryCountsASplitSeatOnce() {
+        SplitSeatFixture fixture = new SplitSeatFixture();
+
+        var synthese = tools(fixture.plan().getPostes()).summarizeAffectations(null);
+
+        assertThat(synthese.postesTotal()).isEqualTo(3);
+        assertThat(synthese.postesPourvus()).isEqualTo(2);
+        assertThat(synthese.postesNonPourvus()).isEqualTo(1);
+        assertThat(synthese.animateursAffectes()).isEqualTo(3);
+        assertThat(synthese.parStand())
+                .extracting(ligne -> ligne.standId() + ":" + ligne.postes() + "/" + ligne.pourvus())
+                .containsExactlyInAnyOrder("CIRQUE:2/2", "KIOSQUE:1/0");
     }
 
     @Test

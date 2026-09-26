@@ -147,6 +147,12 @@ public final class ProblemBuilder {
             // After the locks and before any warm start: a past seat is left
             // as a lock left it, and the warm start skips what is pinned.
             FrozenPast.freeze(postes, animateurs, plan == null ? Map.of() : plan, moment);
+            // A seat split on the day (ADR 0066) is two seats the referential
+            // does not generate: replayed from the persisted plan, after the
+            // positional freeze whose seeding it overrides on those cells.
+            if (persistence != null) {
+                SeatSplit.restore(postes, animateurs, persistence.loadSplitCells(), moment);
+            }
         }
         LocalDate dateDebut = creneaux.stream()
                 .map(Creneau::getDate)
@@ -389,6 +395,12 @@ public final class ProblemBuilder {
                 scope == null ? ReplanificationScope.automatic() : scope,
                 contraintesAdHoc,
                 moment);
+        // The splits of the day (ADR 0066), replayed over the generated seats:
+        // the incremental re-solve re-opens the future only, never the rest of
+        // a timeslot somebody else took over at 09:20.
+        if (moment != null) {
+            SeatSplit.restore(postes, animateurs, persistence.loadSplitCells(), moment);
+        }
         FrozenPast.refuseIfNothingAhead(postes);
         LocalDate dateDebut = creneaux.stream()
                 .map(Creneau::getDate)

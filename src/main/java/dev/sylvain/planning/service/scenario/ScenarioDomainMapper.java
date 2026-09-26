@@ -50,6 +50,7 @@ import dev.sylvain.planning.scenario.dto.TypologieDto;
 import dev.sylvain.planning.scenario.dto.VacationTypeDto;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.consigne.ConsigneService;
+import dev.sylvain.planning.service.referentiel.AnimateurService;
 import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
 import dev.sylvain.planning.service.referentiel.JourneesTypesMaterialisation;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
@@ -357,6 +358,8 @@ final class ScenarioDomainMapper {
                 required(dto.dateNaissance(), "animateurs.dateNaissance"),
                 Boolean.TRUE.equals(dto.manager()));
         animateur.setEmail(dto.email());
+        AnimateurService.requirePhoneFits(dto.telephone(), "animateurs.telephone");
+        animateur.setTelephone(dto.telephone());
         Map<String, NiveauCompetence> competences = new HashMap<>();
         if (dto.competences() != null) {
             competences.putAll(dto.competences());

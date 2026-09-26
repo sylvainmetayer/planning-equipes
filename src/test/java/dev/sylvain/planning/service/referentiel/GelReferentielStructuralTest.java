@@ -192,7 +192,7 @@ class GelReferentielStructuralTest {
                     "ReferenceDataService#createContrainteAdHoc(ContrainteAdHoc)",
                     "the ad hoc adjustments stay open: they are the late phase's own gesture"),
             Map.entry("ReferenceDataService#writeContrainteAdHoc(ContrainteAdHoc)", "same"),
-            Map.entry("ReferenceDataService#createContraintesAdHoc(List)", "same"),
+            Map.entry("ReferenceDataService#createContraintesAdHoc(Connection,List)", "same"),
             Map.entry("ReferenceDataService#deleteContrainteAdHoc(String)", "same"),
             Map.entry(
                     "ReferenceDataService#writeVerrouillage(VerrouillagePlanning)",

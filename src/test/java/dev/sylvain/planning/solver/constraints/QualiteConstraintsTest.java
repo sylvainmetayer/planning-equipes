@@ -142,6 +142,20 @@ class QualiteConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(0);
     }
 
+    /**
+     * The referent who held the first twenty minutes of a timeslot split at
+     * 09:20 (ADR 0066) is gone for the rest of it: the stand has no referent
+     * from then on. A referent on the rest does count.
+     */
+    @Test
+    void aReferentWhoLeftAtTheSplitLeavesTheRestWithoutOne() {
+        PosteAffectation[] parti = splitAt0920(standStrat, creneauMatin, referentMajeur("A1"), majeurAutonome("A2"));
+        verify("standComplexeAvecReferent").given(parti[0], parti[1]).penalizesBy(1);
+
+        PosteAffectation[] arrive = splitAt0920(standStrat, creneauMatin, majeurAutonome("A3"), referentMajeur("A4"));
+        verify("standComplexeAvecReferent").given(arrive[0], arrive[1]).penalizesBy(0);
+    }
+
     @Test
     void chargeEquilibreeNEstPasPenalisee() {
         // Two animateurs with one seat each: a perfect spread.
@@ -198,6 +212,27 @@ class QualiteConstraintsTest extends ConstraintTestBase {
                 .given(
                         poste(standStrat, creneauMatin, mineurDebutant("M1")),
                         poste(standStrat, creneauMatin, referentMajeur("A1")))
+                .penalizesBy(0);
+    }
+
+    /**
+     * Who is on the stand for the rest of a timeslot split at 09:20 (ADR
+     * 0066) is who holds the remainder, not who held its first twenty
+     * minutes: an adult who left leaves two minors alone, a minor who left
+     * leaves an adult with one.
+     */
+    @Test
+    void theMinorsAndAdultsOfASplitTimeslotAreCountedOnItsRest() {
+        PosteAffectation[] adulteParti =
+                splitAt0920(standStrat, creneauMatin, referentMajeur("A1"), mineurDebutant("M1"));
+        verify("repartitionMineursParCreneau")
+                .given(adulteParti[0], adulteParti[1], postePasse(standStrat, creneauMatin, mineurDebutant("M2")))
+                .penalizesBy(2);
+
+        PosteAffectation[] mineurParti =
+                splitAt0920(standStrat, creneauMatin, mineurDebutant("M3"), referentMajeur("A2"));
+        verify("repartitionMineursParCreneau")
+                .given(mineurParti[0], mineurParti[1], postePasse(standStrat, creneauMatin, mineurDebutant("M4")))
                 .penalizesBy(0);
     }
 
@@ -267,6 +302,22 @@ class QualiteConstraintsTest extends ConstraintTestBase {
                         poste(standDeuxPlaces, creneauAprem, a1),
                         poste(standDeuxPlaces, creneauAprem, a2))
                 .penalizesBy(0);
+    }
+
+    /**
+     * A seat split on the day (ADR 0066) is one place held by two people one
+     * after the other, not two places: the crew of the timeslot stays one, so
+     * the second face on it is the rotation it is.
+     */
+    @Test
+    void aSeatSplitOnTheDayDoesNotDoubleTheCrewOfItsTimeslot() {
+        PosteAffectation origine = poste(standPremium, creneauMatin, referentMajeur("A1"));
+        origine.setHeureFinEffective(LocalTime.of(9, 20));
+        PosteAffectation suite = poste(standPremium, creneauMatin, referentMajeur("A2"));
+        suite.setHeureDebutEffective(LocalTime.of(9, 20));
+        suite.setSuiteDe(origine.getId());
+
+        verify("eviterRoulementStandsPremium").given(origine, suite).penalizesBy(1);
     }
 
     @Test

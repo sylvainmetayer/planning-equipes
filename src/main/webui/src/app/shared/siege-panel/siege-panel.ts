@@ -105,7 +105,7 @@ export class SeatPanel {
   readonly planChanged = output<void>();
 
   private readonly explanations = inject(AffectationExplanationService);
-  private readonly repairs = inject(JourJService);
+  private readonly jourJ = inject(JourJService);
   private readonly postesApi = inject(PostesApi);
   private readonly placement = inject(SeatPlacement);
   private readonly constraintsApi = inject(ConstraintsApi);
@@ -290,7 +290,7 @@ export class SeatPanel {
     this.suggestionsLoading.set(true);
     this.gestureError.set('');
     try {
-      this.suggestions.set(await this.repairs.suggestions(seat.id));
+      this.suggestions.set(await this.jourJ.suggestions(seat.id));
     } catch (error) {
       this.suggestions.set(null);
       this.gestureError.set(errorPrefix(error));
@@ -430,6 +430,45 @@ export class SeatPanel {
       );
       return null;
     }
+  }
+
+  /**
+   * « Marquer absent » : the gesture of Aujourd'hui, from the seat — the same
+   * service, on this timeslot alone. The holder is declared unavailable on it
+   * and the seat freed; a timeslot under way is split at « now », the part
+   * already held staying theirs (ADR 0066).
+   */
+  protected async markAbsent(): Promise<void> {
+    const seat = this.seat();
+    if (!seat?.animateur || !seat.creneau) {
+      return;
+    }
+    const nom = this.holder();
+    const confirmed = await this.confirm.ask({
+      title: $localize`:@@siege.absent.titre:Marquer ${nom}:nom: absent ?`,
+      message: $localize`:@@siege.absent.message:Une indisponibilité est posée sur ce créneau et le siège est libéré ; s'il est commencé, ce qui a été tenu reste à son nom.`,
+      confirmLabel: $localize`:@@siege.absent:Marquer absent`,
+      danger: true,
+    });
+    if (!confirmed) {
+      return;
+    }
+    const animateurId = seat.animateur.id;
+    const { date, id: creneauId } = seat.creneau;
+    await this.write('absent', async () => {
+      const marquee = await this.jourJ.marquerAbsent(
+        animateurId,
+        '',
+        date ?? undefined,
+        undefined,
+        creneauId,
+      );
+      return {
+        message: $localize`:@@siege.absent.fait:${marquee.nomAffiche}:nom: est marqué absent sur ce créneau.`,
+        warning: null,
+        holeOpened: marquee.postesLiberes.length > 0,
+      };
+    });
   }
 
   /** « Verrouiller » : this person on this timeslot, kept by the next solve. */

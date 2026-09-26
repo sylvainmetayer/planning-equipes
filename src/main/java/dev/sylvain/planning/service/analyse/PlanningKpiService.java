@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.EffectiveWork;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.SeatPlaces;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.PlanningDiagnostic;
 import dev.sylvain.planning.service.consigne.ConsigneService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
@@ -227,11 +228,21 @@ public class PlanningKpiService {
     /**
      * One staffed-or-empty seat reduced to what the KPI need: who, for how
      * long, and on which day — {@code null} when the caller does not know it.
+     *
+     * @param place whether the row counts as a place: false for the origin of
+     *              a seat split on the day (ADR 0066), whose place is counted
+     *              on its continuation — its hours still count, on its own
+     *              window
      */
-    record AffectationKpi(String standId, String creneauId, String animateurId, Integer dureeMinutes, LocalDate date) {
+    record AffectationKpi(
+            String standId, String creneauId, String animateurId, Integer dureeMinutes, LocalDate date, boolean place) {
+
+        AffectationKpi(String standId, String creneauId, String animateurId, Integer dureeMinutes, LocalDate date) {
+            this(standId, creneauId, animateurId, dureeMinutes, date, true);
+        }
 
         AffectationKpi(String standId, String creneauId, String animateurId, Integer dureeMinutes) {
-            this(standId, creneauId, animateurId, dureeMinutes, null);
+            this(standId, creneauId, animateurId, dureeMinutes, null, true);
         }
     }
 
@@ -245,15 +256,7 @@ public class PlanningKpiService {
      */
     public PlanningKpi computeCurrent(Long dureeSolveSecondes) {
         PlanningEvenement planning = persistenceService.loadPersistedPlanning();
-        List<AffectationKpi> affectations = new ArrayList<>();
-        for (PosteAffectation poste : planning.getPostes()) {
-            affectations.add(new AffectationKpi(
-                    poste.getStand().getId(),
-                    String.valueOf(poste.getCreneau().getId()),
-                    poste.getAnimateur() == null ? null : poste.getAnimateur().getId(),
-                    poste.getDureeEffectiveMinutes(),
-                    poste.getCreneau().getDate()));
-        }
+        List<AffectationKpi> affectations = affectationsOf(planning.getPostes());
         ConstraintAnalysisStore.StoredAnalysis analysis = analysisStore.latest();
         PlanningDiagnostic diagnostic = analysis == null ? null : analysis.diagnostic();
         int modifications = referenceDataService.listContraintesAdHoc().size()
@@ -277,6 +280,26 @@ public class PlanningKpiService {
     }
 
     /**
+     * The seats of a plan as the KPI read them: one row each, the origin of a
+     * seat split on the day marked as no place of its own (ADR 0066) — the
+     * place is its continuation's, the hours are both parts'.
+     */
+    static List<AffectationKpi> affectationsOf(List<PosteAffectation> postes) {
+        Set<String> continues = SeatPlaces.continuedIds(postes);
+        List<AffectationKpi> affectations = new ArrayList<>();
+        for (PosteAffectation poste : postes) {
+            affectations.add(new AffectationKpi(
+                    poste.getStand().getId(),
+                    String.valueOf(poste.getCreneau().getId()),
+                    poste.getAnimateur() == null ? null : poste.getAnimateur().getId(),
+                    poste.getDureeEffectiveMinutes(),
+                    poste.getCreneau().getDate(),
+                    !continues.contains(poste.getId())));
+        }
+        return affectations;
+    }
+
+    /**
      * Degraded recomputation for a snapshot captured before KPI were stored
      * (issue #70): coverage and volumetry stay exact, the hours are resolved
      * against the referential of the snapshot's own edition — so the caller
@@ -291,13 +314,16 @@ public class PlanningKpiService {
         for (Creneau creneau : referenceDataService.listCreneaux()) {
             creneauxParId.put(String.valueOf(creneau.getId()), creneau);
         }
+        Set<String> continues = SeatPlaces.continuedIds(affectations, AffectationSnapshot::suiteDe);
         List<AffectationKpi> reduites = new ArrayList<>();
         for (AffectationSnapshot affectation : affectations) {
             reduites.add(new AffectationKpi(
                     affectation.standId(),
                     affectation.creneauId(),
                     affectation.animateurId(),
-                    dureeMinutes(affectation, creneauxParId.get(affectation.creneauId()))));
+                    dureeMinutes(affectation, creneauxParId.get(affectation.creneauId())),
+                    null,
+                    affectation.posteId() == null || !continues.contains(affectation.posteId())));
         }
         return compute(reduites, score, Map.of(), null, null, null);
     }
@@ -391,7 +417,7 @@ public class PlanningKpiService {
                         heuresParAnimateur.computeIfPresent(animateurId, (id, heures) -> heures - minutes / 60.0));
         Dispersion dispersion = dispersion(heuresParAnimateur.values());
         int[] niveaux = parseScore(inputs.score());
-        int total = inputs.affectations().size();
+        int total = tally.places;
         Integer modificationsManuelles = inputs.modificationsManuelles();
         Double taux = modificationsManuelles == null || total == 0 ? null : modificationsManuelles / (double) total;
         return new PlanningKpi(
@@ -423,7 +449,11 @@ public class PlanningKpiService {
                 tally.couvertureParJour());
     }
 
-    /** The seats counted once: distinct stands and créneaux, the filled ones, and the hours per animateur. */
+    /**
+     * The seats counted once: distinct stands and créneaux, the places and the
+     * filled ones — a split seat is one place, on its continuation (ADR
+     * 0066) —, and the hours per animateur, every part on its own window.
+     */
     private static final class SeatTally {
         private final Set<String> stands = new LinkedHashSet<>();
         private final Set<String> creneaux = new LinkedHashSet<>();
@@ -431,6 +461,7 @@ public class PlanningKpiService {
         /** Per ISO date: seats, staffed seats. Sorted, so the band reads in calendar order. */
         private final Map<String, int[]> parJour = new TreeMap<>();
 
+        private int places;
         private int pourvus;
         private boolean heuresIncompletes;
 
@@ -453,17 +484,22 @@ public class PlanningKpiService {
         private void add(AffectationKpi affectation) {
             stands.add(affectation.standId());
             creneaux.add(affectation.creneauId());
-            if (affectation.date() != null) {
-                int[] jour = parJour.computeIfAbsent(affectation.date().toString(), date -> new int[2]);
-                jour[0]++;
+            if (affectation.place()) {
+                places++;
                 if (affectation.animateurId() != null) {
-                    jour[1]++;
+                    pourvus++;
+                }
+                if (affectation.date() != null) {
+                    int[] jour = parJour.computeIfAbsent(affectation.date().toString(), date -> new int[2]);
+                    jour[0]++;
+                    if (affectation.animateurId() != null) {
+                        jour[1]++;
+                    }
                 }
             }
             if (affectation.animateurId() == null) {
                 return;
             }
-            pourvus++;
             if (affectation.dureeMinutes() == null) {
                 heuresIncompletes = true;
             } else {

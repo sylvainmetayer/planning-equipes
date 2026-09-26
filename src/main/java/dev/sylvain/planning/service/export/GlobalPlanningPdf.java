@@ -5,6 +5,7 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.SeatPlaces;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.referentiel.TypologieLibelles;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -128,6 +129,10 @@ public class GlobalPlanningPdf {
      * readable at event scale (3 500 seats becoming ~2 000 lines).
      */
     private List<LigneAffectation> lignesAffectation(PlanningEvenement planning) {
+        // The origin of a seat split on the day (ADR 0066) has a line of its
+        // own — who held 09:00-09:20 — but no place: its continuation's line
+        // counts it.
+        Set<String> continues = SeatPlaces.continuedIds(planning.getPostes());
         Map<String, List<PosteAffectation>> parCle = new LinkedHashMap<>();
         for (PosteAffectation poste : planning.getPostes()) {
             Creneau creneau = poste.getCreneau();
@@ -154,7 +159,13 @@ public class GlobalPlanningPdf {
                     premier.heureDebutEffectif(),
                     premier.heureFinEffectif(),
                     animateurs,
-                    postes.size()));
+                    postes.size(),
+                    (int) postes.stream()
+                            .filter(poste -> !continues.contains(poste.getId()))
+                            .count(),
+                    (int) postes.stream()
+                            .filter(poste -> poste.getAnimateur() != null && !continues.contains(poste.getId()))
+                            .count()));
         }
         return lignes;
     }
@@ -165,9 +176,19 @@ public class GlobalPlanningPdf {
      * @param sieges seats generated for that line — never the stand's
      *               {@code effectifMin}, which a meal-pause coverage vacation
      *               deliberately halves
+     * @param places the seats of the line counted as places: all of them but
+     *               the origins of seats split on the day (ADR 0066)
+     * @param placesTenues those places somebody holds
      */
     private record LigneAffectation(
-            Stand stand, Creneau creneau, LocalTime debut, LocalTime fin, List<String> animateurs, int sieges) {
+            Stand stand,
+            Creneau creneau,
+            LocalTime debut,
+            LocalTime fin,
+            List<String> animateurs,
+            int sieges,
+            int places,
+            int placesTenues) {
 
         boolean incomplete() {
             return animateurs.size() < sieges;
@@ -220,8 +241,8 @@ public class GlobalPlanningPdf {
                 }
                 numeroDuJour.putIfAbsent(date, ligne.creneau().getJour());
                 stands.putIfAbsent(ligne.stand().getId(), ligne.stand());
-                compteSieges += ligne.sieges();
-                comptePourvus += ligne.animateurs().size();
+                compteSieges += ligne.places();
+                comptePourvus += ligne.placesTenues();
                 int duree = minutes(ligne);
                 for (String animateur : ligne.animateurs()) {
                     presents.computeIfAbsent(date, ignored -> new TreeSet<>()).add(animateur);

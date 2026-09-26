@@ -8,6 +8,7 @@ import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.SeatPlaces;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.referentiel.CsvFormulaGuard;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
@@ -182,12 +183,15 @@ public class EquiteService {
         for (Animateur animateur : animateursInOrder(planning, postes)) {
             tallies.put(animateur.getId(), new Tally(animateur));
         }
+        // The rest of a seat its own holder kept after a split on the day
+        // (ADR 0066) is the same seat of theirs: its hours count, not a seat more.
+        Set<String> memeTitulaire = SeatPlaces.sameHolderContinuations(postes);
         for (PosteAffectation poste : postes) {
             if (poste.getAnimateur() == null) {
                 continue;
             }
             Tally tally = tallies.get(poste.getAnimateur().getId());
-            tally.add(poste, debutSoiree);
+            tally.add(poste, debutSoiree, !memeTitulaire.contains(poste.getId()));
             semaines.add(poste.getCreneau().semaineIso());
         }
         deductBreaksDue(tallies, postes, parametres);
@@ -479,7 +483,8 @@ public class EquiteService {
             heuresParSemaine.merge(semaine, heures, Double::sum);
         }
 
-        void add(PosteAffectation poste, LocalTime debutSoiree) {
+        /** {@code seat}: false for the rest of a seat this person already holds the start of. */
+        void add(PosteAffectation poste, LocalTime debutSoiree, boolean seat) {
             Creneau creneau = poste.getCreneau();
             Stand stand = poste.getStand();
             // Amplitude: what the week-end and public-holiday columns count,
@@ -488,7 +493,6 @@ public class EquiteService {
             // `deductBreaksDue` — a break belongs to a stretch, and a
             // stretch to one day.
             double heures = poste.getDureeEffectiveMinutes() / 60.0;
-            postes++;
             heuresSoiree += eveningMinutes(poste, debutSoiree) / 60.0;
             LocalDate date = creneau.getDate();
             if (date != null) {
@@ -500,18 +504,12 @@ public class EquiteService {
                     heuresJourFerie += heures;
                 }
             }
-            if (isDemanding(stand)) {
-                postesPenibles++;
+            if (seat) {
+                countSeat(stand);
             }
             if (stand != null) {
                 stands.add(stand.getId());
                 typologies.addAll(exercisedTypologies(animateur, stand));
-                if (animateur.hasSouhaitFor(stand)) {
-                    postesSouhaites++;
-                }
-                if (animateur.hasCompetenceFor(stand)) {
-                    postesApprecies++;
-                }
                 // A poste without a location is left out, as the constraint
                 // leaves it out: nothing counted, rather than one big zone.
                 if (stand.getEmplacement() != null && stand.getEmplacement().getId() != null) {
@@ -519,6 +517,20 @@ public class EquiteService {
                             .computeIfAbsent(creneau.getJour(), jour -> new HashSet<>())
                             .add(stand.getEmplacement().getId());
                 }
+            }
+        }
+
+        /** One seat more, and what it counts for: demanding, wished, appreciated. */
+        private void countSeat(Stand stand) {
+            postes++;
+            if (isDemanding(stand)) {
+                postesPenibles++;
+            }
+            if (stand != null && animateur.hasSouhaitFor(stand)) {
+                postesSouhaites++;
+            }
+            if (stand != null && animateur.hasCompetenceFor(stand)) {
+                postesApprecies++;
             }
         }
 

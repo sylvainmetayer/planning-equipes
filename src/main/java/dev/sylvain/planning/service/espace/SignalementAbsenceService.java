@@ -235,28 +235,27 @@ public class SignalementAbsenceService {
      * report marked settled. The seats it frees come back for the
      * replacement.
      *
-     * <p>The report is <b>claimed first</b>: two admins deciding a second
-     * apart, or the person withdrawing it meanwhile, leave one winner, and the
-     * absence is recorded by that one only. When recording it is refused — a
-     * contradiction, a lock, a solve holding the edition —, the claim is
-     * given back and the report stays open for another decision.</p>
+     * <p>The report is <b>claimed</b> — {@code SIGNALE} to {@code TRAITE} —
+     * in the same transaction that records the absence: two admins deciding a
+     * second apart, or the person withdrawing it meanwhile, leave one winner,
+     * and the others a {@code 409} with nothing written. When recording is
+     * refused — a contradiction, a lock, a solve holding the edition —, the
+     * claim is rolled back with it and the report stays open for another
+     * decision.</p>
      *
      * @throws BusinessError.Conflict already settled, or withdrawn
      */
     public AbsenceMarquee observe(long id) {
         SignalementAbsence signalement = open(id);
-        if (!repository.settle(signalement.id(), Statut.TRAITE, Instant.now())) {
-            throw alreadySettled();
-        }
         String raison =
                 "signalé depuis l'espace" + (signalement.motif() == null ? "" : ", " + motif(signalement.motif()));
-        try {
-            return jourJService.recordAbsence(
-                    signalement.animateurId(), raison, signalement.jour(), null, signalement.creneauId());
-        } catch (RuntimeException refus) {
-            repository.reopen(signalement.id(), Statut.TRAITE);
-            throw refus;
-        }
+        Instant le = Instant.now();
+        return jourJService.recordAbsence(
+                signalement.animateurId(), raison, signalement.jour(), null, signalement.creneauId(), connection -> {
+                    if (!repository.settle(connection, signalement.id(), Statut.TRAITE, le)) {
+                        throw alreadySettled();
+                    }
+                });
     }
 
     /* ------------------------------- Internals ------------------------------ */

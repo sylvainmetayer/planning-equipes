@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.analyse;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.SeatPlaces;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
@@ -83,8 +84,11 @@ public class TypologieAnalyzer {
                         .filter(poste -> poste.getAnimateur() != null && poste.getStand() != null)
                         .toList();
 
+        // A seat split on the day (ADR 0066) is one seat held: counted on its
+        // continuation, its hours on both parts.
+        Set<String> continues = SeatPlaces.continuedIds(planning == null ? List.of() : planning.getPostes());
         HeldSeats tenus = new HeldSeats();
-        postes.forEach(tenus::add);
+        postes.forEach(poste -> tenus.add(poste, !continues.contains(poste.getId())));
         Map<String, String> nomParAnimateur = tenus.nomParAnimateur;
         Map<String, Set<String>> competentsParTypologie = competentsByTypologie(animateurs, nomParAnimateur);
 
@@ -131,7 +135,8 @@ public class TypologieAnalyzer {
         private final Map<String, Map<String, Double>> heuresParTypologieEtJour = new LinkedHashMap<>();
         private final TreeSet<String> jours = new TreeSet<>();
 
-        void add(PosteAffectation poste) {
+        /** {@code place}: false for the origin of a split seat, whose place its continuation counts. */
+        void add(PosteAffectation poste, boolean place) {
             Animateur animateur = poste.getAnimateur();
             nomParAnimateur.putIfAbsent(animateur.getId(), animateur.nomAffiche());
             double heures = poste.getDureeEffectiveMinutes() / 60.0;
@@ -149,7 +154,9 @@ public class TypologieAnalyzer {
                         .computeIfAbsent(typologie, id -> new LinkedHashSet<>())
                         .add(animateur.getId());
                 heuresParTypologie.merge(typologie, heures, Double::sum);
-                postesParTypologie.merge(typologie, 1, Integer::sum);
+                if (place) {
+                    postesParTypologie.merge(typologie, 1, Integer::sum);
+                }
                 if (jour != null) {
                     heuresParTypologieEtJour
                             .computeIfAbsent(typologie, id -> new LinkedHashMap<>())

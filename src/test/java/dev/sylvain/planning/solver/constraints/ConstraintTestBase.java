@@ -208,6 +208,22 @@ abstract class ConstraintTestBase {
     }
 
     /**
+     * A seat split on the day at 09:20 (ADR 0066): the origin, already
+     * started, held by {@code before} up to 09:20, and its remainder held by
+     * {@code after} from 09:20 to the end of {@code creneau}.
+     *
+     * @return the origin, then the remainder
+     */
+    protected PosteAffectation[] splitAt0920(Stand stand, Creneau creneau, Animateur before, Animateur after) {
+        PosteAffectation origine = postePasse(stand, creneau, before);
+        origine.setHeureFinEffective(LocalTime.of(9, 20));
+        PosteAffectation suite = poste(stand, creneau, after);
+        suite.setHeureDebutEffective(LocalTime.of(9, 20));
+        suite.setSuiteDe(origine.getId());
+        return new PosteAffectation[] {origine, suite};
+    }
+
+    /**
      * A poste covering only part of {@code creneau} — the case created by a
      * partial stand closure (issue #60): {@code creneau} is still the real,
      * persisted créneau, but {@link PosteAffectation#getHeureDebutEffective()}

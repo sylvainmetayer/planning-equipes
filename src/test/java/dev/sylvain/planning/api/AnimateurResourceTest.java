@@ -111,4 +111,41 @@ class AnimateurResourceTest {
                 .body("find { it.id == '" + createdId + "' }.nom", equalTo("Martin"))
                 .body("find { it.id == '" + createdId + "' }.dateNaissance", equalTo("1990-01-01"));
     }
+
+    /**
+     * The phone number is written with the fiche and read back with it,
+     * trimmed; past its 32 characters the write is refused in 400 — never the
+     * database's 500 — without quoting the number back, and the fiche keeps
+     * the one it had.
+     */
+    @Test
+    void thePhoneNumberIsReadBackAndATooLongOneRefused() {
+        createdId = given().contentType(ContentType.JSON)
+                .body("""
+                        {"prenom":"Alice","nom":"AR-Telephone","dateNaissance":"1990-01-01",\
+                        "telephone":" 06 12 34 56 78 "}""")
+                .when()
+                .post("/api/animateurs")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("animateur.id");
+        String tropLong = "+33 6 12 34 56 78 poste 1234567890";
+
+        given().contentType(ContentType.JSON)
+                .body("{\"prenom\":\"Alice\",\"nom\":\"AR-Telephone\",\"dateNaissance\":\"1990-01-01\","
+                        + "\"telephone\":\"" + tropLong + "\"}")
+                .when()
+                .put("/api/animateurs/" + createdId)
+                .then()
+                .statusCode(400)
+                .body("message", containsString("32 caractères"))
+                .body("message", not(containsString(tropLong)));
+
+        given().when()
+                .get("/api/animateurs")
+                .then()
+                .statusCode(200)
+                .body("find { it.id == '" + createdId + "' }.telephone", equalTo("06 12 34 56 78"));
+    }
 }

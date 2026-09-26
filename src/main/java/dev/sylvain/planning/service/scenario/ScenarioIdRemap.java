@@ -458,6 +458,7 @@ final class ScenarioIdRemap {
                             dto.dateNaissance(),
                             dto.manager(),
                             dto.email(),
+                            dto.telephone(),
                             competences,
                             dto.joursIndisponibles(),
                             dto.souhaits() == null

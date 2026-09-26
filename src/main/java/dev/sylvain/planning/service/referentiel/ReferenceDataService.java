@@ -656,9 +656,10 @@ public class ReferenceDataService implements ReferenceData {
         return new WrittenContrainteAdHoc(ecrite, coherence.onContrainteAdHoc(ecrite));
     }
 
-    /** See {@link ContrainteAdHocService#createAll} — all or none. */
-    public List<ContrainteAdHoc> createContraintesAdHoc(List<ContrainteAdHoc> contraintes) {
-        return contraintesAdHoc.createAll(contraintes);
+    /** See {@link ContrainteAdHocService#createAll} — all or none, on the caller's transaction. */
+    public List<ContrainteAdHoc> createContraintesAdHoc(Connection connection, List<ContrainteAdHoc> contraintes)
+            throws SQLException {
+        return contraintesAdHoc.createAll(connection, contraintes);
     }
 
     public void deleteContrainteAdHoc(String id) {

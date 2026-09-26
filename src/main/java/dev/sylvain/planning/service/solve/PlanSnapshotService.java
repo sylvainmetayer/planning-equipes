@@ -118,6 +118,10 @@ public class PlanSnapshotService {
      * <p>{@code heureDebutEffective}/{@code heureFinEffective} keep their own
      * meaning — the <b>override</b> narrowing that window for this seat alone
      * (issue #60), {@code null} when the seat runs the whole créneau.</p>
+     *
+     * <p>{@code suiteDe} names the seat this one is the remainder of, when it
+     * was split on the day (ADR 0066) — {@code null} otherwise, and on every
+     * snapshot captured before splits existed.</p>
      */
     public record AffectationSnapshot(
             String posteId,
@@ -128,7 +132,33 @@ public class PlanSnapshotService {
             String heureFin,
             String animateurId,
             String heureDebutEffective,
-            String heureFinEffective) {}
+            String heureFinEffective,
+            String suiteDe) {
+
+        /** A seat no split names. */
+        public AffectationSnapshot(
+                String posteId,
+                String standId,
+                String creneauId,
+                String date,
+                String heureDebut,
+                String heureFin,
+                String animateurId,
+                String heureDebutEffective,
+                String heureFinEffective) {
+            this(
+                    posteId,
+                    standId,
+                    creneauId,
+                    date,
+                    heureDebut,
+                    heureFin,
+                    animateurId,
+                    heureDebutEffective,
+                    heureFinEffective,
+                    null);
+        }
+    }
 
     /**
      * A snapshot without its content: what the management screen lists.
@@ -574,7 +604,8 @@ public class PlanSnapshotService {
                 affectation.animateurId(),
                 time(affectation.heureDebutEffective()),
                 time(affectation.heureFinEffective()),
-                vacation);
+                vacation,
+                affectation.suiteDe());
     }
 
     private static LocalTime time(String text) {
@@ -655,10 +686,11 @@ public class PlanSnapshotService {
             }
             String insert = """
  INSERT INTO poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id,
- heure_debut_effective, heure_fin_effective)
- VALUES (?, ?, ?, ?, ?, ?, ?)""";
+ heure_debut_effective, heure_fin_effective, suite_de)
+ VALUES (?, ?, ?, ?, ?, ?, ?, ?)""";
             try (PreparedStatement ps = scope.prepareScoped(connection, insert)) {
                 for (AffectationSnapshot affectation : detail.affectations()) {
+                    ps.setString(8, affectation.suiteDe());
                     ps.setString(2, affectation.posteId());
                     ps.setString(3, affectation.standId());
                     ps.setLong(4, Long.parseLong(affectation.creneauId()));
@@ -706,7 +738,7 @@ public class PlanSnapshotService {
     private List<AffectationSnapshot> readPersistedAffectations() {
         String sql = """
  SELECT pa.id, pa.stand_id, pa.creneau_id, pa.animateur_id,
- pa.heure_debut_effective, pa.heure_fin_effective,
+ pa.heure_debut_effective, pa.heure_fin_effective, pa.suite_de,
  c.date_creneau, c.heure_debut, c.heure_fin
  FROM poste_affectation pa
  JOIN creneau c ON c.edition_id = pa.edition_id AND c.id = pa.creneau_id
@@ -726,7 +758,8 @@ public class PlanSnapshotService {
                         text(rs.getObject("heure_fin", LocalTime.class)),
                         rs.getString("animateur_id"),
                         text(rs.getObject("heure_debut_effective", LocalTime.class)),
-                        text(rs.getObject("heure_fin_effective", LocalTime.class))));
+                        text(rs.getObject("heure_fin_effective", LocalTime.class)),
+                        rs.getString("suite_de")));
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to read the persisted plan", e);

@@ -238,6 +238,28 @@ class AnimateurCsvImportServiceTest {
         assertThat(motif(rapport, 9)).contains("hors des dates de l'événement");
     }
 
+    /**
+     * The phone column is read onto the fiche, trimmed like any cell, and a
+     * number longer than its column rejects the row by name rather than
+     * failing the whole import on the database.
+     */
+    @Test
+    void thePhoneColumnIsWrittenAndATooLongNumberRejectsItsRow() {
+        String csv = """
+                prenom;nom;date de naissance;portable
+                Amélie;Durand;12/03/1990; 06 12 34 56 78\s
+                Bruno;Lefèvre;1988-06-04;+33 6 12 34 56 78 poste 1234567890
+                """;
+
+        AnimateurCsvImportReport rapport = inEdition(() -> csvImport.apply(demande(csv)));
+
+        assertThat(rapport.accepted()).isEqualTo(1);
+        assertThat(motif(rapport, 3)).contains("Numéro de téléphone trop long");
+        assertThat(inEdition(() -> referenceData.listAnimateurs()))
+                .singleElement()
+                .satisfies(amelie -> assertThat(amelie.getTelephone()).isEqualTo("06 12 34 56 78"));
+    }
+
     private static String motif(AnimateurCsvImportReport rapport, int ligne) {
         return rapport.rows().stream()
                 .filter(row -> row.line() == ligne)
@@ -536,7 +558,7 @@ class AnimateurCsvImportServiceTest {
     @Test
     void manualMappingOverridesHeaders() {
         String csv = "colonne A;colonne B;colonne C\nDurand;Amélie;12/03/1990\n";
-        AnimateurCsvMapping mapping = new AnimateurCsvMapping(1, 0, 2, null, null, null, null, null);
+        AnimateurCsvMapping mapping = new AnimateurCsvMapping(1, 0, 2, null, null, null, null, null, null);
         AnimateurCsvImportRequest demande = new AnimateurCsvImportRequest("a.csv", csv, mapping, false, false);
 
         AnimateurCsvImportReport rapport = inEdition(() -> csvImport.apply(demande));
@@ -554,7 +576,7 @@ class AnimateurCsvImportServiceTest {
      */
     @Test
     void mappingNamingNobodyReportsAndRefusesToWrite() {
-        AnimateurCsvMapping sansIdentite = new AnimateurCsvMapping(null, null, 0, null, null, null, null, null);
+        AnimateurCsvMapping sansIdentite = new AnimateurCsvMapping(null, null, 0, null, null, null, null, null, null);
         AnimateurCsvImportRequest demande =
                 new AnimateurCsvImportRequest("a.csv", "date de naissance\n01/01/1990\n", sansIdentite, false, false);
 

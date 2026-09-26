@@ -2,13 +2,21 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.edition.EditionRepository;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import dev.sylvain.planning.service.solve.PlanningService;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
+import jakarta.inject.Inject;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -56,6 +64,18 @@ class FrozenPastAcceptanceTest {
     private static final String MATIN = "10:00:00";
     private static final Duration POLL_TIMEOUT = Duration.ofSeconds(120);
     private static final Duration POLL_INTERVAL = Duration.ofMillis(250);
+
+    @Inject
+    PlanningService planningService;
+
+    @Inject
+    PlanningPersistenceService persistence;
+
+    @Inject
+    EditionContext editionContext;
+
+    @Inject
+    EditionRepository editionRepository;
 
     @BeforeEach
     void anEditionFrozenBeforeItsFirstDay() {
@@ -177,6 +197,189 @@ class FrozenPastAcceptanceTest {
                 .post("/api/postes/" + siegeAVenir + "/deplacement/simulation?animateur=" + firstHolderOn(J1))
                 .then()
                 .statusCode(200);
+    }
+
+    /**
+     * The acceptance criterion of ADR 0066: somebody missing at 10:00, noticed
+     * at 10:20. Marking them absent splits their seat at 10:20 — the history
+     * keeps them on 10:00–10:20 — and the rest of the timeslot is repaired
+     * without a 400; the repair then goes through, and a full solve keeps the
+     * split as it found it.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void aSeatOfTheTimeslotUnderWayIsSplitAtNowAndItsRestRepaired() {
+        solveComplet();
+        freezeClock(J3, "10:20");
+        String absent = null;
+        for (Map<String, Object> poste : affectationsPersistees()) {
+            Map<String, Object> animateur = (Map<String, Object>) poste.get("animateur");
+            if (animateur != null
+                    && J3.equals(String.valueOf(creneauOf(poste).get("date")))
+                    && MATIN.equals(heureDebut(poste))) {
+                absent = String.valueOf(animateur.get("id"));
+                break;
+            }
+        }
+        assertThat(absent).as("somebody on the Wednesday morning").isNotNull();
+
+        JsonPath marquee = given().contentType(ContentType.JSON)
+                .body(Map.of("animateurId", absent))
+                .when()
+                .post("/api/jour-j/absences")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
+        List<Map<String, Object>> liberes = marquee.getList("postesLiberes");
+        Map<String, Object> reste = liberes.stream()
+                .filter(poste -> "10:20:00".equals(String.valueOf(poste.get("heureDebut"))))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("No seat split at 10:20 in " + liberes));
+        String resteId = String.valueOf(reste.get("posteId"));
+        assertThat(resteId).endsWith("~1020");
+
+        // The history keeps who held 10:00–10:20.
+        String absentId = absent;
+        assertThat(seatsByDay().get(J3))
+                .anySatisfy(siege -> assertThat(siege).endsWith("@10:00:00|10:20:00|" + absentId));
+        // Aujourd'hui offers it as the rest of the timeslot, new since the publication.
+        List<Map<String, Object>> aPourvoir = given().when()
+                .get("/api/jour-j")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("postesAPourvoir");
+        assertThat(aPourvoir)
+                .filteredOn(poste -> resteId.equals(poste.get("posteId")))
+                .singleElement()
+                .satisfies(poste -> assertThat(poste.get("resteDuCreneau")).isEqualTo(true));
+
+        List<String> candidats = given().when()
+                .post("/api/jour-j/postes/" + resteId + "/suggestions")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("suggestions.animateurId");
+        assertThat(candidats).isNotEmpty();
+        given().when()
+                .post("/api/postes/" + resteId + "/affectation?animateurId=" + candidats.getFirst())
+                .then()
+                .statusCode(204);
+        assertThat(seatsByDay().get(J3))
+                .anySatisfy(
+                        siege -> assertThat(siege).endsWith("@10:20:00|" + morningEnd() + "|" + candidats.getFirst()));
+
+        // A full solve rebuilds the problem from the referential: it replays the
+        // split instead of folding the two holders back onto one seat.
+        solveComplet();
+        assertThat(seatsByDay().get(J3))
+                .anySatisfy(siege -> assertThat(siege).endsWith("@10:00:00|10:20:00|" + absentId))
+                .anySatisfy(siege -> assertThat(siege).contains("@10:20:00|"));
+    }
+
+    /**
+     * An empty seat under way is narrowed, never split (ADR 0066): a seat
+     * left empty since 10:00 and filled at 10:20 stays one row, now starting
+     * at 10:20 — no empty 10:00–10:20 fragment beside it to count as a seat
+     * « non pourvu » —, and a full solve replays it as it found it rather
+     * than handing the replacement the minutes nobody held.
+     */
+    @Test
+    void anEmptySeatUnderWayIsNarrowedToNowAndNotSplit() {
+        solveComplet();
+        freezeClock(J3, "09:00");
+        String posteId = affectationsPersistees().stream()
+                .filter(poste -> poste.get("animateur") != null
+                        && J3.equals(String.valueOf(creneauOf(poste).get("date")))
+                        && MATIN.equals(heureDebut(poste)))
+                .map(poste -> String.valueOf(poste.get("id")))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Nobody seated on the Wednesday morning"));
+        // Emptied before the timeslot starts: nobody holds it from 10:00.
+        given().when().post("/api/postes/" + posteId + "/affectation").then().statusCode(204);
+
+        freezeClock(J3, "10:20");
+        List<String> candidats = given().when()
+                .post("/api/jour-j/postes/" + posteId + "/suggestions")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("suggestions.animateurId");
+        assertThat(candidats).isNotEmpty();
+        String remplacant = candidats.getFirst();
+        given().when()
+                .post("/api/postes/" + posteId + "/affectation?animateurId=" + remplacant)
+                .then()
+                .statusCode(204);
+
+        assertThat(affectationsPersistees())
+                .extracting(poste -> String.valueOf(poste.get("id")))
+                .doesNotContain(posteId)
+                .contains(posteId + "~1020")
+                .noneMatch(id -> id.startsWith(posteId + "~") && !id.equals(posteId + "~1020"));
+        String retreci = "@10:20:00|" + morningEnd() + "|" + remplacant;
+        assertThat(seatsByDay().get(J3)).anySatisfy(siege -> assertThat(siege).endsWith(retreci));
+
+        // A full solve rebuilds the problem from the referential: it replays
+        // the narrowed seat instead of seating the replacement from 10:00.
+        solveComplet();
+        assertThat(seatsByDay().get(J3))
+                .anySatisfy(siege -> assertThat(siege).endsWith(retreci))
+                .noneSatisfy(
+                        siege -> assertThat(siege).endsWith("|" + remplacant).contains("@10:00:00|"));
+    }
+
+    /**
+     * Two gestures on the same plan read before either wrote: the first
+     * splits the seat at 10:20, the second — decided on the seat as it was
+     * before — is refused in 409 instead of laying a second remainder over the
+     * first.
+     */
+    @Test
+    void aSecondSplitDecidedOnAStalePlanIsRefused() {
+        solveComplet();
+        freezeClock(J3, "10:20");
+        String posteId = affectationsPersistees().stream()
+                .filter(poste -> poste.get("animateur") != null
+                        && J3.equals(String.valueOf(creneauOf(poste).get("date")))
+                        && MATIN.equals(heureDebut(poste)))
+                .map(poste -> String.valueOf(poste.get("id")))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Nobody seated on the Wednesday morning"));
+        String edition = editionRepository.defaultEditionId();
+        PlanningEvenement premier = editionContext.executeIn(edition, persistence::loadPersistedPlanning);
+        PlanningEvenement second = editionContext.executeIn(edition, persistence::loadPersistedPlanning);
+
+        editionContext.executeIn(edition, () -> planningService.applyReparations(premier, List.of(posteId), null));
+
+        assertThatThrownBy(() -> editionContext.executeIn(
+                        edition, () -> planningService.applyReparations(second, List.of(posteId), null)))
+                .isInstanceOf(BusinessError.Conflict.class);
+        List<Map<String, Object>> cellule = affectationsPersistees().stream()
+                .filter(poste -> posteId.equals(poste.get("id"))
+                        || String.valueOf(poste.get("id")).startsWith(posteId + "~"))
+                .toList();
+        assertThat(cellule)
+                .extracting(poste -> String.valueOf(poste.get("id")))
+                .containsExactlyInAnyOrder(posteId, posteId + "~1020");
+        assertThat(cellule)
+                .filteredOn(poste -> posteId.equals(poste.get("id")))
+                .singleElement()
+                .satisfies(poste -> assertThat(heureFin(poste)).isEqualTo("10:20:00"));
+    }
+
+    /** The end of the Wednesday morning timeslot, as the scenario sets it. */
+    private static String morningEnd() {
+        return affectationsPersistees().stream()
+                .filter(poste -> J3.equals(String.valueOf(creneauOf(poste).get("date"))))
+                .filter(poste -> MATIN.equals(String.valueOf(creneauOf(poste).get("heureDebut"))))
+                .map(poste -> String.valueOf(creneauOf(poste).get("heureFin")))
+                .findFirst()
+                .orElseThrow();
     }
 
     /** After the last day, a solve — full or incremental — has nothing to plan and says so. */

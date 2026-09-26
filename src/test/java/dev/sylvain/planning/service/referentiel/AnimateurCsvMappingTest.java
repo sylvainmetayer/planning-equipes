@@ -26,6 +26,17 @@ class AnimateurCsvMappingTest {
     }
 
     @Test
+    void recognisesThePhoneColumnUnderItsUsualHeaders() {
+        assertThat(AnimateurCsvMapping.propose(List.of("Prénom", "Nom", "Téléphone"))
+                        .telephone())
+                .isEqualTo(2);
+        assertThat(AnimateurCsvMapping.propose(List.of("Portable", "Prénom")).telephone())
+                .isZero();
+        assertThat(AnimateurCsvMapping.propose(List.of("Phone number")).telephone())
+                .isZero();
+    }
+
+    @Test
     void recognisesEnglishHeadersToo() {
         AnimateurCsvMapping mapping = AnimateurCsvMapping.propose(List.of("First name", "Last name", "Birth date"));
 

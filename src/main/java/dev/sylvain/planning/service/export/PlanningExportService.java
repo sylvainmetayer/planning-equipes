@@ -243,28 +243,30 @@ public class PlanningExportService {
 
     /**
      * For each of this animateur's postes, the names of the others holding a
-     * seat on the same stand, same créneau and same window — who they will
+     * seat on the same stand and créneau at a common moment — who they will
      * actually be working alongside, which is what someone reads their own
      * planning to find out. Keyed by poste id, empty list when they hold the
      * stand alone.
      *
-     * <p>Same grouping key as the calendars: two segments of one stand split by
-     * a mid-créneau closure are not the same line, and the people on either
-     * side never meet.</p>
+     * <p>Read on the windows ({@link PosteAffectation#overlaps}): two segments
+     * of one stand split by a mid-créneau closure never meet, and neither do
+     * the two parts of a seat split on the day (ADR 0066) — whoever left at
+     * 09:20 did not work beside their replacement, who works beside the rest
+     * of the stand's crew.</p>
      *
      * <p>Static and public: the espace animateur reuses it from its own
      * package, and the rule is unit-tested on plain objects rather than
      * through the bytes of a generated PDF.</p>
      */
     public static Map<String, List<String>> teammatesByPoste(PlanningEvenement planning, String animateurId) {
-        Map<String, List<String>> equipeParLigne = new LinkedHashMap<>();
+        Map<String, List<PosteAffectation>> tenusParCellule = new LinkedHashMap<>();
         for (PosteAffectation poste : planning.getPostes()) {
             if (poste.getAnimateur() == null || poste.getCreneau() == null || poste.getStand() == null) {
                 continue;
             }
-            equipeParLigne
-                    .computeIfAbsent(ligneKey(poste), ignored -> new ArrayList<>())
-                    .add(poste.getAnimateur().nomAffiche());
+            tenusParCellule
+                    .computeIfAbsent(celluleKey(poste), ignored -> new ArrayList<>())
+                    .add(poste);
         }
         Map<String, List<String>> parPoste = new LinkedHashMap<>();
         for (PosteAffectation poste : planning.getPostes()) {
@@ -274,17 +276,19 @@ public class PlanningExportService {
                     || poste.getStand() == null) {
                 continue;
             }
-            List<String> equipe = new ArrayList<>(equipeParLigne.getOrDefault(ligneKey(poste), List.of()));
-            equipe.remove(poste.getAnimateur().nomAffiche());
-            equipe.sort(String.CASE_INSENSITIVE_ORDER);
-            parPoste.put(poste.getId(), equipe);
+            List<String> equipe = tenusParCellule.getOrDefault(celluleKey(poste), List.of()).stream()
+                    .filter(autre -> !animateurId.equals(autre.getAnimateur().getId()) && poste.overlaps(autre))
+                    .map(autre -> autre.getAnimateur().nomAffiche())
+                    .distinct()
+                    .sorted(String.CASE_INSENSITIVE_ORDER)
+                    .toList();
+            parPoste.put(poste.getId(), new ArrayList<>(equipe));
         }
         return parPoste;
     }
 
-    private static String ligneKey(PosteAffectation poste) {
-        return poste.getStand().getId() + "@" + poste.getCreneau().getId() + "#" + poste.heureDebutEffectif() + "-"
-                + poste.heureFinEffectif();
+    private static String celluleKey(PosteAffectation poste) {
+        return poste.getStand().getId() + "@" + poste.getCreneau().getId();
     }
 
     /** The whole planning in one landscape PDF, for the organiser — see {@link GlobalPlanningPdf}. */

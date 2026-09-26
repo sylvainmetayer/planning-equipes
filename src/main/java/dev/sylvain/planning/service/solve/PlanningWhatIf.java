@@ -19,6 +19,8 @@ import dev.sylvain.planning.service.diagnostic.PlanningAnalysis;
 import dev.sylvain.planning.service.referentiel.ReferenceData;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.EligibleAnimateurMoveFilter;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -226,19 +228,28 @@ public final class PlanningWhatIf {
      * best impact first. Nothing is persisted — applying a suggestion is the
      * separate, explicit {@link #applyReparation}.
      *
-     * <p><b>Bounded on purpose.</b> Only the first {@code plafond} eligible
-     * candidates are simulated (see {@link #SUGGESTIONS_PLAFOND_DEFAUT}); the
-     * result carries both counts so the caller can say "the 20 most promising of
-     * 137" rather than pass a truncated list off as exhaustive.</p>
+     * <p><b>Bounded on purpose.</b> Only {@code plafond} eligible candidates
+     * are simulated (see {@link #SUGGESTIONS_PLAFOND_DEFAUT}); the result
+     * carries both counts so the caller can say "the 20 most promising of
+     * 137" rather than pass a truncated list off as exhaustive. A caller that
+     * found nobody among them asks again {@code depuis} where it stopped: the
+     * eligible list is ranked the same way on every call, so the next batch
+     * is the next candidates, never the same ones again.</p>
      *
      * @param plafondDemande {@code null} or non-positive falls back to the
      *                       default, anything above {@link #SUGGESTIONS_PLAFOND_MAX} is clamped
+     * @param depuisDemande  the rank of the first eligible candidate to
+     *                       simulate; {@code null} or negative means the first,
+     *                       beyond the list means none
      */
-    public SuggestionsReparation suggererReparations(PlanningEvenement solved, String posteId, Integer plafondDemande) {
-        PosteAffectation poste = findPoste(solved, posteId);
-        // A past seat has no candidate: nothing the assistant proposes there
-        // could be applied (ADR 0044).
-        refuseIfPast(poste);
+    public SuggestionsReparation suggererReparations(
+            PlanningEvenement solved, String posteId, Integer plafondDemande, Integer depuisDemande) {
+        // A seat of a timeslot under way is looked at as the rest of it (ADR
+        // 0066): split — or, empty, narrowed — here in the throwaway plan,
+        // exactly as the write will, so the candidates are scored on what they
+        // would hold. A seat already over has no candidate: nothing proposed
+        // there could be applied (ADR 0044).
+        PosteAffectation poste = seatAhead(solved, findPoste(solved, posteId), horizon.get(), null, new ArrayList<>());
         Animateur actuel = poste.getAnimateur();
         int plafond = effectiveCandidateCap(plafondDemande);
 
@@ -249,7 +260,8 @@ public final class PlanningWhatIf {
                 violeesAvant.stream().map(ContrainteImpact::name).collect(Collectors.toSet());
 
         List<Animateur> eligibles = candidatsEligibles(solved, poste);
-        List<Animateur> evalues = eligibles.size() > plafond ? eligibles.subList(0, plafond) : eligibles;
+        int depuis = Math.min(depuisDemande == null ? 0 : Math.max(depuisDemande, 0), eligibles.size());
+        List<Animateur> evalues = eligibles.subList(depuis, Math.min(depuis + plafond, eligibles.size()));
 
         BaselineState baseline = new BaselineState(scoreAvant, violeesAvant, nomsAvant);
         List<SuggestionReparation> suggestions = new ArrayList<>();
@@ -269,9 +281,15 @@ public final class PlanningWhatIf {
                 scoreAvant,
                 violeesAvant,
                 eligibles.size(),
+                depuis,
                 evalues.size(),
                 plafond,
                 List.copyOf(suggestions));
+    }
+
+    /** The first batch of {@link #suggererReparations(PlanningEvenement, String, Integer, Integer)}. */
+    public SuggestionsReparation suggererReparations(PlanningEvenement solved, String posteId, Integer plafondDemande) {
+        return suggererReparations(solved, posteId, plafondDemande, null);
     }
 
     /** The seat's state before any substitution, which every candidate is measured against. */
@@ -345,20 +363,52 @@ public final class PlanningWhatIf {
      * solver's own notion of a viable candidate rather than restating it, so
      * the two can never drift apart.
      *
-     * <p>The order matters because the caller truncates: animateurs free at
-     * that moment come first, since handing them the seat cannot create the
-     * overlap that anyone already busy then would. Natural id order breaks ties
-     * so the same call twice returns the same list.</p>
+     * <p>The order matters because the caller truncates, and on the day a
+     * first batch with nobody viable in it helps no one. Ranked by what
+     * makes a candidate likely to pass the simulation:</p>
+     * <ol>
+     * <li>free at that moment — handing them the seat cannot create the
+     *     overlap that anyone already busy then would;</li>
+     * <li>no seat at all on that day — the rest, opening-span and daily-hours
+     *     rules then have nothing of theirs to break;</li>
+     * <li>fewer minutes worked over the whole plan — the furthest from every
+     *     weekly cap, and the fairest to ask;</li>
+     * <li>natural id order, so the same call twice returns the same list.</li>
+     * </ol>
+     *
+     * <p>One pass over the seats, whatever the size of the roster.</p>
      */
-    private static List<Animateur> candidatsEligibles(PlanningEvenement solved, PosteAffectation poste) {
+    static List<Animateur> candidatsEligibles(PlanningEvenement solved, PosteAffectation poste) {
         String actuelId =
                 poste.getAnimateur() == null ? null : poste.getAnimateur().getId();
-        Set<String> occupes = animateursOccupesPendant(solved, poste);
+        LocalDateTime[] fenetre = SeatSplit.window(poste);
+        LocalDate jour = poste.getCreneau() == null ? null : poste.getCreneau().getDate();
+        Set<String> occupes = new HashSet<>();
+        Set<String> deServiceCeJour = new HashSet<>();
+        Map<String, Integer> minutes = new HashMap<>();
+        for (PosteAffectation autre : solved.getPostes()) {
+            if (autre == poste || autre.getAnimateur() == null) {
+                continue;
+            }
+            String id = autre.getAnimateur().getId();
+            minutes.merge(id, autre.getDureeEffectiveMinutes(), Integer::sum);
+            if (jour != null
+                    && autre.getCreneau() != null
+                    && jour.equals(autre.getCreneau().getDate())) {
+                deServiceCeJour.add(id);
+            }
+            LocalDateTime[] autreFenetre = fenetre == null ? null : SeatSplit.window(autre);
+            if (autreFenetre != null && autreFenetre[0].isBefore(fenetre[1]) && autreFenetre[1].isAfter(fenetre[0])) {
+                occupes.add(id);
+            }
+        }
         return solved.getAnimateurs().stream()
                 .filter(animateur -> !animateur.getId().equals(actuelId))
                 .filter(animateur ->
                         EligibleAnimateurMoveFilter.isEligible(poste, animateur, solved.parametresLegaux()))
                 .sorted(Comparator.comparing((Animateur animateur) -> occupes.contains(animateur.getId()))
+                        .thenComparing(animateur -> deServiceCeJour.contains(animateur.getId()))
+                        .thenComparingInt(animateur -> minutes.getOrDefault(animateur.getId(), 0))
                         .thenComparing(Animateur::getId, NaturalOrder.OF_IDS))
                 .toList();
     }
@@ -366,41 +416,30 @@ public final class PlanningWhatIf {
     /**
      * Ids of the animateurs already holding a seat whose effective window
      * overlaps {@code poste}'s — the very overlap {@code pasDeChevauchementHoraire}
-     * penalises, compared the same way (effective start plus effective
-     * duration, so a window crossing midnight ends the next day).
+     * penalises, compared on the calendar (a window crossing midnight ends the
+     * next day, the remainder of an overnight seat split after midnight lies on
+     * the next day).
      *
      * <p>Only used to <em>rank</em> candidates: being busy is not an exclusion,
      * since a busy candidate may still be the least bad repair and the
      * simulation is what decides.</p>
      */
     private static Set<String> animateursOccupesPendant(PlanningEvenement solved, PosteAffectation poste) {
-        if (!horaireConnu(poste)) {
+        LocalDateTime[] fenetre = SeatSplit.window(poste);
+        if (fenetre == null) {
             return Set.of();
         }
-        LocalDateTime debut = debutEffectif(poste);
-        LocalDateTime fin = debut.plusMinutes(poste.getDureeEffectiveMinutes());
         Set<String> occupes = new HashSet<>();
         for (PosteAffectation autre : solved.getPostes()) {
-            if (autre == poste || autre.getAnimateur() == null || !horaireConnu(autre)) {
+            if (autre == poste || autre.getAnimateur() == null) {
                 continue;
             }
-            LocalDateTime autreDebut = debutEffectif(autre);
-            if (autreDebut.isBefore(fin)
-                    && autreDebut.plusMinutes(autre.getDureeEffectiveMinutes()).isAfter(debut)) {
+            LocalDateTime[] autreFenetre = SeatSplit.window(autre);
+            if (autreFenetre != null && autreFenetre[0].isBefore(fenetre[1]) && autreFenetre[1].isAfter(fenetre[0])) {
                 occupes.add(autre.getAnimateur().getId());
             }
         }
         return occupes;
-    }
-
-    private static boolean horaireConnu(PosteAffectation poste) {
-        return poste.getCreneau() != null
-                && poste.getCreneau().getDate() != null
-                && poste.getCreneau().getHeureDebut() != null;
-    }
-
-    private static LocalDateTime debutEffectif(PosteAffectation poste) {
-        return LocalDateTime.of(poste.getCreneau().getDate(), poste.heureDebutEffectif());
     }
 
     /**
@@ -694,7 +733,8 @@ public final class PlanningWhatIf {
      *         there is no seat to repair, and « poste inconnu » would send the
      *         reader looking for an id that is not the problem
      */
-    public SuggestionsReparation persistedSuggererReparations(String posteId, Integer plafondDemande) {
+    public SuggestionsReparation persistedSuggererReparations(
+            String posteId, Integer plafondDemande, Integer depuisDemande) {
         PlanningEvenement persiste = persistence.loadPersistedPlanning();
         if (persiste == null
                 || persiste.getPostes() == null
@@ -702,7 +742,7 @@ public final class PlanningWhatIf {
             throw new BusinessError.Conflict("Aucun planning persisté : lancez d'abord une résolution.");
         }
         preparation.accept(persiste);
-        return suggererReparations(persiste, posteId, plafondDemande);
+        return suggererReparations(persiste, posteId, plafondDemande, depuisDemande);
     }
 
     /**
@@ -786,8 +826,9 @@ public final class PlanningWhatIf {
      *                    called in sick is the one gesture that must never be
      *                    blocked by the plan it is repairing
      */
-    public void applyReparations(PlanningEvenement persiste, List<String> posteIds, String animateurId) {
-        writeSeating(persiste, posteIds, animateurId, null, false);
+    public List<PosteAffectation> applyReparations(
+            PlanningEvenement persiste, List<String> posteIds, String animateurId) {
+        return writeSeating(persiste, posteIds, animateurId, null, false).sieges();
     }
 
     /**
@@ -816,7 +857,7 @@ public final class PlanningWhatIf {
         }
         SeatingScores scores = writeSeating(persiste, List.of(posteId), animateurId, SeatPrecondition.FREE, true);
         return new DeplacementSimulation(
-                posteId,
+                scores.sieges().getFirst().getId(),
                 null,
                 null,
                 animateurId,
@@ -865,15 +906,76 @@ public final class PlanningWhatIf {
             String animateurId,
             SeatPrecondition precondition,
             boolean receiverLocksApply) {
+        SeatingWrite ecriture = prepareSeating(persiste, posteIds, animateurId, precondition, receiverLocksApply);
+        if (ecriture.scissions().isEmpty() && ecriture.narrowings().isEmpty()) {
+            for (PosteAffectation poste : ecriture.scores().sieges()) {
+                if (precondition == null) {
+                    persistence.reaffecterPoste(poste.getId(), animateurId);
+                } else if (!persistence.reassignSeatIfHeldBy(poste.getId(), animateurId, precondition.holderId())) {
+                    throw precondition.refusal();
+                }
+            }
+        } else {
+            persistence.splitAndReassign(
+                    ecriture.scissions(),
+                    ecriture.narrowings(),
+                    ecriture.animateurParPoste(),
+                    ecriture.expectedHolders(),
+                    ecriture.refusal());
+        }
+        return ecriture.scores();
+    }
+
+    /**
+     * {@link #applyReparations} on the caller's transaction: the seats are
+     * written with whatever else the caller writes on {@code connection}, and
+     * rolled back with it. Same checks, all made before the first write.
+     */
+    public List<PosteAffectation> applyReparations(
+            Connection connection, PlanningEvenement persiste, List<String> posteIds, String animateurId)
+            throws SQLException {
+        SeatingWrite ecriture = prepareSeating(persiste, posteIds, animateurId, null, false);
+        persistence.splitAndReassign(
+                connection,
+                ecriture.scissions(),
+                ecriture.narrowings(),
+                ecriture.animateurParPoste(),
+                ecriture.expectedHolders(),
+                ecriture.refusal());
+        return ecriture.scores().sieges();
+    }
+
+    /**
+     * A seating checked, scored and split in memory, not written yet: the
+     * splits and the narrowings to lay down, who each seat goes to —
+     * continuations and narrowed seats under their new ids —,
+     * the seats whose write is conditional and on whom, and what a failed
+     * precondition answers.
+     */
+    private record SeatingWrite(
+            SeatingScores scores,
+            List<PlanningPersistenceService.Scission> scissions,
+            List<PlanningPersistenceService.Narrowing> narrowings,
+            Map<String, String> animateurParPoste,
+            Map<String, String> expectedHolders,
+            Supplier<? extends RuntimeException> refusal) {}
+
+    /** Everything {@link #writeSeating} does but the write. */
+    private SeatingWrite prepareSeating(
+            PlanningEvenement persiste,
+            List<String> posteIds,
+            String animateurId,
+            SeatPrecondition precondition,
+            boolean receiverLocksApply) {
         // First of the pre-checks: a solve holding the edition would bring the
         // seats back on landing, so nothing is looked up, scored or written.
         if (persistence != null) {
             persistence.refuseIfSolving();
         }
-        List<PosteAffectation> postes =
+        List<PosteAffectation> demandes =
                 posteIds.stream().map(id -> findPoste(persiste, id)).toList();
         if (precondition != null) {
-            for (PosteAffectation poste : postes) {
+            for (PosteAffectation poste : demandes) {
                 String holder = poste.getAnimateur() == null
                         ? null
                         : poste.getAnimateur().getId();
@@ -883,9 +985,8 @@ public final class PlanningWhatIf {
             }
         }
         Animateur repreneur = animateurId == null ? null : findAnimateur(persiste, animateurId);
-        refuseIfPast(postes.toArray(PosteAffectation[]::new));
         List<VerrouillagePlanning> verrouillages = referenceDataService.listVerrouillages();
-        for (PosteAffectation poste : postes) {
+        for (PosteAffectation poste : demandes) {
             if (verrouillages.stream().anyMatch(verrouillage -> verrouillage.couvre(poste))) {
                 throw new BusinessError.Invalid(
                         "Ce poste est verrouillé : déverrouillez-le avant d'y appliquer une réparation.");
@@ -894,15 +995,122 @@ public final class PlanningWhatIf {
                 refuseIfReceiverLocked(verrouillages, animateurId, poste);
             }
         }
+        // Read once, so every seat of the gesture is judged against the same
+        // minute. A seat over is refused; a held seat under way is split at
+        // « now » and the write lands on its remainder, an empty one is
+        // narrowed to « now » when somebody is seated on it (ADR 0066).
+        PastHorizon moment = horizon.get();
+        List<PersistenceSplit> scissions = new ArrayList<>();
+        List<PlanningPersistenceService.Narrowing> narrowings = new ArrayList<>();
+        List<PosteAffectation> postes = demandes.stream()
+                .map(poste -> seatAhead(persiste, poste, moment, scissions, animateurId == null ? null : narrowings))
+                .toList();
         SeatingScores scores = refuseIfBreaksHardRules(persiste, postes, repreneur);
+        // The split and its write land in one transaction, each split or
+        // narrowing holding the before-image it was decided on, each other seat
+        // the gesture's precondition: a plan read earlier cannot split a seat
+        // somebody else already split, nor overwrite a holder that moved.
+        Map<String, String> ecritures = new LinkedHashMap<>();
+        Map<String, String> titulairesAttendus = new LinkedHashMap<>();
+        Set<String> suites = new HashSet<>();
+        scissions.forEach(scission -> suites.add(scission.suite().getId()));
+        narrowings.forEach(narrowing -> suites.add(narrowing.newId()));
         for (PosteAffectation poste : postes) {
-            if (precondition == null) {
-                persistence.reaffecterPoste(poste.getId(), animateurId);
-            } else if (!persistence.reassignSeatIfHeldBy(poste.getId(), animateurId, precondition.holderId())) {
-                throw precondition.refusal();
+            ecritures.put(poste.getId(), animateurId);
+            if (precondition != null && !suites.contains(poste.getId())) {
+                titulairesAttendus.put(poste.getId(), precondition.holderId());
             }
         }
-        return scores;
+        return new SeatingWrite(
+                new SeatingScores(
+                        scores == null ? null : scores.avant(), scores == null ? null : scores.apres(), postes),
+                scissions.stream()
+                        .map(scission -> new PlanningPersistenceService.Scission(
+                                scission.origine(),
+                                scission.at(),
+                                scission.suite(),
+                                scission.finAvant(),
+                                scission.titulaireAvant()))
+                        .toList(),
+                narrowings,
+                ecritures,
+                titulairesAttendus,
+                precondition == null ? PlanningWhatIf::staleSplitRefusal : precondition::refusal);
+    }
+
+    /**
+     * What a split answers when the seat it was decided on has changed since
+     * the plan was read — split by another gesture, or handed to somebody
+     * else: writing it anyway would lay a second remainder over the first.
+     */
+    private static BusinessError.Conflict staleSplitRefusal() {
+        return new BusinessError.Conflict(
+                "Ce siège a changé depuis la lecture du planning : rechargez la vue " + "avant de le modifier.");
+    }
+
+    /**
+     * A split decided by a gesture, written with it, and the seat as it was
+     * read before the split — its own end ({@code null}: the timeslot's) and
+     * its holder —, the precondition the write holds.
+     */
+    private record PersistenceSplit(
+            String origine, LocalTime at, PosteAffectation suite, LocalTime finAvant, String titulaireAvant) {}
+
+    /**
+     * The seat a gesture really writes: {@code poste} itself when it is ahead,
+     * or started this very minute; its remainder when it is held and its
+     * timeslot is under way — split in {@code plan} at the current minute,
+     * the continuation added to the plan and recorded in {@code scissions}
+     * when the split is to be written; {@code poste} narrowed to the current
+     * minute when it is empty and somebody is being seated on it, recorded in
+     * {@code narrowings} ({@code null}: nobody is being seated, and an empty
+     * seat is written as it is). A seat whose window is over is refused
+     * (ADR 0044).
+     *
+     * <p>The seat returned is never marked past, whatever the preparation of
+     * the plan said: it is the future part, and the score has to read what a
+     * candidate would break on it.</p>
+     */
+    private static PosteAffectation seatAhead(
+            PlanningEvenement plan,
+            PosteAffectation poste,
+            PastHorizon moment,
+            List<PersistenceSplit> scissions,
+            List<PlanningPersistenceService.Narrowing> narrowings) {
+        if (moment == null || !FrozenPast.isPast(poste, moment)) {
+            return poste;
+        }
+        if (SeatSplit.isOver(poste, moment)) {
+            throw new BusinessError.Invalid(FrozenPast.PAST_SEAT_REFUSAL);
+        }
+        LocalTime at = SeatSplit.minute(moment);
+        if (narrowings != null && SeatSplit.needsNarrowing(poste, moment)) {
+            // Nobody held the minutes gone: they are dropped rather than kept
+            // as an empty fragment, and the seat is written from « now ».
+            String avant = poste.getId();
+            LocalTime debutAvant = poste.getHeureDebutEffective();
+            SeatSplit.narrow(poste, at);
+            poste.setPasse(false);
+            narrowings.add(new PlanningPersistenceService.Narrowing(avant, poste.getId(), at, debutAvant));
+            return poste;
+        }
+        if (!SeatSplit.needsSplit(poste, moment)) {
+            poste.setPasse(false);
+            return poste;
+        }
+        // The before-image, read before the split cuts the seat short.
+        LocalTime finAvant = poste.getHeureFinEffective();
+        String titulaireAvant =
+                poste.getAnimateur() == null ? null : poste.getAnimateur().getId();
+        PosteAffectation suite = SeatSplit.split(poste, at);
+        suite.setPasse(false);
+        List<PosteAffectation> sieges = new ArrayList<>(plan.getPostes());
+        sieges.add(suite);
+        plan.setPostes(sieges);
+        if (scissions != null) {
+            scissions.add(new PersistenceSplit(poste.getId(), at, suite, finAvant, titulaireAvant));
+        }
+        return suite;
     }
 
     /**
@@ -993,8 +1201,17 @@ public final class PlanningWhatIf {
         return new SeatingScores(avant.score(), apres.score());
     }
 
-    /** The plan's score on either side of a seating the checks accepted. */
-    private record SeatingScores(HardMediumSoftScore avant, HardMediumSoftScore apres) {}
+    /**
+     * The plan's score on either side of a seating the checks accepted —
+     * {@code null} when seats are only emptied — and the seats actually
+     * written: the remainders, for a seat that was split.
+     */
+    private record SeatingScores(HardMediumSoftScore avant, HardMediumSoftScore apres, List<PosteAffectation> sieges) {
+
+        SeatingScores(HardMediumSoftScore avant, HardMediumSoftScore apres) {
+            this(avant, apres, List.of());
+        }
+    }
 
     /**
      * The rules a refused gesture would break, as the sentence that names them.
@@ -1581,14 +1798,21 @@ public final class PlanningWhatIf {
      * answer — the UI has to say so rather than imply completeness.
      *
      * @param animateurActuelId the poste's occupant before any repair, {@code null} when the seat is empty
+     * @param depuis            the rank, in the eligible list, of the first
+     *                          candidate this call simulated: a caller paging
+     *                          through the list has now seen
+     *                          {@code depuis + candidatsEvalues} of the
+     *                          {@code candidatsEligibles}
+     * @param candidatsEvalues  how many this call simulated
      */
-    @Schema(requiredProperties = {"candidatsEligibles", "candidatsEvalues", "plafond"})
+    @Schema(requiredProperties = {"candidatsEligibles", "depuis", "candidatsEvalues", "plafond"})
     public record SuggestionsReparation(
             String posteId,
             String animateurActuelId,
             HardMediumSoftScore scoreAvant,
             List<ContrainteImpact> contraintesVioleesAvant,
             int candidatsEligibles,
+            int depuis,
             int candidatsEvalues,
             int plafond,
             List<SuggestionReparation> suggestions) {}

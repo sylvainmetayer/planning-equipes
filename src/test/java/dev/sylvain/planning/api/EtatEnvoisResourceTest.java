@@ -171,6 +171,17 @@ class EtatEnvoisResourceTest {
         assertThat(ligne(etat, "ETAT-B").get("aPrevenir")).isEqualTo(true);
         assertThat(ligne(etat, "ETAT-B").get("differe")).isEqualTo(true);
         assertThat(ligne(etat, "ETAT-A").get("aPrevenir")).isEqualTo(false);
+        // Aujourd'hui's « Prévenir les N personnes » counts the same people
+        // Diffuser does: Bruno, deferred, although the plan now equals the
+        // published one.
+        assertThat(given().when()
+                        .get("/api/jour-j?date=" + JOUR + "&maintenant=" + JOUR + "T13:00")
+                        .then()
+                        .statusCode(200)
+                        .extract()
+                        .jsonPath()
+                        .getList("aPrevenir", String.class))
+                .containsExactly("ETAT-B");
     }
 
     /**

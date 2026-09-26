@@ -264,15 +264,7 @@ public class PlanPublicationService {
         PlanSnapshotService.SnapshotMeta derniere = planPublieService.lastPublication();
 
         Map<String, Identite> identites = identites();
-        Map<String, Long> marqueurs = notifiedPlans.byAnimateur();
-        List<ChangementAnimateur> changements = diffService.comparer(
-                vacationsNotifiees(marqueurs, identites.keySet()),
-                PublicationDiffService.vacationsByAnimateur(courant),
-                identites,
-                jamaisPublie);
-
-        List<DestinatairePublication> destinataires =
-                assembler(changements, identites, traceRepository.deferred(), confirmationService.storedByAnimateur());
+        List<DestinatairePublication> destinataires = recipients(courant, identites, jamaisPublie);
         ValidationPrerequisService.ProgressionValidations relecture = prerequisService.progression();
         return new ApercuPublication(
                 jamaisPublie,
@@ -286,6 +278,28 @@ public class PlanPublicationService {
                         .filter(envoi -> envoi.statut() == StatutEnvoi.ECHEC)
                         .filter(envoi -> identites.containsKey(envoi.animateurId()))
                         .count());
+    }
+
+    /**
+     * Who the next publication would write to, over a working plan the caller
+     * already read: the recipients of {@link #apercu()}, deferred people
+     * included, and nothing else of it — what « Prévenir les N personnes »
+     * of Aujourd'hui counts and targets, so the screen and Diffuser cannot
+     * count two different sets of people.
+     */
+    public List<DestinatairePublication> recipients(PlanningEvenement courant) {
+        return recipients(courant, identites(), planPublieService.jamaisPublie());
+    }
+
+    private List<DestinatairePublication> recipients(
+            PlanningEvenement courant, Map<String, Identite> identites, boolean jamaisPublie) {
+        Map<String, Long> marqueurs = notifiedPlans.byAnimateur();
+        List<ChangementAnimateur> changements = diffService.comparer(
+                vacationsNotifiees(marqueurs, identites.keySet()),
+                PublicationDiffService.vacationsByAnimateur(courant),
+                identites,
+                jamaisPublie);
+        return assembler(changements, identites, traceRepository.deferred(), confirmationService.storedByAnimateur());
     }
 
     /**

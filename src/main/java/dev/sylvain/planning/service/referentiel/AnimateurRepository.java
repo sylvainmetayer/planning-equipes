@@ -56,7 +56,7 @@ public class AnimateurRepository {
         Map<String, Animateur> byId = new LinkedHashMap<>();
         try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement ps = scope.prepareScoped(connection, """
-                    SELECT id, prenom, nom, date_naissance, manager, email, access_token, modifie_le
+                    SELECT id, prenom, nom, date_naissance, manager, email, telephone, access_token, modifie_le
                     FROM animateur
                     WHERE edition_id = ?
                     ORDER BY id""");
@@ -69,6 +69,7 @@ public class AnimateurRepository {
                             rs.getObject("date_naissance", LocalDate.class),
                             rs.getBoolean("manager"));
                     animateur.setEmail(rs.getString("email"));
+                    animateur.setTelephone(rs.getString("telephone"));
                     animateur.setAccessToken(rs.getString("access_token"));
                     animateur.setModifieLe(
                             rs.getObject("modifie_le", OffsetDateTime.class).toInstant());
@@ -395,11 +396,13 @@ public class AnimateurRepository {
         // Neither token is listed: a fresh row gets the database default, an
         // existing row keeps both. Rotation only happens through
         // regenerateAnimateurToken and regenerateAbonnementToken.
-        String miseAJourEmail =
-                conserverEmailSiAbsent ? "email = COALESCE(EXCLUDED.email, animateur.email)" : "email = EXCLUDED.email";
+        String miseAJourEmail = conserverEmailSiAbsent
+                ? "email = COALESCE(EXCLUDED.email, animateur.email),"
+                        + " telephone = COALESCE(EXCLUDED.telephone, animateur.telephone)"
+                : "email = EXCLUDED.email, telephone = EXCLUDED.telephone";
         try (PreparedStatement ps = scope.prepareScoped(connection, """
-                INSERT INTO animateur (edition_id, id, prenom, nom, date_naissance, manager, email)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO animateur (edition_id, id, prenom, nom, date_naissance, manager, email, telephone)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (edition_id, id)
                 DO UPDATE SET prenom = EXCLUDED.prenom, nom = EXCLUDED.nom, date_naissance = EXCLUDED.date_naissance,
                 manager = EXCLUDED.manager, modifie_le = now(), """ + miseAJourEmail + "\n" + """
@@ -414,7 +417,14 @@ public class AnimateurRepository {
             ps.setObject(5, animateur.getDateNaissance());
             ps.setBoolean(6, animateur.isManager());
             ps.setString(7, animateur.getEmail());
-            WriteStamp.bindPrecondition(ps, 8, !failIfPresent, animateur.getModifieLe());
+            // A blank number is no number: the fiche form and a CSV cell both
+            // send an empty string for a field cleared.
+            String telephone =
+                    animateur.getTelephone() == null || animateur.getTelephone().isBlank()
+                            ? null
+                            : animateur.getTelephone().trim();
+            ps.setString(8, telephone);
+            WriteStamp.bindPrecondition(ps, 9, !failIfPresent, animateur.getModifieLe());
             Instant ecrit = WriteStamp.writtenOrRefused(ps);
             if (ecrit == null) {
                 refuse(failIfPresent, "animateur", animateur.getId());

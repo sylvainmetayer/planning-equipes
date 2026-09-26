@@ -107,6 +107,7 @@ export class AnimateurFormDialog {
           nom: '',
           dateNaissance: '',
           email: '',
+          telephone: '',
           modifieLe: null,
         };
   protected readonly draft = signal<AnimateurDraft>(this.initial);
@@ -240,6 +241,7 @@ export class AnimateurFormDialog {
       dateNaissance: draft.dateNaissance,
       manager: draft.manager,
       email: draft.email.trim() || null,
+      telephone: draft.telephone.trim() || null,
       competences,
       souhaits: draft.souhaits,
       joursIndisponibles: draft.joursIndisponibles,

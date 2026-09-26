@@ -157,6 +157,25 @@ class PlanningPdfContenuTest {
     }
 
     /**
+     * The phone number is for the organisation on the day, never for paper:
+     * set on everybody, it appears in no individual layout — teammates
+     * included — nor in the global document, nor in the calendar.
+     */
+    @Test
+    void noDocumentPrintsAPhoneNumber() throws IOException {
+        PlanningEvenement planning = planning();
+        planning.getAnimateurs().forEach(animateur -> animateur.setTelephone("06 99 88 77 66"));
+
+        for (FormatPlanning format : FormatPlanning.values()) {
+            assertThat(textOf(service.exportAnimateurPdf(planning, "A-ADA", format)))
+                    .doesNotContain("06 99 88 77 66")
+                    .doesNotContain("0699887766");
+        }
+        assertThat(textOf(service.exportGlobalPdf(planning))).doesNotContain("06 99 88 77 66");
+        assertThat(service.exportAnimateurIcs(planning, "A-ADA")).doesNotContain("06 99 88 77 66");
+    }
+
+    /**
      * « Où dois-je aller » is answered by the overview and not by the
      * chronological pages: the stands are grouped by place, each with its
      * typologie and how much it weighs — « 1 × · 4 h ».

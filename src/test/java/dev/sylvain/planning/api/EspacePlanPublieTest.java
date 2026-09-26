@@ -1,6 +1,7 @@
 package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
@@ -134,6 +135,31 @@ class EspacePlanPublieTest {
                 .body("publieLe", containsString("20"))
                 .body("postes.size()", equalTo(1))
                 .body("postes[0].standNom", equalTo("Stand espace un"));
+    }
+
+    /**
+     * The espace shows a person their planning and their teammates, never a
+     * phone number — not even their own: it is the organisation's way to
+     * reach them on the day, read on the fiche and on Aujourd'hui only.
+     */
+    @Test
+    void theEspaceNeverShowsAPhoneNumber() {
+        Animateur alice = referenceData.listAnimateurs().stream()
+                .filter(candidat -> candidat.getId().equals("PUBESP-A"))
+                .findFirst()
+                .orElseThrow();
+        alice.setTelephone("06 99 88 77 66");
+        referenceData.updateAnimateur("PUBESP-A", alice);
+        publication.publier();
+
+        String espace = given().when()
+                .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
+                .then()
+                .statusCode(200)
+                .extract()
+                .asString();
+
+        assertThat(espace).contains("Stand espace un").doesNotContain("06 99 88 77 66");
     }
 
     @Test

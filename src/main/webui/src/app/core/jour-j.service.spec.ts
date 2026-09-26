@@ -81,10 +81,21 @@ describe('JourJService', () => {
     expect(api.post).toHaveBeenCalledWith('/api/jour-j/postes/P%202/suggestions', null);
   });
 
-  it('reads the publication count from the existing preview, and sends nothing', async () => {
-    await service.apercuPublication();
+  it('asks for the next batch of candidates from where the last one stopped', async () => {
+    await service.suggestions('P2', { depuis: 20, plafond: 100 });
 
-    expect(api.get).toHaveBeenCalledWith('/api/planning/publication');
-    expect(api.post).not.toHaveBeenCalled();
+    expect(api.post).toHaveBeenCalledWith(
+      '/api/jour-j/postes/P2/suggestions?plafond=100&depuis=20',
+      null,
+    );
+  });
+
+  it('warns the people it names through the targeted publication, and nobody else', async () => {
+    await service.prevenir(['A1', 'A2']);
+
+    expect(api.post).toHaveBeenCalledWith('/api/planning/publication', {
+      exclusions: [],
+      cibles: ['A1', 'A2'],
+    });
   });
 });

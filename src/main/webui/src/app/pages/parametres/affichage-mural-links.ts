@@ -21,6 +21,7 @@ import { AffichageMuralApi } from '../../core/api/affichage-mural-api';
 import { errorMessage } from '../../core/error-message';
 import { AffichageMuralLink, QrCodeView } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
+import { qrPath } from '../../core/qr-path';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { ConfirmService } from '../../shared/confirm-dialog';
 
@@ -104,15 +105,7 @@ export class AffichageMuralLinks implements OnInit {
 
   /** The QR code's dark modules as one SVG path, one unit square per module. */
   protected cheminQr(qr: QrCodeView): string {
-    const segments: string[] = [];
-    qr.rows.forEach((row, y) => {
-      for (let x = 0; x < row.length; x++) {
-        if (row[x] === '1') {
-          segments.push(`M${x} ${y}h1v1h-1z`);
-        }
-      }
-    });
-    return segments.join('');
+    return qrPath(qr);
   }
 
   protected async create(): Promise<void> {

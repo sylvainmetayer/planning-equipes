@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.publication;
 
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.SeatPlaces;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -217,6 +218,30 @@ public class PublicationDiffService {
         return List.copyOf(resultat);
     }
 
+    /**
+     * The ids of the people whose schedule differs between the working plan
+     * and the published one — what « peut différer » counts on the wall
+     * display: the diff the publication writes from, never a second reading.
+     * Empty before the first publication: there is nothing to differ from
+     * yet.
+     */
+    public List<String> changedPeople(PlanningEvenement courant, PlanningEvenement publie) {
+        if (publie == null) {
+            return List.of();
+        }
+        Map<String, Identite> identites = new LinkedHashMap<>();
+        for (PlanningEvenement plan : List.of(courant, publie)) {
+            if (plan.getAnimateurs() != null) {
+                plan.getAnimateurs()
+                        .forEach(animateur ->
+                                identites.putIfAbsent(animateur.getId(), new Identite(animateur.getId(), null)));
+            }
+        }
+        return comparer(vacationsByAnimateur(publie), vacationsByAnimateur(courant), identites, false).stream()
+                .map(ChangementAnimateur::animateurId)
+                .toList();
+    }
+
     /** Display name and address of one animateur — all the diff needs of a fiche. */
     public record Identite(String nomAffiche, String email) {}
 
@@ -240,16 +265,30 @@ public class PublicationDiffService {
         if (planning == null || planning.getPostes() == null) {
             return byAnimateur;
         }
+        // A seat split on the day (ADR 0066) whose rest its own holder kept is
+        // one vacation of theirs, from the origin's start to the rest's end:
+        // read as two, it would tell them their hours changed when nothing did.
+        Set<String> memeTitulaire = SeatPlaces.sameHolderContinuations(planning.getPostes());
+        Map<String, PosteAffectation> suites = SeatPlaces.continuationByOrigin(planning.getPostes());
         for (PosteAffectation poste : planning.getPostes()) {
-            if (poste.getAnimateur() == null || poste.getStand() == null || poste.getCreneau() == null) {
+            if (poste.getAnimateur() == null
+                    || poste.getStand() == null
+                    || poste.getCreneau() == null
+                    || memeTitulaire.contains(poste.getId())) {
                 continue;
+            }
+            PosteAffectation dernier = poste;
+            for (PosteAffectation suite = suites.get(dernier.getId());
+                    suite != null && memeTitulaire.contains(suite.getId());
+                    suite = suites.get(dernier.getId())) {
+                dernier = suite;
             }
             byAnimateur
                     .computeIfAbsent(poste.getAnimateur().getId(), unused -> new ArrayList<>())
                     .add(new Vacation(
                             poste.getCreneau().getDate(),
                             poste.heureDebutEffectif(),
-                            poste.heureFinEffectif(),
+                            dernier.heureFinEffectif(),
                             poste.getStand().getId(),
                             poste.getStand().getNom()));
         }
