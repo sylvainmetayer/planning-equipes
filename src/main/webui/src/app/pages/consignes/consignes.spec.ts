@@ -19,6 +19,7 @@ import {
   datesCandidates,
   erreursForm,
   isPast,
+  resolveDateParam,
   fenetresDemandees,
   fenetresSaisies,
   filterStands,
@@ -112,6 +113,19 @@ describe('the hours read into the form and back', () => {
         { standId: 'A', debut: '09:00:00', fin: null, effectif: null },
       ]),
     ).toEqual([fenetre('18:00', '22:00', '2'), fenetre('09:00', '', '')]);
+  });
+});
+
+describe('the date a link names', () => {
+  it('reads « demain » as the day after the server’s today, across a month end', () => {
+    expect(resolveDateParam('demain', '2026-07-10')).toBe('2026-07-11');
+    expect(resolveDateParam('demain', '2026-07-31')).toBe('2026-08-01');
+  });
+
+  it('knows no tomorrow before the server said what today is, and keeps a plain date', () => {
+    expect(resolveDateParam('demain', null)).toBeNull();
+    expect(resolveDateParam('2026-07-12', '2026-07-10')).toBe('2026-07-12');
+    expect(resolveDateParam(null, '2026-07-10')).toBeNull();
   });
 });
 

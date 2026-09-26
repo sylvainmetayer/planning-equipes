@@ -298,30 +298,33 @@ export function buildNavGroups(): NavGroup[] {
           ],
         },
         {
-          path: '/ad-hoc-constraints',
-          label: $localize`:@@nav.link.adHocConstraints:Ajustements manuels`,
-          icon: 'rule',
+          // What the next solve must respect (issue #719): the adjustments,
+          // the locks and the consignes (ADR 0043), one page in three tabs.
+          // No shortcut: its initial is Créneaux's.
+          path: '/consignes-solveur',
+          label: $localize`:@@nav.link.consignesSolveur:Consignes au solveur`,
+          icon: 'assignment_late',
+          keywords: $localize`:@@nav.keywords.consignesSolveur:ajustements manuels verrouillages consignes arrêté canicule fermeture`,
           tabs: [
             tab(
-              'vue',
-              'reseau',
-              $localize`:@@nav.tab.reseau:Réseau`,
-              $localize`:@@nav.keywords.reseau:affinités incompatibilités paires`,
+              'onglet',
+              'ajustements',
+              $localize`:@@consignesSolveur.onglet.ajustements:Ajustements`,
+              $localize`:@@nav.keywords.ajustements:affinités incompatibilités affectation forcée`,
+            ),
+            tab(
+              'onglet',
+              'verrouillages',
+              $localize`:@@consignesSolveur.onglet.verrouillages:Verrouillages`,
+              $localize`:@@nav.keywords.verrouillages:figer geler`,
+            ),
+            tab(
+              'onglet',
+              'consignes',
+              $localize`:@@consignesSolveur.onglet.consignes:Consignes`,
+              $localize`:@@nav.keywords.consignes:arrêté canicule fermeture`,
             ),
           ],
-        },
-        {
-          path: '/verrouillages',
-          label: $localize`:@@nav.link.verrouillages:Verrouillages`,
-          icon: 'lock',
-          shortcut: 'v',
-        },
-        {
-          // Closing every stand on a band of one date, by decision (ADR 0043).
-          path: '/consignes',
-          label: $localize`:@@nav.link.consignes:Consignes`,
-          icon: 'policy',
-          keywords: $localize`:@@nav.keywords.consignes:arrêté canicule fermeture`,
         },
         {
           // Every setting that decides the plan (issue #720): the hard rules

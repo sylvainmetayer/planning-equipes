@@ -1,6 +1,5 @@
-// The volumetry card reads the store and derives two figures the template
-// would otherwise get wrong: a fill ratio that must not divide by zero, and a
-// problem scale that is a logarithm, not a product.
+// The volumetry card reads the store and derives the one figure the template
+// would otherwise get wrong: a fill ratio that must not divide by zero.
 
 import { provideZonelessChangeDetection, Signal, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -10,7 +9,6 @@ import { SolverVolumetry } from './solver-volumetry';
 
 type CardInternals = {
   fillRatio: Signal<number | null>;
-  problemScale: Signal<number>;
 };
 
 describe('SolverVolumetry', () => {
@@ -79,7 +77,7 @@ describe('SolverVolumetry', () => {
     expect(text()).toContain('Taux de remplissage : 0.75');
   });
 
-  it('gives the problem scale as postes times log10 of the animateurs', () => {
+  it('prints no search space, and folds under its title', () => {
     scale.set({
       animateurCount: 100,
       posteCount: 1500,
@@ -87,30 +85,13 @@ describe('SolverVolumetry', () => {
       hoursToFill: 0,
       hoursAvailable: 0,
     });
-    const card = createCard();
+    createCard();
 
-    expect(card.problemScale()).toBe(3000);
-    expect(text()).toContain('10^3000');
-  });
-
-  it('shows no scale at all with a single animateur or no poste', () => {
-    scale.set({
-      animateurCount: 1,
-      posteCount: 1500,
-      contrainteAdHocCount: 0,
-      hoursToFill: 0,
-      hoursAvailable: 0,
-    });
-    expect(createCard().problemScale()).toBe(0);
-
-    scale.set({
-      animateurCount: 100,
-      posteCount: 0,
-      contrainteAdHocCount: 0,
-      hoursToFill: 0,
-      hoursAvailable: 0,
-    });
-    expect(createCard().problemScale()).toBe(0);
+    expect(text()).not.toContain('10^');
+    expect(text()).not.toContain('espace de recherche');
+    const details = (fixture.nativeElement as HTMLElement).querySelector('details');
+    expect(details?.open).toBe(false);
+    expect(details?.querySelector('summary')?.textContent).toContain('Volumétrie du problème');
   });
 
   it('follows the store as it changes', () => {
@@ -123,10 +104,14 @@ describe('SolverVolumetry', () => {
     });
     creneaux.set([{}, {}]);
     createCard();
-    expect(text()).toContain('10 animateurs sur 40 postes (2 créneaux), sous 3 ajustements');
+    const valeurs = (): string[] =>
+      Array.from(
+        (fixture.nativeElement as HTMLElement).querySelectorAll('.staffing-stat-value'),
+      ).map((each) => each.textContent!.trim());
+    expect(valeurs().slice(0, 4)).toEqual(['10', '40', '2', '3']);
 
     creneaux.set([{}, {}, {}]);
     fixture.detectChanges();
-    expect(text()).toContain('(3 créneaux)');
+    expect(valeurs()[2]).toBe('3');
   });
 });

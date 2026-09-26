@@ -226,7 +226,7 @@
                 }
               </a>
               @if (e.consigne) {
-                <a matButton routerLink="/consignes" [queryParams]="{ date: e.date }">
+                <a matButton routerLink="/consignes-solveur" [queryParams]="{ onglet: 'consignes', date: e.date }">
                   <mat-icon>gavel</mat-icon>
                   <ng-container i18n="@@ouvertures.explication.consigne">Consigne du jour</ng-container>
                 </a>

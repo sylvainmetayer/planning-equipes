@@ -23,12 +23,6 @@
   font-weight: 600;
 }
 
-/* Softer than .groupe-mismatch: a hint, not an error, since editing data
-   without resolving right away is often intentional. */
-.data-stale-hint {
-  color: var(--mat-sys-tertiary);
-}
-
 /* A solve that scored lower than the plan it replaced (issue #274). As loud as
    .groupe-mismatch: nothing else on the page says the run was a step back, and
    the snapshot that can undo it expires after a few solves. */
@@ -212,4 +206,13 @@
 .relecture-jauge {
   flex: 0 1 12rem;
   min-width: 8rem;
+}
+
+/* « Relancer le calcul », offered wherever an input of the next solve was
+   just written: Règles du planning, Consignes au solveur (issues #719, #720). */
+.relancer-calcul {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
 }

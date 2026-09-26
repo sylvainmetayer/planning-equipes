@@ -1,0 +1,32 @@
+/* « Consignes au solveur »: one subtitle, three tabs, and the relaunch offered
+   once something was written. */
+
+.consignes-solveur-sous-titre {
+  margin: -0.5rem 0 1rem;
+  font: var(--mat-sys-body-large);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.consignes-solveur-onglets {
+  margin-bottom: 1rem;
+}
+
+.consignes-solveur-relancer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+/* The Verrouillages tab: what the target would freeze, and where to see it. */
+.verrouillages-apercu {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+}

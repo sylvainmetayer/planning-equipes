@@ -836,6 +836,29 @@ export interface PlanningResolution {
   derniereModificationDonnees: string | null;
 }
 
+/** A consigne as the Solveur's summary names it: its date and its motif. */
+export interface ConsigneInput {
+  date: string;
+  motif: string;
+}
+
+/**
+ * « Ce calcul tiendra compte de » (issues #704, #719): the inputs of the next
+ * solve, counted in one read (`GET /api/solve/entrees`).
+ * `pendingDeclarations` are the declarations of availability awaiting a
+ * decision — what the solve will not see; `changesSinceSolve` counts the
+ * changes journalled since the persisted plan, 0 without one.
+ */
+export interface SolveInputs {
+  locks: number;
+  adjustments: number;
+  consignes: ConsigneInput[];
+  pendingDeclarations: number;
+  disabledRules: number;
+  changesSinceSolve: number;
+  solvedAt?: string | null;
+}
+
 /** One seat to fill: a stand on a timeslot, with its animator once solved. */
 export interface PosteAffectation {
   dureeEffectiveMinutes?: number;

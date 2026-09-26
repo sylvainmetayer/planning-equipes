@@ -207,6 +207,26 @@ pourvoir n'est pas un feu vert. Et sa capacité par créneau ne compte un mineur
 qu'aux côtés d'un majeur, hors de sa nuit légale, d'un jour férié et des stands
 réservés aux majeurs — une équipe de mineurs seuls n'y couvre plus rien.
 
+### Ce que la prochaine résolution recevra
+
+`GET /api/solve/entrees` compte, en une lecture, ce que la page Solveur annonce
+sous « Ce calcul tiendra compte de ». Tout y est lu dans l'édition telle
+qu'elle est stockée — les lignes mêmes dont le problème est construit —, rien
+n'est calculé par le solveur. Deux compteurs demandent une lecture attentive :
+
+- `pendingDeclarations` compte les déclarations de disponibilité **en
+  attente** : une résolution lit les fiches, jamais les déclarations, donc ce
+  chiffre dit ce que le calcul **ne verra pas** tant qu'elles ne sont pas
+  appliquées ;
+- `changesSinceSolve` compte les actions journalisées depuis le plan
+  persisté, avec le même filtre que `GET /api/historique/changements` (seules
+  celles qui changent ce qu'un solve reçoit) ; il vaut 0 sans plan, et
+  `solvedAt` est alors absent.
+
+`disabledRules` ne compte que les règles que le catalogue livre actives et que
+l'édition a éteintes : une règle livrée éteinte n'est pas une décision de
+l'organisateur.
+
 ### File d'attente
 
 ![Cycle de vie d'un job de résolution](diagrammes/job-etats.svg)

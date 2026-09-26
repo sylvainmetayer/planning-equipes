@@ -96,6 +96,7 @@ dev/sylvain/planning/api/RequestSizeCapTest.java
 dev/sylvain/planning/api/SecurityHeadersTest.java
 dev/sylvain/planning/api/SolveFileAttenteResourceTest.java
 dev/sylvain/planning/api/SolveIncrementalResourceTest.java
+dev/sylvain/planning/api/SolveInputsResourceTest.java
 dev/sylvain/planning/api/SolveSynchronePipelineTest.java
 dev/sylvain/planning/api/SolverBudgetResourceTest.java
 dev/sylvain/planning/api/SolverJobResourceTest.java

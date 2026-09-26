@@ -226,10 +226,11 @@ public final class ConstraintCatalog {
             "Le plan ne peut pas tenir en l'état : ajoutez des animateurs disponibles, ou "
                     + "allégez ce que les stands demandent.",
             "Verrouillage",
-            "C'est un verrou posé à la main : levez-le depuis l'écran Verrouillages s'il n'a plus " + "lieu d'être.",
+            "C'est un verrou posé à la main : levez-le depuis l'onglet Verrouillages des Consignes au solveur"
+                    + " s'il n'a plus lieu d'être.",
             "Ajustement manuel",
             "C'est une contrainte ad hoc écrite à la main : revoyez-la ou supprimez-la depuis "
-                    + "l'écran Ajustements manuels.");
+                    + "l'onglet Ajustements des Consignes au solveur.");
 
     /** The fallback of the fallback: a rule of a category nobody wrote a lever for. */
     private static final String REMEDIATION_PAR_DEFAUT =

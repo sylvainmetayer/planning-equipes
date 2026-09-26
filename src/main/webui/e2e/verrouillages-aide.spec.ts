@@ -21,15 +21,28 @@ test.afterAll(async () => {
 test('poser un verrouillage de journée, mesurer son impact, le retirer', async ({ browser }) => {
   test.slow();
   const page = await pageAdmin(browser, admin);
+  // The old address lands on its tab of « Consignes au solveur » (issue #719).
   await page.goto('/verrouillages');
+  await expect(page).toHaveURL(/\/consignes-solveur\?onglet=verrouillages/);
+  // The work-in-progress banner is gone: the lock is honoured by every solve.
+  await expect(page.locator('#contenu')).not.toContainText('en cours de développement');
 
-  // Type "Journée" is the default; pick the seeded day.
+  // « Animateur » is the default type, the frequent case; a day is one choice away.
+  await expect(page.getByLabel('Animateur', { exact: true })).toBeVisible();
+  await page.getByLabel('Type').click();
+  await page.getByRole('option', { name: 'Journée' }).click();
   await page.getByLabel('Journée').click();
   await page.getByRole('option', { name: SEED.jour }).click();
-  // The preview counts the already-assigned seats the lock would freeze.
+  // The preview counts the already-assigned seats the lock would freeze, and
+  // leads to the day that shows them.
   await expect(page.locator('#contenu')).toContainText(/affectation\(s\) déjà enregistrée\(s\)/);
+  await expect(
+    page.getByRole('link', { name: 'Voir ce qui sera figé dans Journée' }),
+  ).toHaveAttribute('href', `/journee?date=${SEED.jour}`);
   await page.getByRole('button', { name: 'Verrouiller', exact: true }).click();
   await expect(page.getByText('Verrouillage enregistré.')).toBeVisible();
+  // Something the next solve must respect was written: relaunching is offered in place.
+  await expect(page.getByText('Le prochain calcul en tiendra compte.')).toBeVisible();
 
   const ligne = page.getByRole('row', { name: new RegExp(SEED.jour) }).first();
   await expect(ligne).toBeVisible();

@@ -25,8 +25,9 @@ import { StatusMessage } from '../../shared/status-message';
  * deleted twenty créneaux. Only the actions that change what a solve would be
  * given are counted, so a mail sent since does not show up here.</p>
  *
- * <p>Loaded when the hint appears, and never on a screen where it does not:
- * the component is created by the `@if` that shows the warning.</p>
+ * <p>Shown by « Corriger après un changement » before the perimeter is chosen
+ * (issue #719), and loaded only then: the component is created by the dialog.
+ * Nothing changed is said too — the correction then only fills the holes.</p>
  */
 @Component({
   selector: 'app-changements-donnees',
@@ -55,6 +56,10 @@ import { StatusMessage } from '../../shared/status-message';
             </li>
           }
         </ul>
+      } @else {
+        <p class="calendar-meta" i18n="@@solver.changements.aucun">
+          Aucune donnée modifiée depuis ce plan : seuls les postes vides seront recalculés.
+        </p>
       }
     }
   `,

@@ -1,53 +1,15 @@
+<!-- « Consignes au solveur › Ajustements »: the page carries the title and the
+     one subtitle of its three tabs (issue #719). -->
 <mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h1 mat-card-title #pageTitle tabindex="-1" i18n="@@adHoc.list.title">Ajustements manuels ({{ store.contraintes().length }})</h1>
-    <mat-card-subtitle>
-      <ng-container i18n="@@adHoc.list.subtitle">
-        Des règles sur mesure pour placer ou écarter quelqu'un, que le solveur honore à chaque résolution.
-      </ng-container>
-      <a routerLink="/verrouillages" i18n="@@adHoc.list.verrouillagesLink">
-        Pour figer une partie d'un plan déjà calculé, c'est un verrouillage.
-      </a>
-    </mat-card-subtitle>
-  </mat-card-header>
   <mat-card-actions class="card-actions">
     <button matButton="filled" type="button" [disabled]="editingLocked()" (click)="openCreate()">
       <mat-icon>add</mat-icon>
       <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
-    <mat-button-toggle-group class="ajustements-vues" [value]="view()" (change)="changeView($event.value)"
-                             aria-label="Lecture des ajustements" i18n-aria-label="@@adHoc.vue.label">
-      <mat-button-toggle value="liste">
-        <mat-icon>table_rows</mat-icon>
-        <ng-container i18n="@@adHoc.vue.liste">Liste</ng-container>
-      </mat-button-toggle>
-      <mat-button-toggle value="reseau">
-        <mat-icon>hub</mat-icon>
-        <ng-container i18n="@@adHoc.vue.reseau">Réseau</ng-container>
-      </mat-button-toggle>
-    </mat-button-toggle-group>
-    @if (view() === 'reseau' && (filtreReseau().trim() !== '' || typesReseau() !== 'toutes')) {
-      <button matButton type="button" (click)="resetReseau()">
-        <mat-icon>filter_alt_off</mat-icon>
-        <ng-container i18n="@@common.resetView">Réinitialiser la vue</ng-container>
-      </button>
-    }
+    <app-table-filter [(value)]="personne" [matches]="rows().length" [total]="store.contraintes().length"
+                      label="Personne" i18n-label="@@adHoc.filter.personne" />
+    <span class="calendar-meta" #pageTitle tabindex="-1" i18n="@@adHoc.count">{{ store.contraintes().length }} ajustement(s)</span>
   </mat-card-actions>
-  @if (view() === 'reseau') {
-    <mat-card-content>
-      <app-reseau-paires-vue
-        [contraintes]="store.contraintes()"
-        [animateurs]="store.animateurs()"
-        [creneaux]="store.creneaux()"
-        [stands]="store.stands()"
-        [editingLocked]="editingLocked()"
-        [(filtre)]="filtreReseau"
-        [(types)]="typesReseau"
-        (editer)="edit($event)"
-        (create)="openCreate()"
-      />
-    </mat-card-content>
-  } @else {
   @if (onlyIds().length > 0) {
     <mat-card-content>
       <p class="calendar-meta">
@@ -123,5 +85,4 @@
       <p class="empty-hint" i18n="@@adHoc.empty">Aucun ajustement manuel pour le moment.</p>
     }
   </mat-card-content>
-  }
 </mat-card>

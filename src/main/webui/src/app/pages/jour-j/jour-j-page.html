@@ -33,6 +33,12 @@
       <mat-icon>refresh</mat-icon>
       <ng-container i18n="@@common.refresh">Actualiser</ng-container>
     </button>
+    <!-- A consigne cannot touch a day already begun: tomorrow is the nearest
+         date it can close (issue #719). -->
+    <a matButton routerLink="/consignes-solveur" [queryParams]="{ onglet: 'consignes', date: 'demain', nouvelle: '1' }" class="jour-j-action">
+      <mat-icon>gavel</mat-icon>
+      <ng-container i18n="@@consignes.fermerDemain">Fermer des stands demain</ng-container>
+    </a>
     @if (chargement()) {
       <mat-progress-bar mode="indeterminate" />
     }
@@ -49,7 +55,7 @@
       <mat-icon>gavel</mat-icon>
       <div>
         <p i18n="@@jourJ.consigne">Horaires modifiés par décision de l'organisation : tous les stands fermés de {{ consigne.bande }} — {{ consigne.motif }}</p>
-        <a routerLink="/consignes" i18n="@@jourJ.consigne.lien">Voir les consignes</a>
+        <a routerLink="/consignes-solveur" [queryParams]="{ onglet: 'consignes' }" i18n="@@jourJ.consigne.lien">Voir les consignes</a>
       </div>
     </mat-card-content>
   </mat-card>

@@ -91,7 +91,7 @@ describe('app.routes', () => {
     // Le compte exact plutôt qu'un plancher : un plancher laisse supprimer six
     // titres sans rien dire, et c'est ce chiffre-là que les descriptions de PR
     // annonçaient de travers.
-    expect(titrees).toHaveLength(44);
+    expect(titrees).toHaveLength(42);
     for (const route of titrees) {
       // Une fonction, et non une chaîne : c'est ce qui permet au titre de
       // passer par $localize sans être évalué au chargement du module, avant
@@ -381,6 +381,31 @@ describe('app.routes', () => {
 
     it('sert le Débogage pour tout le reste', async () => {
       expect(await naviguer('/debug?onglet=verifications')).toBe('/debug?onglet=verifications');
+    });
+  });
+
+  /** Three screens became the tabs of « Consignes au solveur » (issue #719). */
+  describe('les anciennes adresses des consignes au solveur', () => {
+    it('mène aux ajustements filtrés sur la personne que nommait le réseau, sans le réseau', () => {
+      expect(
+        redirectTarget('ad-hoc-constraints', {
+          vue: 'reseau',
+          personne: 'Alice',
+          paires: 'AFFINITE',
+        }),
+      ).toBe('/consignes-solveur?onglet=ajustements&personne=Alice');
+      expect(redirectTarget('ad-hoc-constraints', { ids: 'A1,A2' })).toBe(
+        '/consignes-solveur?onglet=ajustements&ids=A1%2CA2',
+      );
+    });
+
+    it('garde les paramètres des verrouillages et des consignes', () => {
+      expect(redirectTarget('verrouillages', { animateur: 'a1' })).toBe(
+        '/consignes-solveur?onglet=verrouillages&animateur=a1',
+      );
+      expect(redirectTarget('consignes', { date: '2026-08-02', nouvelle: '1' })).toBe(
+        '/consignes-solveur?onglet=consignes&date=2026-08-02&nouvelle=1',
+      );
     });
   });
 

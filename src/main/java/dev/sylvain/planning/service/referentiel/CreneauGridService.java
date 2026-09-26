@@ -376,7 +376,8 @@ public class CreneauGridService {
                 nombre + " verrouillage(s) visent la vacation " + vacation
                         + ", que la grille ne porte pas. Ils attendent qu'elle revienne : recréer la"
                         + " vacation à l'identique les remet en service, la supprimer pour de bon demande"
-                        + " de les retirer depuis l'écran Verrouillages. Un échange validé pose deux de"
+                        + " de les retirer depuis l'onglet Verrouillages des Consignes au solveur. Un échange"
+                        + " validé pose deux de"
                         + " ces verrous.")));
         return anomalies;
     }

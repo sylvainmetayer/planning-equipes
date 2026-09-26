@@ -6,19 +6,17 @@ import {
   ElementRef,
   inject,
   Injector,
+  output,
   signal,
   viewChild,
-  ViewEncapsulation,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceDataStore } from '../../core/reference-data.store';
@@ -36,8 +34,8 @@ import {
   AdHocConstraintFormDialog,
   adHocDescription,
 } from './ad-hoc-constraint-form-dialog';
-import { FiltreTypesPaires, readFiltreTypes, ReseauPairesView } from './reseau-paires-vue';
-import { AdjustmentsView, readAdjustmentsView } from './reseau-paires';
+import { TableFilter } from '../../shared/table-filter';
+import { correspondAuFiltre } from '../../core/text-filter';
 
 /** Called lazily (never at module scope, see `app.ts`'s `buildNavGroups`). */
 function contrainteTypeLabel(value: TypeContrainteAdHoc): string {
@@ -69,33 +67,31 @@ function contrainteTypeLabel(value: TypeContrainteAdHoc): string {
  * (`issueDeCovoiturage`) is read here and changed nowhere: its row links to
  * Disponibilités > Covoiturage, whose cancellation tells the group.</p>
  *
- * <p>Two readings of the same data (`?vue=reseau`): the table, and the network
- * of the AFFINITE / INCOMPATIBILITE pairs — a second reading on the same page
- * rather than a route of its own, as the renderings of the Journée are.</p>
+ * <p>The « Ajustements » tab of « Consignes au solveur » (issue #719): the page
+ * carries the title and the subtitle. The network of pairs it used to draw
+ * (`?vue=reseau`) is gone; its `?personne=` narrows the table instead — the
+ * question it answered was « what binds this person ».</p>
  */
 @Component({
   selector: 'app-ad-hoc-constraints-page',
   imports: [
     MatCardModule,
     MatButtonModule,
-    MatButtonToggleModule,
     MatIconModule,
     MatTableModule,
     MatTooltipModule,
-    ReseauPairesView,
     RouterLink,
+    TableFilter,
   ],
   templateUrl: './ad-hoc-constraints-page.html',
-  styleUrl: './ad-hoc-constraints-page.css',
-  // Global by design (AGENTS.md): loaded with the route, unscoped like a partial.
-  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdHocConstraintsPage {
-  /** The reading on screen, and the network's own state: all three in the URL. */
-  protected readonly view = signal<AdjustmentsView>('liste');
-  protected readonly filtreReseau = signal('');
-  protected readonly typesReseau = signal<FiltreTypesPaires>('toutes');
+  /** An adjustment was written: the next solve has something new to respect. */
+  readonly changed = output<void>();
+
+  /** `?personne=`: the rows naming somebody whose name holds these words, or whose id this is. */
+  protected readonly personne = signal('');
 
   protected readonly columns = ['id', 'type', 'animateurs', 'portee', 'raison', 'actions'];
   protected readonly store = inject(ReferenceDataStore);
@@ -110,7 +106,6 @@ export class AdHocConstraintsPage {
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
   protected readonly editingLocked = this.jobs.editingLocked;
 
-  private readonly route = inject(ActivatedRoute);
   private readonly injector = inject(Injector);
   private readonly pageTitle = viewChild<ElementRef<HTMLElement>>('pageTitle');
   private readonly crud = inject(ReferenceCrudService);
@@ -128,13 +123,20 @@ export class AdHocConstraintsPage {
       .filter((id) => id !== ''),
   );
 
-  /** The rows on screen: every adjustment, or only the ones the URL named. */
+  /** The rows on screen: every adjustment, or only the ones the URL named, narrowed to a person. */
   protected readonly rows = computed(() => {
     const ids = this.onlyIds();
-    const contraintes = this.store.contraintes();
-    return ids.length === 0
-      ? contraintes
-      : contraintes.filter((contrainte) => ids.includes(contrainte.id));
+    const personne = this.personne();
+    return this.store
+      .contraintes()
+      .filter((contrainte) => ids.length === 0 || ids.includes(contrainte.id))
+      .filter((contrainte) =>
+        correspondAuFiltre(personne, [
+          this.animateursLabel(contrainte),
+          // An id too: the fiche of an animateur links here by id, never by name.
+          ...(contrainte.animateursConcernes ?? []).map((animateur) => animateur.id),
+        ]),
+      );
   });
 
   /** The one-action reset of the narrowing. */
@@ -145,21 +147,8 @@ export class AdHocConstraintsPage {
   }
 
   constructor() {
-    // The reading is followed rather than read once: the palette's
-    // « Ajustements manuels › Réseau » navigates to this very route, and the
-    // router reuses the component.
-    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((query) => {
-      this.view.set(readAdjustmentsView(query.get('vue')));
-    });
-    const params = currentViewParams();
-    this.filtreReseau.set(params.get('personne') ?? '');
-    this.typesReseau.set(readFiltreTypes(params.get('paires')));
-    keepViewInQueryParams(() => ({
-      vue: this.view() === 'reseau' ? 'reseau' : null,
-      personne: this.view() === 'reseau' ? optionalParam(this.filtreReseau()) : null,
-      paires:
-        this.view() === 'reseau' && this.typesReseau() !== 'toutes' ? this.typesReseau() : null,
-    }));
+    this.personne.set(currentViewParams().get('personne') ?? '');
+    keepViewInQueryParams(() => ({ personne: optionalParam(this.personne()) }));
     keepViewInQueryParams(() => ({ ids: optionalParam(this.onlyIds().join(',')) }));
     const chargement = this.crud.reload();
     void this.problemes.reloadFeasibility();
@@ -174,16 +163,6 @@ export class AdHocConstraintsPage {
         this.openDialog(contrainte);
       }
     });
-  }
-
-  protected changeView(view: AdjustmentsView): void {
-    this.view.set(view);
-  }
-
-  /** The network's filters narrowed the picture: one action puts it back. */
-  protected resetReseau(): void {
-    this.filtreReseau.set('');
-    this.typesReseau.set('toutes');
   }
 
   protected typeLabel(contrainte: ContrainteAdHoc): string {
@@ -232,24 +211,34 @@ export class AdHocConstraintsPage {
   }
 
   private openDialog(contrainte: ContrainteAdHoc | null): void {
-    this.dialog.open<AdHocConstraintFormDialog, AdHocConstraintFormData, boolean>(
-      AdHocConstraintFormDialog,
-      {
-        data: { contrainte },
-        width: '40rem',
-        maxWidth: '95vw',
-        autoFocus: 'first-tabbable',
-      },
-    );
+    this.dialog
+      .open<AdHocConstraintFormDialog, AdHocConstraintFormData, boolean>(
+        AdHocConstraintFormDialog,
+        {
+          data: { contrainte },
+          width: '40rem',
+          maxWidth: '95vw',
+          autoFocus: 'first-tabbable',
+        },
+      )
+      .afterClosed()
+      .subscribe((saved) => {
+        if (saved) {
+          this.changed.emit();
+        }
+      });
   }
 
   protected async remove(contrainte: ContrainteAdHoc): Promise<void> {
-    await this.crud.remove(
+    const removed = await this.crud.remove(
       'contraintes-ad-hoc',
       contrainte.id,
       $localize`:@@adHoc.entityLabel:Ajustement`,
       // Names animateurs: in the confirmation and the snack bar, never in the log.
       { name: { text: adHocDescription(contrainte, this.store.animateurs()), personal: true } },
     );
+    if (removed) {
+      this.changed.emit();
+    }
   }
 }

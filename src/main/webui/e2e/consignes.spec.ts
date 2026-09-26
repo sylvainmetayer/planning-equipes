@@ -84,7 +84,7 @@ test('poser une consigne sur un jour à venir, la voir sur la grille, la lever',
 }) => {
   test.slow();
   const page = await pageAdmin(browser, admin);
-  await page.goto('/consignes');
+  await page.goto('/consignes-solveur?onglet=consignes');
   await expect(page.locator('#contenu')).toContainText('Aucune journée sous consigne');
 
   await page.getByRole('button', { name: 'Poser une consigne' }).click();
@@ -134,6 +134,8 @@ test('poser une consigne sur un jour à venir, la voir sur la grille, la lever',
   await expect(ligne).toContainText(MOTIF);
   await expect(ligne).toContainText('12h–18h');
   await expect(ligne).toContainText('à venir');
+  // Something the next solve must respect was written: relaunching is offered in place.
+  await expect(page.getByText('Le prochain calcul en tiendra compte.')).toBeVisible();
 
   // What was written is what the preview read: one opening per stand, on the window typed.
   const etat = (await (await admin.get('/api/consignes')).json()) as {
@@ -153,7 +155,7 @@ test('poser une consigne sur un jour à venir, la voir sur la grille, la lever',
   );
 
   // Lifted from the row, after its preview.
-  await page.goto('/consignes');
+  await page.goto('/consignes-solveur?onglet=consignes');
   await page.locator(`tr[data-date="${DATE}"]`).getByRole('button', { name: 'Lever' }).click();
   const levee = await dialogueOuvert(page);
   await levee.getByRole('button', { name: 'Aperçu' }).click();
@@ -167,7 +169,7 @@ test('poser une consigne sur un jour à venir, la voir sur la grille, la lever',
 
 test('un préréglage se crée, remplit le formulaire, et se supprime', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/consignes');
+  await page.goto('/consignes-solveur?onglet=consignes');
 
   await page.getByRole('button', { name: 'Nouveau préréglage' }).click();
   const dialog = await dialogueOuvert(page);

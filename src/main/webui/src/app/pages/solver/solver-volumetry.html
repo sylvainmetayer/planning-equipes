@@ -1,53 +1,42 @@
-<mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h2 mat-card-title i18n="@@solver.volumetry.title">Volumétrie du problème</h2>
-    <mat-card-subtitle i18n="@@solver.volumetry.hint">
-      Données de référence de l'édition, mises à jour dès qu'elles changent.
-    </mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-content>
-    <div class="solver-volumetry">
-      <mat-card appearance="outlined" class="staffing-stat">
-        <div class="staffing-stat-value">{{ animateurCount() }}</div>
-        <div class="staffing-stat-label" i18n="@@solver.volumetry.animateurs">Animateurs</div>
-      </mat-card>
-      <mat-card appearance="outlined" class="staffing-stat">
-        <div class="staffing-stat-value">{{ posteCount() }}</div>
-        <div class="staffing-stat-label" i18n="@@solver.volumetry.postes">Postes à pourvoir</div>
-      </mat-card>
-      <mat-card appearance="outlined" class="staffing-stat">
-        <div class="staffing-stat-value">{{ creneauCount() }}</div>
-        <div class="staffing-stat-label" i18n="@@solver.volumetry.creneaux">Créneaux</div>
-      </mat-card>
-      <mat-card appearance="outlined" class="staffing-stat">
-        <div class="staffing-stat-value">{{ adHocConstraintCount() }}</div>
-        <div class="staffing-stat-label" i18n="@@solver.volumetry.contraintesAdHoc">Ajustements manuels</div>
-      </mat-card>
-      <mat-card appearance="outlined" class="staffing-stat">
-        <div class="staffing-stat-value">{{ hoursToFill() | number: '1.0-0' }} h</div>
-        <div class="staffing-stat-label" i18n="@@solver.volumetry.hoursToFill">Heures à pourvoir</div>
-      </mat-card>
-      <mat-card appearance="outlined" class="staffing-stat">
-        <div class="staffing-stat-value">{{ hoursAvailable() | number: '1.0-0' }} h</div>
-        <div class="staffing-stat-label" i18n="@@solver.volumetry.hoursAvailable">Heures offertes</div>
-      </mat-card>
-    </div>
-    @if (fillRatio(); as taux) {
-      <p class="solver-volumetry-formula" i18n="@@solver.volumetry.hours">
-        Taux de remplissage : {{ taux | number: '1.2-2' }} (heures à pourvoir sur heures offertes, indisponibilités
-        déduites). Compétences, repos et pauses non comptés : un taux proche de 1 est déjà infaisable.
-      </p>
-    }
-    <p class="solver-volumetry-formula">
-      <ng-container i18n="@@solver.volumetry.formula">
-        Timefold doit affecter {{ animateurCount() }} animateurs sur {{ posteCount() }} postes ({{ creneauCount() }} créneaux), sous {{ adHocConstraintCount() }} ajustements manuels supplémentaires
-      </ng-container>
-      @if (problemScale() > 0) {
-        <strong i18n="@@solver.volumetry.formulaLabel">
-          &nbsp;— soit un espace de recherche d'environ 10^{{ problemScale() }} affectations théoriques
-          (« problem scale » ≈ {{ problemScale() }}), avant élimination des affectations impossibles.
-        </strong>
-      }
+<!-- Folded by default (issue #719): a reading for when a solve surprises,
+     not a step of launching one. -->
+<details class="page-card solver-volumetry-details">
+  <summary>
+    <h2 class="solver-volumetry-title" i18n="@@solver.volumetry.title">Volumétrie du problème</h2>
+  </summary>
+  <p class="solver-volumetry-formula" i18n="@@solver.volumetry.hint">
+    Données de référence de l'édition, mises à jour dès qu'elles changent.
+  </p>
+  <div class="solver-volumetry">
+    <mat-card appearance="outlined" class="staffing-stat">
+      <div class="staffing-stat-value">{{ animateurCount() }}</div>
+      <div class="staffing-stat-label" i18n="@@solver.volumetry.animateurs">Animateurs</div>
+    </mat-card>
+    <mat-card appearance="outlined" class="staffing-stat">
+      <div class="staffing-stat-value">{{ posteCount() }}</div>
+      <div class="staffing-stat-label" i18n="@@solver.volumetry.postes">Postes à pourvoir</div>
+    </mat-card>
+    <mat-card appearance="outlined" class="staffing-stat">
+      <div class="staffing-stat-value">{{ creneauCount() }}</div>
+      <div class="staffing-stat-label" i18n="@@solver.volumetry.creneaux">Créneaux</div>
+    </mat-card>
+    <mat-card appearance="outlined" class="staffing-stat">
+      <div class="staffing-stat-value">{{ adHocConstraintCount() }}</div>
+      <div class="staffing-stat-label" i18n="@@solver.volumetry.contraintesAdHoc">Ajustements manuels</div>
+    </mat-card>
+    <mat-card appearance="outlined" class="staffing-stat">
+      <div class="staffing-stat-value">{{ hoursToFill() | number: '1.0-0' }} h</div>
+      <div class="staffing-stat-label" i18n="@@solver.volumetry.hoursToFill">Heures à pourvoir</div>
+    </mat-card>
+    <mat-card appearance="outlined" class="staffing-stat">
+      <div class="staffing-stat-value">{{ hoursAvailable() | number: '1.0-0' }} h</div>
+      <div class="staffing-stat-label" i18n="@@solver.volumetry.hoursAvailable">Heures offertes</div>
+    </mat-card>
+  </div>
+  @if (fillRatio(); as taux) {
+    <p class="solver-volumetry-formula" i18n="@@solver.volumetry.hours">
+      Taux de remplissage : {{ taux | number: '1.2-2' }} (heures à pourvoir sur heures offertes, indisponibilités
+      déduites). Compétences, repos et pauses non comptés : un taux proche de 1 est déjà infaisable.
     </p>
-  </mat-card-content>
-</mat-card>
+  }
+</details>

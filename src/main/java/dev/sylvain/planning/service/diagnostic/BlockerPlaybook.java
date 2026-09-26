@@ -91,9 +91,14 @@ public final class BlockerPlaybook {
 
     static final String ROUTE_SKILLS = "/competences";
     static final String ROUTE_OPENINGS = "/ouvertures";
-    static final String ROUTE_ADJUSTMENTS = "/ad-hoc-constraints";
+    /** « Consignes au solveur », whose default tab is the adjustments. */
+    static final String ROUTE_ADJUSTMENTS = "/consignes-solveur";
+
     static final String ROUTE_ANIMATEURS = "/animateurs";
-    static final String ROUTE_LOCKS = "/verrouillages";
+    /** The same page, on its « Verrouillages » tab ({@link #TAB_LOCKS}). */
+    static final String ROUTE_LOCKS = "/consignes-solveur";
+
+    static final String TAB_LOCKS = "verrouillages";
     static final String ROUTE_CONSTRAINTS = "/regles";
     static final String ROUTE_DAY = "/journee";
     static final String ROUTE_TIMESLOTS = "/creneaux";
@@ -396,11 +401,12 @@ public final class BlockerPlaybook {
         return new ActionType(
                 CODE_LIFT_LOCK,
                 "Lever le verrou",
-                "C'est un verrou posé à la main : levez-le depuis l'écran Verrouillages s'il n'a plus lieu d'être.",
+                "C'est un verrou posé à la main : levez-le depuis l'onglet Verrouillages des Consignes au solveur"
+                        + " s'il n'a plus lieu d'être.",
                 ROUTE_LOCKS,
                 context.animateurIds().isEmpty()
-                        ? Map.of()
-                        : Map.of("animateur", String.join(",", context.animateurIds())));
+                        ? Map.of("onglet", TAB_LOCKS)
+                        : Map.of("onglet", TAB_LOCKS, "animateur", String.join(",", context.animateurIds())));
     }
 
     private static ActionType repairAction(Context context) {
@@ -447,8 +453,8 @@ public final class BlockerPlaybook {
         return new ActionType(
                 CODE_REVIEW_ADJUSTMENTS,
                 "Revoir l'ajustement",
-                "C'est un ajustement écrit à la main : revoyez-le ou supprimez-le depuis l'écran Ajustements"
-                        + " manuels.",
+                "C'est un ajustement écrit à la main : revoyez-le ou supprimez-le depuis l'onglet Ajustements"
+                        + " des Consignes au solveur.",
                 ROUTE_ADJUSTMENTS,
                 idsParam(contrainteIds));
     }

@@ -22,12 +22,12 @@ import { ConsignesStore } from '../../core/consignes.store';
         <span class="journee-consigne-etat" i18n="@@journee.consigne.sousConsigne"
           >Journée sous consigne : tous les stands fermés de {{ bande() }} — {{ consigne.motif }}</span
         >
-        <a routerLink="/consignes" [queryParams]="{ date: jour() }" i18n="@@journee.consigne.modifier">Modifier ou lever</a>
+        <a routerLink="/consignes-solveur" [queryParams]="{ onglet: 'consignes', date: jour() }" i18n="@@journee.consigne.modifier">Modifier ou lever</a>
       } @else if (peutPoser()) {
-        <a routerLink="/consignes" [queryParams]="{ date: jour(), nouvelle: '1' }"
+        <a routerLink="/consignes-solveur" [queryParams]="{ onglet: 'consignes', date: jour(), nouvelle: '1' }"
            i18n="@@journee.consigne.poser">Poser une consigne sur cette journée</a>
       } @else {
-        <a routerLink="/consignes" i18n="@@journee.consigne.aucuneVoir">Aucune consigne</a>
+        <a routerLink="/consignes-solveur" [queryParams]="{ onglet: 'consignes' }" i18n="@@journee.consigne.aucuneVoir">Aucune consigne</a>
       }
     </p>
   `,

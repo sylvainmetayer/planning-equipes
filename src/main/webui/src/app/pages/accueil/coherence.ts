@@ -175,13 +175,14 @@ export function coherenceLink(ligne: CoherenceIssue): LienEtat {
       };
     case 'CONTRAINTE_AD_HOC':
       return {
-        route: '/ad-hoc-constraints',
-        queryParams: id ? { edit: id } : undefined,
+        route: '/consignes-solveur',
+        queryParams: id ? { onglet: 'ajustements', edit: id } : { onglet: 'ajustements' },
         libelle: $localize`:@@accueil.coherence.lien.adHoc:Ajustement manuel`,
       };
     case 'VERROUILLAGE':
       return {
-        route: '/verrouillages',
+        route: '/consignes-solveur',
+        queryParams: { onglet: 'verrouillages' },
         libelle: $localize`:@@accueil.coherence.lien.verrouillages:Verrouillages`,
       };
     case 'TYPOLOGIE':
@@ -221,7 +222,8 @@ function editionLink(famille: CoherenceFamily): LienEtat {
       };
     case 'AJUSTEMENTS':
       return {
-        route: '/ad-hoc-constraints',
+        route: '/consignes-solveur',
+        queryParams: { onglet: 'ajustements' },
         libelle: $localize`:@@accueil.coherence.lien.adHocListe:Ajustements manuels`,
       };
   }
