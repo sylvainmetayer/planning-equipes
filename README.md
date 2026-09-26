@@ -60,11 +60,13 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 1. Ouvrir <http://localhost:8080> et se connecter (compte `admin`, mot de passe
    `admin` par défaut en local — variable `ADMIN_PASSWORD`) — la page
    **État de l'édition** s'affiche : la checklist du cycle, chaque étape avec
-   son état et un lien vers l'écran qui la fait avancer ; le menu latéral donne accès à chaque écran (en
-   mode simple par défaut : « Menu simple », en tête du menu, bascule vers le
-   menu avancé qui liste aussi la quinzaine d'écrans spécialisés — diagnostic
-   approfondi, vues d'analyse et outils techniques).
-2. Sur **Débogage**, choisir un scénario livré puis **Charger le scénario
+   son état et un lien vers l'écran qui la fait avancer. Le menu latéral, le
+   même pour tout le monde, suit le cycle d'une édition : Accueil, Planning,
+   Préparer, Construire, Diffuser, Aujourd'hui, Administrer ; les pages
+   légales et les Nouveautés sont en pied de menu. **Ctrl+K** ouvre la palette,
+   qui trouve aussi un onglet (« problèmes », « mural ») et les écrans hors
+   menu comme **Débogage**.
+2. Sur **Débogage** (Ctrl+K puis « débogage », ou l'adresse `/debug`), choisir un scénario livré puis **Charger le scénario
    sélectionné** pour remplir l'édition courante (les référentiels sont ensuite
    modifiables depuis **Stands**, **Emplacements**, **Animateurs**,
    **Créneaux** et **Typologies**).
@@ -104,7 +106,7 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `PLANNING_MCP_TRUSTED_PROXIES` | *(valeur de `CONNEXION_PROXYS_FIABLES`)* | Proxys inverses dont `X-Forwarded-For` est cru pour compter les appels `/mcp` |
 | `PLANNING_MCP_MAX_FAILURES` | `5` | Clés refusées consécutives tolérées par adresse avant blocage de `/mcp` ; `0` ou moins désactive le verrou |
 | `PLANNING_MCP_LOCKOUT_DURATION` | `PT10M` | Durée de ce blocage, comptée depuis le dernier échec |
-| `PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID` | *(vide)* | Identifiant du jeton d'accès Pangolin, révélable depuis la page MCP (menu avancé ; même contrôle par mot de passe admin que la clé API) |
+| `PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID` | *(vide)* | Identifiant du jeton d'accès Pangolin, révélable depuis la page MCP (groupe Administrer ; même contrôle par mot de passe admin que la clé API) |
 | `PLANNING_MCP_PANGOLIN_ACCESS_TOKEN` | *(vide)* | Jeton d'accès Pangolin correspondant, révélable de la même façon |
 | `ADMIN_PASSWORD` | `admin` | Mot de passe du compte administrateur `admin`. En production, le défaut refuse le démarrage : il faut en donner un |
 | `PROXY_ADDRESS_FORWARDING` | `true` | Suivre les en-têtes `X-Forwarded-*` d'un reverse proxy qui termine le TLS, indispensable pour que la redirection de connexion reste en `https` — voir [`api.md`](docs/api.md#derrière-un-reverse-proxy-qui-termine-le-tls) |
@@ -346,7 +348,7 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | Déclaration d'accessibilité | Page publique, liée depuis chaque écran : l'état de conformité au RGAA que l'organisation déclare, les contenus non accessibles, où signaler un défaut. Vide, elle le dit plutôt que d'annoncer une conformité. Les écrans se parcourent au clavier — déplacer une affectation compris — et les raccourcis à une touche se coupent |
 | Aide intégrée | Le mode d'emploi complet, cherchable, consultable pendant qu'une résolution tourne ou sur une édition vide |
 | Nouveautés | Ce que la version installée a apporté, et depuis quelle version : les évolutions sont lues dans l'historique du dépôt au moment de la construction, regroupées par version — ce qui n'est pas encore publié apparaît sous « À venir » — et triées comme les notes de version, « À surveiller » d'abord. Rien à tenir à jour à la main, donc rien qui puisse mentir sur ce qui tourne |
-| Palette de commandes | Ctrl+K ouvre une zone de saisie unique qui mène à n'importe quel écran et retrouve un animateur, un stand ou un créneau ; « g » suivi d'une lettre va droit à un écran, « / » saisit le filtre de la page et « ? » liste les raccourcis |
+| Palette de commandes | Ctrl+K ouvre une zone de saisie unique qui mène à n'importe quel écran — ou directement à l'un de ses onglets ou de ses vues — et retrouve un animateur, un stand ou un créneau ; « g » suivi d'une lettre va droit à un écran, « / » saisit le filtre de la page et « ? » liste les raccourcis |
 | Navigation au clavier des tableaux | Dans les tableaux de données de référence, « / » saisit le filtre de la page puis Flèche bas entre dans le tableau ; les flèches haut et bas déplacent ensuite la ligne courante, Entrée l'ouvre et Espace la coche pour une action groupée. Un clic sur une ligne la focalise de la même façon, et la tabulation entre aussi dans le tableau et en ressort sans jamais y rester coincée |
 | Thème clair ou sombre | Un bouton de la barre d'outils fait tourner l'affichage entre « automatique », « clair » et « sombre ». « Automatique » suit le réglage du système d'exploitation et le suit en direct ; un choix explicite est retenu par le navigateur et survit au rechargement comme au changement d'humeur de la machine |
 | Accès | Connexion administrateur par mot de passe, ou attestation par en-tête derrière un proxy d'accès ; les espaces animateurs restent joignables par leur lien |

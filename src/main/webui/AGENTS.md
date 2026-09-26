@@ -4,7 +4,7 @@ Directory-scoped memory for the Angular frontend, loaded when a session works
 under `src/main/webui`. The root `AGENTS.md` holds everything else — the i18n
 rules, the language policy, the domain invariants, the documentation rules —
 and this file does not repeat them. When one of the three frontend rules the
-root file keeps changes (no new dependency, one route = one page, both i18n
+root file keeps changes (no new dependency, one question = one screen, both i18n
 halves), change it there.
 
 Angular 22 application in `src/main/webui`, built during `mvn package` and served
@@ -51,16 +51,27 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   brand toolbar, the OpenStreetMap tiles of `/emplacements`, and the
   server-side PDFs — see `docs/architecture.md`.
 - Shell: `app/app.ts` is a bare `<router-outlet/>`; the admin chrome
-  (`mat-toolbar` + `mat-sidenav`, navigation grouped in Planning / Pendant
-  l'événement / Aide à la décision / Reference data / Views / Tools, the
-  solver `app-job-monitor`, the logout button) lives in
-  `app/shell/admin-shell.ts`, a layout route wrapping every admin page. The
-  drawer has two modes, `simple` (the default) and `avance`: an entry flagged
-  `avance` in `shell/nav-groups.ts` is listed only in the second, or while its
-  route is the one on screen — the list of expert screens is that flag, never
-  a second list, and the mode is a chrome preference (`core/nav-mode`), so it
-  changes nothing about what a URL, the palette or a help link can reach. The
-  standalone routes `/login`, `/animateur/:jeton` (espace animateur, issue
+  (`mat-toolbar` + `mat-sidenav`, the solver `app-job-monitor`, the logout
+  button) lives in `app/shell/admin-shell.ts`, a layout route wrapping every
+  admin page. The drawer is **one menu for everybody**, grouped by moment of
+  the edition's cycle — Accueil / Planning / Préparer / Construire / Diffuser /
+  Aujourd'hui / Administrer — with no simple or advanced mode: a rare screen
+  goes down its group, it is never hidden. Its foot lists the news and the
+  four legal pages in text (the accessibility statement must be one click
+  away from every page). While this browser has not opened the news of the
+  running version (`core/news-seen`, a chrome preference), a small
+  « nouveautés » link to them sits next to the Aide entry, and the foot's
+  news link carries a dot, still in sight when the group is folded.
+  `shell/nav-groups.ts` is the one
+  table behind the drawer, the command palette and the `g`+letter shortcuts:
+  `buildNavGroups()` the menu, each entry with its icon (never shared by two
+  entries), its letter and the tabs or views the palette indexes;
+  `buildOffMenuLinks()` the **routes served but listed in no group** —
+  `/debug` (raw technical information, reached by Ctrl+K or its address),
+  `/notifications` (the bell), `/nouveautes` (the foot of the menu) and the
+  Quarkus Dev UI in development; `buildLegalLinks()` the legal pages.
+  `nav-groups.spec.ts` fails on a route of `app.routes.ts` that none of the
+  three knows. The standalone routes `/login`, `/animateur/:jeton` (espace animateur, issue
   #165) and `/mural/:jeton` (« Affichage mural » — the control room's
   television, opened by a dedicated token and no session, ADR 0053: the stands
   of the day with the shift under way and the next one, over the pure
@@ -77,7 +88,12 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `/animateur/:jeton/covoiturage` (« Covoiturage » — « Je viens avec… », asked
   for apart from the declaration on the same collection window, read-only
   outside it) and `/animateur/:jeton/aide`.
-- **One route = one page = one block.** Admin routes (children of the shell):
+- **One question = one screen, its variants as tabs or views in the URL.**
+  A functional block is one route and one `app/pages/<block>/` folder; a
+  variant of the same question (`?onglet=`, `?vue=`) is a tab of that page,
+  never a second route, and a route may be served without a menu entry. The
+  palette indexes the tabs and views declared in `shell/nav-groups.ts`, not
+  only the routes. Admin routes (children of the shell):
   `/` (default, « État de l'édition » — the checklist of the cycle, one line
   per step with its state and a link to the screen that moves it, read in one
   call from `GET /api/editions/courant/etat`), `/solveur` (the solver page,
@@ -198,8 +214,9 @@ and `?dosage=` in the URL), `/comparateur`
   `/pauses`, `/problemes`, `/staffing`, `/fragilite` and `/banc-de-touche`,
   whose redirects carry their query params along, renamed where the page now
   owns the key).
-  Adding a functional block means adding a route and a `app/pages/<block>/`
-  folder, never a new section inside an existing page.
+  Adding a functional block means adding a route, a `app/pages/<block>/`
+  folder and its line in `shell/nav-groups.ts` (a group, or the off-menu
+  list), never a new section inside an existing page.
 - Layout: `app/core/` holds shared services (`api.service.ts` — the only place
   touching `HttpClient`: the verbs, the error mapping, `downloadFile` returning
   a status string and never touching the DOM; `core/api/` — one service per
@@ -258,11 +275,13 @@ and `?dosage=` in the URL), `/comparateur`
   control must name itself, or the generated sort button borrows that control's
   `aria-label`), and `app/pages/<page>/` holds one folder per route.
 - **One global keyboard listener, and it already exists.** Ctrl+K (command
-  palette), `g`+letter (navigation — `g g` the home, `g l` the solver), `/` (the page's filter, marked by
-  `data-page-filter`), `?` (the shortcut list) and Ctrl+Enter (submit the
-  active form) all go through `core/keyboard-shortcuts.service.ts`; its
-  destinations are derived from `app.routes.ts`, so a new route is reachable
-  by keyboard without being registered anywhere. Single-key shortcuts are
+  palette), `g`+letter (navigation — the initial of the destination wherever
+  it was free: `g s` the solver, `g a` the animateurs, `g g` the home), `/`
+  (the page's filter, marked by `data-page-filter`), `?` (the shortcut list,
+  the `g`+letter table included) and Ctrl+Enter (submit the active form) all
+  go through `core/keyboard-shortcuts.service.ts`; its destinations are read
+  from `shell/nav-groups.ts` — the menu in its order on an empty query, the
+  tabs, the off-menu routes and the legal pages on a query only. Single-key shortcuts are
   suppressed while the focus is in a text entry — modifier combinations are
   not, since Ctrl+Enter is meant to be pressed from inside a field — and can
   be turned off on a browser (WCAG 2.1.4: dictation fires one per word said
@@ -305,7 +324,7 @@ and `?dosage=` in the URL), `/comparateur`
   *this* person's screen is neither shareable nor worth a param, and a param
   would be gone on the next plain navigation, which is the visit the preference
   has to survive. Those go to localStorage, through `core/nav-collapse` (the
-  drawer's folded groups), `core/nav-mode` (simple / avancé) or
+  drawer's folded groups), `core/news-seen` (the news read) or
   `core/panel-collapse` (a page panel, e.g. the
   solver's score curve). An unsaved entry is neither, and has its own module:
   `core/brouillon-formulaire.ts` keeps the draft of the three long forms,

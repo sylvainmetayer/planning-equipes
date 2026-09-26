@@ -13,6 +13,40 @@ import {
   TypeAnomalieOuverture,
 } from '../../core/models';
 
+/**
+ * Reading grid, entry grid by date, entry grid by kind of day, or one day laid
+ * on time (ADR 0032 and 0033). The two entry grids write the same cells: the
+ * one by kind of day says a vacation once for every date its template governs.
+ */
+export type OpeningsView =
+  'CONSULTER' | 'SAISIR' | 'JOURNEES_TYPES' | 'JOURNEE' | 'CALENDRIER' | 'COMPARER';
+
+/** The `vue` query param of each view; the reading grid, the default, writes none. */
+export const OPENINGS_VIEW_PARAMS: Readonly<Record<OpeningsView, string | null>> = {
+  CONSULTER: null,
+  SAISIR: 'saisie',
+  JOURNEES_TYPES: 'journees-types',
+  JOURNEE: 'journee',
+  CALENDRIER: 'calendrier',
+  COMPARER: 'comparer',
+};
+
+export function readOpeningsView(param: string | null): OpeningsView {
+  if (param === 'saisie') {
+    return 'SAISIR';
+  }
+  if (param === 'journees-types') {
+    return 'JOURNEES_TYPES';
+  }
+  if (param === 'comparer') {
+    return 'COMPARER';
+  }
+  if (param === 'calendrier') {
+    return 'CALENDRIER';
+  }
+  return param === 'journee' ? 'JOURNEE' : 'CONSULTER';
+}
+
 /** Which rows to show: everything, or only what deserves a second look. */
 export type FiltreOuvertures = 'TOUS' | 'ANOMALIES' | 'PARTIELS' | 'FERMES';
 

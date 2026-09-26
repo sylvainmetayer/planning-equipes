@@ -9,7 +9,7 @@
 // palette, the URL). Modifier combinations stay armed: Ctrl+K cannot be typed
 // by accident.
 //
-// A chrome preference on the model of `nav-mode`: this browser's, not the
+// A chrome preference on the model of `nav-collapse`: this browser's, not the
 // account's, in localStorage.
 
 import { Injectable, signal } from '@angular/core';

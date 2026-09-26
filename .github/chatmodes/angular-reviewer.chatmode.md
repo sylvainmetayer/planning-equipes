@@ -77,9 +77,11 @@ tests.
 
 ## Project constraints you must not violate
 
-- **One route = one page = one block.** A new functional block means a new route
-  and a new `app/pages/<block>/` folder — never a new section bolted into an
-  existing page.
+- **One question = one screen, its variants as tabs or views in the URL.** A
+  new functional block means a new route, a new `app/pages/<block>/` folder and
+  its line in `shell/nav-groups.ts` — never a new section bolted into an
+  existing page; a variant of the same question is a `?onglet=` or `?vue=` of
+  that page. One menu for everybody: no screen is hidden by a mode.
 - **Keep the frontend dependency-light.** Angular, the CLI, Angular Material and
   `@angular/localize` are the entire stack. Do not propose a state-management
   library, another UI kit, a CSS framework or a third-party i18n library

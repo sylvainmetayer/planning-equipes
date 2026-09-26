@@ -238,48 +238,71 @@ test("la bascule de langue passe l'interface en anglais", async ({ browser }) =>
 });
 
 /**
- * The drawer opens in its simple mode: the expert screens are not listed, and
- * a menu shorter by more than a third is the point — the technical tools, the
- * deep diagnostics and the specialised renderings of the plan all sit behind
- * the toggle. The toggle at the top of the drawer
- * shows them, the choice survives a reload, and a screen reached by its
- * address is listed for the time of the visit — the entry says where the
- * reader landed, without switching the mode under them.
+ * One menu for everybody (#709): no mode hides a step of the cycle, the groups
+ * follow the moments of an edition, Débogage is in no group but answers at its
+ * address and in the palette, and the legal pages sit at the foot (#706).
  */
-test('le menu simple masque les écrans de diagnostic, et les montre sur demande', async ({
-  browser,
-}) => {
+test('un seul menu par moment du cycle, Débogage hors menu mais servi', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/stands');
   const navigation = page.getByRole('navigation', { name: 'Navigation principale' });
-  await expect(navigation.getByRole('link', { name: 'Stands', exact: true })).toBeVisible();
-  await expect(navigation.getByRole('link', { name: 'Débogage' })).toHaveCount(0);
-  await expect(navigation.getByRole('link', { name: 'Historique' })).toHaveCount(0);
-  // A specialised rendering, not only the technical tools.
-  await expect(navigation.getByRole('link', { name: 'Heatmap de charge' })).toHaveCount(0);
-  await expect(navigation.getByRole('link', { name: 'Heures', exact: true })).toBeVisible();
-
-  const bascule = navigation.getByRole('button', { name: /Menu simple/ });
-  await expect(bascule).toHaveAttribute('aria-pressed', 'false');
-  await bascule.click();
-  await expect(navigation.getByRole('link', { name: 'Débogage' })).toBeVisible();
-  await expect(navigation.getByRole('link', { name: 'Historique' })).toBeVisible();
+  for (const groupe of [
+    'Accueil',
+    'Planning',
+    'Préparer',
+    'Construire',
+    'Diffuser',
+    "Aujourd'hui",
+    'Administrer',
+  ]) {
+    // The folding chevron is a ligature, read as part of the button's name.
+    await expect(navigation.getByRole('button', { name: new RegExp(`^${groupe}`) })).toBeVisible();
+  }
+  // Once hidden by the simple mode, now listed down their group.
   await expect(navigation.getByRole('link', { name: 'Heatmap de charge' })).toBeVisible();
-  await expect(navigation.getByRole('button', { name: /Menu avancé/ })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
-
-  await page.reload();
-  await expect(navigation.getByRole('link', { name: 'Débogage' })).toBeVisible();
-
-  await navigation.getByRole('button', { name: /Menu avancé/ }).click();
+  await expect(navigation.getByRole('link', { name: 'Historique' })).toBeVisible();
+  await expect(navigation.getByRole('button', { name: /Menu simple|Menu avancé/ })).toHaveCount(0);
   await expect(navigation.getByRole('link', { name: 'Débogage' })).toHaveCount(0);
+  await expect(navigation.getByRole('link', { name: 'Accessibilité' })).toBeVisible();
 
-  // Reached by its address anyway: the route is open whatever the menu lists.
+  // Reached by its address anyway, and by the palette.
   await page.goto('/debug');
   await expect(page.locator('#contenu')).toContainText('Dernière analyse');
-  await expect(navigation.getByRole('link', { name: 'Débogage' })).toBeVisible();
-  await expect(navigation.getByRole('link', { name: 'Historique' })).toHaveCount(0);
+  await expect(navigation.getByRole('link', { name: 'Débogage' })).toHaveCount(0);
+
+  await page.goto('/stands');
+  // The palette listens once the shell is up: a key pressed before it is lost.
+  await expect(navigation).toBeVisible();
+  await expect(page.locator('#contenu')).toContainText('Stands');
+  await page.keyboard.press('Control+k');
+  const palette = page.getByRole('dialog');
+  await palette.getByRole('combobox').fill('swagger');
+  await palette
+    .getByRole('option', { name: /Débogage/ })
+    .first()
+    .click();
+  await expect(page).toHaveURL(/\/debug/);
+
+  await page.keyboard.press('Control+k');
+  await page.getByRole('dialog').getByRole('combobox').fill('banc');
+  await page
+    .getByRole('dialog')
+    .getByRole('option', { name: /Banc de touche/ })
+    .click();
+  await expect(page).toHaveURL(/\/diagnostic\?onglet=banc/);
+
+  // A view of the page already on screen: the router reuses the page, which
+  // must follow its address rather than keep the view it was built with.
+  await page.goto('/ad-hoc-constraints');
+  await expect(page.locator('#contenu')).toContainText('Ajustements manuels');
+  await expect(page.locator('#contenu app-reseau-paires-vue')).toHaveCount(0);
+  await page.keyboard.press('Control+k');
+  await page.getByRole('dialog').getByRole('combobox').fill('réseau');
+  await page
+    .getByRole('dialog')
+    .getByRole('option', { name: /Ajustements manuels › Réseau/ })
+    .click();
+  await expect(page).toHaveURL(/\/ad-hoc-constraints\?vue=reseau/);
+  await expect(page.locator('#contenu app-reseau-paires-vue')).toHaveCount(1);
   await page.context().close();
 });

@@ -38,20 +38,16 @@ import { GelInvitation } from '../core/gel-invitation';
 
 const NAV_STORAGE_KEY = 'planning-equipes.nav.collapsedGroups';
 const THEME_STORAGE_KEY = 'planning-equipes.theme';
-const NAV_MODE_STORAGE_KEY = 'planning-equipes.nav.mode';
 
 interface NavGroupShape {
   id: string;
   title: string;
-  links: { path: string; label: string; avance?: boolean }[];
+  links: { path: string; label: string }[];
 }
 
 /** Reaches the protected members the template binds to. */
 type ShellInternals = {
   navGroups: NavGroupShape[];
-  visibleGroups: Signal<NavGroupShape[]>;
-  navModeLabel: Signal<string>;
-  toggleNavMode: () => void;
   drawerMode: Signal<'over' | 'side'>;
   drawerOpen: WritableSignal<boolean>;
   collapsedGroups: Signal<ReadonlySet<string>>;
@@ -183,7 +179,6 @@ describe('AdminShell', () => {
     );
     localStorage.removeItem(NAV_STORAGE_KEY);
     localStorage.removeItem(THEME_STORAGE_KEY);
-    localStorage.removeItem(NAV_MODE_STORAGE_KEY);
     document.documentElement.style.colorScheme = '';
     for (const stub of [
       breakpoints.observe,
@@ -263,14 +258,18 @@ describe('AdminShell', () => {
   afterEach(() => {
     localStorage.removeItem(NAV_STORAGE_KEY);
     localStorage.removeItem(THEME_STORAGE_KEY);
-    localStorage.removeItem(NAV_MODE_STORAGE_KEY);
     document.documentElement.style.colorScheme = '';
   });
 
   function createShell(): ShellInternals {
+    return createFixture().componentInstance as unknown as ShellInternals;
+  }
+
+  function createFixture(): ComponentFixture<AdminShell> {
     fixture = TestBed.createComponent(AdminShell);
     TestBed.tick();
-    return fixture.componentInstance as unknown as ShellInternals;
+    fixture.detectChanges();
+    return fixture;
   }
 
   describe('the polling lifecycle it owns', () => {
@@ -488,11 +487,11 @@ describe('AdminShell', () => {
     // Stored by stable group id, not by title: the titles are translated, and
     // a language switch must not silently unfold everything.
     it('reads back the folded groups written by a previous visit', () => {
-      localStorage.setItem(NAV_STORAGE_KEY, JSON.stringify(['reference-data']));
+      localStorage.setItem(NAV_STORAGE_KEY, JSON.stringify(['preparer']));
 
       const shell = createShell();
 
-      expect(shell.collapsedGroups()).toEqual(new Set(['reference-data']));
+      expect(shell.collapsedGroups()).toEqual(new Set(['preparer']));
     });
 
     it('folds every group at once, and unfolds them all on the second press', () => {
@@ -534,93 +533,52 @@ describe('AdminShell', () => {
     });
   });
 
-  describe('the simple / advanced menu', () => {
+  describe('the one menu', () => {
     const paths = (groups: NavGroupShape[]): string[] =>
       groups.flatMap((group) => group.links.map((link) => link.path));
 
-    it('hides the expert entries by default, and nothing else', () => {
-      const shell = createShell();
+    // #709: no mode hides a step of the cycle any more; the drawer is the
+    // same for everybody, and a screen that is rare goes down its group.
+    it('renders every entry of every group, with no mode toggle', () => {
+      const fixture = createFixture();
+      const shell = fixture.componentInstance as unknown as ShellInternals;
+      const rendered = Array.from(
+        (fixture.nativeElement as HTMLElement).querySelectorAll('nav a[mat-list-item]'),
+      ).map((anchor) => anchor.getAttribute('href'));
 
-      const hidden = shell.navGroups
-        .flatMap((group) => group.links)
-        .filter((link) => link.avance)
-        .map((link) => link.path);
-      // The exact set, not a sample: what the simple menu hides is the whole
-      // point of the mode, so adding a screen has to be a deliberate edit here
-      // rather than something a loose assertion waves through.
-      expect([...hidden].sort((a, b) => a.localeCompare(b))).toEqual([
-        '/comparateur',
-        '/constraints',
-        '/debug',
-        '/equite',
-        '/graphe',
-        '/heatmap',
-        '/historique',
-        '/instantanes',
-        '/intendance',
-        '/kpi',
-        '/marge',
-        '/mcp-client',
-        '/repartition-heures',
-        '/repos',
-        '/timeline',
-        '/typologies-planning',
-      ]);
-      const visible = paths(shell.visibleGroups());
-      for (const path of hidden) {
-        expect(visible).not.toContain(path);
-      }
-      expect(visible.length + hidden.length).toBe(paths(shell.navGroups).length);
-      expect(shell.navModeLabel()).toContain('Menu simple');
+      expect(rendered).toEqual(paths(shell.navGroups));
+      expect(fixture.nativeElement.textContent).not.toContain('Menu simple');
+      expect(fixture.nativeElement.textContent).not.toContain('Menu avancé');
     });
 
-    it('lists everything once switched to advanced, and remembers it across visits', () => {
-      const shell = createShell();
-
-      shell.toggleNavMode();
-
-      expect(paths(shell.visibleGroups())).toEqual(paths(shell.navGroups));
-      expect(localStorage.getItem(NAV_MODE_STORAGE_KEY)).toBe('avance');
-      expect(announcer.announce).toHaveBeenCalledWith('Menu avancé.', 'polite');
-      expect(shell.navModeLabel()).toContain('Menu avancé');
-    });
-
-    it('starts advanced when the previous visit chose so', () => {
-      localStorage.setItem(NAV_MODE_STORAGE_KEY, 'avance');
-
-      const shell = createShell();
-
-      expect(paths(shell.visibleGroups())).toEqual(paths(shell.navGroups));
-    });
-
-    // A link of the help or of the palette to a hidden screen still lands
-    // there; the drawer then shows where the reader is, and only that.
-    it('shows a hidden entry for the time of the visit when its route is on screen', () => {
-      const shell = createShell();
-      const router = TestBed.inject(Router);
-
-      (router.events as Subject<unknown>).next(
-        new NavigationEnd(1, '/debug?focus=date-du-jour', '/debug?focus=date-du-jour'),
+    it('lists the legal pages at the foot of the menu, not in a group', () => {
+      const fixture = createFixture();
+      const pied = (fixture.nativeElement as HTMLElement).querySelector('.nav-footer');
+      const liens = Array.from(pied?.querySelectorAll('a') ?? []).map((a) =>
+        a.getAttribute('href'),
       );
 
-      const visible = paths(shell.visibleGroups());
-      expect(visible).toContain('/debug');
-      expect(visible).not.toContain('/mcp-client');
-
-      (router.events as Subject<unknown>).next(new NavigationEnd(2, '/stands', '/stands'));
-
-      expect(paths(shell.visibleGroups())).not.toContain('/debug');
+      expect(liens).toEqual([
+        '/mentions-legales',
+        '/politique-confidentialite',
+        '/conditions-utilisation',
+        '/declaration-accessibilite',
+      ]);
     });
 
-    // Folding is about groups, whatever the mode lists: the count stays the
-    // count of groups, or "tout replier" would flip depending on the mode.
-    it('keeps folding every group, hidden entries or not', () => {
-      const shell = createShell();
+    it('marks the foot link of the page on screen, as the group entries do', async () => {
+      const router = TestBed.inject(Router);
+      router.resetConfig([{ path: '**', children: [] }]);
+      const fixture = createFixture();
 
-      shell.toggleAllGroups();
+      await router.navigateByUrl('/declaration-accessibilite');
+      fixture.detectChanges();
 
-      expect(shell.allCollapsed()).toBe(true);
-      expect(shell.visibleGroups().length).toBeGreaterThan(0);
+      const pied = (fixture.nativeElement as HTMLElement).querySelector('.nav-footer');
+      const courants = Array.from(pied?.querySelectorAll('a[aria-current="page"]') ?? []).map((a) =>
+        a.getAttribute('href'),
+      );
+      expect(courants).toEqual(['/declaration-accessibilite']);
     });
   });
 

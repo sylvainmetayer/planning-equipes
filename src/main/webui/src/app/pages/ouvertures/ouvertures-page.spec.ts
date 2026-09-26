@@ -7,6 +7,7 @@ import { Location } from '@angular/common';
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EditionsApi } from '../../core/api/editions-api';
 import { StandsApi } from '../../core/api/stands-api';
@@ -208,6 +209,15 @@ function mount(
   const reloadStore = vi.fn(async () => undefined);
   const notify = vi.fn();
   TestBed.resetTestingModule();
+  const queryParamMap = convertToParamMap({
+    ...(options.vue ? { vue: options.vue } : {}),
+    ...(options.q ? { q: options.q } : {}),
+    ...(options.stand ? { stand: options.stand } : {}),
+    ...(options.date ? { date: options.date } : {}),
+    ...(options.stands ? { stands: options.stands } : {}),
+    ...(options.ref ? { ref: options.ref } : {}),
+    ...(options.couches ? { couches: options.couches } : {}),
+  });
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
@@ -249,19 +259,7 @@ function mount(
       { provide: Location, useValue: { path: () => '/ouvertures', replaceState: vi.fn() } },
       {
         provide: ActivatedRoute,
-        useValue: {
-          snapshot: {
-            queryParamMap: convertToParamMap({
-              ...(options.vue ? { vue: options.vue } : {}),
-              ...(options.q ? { q: options.q } : {}),
-              ...(options.stand ? { stand: options.stand } : {}),
-              ...(options.date ? { date: options.date } : {}),
-              ...(options.stands ? { stands: options.stands } : {}),
-              ...(options.ref ? { ref: options.ref } : {}),
-              ...(options.couches ? { couches: options.couches } : {}),
-            }),
-          },
-        },
+        useValue: { snapshot: { queryParamMap }, queryParamMap: of(queryParamMap) },
       },
     ],
   });

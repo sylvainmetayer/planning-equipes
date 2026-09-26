@@ -570,3 +570,11 @@ function trace(
 export function resumeReseau(reseau: Reseau): string {
   return $localize`:@@adHoc.reseau.resume:${reseau.grappes.length}:grappes: grappe(s), ${reseau.noeuds.length}:personnes: personne(s), ${reseau.incompatibilitesInternes.length}:internes: incompatibilité(s) interne(s)`;
 }
+
+/** The two readings of the page, and the values of the `vue` query param. */
+export type AdjustmentsView = 'liste' | 'reseau';
+
+/** Reads the `vue` query param; anything but the network is the table, the reading the page opens on. */
+export function readAdjustmentsView(value: string | null): AdjustmentsView {
+  return value === 'reseau' ? 'reseau' : 'liste';
+}

@@ -375,7 +375,11 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.shortcuts.go:Pour aller directement sur un écran, tapez « g » puis la lettre de la destination — « g » puis « a » pour les animateurs. Les pages sans lettre restent atteignables par la palette, qui les liste toutes.`,
+          text: $localize`:@@aide.shortcuts.onglets:La palette connaît aussi les onglets et les vues des pages : « problèmes », « banc » ou « mural » ouvrent directement le bon onglet. Sans rien taper, elle liste le menu dans son ordre.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.shortcuts.go:Pour aller directement sur un écran, tapez « g » puis l'initiale de la destination — « g » puis « a » pour les animateurs, « g » puis « s » pour le solveur. « g » « g » ramène à l'accueil. Les pages sans lettre restent atteignables par la palette.`,
         },
         {
           kind: 'definitions',
@@ -386,7 +390,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.shortcuts.menuMode:Le menu latéral s'ouvre en mode simple : treize écrans spécialisés n'y figurent pas — les vues d'analyse (équité, jours de repos, heatmap de charge, marge disponible, timeline animateur, graphe), les écrans de diagnostic approfondi (contraintes, instantanés, comparateur A/B, autopsie du planning) et les outils techniques (historique, MCP, débogage). « Menu simple », en tête du menu, bascule vers le menu avancé, et ce navigateur retient le choix. Un écran masqué reste atteignable par la palette, par un lien de l'aide ou par son adresse : il apparaît alors dans le menu le temps de la visite.`,
+          text: $localize`:@@aide.shortcuts.menu:Le menu latéral est le même pour tout le monde et suit le cycle d'une édition : Accueil, Planning, Préparer, Construire, Diffuser, Aujourd'hui, Administrer. Aucun écran n'y est caché ; les plus rares sont en bas de leur groupe. Débogage n'y figure pas : il s'ouvre par la palette — « débogage », « swagger », « mailpit » — ou par son adresse. Les pages légales et les Nouveautés sont en pied de menu. Après une mise à jour, « nouveautés » s'allume à côté d'Aide et une pastille marque le lien du pied de menu, jusqu'à l'ouverture de la page.`,
         },
         {
           kind: 'paragraph',
