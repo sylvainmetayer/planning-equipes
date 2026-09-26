@@ -67,6 +67,21 @@ class TerraformKeycloakStructuralTest {
      * one differs, nobody finds out until an administrator signs in with a
      * single factor — or cannot sign in at all.</p>
      */
+    /**
+     * Production offers passkeys on the address screen like the development
+     * realm — an attribute the provider only knows from 5.8 on, hence the pin.
+     */
+    @Test
+    void passkeysAreOfferedFromTheAddressScreenAsInDevelopment() {
+        assertThat(realm.path("webAuthnPolicyPasswordlessPasskeysEnabled").asBoolean())
+                .isTrue();
+        assertThat(resources.get("keycloak_realm.planning"))
+                .containsPattern("passwordless_passkeys_enabled\\s*=\\s*true");
+        assertThat(KeycloakConfigFiles.read(Path.of("terraform/keycloak/versions.tf")))
+                .as("passwordless_passkeys_enabled exists from provider 5.8 on")
+                .contains("version = \"~> 5.8\"");
+    }
+
     @Test
     void theLoginFlowIsTheSameTreeOnBothSides() {
         assertThat(terraformFlowTree())

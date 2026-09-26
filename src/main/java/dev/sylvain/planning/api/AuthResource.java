@@ -1,5 +1,6 @@
 package dev.sylvain.planning.api;
 
+import dev.sylvain.planning.config.ConfigOidc;
 import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.inject.Inject;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -43,11 +45,27 @@ public class AuthResource {
     /** Must match {@code quarkus.http.auth.form.cookie-name}. */
     static final String COOKIE_SESSION = "planning-session";
 
+    /**
+     * The page of the Keycloak account console where a person adds, replaces
+     * or removes a passkey, relative to the realm's URL.
+     */
+    static final String PAGE_MOYENS_DE_CONNEXION = "/account/account-security/signing-in";
+
     private final SecurityIdentity identity;
 
+    private final ConfigOidc oidc;
+
+    /** The realm's public URL — the one the browser already goes to sign in. */
+    private final String realm;
+
     @Inject
-    public AuthResource(SecurityIdentity identity) {
+    public AuthResource(
+            SecurityIdentity identity,
+            ConfigOidc oidc,
+            @ConfigProperty(name = "quarkus.oidc.auth-server-url") String realm) {
         this.identity = identity;
+        this.oidc = oidc;
+        this.realm = realm;
     }
 
     /**
@@ -96,6 +114,27 @@ public class AuthResource {
     @Authenticated
     public Response oidcLogin(@QueryParam("redirect") String redirect, @Context UriInfo uriInfo) {
         return Response.seeOther(target(uriInfo.getBaseUri(), redirect)).build();
+    }
+
+    /**
+     * Sends the person to their own sign-in methods in the Keycloak account
+     * console: where a passkey is registered on a new phone, or replaced once
+     * lost after signing back in with the code by e-mail (ADR 0054). Keycloak
+     * owns the credentials, so the application only points at the page — it
+     * holds no passkey and no password of its own.
+     *
+     * <p>{@code 404} without Keycloak: the break-glass account has nothing to
+     * manage there.</p>
+     */
+    @GET
+    @Path("/oidc/compte")
+    @Authenticated
+    public Response manageSignInMethods() {
+        if (!oidc.enabled()) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        return Response.seeOther(URI.create(realm.replaceAll("/+$", "") + PAGE_MOYENS_DE_CONNEXION))
+                .build();
     }
 
     /**
