@@ -135,6 +135,7 @@ describe('rappelPublication', () => {
     nombreConcernes,
     journeesNonValidees: 0,
     destinataires: [],
+    envoisEnEchec: 0,
   });
 
   it('stays silent when nobody is waiting', () => {

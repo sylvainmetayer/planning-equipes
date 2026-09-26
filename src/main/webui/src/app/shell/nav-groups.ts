@@ -354,10 +354,15 @@ export function buildNavGroups(): NavGroup[] {
       links: [
         {
           path: '/publication',
-          label: $localize`:@@nav.link.publication:Publication`,
+          label: $localize`:@@nav.link.diffuser:Diffuser`,
           icon: 'outgoing_mail',
-          shortcut: 'p',
-          keywords: $localize`:@@nav.keywords.publication:publier envoyer pdf`,
+          // No `g`+letter: `d` is the Diagnostic's, and a letter that is not
+          // the label's initial is one nobody guesses. Ctrl+K finds it.
+          keywords: $localize`:@@nav.keywords.diffuser:publier publication envoyer renvoyer relancer accusés pdf documents`,
+          tabs: [
+            tab('onglet', 'envoyer', $localize`:@@diffuser.onglet.envoyer:Envoyer`),
+            tab('onglet', 'documents', $localize`:@@diffuser.onglet.documents:Documents`),
+          ],
         },
         {
           path: '/echanges',

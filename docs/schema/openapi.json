@@ -860,7 +860,7 @@
         }
       },
       "ApercuPublication" : {
-        "required" : [ "jamaisPublie", "journeesNonValidees", "nombreConcernes", "planVide", "solveEnCours" ],
+        "required" : [ "jamaisPublie", "journeesNonValidees", "nombreConcernes", "planVide", "solveEnCours", "envoisEnEchec" ],
         "type" : "object",
         "properties" : {
           "jamaisPublie" : {
@@ -888,6 +888,10 @@
             "items" : {
               "$ref" : "#/components/schemas/DestinatairePublication"
             }
+          },
+          "envoisEnEchec" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -1121,6 +1125,10 @@
             "type" : "string"
           }
         }
+      },
+      "CauseEchec" : {
+        "type" : "string",
+        "enum" : [ "ADRESSE_REFUSEE", "BOITE_PLEINE", "SERVEUR_INJOIGNABLE", "AUTRE" ]
       },
       "CauseInfaisabilite" : {
         "type" : "object",
@@ -2944,6 +2952,12 @@
             "items" : {
               "type" : "string"
             }
+          },
+          "cibles" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
           }
         }
       },
@@ -3027,6 +3041,28 @@
           }
         }
       },
+      "DernierEnvoi" : {
+        "required" : [ "nature", "statut", "envoyeLe" ],
+        "type" : "object",
+        "properties" : {
+          "nature" : {
+            "$ref" : "#/components/schemas/NatureEnvoi"
+          },
+          "statut" : {
+            "$ref" : "#/components/schemas/StatutEnvoi"
+          },
+          "cause" : {
+            "$ref" : "#/components/schemas/CauseEchec"
+          },
+          "envoyeLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "numero" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
       "Destinataire" : {
         "required" : [ "snapshotId", "premiereDiffusion" ],
         "type" : "object",
@@ -3069,7 +3105,7 @@
       },
       "DestinatairePublication" : {
         "type" : "object",
-        "required" : [ "premiereDiffusion", "ajouts", "retraits", "deplacements", "mineur", "reporte" ],
+        "required" : [ "premiereDiffusion", "ajouts", "retraits", "deplacements", "mineur", "reporte", "jours" ],
         "properties" : {
           "animateurId" : {
             "type" : "string"
@@ -3118,6 +3154,14 @@
           },
           "confirmeLe" : {
             "$ref" : "#/components/schemas/Instant"
+          },
+          "jours" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "date",
+              "examples" : [ "2022-03-10" ]
+            }
           }
         }
       },
@@ -3663,6 +3707,28 @@
           }
         }
       },
+      "EtatEnvois" : {
+        "required" : [ "relancesAutomatiques", "nombreConcernes", "personnes" ],
+        "type" : "object",
+        "properties" : {
+          "derniereVersion" : {
+            "$ref" : "#/components/schemas/VersionPubliee"
+          },
+          "relancesAutomatiques" : {
+            "type" : "boolean"
+          },
+          "nombreConcernes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "personnes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/LigneEnvoi"
+            }
+          }
+        }
+      },
       "EtatEvenement" : {
         "required" : [ "aujourdhui", "phase", "termine" ],
         "type" : "object",
@@ -3898,7 +3964,7 @@
         }
       },
       "EtatPublication" : {
-        "required" : [ "jamaisPublie", "personnesAPrevenir", "statut" ],
+        "required" : [ "jamaisPublie", "personnesAPrevenir", "statut", "envoisEnEchec" ],
         "type" : "object",
         "properties" : {
           "jamaisPublie" : {
@@ -3913,6 +3979,10 @@
           },
           "statut" : {
             "$ref" : "#/components/schemas/Statut"
+          },
+          "envoisEnEchec" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -5236,6 +5306,62 @@
           }
         }
       },
+      "LigneEnvoi" : {
+        "type" : "object",
+        "required" : [ "animateurId", "nomAffiche", "email", "affecte", "rappelVeilleEchec", "relanceEchec", "confirmation", "aPrevenir", "differe", "joursAPrevenir" ],
+        "properties" : {
+          "animateurId" : {
+            "type" : "string"
+          },
+          "nomAffiche" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "boolean"
+          },
+          "affecte" : {
+            "type" : "boolean"
+          },
+          "version" : {
+            "$ref" : "#/components/schemas/VersionPubliee"
+          },
+          "envoi" : {
+            "$ref" : "#/components/schemas/DernierEnvoi"
+          },
+          "rappelVeilleLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "rappelVeilleEchec" : {
+            "type" : "boolean"
+          },
+          "relanceLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "relanceEchec" : {
+            "type" : "boolean"
+          },
+          "confirmation" : {
+            "type" : "string"
+          },
+          "confirmeLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "aPrevenir" : {
+            "type" : "boolean"
+          },
+          "differe" : {
+            "type" : "boolean"
+          },
+          "joursAPrevenir" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "date",
+              "examples" : [ "2022-03-10" ]
+            }
+          }
+        }
+      },
       "LigneEquite" : {
         "required" : [ "animateurId", "heuresTotal", "heuresSoiree", "heuresWeekEnd", "heuresJourFerie", "postes", "postesPenibles", "standsDistincts", "typologiesDistinctes", "emplacementsDistinctsParJourMax", "tauxSouhaits", "tauxAppreciation", "joursTravailles", "joursRepos", "plusLongueSerie" ],
         "type" : "object",
@@ -5738,6 +5864,10 @@
             }
           }
         }
+      },
+      "NatureEnvoi" : {
+        "type" : "string",
+        "enum" : [ "PUBLICATION", "RENVOI" ]
       },
       "NewCarpoolRequest" : {
         "type" : "object",
@@ -8841,6 +8971,23 @@
           },
           "vacationMissing" : {
             "type" : "boolean"
+          }
+        }
+      },
+      "VersionPubliee" : {
+        "type" : "object",
+        "required" : [ "snapshotId", "numero" ],
+        "properties" : {
+          "snapshotId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "numero" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "publieLe" : {
+            "$ref" : "#/components/schemas/Instant"
           }
         }
       },
@@ -14191,6 +14338,24 @@
           }
         },
         "summary" : "Destinataires",
+        "tags" : [ "Publication Resource" ]
+      }
+    },
+    "/api/planning/publication/etat" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EtatEnvois"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Etat",
         "tags" : [ "Publication Resource" ]
       }
     },

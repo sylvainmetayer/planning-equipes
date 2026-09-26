@@ -8,7 +8,9 @@ import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * What the scheduled jobs have already sent, and the only thing standing
@@ -173,5 +175,34 @@ public class JournalNotificationsRepository {
 
     private static Instant instant(Timestamp timestamp) {
         return timestamp == null ? null : timestamp.toInstant();
+    }
+
+    /**
+     * When each animateur was last the subject of a {@code type} row — the
+     * night's reminder sent, or the one it could not send. What the Diffuser
+     * table reads as « rappel de la veille » and « relance », per person, with
+     * no identity stored: the id is joined to the referential by the reader.
+     */
+    public Map<String, Instant> lastByAnimateur(Type type) {
+        String sql = """
+                SELECT animateur_id, MAX(declenche_le) AS dernier
+                FROM notification_planifiee
+                WHERE edition_id = ? AND type = ? AND animateur_id IS NOT NULL
+                GROUP BY animateur_id""";
+        return scope.read("Failed to load the scheduled notifications per animateur", connection -> {
+            try (PreparedStatement ps = scope.prepareScoped(connection, sql)) {
+                ps.setString(2, type.name());
+                try (ResultSet rs = ps.executeQuery()) {
+                    Map<String, Instant> derniers = new HashMap<>();
+                    while (rs.next()) {
+                        Timestamp dernier = rs.getTimestamp("dernier");
+                        if (dernier != null) {
+                            derniers.put(rs.getString("animateur_id"), dernier.toInstant());
+                        }
+                    }
+                    return derniers;
+                }
+            }
+        });
     }
 }

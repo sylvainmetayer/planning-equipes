@@ -1,0 +1,63 @@
+<div class="diffuser-documents">
+  <mat-card appearance="outlined" class="diffuser-document">
+    <mat-card-header>
+      <mat-icon mat-card-avatar>print</mat-icon>
+      <h2 mat-card-title i18n="@@diffuser.doc.feuilles.titre">Une feuille par personne (PDF recto-verso)</h2>
+      <mat-card-subtitle i18n="@@diffuser.doc.feuilles.pour">Pour chaque animateur : à plier et à remettre en main propre.</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-actions>
+      <button matButton="tonal" [disabled]="busy() || editingLocked()" (click)="feuilles()">
+        <mat-icon>download</mat-icon>
+        <ng-container i18n="@@diffuser.doc.telecharger">Télécharger</ng-container>
+      </button>
+    </mat-card-actions>
+  </mat-card>
+
+  <mat-card appearance="outlined" class="diffuser-document">
+    <mat-card-header>
+      <mat-icon mat-card-avatar>archive</mat-icon>
+      <h2 mat-card-title i18n="@@diffuser.doc.archive.titre">L'archive des plannings individuels (PDF + ICS)</h2>
+      <mat-card-subtitle i18n="@@diffuser.doc.archive.pour">Pour envoyer à la main ou garder une trace : un planning et un calendrier par personne.</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-actions>
+      <button matButton="tonal" [disabled]="busy() || editingLocked()" (click)="archive()">
+        <mat-icon>download</mat-icon>
+        <ng-container i18n="@@diffuser.doc.telecharger">Télécharger</ng-container>
+      </button>
+    </mat-card-actions>
+  </mat-card>
+
+  <mat-card appearance="outlined" class="diffuser-document">
+    <mat-card-header>
+      <mat-icon mat-card-avatar>picture_as_pdf</mat-icon>
+      <h2 mat-card-title i18n="@@diffuser.doc.classeur.titre">Le classeur de l'organisateur (PDF)</h2>
+      <mat-card-subtitle i18n="@@diffuser.doc.classeur.pour">Pour l'organisation : toutes les affectations par journée, stand et animateur.</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-actions>
+      <button matButton="tonal" [disabled]="busy() || editingLocked()" (click)="classeur()">
+        <mat-icon>download</mat-icon>
+        <ng-container i18n="@@diffuser.doc.telecharger">Télécharger</ng-container>
+      </button>
+    </mat-card-actions>
+  </mat-card>
+
+  <mat-card appearance="outlined" class="diffuser-document">
+    <mat-card-header>
+      <mat-icon mat-card-avatar>table_view</mat-icon>
+      <h2 mat-card-title i18n="@@diffuser.doc.changements.titre">Le détail des changements (CSV)</h2>
+      <mat-card-subtitle i18n="@@diffuser.doc.changements.pour">Pour relire en réunion : une ligne par personne à prévenir.</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-actions>
+      <button matButton="tonal" [disabled]="busy() || editingLocked()" (click)="changements()">
+        <mat-icon>download</mat-icon>
+        <ng-container i18n="@@diffuser.doc.telecharger">Télécharger</ng-container>
+      </button>
+    </mat-card-actions>
+  </mat-card>
+</div>
+
+<p class="diffuser-journee">
+  <mat-icon inline>event</mat-icon>
+  <ng-container i18n="@@diffuser.doc.journee">Imprimer une journée se fait depuis la Journée.</ng-container>
+  <a routerLink="/journee" i18n="@@diffuser.doc.journee.lien">Ouvrir la Journée</a>
+</p>

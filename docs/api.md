@@ -724,6 +724,45 @@ mesure ce qui a changé, pas ce qui a été délivré. Le rapport nomme les manq
 et `POST /api/planning/envoi/animateur/{id}` est le rattrapage — il renvoie le
 plan **publié**, refusé (`400`) tant que rien ne l'a été.
 
+L'échec n'est plus seulement une ligne du journal du serveur : chaque envoi —
+d'une publication ou d'un renvoi — laisse **son état** dans `envoi_planning`,
+des dates et des états seulement (`ENVOYE`, `ECHEC`, `SANS_EMAIL`, `EXCLU`),
+jamais de contenu, et sur un échec une **cause courte**
+(`ADRESSE_REFUSEE`, `BOITE_PLEINE`, `SERVEUR_INJOIGNABLE`, `AUTRE`) plutôt que
+le message du serveur de messagerie, qui cite volontiers l'adresse. L'aperçu en
+tire `envoisEnEchec` — les personnes dont le **dernier** envoi a échoué —, et
+`GET /api/editions/courant/etat` ne dit plus « fait » sur la ligne de
+publication tant qu'il en reste : rien n'a changé pour elles, elles n'ont
+simplement rien reçu.
+
+`GET /api/planning/publication/etat` — **qui a reçu quelle version**, une ligne
+par animateur de l'édition, qu'il reste ou non quelqu'un à prévenir : la
+version qu'on lui a annoncée (`version.numero`, le rang de la publication dans
+l'édition), son dernier envoi (`envoi` : nature, état, cause, date), le rappel
+de la veille et la relance lus dans `notification_planifiee`, l'accusé de
+réception, `aPrevenir`, `differe` et `joursAPrevenir`. Rien n'y est recalculé :
+chaque colonne lit le magasin qui répond déjà à sa question, le service ne fait
+que les joindre par personne. N'envoie rien.
+
+### Publier pour quelques personnes
+
+`{"cibles": ["id", …]}` restreint une publication aux personnes nommées —
+« Prévenir les 2 personnes » après un échange accepté, ou après un remplacement
+le jour J. Tous les autres concernés sont **différés**, exactement comme par
+`exclusions` : la capture reste globale, leur repère ne bouge pas, ils
+reviennent au décompte suivant. Des cibles qui ne nomment aucun concerné
+laissent la publication sans destinataire : `409`.
+
+### Le jour d'un changement
+
+Chaque ligne d'aperçu porte `jours`, les dates de ses changements — la date de
+la vacation annoncée, `ChangementVacation.touches`. C'est **la même règle** que
+l'onglet « Changements » de la Journée applique pour garder une personne sur un
+jour : l'écran Diffuser et la Journée comptent donc les mêmes personnes pour un
+même jour, et un test partagé
+(`ChangementsJourneeServiceTest#theDiffuserDayFilterAndTheChangesOfTheDayCountTheSamePeople`)
+le tient.
+
 ### Différer le message de quelqu'un
 
 Le `POST` prend un corps JSON — `{"exclusions": ["id", …]}` — et **demande

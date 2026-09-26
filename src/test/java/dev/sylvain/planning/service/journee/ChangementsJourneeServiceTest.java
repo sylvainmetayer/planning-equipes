@@ -86,6 +86,52 @@ class ChangementsJourneeServiceTest {
                 jour, ReferenceChangements.PUBLICATION, REFERENCE_LE, avant.build(), apres.build(), diff);
     }
 
+    /**
+     * The shared test of the Journée's « Changements » and the Diffuser
+     * screen's day filter: for every day, the people the first lists are
+     * exactly the recipients the second keeps for that day — the publication
+     * diff narrowed by {@code joursTouches}, which is what the Diffuser table
+     * filters on. Two screens, one rule, the same counts.
+     */
+    @Test
+    void theDiffuserDayFilterAndTheChangesOfTheDayCountTheSamePeople() {
+        Plan avant = new Plan("a")
+                .seat(CIRQUE, SAMEDI_APREM, CAMILLE)
+                .seat(NINJA, SAMEDI_MATIN, DOMINIQUE)
+                .seat(CIRQUE, DIMANCHE_APREM, SASHA);
+        Plan apres = new Plan("b")
+                .seat(CIRQUE, SAMEDI_APREM, DOMINIQUE)
+                .seat(NINJA, SAMEDI_MATIN, DOMINIQUE)
+                .seat(NINJA, DIMANCHE_APREM, SASHA)
+                .seat(CIRQUE, DIMANCHE_APREM, CAMILLE);
+
+        java.util.Map<String, PublicationDiffService.Identite> identites = new java.util.LinkedHashMap<>();
+        for (Animateur animateur : List.of(CAMILLE, DOMINIQUE, SASHA)) {
+            identites.put(animateur.getId(), new PublicationDiffService.Identite(animateur.nomAffiche(), null));
+        }
+        List<PublicationDiffService.ChangementAnimateur> destinataires = diff.comparer(
+                PublicationDiffService.vacationsByAnimateur(avant.build()),
+                PublicationDiffService.vacationsByAnimateur(apres.build()),
+                identites,
+                false);
+
+        for (LocalDate jour : List.of(SAMEDI, DIMANCHE)) {
+            List<String> diffuser = destinataires.stream()
+                    .filter(destinataire -> PublicationDiffService.joursTouches(destinataire.changements())
+                            .contains(jour))
+                    .map(PublicationDiffService.ChangementAnimateur::animateurId)
+                    .sorted()
+                    .toList();
+            List<String> journee = compare(jour, avant, apres).parAnimateur().stream()
+                    .map(AnimateurLine::animateurId)
+                    .sorted()
+                    .toList();
+            assertThat(journee).as("people concerned on %s", jour).isEqualTo(diffuser);
+        }
+        assertThat(compare(SAMEDI, avant, apres).animateursConcernes()).isEqualTo(2);
+        assertThat(compare(DIMANCHE, avant, apres).animateursConcernes()).isEqualTo(2);
+    }
+
     @Test
     void anUnchangedDayHasNoLineAndCarriesItsReference() {
         Plan avant = new Plan("a").seat(CIRQUE, SAMEDI_APREM, CAMILLE);

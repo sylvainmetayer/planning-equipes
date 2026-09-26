@@ -4,9 +4,12 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.export.PlanningExportService;
+import dev.sylvain.planning.service.publication.PublicationTraceRepository.StatutEnvoi;
+import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -35,12 +38,18 @@ public class PlanningDeliveryService {
 
     private final MailService mailService;
 
+    private final EnvoiPlanningRepository envois;
+
     @Inject
     public PlanningDeliveryService(
-            PlanPublieService planPublieService, PlanningExportService planningExportService, MailService mailService) {
+            PlanPublieService planPublieService,
+            PlanningExportService planningExportService,
+            MailService mailService,
+            EnvoiPlanningRepository envois) {
         this.planPublieService = planPublieService;
         this.planningExportService = planningExportService;
         this.mailService = mailService;
+        this.envois = envois;
     }
 
     /**
@@ -79,13 +88,27 @@ public class PlanningDeliveryService {
             // animateur that carries the button.
             throw new BusinessError.Invalid("L'animateur " + animateurId + " n'a pas d'adresse e-mail sur sa fiche.");
         }
+        PlanSnapshotService.SnapshotMeta publiee = planPublieService.lastPublication();
+        Long version = publiee == null ? null : publiee.id();
         try {
             send(planning, animateur);
         } catch (RuntimeException e) {
             Log.errorf(e, "Failed to mail the planning of animateur %s", animateur.getId());
+            record(animateur.getId(), version, StatutEnvoi.ECHEC, EnvoiPlanningRepository.CauseEchec.of(e));
             return new DeliveryReport(0, List.of(), List.of("Échec de l'envoi à " + animateur.getEmail()));
         }
+        record(animateur.getId(), version, StatutEnvoi.ENVOYE, null);
         return new DeliveryReport(1, List.of(), List.of());
+    }
+
+    /**
+     * Writes the resend to the delivery ledger, so the Diffuser table shows
+     * « envoyé » where it showed « échec » — the whole point of resending.
+     */
+    private void record(
+            String animateurId, Long version, StatutEnvoi statut, EnvoiPlanningRepository.CauseEchec cause) {
+        envois.record(List.of(new EnvoiPlanningRepository.Envoi(
+                animateurId, version, EnvoiPlanningRepository.NatureEnvoi.RENVOI, statut, cause, Instant.now())));
     }
 
     private static boolean hasAddress(Animateur animateur) {

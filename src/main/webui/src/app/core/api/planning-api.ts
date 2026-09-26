@@ -9,6 +9,7 @@ import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
 import {
   ApercuPublication,
+  EtatEnvois,
   ComparaisonSnapshots,
   CompteRenduEnvoi,
   HeuresRapport,
@@ -117,6 +118,23 @@ export class PlanningApi {
    */
   publish(exclusions: readonly string[] = []): Promise<RapportPublication> {
     return this.api.post<RapportPublication>('/api/planning/publication', { exclusions });
+  }
+
+  /**
+   * A publication aimed at a few people — « Prévenir les 2 personnes » after an
+   * échange or a replacement. Everybody else concerned is deferred, and comes
+   * back in the next count.
+   */
+  publishTo(cibles: readonly string[]): Promise<RapportPublication> {
+    return this.api.post<RapportPublication>('/api/planning/publication', {
+      exclusions: [],
+      cibles,
+    });
+  }
+
+  /** « Qui a reçu quelle version »: one line per person. Sends nothing. */
+  deliveryState(): Promise<EtatEnvois> {
+    return this.api.get<EtatEnvois>('/api/planning/publication/etat');
   }
 
   /** The review table as a CSV, read away from the screen. Sends nothing. */

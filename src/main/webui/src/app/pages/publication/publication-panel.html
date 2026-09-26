@@ -1,45 +1,15 @@
-<mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h2 mat-card-title i18n="@@solver.diffusion.title">Diffusion du planning</h2>
-    <mat-card-subtitle i18n="@@solver.diffusion.hint">
-      Documents à imprimer ou à archiver, et envoi du planning enregistré aux seules personnes dont l'emploi du temps a changé.
-    </mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-actions class="card-actions">
-    <button matButton="tonal" [disabled]="exportBusy() || editingLocked()" (click)="exportBundle()">
-      <mat-icon>archive</mat-icon>
-      <ng-container i18n="@@solver.export">Exporter le planning (PDF + ICS)</ng-container>
-    </button>
-    <button matButton="tonal" [disabled]="exportBusy() || editingLocked()"
-            i18n-matTooltip="@@solver.exportFeuilles.tooltip"
-            matTooltip="Une feuille A4 paysage par personne : calendrier au recto, coéquipiers et lieux au verso. Une impression par animateur au lieu de cinq."
-            (click)="exportFeuilles()">
-      <mat-icon>print</mat-icon>
-      <ng-container i18n="@@solver.exportFeuilles">Exporter les feuilles recto-verso (PDF)</ng-container>
-    </button>
-    <button matButton="tonal" [disabled]="exportBusy() || editingLocked()"
-            i18n-matTooltip="@@solver.exportGlobal.tooltip"
-            matTooltip="Toutes les affectations dans un seul PDF : vue d'ensemble, journées, stands et animateurs, avec un sommaire cliquable."
-            (click)="exportGlobalPdf()">
-      <mat-icon>picture_as_pdf</mat-icon>
-      <ng-container i18n="@@solver.exportGlobal">Exporter le planning global (PDF)</ng-container>
-    </button>
-    <button matButton="tonal"
+<mat-card appearance="outlined" class="page-card diffuser-publier">
+  <mat-card-content class="diffuser-publier-ligne">
+    <button matButton="filled"
             [disabled]="busy() || editingLocked() || !publishable()"
-            i18n-matTooltip="@@publication.bouton.tooltip"
-            matTooltip="Prévient uniquement les personnes dont l'emploi du temps a changé depuis la dernière publication, en leur disant ce qui change."
             (click)="publish()">
       <mat-icon>forward_to_inbox</mat-icon>
       <span>{{ publishLabel() }}</span>
     </button>
-    <button matButton="tonal" [disabled]="exportBusy() || editingLocked()"
-            i18n-matTooltip="@@publication.exportDiff.tooltip"
-            matTooltip="Une ligne par personne à prévenir, à relire ou à discuter hors de l'application."
-            (click)="exportDiff()">
-      <mat-icon>table_view</mat-icon>
-      <ng-container i18n="@@publication.exportDiff">Exporter le détail (CSV)</ng-container>
-    </button>
-  </mat-card-actions>
+    @if (publishSentence(); as phrase) {
+      <p class="diffuser-publier-phrase">{{ phrase }}</p>
+    }
+  </mat-card-content>
 
   @if (busy()) {
     <mat-card-content>
@@ -81,7 +51,7 @@
         @if (listOpen()) {
           <ng-container i18n="@@publication.liste.masquer">Masquer qui est concerné</ng-container>
         } @else {
-          <ng-container i18n="@@publication.liste.voir">Voir qui est concerné et ce qui change</ng-container>
+          <ng-container i18n="@@diffuser.liste.voir">Voir ce qui change pour chacune</ng-container>
         }
       </button>
       @if (listOpen()) {

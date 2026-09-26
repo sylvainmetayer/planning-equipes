@@ -1,9 +1,8 @@
 <div class="page-header">
   <h1 i18n="@@echanges.titre">Échanges de créneaux</h1>
-  <p i18n="@@echanges.intro">
-    Les demandes d'échange soumises par les animateurs depuis leur espace, une fois acceptées par
-    le collègue concerné.
-  </p>
+  @if (nouvelles() > 0) {
+    <p class="echanges-nouvelles" i18n="@@echanges.nouvelles">{{ nouvelles() }} nouvelle(s) demande(s) depuis votre dernière visite</p>
+  }
   <button matButton (click)="reload()" [disabled]="chargement()">
     <mat-icon>refresh</mat-icon>
     <span i18n="@@echanges.recharger">Recharger</span>
@@ -176,12 +175,34 @@
           @if (demande.nonCommuniquee) {
             <span class="echanges-demande-attente">
               <mat-icon inline>schedule_send</mat-icon>
-              <ng-container i18n="@@echanges.nonCommuniquee">pas encore communiquée — la prochaine publication l'annonce</ng-container>
+              <ng-container i18n="@@echanges.nonCommuniquee2">pas encore communiquée</ng-container>
             </span>
           }
         </div>
         @if (demande.commentaireAdmin) {
           <p class="espace-demande-commentaire">{{ demande.commentaireAdmin }}</p>
+        }
+        @if (followUpDone()[demande.id]; as fait) {
+          <p class="echanges-suite-faite" role="status">{{ fait }}</p>
+        }
+        @if (offersFollowUps(demande)) {
+          <div class="echanges-actions">
+            <button matButton="filled" (click)="prevenir(demande)"
+                    [disabled]="editingLocked() || followUpBusy() === demande.id">
+              <mat-icon>forward_to_inbox</mat-icon>
+              <span i18n="@@echanges.prevenir">Prévenir les 2 personnes</span>
+            </button>
+            <button matButton (click)="corriger(demande)" [disabled]="followUpBusy() === demande.id">
+              <mat-icon>auto_fix_high</mat-icon>
+              <span i18n="@@echanges.corriger">Corriger le reste</span>
+            </button>
+            @if (demande.date) {
+              <a matButton routerLink="/journee" [queryParams]="{ jour: demande.date }">
+                <mat-icon>calendar_view_day</mat-icon>
+                <span i18n="@@echanges.voirJournee">Voir la journée</span>
+              </a>
+            }
+          </div>
         }
       </mat-card-content>
     </mat-card>

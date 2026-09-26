@@ -54,6 +54,7 @@ dev/sylvain/planning/api/EquiteResourceTest.java
 dev/sylvain/planning/api/EspaceAccesTest.java
 dev/sylvain/planning/api/EspacePlanPublieTest.java
 dev/sylvain/planning/api/EtatEditionResourceTest.java
+dev/sylvain/planning/api/EtatEnvoisResourceTest.java
 dev/sylvain/planning/api/FeasibilityResourceTest.java
 dev/sylvain/planning/api/FoireAndEspaceExportsTest.java
 dev/sylvain/planning/api/FormationResourceTest.java

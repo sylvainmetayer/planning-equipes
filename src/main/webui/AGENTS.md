@@ -232,13 +232,23 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   the event's last day is past. The referential screens open the same import
   card in a dialog through `shared/import-button.ts`, without leaving the
   list),
-  `/publication` (« Publication » — what reaches real people: the planning
-  documents to print or archive, and the mailing to every animateur whose
-  schedule changed; a screen of its own under Solveur since issue #320, so the
-  solver page only solves. Before sending, the review table — one row per
+  `/publication` (« Diffuser » — what reaches real people, two tabs chosen by
+  `?onglet=envoyer|documents`. « Envoyer »: the publish button with its count
+  and the sentence saying both its effects, the review table — one row per
   person, ordered by `?tri=nom|ampleur`, minor changes folded by
   `?mineurs=masques`, each row a checkbox that **defers** that person's message
-  rather than dropping it, ADR 0047), `/export-csv`, `/creneaux` (one path
+  rather than dropping it, ADR 0047 —, then the permanent table of every
+  person (`envois-table.ts` over the pure `envois.ts`, read from
+  `GET /api/planning/publication/etat`): the version they were last sent, the
+  state of their latest mail — sent, failed with its cause, no address,
+  deferred —, the night's reminder, the latest reminder of the silent, the
+  acknowledgement, and per row « Renvoyer son planning », « Relancer »,
+  « Différer »; filtered by `?filtre=a-prevenir|echec|sans-email|silencieux|differes`
+  and `?jour=` (the day rule of the Journée's « Changements »). The deferral is
+  shared by the two tables through the page-provided `PublicationSelection`,
+  never the URL. « Documents »: the four files the plan becomes, each saying
+  who it is for; a screen of its own since issue #320, so the solver page only
+  solves), `/export-csv`, `/creneaux` (one path
   first — day templates laid on the calendar, or applied without being kept;
   a single timeslot, recognition and derivation from the stands' hours sit in
   one « Autres façons de créer la grille » menu; the grid check is a band read
@@ -344,7 +354,13 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   « Former » per person. The tab components keep their own view state in the
   URL next to the page's key; `?onglet=banc` is sent to the Planning page by
   `benchTabToJournee`, `?onglet=former` to `?onglet=besoin&section=former` by
-  `trainingTabToNeed`), `/echanges`, `/jour-j` (« Mode jour J » — the day-of screen:
+  `trainingTabToNeed`), `/echanges` (« Échanges » —
+  opens on the queue, under the foire's one-line state (`shared/guichet-etat`);
+  an accepted swap offers « Prévenir les 2 personnes », a publication
+  aimed at those two through `PlanningApi.publishTo`, and « Corriger le
+  reste », the incremental solve, on its card; the header counts the requests
+  arrived since this browser's last visit, `core/derniere-visite`, a chrome
+  preference), `/jour-j` (« Mode jour J » — the day-of screen:
   mark somebody absent, repair the seats they held), `/versions` (« Versions du
   plan » — the finished solves and the snapshots of the edition in one
   chronology over the pure `versions.ts`, `?editions=toutes` for every
@@ -525,8 +541,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   *this* person's screen is neither shareable nor worth a param, and a param
   would be gone on the next plain navigation, which is the visit the preference
   has to survive. Those go to localStorage, through `core/nav-collapse` (the
-  drawer's folded groups), `core/news-seen` (the news read) or
-  `core/panel-collapse` (a page panel, e.g. the
+  drawer's folded groups), `core/news-seen` (the news read),
+  `core/derniere-visite` (a screen's previous visit, what « depuis votre
+  dernière visite » counts from) or `core/panel-collapse` (a page panel, e.g. the
   solver's score curve). An unsaved entry is neither, and has its own module:
   `core/brouillon-formulaire.ts` keeps the draft of the three long forms,
   scoped by edition, 24 h at most, sessionStorage for the fiche animateur and

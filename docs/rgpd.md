@@ -366,6 +366,16 @@ complètes. Quatre points sont connus et se consignent :
   alerte qui ne nomme plus personne. Ce journal n'a pas de purge propre : il
   disparaît avec son édition, en cascade sur `edition_id`, donc à la purge
   annuelle ;
+- **l'état de chaque envoi du planning est conservé** (`envoi_planning`) :
+  pour chaque publication et chaque renvoi, une ligne par personne qui dit si
+  le courriel est parti, a échoué, n'a pas pu partir faute d'adresse ou a été
+  différé. Des **dates et des états seulement** : ni le contenu du message
+  (qui vit déjà dans `publication_destinataire`), ni l'adresse, ni le message
+  d'erreur du serveur de messagerie — il cite volontiers l'adresse refusée —,
+  remplacé par une cause courte (adresse refusée, boîte pleine, serveur
+  injoignable, autre). Comme la trace des publications, la ligne survit à la
+  fiche qu'elle concerne — c'est une preuve d'envoi — et cascade avec son
+  instantané et son édition, donc disparaît au plus tard à la purge annuelle ;
 - **l'historique des actions (`journal_action`) trace qui a fait quoi**, et
   c'est un traitement à consigner comme tel. Il suit la même règle que le
   journal ci-dessus, et deux de plus. Il ne stocke **ni nom, ni adresse, ni

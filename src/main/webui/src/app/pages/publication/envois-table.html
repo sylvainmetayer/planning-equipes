@@ -1,0 +1,108 @@
+<section class="diffuser-envois" aria-labelledby="diffuser-envois-titre">
+  <div class="diffuser-envois-tete">
+    <h2 id="diffuser-envois-titre" i18n="@@diffuser.envois.titre">Qui a reçu quelle version</h2>
+    @if (lastVersion(); as derniere) {
+      <span class="diffuser-envois-derniere">{{ derniere }}</span>
+    }
+    @if (state(); as etat) {
+      @if (etat.relancesAutomatiques) {
+        <span class="diffuser-relances" i18n="@@diffuser.relances.actives">Relances automatiques activées</span>
+      } @else {
+        <span class="diffuser-relances diffuser-relances-inactives">
+          <ng-container i18n="@@diffuser.relances.inactives">Relances automatiques désactivées</ng-container>
+          · <a routerLink="/parametres" [queryParams]="{ onglet: 'emails' }" i18n="@@diffuser.relances.activer">Activer</a>
+        </span>
+      }
+    }
+    @if (silentReachable().length > 0) {
+      <button matButton [disabled]="busy() !== null || editingLocked()" (click)="remindAll()">
+        <mat-icon>notifications_active</mat-icon>
+        <ng-container i18n="@@diffuser.relancerTous">Relancer les {{ silentReachable().length }} silencieux</ng-container>
+      </button>
+    }
+  </div>
+
+  <app-status-message [text]="error()" tone="error" />
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" i18n-aria-label="@@diffuser.chargement" aria-label="Lecture des envois" />
+  }
+
+  <div class="diffuser-filtres">
+    <mat-button-toggle-group [value]="filtre()" (change)="chooseFilter($event.value)"
+                             i18n-aria-label="@@diffuser.filtres.label" aria-label="Filtrer les personnes">
+      <mat-button-toggle value="tous" i18n="@@diffuser.filtre.tous">Tous · {{ comptes().tous }}</mat-button-toggle>
+      <mat-button-toggle value="a-prevenir" i18n="@@diffuser.filtre.aPrevenir">À prévenir · {{ comptes()['a-prevenir'] }}</mat-button-toggle>
+      <mat-button-toggle value="echec" i18n="@@diffuser.filtre.echec">En échec · {{ comptes().echec }}</mat-button-toggle>
+      <mat-button-toggle value="sans-email" i18n="@@diffuser.filtre.sansEmail">Sans e-mail · {{ comptes()['sans-email'] }}</mat-button-toggle>
+      <mat-button-toggle value="silencieux" i18n="@@diffuser.filtre.silencieux">Silencieux · {{ comptes().silencieux }}</mat-button-toggle>
+      <mat-button-toggle value="differes" i18n="@@diffuser.filtre.differes">Différés · {{ comptes().differes }}</mat-button-toggle>
+    </mat-button-toggle-group>
+    @if (jours().length > 0 || jour()) {
+      <mat-form-field class="diffuser-jour" subscriptSizing="dynamic">
+        <mat-label i18n="@@diffuser.jour.label">Ce qui change le</mat-label>
+        <mat-select [value]="jour()" (selectionChange)="chooseDay($event.value)">
+          <mat-option [value]="null" i18n="@@diffuser.jour.tous">tous les jours</mat-option>
+          @for (candidat of jours(); track candidat) {
+            <mat-option [value]="candidat">{{ dayLabel(candidat) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
+  </div>
+
+  <div class="diffuser-table-cadre">
+    <table class="diffuser-table">
+      <caption class="visually-hidden" i18n="@@diffuser.table.caption">
+        Chaque personne de l'édition : la version envoyée, l'état de l'envoi, le rappel de la veille, la relance, l'accusé de réception et ce qui reste à lui annoncer.
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col" i18n="@@diffuser.col.personne">Personne</th>
+          <th scope="col" i18n="@@diffuser.col.version">Version envoyée</th>
+          <th scope="col" i18n="@@diffuser.col.etat">État de l'envoi</th>
+          <th scope="col" i18n="@@diffuser.col.rappel">Rappel J-1</th>
+          <th scope="col" i18n="@@diffuser.col.relance">Relance</th>
+          <th scope="col" i18n="@@diffuser.col.accuse">Accusé</th>
+          <th scope="col" i18n="@@diffuser.col.change">Prochaine publication</th>
+          <th scope="col" i18n="@@diffuser.col.actions">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (ligne of rows(); track ligne.animateurId) {
+          @let etat = delivery(ligne);
+          <tr [class.diffuser-ligne-a-prevenir]="ligne.aPrevenir">
+            <th scope="row"><a [routerLink]="['/animateurs', ligne.animateurId]">{{ ligne.nomAffiche }}</a></th>
+            <td>{{ versionOf(ligne) }}</td>
+            <td [class]="'diffuser-etat diffuser-etat-' + etat.ton">{{ etat.texte }}</td>
+            <td>{{ reminder(ligne) }}</td>
+            <td>{{ relance(ligne) }}</td>
+            <td>{{ acknowledgement(ligne) }}</td>
+            <td>{{ pending(ligne) }}</td>
+            <td class="diffuser-actions">
+              @if (canResend(ligne)) {
+                <button matButton [disabled]="busy() !== null || editingLocked()" (click)="resend(ligne)"
+                        i18n="@@diffuser.action.renvoyer">Renvoyer son planning</button>
+              }
+              @if (canRemind(ligne)) {
+                <button matButton [disabled]="busy() !== null || editingLocked()" (click)="remind(ligne)"
+                        i18n="@@diffuser.action.relancer">Relancer</button>
+              }
+              @if (ligne.aPrevenir) {
+                <button matButton (click)="toggleDefer(ligne)">
+                  @if (selection.isExcluded(ligne.animateurId)) {
+                    <ng-container i18n="@@diffuser.action.reintegrer">Réintégrer</ng-container>
+                  } @else {
+                    <ng-container i18n="@@diffuser.action.differer">Différer</ng-container>
+                  }
+                </button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  @if (state() && rows().length === 0) {
+    <p class="diffuser-vide" i18n="@@diffuser.table.vide">Personne ne correspond à ce filtre.</p>
+  }
+</section>

@@ -17,7 +17,7 @@ class PlanPublicationCsvTest {
 
     private static ApercuPublication apercu(DestinatairePublication... destinataires) {
         return new ApercuPublication(
-                false, false, false, Instant.EPOCH, destinataires.length, 0, List.of(destinataires));
+                false, false, false, Instant.EPOCH, destinataires.length, 0, List.of(destinataires), 0);
     }
 
     @Test
@@ -44,7 +44,8 @@ class PlanPublicationCsvTest {
                 false,
                 true,
                 "CONFIRME",
-                Instant.EPOCH)));
+                Instant.EPOCH,
+                List.of())));
 
         assertThat(csv.split("\n")[1])
                 .isEqualTo("a1;Camille Durand;camille@example.org;false;true;1;0;1;false;CONFIRME;"
@@ -60,7 +61,20 @@ class PlanPublicationCsvTest {
     @Test
     void aValueCarryingTheSeparatorIsQuoted() {
         String csv = PlanPublicationService.generateCsv(apercu(new DestinatairePublication(
-                "a2", "Roy; Dominique", null, true, List.of(), List.of(), 0, 0, 0, false, false, null, null)));
+                "a2",
+                "Roy; Dominique",
+                null,
+                true,
+                List.of(),
+                List.of(),
+                0,
+                0,
+                0,
+                false,
+                false,
+                null,
+                null,
+                List.of())));
 
         assertThat(csv.split("\n")[1]).isEqualTo("a2;\"Roy; Dominique\";;true;false;0;0;0;false;;;");
     }

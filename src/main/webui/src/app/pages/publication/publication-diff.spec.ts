@@ -24,6 +24,7 @@ function destinataire(partiel: Partial<DestinatairePublication> = {}): Destinata
     reporte: false,
     confirmation: null,
     confirmeLe: null,
+    jours: [],
     ...partiel,
   };
 }
