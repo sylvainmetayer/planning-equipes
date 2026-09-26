@@ -7,8 +7,8 @@
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
-    <p class="empty-hint" i18n="@@imports.scenario.aide">
-      Les cinq autres onglets complètent l'édition ; un scénario la remplace. La confirmation rappelle
+    <p class="empty-hint" i18n="@@imports.scenario.aide.fichiers">
+      Les imports de référentiels complètent l'édition ; un scénario la remplace. La confirmation rappelle
       l'édition visée — celle que désigne le fichier — et un instantané du plan est pris avant d'écrire.
     </p>
     <app-gel-edition-notice operation="scenario" />
@@ -22,11 +22,9 @@
         <mat-icon>upload_file</mat-icon>
         <span i18n="@@dataSetup.importScenarioFile">Importer un fichier</span>
       </button>
-      <a matButton routerLink="/debug" [queryParams]="{ onglet: 'yaml' }">
-        <mat-icon>science</mat-icon>
-        <span i18n="@@imports.scenario.versValidateur"
-          >Valider un fichier sans l'importer (Débogage)</span
-        >
+      <a matButton routerLink="/fichiers" [queryParams]="{ cible: 'verifier' }">
+        <mat-icon>fact_check</mat-icon>
+        <span i18n="@@yamlValidator.title.verifier">Vérifier un fichier sans l'importer</span>
       </a>
     </div>
     <input

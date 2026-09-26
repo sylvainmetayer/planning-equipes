@@ -10,9 +10,9 @@ import { ExportCsvApi } from '../../core/api/export-csv-api';
 import { CIBLES_EXPORT_CSV } from '../../core/api/imports-api';
 import { ArchiveEvenementApi } from '../../core/api/archive-evenement-api';
 import { PlanningApi } from '../../core/api/planning-api';
-import { ExportsPage } from './exports-page';
+import { ExporterPanel } from './exporter-panel';
 
-describe('ExportsPage', () => {
+describe('ExporterPanel', () => {
   const api = { volumes: vi.fn(), telecharger: vi.fn() };
   const planningApi = { exportScenario: vi.fn() };
   // The archive card has its own spec; here it only has to render.
@@ -56,11 +56,11 @@ describe('ExportsPage', () => {
   };
 
   async function monter(): Promise<{
-    fixture: ComponentFixture<ExportsPage>;
+    fixture: ComponentFixture<ExporterPanel>;
     page: Internals;
     racine: HTMLElement;
   }> {
-    const fixture = TestBed.createComponent(ExportsPage);
+    const fixture = TestBed.createComponent(ExporterPanel);
     await fixture.whenStable();
     return {
       fixture,

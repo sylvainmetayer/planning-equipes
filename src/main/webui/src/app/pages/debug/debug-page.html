@@ -1,9 +1,9 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
     <h1 mat-card-title i18n="@@nav.link.debug">Débogage</h1>
-    <mat-card-subtitle i18n="@@debug.description">
-      Les outils techniques de l'instance : la sortie brute de la dernière résolution, les vérifications
-      (notifications, erreurs, e-mails, date figée), les données de démonstration et le validateur YAML.
+    <mat-card-subtitle i18n="@@debug.description.brut">
+      Les informations brutes de l'instance : la sortie de la dernière résolution, la version, l'API et les
+      vérifications techniques.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
@@ -16,14 +16,6 @@
       <mat-button-toggle value="verifications">
         <mat-icon>bug_report</mat-icon>
         <ng-container i18n="@@debug.onglet.verifications">Vérifications</ng-container>
-      </mat-button-toggle>
-      <mat-button-toggle value="donnees">
-        <mat-icon>storage</mat-icon>
-        <ng-container i18n="@@debug.onglet.donnees">Données</ng-container>
-      </mat-button-toggle>
-      <mat-button-toggle value="yaml">
-        <mat-icon>rule</mat-icon>
-        <ng-container i18n="@@debug.onglet.yaml">Validateur YAML</ng-container>
       </mat-button-toggle>
     </mat-button-toggle-group>
   </mat-card-content>
@@ -40,8 +32,8 @@
         </mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
-        <p class="debug-version" i18n="@@debug.testNotifications.hint">
-          Génère une notification de test (visible ici en toast, puis dans l'onglet Notifications) :
+        <p class="debug-version" i18n="@@debug.testNotifications.hint.accueil">
+          Génère une notification de test (visible ici en toast, puis dans les messages récents de l'accueil) :
         </p>
         <div class="calendar-toolbar">
           <button matButton="outlined" type="button" (click)="sendTestNotification('info')">
@@ -98,92 +90,16 @@
             <mat-icon>outgoing_mail</mat-icon>
             <ng-container i18n="@@debug.mailLink">Ouvrir le débogueur d'e-mails (Mailpit)</ng-container>
           </a>
+          <!-- `/db` resolves relative to whatever host serves this app; routing it to
+               pgAdmin is a deployment-side reverse-proxy concern (see proxy.conf.json
+               for the `ng serve` wiring). -->
+          <a matButton="outlined" href="/db" target="_blank" rel="noopener">
+            <mat-icon>storage</mat-icon>
+            <ng-container i18n="@@dataSetup.database.pgAdminLink">Accéder à la base de données (pgAdmin)</ng-container>
+          </a>
         </div>
       </mat-card-content>
     </mat-card>
-
-    @if (dates.modifiable()) {
-      <mat-card appearance="outlined" class="page-card">
-        <mat-card-header>
-          <h2 mat-card-title i18n="@@debug.dateDuJour.title">Date du jour (mock)</h2>
-          <mat-card-subtitle i18n="@@debug.dateDuJour.description">
-            Fige la date du serveur, et si besoin l'heure, pour essayer le mode jour J et l'espace
-            animateur hors de l'événement. Sans heure, l'horloge tourne ; date vide : horloge réelle.
-          </mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
-          <mat-form-field appearance="outline" class="debug-date-du-jour">
-            <mat-label i18n="@@debug.dateDuJour.label">Date du jour</mat-label>
-            <input
-              matInput
-              #champDateDuJour
-              [id]="todayAnchor"
-              type="date"
-              name="dateDuJour"
-              [ngModel]="dates.dateDuJour()"
-              (ngModelChange)="onDateDuJour($event)"
-            />
-          </mat-form-field>
-          <mat-form-field appearance="outline" class="debug-date-du-jour">
-            <mat-label i18n="@@debug.heureDuJour.label">Heure (facultative)</mat-label>
-            <input
-              matInput
-              id="heure-du-jour"
-              type="time"
-              name="heureDuJour"
-              [disabled]="!dates.actif()"
-              [ngModel]="dates.heureMock()"
-              (ngModelChange)="onHeureMock($event)"
-            />
-          </mat-form-field>
-          <app-status-message [text]="dateDuJourErreur()" tone="error" />
-          @if (dates.actif()) {
-            <p class="debug-date-du-jour-actif" i18n="@@debug.dateDuJour.actif">
-              Date figée : les écrans qui raisonnent sur « maintenant » ne montrent pas la réalité.
-            </p>
-          }
-        </mat-card-content>
-      </mat-card>
-    }
-  }
-  @case ('donnees') {
-    <mat-card appearance="outlined" class="page-card">
-      <mat-card-header>
-        <h2 mat-card-title i18n="@@dataSetup.database.title">Base de données</h2>
-        <mat-card-subtitle i18n="@@dataSetup.database.description">
-          Interagir avec la base de données. Ces actions sont verrouillées pendant que le solveur est en
-          cours d'exécution.
-        </mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content>
-        <app-gel-edition-notice operation="reset" />
-      </mat-card-content>
-      <mat-card-actions class="card-actions">
-        <button
-          matButton="outlined"
-          class="danger-action"
-          [disabled]="solverBusy() || resetting() || gel.anyFrozen()"
-          (click)="onResetDatabase()"
-        >
-          <mat-icon>delete_sweep</mat-icon>
-          <ng-container i18n="@@dataSetup.resetDatabase">Vider la base de données</ng-container>
-        </button>
-        <!-- `/db` resolves relative to whatever host serves this app; routing it to
-             pgAdmin is a deployment-side reverse-proxy concern (see proxy.conf.json
-             for the `ng serve` wiring). -->
-        <a matButton="outlined" href="/db" target="_blank" rel="noopener">
-          <mat-icon>storage</mat-icon>
-          <ng-container i18n="@@dataSetup.database.pgAdminLink"
-            >Accéder à la base de données (pgAdmin)</ng-container
-          >
-        </a>
-      </mat-card-actions>
-    </mat-card>
-
-    <app-scenario-preenregistre />
-  }
-  @case ('yaml') {
-    <app-yaml-validator />
   }
   @default {
     <mat-card appearance="outlined" class="page-card">

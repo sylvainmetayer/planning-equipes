@@ -67,7 +67,7 @@ export function aujourdhuiLocal(maintenant: Date): string {
 
 /**
  * The moment the marker reasons on: the browser's own, unless a developer froze
- * the server's clock (`/api/debug/date-du-jour`).
+ * the server's clock (`/api/horloge`).
  *
  * <p>The same rule as the mode jour J screen: the frozen date replaces the
  * phone's, and the time of day follows the phone's unless it was frozen too —

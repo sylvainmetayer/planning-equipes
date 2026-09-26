@@ -12,9 +12,9 @@
 <mat-card class="page-card" appearance="outlined">
   <mat-card-header>
     <h2 mat-card-title i18n="@@importCsv.fichier.titre">1. Le fichier</h2>
-    <mat-card-subtitle i18n="@@importCsv.fichier.aide">
-      Format CSV uniquement. Ne rouvrez pas le CSV dans un tableur : il réécrit les années sur deux
-      chiffres (« 12/09/26 ») et l'aperçu dit alors comment une telle date a été lue.
+    <mat-card-subtitle i18n="@@importCsv.fichier.aide.tableur">
+      Un CSV, ou les cellules copiées depuis le tableur. Une année sur deux chiffres (« 12/09/26 ») est
+      lue quand même : l'aperçu dit comment.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
@@ -49,6 +49,7 @@
         </button>
       }
     </div>
+    <app-collage-tableur [disabled]="analyseEnCours() || importEnCours()" (colle)="onColle($event)" />
     <input #csvInput i18n-aria-label="@@importCsv.fichier.choisir" aria-label="Choisir un fichier CSV" type="file" accept=".csv,text/csv,text/plain" hidden (change)="onFichierChoisi($event)" />
     @if (nomFichier()) {
       <p class="empty-hint">
@@ -264,6 +265,12 @@
         <mat-icon>refresh</mat-icon>
         <span i18n="@@importCsv.reanalyser">Recalculer l'aperçu</span>
       </button>
+      @if (lienReferentiel() && lienLignes(); as lien) {
+        <a matButton routerLink="/animateurs" [queryParams]="lien.queryParams">
+          <span>{{ lien.libelle }}</span>
+          <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+        </a>
+      }
     </mat-card-actions>
   </mat-card>
 }

@@ -4,7 +4,8 @@ import { readAdjustmentsView } from '../pages/ad-hoc-constraints/reseau-paires';
 import { ONGLETS_DEBUG, readOngletDebug } from '../pages/debug/debug';
 import { ONGLETS_DIAGNOSTIC, readOnglet } from '../pages/diagnostic/diagnostic';
 import { readDisponibilitesTab } from '../pages/disponibilites/declarations-filter';
-import { ONGLETS_IMPORTS, readOngletImports } from '../pages/imports/imports';
+import { ONGLETS_FICHIERS, readOngletFichiers } from '../pages/fichiers/fichiers';
+import { IMPORT_CARDS, readImportCard } from '../pages/imports/imports';
 import { JOURNEE_VIEWS, readView } from '../pages/journee/journee';
 import { MARGIN_VIEW_PARAMS, readMarginView } from '../pages/marge/marge';
 import { OPENINGS_VIEW_PARAMS, readOpeningsView } from '../pages/ouvertures/ouvertures';
@@ -20,12 +21,15 @@ const written = (params: Readonly<Record<string, string | null>>): string[] =>
 /**
  * How each page with tabs reads its address, from the page's own reader: the
  * param, whether a value opens that tab or view (it reads back as itself), and
- * the values the page knows.
+ * the values the page knows. A page reading two params lists one reader each.
  */
-const TAB_READERS: Record<
-  string,
-  { param: string; opens: (value: string) => boolean; values: readonly string[] }
-> = {
+interface TabReader {
+  param: string;
+  opens: (value: string) => boolean;
+  values: readonly string[];
+}
+
+const TAB_READERS: Record<string, TabReader | readonly TabReader[]> = {
   '/journee': { param: 'vue', opens: (v) => readView(v) === v, values: JOURNEE_VIEWS },
   '/ouvertures': {
     param: 'vue',
@@ -42,11 +46,15 @@ const TAB_READERS: Record<
     opens: (v) => readDisponibilitesTab(v) === v,
     values: ['covoiturage'],
   },
-  '/imports': {
-    param: 'onglet',
-    opens: (v) => readOngletImports(v) === v,
-    values: ONGLETS_IMPORTS,
-  },
+  '/fichiers': [
+    // The Importer tab is reached through its cards, the page's default tab.
+    { param: 'cible', opens: (v) => readImportCard(v) === v, values: IMPORT_CARDS },
+    {
+      param: 'onglet',
+      opens: (v) => readOngletFichiers(v) === v,
+      values: ONGLETS_FICHIERS.filter((onglet) => onglet !== 'importer'),
+    },
+  ],
   '/diagnostic': { param: 'onglet', opens: (v) => readOnglet(v) === v, values: ONGLETS_DIAGNOSTIC },
   '/ad-hoc-constraints': {
     param: 'vue',
@@ -121,15 +129,21 @@ describe('buildNavGroups', () => {
       Object.keys(TAB_READERS).sort((a, b) => a.localeCompare(b)),
     );
     for (const link of withTabs) {
-      const reader = TAB_READERS[link.path];
+      const entry = TAB_READERS[link.path];
+      const readers: readonly TabReader[] = Array.isArray(entry) ? entry : [entry as TabReader];
       for (const tab of link.tabs ?? []) {
         const address = `${link.path}?${tab.param}=${tab.value}`;
-        expect(tab.param, address).toBe(reader.param);
-        expect(reader.opens(tab.value), address).toBe(true);
+        const reader = readers.find((candidate) => candidate.param === tab.param);
+        expect(reader, address).toBeDefined();
+        expect(reader?.opens(tab.value), address).toBe(true);
       }
-      const declared = (link.tabs ?? []).map((tab) => tab.value);
-      for (const value of reader.values) {
-        expect(declared, `${link.path}?${reader.param}=${value}`).toContain(value);
+      for (const reader of readers) {
+        const declared = (link.tabs ?? [])
+          .filter((tab) => tab.param === reader.param)
+          .map((tab) => tab.value);
+        for (const value of reader.values) {
+          expect(declared, `${link.path}?${reader.param}=${value}`).toContain(value);
+        }
       }
     }
   });

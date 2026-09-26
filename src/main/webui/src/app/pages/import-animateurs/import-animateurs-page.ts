@@ -4,6 +4,7 @@ import {
   computed,
   inject,
   input,
+  output,
   signal,
   viewChild,
   ElementRef,
@@ -26,6 +27,9 @@ import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 import { GelNotice } from '../../shared/gel-notice';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { CollageTableur } from '../imports/collage-tableur';
+import { PASTE_FILE_NAME } from '../imports/collage';
+import { IMPORTED_IDS_PARAM } from '../../core/imported-rows';
 import {
   CHAMPS_IMPORT,
   ChampImport,
@@ -64,6 +68,7 @@ import {
     MatTooltipModule,
     RouterLink,
     GelNotice,
+    CollageTableur,
   ],
   templateUrl: './import-animateurs-page.html',
   styleUrl: '../../../styles/import-animateurs.css',
@@ -72,8 +77,12 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ImportAnimateursPage {
-  /** False inside the Imports page, which carries the title of the screen itself. */
+  /** False inside the Fichiers page and the Importer dialog, which carry the title of the screen themselves. */
   readonly entete = input(true);
+  /** False inside the Importer dialog of the Animateurs screen: the rows are on the page it closes onto. */
+  readonly lienReferentiel = input(true);
+  /** A write went through: the host reloads what it shows. */
+  readonly imported = output<void>();
 
   private readonly animateursApi = inject(AnimateursApi);
   private readonly notifications = inject(NotificationService);
@@ -94,6 +103,32 @@ export class ImportAnimateursPage {
   protected readonly nomFichier = signal('');
   protected readonly mapping = signal<AnimateurCsvMapping | null>(null);
   protected readonly rapport = signal<ImportCsvRapport | null>(null);
+
+  /**
+   * Once a write went through: the Animateurs list opened on the fiches it
+   * created or updated (`?ids=`), `null` before and when it wrote none.
+   */
+  protected readonly lienLignes = computed(() => {
+    const rapport = this.rapport();
+    if (!rapport?.applied) {
+      return null;
+    }
+    const ids = [
+      ...new Set(
+        rapport.rows.flatMap((ligne) =>
+          ligne.action !== 'REJECTED' && ligne.animateurId !== null ? [ligne.animateurId] : [],
+        ),
+      ),
+    ];
+    if (ids.length === 0) {
+      return null;
+    }
+    const count = ids.length;
+    return {
+      queryParams: { [IMPORTED_IDS_PARAM]: ids.join(',') },
+      libelle: $localize`:@@importRef.voirLignes:Voir les ${count}:count: lignes importées`,
+    };
+  });
   protected readonly erreur = signal('');
   protected readonly analyseEnCours = signal(false);
   protected readonly importEnCours = signal(false);
@@ -199,11 +234,24 @@ export class ImportAnimateursPage {
     if (!file) {
       return;
     }
+    await this.load(file.name, await file.text());
+  }
+
+  /** Cells pasted from a spreadsheet: read exactly as a file of that content would be. */
+  protected onColle(csv: string): Promise<void> {
+    return this.load(PASTE_FILE_NAME, csv);
+  }
+
+  /**
+   * A text to read, whichever way it came in — a file or a paste: the last
+   * answer forgotten, the text held under its name, then previewed.
+   */
+  private async load(name: string, content: string): Promise<void> {
     this.derniereAnalyse++;
     this.rapport.set(null);
     this.mapping.set(null);
-    this.nomFichier.set(file.name);
-    this.contenu.set(await file.text());
+    this.nomFichier.set(name);
+    this.contenu.set(content);
     await this.analyser();
   }
 
@@ -292,6 +340,7 @@ export class ImportAnimateursPage {
       const applique = await this.animateursApi.applyCsvImport(this.demande());
       this.rapport.set(applique);
       await this.store.reload();
+      this.imported.emit();
       this.notifications.notify({
         title: $localize`:@@importCsv.succes.titre:Import terminé`,
         message: $localize`:@@importCsv.succes.message:${applique.created}:creations: fiche(s) créée(s), ${applique.updated}:maj: mise(s) à jour, ${applique.deleted}:supprimes: supprimée(s).`,

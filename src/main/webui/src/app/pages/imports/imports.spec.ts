@@ -1,27 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import { ONGLETS_IMPORTS, readOngletImports } from './imports';
+import { IMPORT_CARDS, readImportCard } from './imports';
 
-describe('readOngletImports', () => {
+describe('readImportCard', () => {
   it('opens on the typologies, where an edition starts', () => {
-    expect(readOngletImports(null)).toBe('typologies');
-    expect(readOngletImports('')).toBe('typologies');
-    expect(readOngletImports('inconnu')).toBe('typologies');
+    expect(readImportCard(null)).toBe('typologies');
+    expect(readImportCard('')).toBe('typologies');
+    expect(readImportCard('inconnu')).toBe('typologies');
   });
 
-  it('reads every tab it declares', () => {
-    for (const onglet of ONGLETS_IMPORTS) {
-      expect(readOngletImports(onglet)).toBe(onglet);
+  it('reads every card it declares', () => {
+    for (const card of IMPORT_CARDS) {
+      expect(readImportCard(card)).toBe(card);
     }
   });
 
   /**
    * The order is the order the data is entered — the dates before the
    * animateurs, whose off days would otherwise have nothing to land on; the
-   * matrix needs the rest, and the scenario comes last because it replaces
-   * rather than fills.
+   * matrix needs the rest, and the scenario cards come last because they
+   * replace rather than fill.
    */
-  it('lists the tabs in the order an edition fills up', () => {
-    expect(ONGLETS_IMPORTS).toEqual([
+  it('lists the cards in the order an edition fills up', () => {
+    expect(IMPORT_CARDS).toEqual([
       'typologies',
       'emplacements',
       'stands',
@@ -30,6 +30,8 @@ describe('readOngletImports', () => {
       'animateurs',
       'grille-stands',
       'scenario',
+      'exemples',
+      'verifier',
     ]);
   });
 });

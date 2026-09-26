@@ -23,6 +23,12 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import {
+  IMPORTED_IDS_PARAM,
+  importedIdsParam,
+  keptByImportedIds,
+  readImportedIds,
+} from '../../core/imported-rows';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AnimateursApi } from '../../core/api/animateurs-api';
 import { intlLocale } from '../../core/locale';
@@ -71,6 +77,7 @@ import {
 } from './confirmation-filter';
 import { resumeRelance } from './relance-resume';
 import { typologieLabel, typologieLabels } from '../../core/typologie-colors';
+import { ImportButton } from '../../shared/import-button';
 
 /**
  * Animateurs CRUD. Minor/adult status is never stored: it is derived from the
@@ -94,6 +101,7 @@ import { typologieLabel, typologieLabels } from '../../core/typologie-colors';
 @Component({
   selector: 'app-animateurs-page',
   imports: [
+    ImportButton,
     MatCardModule,
     MatButtonModule,
     MatCheckboxModule,
@@ -173,9 +181,15 @@ export class AnimateursPage implements OnInit {
     const id = this.souhait();
     return this.store.typologies().find((typologie) => typologie.id === id)?.label ?? id;
   });
+  /**
+   * `?ids=`: the fiches an import just wrote, which its « Voir les N lignes
+   * importées » opens the list on — a chip, removed like the others.
+   */
+  protected readonly importedIds = signal<ReadonlySet<string> | null>(null);
   protected readonly viewChanged = computed(
     () =>
       this.filtre().trim() !== '' ||
+      this.importedIds() !== null ||
       this.accuses() !== 'tous' ||
       this.typologiesFiltrees().length > 0 ||
       this.souhait() !== '' ||
@@ -189,8 +203,10 @@ export class AnimateursPage implements OnInit {
     const lastPublishedAt = this.synthese()?.dernierePublicationLe ?? null;
     const maintenant = new Date();
     const typologies = typologieLabels(this.store.typologies());
+    const importedIds = this.importedIds();
     return this.store.animateurs().filter(
       (animateur) =>
+        keptByImportedIds(importedIds, animateur.id) &&
         keptByAcknowledgement(
           mode,
           jours,
@@ -374,6 +390,7 @@ export class AnimateursPage implements OnInit {
     this.neverReminded.set(readNeverReminded(params.get('relance')));
     this.typologie.set(params.get('typologie') ?? '');
     this.souhait.set(params.get('souhait')?.trim() ?? '');
+    this.importedIds.set(readImportedIds(params.get(IMPORTED_IDS_PARAM)));
     const chargement = this.crud.reload();
     void chargement.then((loaded) => {
       if (loaded) {
@@ -395,6 +412,7 @@ export class AnimateursPage implements OnInit {
       relance: this.accuses() !== 'tous' && this.neverReminded() ? 'jamais' : null,
       typologie: optionalParam(this.typologie()),
       souhait: optionalParam(this.souhait()),
+      [IMPORTED_IDS_PARAM]: importedIdsParam(this.importedIds()),
     }));
     // `?edit=<id>`: a link from a symptom (a problem, a warning) lands here
     // with the fiche to open. Followed rather than read once — the link often
@@ -542,9 +560,15 @@ export class AnimateursPage implements OnInit {
     this.souhait.set('');
   }
 
+  /** The imported rows' chip, the same way. */
+  protected clearImportedIds(): void {
+    this.importedIds.set(null);
+  }
+
   /** Back to the whole referential, in the order the store holds it. */
   protected resetView(): void {
     this.filtre.set('');
+    this.importedIds.set(null);
     this.typologie.set('');
     this.souhait.set('');
     this.sort.set(NO_SORT);

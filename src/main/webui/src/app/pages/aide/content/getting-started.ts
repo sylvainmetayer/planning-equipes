@@ -27,7 +27,7 @@ export function buildGettingStartedSections(): HelpSection[] {
           kind: 'steps',
           items: [
             $localize`:@@aide.start.step1:Choisir ou créer l'édition. Rien ne circule d'une édition à l'autre.`,
-            $localize`:@@aide.start.step2:Saisir les référentiels dans l'ordre du groupe Préparer : typologies, créneaux (c'est là que l'édition prend ses dates), emplacements, stands, animateurs. Chacun s'importe aussi depuis un fichier CSV ; un scénario YAML remplace l'étape entière.`,
+            $localize`:@@aide.start.step2.fichiers:Saisir les référentiels dans l'ordre du groupe Préparer : typologies, créneaux (c'est là que l'édition prend ses dates), emplacements, stands, animateurs. Chacun s'importe aussi depuis un fichier CSV ou un collage de tableur, par le bouton « Importer » de son écran ou par la page Fichiers ; un scénario YAML remplace l'étape entière.`,
             $localize`:@@aide.start.step3:Ouvrir la collecte des disponibilités, case « prévenir » cochée : chacun reçoit le lien de son espace et y déclare ses absences et ses souhaits. Les fiches animateurs et les créneaux doivent donc déjà exister.`,
             $localize`:@@aide.start.step4:Appliquer ou refuser les déclarations reçues, puis fermer la collecte.`,
             $localize`:@@aide.start.step5:Vérifier les ouvertures des stands, puis le besoin en animateurs. Ces deux écrans répondent avant tout calcul.`,
@@ -37,6 +37,10 @@ export function buildGettingStartedSections(): HelpSection[] {
             $localize`:@@aide.start.step9:Suivre les accusés de réception sur la page Animateurs, et activer les envois de nuit sur la page Paramètres pour relancer les silencieux.`,
             $localize`:@@aide.start.step10:Vérifier que la foire au planning est ouverte — elle l'est par défaut — puis la fermer quand le planning est figé. Le jour même, le mode jour J prend le relais.`,
           ],
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.start.demo:Pour découvrir l'application sans rien saisir, chargez un exemple : page Fichiers, onglet Importer, carte « Exemples ». « Festival réaliste — canicule » est une édition réelle anonymisée de seize jours ; elle arrive dans une édition à son nom, sans toucher la vôtre.`,
         },
         {
           kind: 'paragraph',
@@ -70,8 +74,14 @@ export function buildGettingStartedSections(): HelpSection[] {
       links: [
         { route: '/editions', label: $localize`:@@nav.link.editions:Éditions` },
         {
-          route: '/imports',
-          label: $localize`:@@aide.lien.importAnimateurs:Imports — onglet Animateurs`,
+          route: '/fichiers',
+          queryParams: { cible: 'exemples' },
+          label: $localize`:@@aide.lien.exemples:Fichiers — Exemples`,
+        },
+        {
+          route: '/fichiers',
+          queryParams: { cible: 'animateurs' },
+          label: $localize`:@@nav.tab.importAnimateurs:Importer des animateurs`,
         },
         { route: '/disponibilites', label: $localize`:@@nav.link.disponibilites:Disponibilités` },
         { route: '/', label: $localize`:@@nav.link.accueil:État de l'édition` },

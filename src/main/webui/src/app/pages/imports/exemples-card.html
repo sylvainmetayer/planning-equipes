@@ -1,0 +1,42 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@exemples.title">Exemples</h2>
+    <mat-card-subtitle i18n="@@exemples.subtitle">
+      Un planning livré avec l'application, chargé à la place de l'édition actuelle ; l'édition visée est
+      rappelée au moment de confirmer.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <app-gel-edition-notice operation="scenario" />
+    <div class="card-actions">
+      <mat-form-field appearance="outline" class="exemples-select" subscriptSizing="dynamic">
+        <mat-label i18n="@@exemples.select">Exemple</mat-label>
+        <mat-select
+          [value]="selectedScenario()"
+          (valueChange)="onSelectScenario($event)"
+          [disabled]="editionLocked() || chargement() || groupes().length === 0"
+        >
+          @for (groupe of groupes(); track groupe.famille) {
+            <mat-optgroup [label]="groupe.titre">
+              @for (exemple of groupe.exemples; track exemple.name) {
+                <mat-option [value]="exemple.name">{{ exemple.libelle }}</mat-option>
+              }
+            </mat-optgroup>
+          }
+        </mat-select>
+      </mat-form-field>
+      <button
+        matButton="filled"
+        [disabled]="editionLocked() || chargement() || selected() === null"
+        (click)="onLoadSample()"
+      >
+        <mat-icon>auto_awesome</mat-icon>
+        <ng-container i18n="@@exemples.charger">Charger cet exemple</ng-container>
+      </button>
+    </div>
+    @if (selected(); as exemple) {
+      <p class="empty-hint exemples-phrase">{{ exemple.phrase }}</p>
+    }
+    <app-output-panel [text]="output()" />
+  </mat-card-content>
+</mat-card>

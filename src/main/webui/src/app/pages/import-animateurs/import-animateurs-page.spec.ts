@@ -154,6 +154,21 @@ describe('ImportAnimateursPage', () => {
     expect(notifications.notify).toHaveBeenCalledOnce();
   });
 
+  /** « Voir les N lignes importées » opens the list on the fiches written, never on the refused. */
+  it('links to the fiches the write created or updated, and to them alone', async () => {
+    await chargerFichier();
+    const lien = (page as unknown as { lienLignes: () => unknown }).lienLignes;
+    expect(lien()).toBeNull();
+    animateursApi.applyCsvImport.mockResolvedValueOnce(rapport(true));
+
+    await page.importer();
+
+    expect(lien()).toEqual({
+      queryParams: { ids: 'amelie-durand' },
+      libelle: 'Voir les 1 lignes importées',
+    });
+  });
+
   it('re-previews when an option changes, so the report always matches the options', async () => {
     await chargerFichier();
     animateursApi.analyseCsvImport.mockResolvedValueOnce(rapport(false));

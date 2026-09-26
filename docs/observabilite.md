@@ -182,7 +182,7 @@ backend les expose donc via `/api/config`, lu avant `bootstrapApplication()`. Un
 DSN et un token de beacon sont par construction des identifiants publics, prévus
 pour vivre dans du code navigateur — les exposer ainsi ne crée pas de fuite.
 
-L'onglet Débogage lève une exception de test de chaque côté, pour vérifier un
+La page Débogage (onglet *Vérifications*) lève une exception de test de chaque côté, pour vérifier un
 DSN fraîchement configuré sans attendre un vrai bug.
 
 ## RGPD

@@ -77,7 +77,7 @@ test('les trois référentiels se remplissent depuis un fichier, sur un seul éc
   );
 
   // 1. Typologies — l'onglet d'ouverture, puisque tout en part.
-  await page.goto('/imports');
+  await page.goto('/fichiers');
   await expect(page.locator('.imports-onglets')).toBeVisible();
   await deposer(
     page,
@@ -98,7 +98,7 @@ test('les trois référentiels se remplissent depuis un fichier, sur un seul éc
   expect(typologies.find((t) => t.code === 'E2EIMP-A')?.label).toBe('Jeux d’ambiance');
 
   // 2. Emplacements — les coordonnées restent facultatives.
-  await page.goto('/imports?onglet=emplacements');
+  await page.goto('/fichiers?cible=emplacements');
   await deposer(
     page,
     'emplacements.csv',
@@ -110,7 +110,7 @@ test('les trois référentiels se remplissent depuis un fichier, sur un seul éc
   await expect(page.locator('#contenu')).toContainText('Import effectué');
 
   // 3. Stands — effectif facultatif, et une typologie inconnue annoncée puis créée.
-  await page.goto('/imports?onglet=stands');
+  await page.goto('/fichiers?cible=stands');
   await deposer(
     page,
     'stands.csv',
@@ -123,6 +123,16 @@ test('les trois référentiels se remplissent depuis un fichier, sur un seul éc
   await page.getByRole('button', { name: 'Importer', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Confirmer' }).click();
   await expect(page.locator('#contenu')).toContainText('Import effectué');
+
+  // The rows written are one click away: the screen of the referential,
+  // narrowed to them, and « Tout afficher » brings the rest back.
+  await page.getByRole('link', { name: 'Voir les 2 lignes importées' }).click();
+  await expect(page).toHaveURL(/\/stands\?ids=[^&]+$/);
+  await expect(page.locator('#contenu')).toContainText('Filtre : lignes importées (2)');
+  await expect(page.locator('#contenu')).toContainText('Stand deux');
+  await page.getByRole('button', { name: 'Tout afficher' }).click();
+  await expect(page).toHaveURL(/\/stands$/);
+  await expect(page.locator('#contenu')).not.toContainText('lignes importées');
 
   const stands = await lire(page, 'stands');
   const standUn = stands.find((s) => s.code === 'E2EIMP-S1');
@@ -152,7 +162,7 @@ test('les trois référentiels se remplissent depuis un fichier, sur un seul éc
   });
   expect(avecHoraire.ok(), await avecHoraire.text()).toBe(true);
 
-  await page.goto('/imports?onglet=stands');
+  await page.goto('/fichiers?cible=stands');
   await deposer(page, 'renommage.csv', 'code;nom;typologies\nE2EIMP-S1;Stand renommé;E2EIMP-A\n');
   await expect(page.locator('.import-ligne-maj')).toHaveCount(1);
   await page.getByRole('button', { name: 'Importer', exact: true }).click();
@@ -167,5 +177,47 @@ test('les trois référentiels se remplissent depuis un fichier, sur un seul éc
   expect(renomme?.effectifMin).toBe(2);
   expect(renomme?.horaires).toHaveLength(1);
 
+  await page.context().close();
+});
+
+/**
+ * A referential screen fills from a file or a paste without leaving it: its
+ * « Importer » button opens the very card of Fichiers in a dialog.
+ */
+test("« Importer » ouvre la carte d'import sans quitter la page", async ({ browser }) => {
+  const page = await pageAdmin(browser, admin);
+  await page.addInitScript(
+    (id) => localStorage.setItem('planning-equipes.editionId', id as string),
+    EDITION,
+  );
+  await page.goto('/animateurs');
+  await page.getByRole('button', { name: 'Importer', exact: true }).click();
+
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByRole('heading', { name: 'Importer des animateurs' })).toBeVisible();
+  await expect(dialog).toContainText('date de naissance est obligatoire');
+  await expect(dialog.getByRole('button', { name: 'Coller depuis un tableur' })).toBeVisible();
+  await expect(page).toHaveURL(/\/animateurs$/);
+
+  await dialog.getByRole('button', { name: 'Fermer' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.context().close();
+});
+
+/** A spreadsheet paste is read as a file: tabs become the separator the import expects. */
+test('un collage de tableur se lit comme un fichier', async ({ browser }) => {
+  const page = await pageAdmin(browser, admin);
+  await page.addInitScript(
+    (id) => localStorage.setItem('planning-equipes.editionId', id as string),
+    EDITION,
+  );
+  await page.goto('/fichiers?cible=typologies');
+  await page.getByRole('button', { name: 'Coller depuis un tableur' }).click();
+  await page
+    .getByLabel('Cellules copiées depuis le tableur, en-têtes compris')
+    .fill('code\tlibelle\nE2EIMP-C\tJeux collés, en tableur\n');
+  await page.getByRole('button', { name: 'Lire le collage' }).click();
+  await expect(page.locator('.import-ligne-creation')).toHaveCount(1);
+  await expect(page.locator('#contenu')).toContainText('Jeux collés, en tableur');
   await page.context().close();
 });

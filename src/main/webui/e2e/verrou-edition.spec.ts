@@ -115,7 +115,7 @@ test("pendant un solve, la saisie n'est verrouillée que sur l'édition du job",
     await expect(page.getByRole('button', { name: 'Ajouter' })).toBeEnabled();
 
     // …and scenario imports stay open there too.
-    await page.goto('/imports?onglet=scenario');
+    await page.goto('/fichiers?cible=scenario');
     await expect(page.getByRole('button', { name: 'Importer un fichier' })).toBeEnabled();
 
     // Only meaningful if the job was still running while we looked.

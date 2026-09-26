@@ -11,6 +11,7 @@
       <mat-icon>add</mat-icon>
       <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
+    <app-import-button card="stands" [disabled]="standsLocked()" />
     <button matButton type="button" [disabled]="standsLocked() || compactageEnCours()"
             i18n-matTooltip="@@stands.compactage.tooltip"
             matTooltip="Réécrit les plages datées répétées en règles d'horaire équivalentes, avec un aperçu avant d'écrire."
@@ -24,7 +25,7 @@
       <mat-icon>grid_on</mat-icon>
       <ng-container i18n="@@stands.grille.action">Saisir en grille</ng-container>
     </a>
-    <a matButton routerLink="/imports" [queryParams]="{ onglet: 'grille-stands' }"
+    <a matButton routerLink="/fichiers" [queryParams]="{ cible: 'grille-stands' }"
        i18n-matTooltip="@@stands.importGrille.tooltip"
        matTooltip="Charger un fichier CSV — stands en lignes, jours et créneaux en colonnes — avec un aperçu avant d'écrire.">
       <mat-icon>upload_file</mat-icon>
@@ -32,6 +33,9 @@
     </a>
     <app-table-filter [(value)]="filtre" [matches]="standsFiltres().length" [total]="store.stands().length"
                       (enterTable)="navigation.focusCurrent()" />
+    @if (importedIds(); as ids) {
+      <app-imported-rows-filter [count]="ids.size" (cleared)="showAllRows()" />
+    }
   </mat-card-actions>
   <mat-card-content class="table-wrapper">
     @if (selection.hasSelection()) {

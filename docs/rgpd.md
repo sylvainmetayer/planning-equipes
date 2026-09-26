@@ -300,7 +300,7 @@ complètes. Quatre points sont connus et se consignent :
   honnête que si l'externalisation chiffrée annoncée au socle existe
   réellement ;
 - **l'archive de fin d'événement sort une édition entière en un geste** :
-  depuis l'écran Exports, un seul ZIP peut réunir le planning global, les CSV
+  depuis l'écran Fichiers (onglet Archive), un seul ZIP peut réunir le planning global, les CSV
   Équité et Heures, les six référentiels (animateurs compris, avec leurs dates
   de naissance et leurs adresses), le scénario YAML de l'édition, la relecture
   de publication et les plannings individuels — mineurs compris. Une fois

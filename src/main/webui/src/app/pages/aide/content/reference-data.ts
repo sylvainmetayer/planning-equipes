@@ -34,6 +34,10 @@ export function buildReferenceDataSections(): HelpSection[] {
             $localize`:@@aide.editions.rituel6:Au retour à la normale : revenir à l'édition nominale, intacte, et publier à nouveau.`,
           ],
         },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.editions.vider:« Vider cette édition », en bas de la page Éditions, supprime les stands, créneaux, animateurs, affectations, ajustements manuels, verrouillages, validations de journées, demandes d'échange, consignes et préréglages de consigne de l'édition consultée, après avoir fait recopier son nom. Restent ses typologies, emplacements, journées types, instantanés et paramètres, les autres éditions et les réglages de l'instance. Refusé pendant une résolution et tant qu'une famille est figée.`,
+        },
       ],
       links: [
         { route: '/editions', label: $localize`:@@nav.link.editions:Éditions` },
@@ -307,7 +311,7 @@ export function buildReferenceDataSections(): HelpSection[] {
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.importCsv.ecran:Tous les fichiers qui remplissent une édition sont sur l'écran « Imports », un onglet par référentiel et dans l'ordre où les données se tiennent. Rien n'est écrit tant que vous n'avez pas validé l'aperçu, et une colonne que le fichier ne porte pas n'efface rien : renommer des stands par un fichier de trois colonnes ne touche ni leurs horaires ni leur emplacement.`,
+          text: $localize`:@@aide.importCsv.ecran.fichiers:Tous les fichiers qui remplissent une édition sont sur l'écran « Fichiers », onglet Importer, une carte par référentiel et dans l'ordre où les données se tiennent ; le bouton « Importer » de chaque écran de référentiel ouvre la même carte sans quitter l'écran, et chaque carte accepte aussi un collage depuis un tableur. Rien n'est écrit tant que vous n'avez pas validé l'aperçu, et une colonne que le fichier ne porte pas n'efface rien : renommer des stands par un fichier de trois colonnes ne touche ni leurs horaires ni leur emplacement.`,
         },
         {
           kind: 'list',
@@ -321,7 +325,7 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.importCsv.exports:L'écran « Exports » fait le chemin inverse : une archive ZIP, un fichier par référentiel, dans la forme exacte que ces onglets relisent. C'est ce qui permet de recopier une édition sur l'autre, ou de corriger en masse dans un tableur puis de réimporter.`,
+          text: $localize`:@@aide.importCsv.exports.fichiers:L'onglet Exporter de la même page fait le chemin inverse : une archive ZIP, un fichier par référentiel, dans la forme exacte que ces cartes relisent. C'est ce qui permet de recopier une édition sur l'autre, ou de corriger en masse dans un tableur puis de réimporter.`,
         },
         {
           kind: 'steps',
@@ -352,10 +356,15 @@ export function buildReferenceDataSections(): HelpSection[] {
       ],
       links: [
         {
-          route: '/imports',
-          label: $localize`:@@aide.lien.importAnimateurs:Imports — onglet Animateurs`,
+          route: '/fichiers',
+          queryParams: { cible: 'animateurs' },
+          label: $localize`:@@nav.tab.importAnimateurs:Importer des animateurs`,
         },
-        { route: '/exports', label: $localize`:@@nav.link.exports:Export` },
+        {
+          route: '/fichiers',
+          queryParams: { onglet: 'exporter' },
+          label: $localize`:@@aide.lien.exporter:Fichiers — Exporter`,
+        },
         { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
       ],
@@ -385,8 +394,9 @@ export function buildReferenceDataSections(): HelpSection[] {
       ],
       links: [
         {
-          route: '/imports',
-          label: $localize`:@@aide.lien.importGrille:Imports — onglet Grille des stands`,
+          route: '/fichiers',
+          queryParams: { cible: 'grille-stands' },
+          label: $localize`:@@aide.lien.importGrille.fichiers:Fichiers — Grille des stands`,
         },
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
         { route: '/ouvertures', label: $localize`:@@nav.link.ouvertures:Ouvertures des stands` },

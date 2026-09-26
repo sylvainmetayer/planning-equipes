@@ -76,7 +76,7 @@ are the `heavy-tests` skill. Four rules hold without it:
   list in step with any move of those files — a solver tuning that ships
   without these tests having run is the hole this workflow exists to close.
 - Every scenario file lives **flat** in the single classpath folder
-  `src/main/resources/scenarios/`: the Débogage screen lists that folder and
+  `src/main/resources/scenarios/`: the examples of Fichiers › Importer list that folder and
   `ScenarioYamlReader.scenarioPath` refuses a path component, so a scenario in
   a subfolder — or in a second `scenarios/` directory, which `getResource`
   would hide entirely — is one nobody can pick. `ScenariosLivres` in the tests

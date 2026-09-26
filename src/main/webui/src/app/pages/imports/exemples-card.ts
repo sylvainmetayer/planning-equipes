@@ -17,21 +17,22 @@ import { ScenarioImportService } from '../../core/scenario-import.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { GelEditionNotice } from '../../shared/gel-edition-notice';
 import { OutputPanel } from '../../shared/output-panel';
+import { defaultExample, describeExample, groupExamples, GroupeExemples } from './exemples';
 
 /**
- * Loads one of the scenarios bundled with the application over the current
- * edition. A diagnostic tool, and shown as one: the list is the fifty-odd files
- * of `src/main/resources/scenarios` — the hand-written demo fixtures, the
- * thirty rungs of the ladder and the fifteen extreme cases — which is a
- * developer's and a support engineer's catalogue, not an organiser's.
+ * « Exemples »: loads one of the scenarios bundled with the application over
+ * the current edition — the demonstration, and the cases a tester wants to
+ * replay. Each is offered by a readable name and one sentence (its size, its
+ * days, what it is about), sorted « pour découvrir / pour tester un cas /
+ * extrêmes »; the file names the server lists never reach the screen
+ * ({@link describeExample}).
  *
  * <p>It writes, and destructively: the whole choreography (resolve the target
  * edition, count the impact, confirm, snapshot the plan, reload the stores) is
- * {@link ScenarioImportService}'s, exactly as for the file upload that now
- * lives on the Imports screen.</p>
+ * {@link ScenarioImportService}'s, exactly as for a scenario file.</p>
  */
 @Component({
-  selector: 'app-scenario-preenregistre',
+  selector: 'app-exemples-card',
   imports: [
     GelEditionNotice,
     MatButtonModule,
@@ -41,16 +42,20 @@ import { OutputPanel } from '../../shared/output-panel';
     MatSelectModule,
     OutputPanel,
   ],
-  templateUrl: './scenario-preenregistre.html',
+  templateUrl: './exemples-card.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ScenarioPreenregistre implements OnInit {
+export class ExemplesCard implements OnInit {
   protected readonly output = signal('');
   protected readonly chargement = signal(false);
 
-  /** Scenario files offered by the backend, and the one currently selected. */
-  protected readonly scenarios = signal<string[]>([]);
+  /** The bundled scenarios, by family, and the one currently selected (by its file name). */
+  protected readonly groupes = signal<GroupeExemples[]>([]);
   protected readonly selectedScenario = signal<string | null>(null);
+  protected readonly selected = computed(() => {
+    const name = this.selectedScenario();
+    return name === null ? null : describeExample(name);
+  });
 
   /**
    * The per-edition lock: a solve running on ANOTHER edition leaves the import
@@ -66,18 +71,17 @@ export class ScenarioPreenregistre implements OnInit {
     void this.loadScenarioList();
   }
 
-  // Fills the dropdown with the scenario files exposed by the backend. Selects
-  // the first one so the "Load" button always has a target.
+  // Preselects the realistic example, so the button always has a target.
   private async loadScenarioList(): Promise<void> {
     try {
-      const names = await this.planningApi.scenarioNames();
-      this.scenarios.set(names);
-      if (names.length > 0 && !this.selectedScenario()) {
-        this.selectedScenario.set(names[0]);
+      const groupes = groupExamples(await this.planningApi.scenarioNames());
+      this.groupes.set(groupes);
+      if (!this.selectedScenario()) {
+        this.selectedScenario.set(defaultExample(groupes));
       }
     } catch (error) {
       this.output.set(
-        $localize`:@@dataSetup.scenarioListError:Erreur lors du chargement de la liste des scénarios : ${errorMessage(error)}:message:`,
+        $localize`:@@exemples.listError:Liste des exemples illisible : ${errorMessage(error)}:message:`,
       );
     }
   }
@@ -90,15 +94,17 @@ export class ScenarioPreenregistre implements OnInit {
     if (this.solverActionBlocked()) {
       return;
     }
-    const name = this.selectedScenario();
+    const exemple = this.selected();
+    if (exemple === null) {
+      return;
+    }
+    const libelle = exemple.libelle;
     this.chargement.set(true);
     this.output.set(
-      name
-        ? $localize`:@@dataSetup.loadingScenario:Chargement du scénario « ${name}:name: »...`
-        : $localize`:@@dataSetup.loadingSample:Chargement du planning d'exemple...`,
+      $localize`:@@exemples.chargement:Chargement de l'exemple « ${libelle}:libelle: »…`,
     );
     try {
-      const outcome = await this.scenarioImport.importer({ kind: 'name', name });
+      const outcome = await this.scenarioImport.importer({ kind: 'name', name: exemple.name });
       if (outcome.status === 'cancelled') {
         this.output.set('');
         return;
@@ -106,7 +112,7 @@ export class ScenarioPreenregistre implements OnInit {
       this.output.set(
         this.scenarioImport.recapitulatif(
           outcome.result,
-          $localize`:@@dataSetup.sampleLoaded:Planning d'exemple chargé : les données de référence sont peuplées.`,
+          $localize`:@@exemples.charge:Exemple « ${libelle}:libelle: » chargé : les référentiels sont remplis.`,
         ),
       );
     } catch (error) {

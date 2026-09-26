@@ -24,6 +24,7 @@ import { Edition } from '../../core/models';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { PromptDialog } from '../../shared/prompt-dialog';
 import { errorMessage } from '../../core/error-message';
+import { EmptyEditionCard } from './empty-edition-card';
 
 /** The shape of an edition id (`E1`, `E2`…), which the server refuses as a name. */
 const NOM_FORME_ID = /^[Ee][1-9][0-9]*$/;
@@ -31,7 +32,7 @@ const NOM_FORME_ID = /^[Ee][1-9][0-9]*$/;
 /**
  * Manages the editions the whole referential is partitioned into: create an
  * empty "Année 2026", duplicate "Année 2025" into it, rename one, designate
- * the fallback, delete one.
+ * the fallback, delete one — and empty the one this tab works in.
  *
  * Duplication is the action that makes several editions practical at all —
  * "2026 = 2025 minus the assignments" — so it is offered on every row rather
@@ -49,6 +50,7 @@ const NOM_FORME_ID = /^[Ee][1-9][0-9]*$/;
     MatInputModule,
     MatTableModule,
     MatTooltipModule,
+    EmptyEditionCard,
   ],
   templateUrl: './editions-page.html',
   styleUrl: './editions-page.css',
@@ -140,8 +142,8 @@ export class EditionsPage implements OnInit {
       title: $localize`:@@editions.delete.title:Supprimer l'édition ${edition.nom}:nom: ?`,
       label: $localize`:@@editions.delete.typeName:Saisissez « ${edition.nom}:nom: » pour confirmer`,
       confirmLabel: $localize`:@@common.delete:Supprimer`,
-      // Supprimer une édition entière est plus destructeur que vider la base :
-      // le bouton se lit comme tel, au même titre que les deux autres recopies.
+      // Deleting a whole edition is more destructive than emptying it: the
+      // button reads as such, like the two other typed-back confirmations.
       danger: true,
     });
     if (saisi === null) {

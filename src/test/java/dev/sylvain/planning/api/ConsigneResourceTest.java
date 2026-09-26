@@ -72,7 +72,7 @@ class ConsigneResourceTest {
         given().contentType("application/json")
                 .body("{\"dateDuJour\":\"" + VEILLE + "\"}")
                 .when()
-                .put("/api/debug/date-du-jour")
+                .put("/api/horloge")
                 .then()
                 .statusCode(200);
         given().when()
@@ -119,7 +119,7 @@ class ConsigneResourceTest {
         given().contentType("application/json")
                 .body("{\"dateDuJour\":null}")
                 .when()
-                .put("/api/debug/date-du-jour")
+                .put("/api/horloge")
                 .then()
                 .statusCode(200);
         given().when().post("/api/planning/reset").then().statusCode(200);
@@ -338,7 +338,7 @@ class ConsigneResourceTest {
         given().contentType("application/json")
                 .body("{\"dateDuJour\":\"" + JOUR + "\"}")
                 .when()
-                .put("/api/debug/date-du-jour")
+                .put("/api/horloge")
                 .then()
                 .statusCode(200);
 

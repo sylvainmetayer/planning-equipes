@@ -5,6 +5,7 @@ import {
   inject,
   signal,
   viewChild,
+  ViewEncapsulation,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -15,19 +16,22 @@ import { ScenarioValidationResult } from '../../core/models';
 import { errorPrefix } from '../../core/error-message';
 import { StatusMessage } from '../../shared/status-message';
 
-/** Body of `POST /api/reference-data/valider-scenario-fichier` — see docs/api.md. */
 /**
- * Uploads a scenario YAML file and reports the structural validation errors
- * ScenarioValidator finds (types, required fields, value ranges — see
- * docs/schema/scenario-schema.json), without importing anything. A
- * diagnostic tool embedded in the Debug page: unlike the "Importer un
- * fichier" button of the Imports screen's Scénario tab, nothing here is ever
- * persisted, so it's safe to try on any file, valid or not.
+ * « Vérifier un fichier sans l'importer »: uploads a scenario YAML file to
+ * `POST /api/reference-data/valider-scenario-fichier` and reports the
+ * structural validation errors ScenarioValidator finds (types, required
+ * fields, value ranges — see docs/schema/scenario-schema.json), without
+ * importing anything. Next to the scenario import on Fichiers › Importer:
+ * unlike it, nothing here is ever persisted, so it is safe to try on any file,
+ * valid or not.
  */
 @Component({
   selector: 'app-yaml-validator',
   imports: [StatusMessage, MatCardModule, MatButtonModule, MatIconModule, MatProgressBarModule],
   templateUrl: './yaml-validator.html',
+  styleUrl: '../../../styles/yaml-validator.css',
+  // Global by design (AGENTS.md): loaded with the chunk that hosts it, unscoped like the partial it was.
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class YamlValidator {

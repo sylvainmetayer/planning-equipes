@@ -427,6 +427,6 @@ describe('AccueilPage', () => {
     await vi.waitFor(() => expect(element().querySelector('[data-bloc="archive"]')).not.toBeNull());
     const lien = element().querySelector('[data-bloc="archive"] a')!;
     expect(lien.textContent).toContain("Archiver l'édition");
-    expect(lien.getAttribute('href')).toBe('/exports#archive-evenement');
+    expect(lien.getAttribute('href')).toBe('/fichiers?onglet=archive');
   });
 });

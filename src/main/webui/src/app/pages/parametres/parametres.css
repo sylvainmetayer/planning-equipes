@@ -154,3 +154,16 @@
   height: 12rem;
   margin-top: 0.75rem;
 }
+
+/* « Date et heure simulées » (Instance tab): Material themes the fields, and the
+   warning colour is the one the toolbar indicator uses for the same fact. */
+.horloge-simulee-champ {
+  width: 100%;
+  max-width: 18rem;
+  margin-right: 1rem;
+}
+
+.horloge-simulee-actif {
+  margin: 0;
+  color: var(--mat-sys-error);
+}

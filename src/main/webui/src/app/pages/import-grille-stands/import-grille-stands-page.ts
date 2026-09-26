@@ -23,6 +23,8 @@ import { GelNotice } from '../../shared/gel-notice';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { standNames } from '../../core/reference-labels';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { CollageTableur } from '../imports/collage-tableur';
+import { PASTE_FILE_NAME } from '../imports/collage';
 import {
   ImportGrilleAction,
   ImportGrilleDemande,
@@ -51,6 +53,7 @@ import {
     MatTooltipModule,
     RouterLink,
     GelNotice,
+    CollageTableur,
   ],
   templateUrl: './import-grille-stands-page.html',
   styleUrl: '../../../styles/import-animateurs.css',
@@ -59,7 +62,7 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ImportGrilleStandsPage {
-  /** False inside the Imports page, which carries the title of the screen itself. */
+  /** False inside the Fichiers page, which carries the title of the screen itself. */
   readonly entete = input(true);
 
   private readonly standsApi = inject(StandsApi);
@@ -149,10 +152,23 @@ export class ImportGrilleStandsPage {
     if (!file) {
       return;
     }
+    await this.load(file.name, await file.text());
+  }
+
+  /** Cells pasted from a spreadsheet: read exactly as a file of that content would be. */
+  protected onColle(csv: string): Promise<void> {
+    return this.load(PASTE_FILE_NAME, csv);
+  }
+
+  /**
+   * A text to read, whichever way it came in — a file or a paste: the last
+   * answer forgotten, the text held under its name, then previewed.
+   */
+  private async load(name: string, content: string): Promise<void> {
     this.derniereAnalyse++;
     this.rapport.set(null);
-    this.nomFichier.set(file.name);
-    this.contenu.set(await file.text());
+    this.nomFichier.set(name);
+    this.contenu.set(content);
     await this.analyser();
   }
 

@@ -1,45 +1,22 @@
-// The four tabs of the Débogage page (issue #606): where each card lives, what
-// the address says, and the two cases a tab group gets wrong — a page that
-// reads its query param once and never again, and a tab that disappears with
-// the one card the deployment does not allow.
+// The two tabs of the Débogage page: where each card lives, what the address
+// says, and the case a tab group gets wrong — a page that reads its query
+// param once and never again. What moved away (the scenarios, the validator,
+// the reset, the simulated clock) must not be here any more.
 
-import { provideZonelessChangeDetection, signal } from '@angular/core';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, ParamMap } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
-import { DateMockService } from '../../core/date-mock.service';
-import { EditionStore } from '../../core/edition.store';
-import type { EtatGel } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
-import { PlanningApi } from '../../core/api/planning-api';
-import { PlanningResolutionStore } from '../../core/planning-resolution.store';
-import { PlanningStateService } from '../../core/planning-state.service';
-import { ProblemesStore } from '../../core/problemes.store';
-import { ReferenceDataStore } from '../../core/reference-data.store';
-import { ScenarioImportService } from '../../core/scenario-import.service';
-import { SolverJobService } from '../../core/solver-job.service';
-import { SolverSettingsService } from '../../core/solver-settings.service';
-import { ConfirmationRecopie } from '../../shared/confirmation-recopie';
-import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
 import { DebugPage } from './debug-page';
-
-/** What `GET /api/editions/courant/gel` answers when two families are frozen. */
-const FROZEN_STATES: EtatGel[] = [
-  { famille: 'STANDS', libelle: 'Stands', fige: true, figeLe: '2026-07-01T08:00:00Z' },
-  { famille: 'CRENEAUX', libelle: 'Créneaux', fige: true, figeLe: '2026-07-01T08:00:00Z' },
-  { famille: 'TYPOLOGIES_EMPLACEMENTS', libelle: 'Typologies', fige: false, figeLe: null },
-  { famille: 'COMPETENCES', libelle: 'Compétences', fige: false, figeLe: null },
-];
 
 describe('DebugPage — onglets', () => {
   let fixture: ComponentFixture<DebugPage>;
   let params: BehaviorSubject<ParamMap>;
 
-  async function rendre(
-    options: { onglet?: string; dateModifiable?: boolean; gel?: EtatGel[] } = {},
-  ): Promise<void> {
+  async function rendre(options: { onglet?: string } = {}): Promise<void> {
     params = new BehaviorSubject<ParamMap>(
       convertToParamMap(options.onglet ? { onglet: options.onglet } : {}),
     );
@@ -50,47 +27,11 @@ describe('DebugPage — onglets', () => {
         {
           provide: ApiService,
           useValue: {
-            get: vi.fn(async (url: string) =>
-              url === '/api/editions/courant/gel' ? (options.gel ?? []) : { adminEmail: null },
-            ),
+            get: vi.fn(async () => ({ adminEmail: null })),
             post: vi.fn(),
           },
         },
-        {
-          provide: DateMockService,
-          useValue: {
-            dateDuJour: signal(''),
-            heureMock: signal(''),
-            modifiable: signal(options.dateModifiable ?? true),
-            actif: () => false,
-            set: vi.fn(),
-          },
-        },
-        { provide: EditionStore, useValue: { courant: () => null } },
         { provide: NotificationService, useValue: { notify: vi.fn() } },
-        { provide: ConfirmationRecopie, useValue: { demander: vi.fn() } },
-        { provide: InstantaneAvantAction, useValue: { proposer: vi.fn() } },
-        { provide: PlanningStateService, useValue: { set: vi.fn() } },
-        { provide: ReferenceDataStore, useValue: { reload: vi.fn(async () => undefined) } },
-        { provide: PlanningResolutionStore, useValue: { reload: vi.fn(async () => undefined) } },
-        { provide: SolverSettingsService, useValue: { refresh: vi.fn(async () => undefined) } },
-        { provide: ProblemesStore, useValue: { reloadFeasibility: vi.fn(async () => undefined) } },
-        {
-          provide: SolverJobService,
-          useValue: {
-            solverBusy: () => false,
-            editingLocked: () => false,
-            activeJobDescription: () => '',
-          },
-        },
-        { provide: PlanningApi, useValue: { scenarioNames: vi.fn(async () => []) } },
-        {
-          provide: ScenarioImportService,
-          useValue: {
-            importer: vi.fn(async () => ({ status: 'cancelled', result: null })),
-            recapitulatif: vi.fn(() => ''),
-          },
-        },
         {
           provide: ActivatedRoute,
           useValue: { snapshot: { queryParamMap: params.value }, queryParamMap: params },
@@ -133,40 +74,42 @@ describe('DebugPage — onglets', () => {
     await rendre();
   });
 
-  it('names its four tabs and opens on the raw analysis', () => {
-    expect(onglets()).toEqual(['Résolution', 'Vérifications', 'Données', 'Validateur YAML']);
+  it('names its two tabs and opens on the raw analysis', () => {
+    expect(onglets()).toEqual(['Résolution', 'Vérifications']);
     expect(textOf()).toContain('Dernière analyse');
     expect(textOf()).toContain("Documentation de l'API");
-    // And none of the other tabs' cards is on screen with it.
-    expect(textOf()).not.toContain('Base de données');
-    expect(textOf()).not.toContain('Validateur YAML (');
+    expect(textOf()).not.toContain('Envoyer un mail de test');
   });
 
-  it('puts each card under the tab that names it', async () => {
+  it('keeps the raw checks on the Vérifications tab, pgAdmin included', async () => {
     await cliquerOnglet('Vérifications');
     expect(textOf()).toContain('Envoyer un mail de test');
     expect(textOf()).toContain('Mailpit');
-    expect(textOf()).toContain('Date du jour');
+    expect(textOf()).toContain('pgAdmin');
+  });
 
-    await cliquerOnglet('Données');
-    expect(textOf()).toContain('Vider la base de données');
-    expect(textOf()).toContain('Scénarios');
-
-    await cliquerOnglet('Validateur YAML');
-    expect(racine().querySelector('app-yaml-validator')).not.toBeNull();
+  /** Each has a screen of its own now: Fichiers, Éditions, Paramètres › Instance. */
+  it('no longer carries the gestures of an organiser or an operator', async () => {
+    for (const nom of ['Résolution', 'Vérifications']) {
+      await cliquerOnglet(nom);
+      expect(textOf()).not.toContain('Vider');
+      expect(textOf()).not.toContain('Scénarios');
+      expect(textOf()).not.toContain('Validateur YAML');
+      expect(racine().querySelector('input#date-du-jour')).toBeNull();
+    }
   });
 
   /**
    * The router reuses this component when one navigates to `/debug` again with
-   * another `onglet` — from the menu, from the date-frozen indicator. Read once
-   * in the constructor, the address changed and the screen did not, until an F5.
+   * another `onglet` — from the palette. Read once in the constructor, the
+   * address changed and the screen did not, until an F5.
    */
   it('follows the address instead of reading it once', async () => {
-    params.next(convertToParamMap({ onglet: 'donnees' }));
+    params.next(convertToParamMap({ onglet: 'verifications' }));
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(textOf()).toContain('Vider la base de données');
+    expect(textOf()).toContain('Envoyer un mail de test');
   });
 
   it('opens on the default tab when the address names one it does not know', async () => {
@@ -175,53 +118,11 @@ describe('DebugPage — onglets', () => {
     expect(textOf()).toContain('Dernière analyse');
   });
 
-  /**
-   * The frozen date is a development-only control. Its card disappears where
-   * the server forbids it; the tab it sits on holds four other checks and has
-   * no business disappearing with it.
-   */
-  it('keeps the checks tab where the frozen date is not allowed', async () => {
-    await rendre({ onglet: 'verifications', dateModifiable: false });
-
-    expect(onglets()).toContain('Vérifications');
-    expect(textOf()).toContain('Envoyer un mail de test');
-    expect(textOf()).not.toContain('Date du jour');
-  });
-
   /** The output panel answers an action of one tab and is read after it. */
   it('keeps the output panel under every tab', async () => {
     expect(racine().querySelector('app-output-panel')).not.toBeNull();
 
-    await cliquerOnglet('Données');
+    await cliquerOnglet('Vérifications');
     expect(racine().querySelector('app-output-panel')).not.toBeNull();
-  });
-
-  function resetButton(): HTMLButtonElement {
-    const found = Array.from(racine().querySelectorAll('button')).find((each) =>
-      each.textContent!.includes('Vider la base de données'),
-    );
-    expect(found, 'bouton « Vider » absent').toBeDefined();
-    return found as HTMLButtonElement;
-  }
-
-  it('closes the reset and says why while a family of the referential is frozen', async () => {
-    await rendre({ onglet: 'donnees', gel: FROZEN_STATES });
-
-    expect(resetButton().disabled).toBe(true);
-    const notices = Array.from(racine().querySelectorAll('.gel-edition-notice'));
-    const reset = notices.find((each) => each.getAttribute('data-operation') === 'reset');
-    expect(reset).toBeDefined();
-    expect(reset!.textContent).toContain('« Stands » et « Créneaux »');
-    expect(reset!.textContent).toContain('vider la base est impossible');
-    expect(reset!.textContent).toContain('Lever le gel');
-    // The bundled scenarios below warn instead, their button left enabled.
-    expect(notices.some((each) => each.getAttribute('data-operation') === 'scenario')).toBe(true);
-  });
-
-  it('leaves the reset open, without a notice, while every family is open', async () => {
-    await rendre({ onglet: 'donnees' });
-
-    expect(resetButton().disabled).toBe(false);
-    expect(racine().querySelector('.gel-edition-notice')).toBeNull();
   });
 });
