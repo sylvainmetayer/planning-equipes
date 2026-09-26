@@ -29,6 +29,7 @@ import {
   versNouvelleDeclaration,
 } from './declaration-brouillon';
 import { StatusMessage } from '../../shared/status-message';
+import { EspaceContact } from './espace-contact';
 
 /**
  * « Mes disponibilités » (issue #291): the animateur declares the days they
@@ -45,6 +46,7 @@ import { StatusMessage } from '../../shared/status-message';
 @Component({
   selector: 'app-espace-disponibilites-page',
   imports: [
+    EspaceContact,
     StatusMessage,
     DatePipe,
     FormsModule,

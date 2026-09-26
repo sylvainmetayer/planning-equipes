@@ -122,7 +122,7 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@espace.aide.planning.maj:« Planning communiqué le… » indique de quand date la version que vous lisez. Elle ne change que lorsque l'organisation publie à nouveau, et vous êtes alors prévenu par e-mail. Repassez tout de même ici avant de partir : c'est cette page qui fait foi.`,
+          text: $localize`:@@espace.aide.planning.majEnvoi:« Planning communiqué le… » indique de quand date la version que vous lisez. Elle ne change que lorsque l'organisation publie à nouveau, et vous êtes alors prévenu par e-mail. Si ce courriel n'a pas pu partir, ou si votre fiche n'a pas d'adresse, la page le dit à la place. Repassez ici avant de partir : c'est cette page qui fait foi.`,
         },
         {
           kind: 'paragraph',
@@ -172,7 +172,7 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@espace.aide.emporter.abonnement:En haut de « Mon planning », la bande « Emporter mon planning » propose quatre sorties.`,
+          text: $localize`:@@espace.aide.emporter.menu:En haut de « Mon planning », le bouton de téléchargement, à droite des onglets, propose trois sorties ; la quatrième est en bas de la page.`,
         },
         {
           kind: 'list',
@@ -342,7 +342,7 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@espace.aide.dispo.avant:Si la collecte n'a pas encore commencé, l'onglet annonce la date à partir de laquelle revenir. Ce n'est pas un refus : il n'y a rien à faire d'ici là.`,
+          text: $localize`:@@espace.aide.dispo.onglets:Les onglets « Mes disponibilités » et « Covoiturage » n'apparaissent que pendant la collecte, et un bandeau sous les onglets l'annonce quand elle s'ouvre. Le reste du temps, il n'y a rien à y faire : un empêchement se signale avec « Je ne pourrai pas venir ».`,
         },
         {
           kind: 'steps',
@@ -477,6 +477,7 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
           items: [
             $localize`:@@espace.aide.contact.item1:Une affectation vous semble fausse, ou une indisponibilité annoncée n'a pas été prise en compte : signalez-le. Hors période de collecte, vous ne pouvez pas corriger vos données vous-même.`,
             $localize`:@@espace.aide.contact.item2:Empêchement de dernière minute : signalez-le avec « Je ne pourrai pas venir » et, pour un poste qui commence bientôt, appelez aussi l'organisation.`,
+            $localize`:@@espace.aide.contact.item4:Le téléphone ou l'adresse de l'organisation, quand elle les a donnés, sont en bas de chaque page de cet espace.`,
             $localize`:@@espace.aide.contact.item3:Ce que l'application sait de vous et ce qu'elle en fait est décrit dans la politique de confidentialité, dans le menu en haut à droite.`,
           ],
         },
