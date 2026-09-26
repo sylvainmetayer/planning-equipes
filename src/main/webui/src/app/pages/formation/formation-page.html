@@ -1,10 +1,4 @@
 <mat-card appearance="outlined" class="page-card">
-  @if (entete()) {
-    <mat-card-header>
-      <h1 mat-card-title i18n="@@formation.title">À former</h1>
-      <mat-card-subtitle i18n="@@formation.subtitle">Qui former, typologie par typologie, là où le besoin ou la fragilité signale un manque.</mat-card-subtitle>
-    </mat-card-header>
-  }
   <mat-card-actions class="card-actions">
     <button matButton type="button" [disabled]="chargement()" (click)="recharger()">
       <mat-icon>refresh</mat-icon>
@@ -40,10 +34,15 @@
         <p class="formation-tri" i18n="@@formation.tri">Candidats classés par jours en tension disponibles, puis souhait, puis niveau (autonome avant débutant).</p>
         @for (ligne of plan.typologies; track ligne.typologie) {
           <section class="formation-typologie">
-            <h2>
+            <h3>
               <a routerLink="/typologies" [queryParams]="{ edit: ligne.typologie }">{{ ligne.label || ligne.typologie }}</a>
-            </h2>
-            <p class="formation-deficit">{{ resumeDeficit(ligne) }}</p>
+            </h3>
+            <p class="formation-deficit">
+              {{ resumeDeficit(ligne) }}
+              <!-- The gesture of this section: the competences grid on this game category. -->
+              <a class="formation-lien" routerLink="/competences" [queryParams]="{ typologies: ligne.typologie }"
+                 i18n="@@formation.versCompetencesTypologie">Compétences de cette typologie</a>
+            </p>
             @if (ligne.joursTension.length > 0) {
               <p class="formation-jours">
                 <ng-container i18n="@@formation.joursTension">Jours en tension :</ng-container>
@@ -55,7 +54,7 @@
             @if (ligne.candidats.length === 0) {
               <p class="formation-recrutement">
                 <ng-container i18n="@@formation.recrutement">Aucun candidat : recrutement.</ng-container>
-                <a routerLink="/diagnostic" [queryParams]="{ onglet: 'besoin' }" i18n="@@formation.versBesoin">Voir le besoin en animateurs</a>
+                <a routerLink="/animateurs" i18n="@@formation.versAnimateurs">Ajouter des animateurs</a>
               </p>
             } @else {
               <table class="formation-candidats">

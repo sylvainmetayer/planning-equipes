@@ -17,7 +17,7 @@
 // filter) is the one that must keep working.
 
 import { APIRequestContext, Page, expect, test } from '@playwright/test';
-import { contexteAdmin, pageAdmin, seedPlanning } from './support';
+import { SEED, contexteAdmin, pageAdmin, seedPlanning } from './support';
 import { repartirDeLaReference } from './reference';
 
 let admin: APIRequestContext;
@@ -330,44 +330,48 @@ test.describe('navigation clavier des tables de référence', () => {
   });
 
   /*
-   * The pivot of « Règles du planning » (RGAA 7.1): a table carrying `role="grid"` must
-   * keep that promise — one tab stop, arrows inside, Enter opens the cell. The
-   * breaches are grafted onto the real catalogue: the seeded plan breaks
-   * nothing, and what is under test is the grid, not the analysis.
+   * The pivot under the Diagnostic's problems (RGAA 7.1): a table carrying
+   * `role="grid"` must keep that promise — one tab stop, arrows inside, Enter
+   * opens the screen where the cell's breaches are fixed. The breaches are
+   * grafted onto the real catalogue: the seeded plan breaks nothing, and what
+   * is under test is the grid, not the analysis.
    */
-  test('parcourt le tableau croisé des contraintes au clavier', async ({ browser }) => {
+  test('walks the breaches cross-table by keyboard', async ({ browser }) => {
     const page = await pageAdmin(browser, admin);
     await page.route('**/api/constraints', async (route) => {
       const reponse = await route.fetch();
       const vue = await reponse.json();
       const [premiere, seconde] = vue.contraintes as { name: string }[];
       vue.pivotEcarts = [
-        { contrainte: premiere.name, axe: 'JOUR', cle: '2026-07-10', ecarts: 3 },
-        { contrainte: premiere.name, axe: 'JOUR', cle: '2026-07-11', ecarts: 1 },
-        { contrainte: seconde.name, axe: 'JOUR', cle: '2026-07-11', ecarts: 2 },
+        { contrainte: premiere.name, axe: 'JOUR', cle: SEED.jour, ecarts: 3 },
+        { contrainte: premiere.name, axe: 'JOUR', cle: SEED.jourSuivant, ecarts: 1 },
+        { contrainte: seconde.name, axe: 'JOUR', cle: SEED.jourSuivant, ecarts: 2 },
       ];
       await route.fulfill({ response: reponse, json: vue });
     });
-    await page.goto('/regles');
-    await page.getByText('Où se concentrent les écarts').click();
-    const cellules = page.locator('td[data-ligne]');
+    await page.goto('/diagnostic');
+    const pivot = page.locator('#ecarts-pivot');
+    await expect(pivot.getByText('Où se concentrent les écarts')).toBeVisible();
+    const cellules = pivot.locator('td[data-ligne]');
     await expect(cellules).toHaveCount(4);
-    await expect(page.locator('td[data-ligne][tabindex="0"]')).toHaveCount(1);
+    await expect(pivot.locator('td[data-ligne][tabindex="0"]')).toHaveCount(1);
 
-    // From the summary: the axis chips, then the grid — one stop each.
-    await page.locator('.constraint-pivot-summary').focus();
+    // From the axis chips, the grid is the next stop — one for all its cells.
+    await pivot.getByRole('option', { selected: true }).focus();
     await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
-    const premiere = page.locator('td[data-ligne="0"][data-colonne="0"]');
+    const premiere = pivot.locator('td[data-ligne="0"][data-colonne="0"]');
     await expect(premiere, await elementFocalise(page)).toBeFocused();
     await expect(premiere).toHaveAccessibleName(/écart/);
 
     await page.keyboard.press('ArrowRight');
-    await expect(page.locator('td[data-ligne="0"][data-colonne="1"]')).toBeFocused();
+    await expect(pivot.locator('td[data-ligne="0"][data-colonne="1"]')).toBeFocused();
     await page.keyboard.press('ArrowDown');
-    await expect(page.locator('td[data-ligne="1"][data-colonne="1"]')).toBeFocused();
+    await expect(pivot.locator('td[data-ligne="1"][data-colonne="1"]')).toBeFocused();
+    // A day's breaches are fixed on that day of the Planning page. The seeded
+    // days move with the calendar: a literal date names none of them, and the
+    // page then falls back to the first day, which writes no `date=`.
     await page.keyboard.press('Enter');
-    await expect(page.locator('.constraint-pivot-detail')).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`/journee\\?date=${SEED.jourSuivant}`));
     await page.context().close();
   });
 });

@@ -21,6 +21,10 @@ function probleme(id: string, niveau: NiveauProbleme): Probleme {
     references: [],
     actions: [],
     liens: [],
+    ou: [],
+    qui: [],
+    quiRestants: 0,
+    regle: null,
   };
 }
 

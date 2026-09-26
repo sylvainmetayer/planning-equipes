@@ -35,7 +35,6 @@ import { PostesApi } from '../../core/api/postes-api';
 import { errorPrefix } from '../../core/error-message';
 import { JourJService } from '../../core/jour-j.service';
 import {
-  Avertissement,
   ContrainteAdHoc,
   ContrainteImpact,
   PlanningEvenement,
@@ -61,7 +60,7 @@ import { ConfirmService } from '../confirm-dialog';
 import { moveTargets, resumeDeplacement } from '../deplacement';
 import { openMoveDialog } from '../deplacement-dialog';
 import { StatusMessage } from '../status-message';
-import { openBenchDialog } from './bench-dialog';
+import { lockWarning, SeatPlacement } from './seat-placement';
 import {
   catalogueByName,
   levelLabel,
@@ -108,6 +107,7 @@ export class SeatPanel {
   private readonly explanations = inject(AffectationExplanationService);
   private readonly repairs = inject(JourJService);
   private readonly postesApi = inject(PostesApi);
+  private readonly placement = inject(SeatPlacement);
   private readonly constraintsApi = inject(ConstraintsApi);
   private readonly verrous = inject(VerrouillageStore);
   private readonly store = inject(ReferenceDataStore);
@@ -479,34 +479,27 @@ export class SeatPanel {
     if (!seat?.creneau || !planning) {
       return;
     }
-    const choice = await firstValueFrom(
-      openBenchDialog(this.dialog, {
-        posteId: seat.id,
-        creneauId: seat.creneau.id,
-        standId: seat.stand?.id ?? null,
-        title: `${this.standName()} · ${this.when()}`,
-        animateurs: planning.animateurs ?? [],
-        catalogue: this.catalogue(),
-        offerPlacement: !seat.animateur,
-      }).afterClosed(),
-    );
+    const choice = await this.placement.choose({
+      posteId: seat.id,
+      creneauId: seat.creneau.id,
+      standId: seat.stand?.id ?? null,
+      title: `${this.standName()} · ${this.when()}`,
+      animateurs: planning.animateurs ?? [],
+      catalogue: this.catalogue(),
+      offerPlacement: !seat.animateur,
+    });
     if (!choice || seat.animateur) {
       return;
     }
     const creneauId = seat.creneau.id;
     const nom = this.name(choice.animateurId);
     await this.write('place', async () => {
-      const placement = await this.postesApi.place(seat.id, choice.animateurId);
-      let message = $localize`:@@deplacement.place:${nom}:cible: est placé(e) sur ce siège.`;
-      const warnings = [qualityWarning(placement.delta)];
-      if (choice.keep) {
-        const kept = await this.keepLock(choice.animateurId, creneauId);
-        if (kept) {
-          message = $localize`:@@siege.placer.garde:${nom}:nom: est placé(e) sur ce siège, et y restera au prochain calcul.`;
-          warnings.push(kept.warning);
-        }
+      const done = await this.placement.place(seat.id, creneauId, choice, nom);
+      // The placement is written: say the lock is not, rather than undo it.
+      if (done.lockError) {
+        this.gestureError.set(done.lockError);
       }
-      return { message, warning: warnings.filter(Boolean).join(' ') || null };
+      return done;
     });
   }
 
@@ -585,15 +578,4 @@ export class SeatPanel {
       this.busy.set(false);
     }
   }
-}
-
-/**
- * What the server wants read about a lock just laid — seats it freezes that
- * already break a hard rule — as one sentence of the panel, which the
- * notification journal never sees. Null when it said nothing.
- */
-function lockWarning(avertissements: readonly Avertissement[]): string | null {
-  return avertissements.length > 0
-    ? avertissements.map((avertissement) => avertissement.message).join(' ')
-    : null;
 }

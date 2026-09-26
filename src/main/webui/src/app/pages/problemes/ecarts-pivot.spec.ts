@@ -101,7 +101,7 @@ describe('cellLink', () => {
     expect(cellLink('ANIMATEUR', 'a1', 'Alice Martin')).toEqual({
       route: '/animateurs/a1',
       queryParams: { section: 'timeline' },
-      label: 'Voir la journée de Alice Martin',
+      label: 'Voir la fiche de Alice Martin',
     });
   });
 

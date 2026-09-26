@@ -132,15 +132,6 @@ export function buildNavGroups(): NavGroup[] {
             ),
           ],
         },
-        {
-          path: '/marge',
-          label: $localize`:@@nav.link.marge:Marge disponible`,
-          icon: 'exposure',
-          tabs: [
-            tab('mode', 'apres', $localize`:@@marge.mode.apres:Après résolution`),
-            tab('mode', 'tension', $localize`:@@nav.tab.margeTension:Tension`),
-          ],
-        },
       ],
     },
     {
@@ -286,15 +277,15 @@ export function buildNavGroups(): NavGroup[] {
               'onglet',
               'besoin',
               $localize`:@@diagnostic.onglet.besoin:Besoin en animateurs`,
-              'staffing',
+              $localize`:@@nav.keywords.besoin:staffing marge avant à former formation`,
             ),
-            tab('onglet', 'fragilite', $localize`:@@diagnostic.onglet.fragilite:Fragilité`),
             tab(
               'onglet',
-              'former',
-              $localize`:@@diagnostic.onglet.former:À former`,
-              $localize`:@@nav.keywords.former:formation`,
+              'tension',
+              $localize`:@@diagnostic.onglet.tension:Tension`,
+              $localize`:@@nav.keywords.tension:marge disponible après résolution`,
             ),
+            tab('onglet', 'fragilite', $localize`:@@diagnostic.onglet.fragilite:Fragilité`),
           ],
         },
         {

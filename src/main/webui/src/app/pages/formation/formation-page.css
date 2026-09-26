@@ -1,4 +1,4 @@
-/* The « À former » tab: one section per typologie in shortage, its deficit in
+/* « À former », at the foot of the Besoin tab: one section per typologie in shortage, its deficit in
    one line and its candidates in a plain table. */
 
 .formation-tri,
@@ -19,7 +19,7 @@
   margin-top: 1.25rem;
 }
 
-.formation-typologie h2 {
+.formation-typologie h3 {
   margin: 0 0 0.25rem;
   font: var(--mat-sys-title-medium);
 }
@@ -42,4 +42,12 @@
 
 .formation-candidats td:last-child {
   font-variant-numeric: tabular-nums;
+}
+
+/* The competences grid of the typologie, right after its shortage. */
+.formation-lien {
+  margin-left: 0.5rem;
+  font: var(--mat-sys-label-medium);
+  color: var(--app-accent);
+  white-space: nowrap;
 }

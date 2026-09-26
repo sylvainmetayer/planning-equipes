@@ -83,12 +83,17 @@ describe('FormationPage', () => {
     const racine = fixture.nativeElement as HTMLElement;
 
     const sections = Array.from(racine.querySelectorAll('.formation-typologie'));
-    expect(sections.map((section) => section.querySelector('h2')!.textContent!.trim())).toEqual([
+    // Under the « À former » heading of the Besoin tab: one level down.
+    expect(sections.map((section) => section.querySelector('h3')!.textContent!.trim())).toEqual([
       'Escape game',
       'Quiz',
     ]);
     expect(sections[0].querySelector('.formation-deficit')!.textContent).toContain(
       'manque 1 animateur(s) au besoin',
+    );
+    // A typologie in shortage opens the competences grid on it.
+    expect(sections[0].querySelector('a.formation-lien')!.getAttribute('href')).toMatch(
+      /^\/competences\?typologies=/,
     );
     expect(sections[0].querySelector('.formation-jours')!.textContent).toContain('10/07');
     const lignes = Array.from(sections[0].querySelectorAll('tbody tr')).map((tr) =>

@@ -1,35 +1,12 @@
-// Pure view logic of the « Marge disponible » screen, kept out of the
-// component so it is unit-tested without rendering anything. Nothing here
+// Pure view logic of the margin grids — the « avant » column of the
+// Diagnostic's Besoin tab, and the Tension tab's cells — kept out of the
+// components so it is unit-tested without rendering anything. Nothing here
 // computes a margin: the server already did, from the seats and the roster
 // (issue #499). This only lays the cells out in a grid, colours them and words
 // them.
 
 import { CelluleMarge, JourMarge, ModeMarge, RapportMarge } from '../../core/models';
-
-/**
- * The three readings of the page: the margin before and after a solve, and the
- * tension map that crosses the second with the fragility of the same plan.
- */
-export type MarginView = ModeMarge | 'TENSION';
-
-/** The `mode` query param of each reading; the default one leaves the URL bare. */
-export const MARGIN_VIEW_PARAMS: Readonly<Record<MarginView, string | null>> = {
-  AVANT: null,
-  APRES: 'apres',
-  TENSION: 'tension',
-};
-
-/**
- * Reads the `mode` query param. Anything but the values this page knows is the
- * margin before a solve: an unknown mode would otherwise show the « après »
- * grid under the « avant » toggle.
- */
-export function readMarginView(param: string | null): MarginView {
-  if (param === 'apres') {
-    return 'APRES';
-  }
-  return param === 'tension' ? 'TENSION' : 'AVANT';
-}
+import { compareCodeUnits } from '../../core/string-order';
 
 /**
  * The divergent scale. Five steps and not three: a cell at −1 and a cell at −6
@@ -110,24 +87,72 @@ export function signe(marge: number): string {
   return marge > 0 ? `+${marge}` : String(marge);
 }
 
+/** The column a timeslot falls in: its start hour, whatever its end. */
+export function columnKey(debut: string): string {
+  return heure(debut);
+}
+
 /**
- * The grid: one row per event day, one column per timeslot of the grid, in the
- * order the server sent them — it is the one that knows which timeslots the
- * edition really holds. A day with no cell on a column gets an empty one, so
- * every row has the same length and the columns stay aligned.
+ * The columns of the grid, one per start hour of the timeslots, earliest
+ * first. The server sends one per distinct pair of hours, and an edition
+ * whose evening ends at 22:00 on weekdays and at midnight on Saturdays got two
+ * columns, « 18:00-00:00 » and « 18:00-22:00 », each with a hole every other
+ * row: the same evening, read on two columns. Keyed on the start, they are
+ * one, and its label says every end it holds — « 18:00-22:00/00:00 ».
+ */
+export function normalizeColumns(
+  tranches: readonly { debut: string; fin: string }[],
+): ColonneMarge[] {
+  const fins = new Map<string, Set<string>>();
+  for (const tranche of tranches) {
+    const key = columnKey(tranche.debut);
+    const ends = fins.get(key) ?? new Set<string>();
+    ends.add(heure(tranche.fin));
+    fins.set(key, ends);
+  }
+  // Midnight as an end is the end of the day, after every other hour.
+  const endOrder = (fin: string): string => (fin === '00:00' ? '24:00' : fin);
+  return [...fins.entries()]
+    .sort(([a], [b]) => compareCodeUnits(a, b))
+    .map(([key, ends]) => ({
+      cle: key,
+      label: `${key}-${[...ends].sort((a, b) => compareCodeUnits(endOrder(a), endOrder(b))).join('/')}`,
+    }));
+}
+
+/**
+ * The cell of each column of a day. Two timeslots of one day starting at the
+ * same hour — two relay shifts — share a column: the tighter one is kept,
+ * since that is the one the reader must see.
+ */
+export function cellsByColumn<T extends { debut: string; marge: number }>(
+  cellules: readonly T[],
+  worse: (a: T, b: T) => boolean = (a, b) => a.marge < b.marge,
+): Map<string, T> {
+  const index = new Map<string, T>();
+  for (const cellule of cellules) {
+    const key = columnKey(cellule.debut);
+    const current = index.get(key);
+    if (!current || worse(cellule, current)) {
+      index.set(key, cellule);
+    }
+  }
+  return index;
+}
+
+/**
+ * The grid: one row per event day, one column per start hour of the grid's
+ * timeslots (see {@link normalizeColumns}). A day with no cell on a column
+ * gets an empty one, so every row has the same length and the columns stay
+ * aligned.
  */
 export function buildTable(rapport: RapportMarge | null): TableMarge {
   if (!rapport) {
     return { colonnes: [], lignes: [] };
   }
-  const colonnes = rapport.tranches.map((tranche) => ({
-    cle: libelleTranche(tranche.debut, tranche.fin),
-    label: libelleTranche(tranche.debut, tranche.fin),
-  }));
+  const colonnes = normalizeColumns(rapport.tranches);
   const lignes = rapport.jours.map((jour) => {
-    const indexedCells = new Map(
-      jour.cellules.map((cellule) => [libelleTranche(cellule.debut, cellule.fin), cellule]),
-    );
+    const indexedCells = cellsByColumn(jour.cellules);
     return {
       cle: jour.date,
       label: libelleJour(jour),
@@ -169,24 +194,21 @@ function buildCellule(
     cle: colonne.cle,
     niveau: niveauMarge(cellule.marge),
     label: signe(cellule.marge),
-    tooltip: tooltip(cellule, colonne, jourLabel, mode),
+    tooltip: tooltip(cellule, jourLabel, mode),
     creneauId: cellule.creneauId,
     date: cellule.date,
   };
 }
 
-function tooltip(
-  cellule: CelluleMarge,
-  colonne: ColonneMarge,
-  jourLabel: string,
-  mode: ModeMarge,
-): string {
+/** The cell's own hours, not its column's: a column can hold several ends. */
+function tooltip(cellule: CelluleMarge, jourLabel: string, mode: ModeMarge): string {
   const chiffres =
     mode === 'APRES'
       ? $localize`:@@marge.cell.tooltipApres:${cellule.disponibles}:disponibles: libre(s) pour ${cellule.besoin}:besoin: siège(s) vide(s) sur ${cellule.sieges}:sieges:`
       : $localize`:@@marge.cell.tooltipAvant:${cellule.disponibles}:disponibles: disponible(s) pour ${cellule.besoin}:besoin: siège(s) à pourvoir`;
   const marge = signe(cellule.marge);
-  return $localize`:@@marge.cell.tooltip:${jourLabel}:jour: — ${colonne.label}:tranche: : marge ${marge}:marge: (${chiffres}:detail:)`;
+  const tranche = libelleTranche(cellule.debut, cellule.fin);
+  return $localize`:@@marge.cell.tooltip:${jourLabel}:jour: — ${tranche}:tranche: : marge ${marge}:marge: (${chiffres}:detail:)`;
 }
 
 /** One line per day, worst cell first in the day's own reading — the server picked it. */

@@ -8,7 +8,8 @@
 
 import { provideZonelessChangeDetection, Signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Location } from '@angular/common';
+import { provideRouter, Router } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import {
@@ -155,11 +156,19 @@ function createPage(): PageInternals {
 }
 
 describe('StaffingPage', () => {
-  const analysesApi = { staffing: vi.fn() };
+  const analysesApi = {
+    staffing: vi.fn(),
+    // The « avant » margin column and the « À former » section, read beside the need.
+    margin: vi.fn(),
+    trainingPlan: vi.fn(async () => null),
+    exportTrainingPlan: vi.fn(),
+  };
 
   beforeEach(() => {
     analysesApi.staffing.mockReset();
     analysesApi.staffing.mockResolvedValue(summary());
+    analysesApi.margin.mockReset();
+    analysesApi.margin.mockResolvedValue(null);
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
@@ -560,14 +569,111 @@ describe('StaffingPage', () => {
       await fixture.whenStable();
       fixture.detectChanges();
 
+      const root = fixture.nativeElement as HTMLElement;
       const liens = Array.from(
-        (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>(
-          'a.staffing-lien',
-        ),
+        root.querySelectorAll<HTMLAnchorElement>('tr.staffing-goulot a.staffing-lien'),
       );
       expect(liens.map((lien) => lien.getAttribute('href'))).toEqual([
         '/animateurs?typologie=ESCAPE',
+        '/competences?typologies=ESCAPE',
       ]);
+      expect(root.querySelectorAll('tr.staffing-goulot')).toHaveLength(1);
+    });
+  });
+
+  /**
+   * Every figure leads to the screen that changes it: a day to its stands'
+   * opening hours, a bound to the settings it is proved on, the feasibility
+   * check to the Solveur — and the « avant » margin is a column of the days.
+   */
+  describe('the links from each figure to the screen that changes it', () => {
+    it('links each day to its opening hours, and prints its tightest margin', async () => {
+      analysesApi.margin.mockResolvedValue({
+        mode: 'AVANT',
+        tranches: [{ debut: '18:00:00', fin: '22:00:00' }],
+        jours: [
+          {
+            date: '2026-09-01',
+            jour: 1,
+            cellules: [],
+            pireCellule: {
+              date: '2026-09-01',
+              jour: 1,
+              debut: '18:00:00',
+              fin: '22:00:00',
+              creneauId: 4,
+              sieges: 6,
+              siegesPourvus: 0,
+              besoin: 6,
+              disponibles: 4,
+              marge: -2,
+            },
+          },
+        ],
+        animateursTotal: 4,
+        cellulesDeficitaires: 1,
+        pireCellule: null,
+        referentielsManquants: [],
+        message: '',
+      });
+      analysesApi.staffing.mockResolvedValue(
+        summary({ parJour: [jour({ date: '2026-09-01', jour: 1 })] }),
+      );
+      const fixture = TestBed.createComponent(StaffingPage);
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const root = fixture.nativeElement as HTMLElement;
+      const hrefs = Array.from(root.querySelectorAll<HTMLAnchorElement>('a')).map((lien) =>
+        lien.getAttribute('href'),
+      );
+      expect(hrefs).toContain('/ouvertures?du=2026-09-01&au=2026-09-01');
+      expect(hrefs).toContain('/regles?onglet=legal&regle=coupureRepasObligatoire');
+      expect(hrefs).toContain('/solveur');
+      expect(root.querySelector('.staffing-marge')?.textContent).toBe('-2');
+      expect(root.querySelector('.staffing-marge-tranche')?.textContent).toBe('18:00-22:00');
+      expect(root.textContent).toContain('Horaires des stands du 01/09');
+    });
+
+    // « À former » starts where the tables above it end: scrolled to while
+    // they still load, the reader would land on what they push down. And the
+    // landing is obeyed once — coming back to the tab does not scroll again.
+    it('scrolls to « À former » once the figures above it are on screen, then drops `section`', async () => {
+      const pending = deferred<StaffingSummary>();
+      analysesApi.staffing.mockReturnValue(pending.promise);
+      const scroll = vi.fn();
+      const original = Element.prototype.scrollIntoView;
+      Element.prototype.scrollIntoView = scroll;
+      try {
+        await TestBed.inject(Router).navigateByUrl('/?onglet=besoin&section=former');
+        const fixture = TestBed.createComponent(StaffingPage);
+        fixture.detectChanges();
+        await new Promise((resolve) => setTimeout(resolve));
+        fixture.detectChanges();
+        expect(scroll).not.toHaveBeenCalled();
+
+        pending.resolve(summary());
+        await vi.waitFor(() => {
+          fixture.detectChanges();
+          expect(scroll).toHaveBeenCalledTimes(1);
+        });
+        expect(scroll.mock.contexts[0]).toBe(document.getElementById('a-former'));
+        const location = TestBed.inject(Location);
+        await vi.waitFor(() => expect(location.path()).not.toContain('section'));
+        expect(location.path()).toContain('onglet=besoin');
+      } finally {
+        Element.prototype.scrollIntoView = original;
+      }
+    });
+
+    it('ends on « À former », the section `?onglet=former` lands on', async () => {
+      const fixture = TestBed.createComponent(StaffingPage);
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const section = (fixture.nativeElement as HTMLElement).querySelector('#a-former')!;
+      expect(section.querySelector('h2')?.textContent).toContain('À former');
+      expect(section.querySelector('app-formation-page')).not.toBeNull();
     });
   });
 });
