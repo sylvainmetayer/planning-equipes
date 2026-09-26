@@ -11,11 +11,12 @@
   <app-solver-running-indicator />
   <app-data-stale-indicator />
   <app-update-available-indicator />
-  <!-- The unread count is in the link's name, where it is read once with
-       « Notifications ». Carried by the icon as a badge description, it made
-       the icon an image without a name (axe: role-img-alt), announced apart. -->
-  <a matIconButton routerLink="/notifications" routerLinkActive="active-link" class="notifications-toggle"
-     [attr.aria-label]="notificationsLabel()">
+  <!-- The bell opens « À traiter aujourd'hui » on the home screen. The unread
+       count is in the link's name, where it is read once with « Notifications ».
+       Carried by the icon as a badge description, it made the icon an image
+       without a name (axe: role-img-alt), announced apart. -->
+  <a matIconButton routerLink="/" fragment="a-traiter" class="notifications-toggle"
+     [attr.aria-label]="notificationsLabel()" (click)="toATraiter()">
     <mat-icon
       aria-hidden="true"
       [matBadge]="notificationBadgeContent()"

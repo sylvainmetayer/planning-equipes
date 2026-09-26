@@ -45,10 +45,19 @@ test("la page d'accueil liste les douze étapes du cycle", async ({ browser }) =
   for (const id of LIGNES) {
     await expect(page.locator(`li[data-ligne="${id}"]`), `ligne ${id}`).toBeVisible();
   }
-  // Every line carries its state and a link: nothing is a dead end. Two lines
-  // unfold in place instead — the coherence, each of its anomalies linking on,
-  // and the freeze of the referential, its switches.
-  await expect(page.locator('li.accueil-ligne a.accueil-lien')).toHaveCount(LIGNES.length - 2);
+  // Every line carries its state and a link: nothing is a dead end. The
+  // coherence alone may unfold in place instead, when it holds several
+  // subjects — each of its anomalies linking on. The freeze has no switch
+  // here any more: it links to Paramètres, the one place it is set.
+  expect(await page.locator('li.accueil-ligne a.accueil-lien').count()).toBeGreaterThanOrEqual(
+    LIGNES.length - 1,
+  );
+  await expect(page.locator('li[data-ligne="gel"] a.accueil-lien')).toHaveAttribute(
+    'href',
+    '/parametres?onglet=edition#gel-referentiel',
+  );
+  // Never the raw score: the reading is in sentences.
+  await expect(page.locator('#contenu')).not.toContainText(/-?\d+hard\//);
   await expect(page.locator('.accueil-bilan')).toContainText('à faire');
   await page.context().close();
 });
@@ -86,5 +95,27 @@ test('une édition amorcée lit ses référentiels et sa publication, et chaque 
   // The old address of the solver still lands on it.
   await page.goto('/solver');
   await expect(page).toHaveURL(/\/solveur$/);
+  await page.context().close();
+});
+
+/**
+ * The bell of the toolbar opens « À traiter aujourd'hui » on the home screen,
+ * and the former Notifications page lands there too: the night's alerts and
+ * the history of the messages are its « Messages récents ».
+ */
+test("la cloche et l'ancienne page Notifications mènent à « À traiter aujourd'hui »", async ({
+  browser,
+}) => {
+  const page = await pageAdmin(browser, admin);
+  await page.goto('/stands');
+  await page.locator('a.notifications-toggle').click();
+  await expect(page).toHaveURL(/\/#a-traiter$/);
+  await expect(page.locator('#a-traiter')).toBeVisible();
+
+  await page.goto('/notifications');
+  await expect(page).toHaveURL(/\/#a-traiter$/);
+  await page.getByRole('button', { name: /Messages récents/ }).click();
+  await expect(page.locator('#alertes-nuit')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Tout marquer comme lu' })).toBeVisible();
   await page.context().close();
 });

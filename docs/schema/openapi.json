@@ -3331,7 +3331,7 @@
         }
       },
       "EtatATraiter" : {
-        "required" : [ "aujourdhui", "declarationsEnAttente", "donneesModifiees", "echangesAArbitrer", "echangesEnAlerte", "horizonJours", "journeesNonRelues", "personnesAPrevenir", "seuilAncienneteJours", "silenceJours", "silencieuxARelancer" ],
+        "required" : [ "aujourdhui", "declarationsEnAttente", "donneesModifiees", "echangesAArbitrer", "echangesEnAlerte", "horizonJours", "journeesNonRelues", "personnesAPrevenir", "rappelsNonEnvoyes", "relancesNonEnvoyees", "sauvegardeEnEchec", "seuilAncienneteJours", "silenceJours", "silencieuxARelancer" ],
         "type" : "object",
         "properties" : {
           "aujourdhui" : {
@@ -3385,6 +3385,20 @@
           "personnesAPrevenir" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "rappelsNonEnvoyes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "relancesNonEnvoyees" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "sauvegardeEnEchec" : {
+            "type" : "boolean"
+          },
+          "sauvegardeEchecLe" : {
+            "$ref" : "#/components/schemas/Instant"
           }
         }
       },
@@ -3451,7 +3465,7 @@
         }
       },
       "EtatConfirmations" : {
-        "required" : [ "confirmes", "relances", "silencieux", "statut" ],
+        "required" : [ "confirmes", "delaiRelanceHeures", "relances", "relancesAutomatiques", "silencieux", "statut" ],
         "type" : "object",
         "properties" : {
           "confirmes" : {
@@ -3468,6 +3482,13 @@
           },
           "statut" : {
             "$ref" : "#/components/schemas/Statut"
+          },
+          "relancesAutomatiques" : {
+            "type" : "boolean"
+          },
+          "delaiRelanceHeures" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -3552,7 +3573,7 @@
         }
       },
       "EtatEvenement" : {
-        "required" : [ "termine" ],
+        "required" : [ "aujourdhui", "phase", "termine" ],
         "type" : "object",
         "properties" : {
           "premierJour" : {
@@ -3563,6 +3584,15 @@
           },
           "termine" : {
             "type" : "boolean"
+          },
+          "aujourdhui" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "phase" : {
+            "$ref" : "#/components/schemas/Phase"
+          },
+          "jour" : {
+            "$ref" : "#/components/schemas/EtatJour"
           }
         }
       },
@@ -3612,6 +3642,35 @@
           },
           "statut" : {
             "$ref" : "#/components/schemas/Statut"
+          }
+        }
+      },
+      "EtatJour" : {
+        "type" : "object",
+        "required" : [ "absents", "date", "echangesAArbitrer", "numero", "placesVides", "standsOuverts" ],
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "numero" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "standsOuverts" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "placesVides" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "absents" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "echangesAArbitrer" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -3809,7 +3868,7 @@
         }
       },
       "EtatResolution" : {
-        "required" : [ "dataStale", "resolue", "solveEnCours", "statut" ],
+        "required" : [ "dataStale", "lecture", "resolue", "solveEnCours", "statut" ],
         "type" : "object",
         "properties" : {
           "resolue" : {
@@ -3835,6 +3894,12 @@
           },
           "statut" : {
             "$ref" : "#/components/schemas/Statut"
+          },
+          "lecture" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ScoreSentence"
+            }
           }
         }
       },
@@ -5946,6 +6011,10 @@
             "format" : "int32"
           }
         }
+      },
+      "Phase" : {
+        "type" : "string",
+        "enum" : [ "PREPARATION", "EVENEMENT", "APRES" ]
       },
       "PlanFormation" : {
         "required" : [ "aucunAnimateur", "aucuneCompetence", "planPersiste", "typologies" ],

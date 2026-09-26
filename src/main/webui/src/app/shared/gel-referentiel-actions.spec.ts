@@ -29,6 +29,7 @@ describe('phaseReminder', () => {
           dataStale: false,
           solveEnCours: false,
           statut: 'FAIT',
+          lecture: [],
         },
       }),
     ).toContain('publié');
@@ -49,6 +50,7 @@ describe('phaseReminder', () => {
           dataStale: false,
           solveEnCours: false,
           statut: 'FAIT',
+          lecture: [],
         },
       }),
     ).toContain('calculé');
@@ -69,6 +71,7 @@ describe('phaseReminder', () => {
           dataStale: false,
           solveEnCours: false,
           statut: 'A_FAIRE',
+          lecture: [],
         },
       }),
     ).toBe('');

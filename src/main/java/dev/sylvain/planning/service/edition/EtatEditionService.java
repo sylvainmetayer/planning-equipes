@@ -1,10 +1,12 @@
 package dev.sylvain.planning.service.edition;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.DeclarationDisponibilite;
 import dev.sylvain.planning.domain.DemandeEchange;
 import dev.sylvain.planning.domain.Edition;
+import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.StatutDeclaration;
 import dev.sylvain.planning.service.EditionContext;
@@ -17,6 +19,8 @@ import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.Constraint
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.PlanningDiagnostic;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
 import dev.sylvain.planning.service.analyse.StaffingService;
+import dev.sylvain.planning.service.backup.BackupRun;
+import dev.sylvain.planning.service.backup.BackupService;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatATraiter;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatBesoin;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatCoherence;
@@ -24,17 +28,25 @@ import dev.sylvain.planning.service.edition.EtatEditionView.EtatCollecte;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatConfirmations;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatEvenement;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatFoire;
+import dev.sylvain.planning.service.edition.EtatEditionView.EtatJour;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatOuvertures;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatProblemes;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatPublication;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatReferentiels;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatRelecture;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatResolution;
+import dev.sylvain.planning.service.edition.EtatEditionView.Phase;
 import dev.sylvain.planning.service.edition.EtatEditionView.Statut;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService;
 import dev.sylvain.planning.service.espace.DemandeEchangeService;
 import dev.sylvain.planning.service.espace.JourJClock;
+import dev.sylvain.planning.service.espace.JourJService;
+import dev.sylvain.planning.service.espace.TimeslotWindows;
+import dev.sylvain.planning.service.mural.AffichageMuralService;
+import dev.sylvain.planning.service.mural.AffichageMuralView;
 import dev.sylvain.planning.service.notification.AlerteEchangeJob;
+import dev.sylvain.planning.service.notification.JournalNotificationsRepository;
+import dev.sylvain.planning.service.notification.JournalNotificationsRepository.Alerte;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService.SyntheseConfirmations;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
@@ -62,11 +74,15 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Where the current edition stands in its cycle — the one aggregation the
@@ -129,6 +145,17 @@ public class EtatEditionService {
 
     private final GelReferentielService gelService;
 
+    /** The wall display's reading of the day under way: open stands and empty seats. */
+    private final AffichageMuralService affichageMuralService;
+
+    /** The mode jour J's reading of who is absent. */
+    private final JourJService jourJService;
+
+    /** The alerts the nightly jobs left behind. */
+    private final JournalNotificationsRepository journalNotifications;
+
+    private final BackupService backupService;
+
     @Inject
     public EtatEditionService(
             EditionService editionService,
@@ -148,7 +175,11 @@ public class EtatEditionService {
             ValidationPrerequisService prerequisService,
             CoherenceReferentielService coherenceService,
             JourJClock jourJClock,
-            GelReferentielService gelService) {
+            GelReferentielService gelService,
+            AffichageMuralService affichageMuralService,
+            JourJService jourJService,
+            JournalNotificationsRepository journalNotifications,
+            BackupService backupService) {
         this.editionService = editionService;
         this.editionContext = editionContext;
         this.referenceDataService = referenceDataService;
@@ -167,7 +198,14 @@ public class EtatEditionService {
         this.coherenceService = coherenceService;
         this.jourJClock = jourJClock;
         this.gelService = gelService;
+        this.affichageMuralService = affichageMuralService;
+        this.jourJService = jourJService;
+        this.journalNotifications = journalNotifications;
+        this.backupService = backupService;
     }
+
+    /** How many alerts of each kind the journal is read for: its own ceiling, never a screenful. */
+    private static final int NIGHT_ALERTS_READ = 500;
 
     /**
      * How far ahead « journées proches » looks, in days, today included —
@@ -187,10 +225,20 @@ public class EtatEditionService {
     /**
      * What « À traiter aujourd'hui » reads besides the other blocks' facts.
      *
-     * @param maintenant         now, on the recette clock when it is frozen
-     * @param declarations       when each pending availability declaration was submitted
-     * @param echanges           since when each swap request has waited on the organisation
-     * @param joursEvenement     the days carrying a timeslot
+     * @param maintenant           now, on the recette clock when it is frozen
+     * @param declarations         when each pending availability declaration was submitted
+     * @param echanges             since when each swap request has waited on the organisation
+     * @param joursEvenement       the days carrying a timeslot
+     * @param relancesAutomatiques the nightly sends are armed on this edition
+     * @param delaiRelanceHeures   how long a silence lasts before the nightly reminder
+     * @param alertesNuit          the alerts the nightly jobs left in the journal
+     * @param derniereSauvegarde   the last nightly backup attempt, {@code null} when none is configured
+     * @param jour                 the day under way as the wall display and the mode jour J
+     *                             count it, read only while the event runs — {@code null} otherwise
+     * @param jourEnCours          the journée under way as those two screens name it
+     *                             ({@link TimeslotWindows#currentDay}): still the last day at one
+     *                             in the morning while its night shift runs — what the phase is
+     *                             judged on, where {@code aujourdhui} stays the calendar date
      */
     public record TodayFacts(
             LocalDate aujourdhui,
@@ -198,7 +246,74 @@ public class EtatEditionService {
             List<Instant> declarations,
             List<Instant> echanges,
             int ancienneteEchangeJours,
-            List<LocalDate> joursEvenement) {}
+            List<LocalDate> joursEvenement,
+            boolean relancesAutomatiques,
+            int delaiRelanceHeures,
+            List<Alerte> alertesNuit,
+            BackupRun derniereSauvegarde,
+            JourFacts jour,
+            LocalDate jourEnCours) {
+
+        /** No shift running past midnight: the journée under way is the calendar date. */
+        public TodayFacts(
+                LocalDate aujourdhui,
+                Instant maintenant,
+                List<Instant> declarations,
+                List<Instant> echanges,
+                int ancienneteEchangeJours,
+                List<LocalDate> joursEvenement,
+                boolean relancesAutomatiques,
+                int delaiRelanceHeures,
+                List<Alerte> alertesNuit,
+                BackupRun derniereSauvegarde,
+                JourFacts jour) {
+            this(
+                    aujourdhui,
+                    maintenant,
+                    declarations,
+                    echanges,
+                    ancienneteEchangeJours,
+                    joursEvenement,
+                    relancesAutomatiques,
+                    delaiRelanceHeures,
+                    alertesNuit,
+                    derniereSauvegarde,
+                    jour,
+                    aujourdhui);
+        }
+
+        /** Nothing armed, nothing left by the night, no day read — what the rules' tests start from. */
+        public TodayFacts(
+                LocalDate aujourdhui,
+                Instant maintenant,
+                List<Instant> declarations,
+                List<Instant> echanges,
+                int ancienneteEchangeJours,
+                List<LocalDate> joursEvenement) {
+            this(
+                    aujourdhui,
+                    maintenant,
+                    declarations,
+                    echanges,
+                    ancienneteEchangeJours,
+                    joursEvenement,
+                    false,
+                    ParametresNotifications.DELAI_RELANCE_HEURES_PAR_DEFAUT,
+                    List.of(),
+                    null,
+                    null);
+        }
+    }
+
+    /**
+     * The day under way, as the services that already count it say it.
+     *
+     * @param date          the journée under way, as the wall display reads it
+     * @param standsOuverts stands holding at least one seat that day
+     * @param placesVides   seats of that day nobody holds
+     * @param absents       animateurs marked absent on one of its timeslots
+     */
+    public record JourFacts(LocalDate date, int standsOuverts, int placesVides, int absents) {}
 
     /**
      * Everything {@link #assemble} decides on, read once per call.
@@ -319,6 +434,17 @@ public class EtatEditionService {
         // coherence checklist that lists their anomalies.
         RapportOuvertures ouvertures = OuvertureStandsAnalyzer.analyze(stands, creneaux);
         StaffingSummary staffing = staffingService.analyzeEdition();
+        List<LocalDate> joursEvenement = creneaux.stream()
+                .map(Creneau::getDate)
+                .filter(Objects::nonNull)
+                .distinct()
+                .sorted()
+                .toList();
+        ParametresNotifications notifications = referenceDataService.getParametresNotifications();
+        List<ContrainteAdHoc> contraintes = referenceDataService.listContraintesAdHoc();
+        // The journée under way as the wall display and the mode jour J name
+        // it: at one in the morning, the last day's night shift still runs.
+        LocalDate jourEnCours = dayUnderWayOf(creneaux, moment);
         return new Facts(
                 edition,
                 stands.size(),
@@ -342,7 +468,7 @@ public class EtatEditionService {
                         animateurs,
                         stands,
                         creneaux,
-                        referenceDataService.listContraintesAdHoc(),
+                        contraintes,
                         FeasibilityAnalyzer.encadrementMineursActif(referenceDataService.getContraintesDesactivees()),
                         new FeasibilityAnalyzer.PlanContext(
                                 referenceDataService.listVerrouillages(),
@@ -366,14 +492,90 @@ public class EtatEditionService {
                                 .map(AlerteEchangeJob::waitingSince)
                                 .filter(Objects::nonNull)
                                 .toList(),
-                        referenceDataService.getParametresNotifications().ancienneteEchangeJours(),
-                        creneaux.stream()
-                                .map(Creneau::getDate)
-                                .filter(Objects::nonNull)
-                                .distinct()
-                                .sorted()
-                                .toList()),
+                        notifications.ancienneteEchangeJours(),
+                        joursEvenement,
+                        notifications.actives(),
+                        notifications.delaiRelanceHeures(),
+                        stillStanding(
+                                journalNotifications.alertes(NIGHT_ALERTS_READ),
+                                animateurs,
+                                () -> Set.copyOf(confirmationService.unconfirmed())),
+                        backupService.lastConfiguredRun(),
+                        phase(joursEvenement, jourEnCours) == Phase.EVENEMENT
+                                ? dayUnderWay(creneaux, contraintes)
+                                : null,
+                        jourEnCours),
                 gelService.etat());
+    }
+
+    /**
+     * The journée under way at {@code moment}, read the way the wall display
+     * and the mode jour J read it — {@link TimeslotWindows#currentDay}: a
+     * 22:00–02:00 shift keeps its evening's date until it ends, and a moment
+     * no timeslot covers falls back on the calendar date.
+     */
+    static LocalDate dayUnderWayOf(List<Creneau> creneaux, LocalDateTime moment) {
+        return TimeslotWindows.currentDay(creneaux, moment);
+    }
+
+    /**
+     * The alerts of the night that still say something true. A day-before
+     * reminder that could not leave is about a fiche without an address: once
+     * the address is there, the night's next run writes to it. A reminder of
+     * the silent that could not leave — the night's or a manual one, no
+     * address or a failed send — is about somebody who has not answered: once
+     * they have, there is nobody left to chase. The other kinds pass as they
+     * are; so do the alerts about a fiche since deleted, which nothing reads
+     * any more — the day-before count leaves them out below.
+     *
+     * @param silencieux the ids still silent on the published plan, read only
+     *                   when a reminder alert is there to be checked
+     */
+    static List<Alerte> stillStanding(
+            List<Alerte> alertes, List<Animateur> animateurs, Supplier<Set<String>> silencieux) {
+        Set<String> sansAdresse = animateurs.stream()
+                .filter(animateur ->
+                        animateur.getEmail() == null || animateur.getEmail().isBlank())
+                .map(Animateur::getId)
+                .collect(Collectors.toSet());
+        String rappel = JournalNotificationsRepository.Type.RAPPEL_VEILLE_INJOIGNABLE.name();
+        String relance = JournalNotificationsRepository.Type.RELANCE_INJOIGNABLE.name();
+        Set<String> encoreSilencieux =
+                alertes.stream().anyMatch(alerte -> relance.equals(alerte.type())) ? silencieux.get() : Set.of();
+        return alertes.stream()
+                .filter(alerte -> !rappel.equals(alerte.type()) || sansAdresse.contains(alerte.animateurId()))
+                .filter(alerte -> !relance.equals(alerte.type()) || encoreSilencieux.contains(alerte.animateurId()))
+                .toList();
+    }
+
+    /**
+     * The day under way, read by the two screens that already answer it: the
+     * wall display for the stands it shows and their empty seats, the mode
+     * jour J for the absences — over the timeslots and the ad hoc constraints
+     * this call already read. Only ever called while the event runs.
+     */
+    private JourFacts dayUnderWay(List<Creneau> creneaux, List<ContrainteAdHoc> contraintes) {
+        AffichageMuralView vue = affichageMuralService.currentEditionView();
+        int placesVides = vue.stands().stream()
+                .flatMap(stand -> stand.vacations().stream())
+                .mapToInt(AffichageMuralView.MuralShift::emptySeats)
+                .sum();
+        return new JourFacts(
+                vue.jour(),
+                vue.stands().size(),
+                placesVides,
+                jourJService.absentCount(vue.jour(), creneaux, contraintes));
+    }
+
+    /** Before the first day, from the first to the last, after the last; before, too, without any day. */
+    static Phase phase(List<LocalDate> joursEvenement, LocalDate aujourdhui) {
+        JoursEvenement jours = new JoursEvenement(joursEvenement);
+        LocalDate premier = jours.first();
+        LocalDate dernier = jours.last();
+        if (premier == null || aujourdhui.isBefore(premier)) {
+            return Phase.PREPARATION;
+        }
+        return aujourdhui.isAfter(dernier) ? Phase.APRES : Phase.EVENEMENT;
     }
 
     /**
@@ -429,9 +631,27 @@ public class EtatEditionService {
     static EtatEvenement evenement(TodayFacts today) {
         JoursEvenement jours = new JoursEvenement(today.joursEvenement());
         // last() is null on an edition without a timeslot: read it once and test that.
+        LocalDate premier = jours.first();
         LocalDate dernier = jours.last();
-        boolean termine = dernier != null && dernier.isBefore(today.aujourdhui());
-        return new EtatEvenement(jours.first(), dernier, termine);
+        // Judged on the journée under way, not the calendar date: at one in
+        // the morning after the last day, its night shift still runs.
+        boolean termine = dernier != null && dernier.isBefore(today.jourEnCours());
+        Phase phase = phase(today.joursEvenement(), today.jourEnCours());
+        EtatJour jour = null;
+        if (phase == Phase.EVENEMENT && today.jour() != null) {
+            JourFacts facts = today.jour();
+            // Ranked on the calendar from the first day: a day without a
+            // timeslot in between still counts, as it does on a wall calendar.
+            int numero = (int) ChronoUnit.DAYS.between(premier, facts.date()) + 1;
+            jour = new EtatJour(
+                    facts.date(),
+                    numero,
+                    facts.standsOuverts(),
+                    facts.placesVides(),
+                    facts.absents(),
+                    today.echanges().size());
+        }
+        return new EtatEvenement(premier, dernier, termine, today.aujourdhui(), phase, jour);
     }
 
     private static EtatReferentiels referentiels(Facts facts, boolean saisis) {
@@ -563,7 +783,8 @@ public class EtatEditionService {
                 faisable,
                 dataStale,
                 facts.solveEnCours(),
-                statut);
+                statut,
+                diagnostic == null || diagnostic.lecture() == null ? List.of() : diagnostic.lecture());
     }
 
     /**
@@ -676,18 +897,36 @@ public class EtatEditionService {
                 apercu.jamaisPublie(), apercu.dernierePublicationLe(), apercu.nombreConcernes(), statut);
     }
 
-    /** Somebody reminded is still somebody who has not answered. */
-    private static EtatConfirmations confirmations(Facts facts) {
+    /**
+     * Somebody reminded is still somebody who has not answered — but a silence
+     * an hour after the publication is not yet one: the line only asks for
+     * attention once the reminder delay set in Paramètres › E-mails has run
+     * out, the delay after which the nightly job itself would have written.
+     * Before that, the figures are read for information.
+     */
+    static EtatConfirmations confirmations(Facts facts) {
         SyntheseConfirmations synthese = facts.confirmations();
+        TodayFacts today = facts.today();
         Statut statut;
         if (synthese.jamaisPublie()) {
             statut = Statut.A_FAIRE;
-        } else if (synthese.silencieux() > 0 || synthese.relances() > 0) {
+        } else if (synthese.silencieux() == 0 && synthese.relances() == 0) {
+            statut = Statut.FAIT;
+        } else if (synthese.dernierePublicationLe() == null
+                || Duration.between(synthese.dernierePublicationLe(), today.maintenant())
+                                .compareTo(Duration.ofHours(today.delaiRelanceHeures()))
+                        >= 0) {
             statut = Statut.ATTENTION;
         } else {
-            statut = Statut.FAIT;
+            statut = Statut.INFO;
         }
-        return new EtatConfirmations(synthese.confirmes(), synthese.relances(), synthese.silencieux(), statut);
+        return new EtatConfirmations(
+                synthese.confirmes(),
+                synthese.relances(),
+                synthese.silencieux(),
+                statut,
+                today.relancesAutomatiques(),
+                today.delaiRelanceHeures());
     }
 
     /**
@@ -749,6 +988,9 @@ public class EtatEditionService {
         ApercuPublication publication = facts.publication();
         int aPrevenir = publication.jamaisPublie() || facts.solveEnCours() ? 0 : publication.nombreConcernes();
 
+        BackupRun sauvegarde = today.derniereSauvegarde();
+        boolean sauvegardeEnEchec = sauvegarde != null && sauvegarde.ranAtLeastOnce() && !sauvegarde.succeeded();
+
         return new EtatATraiter(
                 aujourdhui,
                 today.declarations().size(),
@@ -765,6 +1007,60 @@ public class EtatEditionService {
                 silenceEcoule ? confirmations.silencieux() : 0,
                 SILENCE_DAYS,
                 !facts.solveEnCours() && resolution(facts).dataStale(),
-                aPrevenir);
+                aPrevenir,
+                unsentDayBeforeReminders(today.alertesNuit(), aujourdhui),
+                unsentReminders(today.alertesNuit(), confirmations),
+                sauvegardeEnEchec,
+                sauvegardeEnEchec ? sauvegarde.attemptedAt() : null);
+    }
+
+    /**
+     * The day-before reminders the nightly job could not send, for a day still
+     * ahead — among the alerts {@link #stillStanding} kept, so about a fiche
+     * still without an address: past that day, the person has worked it and
+     * the alert says nothing any more. The day is the second half of the alert's key
+     * ({@code animateurId|date}); a key that does not read as one is left out
+     * rather than guessed.
+     */
+    static int unsentDayBeforeReminders(List<Alerte> alertes, LocalDate aujourdhui) {
+        return (int) alertes.stream()
+                .filter(alerte -> JournalNotificationsRepository.Type.RAPPEL_VEILLE_INJOIGNABLE
+                        .name()
+                        .equals(alerte.type()))
+                .map(alerte -> dayOfKey(alerte.cle()))
+                .filter(jour -> jour != null && !jour.isBefore(aujourdhui))
+                .count();
+    }
+
+    /**
+     * The reminders of the silent that could not leave — the night's or a
+     * manual one — since the last publication, among the alerts
+     * {@link #stillStanding} kept, so about somebody still silent: one about
+     * an older plan was about a schedule the publication since has replaced.
+     */
+    static int unsentReminders(List<Alerte> alertes, SyntheseConfirmations confirmations) {
+        Instant publication = confirmations.dernierePublicationLe();
+        if (confirmations.jamaisPublie() || publication == null) {
+            return 0;
+        }
+        return (int) alertes.stream()
+                .filter(alerte -> JournalNotificationsRepository.Type.RELANCE_INJOIGNABLE
+                        .name()
+                        .equals(alerte.type()))
+                .filter(alerte ->
+                        alerte.declencheLe() != null && !alerte.declencheLe().isBefore(publication))
+                .count();
+    }
+
+    private static LocalDate dayOfKey(String cle) {
+        int separateur = cle == null ? -1 : cle.lastIndexOf('|');
+        if (separateur < 0) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(cle.substring(separateur + 1));
+        } catch (DateTimeParseException _) {
+            return null;
+        }
     }
 }

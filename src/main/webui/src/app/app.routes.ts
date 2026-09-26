@@ -161,12 +161,10 @@ const adminRoutes: Routes = [
     canActivate: [redirectFormerDebugTabs],
     loadComponent: () => import('./pages/debug/debug-page').then((m) => m.DebugPage),
   },
-  {
-    path: 'notifications',
-    title: () => $localize`:@@route.notifications:Notifications`,
-    loadComponent: () =>
-      import('./pages/notifications/notifications-page').then((m) => m.NotificationsPage),
-  },
+  // The alerts of the night and the history of the application's messages
+  // live under « À traiter aujourd'hui » of the home screen now: the bell and
+  // the former address land there.
+  { path: 'notifications', redirectTo: () => '/#a-traiter' },
   {
     path: 'jour-j',
     title: () => $localize`:@@route.jourJ:Jour J`,

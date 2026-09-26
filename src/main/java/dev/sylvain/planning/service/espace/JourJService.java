@@ -137,7 +137,8 @@ public class JourJService {
                 .toList();
 
         Map<String, Identite> identites = identites();
-        List<AbsenceJourJ> absences = absencesOf(creneauxDuJour, identites);
+        List<AbsenceJourJ> absences =
+                absencesOf(creneauxDuJour, identites, referenceDataService.listContraintesAdHoc());
         // Only an absence covering a timeslot that is still ahead counts as
         // "already marked". Somebody declared unavailable this morning and
         // nowhere else is on duty this afternoon like anyone else, and the
@@ -165,6 +166,18 @@ public class JourJService {
                         .map(consigne ->
                                 new ConsigneJourJ(consigne.fermetureDebut(), consigne.fermetureFin(), consigne.motif()))
                         .orElse(null));
+    }
+
+    /**
+     * How many animateurs are absent on one journée — the absences the mode
+     * jour J lists for it, counted the same way: every forced unavailability
+     * in force on one of that day's timeslots, whoever wrote it. What the home
+     * screen's « Aujourd'hui » line says, without a second reading of who is
+     * missing — over the timeslots and the ad hoc constraints its caller has
+     * already read, rather than a second trip for each.
+     */
+    public int absentCount(LocalDate jour, List<Creneau> creneaux, List<ContrainteAdHoc> contraintes) {
+        return absencesOf(creneauxOf(creneaux, jour), Map.of(), contraintes).size();
     }
 
     /**
@@ -524,10 +537,11 @@ public class JourJService {
      * this morning: what the screen answers is "who is missing today", not
      * "what did this screen write".
      */
-    private List<AbsenceJourJ> absencesOf(List<Creneau> creneauxDuJour, Map<String, Identite> identites) {
+    private List<AbsenceJourJ> absencesOf(
+            List<Creneau> creneauxDuJour, Map<String, Identite> identites, List<ContrainteAdHoc> contraintes) {
         Map<Long, Creneau> byId = creneauxById(creneauxDuJour);
         Map<String, List<EntreeAbsence>> parAnimateur = new LinkedHashMap<>();
-        for (ContrainteAdHoc contrainte : referenceDataService.listContraintesAdHoc()) {
+        for (ContrainteAdHoc contrainte : contraintes) {
             if (contrainte.getType() != TypeContrainteAdHoc.INDISPONIBILITE_FORCEE
                     || contrainte.getCreneau() == null
                     || !byId.containsKey(contrainte.getCreneau().getId())) {

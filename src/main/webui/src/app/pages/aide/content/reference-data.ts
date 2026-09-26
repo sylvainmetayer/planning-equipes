@@ -54,7 +54,7 @@ export function buildReferenceDataSections(): HelpSection[] {
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.gel.intro:Une fois les stands prêts, ou les créneaux arrêtés, on les fige : plus aucun chemin ne les modifie — formulaire, modification en masse, import de fichier, assistant — jusqu'à la levée du gel. Le gel se pose famille par famille, dans l'édition courante, depuis l'État de l'édition ou l'onglet Édition des Paramètres. L'application le propose après le premier calcul et après la première publication, sans jamais l'imposer.`,
+          text: $localize`:@@aide.gel.intro.parametres:Une fois les stands prêts, ou les créneaux arrêtés, on les fige : plus aucun chemin ne les modifie — formulaire, modification en masse, import de fichier, assistant — jusqu'à la levée du gel. Le gel se pose famille par famille, dans l'édition courante, depuis l'onglet Édition des Paramètres — l'État de l'édition en rappelle l'état et y mène. L'application le propose après le premier calcul et après la première publication, sans jamais l'imposer.`,
         },
         {
           kind: 'definitions',
