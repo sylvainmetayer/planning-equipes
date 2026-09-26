@@ -231,7 +231,7 @@ function ouvertures(etat: EtatEdition): LigneEtat {
   }
   return {
     id: 'ouvertures',
-    titre: $localize`:@@accueil.ligne.ouvertures:Ouvertures des stands`,
+    titre: $localize`:@@accueil.ligne.ouvertures:Horaires des stands`,
     statut,
     detail,
     lien: {

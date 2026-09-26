@@ -2872,7 +2872,7 @@ l'effectif **configuré** que le stand y demande, `null` s'il y est fermé.
 `partiel` ne subsiste que pour une borne qu'aucune colonne ne suit ; `effectif`
 est alors le plus haut et `segments` dit ce que la case porte.
 
-### Calendrier combiné : les couches avant résolution
+### Couches des horaires : d'où vient une ouverture, avant résolution
 
 `GET /api/ouvertures-stands/couches?du=AAAA-MM-JJ&au=AAAA-MM-JJ` dit **d'où
 vient** chaque ouverture, là où le rapport ci-dessus dit ce qu'elle devient.
@@ -2887,20 +2887,20 @@ Pour chaque stand et chaque jour de la plage qui porte un créneau :
 
 Toutes les fenêtres sont en **minutes depuis minuit du jour** : un créneau qui
 passe minuit finit au-delà de 1440, et les fenêtres du lendemain matin sont
-reportées jusque-là — la convention de la vue Journée. Un `effectif` absent
+reportées jusque-là — la convention de `journee-stands.ts`. Un `effectif` absent
 d'une fenêtre vaut le minimum du stand ; sur une réouverture, `null` dit que la
 consigne hérite l'effectif de ce que la bande a retiré.
 
 Un endpoint à part plutôt qu'un rapport qui grossit : le rapport est lu à
 chaque visite et à chaque enregistrement de la grille, les couches ne servent
-qu'au calendrier, une semaine à la fois. Les **sièges** n'y figurent pas : le
-calendrier les tire du rapport, avec la fonction même de la vue Journée, et
-ne peut donc pas en montrer d'autres. Rien n'y lit le plan : l'écran répond
-sur une édition jamais résolue. Les deux bornes sont facultatives (toute
-l'édition) ; `400` sur une date illisible ou une plage inversée. La plage n'est
-pas plafonnée : seuls les jours qui portent un créneau y sont calculés, et
-l'écran pagine par sept jours **d'événement**, qui peuvent être éloignés de
-plusieurs mois.
+qu'aux barres des cases et à la phrase qui explique une case. La grille des
+horaires les lit une fois par rapport, sur les jours qu'elle affiche (`?du=` /
+`?au=` de l'écran, toute l'édition par défaut). Les **sièges** n'y figurent
+pas : la grille les tire du rapport et ne peut donc pas en montrer d'autres.
+Rien n'y lit le plan : l'écran répond sur une édition jamais résolue. Les deux
+bornes sont facultatives (toute l'édition) ; `400` sur une date illisible ou
+une plage inversée. La plage n'est pas plafonnée : seuls les jours qui portent
+un créneau y sont calculés.
 
 ### Saisie en grille
 

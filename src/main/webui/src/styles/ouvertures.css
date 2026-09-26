@@ -1,7 +1,9 @@
-/* "Ouvertures des stands" : grille stand × jour, sa légende et sa liste
-   d'anomalies. Seul ce que Material ne couvre pas — l'essentiel étant le codage
-   couleur des cases, qui doit rester lisible sans dépendre de la seule couleur
-   (chaque case porte aussi une barre proportionnelle et une infobulle). */
+/* « Horaires des stands »: the stand × timeslot grid, its legend, its summary,
+   its anomalies and the panel explaining a cell. Only what Material does not
+   cover — mostly the bars of the cells, each saying its layer by its place as
+   much as by its colour (the retained opening at the bottom, the stand's
+   opening hours at the top, the consigne's band over the whole height), which
+   the tooltip and the panel also say in words. */
 
 .ouvertures-synthese,
 .ouvertures-legende {
@@ -52,23 +54,6 @@
   vertical-align: -2px;
   border-radius: 0.2rem;
   border: 1px solid var(--mat-sys-outline-variant);
-}
-
-/* Les deux pastilles de provenance ne portent qu'un liseré : sur un carré pâle
-   de 0,85 rem il ne se voyait pas. On les élargit et on épaissit le liseré, seul
-   porteur de l'information ici. */
-.ouvertures-legende .pastille.source-regle,
-.ouvertures-legende .pastille.source-exception {
-  width: 1.4rem;
-  background: var(--mat-sys-surface-container-high);
-}
-
-.ouvertures-legende .pastille.source-regle {
-  border-left: 5px solid var(--app-accent);
-}
-
-.ouvertures-legende .pastille.source-exception {
-  border-left: 5px dashed var(--mat-sys-error);
 }
 
 .ouvertures-grille {
@@ -143,33 +128,6 @@
   color: var(--mat-sys-error);
 }
 
-/* Une case : un fond selon l'état, une barre proportionnelle à la part
-   d'amplitude couverte, et l'heure d'ouverture en clair. */
-.ouverture-cellule {
-  position: relative;
-  min-width: 3.4rem;
-  height: 2.1rem;
-  vertical-align: middle;
-}
-
-.ouverture-cellule .cellule-barre {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  height: 0.3rem;
-  background: currentColor;
-  opacity: 0.75;
-}
-
-.ouverture-cellule .cellule-heures {
-  position: relative;
-  font-variant-numeric: tabular-nums;
-}
-
-.ouverture-cellule .cellule-vide {
-  color: var(--mat-sys-on-surface-variant);
-}
-
 /* Deux valeurs par cellule de total : sans empilement elles se lisent
    « 96 h86 postes ». */
 .ouvertures-grille .colonne-total {
@@ -187,43 +145,6 @@
   font-size: 0.75rem;
 }
 
-/* Le nombre de fenêtres d'un jour : sans ce repère, une journée coupée en deux
-   (10h-12h puis 14h-20h) est indistinguable d'une journée continue. */
-.ouverture-cellule .cellule-fenetres {
-  position: relative;
-  margin-left: 0.2rem;
-  font-size: 0.7rem;
-  opacity: 0.8;
-}
-
-/* The three states, on a grid cell and on its legend swatch — and nowhere
-   else: written bare, they used to paint the carte-jour's own `.etat-*`
-   markers too, which only asked for a border colour. */
-.ouverture-cellule.etat-total,
-.ouvertures-legende .etat-total {
-  background: var(--mat-sys-secondary-container);
-  color: var(--mat-sys-on-secondary-container);
-}
-
-.ouverture-cellule.etat-partiel,
-.ouvertures-legende .etat-partiel {
-  background: var(--mat-sys-tertiary-container);
-  color: var(--mat-sys-on-tertiary-container);
-}
-
-.ouverture-cellule.etat-ferme,
-.ouvertures-legende .etat-ferme {
-  background: var(--mat-sys-surface-container-high);
-  color: var(--mat-sys-on-surface-variant);
-}
-
-/* Closed by a consigne (issue #4): the day's badge says so, and the cell is
-   muted rather than read as a hole — nobody typed that closure. */
-.ouverture-cellule.etat-ferme-consigne {
-  background: var(--mat-sys-surface-container-low);
-  opacity: 0.7;
-}
-
 .ouvertures-grille .entete-consigne {
   display: block;
   margin-top: 0.15rem;
@@ -235,16 +156,6 @@
   font-size: 0.7rem;
   white-space: normal;
   max-width: 9rem;
-}
-
-/* Quelle couche a décidé du jour : un liseré, pour que l'état reste porté par le
-   fond et la provenance par la bordure — deux informations, deux canaux. */
-.source-regle {
-  border-left: 3px solid var(--app-accent);
-}
-
-.source-exception {
-  border-left: 3px dashed var(--mat-sys-error);
 }
 
 .ouvertures-anomalies {
@@ -455,14 +366,6 @@
   display: none;
 }
 
-/* An emptied field keeps showing, greyed, the value the cell still holds:
-   emptying says nothing, so what applies stays readable. A closed cell
-   reads « - », muted, so closed and open-at-one never look alike. */
-.grille-saisie .cellule-saisie input::placeholder {
-  color: var(--mat-sys-on-surface-variant);
-  opacity: 0.6;
-}
-
 .grille-saisie .cellule-fermee input {
   color: var(--mat-sys-outline);
 }
@@ -501,266 +404,6 @@
   opacity: 0.8;
 }
 
-/* ------------------------- « Journée » : l'axe du temps ------------------------- */
-/* Même dessin que le rail d'une journée (rail-jour-vue.css) : une ligne par
-   stand, une piste dont les heures sont un fond répété, des blocs positionnés
-   en pourcentage. Les créneaux sont des bandes derrière chaque ligne, et une
-   fenêtre hors de toute vacation est hachurée là où elle tombe. */
-.axe-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  margin-bottom: 0.5rem;
-}
-
-.axe-jour-select {
-  width: 20rem;
-  max-width: 100%;
-}
-
-.axe-legende {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.375rem 1.25rem;
-  list-style: none;
-  margin: 0 0 0.5rem;
-  padding: 0;
-  font: var(--mat-sys-body-small);
-  color: var(--mat-sys-on-surface-variant);
-}
-
-.axe-legende li {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-}
-
-.axe-swatch {
-  display: inline-block;
-  width: 1.5rem;
-  height: 0.75rem;
-  border-radius: var(--mat-sys-corner-extra-small);
-  border: 1px solid var(--mat-sys-outline-variant);
-  background: var(--mat-sys-surface-container-low);
-}
-
-/* Quatre états sur une même ligne, quatre teintes qui se distinguent d'un coup
-   d'œil. Les conteneurs Material — `primary-container` #d7e3ff,
-   `tertiary-container` #e0e0ff, `surface-container-high` #e9e7eb — tiennent en
-   trois pour cent de clarté : ouvert, relais et créneau de la grille se
-   lisaient pareil sur une journée entière. Les couleurs pleines les écartent,
-   et le relais garde en plus ses hachures et son trait pointillé, pour que la
-   différence survive au mode sombre comme au daltonisme. */
-.axe-swatch-bloc,
-.axe-bloc {
-  background-color: var(--mat-sys-primary);
-  color: var(--mat-sys-on-primary);
-}
-
-.axe-swatch-relais,
-.axe-bloc-relais {
-  background-color: var(--mat-sys-tertiary);
-  color: var(--mat-sys-on-tertiary);
-  /* 135°, quand l'ouverture sans effet hachure à 45° : deux motifs qui ne se
-     confondent pas. Assez pâles pour laisser lire l'effectif au travers. */
-  background-image: repeating-linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--mat-sys-on-tertiary) 22%, transparent) 0 3px,
-    transparent 3px 10px
-  );
-  border-style: dashed;
-  border-color: var(--mat-sys-on-tertiary);
-}
-
-.axe-swatch-bande,
-.axe-bande-fond {
-  background-color: var(--mat-sys-surface-container-highest);
-  border: 1px solid var(--mat-sys-outline-variant);
-}
-
-.axe-swatch-hors,
-.axe-hors {
-  background-color: color-mix(in srgb, var(--mat-sys-error-container) 70%, transparent);
-  background-image: repeating-linear-gradient(
-    45deg,
-    var(--mat-sys-error),
-    var(--mat-sys-error) 3px,
-    transparent 3px,
-    transparent 8px
-  );
-  background-size: auto;
-}
-
-.axe-scroll {
-  max-height: 70vh;
-  overflow: auto;
-}
-
-.axe-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-}
-
-.axe-table th,
-.axe-table td {
-  border-bottom: 1px solid var(--mat-sys-outline-variant);
-}
-
-.axe-table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: var(--mat-sys-surface);
-  font: var(--mat-sys-label-medium);
-  text-align: left;
-  padding: 0.25rem 0.5rem 0.25rem;
-  box-shadow: inset 0 -1px 0 var(--mat-sys-outline-variant);
-}
-
-.axe-nom-header {
-  width: 14rem;
-}
-
-.axe-table thead th.axe-scale-header {
-  padding-left: 0;
-  padding-right: 0.5rem;
-}
-
-.axe-scale {
-  position: relative;
-  display: block;
-  height: 1rem;
-}
-
-.axe-tick {
-  position: absolute;
-  top: 0;
-  transform: translateX(-50%);
-  font: var(--mat-sys-label-small);
-  color: var(--mat-sys-on-surface-variant);
-  white-space: nowrap;
-}
-
-.axe-tick:first-child {
-  transform: none;
-}
-
-.axe-tick:last-child {
-  transform: translateX(-100%);
-}
-
-/* The créneaux of the day, named once in the header; their bands repeat greyed behind every line. */
-.axe-bandes {
-  position: relative;
-  display: block;
-  height: 1.25rem;
-  margin-top: 0.15rem;
-}
-
-.axe-bande {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  overflow: hidden;
-  padding: 0 0.25rem;
-  border-radius: var(--mat-sys-corner-extra-small);
-  background: var(--mat-sys-surface-container-high);
-  border: 1px solid var(--mat-sys-outline-variant);
-  font: var(--mat-sys-label-small);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.axe-bande-relais {
-  border-style: dashed;
-}
-
-.axe-nom {
-  padding: 0.125rem 0.5rem;
-  font: var(--mat-sys-body-small);
-  font-weight: 500;
-  text-align: left;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.axe-nom-meta::before {
-  content: '\00a0\00b7\00a0';
-}
-
-.axe-nom-meta {
-  font-weight: 400;
-  color: var(--mat-sys-on-surface-variant);
-}
-
-.axe-ligne-fermee .axe-nom {
-  color: var(--mat-sys-on-surface-variant);
-  font-style: italic;
-}
-
-.axe-ligne-hors .axe-nom {
-  color: var(--mat-sys-error);
-}
-
-.axe-cell {
-  padding: 0.125rem 0.5rem 0.125rem 0;
-}
-
-.axe-track {
-  position: relative;
-  display: block;
-  height: 1.375rem;
-  border-radius: var(--mat-sys-corner-extra-small);
-  background-color: var(--mat-sys-surface-container-low);
-  background-image: linear-gradient(
-    to right,
-    var(--mat-sys-outline-variant) 0 1px,
-    transparent 1px
-  );
-  background-repeat: repeat;
-}
-
-.axe-bande-fond,
-.axe-hors,
-.axe-bloc {
-  position: absolute;
-  top: 1px;
-  bottom: 1px;
-  min-width: 2px;
-  border-radius: var(--mat-sys-corner-extra-small);
-}
-
-.axe-bloc {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  border: 1px solid var(--mat-sys-surface);
-  z-index: 1;
-}
-
-.axe-bloc-label {
-  font: var(--mat-sys-label-small);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-/* The « voir la journée » button on a day header of the reading grid: shown on hover, always reachable. */
-.ouvertures-grille .voir-journee {
-  --mdc-icon-button-state-layer-size: 1.5rem;
-  width: 1.5rem;
-  height: 1.5rem;
-  padding: 0;
-  opacity: 0.45;
-}
-
-.ouvertures-grille th:hover .voir-journee,
-.ouvertures-grille .voir-journee:focus-visible {
-  opacity: 1;
-}
-
 /* A public holiday: the column is tinted and the header carries the « Férié »
    mark — informative, never blocking. The tint is an inset shadow so it lies
    over a cell's own state colour. */
@@ -774,15 +417,141 @@
   margin-top: 0.15rem;
 }
 
-.ferie-bandeau {
+/* The colours of a cell's bars (`rendu-grille.ts` names them): each layer
+   has its own lane as well as its own colour, so the reading survives dark
+   mode and colour blindness. */
+.grille-saisie,
+.ouvertures-legende {
+  --ouv-regle: var(--app-accent, var(--mat-sys-primary));
+  --ouv-exception: var(--mat-sys-error);
+  --ouv-defaut: var(--mat-sys-outline);
+  --ouv-nominal: var(--mat-sys-on-surface-variant);
+  --ouv-reouverture: var(--mat-sys-tertiary);
+  --ouv-bande: color-mix(in srgb, var(--mat-sys-tertiary-container) 70%, transparent);
+}
+
+/* Nothing typed for the stand: it follows its rule, open by default. */
+.grille-saisie .cellule-sans-saisie input {
+  font-style: italic;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* A timeslot the day's consigne added for its reopenings. */
+.grille-saisie .cellule-ajoutee-consigne {
+  outline: 1px dashed var(--mat-sys-tertiary);
+  outline-offset: -2px;
+}
+
+.grille-saisie .colonne-stand .stand-nom {
+  color: inherit;
+}
+
+.ouvertures-legende .legende-vide {
+  background: var(--mat-sys-surface);
+}
+
+.ouvertures-legende .legende-sans-saisie {
+  width: auto;
+  height: auto;
+  padding: 0 0.2rem;
+  border: 0;
+  font-style: italic;
+  line-height: 1;
+}
+
+.ouvertures-legende .legende-regle {
+  background: linear-gradient(var(--ouv-regle), var(--ouv-regle)) bottom / 100% 5px no-repeat;
+}
+
+.ouvertures-legende .legende-exception {
+  background: linear-gradient(var(--ouv-exception), var(--ouv-exception)) bottom / 100% 5px
+    no-repeat;
+}
+
+.ouvertures-legende .legende-nominal {
+  background: linear-gradient(var(--ouv-nominal), var(--ouv-nominal)) top / 100% 3px no-repeat;
+}
+
+.ouvertures-legende .legende-bande {
+  background: var(--ouv-bande);
+}
+
+.ouvertures-legende .legende-ajoutee {
+  border: 1px dashed var(--mat-sys-tertiary);
+}
+
+/* The figures of the summary narrow the grid to what they count. */
+.ouvertures-synthese .synthese-lien {
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline dotted;
+  cursor: pointer;
+}
+
+.ouvertures-anomalies-bloc {
+  margin-bottom: 0.75rem;
+}
+
+.ouvertures-anomalies-bloc summary {
+  cursor: pointer;
+  font: var(--mat-sys-title-small);
+  margin-bottom: 0.5rem;
+}
+
+.ouvertures-anomalies .anomalie-liens {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0 0.25rem;
+  margin-left: auto;
+}
+
+.ouvertures-jour {
+  width: 9rem;
+}
+
+.couches-choix {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
-  margin: 0 0 0.5rem;
-  padding: 0.375rem 0.75rem;
-  border-radius: 0.5rem;
-  background: var(--mat-sys-secondary-container);
-  color: var(--mat-sys-on-secondary-container);
+  gap: 0 0.5rem;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.couches-choix legend {
+  float: left;
+  margin-right: 0.25rem;
+  font: var(--mat-sys-label-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* The focused cell, explained: one line, its links beside it — kept one
+   height tall when empty so the grid below does not jump on the first click. */
+.ouvertures-explication {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+  min-height: 2.5rem;
+  margin-bottom: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--mat-sys-corner-small);
+  background: var(--mat-sys-surface-container-low);
   font: var(--mat-sys-body-medium);
+}
+
+.ouvertures-explication .explication-case {
+  font-weight: 600;
+}
+
+.ouvertures-explication .explication-phrase {
+  flex: 1 1 20rem;
+}
+
+.ouvertures-explication .explication-vide {
+  color: var(--mat-sys-on-surface-variant);
 }

@@ -212,43 +212,39 @@ export function buildReferenceDataSections(): HelpSection[] {
       ],
     },
     {
-      id: 'ouvertures-des-stands',
+      id: 'horaires-des-stands',
       icon: 'storefront',
-      title: $localize`:@@aide.ouvertures.title:Ouvertures des stands`,
-      summary: $localize`:@@aide.ouvertures.summary:Voir ce que le solveur lira vraiment, et saisir les effectifs comme dans un tableur.`,
+      title: $localize`:@@aide.ouvertures.title:Horaires des stands`,
+      summary: $localize`:@@aide.ouvertures.summary:Saisir l'effectif de chaque stand sur chaque créneau, comme dans un tableur, et voir aussitôt ce que le solveur lira.`,
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.ouvertures.intro:Ouvrez cet écran avant toute résolution. Il montre ce que le solveur lira une fois les règles étendues et les exceptions appliquées, et signale les trois erreurs de saisie habituelles : un stand finalement ouvert aucun jour, une fenêtre hors des heures du jour, une plage trop courte pour valoir une vacation. La fiche de chaque stand liste aussi ses propres anomalies.`,
+          text: $localize`:@@aide.ouvertures.intro:Ouvrez cet écran avant toute résolution. On y saisit et on y relit au même endroit : chaque case dit ce que le solveur lira une fois les règles étendues, les exceptions et la consigne du jour appliquées. La synthèse et les anomalies sont au-dessus de la grille : un stand finalement ouvert aucun jour, une fenêtre hors des heures du jour, une plage trop courte pour valoir une vacation. Chaque anomalie mène à la fiche du stand, ou à la grille des créneaux quand c'est elle qui est en cause.`,
         },
         {
           kind: 'definitions',
           items: [
             {
-              term: $localize`:@@aide.ouvertures.term.parDate:Par date`,
-              text: $localize`:@@aide.ouvertures.def.parDate:La vue de référence : une colonne par tranche de besoin, une case par stand. Les colonnes suivent les changements d'effectif, pas les vacations — un stand qui change d'effectif à 19 h scinde le créneau 14-20 en deux colonnes pour tout le monde.`,
+              term: $localize`:@@aide.ouvertures.term.grille:Grille`,
+              text: $localize`:@@aide.ouvertures.def.grille:Une ligne par stand, une colonne par tranche de besoin, l'effectif dans chaque case. Les colonnes suivent les changements d'effectif, pas les vacations — un stand qui change d'effectif à 19 h scinde le créneau 14-20 en deux colonnes pour tout le monde. Une case vide est fermée : on la vide, on tape « - » ou 0 pour fermer. Un chiffre en italique n'a pas été saisi : le stand, sans horaire déclaré, suit sa règle et ouvre par défaut. Les gestes d'un tableur — flèches, Entrée, collage d'un bloc, recopie d'un jour sur les autres jours affichés, reprise de la ligne du dessus, application d'une case à toute sa colonne. Ces deux-là ont chacune un bouton, qui apparaît au survol en tête de ligne et en tête de colonne, et un raccourci : Ctrl+D et Ctrl+Maj+Bas. Le nom d'un stand mène à sa fiche ; « Du » et « Au » réduisent la grille à quelques jours.`,
+            },
+            {
+              term: $localize`:@@aide.ouvertures.term.couches:Ce que dit une case`,
+              text: $localize`:@@aide.ouvertures.def.couches:Derrière le chiffre, des barres fines : en bas l'ouverture retenue, pleine pour une règle récurrente, rouge pour une exception datée ; en haut les horaires du stand avant la consigne ; sur toute la hauteur, teintée, la bande que la consigne du jour ferme ; en pointillé, un créneau que la consigne a ajouté. « Afficher dans les cases » masque chacune de ces couches, et l'adresse garde le choix. Une case modifiée montre tout de suite l'ouverture qu'elle écrira. Un clic sur une case l'explique en une phrase au-dessus de la grille, par exemple « Ouvert 14:00–18:00 : règle récurrente 14:00–20:00, amputé par la consigne « Plan canicule » 18:00–20:00 », avec les sièges du jour, une fenêtre hors de tout créneau s'il y en a une, et trois liens : la fiche du stand, la journée type du jour et la consigne du jour.`,
             },
             {
               term: $localize`:@@aide.ouvertures.term.parJourneeType:Par journée type`,
               text: $localize`:@@aide.ouvertures.def.parJourneeType:Disponible dès que l'édition a des journées types : une colonne par vacation, une case qui vaut d'un coup pour toutes les dates gouvernées. Soixante colonnes deviennent une quinzaine. Une case « ≠ » signale des dates qui ne disent pas la même chose ; la retaper les aligne. Tant qu'elle diverge, elle ne dit rien à propager : appliquer sa colonne est refusé plutôt que de trancher pour vous.`,
             },
             {
-              term: $localize`:@@aide.ouvertures.term.journee:Journée`,
-              text: $localize`:@@aide.ouvertures.def.journee:Une journée sur l'axe du temps : une ligne par stand, chaque ouverture en bloc avec son effectif. Une fenêtre déclarée à une heure qu'aucune vacation ne couvre apparaît hachurée — la seule erreur que les grilles ne montrent pas.`,
-            },
-            {
-              term: $localize`:@@aide.ouvertures.term.saisir:Saisir`,
-              text: $localize`:@@aide.ouvertures.def.saisir:La même grille en écriture : l'effectif à tenir dans chaque case, « - » ou 0 pour fermer, une case vidée gardant sa valeur. Les gestes d'un tableur — flèches, Entrée, collage d'un bloc, recopie d'un jour sur les autres, reprise de la ligne du dessus, application d'une case à toute sa colonne. Ces deux-là ont chacune un bouton, qui apparaît au survol en tête de ligne et en tête de colonne, et un raccourci : Ctrl+D et Ctrl+Maj+Bas. Les en-têtes et la colonne des stands restent en place pendant le défilement.`,
-            },
-            {
-              term: $localize`:@@aide.ouvertures.term.calendrier:Calendrier combiné`,
-              text: $localize`:@@aide.ouvertures.def.calendrier:Une semaine de l'événement, un stand par ligne, et dans chaque case les trois couches qui décident des sièges, avant tout calcul : les horaires du stand — une règle récurrente pleine, une exception datée en pointillés, un stand sans horaire ouvert par défaut —, les créneaux de la grille en fond (R pour un relais repas), la consigne du jour — sa bande hachurée, ses réouvertures encadrées — et, dessous, les sièges que le calcul recevra, les mêmes que dans la vue Journée. Chaque couche se masque par sa case à cocher, et l'adresse garde le choix. Le survol d'une case l'explique en une phrase, par exemple « ouvert 14:00–18:00 : règle récurrente 14:00–20:00, amputé par la consigne Plan canicule 18:00–20:00 » ; un clic mène à la fiche du stand, aux créneaux ou à la consigne. Une vacation qu'aucune ouverture ne couvre s'y voit seule sur sa ligne.`,
-            },
-            {
               term: $localize`:@@aide.ouvertures.term.comparer:Comparer`,
               text: $localize`:@@aide.ouvertures.def.comparer:Deux à huit stands posés sur les mêmes jours et les mêmes colonnes, par exemple les buvettes qui devraient avoir les mêmes horaires. On les choisit un par un ou par typologie ; le premier sert de référence, et un autre peut prendre ce rôle. Chaque case qui s'écarte de la référence est encadrée et dit la nature de l'écart — ouverture, heures ou effectif. La comparaison porte sur ce que le solveur lira : une règle et des exceptions datées qui ouvrent de la même façon ne font aucun écart. La synthèse compte, par stand, les jours en écart et dit le premier ; « Seulement les jours qui diffèrent » masque les autres. Sous la grille, les règles et exceptions de chaque stand côte à côte, une règle absente de la référence ou manquante étant signalée. Un jour sous consigne est marqué. Le comparateur n'écrit rien : « Copier les horaires de la référence vers… » ouvre la modification en masse des stands, réglée sur « Remplacer par ceux d'un stand », qui attend son propre enregistrement. On y arrive aussi depuis la page Stands, par la sélection ou par « Comparer avec… » dans la fiche d'un stand ; l'adresse garde la sélection.`,
             },
           ],
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.ouvertures.anciennesVues:La journée posée sur l'axe du temps est devenue la page Journée, une fois un planning calculé ; avant, une ancienne adresse de cette vue ouvre la grille sur ce seul jour. Le calendrier combiné est devenu le rendu des cases : son adresse ouvre la grille avec les mêmes couches.`,
         },
         {
           kind: 'paragraph',
@@ -260,7 +256,7 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.ouvertures.feries:Un jour férié porte la pastille « Férié » en tête de colonne, et sa colonne est teintée ; la vue Journée l'annonce en bandeau. Son nom et ce qu'il change — les mineurs n'y travaillent pas, les heures y sont comptées fériées — se lisent au survol ou au clavier. C'est une information : rien n'empêche d'ouvrir ce jour-là.`,
+          text: $localize`:@@aide.ouvertures.feries:Un jour férié porte la pastille « Férié » en tête de colonne, et sa colonne est teintée. Son nom et ce qu'il change — les mineurs n'y travaillent pas, les heures y sont comptées fériées — se lisent au survol ou au clavier. C'est une information : rien n'empêche d'ouvrir ce jour-là.`,
         },
         {
           kind: 'paragraph',
@@ -268,7 +264,7 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
       ],
       links: [
-        { route: '/ouvertures', label: $localize`:@@nav.link.ouvertures:Ouvertures des stands` },
+        { route: '/ouvertures', label: $localize`:@@nav.link.ouvertures:Horaires des stands` },
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
       ],
@@ -399,7 +395,7 @@ export function buildReferenceDataSections(): HelpSection[] {
           label: $localize`:@@aide.lien.importGrille.fichiers:Fichiers — Grille des stands`,
         },
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
-        { route: '/ouvertures', label: $localize`:@@nav.link.ouvertures:Ouvertures des stands` },
+        { route: '/ouvertures', label: $localize`:@@nav.link.ouvertures:Horaires des stands` },
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
       ],
     },

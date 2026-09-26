@@ -2,6 +2,8 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Params, RedirectFunction, Router, Routes } from '@angular/router';
 import { TODAY_ANCHOR } from './core/date-mock.service';
 import type { CompetencesPage } from './pages/competences/competences-page';
+import type { OuverturesPage } from './pages/ouvertures/ouvertures-page';
+import { retiredOpeningsViews } from './pages/ouvertures/vues-retirees';
 
 /**
  * One route per functional block; every page is lazy-loaded. A `title` names
@@ -403,8 +405,13 @@ const adminRoutes: Routes = [
   },
   {
     path: 'ouvertures',
-    title: () => $localize`:@@route.ouvertures:Ouvertures des stands`,
+    title: () => $localize`:@@route.ouvertures:Horaires des stands`,
+    // `?vue=journee` and `?vue=calendrier` were folded into the grid: their
+    // addresses land where the same question is now answered.
+    canActivate: [retiredOpeningsViews],
     loadComponent: () => import('./pages/ouvertures/ouvertures-page').then((m) => m.OuverturesPage),
+    // The grid carries links away (a stand's fiche, the panel's, an anomaly's): unsaved cells ask first.
+    canDeactivate: [(page: OuverturesPage) => page.canLeave()],
   },
   {
     path: 'heatmap',

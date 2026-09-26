@@ -319,7 +319,7 @@ describe('MargePage', () => {
     await fixture.whenStable();
 
     expect(navigate).toHaveBeenCalledWith(['/ouvertures'], {
-      queryParams: { vue: 'journee', date: '2026-07-10' },
+      queryParams: { du: '2026-07-10', au: '2026-07-10' },
     });
   });
 
