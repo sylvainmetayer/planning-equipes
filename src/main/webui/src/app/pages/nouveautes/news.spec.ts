@@ -19,11 +19,14 @@ describe('classify', () => {
     expect(classify('chore(deps): update node to v24')).toBe('deps');
   });
 
-  it('warns on a breaking marker and on the reserved legal scope', () => {
+  it('warns on a breaking marker and on the two reserved scopes', () => {
     expect(classify('feat(instantanes)!: un instantané dit s’il est à jour')).toBe('attention');
     expect(classify('feat(contraintes-legales): plancher de repos quotidien')).toBe('attention');
     // The scope wins over the type: a fix under it warns too.
     expect(classify('fix(contraintes-legales): compter la nuit une fois')).toBe('attention');
+    expect(classify('feat(attention): importance d’une règle en trois positions')).toBe(
+      'attention',
+    );
   });
 
   it('keeps housekeeping and unconventional subjects off the screen', () => {
