@@ -9,11 +9,28 @@ Périmètre retenu : tous les endpoints de l'organisation peuvent être exposés
 **la seule restriction est la confidentialité des données animateur**. Ce qui
 reste dehors est énuméré en fin de document, avec sa raison.
 
-## Authentification : clé API partagée
+## Authentification : OAuth2, ou clé API partagée
 
-L'application n'a pas de modèle utilisateur, donc pas d'OAuth2 — il supposerait
-un consentement qui n'existe pas ici. La clé se présente dans un en-tête
-configurable (`X-MCP-Api-Key` par défaut) ou en `Authorization: Bearer`.
+Deux voies, et elles cohabitent ([ADR 0054](decisions/0054-keycloak-obligatoire-comptes-nominatifs.md)).
+
+**OAuth2** : `/mcp` est un *resource server* OAuth 2.1 au sens de la
+spécification MCP — défi `401` portant `WWW-Authenticate: Bearer
+resource_metadata="…"` (RFC 9728), document de métadonnées public
+(`/.well-known/oauth-protected-resource`), et validation d'audience : seul un
+jeton émis **pour** `planning-mcp` (`OIDC_MCP_AUDIENCE`) et portant le rôle de
+realm `mcp` est accepté. Porter `admin` n'est pas porter `mcp` : une session
+d'administration n'ouvre pas `/mcp`. Clients et flux : [`keycloak.md`](keycloak.md).
+
+**La clé API** se présente dans un en-tête configurable (`X-MCP-Api-Key` par
+défaut) ou en `Authorization: Bearer`. Elle n'est pas retirée : un jeton
+porteur n'a pas d'en-tête de repli, et un déploiement derrière un proxy d'accès
+qui consomme `Authorization` pour son propre compte (section suivante) ne peut
+pas utiliser OAuth2 du tout. OAuth2 apporte ce que la clé ne peut pas donner —
+expiration, révocation, audience — et reste la voie à préférer sur Internet.
+
+**Révéler la clé** depuis la page MCP exige, pour une session Keycloak, une
+connexion au realm de moins de cinq minutes (sinon : se déconnecter et se
+reconnecter) ; pour le compte de secours, le mot de passe retapé.
 
 ![Un appel d'outil MCP, de la clé au service](diagrammes/mcp.svg)
 

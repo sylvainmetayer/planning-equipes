@@ -7,7 +7,8 @@
 
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { SessionExpireeError } from '../../core/api.service';
 import { McpApi } from '../../core/api/mcp-api';
 import { NotificationService } from '../../core/notification.service';
 import { PromptMcp } from '../../core/models';
@@ -38,7 +39,11 @@ describe('McpPage', () => {
         }
         return prompts;
       }),
-      status: vi.fn(async () => ({ configuree: true, header: 'X-MCP-Api-Key' })),
+      status: vi.fn(async () => ({
+        configuree: true,
+        header: 'X-MCP-Api-Key',
+        revelationParReconnexion: false,
+      })),
       configResponse: vi.fn(async () => new Response(null, { status: 200 })),
       regenerateKey: vi.fn(),
     };
@@ -106,5 +111,101 @@ describe('McpPage', () => {
     await fixture.whenStable();
 
     expect(write).toHaveBeenCalledWith(PROMPTS[1].texte);
+  });
+});
+
+/**
+ * Revealing the key: the admin password under the break-glass session, a
+ * recent Keycloak sign-in otherwise — where no shared password exists to type.
+ */
+describe('McpPage — révéler la clé', () => {
+  let fixture: ComponentFixture<McpPage>;
+  const mcpApi = {
+    prompts: vi.fn(async () => []),
+    status: vi.fn(),
+    configResponse: vi.fn(async () => new Response(null, { status: 200 })),
+    regenerateKey: vi.fn(),
+    revealKeyAfterRecentSignIn: vi.fn(),
+  };
+
+  async function rendre(revelationParReconnexion: boolean): Promise<void> {
+    for (const espion of [mcpApi.status, mcpApi.regenerateKey, mcpApi.revealKeyAfterRecentSignIn]) {
+      espion.mockReset();
+    }
+    mcpApi.status.mockResolvedValue({
+      configuree: true,
+      header: 'X-MCP-Api-Key',
+      revelationParReconnexion,
+    });
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: McpApi, useValue: mcpApi },
+        { provide: NotificationService, useValue: { notify: vi.fn() } },
+      ],
+    });
+    fixture = TestBed.createComponent(McpPage);
+    await stabiliser();
+  }
+
+  async function stabiliser(): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  function racine(): HTMLElement {
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  function revealButton(): HTMLButtonElement {
+    return [...racine().querySelectorAll('button')].find((b) =>
+      b.textContent!.includes("Révéler la clé d'API"),
+    )!;
+  }
+
+  afterEach(() => {
+    fixture.destroy();
+  });
+
+  it('session Keycloak : aucun champ mot de passe, la clé vient sans rien demander', async () => {
+    await rendre(true);
+    mcpApi.revealKeyAfterRecentSignIn.mockResolvedValue({
+      cle: 'cle-secrete',
+      pangolinAccessTokenId: null,
+      pangolinAccessToken: null,
+    });
+
+    revealButton().click();
+    await stabiliser();
+
+    expect(racine().querySelector('input[type=password]')).toBeNull();
+    expect(mcpApi.revealKeyAfterRecentSignIn).toHaveBeenCalledOnce();
+    expect(mcpApi.regenerateKey).not.toHaveBeenCalled();
+    expect(racine().querySelector('.mcp-cle-revelee')?.textContent).toContain('cle-secrete');
+  });
+
+  it('session Keycloak trop ancienne : dit de se déconnecter puis se reconnecter', async () => {
+    await rendre(true);
+    mcpApi.revealKeyAfterRecentSignIn.mockRejectedValue(new SessionExpireeError());
+
+    revealButton().click();
+    await stabiliser();
+
+    expect(racine().textContent).toContain(
+      'Déconnectez-vous puis reconnectez-vous : révéler la clé exige une connexion de moins de 5 minutes.',
+    );
+    expect(racine().querySelector('.mcp-cle-revelee')).toBeNull();
+  });
+
+  it('compte de secours : le mot de passe administrateur reste demandé', async () => {
+    await rendre(false);
+
+    revealButton().click();
+    await stabiliser();
+
+    expect(racine().querySelector('input[type=password]')).not.toBeNull();
+    expect(mcpApi.revealKeyAfterRecentSignIn).not.toHaveBeenCalled();
   });
 });

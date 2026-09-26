@@ -10,11 +10,21 @@ import {
   RapportCompactage,
   RapportOuvertures,
   RapportSaisieGrille,
+  Stand,
 } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class StandsApi {
   private readonly api = inject(ApiService);
+
+  /**
+   * The stands of a named edition, whichever one this browser works in — the
+   * scope of a right granted there. Sent with an explicit `X-Edition-Id`, which
+   * the edition interceptor leaves untouched, never by switching edition.
+   */
+  listInEdition(editionId: string): Promise<Stand[]> {
+    return this.api.getDansEdition<Stand[]>('/api/stands', editionId);
+  }
 
   /** Rewrites hand-entered dated windows as the recurring rules they repeat; a preview writes nothing. */
   compactSchedules(apply: boolean): Promise<RapportCompactage> {

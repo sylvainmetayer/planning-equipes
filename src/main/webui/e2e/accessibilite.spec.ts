@@ -149,7 +149,7 @@ test.describe('accessibilité — espace animateur', () => {
   ];
   for (const { ecran, suffixe } of ONGLETS) {
     test(`${ecran} ne porte aucune violation grave hors ligne de base`, async ({ page }) => {
-      await ouvrirSessionEspace(page.request, jeton, `${SEED.demandeur}@example.org`);
+      await ouvrirSessionEspace(page, jeton, `${SEED.demandeur}@example.org`);
       await page.goto(`/animateur/${jeton}${suffixe}`);
       await expect(page.locator('main#contenu h1')).toBeAttached();
       await expect(page.getByText('Alice E2E')).toBeVisible();

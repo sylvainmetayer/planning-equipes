@@ -21,18 +21,17 @@ dev/sylvain/planning/api/AnimateurProfileResourceTest.java
 dev/sylvain/planning/api/AnimateurResourceTest.java
 dev/sylvain/planning/api/ArchiveEvenementResourceTest.java
 dev/sylvain/planning/api/AuthentificationAdminTest.java
-dev/sylvain/planning/api/AuthentificationRemoteUserTest.java
 dev/sylvain/planning/api/AvertissementsEcritureTest.java
 dev/sylvain/planning/api/BrandingConfigureeResourceTest.java
 dev/sylvain/planning/api/BrandingResourceTest.java
 dev/sylvain/planning/api/CarpoolFlowTest.java
 dev/sylvain/planning/api/ChangementsJourneeResourceTest.java
-dev/sylvain/planning/api/CodeRequestLimiterTest.java
 dev/sylvain/planning/api/ColleagueLookupRateLimitTest.java
 dev/sylvain/planning/api/CollecteInvitationAtomicityTest.java
 dev/sylvain/planning/api/ComparateurSnapshotsResourceTest.java
 dev/sylvain/planning/api/CompetencesGrilleResourceTest.java
 dev/sylvain/planning/api/ConfigResourceDragDropTest.java
+dev/sylvain/planning/api/CompteResourceTest.java
 dev/sylvain/planning/api/ConfigResourceTest.java
 dev/sylvain/planning/api/ConfirmationPlanningTest.java
 dev/sylvain/planning/api/ConsigneResourceTest.java
@@ -54,6 +53,7 @@ dev/sylvain/planning/api/EspacePlanPublieTest.java
 dev/sylvain/planning/api/EtatEditionResourceTest.java
 dev/sylvain/planning/api/FeasibilityResourceTest.java
 dev/sylvain/planning/api/FoireAndEspaceExportsTest.java
+dev/sylvain/planning/api/FormLoginSecoursTest.java
 dev/sylvain/planning/api/FormationResourceTest.java
 dev/sylvain/planning/api/FrozenPastAcceptanceTest.java
 dev/sylvain/planning/api/GelReferentielResourceTest.java
@@ -90,6 +90,7 @@ dev/sylvain/planning/api/ReferenceUsageResourceTest.java
 dev/sylvain/planning/api/RefusInconnuResourceTest.java
 dev/sylvain/planning/api/RelanceResourceTest.java
 dev/sylvain/planning/api/RequestSizeCapTest.java
+dev/sylvain/planning/api/RolesKeycloakTest.java
 dev/sylvain/planning/api/SecurityHeadersTest.java
 dev/sylvain/planning/api/SolveFileAttenteResourceTest.java
 dev/sylvain/planning/api/SolveIncrementalResourceTest.java
@@ -118,6 +119,7 @@ dev/sylvain/planning/mcp/McpRateLimitTest.java
 dev/sylvain/planning/mcp/McpRequiredHeadersTest.java
 dev/sylvain/planning/mcp/McpRunningSolveEditionTest.java
 dev/sylvain/planning/mcp/McpWarnsWhileSolvingTest.java
+dev/sylvain/planning/mcp/OidcMcpTest.java
 dev/sylvain/planning/mcp/ParametresSolveurMcpToolsTest.java
 dev/sylvain/planning/mcp/PlanificationMcpToolsTest.java
 dev/sylvain/planning/mcp/ReferentielMcpToolsTest.java

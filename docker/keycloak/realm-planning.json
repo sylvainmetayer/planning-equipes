@@ -1,0 +1,503 @@
+{
+  "realm": "planning",
+  "displayName": "Planning Équipes",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "verifyEmail": false,
+  "rememberMe": true,
+  "loginTheme": "planning",
+  "emailTheme": "planning",
+  "accessTokenLifespan": 900,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 28800,
+  "actionTokenGeneratedByAdminLifespan": 172800,
+  "internationalizationEnabled": true,
+  "supportedLocales": ["fr", "en"],
+  "defaultLocale": "fr",
+  "otpPolicyType": "totp",
+  "otpPolicyAlgorithm": "HmacSHA1",
+  "otpPolicyDigits": 6,
+  "otpPolicyPeriod": 30,
+  "otpPolicyLookAheadWindow": 1,
+  "browserFlow": "browser-planning",
+  "smtpServer": {
+    "host": "mailpit",
+    "port": "1025",
+    "from": "keycloak@planning.local",
+    "fromDisplayName": "Planning Équipes",
+    "ssl": "false",
+    "starttls": "false",
+    "auth": "false"
+  },
+  "roles": {
+    "realm": [
+      {
+        "name": "admin",
+        "description": "Administration complète : /api/*, /q/openapi. Second facteur TOTP imposé par le flow browser-planning, quelle que soit la méthode de connexion."
+      },
+      {
+        "name": "animateur",
+        "description": "Ouvre l'espace de sa propre fiche, et rien d'autre. Distinct de « user » à dessein : un privilège bâti sur le rôle ordinaire du realm serait un privilège que tout compte futur hérite sans que personne l'accorde."
+      },
+      {
+        "name": "user",
+        "description": "Rôle ordinaire du realm : N'OUVRE RIEN. Un compte qui ne porte que lui atteint une page disant qu'il est connecté sans disposer d'aucun accès. C'est le point de départ voulu pour tout rôle à venir."
+      },
+      {
+        "name": "mcp",
+        "description": "Serveur MCP : /mcp uniquement, jamais /api. Porté par le client automatisé ou par une personne qui passe par un client MCP interactif."
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "planning-app",
+      "name": "Planning Équipes — application web",
+      "description": "Client confidentiel du code flow, PKCE S256 exigé : c'est lui que Quarkus utilise pour connecter administrateurs et animateurs.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "dev-planning-app-oJ4kQ2vT-8fW6nB3q",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8080/*",
+        "http://localhost:4200/*",
+        "http://127.0.0.1:8080/*"
+      ],
+      "webOrigins": [
+        "http://localhost:8080",
+        "http://localhost:4200",
+        "http://127.0.0.1:8080"
+      ],
+      "attributes": {
+        "post.logout.redirect.uris": "http://localhost:8080/*##http://localhost:4200/*",
+        "pkce.code.challenge.method": "S256"
+      }
+    },
+    {
+      "clientId": "planning-mcp",
+      "name": "Planning Équipes — serveur MCP (resource server)",
+      "description": "N'émet aucun jeton : il EST l'audience que /mcp exige. Séparer la ressource du client est ce qui permet de refuser un jeton émis pour autre chose.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false
+    },
+    {
+      "clientId": "planning-mcp-client",
+      "name": "Planning Équipes — client MCP automatisé",
+      "description": "client_credentials pour un assistant qui tourne sans humain. Rôle mcp, jamais admin : il ouvre /mcp et rien d'autre.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "dev-planning-mcp-rB7nX3wD",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "protocolMappers": [
+        {
+          "name": "planning-mcp-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "planning-mcp",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ],
+      "defaultClientScopes": [
+        "basic",
+        "roles"
+      ]
+    },
+    {
+      "clientId": "planning-mcp-public",
+      "name": "Planning Équipes — client MCP interactif",
+      "description": "Client public + PKCE, pour un client MCP de bureau qui ouvre un navigateur et écoute sur une boucle locale. L'audience est posée sur le client : un client enregistré dynamiquement (DCR) ne l'obtient pas seul, voir docs/keycloak.md.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "protocolMappers": [
+        {
+          "name": "planning-mcp-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "planning-mcp",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "planning-provisioning",
+      "name": "Planning Équipes — provisioning des comptes",
+      "description": "Compte de service par lequel l'application crée les comptes animateurs. manage-users sur ce realm, rien de plus : il ne peut ni lire les jetons, ni toucher aux clients.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "dev-planning-provisioning-yH5mL8sK",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true
+    }
+  ],
+  "authenticationFlows": [
+    {
+      "alias": "browser-planning",
+      "description": "Connexion navigateur : session existante, fournisseur externe, ou l'adresse puis une méthode. Écrit en entier, jamais copié du flow natif.",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-cookie",
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "authenticator": "identity-provider-redirector",
+          "requirement": "ALTERNATIVE",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "requirement": "ALTERNATIVE",
+          "priority": 30,
+          "flowAlias": "browser-planning-forms",
+          "userSetupAllowed": false,
+          "autheticatorFlow": true
+        }
+      ]
+    },
+    {
+      "alias": "browser-planning-forms",
+      "description": "L'adresse d'abord, puis une méthode, puis le second facteur des administrateurs, quelle que soit la méthode choisie.",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-username-form",
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "flowAlias": "browser-planning-methodes",
+          "userSetupAllowed": false,
+          "autheticatorFlow": true
+        },
+        {
+          "requirement": "CONDITIONAL",
+          "priority": 30,
+          "flowAlias": "browser-planning-otp-admin",
+          "userSetupAllowed": false,
+          "autheticatorFlow": true
+        }
+      ]
+    },
+    {
+      "alias": "browser-planning-methodes",
+      "description": "Les méthodes, en alternatives : passkey, code par e-mail ou mot de passe. La première qui aboutit identifie la personne.",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "webauthn-authenticator-passwordless",
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "requirement": "ALTERNATIVE",
+          "priority": 20,
+          "flowAlias": "browser-planning-code-email",
+          "userSetupAllowed": false,
+          "autheticatorFlow": true
+        },
+        {
+          "authenticator": "auth-password-form",
+          "requirement": "ALTERNATIVE",
+          "priority": 30,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        }
+      ]
+    },
+    {
+      "alias": "browser-planning-code-email",
+      "description": "Code à six chiffres envoyé à l'adresse du compte (extension keycloak/code-email). Sous-flux à part : l'authentificateur n'accepte que REQUIRED.",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "planning-code-email",
+          "authenticatorConfig": "code-email-planning",
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        }
+      ]
+    },
+    {
+      "alias": "browser-planning-otp-admin",
+      "description": "Conditionnel : pour le rôle admin seulement, un code TOTP après n'importe quelle méthode. Un admin sans TOTP se voit imposer CONFIGURE_TOTP.",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "conditional-user-role",
+          "authenticatorConfig": "condition-role-admin",
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "authenticator": "auth-otp-form",
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        }
+      ]
+    }
+  ],
+  "authenticatorConfig": [
+    {
+      "alias": "condition-role-admin",
+      "config": {
+        "condUserRole": "admin",
+        "negate": "false"
+      }
+    },
+    {
+      "alias": "code-email-planning",
+      "config": {
+        "validiteSecondes": "600",
+        "essaisMax": "5"
+      }
+    }
+  ],
+  "components": {
+    "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy": [
+      {
+        "name": "Allowed Protocol Mapper Types",
+        "providerId": "allowed-protocol-mappers",
+        "subType": "anonymous",
+        "config": {
+          "allowed-protocol-mapper-types": [
+            "oidc-full-name-mapper",
+            "oidc-sha256-pairwise-sub-mapper",
+            "oidc-address-mapper",
+            "oidc-usermodel-property-mapper",
+            "oidc-usermodel-attribute-mapper",
+            "saml-user-property-mapper",
+            "saml-user-attribute-mapper",
+            "saml-role-list-mapper"
+          ]
+        }
+      },
+      {
+        "name": "Allowed Client Scopes",
+        "providerId": "allowed-client-templates",
+        "subType": "anonymous",
+        "config": {
+          "allow-default-scopes": [
+            "true"
+          ]
+        }
+      },
+      {
+        "name": "Max Clients Limit",
+        "providerId": "max-clients",
+        "subType": "anonymous",
+        "config": {
+          "max-clients": [
+            "200"
+          ]
+        }
+      },
+      {
+        "name": "Full Scope Disabled",
+        "providerId": "scope",
+        "subType": "anonymous",
+        "config": {}
+      }
+    ]
+  },
+  "users": [
+    {
+      "username": "admin@planning.local",
+      "email": "admin@planning.local",
+      "firstName": "Admin",
+      "lastName": "Démo",
+      "enabled": true,
+      "emailVerified": true,
+      "realmRoles": [
+        "admin"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "dev-admin-Zc6qL1yV",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "Démo (secret fixe, développement uniquement)",
+          "secretData": "{\"value\":\"planningequipesotp01\"}",
+          "credentialData": "{\"subType\":\"totp\",\"digits\":6,\"counter\":0,\"period\":30,\"algorithm\":\"HmacSHA1\"}"
+        }
+      ]
+    },
+    {
+      "username": "marie.dupont@example.org",
+      "email": "marie.dupont@example.org",
+      "firstName": "Marie",
+      "lastName": "Dupont",
+      "enabled": true,
+      "emailVerified": true,
+      "realmRoles": [
+        "user",
+        "animateur"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "dev-animateur-Pn3vK9tR",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "paul.martin@example.org",
+      "email": "paul.martin@example.org",
+      "firstName": "Paul",
+      "lastName": "Martin",
+      "enabled": true,
+      "emailVerified": true,
+      "realmRoles": [
+        "user",
+        "animateur"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "dev-animateur-Pn3vK9tR",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "sans.role@example.org",
+      "email": "sans.role@example.org",
+      "firstName": "Sans",
+      "lastName": "Rôle",
+      "enabled": true,
+      "emailVerified": true,
+      "realmRoles": [
+        "user"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "dev-animateur-Pn3vK9tR",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "service-account-planning-mcp-client",
+      "enabled": true,
+      "serviceAccountClientId": "planning-mcp-client",
+      "realmRoles": [
+        "mcp"
+      ]
+    },
+    {
+      "username": "service-account-planning-provisioning",
+      "enabled": true,
+      "serviceAccountClientId": "planning-provisioning",
+      "clientRoles": {
+        "realm-management": [
+          "manage-users",
+          "view-users",
+          "query-users"
+        ]
+      }
+    }
+  ],
+  "webAuthnPolicyPasswordlessRpEntityName": "Planning Équipes",
+  "webAuthnPolicyPasswordlessSignatureAlgorithms": [
+    "ES256",
+    "RS256"
+  ],
+  "webAuthnPolicyPasswordlessRpId": "",
+  "webAuthnPolicyPasswordlessAttestationConveyancePreference": "none",
+  "webAuthnPolicyPasswordlessAuthenticatorAttachment": "not specified",
+  "webAuthnPolicyPasswordlessRequireResidentKey": "Yes",
+  "webAuthnPolicyPasswordlessUserVerificationRequirement": "required",
+  "webAuthnPolicyPasswordlessPasskeysEnabled": true,
+  "webAuthnPolicyPasswordlessCreateTimeout": 0,
+  "webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister": false,
+  "webAuthnPolicyPasswordlessAcceptableAaguids": [],
+  "webAuthnPolicyPasswordlessExtraOrigins": [],
+  "identityProviders": [
+    {
+      "alias": "google",
+      "providerId": "google",
+      "enabled": false,
+      "trustEmail": false,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "linkOnly": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "",
+        "clientSecret": "",
+        "syncMode": "IMPORT",
+        "useJwksUrl": "true"
+      }
+    }
+  ]
+}

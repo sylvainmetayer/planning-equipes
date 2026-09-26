@@ -288,7 +288,12 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           icon: 'manage_search',
           avance: true,
         },
-
+        {
+          path: '/comptes',
+          label: $localize`:@@nav.link.comptes:Comptes et droits`,
+          icon: 'manage_accounts',
+          avance: true,
+        },
         {
           path: '/mcp-client',
           label: $localize`:@@nav.link.mcp:MCP`,

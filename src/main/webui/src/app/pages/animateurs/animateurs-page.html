@@ -15,6 +15,16 @@
       <mat-icon>add</mat-icon>
       <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
+    <!-- An import creates the Keycloak accounts and mails nobody: the
+         organiser invites once the list is reviewed. -->
+    @if (invitations(); as etat) {
+      @if (etat.actif && etat.enAttente > 0) {
+        <button matButton="tonal" type="button" (click)="sendInvitations()">
+          <mat-icon>forward_to_inbox</mat-icon>
+          <ng-container i18n="@@animateurs.invitations.bouton">Envoyer les invitations ({{ etat.enAttente }})</ng-container>
+        </button>
+      }
+    }
     <mat-form-field appearance="outline" subscriptSizing="dynamic" class="accuses-filter">
       <mat-label i18n="@@animateurs.accuses.label">Accusés</mat-label>
       <mat-select [ngModel]="accuses()" (ngModelChange)="accuses.set($event)">

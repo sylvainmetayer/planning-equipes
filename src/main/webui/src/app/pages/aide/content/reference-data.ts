@@ -347,7 +347,7 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.importCsv.remplacement:Si vous cochez le remplacement complet, lisez l'avertissement de l'aperçu : supprimer une fiche emporte aussi la déclaration de disponibilités de la personne, son accusé de réception et son code d'accès à l'espace.`,
+          text: $localize`:@@aide.importCsv.remplacement:Si vous cochez le remplacement complet, lisez l'avertissement de l'aperçu : supprimer une fiche emporte aussi la déclaration de disponibilités de la personne, son accusé de réception et son lien d'espace.`,
         },
       ],
       links: [

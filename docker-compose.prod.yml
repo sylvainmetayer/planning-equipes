@@ -1,13 +1,17 @@
 # Pile de production, à ne pas confondre avec `docker-compose.yml`, qui est une
 # pile de DÉVELOPPEMENT : celle-ci publie PostgreSQL sur l'hôte, ajoute pgAdmin
-# en `admin/admin` sans mode serveur et un puits SMTP qui n'envoie rien — trois
-# choses qui n'ont pas à exister sur une machine exposée.
+# en `admin/admin` sans mode serveur, un puits SMTP qui n'envoie rien et un
+# realm Keycloak importé avec des comptes de démonstration — autant de choses
+# qui n'ont pas à exister sur une machine exposée.
 #
-# Ici, un seul port est publié, et encore : sur la boucle locale, parce que
-# c'est le reverse proxy qui termine le TLS et qui doit être le seul chemin
-# vers l'application (voir docs/securite.md § Déploiement).
+# Ici, un seul port est publié (deux avec le profil `keycloak`), et encore :
+# sur la boucle locale, parce que c'est le reverse proxy qui termine le TLS et
+# qui doit être le seul chemin vers l'application et vers Keycloak (voir
+# docs/securite.md § Déploiement).
 #
 #   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+#   # avec un Keycloak hébergé par cette pile :
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod --profile keycloak up -d
 #
 # Tout ce qui est repris de l'environnement est OBLIGATOIRE et sans valeur par
 # défaut : un `?` fait échouer le démarrage plutôt que de laisser passer un
@@ -46,8 +50,26 @@ services:
       DB_URL: jdbc:postgresql://postgres:5432/festival
       DB_USER: festival
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD est obligatoire}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD est obligatoire}
-      # Sans clé fixe, les sessions admin sont invalidées à chaque redémarrage.
+      # Keycloak est OBLIGATOIRE (docs/keycloak.md) : administrateurs (second
+      # facteur imposé), animateurs et locataire OAuth2 de /mcp. URL PUBLIQUE
+      # du realm, celle que voient les navigateurs : c'est elle qui signe
+      # l'émetteur des jetons, et le conteneur doit pouvoir la joindre aussi.
+      OIDC_AUTH_SERVER_URL: ${OIDC_AUTH_SERVER_URL:?OIDC_AUTH_SERVER_URL est obligatoire, ex. https://sso.exemple.org/realms/planning}
+      # Au moins 32 caractères : il chiffre le vérificateur PKCE dans le cookie
+      # d'état. `terraform output oidc_client_secret`.
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:?OIDC_CLIENT_SECRET est obligatoire (>= 32 caractères)}
+      # Le proxy termine le TLS : sans cela, les URL de redirection et les
+      # métadonnées MCP sont annoncées en http, et Keycloak les refuse.
+      OIDC_FORCE_HTTPS: ${OIDC_FORCE_HTTPS:-true}
+      # Créer une fiche animateur crée le compte Keycloak qui ouvre son espace.
+      OIDC_PROVISIONING_ENABLED: ${OIDC_PROVISIONING_ENABLED:-true}
+      # Compte de SECOURS (`admin`), FERMÉ par défaut (ADMIN_SECOURS_ENABLED,
+      # voir .env.prod.example). Le mot de passe reste obligatoire pour que la
+      # porte existe le jour où il faut l'ouvrir. docs/keycloak.md § Compte de
+      # secours.
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD est obligatoire (compte de secours)}
+      # Sans clé fixe, les sessions du compte de secours sont invalidées à
+      # chaque redémarrage.
       QUARKUS_HTTP_AUTH_SESSION_ENCRYPTION_KEY: ${SESSION_ENCRYPTION_KEY:?SESSION_ENCRYPTION_KEY est obligatoire (>= 16 caractères)}
       # URL publique, imprimée comme lien « espace animateur » sur les PDF.
       PUBLIC_URL: ${PUBLIC_URL:?PUBLIC_URL est obligatoire}
@@ -55,9 +77,10 @@ services:
       # en http et le cookie de session perd son flag Secure.
       PROXY_ADDRESS_FORWARDING: "true"
       QUARKUS_HTTP_PROXY_TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
-      # SMTP réel : c'est par là que partent les codes d'accès de l'espace
-      # animateur. Relais authentifié en STARTTLS par défaut — l'application,
-      # elle, part sur un Mailpit local (1025, sans TLS).
+      # SMTP réel : plannings, notifications et relances partent par là. Les
+      # invitations et les codes de connexion, eux, partent de Keycloak, par
+      # le relais que Terraform pose sur le realm. Relais authentifié en
+      # STARTTLS par défaut.
       MAIL_MOCK: "false"
       MAIL_HOST: ${MAIL_HOST:?MAIL_HOST est obligatoire}
       MAIL_FROM: ${MAIL_FROM:?MAIL_FROM est obligatoire}
@@ -111,6 +134,107 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql
 
+  # ---------------------------------------------------------------- keycloak --
+  # Facultatif, sous le profil `keycloak` :
+  #
+  #   docker compose -f docker-compose.prod.yml --env-file .env.prod \
+  #     --profile keycloak up -d
+  #
+  # Keycloak est obligatoire pour l'application, pas le fait qu'il tourne ICI :
+  # une instance déjà en place chez l'hébergeur fait aussi bien, et
+  # OIDC_AUTH_SERVER_URL la désigne. Avec ce profil, c'est l'image du dépôt
+  # qui tourne — l'officielle, plus l'authentificateur « code par e-mail » et
+  # le thème « planning » (docker/keycloak/Dockerfile). Dans les deux cas le
+  # realm est décrit par terraform/keycloak/, en visant KEYCLOAK_HOSTNAME.
+  #
+  # Même version nommée que l'application : les deux images sont publiées sur
+  # les mêmes tags, et un incident se rapporte avec UN numéro.
+  #
+  # Ses variables à lui sont les seules exceptions au `?` de l'en-tête :
+  # Compose interpole TOUS les services, profil activé ou non, et un `?` ici
+  # exigerait KEYCLOAK_DB_PASSWORD d'un déploiement dont le Keycloak est
+  # ailleurs. Elles n'en restent pas moins nécessaires au profil : sans mot de
+  # passe, PostgreSQL refuse d'initialiser sa base, sans KEYCLOAK_HOSTNAME
+  # Keycloak refuse de démarrer — l'erreur arrive au démarrage, pas avant.
+  keycloak:
+    image: ${KEYCLOAK_IMAGE:-ghcr.io/sylvainmetayer/planning-equipes-keycloak}:${APP_VERSION:?APP_VERSION est obligatoire — la même version nommée que l'application}
+    profiles: [keycloak]
+    restart: unless-stopped
+    # `--optimized` : l'image a été construite pour PostgreSQL (kc.sh build
+    # dans le Dockerfile), le démarrage ne refait pas ce travail.
+    command: ["start", "--optimized"]
+    # Sur la boucle locale seulement, comme l'application : c'est le reverse
+    # proxy qui termine le TLS et publie KEYCLOAK_HOSTNAME.
+    ports:
+      - "127.0.0.1:8081:8080"
+    environment:
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-}
+      # L'URL PUBLIQUE, avec son schéma : c'est elle qui signe l'émetteur des
+      # jetons, et OIDC_AUTH_SERVER_URL doit la reprendre à l'identique.
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-}
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+      # Compte d'amorçage, temporaire par construction : Keycloak ne le crée
+      # qu'au premier démarrage, et demande de le remplacer par un compte
+      # permanent depuis la console. docs/keycloak.md § Mise en production.
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-}
+      # Couleur d'accent du thème, connexion et e-mails. Vide : celle du
+      # produit.
+      KEYCLOAK_BRAND_ACCENT: ${KEYCLOAK_BRAND_ACCENT:-}
+    volumes:
+      # Les visuels du client — logo.svg, background.svg, brand.css,
+      # logo-email.png — prennent la place du dossier brand/ de l'image. Sans
+      # KEYCLOAK_BRAND_DIR, c'est un volume nommé qui est monté : vide à sa
+      # création, Docker le remplit avec le contenu de l'image, donc avec les
+      # visuels neutres du produit. Le thème n'a ainsi jamais un dossier
+      # vide sous les pieds. Voir docs/keycloak.md § Le thème.
+      - ${KEYCLOAK_BRAND_DIR:-keycloak_brand}:/opt/keycloak/themes/planning/brand:ro
+    healthcheck:
+      # Le port de management (9000), comme dans docker-compose.yml : l'image
+      # n'a ni curl ni wget, bash sait ouvrir une socket.
+      test:
+        [
+          "CMD-SHELL",
+          "exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '\"UP\"' <&3",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+
+  # Base dédiée, séparée de celle de l'application : un fournisseur d'identité
+  # et un planning n'ont ni le même cycle de sauvegarde ni le même rythme de
+  # migration. Jamais publiée sur l'hôte. Elle porte les comptes, les mots de
+  # passe et les seconds facteurs de tout le monde, et la sauvegarde nocturne
+  # de l'application ne la couvre PAS : docs/exploitation.md.
+  keycloak-db:
+    image: postgres:18
+    profiles: [keycloak]
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    volumes:
+      - keycloak_db_data:/var/lib/postgresql
+
 volumes:
   postgres_data:
     name: postgres_data_pg18
+  keycloak_db_data:
+    name: keycloak_data_pg18
+  # Repli du montage brand/ : rempli depuis l'image à sa création.
+  keycloak_brand:
+    name: keycloak_brand

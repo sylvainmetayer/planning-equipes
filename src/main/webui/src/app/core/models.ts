@@ -2279,6 +2279,17 @@ export interface AppConfig {
   dragDropEnabled: boolean;
   /** Backend version, as the startup line prints it (docs/versioning.md). */
   version: string;
+  /**
+   * Keycloak (OIDC) sign-in is on — the normal door, for the administration
+   * and the espace animateur alike. Read at bootstrap because both screens
+   * that need it are reachable without a session.
+   */
+  authOidc: boolean;
+  /**
+   * The break-glass form login (the embedded `admin` account) is open. Closed
+   * by default in production; `POST /j_security_check` then answers 409.
+   */
+  authSecours: boolean;
 }
 
 /**
@@ -2506,16 +2517,88 @@ export interface RestaurationSnapshot {
 
 /* ----------------------- Foire au planning (issue #165) ----------------------- */
 
-/** `/api/auth/me`: whether the browser holds a valid admin session. */
+/** `/api/auth/me`: whether the browser holds a session, and what it opens. */
 export interface StatutSession {
   authentifie: boolean;
   nom: string | null;
+  /**
+   * Realm roles of the session, sorted — `admin` opens the administration,
+   * `animateur` an espace (with the matching e-mail), `user` nothing. Empty
+   * for an anonymous caller.
+   */
+  roles: string[];
+}
+
+/* ------------------- Named accounts and delegated rights ------------------- */
+
+/**
+ * The roles an administrator grants in the application, per edition (ADR
+ * 0054). The global ones — `admin`, `mcp`, `animateur` — are Keycloak realm
+ * roles and never appear here.
+ */
+export type RoleHabilitation = 'RH' | 'RESPONSABLE_STAND';
+
+/** One right of an account. Withdrawn by `retireeLe`, never deleted. */
+export interface Habilitation {
+  id: string;
+  role: RoleHabilitation;
+  /** `null`: every edition. */
+  editionId: string | null;
+  /** Instant past which the right opens nothing; `null`: no expiry. */
+  expireLe: string | null;
+  /** The scope of a `RESPONSABLE_STAND`, empty for any other role. */
+  standIds: string[];
+  /** Who granted it — the granting session's name. */
+  creePar: string;
+  creeLe: string;
+  retireeLe: string | null;
+}
+
+/** `GET /api/comptes`: one person able to sign in, whatever the edition. Never deleted. */
+export interface Compte {
+  id: string;
+  email: string;
+  nom: string | null;
+  /** The Keycloak `sub`; `null` for an account created ahead of its first sign-in. */
+  sujet: string | null;
+  creeLe: string;
+  derniereConnexionLe: string | null;
+  /** Set while the account is deactivated: every role is then stripped, realm ones included. */
+  desactiveLe: string | null;
+  habilitations: Habilitation[];
+}
+
+/** Body of `POST /api/comptes`. */
+export interface NouveauCompte {
+  email: string;
+  nom: string | null;
+}
+
+/** Body of `POST /api/comptes/{id}/habilitations`. */
+export interface NouvelleHabilitation {
+  role: RoleHabilitation;
+  editionId: string | null;
+  /** ISO instant, in the future; `null`: no expiry. */
+  expireLe: string | null;
+  standIds: string[];
+}
+
+/** Answer of `POST /api/auth/logout`: where to go next to finish signing out. */
+export interface Deconnexion {
+  /** Route ending the identity provider's session, `null` when there is none. */
+  urlDeconnexion: string | null;
 }
 
 /** Whether this deployment has an MCP API key at all, and the header it travels in. Never the key. */
 export interface StatutMcp {
   configuree: boolean;
   header: string;
+  /**
+   * The caller holds a Keycloak session: revealing the key asks for no
+   * password, only a sign-in less than five minutes old (401 otherwise). False
+   * under the break-glass form session, which still confirms the password.
+   */
+  revelationParReconnexion: boolean;
 }
 
 /** The MCP API key, returned only in exchange for the admin password. Never stored. */
@@ -2868,6 +2951,23 @@ export interface RelanceDemande {
  * one-reminder rule (`dejaRelancesPourCettePublication`) holds across the
  * night and the hand.
  */
+/**
+ * Who, in this edition, was never invited to their Keycloak account: an
+ * import creates the accounts and mails nobody. `actif` is false without
+ * provisioning.
+ */
+export interface EtatInvitations {
+  actif: boolean;
+  enAttente: number;
+}
+
+/** What « Envoyer les invitations » did, one person counted once. */
+export interface BilanComptes {
+  crees: number;
+  invites: number;
+  echecs: number;
+}
+
 export interface RapportRelance {
   envoyes: string[];
   dejaConfirmes: string[];

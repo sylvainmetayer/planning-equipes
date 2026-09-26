@@ -93,7 +93,8 @@ class ReferenceDataChangesTest {
                         "INSTANTANE_RESTAURE",
                         "ANIMATEUR_JETON_REGENERE",
                         "ANIMATEURS_RELANCES",
-                        "SESSION_ESPACE_OUVERTE");
+                        "COMPTE_CREE",
+                        "HABILITATION_ACCORDEE");
     }
 
     @Test

@@ -25,6 +25,8 @@ const CONFIG: AppConfig = {
   devMode: false,
   dragDropEnabled: false,
   version: '',
+  authOidc: true,
+  authSecours: false,
 };
 
 describe('loadAppConfig', () => {
@@ -49,6 +51,8 @@ describe('loadAppConfig', () => {
       devMode: false,
       dragDropEnabled: false,
       version: '',
+      authOidc: true,
+      authSecours: false,
     });
   });
 
@@ -61,6 +65,8 @@ describe('loadAppConfig', () => {
       devMode: false,
       dragDropEnabled: false,
       version: '',
+      authOidc: true,
+      authSecours: false,
     });
   });
 });

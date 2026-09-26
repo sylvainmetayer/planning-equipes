@@ -25,6 +25,11 @@ export const DEFAULT_APP_CONFIG: AppConfig = {
   devMode: false,
   dragDropEnabled: false,
   version: '',
+  // Production's defaults: Keycloak is the door and the break-glass form is
+  // closed. A login page offering a password field no server accepts would be
+  // worse than one offering the sign-in button every deployment has.
+  authOidc: true,
+  authSecours: false,
 };
 
 /**

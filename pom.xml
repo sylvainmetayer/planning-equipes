@@ -158,6 +158,24 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-elytron-security-properties-file</artifactId>
         </dependency>
+        <!-- Keycloak / OIDC login (docs/keycloak.md, ADR 0054). Two tenants: the
+             default one is a web-app tenant for the admin and animateur browser
+             sessions, the "mcp" one a service tenant validating bearer tokens on
+             /mcp. Mandatory in production; the embedded account above only
+             survives as the break-glass door (planning.auth.secours). -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-oidc</artifactId>
+        </dependency>
+        <!-- Provisioning of the animateur accounts in Keycloak
+             (dev.sylvain.planning.service.keycloak): creating a fiche creates
+             the account that opens the espace. The admin REST client rather
+             than hand-rolled HTTP calls: token refresh, error mapping and the
+             representation records are the tedious part to get right. -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-keycloak-admin-rest-client</artifactId>
+        </dependency>
         <dependency>
             <groupId>ai.timefold.solver</groupId>
             <artifactId>timefold-solver-core</artifactId>
@@ -282,6 +300,17 @@
             <artifactId>quarkus-junit</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Signs real JWTs for the OIDC tests without a Keycloak container:
+             OidcWiremockTestResource publishes the JWKS, so the role mapping,
+             the audience check, the espace animateur and the /mcp bearer path
+             run on the real code path in a suite that stays Docker-free. The
+             code flow and the realm's second factor are exercised by the
+             Playwright suite against a real Keycloak. -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-test-oidc-server</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
@@ -400,10 +429,16 @@
                          mot de passe, comme la garde le demande à un
                          exploitant, et déclarent ce que ces tests sont — une
                          instance qui n'est pas en service. Elles passent au
-                         processus lancé, pas à celui de Maven. -->
+                         processus lancé, pas à celui de Maven.
+                         Keycloak est obligatoire en %prod (ADR 0054) et
+                         aucun realm ne tourne ici : ces tests se connectent
+                         par le compte de secours, ouvert pour eux seuls,
+                         comme la pile e2e « secours ». -->
                     <environmentVariables>
                         <ADMIN_PASSWORD>${it.admin.password}</ADMIN_PASSWORD>
                         <LEGAL_DEMO_INSTANCE>true</LEGAL_DEMO_INSTANCE>
+                        <OIDC_ENABLED>false</OIDC_ENABLED>
+                        <ADMIN_SECOURS_ENABLED>true</ADMIN_SECOURS_ENABLED>
                     </environmentVariables>
                 </configuration>
             </plugin>

@@ -198,6 +198,10 @@ function buildDefinitionsRoutes(): Map<string, DefinitionRoute> {
       '/parametres',
       { label: $localize`:@@nav.link.parametres:Paramètres`, icon: 'settings', touche: 'r' },
     ],
+    [
+      '/comptes',
+      { label: $localize`:@@nav.link.comptes:Comptes et droits`, icon: 'manage_accounts' },
+    ],
     ['/mcp-client', { label: $localize`:@@nav.link.mcp:MCP`, icon: 'smart_toy' }],
     ['/historique', { label: $localize`:@@nav.link.historique:Historique`, icon: 'manage_search' }],
     ['/debug', { label: $localize`:@@nav.link.debug:Débogage`, icon: 'bug_report', touche: 'd' }],

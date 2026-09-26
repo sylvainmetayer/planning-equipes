@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 
 import { APP_VERSION, REPO_URL } from '../version';
 import { AdminApi } from './api/admin-api';
+import { opensAdministration } from './session';
 import { compareVersions, isReleaseTag } from './version-link';
 
 /** A published version newer than the one running, and where to read about it. */
@@ -78,7 +79,9 @@ export class UpdateCheckService {
    */
   private async checkAsAdmin(currentVersion: string): Promise<void> {
     try {
-      if (!(await this.adminApi.session()).authentifie) {
+      // Signed in is not enough: under Keycloak an animateur has a session too,
+      // and the hint is an administrator's business.
+      if (!opensAdministration(await this.adminApi.session())) {
         return;
       }
     } catch {

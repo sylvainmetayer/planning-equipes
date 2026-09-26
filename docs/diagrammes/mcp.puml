@@ -1,8 +1,8 @@
 @startuml
-' Un appel d'outil MCP, de la clé jusqu'au service. Le limiteur compte avant
-' l'authentification ; un refus métier revient comme un refus lisible par
-' l'assistant, pas comme « Internal error » ; l'édition se désigne par
-' argument, pas par en-tête. Voir docs/mcp.md.
+' Un appel d'outil MCP, de la clé — ou du jeton OAuth2 — jusqu'au service. Le
+' limiteur compte avant l'authentification ; un refus métier revient comme un
+' refus lisible par l'assistant, pas comme « Internal error » ; l'édition se
+' désigne par argument, pas par en-tête. Voir docs/mcp.md.
 skinparam backgroundColor #FFFFFF
 skinparam responseMessageBelowArrow true
 hide footbox
@@ -12,6 +12,7 @@ actor "Assistant IA\n(client MCP)" as client
 participant McpRateLimiter as limiteur
 participant McpApiKeyAuthenticationMechanism as cle
 participant McpApiKeyIdentityProvider as identite
+boundary "Locataire OIDC mcptransport\n(jeton Keycloak)" as oauth
 boundary "Extension quarkus-mcp-server\n(POST /mcp)" as extension
 participant RefusMetierInterceptor as refus
 participant EditionCibleeInterceptor as edition
@@ -31,12 +32,15 @@ end
 note right of limiteur : l'adresse est celle du client,\nlue dans X-Forwarded-For\nseulement derrière un proxy déclaré
 limiteur -> cle : authenticate(contexte, …)
 note right of cle : comparaison à temps constant ;\nen-têtes exigés (PLANNING_MCP_REQUIRED_HEADERS)
-alt clé absente ou fausse
+alt clé fausse
   cle --> client : 401
   limiteur -> limiteur : 401 vu à la sortie : un échec de plus pour l'adresse
 else clé correcte
   cle -> identite : identité « mcp », rôle mcp
   note right of identite : une session admin n'a pas le rôle :\n403 sur /mcp
+else pas de clé, Authorization: Bearer
+  cle -> oauth : la clé cède la main au locataire OAuth2
+  note right of oauth : audience planning-mcp et rôle de realm mcp ;\nsans jeton : 401 + WWW-Authenticate\nresource_metadata (RFC 9728)
 end
 identite -> extension : requête autorisée
 extension -> refus : reportBusinessError(contexte)

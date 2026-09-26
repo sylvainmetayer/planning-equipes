@@ -13,14 +13,27 @@ import localeFr from '@angular/common/locales/fr';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { of } from 'rxjs';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AdminApi } from '../../core/api/admin-api';
+import { APP_CONFIG } from '../../core/app-config';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
-import { EspaceAnimateurView } from '../../core/models';
+import { AppConfig, EspaceAnimateurView } from '../../core/models';
 import { EspaceAnimateurShell } from './espace-animateur-shell';
 
 // The dates are read in French, as `main.ts` serves them: the band is written
 // with the DatePipe, so the month names are the locale's and not the code's.
 registerLocaleData(localeFr, 'fr');
+
+const CONFIG: AppConfig = {
+  sentryDsn: '',
+  sentryEnvironment: 'local',
+  cloudflareWebAnalyticsToken: '',
+  devMode: false,
+  dragDropEnabled: false,
+  version: '',
+  authOidc: true,
+  authSecours: false,
+};
 
 function view(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView {
   return {
@@ -68,9 +81,12 @@ describe('EspaceAnimateurShell — quelle édition', () => {
             erreur: signal(null),
             authRequise: signal(false),
             charger: vi.fn(async () => undefined),
-            demanderCode: vi.fn(),
-            validerCode: vi.fn(),
           },
+        },
+        { provide: APP_CONFIG, useValue: CONFIG },
+        {
+          provide: AdminApi,
+          useValue: { session: vi.fn(), logout: vi.fn(), oidcLoginUrl: vi.fn() },
         },
         {
           provide: ActivatedRoute,
@@ -135,17 +151,44 @@ describe('EspaceAnimateurShell — quelle édition', () => {
 
     expect((fixture.nativeElement as HTMLElement).querySelector('.espace-edition')).toBeNull();
   });
+
+  /**
+   * Keycloak holds the passkeys: the menu points at its page, where one is
+   * registered on this phone or replaced once lost.
+   */
+  it('mène aux moyens de connexion depuis le menu du compte', async () => {
+    const menu = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      'button[aria-label="Mon compte et informations légales"]',
+    )!;
+    menu.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const lien = document.querySelector<HTMLAnchorElement>('a[href="/api/auth/oidc/compte"]');
+    expect(lien?.textContent).toContain('Ma passkey et mes moyens de connexion');
+  });
 });
 
-// The accessibility groundwork the admin shell had and the espace never
-// received (RGAA 12.7 and 7.5): a skip link to a focusable <main>, and an
-// access-code failure that is announced instead of silently printed.
-describe('EspaceAnimateurShell — accessibility groundwork', () => {
+/**
+ * The access screen a 401 renders: the e-mail code is gone, a Keycloak
+ * session is the only key, and the screen must never loop on a sign-in the
+ * person has already done.
+ */
+describe("EspaceAnimateurShell — écran d'accès", () => {
   let fixture: ComponentFixture<EspaceAnimateurShell>;
-  const validateCode = vi.fn();
+  const adminApi = {
+    session: vi.fn(),
+    logout: vi.fn(),
+    oidcLoginUrl: vi.fn((retour: string) => `/api/auth/oidc/login?redirect=${retour}`),
+  };
 
-  beforeEach(async () => {
-    validateCode.mockReset();
+  async function rendre(options: { authOidc: boolean; authentifie?: boolean }): Promise<void> {
+    adminApi.session.mockReset();
+    adminApi.session.mockResolvedValue({
+      authentifie: options.authentifie ?? false,
+      nom: options.authentifie ? 'marie' : null,
+      roles: options.authentifie ? ['user'] : [],
+    });
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
@@ -160,10 +203,10 @@ describe('EspaceAnimateurShell — accessibility groundwork', () => {
             erreur: signal(null),
             authRequise: signal(true),
             charger: vi.fn(async () => undefined),
-            demanderCode: vi.fn(async () => 'a***@example.org'),
-            validerCode: validateCode,
           },
         },
+        { provide: APP_CONFIG, useValue: { ...CONFIG, authOidc: options.authOidc } },
+        { provide: AdminApi, useValue: adminApi },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -174,40 +217,68 @@ describe('EspaceAnimateurShell — accessibility groundwork', () => {
       ],
     });
     fixture = TestBed.createComponent(EspaceAnimateurShell);
+    // The session probe runs after `charger` settles: let both resolve.
+    await new Promise((resolve) => setTimeout(resolve, 0));
     await fixture.whenStable();
-  });
-
-  function root(): HTMLElement {
-    return fixture.nativeElement as HTMLElement;
+    fixture.detectChanges();
   }
 
-  it('moves the focus to <main> from the skip link', () => {
-    const skip = root().querySelector<HTMLAnchorElement>('a.skip-link')!;
-    const main = root().querySelector<HTMLElement>('main#contenu')!;
-    document.body.appendChild(root());
+  function textOf(): string {
+    return (fixture.nativeElement as HTMLElement).textContent!.replace(/\s+/g, ' ');
+  }
+
+  function bouton(libelle: string): HTMLButtonElement | undefined {
+    return [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')].find((b) =>
+      b.textContent!.includes(libelle),
+    );
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('propose de se connecter avec son compte, et revient sur ce même espace', async () => {
+    const assign = vi.fn();
+    vi.spyOn(window, 'location', 'get').mockReturnValue({ assign } as unknown as Location);
+    await rendre({ authOidc: true });
+
+    expect(textOf()).not.toContain('code');
+    bouton('Se connecter avec mon compte')!.click();
+
+    expect(adminApi.oidcLoginUrl).toHaveBeenCalledWith('/animateur/jeton-1');
+    expect(assign).toHaveBeenCalledExactlyOnceWith(
+      '/api/auth/oidc/login?redirect=/animateur/jeton-1',
+    );
+  });
+
+  it("déjà connecté avec un compte qui n'ouvre pas l'espace : le dit et offre la déconnexion", async () => {
+    await rendre({ authOidc: true, authentifie: true });
+
+    expect(textOf()).toContain("ce compte n'ouvre pas cet espace");
+    expect(bouton('Se connecter avec mon compte')).toBeUndefined();
+    expect(bouton('Se déconnecter')).toBeDefined();
+  });
+
+  // RGAA 12.7: a skip link to a focusable <main>, as in the admin shell.
+  it('moves the focus to <main> from the skip link', async () => {
+    await rendre({ authOidc: true });
+    const root = fixture.nativeElement as HTMLElement;
+    const skip = root.querySelector<HTMLAnchorElement>('a.skip-link')!;
+    const main = root.querySelector<HTMLElement>('main#contenu')!;
+    document.body.appendChild(root);
 
     expect(skip).not.toBeNull();
     expect(main.getAttribute('tabindex')).toBe('-1');
     skip.click();
     expect(document.activeElement).toBe(main);
-    root().remove();
+    root.remove();
   });
 
-  it('announces a wrong access code as an alert', async () => {
-    validateCode.mockRejectedValue(new Error('Code incorrect'));
-    (root().querySelector('.espace-code button[matButton="filled"]') as HTMLButtonElement).click();
-    await fixture.whenStable();
-    const input = root().querySelector<HTMLInputElement>('input[name="code"]')!;
-    input.value = '000000';
-    input.dispatchEvent(new Event('input'));
-    await fixture.whenStable();
-    root()
-      .querySelector('form.espace-code-form')!
-      .dispatchEvent(new Event('submit', { cancelable: true }));
-    await fixture.whenStable();
+  it("sans Keycloak, l'espace se dit indisponible et n'offre aucune porte", async () => {
+    await rendre({ authOidc: false });
 
-    const alert = root().querySelector('[role="alert"]');
-    expect(alert).not.toBeNull();
-    expect(alert!.textContent).toContain('Code incorrect');
+    expect(textOf()).toContain('momentanément indisponible');
+    expect(bouton('Se connecter')).toBeUndefined();
+    expect(adminApi.session).not.toHaveBeenCalled();
   });
 });

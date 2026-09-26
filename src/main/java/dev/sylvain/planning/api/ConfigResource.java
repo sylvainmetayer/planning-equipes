@@ -2,6 +2,8 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.config.ConfigAdmin;
 import dev.sylvain.planning.config.ConfigObservabilite;
+import dev.sylvain.planning.config.ConfigOidc;
+import dev.sylvain.planning.config.ConfigSecours;
 import dev.sylvain.planning.config.DevMode;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -48,16 +50,24 @@ public class ConfigResource {
 
     private final String version;
 
+    private final ConfigOidc oidc;
+
+    private final ConfigSecours secours;
+
     @Inject
     public ConfigResource(
             ConfigObservabilite observabilite,
             DevMode devMode,
             ConfigAdmin admin,
-            @ConfigProperty(name = "quarkus.application.version") String version) {
+            @ConfigProperty(name = "quarkus.application.version") String version,
+            ConfigOidc oidc,
+            ConfigSecours secours) {
         this.observabilite = observabilite;
         this.devMode = devMode;
         this.admin = admin;
         this.version = version;
+        this.oidc = oidc;
+        this.secours = secours;
     }
 
     @GET
@@ -68,7 +78,9 @@ public class ConfigResource {
                 observabilite.cloudflare().webAnalyticsToken().orElse(""),
                 devMode.isActive(),
                 admin.dragDropEnabled(),
-                version);
+                version,
+                oidc.enabled(),
+                secours.enabled());
     }
 
     /**
@@ -83,13 +95,21 @@ public class ConfigResource {
      * @param version            backend version: {@code X.Y.Z} on a release
      *                           image, the short SHA on a recette image,
      *                           {@code 999-SNAPSHOT} in a local build
+     * @param authOidc           Keycloak signs people in: the login page and
+     *                           the espace offer its button. Both screens are
+     *                           reachable without a session, so neither can
+     *                           learn it from {@code /api/auth/me} in time
+     * @param authSecours        the break-glass password form is open. Says
+     *                           which door exists, never a credential of it
      */
-    @Schema(requiredProperties = {"devMode", "dragDropEnabled", "version"})
+    @Schema(requiredProperties = {"devMode", "dragDropEnabled", "version", "authOidc", "authSecours"})
     public record ConfigView(
             String sentryDsn,
             String sentryEnvironment,
             String cloudflareWebAnalyticsToken,
             boolean devMode,
             boolean dragDropEnabled,
-            String version) {}
+            String version,
+            boolean authOidc,
+            boolean authSecours) {}
 }

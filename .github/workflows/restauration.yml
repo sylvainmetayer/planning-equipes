@@ -84,6 +84,15 @@ jobs:
           MAIL_HOST=localhost
           MAIL_FROM=ci@localhost
           LEGAL_DEMO_INSTANCE=true
+          # No Keycloak in this stack: a restore needs no sign-in. Keycloak
+          # off, then, and the break-glass door open instead — the start
+          # refuses an instance with neither (ADR 0054). The compose file still
+          # requires the realm's URL and secret; nothing contacts them.
+          OIDC_ENABLED=false
+          OIDC_PROVISIONING_ENABLED=false
+          ADMIN_SECOURS_ENABLED=true
+          OIDC_AUTH_SERVER_URL=http://localhost:8081/realms/planning
+          OIDC_CLIENT_SECRET=$(openssl rand -hex 32)
           EOF
           # ./backup is a host directory, as on the reference deployment: it
           # must belong to the container's uid before the first start.

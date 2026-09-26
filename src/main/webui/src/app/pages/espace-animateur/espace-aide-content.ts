@@ -67,17 +67,19 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
       id: 'acces',
       icon: 'key',
       question: $localize`:@@espace.aide.acces.question:Comment j'accède à mon espace ?`,
-      resume: $localize`:@@espace.aide.acces.resume:Par votre lien personnel, puis par un code reçu par e-mail.`,
+      resume: $localize`:@@espace.aide.acces.resume:Par votre lien personnel, puis en vous connectant avec votre compte.`,
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@espace.aide.acces.intro:Le lien que l'organisation vous a envoyé est personnel : il ouvre votre planning et lui seul. La première fois que vous l'ouvrez sur un appareil, un code à 6 chiffres est envoyé à l'adresse e-mail que l'organisation connaît. Il est valable 10 minutes, et vous avez 5 essais.`,
+          text: $localize`:@@espace.aide.acces.intro:Le lien que l'organisation vous a envoyé est personnel : il désigne votre planning et lui seul. Pour l'ouvrir, connectez-vous avec votre compte, dont l'adresse e-mail est celle de votre fiche : l'organisation vous a invité à le créer.`,
         },
         {
           kind: 'list',
           items: [
-            $localize`:@@espace.aide.acces.item1:Un code par appareil. Une fois saisi, cet appareil reste connecté un mois environ, puis un nouveau code vous est demandé.`,
-            $localize`:@@espace.aide.acces.item2:Code non reçu ? Regardez dans les indésirables, puis demandez-en un nouveau.`,
+            $localize`:@@espace.aide.acces.item1:Pas reçu d'invitation pour créer votre compte ? Regardez dans les indésirables, puis contactez l'organisation.`,
+            $localize`:@@espace.aide.acces.passkey:Pas de mot de passe à retenir : après votre adresse, un code à six chiffres arrive par e-mail. Pour aller plus vite, vous pouvez ajouter une passkey, que votre téléphone déverrouille par votre visage, votre empreinte ou son code : « Ma passkey et mes moyens de connexion », dans le menu en haut à droite.`,
+            $localize`:@@espace.aide.acces.passkeyPerdue:Passkey perdue, ou nouveau téléphone ? Après votre adresse, choisissez une autre méthode : le code par e-mail reste toujours possible. Une fois connecté, le même menu en enregistre une nouvelle.`,
+            $localize`:@@espace.aide.acces.item2:« Ce compte n'ouvre pas cet espace » : vous êtes connecté avec une autre adresse que celle de votre fiche. Déconnectez-vous, puis reconnectez-vous avec la bonne.`,
             $localize`:@@espace.aide.acces.item3:Ne transférez pas votre lien : la personne qui l'ouvre voit votre planning.`,
             $localize`:@@espace.aide.acces.item4:« Ce lien n'est plus valide », ou pas d'adresse e-mail sur votre fiche : contactez l'organisation.`,
           ],

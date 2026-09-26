@@ -439,9 +439,10 @@ class DatabaseResourceTest {
                 // And the tables that must not travel stay out, in both directions.
                 .doesNotContain("horloge_jour_j")
                 .doesNotContain("backup_settings")
-                .doesNotContain("espace_acces")
-                .doesNotContain("espace_session")
                 .doesNotContain("lien_affichage_mural")
+                .doesNotContain("FROM compte;")
+                .doesNotContain("INTO compte (")
+                .doesNotContain("habilitation")
                 .doesNotContain("solver_job")
                 .doesNotContain("journal_action");
     }

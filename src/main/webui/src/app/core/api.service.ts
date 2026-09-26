@@ -41,7 +41,7 @@ export class ApiService {
     return firstValueFrom(this.http.post<T>(url, body));
   }
 
-  /** GET flavour of {@link postPreservingHttpError} — the espace animateur tells a 401 (code required) from a 404 (dead link). */
+  /** GET flavour of {@link postPreservingHttpError} — the espace animateur tells a 401 (sign-in required) from a 404 (dead link). */
   getPreservingHttpError<T>(url: string): Promise<T> {
     return firstValueFrom(this.http.get<T>(url));
   }
@@ -54,8 +54,9 @@ export class ApiService {
     return this.run(this.http.put<T>(url, body));
   }
 
-  delete(url: string): Promise<void> {
-    return this.run(this.http.delete<void>(url));
+  /** `T` for the few DELETEs answering a body — withdrawing a right returns the account. */
+  delete<T = void>(url: string): Promise<T> {
+    return this.run(this.http.delete<T>(url));
   }
 
   /** Sends a raw (non JSON) payload such as a SQL dump or a CSV file. */

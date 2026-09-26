@@ -76,9 +76,10 @@ class ColleagueLookupRateLimitTest {
                 .then()
                 .statusCode(200);
         mailbox.clear();
-        String session = EspaceSessions.open(mailbox, token(), EMAIL);
-        RestAssured.requestSpecification =
-                new RequestSpecBuilder().addCookie("planning-espace", session).build();
+        String session = EspaceSessions.open(EMAIL);
+        RestAssured.requestSpecification = new RequestSpecBuilder()
+                .addHeader(EspaceSessions.EN_TETE, session)
+                .build();
     }
 
     @AfterEach

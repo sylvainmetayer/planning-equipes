@@ -682,7 +682,7 @@ d'une fiche à l'unité : places libérées dans le planning persisté,
 verrouillages retirés, contraintes ad hoc concernées. Et il nomme le reste,
 qui part **en cascade et sans retour** avec la fiche : déclaration de
 disponibilités, accusé de réception du planning publié, échanges de la foire au
-planning, code d'accès à l'espace animateur, compétences et souhaits. Un
+planning, compétences et souhaits. Un
 avertissement qui sous-estime ce qu'il détruit vaut moins qu'aucun
 avertissement.
 

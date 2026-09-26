@@ -47,6 +47,7 @@ import { ThemeService } from '../core/theme.service';
 import { NavModeService } from '../core/nav-mode.service';
 import { ThemePreference } from '../core/theme-preference';
 import { injectAppConfig } from '../core/app-config';
+import { signOut } from '../core/session';
 import { SolverJobService } from '../core/solver-job.service';
 import { BrandLogo } from '../shared/brand-logo';
 import { DataStaleIndicator } from '../shared/data-stale-indicator';
@@ -460,20 +461,15 @@ export class AdminShell {
   private readonly adminApi = inject(AdminApi);
 
   /**
-   * Drops the admin session cookie, then hard-navigates to /login: a reload
-   * (rather than a router navigation) also resets every store this shell
-   * preloaded, so nothing keeps polling behind the login page.
+   * Ends the session and hard-navigates away — to the identity provider's
+   * logout when the server names one, to /login otherwise (see `signOut`).
    */
-  protected async logout(): Promise<void> {
+  protected logout(): Promise<void> {
     // Before anything that could fail: on a shared régie computer, the next
     // person must not be offered the previous one's unsaved entries.
     this.draftStorages.forEach((storage) => purgeAllDrafts(storage));
     announceLogout(this.sessionEnd);
-    try {
-      await this.adminApi.logout();
-    } finally {
-      window.location.assign('/login');
-    }
+    return signOut(this.adminApi);
   }
 }
 

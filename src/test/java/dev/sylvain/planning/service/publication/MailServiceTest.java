@@ -22,9 +22,8 @@ import org.junit.jupiter.api.Test;
  *
  * <p>The invariant of this class is the opposite of the one of the
  * notifications: here a failure <b>must propagate</b>. The mail does not
- * accompany an operation, it <i>is</i> the operation — without it the animateur
- * has no code and cannot get in, or the administrator believes they have
- * delivered a planning that never left. The best-effort policy is tested
+ * accompany an operation, it <i>is</i> the operation — without it the
+ * administrator believes they have delivered a planning that never left. The best-effort policy is tested
  * separately, in {@code NotificationDispatcherTest}.</p>
  */
 class MailServiceTest {
@@ -55,10 +54,10 @@ class MailServiceTest {
     /** Each send is counted under the template that wrote it, never under a recipient. */
     @Test
     void aSentMailIsCountedUnderItsTemplate() {
-        service.sendAccessCode("alice@example.org", "Alice", "042137");
+        service.sendRelanceConfirmation("alice@example.org", "Alice", null);
 
         assertThat(registry.get("planning.mail.sent")
-                        .tag("template", "code-acces")
+                        .tag("template", "relance-confirmation")
                         .counter()
                         .count())
                 .isEqualTo(1.0);
@@ -70,11 +69,11 @@ class MailServiceTest {
     void aFailedSendIsCountedAndStillPropagates() {
         MailService failing = failingService();
 
-        assertThatThrownBy(() -> failing.sendAccessCode("alice@example.org", "Alice", "042137"))
+        assertThatThrownBy(() -> failing.sendRelanceConfirmation("alice@example.org", "Alice", null))
                 .isInstanceOf(IllegalStateException.class);
 
         assertThat(registry.get("planning.mail.failures")
-                        .tag("template", "code-acces")
+                        .tag("template", "relance-confirmation")
                         .counter()
                         .count())
                 .isEqualTo(1.0);
@@ -112,28 +111,6 @@ class MailServiceTest {
 
         assertThat(envoyes).hasSize(1);
         assertThat(envoyes.get(0).getText()).contains("Bonjour,").doesNotContain("espace en ligne");
-    }
-
-    /** The access code leaves in clear in the body, with how long it is valid. */
-    @Test
-    void leCodeDAccesEstEnvoyeAvecSaDureeDeValidite() {
-        service.sendAccessCode("alice@example.org", "Alice", "042137");
-
-        assertThat(envoyes).hasSize(1);
-        assertThat(envoyes.get(0).getSubject()).contains("code d'accès");
-        assertThat(envoyes.get(0).getText())
-                .contains("Bonjour Alice")
-                .contains("042137")
-                .contains("10 minutes");
-    }
-
-    /** No mail, no access: a failure to send the code must propagate. */
-    @Test
-    void aFailedAccessCodeSendPropagatesToTheCaller() {
-        service = failingService();
-
-        assertThatThrownBy(() -> service.sendAccessCode("alice@example.org", "Alice", "042137"))
-                .isInstanceOf(IllegalStateException.class);
     }
 
     /**

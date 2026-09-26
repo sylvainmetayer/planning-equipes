@@ -714,7 +714,7 @@ class AnimateurCsvImportServiceTest {
                         .contains("place(s) du planning persisté")
                         .contains("déclaration de disponibilités")
                         .contains("accusé de réception")
-                        .contains("code d'accès à l'espace animateur"));
+                        .contains("compétences et souhaits"));
     }
 
     /* -------------------------------- Mapping ------------------------------- */

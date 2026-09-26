@@ -40,25 +40,59 @@ Le verrou « un solveur à la fois » reste, lui, **global à l'instance**.
 
 ## Authentification
 
-Toute l'API est réservée à la session admin, avec six exceptions
-volontaires : l'espace animateur (le jeton d'URL est la clé), l'abonnement ICS
-(`/api/abonnements/*`, voir plus bas), l'affichage mural (`/api/mural/*`, voir
-[Affichage mural](#affichage-mural)), les routes de
-session, `/api/config` et `/api/branding` — lus par le frontend avant son
-démarrage, page de connexion comprise — et `/api/mentions-legales`. Un appel
-non authentifié répond **401, jamais une redirection HTML**.
+L'authentification passe par **Keycloak** ([ADR 0054](decisions/0054-keycloak-obligatoire-comptes-nominatifs.md),
+[`keycloak.md`](keycloak.md)). Toute l'API exige le rôle de realm **`admin`**,
+avec six exceptions volontaires : l'espace animateur (voir plus bas),
+l'abonnement ICS (`/api/abonnements/*`, voir plus bas), l'affichage mural
+(`/api/mural/*`, voir [Affichage mural](#affichage-mural)), les routes de session,
+`/api/config` et `/api/branding` — lus par le frontend avant son démarrage, page
+de connexion comprise — et `/api/mentions-legales`. Un appel non authentifié
+répond **401, jamais une redirection HTML** ; un appel authentifié sans le rôle
+`admin` (un animateur, un compte ordinaire) répond **403**.
 
-![Connexion du coordinateur : formulaire ou proxy d'accès](diagrammes/authentification.svg)
+| Route | Rôle |
+| --- | --- |
+| `GET /api/auth/me` | `{authentifie, nom, roles}` — `nom` est l'adresse du compte Keycloak, ou `admin` pour le compte de secours |
+| `GET /api/auth/oidc/login?redirect=/chemin` | Entrée du code flow : 302 vers Keycloak, retour sur le chemin demandé (un chemin de l'application, sinon `/`) |
+| `GET /api/auth/oidc/compte` | 303 vers la page « moyens de connexion » de la console de compte Keycloak : ajouter ou remplacer une passkey. Ouverte à toute session, animateur compris ; `404` sans Keycloak |
+| `POST /api/auth/logout` | `{urlDeconnexion}` : pour une session Keycloak, `/api/auth/oidc/logout`, que le navigateur doit suivre pour fermer aussi la session du realm |
+| `GET /api/config` | `authOidc`, `authSecours` : quelles portes ce déploiement ouvre |
+
+![Connexion du coordinateur : Keycloak, ou le compte de secours](diagrammes/authentification.svg)
 
 <sub>Source : [`diagrammes/authentification.puml`](diagrammes/authentification.puml).</sub>
 
-Le form login `/j_security_check` répond `429` après cinq échecs depuis la même
+**Compte de secours.** Le formulaire `/j_security_check` (compte `admin`,
+`ADMIN_PASSWORD`) n'existe que si `ADMIN_SECOURS_ENABLED=true` ; fermé, il
+répond `409`. Ouvert, il répond `429` après cinq échecs depuis la même
 adresse, **y compris avec le bon mot de passe** ([`securite.md`](securite.md)).
 
-`POST /api/mcp/cle` échange le mot de passe admin contre la clé MCP : la
-session ne suffit pas, parce que cette clé donne un accès complet en écriture et
-**survit à la session** d'où elle a été copiée. La révélation doit être liée à
-quelqu'un présent au clavier.
+**Comptes et habilitations.** `GET/POST /api/comptes`,
+`POST /api/comptes/administrateurs` (`{ email, nom }` : rôle de realm `admin`
+posé dans Keycloak, compte créé et invité s'il manque ; `409` sans
+provisioning),
+`POST /api/comptes/{id}/desactivation|reactivation`,
+`POST /api/comptes/{id}/habilitations`,
+`DELETE /api/comptes/{id}/habilitations/{habilitationId}`. Un compte est créé à
+la première connexion Keycloak, ou à l'avance ici ; il se **désactive**, une
+habilitation se **retire** — rien ne se supprime. Un compte désactivé perd tous
+ses rôles, ceux du realm compris. Les rôles délégués (`RH`,
+`RESPONSABLE_STAND`) n'ouvrent encore aucune route : refus par défaut, jusqu'au
+lot qui construira leurs vues.
+
+**Espace animateur.** Chaque route porte le jeton d'accès de la fiche **et**
+exige une session Keycloak qui porte le rôle `animateur` et dont l'adresse,
+**vérifiée**, est celle de cette fiche. Le lien seul n'ouvre rien ; le compte
+d'un collègue non plus. Sans session : `401`, l'interface propose alors de se
+connecter.
+
+`POST /api/mcp/cle` révèle la clé MCP : la session ne suffit pas, parce que
+cette clé donne un accès complet en écriture et **survit à la session** d'où
+elle a été copiée. Pour une session Keycloak, la dernière connexion au realm
+doit dater de moins de cinq minutes (`auth_time`) — sinon `401` et
+« déconnectez-vous puis reconnectez-vous » ; pour le compte de secours, le mot
+de passe est redemandé. `GET /api/mcp/statut` dit laquelle des deux
+(`revelationParReconnexion`).
 
 `GET /api/mcp/prompts` sert les prompts que le serveur MCP annonce — nom,
 description, texte — pour que la page MCP les propose aux clients qui ne savent
@@ -82,29 +116,6 @@ Deux compléments : `QUARKUS_HTTP_PROXY_TRUSTED_PROXIES` — **à renseigner si
 l'origine est joignable sans passer par le proxy**, sinon n'importe quel client
 annonce le schéma et l'adresse de son choix — et
 `QUARKUS_HTTP_PROXY_ENABLE_FORWARDED_HOST` si le proxy réécrit `Host`.
-
-### Mode « remote user » (facultatif, désactivé par défaut)
-
-Pour un proxy d'accès qui authentifie lui-même ses visiteurs et transmet
-l'adresse retenue. Le form login reste disponible en parallèle : une origine
-atteinte directement, ou un proxy mal configuré, laisse toujours `/login`
-utilisable. Variables `REMOTE_USER_*`.
-
-**Le secret partagé n'est pas une option.** Un en-tête est une affirmation, pas
-une preuve : sans lui, quiconque atteint l'origine sans passer par le proxy
-devient administrateur en envoyant une ligne d'en-tête — et une origine
-joignable en direct est l'état ordinaire (un port publié pour déboguer, une
-seconde ingress, un réseau interne). Activer le mode sans secret **fait échouer
-le démarrage**. Le secret doit voyager sur un en-tête que le proxy **écrase
-inconditionnellement** en entrée.
-
-Qui est qui : `REMOTE_USER_ADMIN_EMAIL` obtient le rôle admin ; **toute autre
-adresse est un animateur**, et l'attestation du proxy remplace alors le code à
-6 chiffres — c'est exactement le fait que ce code prouve, établi une étape plus
-tôt. Le jeton reste nécessaire et doit désigner la fiche portant cette adresse :
-l'attestation d'un animateur n'ouvre pas l'espace d'un collègue dont il aurait
-ramassé le lien. Si l'adresse admin est aussi celle d'un animateur, l'admin
-l'emporte et la personne perd son espace — collision signalée au démarrage.
 
 ## Résolution
 
@@ -1911,7 +1922,7 @@ hors de l'outil. Ce point n'expose que le chiffre que seul le planning connaît.
 
 ## Espace animateur
 
-Seules routes accessibles sans session admin. Le jeton — le lien imprimé sur le
+Routes accessibles sans le rôle `admin`. Le jeton — le lien imprimé sur le
 PDF individuel — résout à lui seul l'animateur **et** son édition :
 `X-Edition-Id` n'y est pas lu. Un jeton inconnu répond `404`, jamais `401`.
 
@@ -1920,11 +1931,13 @@ PDF individuel — résout à lui seul l'animateur **et** son édition :
 <sub>Source : [`diagrammes/espace-animateur.puml`](diagrammes/espace-animateur.puml).</sub>
 
 **Le lien ne suffit pas.** L'espace sert le planning en téléchargement, donc
-toutes les routes sauf `/code` et `/session` exigent aussi la session du cookie
-`planning-espace`, liée à l'animateur que le jeton résout. L'e-mail de la fiche
-**est** le second facteur : sans adresse, pas de code, et `400`. Trois codes
-jamais utilisés dans la fenêtre déclenchent un `429` — ouvrir la session efface
-le compteur.
+toutes ses routes exigent aussi une **session Keycloak** qui porte le rôle
+`animateur` et dont l'adresse, vérifiée par le realm, est celle de la fiche que
+le jeton désigne ([ADR 0054](decisions/0054-keycloak-obligatoire-comptes-nominatifs.md)).
+Un compte Keycloak est une personne : le même compte ouvre les fiches de cette
+personne dans chaque édition, jamais celle d'un collègue. Sans adresse sur la
+fiche, l'espace ne s'ouvre pas. Le code à six chiffres envoyé par e-mail
+n'existe plus.
 
 La rotation du jeton (`POST /api/animateurs/{id}/token`) invalide aussitôt le
 lien déjà distribué : c'est le geste à faire quand un planning individuel a
@@ -1981,7 +1994,7 @@ photo à un instant — et l'abonnement s'ajoute à côté, il ne le remplace pa
 | | Jeton d'espace (`access_token`) | Jeton d'abonnement (`abonnement_token`) |
 | --- | --- | --- |
 | Chemin | `/api/espace-animateur/{jeton}/…` | `/api/abonnements/{token}/planning.ics` |
-| Ce qu'il faut en plus | la session ouverte par code e-mail | **rien** |
+| Ce qu'il faut en plus | une session Keycloak à l'adresse de la fiche | **rien** |
 | Ce qu'il ouvre | tout l'espace : planning, PDF, échanges, disponibilités, et une écriture | **un document**, en lecture |
 | Rotation | `POST /api/animateurs/{id}/token` (admin) | `POST /api/espace-animateur/{jeton}/abonnement` (l'animateur, depuis son espace) |
 
@@ -2688,6 +2701,15 @@ Deux endpoints, même corps, et un seul écrit :
 | `POST` | `/api/animateurs/import-csv/analyse` | Lit le fichier et rend le rapport ligne par ligne. **N'ouvre aucune transaction** |
 | `POST` | `/api/animateurs/import-csv` | Relit le même fichier, rejoue toutes les vérifications, puis écrit les lignes acceptées en **une** transaction |
 | `GET` | `/api/animateurs/import-csv/exemple` | Rend le CSV d'exemple versionné (`text/csv`, en pièce jointe). Lecture pure, hors édition — le fichier est une ressource du classpath, pas une donnée |
+
+Avec le provisioning Keycloak, l'import crée les comptes manquants **sans
+envoyer de mail** (de même l'import de scénario et la duplication d'une
+édition) ; les invitations partent ensuite d'un geste :
+
+| Méthode | Chemin | Effet |
+| --- | --- | --- |
+| `GET` | `/api/animateurs/invitations` | `{ actif, enAttente }` : combien de personnes de l'édition n'ont jamais été invitées. `actif: false` sans provisioning |
+| `POST` | `/api/animateurs/invitations` | Invite chacune, son compte créé s'il manque ; rend `{ crees, invites, echecs }`. `409` sans provisioning ou si Keycloak ne répond pas |
 
 Le corps est identique aux deux : `{ fileName, content, mapping,
 replaceAnimateurs, replaceJoursIndisponibles }`. `content` est le texte du

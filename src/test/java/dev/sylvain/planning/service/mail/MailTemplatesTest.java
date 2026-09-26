@@ -40,19 +40,17 @@ class MailTemplatesTest {
         MailTemplates templates = MailTemplates.standalone(new ProductName("Planning Machin"), BRANDED);
 
         MailContent content = templates.render(
-                "mail/code-acces",
-                "Planning Machin — votre code d'accès",
-                MailTemplates.values("prenom", "Alice", "code", "123456"));
+                "mail/declaration-soumise",
+                "Planning Machin — l'accès d'Alice",
+                MailTemplates.values("nom", "Alice", "joursIndisponibles", 2, "souhaits", 1, "lien", ""));
 
         assertThat(content.text())
-                .startsWith("Bonjour Alice,\n\n")
-                .contains("Voici votre code d'accès à votre espace animateur : 123456")
+                .startsWith("Alice a déclaré ses disponibilités depuis son espace : 2 jours")
                 .doesNotContain("<");
         assertThat(content.html())
                 // The subject is a value, so the layout escapes it like any other.
-                .contains("<title>Planning Machin — votre code d&#39;accès</title>")
-                .contains("Bonjour Alice,")
-                .contains("123456")
+                .contains("<title>Planning Machin — l&#39;accès d&#39;Alice</title>")
+                .contains("Alice a déclaré ses disponibilités")
                 .contains("cid:" + MailTemplates.LOGO_CID)
                 .contains("border-top:4px solid #aa0000")
                 .contains("Les Bénévoles du Jeu — Planning Machin");
@@ -113,7 +111,7 @@ class MailTemplatesTest {
                 names.add(matcher.group(1));
             }
         }
-        assertThat(names).as("templates named by the mail classes").hasSizeGreaterThanOrEqualTo(12);
+        assertThat(names).as("templates named by the mail classes").hasSizeGreaterThanOrEqualTo(11);
 
         Path folder = Path.of("src/main/resources/templates/mail");
         for (String name : names) {

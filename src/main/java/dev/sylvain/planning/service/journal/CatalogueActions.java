@@ -42,6 +42,7 @@ public final class CatalogueActions {
     private static final String STANDS_IMPORTES = "STANDS_IMPORTES";
     private static final String ANIMATEUR_COMPETENCES_GRILLE = "ANIMATEUR_COMPETENCES_GRILLE";
     private static final String ANIMATEURS_RELANCES = "ANIMATEURS_RELANCES";
+    private static final String ANIMATEURS_INVITES = "ANIMATEURS_INVITES";
     private static final String STAND_CREE = "STAND_CREE";
     private static final String STAND_MODIFIE = "STAND_MODIFIE";
     private static final String STAND_SUPPRIME = "STAND_SUPPRIME";
@@ -151,9 +152,13 @@ public final class CatalogueActions {
     private static final String PLANNING_CONFIRME = "PLANNING_CONFIRME";
     private static final String ABONNEMENT_CREE = "ABONNEMENT_CREE";
     private static final String ABONNEMENT_ANNULE = "ABONNEMENT_ANNULE";
-    private static final String CODE_ESPACE_DEMANDE = "CODE_ESPACE_DEMANDE";
-    private static final String SESSION_ESPACE_OUVERTE = "SESSION_ESPACE_OUVERTE";
     private static final String DECONNEXION = "DECONNEXION";
+    private static final String COMPTE_CREE = "COMPTE_CREE";
+    private static final String COMPTE_DESACTIVE = "COMPTE_DESACTIVE";
+    private static final String COMPTE_REACTIVE = "COMPTE_REACTIVE";
+    private static final String ADMINISTRATEUR_INVITE = "ADMINISTRATEUR_INVITE";
+    private static final String HABILITATION_ACCORDEE = "HABILITATION_ACCORDEE";
+    private static final String HABILITATION_RETIREE = "HABILITATION_RETIREE";
     private static final String TELECHARGEMENT_ESPACE_PDF = "TELECHARGEMENT_ESPACE_PDF";
     private static final String TELECHARGEMENT_ESPACE_ICS = "TELECHARGEMENT_ESPACE_ICS";
 
@@ -205,6 +210,7 @@ public final class CatalogueActions {
         changesData(STANDS_IMPORTES, "Stands importés depuis un fichier", Entite.STAND);
         changesData(ANIMATEUR_COMPETENCES_GRILLE, "Grille des compétences enregistrée", Entite.ANIMATEUR);
         action(ANIMATEURS_RELANCES, "Animateurs relancés à la main", Entite.ANIMATEUR);
+        action(ANIMATEURS_INVITES, "Invitations aux comptes Keycloak envoyées", Entite.ANIMATEUR);
 
         /* -------------------------- Stands -------------------------- */
         changesData(STAND_CREE, "Stand ajouté", Entite.STAND);
@@ -361,9 +367,15 @@ public final class CatalogueActions {
         action(PLANNING_CONFIRME, "Planning confirmé depuis l'espace", Entite.ANIMATEUR);
         action(ABONNEMENT_CREE, "Abonnement au calendrier activé", Entite.ANIMATEUR);
         action(ABONNEMENT_ANNULE, "Abonnement au calendrier annulé", Entite.ANIMATEUR);
-        action(CODE_ESPACE_DEMANDE, "Code d'accès à l'espace demandé", Entite.ANIMATEUR);
-        action(SESSION_ESPACE_OUVERTE, "Session d'espace ouverte", Entite.ANIMATEUR);
         action(DECONNEXION, "Déconnexion", Entite.PARAMETRES);
+        // Accounts and rights are instance-wide; they are filed under the
+        // edition the administrator was working in, like the logout above.
+        action(COMPTE_CREE, "Compte créé", Entite.PARAMETRES);
+        action(COMPTE_DESACTIVE, "Compte désactivé", Entite.PARAMETRES);
+        action(COMPTE_REACTIVE, "Compte réactivé", Entite.PARAMETRES);
+        action(ADMINISTRATEUR_INVITE, "Administrateur invité", Entite.PARAMETRES);
+        action(HABILITATION_ACCORDEE, "Habilitation accordée", Entite.PARAMETRES);
+        action(HABILITATION_RETIREE, "Habilitation retirée", Entite.PARAMETRES);
         // One line per explicit download, never per page shown: « a-t-il bien
         // récupéré son planning ? » without turning the history into an
         // access log. The calendar subscription stays out — see SANS_TRACE.
@@ -407,6 +419,7 @@ public final class CatalogueActions {
         route("AnimateurResource#importCsvAnimateurs", ANIMATEURS_IMPORTES);
         route("AnimateurResource#saveCompetencesGrid", ANIMATEUR_COMPETENCES_GRILLE);
         route("AnimateurResource#relancer", ANIMATEURS_RELANCES);
+        route("AnimateurResource#sendInvitations", ANIMATEURS_INVITES);
 
         route("StandResource#createStand", STAND_CREE);
         route("StandResource#updateStand", STAND_MODIFIE);
@@ -515,6 +528,12 @@ public final class CatalogueActions {
         route("AffichageMuralResource#create", AFFICHAGE_MURAL_CREE);
         route("AffichageMuralResource#revoke", AFFICHAGE_MURAL_REVOQUE);
         route("AuthResource#logout", DECONNEXION);
+        route("CompteResource#create", COMPTE_CREE);
+        route("CompteResource#deactivate", COMPTE_DESACTIVE);
+        route("CompteResource#reactivate", COMPTE_REACTIVE);
+        route("CompteResource#inviteAdministrator", ADMINISTRATEUR_INVITE);
+        route("CompteResource#grant", HABILITATION_ACCORDEE);
+        route("CompteResource#withdraw", HABILITATION_RETIREE);
 
         route("DeclarationDisponibiliteResource#configure", COLLECTE_CONFIGUREE);
         route("DeclarationDisponibiliteResource#apply", DECLARATION_APPLIQUEE);
@@ -534,8 +553,6 @@ public final class CatalogueActions {
         route("EspaceAnimateurResource#requestCarpool", COVOITURAGE_DEMANDE);
         route("EspaceAnimateurResource#regenerateAbonnementToken", ABONNEMENT_CREE);
         route("EspaceAnimateurResource#cancel", ABONNEMENT_ANNULE);
-        route("EspaceAnimateurResource#requestCode", CODE_ESPACE_DEMANDE);
-        route("EspaceAnimateurResource#openSession", SESSION_ESPACE_OUVERTE);
         routeWhenProven("EspaceAnimateurResource#planningPdf", TELECHARGEMENT_ESPACE_PDF);
         routeWhenProven("EspaceAnimateurResource#planningIcs", TELECHARGEMENT_ESPACE_ICS);
     }

@@ -17,9 +17,11 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 /**
  * Locks the admin form login out after a run of failures.
  *
- * <p>The application has a single account, {@code admin}, with no second
- * factor: one pair of credentials opens the personal data of ~150 people,
- * minors included. {@code /j_security_check} nonetheless accepted attempts at
+ * <p>The break-glass account, {@code admin}, has no second factor: one pair
+ * of credentials opens the personal data of ~150 people, minors included —
+ * which is why the door is closed unless {@code ADMIN_SECOURS_ENABLED} opens
+ * it (see {@link FormLoginSecours}), and why it stays locked out after a run
+ * of failures when it is open. {@code /j_security_check} nonetheless accepted attempts at
  * the speed of the network — while revealing the MCP key already locked out
  * after five tries. This is the same lock, put where it was missing most.</p>
  *
@@ -55,6 +57,17 @@ public class AdminLoginLimiter {
 
     /** Target of the Quarkus form login ({@code quarkus.http.auth.form.post-location} by default). */
     static final String CHEMIN_CONNEXION = "/j_security_check";
+
+    /**
+     * Whether {@code path} is one the form mechanism treats as a login. Quarkus'
+     * {@code FormAuthenticationMechanism} accepts any POST whose path
+     * <em>ends</em> with the post location — {@code /api/j_security_check}
+     * logs in as well as {@code /j_security_check} — so every guard of that
+     * door matches the same way, or a prefix walks around it.
+     */
+    static boolean isLoginPath(String path) {
+        return path != null && path.endsWith(CHEMIN_CONNEXION);
+    }
 
     /** After the security headers, before anything handles the request. */
     private static final int PRIORITE = 250;
@@ -107,7 +120,7 @@ public class AdminLoginLimiter {
     }
 
     private void apply(RoutingContext contexte) {
-        if (!CHEMIN_CONNEXION.equals(contexte.normalizedPath())) {
+        if (!isLoginPath(contexte.normalizedPath())) {
             contexte.next();
             return;
         }
@@ -132,9 +145,9 @@ public class AdminLoginLimiter {
 
     void onFailure(@Observes AuthenticationFailureEvent evenement) {
         Object contexte = evenement.getEventProperties().get(RoutingContext.class.getName());
-        // The other mechanisms (MCP key, remote-user header, session already
+        // The other mechanisms (MCP key, OIDC tenants, session already
         // open) raise the same event and have nothing to do with this lock.
-        if (!(contexte instanceof RoutingContext routage) || !CHEMIN_CONNEXION.equals(routage.normalizedPath())) {
+        if (!(contexte instanceof RoutingContext routage) || !isLoginPath(routage.normalizedPath())) {
             return;
         }
         failures.recordFailure(address(routage), config.dureeBlocage());

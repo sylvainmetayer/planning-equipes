@@ -51,6 +51,7 @@ on:
       - 'src/main/webui/src/app/shared/deplacement-dialog.ts'
       - 'src/main/webui/src/app/pages/solver/**'
       - 'src/main/webui/e2e/support.ts'
+      - 'src/main/webui/e2e/keycloak.ts'
       - 'src/main/webui/e2e/reference.ts'
       - 'src/main/webui/playwright.config.ts'
       - '.github/workflows/e2e-lourd.yml'
@@ -89,6 +90,7 @@ on:
       - 'src/main/webui/src/app/shared/deplacement-dialog.ts'
       - 'src/main/webui/src/app/pages/solver/**'
       - 'src/main/webui/e2e/support.ts'
+      - 'src/main/webui/e2e/keycloak.ts'
       - 'src/main/webui/e2e/reference.ts'
       - 'src/main/webui/playwright.config.ts'
       - '.github/workflows/e2e-lourd.yml'
@@ -128,6 +130,10 @@ jobs:
     uses: ./.github/workflows/e2e-suite.yml
     with:
       playwright-args: --grep @lourd
+      # Ces specs n'ouvrent aucun espace animateur : pas de Keycloak à monter
+      # (OIDC_ENABLED=false), l'administration passe par le compte de secours.
+      # Une spec @lourd qui ouvrirait un espace demanderait `keycloak-secours`.
+      authentification: secours
       # Trois résolutions réelles et trois publications : la spec s'accorde
       # vingt minutes à elle seule, et un runner lent en prend plus.
       timeout-minutes: 60

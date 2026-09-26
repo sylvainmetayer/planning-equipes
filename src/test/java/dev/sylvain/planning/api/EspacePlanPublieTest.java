@@ -99,9 +99,10 @@ class EspacePlanPublieTest {
 
         // The espace session (e-mail code flow) rides on every request.
         RestAssured.requestSpecification = null;
-        String session = EspaceSessions.open(mailbox, tokenOf("PUBESP-A"), EMAIL_ALICE);
-        RestAssured.requestSpecification =
-                new RequestSpecBuilder().addCookie("planning-espace", session).build();
+        String session = EspaceSessions.open(EMAIL_ALICE);
+        RestAssured.requestSpecification = new RequestSpecBuilder()
+                .addHeader(EspaceSessions.EN_TETE, session)
+                .build();
         mailbox.clear();
     }
 
@@ -260,9 +261,10 @@ class EspacePlanPublieTest {
 
         RestAssured.requestSpecification = null;
         donnerEmail("PUBESP-B", EMAIL_BRUNO);
-        String session = EspaceSessions.open(mailbox, tokenOf("PUBESP-B"), EMAIL_BRUNO);
-        RestAssured.requestSpecification =
-                new RequestSpecBuilder().addCookie("planning-espace", session).build();
+        String session = EspaceSessions.open(EMAIL_BRUNO);
+        RestAssured.requestSpecification = new RequestSpecBuilder()
+                .addHeader(EspaceSessions.EN_TETE, session)
+                .build();
 
         given().when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-B"))
@@ -389,7 +391,8 @@ class EspacePlanPublieTest {
     /**
      * A fiche without an address is precisely the case this feature exists
      * for: the mail never left, so the espace is the only place those
-     * sentences can still be read.
+     * sentences can still be read — once the address is added and the person
+     * signs in (the espace itself needs the address since ADR 0054).
      */
     @Test
     void unePublicationQuiNAPasPuPartirResteLisibleDansLEspace() {
@@ -397,6 +400,7 @@ class EspacePlanPublieTest {
         donnerEmail("PUBESP-A", null);
         persistPlan("PUBESP-B");
         publication.publier();
+        donnerEmail("PUBESP-A", EMAIL_ALICE);
 
         given().when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))

@@ -9,12 +9,9 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -28,20 +25,23 @@ import {
   RouterOutlet,
 } from '@angular/router';
 import { filter, map } from 'rxjs';
+import { AdminApi } from '../../core/api/admin-api';
+import { APP_CONFIG } from '../../core/app-config';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
 import { PageFocusService } from '../../core/page-focus.service';
 import { AppLocale, getStoredLocale, setStoredLocaleAndReload } from '../../core/locale';
-import { errorMessage } from '../../core/error-message';
+import { signOut } from '../../core/session';
 import { BrandLogo } from '../../shared/brand-logo';
-import { StatusMessage } from '../../shared/status-message';
 import { VersionFooter } from '../../shared/version-footer';
 
 /**
  * Standalone layout of the espace animateur (issue #165): a minimal toolbar
  * (no admin navigation, no solver monitor, no polling) above the two tabs —
  * the animateur's planning and their demandes d'échange. The access token in
- * the URL is the whole credential: this shell loads everything from it and
- * the child pages read the shared `EspaceAnimateurService` state.
+ * the URL designates the fiche; a Keycloak session whose verified e-mail is
+ * that fiche's, with the `animateur` role, is what opens it. This shell loads
+ * everything from the token and the child pages read the shared
+ * `EspaceAnimateurService` state.
  */
 @Component({
   selector: 'app-espace-animateur-shell',
@@ -51,15 +51,11 @@ import { VersionFooter } from '../../shared/version-footer';
     RouterLink,
     RouterLinkActive,
     BrandLogo,
-    StatusMessage,
     VersionFooter,
-    FormsModule,
     MatToolbarModule,
     MatButtonModule,
     MatCardModule,
-    MatFormFieldModule,
     MatIconModule,
-    MatInputModule,
     MatMenuModule,
     MatProgressBarModule,
     MatTooltipModule,
@@ -74,6 +70,22 @@ export class EspaceAnimateurShell {
   protected readonly espace = inject(EspaceAnimateurService);
   protected readonly locale: AppLocale = getStoredLocale();
 
+  /**
+   * Keycloak sign-in is on. Off (a deployment running on its break-glass
+   * account alone), no session can open an espace: the screen says the espace
+   * is unavailable rather than offering a door that does not exist.
+   */
+  protected readonly modeOidc = inject(APP_CONFIG).authOidc;
+
+  /**
+   * Set when the visitor is already signed in and the espace still refuses
+   * them: a session without the `animateur` role, or whose e-mail is not the
+   * one on the fiche this link designates. Without it the screen would loop —
+   * "Se connecter" signs the same account straight back into the same refusal.
+   */
+  protected readonly signedInWithoutAccess = signal(false);
+
+  private readonly adminApi = inject(AdminApi);
   private readonly route = inject(ActivatedRoute);
   protected readonly jeton = toSignal(
     this.route.paramMap.pipe(map((params) => params.get('jeton'))),
@@ -89,7 +101,7 @@ export class EspaceAnimateurShell {
   constructor() {
     const jeton = this.route.snapshot.paramMap.get('jeton');
     if (jeton) {
-      void this.espace.charger(jeton);
+      void this.espace.charger(jeton).then(() => this.diagnoseRefusal());
     }
     // Same contract as the admin shell: moving to another tab of the espace
     // hands the focus to <main> and speaks the new page's title, instead of
@@ -122,6 +134,38 @@ export class EspaceAnimateurShell {
     this.pageFocus.skipTo(event, this.contenu()?.nativeElement);
   }
 
+  /** Who is signed in, if anyone — asked only once the espace has refused. */
+  private async diagnoseRefusal(): Promise<void> {
+    if (!this.modeOidc || !this.espace.authRequise()) {
+      this.signedInWithoutAccess.set(false);
+      return;
+    }
+    try {
+      this.signedInWithoutAccess.set((await this.adminApi.session()).authentifie);
+    } catch {
+      // Unreachable probe: offering the sign-in button is the better guess.
+      this.signedInWithoutAccess.set(false);
+    }
+  }
+
+  /**
+   * Signs in with Keycloak and comes back to this very espace: the token in
+   * the URL is what designates the fiche — and so the edition — being opened.
+   */
+  protected signInWithKeycloak(): void {
+    window.location.assign(this.adminApi.oidcLoginUrl(`/animateur/${this.jeton() ?? ''}`));
+  }
+
+  /**
+   * Ends the session that does not open this espace — on Keycloak too, or the
+   * next "Se connecter" would sign the same wrong account back in without
+   * asking anything. The RP-initiated logout lands on the deployment's single
+   * post-logout route; this espace is only the fallback without one.
+   */
+  protected deconnecter(): Promise<void> {
+    return signOut(this.adminApi, window.location.pathname);
+  }
+
   protected infobulleHorloge(date: string, heure: string): string {
     const moment = heure ? `${date} ${heure}` : date;
     return $localize`:@@espace.dateFigee:MOCK — la date du jour est figée au ${moment}:date: sur ce serveur : « Aujourd'hui » et les journées passées se lisent sur ce moment-là, pas sur celui du téléphone.`;
@@ -130,43 +174,5 @@ export class EspaceAnimateurShell {
   /** Language messages resolve once at bootstrap, so switching reloads the page. */
   protected toggleLocale(): void {
     setStoredLocaleAndReload(this.locale === 'fr' ? 'en' : 'fr');
-  }
-
-  /* -------- Passwordless access: e-mail code against the valid token ------- */
-
-  /** Masked address the code went to, `null` while none was requested. */
-  protected readonly codeEnvoyeA = signal<string | null>(null);
-  protected readonly codeSaisi = signal('');
-  protected readonly authEnCours = signal(false);
-  protected readonly erreurAuth = signal<string | null>(null);
-
-  protected async demanderCode(): Promise<void> {
-    this.authEnCours.set(true);
-    this.erreurAuth.set(null);
-    try {
-      this.codeEnvoyeA.set(await this.espace.demanderCode());
-      this.codeSaisi.set('');
-    } catch (error) {
-      this.erreurAuth.set(errorMessage(error));
-    } finally {
-      this.authEnCours.set(false);
-    }
-  }
-
-  protected async validerCode(): Promise<void> {
-    if (!this.codeSaisi().trim()) {
-      return;
-    }
-    this.authEnCours.set(true);
-    this.erreurAuth.set(null);
-    try {
-      // On success `charger` runs again with the fresh cookie: `authRequise`
-      // flips back and the espace renders in place of this screen.
-      await this.espace.validerCode(this.codeSaisi().trim());
-    } catch (error) {
-      this.erreurAuth.set(errorMessage(error));
-    } finally {
-      this.authEnCours.set(false);
-    }
   }
 }
