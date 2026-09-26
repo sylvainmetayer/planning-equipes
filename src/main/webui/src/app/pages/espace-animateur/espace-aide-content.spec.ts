@@ -29,6 +29,7 @@ describe('buildEspaceAideSections', () => {
         'suivi',
         'demandes-recues',
         'declarer-disponibilites',
+        'empechement',
         'foire-fermee',
       ]),
     );

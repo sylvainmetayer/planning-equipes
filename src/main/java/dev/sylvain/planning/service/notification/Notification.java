@@ -46,6 +46,20 @@ public sealed interface Notification {
             implements Notification {}
 
     /**
+     * An animateur reported from their espace that they will not be there —
+     * a whole day, or one seat — and the report waits on the day's screen.
+     * Told to the organisation at once, without waiting for somebody to open
+     * a screen: the seat may start within the hour.
+     *
+     * @param poste  the seat, worded (« Stand 07 09:00-12:00 »), {@code null}
+     *               for a whole day
+     * @param motif  the closed-list reason, worded, {@code null} when none was
+     *               given — never free text
+     */
+    record EmpechementSignale(String animateurNomComplet, LocalDate jour, String poste, String motif)
+            implements Notification {}
+
+    /**
      * The organisation validated a covoiturage: one notification per member of
      * the grouped arrival, the declarant and the teammates alike — each of
      * them now rides in a car they can no longer change from their espace.

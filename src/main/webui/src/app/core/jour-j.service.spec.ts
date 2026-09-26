@@ -41,10 +41,25 @@ describe('JourJService', () => {
     expect(api.post).toHaveBeenCalledWith('/api/jour-j/absences', {
       animateurId: 'A1',
       raison: null,
+      creneauId: null,
     });
 
     await service.marquerAbsent('A1', '  Malade  ');
-    expect(api.post.mock.calls[1][1]).toEqual({ animateurId: 'A1', raison: 'Malade' });
+    expect(api.post.mock.calls[1][1]).toEqual({
+      animateurId: 'A1',
+      raison: 'Malade',
+      creneauId: null,
+    });
+  });
+
+  it('narrows an absence to one timeslot, and settles a report either way', async () => {
+    await service.marquerAbsent('A1', '', undefined, undefined, 42);
+    expect(api.post.mock.calls[0][1]).toEqual({ animateurId: 'A1', raison: null, creneauId: 42 });
+
+    await service.traiterSignalement(7);
+    expect(api.post).toHaveBeenCalledWith('/api/jour-j/signalements/7/traitement', null);
+    await service.classerSignalement(7);
+    expect(api.post).toHaveBeenCalledWith('/api/jour-j/signalements/7/classement', null);
   });
 
   it('cancels the whole day, or one timeslot', async () => {

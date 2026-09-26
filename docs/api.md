@@ -2369,6 +2369,43 @@ qu'une résolution tient l'édition : le calcul en cours note encore l'arrivée
 groupée qu'il a reçue, et le groupe serait prévenu d'un changement que le plan
 à venir ne reflète pas.
 
+## Empêchement signalé depuis l'espace
+
+« Je ne pourrai pas être là » : l'animateur signale depuis son espace qu'il sera
+absent **toute une journée** ou **sur un poste**. C'est la **deuxième route en
+écriture** de l'espace, après la déclaration de disponibilités, et elle reste
+ouverte **toute l'édition** — foire et collecte fermées comprises : c'est le cas
+principal. Rien n'est écrit au planning : l'organisation **constate** ou
+**classe** (ADR 0065).
+
+| Borne | Ce qu'elle empêche |
+| --- | --- |
+| Une journée de l'événement où l'animateur tient un poste **dans le planning communiqué**, pas encore terminée ; pour un poste, le sien et pas encore terminé (`400`) | Un signalement sur ce qu'il ne voit pas dans son espace, ou sur du passé |
+| **Un seul signalement ouvert** par personne et par objet (index unique partiel, V111) ; une journée déjà signalée entière couvre ses postes (`409`) | Le volume : renvoyer mille fois laisse une ligne |
+| `ESPACE_DECLARATION_MAX_ENVOIS` par animateur et par fenêtre, compté **à part** de la déclaration et avant toute validation | Le rythme : chaque signalement écrit à l'organisation. Au-delà, `429` + `Retry-After` |
+
+Le poste est désigné par sa **clé naturelle** — `creneauId` et `standId` —,
+jamais par l'identifiant du siège, qu'une résolution renumérote. Le motif est
+**facultatif et en liste fermée** (`PERSONNEL`, `TRANSPORT`, `AUTRE`) : aucun
+champ libre, c'est là qu'on écrirait une raison de santé que personne n'a
+demandée.
+
+L'organisation est prévenue par courriel dès le signalement, au mieux
+(`service/notification/`) : un courriel perdu n'annule pas le signalement, que
+l'écran Aujourd'hui liste de toute façon. L'animateur annule le sien tant qu'il
+est ouvert, jamais après : une fois traité ou classé, c'est `409`.
+
+« Marquer absent et remplacer » **réserve** le signalement avant d'écrire
+l'absence : deux décisions à une seconde d'écart, ou une annulation qui se
+croise avec la décision, laissent un seul gagnant, et l'autre reçoit `409` sans
+qu'une absence soit posée deux fois. Si l'absence est refusée (un verrou, une
+contradiction, une résolution en cours), la réservation est rendue et le
+signalement reste ouvert pour une autre décision.
+
+`POST /api/jour-j/absences` prend désormais un `creneauId` facultatif : l'absence
+porte alors sur ce créneau seul, au lieu du reste de la journée — le geste du
+poste signalé, et celui du panneau Siège.
+
 ## Marque et mentions légales
 
 `/api/branding` et `/api/mentions-legales` sont **publics**, comme
