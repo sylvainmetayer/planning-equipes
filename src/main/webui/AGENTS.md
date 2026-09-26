@@ -236,11 +236,20 @@ and `?dosage=` in the URL), `/comparateur`
   (« Comparateur A/B » of two snapshots), `/instantanes` (« Instantanés »),
   `/verrouillages`, `/consignes` (« Consignes » — a band an arrêté closes
   for every stand on a date, the compensation chosen, the presets; issue #4
-  / ADR 0043), `/ouvertures` (« Ouvertures des stands » — `?vue=comparer&stands=a,b&ref=a` lays two
-  to eight stands against a reference, read-only, over the pure
-  `comparaison-ouvertures.ts`; its copy opens the stands' bulk edit preset;
-  `?vue=calendrier` is the combined calendar, a week from `?du=`, the layers
-  of `?couches=` over the seats, over the pure `calendrier-couches.ts`),
+  / ADR 0043), `/ouvertures` (« Horaires des stands » — three
+  views chosen by `?vue=`: the grid, the default, read and typed in one place —
+  one field per stand and timeslot, an empty cell is closed, and behind each
+  field the bars of the layers ticked in `?couches=` (the result, the stand's
+  own hours, the consigne) drawn as one `background-image` over the pure
+  `rendu-grille.ts`, a focused cell explained in a sentence by
+  `calendrier-couches.ts` with its links, `?du=`/`?au=` narrowing the days;
+  `?vue=journees-types`, the same cells said once per template;
+  `?vue=comparer&stands=a,b&ref=a`, two to eight stands against a reference,
+  read-only, over the pure `comparaison-ouvertures.ts`, its copy opening the
+  stands' bulk edit preset. The former `?vue=journee` and `?vue=calendrier`
+  are redirected by the route's guard, `vues-retirees.ts`, to `/journee` once
+  a plan is computed or to the grid narrowed to the day, and to the grid with
+  its layers),
   `/disponibilites` (what the animateurs
   declared), `/editions`, `/historique` (« Historique des actions »),
   `/nouveautes` (« Nouveautés » — what the running version brought, read from

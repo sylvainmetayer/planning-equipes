@@ -1,4 +1,4 @@
-// Presentation rules of the "Ouvertures des stands" screen, kept apart from the
+// Presentation rules of the « Horaires des stands » screen, kept apart from the
 // component so they are unit-tested without rendering — same split as the bulk
 // edits (`<entity>-bulk-edit.ts`).
 //
@@ -7,61 +7,41 @@
 
 import {
   AnomalieOuverture,
-  CelluleJourOuverture,
   LigneStandOuverture,
   RapportOuvertures,
   TypeAnomalieOuverture,
 } from '../../core/models';
 
 /**
- * Reading grid, entry grid by date, entry grid by kind of day, or one day laid
- * on time (ADR 0032 and 0033). The two entry grids write the same cells: the
- * one by kind of day says a vacation once for every date its template governs.
+ * The grid (typed and read in one place), the same grid said once per kind of
+ * day (ADR 0033), and two to eight stands laid side by side. The two grids
+ * write the same cells: the one by kind of day says a timeslot once for every
+ * date its template governs.
  */
-export type OpeningsView =
-  'CONSULTER' | 'SAISIR' | 'JOURNEES_TYPES' | 'JOURNEE' | 'CALENDRIER' | 'COMPARER';
+export type OpeningsView = 'GRILLE' | 'JOURNEES_TYPES' | 'COMPARER';
 
-/** The `vue` query param of each view; the reading grid, the default, writes none. */
+/** The `vue` query param of each view; the grid, the default, writes none. */
 export const OPENINGS_VIEW_PARAMS: Readonly<Record<OpeningsView, string | null>> = {
-  CONSULTER: null,
-  SAISIR: 'saisie',
+  GRILLE: null,
   JOURNEES_TYPES: 'journees-types',
-  JOURNEE: 'journee',
-  CALENDRIER: 'calendrier',
   COMPARER: 'comparer',
 };
 
+/**
+ * `saisie` was the entry grid's own name before the reading grid folded into
+ * it, and the « Que faire ? » actions still write it: it reads as the grid.
+ * `journee` and `calendrier` are redirected before the page is built
+ * (`vues-retirees.ts`); here they only fall back to the default.
+ */
 export function readOpeningsView(param: string | null): OpeningsView {
-  if (param === 'saisie') {
-    return 'SAISIR';
-  }
   if (param === 'journees-types') {
     return 'JOURNEES_TYPES';
   }
-  if (param === 'comparer') {
-    return 'COMPARER';
-  }
-  if (param === 'calendrier') {
-    return 'CALENDRIER';
-  }
-  return param === 'journee' ? 'JOURNEE' : 'CONSULTER';
+  return param === 'comparer' ? 'COMPARER' : 'GRILLE';
 }
 
 /** Which rows to show: everything, or only what deserves a second look. */
 export type FiltreOuvertures = 'TOUS' | 'ANOMALIES' | 'PARTIELS' | 'FERMES';
-
-/**
- * Bar width of a cell, as a percentage of the day's amplitude. A stand open a
- * few minutes out of ten hours must still show a visible sliver rather than
- * nothing — that is exactly the case worth spotting.
- */
-export function largeurPourcent(cellule: CelluleJourOuverture): number {
-  if (cellule.minutesAmplitude <= 0 || cellule.minutesOuvertes <= 0) {
-    return 0;
-  }
-  const brut = (cellule.minutesOuvertes / cellule.minutesAmplitude) * 100;
-  return Math.max(4, Math.min(100, Math.round(brut)));
-}
 
 /** `135` → `2 h 15`, `45` → `45 min`. Labels come from the caller, so no `$localize` here. */
 export function dureeCourte(
@@ -149,23 +129,6 @@ export function synthese(rapport: RapportOuvertures): SyntheseOuvertures {
     postesTotal: rapport.postesTotal,
     anomalies: rapport.anomalies.length,
   };
-}
-
-const CLASSE_ETAT_CELLULE: Partial<Record<CelluleJourOuverture['etat'], string>> = {
-  FERME: 'ferme',
-  OUVERT_PARTIEL: 'partiel',
-};
-
-const CLASSE_SOURCE_CELLULE: Partial<Record<CelluleJourOuverture['source'], string>> = {
-  EXCEPTION: ' source-exception',
-  REGLE: ' source-regle',
-};
-
-/** CSS class of a cell, driving its colour: state first, then which layer decided it. */
-export function classeCellule(cellule: CelluleJourOuverture): string {
-  const etat = CLASSE_ETAT_CELLULE[cellule.etat] ?? 'total';
-  const source = CLASSE_SOURCE_CELLULE[cellule.source] ?? '';
-  return `ouverture-cellule etat-${etat}${source}`;
 }
 
 /** Icon of an anomaly kind, so the list reads without colour alone. */

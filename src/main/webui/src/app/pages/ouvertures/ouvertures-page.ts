@@ -8,6 +8,7 @@ import {
   afterNextRender,
   computed,
   inject,
+  resource,
   signal,
   viewChild,
   ViewEncapsulation,
@@ -17,6 +18,7 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -37,17 +39,23 @@ import {
 } from '../../core/grille-saisie';
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
+import { errorText } from '../../core/resource-state';
 import { SolverJobService } from '../../core/solver-job.service';
-import { dayNavigation } from '../../core/day-navigation';
 import { keepViewInQueryParams } from '../../core/view-query-params';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { GelNotice } from '../../shared/gel-notice';
 import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 import { PastilleFerie } from '../../shared/pastille-ferie';
-import { JourneeStandsVue, buildJourneeStands, pasHoraire } from './journee-stands';
+import { buildJourneeStands } from './journee-stands';
 import { OpeningsComparisonView } from './comparaison-vue';
-import { OpeningLayersView } from './couches-vue';
-import { Couche, readCouchesParam, writeCouchesParam } from './calendrier-couches';
+import {
+  COUCHES,
+  Couche,
+  explainCell,
+  readCouchesParam,
+  toggleCouche,
+  writeCouchesParam,
+} from './calendrier-couches';
 import { readStandsParam, writeStandsParam } from './comparaison-ouvertures';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { labelOf, labelsOf } from '../../core/reference-labels';
@@ -65,18 +73,20 @@ import {
   AnomalieOuverture,
   CelluleJourOuverture,
   EtatJourneesTypes,
+  LayerCell,
+  LayerDay,
   LigneStandOuverture,
   RapportOuvertures,
   SegmentCellule,
+  SourceHoraire,
+  TypeAnomalieOuverture,
 } from '../../core/models';
 import {
   anomaliesParStand,
-  classeCellule,
   dureeCourte,
   filtrerStands,
   FiltreOuvertures,
   iconeAnomalie,
-  largeurPourcent,
   OpeningsView,
   OPENINGS_VIEW_PARAMS,
   readOpeningsView,
@@ -106,17 +116,23 @@ import {
   recopierJour,
   saisie,
   scinder,
+  cellSegments,
   segmentsPartiels,
   standsModifies,
 } from './grille-horaires';
+import {
+  RenduCellule,
+  columnSpan,
+  portionsIn,
+  renderCell,
+  segmentSpans,
+  windowSpans,
+} from './rendu-grille';
 
 /** What a cell whose dates disagree shows: the template view never flattens one. */
 const ECART = '≠';
 
-/** What a closed cell shows, and one of the things typed to close one (`readCell`). */
-const FERME = '-';
-
-/** One cell as the template binds it: text and flags computed once, no call per binding. */
+/** One cell as the template binds it: text, flags and bars computed once, no call per binding. */
 interface CelluleView {
   clef: string;
   colonneId: string;
@@ -125,11 +141,16 @@ interface CelluleView {
   modifiee: boolean;
   partielle: boolean;
   fermee: boolean;
+  /** Nothing typed for the stand: it follows its rule — open by default, at its headcount. */
+  sansSaisie: boolean;
+  /** A timeslot the day's consigne added: dotted, under the « Créneaux » layer. */
+  ajouteeParConsigne: boolean;
   /** The column falls on a public holiday: tinted, never blocked. */
   ferie: boolean;
   desactivee: boolean;
   libelle: string;
   infobulle: string | null;
+  rendu: RenduCellule;
 }
 
 interface LigneView {
@@ -140,25 +161,50 @@ interface LigneView {
   /** Nothing to take from above: the row is the first one displayed, or is not displayed at all. */
   noLignePrecedente: boolean;
   modifiee: boolean;
+  /** Its anomalies in one tooltip, empty when it has none. */
+  anomalies: string;
+  /** Open time and seats over the displayed days: the reading grid's total column. */
+  minutesOuvertes: number;
+  postes: number;
   cellules: CelluleView[];
 }
 
+/** The cell the focus is in, explained: what the admin reads on a click. */
+export interface ExplicationCellule {
+  standId: string;
+  nom: string;
+  date: string;
+  jour: number | null;
+  colonne: string;
+  /** The day in one sentence, from the layers; `null` while they are read. */
+  phrase: string | null;
+  postes: number;
+  /** Windows the stand declares at an hour no timeslot covers, that day. */
+  horsGrille: string[];
+  partielle: string | null;
+  modifiee: boolean;
+  journeeType: string | null;
+  consigne: boolean;
+}
+
 /**
- * Read-only stand × jour grid of the opening schedule actually in force, so an
- * administrator can validate it visually before spending minutes on a solve.
+ * « Horaires des stands »: the stand × timeslot grid of the opening schedule,
+ * read and typed in one place.
  *
- * <p>Everything shown comes from `GET /api/ouvertures-stands`, which builds it
- * server-side from the very postes `PlanningService.construirePostes` would hand
- * the solver — recurring horaires expanded, dated exceptions applied, windows
- * clamped to each créneau. Deliberately not recomputed here: a validation screen
- * that offers a second interpretation of the data validates nothing.
+ * <p>What a cell shows comes from `GET /api/ouvertures-stands`, which builds it
+ * server-side from the very seats `PlanningService.construirePostes` would hand
+ * the solver — recurring rules expanded, dated exceptions applied, windows
+ * clamped to each timeslot — and its bars from `GET
+ * /api/ouvertures-stands/couches`, the layers before the consigne. Nothing is
+ * recomputed here: a validation screen offering a second interpretation of
+ * the data validates nothing.</p>
  *
- * <p>The same grid is also where the schedule is typed (« Saisir »): one
- * integer per stand and créneau, the way the organiser's own spreadsheet holds
- * it, with the moves a spreadsheet user expects — arrows, Enter, a pasted
- * block, a day copied onto the others. Nothing is written until « Enregistrer »,
- * and only the stands whose cells changed are sent, each with its whole
- * schedule (`PUT /api/ouvertures-stands/grille`).</p>
+ * <p>The cells are typed the way the organiser's own spreadsheet holds them —
+ * one integer per stand and column, arrows, Enter, a pasted block, a day
+ * copied onto the others. Nothing is written until « Enregistrer », and only
+ * the stands whose cells changed are sent, each with its whole schedule
+ * (`PUT /api/ouvertures-stands/grille`). A cell typed and not yet saved
+ * already draws the opening it will write.</p>
  */
 @Component({
   selector: 'app-ouvertures-page',
@@ -167,6 +213,7 @@ interface LigneView {
     MatCardModule,
     MatButtonModule,
     MatButtonToggleModule,
+    MatCheckboxModule,
     MatFormFieldModule,
     MatInputModule,
     MatIconModule,
@@ -174,7 +221,6 @@ interface LigneView {
     MatTooltipModule,
     RouterLink,
     OpeningsComparisonView,
-    OpeningLayersView,
     PastilleFerie,
     GelNotice,
   ],
@@ -258,49 +304,103 @@ export class OuverturesPage implements OnInit {
   private readonly store = inject(ReferenceDataStore);
   private referentielCharge = false;
 
-  /* ----------------------------- combined calendar ----------------------------- */
+  /* ------------------------------ grid rendering ------------------------------ */
 
-  /** `?couches=`: the layers the combined calendar shows; absent = all four. */
+  /** `?couches=`: what the bars of a cell draw; absent = all four. */
   protected readonly couchesAffichees = signal<Couche[]>(
     readCouchesParam(this.route.snapshot.queryParamMap.get('couches')),
   );
-  /** `?du=`: the first day of the combined calendar's page; absent = the first day. */
-  protected readonly calendarFirstDay = signal<string | null>(
+  protected readonly allLayers = COUCHES;
+  protected readonly couchesVisibles = computed<ReadonlySet<Couche>>(
+    () => new Set(this.couchesAffichees()),
+  );
+
+  /** `?du=` / `?au=`: the days the grid shows, both included; absent = from the first, to the last. */
+  protected readonly rangeStart = signal<string | null>(
     this.route.snapshot.queryParamMap.get('du') || null,
   );
-  /** The stands the filter keeps, for the combined calendar. */
-  protected readonly standIdsFiltres = computed<ReadonlySet<string>>(
-    () => new Set(this.lignes().map((ligne) => ligne.standId)),
+  protected readonly rangeEnd = signal<string | null>(
+    this.route.snapshot.queryParamMap.get('au') || null,
   );
 
-  /* ------------------------------- day view ------------------------------- */
-
-  /** The day on screen in « Journée », keyed by its date; the URL's `date` names it. */
-  private readonly navigationJour = dayNavigation(
-    computed(() => this.rapport()?.jours ?? []),
-    (jour) => jour.date,
-    { initial: this.route.snapshot.queryParamMap.get('date') },
-  );
-  protected readonly jourCourant = computed(() => this.navigationJour.current());
-  protected readonly isPremierJour = this.navigationJour.isFirst;
-  protected readonly isDernierJour = this.navigationJour.isLast;
-  /** The day laid on time, narrowed by the same filter and search as the grid. */
-  protected readonly journee = computed<JourneeStandsVue | null>(() => {
-    const rapport = this.rapport();
-    const jour = this.jourCourant();
-    if (!rapport || !jour) {
-      return null;
-    }
-    return buildJourneeStands(
-      rapport,
-      jour.date,
-      new Set(this.lignes().map((ligne) => ligne.standId)),
+  /** The event days inside `[rangeStart, rangeEnd]`. */
+  protected readonly joursAffiches = computed(() => {
+    const start = this.rangeStart();
+    const end = this.rangeEnd();
+    return (this.rapport()?.jours ?? []).filter(
+      (jour) => (start === null || jour.date >= start) && (end === null || jour.date <= end),
     );
   });
-  protected readonly pasHoraire = computed(() => {
-    const vue = this.journee();
-    return vue ? pasHoraire(vue) : null;
+  private readonly datesAffichees = computed(
+    () => new Set(this.joursAffiches().map((jour) => jour.date)),
+  );
+  /** The columns of the displayed days: what the moves, the paste and the keyboard walk over. */
+  protected readonly colonnesAffichees = computed(() => {
+    const dates = this.datesAffichees();
+    return this.colonnes().filter((colonne) => dates.has(colonne.date));
   });
+
+  /**
+   * The layers of the displayed days, before any solve: the stand's own
+   * windows and the consigne, read once per report and range — a save changes
+   * them too. What a cell explains on a click, and what its thin bars draw.
+   */
+  private readonly layersData = resource({
+    params: () => {
+      const jours = this.joursAffiches();
+      const rapport = this.rapport();
+      return rapport && jours.length > 0
+        ? { from: jours[0].date, to: jours[jours.length - 1].date, rapport }
+        : undefined;
+    },
+    loader: ({ params }) => this.standsApi.openingLayers(params.from, params.to),
+  });
+  protected readonly erreurCouches = errorText(this.layersData);
+  /** `standId|date` → that stand's layers that day. */
+  private readonly layersByCell = computed(() => {
+    const index = new Map<string, LayerCell>();
+    if (!this.layersData.hasValue()) {
+      return index;
+    }
+    for (const ligne of this.layersData.value().stands) {
+      for (const cellule of ligne.jours) {
+        index.set(`${ligne.standId}|${cellule.date}`, cellule);
+      }
+    }
+    return index;
+  });
+  private readonly layersByDay = computed(
+    () =>
+      new Map<string, LayerDay>(
+        this.layersData.hasValue()
+          ? this.layersData.value().jours.map((jour) => [jour.date, jour])
+          : [],
+      ),
+  );
+
+  /** `standId|date` → the stand's day as the report has it. */
+  private readonly daysByCell = computed(() => {
+    const index = new Map<string, CelluleJourOuverture>();
+    for (const ligne of this.rapport()?.stands ?? []) {
+      for (const jour of ligne.jours) {
+        index.set(`${ligne.standId}|${jour.date}`, jour);
+      }
+    }
+    return index;
+  });
+
+  /** The day of each stand in one sentence, from its layers; empty until they are read. */
+  private readonly explications = computed(() => {
+    const jours = this.layersByDay();
+    const phrases = new Map<string, string>();
+    for (const [clef, cellule] of this.layersByCell()) {
+      phrases.set(clef, explainCell(cellule, jours.get(cellule.date)?.consigne ?? null));
+    }
+    return phrases;
+  });
+
+  /** What every cell of the report really holds, keyed `standId#colonneId`: the result bar. */
+  private readonly segmentsLus = signal<ReadonlyMap<string, SegmentCellule[]>>(new Map());
 
   /* ------------------------------- entry grid ------------------------------ */
 
@@ -317,7 +417,7 @@ export class OuverturesPage implements OnInit {
       .map((ligne) => ligne.standId)
       .filter((standId) => this.hasPartialCells(standId)),
   );
-  /** The last cell focused: where a paste lands, and which day a row copy takes. */
+  /** The last cell focused: where a paste lands, which day a row copy takes, and what the panel explains. */
   protected readonly celluleActive = signal<AdresseCellule | null>(null);
   protected readonly enregistrement = signal(false);
 
@@ -333,21 +433,49 @@ export class OuverturesPage implements OnInit {
   );
   private readonly standIdsAffiches = computed(() => this.lignes().map((ligne) => ligne.standId));
 
+  /** Timeslot id → added by the consigne of its day, from the layers. */
+  private readonly creneauxAjoutes = computed(() => {
+    const ajoutes = new Set<number>();
+    for (const jour of this.layersByDay().values()) {
+      for (const vacation of jour.vacations) {
+        if (vacation.addedByConsigne && vacation.id !== null) {
+          ajoutes.add(vacation.id);
+        }
+      }
+    }
+    return ajoutes;
+  });
+
   /**
-   * The rows as the template binds them: every cell's text, flags and
-   * labels computed once per change, so the template reads properties
-   * instead of calling a dozen functions per cell — four thousand cells make
-   * that the difference between a filter that follows the keystroke and one
-   * that lags behind it.
+   * The rows as the template binds them: every cell's text, flags, labels and
+   * bars computed once per change, so the template reads properties instead
+   * of calling a dozen functions per cell — four thousand cells make that the
+   * difference between a filter that follows the keystroke and one that lags
+   * behind it.
    */
   protected readonly rowViews = computed<LigneView[]>(() => {
-    const colonnes = this.colonnes();
+    const colonnesGrille = this.colonnesAffichees();
+    const dates = this.datesAffichees();
     const cellules = this.cellules();
     const reference = this.reference();
     const partielles = this.partielles();
+    const segmentsLus = this.segmentsLus();
     const modifies = new Set(this.standsModifies());
     const verrouille = this.gridLocked();
     const feries = this.holidaysByDate();
+    const couches = this.couchesVisibles();
+    const layersByCell = this.layersByCell();
+    const layersByDay = this.layersByDay();
+    const daysByCell = this.daysByCell();
+    const explications = this.explications();
+    const ajoutes = this.creneauxAjoutes();
+    const anomalies = this.anomaliesParStand();
+    const spans = new Map(
+      colonnesGrille.map((colonne) => [
+        colonne.colonneId,
+        columnSpan(colonne.heureDebut, colonne.heureFin),
+      ]),
+    );
     // Every stand is rendered once and the filter only hides rows: rebuilding
     // twenty-eight rows of sixty cells when the field empties is what lagged.
     const visibles = new Set(this.lignes().map((ligne) => ligne.standId));
@@ -356,29 +484,65 @@ export class OuverturesPage implements OnInit {
       const nom = ligne.nom || ligne.standId;
       const typees = cellules.get(ligne.standId);
       const lues = reference.get(ligne.standId);
+      const joursAffiches = ligne.jours.filter((jour) => dates.has(jour.date));
       return {
         standId: ligne.standId,
         nom,
         visible: visibles.has(ligne.standId),
         noLignePrecedente: !visibles.has(ligne.standId) || ligne.standId === first,
         modifiee: modifies.has(ligne.standId),
-        cellules: colonnes.map((colonne) => {
+        anomalies: (anomalies.get(ligne.standId) ?? []).map((each) => each.message).join('\n'),
+        minutesOuvertes: joursAffiches.reduce((total, jour) => total + jour.minutesOuvertes, 0),
+        postes: joursAffiches.reduce((total, jour) => total + jour.postes, 0),
+        cellules: colonnesGrille.map((colonne) => {
           const clef = key(ligne.standId, colonne.colonneId);
+          const caseJour = `${ligne.standId}|${colonne.date}`;
           const partielle = partielles.has(clef);
           const effectif = typees?.get(colonne.colonneId) ?? null;
-          const valeur = effectif === null ? FERME : String(effectif);
+          const modifiee = effectif !== (lues?.get(colonne.colonneId) ?? null);
+          const source: SourceHoraire = daysByCell.get(caseJour)?.source ?? 'REGLE';
+          const span = spans.get(colonne.colonneId) ?? columnSpan('00:00', '00:00');
+          const lus = segmentsLus.get(clef);
+          const couchesJour = layersByCell.get(caseJour);
+          const consigne = layersByDay.get(colonne.date)?.consigne ?? null;
+          const explication = explications.get(caseJour) ?? null;
+          const note = partielle ? this.infobullePartielle(ligne.standId, colonne.colonneId) : null;
+          let resultat: (readonly [number, number])[] = [];
+          if (lus !== undefined && !modifiee) {
+            resultat = portionsIn(segmentSpans(lus, span), span);
+          } else if (effectif !== null) {
+            // A typed cell draws what its save will write: the whole column.
+            resultat = [[0, 1]];
+          }
           return {
             clef,
             colonneId: colonne.colonneId,
             premierDuJour: colonne.rang === 0,
-            valeur,
-            modifiee: effectif !== (lues?.get(colonne.colonneId) ?? null),
+            // One meaning for an empty cell: closed.
+            valeur: effectif === null ? '' : String(effectif),
+            modifiee,
             partielle,
             fermee: effectif === null,
+            sansSaisie: source === 'DEFAUT' && !modifiee,
+            ajouteeParConsigne: couches.has('creneaux') && ajoutes.has(colonne.creneauId),
             ferie: feries.has(colonne.date),
             desactivee: verrouille,
             libelle: `${nom} · ${this.libelleJour(colonne.date)} ${libelleColonne(colonne)}`,
-            infobulle: partielle ? this.infobullePartielle(ligne.standId, colonne.colonneId) : null,
+            infobulle: [explication, note].filter(Boolean).join('\n') || null,
+            rendu: renderCell(
+              {
+                resultat,
+                source,
+                nominal: couchesJour ? portionsIn(windowSpans(couchesJour.nominal), span) : null,
+                bande: consigne
+                  ? portionsIn([[consigne.debutMinutes, consigne.finMinutes]], span)
+                  : [],
+                reouvertures: couchesJour
+                  ? portionsIn(windowSpans(couchesJour.reopenings), span)
+                  : [],
+              },
+              couches,
+            ),
           };
         }),
       };
@@ -390,7 +554,7 @@ export class OuverturesPage implements OnInit {
   /** The templates and their calendar; absent until the first read, and null when the read fails. */
   protected readonly etatJourneesTypes = signal<EtatJourneesTypes | null>(null);
 
-  /** One column per vacation of every template the calendar actually uses. */
+  /** One column per timeslot of every template the calendar actually uses. */
   protected readonly colonnesJourneesTypes = computed<ColonneJourneeType[]>(() => {
     const rapport = this.rapport();
     return rapport ? colonnesJourneesTypes(rapport, this.etatJourneesTypes()) : [];
@@ -399,6 +563,18 @@ export class OuverturesPage implements OnInit {
   private readonly colonnesJourneesTypesParId = computed(
     () => new Map(this.colonnesJourneesTypes().map((colonne) => [colonne.colonneId, colonne])),
   );
+
+  /** Date → the name of the template governing it, for the panel's link. */
+  private readonly dayTemplateByDate = computed(() => {
+    const etat = this.etatJourneesTypes();
+    const noms = new Map((etat?.journeesTypes ?? []).map((each) => [each.id, each.nom]));
+    return new Map(
+      (etat?.calendrier ?? []).map((affectation) => [
+        affectation.date,
+        noms.get(affectation.journeeTypeId) ?? '',
+      ]),
+    );
+  });
 
   /** Date → the public holiday's name, for the days of the report that fall on one. */
   protected readonly holidaysByDate = computed(() => {
@@ -472,6 +648,7 @@ export class OuverturesPage implements OnInit {
     const verrouille = this.gridLocked();
     const visibles = new Set(this.lignes().map((ligne) => ligne.standId));
     const first = this.standIdsAffiches()[0];
+    const aucunRendu: RenduCellule = { image: null, size: null, position: null };
     return (this.rapport()?.stands ?? []).map((ligne) => {
       const nom = ligne.nom || ligne.standId;
       return {
@@ -480,6 +657,9 @@ export class OuverturesPage implements OnInit {
         visible: visibles.has(ligne.standId),
         noLignePrecedente: !visibles.has(ligne.standId) || ligne.standId === first,
         modifiee: modifies.has(ligne.standId),
+        anomalies: '',
+        minutesOuvertes: 0,
+        postes: 0,
         cellules: colonnesJT.map((colonne) => {
           const valeur = valeurJourneeType(cellules, ligne.standId, colonne);
           const lue = valeurJourneeType(reference, ligne.standId, colonne);
@@ -491,6 +671,8 @@ export class OuverturesPage implements OnInit {
             modifiee: valeur !== lue,
             partielle: valeur === 'ecart',
             fermee: valeur === null,
+            sansSaisie: false,
+            ajouteeParConsigne: false,
             ferie: false,
             desactivee: verrouille || colonne.colonnes.length === 0,
             libelle: `${nom} · ${colonne.nomJourneeType} ${libelleColonneJourneeType(colonne)}`,
@@ -498,6 +680,7 @@ export class OuverturesPage implements OnInit {
               valeur === 'ecart'
                 ? $localize`:@@ouvertures.journeesTypes.ecartInfobulle:Les dates de cette journée type ne disent pas la même chose. Retapez la case pour les aligner, ou réglez-les une à une dans la grille par date.`
                 : null,
+            rendu: aucunRendu,
           };
         }),
       };
@@ -516,13 +699,13 @@ export class OuverturesPage implements OnInit {
   protected readonly onlyStand = signal(this.route.snapshot.queryParamMap.get('stand') ?? '');
 
   /**
-   * `?date=` in the entry grid: the day a « Que faire ? » action opened it
-   * on. Once the grid is laid, the first cell of that day — on the stand of
-   * `?stand=`, else on the first row — takes the focus, which brings it into
-   * view; the address keeps the day until the page leaves the entry view.
+   * `?date=` in the grid: the day a « Que faire ? » action opened it on. Once
+   * the grid is laid, the first cell of that day — on the stand of `?stand=`,
+   * else on the first row — takes the focus, which brings it into view; the
+   * address keeps the day until the page leaves the grid.
    */
   private readonly saisieDate = signal(
-    this.view() === 'SAISIR' ? (this.route.snapshot.queryParamMap.get('date') ?? '') : '',
+    this.view() === 'GRILLE' ? (this.route.snapshot.queryParamMap.get('date') ?? '') : '',
   );
   /** The requested day is focused once, on the first load: a reload after a save leaves the focus where the user put it. */
   private saisieDateFocused = false;
@@ -551,6 +734,45 @@ export class OuverturesPage implements OnInit {
     return labelOf(this.nomsStands(), standId);
   });
 
+  /**
+   * The focused cell, explained — what the stand's layers make of its day,
+   * the seats it yields, a window no timeslot covers — with the three screens
+   * that own those layers. `null` outside the grid or before any focus.
+   */
+  protected readonly explication = computed<ExplicationCellule | null>(() => {
+    const active = this.celluleActive();
+    const rapport = this.rapport();
+    if (!active || !rapport || this.view() !== 'GRILLE') {
+      return null;
+    }
+    const colonne = this.colonnes().find((each) => each.colonneId === active.colonneId);
+    if (!colonne) {
+      return null;
+    }
+    const caseJour = `${active.standId}|${colonne.date}`;
+    const jour = this.daysByCell().get(caseJour);
+    const journee = buildJourneeStands(rapport, colonne.date, new Set([active.standId]));
+    const clef = key(active.standId, active.colonneId);
+    return {
+      standId: active.standId,
+      nom: labelOf(this.nomsStands(), active.standId),
+      date: colonne.date,
+      jour: rapport.jours.find((each) => each.date === colonne.date)?.jour ?? null,
+      colonne: libelleColonne(colonne),
+      phrase: this.explications().get(caseJour) ?? null,
+      postes: jour?.postes ?? 0,
+      horsGrille: (journee?.lignes[0]?.horsGrille ?? []).map(
+        (fenetre) => `${fenetre.heureDebut}–${fenetre.heureFin}`,
+      ),
+      partielle: this.partielles().has(clef)
+        ? this.infobullePartielle(active.standId, active.colonneId)
+        : null,
+      modifiee: this.isModified(active.standId, active.colonneId),
+      journeeType: this.dayTemplateByDate().get(colonne.date) || null,
+      consigne: this.consigneByDate().has(colonne.date),
+    };
+  });
+
   private readonly injector = inject(Injector);
   private readonly pageTitle = viewChild<ElementRef<HTMLElement>>('pageTitle');
 
@@ -570,6 +792,17 @@ export class OuverturesPage implements OnInit {
     anomaliesParStand(this.rapport()?.anomalies ?? []),
   );
 
+  /** Any narrowing of the grid a click can undo: a day range, a filter, a search, one stand, a layer hidden. */
+  protected readonly viewChanged = computed(
+    () =>
+      this.rangeStart() !== null ||
+      this.rangeEnd() !== null ||
+      this.filtre() !== 'TOUS' ||
+      this.recherche().trim() !== '' ||
+      this.onlyStand() !== '' ||
+      this.couchesAffichees().length !== COUCHES.length,
+  );
+
   constructor() {
     // The view is followed rather than read once: the palette's « Ouvertures
     // des stands › Comparer » navigates to this very route, and the router
@@ -582,14 +815,15 @@ export class OuverturesPage implements OnInit {
     });
     keepViewInQueryParams(() => ({
       vue: OPENINGS_VIEW_PARAMS[this.view()],
-      date: this.dateQueryParam(),
+      date: this.view() === 'GRILLE' ? this.saisieDate() || null : null,
       q: this.recherche().trim() || null,
       stand: this.onlyStand() || null,
       stands: this.view() === 'COMPARER' ? writeStandsParam(this.comparaisonStands()) : null,
       ref: this.view() === 'COMPARER' ? this.comparaisonReference() : null,
       ecarts: this.view() === 'COMPARER' && this.comparaisonEcarts() ? '1' : null,
-      couches: this.view() === 'CALENDRIER' ? writeCouchesParam(this.couchesAffichees()) : null,
-      du: this.view() === 'CALENDRIER' ? this.calendarFirstDay() : null,
+      couches: this.view() === 'GRILLE' ? writeCouchesParam(this.couchesAffichees()) : null,
+      du: this.view() === 'GRILLE' ? this.rangeStart() : null,
+      au: this.view() === 'GRILLE' ? this.rangeEnd() : null,
     }));
     inject(DestroyRef).onDestroy(() => {
       if (this.filtrePending !== null) {
@@ -615,6 +849,52 @@ export class OuverturesPage implements OnInit {
     }, 150);
   }
 
+  /** One layer ticked or unticked in the grid's rendering. */
+  protected basculerCouche(couche: Couche, visible: boolean): void {
+    this.couchesAffichees.set(toggleCouche(this.couchesAffichees(), couche, visible));
+  }
+
+  protected libelleCouche(couche: Couche): string {
+    switch (couche) {
+      case 'stand':
+        return $localize`:@@ouvertures.couches.couche.stand:Horaires du stand`;
+      case 'creneaux':
+        return $localize`:@@ouvertures.couches.couche.creneaux:Créneaux`;
+      case 'consigne':
+        return $localize`:@@ouvertures.couches.couche.consigne:Consigne`;
+      case 'resultat':
+        return $localize`:@@ouvertures.couches.couche.resultat:Sièges`;
+    }
+  }
+
+  /** « Du » moved past « au », or the reverse: the other bound follows rather than emptying the grid. */
+  protected setRangeStart(date: string | null): void {
+    this.rangeStart.set(date || null);
+    const end = this.rangeEnd();
+    if (date && end !== null && end < date) {
+      this.rangeEnd.set(date);
+    }
+  }
+
+  protected setRangeEnd(date: string | null): void {
+    this.rangeEnd.set(date || null);
+    const start = this.rangeStart();
+    if (date && start !== null && start > date) {
+      this.rangeStart.set(date);
+    }
+  }
+
+  /** Every narrowing undone at once: all the days, all the stands, every layer. */
+  protected resetView(): void {
+    this.rangeStart.set(null);
+    this.rangeEnd.set(null);
+    this.filtre.set('TOUS');
+    this.filterStands('');
+    this.recherche.set('');
+    this.onlyStand.set('');
+    this.couchesAffichees.set([...COUCHES]);
+  }
+
   protected async recharger(): Promise<void> {
     void this.consignes.reload();
     this.chargement.set(true);
@@ -629,6 +909,7 @@ export class OuverturesPage implements OnInit {
       this.cellules.set(cellules);
       this.partielles.set(cellulesPartielles(rapport));
       this.segments.set(segmentsPartiels(rapport));
+      this.segmentsLus.set(cellSegments(rapport));
       // The templates come along, not on demand: the toggle to the grid by
       // kind of day must not wait on a second round trip, and an edition
       // without templates simply shows no such grid.
@@ -641,26 +922,24 @@ export class OuverturesPage implements OnInit {
     this.focusRequestedDay();
   }
 
-  /** The `?date=` of the view on screen: the day shown, the day being entered, or none. */
-  private dateQueryParam(): string | null {
-    if (this.view() === 'JOURNEE') {
-      return this.navigationJour.queryParam();
-    }
-    return this.view() === 'SAISIR' ? this.saisieDate() || null : null;
-  }
-
   /** Hands the focus to the first cell of `?date=`, once the grid is on screen. */
   private focusRequestedDay(): void {
     const date = this.saisieDate();
-    if (!date || this.saisieDateFocused || this.view() !== 'SAISIR') {
+    if (!date || this.saisieDateFocused || this.view() !== 'GRILLE') {
       return;
     }
-    const colonne = this.colonnes().find((each) => each.date === date);
     const standId = this.onlyStand() || this.standIdsAffiches()[0];
-    if (!colonne || !standId) {
-      return;
+    if (standId && this.focusCell(standId, date)) {
+      this.saisieDateFocused = true;
     }
-    this.saisieDateFocused = true;
+  }
+
+  /** The first cell of that stand on that day takes the focus, once the grid is laid; `false` when the day has none on screen. */
+  private focusCell(standId: string, date: string): boolean {
+    const colonne = this.colonnesAffichees().find((each) => each.date === date);
+    if (!colonne) {
+      return false;
+    }
     afterNextRender(
       () =>
         this.hote.nativeElement
@@ -668,31 +947,37 @@ export class OuverturesPage implements OnInit {
           ?.focus(),
       { injector: this.injector },
     );
+    return true;
   }
 
-  /** « Voir la journée » from a day header of the grid: the same day, laid on time. */
-  protected voirJournee(date: string): void {
-    this.navigationJour.select(date);
-    this.saisieDate.set('');
-    this.view.set('JOURNEE');
+  /** « Voir la case » on an anomaly: its stand on its day, the day brought back into the range if it had left it. */
+  protected showCell(anomalie: AnomalieOuverture): void {
+    if (!anomalie.date) {
+      return;
+    }
+    if (!this.datesAffichees().has(anomalie.date)) {
+      this.rangeStart.set(null);
+      this.rangeEnd.set(null);
+    }
+    if (!this.lignes().some((ligne) => ligne.standId === anomalie.standId)) {
+      this.filtre.set('TOUS');
+      this.onlyStand.set(anomalie.standId);
+    }
+    this.focusCell(anomalie.standId, anomalie.date);
   }
 
-  protected selectJour(date: string): void {
-    this.navigationJour.select(date);
-  }
-
-  protected decalerJour(delta: number): void {
-    this.navigationJour.step(delta);
-  }
-
-  /** Leaving the entry view with unsaved cells asks first: they would silently survive, invisible, until the next reload. */
+  /**
+   * Leaving the entry grids for « Comparer » with unsaved cells asks first:
+   * they would silently survive, invisible, until the next reload. The two
+   * grids write the same cells, so moving between them asks nothing.
+   */
   protected async changeView(view: OpeningsView | undefined): Promise<void> {
     // The toggle group emits `undefined` on its first render, before any
     // click: taking it for a view would forget the `?date=` being entered.
     if (!view) {
       return;
     }
-    if (view !== 'SAISIR' && this.standsModifies().length > 0) {
+    if (view === 'COMPARER' && this.standsModifies().length > 0) {
       const abandon = await this.confirm.ask({
         title: $localize`:@@ouvertures.saisie.quitterTitle:Abandonner les modifications ?`,
         message: $localize`:@@ouvertures.saisie.quitterMessage:${this.standsModifies().length}:stands: stand(s) ont des cases modifiées non enregistrées.`,
@@ -704,7 +989,7 @@ export class OuverturesPage implements OnInit {
       }
       this.cellules.set(this.reference());
     }
-    if (view !== 'SAISIR') {
+    if (view !== 'GRILLE') {
       this.saisieDate.set('');
     }
     this.view.set(view);
@@ -746,17 +1031,14 @@ export class OuverturesPage implements OnInit {
     return Array.from(this.partielles()).some((clef) => clef.startsWith(prefixe));
   }
 
-  /**
-   * What the field shows: the headcount, or « - » for closed — a closed cell
-   * is a statement, and it reads as one. An inert cell shows nothing.
-   */
+  /** What the field shows: the headcount, or nothing for closed — one meaning for an empty cell. */
   protected valeur(standId: string, colonneId: string): string {
     const colonneJT = this.colonnesJourneesTypesParId().get(colonneId);
     if (colonneJT) {
       return this.texteJourneeType(valeurJourneeType(this.cellules(), standId, colonneJT));
     }
     const effectif = this.cellules().get(standId)?.get(colonneId) ?? null;
-    return effectif === null ? FERME : String(effectif);
+    return effectif === null ? '' : String(effectif);
   }
 
   protected isModified(standId: string, colonneId: string): boolean {
@@ -782,13 +1064,12 @@ export class OuverturesPage implements OnInit {
   }
 
   /**
-   * A keystroke in a cell: digits become the headcount, a dash or a zero
-   * closes the stand. An emptied field says nothing — the cell keeps its
-   * value, which the placeholder keeps showing, the way the fiche reads an
-   * empty effectif as « celui du stand ». Anything else is left as typed.
+   * A keystroke in a cell: digits become the headcount; an emptied field, a
+   * dash or a zero closes the stand — an empty cell is a closed one, there is
+   * no third meaning. Anything else is left as typed, and put back on blur.
    */
   protected saisir(standId: string, colonneId: string, text: string): void {
-    if (this.gridLocked() || text.trim() === '') {
+    if (this.gridLocked()) {
       return;
     }
     const lu = readCell(text);
@@ -807,12 +1088,12 @@ export class OuverturesPage implements OnInit {
     this.cellules.update((cellules) => ecrireCellule(cellules, { standId, colonneId }, lu));
   }
 
-  /** `2`, `-` or `≠` — what a template cell shows, and what a blur puts back. */
+  /** `2`, empty or `≠` — what a template cell shows, and what a blur puts back. */
   private texteJourneeType(valeur: number | null | 'ecart'): string {
     if (valeur === 'ecart') {
       return ECART;
     }
-    return valeur === null ? FERME : String(valeur);
+    return valeur === null ? '' : String(valeur);
   }
 
   /**
@@ -881,6 +1162,13 @@ export class OuverturesPage implements OnInit {
     }
   }
 
+  /** The column ids of the grid on screen, in display order: what the keyboard and the moves walk over. */
+  private readonly colonneIdsAffiches = computed(() =>
+    this.view() === 'JOURNEES_TYPES'
+      ? this.colonnesJourneesTypes().map((colonne) => colonne.colonneId)
+      : this.colonnesAffichees().map((colonne) => colonne.colonneId),
+  );
+
   /**
    * Arrows, Enter, Home and End move between cells the way a spreadsheet
    * does. Left and right only when the caret cannot move inside the field
@@ -904,7 +1192,7 @@ export class OuverturesPage implements OnInit {
       event.key,
       { standId, colonneId },
       this.standIdsAffiches(),
-      this.colonnes(),
+      this.colonneIdsAffiches().map((id) => ({ colonneId: id })),
     );
     if (target === null) {
       return;
@@ -918,12 +1206,18 @@ export class OuverturesPage implements OnInit {
   /** A block copied from a spreadsheet lands from the cell it is pasted in; a single value pastes as typed. */
   protected onPaste(event: ClipboardEvent, standId: string, colonneId: string): void {
     const text = event.clipboardData?.getData('text') ?? '';
-    if (this.gridLocked() || !/[\t\n]/.test(text)) {
+    if (this.gridLocked() || !/[\t\n]/.test(text) || this.view() !== 'GRILLE') {
       return;
     }
     event.preventDefault();
     this.cellules.update((cellules) =>
-      collerBloc(cellules, text, { standId, colonneId }, this.standIdsAffiches(), this.colonnes()),
+      collerBloc(
+        cellules,
+        text,
+        { standId, colonneId },
+        this.standIdsAffiches(),
+        this.colonnesAffichees(),
+      ),
     );
   }
 
@@ -960,13 +1254,6 @@ export class OuverturesPage implements OnInit {
     this.view() === 'JOURNEES_TYPES'
       ? accesGrilleJourneesTypes(this.colonnesJourneesTypesParId())
       : accesGrilleDates,
-  );
-
-  /** The columns of the grid on screen, in display order. */
-  private readonly colonneIdsAffiches = computed(() =>
-    this.view() === 'JOURNEES_TYPES'
-      ? this.colonnesJourneesTypes().map((colonne) => colonne.colonneId)
-      : this.colonnes().map((colonne) => colonne.colonneId),
   );
 
   /** The row above this one, on screen, copied onto it — the stand that opens like its neighbour. */
@@ -1042,27 +1329,29 @@ export class OuverturesPage implements OnInit {
     }
   }
 
-  /** The day's cells, for every displayed stand, copied onto every other day. */
+  /** The day's cells, for every displayed stand, copied onto every other displayed day. */
   protected recopierJour(date: string): void {
     this.appliquerRecopie((cellules) =>
-      recopierJour(cellules, date, this.standIdsAffiches(), this.colonnes()),
+      recopierJour(cellules, date, this.standIdsAffiches(), this.colonnesAffichees()),
     );
   }
 
-  /** One stand's day — the focused one when it is on that row, else its first day with a headcount — copied onto its other days. */
+  /** One stand's day — the focused one when it is on that row, else its first day with a headcount — copied onto its other displayed days. */
   protected recopierLigne(standId: string): void {
     const active = this.celluleActive();
     const date =
       active?.standId === standId
         ? (this.colonnes().find((colonne) => colonne.colonneId === active.colonneId)?.date ?? null)
-        : jourDeReference(this.cellules(), standId, this.colonnes());
+        : jourDeReference(this.cellules(), standId, this.colonnesAffichees());
     if (date !== null) {
-      this.appliquerRecopie((cellules) => recopierJour(cellules, date, [standId], this.colonnes()));
+      this.appliquerRecopie((cellules) =>
+        recopierJour(cellules, date, [standId], this.colonnesAffichees()),
+      );
     }
   }
 
   /**
-   * Applies a day copy and says how many cells it changed. A day whose créneaux
+   * Applies a day copy and says how many cells it changed. A day whose timeslots
    * were sliced differently matches none of the target columns, and the copy
    * then does nothing at all — silence would read as success.
    */
@@ -1073,7 +1362,7 @@ export class OuverturesPage implements OnInit {
     const before = this.cellules();
     const after = recopie(before);
     this.applyMouvement(
-      { cellules: after, changees: countCopied(before, after, this.colonnes()) },
+      { cellules: after, changees: countCopied(before, after, this.colonnesAffichees()) },
       $localize`:@@ouvertures.saisie.recopieVide:Aucune case recopiée : les créneaux des autres jours n'ont pas les mêmes horaires.`,
     );
   }
@@ -1108,6 +1397,7 @@ export class OuverturesPage implements OnInit {
     this.cellules.update((cellules) => propagerScission(cellules, ancienne, ids));
     this.reference.update((cellules) => propagerScission(cellules, ancienne, ids));
     this.segments.update((segments) => propagerClefs(segments, ancienne, ids));
+    this.segmentsLus.update((segments) => propagerClefs(segments, ancienne, ids));
     this.partielles.update((partielles) => this.propagerEnsemble(partielles, ancienne, ids));
     this.celluleActive.set(null);
   }
@@ -1133,7 +1423,7 @@ export class OuverturesPage implements OnInit {
   /**
    * Sends the modified stands, each with its whole schedule. A partial cell
    * saved as shown keeps its stretches; one that was retyped is named first,
-   * because the value typed will then cover the whole créneau.
+   * because the value typed will then cover the whole timeslot.
    */
   protected async enregistrer(): Promise<void> {
     const modifies = this.standsModifies();
@@ -1161,7 +1451,7 @@ export class OuverturesPage implements OnInit {
 
   /**
    * Every stand the server reported partial, sent back with `aplatir`: the
-   * one gesture that extends a partial cell to its whole créneau. The
+   * one gesture that extends a partial cell to its whole timeslot. The
    * confirmation prices it first — stands, cells, hours of opening added —
    * because on the reference event that is 12 stands and 74 hours. Refused
    * while cells are modified: the reload after the save would drop them.
@@ -1226,10 +1516,17 @@ export class OuverturesPage implements OnInit {
     }
   }
 
-  protected readonly largeurPourcent = largeurPourcent;
-  protected readonly classeCellule = classeCellule;
   protected readonly iconeAnomalie = iconeAnomalie;
   protected readonly isInformationalAnomaly = isInformationalAnomaly;
+
+  /**
+   * Where an anomaly is corrected: a window outside every timeslot is as much
+   * the grid's doing as the stand's, so it names both; anything else is the
+   * way the stand's own hours are written, on its fiche.
+   */
+  protected anomalyFixedInGrid(type: TypeAnomalieOuverture): boolean {
+    return type === 'FENETRE_SANS_EFFET';
+  }
 
   protected duree(minutes: number): string {
     return dureeCourte(minutes, {
@@ -1242,66 +1539,6 @@ export class OuverturesPage implements OnInit {
   protected libelleJour(date: string): string {
     const [, mois, jour] = date.split('-');
     return `${jour}/${mois}`;
-  }
-
-  protected anomaliesDe(standId: string): AnomalieOuverture[] {
-    return this.anomaliesParStand().get(standId) ?? [];
-  }
-
-  protected infobulleStand(ligne: LigneStandOuverture): string {
-    const anomalies = this.anomaliesDe(ligne.standId);
-    return anomalies.length === 0 ? '' : anomalies.map((anomaly) => anomaly.message).join('\n');
-  }
-
-  /** Everything a cell says, for its tooltip — state, windows, decisive layer, postes. */
-  protected infobulleCellule(cellule: CelluleJourOuverture): string {
-    const lignes: string[] = [this.libelleEtat(cellule)];
-    if (cellule.fenetres.length > 0) {
-      lignes.push(
-        cellule.fenetres
-          .map((fenetre) => `${this.heure(fenetre.heureDebut)} → ${this.heure(fenetre.heureFin)}`)
-          .join(', '),
-      );
-    }
-    lignes.push(
-      $localize`:@@ouvertures.tooltip.ouvert:Ouvert ${this.duree(cellule.minutesOuvertes)}:ouvert: sur ${this.duree(cellule.minutesAmplitude)}:amplitude:`,
-      $localize`:@@ouvertures.tooltip.postes:${cellule.postes}:postes: poste(s) généré(s)`,
-      this.libelleSource(cellule),
-    );
-    return lignes.join('\n');
-  }
-
-  protected libelleEtat(cellule: CelluleJourOuverture): string {
-    switch (cellule.etat) {
-      case 'OUVERT_TOTAL':
-        return $localize`:@@ouvertures.etat.total:Ouvert toute l'amplitude`;
-      case 'OUVERT_PARTIEL':
-        return $localize`:@@ouvertures.etat.partiel:Ouvert partiellement`;
-      case 'FERME':
-        // Closed on a day under consigne is the consigne's doing, not a hole in the schedule.
-        return this.consigneByDate().has(cellule.date)
-          ? $localize`:@@ouvertures.etat.fermeParConsigne:Fermé par consigne`
-          : $localize`:@@ouvertures.etat.ferme:Fermé`;
-    }
-  }
-
-  /** The cell's class, muted rather than alarming when the consigne is what closed it. */
-  protected classeCelluleConsigne(cellule: CelluleJourOuverture): string {
-    const classe = classeCellule(cellule);
-    return cellule.etat === 'FERME' && this.consigneByDate().has(cellule.date)
-      ? `${classe} etat-ferme-consigne`
-      : classe;
-  }
-
-  protected libelleSource(cellule: CelluleJourOuverture): string {
-    switch (cellule.source) {
-      case 'DEFAUT':
-        return $localize`:@@ouvertures.source.defaut:Aucune règle ni exception : ouvert par défaut`;
-      case 'REGLE':
-        return $localize`:@@ouvertures.source.regle:Décidé par une règle d'horaire récurrente`;
-      case 'EXCEPTION':
-        return $localize`:@@ouvertures.source.exception:Décidé par une exception datée, qui prime sur les règles`;
-    }
   }
 
   /** `09:00:00` → `09:00`. */

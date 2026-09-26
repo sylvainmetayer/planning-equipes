@@ -168,7 +168,7 @@ function cellule(page: Page, stand: string, jour: string, colonne: string) {
   return page.getByLabel(`${stand} · ${jj}/${mois} ${colonne}`);
 }
 
-test('une édition saisie de bout en bout, résolue, et relue sur l’axe du temps', async ({
+test('une édition saisie de bout en bout, résolue, et relue dans la grille des horaires', async ({
   browser,
 }) => {
   test.slow();
@@ -318,28 +318,23 @@ test('une édition saisie de bout en bout, résolue, et relue sur l’axe du tem
   await expect(fiche).toBeHidden();
   await expect(page.getByText(/ne recoupe aucun créneau/)).toBeVisible();
 
-  // 5. La journée sur l'axe du temps : les blocs, le relais, la fenêtre hors de toute vacation.
-  await page.goto('/ouvertures?vue=journee');
-  await expect(page.locator('.axe-table')).toBeVisible();
-  await expect(page.locator('.axe-ligne')).toHaveCount(3);
-  await expect(page.locator('.axe-bande')).toHaveCount(4);
-  await expect(page.locator('.axe-bande-relais')).toHaveCount(2);
-  const ligneDe = (stand: string) => page.locator('.axe-ligne', { hasText: stand });
-  await expect(ligneDe('Stand un E2E').locator('.axe-bloc')).toHaveCount(4);
-  await expect(ligneDe('Stand un E2E').locator('.axe-bloc-relais')).toHaveCount(2);
-  await expect(ligneDe('Stand deux E2E').locator('.axe-bloc')).toHaveCount(1);
-  await expect(ligneDe('Stand trois E2E').locator('.axe-bloc')).toHaveCount(0);
-  await expect(page.locator('.axe-hors')).toHaveCount(0);
-  // Le jour suivant, le stand trois ouvre l'après-midi.
-  await page.getByRole('button', { name: 'Jour suivant' }).click();
-  await expect(ligneDe('Stand trois E2E').locator('.axe-bloc')).toHaveCount(1);
-  // La nocturne : deux bandes, et l'ouverture de 07:00 hachurée là où elle tombe.
-  await page.getByRole('button', { name: 'Jour suivant' }).click();
-  await expect(page.locator('.axe-bande')).toHaveCount(2);
-  await expect(page.locator('.axe-hors')).toHaveCount(1);
-  await expect(ligneDe('Stand trois E2E').locator('.axe-bloc')).toHaveCount(1);
-  await expect(ligneDe('Stand deux E2E').locator('.axe-bloc')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Jour suivant' })).toBeDisabled();
+  // 5. La grille relue : une case vide est fermée, et un clic sur une case
+  // explique d'où vient son ouverture — ici, la fenêtre de 07:00 qu'aucune
+  // vacation ne couvre, qu'aucune case ne sait dire.
+  await page.goto('/ouvertures');
+  await expect(page.locator('.grille-saisie')).toBeVisible();
+  await expect(page.locator('.grille-saisie tbody tr:not(.ligne-masquee)')).toHaveCount(3);
+  await expect(cellule(page, 'Stand trois E2E', JOUR1, '09-12')).toHaveValue('');
+  await cellule(page, 'Stand trois E2E', JOUR3, '14-19').click();
+  const explication = page.locator('.ouvertures-explication');
+  await expect(explication).toContainText('Stand trois E2E');
+  await expect(explication).toContainText('07:00–08:00');
+  await expect(explication.getByRole('link', { name: /Fiche du stand/ })).toBeVisible();
+  await expect(page.locator('.ouvertures-anomalies-bloc summary')).toContainText('Anomalies');
+  // L'ancienne vue Journée, avant tout calcul, ouvre la grille sur ce jour.
+  await page.goto(`/ouvertures?vue=journee&date=${JOUR3}`);
+  await expect(page).toHaveURL(new RegExp(`du=${JOUR3}&au=${JOUR3}`));
+  await expect(page.locator('.grille-saisie .entete-jour-saisie')).toHaveCount(1);
 
   // La fiche du stand porte son anomalie, l'accueil la compte à part.
   await page.goto('/stands');
@@ -395,8 +390,10 @@ test('une édition saisie de bout en bout, résolue, et relue sur l’axe du tem
   await expect(page.getByRole('heading', { name: 'Diagnostic' })).toBeVisible();
   await expect(page.locator('app-problemes-page')).toBeVisible();
   await expect(page.locator('body')).not.toContainText('bloquant(s)');
-  await page.goto('/ouvertures?vue=journee');
-  await expect(page.locator('.axe-ligne')).toHaveCount(3);
+  // Le plan calculé, l'ancienne vue Journée des ouvertures mène au planning du
+  // jour. Le deuxième : l'adresse de la Journée tait le premier, son jour par défaut.
+  await page.goto(`/ouvertures?vue=journee&date=${JOUR2}`);
+  await expect(page).toHaveURL(new RegExp(`/journee\\?date=${JOUR2}`));
 
   await page.evaluate(() => localStorage.removeItem('planning-equipes.editionId'));
   await page.context().close();

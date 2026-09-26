@@ -1,39 +1,27 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <h1 mat-card-title #pageTitle tabindex="-1" i18n="@@ouvertures.title">Ouvertures des stands</h1>
+    <h1 mat-card-title #pageTitle tabindex="-1" i18n="@@ouvertures.title">Horaires des stands</h1>
     <mat-card-subtitle i18n="@@ouvertures.subtitle">
-      Ce que le solveur lira : les ouvertures de chaque stand, règles et exceptions résolues, sur chaque créneau de l'édition.
+      Ce que le solveur lira : l'effectif de chaque stand sur chaque créneau, saisi et relu au même endroit.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
     <mat-button-toggle-group [value]="view()" (valueChange)="changeView($event)" hideSingleSelectionIndicator
                              i18n-aria-label="@@ouvertures.vue.label" aria-label="Vue">
-      <mat-button-toggle value="CONSULTER">
-        <mat-icon>visibility</mat-icon>
-        <ng-container i18n="@@ouvertures.vue.consulter">Consulter</ng-container>
-      </mat-button-toggle>
-      <mat-button-toggle value="SAISIR">
+      <mat-button-toggle value="GRILLE">
         <mat-icon>grid_on</mat-icon>
-        <ng-container i18n="@@ouvertures.vue.saisir">Saisir</ng-container>
+        <ng-container i18n="@@ouvertures.vue.grille">Grille</ng-container>
       </mat-button-toggle>
       <mat-button-toggle value="JOURNEES_TYPES" [disabled]="colonnesJourneesTypes().length === 0">
         <mat-icon>event_repeat</mat-icon>
         <ng-container i18n="@@ouvertures.vue.journeesTypes">Par journée type</ng-container>
-      </mat-button-toggle>
-      <mat-button-toggle value="JOURNEE">
-        <mat-icon>view_timeline</mat-icon>
-        <ng-container i18n="@@ouvertures.vue.journee">Journée</ng-container>
-      </mat-button-toggle>
-      <mat-button-toggle value="CALENDRIER">
-        <mat-icon>layers</mat-icon>
-        <ng-container i18n="@@ouvertures.vue.calendrier">Calendrier combiné</ng-container>
       </mat-button-toggle>
       <mat-button-toggle value="COMPARER">
         <mat-icon>compare</mat-icon>
         <ng-container i18n="@@ouvertures.vue.comparer">Comparer</ng-container>
       </mat-button-toggle>
     </mat-button-toggle-group>
-    @if (view() === 'SAISIR' || view() === 'JOURNEES_TYPES') {
+    @if (view() !== 'COMPARER') {
       <button matButton="filled" type="button" class="saisie-enregistrer"
               [disabled]="gridLocked() || enregistrement() || standsModifies().length === 0" (click)="enregistrer()">
         <mat-icon>save</mat-icon>
@@ -46,7 +34,7 @@
         <mat-icon>undo</mat-icon>
         <ng-container i18n="@@ouvertures.saisie.annuler">Annuler les modifications</ng-container>
       </button>
-      @if (view() === 'SAISIR') {
+      @if (view() === 'GRILLE') {
       <button matButton type="button" class="saisie-aligner" [matTooltip]="infobulleAligner()"
               [disabled]="gridLocked() || enregistrement() || standsModifies().length > 0 || standsPartiels().length === 0"
               (click)="alignerPartiels()">
@@ -68,7 +56,7 @@
       <p class="empty-hint" i18n="@@ouvertures.loading">Calcul des ouvertures…</p>
     } @else if (!rapport() || rapport()!.jours.length === 0) {
       <p class="empty-hint" i18n="@@ouvertures.empty">
-        Aucun créneau dans l'édition : créez-en depuis la page Créneaux pour voir les ouvertures.
+        Les créneaux donnent ses jours à l'édition : créez-les d'abord, les horaires des stands se saisissent ensuite ici.
       </p>
       <a matButton routerLink="/creneaux">
         <mat-icon>calendar_month</mat-icon>
@@ -88,28 +76,94 @@
         <div class="ouvertures-synthese">
           <span><strong>{{ bilan.stands }}</strong>&nbsp;<ng-container i18n="@@ouvertures.synthese.stands">stands</ng-container></span>
           <span><strong>{{ bilan.postesTotal }}</strong>&nbsp;<ng-container i18n="@@ouvertures.synthese.postes">postes à pourvoir</ng-container></span>
-          <span class="synthese-partiel"><strong>{{ bilan.avecJourPartiel }}</strong>&nbsp;<ng-container i18n="@@ouvertures.synthese.partiels">avec un jour partiel</ng-container></span>
-          <span class="synthese-ferme"><strong>{{ bilan.avecJourFerme }}</strong>&nbsp;<ng-container i18n="@@ouvertures.synthese.fermes">avec un jour fermé</ng-container></span>
+          <button type="button" class="synthese-lien synthese-partiel" (click)="filtre.set('PARTIELS')"><strong>{{ bilan.avecJourPartiel }}</strong>&nbsp;<ng-container i18n="@@ouvertures.synthese.partiels">avec un jour partiel</ng-container></button>
+          <button type="button" class="synthese-lien synthese-ferme" (click)="filtre.set('FERMES')"><strong>{{ bilan.avecJourFerme }}</strong>&nbsp;<ng-container i18n="@@ouvertures.synthese.fermes">avec un jour fermé</ng-container></button>
           @if (bilan.jamaisOuverts > 0) {
             <span class="synthese-alerte"><strong>{{ bilan.jamaisOuverts }}</strong>&nbsp;<ng-container i18n="@@ouvertures.synthese.jamaisOuverts">jamais ouverts</ng-container></span>
           }
           @if (bilan.anomalies > 0) {
-            <span class="synthese-alerte"><strong>{{ bilan.anomalies }}</strong>&nbsp;<ng-container i18n="@@ouvertures.synthese.anomalies">anomalies</ng-container></span>
+            <button type="button" class="synthese-lien synthese-alerte" (click)="filtre.set('ANOMALIES')"><strong>{{ bilan.anomalies }}</strong>&nbsp;<ng-container i18n="@@ouvertures.synthese.anomalies">anomalies</ng-container></button>
           }
         </div>
       }
 
+      @if (rapport()!.anomalies.length > 0) {
+        <details class="ouvertures-anomalies-bloc">
+          <summary i18n="@@ouvertures.anomalies.title">Anomalies détectées ({{ rapport()!.anomalies.length }})</summary>
+          <p class="empty-hint" i18n="@@ouvertures.anomalies.hint">
+            Ces points ne bloquent pas la résolution, mais signalent souvent une saisie qui ne fait pas ce qu'on croit.
+          </p>
+          <ul class="ouvertures-anomalies">
+            @for (anomalie of rapport()!.anomalies; track $index) {
+              <li [class.anomalie-info]="isInformationalAnomaly(anomalie.type)">
+                <mat-icon>{{ iconeAnomalie(anomalie.type) }}</mat-icon>
+                <span class="anomalie-stand">{{ anomalie.standNom || anomalie.standId }}</span>
+                @if (anomalie.date) {
+                  <span class="anomalie-date">{{ libelleJour(anomalie.date) }}</span>
+                }
+                <span>{{ anomalie.message }}</span>
+                @if (isInformationalAnomaly(anomalie.type)) {
+                  <span class="anomalie-date" i18n="@@ouvertures.anomalies.pourInformation">(pour information)</span>
+                }
+                <span class="anomalie-liens">
+                  @if (anomalie.date && view() === 'GRILLE') {
+                    <button matButton type="button" (click)="showCell(anomalie)" i18n="@@ouvertures.anomalies.voirCase">Voir la case</button>
+                  }
+                  <a matButton routerLink="/stands" [queryParams]="{ edit: anomalie.standId }" i18n="@@ouvertures.anomalies.ficheStand">Fiche du stand</a>
+                  @if (anomalyFixedInGrid(anomalie.type)) {
+                    <a matButton routerLink="/creneaux" i18n="@@ouvertures.anomalies.grilleCreneaux">Grille des créneaux</a>
+                  }
+                </span>
+              </li>
+            }
+          </ul>
+        </details>
+      }
+
       <div class="ouvertures-controles">
-        <mat-button-toggle-group [value]="filtre()" (valueChange)="filtre.set($event)" hideSingleSelectionIndicator>
+        <mat-button-toggle-group [value]="filtre()" (valueChange)="filtre.set($event)" hideSingleSelectionIndicator
+                                 i18n-aria-label="@@ouvertures.filtre.label" aria-label="Stands affichés">
           <mat-button-toggle value="TOUS" i18n="@@ouvertures.filtre.tous">Tous</mat-button-toggle>
           <mat-button-toggle value="ANOMALIES" i18n="@@ouvertures.filtre.anomalies">Anomalies</mat-button-toggle>
           <mat-button-toggle value="PARTIELS" i18n="@@ouvertures.filtre.partiels">Jours partiels</mat-button-toggle>
           <mat-button-toggle value="FERMES" i18n="@@ouvertures.filtre.fermes">Jours fermés</mat-button-toggle>
         </mat-button-toggle-group>
-        <mat-form-field appearance="outline" class="ouvertures-recherche">
+        <mat-form-field appearance="outline" class="ouvertures-recherche" subscriptSizing="dynamic">
           <mat-label i18n="@@ouvertures.recherche">Filtrer par stand</mat-label>
           <input matInput name="recherche" [ngModel]="rechercheSaisie()" (ngModelChange)="filterStands($event)" />
         </mat-form-field>
+        @if (view() === 'GRILLE') {
+          <mat-form-field appearance="outline" class="ouvertures-jour" subscriptSizing="dynamic">
+            <mat-label i18n="@@ouvertures.jours.du">Du</mat-label>
+            <mat-select [value]="rangeStart()" (valueChange)="setRangeStart($event)">
+              <mat-option [value]="null" i18n="@@ouvertures.jours.premier">Premier jour</mat-option>
+              @for (jour of rapport()!.jours; track jour.date) {
+                <mat-option [value]="jour.date">J{{ jour.jour }} · {{ libelleJour(jour.date) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="ouvertures-jour" subscriptSizing="dynamic">
+            <mat-label i18n="@@ouvertures.jours.au">Au</mat-label>
+            <mat-select [value]="rangeEnd()" (valueChange)="setRangeEnd($event)">
+              <mat-option [value]="null" i18n="@@ouvertures.jours.dernier">Dernier jour</mat-option>
+              @for (jour of rapport()!.jours; track jour.date) {
+                <mat-option [value]="jour.date">J{{ jour.jour }} · {{ libelleJour(jour.date) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <fieldset class="couches-choix">
+            <legend i18n="@@ouvertures.couches.choix">Afficher dans les cases</legend>
+            @for (couche of allLayers; track couche) {
+              <mat-checkbox [checked]="couchesVisibles().has(couche)" (change)="basculerCouche(couche, $event.checked)">{{ libelleCouche(couche) }}</mat-checkbox>
+            }
+          </fieldset>
+        }
+        @if (viewChanged()) {
+          <button matButton type="button" (click)="resetView()">
+            <mat-icon>filter_alt_off</mat-icon>
+            <ng-container i18n="@@common.resetView">Réinitialiser la vue</ng-container>
+          </button>
+        }
       </div>
       @if (onlyStand()) {
         <p class="calendar-meta">
@@ -118,31 +172,77 @@
         </p>
       }
 
-      @if (view() !== 'CALENDRIER') {
-      <div class="ouvertures-legende">
-        <span><i class="pastille etat-total"></i><ng-container i18n="@@ouvertures.legende.total">Toute l'amplitude</ng-container></span>
-        <span><i class="pastille etat-partiel"></i><ng-container i18n="@@ouvertures.legende.partiel">Partiel</ng-container></span>
-        <span><i class="pastille etat-ferme"></i><ng-container i18n="@@ouvertures.legende.ferme">Fermé</ng-container></span>
-        <span><i class="pastille source-regle"></i><ng-container i18n="@@ouvertures.legende.regle">Décidé par une règle</ng-container></span>
-        <span><i class="pastille source-exception"></i><ng-container i18n="@@ouvertures.legende.exception">Décidé par une exception datée</ng-container></span>
-      </div>
-      }
-
-      @if (view() === 'SAISIR') {
+      @if (view() === 'GRILLE') {
+        <div class="ouvertures-legende">
+          <span><i class="pastille legende-vide"></i><ng-container i18n="@@ouvertures.legende.vide">Case vide : fermé</ng-container></span>
+          <span><i class="pastille legende-sans-saisie">2</i><ng-container i18n="@@ouvertures.legende.sansSaisie">En italique : sans saisie, le stand suit sa règle</ng-container></span>
+          <span><i class="pastille legende-regle"></i><ng-container i18n="@@ouvertures.legende.regle">Ouverture retenue, décidée par une règle</ng-container></span>
+          <span><i class="pastille legende-exception"></i><ng-container i18n="@@ouvertures.legende.exception">Décidée par une exception datée</ng-container></span>
+          <span><i class="pastille legende-nominal"></i><ng-container i18n="@@ouvertures.legende.nominal">Horaires du stand avant consigne</ng-container></span>
+          <span><i class="pastille legende-bande"></i><ng-container i18n="@@ouvertures.legende.bande">Bande fermée par consigne</ng-container></span>
+          <span><i class="pastille legende-ajoutee"></i><ng-container i18n="@@ouvertures.legende.ajoutee">Créneau ajouté par la consigne</ng-container></span>
+        </div>
         <p class="empty-hint" i18n="@@ouvertures.saisie.hint">
-          Une case par stand et par colonne : l'effectif, « - » ou 0 pour fermer, vide pour laisser tel quel. Flèches, Entrée et collage depuis un tableur. Une colonne se scinde depuis son en-tête.
+          L'effectif dans chaque case ; vide, « - » ou 0 pour fermer. Flèches, Entrée et collage depuis un tableur. Une colonne se scinde depuis son en-tête.
         </p>
         <app-gel-notice family="STANDS" />
         @if (editingLocked()) {
           <p class="locked-hint" i18n="@@ouvertures.saisie.locked">La saisie est verrouillée pendant que le solveur est en cours d'exécution.</p>
         }
+        @if (erreurCouches()) {
+          <p class="field-error" role="alert">{{ erreurCouches() }}</p>
+        }
+        <output class="ouvertures-explication" aria-live="polite">
+          @if (explication(); as e) {
+            <span class="explication-case">{{ e.nom }} · @if (e.jour !== null) {J{{ e.jour }} }{{ libelleJour(e.date) }} · {{ e.colonne }}</span>
+            <span class="explication-phrase">
+              @if (e.phrase) {
+                {{ e.phrase }}.
+              } @else {
+                <ng-container i18n="@@ouvertures.explication.lecture">Lecture des couches…</ng-container>
+              }
+              <ng-container i18n="@@ouvertures.explication.postes">{{ e.postes }} poste(s) ce jour.</ng-container>
+              @if (e.horsGrille.length > 0) {
+                <ng-container i18n="@@ouvertures.explication.horsGrille">Hors de tout créneau, sans effet : {{ e.horsGrille.join(', ') }}.</ng-container>
+              }
+              @if (e.modifiee) {
+                <ng-container i18n="@@ouvertures.explication.modifiee">Case modifiée : enregistrez pour la voir prise en compte.</ng-container>
+              }
+              @if (e.partielle) {
+                {{ e.partielle }}
+              }
+            </span>
+            <span class="explication-liens">
+              <a matButton routerLink="/stands" [queryParams]="{ edit: e.standId }">
+                <mat-icon>storefront</mat-icon>
+                <ng-container i18n="@@ouvertures.explication.ficheStand">Fiche du stand</ng-container>
+              </a>
+              <a matButton routerLink="/creneaux">
+                <mat-icon>event_repeat</mat-icon>
+                @if (e.journeeType) {
+                  <ng-container i18n="@@ouvertures.explication.journeeType">Journée type « {{ e.journeeType }} »</ng-container>
+                } @else {
+                  <ng-container i18n="@@ouvertures.explication.creneaux">Grille des créneaux</ng-container>
+                }
+              </a>
+              @if (e.consigne) {
+                <a matButton routerLink="/consignes" [queryParams]="{ date: e.date }">
+                  <mat-icon>gavel</mat-icon>
+                  <ng-container i18n="@@ouvertures.explication.consigne">Consigne du jour</ng-container>
+                </a>
+              }
+            </span>
+          } @else {
+            <span class="explication-vide" i18n="@@ouvertures.explication.vide">Cliquez une case : d'où vient son ouverture s'affiche ici, avec les écrans qui la décident.</span>
+          }
+        </output>
         <div class="table-wrapper grille-defilement">
           <table class="ouvertures-grille grille-saisie">
-            <caption class="visually-hidden" i18n="@@ouvertures.saisie.caption">Saisie des ouvertures : une ligne par stand, une colonne par créneau ou tranche de créneau de chaque journée, l'effectif dans chaque case</caption>
+            <caption class="visually-hidden" i18n="@@ouvertures.saisie.caption">Horaires des stands : une ligne par stand, une colonne par créneau ou tranche de créneau de chaque journée, l'effectif dans chaque case</caption>
             <thead>
               <tr>
                 <th scope="col" class="colonne-stand" rowspan="2" i18n="@@ouvertures.colonne.stand">Stand</th>
-                @for (jour of rapport()!.jours; track jour.date) {
+                @for (jour of joursAffiches(); track jour.date) {
                   <th scope="colgroup" class="entete-jour-saisie" [class.colonne-ferie]="jour.ferie" [attr.colspan]="columnsOfDay(jour.date).length">
                     <span class="entete-jour">J{{ jour.jour }}</span>
                     <span class="entete-date">{{ libelleJour(jour.date) }}</span>
@@ -153,16 +253,17 @@
                       <span class="entete-consigne" [matTooltip]="consigne.motif">{{ consigne.libelle }}</span><span class="visually-hidden"> — {{ consigne.motif }}</span>
                     }
                     <button matIconButton type="button" class="recopier-jour" [disabled]="gridLocked()"
-                            i18n-matTooltip="@@ouvertures.saisie.recopierJour" matTooltip="Recopier ce jour sur tous les autres jours, pour les stands affichés"
-                            i18n-aria-label="@@ouvertures.saisie.recopierJour" aria-label="Recopier ce jour sur tous les autres jours, pour les stands affichés"
+                            i18n-matTooltip="@@ouvertures.saisie.recopierJour" matTooltip="Recopier ce jour sur les autres jours affichés, pour les stands affichés"
+                            i18n-aria-label="@@ouvertures.saisie.recopierJour" aria-label="Recopier ce jour sur les autres jours affichés, pour les stands affichés"
                             (click)="recopierJour(jour.date)">
                       <mat-icon>content_copy</mat-icon>
                     </button>
                   </th>
                 }
+                <th scope="col" class="colonne-total" rowspan="2" i18n="@@ouvertures.colonne.total">Total</th>
               </tr>
               <tr>
-                @for (colonne of colonnes(); track colonne.colonneId) {
+                @for (colonne of colonnesAffichees(); track colonne.colonneId) {
                   <th scope="col" class="entete-creneau" [class.premier-du-jour]="colonne.rang === 0" [class.colonne-ferie]="holidaysByDate().has(colonne.date)">
                     @if (scissionActive() === colonne.colonneId) {
                       <!-- eslint-disable-next-line @angular-eslint/template/no-autofocus -- revealed on demand by the « couper » button: the field the user just asked for takes the focus, nothing is stolen on page load -->
@@ -200,10 +301,14 @@
               @for (ligne of rowViews(); track ligne.standId) {
                 <tr [class.ligne-modifiee]="ligne.modifiee" [class.ligne-masquee]="!ligne.visible">
                   <th scope="row" class="colonne-stand">
-                    <span class="stand-nom">{{ ligne.nom }}</span>
+                    <a class="stand-nom" routerLink="/stands" [queryParams]="{ edit: ligne.standId }">{{ ligne.nom }}</a>
+                    @if (ligne.anomalies) {
+                      <mat-icon class="row-problem-icon" [matTooltip]="ligne.anomalies" aria-hidden="false"
+                                [attr.aria-label]="ligne.anomalies">warning</mat-icon>
+                    }
                     <button matIconButton type="button" class="recopier-ligne" [disabled]="gridLocked()"
-                            i18n-matTooltip="@@ouvertures.saisie.recopierLigne" matTooltip="Recopier le jour de la case active (sinon le premier jour renseigné) sur tous les jours de ce stand"
-                            i18n-aria-label="@@ouvertures.saisie.recopierLigne" aria-label="Recopier le jour de la case active (sinon le premier jour renseigné) sur tous les jours de ce stand"
+                            i18n-matTooltip="@@ouvertures.saisie.recopierLigne" matTooltip="Recopier le jour de la case active (sinon le premier jour renseigné) sur les autres jours affichés de ce stand"
+                            i18n-aria-label="@@ouvertures.saisie.recopierLigne" aria-label="Recopier le jour de la case active (sinon le premier jour renseigné) sur les autres jours affichés de ce stand"
                             (click)="recopierLigne(ligne.standId)">
                       <mat-icon>content_copy</mat-icon>
                     </button>
@@ -220,21 +325,30 @@
                         [class.cellule-modifiee]="cellule.modifiee"
                         [class.cellule-fermee]="cellule.fermee"
                         [class.cellule-partielle]="cellule.partielle"
+                        [class.cellule-sans-saisie]="cellule.sansSaisie"
+                        [class.cellule-ajoutee-consigne]="cellule.ajouteeParConsigne"
                         [class.colonne-ferie]="cellule.ferie">
                       <input type="text" inputmode="numeric" autocomplete="off" maxlength="3"
+                             [style.background-image]="cellule.rendu.image"
+                             [style.background-size]="cellule.rendu.size"
+                             [style.background-position]="cellule.rendu.position"
+                             [style.background-repeat]="cellule.rendu.image ? 'no-repeat' : null"
                              [attr.data-cellule]="cellule.clef"
                              [attr.aria-label]="cellule.libelle"
                              [attr.title]="cellule.infobulle"
                              [disabled]="cellule.desactivee"
-                             [value]="cellule.valeur"
-                             [placeholder]="cellule.valeur" />
+                             [value]="cellule.valeur" />
                     </td>
                   }
+                  <td class="colonne-total">
+                    <span>{{ duree(ligne.minutesOuvertes) }}</span>
+                    <span class="total-postes" i18n="@@ouvertures.total.postes">{{ ligne.postes }} postes</span>
+                  </td>
                 </tr>
               }
               @if (lignes().length === 0) {
                 <tr>
-                  <td [attr.colspan]="colonnes().length + 1" class="empty-hint" i18n="@@ouvertures.aucuneLigne">
+                  <td [attr.colspan]="colonnesAffichees().length + 2" class="empty-hint" i18n="@@ouvertures.aucuneLigne">
                     Aucun stand ne correspond à ce filtre.
                   </td>
                 </tr>
@@ -329,8 +443,7 @@
                              [attr.aria-label]="cellule.libelle"
                              [attr.title]="cellule.infobulle"
                              [disabled]="cellule.desactivee"
-                             [value]="cellule.valeur"
-                             [placeholder]="cellule.valeur" />
+                             [value]="cellule.valeur" />
                     </td>
                   }
                 </tr>
@@ -345,203 +458,6 @@
             </tbody>
           </table>
         </div>
-      } @else if (view() === 'CALENDRIER') {
-        <!-- The three layers that decide the seats, laid over them, a week at a
-             time: read-only, and before any solve. -->
-        <app-calendrier-couches
-          [rapport]="rapport()"
-          [standIds]="standIdsFiltres()"
-          [(couches)]="couchesAffichees"
-          [(firstDay)]="calendarFirstDay"
-        />
-      } @else if (view() === 'JOURNEE') {
-        <!-- One day laid on time: a line per stand, the créneaux as bands, each
-             open stretch a block carrying its headcount, and a window declared
-             outside the grid hatched where it falls — the one thing the two
-             grids cannot show. -->
-        @if (journee(); as vue) {
-          <div class="axe-toolbar">
-            <button matIconButton type="button" [disabled]="isPremierJour()" (click)="decalerJour(-1)"
-                    i18n-aria-label="@@journee.previousDay" aria-label="Jour précédent">
-              <mat-icon>chevron_left</mat-icon>
-            </button>
-            <mat-form-field appearance="outline" class="axe-jour-select" subscriptSizing="dynamic">
-              <mat-label i18n="@@ouvertures.journee.jour">Journée</mat-label>
-              <mat-select [value]="vue.date" (valueChange)="selectJour($event)">
-                @for (jour of rapport()!.jours; track jour.date) {
-                  <mat-option [value]="jour.date">J{{ jour.jour }} · {{ libelleJour(jour.date) }} · {{ heure(jour.heureDebut) }}→{{ heure(jour.heureFin) }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-            <button matIconButton type="button" [disabled]="isDernierJour()" (click)="decalerJour(1)"
-                    i18n-aria-label="@@journee.nextDay" aria-label="Jour suivant">
-              <mat-icon>chevron_right</mat-icon>
-            </button>
-          </div>
-          @if (jourCourant()?.ferie; as ferie) {
-            <p class="ferie-bandeau">
-              <ng-container i18n="@@ouvertures.journee.ferie">Jour férié :</ng-container>
-              <app-pastille-ferie [libelle]="ferie" />
-              <span i18n="@@ouvertures.journee.ferieConsequence">seuls les majeurs peuvent y siéger (L3164-6).</span>
-            </p>
-          }
-          <ul class="axe-legende">
-            <li><i class="axe-swatch axe-swatch-bloc"></i><ng-container i18n="@@ouvertures.journee.legende.bloc">Ouvert, avec l'effectif demandé</ng-container></li>
-            <li><i class="axe-swatch axe-swatch-relais"></i><ng-container i18n="@@ouvertures.journee.legende.relais">Relais repas : sièges divisés par deux</ng-container></li>
-            <li><i class="axe-swatch axe-swatch-bande"></i><ng-container i18n="@@ouvertures.journee.legende.bande">Créneau de la grille</ng-container></li>
-            <li><i class="axe-swatch axe-swatch-hors"></i><ng-container i18n="@@ouvertures.journee.legende.hors">Ouverture hors de toute vacation : sans effet</ng-container></li>
-          </ul>
-          @if (vue.lignes.length === 0) {
-            <p class="empty-hint" i18n="@@ouvertures.journee.aucunStand">Aucun stand ne correspond au filtre pour cette journée.</p>
-          } @else {
-            <div class="axe-scroll">
-              <table class="axe-table">
-                <caption class="visually-hidden" i18n="@@ouvertures.journee.caption">Une journée sur l'axe du temps : une ligne par stand, les créneaux en bandes, chaque ouverture en bloc avec son effectif</caption>
-                <thead>
-                  <tr>
-                    <th scope="col" class="axe-nom-header" i18n="@@ouvertures.colonne.stand">Stand</th>
-                    <th scope="col" class="axe-scale-header">
-                      <span class="visually-hidden" i18n="@@ouvertures.journee.colonneHeures">Journée, heure par heure</span>
-                      <span class="axe-scale" aria-hidden="true">
-                        @for (heure of vue.heures; track heure.minutes) {
-                          <span class="axe-tick" [style.left.%]="heure.offsetPercent">{{ heure.label }}</span>
-                        }
-                      </span>
-                      <span class="axe-bandes" aria-hidden="true">
-                        @for (bande of vue.bandes; track bande.id + '@' + bande.heureDebut) {
-                          <span class="axe-bande" [class.axe-bande-relais]="bande.couverturePause"
-                                [style.left.%]="bande.offsetPercent" [style.width.%]="bande.widthPercent" [title]="bande.label">
-                            <span class="axe-bande-label">{{ bande.label }}</span>
-                          </span>
-                        }
-                      </span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (ligne of vue.lignes; track ligne.standId) {
-                    <tr class="axe-ligne" [class.axe-ligne-fermee]="ligne.etat === 'FERME'" [class.axe-ligne-hors]="ligne.horsGrille.length > 0">
-                      <th scope="row" class="axe-nom">
-                        <span class="axe-nom-label">{{ ligne.nom }}</span>
-                        <span class="axe-nom-meta">{{ ligne.postes }}</span>
-                      </th>
-                      <td class="axe-cell" [attr.aria-label]="ligne.resume">
-                        <span class="axe-track" aria-hidden="true" [style.background-size]="pasHoraire()">
-                          @for (bande of vue.bandes; track bande.id + '@' + bande.heureDebut) {
-                            <span class="axe-bande-fond" [style.left.%]="bande.offsetPercent" [style.width.%]="bande.widthPercent"></span>
-                          }
-                          @for (fenetre of ligne.horsGrille; track $index) {
-                            <span class="axe-hors" [style.left.%]="fenetre.offsetPercent" [style.width.%]="fenetre.widthPercent" [title]="fenetre.label"></span>
-                          }
-                          <!-- Tracked on the index: a day holding two créneaux
-                               with the same hours — the DOUBLON the grid
-                               reports and lets you keep — gives two blocks
-                               that would share a key. -->
-                          @for (bloc of ligne.blocs; track $index) {
-                            <span class="axe-bloc" [class.axe-bloc-relais]="bloc.couverturePause"
-                                  [style.left.%]="bloc.offsetPercent" [style.width.%]="bloc.widthPercent" [title]="bloc.label">
-                              <span class="axe-bloc-label">{{ bloc.effectif }}</span>
-                            </span>
-                          }
-                        </span>
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          }
-        }
-      } @else {
-      <div class="table-wrapper grille-defilement">
-          <table class="ouvertures-grille">
-            <caption class="visually-hidden" i18n="@@ouvertures.table.caption">Ouvertures effectives des stands : une ligne par stand, une colonne par journée de l'événement</caption>
-            <thead>
-              <tr>
-                <th scope="col" class="colonne-stand" i18n="@@ouvertures.colonne.stand">Stand</th>
-                @for (jour of rapport()!.jours; track jour.date) {
-                  <th scope="col" [class.colonne-ferie]="jour.ferie"
-                      [matTooltip]="libelleJour(jour.date) + ' · ' + heure(jour.heureDebut) + '→' + heure(jour.heureFin) + ' · ' + duree(jour.minutes)">
-                    <span class="entete-jour">J{{ jour.jour }}</span>
-                    <span class="entete-date">{{ libelleJour(jour.date) }}</span>
-                    <span class="visually-hidden"> · {{ heure(jour.heureDebut) }}→{{ heure(jour.heureFin) }} · {{ duree(jour.minutes) }}</span>
-                    @if (jour.ferie) {
-                      <app-pastille-ferie [libelle]="jour.ferie" compact />
-                    }
-                    @if (consigneByDate().get(jour.date); as consigne) {
-                      <span class="entete-consigne" [matTooltip]="consigne.motif">{{ consigne.libelle }}</span><span class="visually-hidden"> — {{ consigne.motif }}</span>
-                    }
-                    <button matIconButton type="button" class="voir-journee" (click)="voirJournee(jour.date)"
-                            i18n-matTooltip="@@ouvertures.journee.voir" matTooltip="Voir cette journée sur l'axe du temps"
-                            i18n-aria-label="@@ouvertures.journee.voir" aria-label="Voir cette journée sur l'axe du temps">
-                      <mat-icon>view_timeline</mat-icon>
-                    </button>
-                  </th>
-                }
-                <th scope="col" class="colonne-total" i18n="@@ouvertures.colonne.total">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (ligne of lignes(); track ligne.standId) {
-                <tr>
-                  <th scope="row" class="colonne-stand">
-                    <span class="stand-nom">{{ ligne.nom || ligne.standId }}</span>
-                    @if (anomaliesDe(ligne.standId).length > 0) {
-                      <mat-icon class="row-problem-icon" [matTooltip]="infobulleStand(ligne)" aria-hidden="false"
-                                [attr.aria-label]="infobulleStand(ligne)">warning</mat-icon>
-                    }
-                  </th>
-                  @for (cellule of ligne.jours; track cellule.date) {
-                    <td [class]="classeCelluleConsigne(cellule)" [class.colonne-ferie]="holidaysByDate().has(cellule.date)" [matTooltip]="infobulleCellule(cellule)"
-                        [attr.aria-label]="libelleEtat(cellule)">
-                      @if (cellule.etat === 'FERME') {
-                        <span class="cellule-vide" aria-hidden="true">—</span>
-                      } @else {
-                        <span class="cellule-barre" [style.width.%]="largeurPourcent(cellule)"></span>
-                        <span class="cellule-heures">{{ heure(cellule.fenetres[0].heureDebut) }}</span>
-                        @if (cellule.fenetres.length > 1) {
-                          <span class="cellule-fenetres">×{{ cellule.fenetres.length }}</span>
-                        }
-                      }
-                    </td>
-                  }
-                  <td class="colonne-total">
-                    <span>{{ duree(ligne.minutesOuvertes) }}</span>
-                    <span class="total-postes" i18n="@@ouvertures.total.postes">{{ ligne.postes }} postes</span>
-                  </td>
-                </tr>
-              } @empty {
-                <tr>
-                  <td [attr.colspan]="rapport()!.jours.length + 2" class="empty-hint" i18n="@@ouvertures.aucuneLigne">
-                    Aucun stand ne correspond à ce filtre.
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      }
-
-      @if (rapport()!.anomalies.length > 0) {
-        <h3 i18n="@@ouvertures.anomalies.title">Anomalies détectées</h3>
-        <p class="empty-hint" i18n="@@ouvertures.anomalies.hint">
-          Ces points ne bloquent pas la résolution, mais signalent souvent une saisie qui ne fait pas ce qu'on croit.
-        </p>
-        <ul class="ouvertures-anomalies">
-          @for (anomalie of rapport()!.anomalies; track $index) {
-            <li [class.anomalie-info]="isInformationalAnomaly(anomalie.type)">
-              <mat-icon>{{ iconeAnomalie(anomalie.type) }}</mat-icon>
-              <span class="anomalie-stand">{{ anomalie.standNom || anomalie.standId }}</span>
-              @if (anomalie.date) {
-                <span class="anomalie-date">{{ libelleJour(anomalie.date) }}</span>
-              }
-              <span>{{ anomalie.message }}</span>
-              @if (isInformationalAnomaly(anomalie.type)) {
-                <span class="anomalie-date" i18n="@@ouvertures.anomalies.pourInformation">(pour information)</span>
-              }
-            </li>
-          }
-        </ul>
       }
       }
     }

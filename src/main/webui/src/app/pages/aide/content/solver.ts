@@ -158,7 +158,7 @@ export function buildSolverSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.setup.term.ouvertures:Vérifier ce que le solveur lira`,
-              text: $localize`:@@aide.setup.def.ouvertures:La grille « Ouvertures des stands » montre, stand par jour, les fenêtres résolues et les sièges qu'elles génèrent. Un stand jamais ouvert, une fenêtre hors des créneaux, un segment trop court pour valoir une vacation s'y voient avant tout calcul. Un stand dont personne ne doit s'occuper à une heure donnée se déclare fermé, jamais à effectif zéro.`,
+              text: $localize`:@@aide.setup.def.ouvertures:La grille « Horaires des stands » montre, stand par créneau, les effectifs résolus et les sièges qu'ils génèrent. Un stand jamais ouvert, une fenêtre hors des créneaux, un segment trop court pour valoir une vacation s'y voient avant tout calcul. Un stand dont personne ne doit s'occuper à une heure donnée se déclare fermé, jamais à effectif zéro.`,
             },
             {
               term: $localize`:@@aide.setup.term.creneaux:Des blocs, et ce que coûte une coupe`,
@@ -190,7 +190,7 @@ export function buildSolverSections(): HelpSection[] {
           kind: 'steps',
           items: [
             $localize`:@@aide.setup.step1:Besoin en animateurs : les bornes disent le plancher. Sous le plancher, aucun réglage n'y changera rien.`,
-            $localize`:@@aide.setup.step2:Ouvertures des stands, puis faisabilité : le besoin fenêtre par fenêtre, la capacité jour par jour, sans calcul.`,
+            $localize`:@@aide.setup.step2:Horaires des stands, puis faisabilité : le besoin fenêtre par fenêtre, la capacité jour par jour, sans calcul.`,
             $localize`:@@aide.setup.step3:Une résolution courte, puis la page Problèmes : les écarts restants disent quelle règle tient les sièges vides.`,
             $localize`:@@aide.setup.step4:Une résolution longue, une fois la configuration stable, en ne changeant qu'une chose à la fois.`,
             $localize`:@@aide.setup.step5:Fragilité, puis Pauses : qui est irremplaçable, et quels relais organiser avant de publier.`,
@@ -203,7 +203,7 @@ export function buildSolverSections(): HelpSection[] {
       ],
       links: [
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
-        { route: '/ouvertures', label: $localize`:@@nav.link.ouvertures:Ouvertures des stands` },
+        { route: '/ouvertures', label: $localize`:@@nav.link.ouvertures:Horaires des stands` },
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
         { route: '/constraints', label: $localize`:@@nav.link.constraints:Contraintes` },
         {

@@ -1,4 +1,4 @@
-// The entry side of the "Ouvertures des stands" screen: one integer per stand
+// The entry side of the « Horaires des stands » screen: one integer per stand
 // and column, typed the way the organiser's own spreadsheet holds it. Pure
 // functions, so the moves — a key, a paste, a day copied — are tested without
 // rendering; the component only wires them to the DOM.
@@ -140,13 +140,25 @@ function cellulesTelles(
 
 /** The stretches behind every partial cell, keyed `standId#colonneId`: what a save keeps, and what « Aligner » would extend. */
 export function segmentsPartiels(rapport: RapportOuvertures): Map<string, SegmentCellule[]> {
+  return segmentsTels(rapport, (cellule) => cellule.partiel);
+}
+
+/** The stretches behind every cell of the report, keyed `standId#colonneId`: what the grid draws a cell's opening from. */
+export function cellSegments(rapport: RapportOuvertures): Map<string, SegmentCellule[]> {
+  return segmentsTels(rapport, () => true);
+}
+
+function segmentsTels(
+  rapport: RapportOuvertures,
+  telle: (cellule: CelluleCreneauOuverture) => boolean,
+): Map<string, SegmentCellule[]> {
   const ids = colonneByCell(rapport);
   const segments = new Map<string, SegmentCellule[]>();
   for (const ligne of rapport.stands) {
     for (const jour of ligne.jours) {
       for (const cellule of jour.creneaux) {
         const id = idOf(ids, jour.date, cellule);
-        if (id !== undefined && cellule.partiel) {
+        if (id !== undefined && telle(cellule)) {
           segments.set(key(ligne.standId, id), cellule.segments);
         }
       }
@@ -399,7 +411,7 @@ export function deplacement(
   key: string,
   courante: AdresseCellule,
   standIds: readonly string[],
-  colonnesGrille: readonly ColonneGrille[],
+  colonnesGrille: readonly Pick<ColonneGrille, 'colonneId'>[],
 ): AdresseCellule | null {
   const ligne = standIds.indexOf(courante.standId);
   const colonne = colonnesGrille.findIndex((each) => each.colonneId === courante.colonneId);
