@@ -260,7 +260,10 @@ describe('construireProblemes', () => {
         manque: 0,
       }),
     );
-    expect(liens.map((lien) => lien.route)).toEqual(['/ad-hoc-constraints', '/verrouillages']);
+    expect(liens.map((lien) => lien.queryParams?.['onglet'])).toEqual([
+      'ajustements',
+      'verrouillages',
+    ]);
   });
 
   // Every other cause keeps the adjustments link alone.
@@ -277,7 +280,7 @@ describe('construireProblemes', () => {
         manque: 0,
       }),
     );
-    expect(liens.map((lien) => lien.route)).toEqual(['/ad-hoc-constraints']);
+    expect(liens.map((lien) => lien.queryParams?.['onglet'])).toEqual(['ajustements']);
   });
 
   it('links each match of a HARD rule to the fiches it names, in place of the bare lines', () => {
@@ -335,7 +338,7 @@ describe('construireProblemes', () => {
     expect(probleme.niveau).toBe('BLOQUANT');
     expect(probleme.titre).not.toContain('sous-effectif');
     expect(probleme.details.join(' ')).toContain('C1, C2');
-    expect(probleme.liens.map((lien) => lien.route)).toEqual(['/ad-hoc-constraints']);
+    expect(probleme.liens.map((lien) => lien.route)).toEqual(['/consignes-solveur']);
   });
 
   it('attributes an ad hoc rule violations to the exceptions that caused them', () => {
@@ -354,7 +357,7 @@ describe('construireProblemes', () => {
     expect(probleme.details).toContain('P1');
     expect(probleme.liens.map((lien) => lien.route)).toEqual([
       '/constraints',
-      '/ad-hoc-constraints',
+      '/consignes-solveur',
     ]);
   });
 
@@ -436,8 +439,8 @@ describe('actionsOfRule', () => {
     expect(actions[0].queryParams).toEqual({ onglet: 'banc' });
     expect(actions.at(-1)).toMatchObject({
       code: 'REVOIR_AJUSTEMENTS',
-      route: '/ad-hoc-constraints',
-      queryParams: { ids: 'C1,C2' },
+      route: '/consignes-solveur',
+      queryParams: { onglet: 'ajustements', ids: 'C1,C2' },
     });
   });
 });
@@ -542,7 +545,7 @@ describe('construireProblemes — covoiturages', () => {
       'Ines Martin, Oscar Petit · 2026-08-01 — sans Oscar Petit',
     ]);
     expect(problemes[0].liens.map((lien) => lien.queryParams)).toEqual([
-      { ids: 'G1' },
+      { onglet: 'ajustements', ids: 'G1' },
       { vue: 'rail', date: '2026-08-01' },
     ]);
   });

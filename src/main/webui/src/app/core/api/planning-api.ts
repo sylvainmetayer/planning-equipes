@@ -20,11 +20,17 @@ import {
   RapportPublication,
   ResetSummary,
   ScenarioValidationResult,
+  SolveInputs,
 } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class PlanningApi {
   private readonly api = inject(ApiService);
+
+  /** What the next solve will take into account, counted (`/api/solve/entrees`). */
+  solveInputs(): Promise<SolveInputs> {
+    return this.api.get<SolveInputs>('/api/solve/entrees');
+  }
 
   /** How many seats the persisted plan holds — zero, and the next solve starts cold. */
   persistedCount(): Promise<PersistenceStatus> {

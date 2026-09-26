@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { pageRoutes } from '../core/testing/page-routes';
-import { readAdjustmentsView } from '../pages/ad-hoc-constraints/reseau-paires';
+import {
+  ONGLETS_CONSIGNES_SOLVEUR,
+  readOngletConsignesSolveur,
+} from '../pages/consignes-solveur/consignes-solveur';
 import { ONGLETS_DEBUG, readOngletDebug } from '../pages/debug/debug';
 import { ONGLETS_DIAGNOSTIC, readOnglet } from '../pages/diagnostic/diagnostic';
 import { readDisponibilitesTab } from '../pages/disponibilites/declarations-filter';
@@ -66,10 +69,10 @@ const TAB_READERS: Record<string, TabReader | readonly TabReader[]> = {
     },
   ],
   '/diagnostic': { param: 'onglet', opens: (v) => readOnglet(v) === v, values: ONGLETS_DIAGNOSTIC },
-  '/ad-hoc-constraints': {
-    param: 'vue',
-    opens: (v) => readAdjustmentsView(v) === v,
-    values: ['reseau'],
+  '/consignes-solveur': {
+    param: 'onglet',
+    opens: (v) => readOngletConsignesSolveur(v) === v,
+    values: ONGLETS_CONSIGNES_SOLVEUR,
   },
   '/parametres': {
     param: 'onglet',

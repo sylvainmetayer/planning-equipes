@@ -16,7 +16,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDialog } from '@angular/material/dialog';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { PlanningApi } from '../../core/api/planning-api';
 import { intlLocale } from '../../core/locale';
 import {
@@ -35,10 +34,11 @@ import {
   StatistiquesIncremental,
 } from '../../core/models';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
-import { ChangementsDonneesPanel } from './changements-donnees';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
+import { ReferenceDataStore } from '../../core/reference-data.store';
+import { compareCodeUnits } from '../../core/string-order';
 import {
   JobResults,
   SolverJobService,
@@ -59,9 +59,10 @@ import { OutputPanel } from '../../shared/output-panel';
 import { ProblemSummaryBanner } from '../../shared/problem-summary-banner';
 import { StatusMessage } from '../../shared/status-message';
 import { IncrementalResult } from './incremental-result';
-import { ReplanificationDialog } from './replanification-dialog';
+import { ReplanificationData, ReplanificationDialog } from './replanification-dialog';
 import { RouterLink } from '@angular/router';
 import { ScoreCurveCard } from './score-curve-card';
+import { SolveInputsCard } from './solve-inputs';
 import { SolveRecap } from './solve-recap';
 import { SolverQueue } from './solver-queue';
 import { SolverVolumetry } from './solver-volumetry';
@@ -125,7 +126,6 @@ function detailCausesBloquantes(bloquantes: readonly CauseInfaisabilite[]): stri
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatTooltipModule,
     FeasibilityBanner,
     ProblemSummaryBanner,
     OutputPanel,
@@ -134,7 +134,7 @@ function detailCausesBloquantes(bloquantes: readonly CauseInfaisabilite[]): stri
     SolverVolumetry,
     IncrementalResult,
     SolveRecap,
-    ChangementsDonneesPanel,
+    SolveInputsCard,
     ValidationBanner,
     RouterLink,
   ],
@@ -175,6 +175,8 @@ export class SolverPage implements OnInit {
     () => this.solveReading() ?? this.problemes.constraints()?.lecture ?? null,
   );
   protected readonly hardIssues = signal<HardIssue[]>([]);
+  /** Bumped when a solve lands: « Ce calcul tiendra compte de » re-reads its counts. */
+  protected readonly solvesLanded = signal(0);
   protected readonly arretEnCours = signal(false);
 
   /**
@@ -285,10 +287,25 @@ export class SolverPage implements OnInit {
   protected readonly lastRunAt = signal<string | null>(null);
 
   protected readonly resolution = inject(PlanningResolutionStore);
-  /** True once reference data was edited after the last solve: its result may be stale. */
-  protected readonly dataStale = computed(() => this.resolution.dataStale());
-  /** When that solve ran: the moment the summary of what changed counts from. */
-  protected readonly resoluLe = computed(() => this.resolution.resolution()?.resoluLe ?? '');
+  /** When the persisted plan was solved: what « Corriger » shows the changes since. */
+  private readonly solvedAt = computed(() => this.resolution.resolution()?.resoluLe ?? '');
+
+  /**
+   * « Relire » opens the first day of the grid nobody has accepted yet — the
+   * next one to read; every day read, or no grid known, the Journée picks its
+   * own.
+   */
+  protected readonly relireParams = computed<Record<string, string>>(() => {
+    const accepted = this.validations.acceptedDays();
+    const next = [...new Set(this.store.creneaux().map((creneau) => creneau.date))]
+      .sort(compareCodeUnits)
+      .find((date) => !accepted.has(date));
+    const params: Record<string, string> = {};
+    if (next) {
+      params['date'] = next;
+    }
+    return params;
+  });
 
   /**
    * Aggregate of the pre-solve capacity causes and of the last analysis' still
@@ -305,6 +322,7 @@ export class SolverPage implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly crud = inject(ReferenceCrudService);
   private readonly validations = inject(ValidationsStore);
+  private readonly store = inject(ReferenceDataStore);
 
   constructor() {
     void this.problemes.reload();
@@ -330,6 +348,7 @@ export class SolverPage implements OnInit {
       // The banner comments on the plan the solve just rewrote, and that solve
       // may have withdrawn readings: re-read rather than leave a stale count.
       void this.validations.reload();
+      this.solvesLanded.update((count) => count + 1);
       void this.loadLastRun();
       void this.chargerPointDeDepart();
       // The solve rewrote both problem sources server-side (fresh feasibility
@@ -409,8 +428,18 @@ export class SolverPage implements OnInit {
     if (!(await this.confirmUnsavedEntries()) || !(await this.confirmerCausesBloquantes())) {
       return;
     }
+    // The dialog shows what changed since the plan before asking what else
+    // to re-open (issue #719): the perimeter is chosen knowing the changes.
     const scope = await firstValueFrom(
-      this.dialog.open(ReplanificationDialog, { width: '640px' }).afterClosed(),
+      this.dialog
+        .open<ReplanificationDialog, ReplanificationData, PerimetreReplanification>(
+          ReplanificationDialog,
+          {
+            width: '640px',
+            data: { depuis: this.solvedAt() },
+          },
+        )
+        .afterClosed(),
     );
     if (!scope) {
       return;

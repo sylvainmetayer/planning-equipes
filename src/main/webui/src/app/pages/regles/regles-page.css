@@ -210,13 +210,6 @@
   margin: 1rem 0;
 }
 
-.relancer-calcul {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-}
-
 .regles-calcul-mail {
   display: block;
   margin-top: 1rem;

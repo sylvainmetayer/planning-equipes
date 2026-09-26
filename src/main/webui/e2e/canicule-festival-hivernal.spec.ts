@@ -360,7 +360,7 @@ test('la semaine de l’organisateur : canicule posée, résolue, publiée, puis
     .toBeGreaterThan(0);
 
   // 3. Canicule: the consigne laid down from the screen on the three days.
-  await page.goto('/consignes');
+  await page.goto('/consignes-solveur?onglet=consignes');
   await expect(page.locator('#contenu')).toContainText('Aucune journée sous consigne');
   await page.getByRole('button', { name: 'Poser une consigne' }).click();
   const form = await dialogueOuvert(page);
@@ -483,7 +483,7 @@ test('la semaine de l’organisateur : canicule posée, résolue, publiée, puis
   expect((await publicationPreview()).nombreConcernes).toBe(0);
 
   // 4. Levée: the alert is lifted on the third day only, from its row.
-  await page.goto('/consignes');
+  await page.goto('/consignes-solveur?onglet=consignes');
   await page.locator(`tr[data-date="${DAY3}"]`).getByRole('button', { name: 'Lever' }).click();
   const lifting = await dialogueOuvert(page);
   await expect(lifting).toContainText('Lever une consigne');

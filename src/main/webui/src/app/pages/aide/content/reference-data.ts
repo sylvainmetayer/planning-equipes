@@ -89,8 +89,16 @@ export function buildReferenceDataSections(): HelpSection[] {
       ],
       links: [
         { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
-        { route: '/verrouillages', label: $localize`:@@nav.link.verrouillages:Verrouillages` },
-        { route: '/consignes', label: $localize`:@@nav.link.consignes:Consignes` },
+        {
+          route: '/consignes-solveur',
+          queryParams: { onglet: 'verrouillages' },
+          label: $localize`:@@consignesSolveur.onglet.verrouillages:Verrouillages`,
+        },
+        {
+          route: '/consignes-solveur',
+          queryParams: { onglet: 'consignes' },
+          label: $localize`:@@consignesSolveur.onglet.consignes:Consignes`,
+        },
       ],
     },
     {

@@ -109,7 +109,11 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   under it `pages/accueil/messages-recents` — the night's alerts and the
   local history of the application's messages, what `/notifications`, now a
   redirect to `/#a-traiter`, used to show), `/solveur` (the solver page,
-  the former home),
+  the former home: feasibility first, then « Ce calcul tiendra compte de »
+  read from `GET /api/solve/entrees`, each counter a link and a zero muted,
+  the three ways to launch each with its sentence on the page, the result in
+  sentences with « Voir le planning », « Relire » and « Publier » under it,
+  the volumetry folded),
   `/debug` (« Débogage » — the raw and the technical only, served everywhere
   and reached by its address or Ctrl+K: two tabs chosen by
   `?onglet=resolution|verifications`, the raw analysis with the version and
@@ -242,11 +246,18 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   links to the list it counts, the ninja category is ticked in the table, and
   three columns read the computed plan: seats, hours, assigned without the
   skill),
-  `/ad-hoc-constraints` (« Ajustements manuels » on screen — the route, the API
-  path and the domain type keep the `ContrainteAdHoc` name, only the label was
-  renamed; two readings chosen by `?vue=liste|reseau` — the table, and the
-  network of the AFFINITE / INCOMPATIBILITE pairs drawn by hand in SVG over
-  the pure `reseau-paires.ts`, filtered by `?personne=` and `?paires=`),
+  `/consignes-solveur` (« Consignes au solveur » — what the next solve must
+  respect, three tabs chosen by `?onglet=ajustements|verrouillages|consignes`:
+  the manual adjustments (the API path and the domain type keep the
+  `ContrainteAdHoc` name; `?personne=` narrows the table to the rows naming
+  someone, by name or id, and `?ids=` to the rows a problem named), the locks
+  (`?animateur=`) and the consignes (a band an arrêté closes for every stand on
+  a date, the compensation chosen, the presets; issue #4 / ADR 0043;
+  `?date=…&nouvelle=1` opens the form on that date, `date=demain` on the day
+  after the server's today). Each tab emits `changed` after a write, and the
+  page then offers « Relancer le calcul » in place; `/ad-hoc-constraints`,
+  `/verrouillages` and `/consignes` redirect to their tab, their params kept —
+  the network of pairs (`?vue=reseau`, `?paires=`) is gone),
   `/journee` (« Planning », the former Journée, issue #712 — the plan at the
   top: the title on one line with the renderings beside it; the day chosen on
   a foldable mini-month, `pages/journee/mini-mois.ts` over the pure `mois.ts`,
@@ -329,9 +340,7 @@ edition's solves: small multiples drawn by hand over the pure
 `prefers-reduced-motion`; `?edition=` — `*` for every edition — `?rang=`
 and `?dosage=` in the URL), `/comparateur`
   (« Comparateur A/B » of two snapshots), `/instantanes` (« Instantanés »),
-  `/verrouillages`, `/consignes` (« Consignes » — a band an arrêté closes
-  for every stand on a date, the compensation chosen, the presets; issue #4
-  / ADR 0043), `/ouvertures` (« Horaires des stands » — three
+  `/ouvertures` (« Horaires des stands » — three
   views chosen by `?vue=`: the grid, the default, read and typed in one place —
   one field per stand and timeslot, an empty cell is closed, and behind each
   field the bars of the layers ticked in `?couches=` (the result, the stand's

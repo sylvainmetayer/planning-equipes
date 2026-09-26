@@ -84,7 +84,7 @@ test('une exception contradictoire est refusée à la saisie, en nommant les deu
 
   // Refused means not written: the screen lists the first one and only it.
   const page = await pageAdmin(browser, admin);
-  await page.goto('/ad-hoc-constraints');
+  await page.goto('/consignes-solveur');
   await expect(page.locator('#contenu')).toContainText(RAISON_INDISPO);
   await expect(page.locator('#contenu')).not.toContainText(RAISON_FORCEE);
   await page.context().close();
@@ -154,7 +154,7 @@ test('une contradiction déjà en base est signalée avant toute résolution', a
   await expect(page.locator('#contenu')).toContainText(FORCEE);
 
   // And the rows themselves are badged, on the screen that owns them.
-  await page.goto('/ad-hoc-constraints');
+  await page.goto('/consignes-solveur');
   // Anchored on the Id column, not a substring of the row's accessible name:
   // since issue #39 the badge is exposed to assistive tech, and its name is the
   // contradiction sentence — which names *both* exceptions. A bare
@@ -165,5 +165,19 @@ test('une contradiction déjà en base est signalée avant toute résolution', a
   await expect(ligneForcee.getByText('warning')).toBeVisible();
   // The badge says what it means, rather than only showing a tooltip on hover.
   await expect(ligneForcee.getByRole('img', { name: new RegExp(INDISPO) })).toBeVisible();
+  await page.context().close();
+});
+
+test('l’ancienne vue réseau mène à la liste filtrée sur la personne', async ({ browser }) => {
+  await idCree(await admin.post('/api/contraintes-ad-hoc', { data: indisponibilite() }));
+
+  const page = await pageAdmin(browser, admin);
+  // Issue #719: the network is gone, its `?personne=` narrows the list instead.
+  await page.goto(`/ad-hoc-constraints?vue=reseau&personne=${SEED.demandeur}`);
+  await expect(page).toHaveURL(
+    new RegExp(`/consignes-solveur\\?onglet=ajustements&personne=${SEED.demandeur}$`),
+  );
+  await expect(page.locator('#contenu')).toContainText(RAISON_INDISPO);
+  await expect(page.locator('svg.reseau-paires')).toHaveCount(0);
   await page.context().close();
 });

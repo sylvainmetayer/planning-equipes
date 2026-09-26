@@ -1,55 +1,65 @@
 <h1 class="page-title" i18n="@@nav.link.solver">Solveur</h1>
 
+<!-- (1) What stands in the way, before anything is launched (issue #719). -->
+<app-feasibility-banner [report]="feasibility()" [hardScore]="hardScore()" [hardIssues]="hardIssues()" />
 <app-problem-summary-banner [problemes]="problemes.problemes()" />
-
 <app-status-message [text]="alerteReglesLegales()" tone="error" />
 <app-status-message [text]="problemes.alertePausesSansRelais()" tone="warning" />
 
+<!-- (2) What the next solve receives (issue #704). -->
+<app-solve-inputs [version]="solvesLanded()" />
+
+<!-- (3) The three ways to launch, each said in words on the page. -->
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <h2 mat-card-title i18n="@@nav.link.solver">Solveur</h2>
-    <mat-card-subtitle i18n="@@solver.description">
-      Calcule le planning en arrière-plan, le corrige après un changement tardif ou le recommence de zéro.
-    </mat-card-subtitle>
+    <h2 mat-card-title i18n="@@solver.lancer.title">Lancer un calcul</h2>
   </mat-card-header>
-  <mat-card-actions class="card-actions">
-    <button matButton="filled"
-            i18n-matTooltip="@@solver.solve.tooltip"
-            matTooltip="Repart du plan enregistré, s'il existe, et cherche à l'améliorer ; seuls les verrouillages sont figés. Solveur occupé : le calcul est mis en file."
-            (click)="onTimefoldSolve()">
-      <mat-icon>{{ solverBusy() ? 'schedule_send' : 'play_arrow' }}</mat-icon>
-      {{ libelleSolve() }}
-    </button>
-    <button matButton="tonal"
-            i18n-matTooltip="@@solver.incremental.tooltip"
-            matTooltip="Repart du planning enregistré et ne recalcule que les postes rouverts par un changement tardif ou par vous ; le reste est garanti inchangé."
-            (click)="onSolveIncremental()">
-      <mat-icon>{{ solverBusy() ? 'schedule_send' : 'bolt' }}</mat-icon>
-      {{ libelleIncremental() }}
-    </button>
-    <button matButton
-            [disabled]="!planEnregistre()"
-            i18n-matTooltip="@@solver.aFroid.tooltip"
-            matTooltip="Ignore le plan enregistré et repart de rien : la qualité déjà atteinte peut être perdue."
-            (click)="onRecommencerDeZero()">
-      <mat-icon>restart_alt</mat-icon>
-      {{ libelleAFroid() }}
-    </button>
-    <button matButton="tonal" [disabled]="!solverBusy() || arretEnCours()" (click)="onArreterSolveur()">
-      <mat-icon>stop_circle</mat-icon>
-      <ng-container i18n="@@solver.arreter">Arrêter le solveur</ng-container>
-    </button>
-  </mat-card-actions>
-  @if (pointDeDepart()) {
-    <mat-card-content>
+  <mat-card-content>
+    <ul class="solver-modes">
+      <li>
+        <button matButton="filled" type="button" (click)="onTimefoldSolve()" aria-describedby="solver-mode-calculer">
+          <mat-icon>{{ solverBusy() ? 'schedule_send' : 'play_arrow' }}</mat-icon>
+          {{ libelleSolve() }}
+        </button>
+        <p id="solver-mode-calculer" class="solver-mode-phrase" i18n="@@solver.mode.calculer">
+          Repart du plan enregistré, s'il existe, et cherche à l'améliorer ; seuls les verrouillages sont figés.
+        </p>
+      </li>
+      <li>
+        <button matButton="tonal" type="button" (click)="onSolveIncremental()" aria-describedby="solver-mode-corriger">
+          <mat-icon>{{ solverBusy() ? 'schedule_send' : 'bolt' }}</mat-icon>
+          {{ libelleIncremental() }}
+        </button>
+        <p id="solver-mode-corriger" class="solver-mode-phrase" i18n="@@solver.mode.corriger">
+          Ne rouvre que ce que les changements ont invalidé ; le reste du plan est garanti inchangé.
+        </p>
+      </li>
+      <li>
+        <button matButton type="button" [disabled]="!planEnregistre()" (click)="onRecommencerDeZero()" aria-describedby="solver-mode-recommencer">
+          <mat-icon>restart_alt</mat-icon>
+          {{ libelleAFroid() }}
+        </button>
+        <p id="solver-mode-recommencer" class="solver-mode-phrase" i18n="@@solver.mode.recommencer">
+          Ignore le plan enregistré et repart de rien : la qualité déjà atteinte peut être perdue.
+        </p>
+      </li>
+    </ul>
+    @if (pointDeDepart()) {
       <p class="calendar-meta solver-depart">{{ pointDeDepart() }}</p>
-    </mat-card-content>
-  }
-  @if (raisonVerrou()) {
-    <mat-card-content>
+    }
+    @if (raisonVerrou()) {
       <app-status-message [text]="raisonVerrou()" tone="info" />
-    </mat-card-content>
+    }
+  </mat-card-content>
+  @if (solverBusy()) {
+    <mat-card-actions class="card-actions">
+      <button matButton="tonal" type="button" [disabled]="arretEnCours()" (click)="onArreterSolveur()">
+        <mat-icon>stop_circle</mat-icon>
+        <ng-container i18n="@@solver.arreter">Arrêter le solveur</ng-container>
+      </button>
+    </mat-card-actions>
   }
+  <!-- (4) During the solve: its progress, its end at the latest, the queue. -->
   @if (progression() !== null) {
     <mat-card-content>
       <mat-progress-bar mode="determinate" [value]="progression()!"
@@ -65,60 +75,58 @@
     </mat-card-content>
   }
   <app-solver-queue (failed)="output.set($event)" />
-  <app-solve-recap
-    [lastRunAt]="lastRunAt()"
-    [reamorcage]="reamorcageEffectue()"
-    [impact]="impactPublication()"
-    [impactValidations]="impactValidations()"
-    [previousPlan]="planPrecedent()"
-    [score]="score()"
-    [scoreHorsPlancher]="scoreHorsPlancher()"
-    [reading]="reading()"
-    (restored)="onPlanPrecedentRestaure($event)"
-    (failed)="output.set($event)"
-  />
-  @if (resolution.resolution()?.solved) {
+</mat-card>
+
+<!-- The live curve sits by the progress while a solve runs; once it is over
+     it steps below the result, foldable, rather than ahead of it. -->
+@if (solverBusy()) {
+  <app-score-curve-card />
+}
+
+<!-- (4) After the solve: the result in sentences, and the next steps one click away. -->
+@if (lastRunAt() || resolution.resolution()?.solved) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-header>
+      <h2 mat-card-title i18n="@@solver.resultat.title">Résultat du dernier calcul</h2>
+    </mat-card-header>
+    <app-solve-recap
+      [lastRunAt]="lastRunAt()"
+      [reamorcage]="reamorcageEffectue()"
+      [impact]="impactPublication()"
+      [impactValidations]="impactValidations()"
+      [previousPlan]="planPrecedent()"
+      [score]="score()"
+      [scoreHorsPlancher]="scoreHorsPlancher()"
+      [reading]="reading()"
+      (restored)="onPlanPrecedentRestaure($event)"
+      (failed)="output.set($event)"
+    />
     <mat-card-content>
-      @if (dataStale()) {
-        <p class="calendar-meta data-stale-hint" i18n="@@solver.dataStale">
-          Des données de référence ont été modifiées depuis cette résolution ; le résultat affiché peut ne plus être à jour.
-        </p>
-        @if (resoluLe(); as depuis) {
-          <app-changements-donnees [depuis]="depuis" />
-        }
-      }
+      <app-validation-banner />
     </mat-card-content>
-  }
-</mat-card>
-
-<app-validation-banner />
-
-<app-score-curve-card />
-
-<!-- Diffusion moved to its own screen (issue #320): the solver solves, and
-     « Publication » is where the plan reaches the animateurs. The link is the
-     step after, not a card of this page. -->
-<mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h2 mat-card-title i18n="@@solver.diffusion.suite">Le planning vous convient ?</h2>
-    <mat-card-subtitle i18n="@@solver.diffusion.suiteHint">
-      Les documents à imprimer ou à archiver et l'envoi aux animateurs sont sur l'écran Publication.
-    </mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-actions class="card-actions">
-    <app-voir-planning-button />
-    <a matButton="filled" routerLink="/publication">
-      <mat-icon>outgoing_mail</mat-icon>
-      <ng-container i18n="@@nav.link.publication">Publication</ng-container>
-    </a>
-  </mat-card-actions>
-</mat-card>
-
-<app-solver-volumetry />
+    <mat-card-actions class="card-actions">
+      <app-voir-planning-button />
+      <a matButton="tonal" routerLink="/journee" [queryParams]="relireParams()">
+        <mat-icon>fact_check</mat-icon>
+        <ng-container i18n="@@solver.resultat.relire">Relire</ng-container>
+      </a>
+      <a matButton="filled" routerLink="/publication">
+        <mat-icon>outgoing_mail</mat-icon>
+        <ng-container i18n="@@solver.resultat.publier">Publier</ng-container>
+      </a>
+    </mat-card-actions>
+  </mat-card>
+}
 
 @if (incrementalStats(); as stats) {
   <app-incremental-result [stats]="stats" [changements]="incrementalChangements()" />
 }
 
-<app-feasibility-banner [report]="feasibility()" [hardScore]="hardScore()" [hardIssues]="hardIssues()" />
+@if (!solverBusy()) {
+  <app-score-curve-card />
+}
+
+<!-- (6) Folded: read when a solve surprises. -->
+<app-solver-volumetry />
+
 <app-output-panel [text]="output()" />

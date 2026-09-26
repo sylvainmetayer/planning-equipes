@@ -115,13 +115,21 @@ function redirectToDiagnostic(onglet: string): RedirectFunction {
   return redirectToOnglet('diagnostic', onglet);
 }
 
-/** A former screen that became a tab: its address keeps its own query params and gains the `onglet`. */
-function redirectToOnglet(page: string, onglet: string): RedirectFunction {
+/**
+ * A former screen that became a tab: its address keeps its own query params
+ * and gains the `onglet`; `dropped` names the params of a view that did not
+ * survive the move.
+ */
+function redirectToOnglet(
+  page: string,
+  onglet: string,
+  dropped: readonly string[] = [],
+): RedirectFunction {
   return ({ queryParams }) => {
     const params = new URLSearchParams();
     params.set('onglet', onglet);
     for (const [key, valeur] of Object.entries(queryParams)) {
-      if (key !== 'onglet' && valeur !== undefined && valeur !== null) {
+      if (key !== 'onglet' && !dropped.includes(key) && valeur !== undefined && valeur !== null) {
         params.set(key, paramText(valeur));
       }
     }
@@ -488,25 +496,23 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/typologies/typologies-page').then((m) => m.TypologiesPage),
   },
   {
-    path: 'ad-hoc-constraints',
-    title: () => $localize`:@@route.adHocConstraints:Ajustements manuels`,
+    // What the next solve must respect, in three tabs (issue #719): the
+    // adjustments, the locks and the consignes, which were three screens.
+    path: 'consignes-solveur',
+    title: () => $localize`:@@route.consignesSolveur:Consignes au solveur`,
     loadComponent: () =>
-      import('./pages/ad-hoc-constraints/ad-hoc-constraints-page').then(
-        (m) => m.AdHocConstraintsPage,
+      import('./pages/consignes-solveur/consignes-solveur-page').then(
+        (m) => m.ConsignesSolveurPage,
       ),
   },
+  // The network of pairs (`?vue=reseau`, `?paires=`) is gone: its `?personne=`
+  // narrows the list of adjustments instead.
   {
-    path: 'verrouillages',
-    title: () => $localize`:@@route.verrouillages:Verrouillages`,
-    loadComponent: () =>
-      import('./pages/verrouillages/verrouillages-page').then((m) => m.VerrouillagesPage),
+    path: 'ad-hoc-constraints',
+    redirectTo: redirectToOnglet('consignes-solveur', 'ajustements', ['vue', 'paires']),
   },
-  {
-    // A band every stand is shut on for one date, by decision (issue #4).
-    path: 'consignes',
-    title: () => $localize`:@@route.consignes:Consignes`,
-    loadComponent: () => import('./pages/consignes/consignes-page').then((m) => m.ConsignesPage),
-  },
+  { path: 'verrouillages', redirectTo: redirectToOnglet('consignes-solveur', 'verrouillages') },
+  { path: 'consignes', redirectTo: redirectToOnglet('consignes-solveur', 'consignes') },
   {
     // « Planning » (issue #712): the Journée became the page every reading of
     // the plan starts from; the address stayed, for the links already out.

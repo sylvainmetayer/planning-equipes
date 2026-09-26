@@ -32,3 +32,70 @@ app-solve-recap > .mat-mdc-card-content:last-child {
 .solver-impact-validations {
   color: var(--mat-sys-error);
 }
+
+/* « Ce calcul tiendra compte de » (issue #704): one line per input, a counter
+   at zero muted rather than hidden. */
+.solve-inputs-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.solve-inputs-zero {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.solve-inputs-warning {
+  color: var(--mat-sys-error);
+}
+
+/* The three ways to launch, each with its sentence beside it (issue #719). */
+.solver-modes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.solver-modes li {
+  display: grid;
+  grid-template-columns: minmax(16rem, max-content) minmax(0, 1fr);
+  align-items: center;
+  gap: 0.25rem 1rem;
+}
+
+@media (max-width: 640px) {
+  .solver-modes li {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.solver-mode-phrase {
+  margin: 0;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* The volumetry, folded under its title. */
+.solver-volumetry-details {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+}
+
+.solver-volumetry-details > summary {
+  cursor: pointer;
+  list-style-position: inside;
+}
+
+.solver-volumetry-title {
+  display: inline;
+  font: var(--mat-sys-title-medium);
+  margin: 0;
+}
+
+.solver-volumetry-details[open] > summary {
+  margin-bottom: 1rem;
+}

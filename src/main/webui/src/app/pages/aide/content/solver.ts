@@ -29,13 +29,17 @@ export function buildSolverSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.calculer.term.corriger:Corriger après un changement`,
-              text: $localize`:@@aide.calculer.def.corriger:Un désistement, une indisponibilité saisie tard, un stand ajouté : le planning est déjà diffusé et vous voulez bouger le moins possible. Tout ce qui reste valable est figé, seuls les postes que le changement a invalidés sont recalculés, en quelques dizaines de secondes. Le compte rendu nomme qui a bougé. Ne réoptimise rien.`,
+              text: $localize`:@@aide.calculer.def.corriger:Un désistement, une indisponibilité saisie tard, un stand ajouté : le planning est déjà diffusé et vous voulez bouger le moins possible. Tout ce qui reste valable est figé, seuls les postes que le changement a invalidés sont recalculés, en quelques dizaines de secondes. La fenêtre montre d'abord ce qui a changé depuis le plan, puis propose d'en rouvrir davantage : des animateurs, des journées, des stands. Le compte rendu nomme qui a bougé. Ne réoptimise rien.`,
             },
             {
               term: $localize`:@@aide.calculer.term.recommencer:Recommencer de zéro`,
               text: $localize`:@@aide.calculer.def.recommencer:Ignore le plan enregistré et repart de rien. C'est le seul geste qui peut perdre la qualité déjà atteinte, d'où la confirmation : réservez-le à un essai que vous abandonnez ou à des données refaites en profondeur. Sans plan enregistré, le bouton est inactif.`,
             },
           ],
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.calculer.entrees:La page s'ouvre sur ce qui empêche un planning sans écart — faisabilité et alertes —, puis sur « Ce calcul tiendra compte de » : les verrouillages, les ajustements manuels, les consignes et leurs dates, les déclarations de disponibilité encore en attente — que le calcul ne verra pas —, les règles désactivées et les modifications faites depuis la dernière résolution. Chaque compteur mène à l'écran qui les liste ; un compteur à zéro reste affiché, en retrait. Viennent ensuite les trois boutons, chacun avec sa phrase. Après un calcul, son résultat se lit en phrases, et « Voir le planning », « Relire » — la première journée pas encore relue — et « Publier » sont juste dessous. La volumétrie du problème est repliée en bas de page ; le budget de calcul se règle dans Règles du planning, onglet Calcul.`,
         },
         {
           kind: 'paragraph',
@@ -73,7 +77,11 @@ export function buildSolverSections(): HelpSection[] {
       ],
       links: [
         { route: '/solveur', label: $localize`:@@nav.link.solver:Solveur` },
-        { route: '/verrouillages', label: $localize`:@@nav.link.verrouillages:Verrouillages` },
+        {
+          route: '/consignes-solveur',
+          queryParams: { onglet: 'verrouillages' },
+          label: $localize`:@@consignesSolveur.onglet.verrouillages:Verrouillages`,
+        },
       ],
     },
     {
@@ -119,7 +127,7 @@ export function buildSolverSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.config.term.verrouillages:Verrouillages`,
-              text: $localize`:@@aide.config.def.verrouillages:Geler un animateur, un stand, une journée ou un créneau pour que la prochaine résolution n'y touche plus et optimise le reste. Une place non pourvue n'est jamais gelée, et les places gelées continuent d'être évaluées : un verrou laisse donc une alerte visible plutôt que de masquer un problème — et quand ce que vous figez casse déjà une règle dure, l'enregistrement le dit, pour que le score dur négatif du prochain calcul ne soit pas une surprise. Ce n'est pas un ajustement manuel — voir l'encart « Ajustement manuel ou verrouillage ? ».`,
+              text: $localize`:@@aide.config.def.verrouillages:Geler un animateur, un stand, une journée ou un créneau pour que la prochaine résolution n'y touche plus et optimise le reste. Une place non pourvue n'est jamais gelée, et les places gelées continuent d'être évaluées : un verrou laisse donc une alerte visible plutôt que de masquer un problème — et quand ce que vous figez casse déjà une règle dure, l'enregistrement le dit, pour que le score dur négatif du prochain calcul ne soit pas une surprise. Ils se posent sur l'onglet Verrouillages de la page Consignes au solveur, sur un animateur par défaut ; avant d'enregistrer, l'aperçu compte les affectations que le verrou figera et mène à la Journée qui les montre. Ce n'est pas un ajustement manuel — voir l'encart « Ajustement manuel ou verrouillage ? ».`,
             },
           ],
         },
@@ -140,7 +148,11 @@ export function buildSolverSections(): HelpSection[] {
         { route: '/solveur', label: $localize`:@@nav.link.solver:Solveur` },
         { route: '/regles', label: $localize`:@@nav.link.regles:Règles du planning` },
         { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
-        { route: '/verrouillages', label: $localize`:@@nav.link.verrouillages:Verrouillages` },
+        {
+          route: '/consignes-solveur',
+          queryParams: { onglet: 'verrouillages' },
+          label: $localize`:@@consignesSolveur.onglet.verrouillages:Verrouillages`,
+        },
       ],
     },
     {
@@ -381,10 +393,15 @@ export function buildSolverSections(): HelpSection[] {
         },
         { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
         {
-          route: '/ad-hoc-constraints',
-          label: $localize`:@@nav.link.adHocConstraints:Ajustements manuels`,
+          route: '/consignes-solveur',
+          queryParams: { onglet: 'ajustements' },
+          label: $localize`:@@consignesSolveur.onglet.ajustements:Ajustements`,
         },
-        { route: '/verrouillages', label: $localize`:@@nav.link.verrouillages:Verrouillages` },
+        {
+          route: '/consignes-solveur',
+          queryParams: { onglet: 'verrouillages' },
+          label: $localize`:@@consignesSolveur.onglet.verrouillages:Verrouillages`,
+        },
       ],
     },
     {
@@ -395,7 +412,7 @@ export function buildSolverSections(): HelpSection[] {
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.adHoc.intro:Un ajustement manuel est une exception que vous saisissez sur vos propres données, à côté des règles du catalogue. Trois des quatre types sont appliqués au même niveau que le cadre légal : le solveur ne les contournera jamais, quitte à rendre un planning en défaut. Chacun se saisit avec une raison, lisible partout où l'ajustement est cité.`,
+          text: $localize`:@@aide.adHoc.intro:Un ajustement manuel est une exception que vous saisissez sur vos propres données, à côté des règles du catalogue — premier onglet de la page Consignes au solveur, avec les verrouillages et les consignes. Trois des quatre types sont appliqués au même niveau que le cadre légal : le solveur ne les contournera jamais, quitte à rendre un planning en défaut. Chacun se saisit avec une raison, lisible partout où l'ajustement est cité.`,
         },
         {
           kind: 'callout',
@@ -471,16 +488,25 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.adHoc.reseau:La bascule « Réseau » de la page redessine les affinités et les incompatibilités comme un réseau de personnes : un point par animateur cité par une paire, un trait plein pour une affinité, des pointillés pour une incompatibilité, un petit losange quand l'ajustement est limité à un créneau ou un stand. Les personnes reliées par des affinités forment des grappes, encadrées et numérotées ; celles qui ne sont liées que par des incompatibilités sont regroupées à part, et un compteur dit combien d'animateurs n'ont aucune paire. Une incompatibilité entre deux membres d'une même grappe est épaissie et marquée d'un « ! » : le solveur ne pourra jamais récompenser le groupe entier. Un clic sur une personne surligne ses paires et les liste sous le dessin, avec un lien vers sa timeline ; un clic sur un trait ouvre l'ajustement — ou, quand la même paire en porte plusieurs, les liste chacun avec son bouton « Modifier ». La raison d'un ajustement n'apparaît qu'au survol du trait. Le même contenu se lit en texte sous le dessin, au clavier. Le dessin est identique d'un chargement à l'autre : les grappes sont rangées par taille, leurs membres par ordre alphabétique, en cercle — ou en colonnes au-delà de trente personnes.`,
+          text: $localize`:@@aide.adHoc.liste:Le dialogue commence par la personne, puis le type : on pense « Alice », pas « incompatibilité ». Le champ « Personne » au-dessus de la liste ne garde que les ajustements qui nomment quelqu'un — par son nom ou son identifiant ; la fiche d'un animateur y mène filtrée sur lui. L'adresse garde le filtre.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.consignesSolveur.relancer:Après toute saisie sur l'un des trois onglets — un ajustement, un verrou, une consigne —, la page propose « Relancer le calcul » sur place : une correction quand un plan existe, qui ne rouvre que ce que la saisie a invalidé, sinon un calcul complet. Le Solveur compte ces saisies dans « Ce calcul tiendra compte de ».`,
         },
       ],
       links: [
         {
-          route: '/ad-hoc-constraints',
-          label: $localize`:@@nav.link.adHocConstraints:Ajustements manuels`,
+          route: '/consignes-solveur',
+          queryParams: { onglet: 'ajustements' },
+          label: $localize`:@@consignesSolveur.onglet.ajustements:Ajustements`,
         },
         { route: '/diagnostic', label: $localize`:@@aide.link.problemes:Problèmes` },
-        { route: '/verrouillages', label: $localize`:@@nav.link.verrouillages:Verrouillages` },
+        {
+          route: '/consignes-solveur',
+          queryParams: { onglet: 'verrouillages' },
+          label: $localize`:@@consignesSolveur.onglet.verrouillages:Verrouillages`,
+        },
       ],
     },
   ];

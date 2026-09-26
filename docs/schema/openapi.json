@@ -1870,6 +1870,18 @@
           }
         }
       },
+      "ConsigneInput" : {
+        "required" : [ "date", "motif" ],
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "motif" : {
+            "type" : "string"
+          }
+        }
+      },
       "ConsigneJourJ" : {
         "required" : [ "fermetureDebut", "motif" ],
         "type" : "object",
@@ -7953,6 +7965,41 @@
             "items" : {
               "$ref" : "#/components/schemas/ConsigneSnapshot"
             }
+          }
+        }
+      },
+      "SolveInputs" : {
+        "required" : [ "locks", "adjustments", "consignes", "pendingDeclarations", "disabledRules", "changesSinceSolve" ],
+        "type" : "object",
+        "properties" : {
+          "locks" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "adjustments" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "consignes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ConsigneInput"
+            }
+          },
+          "pendingDeclarations" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "disabledRules" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "changesSinceSolve" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "solvedAt" : {
+            "$ref" : "#/components/schemas/Instant"
           }
         }
       },
@@ -15040,6 +15087,24 @@
         },
         "summary" : "Solve From Reference Data",
         "tags" : [ "Solver Job Resource" ]
+      }
+    },
+    "/api/solve/entrees" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SolveInputs"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Current",
+        "tags" : [ "Solve Inputs Resource" ]
       }
     },
     "/api/solve/incremental/async" : {

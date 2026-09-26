@@ -1,0 +1,37 @@
+<h1 class="page-title" i18n="@@nav.link.consignesSolveur">Consignes au solveur</h1>
+<p class="consignes-solveur-sous-titre" i18n="@@consignesSolveur.subtitle">Ce que le prochain calcul doit respecter.</p>
+
+<mat-button-toggle-group class="consignes-solveur-onglets" [value]="onglet()" (change)="changerOnglet($event.value)"
+                         aria-label="Onglet des consignes au solveur" i18n-aria-label="@@consignesSolveur.onglet.label">
+  <mat-button-toggle value="ajustements">
+    <mat-icon>rule</mat-icon>
+    <ng-container i18n="@@consignesSolveur.onglet.ajustements">Ajustements</ng-container>
+  </mat-button-toggle>
+  <mat-button-toggle value="verrouillages">
+    <mat-icon>lock</mat-icon>
+    <ng-container i18n="@@consignesSolveur.onglet.verrouillages">Verrouillages</ng-container>
+  </mat-button-toggle>
+  <mat-button-toggle value="consignes">
+    <mat-icon>policy</mat-icon>
+    <ng-container i18n="@@consignesSolveur.onglet.consignes">Consignes</ng-container>
+  </mat-button-toggle>
+</mat-button-toggle-group>
+
+@if (written()) {
+  <div class="consignes-solveur-relancer" role="status">
+    <span i18n="@@consignesSolveur.relancer">Le prochain calcul en tiendra compte.</span>
+    <app-relancer-calcul mode="correction" />
+  </div>
+}
+
+@switch (onglet()) {
+  @case ('ajustements') {
+    <app-ad-hoc-constraints-page (changed)="onChanged()" />
+  }
+  @case ('verrouillages') {
+    <app-verrouillages-page (changed)="onChanged()" />
+  }
+  @case ('consignes') {
+    <app-consignes-page (changed)="onChanged()" />
+  }
+}

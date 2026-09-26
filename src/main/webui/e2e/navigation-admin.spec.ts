@@ -30,7 +30,7 @@ test.afterAll(async () => {
  */
 const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/', marker: "État de l'édition", sheet: 'accueil-ligne' },
-  { path: '/solveur', marker: 'Calculer le planning', sheet: 'solver-volumetry' },
+  { path: '/solveur', marker: 'Ce calcul tiendra compte de', sheet: 'solver-modes' },
   { path: '/publication', marker: 'Diffusion du planning', sheet: 'publication-etat' },
   // The former Notifications page lands on « À traiter aujourd'hui ».
   { path: '/notifications', marker: "À traiter aujourd'hui", sheet: 'notification-jour' },
@@ -128,9 +128,22 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   },
   { path: '/disponibilites', sheet: 'espace-dispo-intro' },
   { path: '/kpi' },
-  { path: '/ad-hoc-constraints' },
-  { path: '/verrouillages', marker: 'Verrouiller une partie du planning' },
-  { path: '/consignes', marker: 'Consignes', sheet: 'consigne-prereglage' },
+  // Three screens became the tabs of « Consignes au solveur » (issue #719):
+  // the default tab, and the other two by their `?onglet=`.
+  {
+    path: '/consignes-solveur',
+    marker: 'Ce que le prochain calcul doit respecter',
+    sheet: 'consignes-solveur-onglets',
+  },
+  {
+    path: '/consignes-solveur?onglet=verrouillages',
+    marker: 'Verrouiller une partie du planning',
+  },
+  {
+    path: '/consignes-solveur?onglet=consignes',
+    marker: 'Poser une consigne',
+    sheet: 'consigne-prereglage',
+  },
   // Paramètres and Débogage are tab pages: the default tab
   // carries the marker and the route's own stylesheet, and one other tab of
   // each is visited to prove the `?onglet=` addresses land where they say.
@@ -326,16 +339,16 @@ test('un seul menu par moment du cycle, Débogage hors menu mais servi', async (
 
   // A view of the page already on screen: the router reuses the page, which
   // must follow its address rather than keep the view it was built with.
-  await page.goto('/ad-hoc-constraints');
-  await expect(page.locator('#contenu')).toContainText('Ajustements manuels');
-  await expect(page.locator('#contenu app-reseau-paires-vue')).toHaveCount(0);
+  await page.goto('/consignes-solveur');
+  await expect(page.locator('#contenu')).toContainText('Ce que le prochain calcul doit respecter');
+  await expect(page.locator('#contenu app-verrouillages-page')).toHaveCount(0);
   await page.keyboard.press('Control+k');
-  await page.getByRole('dialog').getByRole('combobox').fill('réseau');
+  await page.getByRole('dialog').getByRole('combobox').fill('figer');
   await page
     .getByRole('dialog')
-    .getByRole('option', { name: /Ajustements manuels › Réseau/ })
+    .getByRole('option', { name: /Consignes au solveur › Verrouillages/ })
     .click();
-  await expect(page).toHaveURL(/\/ad-hoc-constraints\?vue=reseau/);
-  await expect(page.locator('#contenu app-reseau-paires-vue')).toHaveCount(1);
+  await expect(page).toHaveURL(/\/consignes-solveur\?onglet=verrouillages/);
+  await expect(page.locator('#contenu app-verrouillages-page')).toHaveCount(1);
   await page.context().close();
 });

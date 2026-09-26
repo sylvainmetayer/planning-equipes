@@ -1,5 +1,9 @@
-<h2 mat-dialog-title i18n="@@solver.incremental.dialog.title">Replanifier (incrémental)</h2>
+<h2 mat-dialog-title i18n="@@solver.incremental.dialog.title">Corriger après un changement</h2>
 <mat-dialog-content>
+  @if (data?.depuis; as depuis) {
+    <h3 class="replanification-soustitre" i18n="@@solver.incremental.dialog.changements">Ce qui a changé depuis le plan</h3>
+    <app-changements-donnees [depuis]="depuis" />
+  }
   <p i18n="@@solver.incremental.dialog.hint">
     Le planning enregistré est figé : seuls les postes invalidés par un changement tardif et les postes vides sont
     recalculés, en quelques dizaines de secondes.

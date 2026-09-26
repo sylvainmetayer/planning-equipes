@@ -1,9 +1,10 @@
+<!-- The « Consignes » tab of « Consignes au solveur » (issue #719): the page
+     carries the title; the card says what a consigne is. -->
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <h1 mat-card-title i18n="@@consignes.title">Consignes</h1>
-    <mat-card-subtitle i18n="@@consignes.subtitle">
+    <p class="calendar-meta" i18n="@@consignes.subtitle">
       Une consigne ferme tous les stands sur une bande horaire d'une date, par décision de l'organisation, et rouvre les stands choisis sur des fenêtres de compensation.
-    </mat-card-subtitle>
+    </p>
   </mat-card-header>
   <mat-card-actions class="card-actions">
     <button matButton="filled" type="button" [disabled]="editingLocked() || datesCandidates().length === 0" (click)="poser()"
