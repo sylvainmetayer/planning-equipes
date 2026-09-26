@@ -44,7 +44,7 @@ describe('DateMockService', () => {
   it('reads the setting from the server, never from the browser', async () => {
     await service.refresh();
 
-    expect(api.get).toHaveBeenCalledWith('/api/debug/date-du-jour');
+    expect(api.get).toHaveBeenCalledWith('/api/horloge');
     expect(service.dateDuJour()).toBe('');
     expect(service.actif()).toBe(false);
   });
@@ -60,7 +60,7 @@ describe('DateMockService', () => {
   it('saves on change and adopts what the server answers', async () => {
     await service.set('2026-07-08');
 
-    expect(api.put).toHaveBeenCalledWith('/api/debug/date-du-jour', {
+    expect(api.put).toHaveBeenCalledWith('/api/horloge', {
       dateDuJour: '2026-07-08',
       heureDuJour: null,
     });

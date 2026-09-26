@@ -2792,7 +2792,7 @@ export interface EspaceAnimateurView {
    */
   changementsLe: string | null;
   /**
-   * The date a developer froze on this server (`/api/debug/date-du-jour`),
+   * The date a developer froze on this server (`/api/horloge`),
    * `null` on the real clock — always `null` where the simulated clock is not allowed. The day
    * marker then reads it in place of the phone's date, and the toolbar says so.
    */
@@ -3559,7 +3559,7 @@ export interface EtatSauvegarde {
 /* --------------------------- Mode « jour J » ------------------------------ */
 
 /**
- * `/api/debug/date-du-jour`: the development- and staging-only override of the server's
+ * `/api/horloge`: the development-, demonstration- and staging-only override of the server's
  * notion of today, and whether this server would accept one.
  */
 export interface DateJourJView {

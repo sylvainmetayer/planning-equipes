@@ -18,9 +18,9 @@ import { GelEditionNotice } from '../../shared/gel-edition-notice';
 import { OutputPanel } from '../../shared/output-panel';
 
 /**
- * « Scénario » : the one import tab that is not a referential.
+ * « Scénario » : the one import card that is not a referential.
  *
- * <p>The five other tabs add to an edition, column by column; a scenario file
+ * <p>The referential imports add to an edition, column by column; a scenario file
  * carries the whole edition — typologies, emplacements, stands, animateurs,
  * créneaux, ad hoc rules, sometimes its legal parameters — and replaces what
  * is there. Which is why it sits here, next to the files an organiser already

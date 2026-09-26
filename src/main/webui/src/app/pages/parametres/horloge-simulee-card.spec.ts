@@ -1,32 +1,20 @@
-// The development-only "freeze today" field of the Débogage page (issue #297).
+// « Date et heure simulées » of Paramètres › Instance (issue #297, moved from
+// the Débogage page by #718).
 //
-// Three things are worth a test here: the field only exists where the server
+// Three things are worth a test here: the card only exists where the server
 // says it may, it saves on change with no Validate button, and the deep link of
-// the toolbar warning really lands on the control instead of on the page.
+// the toolbar indicator really lands on the control instead of on the page.
 
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiService } from '../../core/api.service';
 import { DateMockService } from '../../core/date-mock.service';
-import { EditionStore } from '../../core/edition.store';
-import { NotificationService } from '../../core/notification.service';
-import { PlanningResolutionStore } from '../../core/planning-resolution.store';
-import { PlanningStateService } from '../../core/planning-state.service';
-import { ProblemesStore } from '../../core/problemes.store';
-import { ReferenceDataStore } from '../../core/reference-data.store';
-import { PlanningApi } from '../../core/api/planning-api';
-import { ScenarioImportService } from '../../core/scenario-import.service';
-import { SolverJobService } from '../../core/solver-job.service';
-import { SolverSettingsService } from '../../core/solver-settings.service';
-import { ConfirmationRecopie } from '../../shared/confirmation-recopie';
-import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
-import { DebugPage } from './debug-page';
+import { HorlogeSimuleeCard } from './horloge-simulee-card';
 
-describe('DebugPage — date du jour', () => {
-  let fixture: ComponentFixture<DebugPage>;
+describe('HorlogeSimuleeCard', () => {
+  let fixture: ComponentFixture<HorlogeSimuleeCard>;
   let dates: {
     dateDuJour: ReturnType<typeof signal<string>>;
     heureMock: ReturnType<typeof signal<string>>;
@@ -41,12 +29,6 @@ describe('DebugPage — date du jour', () => {
       dateDuJour?: string;
       heureDuJour?: string;
       focus?: string | null;
-      /**
-       * The tab the address names. The field lives on « Vérifications » since
-       * issue #606, so that is the default here; the deep link of the toolbar
-       * warning is the case where no tab is named and the page has to pick it.
-       */
-      onglet?: string | null;
     } = {},
   ): Promise<void> {
     const dateDuJour = signal(options.dateDuJour ?? '');
@@ -62,56 +44,19 @@ describe('DebugPage — date du jour', () => {
         heureMock.set(date ? heure : '');
       }),
     };
+    const params = convertToParamMap(options.focus ? { focus: options.focus } : {});
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
         { provide: DateMockService, useValue: dates },
         {
-          provide: ApiService,
-          useValue: { get: vi.fn(async () => ({ adminEmail: null })), post: vi.fn() },
-        },
-        { provide: EditionStore, useValue: { courant: () => null } },
-        { provide: NotificationService, useValue: { notify: vi.fn() } },
-        { provide: ConfirmationRecopie, useValue: { demander: vi.fn() } },
-        { provide: InstantaneAvantAction, useValue: { proposer: vi.fn() } },
-        { provide: PlanningStateService, useValue: { set: vi.fn() } },
-        { provide: ReferenceDataStore, useValue: { reload: vi.fn(async () => undefined) } },
-        { provide: PlanningResolutionStore, useValue: { reload: vi.fn(async () => undefined) } },
-        { provide: SolverSettingsService, useValue: { refresh: vi.fn(async () => undefined) } },
-        { provide: ProblemesStore, useValue: { reloadFeasibility: vi.fn(async () => undefined) } },
-        {
-          provide: SolverJobService,
-          useValue: {
-            solverBusy: () => false,
-            editingLocked: () => false,
-            activeJobDescription: () => '',
-          },
-        },
-        // The page hosts the bundled-scenario picker, which lists on entry and
-        // imports on click; neither is what this file is about.
-        { provide: PlanningApi, useValue: { scenarioNames: vi.fn(async () => []) } },
-        {
-          provide: ScenarioImportService,
-          useValue: {
-            importer: vi.fn(async () => ({ status: 'cancelled', result: null })),
-            recapitulatif: vi.fn(() => ''),
-          },
-        },
-        {
           provide: ActivatedRoute,
-          useValue: (() => {
-            const onglet = options.onglet === undefined ? 'verifications' : options.onglet;
-            const params = convertToParamMap({
-              ...(options.focus ? { focus: options.focus } : {}),
-              ...(onglet ? { onglet } : {}),
-            });
-            return { snapshot: { queryParamMap: params }, queryParamMap: of(params) };
-          })(),
+          useValue: { snapshot: { queryParamMap: params }, queryParamMap: of(params) },
         },
       ],
     });
-    fixture = TestBed.createComponent(DebugPage);
+    fixture = TestBed.createComponent(HorlogeSimuleeCard);
     await fixture.whenStable();
     fixture.detectChanges();
   }
@@ -130,14 +75,19 @@ describe('DebugPage — date du jour', () => {
   });
 
   /**
-   * The interface hiding the field is a courtesy; the guard is the server, which
+   * The interface hiding the card is a courtesy; the guard is the server, which
    * refuses the write whatever the client believes. This only checks the
    * courtesy — the refusal is covered by `DateJourJResourceTest`.
    */
-  it('does not offer the field at all outside development mode', async () => {
+  it('does not offer the card at all where the server refuses a simulated clock', async () => {
     await rendre({ modifiable: false });
 
     expect(champ()).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).querySelector('#horloge')).toBeNull();
+  });
+
+  it('carries the anchor the toolbar indicator links to', () => {
+    expect((fixture.nativeElement as HTMLElement).querySelector('#horloge')).not.toBeNull();
   });
 
   it('saves on change, with no Validate button', async () => {
@@ -150,6 +100,19 @@ describe('DebugPage — date du jour', () => {
       (fixture.nativeElement as HTMLElement).querySelectorAll('button'),
     ).find((each) => /valider|enregistrer/i.test(each.textContent ?? ''));
     expect(validate).toBeUndefined();
+  });
+
+  it('hands the clock back to the machine in one click', async () => {
+    await rendre({ dateDuJour: '2026-07-08', heureDuJour: '14:30' });
+    const bouton = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('button'),
+    ).find((each) => (each.textContent ?? '').includes("Revenir à l'horloge de la machine"))!;
+    expect(bouton.disabled).toBe(false);
+
+    bouton.click();
+    await fixture.whenStable();
+
+    expect(dates.set).toHaveBeenLastCalledWith('', '');
   });
 
   it('clears the field back to the real clock', async () => {
@@ -203,7 +166,7 @@ describe('DebugPage — date du jour', () => {
   it('warns, next to the field, that the date is frozen', async () => {
     await rendre({ dateDuJour: '2026-07-08' });
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Date figée');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Date simulée :');
   });
 
   /** A refusal belongs under the control it is about, not in a toast that scrolls away. */
@@ -222,9 +185,8 @@ describe('DebugPage — date du jour', () => {
 
   /** What the toolbar warning links to: the control, focused, not just the page. */
   it('focuses the field when reached through the deep link', async () => {
-    await rendre({ focus: 'date-du-jour', onglet: null });
+    await rendre({ focus: 'date-du-jour' });
 
-    // The tab was not named, and the field it holds is nonetheless on screen.
     expect(champ()).not.toBeNull();
     expect(document.activeElement).toBe(champ());
   });

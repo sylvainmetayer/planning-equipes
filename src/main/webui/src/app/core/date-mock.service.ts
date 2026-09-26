@@ -1,5 +1,5 @@
 // Development- and staging-only override of the server's notion of today
-// (`/api/debug/date-du-jour`, issue #297).
+// (`/api/horloge`, issue #297), set from Paramètres › Instance.
 //
 // The mode jour J screen is entirely about what is still ahead *today*, so
 // without this it could only be exercised on the day of the event. What is
@@ -17,11 +17,17 @@
 // `HORLOGE_SIMULEE_AUTORISEE=true`.
 
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { ApiService } from './api.service';
+import { HorlogeApi } from './api/horloge-api';
 import { DateJourJView } from './models';
 
-/** Query param and anchor the toolbar indicator deep-links to. */
+/**
+ * Query param value, element id and fragment the toolbar indicator deep-links
+ * to: the date field of Paramètres › Instance.
+ */
 export const TODAY_ANCHOR = 'date-du-jour';
+
+/** The card of Paramètres › Instance carrying the field. */
+export const CLOCK_CARD_ANCHOR = 'horloge';
 
 @Injectable({ providedIn: 'root' })
 export class DateMockService {
@@ -46,18 +52,18 @@ export class DateMockService {
   /** Whether the date is frozen right now — what the toolbar indicator watches. */
   readonly actif = computed(() => this.dateDuJour() !== '');
 
-  private readonly api = inject(ApiService);
+  private readonly api = inject(HorlogeApi);
 
   constructor() {
     void this.refresh().catch(() => {
       // Unreachable at startup: stay on "real clock, not modifiable", which is
-      // the safe reading. A caller awaiting refresh() directly (the Débogage
-      // page) still sees the error and reports it.
+      // the safe reading. A caller awaiting refresh() directly (Paramètres ›
+      // Instance) still sees the error and reports it.
     });
   }
 
   async refresh(): Promise<void> {
-    this.apply(await this.api.get<DateJourJView>('/api/debug/date-du-jour'));
+    this.apply(await this.api.read());
   }
 
   /**
@@ -65,12 +71,7 @@ export class DateMockService {
    * keeps the wall clock's. The server answers 400 where the simulated clock is not allowed.
    */
   async set(date: string, heure = ''): Promise<void> {
-    this.apply(
-      await this.api.put<DateJourJView>('/api/debug/date-du-jour', {
-        dateDuJour: date || null,
-        heureDuJour: date && heure ? heure : null,
-      }),
-    );
+    this.apply(await this.api.write(date || null, date && heure ? heure : null));
   }
 
   private apply(view: DateJourJView): void {

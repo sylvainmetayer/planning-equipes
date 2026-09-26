@@ -141,7 +141,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.jourJ.mock:Cet écran ne parle que d'aujourd'hui, ce qui le rend difficile à découvrir hors période. En développement, ou sur un serveur de recette qui l'autorise, la page Débogage permet de figer la date et l'heure que le serveur considère comme maintenant ; une icône d'avertissement apparaît alors dans la barre du haut et ramène au champ pour la modifier. L'espace animateur suit la même horloge. Sur une instance de production, le réglage n'existe pas.`,
+          text: $localize`:@@aide.jourJ.mock.instance:Cet écran ne parle que d'aujourd'hui, ce qui le rend difficile à découvrir hors période. En développement, ou sur un serveur de démonstration ou de recette qui l'autorise, la carte « Date et heure simulées » de Paramètres, onglet Instance, fige la date et l'heure que le serveur considère comme maintenant ; un sablier apparaît alors dans la barre du haut et ramène au champ pour la modifier, et « Revenir à l'horloge de la machine » la lève. L'espace animateur suit la même horloge. Sur une instance de production, le réglage n'existe pas.`,
         },
       ],
       links: [
@@ -440,7 +440,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.shortcuts.disable:Si vous dictez à la voix, ou qu'une touche vous échappe, désactivez les raccourcis à une touche : une case dans la liste des raccourcis (« ? ») et dans Paramètres, onglet Globaux. Le réglage vaut pour ce navigateur ; Ctrl+K, le menu et les adresses restent.`,
+          text: $localize`:@@aide.shortcuts.disable.instance:Si vous dictez à la voix, ou qu'une touche vous échappe, désactivez les raccourcis à une touche : une case dans la liste des raccourcis (« ? ») et dans Paramètres, onglet Instance. Le réglage vaut pour ce navigateur ; Ctrl+K, le menu et les adresses restent.`,
         },
       ],
       links: [

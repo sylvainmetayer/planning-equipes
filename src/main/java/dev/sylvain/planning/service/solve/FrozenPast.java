@@ -38,7 +38,7 @@ import java.util.Map;
  * </ul>
  *
  * <p>The clock is {@code JourJClock}'s: the machine's date in production, the
- * date frozen through {@code PUT /api/debug/date-du-jour} under
+ * date frozen through {@code PUT /api/horloge} under
  * {@code quarkus:dev} or {@code HORLOGE_SIMULEE_AUTORISEE=true} — which is
  * what makes this testable before the event. A {@code null} horizon means the
  * freeze is off ({@code planning.solver.passe-fige=false}): nothing is marked,

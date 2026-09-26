@@ -10485,53 +10485,6 @@
         "tags" : [ "Database Resource" ]
       }
     },
-    "/api/debug/date-du-jour" : {
-      "put" : {
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/DateJourJView"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DateJourJView"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request"
-          }
-        },
-        "summary" : "Set Date Jour J",
-        "tags" : [ "Debug Resource" ]
-      },
-      "get" : {
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DateJourJView"
-                }
-              }
-            }
-          }
-        },
-        "summary" : "Date Jour J",
-        "tags" : [ "Debug Resource" ]
-      }
-    },
     "/api/debug/mail-config" : {
       "get" : {
         "responses" : {
@@ -12173,6 +12126,53 @@
         },
         "summary" : "Changements",
         "tags" : [ "Historique Resource" ]
+      }
+    },
+    "/api/horloge" : {
+      "put" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DateJourJView"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DateJourJView"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Set Date Jour J",
+        "tags" : [ "Horloge Resource" ]
+      },
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DateJourJView"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Date Jour J",
+        "tags" : [ "Horloge Resource" ]
       }
     },
     "/api/jobs" : {

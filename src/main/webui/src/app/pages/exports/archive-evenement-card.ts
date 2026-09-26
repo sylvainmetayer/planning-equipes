@@ -37,7 +37,7 @@ const DEFAULT_PARTS: readonly ArchivePart[] = [
   'scenario',
 ];
 
-/** The fragment the home screen's « Archiver l'édition » link lands on. */
+/** The fragment the former Export page carried for this card: Fichiers still reads it as its Archive tab. */
 export const ARCHIVE_FRAGMENT = 'archive-evenement';
 
 /**
@@ -133,8 +133,8 @@ export class ArchiveEvenementCard {
   constructor() {
     const route = inject(ActivatedRoute, { optional: true });
     const hote = inject(ElementRef<HTMLElement>);
-    // Reached from the home screen's « Archiver l'édition »: the card sits
-    // below the two others, so bring it into view.
+    // Reached through the fragment of an old address: bring the card into
+    // view, wherever its host lays it out.
     afterNextRender(() => {
       if (route?.snapshot.fragment === ARCHIVE_FRAGMENT) {
         (hote.nativeElement as HTMLElement).scrollIntoView?.({ block: 'start' });

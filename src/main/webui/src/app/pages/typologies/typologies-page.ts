@@ -27,6 +27,7 @@ import {
   sortQueryParams,
 } from '../../core/view-query-params';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
+import { ImportedRowsFilter } from '../../shared/imported-rows-filter';
 import { TableFilter } from '../../shared/table-filter';
 import { buildTypologieDetail } from './typologie-detail';
 import { TypologieFormData, TypologieFormDialog } from './typologie-form-dialog';
@@ -44,6 +45,7 @@ import {
 } from './usage-typologies';
 import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 import { GelNotice } from '../../shared/gel-notice';
+import { ImportButton } from '../../shared/import-button';
 
 /**
  * Who references a typologie, counted before it can be deleted. Removing one
@@ -98,6 +100,8 @@ function usageVide(typologieId: string): UsageTypologie {
 @Component({
   selector: 'app-typologies-page',
   imports: [
+    ImportedRowsFilter,
+    ImportButton,
     MatCardModule,
     MatButtonModule,
     MatCheckboxModule,

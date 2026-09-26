@@ -80,13 +80,14 @@ test('une date sans créneau programmé se lit comme telle', async ({ browser })
  */
 test('la date du jour ne peut pas être figée hors mode développement', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
-  // L'onglet qui porte le champ depuis #606 : si la garde tombait, c'est là
-  // qu'il apparaîtrait — l'onglet par défaut ne le rendrait de toute façon pas.
-  await page.goto('/debug?onglet=verifications');
-  await expect(page.locator('#contenu')).toContainText('Envoyer un mail de test');
+  // L'onglet qui porte la carte : si la garde tombait, c'est là qu'elle
+  // apparaîtrait — l'onglet par défaut ne la rendrait de toute façon pas.
+  await page.goto('/parametres?onglet=instance');
+  await expect(page.locator('#contenu')).toContainText('Sauvegarde automatique');
 
   await expect(page.locator('#date-du-jour')).toHaveCount(0);
-  const refus = await page.request.put('/api/debug/date-du-jour', {
+  await expect(page.locator('#contenu')).not.toContainText('Date et heure simulées');
+  const refus = await page.request.put('/api/horloge', {
     data: { dateDuJour: '2026-07-08' },
   });
   expect(refus.status()).toBe(400);

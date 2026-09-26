@@ -335,7 +335,7 @@ public final class CatalogueActions {
         changesData(CONTRAINTE_DESACTIVEE, "Contrainte désactivée", Entite.PARAMETRES);
         changesData(CONTRAINTE_PONDEREE, "Poids d'une contrainte modifié", Entite.PARAMETRES);
         action(SAUVEGARDE_BASCULEE, "Sauvegarde nocturne suspendue ou reprise", Entite.SAUVEGARDE);
-        action(DATE_JOUR_J_FORCEE, "Date du jour forcée (débogage)", Entite.PARAMETRES);
+        action(DATE_JOUR_J_FORCEE, "Date et heure simulées", Entite.PARAMETRES);
         action(CLE_MCP_REVELEE, "Clé MCP révélée", Entite.PARAMETRES);
         // A link that opens a screen without a session is a credential handed
         // out: who made it and who closed it belong in the history. The screen's
@@ -511,7 +511,7 @@ public final class CatalogueActions {
         route("ConstraintResource#setActif", CONTRAINTE_ACTIVEE);
         route("ConstraintResource#setPoids", CONTRAINTE_PONDEREE);
         route("BackupResource#setActive", SAUVEGARDE_BASCULEE);
-        route("DebugResource#setDateJourJ", DATE_JOUR_J_FORCEE);
+        route("HorlogeResource#setDateJourJ", DATE_JOUR_J_FORCEE);
         route("McpResource#reveal", CLE_MCP_REVELEE);
         route("AffichageMuralResource#create", AFFICHAGE_MURAL_CREE);
         route("AffichageMuralResource#revoke", AFFICHAGE_MURAL_REVOQUE);

@@ -46,6 +46,7 @@
         </button>
       }
     </div>
+    <app-collage-tableur [disabled]="analyseEnCours() || importEnCours()" (colle)="onColle($event)" />
     <input #csvInput i18n-aria-label="@@importCsv.fichier.choisir" aria-label="Choisir un fichier CSV" type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values,text/plain" hidden (change)="onFichierChoisi($event)" />
     @if (nomFichier()) {
       <p class="empty-hint">

@@ -2,14 +2,15 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
-import { TODAY_ANCHOR, DateMockService } from '../core/date-mock.service';
+import { CLOCK_CARD_ANCHOR, TODAY_ANCHOR, DateMockService } from '../core/date-mock.service';
 
 /**
  * Toolbar warning that this server's notion of today has been frozen
  * (issue #297): every screen that reasons about "now" — the mode jour J one
  * above all — is then showing another day as if it were this one.
  *
- * <p>It exists although the setting is development- and staging-only, because the danger it
+ * <p>It exists although the setting is limited to development, demonstration
+ * and staging servers, because the danger it
  * covers is not deployment but forgetting: a date frozen at the start of a
  * session is invisible an hour later, and the screen looks simply wrong rather
  * than mocked.
@@ -17,7 +18,7 @@ import { TODAY_ANCHOR, DateMockService } from '../core/date-mock.service';
  * <p>A link rather than the plain icon of its neighbours, and a link that lands
  * on the field rather than on the page: the only two things anyone wants from
  * this warning are to change the date or to clear it, and hunting for the
- * control down a debug page is how a warning gets ignored instead.
+ * control down Paramètres › Instance is how a warning gets ignored instead.
  */
 @Component({
   selector: 'app-date-mock-indicator',
@@ -26,9 +27,9 @@ import { TODAY_ANCHOR, DateMockService } from '../core/date-mock.service';
     @if (dates.actif()) {
       <a
         class="date-mock-indicator"
-        routerLink="/debug"
-        [queryParams]="{ onglet: 'verifications', focus: ancre }"
-        [fragment]="ancre"
+        routerLink="/parametres"
+        [queryParams]="{ onglet: 'instance', focus: ancre }"
+        [fragment]="carte"
         [matTooltip]="tooltip()"
         matTooltipPosition="below"
         [attr.aria-label]="tooltip()"
@@ -50,6 +51,7 @@ import { TODAY_ANCHOR, DateMockService } from '../core/date-mock.service';
 export class DateMockIndicator {
   protected readonly dates = inject(DateMockService);
   protected readonly ancre = TODAY_ANCHOR;
+  protected readonly carte = CLOCK_CARD_ANCHOR;
 
   protected readonly tooltip = computed(
     () =>

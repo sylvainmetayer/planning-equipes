@@ -196,7 +196,7 @@ describe('buildHelpSections', () => {
     const outils = sections.find((candidate) => candidate.id === 'echanges');
     expect(textOf(outils as HelpSection)).toContain('Import CSV des animateurs');
     const routes = (outils as HelpSection).links.map((link) => link.route);
-    expect(routes).toContain('/imports');
+    expect(routes).toContain('/fichiers');
   });
 
   /**

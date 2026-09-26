@@ -22,9 +22,9 @@
     <mat-icon>tv</mat-icon>
     <ng-container i18n="@@parametres.onglet.mural">Affichage mural</ng-container>
   </mat-button-toggle>
-  <mat-button-toggle value="globaux">
+  <mat-button-toggle value="instance">
     <mat-icon>dns</mat-icon>
-    <ng-container i18n="@@parametres.onglet.globaux">Globaux</ng-container>
+    <ng-container i18n="@@parametres.onglet.instance">Instance</ng-container>
   </mat-button-toggle>
 </mat-button-toggle-group>
 
@@ -98,13 +98,13 @@
             <a routerLink="/creneaux" i18n="@@parametres.renvoi.grille">Grille des créneaux, journées types et contrôle de cohérence — page Créneaux</a>
           </li>
           <li>
-            <a routerLink="/imports" i18n="@@parametres.renvoi.importScenario">Import d'un fichier scénario — page Imports, onglet Scénario</a>
+            <a routerLink="/fichiers" [queryParams]="{ cible: 'scenario' }" i18n="@@parametres.renvoi.importScenario.fichiers">Import d'un fichier scénario — page Fichiers, onglet Importer</a>
           </li>
           <li>
-            <a routerLink="/exports" i18n="@@parametres.renvoi.exportScenario">Export de l'édition en scénario — page Exports</a>
+            <a routerLink="/fichiers" [queryParams]="{ onglet: 'exporter' }" i18n="@@parametres.renvoi.exportScenario.fichiers">Export de l'édition en scénario — page Fichiers, onglet Exporter</a>
           </li>
           <li>
-            <a routerLink="/debug" [queryParams]="{ onglet: 'donnees' }" i18n="@@parametres.renvoi.scenarioLivre">Chargement d'un scénario pré-enregistré — page Débogage</a>
+            <a routerLink="/fichiers" [queryParams]="{ cible: 'exemples' }" i18n="@@parametres.renvoi.scenarioLivre.fichiers">Chargement d'un exemple livré avec l'application — page Fichiers, onglet Importer</a>
           </li>
         </ul>
       </mat-card-content>
@@ -143,7 +143,9 @@
   @case ('mural') {
     <app-affichage-mural-links />
   }
-  @case ('globaux') {
+  @case ('instance') {
+    <app-horloge-simulee-card />
+
     <mat-card appearance="outlined" class="page-card">
       <mat-card-header>
         <h2 mat-card-title i18n="@@parametres.raccourcis.title">Raccourcis clavier</h2>

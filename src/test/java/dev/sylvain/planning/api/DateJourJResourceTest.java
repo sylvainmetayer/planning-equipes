@@ -53,7 +53,7 @@ class DateJourJResourceTest {
         given().contentType("application/json")
                 .body("{\"dateDuJour\":null}")
                 .when()
-                .put("/api/debug/date-du-jour")
+                .put("/api/horloge")
                 .then()
                 .statusCode(200);
         given().when().post("/api/planning/reset").then().statusCode(200);
@@ -71,13 +71,13 @@ class DateJourJResourceTest {
         given().contentType("application/json")
                 .body("{\"dateDuJour\":\"" + JOUR + "\"}")
                 .when()
-                .put("/api/debug/date-du-jour")
+                .put("/api/horloge")
                 .then()
                 .statusCode(400)
                 .body("message", containsString("développement"));
 
         given().when()
-                .get("/api/debug/date-du-jour")
+                .get("/api/horloge")
                 .then()
                 .statusCode(200)
                 .body("dateDuJour", nullValue())
@@ -94,7 +94,7 @@ class DateJourJResourceTest {
         given().contentType("application/json")
                 .body("{\"dateDuJour\":null}")
                 .when()
-                .put("/api/debug/date-du-jour")
+                .put("/api/horloge")
                 .then()
                 .statusCode(400);
     }
@@ -103,7 +103,7 @@ class DateJourJResourceTest {
     void devModeAdvertisesThatTheFieldMayBeUsed() {
         QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
 
-        given().when().get("/api/debug/date-du-jour").then().statusCode(200).body("modifiable", equalTo(true));
+        given().when().get("/api/horloge").then().statusCode(200).body("modifiable", equalTo(true));
     }
 
     /* ------------------------------ The setting ---------------------------- */
@@ -115,12 +115,12 @@ class DateJourJResourceTest {
         given().contentType("application/json")
                 .body("{\"dateDuJour\":\"" + JOUR + "\"}")
                 .when()
-                .put("/api/debug/date-du-jour")
+                .put("/api/horloge")
                 .then()
                 .statusCode(200)
                 .body("dateDuJour", equalTo(JOUR));
 
-        given().when().get("/api/debug/date-du-jour").then().statusCode(200).body("dateDuJour", equalTo(JOUR));
+        given().when().get("/api/horloge").then().statusCode(200).body("dateDuJour", equalTo(JOUR));
     }
 
     /** The empty field is how the clock is handed back, so it cannot be an error. */
@@ -130,19 +130,19 @@ class DateJourJResourceTest {
         given().contentType("application/json")
                 .body("{\"dateDuJour\":\"" + JOUR + "\"}")
                 .when()
-                .put("/api/debug/date-du-jour")
+                .put("/api/horloge")
                 .then()
                 .statusCode(200);
 
         given().contentType("application/json")
                 .body("{\"dateDuJour\":\"\"}")
                 .when()
-                .put("/api/debug/date-du-jour")
+                .put("/api/horloge")
                 .then()
                 .statusCode(200)
                 .body("dateDuJour", nullValue());
 
-        given().when().get("/api/debug/date-du-jour").then().statusCode(200).body("dateDuJour", nullValue());
+        given().when().get("/api/horloge").then().statusCode(200).body("dateDuJour", nullValue());
     }
 
     @Test
@@ -152,19 +152,19 @@ class DateJourJResourceTest {
         given().contentType("application/json")
                 .body("{\"dateDuJour\":\"" + JOUR + "\",\"heureDuJour\":\"14:30\"}")
                 .when()
-                .put("/api/debug/date-du-jour")
+                .put("/api/horloge")
                 .then()
                 .statusCode(200)
                 .body("dateDuJour", equalTo(JOUR))
                 .body("heureDuJour", equalTo("14:30"));
 
-        given().when().get("/api/debug/date-du-jour").then().statusCode(200).body("heureDuJour", equalTo("14:30"));
+        given().when().get("/api/horloge").then().statusCode(200).body("heureDuJour", equalTo("14:30"));
 
         // Handing the date back hands the time back with it.
         given().contentType("application/json")
                 .body("{\"dateDuJour\":null}")
                 .when()
-                .put("/api/debug/date-du-jour")
+                .put("/api/horloge")
                 .then()
                 .statusCode(200)
                 .body("dateDuJour", nullValue())
@@ -179,7 +179,7 @@ class DateJourJResourceTest {
         given().contentType("application/json")
                 .body("{\"dateDuJour\":null,\"heureDuJour\":\"14:30\"}")
                 .when()
-                .put("/api/debug/date-du-jour")
+                .put("/api/horloge")
                 .then()
                 .statusCode(400)
                 .body("message", containsString("demande une date"));
@@ -192,7 +192,7 @@ class DateJourJResourceTest {
         given().contentType("application/json")
                 .body("{\"dateDuJour\":\"" + JOUR + "\",\"heureDuJour\":\"midi\"}")
                 .when()
-                .put("/api/debug/date-du-jour")
+                .put("/api/horloge")
                 .then()
                 .statusCode(400)
                 .body("message", containsString("Heure illisible"));
@@ -205,7 +205,7 @@ class DateJourJResourceTest {
         given().contentType("application/json")
                 .body("{\"dateDuJour\":\"le 8 juillet\"}")
                 .when()
-                .put("/api/debug/date-du-jour")
+                .put("/api/horloge")
                 .then()
                 .statusCode(400)
                 .body("message", notNullValue());
@@ -232,7 +232,7 @@ class DateJourJResourceTest {
         given().contentType("application/json")
                 .body("{\"dateDuJour\":\"" + JOUR + "\"}")
                 .when()
-                .put("/api/debug/date-du-jour")
+                .put("/api/horloge")
                 .then()
                 .statusCode(200);
 
@@ -240,7 +240,7 @@ class DateJourJResourceTest {
         QuarkusMock.installMockForType(new DevMode(), DevMode.class);
 
         given().when()
-                .get("/api/debug/date-du-jour")
+                .get("/api/horloge")
                 .then()
                 .statusCode(200)
                 .body("dateDuJour", nullValue())
@@ -272,7 +272,7 @@ class DateJourJResourceTest {
         given().contentType("application/json")
                 .body("{\"dateDuJour\":\"" + JOUR + "\"}")
                 .when()
-                .put("/api/debug/date-du-jour")
+                .put("/api/horloge")
                 .then()
                 .statusCode(200);
 
@@ -299,7 +299,7 @@ class DateJourJResourceTest {
         given().contentType("application/json")
                 .body("{\"dateDuJour\":\"" + JOUR + "\"}")
                 .when()
-                .put("/api/debug/date-du-jour")
+                .put("/api/horloge")
                 .then()
                 .statusCode(200);
 
@@ -346,7 +346,7 @@ class DateJourJResourceTest {
         given().contentType("application/json")
                 .body("{\"dateDuJour\":\"" + JOUR + "\",\"heureDuJour\":\"13:30\"}")
                 .when()
-                .put("/api/debug/date-du-jour")
+                .put("/api/horloge")
                 .then()
                 .statusCode(200);
 
@@ -375,13 +375,13 @@ class DateJourJResourceTest {
         given().contentType("application/json")
                 .body("{\"dateDuJour\":\"" + JOUR + "\"}")
                 .when()
-                .put("/api/debug/date-du-jour")
+                .put("/api/horloge")
                 .then()
                 .statusCode(200);
         given().contentType("application/json")
                 .body("{\"dateDuJour\":null}")
                 .when()
-                .put("/api/debug/date-du-jour")
+                .put("/api/horloge")
                 .then()
                 .statusCode(200);
 
@@ -412,7 +412,7 @@ class DateJourJResourceTest {
         given().contentType("application/json")
                 .body("{\"dateDuJour\":\"" + JOUR + "\"}")
                 .when()
-                .put("/api/debug/date-du-jour")
+                .put("/api/horloge")
                 .then()
                 .statusCode(200);
         String absent = given().when()

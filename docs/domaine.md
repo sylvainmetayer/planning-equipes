@@ -382,7 +382,7 @@ là) ; un titulaire supprimé laisse la place vide, et une place passée vide es
 si sa date est passée, ou si c'est aujourd'hui et que le début effectif de la
 place est atteint ; un créneau à cheval sur minuit appartient à sa date de
 début. « Aujourd'hui » est celui de l'horloge du jour J — la machine en
-production, la date figée depuis la page Débogage sous `quarkus:dev` ou avec
+production, la date figée depuis Paramètres › Instance sous `quarkus:dev` ou avec
 `HORLOGE_SIMULEE_AUTORISEE=true`. Ces places **comptent** dans les règles qui
 lient les jours (repos quotidien entre hier et aujourd'hui, repos et durée
 hebdomadaires, jours consécutifs, pause entre vacations, « fermer tard puis

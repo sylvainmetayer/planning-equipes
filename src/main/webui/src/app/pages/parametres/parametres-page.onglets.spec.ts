@@ -53,9 +53,12 @@ describe('ParametresPage — onglets', () => {
   let fixture: ComponentFixture<ParametresPage>;
   let params: BehaviorSubject<ParamMap>;
 
-  async function rendre(options: { onglet?: string } = {}): Promise<void> {
+  async function rendre(options: { onglet?: string; focus?: string } = {}): Promise<void> {
     params = new BehaviorSubject<ParamMap>(
-      convertToParamMap(options.onglet ? { onglet: options.onglet } : {}),
+      convertToParamMap({
+        ...(options.onglet ? { onglet: options.onglet } : {}),
+        ...(options.focus ? { focus: options.focus } : {}),
+      }),
     );
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -171,7 +174,7 @@ describe('ParametresPage — onglets', () => {
       'Édition',
       'E-mails automatiques',
       'Affichage mural',
-      'Globaux',
+      'Instance',
     ]);
     expect(textOf()).toContain('Paramètres légaux');
     expect(textOf()).toContain('Coupure repas');
@@ -193,7 +196,7 @@ describe('ParametresPage — onglets', () => {
     await cliquerOnglet('Affichage mural');
     expect(textOf()).toContain('Aucun lien actif.');
 
-    await cliquerOnglet('Globaux');
+    await cliquerOnglet('Instance');
     expect(textOf()).toContain('Sauvegarde automatique');
     expect(textOf()).toContain('Export SQL');
   });
@@ -204,11 +207,26 @@ describe('ParametresPage — onglets', () => {
    * link of Pauses while another tab is open.
    */
   it('follows the address instead of reading it once', async () => {
-    params.next(convertToParamMap({ onglet: 'globaux' }));
+    params.next(convertToParamMap({ onglet: 'instance' }));
     await fixture.whenStable();
     fixture.detectChanges();
 
     expect(textOf()).toContain('Sauvegarde automatique');
+  });
+
+  /** « Globaux » became « Instance »: a bookmark of the old name lands on the same cards. */
+  it('reads the former name of the instance tab', async () => {
+    await rendre({ onglet: 'globaux' });
+
+    expect(textOf()).toContain('Sauvegarde automatique');
+  });
+
+  /** The toolbar's hourglass names the field, not the tab: the page opens where it lives. */
+  it('opens the instance tab for the simulated clock field', async () => {
+    await rendre({ focus: 'date-du-jour' });
+
+    expect(textOf()).toContain('Sauvegarde automatique');
+    expect(racine().querySelector('app-horloge-simulee-card')).not.toBeNull();
   });
 
   it('opens on the default tab when the address names one it does not know', async () => {
@@ -221,7 +239,7 @@ describe('ParametresPage — onglets', () => {
   it('keeps the feasibility banner above every tab', async () => {
     expect(racine().querySelector('app-feasibility-banner')).not.toBeNull();
 
-    await cliquerOnglet('Globaux');
+    await cliquerOnglet('Instance');
     expect(racine().querySelector('app-feasibility-banner')).not.toBeNull();
   });
 
@@ -234,7 +252,13 @@ describe('ParametresPage — onglets', () => {
 
   /** One page title, then the cards: the two section headings the tabs replaced are gone. */
   it('leaves a valid heading hierarchy in each tab', async () => {
-    for (const nom of ['Légaux', 'Édition', 'E-mails automatiques', 'Affichage mural', 'Globaux']) {
+    for (const nom of [
+      'Légaux',
+      'Édition',
+      'E-mails automatiques',
+      'Affichage mural',
+      'Instance',
+    ]) {
       await cliquerOnglet(nom);
       expect(racine().querySelectorAll('h1')).toHaveLength(1);
       expect(racine().querySelectorAll('h3')).toHaveLength(0);

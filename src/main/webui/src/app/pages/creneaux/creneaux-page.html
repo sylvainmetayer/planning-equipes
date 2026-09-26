@@ -14,6 +14,7 @@
       <mat-icon>add</mat-icon>
       <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
+    <app-import-button card="creneaux" [disabled]="gridLocked()" />
     <button matButton type="button" [disabled]="gridLocked()" (click)="openSerie()"
             i18n-matTooltip="@@creneaux.serie.tooltip"
             matTooltip="Tous les créneaux d'une journée type, répétés sur les jours choisis, en une règle prévisualisée avant d'écrire.">
@@ -26,6 +27,9 @@
       <mat-icon>storefront</mat-icon>
       <ng-container i18n="@@creneaux.derivation.action">Dériver des horaires des stands</ng-container>
     </button>
+    @if (importedIds(); as ids) {
+      <app-imported-rows-filter [count]="ids.size" (cleared)="showAllRows()" />
+    }
   </mat-card-actions>
   <mat-card-content>
     @if (diagnostic(); as diagnostic) {
