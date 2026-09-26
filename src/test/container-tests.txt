@@ -80,6 +80,7 @@ dev/sylvain/planning/api/OuvertureStandsResourceTest.java
 dev/sylvain/planning/api/PangolinHeaderFilterTest.java
 dev/sylvain/planning/api/ParametresLegauxResourceTest.java
 dev/sylvain/planning/api/PauseResourceTest.java
+dev/sylvain/planning/api/PlacementResourceTest.java
 dev/sylvain/planning/api/PlanSnapshotResourceTest.java
 dev/sylvain/planning/api/PlanningResourceTest.java
 dev/sylvain/planning/api/PublicationExclusionTest.java

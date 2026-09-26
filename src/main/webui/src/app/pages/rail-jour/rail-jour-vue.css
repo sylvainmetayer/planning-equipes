@@ -238,11 +238,28 @@
   border: 1px solid var(--mat-sys-surface);
 }
 
+/* The label is a button filling the rest of the block: a click opens the
+   seat's Siège panel. Its chrome reset, the block's colours shown through. */
 .rail-bloc-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  align-self: stretch;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
   font: var(--mat-sys-label-small);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* The shift the Siège panel is open on. */
+.rail-bloc-ouvert {
+  outline: 2px solid var(--app-accent);
+  outline-offset: -2px;
 }
 
 /* A break over the vacation it falls in; the error colour when nobody relays. */
@@ -321,8 +338,9 @@
     display: none;
   }
 
+  /* The name no longer fits; the button stays, filling the block. */
   .rail-bloc-label {
-    display: none;
+    color: transparent;
   }
 }
 

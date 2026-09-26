@@ -59,9 +59,20 @@ export const MAX_SUGGESTIONS_AFFICHEES = 5;
  * carry ids, the planning carries the people. Falls back to the raw id rather
  * than to an empty cell when the referential changed under us.
  */
-export function nomAnimateur(planning: PlanningEvenement, animateurId: string): string {
+export function nomAnimateur(
+  planning: Pick<PlanningEvenement, 'animateurs'>,
+  animateurId: string,
+): string {
   const animateur = (planning.animateurs ?? []).find((candidat) => candidat.id === animateurId);
-  return animateur ? `${animateur.prenom} ${animateur.nom}` : animateurId;
+  return animateur ? animateurName(animateur) : animateurId;
+}
+
+/**
+ * « Prénom Nom » of an animateur at hand — a seat's holder, a line of the
+ * bench — and its id when the plan carries neither name.
+ */
+export function animateurName(animateur: Pick<Animateur, 'id' | 'prenom' | 'nom'>): string {
+  return `${animateur.prenom ?? ''} ${animateur.nom ?? ''}`.trim() || animateur.id;
 }
 
 /** True when the animateur holds an appreciation on at least one typologie this stand offers. */

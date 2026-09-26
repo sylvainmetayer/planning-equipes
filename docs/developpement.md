@@ -251,9 +251,11 @@ coûte peu à l'écriture, les rattraper coûte cher.
   le jumeau qui appelle le service.** `@angular/cdk/drag-drop` n'écoute que le
   pointeur : déplacer une affectation passe aussi par `shared/deplacement-dialog.ts`
   (« Déplacer … vers »), ouvert par la poignée — un bouton nommé, qu'un clic
-  simple suffit à activer (WCAG 2.5.7) — sur la vue calendrier, et par Entrée
-  sur la ligne du rail. Le choix fait dans le dialogue appelle la même méthode
-  que le dépôt, et `GLISSER_DEPOSER_ACTIF` coupe les deux ensemble. Une cellule qui ouvre un détail est un arrêt clavier (le
+  simple suffit à activer (WCAG 2.5.7) — sur la vue calendrier, par Entrée
+  sur la ligne du rail, et par « Déplacer vers… » du panneau du siège. Le
+  choix fait dans le dialogue appelle la même méthode que le dépôt.
+  `GLISSER_DEPOSER_ACTIF` ne coupe que le geste pointeur : le dialogue reste
+  offert sur toute instance. Une cellule qui ouvre un détail est un arrêt clavier (le
   tableau croisé des contraintes : tabindex itinérant, Entrée), jamais un
   `(click)` sur un `<td>` seul.
 - **Les raccourcis à une touche se coupent** (WCAG 2.1.4) : une case dans le

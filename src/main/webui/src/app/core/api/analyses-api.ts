@@ -93,12 +93,20 @@ export class AnalysesApi {
 
   /**
    * Who could hold a seat: on one créneau, or across the day when none is
-   * named; narrowed to a stand when one is.
+   * named; narrowed to a stand when one is, and to the very seat when
+   * `posteId` names it — what the Siège panel asks.
    */
-  bench(creneauId: number | string | null, standId: string | null): Promise<BancDeTouche> {
+  bench(
+    creneauId: number | string | null,
+    standId: string | null,
+    posteId: string | null = null,
+  ): Promise<BancDeTouche> {
     const chemin = creneauId === null ? '/api/banc-de-touche' : `/api/banc-de-touche/${creneauId}`;
-    const query = standId ? `?standId=${encodeURIComponent(standId)}` : '';
-    return this.api.get<BancDeTouche>(`${chemin}${query}`);
+    // Both keys spelled out, always: that is what lets `check-api-contract`
+    // confront them with the contract. The server reads a blank one as absent.
+    const standParam = encodeURIComponent(standId ?? '');
+    const posteParam = encodeURIComponent(posteId ?? '');
+    return this.api.get<BancDeTouche>(`${chemin}?standId=${standParam}&posteId=${posteParam}`);
   }
 
   kpiHistory(): Promise<KpiHistoriqueEntry[]> {

@@ -1,0 +1,128 @@
+/* The Siège panel: a side panel next to the rendering of the day, never a
+   full-screen dialog in front of it. The page lays it out (a column on a wide
+   screen, above the rendering on a narrow one); this file draws its inside. */
+
+.siege-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-surface-container-low);
+  color: var(--mat-sys-on-surface);
+}
+
+.siege-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.siege-panel-title {
+  margin: 0;
+  font: var(--mat-sys-title-medium);
+}
+
+.siege-panel-title:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 2px;
+}
+
+.siege-panel-when,
+.siege-panel-holder,
+.siege-panel-hole,
+.siege-panel-lock {
+  margin: 0;
+}
+
+.siege-panel-hole {
+  color: var(--mat-sys-error);
+  font-weight: 500;
+}
+
+.siege-panel-lock {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.siege-panel-subtitle {
+  margin: 0.5rem 0 0.25rem;
+  font: var(--mat-sys-title-small);
+}
+
+.siege-panel-rules,
+.siege-panel-candidates {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.siege-panel-rules > li {
+  margin-bottom: 0.35rem;
+}
+
+/* A rule in the organiser's words — the catalogue's short label — and its level. */
+.siege-panel-rule {
+  font-weight: 500;
+}
+
+.siege-panel-rule-hard {
+  color: var(--mat-sys-error);
+}
+
+.siege-panel-level {
+  margin-left: 0.35rem;
+  font: var(--mat-sys-label-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.siege-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.siege-panel-candidates {
+  list-style: none;
+  padding: 0;
+}
+
+.siege-panel-candidates > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.siege-panel-candidate {
+  display: flex;
+  flex-direction: column;
+}
+
+.siege-panel-muted {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+/* What the last gesture did and what is left: « Prévenir », « Corriger le reste ». */
+.siege-panel-outcome {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.75rem;
+  border-radius: var(--mat-sys-corner-small);
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+.siege-panel-outcome p {
+  margin: 0;
+}
+
+.siege-panel-warning {
+  color: var(--mat-sys-tertiary);
+}

@@ -36,7 +36,9 @@ export class VerrouillageStore {
     verrouillage: Partial<VerrouillagePlanning> & { type: TypeVerrouillage },
   ): Promise<Avertissement[]> {
     const written = await this.api.post<WrittenVerrouillage>('/api/verrouillages', verrouillage);
-    await this.reload();
+    // The lock is written: a failed re-read costs the padlocks until the next
+    // one, and must not read as a refusal the caller would report.
+    await this.reload().catch(() => undefined);
     return written?.avertissements ?? [];
   }
 

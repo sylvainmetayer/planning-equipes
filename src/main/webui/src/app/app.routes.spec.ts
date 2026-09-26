@@ -3,7 +3,9 @@ import { TestBed } from '@angular/core/testing';
 import { Title } from '@angular/platform-browser';
 import {
   ActivatedRouteSnapshot,
+  convertToParamMap,
   RedirectFunction,
+  RouterStateSnapshot,
   ResolveFn,
   Routes,
   TitleStrategy,
@@ -12,7 +14,7 @@ import {
 import { RouterTestingHarness } from '@angular/router/testing';
 import { describe, expect, it } from 'vitest';
 
-import { routes } from './app.routes';
+import { benchTabToJournee, routes } from './app.routes';
 import { BRANDING } from './core/branding';
 import { BrandingTitleStrategy } from './core/branding-title.strategy';
 
@@ -142,9 +144,37 @@ describe('app.routes', () => {
       expect(
         redirectTarget('fragilite', { vue: 'COMPETENCES', filtre: 'CRITIQUES', q: 'Alice' }),
       ).toBe('/diagnostic?onglet=fragilite&vue=COMPETENCES&filtre=CRITIQUES&q=Alice');
+    });
+
+    // The bench became the Siège panel of the Journée: both of its addresses
+    // land there, the timeslot and the stand kept for the page to resolve.
+    it('sends the bench to the Journée, timeslot and stand kept', () => {
       expect(redirectTarget('banc-de-touche', { creneau: '12', stand: 'S1' })).toBe(
-        '/diagnostic?onglet=banc&creneau=12&stand=S1',
+        '/journee?creneau=12&stand=S1',
       );
+      expect(redirectTarget('banc-de-touche', {})).toBe('/journee');
+    });
+
+    it('sends the former bench tab of the Diagnostic to the Journée, and no other tab', () => {
+      TestBed.configureTestingModule({
+        providers: [provideZonelessChangeDetection(), provideRouter([])],
+      });
+      const guard = (queryParams: Record<string, string>): unknown =>
+        TestBed.runInInjectionContext(() =>
+          benchTabToJournee(
+            {
+              queryParams,
+              queryParamMap: convertToParamMap(queryParams),
+            } as unknown as ActivatedRouteSnapshot,
+            {} as RouterStateSnapshot,
+          ),
+        );
+
+      expect(String(guard({ onglet: 'banc', creneau: '12', stand: 'S1' }))).toBe(
+        '/journee?creneau=12&stand=S1',
+      );
+      expect(guard({ onglet: 'fragilite' })).toBe(true);
+      expect(guard({})).toBe(true);
     });
   });
 });

@@ -125,7 +125,7 @@
             }
             <ul class="tension-liens">
               @if (cellule.siegesVides > 0) {
-                <li><button type="button" class="tension-lien" (click)="aller('/diagnostic', { onglet: 'banc', creneau: cellule.creneauId })" i18n="@@tension.detail.banc">Banc de touche du créneau</button></li>
+                <li><button type="button" class="tension-lien" (click)="aller('/journee', { creneau: cellule.creneauId })" i18n="@@tension.detail.banc">Qui peut tenir un siège vide</button></li>
               }
               @for (animateurId of cellule.animateursIrremplacables; track animateurId) {
                 <li>

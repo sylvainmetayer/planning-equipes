@@ -11,7 +11,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
 import { keepViewInQueryParams } from '../../core/view-query-params';
-import { BancDeTouchePage } from '../banc-de-touche/banc-de-touche-page';
 import { FormationPage } from '../formation/formation-page';
 import { FragilitePage } from '../fragilite/fragilite-page';
 import { ProblemesPage } from '../problemes/problemes-page';
@@ -20,12 +19,13 @@ import { OngletDiagnostic, readOnglet } from './diagnostic';
 
 /**
  * « Diagnostic » : why the plan does not hold, and what would happen if — the
- * problems, the staffing need, the fragility, who to train and the bench, as
- * five tabs of one screen instead of five screens with five headings and five
- * « Actualiser ».
+ * problems, the staffing need, the fragility and who to train, as four tabs of
+ * one screen instead of four screens with four headings and four
+ * « Actualiser ». The bench, once a fifth, is the Siège panel's « Qui peut
+ * tenir ce siège ? » on the Journée.
  *
  * <p>Each tab is the screen it was, hosted without its heading; its own view
- * state (the fragility filters, the bench's créneau and stand) still lives in
+ * state (the fragility filters) still lives in
  * the URL next to the `onglet` this page writes — `keepViewInQueryParams`
  * lets every writer own the keys it names. The analyses themselves are
  * untouched: this page decides which one is on screen, nothing else.</p>
@@ -40,7 +40,6 @@ import { OngletDiagnostic, readOnglet } from './diagnostic';
     StaffingPage,
     FragilitePage,
     FormationPage,
-    BancDeTouchePage,
   ],
   templateUrl: './diagnostic-page.html',
   styleUrl: './diagnostic-page.css',

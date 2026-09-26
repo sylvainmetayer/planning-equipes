@@ -1179,8 +1179,14 @@ et `DELETE`.
 
 ## Explicabilité
 
-« Pourquoi lui ? » cible un seul poste du planning envoyé, **déjà résolu et
-jamais re-résolu**.
+« Pourquoi lui ? » cible un seul poste d'un planning **déjà résolu et jamais
+re-résolu** : celui qu'on envoie (`POST /api/postes/{id}/explication`, le
+calendrier du mois), ou le planning enregistré (`GET` sur le même chemin, sans
+corps). Le second est **préparé côté serveur** comme une résolution le prépare
+— contraintes désactivées, poids et quotas de l'édition — ; c'est ce que lisent
+le panneau du siège et l'outil MCP `expliquer_affectation`. Un plan envoyé ne
+porte pas ces règles : expliqué nu, il reprochait au titulaire une contrainte
+que l'organisateur avait éteinte.
 
 « Respectée » signifie seulement qu'aucun écart n'a été trouvé pour ce
 poste précis, **pas que la contrainte s'applique à lui** : l'IHM ne doit pas la
@@ -1197,11 +1203,12 @@ une règle dure. L'endpoint reste ouvert à l'API et à l'outil MCP
 Le glisser-déposer des vues journalières (#308), et le même geste par l'API
 et par les outils MCP `simuler_deplacement` / `deplacer_affectation`.
 
-Le geste est **coupé par défaut**, avec son jumeau au clavier (le dialogue
-« Déplacer … vers ») : `GLISSER_DEPOSER_ACTIF=true` rend les deux aux vues
-Journée et Rail (`dragDropEnabled` de `GET /api/config`, lu une fois au
-démarrage du frontend). Seul l'écran est concerné — les deux endpoints
-ci-dessous et les outils MCP restent ouverts.
+Le **glisser** est coupé par défaut : `GLISSER_DEPOSER_ACTIF=true` le rend
+aux vues Journée et Rail (`dragDropEnabled` de `GET /api/config`, lu une fois
+au démarrage du frontend). Le drapeau ne règle que ce geste pointeur : le
+dialogue « Déplacer … vers » — « Déplacer vers… » du panneau du siège, Entrée
+sur une ligne du rail — est toujours offert, et les deux endpoints ci-dessous
+comme les outils MCP restent ouverts.
 
 | Endpoint | Effet |
 | --- | --- |
@@ -1235,15 +1242,52 @@ un siège dont le créneau est déjà commencé — à l'une ou l'autre extrémi
 geste — refuse (`400`, « Ce créneau est déjà commencé : le passé ne se
 modifie plus »), simulation comprise, tant que `PASSE_FIGE` est allumé.
 
-Le clic sur un nom reste le chemin clavier de ce geste : « Pourquoi lui ? »
-et l'assistant de réparation ci-dessous.
+Le clic sur un nom ouvre le panneau du siège de la Journée : « Pourquoi lui ? »,
+l'assistant de réparation ci-dessous et « Déplacer vers… ».
+
+### Placer quelqu'un sur un siège vide
+
+| Endpoint | Effet |
+| --- | --- |
+| `POST /api/postes/{id}/placement?animateur=A` | Assied `A` sur le siège vide `{id}` du plan enregistré, et répond comme un déplacement (`animateurSourceId` nul, scores avant et après). Écrit. |
+
+« Placer », depuis « Qui peut tenir ce siège ? » du panneau du siège. Mêmes
+contrôles que l'écriture directe de l'assistant de réparation — et de l'outil
+MCP `affecter_poste`, dont c'est le service : résolution en cours (`409`),
+créneau déjà commencé ([ADR 0044](decisions/0044-le-passe-est-fige.md)),
+siège verrouillé, et **règle dure lue deux fois**, sur le planning entier et
+sur le siège : remplir un siège vide rend son point `posteDoitEtrePourvu`, et
+le verdict global seul laisserait passer un mineur posé sur une nuit (`400`,
+la règle nommée). S'y ajoutent les deux gardes d'un déplacement : le siège doit
+être **encore vide** (`409` sinon — le panneau montre un plan chargé plus tôt,
+et sans cela on délogerait sans un mot qui l'a pris entre-temps), et la
+personne ne doit pas être sous un verrou qui lui interdit un nouveau siège sur
+ce créneau. Le `delta` de la réponse permet à l'écran de prévenir quand le
+placement coûte en qualité (niveau medium).
+
+Garder la personne au prochain calcul est un **verrou `ANIMATEUR_CRENEAU`**
+que l'écran pose ensuite par `POST /api/verrouillages` — case cochée par
+défaut. Ce point n'écrit que le siège : le journal garde deux lignes, le
+poste attribué et le verrou posé, et un verrou refusé laisse le placement en
+place, dit comme tel. Le dialogue n'offre « Placer » ni à une personne sous un
+verrou `ANIMATEUR` ou `ANIMATEUR_CRENEAU` de ce créneau, ni sur un siège dont
+le créneau est commencé (`seatStarted` du banc) : ce sont les deux refus que les
+règles du banc ne portent pas.
+
+« Libérer » pose le verrou symétrique, case cochée par défaut : un
+`ANIMATEUR_CRENEAU` sur la personne libérée et ce créneau, le mécanisme même
+d'un échange accepté pour tenir à l'écart celui qu'il libère
+(`animateurVerrouilleCreneauFige` : rien de la personne n'est épinglé sur ce
+créneau, donc tout nouveau siège qu'elle y recevrait est une violation). Sans
+lui, « Corriger le reste » remplissait le trou avec la personne qu'on venait
+d'en retirer.
 
 ### Assistant de réparation
 
 | Endpoint | Effet |
 | --- | --- |
 | `POST /api/postes/{id}/suggestions-reparation?plafond=N` | Cherche les remplaçants viables. Ne persiste rien. |
-| `POST /api/postes/{id}/affectation?animateurId=X` | Applique un remplacement au plan enregistré. Écrit. |
+| `POST /api/postes/{id}/affectation?animateurId=X&occupant=Y` | Applique un remplacement au plan enregistré — `animateurId` absent, vide le siège. Écrit. |
 
 Là où `simulation-swap` note le candidat qu'on lui donne, l'assistant
 **énumère** les candidats lui-même : il ne garde que ceux que le filtre
@@ -1281,6 +1325,17 @@ indisponible se retrouvait alors en tête des suggestions, à delta nul.
 `violationsIntroduites` ne porte donc jamais de `HARD`, comme sa documentation
 l'annonçait déjà.
 
+**`occupant`, facultatif, est une précondition portée par l'écriture même.**
+Le panneau du siège montre un plan lu plus tôt : « Libérer » et « Remplacer ›
+Appliquer » envoient la personne affichée, et le serveur répond `409` sans rien
+écrire si quelqu'un d'autre tient le siège entre-temps (un échange accepté, une
+réparation du jour J, un autre onglet). La vérification sur le plan lu donne le
+message ; c'est la clause `animateur_id IS NOT DISTINCT FROM ?` de l'`UPDATE`
+qui ferme la fenêtre entre cette lecture et l'écriture — le même principe que
+le `placement`, qui n'écrit que sur un siège encore vide. Sans `occupant`,
+aucune précondition : l'outil MCP `affecter_poste` et le mode jour J
+écrivent comme avant.
+
 ## Mode « jour J »
 
 L'écran du jour même (`/jour-j`) : quelqu'un ne s'est pas présenté, et ses
@@ -1293,6 +1348,12 @@ sont les briques ci-dessus, appelées dans l'ordre du geste.
 | `POST /api/jour-j/absences?date=&maintenant=` | `{ "animateurId": "A1", "raison": "…" }` — une `INDISPONIBILITE_FORCEE` par créneau restant, et les sièges tenus sur ces créneaux vidés. Écrit. |
 | `DELETE /api/jour-j/absences/{animateurId}?date=&creneauId=` | Annule l'absence : un créneau si `creneauId` est donné, toute la journée sinon. |
 | `POST /api/jour-j/postes/{posteId}/suggestions?plafond=N` | L'assistant de réparation ci-dessus, sur le **plan enregistré** au lieu d'un plan envoyé dans le corps. |
+
+« Remplacer » du panneau du siège passe aussi par ce point plutôt que par
+`/suggestions-reparation` : le plan enregistré y est préparé comme l'écriture
+qui suit le lira (contraintes désactivées, poids, quotas de l'édition), alors
+qu'un plan envoyé par l'écran est noté nu et propose des candidats que
+l'écriture refuse ensuite.
 
 ### Une journée commence à son premier créneau
 
@@ -1380,35 +1441,37 @@ il ne le duplique pas.
 | `GET /api/banc-de-touche/{creneauId}?standId=X&posteId=P` | Qui n'est pas de service sur ce créneau, et pourquoi il ne pourrait pas l'être. Lecture seule. |
 | `GET /api/banc-de-touche?standId=X` | Idem, sur le premier créneau que le plan pourvoit. |
 
-Répond sur le **dernier plan enregistré**, sans relancer de solveur. Affecter
-quelqu'un depuis cet écran est hors périmètre : cela passe par l'assistant de
-réparation ci-dessus.
+Répond sur le **dernier plan enregistré**, sans relancer de solveur. C'est
+« Qui peut tenir ce siège ? » du panneau du siège, qui passe toujours `posteId`
+(le siège montré) ; placer quelqu'un est l'endpoint `placement` ci-dessus.
+L'écran envoie `standId` et `posteId` à chaque appel, vides quand ils ne
+s'appliquent pas : le serveur lit une valeur vide comme absente.
 
-**Ne pas rien avoir à dire n'est pas une erreur.** Le sélecteur de l'écran est
-alimenté par le référentiel, qui porte légitimement **plus** de créneaux que le
-plan : un créneau sur lequel aucun stand n'est ouvert, ou qu'une dérivation a créé
-après la dernière résolution, ne porte aucun siège. Renvoyer `404` dans ce cas
-ouvrait l'écran sur « Créneau inconnu » pour un créneau bien réel, sans rien à
-faire pour en sortir. Le champ `statut` distingue donc les trois réponses :
+**Ne pas rien avoir à dire n'est pas une erreur.** Le référentiel porte
+légitimement **plus** de créneaux que le plan : un créneau sur lequel aucun
+stand n'est ouvert, ou qu'une dérivation a créé après la dernière résolution,
+ne porte aucun siège — et un ancien lien du banc peut le nommer. Renvoyer `404`
+dans ce cas ouvrait l'écran sur « Créneau inconnu » pour un créneau bien réel,
+sans rien à faire pour en sortir. Le champ `statut` distingue donc les trois
+réponses :
 
 | `statut` | Sens | Ce que l'écran dit |
 | --- | --- | --- |
 | `NO_PLAN` | Rien n'est enregistré | « Lancez une résolution » |
-| `NO_SEAT` | Le plan existe, mais aucun siège sur ce créneau (ou sur le stand demandé) | « Choisissez un créneau porteur de sièges » |
+| `NO_SEAT` | Le plan existe, mais aucun siège sur ce créneau (ou sur le stand demandé) | Sans objet pour le dialogue : il nomme toujours son siège, et un `posteId` disparu est refusé, pas `NO_SEAT` |
 | `EVALUATED` | Un siège a été sondé | La liste, et ses motifs |
 
 Hors `EVALUATED`, `posteCibleId`, `standCibleId` et `animateurCibleId` sont nuls
-et les listes vides. Un `404` reste réservé à un créneau qui n'existe **nulle
+et les listes vides, et `seatStarted` faux. Sur `EVALUATED`, `seatStarted` dit
+que le créneau du siège sondé est déjà commencé au sens du passé figé, lu sur
+l'horloge du serveur (toujours faux quand `PASSE_FIGE=false`) : le dialogue
+n'offre alors « Placer » à personne, puisque l'écriture le refuserait. Un `404` reste réservé à un créneau qui n'existe **nulle
 part** dans l'édition — la seule requête qui soit vraiment fausse.
 
-**`creneauxAvecSieges` est tout ce que le sélecteur propose**, et c'est
-délibérément la seule source de créneaux de l'écran. Le référentiel en porte
-davantage — 354 vacations sur le scénario de référence, dont le plan n'en
-pourvoit qu'une partie — et proposer les autres, c'était envoyer des données que
-l'écran n'affichera pas, en laissant l'utilisateur tomber sur un créneau dont la
-réponse ne peut être que vide. La liste porte de quoi étiqueter chaque option
-(`id`, `jour`, `date`, `heureDebut`, `heureFin`) : l'écran ne lit plus
-`/api/creneaux` du tout.
+`creneauxAvecSieges` liste les créneaux que le plan pourvoit. Il alimentait le
+sélecteur de l'ancien écran ; le dialogue, ouvert sur un siège désigné, ne le
+lit plus, et les autres appelants de l'API peuvent s'en servir pour ne
+proposer que des créneaux dont la réponse n'est pas vide d'avance.
 
 Un sélecteur ne peut pas nommer un créneau valide avant sa première réponse,
 d'où la variante **sans identifiant** : le serveur répond sur le premier créneau

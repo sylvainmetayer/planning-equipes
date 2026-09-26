@@ -10,7 +10,9 @@ import { BehaviorSubject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AffectationExplanationService } from '../../core/affectation-explanation.service';
 import { AnalysesApi } from '../../core/api/analyses-api';
+import { ConstraintsApi } from '../../core/api/constraints-api';
 import { JourneesApi } from '../../core/api/journees-api';
+import { PostesApi } from '../../core/api/postes-api';
 import { ConsignesStore } from '../../core/consignes.store';
 import { ApiService } from '../../core/api.service';
 import {
@@ -85,6 +87,10 @@ type PageInternals = {
   decalerJour: (delta: number) => void;
   resetView: () => void;
   recharger: () => Promise<void>;
+  openSeatId: Signal<string | null>;
+  message: Signal<string>;
+  openSeat: (request: { posteId: string }) => void;
+  closeSeat: () => void;
 };
 
 describe('JourneePage', () => {
@@ -172,10 +178,26 @@ describe('JourneePage', () => {
         { provide: ApiService, useValue: { get: vi.fn(async () => ({ assignments: 2 })) } },
         { provide: SolverJobService, useValue: { editingLocked: () => false } },
         { provide: NotificationService, useValue: { notify: vi.fn() } },
-        { provide: AffectationExplanationService, useValue: { deplacer: vi.fn() } },
+        {
+          provide: AffectationExplanationService,
+          useValue: {
+            deplacer: vi.fn(),
+          },
+        },
+        {
+          provide: PostesApi,
+          useValue: {
+            explanation: vi.fn(async () => ({ contraintesViolees: [], contraintesRespectees: [] })),
+          },
+        },
+        {
+          provide: ConstraintsApi,
+          useValue: { catalogue: vi.fn(async () => ({ contraintes: [] })) },
+        },
         {
           provide: VerrouillageStore,
           useValue: {
+            verrouillages: () => [],
             reload: vi.fn(async () => undefined),
             estJourVerrouille: () => false,
             estStandVerrouille: () => false,
@@ -210,6 +232,95 @@ describe('JourneePage', () => {
     expect(racine().querySelector('app-calendar-day-vue')).not.toBeNull();
     expect(page.stands().map((each) => each.id)).toEqual(['Dixit', 'Tir']);
     expect(page.animateurs()[0].label).toBe('Alice Martin');
+  });
+
+  // #711: the bench's old address names a timeslot and a stand. The page
+  // resolves it to a seat once the plan is read, moves to its day, opens the
+  // Siège panel on it, and writes `siege` in place of `creneau`.
+  it('opens the Siège panel on the seat an old bench address names, on its day', async () => {
+    const page = await monter({ creneau: '2', stand: 'Dixit' });
+
+    expect(page.jourCourant()?.jour).toBe(2);
+    expect(page.openSeatId()).toBe('p2');
+    expect(racine().querySelector('app-siege-panel aside')).not.toBeNull();
+    const url = TestBed.inject(Location).path();
+    expect(url).toContain('siege=p2');
+    expect(url).not.toContain('creneau=');
+  });
+
+  it('says so when the timeslot an address names holds no seat in the plan', async () => {
+    const page = await monter({ creneau: '99' });
+
+    expect(page.openSeatId()).toBeNull();
+    expect(page.message()).toContain("n'est pas dans le planning enregistré");
+    expect(TestBed.inject(Location).path()).not.toContain('creneau=');
+  });
+
+  it('opens the panel on a clicked seat and closes it, the URL following', async () => {
+    const page = await monter();
+
+    page.openSeat({ posteId: 'p1' });
+    await fixture.whenStable();
+    expect(racine().querySelector('app-siege-panel')).not.toBeNull();
+    expect(TestBed.inject(Location).path()).toContain('siege=p1');
+
+    page.closeSeat();
+    await fixture.whenStable();
+    expect(racine().querySelector('app-siege-panel')).toBeNull();
+    expect(TestBed.inject(Location).path()).not.toContain('siege=');
+  });
+
+  // A gesture re-reads the plan: the rendering is drawn again and the cell the
+  // focus came from is gone. The focus goes to the one drawn in its place.
+  it('gives the focus back to the cell drawn anew when the panel closes during a re-read', async () => {
+    const page = await monter();
+    const opener = racine().querySelector<HTMLElement>('[data-siege-cle="p1"]')!;
+    opener.focus();
+    page.openSeat({ posteId: 'p1' });
+    await fixture.whenStable();
+
+    let deliver: (planning: PlanningEvenement) => void = () => undefined;
+    loadForDisplay.mockReturnValueOnce(
+      new Promise<PlanningEvenement>((resolve) => {
+        deliver = resolve;
+      }),
+    );
+    const reread = page.recharger();
+    await fixture.whenStable();
+    expect(opener.isConnected).toBe(false);
+
+    page.closeSeat();
+    deliver(planningDeuxJours());
+    await reread;
+    await fixture.whenStable();
+
+    const redrawn = racine().querySelector<HTMLElement>('[data-siege-cle="p1"]')!;
+    expect(redrawn).not.toBe(opener);
+    expect(document.activeElement).toBe(redrawn);
+  });
+
+  it('gives the focus back to the cell drawn anew when the panel closes after a re-read', async () => {
+    const page = await monter();
+    racine().querySelector<HTMLElement>('[data-siege-cle="p1"]')!.focus();
+    page.openSeat({ posteId: 'p1' });
+    await fixture.whenStable();
+    await page.recharger();
+    await fixture.whenStable();
+
+    page.closeSeat();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(racine().querySelector('[data-siege-cle="p1"]'));
+  });
+
+  it('closes the panel when another day is chosen: its seat is not on screen any more', async () => {
+    const page = await monter({ siege: 'p1' });
+    expect(page.openSeatId()).toBe('p1');
+
+    page.decalerJour(1);
+    await fixture.whenStable();
+
+    expect(page.openSeatId()).toBeNull();
   });
 
   it('switches the rendering without reading anything again', async () => {

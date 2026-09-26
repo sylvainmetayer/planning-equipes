@@ -333,6 +333,11 @@ public class PlanningService {
         return whatIf.explainAffectation(solved, posteId);
     }
 
+    /** @see PlanningWhatIf#persistedExplainAffectation */
+    public PlanningWhatIf.AffectationExplanation persistedExplainAffectation(String posteId) {
+        return whatIf.persistedExplainAffectation(posteId);
+    }
+
     /** @see PlanningWhatIf#simulateSwap */
     public PlanningWhatIf.SwapSimulation simulateSwap(
             PlanningEvenement solved, String posteId, String animateurCandidatId) {
@@ -362,9 +367,20 @@ public class PlanningService {
         return whatIf.persistedCreneauAvailability(creneauId, standId, posteId);
     }
 
-    /** @see PlanningWhatIf#applyReparation */
+    /** @see PlanningWhatIf#applyReparation(String, String) */
     public void applyReparation(String posteId, String animateurId) {
         whatIf.applyReparation(posteId, animateurId);
+    }
+
+    /** @see PlanningWhatIf#applyReparation(String, String, String) */
+    public void applyReparation(String posteId, String animateurId, String expectedHolderId) {
+        whatIf.applyReparation(posteId, animateurId, expectedHolderId);
+    }
+
+    /** @see PlanningWhatIf#placeOnFreeSeat */
+    public PlanningWhatIf.DeplacementSimulation placeOnFreeSeat(
+            PlanningEvenement persiste, String posteId, String animateurId) {
+        return whatIf.placeOnFreeSeat(persiste, posteId, animateurId);
     }
 
     /** @see PlanningWhatIf#applyReparations */

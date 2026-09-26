@@ -151,10 +151,10 @@
                       </span>
                     }
                     @for (libre of stand.postesLibres; track libre.id) {
-                      <!-- A link as well as a drop target: the bench says who could take the seat, and why the others cannot. -->
-                      <a class="siege-libre" [attr.data-poste-id]="libre.id" [title]="bancTooltip"
-                         routerLink="/diagnostic"
-                         [queryParams]="{ onglet: 'banc', creneau: slot.creneauId, stand: stand.standId }">{{ siegeLibreLabel }}</a>
+                      <!-- A button as well as a drop target: the Siège panel says who could take the seat, and places them. -->
+                      <button type="button" class="siege-libre" [attr.data-poste-id]="libre.id" [attr.data-siege-cle]="libre.id" [title]="freeSeatTooltip"
+                              [class.siege-ouvert]="openSeatId() === libre.id" [attr.aria-pressed]="openSeatId() === libre.id"
+                              (click)="openSeat(libre.id)">{{ siegeLibreLabel }}</button>
                     }
                   </div>
                 }
@@ -167,12 +167,15 @@
   </div>
 }
 
-<!-- One name of a stand line, drag handle or not: « Pourquoi lui ? » on click. -->
+<!-- One name of a stand line, drag handle or not: its Siège panel on click. -->
 <ng-template #nomAffecte let-entry>
   <button
     type="button"
     class="affectation-link"
-    [title]="pourquoiLuiLabel"
-    (click)="openExplanation(entry.poste)"
+    [attr.data-siege-cle]="entry.poste.id"
+    [class.siege-ouvert]="openSeatId() === entry.poste.id"
+    [attr.aria-pressed]="openSeatId() === entry.poste.id"
+    [title]="seatLabel"
+    (click)="openSeat(entry.poste.id)"
   >{{ entry.label }}</button>
 </ng-template>

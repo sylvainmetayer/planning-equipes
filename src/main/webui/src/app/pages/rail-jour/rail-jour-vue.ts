@@ -18,6 +18,7 @@ import {
   output,
   ViewEncapsulation,
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
@@ -41,7 +42,14 @@ import {
 } from '../../core/models';
 import { correspondAuFiltre } from '../../core/text-filter';
 import { typologieColorClass, typologieLabel, typologieLabels } from '../../core/typologie-colors';
-import { RailBloc, RailJour, RailLigne, buildRailJours, compterStatuts } from './rail-jour';
+import {
+  RailBloc,
+  RailJour,
+  RailLigne,
+  buildRailJours,
+  compterStatuts,
+  shiftToOpen,
+} from './rail-jour';
 
 /** Which lines the rail keeps: everyone, only the mobilisable ones, only the working ones. */
 export type RailVue = 'tous' | 'libres' | 'affectes';
@@ -77,6 +85,7 @@ interface RailLegendItem {
     MatButtonToggleModule,
     MatCardModule,
     MatIconModule,
+    NgTemplateOutlet,
   ],
   templateUrl: './rail-jour-vue.html',
   styleUrl: './rail-jour-vue.css',
@@ -104,6 +113,10 @@ export class RailJourView {
   readonly view = model<RailVue>('tous');
   /** The plan moved under this view (a drop): the page re-reads it. */
   readonly rechargement = output<void>();
+  /** The seat the page's Siège panel is open on, marked on screen; null when it is closed. */
+  readonly openSeatId = input<string | null>(null);
+  /** A shift was clicked: the page opens the Siège panel on its seat. */
+  readonly seatSelected = output<string>();
 
   private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly dialog = inject(MatDialog);
@@ -297,9 +310,8 @@ export class RailJourView {
    * then the very {@link transferer} the drop calls.
    */
   protected openMove(porteur: RailLigne, bloc?: RailBloc): void {
-    if (!this.dragDropEnabled) {
-      return;
-    }
+    // Not gated on `dragDropEnabled` any more: the flag governs the pointer
+    // gesture, and the dialog is the way every instance moves somebody.
     if (this.editingLocked()) {
       // The pointer sees the drag disabled; the keyboard is told why.
       this.notifications.notify({
@@ -328,6 +340,11 @@ export class RailJourView {
       });
   }
 
+  /** A shift was clicked: its Siège panel, on the page. */
+  protected openSeat(bloc: RailBloc): void {
+    this.seatSelected.emit(bloc.posteId);
+  }
+
   private nomDe(animateurId: string): string {
     return this.lignes().find((ligne) => ligne.animateurId === animateurId)?.nom ?? animateurId;
   }
@@ -346,10 +363,30 @@ export class RailJourView {
   }
 
   protected naviguer(event: KeyboardEvent, index: number): void {
+    // Space on a line is the keyboard twin of a click on one of its shifts:
+    // the label is out of the tab order, inside a track hidden from
+    // assistive technology, so the line is the one way in.
+    if (event.key === ' ') {
+      const ligne = this.lignesAffichees()[index];
+      if (!ligne) {
+        return;
+      }
+      event.preventDefault();
+      const bloc = shiftToOpen(ligne.blocs, this.openSeatId());
+      if (bloc) {
+        this.openSeat(bloc);
+      } else {
+        this.notifications.notify({
+          title: $localize`:@@railJour.siege.aucuneVacation:Aucune vacation sur cette ligne : pas de siège à ouvrir.`,
+          variant: 'info',
+        });
+      }
+      return;
+    }
     // Enter on a line is the keyboard twin of dragging one of its shifts
-    // (RGAA 7.3): the drag has no key of its own. Switched off with the drag
-    // when the instance does not offer it.
-    if (event.key === 'Enter' && this.dragDropEnabled) {
+    // (RGAA 7.3): the drag has no key of its own. Offered whether or not the
+    // instance switched the pointer gesture on.
+    if (event.key === 'Enter') {
       const ligne = this.lignesAffichees()[index];
       if (!ligne) {
         return;

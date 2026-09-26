@@ -188,10 +188,10 @@
                 <mat-icon inline aria-hidden="true">free_breakfast</mat-icon>
                 {{ pause.label }}
                 @if (pause.withoutRelais && pause.creneauId !== null) {
-                  <!-- Who could come and relay: the bench on that timeslot. -->
-                  <a class="timeline-banc" routerLink="/diagnostic"
-                     [queryParams]="{ onglet: 'banc', creneau: pause.creneauId, stand: pause.standId }"
-                     i18n="@@timeline.banc">Banc de touche</a>
+                  <!-- Who could come and relay: the Siège panel on that timeslot and stand. -->
+                  <a class="timeline-banc" routerLink="/journee"
+                     [queryParams]="{ creneau: pause.creneauId, stand: pause.standId }"
+                     i18n="@@timeline.banc">Qui peut relayer</a>
                 }
               </li>
             }

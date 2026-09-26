@@ -249,6 +249,39 @@ class FrozenPastTest {
         assertThat(libre.suggererReparations(plan, "p1", null).posteId()).isEqualTo("p1");
     }
 
+    /** « Placer » on a free seat of a started timeslot is the same manual write, refused in the same words. */
+    @Test
+    void placingSomebodyOnAPastFreeSeatIsRefused() {
+        PosteAffectation hierVide = poste("p0", matinHier);
+        PlanningEvenement plan = new PlanningEvenement(HIER, new ArrayList<>(animateurs), List.of(hierVide));
+        plan.setParametresLegaux(List.of(new ParametresLegaux()));
+
+        assertThatThrownBy(() -> whatIf(() -> MIDI).placeOnFreeSeat(plan, "p0", "A2"))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessage(FrozenPast.PAST_SEAT_REFUSAL);
+    }
+
+    /**
+     * The bench of a started seat says so, on the same clock as the refusal:
+     * the dialog then offers « Placer » to nobody rather than a click the
+     * write turns down. A seat ahead, or the freeze off, is not started.
+     */
+    @Test
+    void theBenchOfAStartedSeatSaysItHasStarted() {
+        PosteAffectation hierVide = poste("p0", matinHier);
+        PosteAffectation demainVide = poste("p1", matinDemain);
+        PlanningEvenement plan =
+                new PlanningEvenement(HIER, new ArrayList<>(animateurs), List.of(hierVide, demainVide));
+        plan.setParametresLegaux(List.of(new ParametresLegaux()));
+
+        assertThat(whatIf(() -> MIDI).creneauAvailability(plan, 1L, null, "p0").seatStarted())
+                .isTrue();
+        assertThat(whatIf(() -> MIDI).creneauAvailability(plan, 6L, null, "p1").seatStarted())
+                .isFalse();
+        assertThat(whatIf(() -> null).creneauAvailability(plan, 1L, null, "p0").seatStarted())
+                .isFalse();
+    }
+
     private static PlanningWhatIf whatIf(java.util.function.Supplier<PastHorizon> horizon) {
         return new PlanningWhatIf(
                 configuration().diagnosticService(), new EmptyReferenceData(), null, planning -> {}, horizon);
