@@ -347,20 +347,13 @@ export function buildNavGroups(): NavGroup[] {
           ],
         },
         {
-          path: '/instantanes',
-          label: $localize`:@@nav.link.snapshots:Instantanés`,
+          // The finished solves and the snapshots in one chronology, the
+          // comparator beside it (issue #702).
+          path: '/versions',
+          label: $localize`:@@nav.link.versions:Versions du plan`,
           icon: 'history',
-          shortcut: 'i',
-        },
-        {
-          path: '/comparateur',
-          label: $localize`:@@nav.link.comparateur:Comparateur A/B`,
-          icon: 'compare_arrows',
-        },
-        {
-          path: '/kpi',
-          label: $localize`:@@nav.link.kpi:Autopsie du planning`,
-          icon: 'query_stats',
+          shortcut: 'v',
+          keywords: $localize`:@@nav.keywords.versions:instantanés comparateur autopsie restaurer historique résolutions`,
         },
       ],
     },

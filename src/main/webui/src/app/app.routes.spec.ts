@@ -21,6 +21,7 @@ import {
   equityFicheUrl,
   parametresOngletsDeplaces,
   redirectConstraintsToRegles,
+  redirectKpiToVersions,
   standEditToFicheUrl,
   routes,
 } from './app.routes';
@@ -91,7 +92,7 @@ describe('app.routes', () => {
     // Le compte exact plutôt qu'un plancher : un plancher laisse supprimer six
     // titres sans rien dire, et c'est ce chiffre-là que les descriptions de PR
     // annonçaient de travers.
-    expect(titrees).toHaveLength(42);
+    expect(titrees).toHaveLength(40);
     for (const route of titrees) {
       // Une fonction, et non une chaîne : c'est ce qui permet au titre de
       // passer par $localize sans être évalué au chargement du module, avant
@@ -409,6 +410,16 @@ describe('app.routes', () => {
     });
   });
 
+  /** The Autopsie, the Instantanés and the Comparateur became « Versions du plan » (issue #702). */
+  it('mène les trois anciennes adresses des versions à la nouvelle page', () => {
+    for (const path of ['instantanes', 'comparateur']) {
+      expect(allRoutes(routes).find((route) => route.path === path)?.redirectTo).toBe('/versions');
+    }
+    expect(allRoutes(routes).find((route) => route.path === 'kpi')?.redirectTo).toBe(
+      redirectKpiToVersions,
+    );
+  });
+
   /** `/constraints` became « Règles du planning » (issue #720). */
   describe("l'ancienne adresse des contraintes", () => {
     function target(queryParams: Record<string, string>, fragment: string | null): string {
@@ -425,6 +436,19 @@ describe('app.routes', () => {
     it("fait de l'ancre d'une règle la règle à ouvrir, et oublie celle d'une catégorie", () => {
       expect(target({}, 'coupureRepasObligatoire')).toBe('/regles?regle=coupureRepasObligatoire');
       expect(target({}, 'categorie-legal-mineurs')).toBe('/regles');
+    });
+  });
+
+  /** The Autopsie became « Versions du plan » (issue #702): its every-edition view survives. */
+  describe("l'ancienne adresse de l'Autopsie", () => {
+    function target(queryParams: Record<string, string>): string {
+      return redirectKpiToVersions({ queryParams } as unknown as ActivatedRouteSnapshot) as string;
+    }
+
+    it('garde la vue de toutes les éditions, et elle seule', () => {
+      expect(target({ edition: '*' })).toBe('/versions?editions=toutes');
+      expect(target({ edition: 'E1', rang: '2' })).toBe('/versions');
+      expect(target({})).toBe('/versions');
     });
   });
 

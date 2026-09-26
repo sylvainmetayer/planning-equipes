@@ -12,7 +12,9 @@ import { provideRouter } from '@angular/router';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AnalysesApi } from '../../core/api/analyses-api';
 import { PlanningApi } from '../../core/api/planning-api';
+import { PlanSnapshotStore } from '../../core/plan-snapshot.store';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
@@ -299,6 +301,12 @@ describe('SolverPage', () => {
         { provide: ReferenceCrudService, useValue: crud },
         { provide: PlanningResolutionStore, useValue: resolution },
         { provide: ProblemesStore, useValue: problemes },
+        // « Dernières versions du plan » reads the history and the snapshots.
+        { provide: AnalysesApi, useValue: { kpiHistory: vi.fn(async () => []) } },
+        {
+          provide: PlanSnapshotStore,
+          useValue: { snapshots: signal([]), reload: vi.fn(async () => undefined) },
+        },
       ],
     });
   });

@@ -42,8 +42,7 @@ export function buildReferenceDataSections(): HelpSection[] {
       links: [
         { route: '/editions', label: $localize`:@@nav.link.editions:Éditions` },
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
-        { route: '/instantanes', label: $localize`:@@nav.link.snapshots:Instantanés` },
-        { route: '/comparateur', label: $localize`:@@nav.link.comparateur:Comparateur A/B` },
+        { route: '/versions', label: $localize`:@@nav.link.versions:Versions du plan` },
       ],
     },
     {

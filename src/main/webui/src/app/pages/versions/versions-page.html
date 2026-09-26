@@ -1,0 +1,188 @@
+<h1 class="page-title" i18n="@@nav.link.versions">Versions du plan</h1>
+<p class="versions-sous-titre" i18n="@@versions.subtitle">
+  Les résolutions terminées et les instantanés de l'édition, du plus récent au plus ancien. Un instantané est pris
+  automatiquement avant chaque résolution.
+</p>
+
+<div class="versions-toolbar">
+  <button matButton="filled" type="button" [disabled]="pending() !== null" (click)="capture()">
+    <mat-icon>save</mat-icon>
+    <ng-container i18n="@@snapshots.capture.action">Enregistrer cet état</ng-container>
+  </button>
+  <button matButton="tonal" type="button" [disabled]="ticked().length !== 2" (click)="compareTicked()">
+    <mat-icon>compare_arrows</mat-icon>
+    <ng-container i18n="@@versions.comparer">Comparer</ng-container>
+  </button>
+  <span class="calendar-meta" i18n="@@versions.comparer.hint">Cochez deux lignes, ou une ligne et « Plan en place ».</span>
+  <mat-slide-toggle [checked]="allEditions()" (change)="showAllEditions($event.checked)"
+                    i18n="@@versions.toutesEditions">Toutes les éditions</mat-slide-toggle>
+  <button matButton type="button" [disabled]="chargement()" (click)="recharger()">
+    <mat-icon>refresh</mat-icon>
+    <ng-container i18n="@@common.refresh">Actualiser</ng-container>
+  </button>
+</div>
+
+@if (chargement() || pending() !== null) {
+  <mat-progress-bar mode="indeterminate" />
+}
+<app-status-message [text]="error()" tone="error" />
+<app-status-message [text]="message()" tone="success" />
+@if (locked()) {
+  <p class="locked-hint" i18n="@@snapshots.lockedHint">
+    Une résolution est en cours : la restauration est désactivée, elle serait écrasée à la fin du calcul.
+  </p>
+}
+
+<div class="versions-layout" [class.versions-layout-panneau]="sides() !== null">
+  <div class="table-wrapper">
+    <table mat-table class="versions-table" [dataSource]="rows()">
+      <caption class="visually-hidden" i18n="@@versions.table.caption">
+        Versions du plan : sélection pour comparer, date, événement, résultat en phrases et actions
+      </caption>
+      <ng-container matColumnDef="choix">
+        <th mat-header-cell scope="col" *matHeaderCellDef>
+          <span class="visually-hidden" i18n="@@versions.column.choix">Comparer</span>
+        </th>
+        <td mat-cell *matCellDef="let row">
+          @if (selector(row) !== null) {
+            <mat-checkbox
+              [checked]="isTicked(row)"
+              [disabled]="!canTick(row)"
+              (change)="toggle(row, $event.checked)"
+              i18n-aria-label="@@versions.choix.label"
+              aria-label="Cocher pour comparer"
+            />
+          }
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="quand">
+        <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@versions.column.quand">Quand</th>
+        <td mat-cell *matCellDef="let row">{{ dateLabel(row) }}</td>
+      </ng-container>
+      <ng-container matColumnDef="evenement">
+        <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@versions.column.evenement">Événement</th>
+        <td mat-cell *matCellDef="let row">
+          @switch (row.kind) {
+            @case ('courant') {
+              <strong i18n="@@versions.courant">Plan en place</strong>
+            }
+            @case ('resolution') {
+              <mat-icon inline aria-hidden="true">play_circle</mat-icon>
+              {{ eventOf(row) }}
+              @if (editionOf(row); as edition) {
+                <span class="calendar-meta"> — {{ edition }}</span>
+              }
+            }
+            @case ('snapshot') {
+              <mat-icon inline aria-hidden="true">{{ row.snapshot.automatique ? 'history' : 'bookmark' }}</mat-icon>
+              {{ eventOf(row) }}
+              @if (editionOf(row); as edition) {
+                <span class="calendar-meta"> — {{ edition }}</span>
+              }
+              @if (row.snapshot.automatique) {
+                <mat-chip class="snapshot-auto-chip" i18n="@@snapshots.auto">auto</mat-chip>
+              }
+              @if (row.snapshot.publieLe) {
+                <mat-chip
+                  class="snapshot-publie-chip"
+                  [class.snapshot-publie-courant-chip]="isPublished(row.snapshot)"
+                  [matTooltip]="publicationTooltip(row.snapshot)"
+                >
+                  @if (isPublished(row.snapshot)) {
+                    <ng-container i18n="@@snapshots.published.badge">plan publié</ng-container>
+                  } @else {
+                    <ng-container i18n="@@snapshots.published.badgeRemplace">publié, remplacé</ng-container>
+                  }
+                </mat-chip>
+              }
+              @if (row.snapshot.perime) {
+                <mat-chip class="snapshot-perime-chip" [matTooltip]="staleTooltip(row.snapshot)">
+                  <ng-container i18n="@@snapshots.stale.badge">périmé</ng-container>
+                </mat-chip>
+              }
+            }
+          }
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="resultat">
+        <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@versions.column.resultat">Résultat</th>
+        <td mat-cell *matCellDef="let row" class="versions-resultat">
+          @if (row.kind === 'courant') {
+            <span class="calendar-meta" i18n="@@versions.courant.hint">Le plan que Journée, les calendriers et la publication lisent.</span>
+          } @else {
+            {{ sentenceOf(row) }}
+          }
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="actions" stickyEnd>
+        <th mat-header-cell scope="col" *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
+        <td mat-cell *matCellDef="let row" class="row-actions">
+          @if (row.kind === 'snapshot') {
+            <button
+              matIconButton
+              i18n-matTooltip="@@snapshots.restore.tooltip"
+              matTooltip="Restaurer ce plan"
+              i18n-aria-label="@@snapshots.restore.tooltip"
+              aria-label="Restaurer ce plan"
+              [disabled]="locked() || pending() !== null || isForeign(row.snapshot)"
+              (click)="restaurer(row.snapshot)"
+            >
+              <mat-icon>restore</mat-icon>
+            </button>
+            <button
+              matIconButton
+              i18n-matTooltip="@@versions.comparerActuel"
+              matTooltip="Comparer avec l'actuel"
+              i18n-aria-label="@@versions.comparerActuel"
+              aria-label="Comparer avec l'actuel"
+              (click)="compareWithCurrent(row.snapshot)"
+            >
+              <mat-icon>compare_arrows</mat-icon>
+            </button>
+            <button
+              matIconButton
+              class="danger-action"
+              [matTooltip]="deleteTooltip(row.snapshot)"
+              i18n-aria-label="@@common.delete"
+              aria-label="Supprimer"
+              [disabled]="pending() !== null || isPublished(row.snapshot) || isForeign(row.snapshot)"
+              (click)="deleteSnapshot(row.snapshot)"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+          } @else if (row.kind === 'resolution') {
+            <button
+              matIconButton
+              class="danger-action"
+              i18n-matTooltip="@@versions.supprimerMesure"
+              matTooltip="Supprimer cette mesure"
+              i18n-aria-label="@@versions.supprimerMesure"
+              aria-label="Supprimer cette mesure"
+              [disabled]="pending() !== null"
+              (click)="deleteSolve(row.entry)"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+          }
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns" [class.versions-ligne-courant]="row.kind === 'courant'"></tr>
+    </table>
+    @if (rows().length === 1 && !chargement()) {
+      <p class="empty-hint" i18n="@@versions.empty">
+        Aucune résolution ni aucun instantané pour l'instant : chaque résolution terminée ajoute une ligne, et
+        « Enregistrer cet état » met le plan en place de côté.
+      </p>
+    }
+  </div>
+
+  @if (sides(); as pair) {
+    <app-comparaison-panel
+      [base]="pair.base"
+      [variante]="pair.variante"
+      [snapshots]="snapshots()"
+      (closed)="closeComparison()"
+    />
+  }
+</div>

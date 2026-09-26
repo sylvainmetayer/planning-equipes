@@ -95,7 +95,7 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
           fragment: 'a-traiter',
           label: $localize`:@@aide.lien.aTraiter:Accueil — À traiter aujourd'hui`,
         },
-        { route: '/instantanes', label: $localize`:@@nav.link.snapshots:Instantanés` },
+        { route: '/versions', label: $localize`:@@nav.link.versions:Versions du plan` },
       ],
     },
     {
@@ -141,7 +141,7 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
       links: [
         { route: '/mcp-client', label: $localize`:@@nav.link.mcp:MCP` },
         { route: '/historique', label: $localize`:@@nav.link.historique:Historique` },
-        { route: '/instantanes', label: $localize`:@@nav.link.snapshots:Instantanés` },
+        { route: '/versions', label: $localize`:@@nav.link.versions:Versions du plan` },
       ],
     },
     {

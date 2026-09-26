@@ -1,0 +1,153 @@
+/* « Versions du plan » (issue #702): one chronology of the solves and the
+   snapshots, and the A/B comparator (issue #70) as a panel beside it. */
+
+.versions-sous-titre {
+  margin: -0.5rem 0 1rem;
+  font: var(--mat-sys-body-large);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.versions-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+/* The table and, once two versions are compared, the panel: side by side on
+   a wide screen, the panel under the table on a narrow one. */
+.versions-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (min-width: 1200px) {
+  .versions-layout-panneau {
+    grid-template-columns: minmax(0, 3fr) minmax(24rem, 2fr);
+  }
+}
+
+.versions-ligne-courant td {
+  background: var(--mat-sys-surface-container);
+}
+
+.versions-resultat {
+  max-width: 36rem;
+}
+
+.versions-panneau {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-surface);
+}
+
+.versions-panneau-entete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.versions-panneau-titre {
+  margin: 0;
+  font: var(--mat-sys-title-large);
+}
+
+.snapshot-auto-chip {
+  margin-left: 0.5rem;
+}
+
+/*
+ * Freshness badge (issue #170). Colours come from the theme tokens, so the two
+ * states keep their contrast in light and dark alike: `error` is the palette's
+ * "something is wrong here", which is exactly the weight a stale snapshot
+ * deserves in front of a Restore button. The fresh one stays neutral — a page
+ * of green ticks says nothing.
+ */
+.snapshot-perime-chip {
+  --mat-chip-elevated-container-color: var(--mat-sys-error-container);
+  --mat-chip-label-text-color: var(--mat-sys-on-error-container);
+}
+
+/*
+ * Publication badge (issue #34). The plan on display carries the theme's
+ * "this one matters" colour — it is the one the animateurs hold, and the one
+ * the Delete button is out on. A publication another one has replaced keeps
+ * the neutral surface: it is history, and it deletes like any other snapshot.
+ */
+.snapshot-publie-chip {
+  margin-left: 0.5rem;
+  --mat-chip-elevated-container-color: var(--mat-sys-surface-container-high);
+  --mat-chip-label-text-color: var(--mat-sys-on-surface-variant);
+}
+
+.snapshot-publie-courant-chip {
+  --mat-chip-elevated-container-color: var(--mat-sys-primary-container);
+  --mat-chip-label-text-color: var(--mat-sys-on-primary-container);
+}
+
+.comparateur-sous-titre {
+  font: var(--mat-sys-title-medium);
+  margin-block: 1.5rem 0.5rem;
+}
+
+/*
+ * The direction of a variation. The wording already says "amélioration" /
+ * "dégradation", so the colour reinforces the text and is never its only
+ * carrier.
+ */
+.comparateur-amelioration {
+  color: var(--mat-sys-tertiary);
+  font-weight: 500;
+}
+
+.comparateur-degradation {
+  color: var(--mat-sys-error);
+  font-weight: 500;
+}
+
+/* The consignes each side was captured under (issue #4), side by side. */
+.comparateur-consignes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 1rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.comparateur-consignes ul,
+.comparateur-consignes p {
+  margin: 0.25rem 0 0;
+}
+
+.comparateur-consignes ul {
+  padding-left: 1.25rem;
+}
+
+@media (max-width: 600px) {
+  .comparateur-consignes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* The reading of each side, folded: the table stays the first thing read. */
+.comparateur-lectures {
+  display: grid;
+  gap: 0.5rem;
+  margin-block: 1rem;
+}
+
+.comparateur-lecture summary {
+  cursor: pointer;
+  font: var(--mat-sys-title-small);
+}
+
+/* The rules two dosages disagree on: « rule : base → variante ». */
+.comparateur-dosages {
+  margin-block: 0 1rem;
+  font: var(--mat-sys-body-medium);
+}
