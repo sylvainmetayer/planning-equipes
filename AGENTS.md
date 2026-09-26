@@ -491,10 +491,13 @@ i18n rule at the top of this file:
   framework, i18n library, charting library, runtime or dev — without explicit
   sign-off. Plain Angular served by Quinoa is a deliberate choice, and the
   inventory of what is there and why is in that file.
-- **One route = one page = one block**: adding a functional block means adding
-  a route and an `app/pages/<block>/` folder, never a new section inside an
-  existing page. Every route is listed in that file, and
-  `DocumentationStructuralTest` fails on one that is not.
+- **One question = one screen, its variants as tabs or views in the URL**:
+  adding a functional block means adding a route, an `app/pages/<block>/`
+  folder and its line in `shell/nav-groups.ts`, never a new section inside an
+  existing page; a variant of the same question is a tab (`?onglet=`) or a
+  view (`?vue=`) of that page. A route may be served without a menu entry.
+  Every route is listed in that file, and `DocumentationStructuralTest` fails
+  on one that is not.
 
 ## Domain invariants (never break these)
 

@@ -7,6 +7,7 @@ import {
   signal,
   ViewEncapsulation,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
@@ -282,8 +283,13 @@ export class JourneePage implements OnInit {
   protected readonly jourSuivantLabel = $localize`:@@journee.nextDay:Jour suivant`;
 
   constructor() {
+    // The rendering is followed rather than read once: the palette's
+    // « Journée › Rail » navigates to this very route with another `vue`, and
+    // the router reuses the component instead of building it again.
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((query) => {
+      this.view.set(readView(query.get('vue')));
+    });
     const params = this.route.snapshot.queryParamMap;
-    this.view.set(readView(params.get('vue')));
     this.filtre.set(params.get('q') ?? '');
     this.stand.set(params.get('stand') ?? '');
     this.animateur.set(params.get('animateur') ?? '');

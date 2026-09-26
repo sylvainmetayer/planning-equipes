@@ -363,5 +363,21 @@ describe('AdHocConstraintsPage', () => {
       expect(root.querySelector('svg[role="img"]')).toBeNull();
       expect(TestBed.inject(Location).path()).not.toContain('vue=');
     });
+
+    // The palette's « Ajustements manuels › Réseau », used from this very page:
+    // a real navigation to the same route, which reuses the component.
+    it('switches to the network on a navigation to itself, and back to the list', async () => {
+      const root = await mountNetwork([pair('X1', 'AFFINITE', ['A', 'B'])], '/');
+      const router = TestBed.inject(Router);
+
+      await router.navigateByUrl('/?vue=reseau');
+      await TestBed.inject(ApplicationRef).whenStable();
+      expect(root.querySelector('svg[role="img"]')).not.toBeNull();
+
+      await router.navigateByUrl('/');
+      await TestBed.inject(ApplicationRef).whenStable();
+      expect(root.querySelector('svg[role="img"]')).toBeNull();
+      expect(root.querySelector('table[mat-table]')).not.toBeNull();
+    });
   });
 });

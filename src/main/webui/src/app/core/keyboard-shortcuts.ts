@@ -7,8 +7,7 @@
 // shortcut overlay, the palette and the help page all read the same table
 // instead of drifting apart.
 
-import { Route } from '@angular/router';
-import { routes } from '../app.routes';
+import { NavLink, buildLegalLinks, buildNavGroups, buildOffMenuLinks } from '../shell/nav-groups';
 import { correspondAuFiltre } from './text-filter';
 import { Animateur, Creneau, Stand } from './models';
 
@@ -53,226 +52,61 @@ export interface CommandePalette {
   queryParams?: Record<string, string>;
   /** The `g`+letter sequence reaching the same page, when there is one. */
   raccourci?: string;
-}
-
-/** Label, icon and optional `g`+letter of one route of the application. */
-interface DefinitionRoute {
-  label: string;
-  icon: string;
-  /** Letter pressed after `g`. */
-  touche?: string;
+  /** Served by the backend (the Quarkus Dev UI): opened in a new tab, never routed to. */
+  externe?: boolean;
+  /**
+   * Proposed on an empty query: the menu's entries, in the menu's order. A
+   * tab, a screen listed in no group and a legal page only answer a query.
+   */
+  menu?: boolean;
+  /** Words matched beyond the label and the hint. */
+  motsCles?: string;
 }
 
 /**
- * The `g`+letter table and the palette labels, in one place.
- *
- * <p>Labels reuse the navigation drawer's message ids on purpose: the palette
- * must name a page exactly as the menu does, and doing so adds no string to
- * translate.</p>
- *
- * <p>The letters read from the French label wherever that letter was free, and
- * fall back to a distinctive one where it was not — `g g` is the home page
- * (« État de l'édition »), `g l` *lance* the solver (`s` being taken by the
- * Stands), `g r` is « Réglages » (Paramètres, `p` being taken by the
- * Diagnostic and its *problèmes*), `g m` is the *mensuel* calendar and `g j`
- * the *journée*,
- * `g x` is Échanges (the crossing arrows of a swap, `e` being taken by
- * Emplacements). Pages without a letter are still reachable — through the
- * palette, which lists every route.</p>
+ * Every destination the palette knows, in the menu's order: each menu entry
+ * followed by its tabs, then the screens listed in no group (Débogage, the
+ * news…), then the legal pages. Read from `shell/nav-groups.ts`, the one table
+ * the drawer renders too, so the palette names a page exactly as the menu
+ * does and a tab added there is found here.
  *
  * <p>Built lazily, never at module scope: `$localize` only resolves once
  * `main.ts` has loaded the catalog. Same reasoning as `buildNavGroups()`.</p>
  */
-function buildDefinitionsRoutes(): Map<string, DefinitionRoute> {
-  return new Map<string, DefinitionRoute>([
-    [
-      '/',
-      { label: $localize`:@@nav.link.accueil:État de l'édition`, icon: 'checklist', touche: 'g' },
-    ],
-    [
-      '/solveur',
-      { label: $localize`:@@nav.link.solver:Solveur`, icon: 'play_circle', touche: 'l' },
-    ],
-    [
-      '/notifications',
-      {
-        label: $localize`:@@nav.link.notifications:Notifications`,
-        icon: 'notifications',
-        touche: 'n',
-      },
-    ],
-    [
-      '/diagnostic',
-      { label: $localize`:@@nav.link.diagnostic:Diagnostic`, icon: 'report_problem', touche: 'p' },
-    ],
-    [
-      '/echanges',
-      { label: $localize`:@@nav.link.echanges:Échanges`, icon: 'swap_horiz', touche: 'x' },
-    ],
-    [
-      '/disponibilites',
-      { label: $localize`:@@nav.link.disponibilites:Disponibilités`, icon: 'event_available' },
-    ],
-    ['/constraints', { label: $localize`:@@nav.link.constraints:Contraintes`, icon: 'fact_check' }],
-    [
-      '/ad-hoc-constraints',
-      { label: $localize`:@@nav.link.adHocConstraints:Ajustements manuels`, icon: 'rule' },
-    ],
-    [
-      '/instantanes',
-      { label: $localize`:@@nav.link.snapshots:Instantanés`, icon: 'history', touche: 'i' },
-    ],
-    ['/aide', { label: $localize`:@@nav.link.aide:Aide`, icon: 'help_outline', touche: 'u' }],
-    ['/nouveautes', { label: $localize`:@@nav.link.nouveautes:Nouveautés`, icon: 'new_releases' }],
-    ['/editions', { label: $localize`:@@nav.link.editions:Éditions`, icon: 'layers' }],
-    [
-      '/ouvertures',
-      {
-        label: $localize`:@@nav.link.ouvertures:Ouvertures des stands`,
-        icon: 'storefront',
-        touche: 'o',
-      },
-    ],
-    ['/jour-j', { label: $localize`:@@nav.link.jourJ:Mode jour J`, icon: 'emergency' }],
-    ['/stands', { label: $localize`:@@nav.link.stands:Stands`, icon: 'storefront', touche: 's' }],
-    [
-      '/emplacements',
-      { label: $localize`:@@nav.link.emplacements:Emplacements`, icon: 'place', touche: 'e' },
-    ],
-    [
-      '/animateurs',
-      { label: $localize`:@@nav.link.animateurs:Animateurs`, icon: 'groups', touche: 'a' },
-    ],
-    ['/competences', { label: $localize`:@@nav.link.competences:Compétences`, icon: 'grid_on' }],
-    [
-      '/creneaux',
-      { label: $localize`:@@nav.link.creneaux:Créneaux`, icon: 'schedule', touche: 'c' },
-    ],
-    [
-      '/typologies',
-      { label: $localize`:@@nav.link.typologies:Typologies`, icon: 'category', touche: 't' },
-    ],
-    ['/imports', { label: $localize`:@@nav.link.imports:Imports`, icon: 'upload_file' }],
-    ['/exports', { label: $localize`:@@nav.link.exports:Export`, icon: 'file_download' }],
-    [
-      '/publication',
-      { label: $localize`:@@nav.link.publication:Publication`, icon: 'outgoing_mail' },
-    ],
-    [
-      '/calendar',
-      {
-        label: $localize`:@@nav.link.calendar:Calendrier des affectations`,
-        icon: 'calendar_month',
-        touche: 'm',
-      },
-    ],
-    ['/journee', { label: $localize`:@@nav.link.journee:Journée`, icon: 'view_day', touche: 'j' }],
-    ['/hours', { label: $localize`:@@nav.link.hours:Heures`, icon: 'schedule', touche: 'h' }],
-    [
-      '/intendance',
-      { label: $localize`:@@nav.link.intendance:Intendance des repas`, icon: 'restaurant' },
-    ],
-    [
-      '/typologies-planning',
-      { label: $localize`:@@nav.link.typologiesPlanning:Planning par typologie`, icon: 'category' },
-    ],
-    ['/equite', { label: $localize`:@@nav.link.equite:Équité`, icon: 'balance' }],
-    ['/repos', { label: $localize`:@@nav.link.repos:Jours de repos`, icon: 'weekend' }],
-    ['/heatmap', { label: $localize`:@@nav.link.heatmap:Heatmap de charge`, icon: 'grid_view' }],
-    [
-      '/repartition-heures',
-      { label: $localize`:@@nav.link.repartitionHeures:Répartition des heures`, icon: 'dashboard' },
-    ],
-    ['/marge', { label: $localize`:@@nav.link.marge:Marge disponible`, icon: 'exposure' }],
-    ['/timeline', { label: $localize`:@@nav.link.timeline:Timeline animateur`, icon: 'timeline' }],
-    ['/graphe', { label: $localize`:@@nav.link.graphe:Graphe`, icon: 'hub' }],
-    [
-      '/kpi',
-      { label: $localize`:@@nav.link.kpi:Autopsie du planning`, icon: 'query_stats', touche: 'k' },
-    ],
-    [
-      '/comparateur',
-      { label: $localize`:@@nav.link.comparateur:Comparateur A/B`, icon: 'compare_arrows' },
-    ],
-    [
-      '/parametres',
-      { label: $localize`:@@nav.link.parametres:Paramètres`, icon: 'settings', touche: 'r' },
-    ],
-    ['/mcp-client', { label: $localize`:@@nav.link.mcp:MCP`, icon: 'smart_toy' }],
-    ['/historique', { label: $localize`:@@nav.link.historique:Historique`, icon: 'manage_search' }],
-    ['/debug', { label: $localize`:@@nav.link.debug:Débogage`, icon: 'bug_report', touche: 'd' }],
-    [
-      '/verrouillages',
-      { label: $localize`:@@nav.link.verrouillages:Verrouillages`, icon: 'lock', touche: 'v' },
-    ],
-    // No letter: the free ones are few, and a screen used a few days a year
-    // is reached through the palette's search.
-    ['/consignes', { label: $localize`:@@nav.link.consignes:Consignes`, icon: 'gavel' }],
-    [
-      '/mentions-legales',
-      { label: $localize`:@@nav.link.mentionsLegales:Mentions légales`, icon: 'gavel' },
-    ],
-    [
-      '/politique-confidentialite',
-      {
-        label: $localize`:@@nav.link.confidentialite:Politique de confidentialité`,
-        icon: 'privacy_tip',
-      },
-    ],
-    [
-      '/conditions-utilisation',
-      { label: $localize`:@@nav.link.cgu:Conditions d'utilisation`, icon: 'handshake' },
-    ],
-    [
-      '/declaration-accessibilite',
-      { label: $localize`:@@nav.link.accessibilite:Accessibilité`, icon: 'accessibility_new' },
-    ],
-  ]);
+export function buildDestinationsNavigation(devMode = false): CommandePalette[] {
+  const menu = buildNavGroups().flatMap((group) => group.links);
+  return [
+    ...menu.flatMap((link) => destinations(link, true)),
+    ...buildOffMenuLinks(devMode).flatMap((link) => destinations(link, false)),
+    ...buildLegalLinks().flatMap((link) => destinations(link, false)),
+  ];
 }
 
-/**
- * Routes the palette must not propose: they need a parameter, or a session it
- * is the opposite of — and the admin shell itself, a layout route whose `''`
- * child is the home. Listed as well, it doubled the home entry under the same
- * id, which stayed invisible as long as the home's label matched nothing.
- */
-function estRoutePalette(route: Route): boolean {
-  return (
-    route.loadComponent !== undefined &&
-    route.children === undefined &&
-    route.path !== undefined &&
-    route.path !== 'login' &&
-    !route.path.includes(':') &&
-    !route.path.includes('*')
-  );
-}
-
-/**
- * Every reachable page, read from `app.routes.ts` rather than re-listed here.
- *
- * <p>That is what keeps the palette honest as the application grows: a route
- * added by anyone shows up in the palette on its own, labelled by its `title`
- * until someone gives it an entry in {@link buildDefinitionsRoutes} — a
- * missing label degrades one line of a list, where a forgotten registration
- * would have made a whole page unreachable by keyboard.</p>
- */
-export function buildDestinationsNavigation(): CommandePalette[] {
-  const definitions = buildDefinitionsRoutes();
-  const shell = routes.find((route) => route.path === '' && route.children);
-  const candidats = [...routes, ...(shell?.children ?? [])].filter(estRoutePalette);
-  return candidats.map((route) => {
-    const chemin = route.path === '' ? '/' : `/${route.path}`;
-    const definition = definitions.get(chemin);
-    return {
-      id: `route:${chemin}`,
-      famille: 'navigation' as const,
-      label: definition?.label ?? (typeof route.title === 'string' ? route.title : chemin),
-      hint: chemin,
-      icon: definition?.icon ?? 'arrow_forward',
-      route: chemin,
-      raccourci: definition?.touche ? `g ${definition.touche}` : undefined,
-    };
-  });
+/** A link and its tabs, as palette entries. */
+function destinations(link: NavLink, menu: boolean): CommandePalette[] {
+  const page: CommandePalette = {
+    id: `route:${link.path}`,
+    famille: 'navigation',
+    label: link.label,
+    hint: link.path,
+    icon: link.icon,
+    route: link.path,
+    raccourci: link.shortcut ? `g ${link.shortcut}` : undefined,
+    externe: link.externe,
+    menu,
+    motsCles: link.keywords,
+  };
+  const onglets = (link.tabs ?? []).map((onglet): CommandePalette => ({
+    id: `route:${link.path}?${onglet.param}=${onglet.value}`,
+    famille: 'navigation',
+    label: `${link.label} › ${onglet.label}`,
+    hint: `${link.path}?${onglet.param}=${onglet.value}`,
+    icon: link.icon,
+    route: link.path,
+    queryParams: { [onglet.param]: onglet.value },
+    motsCles: [link.keywords, onglet.keywords].filter(Boolean).join(' ') || undefined,
+  }));
+  return [page, ...onglets];
 }
 
 /** One `g`+letter shortcut, as the overlay and the help page list it. */
@@ -284,22 +118,28 @@ export interface RaccourciNavigation {
 
 /** The `g`+letter table, in reading order, letter first. */
 export function buildRaccourcisNavigation(): RaccourciNavigation[] {
-  return [...buildDefinitionsRoutes()]
-    .filter(([, definition]) => definition.touche !== undefined)
-    .map(([route, definition]) => ({
-      touche: definition.touche as string,
-      route,
-      label: definition.label,
-    }))
+  return linksWithShortcut()
+    .map((link) => ({ touche: link.shortcut as string, route: link.path, label: link.label }))
     .sort((a, b) => a.touche.localeCompare(b.touche));
 }
 
+/**
+ * The `g`+letter table as a map, built on the first key press rather than at
+ * import: `$localize` in the tables it reads only resolves once `main.ts` has
+ * loaded the catalog. The letters do not change while the application runs.
+ */
+let routesByKey: ReadonlyMap<string, string> | null = null;
+
 /** Route reached by `g` then this letter, or `null` when the letter is unassigned. */
 export function routePourTouche(touche: string): string | null {
-  const trouve = [...buildDefinitionsRoutes()].find(
-    ([, definition]) => definition.touche === touche,
+  routesByKey ??= new Map(linksWithShortcut().map((link) => [link.shortcut as string, link.path]));
+  return routesByKey.get(touche) ?? null;
+}
+
+function linksWithShortcut(): NavLink[] {
+  return [...buildNavGroups().flatMap((group) => group.links), ...buildOffMenuLinks(false)].filter(
+    (link) => link.shortcut !== undefined,
   );
-  return trouve ? trouve[0] : null;
 }
 
 /** The referential the palette searches, as the store holds it. */
@@ -361,17 +201,24 @@ function commandeCreneau(creneau: Creneau): CommandePalette {
  * What the palette shows for a query: destinations first — the palette is
  * primarily a navigator — then the referential entries it matches.
  *
- * <p>An empty query lists the destinations only: proposing 24 animateurs to
- * someone who has just pressed Ctrl+K and typed nothing says nothing about
- * what they can do here.</p>
+ * <p>An empty query lists the menu's entries only, in the menu's order:
+ * proposing 24 animateurs, or the four legal pages, to someone who has just
+ * pressed Ctrl+K and typed nothing says nothing about what they can do here.
+ * The tabs, the screens listed in no group and the legal pages answer a
+ * query.</p>
  */
 export function chercherCommandes(query: string, sources: SourcesPalette): CommandePalette[] {
-  const destinations = sources.destinations.filter((destination) =>
-    correspondAuFiltre(query, [destination.label, destination.hint, destination.raccourci]),
-  );
   if (!query.trim()) {
-    return [...destinations];
+    return sources.destinations.filter((destination) => destination.menu);
   }
+  const destinations = sources.destinations.filter((destination) =>
+    correspondAuFiltre(query, [
+      destination.label,
+      destination.hint,
+      destination.raccourci,
+      destination.motsCles,
+    ]),
+  );
   const animateurs = sources.animateurs
     .filter((animateur) =>
       correspondAuFiltre(query, [animateur.prenom, animateur.nom, animateur.id]),

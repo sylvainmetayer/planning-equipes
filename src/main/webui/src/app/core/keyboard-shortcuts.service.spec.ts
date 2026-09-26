@@ -110,6 +110,16 @@ describe('KeyboardShortcutsService', () => {
     });
   });
 
+  it('opens an external entry in a new tab instead of routing to it', () => {
+    const { dialog, router } = start();
+    const open = vi.spyOn(window, 'open').mockReturnValue(null);
+    frapper('k', { ctrlKey: true });
+    dialog.ferme.next({ route: '/q/dev-ui', externe: true });
+    expect(open).toHaveBeenCalledWith('/q/dev-ui', '_blank', 'noopener');
+    expect(router.navigate).not.toHaveBeenCalled();
+    open.mockRestore();
+  });
+
   it('navigates nowhere when the palette is dismissed', () => {
     const { dialog, router } = start();
     frapper('k', { ctrlKey: true });

@@ -67,6 +67,7 @@ import { SolverDurationCard } from './solver-duration-card';
 import { SolverQueue } from './solver-queue';
 import { SolverVolumetry } from './solver-volumetry';
 import { errorPrefix } from '../../core/error-message';
+import { VoirPlanningButton } from '../../shared/voir-planning-button';
 
 /**
  * A constraint's raw score string looks like `-14hard/0medium/0soft`
@@ -119,6 +120,7 @@ function detailCausesBloquantes(bloquantes: readonly CauseInfaisabilite[]): stri
 @Component({
   selector: 'app-solver-page',
   imports: [
+    VoirPlanningButton,
     MatProgressBarModule,
     StatusMessage,
     MatCardModule,

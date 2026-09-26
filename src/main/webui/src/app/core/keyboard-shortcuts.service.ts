@@ -179,7 +179,11 @@ export class KeyboardShortcutsService {
     );
     this.palette.afterClosed().subscribe((commande) => {
       this.palette = null;
-      if (commande) {
+      if (commande?.externe) {
+        // Served by the backend (the Quarkus Dev UI): the router would only
+        // produce a client-side 404.
+        window.open(commande.route, '_blank', 'noopener');
+      } else if (commande) {
         void this.router.navigate([commande.route], { queryParams: commande.queryParams ?? {} });
       }
     });

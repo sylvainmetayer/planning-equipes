@@ -6,7 +6,8 @@
 import { Location } from '@angular/common';
 import { Signal, provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
+import { ActivatedRoute, ParamMap, Router, convertToParamMap } from '@angular/router';
+import { BehaviorSubject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
 import {
@@ -109,6 +110,8 @@ describe('MargePage', () => {
   let get: ReturnType<typeof vi.fn>;
   let navigate: ReturnType<typeof vi.fn>;
   let replaceState: ReturnType<typeof vi.fn>;
+  /** The query params as the router emits them: a navigation to this same route pushes a new map. */
+  let queryParams$: BehaviorSubject<ParamMap>;
 
   async function monter(
     queryParams: Record<string, string> = {},
@@ -135,6 +138,7 @@ describe('MargePage', () => {
     });
     navigate = vi.fn(async () => true);
     replaceState = vi.fn();
+    queryParams$ = new BehaviorSubject(convertToParamMap(queryParams));
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
@@ -142,10 +146,7 @@ describe('MargePage', () => {
         { provide: ApiService, useValue: { get } },
         { provide: Router, useValue: { navigate } },
         { provide: Location, useValue: { path: () => '/marge', replaceState } },
-        {
-          provide: ActivatedRoute,
-          useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } },
-        },
+        { provide: ActivatedRoute, useValue: { queryParamMap: queryParams$.asObservable() } },
       ],
     });
     fixture = TestBed.createComponent(MargePage);
@@ -186,6 +187,19 @@ describe('MargePage', () => {
 
   it('seeds the mode from the URL, so a shared link opens the grid it named', async () => {
     const page = await monter({ mode: 'apres' });
+
+    expect(page.mode()).toBe('APRES');
+    expect(get).toHaveBeenCalledWith('/api/marge?mode=apres');
+  });
+
+  // The palette's « Marge disponible › Après résolution », used from this very
+  // page: the router reuses the component and only the query params move.
+  it('follows a navigation to itself with another mode', async () => {
+    const page = await monter();
+    expect(page.mode()).toBe('AVANT');
+
+    queryParams$.next(convertToParamMap({ mode: 'apres' }));
+    await fixture.whenStable();
 
     expect(page.mode()).toBe('APRES');
     expect(get).toHaveBeenCalledWith('/api/marge?mode=apres');

@@ -1,26 +1,40 @@
-// The navigation drawer's content: one entry per route, mirroring the page
-// split exactly. Data, kept apart from the shell that renders it.
+// The navigation drawer's content, the command palette's destinations and the
+// `g`+letter table, in one place: data, kept apart from the shell that renders
+// it. The drawer is one menu for everybody (no « simple » / « avancé » mode),
+// grouped by moment of the edition's cycle; a screen that is rare goes down
+// its group, it is not hidden.
 
-import { NavMode } from '../core/nav-mode';
+/**
+ * A tab or a view of a page, reachable from the palette as « Page › Tab »:
+ * the address the page reads (`?onglet=`, `?vue=`, `?mode=`…) and the words a
+ * reader may type to find it.
+ */
+export interface NavTab {
+  /** The query param the page reads its tab or view from. */
+  param: string;
+  value: string;
+  label: string;
+  /** Extra words the palette matches, beyond the label: « swagger » finds the raw analysis. */
+  keywords?: string;
+}
 
 export interface NavLink {
   path: string;
   label: string;
+  /** A Material Icons ligature: `nav-groups.spec.ts` refuses two entries sharing one. */
   icon: string;
-  /** Shows the unread notification count as a mat-badge on this link only. */
   /**
    * Served by the backend rather than by the Angular router (the Quarkus Dev
-   * UI): rendered as a plain anchor opening a new tab, since routing to it
-   * would only produce a client-side 404.
+   * UI): the palette opens it in a new tab, since routing to it would only
+   * produce a client-side 404. Listed in no group, so the drawer never draws one.
    */
   externe?: boolean;
-  /**
-   * Only needed for a deep diagnostic: hidden while the menu is in its
-   * `simple` mode (`core/nav-mode`), which is the default. The route, the
-   * command palette and the links of the help still reach it — this is a
-   * matter of what the drawer lists, never of rights.
-   */
-  avance?: boolean;
+  /** The letter pressed after `g` to reach it: the initial of the label wherever it was free. */
+  shortcut?: string;
+  /** Its tabs or views, indexed by the palette. */
+  tabs?: NavTab[];
+  /** Words the palette matches beyond the label. */
+  keywords?: string;
 }
 
 export interface NavGroup {
@@ -31,158 +45,158 @@ export interface NavGroup {
 }
 
 /**
- * The groups the drawer lists under a mode: every entry in `avance`; in
- * `simple`, the entries not flagged `avance` — plus the one carrying the route
- * currently displayed, so a link from the help or the palette to a hidden
- * screen shows where the reader landed, for the time of the visit. A group
- * left with no entry disappears with them.
- */
-export function visibleNavGroups(
-  groups: readonly NavGroup[],
-  mode: NavMode,
-  currentPath: string,
-): NavGroup[] {
-  if (mode === 'avance') {
-    return [...groups];
-  }
-  return groups
-    .map((group) => ({
-      ...group,
-      links: group.links.filter((link) => !link.avance || link.path === currentPath),
-    }))
-    .filter((group) => group.links.length > 0);
-}
-
-/**
- * One entry per route: the navigation mirrors the page split exactly.
+ * The menu, one group per moment of the cycle: Accueil, Planning, Préparer,
+ * Construire, Diffuser, Aujourd'hui, Administrer.
  *
- * Built lazily (called from the component constructor, not at module scope):
- * $localize resolves translations from whatever `loadTranslations()` has
- * registered at call time, and that only happens once `main.ts` has fetched
- * the English catalog — before `bootstrapApplication()` runs, but after this
- * module has already been imported.
+ * <p>Built lazily (called from a constructor, not at module scope): $localize
+ * resolves translations from whatever `loadTranslations()` has registered at
+ * call time, and that only happens once `main.ts` has fetched the English
+ * catalog — before `bootstrapApplication()` runs, but after this module has
+ * already been imported.</p>
  */
-export function buildNavGroups(devMode: boolean): NavGroup[] {
+export function buildNavGroups(): NavGroup[] {
   return [
     {
-      id: 'planning',
-      title: $localize`:@@nav.group.planning:Planning`,
+      id: 'accueil',
+      title: $localize`:@@nav.group.accueil:Accueil`,
       links: [
         {
           path: '/',
           label: $localize`:@@nav.link.accueil:État de l'édition`,
           icon: 'checklist',
-        },
-        { path: '/solveur', label: $localize`:@@nav.link.solver:Solveur`, icon: 'play_circle' },
-        // Right under the solver: it is the step after, and the one that
-        // reaches real people (issue #320).
-        {
-          path: '/publication',
-          label: $localize`:@@nav.link.publication:Publication`,
-          icon: 'outgoing_mail',
-        },
-        {
-          path: '/disponibilites',
-          label: $localize`:@@nav.link.disponibilites:Disponibilités`,
-          icon: 'event_available',
-        },
-        {
-          path: '/ad-hoc-constraints',
-          label: $localize`:@@nav.link.adHocConstraints:Ajustements manuels`,
-          icon: 'rule',
-        },
-        {
-          path: '/verrouillages',
-          label: $localize`:@@nav.link.verrouillages:Verrouillages`,
-          icon: 'lock',
-        },
-        {
-          // Closing every stand on a band of one date, by decision (issue #4):
-          // an act on the edition's days, next to the locks.
-          path: '/consignes',
-          label: $localize`:@@nav.link.consignes:Consignes`,
-          icon: 'gavel',
-        },
-        {
-          path: '/diagnostic',
-          label: $localize`:@@nav.link.diagnostic:Diagnostic`,
-          icon: 'report_problem',
-        },
-        {
-          path: '/constraints',
-          label: $localize`:@@nav.link.constraints:Contraintes`,
-          icon: 'fact_check',
-          avance: true,
-        },
-        {
-          path: '/instantanes',
-          label: $localize`:@@nav.link.snapshots:Instantanés`,
-          icon: 'history',
-          avance: true,
+          // The historic « go home » pair, kept: `e` is Échanges'.
+          shortcut: 'g',
         },
       ],
     },
     {
-      // What happens once the plan is out: the animateurs trading seats among
-      // themselves, and the day itself. Kept apart from « Planning » because
-      // these two screens act on the published plan, not on the next solve.
-      id: 'pendant-evenement',
-      title: $localize`:@@nav.group.pendantEvenement:Pendant l'événement`,
-      links: [
-        { path: '/echanges', label: $localize`:@@nav.link.echanges:Échanges`, icon: 'swap_horiz' },
-        // Both screens write on the published plan — « Échanges » applies or
-        // refuses a trade — but this one is the blunt instrument: it records
-        // real forced unavailabilities and empties real seats. Its banner says
-        // so rather than borrowing the default wording.
-        { path: '/jour-j', label: $localize`:@@nav.link.jourJ:Mode jour J`, icon: 'emergency' },
-      ],
-    },
-    {
-      id: 'decision-support',
-      title: $localize`:@@nav.group.decisionSupport:Aide à la décision`,
+      // The plan read from every angle, until the Planning page gathers them.
+      id: 'planning',
+      title: $localize`:@@nav.group.planning:Planning`,
       links: [
         {
-          path: '/ouvertures',
-          label: $localize`:@@nav.link.ouvertures:Ouvertures des stands`,
-          icon: 'storefront',
+          path: '/journee',
+          label: $localize`:@@nav.link.journee:Journée`,
+          icon: 'view_day',
+          shortcut: 'j',
+          tabs: [
+            tab('vue', 'calendrier', $localize`:@@journee.vue.calendrier:Calendrier`),
+            tab('vue', 'rail', $localize`:@@journee.vue.rail:Rail`),
+            tab(
+              'vue',
+              'carte',
+              $localize`:@@journee.vue.carte:Carte`,
+              $localize`:@@nav.keywords.journeeCarte:plan emplacements`,
+            ),
+            tab(
+              'vue',
+              'pauses',
+              $localize`:@@journee.vue.pauses:Pauses`,
+              $localize`:@@nav.keywords.journeePauses:relais repas`,
+            ),
+            tab('vue', 'changements', $localize`:@@journee.vue.changements:Changements`),
+          ],
         },
         {
-          path: '/kpi',
-          label: $localize`:@@nav.link.kpi:Autopsie du planning`,
-          icon: 'query_stats',
-          avance: true,
+          path: '/calendar',
+          label: $localize`:@@nav.link.calendar:Calendrier des affectations`,
+          icon: 'calendar_month',
         },
         {
-          path: '/comparateur',
-          label: $localize`:@@nav.link.comparateur:Comparateur A/B`,
-          icon: 'compare_arrows',
-          avance: true,
+          path: '/hours',
+          label: $localize`:@@nav.link.hours:Heures`,
+          icon: 'timer',
+          shortcut: 'h',
+          keywords: $localize`:@@nav.keywords.hours:paie`,
+        },
+        { path: '/equite', label: $localize`:@@nav.link.equite:Équité`, icon: 'balance' },
+        { path: '/repos', label: $localize`:@@nav.link.repos:Jours de repos`, icon: 'weekend' },
+        {
+          path: '/heatmap',
+          label: $localize`:@@nav.link.heatmap:Heatmap de charge`,
+          icon: 'grid_view',
+        },
+        {
+          path: '/marge',
+          label: $localize`:@@nav.link.marge:Marge disponible`,
+          icon: 'exposure',
+          tabs: [
+            tab('mode', 'apres', $localize`:@@marge.mode.apres:Après résolution`),
+            tab('mode', 'tension', $localize`:@@nav.tab.margeTension:Tension`),
+          ],
+        },
+        {
+          path: '/timeline',
+          label: $localize`:@@nav.link.timeline:Timeline animateur`,
+          icon: 'timeline',
+        },
+        { path: '/graphe', label: $localize`:@@nav.link.graphe:Graphe`, icon: 'hub' },
+        {
+          path: '/intendance',
+          label: $localize`:@@nav.link.intendance:Intendance des repas`,
+          icon: 'restaurant',
+        },
+        {
+          path: '/repartition-heures',
+          label: $localize`:@@nav.link.repartitionHeures:Répartition des heures`,
+          icon: 'dashboard',
+        },
+        {
+          path: '/typologies-planning',
+          label: $localize`:@@nav.link.typologiesPlanning:Planning par typologie`,
+          icon: 'donut_small',
         },
       ],
     },
     {
-      id: 'reference-data',
-      title: $localize`:@@nav.group.referenceData:Données de référence`,
-      // Dans l'ordre où une édition se remplit : tout part des typologies, et
-      // les créneaux donnent ses dates à l'édition avant que les stands ne
-      // disent leurs ouvertures (ADR 0032).
+      // In the order an edition fills up: everything starts from the game
+      // categories, the timeslots give the edition its dates before the
+      // stands say when they open (ADR 0032), and a stand stands on a
+      // location.
+      id: 'preparer',
+      title: $localize`:@@nav.group.preparer:Préparer`,
       links: [
         {
           path: '/typologies',
           label: $localize`:@@nav.link.typologies:Typologies`,
           icon: 'category',
+          shortcut: 't',
+        },
+        {
+          path: '/creneaux',
+          label: $localize`:@@nav.link.creneaux:Créneaux`,
+          icon: 'schedule',
+          shortcut: 'c',
         },
         {
           path: '/emplacements',
           label: $localize`:@@nav.link.emplacements:Emplacements`,
           icon: 'place',
         },
-        { path: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux`, icon: 'schedule' },
         { path: '/stands', label: $localize`:@@nav.link.stands:Stands`, icon: 'storefront' },
+        {
+          path: '/ouvertures',
+          label: $localize`:@@nav.link.ouvertures:Ouvertures des stands`,
+          icon: 'door_front',
+          shortcut: 'o',
+          keywords: $localize`:@@nav.keywords.ouvertures:horaires`,
+          tabs: [
+            tab('vue', 'saisie', $localize`:@@ouvertures.vue.saisir:Saisir`),
+            tab(
+              'vue',
+              'journees-types',
+              $localize`:@@ouvertures.vue.journeesTypes:Par journée type`,
+            ),
+            tab('vue', 'journee', $localize`:@@ouvertures.vue.journee:Journée`),
+            tab('vue', 'calendrier', $localize`:@@ouvertures.vue.calendrier:Calendrier combiné`),
+            tab('vue', 'comparer', $localize`:@@ouvertures.vue.comparer:Comparer`),
+          ],
+        },
         {
           path: '/animateurs',
           label: $localize`:@@nav.link.animateurs:Animateurs`,
           icon: 'groups',
+          shortcut: 'a',
         },
         {
           path: '/competences',
@@ -190,150 +204,310 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           icon: 'grid_on',
         },
         {
+          path: '/disponibilites',
+          label: $localize`:@@nav.link.disponibilites:Disponibilités`,
+          icon: 'event_available',
+          tabs: [tab('onglet', 'covoiturage', $localize`:@@dispo.onglet.covoiturage:Covoiturage`)],
+        },
+        {
           path: '/imports',
           label: $localize`:@@nav.link.imports:Imports`,
           icon: 'upload_file',
+          keywords: 'csv',
+          tabs: [
+            tab('onglet', 'typologies', $localize`:@@nav.link.typologies:Typologies`),
+            tab('onglet', 'emplacements', $localize`:@@nav.link.emplacements:Emplacements`),
+            tab('onglet', 'stands', $localize`:@@nav.link.stands:Stands`),
+            tab('onglet', 'creneaux', $localize`:@@nav.link.creneaux:Créneaux`),
+            tab('onglet', 'journees-types', $localize`:@@journeesTypes.title:Journées types`),
+            tab('onglet', 'animateurs', $localize`:@@nav.link.animateurs:Animateurs`),
+            tab('onglet', 'grille-stands', $localize`:@@imports.onglet.grille:Grille des stands`),
+            tab('onglet', 'scenario', $localize`:@@imports.onglet.scenario:Scénario`, 'yaml'),
+          ],
         },
         {
-          // `file_export` n'existe pas dans la police Material Icons embarquée
-          // (c'est un nom Material Symbols) : un <mat-icon> sans glyphe affiche
-          // son texte rogné. `file_download` est le miroir de l'import.
+          // `file_export` does not exist in the embedded Material Icons font
+          // (it is a Material Symbols name): a <mat-icon> without a glyph
+          // shows its text, cropped. `file_download` mirrors the import.
           path: '/exports',
           label: $localize`:@@nav.link.exports:Export`,
           icon: 'file_download',
+          keywords: 'csv yaml',
         },
       ],
     },
     {
-      id: 'views',
-      title: $localize`:@@nav.group.views:Vues`,
+      // What the next solve receives, the solve itself and what it produced.
+      id: 'construire',
+      title: $localize`:@@nav.group.construire:Construire`,
       links: [
         {
-          path: '/calendar',
-          label: $localize`:@@nav.link.calendar:Calendrier des affectations`,
-          icon: 'calendar_month',
-        },
-        { path: '/journee', label: $localize`:@@nav.link.journee:Journée`, icon: 'view_day' },
-        { path: '/hours', label: $localize`:@@nav.link.hours:Heures`, icon: 'schedule' },
-        {
-          path: '/intendance',
-          label: $localize`:@@nav.link.intendance:Intendance des repas`,
-          icon: 'restaurant',
-          avance: true,
+          path: '/solveur',
+          label: $localize`:@@nav.link.solver:Solveur`,
+          icon: 'play_circle',
+          shortcut: 's',
+          keywords: $localize`:@@nav.keywords.solver:calculer résolution`,
         },
         {
-          path: '/typologies-planning',
-          label: $localize`:@@nav.link.typologiesPlanning:Planning par typologie`,
-          icon: 'category',
-          avance: true,
+          path: '/diagnostic',
+          label: $localize`:@@nav.link.diagnostic:Diagnostic`,
+          icon: 'report_problem',
+          shortcut: 'd',
+          tabs: [
+            tab('onglet', 'problemes', $localize`:@@diagnostic.onglet.problemes:Problèmes`),
+            tab(
+              'onglet',
+              'besoin',
+              $localize`:@@diagnostic.onglet.besoin:Besoin en animateurs`,
+              'staffing',
+            ),
+            tab('onglet', 'fragilite', $localize`:@@diagnostic.onglet.fragilite:Fragilité`),
+            tab(
+              'onglet',
+              'former',
+              $localize`:@@diagnostic.onglet.former:À former`,
+              $localize`:@@nav.keywords.former:formation`,
+            ),
+            tab(
+              'onglet',
+              'banc',
+              $localize`:@@diagnostic.onglet.banc:Banc de touche`,
+              $localize`:@@nav.keywords.banc:remplaçant candidats`,
+            ),
+          ],
         },
         {
-          path: '/equite',
-          label: $localize`:@@nav.link.equite:Équité`,
-          icon: 'balance',
-          avance: true,
+          path: '/ad-hoc-constraints',
+          label: $localize`:@@nav.link.adHocConstraints:Ajustements manuels`,
+          icon: 'rule',
+          tabs: [
+            tab(
+              'vue',
+              'reseau',
+              $localize`:@@nav.tab.reseau:Réseau`,
+              $localize`:@@nav.keywords.reseau:affinités incompatibilités paires`,
+            ),
+          ],
         },
         {
-          path: '/repos',
-          label: $localize`:@@nav.link.repos:Jours de repos`,
-          icon: 'weekend',
-          avance: true,
+          path: '/verrouillages',
+          label: $localize`:@@nav.link.verrouillages:Verrouillages`,
+          icon: 'lock',
+          shortcut: 'v',
         },
         {
-          path: '/heatmap',
-          label: $localize`:@@nav.link.heatmap:Heatmap de charge`,
-          icon: 'grid_view',
-          avance: true,
+          // Closing every stand on a band of one date, by decision (ADR 0043).
+          path: '/consignes',
+          label: $localize`:@@nav.link.consignes:Consignes`,
+          icon: 'policy',
+          keywords: $localize`:@@nav.keywords.consignes:arrêté canicule fermeture`,
         },
         {
-          path: '/repartition-heures',
-          label: $localize`:@@nav.link.repartitionHeures:Répartition des heures`,
-          icon: 'dashboard',
-          avance: true,
+          path: '/constraints',
+          label: $localize`:@@nav.link.constraints:Contraintes`,
+          icon: 'fact_check',
+          keywords: $localize`:@@nav.keywords.constraints:règles poids`,
         },
         {
-          path: '/marge',
-          label: $localize`:@@nav.link.marge:Marge disponible`,
-          icon: 'exposure',
-          avance: true,
+          path: '/instantanes',
+          label: $localize`:@@nav.link.snapshots:Instantanés`,
+          icon: 'history',
+          shortcut: 'i',
         },
         {
-          path: '/timeline',
-          label: $localize`:@@nav.link.timeline:Timeline animateur`,
-          icon: 'timeline',
-          avance: true,
+          path: '/comparateur',
+          label: $localize`:@@nav.link.comparateur:Comparateur A/B`,
+          icon: 'compare_arrows',
         },
-        { path: '/graphe', label: $localize`:@@nav.link.graphe:Graphe`, icon: 'hub', avance: true },
+        {
+          path: '/kpi',
+          label: $localize`:@@nav.link.kpi:Autopsie du planning`,
+          icon: 'query_stats',
+        },
       ],
     },
     {
-      id: 'tools',
-      title: $localize`:@@nav.group.tools:Outils`,
+      id: 'diffuser',
+      title: $localize`:@@nav.group.diffuser:Diffuser`,
+      links: [
+        {
+          path: '/publication',
+          label: $localize`:@@nav.link.publication:Publication`,
+          icon: 'outgoing_mail',
+          shortcut: 'p',
+          keywords: $localize`:@@nav.keywords.publication:publier envoyer pdf`,
+        },
+        {
+          path: '/echanges',
+          label: $localize`:@@nav.link.echanges:Échanges`,
+          icon: 'swap_horiz',
+          shortcut: 'e',
+          keywords: $localize`:@@nav.keywords.echanges:foire`,
+        },
+      ],
+    },
+    {
+      id: 'aujourdhui',
+      title: $localize`:@@nav.group.aujourdhui:Aujourd'hui`,
+      links: [
+        {
+          path: '/jour-j',
+          label: $localize`:@@nav.link.jourJ:Mode jour J`,
+          icon: 'emergency',
+          shortcut: 'm',
+          keywords: $localize`:@@nav.keywords.jourJ:absent remplacer`,
+        },
+      ],
+    },
+    {
+      id: 'administrer',
+      title: $localize`:@@nav.group.administrer:Administrer`,
       links: [
         { path: '/editions', label: $localize`:@@nav.link.editions:Éditions`, icon: 'layers' },
         {
           path: '/parametres',
           label: $localize`:@@nav.link.parametres:Paramètres`,
           icon: 'settings',
-        },
-        { path: '/aide', label: $localize`:@@nav.link.aide:Aide`, icon: 'help_outline' },
-        {
-          path: '/nouveautes',
-          label: $localize`:@@nav.link.nouveautes:Nouveautés`,
-          icon: 'new_releases',
+          tabs: [
+            tab(
+              'onglet',
+              'legaux',
+              $localize`:@@parametres.onglet.legaux:Légaux`,
+              $localize`:@@nav.keywords.legaux:paramètres légaux durée repos`,
+            ),
+            tab(
+              'onglet',
+              'edition',
+              $localize`:@@parametres.onglet.edition:Édition`,
+              $localize`:@@nav.keywords.parametresEdition:ninja seuils`,
+            ),
+            tab(
+              'onglet',
+              'emails',
+              $localize`:@@parametres.onglet.emails:E-mails automatiques`,
+              $localize`:@@nav.keywords.emails:relances rappels`,
+            ),
+            tab(
+              'onglet',
+              'mural',
+              $localize`:@@parametres.onglet.mural:Affichage mural`,
+              $localize`:@@nav.keywords.mural:tv télévision salle de contrôle`,
+            ),
+            tab(
+              'onglet',
+              'globaux',
+              $localize`:@@parametres.onglet.globaux:Globaux`,
+              $localize`:@@nav.keywords.globaux:sauvegarde sql raccourcis`,
+            ),
+          ],
         },
         {
           path: '/historique',
           label: $localize`:@@nav.link.historique:Historique`,
           icon: 'manage_search',
-          avance: true,
+          keywords: $localize`:@@nav.keywords.historique:journal actions`,
         },
-
-        {
-          path: '/mcp-client',
-          label: $localize`:@@nav.link.mcp:MCP`,
-          icon: 'smart_toy',
-          avance: true,
-        },
-        {
-          path: '/debug',
-          label: $localize`:@@nav.link.debug:Débogage`,
-          icon: 'bug_report',
-          avance: true,
-        },
-        {
-          path: '/mentions-legales',
-          label: $localize`:@@nav.link.mentionsLegales:Mentions légales`,
-          icon: 'gavel',
-        },
-        {
-          path: '/politique-confidentialite',
-          label: $localize`:@@nav.link.confidentialite:Politique de confidentialité`,
-          icon: 'privacy_tip',
-        },
-        {
-          path: '/conditions-utilisation',
-          label: $localize`:@@nav.link.cgu:Conditions d'utilisation`,
-          icon: 'handshake',
-        },
-        {
-          path: '/declaration-accessibilite',
-          label: $localize`:@@nav.link.accessibilite:Accessibilité`,
-          icon: 'accessibility_new',
-        },
-        // Dev mode only: in a packaged application the Dev UI does not exist,
-        // and the entry would lead nowhere.
-        ...(devMode
-          ? [
-              {
-                path: '/q/dev-ui',
-                label: $localize`:@@nav.link.devUi:Quarkus Dev UI`,
-                icon: 'developer_mode',
-                externe: true,
-              },
-            ]
-          : []),
+        { path: '/aide', label: $localize`:@@nav.link.aide:Aide`, icon: 'help_outline' },
+        { path: '/mcp-client', label: $localize`:@@nav.link.mcp:MCP`, icon: 'smart_toy' },
       ],
     },
   ];
+}
+
+/**
+ * The screens served everywhere but listed in no group: the raw technical
+ * page, the bell's page, the news and the Quarkus Dev UI. The palette finds
+ * them on a query and never on an empty one; an address still answers.
+ */
+export function buildOffMenuLinks(devMode: boolean): NavLink[] {
+  return [
+    {
+      path: '/debug',
+      label: $localize`:@@nav.link.debug:Débogage`,
+      icon: 'bug_report',
+      keywords: $localize`:@@nav.keywords.debug:json swagger mailpit version technique`,
+      tabs: [
+        tab(
+          'onglet',
+          'resolution',
+          $localize`:@@debug.onglet.resolution:Résolution`,
+          $localize`:@@nav.keywords.debugResolution:json swagger api version analyse`,
+        ),
+        tab(
+          'onglet',
+          'verifications',
+          $localize`:@@debug.onglet.verifications:Vérifications`,
+          $localize`:@@nav.keywords.debugVerifications:mailpit mail test date simulée horloge`,
+        ),
+        tab(
+          'onglet',
+          'donnees',
+          $localize`:@@debug.onglet.donnees:Données`,
+          $localize`:@@nav.keywords.debugDonnees:scénario exemple démonstration vider`,
+        ),
+        tab('onglet', 'yaml', $localize`:@@debug.onglet.yaml:Validateur YAML`, 'yaml'),
+      ],
+    },
+    {
+      path: '/notifications',
+      label: $localize`:@@nav.link.notifications:Notifications`,
+      icon: 'notifications',
+      shortcut: 'n',
+    },
+    {
+      path: '/nouveautes',
+      label: $localize`:@@nav.link.nouveautes:Nouveautés`,
+      icon: 'new_releases',
+      keywords: 'version changelog',
+    },
+    // Dev mode only: in a packaged application the Dev UI does not exist, and
+    // the entry would lead nowhere.
+    ...(devMode
+      ? [
+          {
+            path: '/q/dev-ui',
+            label: $localize`:@@nav.link.devUi:Quarkus Dev UI`,
+            icon: 'developer_mode',
+            externe: true,
+          },
+        ]
+      : []),
+  ];
+}
+
+/**
+ * The four public legal pages: at the foot of the drawer, in text, and in the
+ * palette on a query only. The accessibility statement must stay reachable
+ * from every page (RGAA), which the foot of the drawer is.
+ */
+export function buildLegalLinks(): NavLink[] {
+  return [
+    {
+      path: '/mentions-legales',
+      label: $localize`:@@nav.link.mentionsLegales:Mentions légales`,
+      icon: 'gavel',
+    },
+    {
+      path: '/politique-confidentialite',
+      label: $localize`:@@nav.link.confidentialite:Politique de confidentialité`,
+      icon: 'privacy_tip',
+      keywords: 'rgpd',
+    },
+    {
+      path: '/conditions-utilisation',
+      label: $localize`:@@nav.link.cgu:Conditions d'utilisation`,
+      icon: 'handshake',
+      keywords: 'cgu',
+    },
+    {
+      path: '/declaration-accessibilite',
+      label: $localize`:@@nav.link.accessibilite:Accessibilité`,
+      icon: 'accessibility_new',
+      keywords: 'rgaa',
+    },
+  ];
+}
+
+function tab(param: string, value: string, label: string, keywords?: string): NavTab {
+  return keywords === undefined ? { param, value, label } : { param, value, label, keywords };
 }

@@ -8,6 +8,7 @@ import {
   signal,
   ViewEncapsulation,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
@@ -17,23 +18,20 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { PlanningApi } from '../../core/api/planning-api';
-import {
-  CelluleTension,
-  ModeMarge,
-  MotifTension,
-  RapportMarge,
-  RapportTension,
-} from '../../core/models';
+import { CelluleTension, MotifTension, RapportMarge, RapportTension } from '../../core/models';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { errorText } from '../../core/resource-state';
 import { keepViewInQueryParams } from '../../core/view-query-params';
 import {
+  MARGIN_VIEW_PARAMS,
+  MarginView,
   SyntheseMarge,
   TableMarge,
   buildSynthese,
   buildTable,
   libelleTranche,
   lienCellule,
+  readMarginView,
   signe,
 } from './marge';
 import {
@@ -46,19 +44,6 @@ import {
 } from './tension';
 import { StatusMessage } from '../../shared/status-message';
 import { nextGridCell } from '../../core/grid-navigation';
-
-/**
- * The three readings of the page: the margin before and after a solve, and the
- * tension map that crosses the second with the fragility of the same plan.
- */
-export type MarginView = ModeMarge | 'TENSION';
-
-/** The `mode` query param of each reading; the default one leaves the URL bare. */
-const MODE_PARAMS: Readonly<Record<MarginView, string | null>> = {
-  AVANT: null,
-  APRES: 'apres',
-  TENSION: 'tension',
-};
 
 /**
  * « Marge disponible » (issue #499): the day × timeslot grid of what is left —
@@ -184,20 +169,16 @@ export class MargePage {
   });
 
   constructor() {
-    this.seedStateFromQueryParams();
-    keepViewInQueryParams(() => ({ mode: MODE_PARAMS[this.mode()] }));
-  }
-
-  private seedStateFromQueryParams(): void {
-    // Anything but the values this page knows is ignored rather than
-    // rendered: an unknown mode would otherwise show the « après » grid under
-    // the « avant » toggle.
-    const mode = this.route.snapshot.queryParamMap.get('mode');
-    if (mode === 'apres') {
-      this.mode.set('APRES');
-    } else if (mode === 'tension') {
-      this.enterTension();
-    }
+    // Followed rather than read once: the palette's « Marge disponible ›
+    // Tension » navigates to this very route, and the router reuses the
+    // component.
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      const mode = readMarginView(params.get('mode'));
+      if (mode !== this.mode()) {
+        this.setMode(mode);
+      }
+    });
+    keepViewInQueryParams(() => ({ mode: MARGIN_VIEW_PARAMS[this.mode()] }));
   }
 
   /** The tension panel names people and stands: their labels come from the referential. */

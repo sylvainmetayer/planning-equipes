@@ -155,3 +155,23 @@ mat-sidenav-content {
     padding: 0.75rem;
   }
 }
+
+/* The foot of the menu, in text, like the foot of a page. */
+.nav-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  padding: 0.75rem 1rem 1rem;
+  font: var(--mat-sys-body-small);
+}
+
+.nav-footer a {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* The page on screen, as the group entries say it: text weight, no pill. */
+.nav-footer a.active-link {
+  background: none;
+  color: var(--mat-sys-on-surface);
+  font-weight: 600;
+}

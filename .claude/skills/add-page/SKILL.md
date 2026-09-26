@@ -5,10 +5,11 @@ description: Scaffold a new Angular route/page in planning-equipes's frontend (a
 
 # Add a new frontend page
 
-This repo enforces **one route = one page = one block** (see `AGENTS.md`,
-Frontend section). Adding a functional block always means a new route and a
-new `app/pages/<block>/` folder — never a new section bolted onto an existing
-page.
+This repo enforces **one question = one screen, its variants as tabs or views
+in the URL** (see `AGENTS.md`, Frontend section). Adding a functional block
+always means a new route and a new `app/pages/<block>/` folder — never a new
+section bolted onto an existing page; a variant of an existing question is a
+tab (`?onglet=`) or a view (`?vue=`) of that page instead.
 
 ## 1. Confirm the block is genuinely new
 
@@ -40,9 +41,15 @@ consistent with the existing entries (lazy `loadComponent`).
 
 ## 4. Wire up navigation
 
-Add an entry to the `mat-sidenav` navigation in `src/main/webui/src/app/app.ts`,
-under the correct existing group (Planning / Reference data / Views) — or ask
-the user which group fits if it's ambiguous.
+Add an entry to `src/main/webui/src/app/shell/nav-groups.ts`, the one table
+behind the drawer, the Ctrl+K palette and the `g`+letter shortcuts: in the
+group of its moment of the cycle (Accueil / Planning / Préparer / Construire /
+Diffuser / Aujourd'hui / Administrer), with an icon no other entry uses, its
+tabs or views if it has some, and a letter only if the label's initial is
+free — or ask the user which group fits if it's ambiguous. A page served
+without a menu entry goes to `buildOffMenuLinks()` instead;
+`nav-groups.spec.ts` fails on a route none of the lists knows. List the route
+in `src/main/webui/AGENTS.md` too (`DocumentationStructuralTest`).
 
 ## 5. Styling
 

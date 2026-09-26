@@ -5,7 +5,8 @@
 import { Location } from '@angular/common';
 import { provideZonelessChangeDetection, Signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { ActivatedRoute, ParamMap, convertToParamMap, provideRouter } from '@angular/router';
+import { BehaviorSubject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AffectationExplanationService } from '../../core/affectation-explanation.service';
 import { AnalysesApi } from '../../core/api/analyses-api';
@@ -133,6 +134,8 @@ describe('JourneePage', () => {
     ),
   };
   let fixture: ComponentFixture<JourneePage>;
+  /** The query params as the router emits them: a navigation to this same route pushes a new map. */
+  let queryParams$: BehaviorSubject<ParamMap>;
 
   beforeEach(() => {
     loadForDisplay.mockReset();
@@ -145,6 +148,7 @@ describe('JourneePage', () => {
   });
 
   async function monter(queryParams: Record<string, string> = {}): Promise<PageInternals> {
+    queryParams$ = new BehaviorSubject(convertToParamMap(queryParams));
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
@@ -180,7 +184,10 @@ describe('JourneePage', () => {
         },
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } },
+          useValue: {
+            snapshot: { queryParamMap: convertToParamMap(queryParams) },
+            queryParamMap: queryParams$.asObservable(),
+          },
         },
       ],
     });
@@ -221,6 +228,22 @@ describe('JourneePage', () => {
     expect(loadForDisplay).toHaveBeenCalledOnce();
     expect(analysesApi.breaks).toHaveBeenCalledOnce();
     expect(TestBed.inject(Location).path()).toContain('vue=pauses');
+  });
+
+  // The palette's « Journée › Rail », used from the Journée page itself: the
+  // router reuses the component and only the query params move.
+  it('follows a navigation to itself with another rendering, on the same day', async () => {
+    const page = await monter({ date: '2026-08-02' });
+    expect(page.view()).toBe('calendrier');
+
+    queryParams$.next(convertToParamMap({ vue: 'rail' }));
+    TestBed.tick();
+    await fixture.whenStable();
+
+    expect(page.view()).toBe('rail');
+    expect(racine().querySelector('app-rail-jour-vue')).not.toBeNull();
+    expect(page.jourCourant()?.jour).toBe(2);
+    expect(loadForDisplay).toHaveBeenCalledOnce();
   });
 
   it('opens on the rendering and the day the URL names, by date or by the older day number', async () => {

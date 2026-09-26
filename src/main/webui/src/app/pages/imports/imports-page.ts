@@ -5,6 +5,7 @@ import {
   signal,
   ViewEncapsulation,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -64,7 +65,11 @@ export class ImportsPage {
   protected readonly aideJourneesTypes = $localize`:@@imports.journeesTypes.aide:Les vacations tiennent sur une ligne, « 09:00-12:00, 12:00-13:00 R, 14:00-20:00 », R pour un relais repas. Les créneaux ne bougent qu'à l'application du calendrier.`;
 
   constructor() {
-    this.onglet.set(readOngletImports(this.route.snapshot.queryParamMap.get('onglet')));
+    // Followed rather than read once: the palette's « Imports › Stands »
+    // navigates to this very route, and the router reuses the component.
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      this.onglet.set(readOngletImports(params.get('onglet')));
+    });
     keepViewInQueryParams(() => ({
       onglet: this.onglet() === 'typologies' ? null : this.onglet(),
     }));

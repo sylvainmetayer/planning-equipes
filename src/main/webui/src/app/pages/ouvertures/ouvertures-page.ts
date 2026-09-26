@@ -12,6 +12,7 @@ import {
   viewChild,
   ViewEncapsulation,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -76,6 +77,9 @@ import {
   FiltreOuvertures,
   iconeAnomalie,
   largeurPourcent,
+  OpeningsView,
+  OPENINGS_VIEW_PARAMS,
+  readOpeningsView,
   synthese,
 } from './ouvertures';
 import {
@@ -105,40 +109,6 @@ import {
   segmentsPartiels,
   standsModifies,
 } from './grille-horaires';
-
-/**
- * Reading grid, entry grid by date, entry grid by kind of day, or one day laid
- * on time (ADR 0032 and 0033). The two entry grids write the same cells: the
- * one by kind of day says a vacation once for every date its template governs.
- */
-export type OpeningsView =
-  'CONSULTER' | 'SAISIR' | 'JOURNEES_TYPES' | 'JOURNEE' | 'CALENDRIER' | 'COMPARER';
-
-/** The `vue` query param of each view; the reading grid, the default, writes none. */
-const VIEW_PARAM: Record<OpeningsView, string | null> = {
-  CONSULTER: null,
-  SAISIR: 'saisie',
-  JOURNEES_TYPES: 'journees-types',
-  JOURNEE: 'journee',
-  CALENDRIER: 'calendrier',
-  COMPARER: 'comparer',
-};
-
-function readOpeningsView(param: string | null): OpeningsView {
-  if (param === 'saisie') {
-    return 'SAISIR';
-  }
-  if (param === 'journees-types') {
-    return 'JOURNEES_TYPES';
-  }
-  if (param === 'comparer') {
-    return 'COMPARER';
-  }
-  if (param === 'calendrier') {
-    return 'CALENDRIER';
-  }
-  return param === 'journee' ? 'JOURNEE' : 'CONSULTER';
-}
 
 /** What a cell whose dates disagree shows: the template view never flattens one. */
 const ECART = '≠';
@@ -601,8 +571,17 @@ export class OuverturesPage implements OnInit {
   );
 
   constructor() {
+    // The view is followed rather than read once: the palette's « Ouvertures
+    // des stands › Comparer » navigates to this very route, and the router
+    // reuses the component. Through `changeView`, so unsaved cells still ask.
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      const view = readOpeningsView(params.get('vue'));
+      if (view !== this.view()) {
+        void this.changeView(view);
+      }
+    });
     keepViewInQueryParams(() => ({
-      vue: VIEW_PARAM[this.view()],
+      vue: OPENINGS_VIEW_PARAMS[this.view()],
       date: this.dateQueryParam(),
       q: this.recherche().trim() || null,
       stand: this.onlyStand() || null,
