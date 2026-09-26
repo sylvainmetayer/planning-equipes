@@ -530,6 +530,63 @@ par `ReferenceDataService`) et un accesseur à argument lu hors du dossier
 balayé — `dureePauseMinutes(mineur)` et `PauseSurPoste.dues`, que les sept
 règles de durée déclarent toutes.
 
+## Quand une règle est en défaut : le geste, pas le poids
+
+« 554 correspondances » est une mesure, pas une suite. L'écran Problèmes du
+Diagnostic proposait sur douze règles en défaut douze fois le même bouton —
+baisser le poids — alors que les explications nommaient le vrai geste sans
+lien : « montez le niveau d'un animateur », « retirez le drapeau premium »,
+« relevez le plafond ». Un écran qui ne propose que de s'en soucier moins
+n'aide pas à corriger.
+
+C'est donc **le catalogue qui dit le geste**, et l'écran qui le rend.
+`ConstraintCatalog` porte, pour chaque règle moyenne et souple (et pour les
+règles dures dont le levier est précis), la liste ordonnée de ses **leviers**
+— un type, jamais une phrase — et `BlockerPlaybook` traduit chaque levier en
+une navigation positionnée sur le premier écart de la règle. La liste règle
+par règle vit dans le catalogue et dans `GET /api/constraints` (champ
+`actions`), pas ici : elle y est vérifiée par test, elle pourrirait ici en
+silence.
+
+| Levier | Bouton | Ce qu'il ouvre |
+| --- | --- | --- |
+| `SEAT` | « Qui peut tenir ce siège ? » | le banc du siège, dans le Diagnostic même, et son « Placer » |
+| `SKILL` | « Saisir la compétence » | la grille des compétences filtrée sur la typologie du stand |
+| `STAND_PROFILE` | « Ouvrir la fiche du stand » | la fiche du stand : effectif, drapeau premium ou épuisant, référent |
+| `STAFFING` | « Baisser l'effectif demandé » | les horaires du stand, ce jour-là |
+| `CAP` | « Régler le plafond » | la ligne de la règle sur « Règles du planning » |
+| `THRESHOLD` | « Régler les seuils » | la même ligne, pour une règle qui mesure contre des seuils |
+| `REPAIR` | « Proposer une réparation » | la page Planning, sur le jour et le stand de l'écart |
+| `GAME_CATEGORY_CAP` | « Régler le plafond de la typologie » | l'écran Typologies |
+| `ANIMATEUR_PROFILES` | « Revoir les fiches » | la fiche de la personne : indisponibilités, souhaits |
+| `WORKLOAD` | « Voir la charge par personne » | la page Planning, par personne |
+| `LOCK` | « Verrouiller ce qui doit tenir » | les verrouillages des consignes au solveur |
+| `ADJUSTMENTS` | « Revoir l'ajustement » | les ajustements manuels en cause |
+| `MEAL_WINDOW`, `SHIFT` | « Régler la fenêtre repas », « Raccourcir la vacation » | la ligne de la coupure repas sur « Règles du planning », les créneaux |
+| `RULE` | « Voir la règle » | la ligne de la règle |
+
+Trois règles tiennent l'ensemble, et chacune a son test (`BlockerPlaybookTest`) :
+
+- **aucune règle moyenne ou souple n'a le poids pour seul geste** : chacune
+  nomme au moins un levier qui change le plan ou le référentiel, et ce levier
+  vient en premier ;
+- **« Baisser l'importance » vient toujours en dernier**, ajouté par le
+  playbook à toute règle pesée — jamais à une règle dure — et l'écran le masque
+  quand le poids est déjà au plus bas : un bouton qui ne peut rien baisser
+  ment ;
+- **« Régler le plafond » ou « les seuils » n'existe que sur une règle qui lit
+  un réglage** (`ConstraintParameters`) : sans champ à remplir, la ligne n'a
+  rien à régler.
+
+Le « où » et le « qui » viennent de la même analyse. Le pivot dit sur quels
+jours, stands et personnes les écarts se concentrent, axe par axe ; il ne dit
+pas quel créneau de quel stand — la seule chose qu'on ouvre pour corriger.
+`BreachHotspots` croise donc stand et créneau pour les trois endroits qui
+rassemblent le plus d'écarts de chaque règle (`hotspots`, des identifiants
+seulement), et chaque endroit ouvre la page Planning sur ce siège, panneau Siège
+ouvert. Une règle agrégée qui ne nomme aucun lieu — l'équilibre de la charge —
+se rabat sur les stands, puis les jours, les plus touchés du pivot.
+
 ## Activer / désactiver
 
 Pour le prochain solve uniquement : la désactivation empêche le stream de

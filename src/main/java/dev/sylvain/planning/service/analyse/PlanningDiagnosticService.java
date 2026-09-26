@@ -185,8 +185,8 @@ public final class PlanningDiagnosticService {
                     floor,
                     references,
                     positionOf(
-                            ca.matches(),
-                            onlyStartedTimeslots(ca.matches(), solved.getPastHorizon(), timeslotFrozen))));
+                            ca.matches(), onlyStartedTimeslots(ca.matches(), solved.getPastHorizon(), timeslotFrozen)),
+                    BreachHotspots.of(ca.matches())));
         }
         constraintDiagnostics.sort((a, b) -> Integer.compare(b.matchCount, a.matchCount));
         HardMediumSoftScore floorScore = HardMediumSoftScore.of(0, plancherMedium, plancherSoft);
@@ -605,6 +605,10 @@ public final class PlanningDiagnosticService {
      *                    (ADR 0044): nothing is left to correct there, and the
      *                    playbook says so rather than proposing a gesture.
      *                    Read by the playbook, never put on the wire
+     * @param hotspots    the few stands and timeslots gathering most of the
+     *                    rule's breaches ({@link BreachHotspots}) — where the
+     *                    Problèmes screen says the rule bites. Served by the
+     *                    rules' view, not by this diagnostic
      */
     public record ConstraintDiagnostic(
             String name,
@@ -614,7 +618,25 @@ public final class PlanningDiagnosticService {
             Integer postesEvalues,
             ConstraintFloor plancher,
             List<ViolationFormatter.ViolationReference> references,
-            @JsonIgnore BlockerPlaybook.Context position) {
+            @JsonIgnore BlockerPlaybook.Context position,
+            @JsonIgnore List<BreachHotspots.Hotspot> hotspots) {
+
+        public ConstraintDiagnostic {
+            hotspots = hotspots == null ? List.of() : List.copyOf(hotspots);
+        }
+
+        /** A rule read with a position and no hotspot. */
+        public ConstraintDiagnostic(
+                String name,
+                String score,
+                int matchCount,
+                List<String> violations,
+                Integer postesEvalues,
+                ConstraintFloor plancher,
+                List<ViolationFormatter.ViolationReference> references,
+                BlockerPlaybook.Context position) {
+            this(name, score, matchCount, violations, postesEvalues, plancher, references, position, List.of());
+        }
 
         /** A rule read without a position, as the tests build them. */
         public ConstraintDiagnostic(
