@@ -13,6 +13,51 @@
    scrolls sideways, and the page itself never does.
    --------------------------------------------------------------------------- */
 
+/* The header above the tabs (issue #724): « en ce moment », the confirmation
+   band, what changed — each one line on a phone, so the first seat of the day
+   stays above the fold. */
+.espace-entete-maintenant {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  margin: 0 0 0.4rem;
+  font-weight: 500;
+}
+
+.espace-confirmation-bande {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+  margin: 0 0 0.4rem;
+}
+
+.espace-confirmation-bande .espace-confirmation-aide {
+  font-size: 0.875rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.espace-envoi-alerte {
+  color: var(--mat-sys-error);
+}
+
+/* The tabs, and « Emporter » folded into one menu button on their row. */
+.espace-onglets-rangee {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.4rem;
+}
+
+.espace-onglets-rangee .espace-onglets {
+  flex: 1 1 auto;
+  margin-bottom: 0;
+}
+
+.espace-emporter {
+  flex: 0 0 auto;
+}
+
 .espace-onglets {
   width: 100%;
   /* Tight on purpose: what the tab bar and the export row take at the top of

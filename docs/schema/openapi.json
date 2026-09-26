@@ -3385,8 +3385,20 @@
           }
         }
       },
+      "EnvoiEspaceView" : {
+        "required" : [ "statut", "le" ],
+        "type" : "object",
+        "properties" : {
+          "statut" : {
+            "type" : "string"
+          },
+          "le" : {
+            "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
       "EspaceAnimateurView" : {
-        "required" : [ "foireOuverte", "contact", "signalements" ],
+        "required" : [ "foireOuverte", "contact", "signalements", "collecteOuverte" ],
         "type" : "object",
         "properties" : {
           "animateurId" : {
@@ -3489,6 +3501,15 @@
             "items" : {
               "$ref" : "#/components/schemas/SignalementView"
             }
+          },
+          "collecteOuverte" : {
+            "type" : "boolean"
+          },
+          "collecteFermeLe" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "dernierEnvoi" : {
+            "$ref" : "#/components/schemas/EnvoiEspaceView"
           }
         }
       },

@@ -23,6 +23,7 @@ import dev.sylvain.planning.service.edition.EtiquetteEditionService;
 import dev.sylvain.planning.service.export.PlanningExportService;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningRepository;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
+import dev.sylvain.planning.service.publication.EnvoiPlanningRepository;
 import dev.sylvain.planning.service.publication.PlanPublieService;
 import dev.sylvain.planning.service.publication.PublicationTraceRepository;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
@@ -96,6 +97,8 @@ public class EspaceAnimateurService {
 
     private final SignalementAbsenceService signalementService;
 
+    private final EnvoiPlanningRepository envois;
+
     @Inject
     public EspaceAnimateurService(
             ReferenceDataService referenceDataService,
@@ -112,7 +115,8 @@ public class EspaceAnimateurService {
             PublicationTraceRepository traceRepository,
             JourJClock clock,
             TeammateRequestService teammateRequestService,
-            SignalementAbsenceService signalementService) {
+            SignalementAbsenceService signalementService,
+            EnvoiPlanningRepository envois) {
         this.referenceDataService = referenceDataService;
         this.planPublieService = planPublieService;
         this.consigneService = consigneService;
@@ -128,6 +132,7 @@ public class EspaceAnimateurService {
         this.clock = clock;
         this.teammateRequestService = teammateRequestService;
         this.signalementService = signalementService;
+        this.envois = envois;
     }
 
     /**
@@ -272,8 +277,18 @@ public class EspaceAnimateurService {
      * @param signalements the absences I reported from here (« je ne pourrai
      *                 pas être là », issue #533), whatever their state — what I
      *                 said and where it stands, by day
+     * @param collecteOuverte whether the availability collection — and the
+     *                 covoiturage requests that live with it — is open today:
+     *                 the espace offers those two pages only then, where they
+     *                 used to be dead tabs all event long
+     * @param collecteFermeLe the collection's last day, {@code null} when it
+     *                 is closed or has no end
+     * @param dernierEnvoi the last time the organisation mailed me my
+     *                 planning, and how it went — what « Planning communiqué
+     *                 le … » can only claim when the mail actually left;
+     *                 {@code null} when nothing was ever sent
      */
-    @Schema(requiredProperties = {"foireOuverte", "contact", "signalements"})
+    @Schema(requiredProperties = {"foireOuverte", "contact", "signalements", "collecteOuverte"})
     public record EspaceAnimateurView(
             String animateurId,
             String prenom,
@@ -299,7 +314,19 @@ public class EspaceAnimateurService {
             LocalDate editionFin,
             List<CarpoolDayView> covoiturage,
             ContactOrganisation contact,
-            List<SignalementAbsenceService.SignalementView> signalements) {}
+            List<SignalementAbsenceService.SignalementView> signalements,
+            boolean collecteOuverte,
+            LocalDate collecteFermeLe,
+            EnvoiEspaceView dernierEnvoi) {}
+
+    /**
+     * The last delivery of my planning, as the Diffuser screen records it:
+     * {@code ENVOYE}, {@code ECHEC}, {@code SANS_EMAIL} or {@code EXCLU} — never
+     * the cause of a failure, which names the mail server's answer and is the
+     * organisation's to read.
+     */
+    @Schema(requiredProperties = {"statut", "le"})
+    public record EnvoiEspaceView(String statut, Instant le) {}
 
     /**
      * One day of my grouped arrival, as the espace says it: whether the car
@@ -427,6 +454,8 @@ public class EspaceAnimateurService {
         PublicationTraceRepository.Destinataire lastTrace = traceRepository.lastScheduleSentTo(animateurId);
         JourJClock.Horloge horloge = clock.mocked();
         EtiquetteEdition edition = etiquetteService.courante();
+        DeclarationDisponibiliteRepository.FenetreCollecte collecte = declarationService.fenetre();
+        boolean collecteOuverte = collecte.openOn(LocalDate.now(ZoneId.systemDefault()));
         boolean diffToShow = lastTrace != null
                 && !lastTrace.premiereDiffusion()
                 && !lastTrace.changements().isEmpty();
@@ -455,7 +484,16 @@ public class EspaceAnimateurService {
                 edition.fin(),
                 carpoolDaysOf(planning, animateurId),
                 referenceDataService.getContactOrganisation(),
-                signalementService.ofAnimateur(animateurId));
+                signalementService.ofAnimateur(animateurId),
+                collecteOuverte,
+                collecteOuverte ? collecte.fin() : null,
+                lastDelivery(animateurId));
+    }
+
+    /** My latest delivery, {@code null} when the organisation never mailed me my planning. */
+    private EnvoiEspaceView lastDelivery(String animateurId) {
+        EnvoiPlanningRepository.Envoi envoi = envois.latestByAnimateur().get(animateurId);
+        return envoi == null ? null : new EnvoiEspaceView(envoi.statut().name(), envoi.envoyeLe());
     }
 
     /**

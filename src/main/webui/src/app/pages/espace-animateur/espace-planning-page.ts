@@ -16,6 +16,8 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   abonnementIcsUrl,
@@ -66,6 +68,7 @@ import { EQUIPE_NOMBREUSE, filterCoequipiers, coequipiersView } from './espace-c
 import { OngletEspace, readOngletEspace } from './espace-onglets';
 import { StatusMessage } from '../../shared/status-message';
 import { NewWindowLink } from '../../shared/new-window-link';
+import { EspaceContact } from './espace-contact';
 
 /**
  * The animateur's own planning (issue #165): their seats from the last
@@ -81,9 +84,10 @@ import { NewWindowLink } from '../../shared/new-window-link';
  * day in `?jour=`, as everywhere else in this application (ADR 0012 / 0018), so
  * touching a row of the frieze opens that day and the address says which.</p>
  *
- * <p>Nothing was dropped on the way: the confirmation, what changed, the
- * agenda, the downloads and the échange button all kept their place under the
- * tab they belong to.</p>
+ * <p>Above the three tabs, whatever the tab: « en ce moment / prochain poste »
+ * first, the confirmation while it is due, what changed, then the tabs with
+ * « Emporter » folded into one menu button on their row — the first seat of
+ * the day has to show on a 390 px phone without scrolling.</p>
  */
 @Component({
   selector: 'app-espace-planning-page',
@@ -98,7 +102,10 @@ import { NewWindowLink } from '../../shared/new-window-link';
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    MatMenuModule,
+    MatTooltipModule,
     RouterLink,
+    EspaceContact,
   ],
   templateUrl: './espace-planning-page.html',
   styleUrl: './espace-planning-page.css',
@@ -228,6 +235,16 @@ export class EspacePlanningPage {
   protected readonly confirmationDemandee = computed(() => {
     const view = this.espace.view();
     return !!view?.publieLe && view.postes.length > 0 && view.statutConfirmation !== 'CONFIRME';
+  });
+
+  /**
+   * How the last mail of my planning went, when it did not simply leave:
+   * « communiqué le » is then not said — the mail failed, or there is no
+   * address to send it to. `null` in every other case.
+   */
+  protected readonly etatEnvoi = computed(() => {
+    const statut = this.espace.view()?.dernierEnvoi?.statut ?? null;
+    return statut === 'ECHEC' || statut === 'SANS_EMAIL' ? statut : null;
   });
 
   protected async confirmer(): Promise<void> {

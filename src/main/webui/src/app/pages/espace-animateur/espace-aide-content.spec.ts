@@ -77,8 +77,10 @@ describe('buildEspaceAideSections', () => {
   it('answers the availability tab in each of its states, not only the open one', () => {
     const section = sections.find((each) => each.id === 'declarer-disponibilites')!;
     const text = textOf(section);
-    // Not open yet: the tab gives a date to come back on, it is not a refusal.
-    expect(text).toContain("n'a pas encore commencé");
+    // Outside the collection the tab is not offered, and the help says so —
+    // and where an impediment goes instead.
+    expect(text).toContain("n'apparaissent que pendant la collecte");
+    expect(text).toContain('Je ne pourrai pas venir');
     // Sent but not dealt with: the card at the top, and what a new submission does.
     expect(text).toContain('Votre déclaration en attente');
     // Dealt with: what the organisers did with it, in the words the screen uses.

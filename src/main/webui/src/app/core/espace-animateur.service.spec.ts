@@ -10,6 +10,9 @@ import { seedStore } from '../core/testing/seed-store';
 function view(): EspaceAnimateurView {
   return {
     signalements: [],
+    collecteOuverte: false,
+    collecteFermeLe: null,
+    dernierEnvoi: null,
     animateurId: 'A1',
     prenom: 'Alice',
     nom: 'Martin',

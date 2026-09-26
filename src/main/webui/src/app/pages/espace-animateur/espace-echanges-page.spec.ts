@@ -51,6 +51,9 @@ function poste(overrides: Partial<PosteAnimateurView> = {}): PosteAnimateurView 
 function view(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView {
   return {
     signalements: [],
+    collecteOuverte: false,
+    collecteFermeLe: null,
+    dernierEnvoi: null,
     joursRepos: [],
     animateurId: 'alice',
     prenom: 'Alice',
@@ -156,6 +159,9 @@ type PageInternals = {
   brouillons: WritableSignal<BrouillonDemande[]>;
   envoiEnCours: Signal<boolean>;
   formulaireComplet: Signal<boolean>;
+  optionsCollegues: Signal<{ id: string; label: string }[]>;
+  chosenTarget: Signal<string[]>;
+  heure: (valeur: string | null | undefined) => string;
   foireOpen: Signal<boolean>;
   demandes: Signal<
     { id: string; statutLabel: string; statutClasse: string; attentePublication: boolean }[]
@@ -486,6 +492,23 @@ describe('EspaceEchangesPage', () => {
       page.ajouter();
 
       expect(page.brouillons()[0].cibleNom).toBe('Bob Durand');
+    });
+
+    /** 152 colleagues are typed, not scrolled: the search holds them as id + name, one picked at most. */
+    it('offers the colleagues to a search, and holds the one picked', () => {
+      const page = createPage();
+
+      expect(page.optionsCollegues()).toContainEqual({ id: 'bob', label: 'Bob Durand' });
+      expect(page.chosenTarget()).toEqual([]);
+      page.cibleId.set('bob');
+      expect(page.chosenTarget()).toEqual(['bob']);
+    });
+
+    it('reads hours without their seconds', () => {
+      const page = createPage();
+
+      expect(page.heure('18:00:00')).toBe('18:00');
+      expect(page.heure(null)).toBe('');
     });
 
     it('falls back to the colleague id when the view does not name them', () => {

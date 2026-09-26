@@ -173,8 +173,11 @@ app-espace-animateur-shell {
   gap: 0.5rem;
 }
 
+/* One row on a phone (issue #724): Mon planning · Mes échanges · Aide share
+   it; the two collection pages, offered only while it is open, wrap below. */
 .espace-nav a {
-  flex: 1 1 40%;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 /* The « Aide » tab at the size of its content, so the routed ones share the rest. */
@@ -812,4 +815,32 @@ app-espace-animateur-shell {
   flex-basis: 100%;
   color: var(--mat-sys-on-surface-variant);
   font-size: 0.9em;
+}
+
+/* The collection is open: said once, under the navigation. */
+.espace-collecte-bandeau {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  margin: 0.25rem 0 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.5rem;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  font-size: 0.875rem;
+}
+
+/* How to reach the organisation, at the foot of every page and after the
+   sentences that point at it. */
+.espace-contact {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.espace-contact-pied {
+  margin: 1rem 0 0;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.875rem;
 }

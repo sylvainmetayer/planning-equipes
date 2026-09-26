@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   ElementRef,
   inject,
   signal,
@@ -35,11 +36,14 @@ import { errorMessage } from '../../core/error-message';
 import { BrandLogo } from '../../shared/brand-logo';
 import { StatusMessage } from '../../shared/status-message';
 import { VersionFooter } from '../../shared/version-footer';
+import { EspaceContact } from './espace-contact';
 
 /**
  * Standalone layout of the espace animateur (issue #165): a minimal toolbar
- * (no admin navigation, no solver monitor, no polling) above the two tabs —
- * the animateur's planning and their demandes d'échange. The access token in
+ * (no admin navigation, no solver monitor, no polling) above one row of
+ * tabs — the planning, the demandes d'échange, the help, and the declaration
+ * and covoiturage pages while the collection is open — and the
+ * organisation's contact at the foot of every page. The access token in
  * the URL is the whole credential: this shell loads everything from it and
  * the child pages read the shared `EspaceAnimateurService` state.
  */
@@ -53,6 +57,7 @@ import { VersionFooter } from '../../shared/version-footer';
     BrandLogo,
     StatusMessage,
     VersionFooter,
+    EspaceContact,
     FormsModule,
     MatToolbarModule,
     MatButtonModule,
@@ -73,6 +78,9 @@ import { VersionFooter } from '../../shared/version-footer';
 export class EspaceAnimateurShell {
   protected readonly espace = inject(EspaceAnimateurService);
   protected readonly locale: AppLocale = getStoredLocale();
+
+  /** Disponibilités and Covoiturage are offered only while the collection is open. */
+  protected readonly collectionOpen = computed(() => this.espace.view()?.collecteOuverte ?? false);
 
   private readonly route = inject(ActivatedRoute);
   protected readonly jeton = toSignal(

@@ -20,6 +20,7 @@
         La foire au planning est fermée : vous ne pouvez plus proposer ni annuler d'échange. Si un
         échange reste nécessaire, rapprochez-vous de l'organisation.
       </p>
+      <app-espace-contact [inline]="true" />
     </div>
   }
 } @else if (foireClosesOn(); as fin) {
@@ -47,19 +48,16 @@
         <mat-select [ngModel]="posteChoisi()" (ngModelChange)="choisirPoste($event)">
           @for (poste of espace.view()?.postes ?? []; track poste.standId + '-' + poste.creneauId + '-' + poste.heureDebut) {
             <mat-option [value]="poste">
-              {{ poste.date | date: 'EEE d MMM' }} {{ poste.heureDebut }}–{{ poste.heureFin }} · {{ poste.standNom }}
+              {{ poste.date | date: 'EEE d MMM' }} {{ heure(poste.heureDebut) }}–{{ heure(poste.heureFin) }} · {{ poste.standNom }}
             </mat-option>
           }
         </mat-select>
       </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label i18n="@@espace.echanges.collegue">Échanger avec</mat-label>
-        <mat-select [ngModel]="cibleId()" (ngModelChange)="choisirCible($event)">
-          @for (collegue of espace.view()?.collegues ?? []; track collegue.id) {
-            <mat-option [value]="collegue.id">{{ collegue.nomComplet }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
+      <!-- Une recherche, pas une liste : 152 noms dans un menu déroulant se
+           parcouraient au pouce, sans filtre. -->
+      <app-selection-recherche label="Échanger avec" i18n-label="@@espace.echanges.collegue"
+                               [options]="optionsCollegues()" [valeurs]="chosenTarget()"
+                               (valeursChange)="choisirCible($event[0] ?? '')" />
       @if (lookupRefusal(); as refus) {
         <output class="espace-suggestions-vide status-paragraph">{{ refus }}</output>
       }
@@ -70,7 +68,7 @@
             <mat-option [value]="null" i18n="@@espace.echanges.creneauSouhaiteAucun">Peu importe — échange sur mon créneau</mat-option>
             @for (poste of postesCollegue(); track poste.standId + '-' + poste.creneauId + '-' + poste.heureDebut) {
               <mat-option [value]="poste">
-                {{ poste.date | date: 'EEE d MMM' }} {{ poste.heureDebut }}–{{ poste.heureFin }} · {{ poste.standNom }}
+                {{ poste.date | date: 'EEE d MMM' }} {{ heure(poste.heureDebut) }}–{{ heure(poste.heureFin) }} · {{ poste.standNom }}
               </mat-option>
             }
           </mat-select>
@@ -97,6 +95,9 @@
         @if (rechercheEnCours()) {
           <mat-spinner diameter="24" />
         } @else if (suggestions(); as trouvees) {
+          <p class="espace-suggestions-portee" i18n="@@espace.echanges.suggestionsPortee">
+            {{ trouvees.optionsEvaluees }} possibilités évaluées sur {{ trouvees.optionsEligibles }}
+          </p>
           @if (trouvees.suggestions.length === 0) {
             <p class="espace-suggestions-vide" i18n="@@espace.echanges.suggestionsAucune">
               Aucun échange ne tient en l'état du planning. Vous pouvez tout de même en proposer
@@ -139,7 +140,7 @@
                     <strong>{{ suggestion.nomComplet }}</strong>
                     <span class="espace-suggestion-detail" i18n="@@espace.echanges.suggestionDirige">
                       vous prenez son {{ suggestion.dateCible | date: 'EEE d MMM' }}
-                      {{ suggestion.heureDebutCible }}–{{ suggestion.heureFinCible }} · {{ suggestion.standCibleNom }}
+                      {{ heure(suggestion.heureDebutCible) }}–{{ heure(suggestion.heureFinCible) }} · {{ suggestion.standCibleNom }}
                     </span>
                     <button matButton (click)="retenirSuggestion(suggestion)">
                       <mat-icon>check</mat-icon>
@@ -223,11 +224,11 @@
         <div class="espace-demande-entete">
           <strong>{{ demande.demandeurNom }}</strong>
           <span i18n="@@espace.recues.propose">vous propose de reprendre :</span>
-          <span>{{ demande.date | date: 'EEE d MMM' }} {{ demande.heureDebut }}–{{ demande.heureFin }} · {{ demande.standNom }}</span>
+          <span>{{ demande.date | date: 'EEE d MMM' }} {{ heure(demande.heureDebut) }}–{{ heure(demande.heureFin) }} · {{ demande.standNom }}</span>
           @if (demande.creneauCibleId) {
             <span class="espace-brouillon-contre">
               <ng-container i18n="@@espace.recues.contreVotre">contre votre créneau</ng-container>
-              {{ demande.dateCible | date: 'EEE d MMM' }} {{ demande.heureDebutCible }}–{{ demande.heureFinCible }} · {{ demande.standCibleNom }}
+              {{ demande.dateCible | date: 'EEE d MMM' }} {{ heure(demande.heureDebutCible) }}–{{ heure(demande.heureFinCible) }} · {{ demande.standCibleNom }}
             </span>
           }
         </div>
@@ -263,7 +264,7 @@
       <mat-card-content>
         <div class="espace-demande-entete">
           <span class="espace-statut espace-statut-{{ demande.statutClasse }}">{{ demande.statutLabel }}</span>
-          <span>{{ demande.date | date: 'EEE d MMM' }} {{ demande.heureDebut }}–{{ demande.heureFin }} · {{ demande.standNom }}</span>
+          <span>{{ demande.date | date: 'EEE d MMM' }} {{ heure(demande.heureDebut) }}–{{ heure(demande.heureFin) }} · {{ demande.standNom }}</span>
           <span class="espace-brouillon-cible">
             <mat-icon inline>swap_horiz</mat-icon>
             {{ demande.cibleNom }}
@@ -271,7 +272,7 @@
           @if (demande.creneauCibleId) {
             <span class="espace-brouillon-contre">
               <ng-container i18n="@@espace.echanges.contre">contre</ng-container>
-              {{ demande.dateCible | date: 'EEE d MMM' }} {{ demande.heureDebutCible }}–{{ demande.heureFinCible }} · {{ demande.standCibleNom }}
+              {{ demande.dateCible | date: 'EEE d MMM' }} {{ heure(demande.heureDebutCible) }}–{{ heure(demande.heureFinCible) }} · {{ demande.standCibleNom }}
             </span>
           }
         </div>

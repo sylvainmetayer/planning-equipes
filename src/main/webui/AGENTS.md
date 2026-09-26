@@ -92,7 +92,15 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   name), `/animateur/:jeton/echanges`, `/animateur/:jeton/disponibilites`,
   `/animateur/:jeton/covoiturage` (« Covoiturage » — « Je viens avec… », asked
   for apart from the declaration on the same collection window, read-only
-  outside it) and `/animateur/:jeton/aide`.
+  outside it) and `/animateur/:jeton/aide`. The espace's navigation is one row
+  — Mon planning · Mes échanges · Aide — and offers the two collection pages
+  only while the collection is open (`collecteOuverte` of the espace view; the
+  routes stay served, for a link already sent). « En ce moment / prochain
+  poste », the confirmation band and what changed sit above the planning's
+  tabs, « Emporter » is one menu button on their row, and
+  `espace-contact.ts` puts the organisation's contact at the foot of every
+  page and after each « adressez-vous à l'organisation », rendering nothing
+  while the view carries none.
 - **One question = one screen, its variants as tabs or views in the URL.**
   A functional block is one route and one `app/pages/<block>/` folder; a
   variant of the same question (`?onglet=`, `?vue=`) is a tab of that page,

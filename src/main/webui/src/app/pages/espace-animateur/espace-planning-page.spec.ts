@@ -8,12 +8,12 @@
 // a phone, where a refused clipboard (Chrome's `NotAllowedError` on a document
 // that lost focus) is a routine outcome, not an edge case.
 //
-// The band's ORDER is frozen here too: the subscription comes first in it,
+// The menu's ORDER is frozen here too: the subscription comes first in it,
 // before the two one-shot files. At the bottom of the page it was never
 // reached on a phone, and a snapshot file silently going stale is the defect
 // issue #324 exists to remove — so a future edit must not demote it below the
-// download. Since issue #615 it lives under the « Aperçu » tab, which is what
-// these tests open first: a band nobody reaches is the same defect again.
+// download. Since issue #724 the three are one « Emporter » menu button on the
+// tab row, above the day.
 
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -26,6 +26,9 @@ import { EspacePlanningPage } from './espace-planning-page';
 function view(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView {
   return {
     signalements: [],
+    collecteOuverte: false,
+    collecteFermeLe: null,
+    dernierEnvoi: null,
     joursRepos: [],
     animateurId: 'alice',
     prenom: 'Alice',
@@ -151,6 +154,15 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
     await fixture.whenStable();
   }
 
+  /** Opens the « Emporter » menu of the tab row and answers its items, in order. */
+  async function openTakeAway(): Promise<HTMLAnchorElement[]> {
+    racine().querySelector<HTMLButtonElement>('button.espace-emporter')!.click();
+    await fixture.whenStable();
+    return Array.from(
+      document.querySelectorAll<HTMLAnchorElement>('.mat-mdc-menu-panel a[mat-menu-item]'),
+    );
+  }
+
   async function copy(): Promise<void> {
     bouton("Copier l'adresse").click();
     await fixture.whenStable();
@@ -190,41 +202,34 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
     const url = racine().querySelector('.espace-abonnement-url')!.textContent!.trim();
     expect(url).toBe(`${window.location.origin}/api/abonnements/abo-1/planning.ics`);
     // The webcal scheme is what a calendar client registers for.
-    const lien = racine().querySelector<HTMLAnchorElement>('.espace-agenda-abonnement')!;
+    const [lien] = await openTakeAway();
     expect(lien.getAttribute('href')).toBe('webcal://' + url.replace(/^https?:\/\//, ''));
     // The espace token stays where it was: it never reaches this address.
     expect(url).not.toContain('jeton-1');
   });
 
-  it('carries the band under every tab, with the subscription first in it', async () => {
+  /**
+   * « Emporter » is one menu button on the tab row (issue #724): three buttons
+   * on two lines were two lines of planning fewer on a phone. It sits above
+   * the day, so taking one's planning away still costs no scrolling, and the
+   * subscription stays first in it.
+   */
+  it('folds the downloads into one menu button on the tab row, the subscription first', async () => {
     espaceView.set(view({ postes: [poste()] }));
     await rendre();
 
-    // Under the three tabs and not behind one of them: taking one's planning
-    // away is a brief gesture, made from wherever one stands — and at the top
-    // of the screen, so it costs no scrolling through a fortnight of days.
-    expect(racine().querySelector('.espace-agenda')).not.toBeNull();
-    expect(racine().querySelector('.espace-poste-carte')).not.toBeNull();
+    const bouton = racine().querySelector('.espace-onglets-rangee button.espace-emporter');
+    expect(bouton).not.toBeNull();
+    expect(bouton!.getAttribute('aria-label')).toBe('Emporter mon planning');
     const contenu = racine().querySelector('.espace-journee')!;
-    const bande = racine().querySelector('.espace-agenda')!;
-    expect(bande.compareDocumentPosition(contenu) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-
-    // Reading order inside the band, and Material's own action hierarchy:
-    // filled for the subscription, outlined for the two PDF layouts. The ICS
-    // file is no longer one of them — it is a fallback, and it lives in the
-    // subscription's own panel.
-    const actions = Array.from(
-      racine().querySelectorAll<HTMLAnchorElement>('.espace-agenda-actions a'),
-    );
-    // `span:not([class])` is the label: Material's own spans (ripple, touch
-    // target) all carry a class, and the icon is a `mat-icon` element.
     expect(
-      actions.map((each) => each.querySelector('span:not([class])')!.textContent!.trim()),
-    ).toEqual(["S'abonner dans mon agenda", 'Livret PDF', 'Feuille A4']);
-    expect(actions[0].classList).toContain('mat-mdc-unelevated-button');
-    expect(actions[1].classList).toContain('mat-mdc-outlined-button');
-    expect(actions[2].classList).toContain('mat-mdc-outlined-button');
+      bouton!.compareDocumentPosition(contenu) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
 
+    const actions = await openTakeAway();
+    const libelle = (item: HTMLElement): string =>
+      item.textContent!.replace(item.querySelector('mat-icon')!.textContent!, '').trim();
+    expect(actions.map(libelle)).toEqual(["S'abonner dans mon agenda", 'Livret PDF', 'Feuille A4']);
     // The two layouts are one route and a parameter: the booklet is what the
     // address alone answers, the folded sheet is asked for by name.
     expect(actions[1].getAttribute('href')).toBe('/api/espace-animateur/jeton-1/planning.pdf');
@@ -271,15 +276,15 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
 
     // Subscribing ahead of the publication is the good gesture: the feed fills
     // itself. A PDF or an ICS of an empty planning is a photograph of nothing.
-    expect(racine().querySelector('.espace-agenda-abonnement')).not.toBeNull();
-    expect(racine().querySelectorAll('.espace-agenda-actions a').length).toBe(1);
+    expect(await openTakeAway()).toHaveLength(1);
+    fixture.destroy();
 
     espaceView.set(view({ postes: [poste()] }));
     await rendre();
 
     // The subscription and the two PDF layouts; the ICS file is a fallback of
     // the panel below, not a fourth way out.
-    expect(racine().querySelectorAll('.espace-agenda-actions a').length).toBe(3);
+    expect(await openTakeAway()).toHaveLength(3);
   });
 
   it('keeps the ICS file in the panel, last, and says it will not follow', async () => {

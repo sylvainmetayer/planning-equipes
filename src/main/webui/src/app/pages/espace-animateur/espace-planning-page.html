@@ -11,59 +11,132 @@
   moins sur un téléphone. Le lecteur d'écran, lui, trouve le point d'entrée.
 -->
 <h1 class="visually-hidden" i18n="@@espace.planning.titrePage">Mon planning</h1>
-<mat-button-toggle-group class="espace-onglets" [value]="onglet()" (change)="changerOnglet($event.value)"
-                         aria-label="Onglet de mon planning" i18n-aria-label="@@espace.planning.onglet.label">
-  <mat-button-toggle value="jour">
-    <mat-icon>today</mat-icon>
-    <ng-container i18n="@@espace.planning.onglet.jour">Jour</ng-container>
-  </mat-button-toggle>
-  <mat-button-toggle value="apercu">
-    <mat-icon>view_timeline</mat-icon>
-    <ng-container i18n="@@espace.planning.onglet.apercu">Aperçu</ng-container>
-  </mat-button-toggle>
-  <mat-button-toggle value="coequipiers">
-    <mat-icon>group</mat-icon>
-    <ng-container i18n="@@espace.planning.onglet.coequipiers">Coéquipiers</ng-container>
-  </mat-button-toggle>
-</mat-button-toggle-group>
 
 <!--
-  Une rangée, en tête d'écran et sous les trois onglets : emporter son planning
-  est un geste bref, qu'on ne veut pas payer d'un déroulé de quinze journées.
-  Le titre reste, pour un lecteur d'écran qui liste les régions, mais il ne
-  prend pas de ligne : chaque ligne prise ici est une ligne de planning en
-  moins, et sur un écran de 667 px la journée doit rester visible sans défiler.
-  La hiérarchie est celle de Material : rempli pour l'abonnement, contour pour
-  les deux PDF.
+  « Je fais quoi, là ? » en première ligne, quel que soit l'onglet ou la
+  journée affichée : c'est le repère #535 tel quel (`repereMaintenant`),
+  jamais un second calcul. Sur un téléphone de 390 px, la première carte de
+  poste était sous le pli, derrière la navigation, les onglets, trois boutons
+  de téléchargement et la confirmation.
 -->
-@if (urlAbonnement() || telechargementsOfferts()) {
-  <section class="espace-agenda espace-agenda-rangee" aria-labelledby="espace-agenda-titre">
-    <h2 id="espace-agenda-titre" class="espace-agenda-titre-invisible" i18n="@@espace.planning.agendaTitre">
-      Emporter mon planning
+@if (repere(); as maintenant) {
+  <output class="espace-maintenant-poste espace-entete-maintenant status-paragraph">
+    @if (maintenant.enCours; as poste) {
+      <mat-icon inline>play_circle</mat-icon>
+      <span i18n="@@espace.planning.maintenantEnCours">En ce moment : {{ poste.standNom }}, {{ heure(poste.heureDebut) }}–{{ heure(poste.heureFin) }}</span>
+    } @else if (maintenant.prochain; as poste) {
+      <mat-icon inline>schedule</mat-icon>
+      <span i18n="@@espace.planning.maintenantProchain">Prochain poste : {{ poste.standNom }}, {{ poste.date | date: 'EEEE d MMMM' }} à {{ heure(poste.heureDebut) }}</span>
+    } @else if (maintenant.reposAujourdhui) {
+      <mat-icon inline>self_improvement</mat-icon>
+      <span i18n="@@espace.planning.maintenantRepos">Repos aujourd'hui — aucune affectation.</span>
+    } @else {
+      <mat-icon inline>done_all</mat-icon>
+      <span i18n="@@espace.planning.maintenantFini">Plus aucun poste à venir.</span>
+    }
+  </output>
+}
+
+<!--
+  La confirmation, en bandeau d'une ligne et sur les trois onglets tant
+  qu'elle est due : ce qu'on redemande de confirmer ne doit pas dépendre de
+  l'onglet qu'on lit.
+-->
+@if (confirmationDemandee()) {
+  <div class="espace-confirmation espace-confirmation-bande">
+    <button matButton="filled" type="button" [disabled]="confirmationEnCours()" (click)="confirmer()">
+      <mat-icon>check_circle</mat-icon>
+      <span i18n="@@espace.planning.confirmer">J'ai lu et je serai là</span>
+    </button>
+    <span class="espace-confirmation-aide" i18n="@@espace.planning.confirmerBande">L'organisation saura que vous l'avez lu.</span>
+    @if (erreurConfirmation(); as erreur) {
+      <app-status-message [text]="erreur" tone="error" />
+    }
+  </div>
+}
+
+<!--
+  Ce qui a changé pour moi (#532) : les phrases exactes du dernier mail de
+  publication, telles qu'elles ont été envoyées. Avant les téléchargements —
+  c'est ce qu'on demande de confirmer juste au-dessus —, et replié par défaut :
+  le titre dit combien il y en a, un geste les ouvre.
+-->
+@if (changements().length > 0) {
+  <section class="espace-changements" [class.espace-changements-actes]="changementsActes()"
+           aria-labelledby="espace-changements-titre">
+    <h2 id="espace-changements-titre" class="espace-changements-titre">
+      <button type="button" class="espace-changements-bascule"
+              [attr.aria-expanded]="changementsDeplies()" aria-controls="espace-changements-detail"
+              (click)="basculerChangements()">
+        <mat-icon inline>campaign</mat-icon>
+        <span i18n="@@espace.planning.changementsTitre">Ce qui a changé pour vous ({{ changements().length }})</span>
+        <mat-icon inline>{{ changementsDeplies() ? 'expand_less' : 'expand_more' }}</mat-icon>
+      </button>
     </h2>
-    <div class="espace-agenda-actions">
-      @if (lienWebcal(); as webcal) {
-        <a class="espace-agenda-abonnement" matButton="filled" [href]="webcal">
-          <mat-icon>event_repeat</mat-icon>
-          <span i18n="@@espace.planning.abonnementSouscrire">S'abonner dans mon agenda</span>
-        </a>
-      }
-      @if (telechargementsOfferts()) {
-        <a matButton="outlined" [href]="lienPdf()" download>
-          <mat-icon>picture_as_pdf</mat-icon>
-          <span i18n="@@espace.planning.telechargerPdf">Livret PDF</span>
-        </a>
-        <a matButton="outlined" [href]="lienPdfFeuille()" download>
-          <mat-icon>description</mat-icon>
-          <span i18n="@@espace.planning.telechargerFeuille">Feuille A4</span>
-        </a>
+    <!-- Le conteneur reste dans le DOM une fois replié : c'est lui que désigne
+         l'`aria-controls` du bouton ci-dessus. -->
+    <div id="espace-changements-detail">
+      @if (changementsDeplies()) {
+        @if (espace.view()?.changementsLe; as annonceLe) {
+          <p class="espace-changements-date" i18n="@@espace.planning.changementsLe">Annoncé le {{ annonceLe | date: 'short' }}</p>
+        }
+        <ul class="espace-changements-lignes">
+          @for (ligne of changements(); track $index) {
+            <li>{{ ligne }}</li>
+          }
+        </ul>
       }
     </div>
   </section>
 }
 
-
-
+<!--
+  Les trois onglets, et « Emporter » replié en un bouton-menu sur la même
+  rangée : trois boutons sur deux lignes, c'était deux lignes de planning en
+  moins sur un téléphone. Le détail de l'abonnement reste en pied de page.
+-->
+<div class="espace-onglets-rangee">
+  <mat-button-toggle-group class="espace-onglets" [value]="onglet()" (change)="changerOnglet($event.value)"
+                           aria-label="Onglet de mon planning" i18n-aria-label="@@espace.planning.onglet.label">
+    <mat-button-toggle value="jour">
+      <mat-icon>today</mat-icon>
+      <ng-container i18n="@@espace.planning.onglet.jour">Jour</ng-container>
+    </mat-button-toggle>
+    <mat-button-toggle value="apercu">
+      <mat-icon>view_timeline</mat-icon>
+      <ng-container i18n="@@espace.planning.onglet.apercu">Aperçu</ng-container>
+    </mat-button-toggle>
+    <mat-button-toggle value="coequipiers">
+      <mat-icon>group</mat-icon>
+      <ng-container i18n="@@espace.planning.onglet.coequipiers">Coéquipiers</ng-container>
+    </mat-button-toggle>
+  </mat-button-toggle-group>
+  @if (urlAbonnement() || telechargementsOfferts()) {
+    <button matIconButton type="button" class="espace-emporter" [matMenuTriggerFor]="menuEmporter"
+            aria-label="Emporter mon planning" i18n-aria-label="@@espace.planning.agendaTitre"
+            matTooltip="Emporter mon planning" i18n-matTooltip="@@espace.planning.agendaTitre">
+      <mat-icon>download</mat-icon>
+    </button>
+    <mat-menu #menuEmporter="matMenu">
+      @if (lienWebcal(); as webcal) {
+        <a mat-menu-item [href]="webcal">
+          <mat-icon>event_repeat</mat-icon>
+          <span i18n="@@espace.planning.abonnementSouscrire">S'abonner dans mon agenda</span>
+        </a>
+      }
+      @if (telechargementsOfferts()) {
+        <a mat-menu-item [href]="lienPdf()" download>
+          <mat-icon>picture_as_pdf</mat-icon>
+          <span i18n="@@espace.planning.telechargerPdf">Livret PDF</span>
+        </a>
+        <a mat-menu-item [href]="lienPdfFeuille()" download>
+          <mat-icon>description</mat-icon>
+          <span i18n="@@espace.planning.telechargerFeuille">Feuille A4</span>
+        </a>
+      }
+    </mat-menu>
+  }
+</div>
 
 @switch (onglet()) {
   @case ('jour') {
@@ -90,64 +163,34 @@
     </output>
   }
 
-  <!--
-    Ce qui a changé pour moi (#532) : les phrases exactes du dernier mail de
-    publication, telles qu'elles ont été envoyées. Au-dessus des journées, parce
-    que c'est ce qu'on redemande de confirmer juste en dessous — et qu'on ne
-    peut pas demander de confirmer ce qu'on n'a pas montré.
-    Replié par défaut : une republication qui touche dix postes faisait dix
-    lignes avant la première journée, sur un téléphone. Le titre dit combien il
-    y en a, un geste les ouvre.
-  -->
-  @if (changements().length > 0) {
-    <section class="espace-changements" [class.espace-changements-actes]="changementsActes()"
-             aria-labelledby="espace-changements-titre">
-      <h2 id="espace-changements-titre" class="espace-changements-titre">
-        <button type="button" class="espace-changements-bascule"
-                [attr.aria-expanded]="changementsDeplies()" aria-controls="espace-changements-detail"
-                (click)="basculerChangements()">
-          <mat-icon inline>campaign</mat-icon>
-          <span i18n="@@espace.planning.changementsTitre">Ce qui a changé pour vous ({{ changements().length }})</span>
-          <mat-icon inline>{{ changementsDeplies() ? 'expand_less' : 'expand_more' }}</mat-icon>
-        </button>
-      </h2>
-      @if (espace.view()?.changementsLe; as annonceLe) {
-        <p class="espace-changements-date" i18n="@@espace.planning.changementsLe">Annoncé le {{ annonceLe | date: 'short' }}</p>
-      }
-      <!-- Le conteneur reste dans le DOM une fois replié : c'est lui que désigne
-           l'`aria-controls` du bouton ci-dessus. -->
-      <div id="espace-changements-detail">
-        @if (changementsDeplies()) {
-          <ul class="espace-changements-lignes">
-            @for (ligne of changements(); track $index) {
-              <li>{{ ligne }}</li>
-            }
-          </ul>
-        }
-      </div>
-    </section>
-  }
-
-    @if (espace.view()?.publieLe; as publie) {
-      <p class="espace-groupe">
-        <mat-icon inline>event_note</mat-icon>
-        <span i18n="@@espace.planning.publieLe">Planning communiqué le {{ publie | date: 'short' }}</span>
-      </p>
-    }
-    @if (confirmationDemandee()) {
-      <div class="espace-confirmation">
-        <button matButton="filled" type="button" [disabled]="confirmationEnCours()" (click)="confirmer()">
-          <mat-icon>check_circle</mat-icon>
-          <span i18n="@@espace.planning.confirmer">J'ai lu et je serai là</span>
-        </button>
-        <p class="espace-confirmation-aide" i18n="@@espace.planning.confirmerAide">
-          Un clic suffit : l'organisation saura que vous avez pris connaissance de ce planning.
+    <!--
+      Ce que l'organisation m'a envoyé : « communiqué le » seulement quand le
+      courriel est vraiment parti. Un envoi en échec ou une fiche sans adresse
+      le disent, pour que personne ne croie avoir reçu ce qui n'est pas parti.
+    -->
+    @switch (etatEnvoi()) {
+      @case ('ECHEC') {
+        <p class="espace-groupe espace-envoi-alerte">
+          <mat-icon inline>error_outline</mat-icon>
+          <span i18n="@@espace.planning.envoiEchec">Le courriel de votre planning n'a pas pu partir : la version à jour est ici.</span>
         </p>
-        @if (erreurConfirmation(); as erreur) {
-          <app-status-message [text]="erreur" tone="error" />
+      }
+      @case ('SANS_EMAIL') {
+        <p class="espace-groupe espace-envoi-alerte">
+          <mat-icon inline>mail_lock</mat-icon>
+          <span i18n="@@espace.planning.envoiSansEmail">Aucune adresse e-mail connue pour vous : votre planning se consulte ici.</span>
+        </p>
+      }
+      @default {
+        @if (espace.view()?.publieLe; as publie) {
+          <p class="espace-groupe">
+            <mat-icon inline>event_note</mat-icon>
+            <span i18n="@@espace.planning.publieLe">Planning communiqué le {{ publie | date: 'short' }}</span>
+          </p>
         }
-      </div>
-    } @else if (espace.view()?.confirmeLe; as confirme) {
+      }
+    }
+    @if (!confirmationDemandee() && espace.view()?.confirmeLe; as confirme) {
       <p class="espace-confirmation-faite">
         <mat-icon inline>check_circle</mat-icon>
         <span i18n="@@espace.planning.confirmeLe">Présence confirmée le {{ confirme | date: 'short' }}</span>
@@ -199,29 +242,13 @@
           Le bandeau d'état, quand la journée affichée est aujourd'hui : c'est le
           repère #535 tel quel (`repereMaintenant`), jamais un second calcul.
         -->
+        <!-- Les pauses qui restent dues aujourd'hui, sous le repère de l'en-tête. -->
         @if (jour.date === repere()?.aujourdhui) {
-          @if (repere(); as maintenant) {
-            <output class="espace-maintenant-poste status-paragraph">
-              @if (maintenant.enCours; as poste) {
-                <mat-icon inline>play_circle</mat-icon>
-                <span i18n="@@espace.planning.maintenantEnCours">En ce moment : {{ poste.standNom }}, {{ heure(poste.heureDebut) }}–{{ heure(poste.heureFin) }}</span>
-              } @else if (maintenant.prochain; as poste) {
-                <mat-icon inline>schedule</mat-icon>
-                <span i18n="@@espace.planning.maintenantProchain">Prochain poste : {{ poste.standNom }}, {{ poste.date | date: 'EEEE d MMMM' }} à {{ heure(poste.heureDebut) }}</span>
-              } @else if (maintenant.reposAujourdhui) {
-                <mat-icon inline>self_improvement</mat-icon>
-                <span i18n="@@espace.planning.maintenantRepos">Repos aujourd'hui — aucune affectation.</span>
-              } @else {
-                <mat-icon inline>done_all</mat-icon>
-                <span i18n="@@espace.planning.maintenantFini">Plus aucun poste à venir.</span>
-              }
-            </output>
-            @for (pause of maintenant.remainingPauses; track pause.standId + '-' + pause.heureLimite) {
-              <p class="espace-maintenant-pause">
-                <mat-icon inline>free_breakfast</mat-icon>
-                <span i18n="@@espace.planning.maintenantPause">Pause à prendre au plus tard à {{ pause.heureLimite.slice(0, 5) }}, sur {{ pause.standNom }}</span>
-              </p>
-            }
+          @for (pause of repere()?.remainingPauses ?? []; track pause.standId + '-' + pause.heureLimite) {
+            <p class="espace-maintenant-pause">
+              <mat-icon inline>free_breakfast</mat-icon>
+              <span i18n="@@espace.planning.maintenantPause">Pause à prendre au plus tard à {{ pause.heureLimite.slice(0, 5) }}, sur {{ pause.standNom }}</span>
+            </p>
           }
         }
 
@@ -348,6 +375,7 @@
               }
               @if (!pause.relaisDisponible) {
                 <span class="espace-pause-seul" i18n="@@espace.planning.pauseSansRelais">— personne d'autre sur le stand : demandez le relais à l'organisation</span>
+                <app-espace-contact [inline]="true" />
               }
             </p>
           }
@@ -369,6 +397,7 @@
           }
           @if (!pause.relaisDisponible) {
             <span class="espace-pause-seul" i18n="@@espace.planning.pauseSansRelais">— personne d'autre sur le stand : demandez le relais à l'organisation</span>
+            <app-espace-contact [inline]="true" />
           }
         </p>
       }

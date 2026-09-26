@@ -2886,8 +2886,9 @@ export interface EspaceAnimateurView {
   covoiturage?: CarpoolDayView[];
   /**
    * Who to call or write to about this edition, as Paramètres › Édition sets
-   * it; both halves `null` when the organisation published none. Shown by
-   * the espace from the next change on; optional for an older payload.
+   * it; both halves `null` when the organisation published none. Shown in
+   * the espace's footer and after its « rapprochez-vous de l'organisation »
+   * (`espace-contact.ts`); optional for an older payload.
    */
   contact?: ContactOrganisation;
   /**
@@ -2895,6 +2896,25 @@ export interface EspaceAnimateurView {
    * #533), whatever their state — what I said and where it stands, by day.
    */
   signalements: SignalementView[];
+  /**
+   * The availability collection — and the covoiturage requests that live with
+   * it — is open today: the espace offers those two pages only then.
+   */
+  collecteOuverte: boolean;
+  /** The collection's last day, `null` when it is closed or has no end. */
+  collecteFermeLe: string | null;
+  /**
+   * The last time the organisation mailed me my planning, and how it went —
+   * « communiqué le » is only claimed when the mail left. `null` when nothing
+   * was ever sent.
+   */
+  dernierEnvoi: EnvoiEspaceView | null;
+}
+
+/** My latest planning delivery, as the Diffuser screen recorded it. */
+export interface EnvoiEspaceView {
+  statut: StatutEnvoi;
+  le: string;
 }
 
 /** What an absence reported from the espace is about: the whole day, or one seat. */
