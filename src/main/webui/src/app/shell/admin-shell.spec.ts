@@ -38,6 +38,7 @@ import { GelInvitation } from '../core/gel-invitation';
 
 const NAV_STORAGE_KEY = 'planning-equipes.nav.collapsedGroups';
 const THEME_STORAGE_KEY = 'planning-equipes.theme';
+const NEWS_STORAGE_KEY = 'planning-equipes.nouveautes.vues';
 
 interface NavGroupShape {
   id: string;
@@ -179,6 +180,7 @@ describe('AdminShell', () => {
     );
     localStorage.removeItem(NAV_STORAGE_KEY);
     localStorage.removeItem(THEME_STORAGE_KEY);
+    localStorage.removeItem(NEWS_STORAGE_KEY);
     document.documentElement.style.colorScheme = '';
     for (const stub of [
       breakpoints.observe,
@@ -258,6 +260,7 @@ describe('AdminShell', () => {
   afterEach(() => {
     localStorage.removeItem(NAV_STORAGE_KEY);
     localStorage.removeItem(THEME_STORAGE_KEY);
+    localStorage.removeItem(NEWS_STORAGE_KEY);
     document.documentElement.style.colorScheme = '';
   });
 
@@ -551,7 +554,7 @@ describe('AdminShell', () => {
       expect(fixture.nativeElement.textContent).not.toContain('Menu avancé');
     });
 
-    it('lists the legal pages at the foot of the menu, not in a group', () => {
+    it('lists the legal pages and the news at the foot of the menu, not in a group', () => {
       const fixture = createFixture();
       const pied = (fixture.nativeElement as HTMLElement).querySelector('.nav-footer');
       const liens = Array.from(pied?.querySelectorAll('a') ?? []).map((a) =>
@@ -559,6 +562,7 @@ describe('AdminShell', () => {
       );
 
       expect(liens).toEqual([
+        '/nouveautes',
         '/mentions-legales',
         '/politique-confidentialite',
         '/conditions-utilisation',
@@ -579,6 +583,62 @@ describe('AdminShell', () => {
         a.getAttribute('href'),
       );
       expect(courants).toEqual(['/declaration-accessibilite']);
+    });
+  });
+
+  describe('the news marker next to Aide (#706)', () => {
+    const marker = (fixture: ComponentFixture<AdminShell>): Element | null =>
+      (fixture.nativeElement as HTMLElement).querySelector('.nav-news-marker');
+    const dot = (fixture: ComponentFixture<AdminShell>): Element | null =>
+      (fixture.nativeElement as HTMLElement).querySelector('.nav-footer .nav-news-dot');
+
+    it('stays off on a first visit, and records the running version', () => {
+      const fixture = createFixture();
+
+      expect(marker(fixture)).toBeNull();
+      expect(dot(fixture)).toBeNull();
+      expect(localStorage.getItem(NEWS_STORAGE_KEY)).not.toBeNull();
+    });
+
+    // Aide leads to the help, and only the news page clears the marker: the
+    // marker is a link of its own, to the page that turns it off.
+    it('lights up after an update as a link to the news, next to the Aide entry', () => {
+      localStorage.setItem(NEWS_STORAGE_KEY, 'une-version-precedente');
+
+      const fixture = createFixture();
+
+      const lien = marker(fixture);
+      expect(lien?.tagName).toBe('A');
+      expect(lien?.getAttribute('href')).toBe('/nouveautes');
+      expect(lien?.getAttribute('aria-label')).toBe('Nouveautés non lues');
+      expect(
+        lien?.closest('.nav-entry')?.querySelector('a[mat-list-item]')?.getAttribute('href'),
+      ).toBe('/aide');
+    });
+
+    // The Administrer group may be folded, hiding the marker: the foot of the
+    // menu, always in sight, says it too.
+    it('marks the news link at the foot of the menu as well', () => {
+      localStorage.setItem(NEWS_STORAGE_KEY, 'une-version-precedente');
+
+      const fixture = createFixture();
+
+      expect(dot(fixture)?.closest('a')?.getAttribute('href')).toBe('/nouveautes');
+      expect(dot(fixture)?.closest('a')?.textContent).toContain('(non lues)');
+    });
+
+    it('marks the foot news link as the page on screen once the news are open', async () => {
+      const router = TestBed.inject(Router);
+      router.resetConfig([{ path: '**', children: [] }]);
+      const fixture = createFixture();
+
+      await router.navigateByUrl('/nouveautes');
+      fixture.detectChanges();
+
+      const pied = (fixture.nativeElement as HTMLElement).querySelector('.nav-footer');
+      expect(pied?.querySelector('a[aria-current="page"]')?.getAttribute('href')).toBe(
+        '/nouveautes',
+      );
     });
   });
 

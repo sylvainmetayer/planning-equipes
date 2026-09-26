@@ -69,22 +69,41 @@
           </button>
           <div [id]="'nav-group-' + group.id" [hidden]="isCollapsed(group)">
             @for (link of group.links; track link.path) {
-              <a mat-list-item [routerLink]="link.path" routerLinkActive="active-link"
-                 #rla="routerLinkActive"
-                 [attr.aria-current]="rla.isActive ? 'page' : null"
-                 [routerLinkActiveOptions]="{ exact: link.path === '/' }" (click)="onNavigate()">
-                <mat-icon matListItemIcon>{{ link.icon }}</mat-icon>
-                <span matListItemTitle>{{ link.label }}</span>
-              </a>
+              <div class="nav-entry">
+                <a mat-list-item [routerLink]="link.path" routerLinkActive="active-link"
+                   #rla="routerLinkActive"
+                   [attr.aria-current]="rla.isActive ? 'page' : null"
+                   [routerLinkActiveOptions]="{ exact: link.path === '/' }" (click)="onNavigate()">
+                  <mat-icon matListItemIcon>{{ link.icon }}</mat-icon>
+                  <span matListItemTitle>{{ link.label }}</span>
+                </a>
+                @if (link.path === '/aide' && news.unseen()) {
+                  <!-- #706: the news of an update are signalled next to Aide,
+                       by a link of their own — the one page that clears it. -->
+                  <a class="nav-news-marker" routerLink="/nouveautes" (click)="onNavigate()"
+                     aria-label="Nouveautés non lues" i18n-aria-label="@@shell.newsMarker.label"
+                     i18n="@@shell.newsMarker">nouveautés</a>
+                }
+              </div>
             }
           </div>
         </mat-nav-list>
         <mat-divider />
       }
-      <!-- The foot of the menu: the four legal pages, in text — reachable in
-           one click from every admin page, the accessibility statement
-           included (RGAA). -->
+      <!-- The foot of the menu (#706): the news and the four legal pages, in
+           text — reachable in one click from every admin page, the
+           accessibility statement included (RGAA). -->
       <div class="nav-footer">
+        <a routerLink="/nouveautes" routerLinkActive="active-link" #rlaNews="routerLinkActive"
+           [attr.aria-current]="rlaNews.isActive ? 'page' : null" (click)="onNavigate()">
+          <span i18n="@@nav.link.nouveautes">Nouveautés</span>
+          @if (news.unseen()) {
+            <!-- Seen when the Administrer group is folded, where the marker
+                 next to Aide is not. -->
+            <span class="nav-news-dot" aria-hidden="true"></span>
+            <span class="visually-hidden" i18n="@@shell.newsUnseen">(non lues)</span>
+          }
+        </a>
         @for (link of legalLinks; track link.path) {
           <a [routerLink]="link.path" routerLinkActive="active-link" #rlaPied="routerLinkActive"
              [attr.aria-current]="rlaPied.isActive ? 'page' : null" (click)="onNavigate()">{{ link.label }}</a>
