@@ -312,6 +312,43 @@ export const parametresOngletsDeplaces: CanActivateFn = (route) => {
       });
 };
 
+/**
+ * `/diagnostic?onglet=former…`: « À former » is a section of the Besoin tab
+ * now, at its foot — the address opens that tab scrolled to it
+ * (`section=former`), its other params kept.
+ */
+export const trainingTabToNeed: CanActivateFn = (route) => {
+  if (route.queryParamMap.get('onglet') !== 'former') {
+    return true;
+  }
+  const params = new URLSearchParams();
+  params.set('onglet', 'besoin');
+  params.set('section', 'former');
+  for (const [key, value] of Object.entries(route.queryParams)) {
+    if (key !== 'onglet' && key !== 'section' && value !== undefined && value !== null) {
+      params.set(key, paramText(value as string | readonly string[]));
+    }
+  }
+  return inject(Router).parseUrl(`/diagnostic?${params.toString()}`);
+};
+
+/**
+ * The Marge disponible screen became two tabs of the Diagnostic: its « avant »
+ * reading is a column of Besoin, its « après » and « tension » readings merged
+ * into Tension. `mode` names the tab, and goes; every other param travels.
+ */
+export function margeToDiagnostic(queryParams: Params): string {
+  const mode = queryParams['mode'];
+  const params = new URLSearchParams();
+  params.set('onglet', mode === 'apres' || mode === 'tension' ? 'tension' : 'besoin');
+  for (const [key, value] of Object.entries(queryParams)) {
+    if (key !== 'mode' && key !== 'onglet' && value !== undefined && value !== null) {
+      params.set(key, paramText(value as string | readonly string[]));
+    }
+  }
+  return `/diagnostic?${params.toString()}`;
+}
+
 const adminRoutes: Routes = [
   {
     // The home: where the edition stands in its cycle, before any screen
@@ -343,7 +380,7 @@ const adminRoutes: Routes = [
   {
     path: 'diagnostic',
     title: () => $localize`:@@route.diagnostic:Diagnostic`,
-    canActivate: [benchTabToJournee],
+    canActivate: [benchTabToJournee, trainingTabToNeed],
     loadComponent: () => import('./pages/diagnostic/diagnostic-page').then((m) => m.DiagnosticPage),
   },
   // The screens the Diagnostic page gathers, kept for the bookmarks; the
@@ -351,6 +388,7 @@ const adminRoutes: Routes = [
   { path: 'problemes', redirectTo: redirectToDiagnostic('problemes') },
   { path: 'staffing', redirectTo: redirectToDiagnostic('besoin') },
   { path: 'fragilite', redirectTo: redirectToDiagnostic('fragilite') },
+  { path: 'marge', redirectTo: ({ queryParams }) => margeToDiagnostic(queryParams) },
   { path: 'banc-de-touche', redirectTo: ({ queryParams }) => benchToJournee(queryParams) },
   {
     path: 'echanges',
@@ -567,11 +605,6 @@ const adminRoutes: Routes = [
     // addresses land where the same question is now answered.
     canActivate: [retiredOpeningsViews],
     loadComponent: () => import('./pages/ouvertures/ouvertures-page').then((m) => m.OuverturesPage),
-  },
-  {
-    path: 'marge',
-    title: () => $localize`:@@route.marge:Marge disponible`,
-    loadComponent: () => import('./pages/marge/marge-page').then((m) => m.MargePage),
   },
   // The timeline became the « Planning » section of the fiche animateur.
   { path: 'timeline', redirectTo: ({ queryParams }) => timelineToFiche(queryParams) },

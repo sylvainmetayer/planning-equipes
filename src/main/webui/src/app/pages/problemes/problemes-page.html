@@ -9,6 +9,8 @@
     </mat-card-header>
   }
   <mat-card-content>
+    <!-- The reading of the score comes first, in sentences: the figures are one hover away. -->
+    <app-lecture-score [sentences]="store.constraints()?.lecture" [running]="jobs.activeJob() !== null" />
     <div class="calendar-toolbar">
       <button matButton="tonal" type="button" [disabled]="store.loading()" (click)="refresh()">
         <mat-icon>refresh</mat-icon>
@@ -16,12 +18,20 @@
       </button>
       <span class="calendar-meta">{{ resumeFaisabilite() }}</span>
     </div>
-    <p class="calendar-meta">{{ resumeAnalyse() }}</p>
-    <app-lecture-score [sentences]="store.constraints()?.lecture" [running]="jobs.activeJob() !== null" />
+    <p class="calendar-meta">
+      {{ resumeAnalyse() }}
+      @if (scoreTooltip(); as score) {
+        <!-- aria-hidden="false" on purpose: MatIcon hides itself, which would drop the tooltip's description. -->
+        <mat-icon inline aria-hidden="false" class="probleme-score" tabindex="0"
+                  [matTooltip]="score" [attr.aria-label]="score">info_outline</mat-icon>
+      }
+    </p>
     @if (store.loading()) {
       <mat-progress-bar mode="indeterminate" />
     }
     <app-status-message [text]="store.error()" tone="error" />
+    <app-status-message [text]="outcome()" />
+    <app-status-message [text]="outcomeError()" tone="error" />
   </mat-card-content>
 </mat-card>
 
@@ -59,24 +69,63 @@
         <h2 class="probleme-titre" [id]="'probleme-titre-' + probleme.id">{{ probleme.titre }}</h2>
       </div>
       <p class="probleme-message"><app-legal-text [text]="probleme.message" /></p>
-      @if (probleme.actions.length > 0) {
-        <!-- Named by its heading and the problem's: N regions called « Que faire ? » alone would be indistinguishable. -->
-        <section class="probleme-que-faire" [attr.aria-labelledby]="'que-faire-' + probleme.id + ' probleme-titre-' + probleme.id">
-          <h3 class="probleme-que-faire-titre" [id]="'que-faire-' + probleme.id" i18n="@@problemes.queFaire.title">Que faire ?</h3>
-          <ol class="probleme-actions">
-            @for (action of probleme.actions; track action.code) {
-              <li class="probleme-action">
-                <a matButton="tonal" class="probleme-action-bouton" [attr.lang]="action.lang" [routerLink]="action.route" [queryParams]="action.queryParams">{{ action.libelle }}</a>
-                <span class="probleme-action-explication" [attr.lang]="action.lang">{{ action.explication }}</span>
-              </li>
+      <div class="probleme-corps">
+        @if (probleme.ou.length > 0 || probleme.qui.length > 0) {
+          <dl class="probleme-ou-qui">
+            @if (probleme.ou.length > 0) {
+              <div class="probleme-ou-qui-ligne">
+                <dt i18n="@@problemes.ou">Où</dt>
+                <dd>
+                  @for (lieu of probleme.ou; track $index; let dernier = $last) {
+                    <a class="probleme-lieu" [routerLink]="lieu.route" [queryParams]="lieu.queryParams ?? {}">{{ lieu.libelle }}</a>@if (!dernier) {<span aria-hidden="true"> · </span>}
+                  }
+                </dd>
+              </div>
             }
-          </ol>
-        </section>
-      }
-      @if (probleme.liens.length > 0) {
+            @if (probleme.qui.length > 0) {
+              <div class="probleme-ou-qui-ligne">
+                <dt i18n="@@problemes.qui">Qui</dt>
+                <dd>
+                  @for (personne of probleme.qui; track personne.route; let dernier = $last) {
+                    <a class="probleme-personne" [routerLink]="personne.route">{{ personne.libelle }}</a>@if (!dernier) {<span aria-hidden="true"> · </span>}
+                  }
+                  @if (probleme.quiRestants > 0) {
+                    <span class="probleme-autres" i18n="@@problemes.qui.autres"> et {{ probleme.quiRestants }} autre(s)</span>
+                  }
+                </dd>
+              </div>
+            }
+          </dl>
+        }
+        @if (probleme.actions.length > 0) {
+          <!-- Named by its heading and the problem's: N regions called « Que faire ? » alone would be indistinguishable. -->
+          <section class="probleme-que-faire" [attr.aria-labelledby]="'que-faire-' + probleme.id + ' probleme-titre-' + probleme.id">
+            <h3 class="probleme-que-faire-titre" [id]="'que-faire-' + probleme.id" i18n="@@problemes.queFaire.title">Que faire ?</h3>
+            <ol class="probleme-actions">
+              @for (action of probleme.actions; track action.code) {
+                <li class="probleme-action">
+                  @if (action.seat) {
+                    <button matButton="tonal" type="button" class="probleme-action-bouton"
+                            [attr.lang]="action.lang" [disabled]="busy() || jobs.editingLocked()"
+                            (click)="whoCanHold(action)">{{ action.libelle }}</button>
+                  } @else {
+                    <a matButton="tonal" class="probleme-action-bouton" [attr.lang]="action.lang"
+                       [routerLink]="action.route" [queryParams]="action.queryParams">{{ action.libelle }}</a>
+                  }
+                  <span class="probleme-action-explication" [attr.lang]="action.lang">{{ action.explication }}</span>
+                </li>
+              }
+            </ol>
+          </section>
+        }
+      </div>
+      @if (probleme.liens.length > 0 || probleme.regle) {
         <p class="probleme-liens">
           @for (lien of probleme.liens; track lien.libelle) {
             <a matButton [routerLink]="lien.route" [queryParams]="lien.queryParams ?? {}">{{ lien.libelle }}</a>
+          }
+          @if (probleme.regle; as regle) {
+            <button matButton type="button" (click)="showPivot(regle)" i18n="@@problemes.lien.pivot">Où se concentrent ces écarts</button>
           }
         </p>
       }
@@ -118,3 +167,5 @@
     serveur ne renvoie que les plus graves.
   </p>
 }
+
+<app-ecarts-pivot-card id="ecarts-pivot" [view]="store.constraints()" [(regle)]="regle" />

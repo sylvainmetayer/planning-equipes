@@ -4,16 +4,19 @@
 // report on screen, and that a failure shows a sentence and not a blank card.
 
 import { Location } from '@angular/common';
-import { provideZonelessChangeDetection, Signal, signal } from '@angular/core';
+import { Provider, provideZonelessChangeDetection, Signal, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import {
   AnimateurFragilite,
   CompetenceRare,
   RapportFragilite,
+  Stand,
   TypologieItem,
 } from '../../core/models';
 import { ReferenceDataStore } from '../../core/reference-data.store';
+import { SolverJobService } from '../../core/solver-job.service';
+import { VerrouillageStore } from '../../core/verrouillage.store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { FragilitePage } from './fragilite-page';
@@ -34,18 +37,33 @@ function rapport(partial: Partial<RapportFragilite> = {}): RapportFragilite {
   };
 }
 
-/** The referential the page names typologies from; reloading it is a no-op here. */
-function referentiel(typologies: Partial<TypologieItem>[] = []): {
-  provide: typeof ReferenceDataStore;
-  useValue: unknown;
-} {
-  return {
-    provide: ReferenceDataStore,
-    useValue: {
-      typologies: signal(typologies as TypologieItem[]),
-      reload: vi.fn(async () => undefined),
+/** What « Verrouiller » writes through; its creations are read back by the gestures' tests. */
+const verrous = {
+  create: vi.fn(async () => []),
+  reload: vi.fn(async () => undefined),
+  estAnimateurVerrouille: vi.fn((): boolean => false),
+};
+
+/**
+ * The referential the page names typologies and stands from — reloading it is
+ * a no-op here —, and the locks and the solver its « Verrouiller » reads.
+ */
+function referentiel(
+  typologies: Partial<TypologieItem>[] = [],
+  stands: Partial<Stand>[] = [],
+): Provider[] {
+  return [
+    {
+      provide: ReferenceDataStore,
+      useValue: {
+        typologies: signal(typologies as TypologieItem[]),
+        stands: signal(stands as Stand[]),
+        reload: vi.fn(async () => undefined),
+      },
     },
-  };
+    { provide: VerrouillageStore, useValue: verrous },
+    { provide: SolverJobService, useValue: { editingLocked: signal(false) } },
+  ];
 }
 
 function deferred<T>(): {
@@ -261,8 +279,8 @@ async function hrefs(view: string): Promise<string[]> {
 }
 
 /**
- * The links out of a fragile row (issue #489): an irreplaceable person leads
- * to their fiche, planning open, a scarce competence to the animateurs holding it.
+ * The links out of a fragile row (issue #489): a person leads to their fiche
+ * and nowhere else, a scarce competence to the animateurs holding it.
  */
 describe('FragilitePage contextual links', () => {
   const analysesApi = { fragility: vi.fn() };
@@ -279,12 +297,20 @@ describe('FragilitePage contextual links', () => {
     });
   });
 
-  it('leads from an irreplaceable person to their fiche, planning open', async () => {
+  it('leads from a person to their fiche, and never to the timeline screen', async () => {
     analysesApi.fragility.mockResolvedValue(
       rapport({ animateurs: [animateur()], animateursIrremplacables: 1 }),
     );
+    await TestBed.inject(Router).navigateByUrl('/');
+    const fixture = TestBed.createComponent(FragilitePage);
+    await fixture.whenStable();
+    fixture.detectChanges();
 
-    expect(await hrefs('')).toEqual(['/animateurs/a1?section=timeline']);
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('a.fragilite-nom')!.getAttribute('href')).toBe('/animateurs/a1');
+    expect(root.querySelector('a[href^="/timeline"]')).toBeNull();
+    // No « on trial » banner any more: the screen is here to stay.
+    expect(root.querySelector('app-work-in-progress-banner')).toBeNull();
   });
 
   it('leads from a scarce competence to the animateurs holding its typologies', async () => {
@@ -334,5 +360,77 @@ describe('FragilitePage typologie names', () => {
     const cell = (fixture.nativeElement as HTMLElement).querySelector('tbody td:nth-of-type(2)');
     expect(cell?.textContent).toContain('Escape game, T9');
     expect(cell?.textContent).not.toContain('T1');
+  });
+});
+
+/**
+ * The three gestures of a fragile person: keep their schedule, find who could
+ * stand in on the seat they would leave hardest to fill, train somebody on
+ * the game categories of their stands.
+ */
+describe('FragilitePage gestures', () => {
+  const analysesApi = { fragility: vi.fn() };
+  const poste = {
+    standId: 'S1',
+    standNom: 'Escape',
+    creneauId: 12,
+    date: '2026-07-08',
+    jour: 1,
+    heureDebut: '10:00:00',
+    heureFin: '12:00:00',
+    effectifMin: 1,
+    couverturePause: false,
+    siegesRequis: 1,
+    siegesPourvus: 1,
+    siegesLiberes: 1,
+    remplacants: 0,
+    irremplacable: true,
+  };
+
+  beforeEach(() => {
+    TestBed.resetTestingModule();
+    verrous.create.mockClear();
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        provideRouter([]),
+        { provide: AnalysesApi, useValue: analysesApi },
+        referentiel([], [{ id: 'S1', typologiesProposees: ['QUIZ', 'ESCAPE'] }]),
+      ],
+    });
+    analysesApi.fragility.mockResolvedValue(
+      rapport({ animateurs: [animateur({ postes: [poste] })], animateursIrremplacables: 1 }),
+    );
+  });
+
+  async function render(): Promise<HTMLElement> {
+    await TestBed.inject(Router).navigateByUrl('/');
+    const fixture = TestBed.createComponent(FragilitePage);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  it('opens the Siège panel on the seat nobody could take over, and the competences to train', async () => {
+    const root = await render();
+    const hrefs = Array.from(root.querySelectorAll<HTMLAnchorElement>('.fragilite-gestes a')).map(
+      (link) => link.getAttribute('href'),
+    );
+
+    expect(hrefs).toEqual([
+      '/journee?creneau=12&stand=S1&animateur=a1',
+      '/competences?typologies=ESCAPE,QUIZ',
+    ]);
+  });
+
+  it("locks the person's whole schedule", async () => {
+    const root = await render();
+    const button = root.querySelector<HTMLButtonElement>('.fragilite-gestes button')!;
+
+    expect(button.getAttribute('aria-label')).toBe('Verrouiller le planning de Alice Martin');
+    button.click();
+    await vi.waitFor(() =>
+      expect(verrous.create).toHaveBeenCalledWith({ type: 'ANIMATEUR', animateurId: 'a1' }),
+    );
   });
 });

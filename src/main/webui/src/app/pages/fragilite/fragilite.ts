@@ -13,6 +13,7 @@ import {
   SeveriteFragilite,
 } from '../../core/models';
 import { LabelIndex, labelsOf } from '../../core/reference-labels';
+import { compareCodeUnits } from '../../core/string-order';
 import { correspondAuFiltre } from '../../core/text-filter';
 
 /** Which of the two questions the screen is showing. */
@@ -127,4 +128,47 @@ export function libelleJour(date: string): string {
 
 export function heure(valeur: string): string {
   return valeur.slice(0, 5);
+}
+
+/** Where a person's fragility is acted upon: a screen and its query params, ready for a `routerLink`. */
+export interface LienFragilite {
+  route: string;
+  queryParams: Record<string, string>;
+}
+
+/**
+ * « Qui peut remplacer » : the Siège panel of the Journée, on the seat whose
+ * loss would hurt most — the first nobody could take over, else the first
+ * one listed — held by this person. `null` when no seat is detailed.
+ */
+export function replacementLink(ligne: AnimateurFragilite): LienFragilite | null {
+  const poste = ligne.postes.find((candidat) => candidat.irremplacable) ?? ligne.postes[0];
+  return poste
+    ? {
+        route: '/journee',
+        queryParams: {
+          creneau: String(poste.creneauId),
+          stand: poste.standId,
+          animateur: ligne.animateurId,
+        },
+      }
+    : null;
+}
+
+/**
+ * « Former » : the Compétences grid on the game categories of the stands this
+ * person holds a fragile seat on — whoever learns one of them is a
+ * replacement tomorrow. `standTypologies` says which a stand offers.
+ */
+export function trainingLink(
+  ligne: AnimateurFragilite,
+  standTypologies: ReadonlyMap<string, readonly string[]>,
+): LienFragilite {
+  const typologies = [
+    ...new Set(ligne.postes.flatMap((poste) => standTypologies.get(poste.standId) ?? [])),
+  ].sort(compareCodeUnits);
+  return {
+    route: '/competences',
+    queryParams: typologies.length > 0 ? { typologies: typologies.join(',') } : {},
+  };
 }

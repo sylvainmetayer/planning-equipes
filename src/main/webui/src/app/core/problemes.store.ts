@@ -24,7 +24,7 @@ import {
   WalkSequenceReport,
   RapportPauses,
 } from './models';
-import { compterProblemes, construireProblemes } from './problemes';
+import { compterProblemes, construireProblemes, TimeslotIndex } from './problemes';
 import { ReferenceDataStore } from './reference-data.store';
 import { animateurNames, standNames } from './reference-labels';
 import { errorMessage } from './error-message';
@@ -83,6 +83,10 @@ export class ProblemesStore {
   private readonly nomsStands = computed(() => standNames(this.referentiel.stands()));
   /** The readings name their animateurs by id; the organiser reads names. */
   private readonly nomsAnimateurs = computed(() => animateurNames(this.referentiel.animateurs()));
+  /** The hours of each timeslot, for « Où » to say when as well as where. */
+  private readonly creneaux = computed<TimeslotIndex>(
+    () => new Map(this.referentiel.creneaux().map((creneau) => [creneau.id, creneau])),
+  );
 
   readonly problemes = computed(() =>
     construireProblemes(
@@ -94,6 +98,7 @@ export class ProblemesStore {
       this.nomsAnimateurs(),
       this.walks(),
       this.groupedArrivals(),
+      { pivot: this.constraints()?.pivotEcarts ?? [], creneaux: this.creneaux() },
     ),
   );
   readonly comptage = computed(() => compterProblemes(this.problemes()));

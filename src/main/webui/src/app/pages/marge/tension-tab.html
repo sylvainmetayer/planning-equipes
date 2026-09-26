@@ -1,0 +1,151 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@tension.title">Tension, tranche par tranche</h2>
+    <mat-card-subtitle i18n="@@tension.subtitle">
+      Sur le planning enregistré : les personnes réellement libres moins les sièges restés vides, et ce que la fragilité
+      du plan y ajoute. Une case ouvre le panneau du siège de sa tranche au Planning.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="heatmap-toolbar">
+      <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">
+        <mat-icon>refresh</mat-icon>
+        <ng-container i18n="@@common.refresh">Actualiser</ng-container>
+      </button>
+    </div>
+
+    <div class="heatmap-legend">
+      <span class="heatmap-legend-item"><span class="heatmap-swatch marge-cell-deficitFort"></span><ng-container i18n="@@marge.legend.deficitFort">Déficit marqué</ng-container></span>
+      <span class="heatmap-legend-item"><span class="heatmap-swatch marge-cell-deficit"></span><ng-container i18n="@@marge.legend.deficit">Déficit</ng-container></span>
+      <span class="heatmap-legend-item"><span class="heatmap-swatch marge-cell-neutre"></span><ng-container i18n="@@marge.legend.neutre">Juste à l'équilibre</ng-container></span>
+      <span class="heatmap-legend-item"><span class="heatmap-swatch marge-cell-surplus"></span><ng-container i18n="@@marge.legend.surplus">Marge</ng-container></span>
+      <span class="heatmap-legend-item"><span class="heatmap-swatch marge-cell-surplusFort"></span><ng-container i18n="@@marge.legend.surplusFort">Marge confortable</ng-container></span>
+    </div>
+    <div class="heatmap-legend">
+      <span class="heatmap-legend-item"><span class="heatmap-swatch tension-marque-critique"></span><ng-container i18n="@@tension.gravite.critique">Critique</ng-container></span>
+      <span class="heatmap-legend-item"><span class="heatmap-swatch tension-marque-elevee"></span><ng-container i18n="@@tension.gravite.elevee">Élevée</ng-container></span>
+      <span class="heatmap-legend-item"><span class="heatmap-swatch tension-marque-surveillee"></span><ng-container i18n="@@tension.gravite.surveillee">Surveillée</ng-container></span>
+      <span class="heatmap-legend-item"><span class="heatmap-swatch tension-cell-passee"></span><ng-container i18n="@@tension.gravite.passee">Tranche passée</ng-container></span>
+    </div>
+    <p class="empty-hint" i18n="@@tension.legende">
+      La couleur dit le signe de la marge, le cadre dit la gravité : une tranche peut avoir du monde à revendre et
+      reposer sur une seule personne irremplaçable.
+    </p>
+    <p class="empty-hint" i18n="@@tension.keyboardHint">
+      Dans la grille : les flèches déplacent la sélection, Entrée ouvre le panneau du siège de la tranche.
+    </p>
+
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    <app-status-message [text]="error()" tone="error" />
+    @if (!persistedPlan()) {
+      <p class="empty-hint">
+        <ng-container i18n="@@tension.sansPlan">Il faut un planning enregistré : lancez d'abord une résolution.</ng-container>
+        <a routerLink="/solveur" i18n="@@tension.versSolveur">Ouvrir le Solveur</a>
+      </p>
+    } @else if (!error() && !loading() && rapport()?.message) {
+      <output class="marge-message status-paragraph">{{ rapport()?.message }}</output>
+    }
+  </mat-card-content>
+</mat-card>
+
+@if (!error() && !loading() && persistedPlan()) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-content>
+      @if (table().lignes.length === 0) {
+        <p class="empty-hint" i18n="@@tension.empty">Aucune tranche à lire : il faut un planning enregistré et des animateurs.</p>
+      } @else {
+        <div class="table-wrapper">
+          <table class="heatmap-table" role="grid">
+            <caption class="visually-hidden" i18n="@@tension.table.caption">Tension : une ligne par journée, une colonne par tranche horaire, la gravité de chaque case</caption>
+            <thead>
+              <tr>
+                <th scope="col" class="heatmap-row-header" i18n="@@marge.column.jour">Journée</th>
+                @for (colonne of table().colonnes; track colonne.cle) {
+                  <th scope="col" class="heatmap-day-header">{{ colonne.label }}</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (ligne of table().lignes; track ligne.cle; let indexLigne = $index) {
+                <tr>
+                  <th class="heatmap-row-header" scope="row">{{ ligne.label }}</th>
+                  @for (cellule of ligne.cellules; track cellule.cle; let indexColonne = $index) {
+                    <td
+                      [class]="'heatmap-cell marge-cell marge-cell-' + cellule.marge + ' tension-marque-' + cellule.niveau"
+                      [class.marge-cell-lien]="cellule.cellule !== null"
+                      [attr.data-ligne]="indexLigne"
+                      [attr.data-colonne]="indexColonne"
+                      [tabindex]="isFocusedCell(indexLigne, indexColonne) ? 0 : -1"
+                      (focus)="focusedCell.set({ ligne: indexLigne, colonne: indexColonne })"
+                      (keydown)="onCellKeydown($event, indexLigne, indexColonne)"
+                      (click)="openCell(indexLigne, indexColonne)"
+                      [matTooltip]="cellule.description"
+                      [attr.aria-label]="cellule.description"
+                    >{{ cellule.label }}@if (cellule.fragiles > 0) {<span class="tension-badge" aria-hidden="true">{{ cellule.fragiles }} ⚠</span>}</td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="marge-synthese-titre" i18n="@@marge.synthese.title">Pire tranche de chaque journée</h3>
+        <ul class="marge-synthese" data-testid="tension-synthese">
+          @for (ligne of synthese(); track ligne.cle) {
+            <li class="marge-synthese-item">
+              <button type="button" class="marge-synthese-lien" (click)="detail.set(ligne.cellule)">
+                <span class="marge-synthese-jour">{{ ligne.jourLabel }}</span>
+                <span class="marge-synthese-tranche">{{ ligne.trancheLabel }}</span>
+                <span [class]="'marge-synthese-valeur tension-marque-' + ligne.niveau">{{ ligne.graviteLabel }} · {{ signedLabel(ligne.marge) }}</span>
+              </button>
+            </li>
+          }
+        </ul>
+
+        @if (detail(); as cellule) {
+          <aside class="tension-detail" aria-live="polite" data-testid="tension-detail">
+            <h3 class="tension-detail-titre">{{ trancheDetail(cellule) }} — {{ libelleGravite(cellule.passee ? null : cellule.gravite) }}</h3>
+            @if (cellule.motifs.length === 0) {
+              <p i18n="@@tension.detail.rien">Rien à signaler sur cette tranche.</p>
+            } @else {
+              <ul class="tension-motifs">
+                @for (motif of cellule.motifs; track motif) {
+                  <li>{{ motifLabel(motif, cellule) }}</li>
+                }
+              </ul>
+            }
+            <ul class="tension-liens">
+              <li>
+                <a [routerLink]="['/journee']" [queryParams]="{ creneau: cellule.creneauId }" i18n="@@tension.detail.siege">Ouvrir le siège de cette tranche</a>
+              </li>
+              @for (animateurId of cellule.animateursIrremplacables; track animateurId) {
+                <li>
+                  <ng-container i18n="@@tension.detail.irremplacable">Irremplaçable :</ng-container>
+                  <a [routerLink]="['/animateurs', animateurId]">{{ nomAnimateur(animateurId) }}</a>
+                </li>
+              }
+              @for (standId of cellule.standsSansSpecialiste; track standId) {
+                <li>
+                  <ng-container i18n="@@tension.detail.sansSpecialiste">Sans spécialiste :</ng-container>
+                  <a routerLink="/diagnostic" [queryParams]="{ onglet: 'fragilite', vue: 'COMPETENCES', q: standId }">{{ nomStand(standId) }}</a>
+                </li>
+              }
+              @for (standId of cellule.standsSpecialisteUnique; track standId) {
+                <li>
+                  <ng-container i18n="@@tension.detail.specialisteUnique">Spécialiste unique :</ng-container>
+                  <a routerLink="/diagnostic" [queryParams]="{ onglet: 'fragilite', vue: 'COMPETENCES', q: standId }">{{ nomStand(standId) }}</a>
+                </li>
+              }
+            </ul>
+            @if (!rapport()?.ninjaConfigure) {
+              <p class="empty-hint" i18n="@@tension.detail.sansNinja">Aucune typologie ninja n'est définie : aucun polyvalent ne peut servir de renfort.</p>
+            }
+            <button matButton type="button" (click)="closeDetail()" i18n="@@common.close">Fermer</button>
+          </aside>
+        }
+      }
+    </mat-card-content>
+  </mat-card>
+}

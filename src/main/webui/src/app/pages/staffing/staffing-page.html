@@ -35,6 +35,10 @@
           <strong i18n="@@staffing.peakBound.label">Pic simultané : {{ resume.picSimultane }}</strong>
           <ng-container i18n="@@staffing.peakBound.description"> — sièges ouverts au même instant, au moment le plus
           chargé de l'événement : personne ne peut en tenir deux à la fois.</ng-container>
+          @if (resume.jourCritique; as critique) {
+            <a class="staffing-lien" routerLink="/ouvertures" [queryParams]="{ vue: 'journee', date: critique.date }"
+               i18n="@@staffing.lien.horairesDuJour">Horaires des stands du {{ jourCourt(critique.date) }}</a>
+          }
         </p>
         <p [class.staffing-binding]="estBorneRetenue('PIC_AVEC_PAUSE')">
           <mat-icon inline aria-hidden="true">groups</mat-icon>
@@ -44,6 +48,8 @@
           cette borne rejoint le pic simultané.</ng-container>
           @if (resume.jourCritique; as critique) {
             {{ jourCritiqueLabel(critique) }}
+            <a class="staffing-lien" routerLink="/ouvertures" [queryParams]="{ vue: 'journee', date: critique.date }"
+               i18n="@@staffing.lien.horairesDuJour">Horaires des stands du {{ jourCourt(critique.date) }}</a>
           }
         </p>
         <p [class.staffing-binding]="estBorneRetenue('CHARGE_HORAIRE')">
@@ -56,11 +62,15 @@
           @if (resume.semaineCritique) {
             {{ semaineCritiqueLabel() }}
           }
+          <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'legal', regle: 'dureeHebdomadaireMax' }"
+             i18n="@@staffing.lien.plafondHebdo">Plafond hebdomadaire</a>
         </p>
         <p [class.staffing-binding]="estBorneRetenue('COUPURE_REPAS')">
           <mat-icon inline aria-hidden="true">restaurant</mat-icon>
           <strong i18n="@@staffing.mealBound.label">Coupure repas : {{ resume.picRepas }}</strong>
           <ng-container i18n="@@staffing.mealBound.description"> — ce qu'impose la coupure repas : qui travaille de part et d'autre d'une fenêtre doit s'en absenter, quelqu'un d'autre tenant le siège. Vaut 0 quand la règle est désactivée.</ng-container>
+          <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'legal', regle: 'coupureRepasObligatoire' }"
+             i18n="@@staffing.lien.fenetreRepas">Fenêtre repas</a>
         </p>
         <p [class.staffing-binding]="estBorneRetenue('ROTATION_JOURS')">
           <mat-icon inline aria-hidden="true">calendar_month</mat-icon>
@@ -69,6 +79,7 @@
           {{ joursTravaillesMax() }} jours dans la même semaine ISO (art. L3132-1). La semaine la plus chargée demande
           {{ resume.semaineCritique?.joursPersonne }} jours-personne : sept journées d'affilée exigeant cent personnes
           ne se tiennent pas à cent, même si le pic d'une seule journée s'arrête là.</ng-container>
+          <a class="staffing-lien" routerLink="/ouvertures" i18n="@@staffing.lien.horaires">Horaires des stands</a>
         </p>
       </div>
 
@@ -81,8 +92,11 @@
 
       <p class="empty-hint staffing-caveat">
         <mat-icon inline aria-hidden="true">warning</mat-icon>
-        <ng-container i18n="@@staffing.caveat">Ces minimums sont optimistes : répartition parfaite, compétences, repos quotidien et
-        disponibilités ignorés. Une fois les animateurs saisis, vérifiez la faisabilité sur la page « Contraintes ».</ng-container>
+        <span>
+          <ng-container i18n="@@staffing.caveat.optimiste">Ces minimums sont optimistes : répartition parfaite, compétences, repos quotidien et
+          disponibilités ignorés. Une fois les animateurs saisis,</ng-container>
+          <a routerLink="/solveur" i18n="@@staffing.caveat.solveur">vérifiez la faisabilité sur le Solveur</a>.
+        </span>
       </p>
 
       @if (referentielsManquantsLabel(); as manquants) {
@@ -125,10 +139,36 @@
                 <strong [class.staffing-critical]="row.minimumJour === resume.jourCritique?.minimumJour">{{ row.minimumJour }}</strong>
               </td>
             </ng-container>
+            <!-- The « avant » margin of the day, at its tightest: who has not declared the date unavailable, minus the seats. -->
+            <ng-container matColumnDef="marge">
+              <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@staffing.column.marge">Disponibles − sièges</th>
+              <td mat-cell *matCellDef="let row">
+                @if (marginByDay().get(row.date); as marge) {
+                  <span [class]="'staffing-marge marge-cell-' + marge.niveau">{{ marge.label }}</span>
+                  <span class="staffing-marge-tranche">{{ marge.tranche }}</span>
+                } @else {
+                  —
+                }
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="horaires">
+              <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@staffing.column.horaires">Ce qui le change</th>
+              <td mat-cell *matCellDef="let row">
+                <a class="staffing-lien" routerLink="/ouvertures" [queryParams]="{ vue: 'journee', date: row.date }"
+                   i18n="@@staffing.lien.horairesDuJour">Horaires des stands du {{ jourCourt(row.date) }}</a>
+              </td>
+            </ng-container>
             <tr mat-header-row *matHeaderRowDef="columns"></tr>
             <tr mat-row *matRowDef="let row; columns: columns"></tr>
           </table>
         </div>
+        @if (rapportMarge(); as marge) {
+          <details class="staffing-marge-detail">
+            <summary i18n="@@staffing.marge.detail">Disponibles − sièges, tranche par tranche</summary>
+            <p class="empty-hint" i18n="@@marge.hint.avant">Capacité brute — qui n'a pas déclaré cette date indisponible — face aux sièges qu'une résolution devrait pourvoir.</p>
+            <app-margin-before-grid [rapport]="marge" />
+          </details>
+        }
       }
     }
   </mat-card-content>
@@ -217,6 +257,9 @@
                   <!-- Who holds this game category: the list to lengthen. -->
                   <a class="staffing-lien" routerLink="/animateurs" [queryParams]="{ typologie: row.typologie }"
                      i18n="@@staffing.lien.animateurs">Animateurs compétents</a>
+                  <!-- Where the pool grows: the competences grid on this game category. -->
+                  <a class="staffing-lien" routerLink="/competences" [queryParams]="{ typologies: row.typologie }"
+                     i18n="@@staffing.lien.competences">Saisir la compétence</a>
                 } @else {
                   <span class="staffing-ok">0</span>
                 }
@@ -242,3 +285,13 @@
     </mat-card-content>
   </mat-card>
 }
+
+<!-- « À former », once a tab of its own: the same shortage, read as who to train, at the foot of the need. -->
+<section id="a-former" class="staffing-former" aria-labelledby="a-former-titre">
+  <h2 id="a-former-titre" class="staffing-former-titre" i18n="@@formation.title">À former</h2>
+  <p class="empty-hint" i18n="@@staffing.former.description">
+    Les typologies en déficit au besoin ou à la fragilité, et qui former sur chacune : un clic ouvre la grille des
+    compétences filtrée sur la typologie.
+  </p>
+  <app-formation-page />
+</section>

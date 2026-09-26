@@ -93,4 +93,32 @@ describe('tension', () => {
       "2 siège(s) que personne d'autre ne pourrait reprendre",
     );
   });
+  // A « +68 » painted in the error colour read as a shortage of sixty-eight:
+  // the fill is the margin's sign, the grade a frame on top of it.
+  it('colours a cell by the sign of its margin, its grade apart', () => {
+    const [, jour1] = buildTableTension(rapport()).lignes;
+
+    expect(jour1.cellules.map((each) => [each.marge, each.niveau])).toEqual([
+      ['surplusFort', 'critique'],
+      ['surplus', 'calme'],
+    ]);
+    // The reasons travel with the cell, for the tooltip and the screen reader.
+    expect(jour1.cellules[0].description).toContain("que personne d'autre ne pourrait reprendre");
+  });
+
+  it('greys a started cell whatever its margin, and draws a hole without a fill', () => {
+    const table = buildTableTension({
+      ...rapport(),
+      jours: [
+        {
+          date: '2026-07-10',
+          jour: 1,
+          cellules: [cellule({ passee: true, gravite: null, marge: -4 })],
+          pireCellule: null,
+        },
+      ],
+    });
+
+    expect(table.lignes[0].cellules.map((each) => each.marge)).toEqual(['vide', 'vide']);
+  });
 });

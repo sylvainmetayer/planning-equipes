@@ -1,6 +1,12 @@
-// Pure view logic of the « Tension » reading of the Marge screen. The grade of
-// each cell is the server's (`TensionAnalyzer`), decided on named rules; this
-// only lays the cells out, names the grade and words the reasons.
+// Pure view logic of the Diagnostic's Tension tab: the margin after a solve
+// crossed with the fragility of the same plan. The grade of each cell is the
+// server's (`TensionAnalyzer`), decided on named rules; this only lays the
+// cells out, names the grade and words the reasons.
+//
+// A cell's colour is its margin's — red below zero, green above, the scale of
+// the margin grids — and its grade is a mark on top of it: a « +68 » painted
+// in the error colour because one seat of it is irreplaceable read as a
+// shortage of sixty-eight, which it is not.
 
 import {
   CelluleTension,
@@ -9,7 +15,15 @@ import {
   MotifTension,
   RapportTension,
 } from '../../core/models';
-import { ColonneMarge, libelleTranche, signe } from './marge';
+import {
+  cellsByColumn,
+  ColonneMarge,
+  libelleTranche,
+  NiveauMarge,
+  niveauMarge,
+  normalizeColumns,
+  signe,
+} from './marge';
 
 /** The CSS modifier of a grade, and of the two cells that carry none. */
 export type NiveauTension = 'critique' | 'elevee' | 'surveillee' | 'calme' | 'passee' | 'vide';
@@ -17,6 +31,8 @@ export type NiveauTension = 'critique' | 'elevee' | 'surveillee' | 'calme' | 'pa
 export interface CelluleTensionAffichee {
   cle: string;
   niveau: NiveauTension;
+  /** The fill of the cell: its margin's sign on the margin grids' scale, `vide` on a hole or a past cell. */
+  marge: NiveauMarge;
   /** The signed margin, as on the other two readings; empty on a hole. */
   label: string;
   /** Fragile seats of the cell, printed as « 2 ⚠ »; 0 prints nothing. */
@@ -81,22 +97,24 @@ export function libelleMotif(motif: MotifTension, cellule: CelluleTension): stri
   }
 }
 
+/** True when `a` should be shown rather than `b` in a shared column: the worse grade, then the tighter margin. */
+function worseTension(a: CelluleTension, b: CelluleTension): boolean {
+  const rang = rangGravite(a.passee ? null : a.gravite) - rangGravite(b.passee ? null : b.gravite);
+  return rang < 0 || (rang === 0 && a.marge < b.marge);
+}
+
 /**
- * The grid: the same rows and columns as the margin, in the server's order. A
- * day with no cell on a column gets an empty one, so the columns stay aligned.
+ * The grid: one row per day, one column per start hour of the grid's
+ * timeslots, as on the margin (see `normalizeColumns`). A day with no cell on
+ * a column gets an empty one, so the columns stay aligned.
  */
 export function buildTableTension(rapport: RapportTension | null): TableTension {
   if (!rapport) {
     return { colonnes: [], lignes: [] };
   }
-  const colonnes = rapport.tranches.map((tranche) => ({
-    cle: libelleTranche(tranche.debut, tranche.fin),
-    label: libelleTranche(tranche.debut, tranche.fin),
-  }));
+  const colonnes = normalizeColumns(rapport.tranches);
   const lignes = rapport.jours.map((jour) => {
-    const bySlice = new Map(
-      jour.cellules.map((cellule) => [libelleTranche(cellule.debut, cellule.fin), cellule]),
-    );
+    const bySlice = cellsByColumn(jour.cellules, worseTension);
     const jourLabel = libelleJourTension(jour);
     return {
       cle: jour.date ?? String(jour.jour),
@@ -122,6 +140,7 @@ function buildCellule(
     return {
       cle: colonne.cle,
       niveau: 'vide',
+      marge: 'vide',
       label: '',
       fragiles: 0,
       description: $localize`:@@marge.cell.tooltipNone:${jourLabel}:jour: — ${colonne.label}:tranche: : aucun siège`,
@@ -129,12 +148,19 @@ function buildCellule(
     };
   }
   const gravite = libelleGravite(cellule.passee ? null : cellule.gravite);
+  const tranche = libelleTranche(cellule.debut, cellule.fin);
+  const raisons = cellule.passee
+    ? ''
+    : cellule.motifs.map((motif) => ` ${libelleMotif(motif, cellule)}.`).join('');
   return {
     cle: colonne.cle,
     niveau: niveauTension(cellule),
+    marge: cellule.passee ? 'vide' : niveauMarge(cellule.marge),
     label: signe(cellule.marge),
     fragiles: cellule.passee ? 0 : cellule.siegesFragiles,
-    description: $localize`:@@tension.cell.description:${jourLabel}:jour: — ${colonne.label}:tranche: : ${gravite}:gravite:, marge ${signe(cellule.marge)}:marge:, ${cellule.siegesFragiles}:fragiles: siège(s) fragile(s)`,
+    description:
+      $localize`:@@tension.cell.description:${jourLabel}:jour: — ${tranche}:tranche: : ${gravite}:gravite:, marge ${signe(cellule.marge)}:marge:, ${cellule.siegesFragiles}:fragiles: siège(s) fragile(s)` +
+      raisons,
     cellule,
   };
 }

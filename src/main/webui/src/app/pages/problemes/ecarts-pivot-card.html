@@ -1,0 +1,70 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@constraints.pivot.title">Où se concentrent les écarts</h2>
+    <mat-card-subtitle i18n="@@problemes.pivot.subtitle">
+      Les écarts de la dernière analyse, croisés avec l'axe choisi. Une case sombre concentre les écarts : c'est là
+      qu'une correction rapporte le plus. Une case ouvre l'écran où la corriger.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="ecarts-pivot-controles">
+      <mat-chip-listbox [value]="axe()" (change)="setAxe($any($event).value)"
+                        i18n-aria-label="@@constraints.pivot.axeLabel" aria-label="Axe du tableau croisé">
+        @for (option of axes; track option.value) {
+          <mat-chip-option [value]="option.value" [selected]="option.value === axe()">{{ option.label }}</mat-chip-option>
+        }
+      </mat-chip-listbox>
+      @if (regleLabel(); as libelle) {
+        <span class="ecarts-pivot-filtre" i18n="@@problemes.pivot.filtre">Règle : {{ libelle }}</span>
+        <button matButton type="button" (click)="showAll()" i18n="@@problemes.pivot.toutes">Toutes les règles</button>
+      }
+    </div>
+    @if (pivot().lignes.length === 0) {
+      <p class="empty-hint" i18n="@@problemes.pivot.vide">Aucun écart à situer : rien n'a été analysé, ou rien n'est en défaut.</p>
+    } @else {
+      <div class="table-wrapper">
+        <table class="heatmap-table" role="grid">
+          <caption class="visually-hidden" i18n="@@constraints.pivot.caption">
+            Écarts par contrainte et par journée, stand ou animateur
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col" class="heatmap-row-header ecarts-pivot-sticky" i18n="@@problemes.pivot.column.regle">Règle</th>
+              @for (colonne of pivot().colonnes; track colonne.cle) {
+                <th scope="col" class="heatmap-day-header ecarts-pivot-sticky">{{ colonne.libelle }}</th>
+              }
+              <th scope="col" class="heatmap-day-header ecarts-pivot-sticky" i18n="@@constraints.pivot.column.total">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (ligne of pivot().lignes; track ligne.contrainte; let indexLigne = $index) {
+              <tr>
+                <th scope="row" class="heatmap-row-header">{{ ruleLabel(ligne.contrainte) }}</th>
+                <!-- A grid in earnest (RGAA 7.1): one tab stop, the arrows move inside, Enter or Space opens the cell. -->
+                @for (ecarts of ligne.ecarts; track $index; let indexColonne = $index) {
+                  <td [class]="classeCellule(ecarts, pivot().maximum)"
+                      [class.ecarts-pivot-lien]="ecarts > 0"
+                      [attr.data-ligne]="indexLigne"
+                      [attr.data-colonne]="indexColonne"
+                      [tabindex]="isFocusedCell(indexLigne, indexColonne) ? 0 : -1"
+                      [attr.aria-label]="cellLabel(ligne.contrainte, pivot().colonnes[indexColonne], ecarts)"
+                      (focus)="focusedCell.set({ ligne: indexLigne, colonne: indexColonne })"
+                      (keydown)="onCellKeydown($event, indexLigne, indexColonne)"
+                      (click)="openCell(pivot().colonnes[indexColonne], ecarts)">
+                    {{ ecarts > 0 ? ecarts : '—' }}
+                  </td>
+                }
+                <td class="heatmap-cell">{{ ligne.total }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (pivot().colonnesMasquees > 0) {
+        <p class="hint" i18n="@@constraints.pivot.masquees">
+          {{ pivot().colonnesMasquees }} colonne(s) de plus, avec moins d'écarts, ne sont pas affichées.
+        </p>
+      }
+    }
+  </mat-card-content>
+</mat-card>

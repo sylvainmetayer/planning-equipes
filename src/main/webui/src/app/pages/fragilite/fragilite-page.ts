@@ -19,16 +19,18 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
+import { errorPrefix } from '../../core/error-message';
 import { AnimateurFragilite, CompetenceRare, SeveriteFragilite } from '../../core/models';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { errorText, retainedValue } from '../../core/resource-state';
+import { SolverJobService } from '../../core/solver-job.service';
 import { typologieLabels } from '../../core/typologie-colors';
+import { VerrouillageStore } from '../../core/verrouillage.store';
 import {
   keepViewInQueryParams,
   optionalParam,
   currentViewParams,
 } from '../../core/view-query-params';
-import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
 import {
   classeSeverite,
   FiltreFragilite,
@@ -37,9 +39,12 @@ import {
   heure,
   iconeSeverite,
   libelleJour,
+  LienFragilite,
   lireFiltre,
   readView,
+  replacementLink,
   synthese,
+  trainingLink,
   typologiesAffichees,
   VueFragilite,
 } from './fragilite';
@@ -54,6 +59,12 @@ import { StatusMessage } from '../../shared/status-message';
  * pas », where this one answers « qui est irremplaçable ». Everything shown
  * comes from `GET /api/fragilite`, computed server-side from the persisted plan
  * and the competence referential — no solve is launched, here or there.
+ *
+ * Each person carries the three gestures that answer their fragility:
+ * « Verrouiller » keeps their schedule as it stands at the next solve,
+ * « Qui peut remplacer » opens the Siège panel on the seat they would leave
+ * hardest to fill, « Former » the competences grid on the game categories of
+ * their stands. Their name leads to their fiche, and nowhere else.
  */
 @Component({
   selector: 'app-fragilite-page',
@@ -69,7 +80,6 @@ import { StatusMessage } from '../../shared/status-message';
     MatInputModule,
     MatProgressBarModule,
     MatTooltipModule,
-    WorkInProgressBanner,
   ],
   templateUrl: './fragilite-page.html',
   styleUrl: './fragilite-page.css',
@@ -87,6 +97,9 @@ export class FragilitePage {
   private readonly analysesApi = inject(AnalysesApi);
   private readonly route = inject(ActivatedRoute);
   private readonly referentiel = inject(ReferenceDataStore);
+  private readonly verrous = inject(VerrouillageStore);
+  /** A solve holding the edition refuses the lock: « Verrouiller » waits for it. */
+  protected readonly editingLocked = inject(SolverJobService).editingLocked;
 
   private readonly fragilite = resource({ loader: () => this.analysesApi.fragility() });
   /** Kept across a failed refresh; the template shows the failure in its place, not a blank card. */
@@ -111,6 +124,32 @@ export class FragilitePage {
   protected readonly competences = computed<CompetenceRare[]>(() =>
     filtrerCompetences(this.rapport(), this.filtre(), this.recherche(), this.typologies()),
   );
+  /** Stand id → the game categories it offers, for « Former ». */
+  private readonly standTypologies = computed(
+    () =>
+      new Map(
+        this.referentiel.stands().map((stand) => [stand.id, stand.typologiesProposees ?? []]),
+      ),
+  );
+  /** Animateur id → where their two navigations lead, computed once per report rather than per render. */
+  protected readonly gestes = computed(
+    () =>
+      new Map<string, { remplacer: LienFragilite | null; former: LienFragilite }>(
+        this.animateurs().map((ligne) => [
+          ligne.animateurId,
+          {
+            remplacer: replacementLink(ligne),
+            former: trainingLink(ligne, this.standTypologies()),
+          },
+        ]),
+      ),
+  );
+  /** A lock in flight: one at a time. */
+  protected readonly locking = signal(false);
+  /** What the last « Verrouiller » did, or why it could not. */
+  protected readonly lockMessage = signal('');
+  protected readonly lockError = signal('');
+
   /** True as soon as the screen shows something other than its default view. */
   protected readonly viewChanged = computed(
     () =>
@@ -122,7 +161,9 @@ export class FragilitePage {
     // « Diagnostic », created afresh every time the tab is opened, and the
     // snapshot still holds what the last real navigation parsed.
     // The labels only: a failure leaves the ids on screen, never the report blank.
-    void this.referentiel.reload(['typologies']).catch(() => undefined);
+    void this.referentiel.reload(['typologies', 'stands']).catch(() => undefined);
+    // Who is locked already: their « Verrouiller » says so instead.
+    void this.verrous.reload().catch(() => undefined);
     const params = currentViewParams();
     this.view.set(readView(params.get('vue')));
     this.filtre.set(lireFiltre(params.get('filtre')));
@@ -157,14 +198,39 @@ export class FragilitePage {
   protected readonly libelleJour = libelleJour;
   protected readonly heure = heure;
 
+  /** Four rows of « Verrouiller » alone would be indistinguishable: the button names whom. */
+  protected lockLabel(ligne: AnimateurFragilite): string {
+    const nom = ligne.nom;
+    return $localize`:@@fragilite.geste.verrouiller.label:Verrouiller le planning de ${nom}:nom:`;
+  }
+
+  protected isLocked(animateurId: string): boolean {
+    return this.verrous.estAnimateurVerrouille(animateurId);
+  }
+
   /**
-   * Why this screen still announces itself as on trial. Not the shared
-   * default sentence: nothing is entered here and the solver reads nothing back
-   * from it. What is provisional is the screen itself — it ships to be tried
-   * out, and goes away if it earns nothing.
+   * « Verrouiller » : this person's whole schedule kept as it stands at the
+   * next solve — the one gesture that protects an irreplaceable person from
+   * being moved elsewhere by a solve chasing a better score.
    */
-  protected messageEssai(): string {
-    return $localize`:@@fragilite.essai:Cet écran est livré à l'essai : il pourra être retiré s'il ne s'avère pas utile. Dites-nous s'il vous sert.`;
+  protected async lock(ligne: AnimateurFragilite): Promise<void> {
+    if (this.locking()) {
+      return;
+    }
+    this.locking.set(true);
+    this.lockMessage.set('');
+    this.lockError.set('');
+    try {
+      await this.verrous.create({ type: 'ANIMATEUR', animateurId: ligne.animateurId });
+      const nom = ligne.nom;
+      this.lockMessage.set(
+        $localize`:@@fragilite.verrouille:Le planning de ${nom}:nom: est verrouillé : le prochain calcul le gardera tel quel.`,
+      );
+    } catch (error) {
+      this.lockError.set(errorPrefix(error));
+    } finally {
+      this.locking.set(false);
+    }
   }
 
   protected libelleSeverite(severite: SeveriteFragilite): string {

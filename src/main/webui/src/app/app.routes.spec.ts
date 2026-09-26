@@ -23,6 +23,7 @@ import {
   redirectConstraintsToRegles,
   standEditToFicheUrl,
   routes,
+  trainingTabToNeed,
 } from './app.routes';
 import { BRANDING } from './core/branding';
 import { BrandingTitleStrategy } from './core/branding-title.strategy';
@@ -85,13 +86,14 @@ describe('app.routes', () => {
     expect(untitled).toEqual([]);
   });
 
-  it('donne un titre traduisible et non vide à chaque route qui en porte un', () => {
+  it('gives a translatable, non-empty title to every route that carries one', () => {
     const titrees = allRoutes(routes).filter((route) => route.title !== undefined);
 
     // Le compte exact plutôt qu'un plancher : un plancher laisse supprimer six
     // titres sans rien dire, et c'est ce chiffre-là que les descriptions de PR
     // annonçaient de travers.
-    expect(titrees).toHaveLength(40);
+    // `/marge` lost its title when it became two tabs of the Diagnostic.
+    expect(titrees).toHaveLength(39);
     for (const route of titrees) {
       // Une fonction, et non une chaîne : c'est ce qui permet au titre de
       // passer par $localize sans être évalué au chargement du module, avant
@@ -275,6 +277,36 @@ describe('app.routes', () => {
         '/journee?creneau=12&stand=S1',
       );
       expect(guard({ onglet: 'fragilite' })).toBe(true);
+      expect(guard({})).toBe(true);
+    });
+
+    // Marge disponible became two tabs of the Diagnostic: its « avant » reading
+    // a column of Besoin, its « après » and « tension » readings the Tension tab.
+    it('sends the margin to Besoin, and its after-solve readings to Tension, params kept', () => {
+      expect(redirectTarget('marge', {})).toBe('/diagnostic?onglet=besoin');
+      expect(redirectTarget('marge', { mode: 'apres' })).toBe('/diagnostic?onglet=tension');
+      expect(redirectTarget('marge', { mode: 'tension', date: '2026-08-02' })).toBe(
+        '/diagnostic?onglet=tension&date=2026-08-02',
+      );
+    });
+
+    it('sends the former « À former » tab to the foot of Besoin, and no other tab', () => {
+      TestBed.configureTestingModule({
+        providers: [provideZonelessChangeDetection(), provideRouter([])],
+      });
+      const guard = (queryParams: Record<string, string>): unknown =>
+        TestBed.runInInjectionContext(() =>
+          trainingTabToNeed(
+            {
+              queryParams,
+              queryParamMap: convertToParamMap(queryParams),
+            } as unknown as ActivatedRouteSnapshot,
+            {} as RouterStateSnapshot,
+          ),
+        );
+
+      expect(String(guard({ onglet: 'former' }))).toBe('/diagnostic?onglet=besoin&section=former');
+      expect(guard({ onglet: 'tension' })).toBe(true);
       expect(guard({})).toBe(true);
     });
   });

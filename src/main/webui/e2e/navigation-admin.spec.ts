@@ -100,10 +100,17 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/journee?axe=typologie', marker: 'Compétents', sheet: 'planning-typologie-table' },
   { path: '/ouvertures', marker: 'Horaires des stands', sheet: 'ouvertures-synthese' },
   { path: '/diagnostic?onglet=besoin', marker: 'Minimum retenu', sheet: 'staffing-summary' },
-  { path: '/diagnostic?onglet=former', marker: 'À former' },
+  // « À former » is the foot of Besoin now: the old tab lands there.
+  { path: '/diagnostic?onglet=former', marker: 'À former', sheet: 'staffing-former' },
+  {
+    path: '/diagnostic?onglet=tension',
+    marker: 'Tension, tranche par tranche',
+    sheet: 'marge-synthese',
+  },
   { path: '/diagnostic?onglet=fragilite', marker: 'Fragilité', sheet: 'fragilite-message' },
   { path: '/jour-j', marker: 'Mode jour J', sheet: 'jour-j-entete' },
-  { path: '/marge', marker: 'Marge disponible', sheet: 'marge-synthese' },
+  // The former Marge disponible lands on the Diagnostic's Tension tab.
+  { path: '/marge?mode=tension', marker: 'Tension, tranche par tranche' },
   // The former timeline lands on a fiche's planning section; its own sheet is gone.
   { path: '/animateurs/E2E-A?section=timeline', marker: 'Planning', sheet: 'timeline-day' },
   { path: '/journee?vue=rail', marker: 'Mobilisables', sheet: 'rail-toolbar' },
