@@ -132,6 +132,81 @@ class HeuresCoherentesTest {
         assertThat(ligne.heuresDimanche()).as("amplitude, pour la prime").isCloseTo(10.0, within(0.001));
     }
 
+    /**
+     * One evening in the whole application (issue #713): the Heures report and
+     * the Équité report give one person the same evening hours, read from the
+     * one settable start of the evening — here moved to 18:00 so that neither
+     * the 20:00 default nor the payroll's fixed 22:00 could pass for it.
+     * The 22:00 bound survives as the payroll's night alone.
+     */
+    @Test
+    void hoursAndEquityGiveOnePersonTheSameEvening() {
+        Stand stand = new Stand("STAND", "Stand", Set.of(), 1, 1, false);
+        Animateur alice = new Animateur("A-ALICE", "Alice", "Martin", LocalDate.of(1990, 1, 1), false);
+        List<PosteAffectation> postes = List.of(
+                poste("P1", stand, new Creneau(1L, 1, JOUR, LocalTime.of(17, 0), LocalTime.of(23, 0)), alice),
+                poste("P2", stand, new Creneau(2L, 2, LENDEMAIN, LocalTime.of(9, 0), LocalTime.of(13, 0)), alice));
+        PlanningEvenement planning = new PlanningEvenement(JOUR, List.of(alice), new ArrayList<>(postes));
+        ParametresLegaux parametres = new ParametresLegaux();
+        parametres.setHeureDebutSoiree(LocalTime.of(18, 0));
+        planning.setParametresLegaux(List.of(parametres));
+
+        PlanningHoursService.HeuresRapport heures = new PlanningHoursService().compute(planning);
+        PlanningHoursService.HeuresAnimateur ligneHeures = heures.animateurs().getFirst();
+        double soireeEquite = EquiteService.compute(planning, parametres, Set.of())
+                .lignes()
+                .getFirst()
+                .heuresSoiree();
+
+        assertThat(heures.heureDebutSoiree()).isEqualTo(LocalTime.of(18, 0));
+        assertThat(ligneHeures.heuresSoiree())
+                .as("écran Heures et écran Équité, même personne")
+                .isCloseTo(soireeEquite, within(0.001))
+                .isCloseTo(5.0, within(0.001));
+        assertThat(ligneHeures.heuresNuit()).as("Nuit (paie), depuis 22 h").isCloseTo(1.0, within(0.001));
+    }
+
+    /**
+     * Current parameters that moved since the last solve move the evening
+     * alone. The break comes off under the plan's own parameters, as the KPI
+     * report deducts it, so the two read-outs keep one total for one person;
+     * only the start of the evening is the edition's setting as it stands.
+     */
+    @Test
+    void currentParametersMoveTheEveningButNotTheTotal() {
+        Stand stand = new Stand("STAND", "Stand", Set.of(), 1, 1, false);
+        Animateur alice = new Animateur("A-ALICE", "Alice", "Martin", LocalDate.of(1990, 1, 1), false);
+        List<PosteAffectation> postes = List.of(
+                poste("P1", stand, new Creneau(1L, 1, JOUR, LocalTime.of(8, 0), LocalTime.of(18, 0)), alice),
+                poste("P2", stand, new Creneau(2L, 2, LENDEMAIN, LocalTime.of(18, 0), LocalTime.of(22, 0)), alice));
+        PlanningEvenement planning = new PlanningEvenement(JOUR, List.of(alice), new ArrayList<>(postes));
+        ParametresLegaux duPlan = planning.parametresLegaux();
+        ParametresLegaux courants = new ParametresLegaux();
+        courants.setDureePauseMinutes(duPlan.getDureePauseMinutes() + 30);
+        courants.setHeureDebutSoiree(LocalTime.of(18, 0));
+
+        PlanningHoursService.HeuresRapport heures = new PlanningHoursService(() -> courants).compute(planning);
+        PlanningHoursService.HeuresAnimateur ligne = heures.animateurs().getFirst();
+        double totalKpi = PlanningKpiService.compute(new PlanningKpiService.KpiInputs(
+                        affectationsKpi(postes),
+                        null,
+                        Map.of(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        EffectiveWork.breakMinutesPerAnimateur(postes, duPlan)))
+                .heuresTotal();
+
+        assertThat(ligne.total())
+                .as("pause du plan, comme le rapport des KPI")
+                .isCloseTo(totalKpi, within(0.001))
+                .isCloseTo(13.5, within(0.001));
+        assertThat(heures.heureDebutSoiree()).isEqualTo(LocalTime.of(18, 0));
+        assertThat(ligne.heuresSoiree()).as("soirée courante, 18 h").isCloseTo(4.0, within(0.001));
+    }
+
     private static List<AffectationKpi> affectationsKpi(List<PosteAffectation> postes) {
         List<AffectationKpi> affectations = new ArrayList<>();
         for (PosteAffectation poste : postes) {

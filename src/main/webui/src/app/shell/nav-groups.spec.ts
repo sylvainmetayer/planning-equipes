@@ -6,7 +6,7 @@ import { ONGLETS_DIAGNOSTIC, readOnglet } from '../pages/diagnostic/diagnostic';
 import { readDisponibilitesTab } from '../pages/disponibilites/declarations-filter';
 import { ONGLETS_FICHIERS, readOngletFichiers } from '../pages/fichiers/fichiers';
 import { IMPORT_CARDS, readImportCard } from '../pages/imports/imports';
-import { JOURNEE_VIEWS, readView } from '../pages/journee/journee';
+import { JOURNEE_VIEWS, PLANNING_AXES, readAxe, readView } from '../pages/journee/journee';
 import { MARGIN_VIEW_PARAMS, readMarginView } from '../pages/marge/marge';
 import { OPENINGS_VIEW_PARAMS, readOpeningsView } from '../pages/ouvertures/ouvertures';
 import { ONGLETS_PARAMETRES, readOngletParametres } from '../pages/parametres/parametres';
@@ -31,7 +31,15 @@ interface TabReader {
 }
 
 const TAB_READERS: Record<string, TabReader | readonly TabReader[]> = {
-  '/journee': { param: 'vue', opens: (v) => readView(v) === v, values: JOURNEE_VIEWS },
+  '/journee': [
+    { param: 'vue', opens: (v) => readView(v) === v, values: JOURNEE_VIEWS },
+    // « Par jour » is the page itself, its address naming no axis.
+    {
+      param: 'axe',
+      opens: (v) => readAxe(v) === v,
+      values: PLANNING_AXES.filter((axe) => axe !== 'jour'),
+    },
+  ],
   '/ouvertures': {
     param: 'vue',
     opens: (v) => OPENINGS_VIEW_PARAMS[readOpeningsView(v)] === v,

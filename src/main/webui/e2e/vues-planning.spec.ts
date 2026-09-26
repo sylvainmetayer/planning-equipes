@@ -1,6 +1,6 @@
-// The read-only views over the seeded persisted planning: hours, staffing,
-// stand openings, rest days and the animateur's planning actually show the
-// seeded data —
+// The read-only views over the seeded persisted planning: the Planning page
+// per person and per stand, staffing, stand openings and the animateur's
+// planning actually show the seeded data —
 // not just a rendered shell.
 
 import { APIRequestContext, expect, test } from '@playwright/test';
@@ -19,11 +19,28 @@ test.afterAll(async () => {
   await admin.dispose();
 });
 
-test('les heures planifiées listent les animateurs du planning enregistré', async ({ browser }) => {
+test('le planning par personne liste les animateurs du planning enregistré', async ({
+  browser,
+}) => {
   const page = await pageAdmin(browser, admin);
+  // The former Heures address lands on the axis that absorbed it.
   await page.goto('/hours');
-  await expect(page.locator('#contenu')).toContainText('Heures planifiées par animateur');
+  await expect(page).toHaveURL(/\/journee\?.*axe=personne/);
+  await expect(page.locator('#contenu')).toContainText('Heures pour la paie (CSV)');
   await expect(page.locator('#contenu')).toContainText('E2E');
+  await page.context().close();
+});
+
+test('le planning par stand dit ce qui est pourvu, stand par stand et jour par jour', async ({
+  browser,
+}) => {
+  const page = await pageAdmin(browser, admin);
+  await page.goto('/journee?axe=stand');
+  await expect(page.locator('#contenu')).toContainText('Stand E2E un');
+  await expect(page.locator('#contenu')).toContainText('Total du jour');
+  // A cell of the grid opens the Siège panel, as a cell of the day does.
+  await page.locator('.planning-grille-case-active').first().click();
+  await expect(page).toHaveURL(/siege=/);
   await page.context().close();
 });
 
@@ -45,12 +62,10 @@ test('la grille des ouvertures montre les stands ensemencés', async ({ browser 
   await page.context().close();
 });
 
-test('la grille des jours de repos montre les animateurs du planning enregistré', async ({
-  browser,
-}) => {
+test('les jours de repos se lisent au pied du planning par personne', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/repos');
-  await expect(page.locator('#contenu')).toContainText('Jours de repos');
+  await expect(page).toHaveURL(/\/journee\?.*axe=personne/);
   await expect(page.locator('#contenu')).toContainText('Alice E2E');
   await expect(page.locator('#contenu')).toContainText('Au repos ce jour-là');
   await page.context().close();

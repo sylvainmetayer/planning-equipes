@@ -7,11 +7,11 @@
 // The SIZE is the seat-hours to staff — filled and empty seats alike — so a
 // rectangle is the mass of the need, not only of what was held. An hour is the
 // seat's effective window (its own narrowed window when a partial closure cut
-// it, its timeslot's otherwise), like the Heatmap and the rest-day screen: a
+// it, its timeslot's otherwise), like the Planning page's other readings: a
 // stand's need is not reduced by its holder's legal break.
 //
-// The tree is an EXACT PARTITION. The typologie reading of the plan
-// (`/typologies-planning`) counts a seat once per game category its stand
+// The tree is an EXACT PARTITION. The game-category reading of the plan
+// (« Par typologie ») counts a seat once per game category its stand
 // offers, on purpose; a treemap cannot, since overlapping surfaces lie about
 // the mass, which is the only thing a treemap says. A stand offering several
 // categories is therefore filed under one « combination » group named by all

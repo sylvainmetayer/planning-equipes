@@ -351,8 +351,8 @@ n'ont ni palette ni ces destinations. **N'en ajoutez pas un second** — deux
 écouteurs globaux se disputent la même frappe sans que rien ne le signale.
 
 Une exception volontaire : le code Konami du shell (une séquence, son propre
-état). Les flèches des calendriers, de la heatmap et des tables de données de
-référence n'en sont pas : elles sont posées sur l'élément du composant, ne
+état). Les flèches des calendriers, de la grille du Planning et des tables de
+données de référence n'en sont pas : elles sont posées sur l'élément du composant, ne
 consomment que les touches qu'elles utilisent, et laissent tout le reste
 remonter jusqu'à l'écouteur global — qui s'arrête sur un événement déjà
 consommé. C'est ainsi qu'on ajoute un comportement clavier ici. Échap n'est
@@ -408,8 +408,7 @@ il alimente `aria-describedby`, qui décrit l'action et laisse le nom
 intact ; masquer le bouton du calcul le rendrait invisible au lecteur d'écran
 alors qu'il est focalisable.
 
-Les trois grilles à deux axes (calendrier mensuel, heatmap, jours de repos)
-gardent leur navigation propre : leur géométrie n'est pas celle d'une liste.
+La grille à deux axes du Planning (par stand, par personne) garde leur navigation propre : leur géométrie n'est pas celle d'une liste.
 
 La table `g`+lettre et les libellés de la palette vivent dans
 `core/keyboard-shortcuts.ts` ; les destinations, elles, sont **dérivées de

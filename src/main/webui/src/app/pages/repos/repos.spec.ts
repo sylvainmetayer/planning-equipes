@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Animateur, ContrainteAdHoc, Creneau, PosteAffectation, Stand } from '../../core/models';
-import {
-  LigneRepos,
-  buildTableauRepos,
-  filtrerLignes,
-  histogrammeRepos,
-  lignesTendues,
-  totauxParJour,
-} from './repos';
+import { LigneRepos, buildTableauRepos, totauxParJour } from './repos';
 
 function creneau(overrides: Partial<Creneau> & { id: number }): Creneau {
   return { jour: 1, date: '2026-08-01', heureDebut: '10:00', heureFin: '12:00', ...overrides };
@@ -292,35 +285,15 @@ describe('totauxParJour', () => {
       animateur('Oscar'),
     ]);
 
-    const totaux = totauxParJour(tableau.jours, filtrerLignes(tableau.lignes, 'Oscar', false));
+    const totaux = totauxParJour(
+      tableau.jours,
+      tableau.lignes.filter((ligne) => ligne.nom.startsWith('Oscar')),
+    );
 
     expect(totaux.map((each) => each.repos)).toEqual([1, 1, 1]);
   });
 });
 
-describe('filtrerLignes', () => {
-  const lignes = buildTableauRepos(troisJours(['Ines', 'Ines', 'Ines']), [
-    animateur('a1', { prenom: 'Inès', nom: 'Dupont' }),
-    animateur('Ines'),
-    animateur('a2', { prenom: 'Oscar', nom: 'Martin' }),
-  ]).lignes;
-
-  it('matches the name whatever its accents and its case', () => {
-    expect(filtrerLignes(lignes, 'ines dup', false).map((each) => each.nom)).toEqual([
-      'Inès Dupont',
-    ]);
-  });
-
-  it('keeps everything on an empty search', () => {
-    expect(filtrerLignes(lignes, '   ', false)).toHaveLength(3);
-  });
-
-  it('narrows to the animateurs without a single rest day', () => {
-    expect(filtrerLignes(lignes, '', true).map((each) => each.nom)).toEqual(['Ines']);
-  });
-});
-
-/** Eight consecutive days from Saturday 2026-08-01, so a week boundary falls inside the grid. */
 function huitJours(animateurs: (string | null)[]): PosteAffectation[] {
   return animateurs.map((id, index) =>
     poste({
@@ -404,49 +377,5 @@ describe('segments', () => {
     // One single worked run, and the anomaly of its second day is on it.
     expect(tableau.lignes[0].segments).toHaveLength(1);
     expect(tableau.lignes[0].segments[0].conflit).toBe(true);
-  });
-});
-
-describe('histogrammeRepos', () => {
-  it('turns the footer figures into a share of the lines counted', () => {
-    const tableau = buildTableauRepos(troisJours(['Ines', null, 'Ines']), [
-      animateur('Ines'),
-      animateur('Oscar'),
-      animateur('Zoe', { joursIndisponibles: ['2026-08-01'] }),
-    ]);
-
-    const barres = histogrammeRepos(tableau.jours, tableau.lignes);
-
-    // Day 1: Oscar rests, Zoé was unavailable, Inès works — one out of three.
-    // Day 3 has Zoé back among the available, hence two.
-    expect(barres.map((each) => each.repos)).toEqual([1, 3, 2]);
-    expect(barres.map((each) => each.part)).toEqual([33, 100, 67]);
-    expect(barres[0].tooltip).toContain('1 au repos sur 3');
-  });
-
-  it('draws nothing rather than dividing by zero when every line is filtered out', () => {
-    const tableau = buildTableauRepos(troisJours(['Ines', 'Ines', 'Ines']), [animateur('Ines')]);
-
-    expect(histogrammeRepos(tableau.jours, []).map((each) => each.part)).toEqual([0, 0, 0]);
-  });
-});
-
-describe('lignesTendues', () => {
-  it('takes the head of the grid and caps it', () => {
-    const tableau = buildTableauRepos(
-      huitJours(['Ines', 'Ines', 'Ines', 'Oscar', null, null, null, null]),
-      [animateur('Ines'), animateur('Oscar'), animateur('Zoe')],
-    );
-
-    const tendues = lignesTendues(tableau.lignes, 2);
-
-    expect(tendues.map((each) => each.ligne.nom)).toEqual(['Ines', 'Oscar']);
-    expect(tendues[0].detail).toContain("3 j d'affilée");
-  });
-
-  it('leaves out anybody assigned nowhere, who is not strained but idle', () => {
-    const tableau = buildTableauRepos(troisJours([null, null, null]), [animateur('Zoe')]);
-
-    expect(lignesTendues(tableau.lignes)).toEqual([]);
   });
 });

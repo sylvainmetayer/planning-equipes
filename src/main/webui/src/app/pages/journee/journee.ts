@@ -17,6 +17,22 @@ export const JOURNEE_VIEWS: readonly JourneeView[] = [
   'changements',
 ];
 
+/**
+ * The axes of the Planning page (issue #713), and the values of the `axe`
+ * query param: one day under its five renderings (the default), the stands ×
+ * days grid, the people × days grid, the table by game category.
+ */
+export type PlanningAxe = 'jour' | 'stand' | 'personne' | 'typologie';
+
+export const PLANNING_AXES: readonly PlanningAxe[] = ['jour', 'stand', 'personne', 'typologie'];
+
+/** Reads the `axe` query param; anything unknown is the day. */
+export function readAxe(value: string | null): PlanningAxe {
+  return (PLANNING_AXES as readonly string[]).includes(value ?? '')
+    ? (value as PlanningAxe)
+    : 'jour';
+}
+
 /** One event day of the plan, as the shared selector lists it. */
 export interface JourEvenement {
   jour: number;

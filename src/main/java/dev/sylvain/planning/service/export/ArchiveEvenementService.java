@@ -82,7 +82,7 @@ public class ArchiveEvenementService {
         HEURES(
                 "heures.csv",
                 "heures",
-                "les heures travaillées par animateur et par semaine ISO, dimanche, férié et après 22 h",
+                "les heures travaillées par animateur et par semaine ISO, dimanche, férié et nuit (paie, après 22 h)",
                 true),
         REFERENTIELS(
                 REFERENTIALS_FOLDER,

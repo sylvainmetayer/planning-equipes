@@ -1,6 +1,7 @@
 // Builders of the rest-days grid: one line per animateur, one column per day
 // of the event, each cell saying whether the person works, rests or is
-// unavailable that day.
+// unavailable that day. The « Jours de repos » screen that drew it is the
+// Planning page's « Par personne » axis now (issue #713), which reads it here.
 //
 // The other views answer "who is where"; this one answers the question the
 // other way round — "who gets a day off, and when". A roster where somebody
@@ -15,7 +16,6 @@
 import { parseDateKey } from '../../core/date-utils';
 import { intlLocale } from '../../core/locale';
 import { Animateur, ContrainteAdHoc, PosteAffectation } from '../../core/models';
-import { correspondAuFiltre } from '../../core/text-filter';
 import { endMinutesOfDay, formatDuration, minutesOfDay } from '../../core/time-of-day';
 
 /**
@@ -127,24 +127,6 @@ export interface TotalJour {
 export interface TableauRepos {
   jours: ColonneJour[];
   lignes: LigneRepos[];
-}
-
-/**
- * One bar of the per-day rest histogram: the same figure as the grid's footer
- * row, given a height. A row of thirty numbers is read one number at a time;
- * the shape of the same thirty is read at once, and the day nobody rests on is
- * what this screen is looking for.
- */
-export interface BarreJour {
-  jour: number;
-  label: string;
-  initiale: string;
-  weekEnd: boolean;
-  debutSemaine: boolean;
-  repos: number;
-  /** 0 to 100: the share of the counted lines resting that day, the bar's height. */
-  part: number;
-  tooltip: string;
 }
 
 /** Display label of an animateur, disambiguated by id when two share a name. */
@@ -458,68 +440,4 @@ export function totauxParJour(jours: ColonneJour[], lignes: LigneRepos[]): Total
     });
     return total;
   });
-}
-
-/**
- * Rows matching the screen's two filters, in the grid's own order. The name
- * search goes through `correspondAuFiltre`, so it behaves like every other
- * quick filter of the application: accent- and case-insensitive, terms AND-ed.
- */
-export function filtrerLignes(
-  lignes: LigneRepos[],
-  recherche: string,
-  sansReposSeulement: boolean,
-): LigneRepos[] {
-  return lignes.filter(
-    (ligne) =>
-      correspondAuFiltre(recherche, [ligne.nom]) && (!sansReposSeulement || ligne.sansRepos),
-  );
-}
-
-/**
- * The per-day rest tally turned into a histogram, over whichever rows are
- * handed in — the same ones the footer counts, so the bar and the number under
- * it never disagree.
- *
- * The height is a *share*, not a count: a day where four people out of six
- * rest and a day where four out of a hundred do are the same number and not
- * remotely the same day, and it is the second one this screen is opened for.
- */
-export function histogrammeRepos(jours: ColonneJour[], lignes: LigneRepos[]): BarreJour[] {
-  const effectif = lignes.length;
-  return totauxParJour(jours, lignes).map((total, index) => {
-    const colonne = jours[index];
-    return {
-      jour: colonne.jour,
-      label: colonne.label,
-      initiale: colonne.initiale,
-      weekEnd: colonne.weekEnd,
-      debutSemaine: colonne.debutSemaine,
-      repos: total.repos,
-      part: effectif === 0 ? 0 : Math.round((total.repos / effectif) * 100),
-      tooltip: $localize`:@@repos.histogramme.tooltip:${colonne.titre}:jour: : ${total.repos}:repos: au repos sur ${effectif}:effectif:, ${total.indisponibles}:indisponibles: indisponible(s)`,
-    };
-  });
-}
-
-/** One line of the "most strained" panel: the row, and the two figures it is there for. */
-export interface LigneTendue {
-  ligne: LigneRepos;
-  detail: string;
-}
-
-/**
- * The lines worth looking at first, capped: the grid is already sorted by
- * longest run then by load, so this is its head — minus anybody working no day
- * at all, who has nothing tense about them and would otherwise fill the list
- * of an edition that has just been created.
- */
-export function lignesTendues(lignes: LigneRepos[], maximum = 5): LigneTendue[] {
-  return lignes
-    .filter((ligne) => ligne.serieMax > 0)
-    .slice(0, maximum)
-    .map((ligne) => ({
-      ligne,
-      detail: $localize`:@@repos.tendues.detail:${ligne.serieMax}:serie: j d'affilée, ${ligne.joursRepos}:repos: j de repos`,
-    }));
 }

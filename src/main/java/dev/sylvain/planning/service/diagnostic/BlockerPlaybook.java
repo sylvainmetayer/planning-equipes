@@ -91,7 +91,6 @@ public final class BlockerPlaybook {
 
     static final String ROUTE_SKILLS = "/competences";
     static final String ROUTE_OPENINGS = "/ouvertures";
-    static final String ROUTE_REST_DAYS = "/repos";
     static final String ROUTE_ADJUSTMENTS = "/ad-hoc-constraints";
     static final String ROUTE_ANIMATEURS = "/animateurs";
     static final String ROUTE_LOCKS = "/verrouillages";
@@ -363,10 +362,12 @@ public final class BlockerPlaybook {
                 "Revoir les indisponibilités du jour",
                 "Qui est indisponible ce jour-là, et qui se repose : une déclaration périmée suffit parfois à"
                         + " vider un créneau.",
-                ROUTE_REST_DAYS,
+                // Who works, rests and is unavailable: the Planning page on its
+                // « Par personne » axis (issue #713).
+                ROUTE_DAY,
                 context.date() == null
-                        ? Map.of()
-                        : Map.of("date", context.date().toString()));
+                        ? Map.of("axe", "personne")
+                        : Map.of("axe", "personne", "date", context.date().toString()));
     }
 
     private static ActionType editAdjustmentAction(Context context, String explanation) {
