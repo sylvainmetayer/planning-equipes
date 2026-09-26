@@ -408,7 +408,7 @@ export class ReferenceCrudService {
     // A partly failed batch still wrote most of its rows, and what they raised
     // is not cancelled by the one row the server refused. The snack bar is
     // taken by the refusal — Material shows one at a time, a second `open()`
-    // would hide it — so the warnings go to the Notifications page instead of
+    // would hide it — so the warnings go to the recent messages of the home page instead of
     // being dropped.
     if (result.avertissements.length > 0) {
       this.notifications.notify({

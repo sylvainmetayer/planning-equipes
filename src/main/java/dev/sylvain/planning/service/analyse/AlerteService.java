@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * The alerts left by the scheduled jobs, resolved for the Notifications screen.
+ * The alerts left by the scheduled jobs, resolved for the recent messages of the home screen.
  *
  * <p>Its only real job is the last step: the journal stores an
  * {@code animateur_id} and never a name, so the identity is joined <b>here</b>,

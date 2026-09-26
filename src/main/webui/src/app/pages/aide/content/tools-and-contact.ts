@@ -28,7 +28,7 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
             $localize`:@@aide.exchange.item.sql:Export et import d'un dump SQL complet, pour dupliquer ou restaurer un jeu de données entier.`,
             $localize`:@@aide.exchange.item.pdfIcs:Export du planning d'un animateur en PDF ou en ICS, à l'unité ou en archive ZIP pour tout le monde. Un fichier ICS est une photo : pour un agenda qui suit les republications, c'est l'abonnement de l'espace animateur qu'il faut.`,
             $localize`:@@aide.exchange.item.yamlValidator.fichiers:Vérifier un fichier sans l'importer (Fichiers, onglet Importer) : contrôle la structure d'un fichier scénario sans rien écrire.`,
-            $localize`:@@aide.exchange.item.notifications:Notifications : l'historique des événements — fin de résolution, import, erreur. Une alerte non lue est signalée dans la navigation.`,
+            $localize`:@@aide.exchange.item.notifications.accueil:Messages récents (accueil, sous « À traiter aujourd'hui ») : l'historique des messages de l'application — fin de résolution, import, erreur — et les alertes des envois de nuit. La cloche de la barre du haut y mène et compte les messages non lus.`,
             $localize`:@@aide.exchange.item.debug.brut:Débogage : l'état brut renvoyé par le serveur, la version, la documentation de l'API et les vérifications techniques — notification, erreur, e-mail de test, Mailpit. Utile pour rapporter un problème précisément. Il n'est pas dans le menu : Ctrl+K puis « débogage », ou son adresse /debug.`,
             $localize`:@@aide.exchange.item.nouveautes:Nouveautés : ce que la version installée a apporté, regroupé par version — « À venir » rassemble ce qui est fait mais pas encore publié. La liste est construite depuis l'historique du dépôt, donc personne ne la tient à jour et elle ne peut pas mentir sur ce qui tourne. « À surveiller » en tête signale les changements qui demandent une vérification avant de relancer un calcul.`,
             $localize`:@@aide.exchange.item.sauvegarde.instance:Sauvegarde de nuit (page Paramètres, onglet Instance) : la base entière est copiée sur le disque du serveur chaque nuit, et l'écran dit où, lesquelles existent et si la dernière s'est bien passée. Elle ne se télécharge pas — elle porte les noms, les dates de naissance et les adresses de tout le monde — et la restauration est une opération de l'exploitant.`,
@@ -49,7 +49,11 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
         },
         { route: '/debug', label: $localize`:@@nav.link.debug:Débogage` },
         { route: '/nouveautes', label: $localize`:@@nav.link.nouveautes:Nouveautés` },
-        { route: '/notifications', label: $localize`:@@nav.link.notifications:Notifications` },
+        {
+          route: '/',
+          fragment: 'a-traiter',
+          label: $localize`:@@aide.lien.aTraiter:Accueil — À traiter aujourd'hui`,
+        },
       ],
     },
     {
@@ -86,7 +90,11 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
       ],
       links: [
         { route: '/historique', label: $localize`:@@nav.link.historique:Historique` },
-        { route: '/notifications', label: $localize`:@@nav.link.notifications:Notifications` },
+        {
+          route: '/',
+          fragment: 'a-traiter',
+          label: $localize`:@@aide.lien.aTraiter:Accueil — À traiter aujourd'hui`,
+        },
         { route: '/instantanes', label: $localize`:@@nav.link.snapshots:Instantanés` },
       ],
     },

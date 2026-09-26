@@ -3,12 +3,11 @@ import {
   Component,
   computed,
   inject,
-  OnInit,
-  signal,
-  ViewEncapsulation,
+  input,
+  linkedSignal,
+  resource,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { intlLocale } from '../../core/locale';
@@ -26,52 +25,62 @@ const SEVERITY_ICONS: Record<NotificationSeverity, string> = {
 };
 
 /**
- * Single, persisted place to review every warning/alert/info notification the
- * app has raised — post-solve feasibility issues, failed hard constraints,
- * solver job status, CRUD errors — even after the snack bar that first showed
- * them has dismissed itself. Backed by {@link NotificationService}, which
- * keeps the log in localStorage.
+ * What the Notifications page used to hold, folded under « À traiter
+ * aujourd'hui »: the alerts the nightly jobs left, person by person, and the
+ * history of the application's messages kept by this browser — read, marked
+ * as read, cleared, as before.
+ *
+ * <p>The two stay apart rather than merged, and both reasons are about not
+ * lying to the reader: the alerts come from the server, so « Effacer » —
+ * which only empties this browser's storage — must visibly not apply to
+ * them; and an alert is closed by doing the thing it names (deciding the
+ * échange, filling in the missing address), never by dismissing it. The
+ * alerts are only read once the section is unfolded, or asked for through
+ * `ouvert` by the lines of « À traiter » that point at them.</p>
  */
 @Component({
-  selector: 'app-notifications-page',
-  imports: [MatCardModule, MatButtonModule, MatIconModule],
-  templateUrl: './notifications-page.html',
-  styleUrl: './notifications-page.css',
-  // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
-  encapsulation: ViewEncapsulation.None,
+  selector: 'app-messages-recents',
+  imports: [MatButtonModule, MatIconModule],
+  templateUrl: './messages-recents.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class NotificationsPage implements OnInit {
-  protected readonly notifications = inject(NotificationService);
+export class MessagesRecents {
+  /** Unfolded from the outside: a line of « À traiter » naming the alerts of the night. */
+  readonly ouvert = input(false);
 
+  protected readonly notifications = inject(NotificationService);
   private readonly analysesApi = inject(AnalysesApi);
 
   /**
-   * Alerts raised by the nightly jobs (issues #298, #299, #300), kept apart
-   * from the log above rather than merged into it.
-   *
-   * Two reasons, and both are about not lying to the reader: these come from
-   * the server, so « Effacer l'historique » — which only empties this
-   * browser's storage — must visibly not apply to them; and an alert is
-   * closed by doing the thing it names (deciding the échange, filling in the
-   * missing address), never by dismissing it.
+   * Folded by default. The reader's click decides until the page asks again:
+   * each time `ouvert` turns true — « Voir qui » followed after the reader
+   * folded the section — it unfolds, and `ouvert` falling back to false (the
+   * address leaving `#alertes-nuit`) folds nothing the reader opened.
    */
-  protected readonly alertes = signal<AlerteView[]>([]);
+  protected readonly deplie = linkedSignal<boolean, boolean>({
+    source: this.ouvert,
+    computation: (ouvert, previous) => ouvert || (previous?.value ?? false),
+  });
 
-  ngOnInit(): void {
-    void this.chargerAlertes();
-  }
-
+  private readonly alertesResource = resource({
+    params: () => (this.deplie() ? true : undefined),
+    loader: () => this.analysesApi.alerts(),
+  });
   /** A server that cannot answer leaves the local log perfectly usable. */
-  private async chargerAlertes(): Promise<void> {
-    try {
-      this.alertes.set(await this.analysesApi.alerts());
-    } catch {
-      this.alertes.set([]);
-    }
+  protected readonly alertes = computed<AlerteView[]>(() =>
+    this.alertesResource.hasValue() ? this.alertesResource.value() : [],
+  );
+
+  protected basculer(): void {
+    this.deplie.update((deplie) => !deplie);
   }
 
-  /** Same three icons as the local log, so one page speaks one language. */
+  /** Unfolded by the page, for a line pointing at the alerts while the address already names them. */
+  unfold(): void {
+    this.deplie.set(true);
+  }
+
+  /** Same three icons as the local log, so one section speaks one language. */
   protected alerteIcon(severite: AlerteView['severite']): string {
     if (severite === 'ALERTE') {
       return SEVERITY_ICONS.alert;
@@ -97,9 +106,9 @@ export class NotificationsPage implements OnInit {
   }
 
   /**
-   * Notifications grouped by day, newest day first. An event week piles up
-   * dozens of them; a flat list of timestamps forces the reader to compare
-   * dates line by line to find "what happened today".
+   * Messages grouped by day, newest day first. An event week piles up dozens
+   * of them; a flat list of timestamps forces the reader to compare dates
+   * line by line to find "what happened today".
    */
   protected readonly journees = computed(() => {
     const journees: { cle: string; libelle: string; notifications: AppNotification[] }[] = [];
@@ -136,10 +145,6 @@ export class NotificationsPage implements OnInit {
 
   protected icon(severity: AppNotification['severity']): string {
     return SEVERITY_ICONS[severity];
-  }
-
-  protected formattedTimestamp(timestamp: number): string {
-    return new Date(timestamp).toLocaleString(intlLocale());
   }
 
   /** Only the time: the day is already the group heading above the row. */

@@ -102,14 +102,27 @@
   white-space: nowrap;
 }
 
+/* The screen a line leads to, and a second one when the line has two ways out. */
+.accueil-liens {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.25rem;
+}
+
 @media (max-width: 640px) {
   .accueil-ligne {
     grid-template-columns: auto 1fr;
   }
 
-  .accueil-lien {
+  .accueil-lien,
+  .accueil-liens {
     grid-column: 2;
     justify-self: start;
+  }
+
+  .accueil-liens {
+    justify-content: flex-start;
   }
 }
 
@@ -278,4 +291,50 @@
 .accueil-archive-texte {
   flex: 1 1 16rem;
   margin: 0;
+}
+
+/* « Messages récents », folded under « À traiter aujourd'hui »: the day
+   headings of the former Notifications page, and the folding button. */
+.notification-jour {
+  font: var(--mat-sys-title-small);
+  color: var(--mat-sys-on-surface-variant);
+  margin: 1rem 0 0.35rem;
+  text-transform: capitalize;
+}
+
+.messages-recents {
+  margin-top: 0.5rem;
+}
+
+/* During the event: the day under way, first, one line that opens the mode
+   jour J, and the television beside it. */
+.accueil-jour {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
+.accueil-jour-lien {
+  flex: 1 1 20rem;
+  font: var(--mat-sys-title-medium);
+  color: inherit;
+}
+
+/* An empty edition: three ways to start instead of the checklist. */
+.accueil-demarrer {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.75rem;
+}
+
+.accueil-lecture {
+  display: block;
+  margin-top: 0.25rem;
 }

@@ -62,7 +62,7 @@ class DateJourJResourceTest {
     /* ------------------------------- The guard ----------------------------- */
 
     /**
-     * The test that matters. {@code /debug} is an ordinary admin route, so a
+     * The test that matters. {@code /api/horloge} is an ordinary admin route, so a
      * deployed instance is one click away from a frozen clock unless the
      * <em>server</em> says no.
      */

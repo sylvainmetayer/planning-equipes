@@ -53,14 +53,14 @@ public class JournalNotificationsRepository {
         ALERTE_ECHANGE
     }
 
-    /** Severity of an alert, matching what the Notifications screen already displays. */
+    /** Severity of an alert, matching what the recent messages of the home screen already displays. */
     public enum Severite {
         INFO,
         WARNING,
         ALERTE
     }
 
-    /** One alert of the Notifications screen, newest first. */
+    /** One alert of the recent messages of the home screen, newest first. */
     public record Alerte(
             String type, String cle, Instant declencheLe, String libelle, String severite, String animateurId) {}
 
@@ -73,7 +73,7 @@ public class JournalNotificationsRepository {
 
     /**
      * Claims {@code cle} for {@code type}, without leaving anything on the
-     * Notifications screen — the plain idempotence lock.
+     * recent messages of the home screen — the plain idempotence lock.
      *
      * @return true when this call is the one that claimed it, and therefore the
      *         one that must send
@@ -83,7 +83,7 @@ public class JournalNotificationsRepository {
     }
 
     /**
-     * Same claim, plus the sentence the Notifications screen shows.
+     * Same claim, plus the sentence the recent messages of the home screen shows.
      *
      * @param libelle written for an organiser and <b>never nominative</b>: it
      *                is stored, so it says what happened, and the identity —

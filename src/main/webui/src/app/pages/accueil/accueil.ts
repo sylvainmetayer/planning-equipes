@@ -3,10 +3,11 @@
 // and the screen that makes the step move. Pure functions, called at runtime
 // (never at module scope) so `$localize` resolves after the catalog is loaded.
 
-import { EtatEdition, StatutEtat } from '../../core/models';
+import { CoherenceReport, EtatEdition, ScoreSentence, StatutEtat } from '../../core/models';
 import { intlLocale } from '../../core/locale';
 import { libelleJour } from '../../core/horaire-stand';
 import { familyLabel } from '../../core/gel-referentiel-labels';
+import { coherenceLines } from './coherence';
 
 /** One line of the checklist, ready to render. */
 export interface LigneEtat {
@@ -18,14 +19,19 @@ export interface LigneEtat {
   detail: string;
   /** The screen the line leads to; absent on a line whose detail unfolds in place instead. */
   lien?: LienEtat;
+  /** A second way out, beside the first: the setting that would move the step on its own. */
+  lienSecondaire?: LienEtat;
   /** A detail this line unfolds below itself rather than on another screen. */
-  panneau?: 'coherence' | 'gel';
+  panneau?: 'coherence';
+  /** Sentences read out below the detail — the reading of the score, never the score itself. */
+  lecture?: ScoreSentence[];
 }
 
 /** Where a line leads: the screen that moves the step forward. */
 export interface LienEtat {
   route: string;
   queryParams?: Record<string, string>;
+  fragment?: string;
   libelle: string;
 }
 
@@ -114,8 +120,9 @@ function referentiels(etat: EtatEdition): LigneEtat {
 
 /**
  * The freeze of the referential (ADR 0052), beside the referentials it
- * protects: which families are frozen, unfolded in place into one switch per
- * family — freezing is a gesture of this screen, not of another one.
+ * protects: which families are frozen. It is set in one place only,
+ * Paramètres › Édition, which the line links to — two editable cards saying
+ * the same thing were two places to wonder which one counts.
  */
 function gel(etat: EtatEdition): LigneEtat {
   const figees = etat.gel.familles.filter((famille) => famille.fige);
@@ -129,7 +136,12 @@ function gel(etat: EtatEdition): LigneEtat {
         : $localize`:@@accueil.detail.gel.figees:Figé : ${figees
             .map((famille) => familyLabel(famille.famille))
             .join(', ')}:familles:`,
-    panneau: 'gel',
+    lien: {
+      route: '/parametres',
+      queryParams: { onglet: 'edition' },
+      fragment: 'gel-referentiel',
+      libelle: $localize`:@@accueil.lien.gel:Régler dans les Paramètres`,
+    },
   };
 }
 
@@ -137,11 +149,30 @@ function gel(etat: EtatEdition): LigneEtat {
  * What was entered, read as a whole: the anomalies every other screen detects
  * on its own, counted here and unfolded in place — no screen to go to, the
  * detail is the list, and each of its lines links to the fiche that fixes it.
+ * Identical anomalies — the same gap in the grid on sixteen days — are one
+ * subject with its count: once the detail is read (it is only fetched when
+ * unfolded), the line counts its subjects too.
  */
-function coherence(etat: EtatEdition): LigneEtat {
+function coherence(etat: EtatEdition, rapport: CoherenceReport | null): LigneEtat {
   const { bloquants, aVerifier, informations, statut } = etat.coherence;
   const total = bloquants + aVerifier + informations;
+  const titre = $localize`:@@accueil.ligne.coherence:Cohérence du référentiel`;
+  if (total === 0) {
+    return {
+      id: 'coherence',
+      titre,
+      statut,
+      detail: $localize`:@@accueil.detail.coherence.ok:Aucune anomalie dans ce qui est saisi`,
+    };
+  }
+  // Once the detail is read, the count of subjects — identical anomalies
+  // merged — comes first; the subjects themselves are in the panel.
+  const sujets = rapport ? coherenceLines(rapport.anomalies) : [];
   const parts: string[] = [];
+  if (sujets.length > 0) {
+    const count = sujets.length;
+    parts.push($localize`:@@accueil.detail.coherence.sujets:${count}:count: sujet(s)`);
+  }
   if (bloquants > 0) {
     parts.push($localize`:@@accueil.detail.coherence.bloquants:${bloquants}:count: bloquant(s)`);
   }
@@ -153,16 +184,7 @@ function coherence(etat: EtatEdition): LigneEtat {
       $localize`:@@accueil.detail.coherence.informations:${informations}:count: pour information`,
     );
   }
-  return {
-    id: 'coherence',
-    titre: $localize`:@@accueil.ligne.coherence:Cohérence du référentiel`,
-    statut,
-    detail:
-      total === 0
-        ? $localize`:@@accueil.detail.coherence.ok:Aucune anomalie dans ce qui est saisi`
-        : parts.join(' · '),
-    panneau: total === 0 ? undefined : 'coherence',
-  };
+  return { id: 'coherence', titre, statut, detail: parts.join(' · '), panneau: 'coherence' };
 }
 
 function collecte(etat: EtatEdition): LigneEtat {
@@ -242,43 +264,61 @@ function besoin(etat: EtatEdition): LigneEtat {
   };
 }
 
+/**
+ * The last solve, read in sentences — the « Lecture du score » the Solveur
+ * shows — and never as `0hard/-2982medium/…`, which tells an organiser
+ * nothing. Once there is a plan, the line leads to it.
+ */
 function resolution(etat: EtatEdition): LigneEtat {
   const bloc = etat.resolution;
-  let detail: string;
+  const titre = $localize`:@@accueil.ligne.resolution:Dernière résolution`;
+  const solveur: LienEtat = {
+    route: '/solveur',
+    libelle: $localize`:@@accueil.lien.resolution:Ouvrir le solveur`,
+  };
   if (bloc.solveEnCours) {
-    detail = $localize`:@@accueil.detail.resolution.enCours:Résolution en cours`;
-  } else if (!bloc.resolue) {
-    detail = $localize`:@@accueil.detail.resolution.jamais:Aucune résolution pour le moment`;
-  } else {
-    const quand = formatInstant(bloc.resoluLe);
-    const parts = [$localize`:@@accueil.detail.resolution.date:Résolue le ${quand}:date:`];
-    if (bloc.score) {
-      parts.push($localize`:@@accueil.detail.resolution.score:score ${bloc.score}:score:`);
-    }
-    if (bloc.scoreHorsPlancher && bloc.scoreHorsPlancher !== bloc.score) {
-      parts.push(
-        $localize`:@@accueil.detail.resolution.horsPlancher:hors plancher ${bloc.scoreHorsPlancher}:score:`,
-      );
-    }
-    if (bloc.faisable === false) {
-      parts.push($localize`:@@accueil.detail.resolution.infaisable:règles dures en défaut`);
-    }
-    if (bloc.dataStale) {
-      parts.push($localize`:@@accueil.detail.resolution.stale:données modifiées depuis`);
-    }
-    detail = parts.join(' · ');
+    return {
+      id: 'resolution',
+      titre,
+      statut: bloc.statut,
+      detail: $localize`:@@accueil.detail.resolution.enCours:Résolution en cours`,
+      lien: solveur,
+    };
+  }
+  if (!bloc.resolue) {
+    return {
+      id: 'resolution',
+      titre,
+      statut: bloc.statut,
+      detail: $localize`:@@accueil.detail.resolution.jamais:Aucune résolution pour le moment`,
+      lien: solveur,
+    };
+  }
+  const quand = formatInstant(bloc.resoluLe);
+  const parts = [$localize`:@@accueil.detail.resolution.date:Résolue le ${quand}:date:`];
+  if (bloc.faisable === false && bloc.lecture.length === 0) {
+    parts.push($localize`:@@accueil.detail.resolution.infaisable:règles dures en défaut`);
+  }
+  if (bloc.dataStale) {
+    parts.push($localize`:@@accueil.detail.resolution.stale:données modifiées depuis`);
   }
   return {
     id: 'resolution',
-    titre: $localize`:@@accueil.ligne.resolution:Dernière résolution`,
+    titre,
     statut: bloc.statut,
-    detail,
+    detail: parts.join(' · '),
+    // The verdict and the sentence after it: the rest is the Solveur's page.
+    lecture: bloc.lecture.slice(0, LECTURE_SENTENCES),
     lien: {
-      route: '/solveur',
-      libelle: $localize`:@@accueil.lien.resolution:Ouvrir le solveur`,
+      route: '/journee',
+      queryParams: { date: etat.evenement.aujourdhui },
+      libelle: $localize`:@@voirPlanning.label:Voir le planning`,
     },
   };
 }
+
+/** How many sentences of the reading the line carries: the verdict and the one after it. */
+const LECTURE_SENTENCES = 2;
 
 function problemes(etat: EtatEdition): LigneEtat {
   const { bloquants, avertissements, reglesAnalysees, statut } = etat.problemes;
@@ -365,27 +405,62 @@ function publication(etat: EtatEdition): LigneEtat {
   };
 }
 
+/**
+ * The acknowledgements, and whether anybody chases the silent: the nightly
+ * reminders are off until somebody arms them, which the detail says. The line
+ * leads to the people who have not answered while there are any — and, with
+ * the reminders off and somebody never reminded, also to the setting that
+ * would chase them; once everybody has answered, to the list alone. An alert
+ * only once the reminder delay set there has passed.
+ */
 function confirmations(etat: EtatEdition): LigneEtat {
-  const { confirmes, relances, silencieux, statut } = etat.confirmations;
-  const detail =
-    statut === 'A_FAIRE'
-      ? $localize`:@@accueil.detail.confirmations.aFaire:Les accusés de réception suivent la publication`
-      : $localize`:@@accueil.detail.confirmations.comptage:${confirmes}:confirmes: confirmé(s) · ${relances}:relances: relancé(s) · ${silencieux}:silencieux: silencieux`;
-  const restants = relances + silencieux > 0;
-  return {
+  const { confirmes, relances, silencieux, statut, relancesAutomatiques, delaiRelanceHeures } =
+    etat.confirmations;
+  const titre = $localize`:@@accueil.ligne.confirmations:Accusés de réception`;
+  if (statut === 'A_FAIRE') {
+    return {
+      id: 'confirmations',
+      titre,
+      statut,
+      detail: $localize`:@@accueil.detail.confirmations.aFaire:Les accusés de réception suivent la publication`,
+      lien: {
+        route: '/animateurs',
+        libelle: $localize`:@@accueil.lien.confirmations.voir:Voir les animateurs`,
+      },
+    };
+  }
+  const comptage = $localize`:@@accueil.detail.confirmations.comptage:${confirmes}:confirmes: confirmé(s) · ${relances}:relances: relancé(s) · ${silencieux}:silencieux: silencieux`;
+  const heures = delaiRelanceHeures;
+  const relance = relancesAutomatiques
+    ? $localize`:@@accueil.detail.confirmations.relancesActives:relance automatique après ${heures}:heures: h`
+    : $localize`:@@accueil.detail.confirmations.relancesInactives:relances automatiques désactivées`;
+  const ligne: LigneEtat = {
     id: 'confirmations',
-    titre: $localize`:@@accueil.ligne.confirmations:Accusés de réception`,
+    titre,
     statut,
-    detail,
-    lien: {
-      route: '/animateurs',
-      // The filter #504 ships: only the people who have not answered.
-      queryParams: restants ? { confirmation: 'jamais' } : undefined,
-      libelle: restants
-        ? $localize`:@@accueil.lien.confirmations.silencieux:Voir qui n'a pas répondu`
-        : $localize`:@@accueil.lien.confirmations.voir:Voir les animateurs`,
-    },
+    detail: `${comptage} · ${relance}`,
+    lien:
+      relances + silencieux > 0
+        ? {
+            route: '/animateurs',
+            // The filter #504 ships: only the people who have not answered.
+            queryParams: { confirmation: 'jamais' },
+            libelle: $localize`:@@accueil.lien.confirmations.silencieux:Voir qui n'a pas répondu`,
+          }
+        : {
+            route: '/animateurs',
+            libelle: $localize`:@@accueil.lien.confirmations.voir:Voir les animateurs`,
+          },
   };
+  // Arming the reminders only helps somebody no reminder reached yet.
+  if (!relancesAutomatiques && silencieux > 0) {
+    ligne.lienSecondaire = {
+      route: '/parametres',
+      queryParams: { onglet: 'emails' },
+      libelle: $localize`:@@accueil.lien.confirmations.activer:Activer`,
+    };
+  }
+  return ligne;
 }
 
 function foire(etat: EtatEdition): LigneEtat {
@@ -412,12 +487,19 @@ function foire(etat: EtatEdition): LigneEtat {
   };
 }
 
-/** The checklist in the guide's order, from the first record to the acknowledged plan. */
-export function buildLignes(etat: EtatEdition): LigneEtat[] {
+/**
+ * The checklist in the guide's order, from the first record to the
+ * acknowledged plan. The coherence report, once read, lets the coherence line
+ * count its subjects — identical anomalies merged — beside its anomalies.
+ */
+export function buildLignes(
+  etat: EtatEdition,
+  coherenceReport: CoherenceReport | null = null,
+): LigneEtat[] {
   return [
     referentiels(etat),
     gel(etat),
-    coherence(etat),
+    coherence(etat, coherenceReport),
     collecte(etat),
     ouvertures(etat),
     besoin(etat),
@@ -546,6 +628,47 @@ export function buildToday(etat: EtatEdition): TodayItem[] {
       },
     });
   }
+  if (bloc.sauvegardeEnEchec) {
+    const quand = formatInstant(bloc.sauvegardeEchecLe);
+    items.push({
+      id: 'sauvegarde',
+      sentence: quand
+        ? $localize`:@@accueil.aTraiter.sauvegarde:La sauvegarde de nuit a échoué le ${quand}:date:`
+        : $localize`:@@accueil.aTraiter.sauvegardeSansDate:La dernière sauvegarde de nuit a échoué`,
+      alerte: true,
+      lien: {
+        route: '/parametres',
+        queryParams: { onglet: 'instance' },
+        libelle: $localize`:@@accueil.aTraiter.lien.sauvegarde:Paramètres › Instance`,
+      },
+    });
+  }
+  if (bloc.rappelsNonEnvoyes > 0) {
+    const count = bloc.rappelsNonEnvoyes;
+    items.push({
+      id: 'rappels',
+      sentence: $localize`:@@accueil.aTraiter.rappels:${count}:count: rappel(s) de la veille non envoyé(s), faute d'adresse : à prévenir à la main`,
+      alerte: true,
+      lien: {
+        route: '/',
+        fragment: 'alertes-nuit',
+        libelle: $localize`:@@accueil.aTraiter.lien.alertesNuit:Voir qui`,
+      },
+    });
+  }
+  if (bloc.relancesNonEnvoyees > 0) {
+    const count = bloc.relancesNonEnvoyees;
+    items.push({
+      id: 'relances',
+      sentence: $localize`:@@accueil.aTraiter.relances:${count}:count: relance(s) non partie(s) depuis la publication`,
+      alerte: true,
+      lien: {
+        route: '/',
+        fragment: 'alertes-nuit',
+        libelle: $localize`:@@accueil.aTraiter.lien.alertesNuit:Voir qui`,
+      },
+    });
+  }
   if (bloc.personnesAPrevenir > 0) {
     const count = bloc.personnesAPrevenir;
     items.push({
@@ -559,4 +682,22 @@ export function buildToday(etat: EtatEdition): TodayItem[] {
     });
   }
   return items;
+}
+
+/* ------------------------------ The day under way ----------------------------- */
+
+/** The event's first line: « Aujourd'hui — J5 · 60 stands ouverts · … », or nothing outside the event. */
+export function buildJour(etat: EtatEdition): string | null {
+  const jour = etat.evenement.jour;
+  if (etat.evenement.phase !== 'EVENEMENT' || jour === null) {
+    return null;
+  }
+  const { numero, standsOuverts, placesVides, absents, echangesAArbitrer } = jour;
+  return $localize`:@@accueil.jour.ligne:Aujourd'hui — J${numero}:numero: · ${standsOuverts}:stands: stand(s) ouvert(s) · ${placesVides}:places: place(s) vide(s) · ${absents}:absents: absent(s) · ${echangesAArbitrer}:echanges: échange(s) à arbitrer`;
+}
+
+/** An edition with nothing entered yet: the page offers three ways to start instead of the checklist. */
+export function isEmptyEdition(etat: EtatEdition): boolean {
+  const { stands, animateurs, creneaux } = etat.referentiels;
+  return stands === 0 && animateurs === 0 && creneaux === 0;
 }

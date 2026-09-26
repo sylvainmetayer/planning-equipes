@@ -161,7 +161,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.rappels.term.rappel:Le rappel de la veille`,
-              text: $localize`:@@aide.rappels.def.rappel:La veille au soir, chaque animateur affecté le lendemain reçoit la liste de ses créneaux. Elle est tirée du planning publié, jamais du plan de travail : personne n'est rappelé pour un créneau que vous ne lui avez pas communiqué. Un animateur sans adresse est sauté et signalé nommément sur la page Notifications.`,
+              text: $localize`:@@aide.rappels.def.rappel.accueil:La veille au soir, chaque animateur affecté le lendemain reçoit la liste de ses créneaux. Elle est tirée du planning publié, jamais du plan de travail : personne n'est rappelé pour un créneau que vous ne lui avez pas communiqué. Un animateur sans adresse est sauté : « À traiter aujourd'hui » le compte tant que son jour est à venir, et « Messages récents » le nomme.`,
             },
             {
               term: $localize`:@@aide.rappels.term.relance:Une relance, pas une série`,
@@ -173,7 +173,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.rappels.term.echanges:Les demandes d'échange qui dorment`,
-              text: $localize`:@@aide.rappels.def.echanges:Une demande qui attend votre décision depuis plus longtemps que le délai fixé remonte sur la page Notifications, une seule fois. L'ancienneté se compte à partir de l'accord du collègue : une demande qui attend encore sa réponse n'attend pas après vous.`,
+              text: $localize`:@@aide.rappels.def.echanges.accueil:Une demande qui attend votre décision depuis plus longtemps que le délai fixé passe en alerte dans « À traiter aujourd'hui », sur la page d'accueil. L'ancienneté se compte à partir de l'accord du collègue : une demande qui attend encore sa réponse n'attend pas après vous.`,
             },
           ],
         },
@@ -189,7 +189,11 @@ export function buildAnimateurSideSections(): HelpSection[] {
           queryParams: { onglet: 'emails' },
           label: $localize`:@@aide.lien.parametresEmails:Paramètres — onglet E-mails automatiques`,
         },
-        { route: '/notifications', label: $localize`:@@nav.link.notifications:Notifications` },
+        {
+          route: '/',
+          fragment: 'a-traiter',
+          label: $localize`:@@aide.lien.aTraiter:Accueil — À traiter aujourd'hui`,
+        },
       ],
     },
   ];

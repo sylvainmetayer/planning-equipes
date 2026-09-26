@@ -37,7 +37,7 @@ import org.jboss.logging.Logger;
  * receiving the same reminder twice.</p>
  *
  * <p>An animateur with no address on their fiche is skipped, and the fact is
- * recorded as an alert of the Notifications screen: the organiser is the one
+ * recorded as an alert of the recent messages of the home screen: the organiser is the one
  * who can pick up a phone, and dropping the person silently would be the worst
  * of the three possible behaviours.</p>
  */

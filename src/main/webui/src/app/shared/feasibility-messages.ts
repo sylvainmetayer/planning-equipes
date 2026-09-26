@@ -6,7 +6,7 @@
  * Rich, actionable explanation shown when the solver could not reach hard
  * score zero. Kept as a standalone function (not inlined where it's used) so
  * the exact same French text backs both the persisted on-page banner and the
- * notification logged to the Notifications page.
+ * notification logged to the recent messages of the home page.
  */
 export function hardScoreNegativeMessage(hardScore: number): string {
   return $localize`:@@feasibility.hardScoreNegative:Ce planning n'est pas totalement réalisable (score dur ${hardScore}:hardScore:) : augmentez l'effectif, raccourcissez les vacations ou revoyez les disponibilités, puis relancez une résolution.`;
