@@ -99,3 +99,23 @@ app-solve-recap > .mat-mdc-card-content:last-child {
 .solver-volumetry-details[open] > summary {
   margin-bottom: 1rem;
 }
+
+/* The last lines of « Versions du plan » (issue #702). */
+.versions-recentes {
+  width: 100%;
+  border-collapse: collapse;
+  font: var(--mat-sys-body-medium);
+}
+
+.versions-recentes th,
+.versions-recentes td {
+  padding: 0.375rem 0.5rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.versions-recentes th {
+  font-weight: 500;
+  color: var(--mat-sys-on-surface-variant);
+}

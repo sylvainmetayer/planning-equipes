@@ -68,6 +68,7 @@ import { SolverQueue } from './solver-queue';
 import { SolverVolumetry } from './solver-volumetry';
 import { errorPrefix } from '../../core/error-message';
 import { VoirPlanningButton } from '../../shared/voir-planning-button';
+import { VersionsRecentes } from '../versions/versions-recentes';
 
 /**
  * A constraint's raw score string looks like `-14hard/0medium/0soft`
@@ -135,6 +136,7 @@ function detailCausesBloquantes(bloquantes: readonly CauseInfaisabilite[]): stri
     IncrementalResult,
     SolveRecap,
     SolveInputsCard,
+    VersionsRecentes,
     ValidationBanner,
     RouterLink,
   ],

@@ -533,7 +533,7 @@ Une édition publie autant de fois qu'elle en a besoin, et les publications
 qu'une autre a remplacées ne sont plus lues par personne : elles se suppriment
 comme n'importe quel instantané. Les protéger toutes — ce que faisait le
 prédicat `publie_le IS NULL` — rendait l'écran inutilisable dès la deuxième
-publication (issue #34). L'écran Instantanés le dit avant le clic : badge
+publication (issue #34). L'écran Versions du plan le dit avant le clic : badge
 « plan publié » sur celle en cours, bouton *Supprimer* désactivé avec le motif,
 badge « publié, remplacé » sur les précédentes.
 
@@ -1092,14 +1092,14 @@ Trois pièges :
   réglage, sans prétendre isoler son effet : le référentiel a pu bouger entre
   deux résolutions.
 
-### Couverture par jour de l'Autopsie
+### Couverture par jour de l'historique des résolutions
 
 Chaque ligne de `GET /api/kpi/historique` écrite depuis cette version porte
 `kpi.couvertureParJour` : par date ISO, `{ postes, pourvus }` — des sièges,
 jamais des personnes, ce qui garde la ligne compatible avec la conservation
-illimitée de l'Autopsie. Les sommes des jours valent `postesTotal` et
-`postesPourvus`. Une ligne antérieure n'a pas la clé (`null`) : le rejeu de
-la page Autopsie affiche alors « non mesurée », jamais une journée vide. Un
+illimitée de l'historique des résolutions. Les sommes des jours valent `postesTotal` et
+`postesPourvus`. Une ligne antérieure n'a pas la clé (`null`) : qui la lit doit dire « non
+mesurée », jamais une journée vide. Un
 instantané recalculé en mode dégradé ne la porte pas non plus. Aucune
 migration : la colonne `kpi` est un `jsonb`, et `lister_kpi_historique` (MCP)
 la rend telle quelle — une trentaine de petits objets par ligne pour une

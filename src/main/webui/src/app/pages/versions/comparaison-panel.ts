@@ -2,21 +2,19 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
-  OnInit,
+  input,
+  output,
   signal,
-  ViewEncapsulation,
+  untracked,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { PlanningApi } from '../../core/api/planning-api';
-import { intlLocale } from '../../core/locale';
 import { ComparaisonSnapshots, CoteComparaison, PlanSnapshot } from '../../core/models';
 import { ScoreReadingPanel } from '../../shared/lecture-score';
 import { StatusMessage } from '../../shared/status-message';
@@ -25,135 +23,85 @@ import { errorMessage } from '../../core/error-message';
 import { bandeLabel, libelleDate } from '../../core/consigne-wording';
 import { DosageDifference, dosageDifferences } from '../../core/dosage';
 
-/** Value designating the currently persisted plan instead of a snapshot id. */
-const COURANT = 'courant';
-
 /**
- * A/B comparator (issue #70): a baseline against a variant, side by side, with
- * the direction of each variation made explicit. A pure read of metrics
- * already measured — it never triggers a solve.
- *
- * <p>Both sides are picked among the snapshots of <b>every</b> edition, plus
- * the plan currently persisted: since #172 a variant of an edition is another
- * edition, so the pair worth comparing usually straddles two of them.</p>
+ * The A/B comparator (issue #70), opened as a panel beside « Versions du plan »
+ * (issue #702): the two sides come from the rows ticked there, the older one
+ * as the reference (A). A pure read of metrics already measured — it never
+ * triggers a solve.
  */
 @Component({
-  selector: 'app-comparateur-page',
+  selector: 'app-comparaison-panel',
   imports: [
     MatButtonModule,
-    MatCardModule,
-    MatFormFieldModule,
     MatIconModule,
     MatProgressBarModule,
-    MatSelectModule,
     MatTableModule,
     MatTooltipModule,
     StatusMessage,
     ScoreReadingPanel,
   ],
-  templateUrl: './comparateur-page.html',
-  styleUrl: './comparateur-page.css',
-  // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
-  encapsulation: ViewEncapsulation.None,
+  templateUrl: './comparaison-panel.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ComparateurPage implements OnInit {
+export class ComparaisonPanel {
+  /** The reference side: a snapshot id as text, or `courant` for the plan in place. */
+  readonly base = input.required<string>();
+  /** The variant side, same selectors. */
+  readonly variante = input.required<string>();
+  /** The snapshots the table lists, to name the stale sides. */
+  readonly snapshots = input<readonly PlanSnapshot[]>([]);
+  readonly closed = output<void>();
+
   protected readonly columns = ['metrique', 'base', 'variante', 'delta'];
   protected readonly columnsViolations = ['contrainte', 'baseViolations', 'varianteViolations'];
-  protected readonly courant = COURANT;
 
-  protected readonly instantanes = signal<PlanSnapshot[]>([]);
-  protected readonly baseId = signal<string>(COURANT);
-  protected readonly varianteId = signal<string>('');
   protected readonly comparaison = signal<ComparaisonSnapshots | null>(null);
   protected readonly chargement = signal(false);
   protected readonly error = signal('');
 
   protected readonly lignes = computed<LigneMetrique[]>(() => {
-    const comparaison = this.comparaison();
-    return comparaison
-      ? construireLignesMetriques(comparaison.base.kpi, comparaison.variante.kpi)
-      : [];
+    const resultat = this.comparaison();
+    return resultat ? construireLignesMetriques(resultat.base.kpi, resultat.variante.kpi) : [];
   });
 
-  protected readonly pretAComparer = computed(
-    () => this.baseId() !== '' && this.varianteId() !== '' && this.baseId() !== this.varianteId(),
-  );
-
-  /** Degraded mode: at least one side predates KPI capture and had to be recomputed. */
+  /** True when either side had its KPI recomputed from the snapshot content (degraded mode). */
   protected readonly kpiRecalcule = computed(() => {
-    const comparaison = this.comparaison();
-    return (
-      comparaison !== null && (comparaison.base.kpiRecalcule || comparaison.variante.kpiRecalcule)
-    );
+    const resultat = this.comparaison();
+    return !!resultat && (resultat.base.kpiRecalcule || resultat.variante.kpiRecalcule);
   });
 
   private readonly planningApi = inject(PlanningApi);
 
-  ngOnInit(): void {
-    void this.chargerInstantanes();
+  constructor() {
+    effect(() => {
+      const base = this.base();
+      const variante = this.variante();
+      untracked(() => void this.comparer(base, variante));
+    });
   }
 
-  /** Reloads the pickers: a solve run in another tab adds snapshots. */
-  protected async rafraichir(): Promise<void> {
-    await this.chargerInstantanes();
-  }
+  /** The last request wins: ticking another pair while one loads drops the first answer. */
+  private request = 0;
 
-  /** Selector sent to the API for a snapshot side — its id, as text. */
-  protected valeurSelection(snapshot: PlanSnapshot): string {
-    return String(snapshot.id);
-  }
-
-  private async chargerInstantanes(): Promise<void> {
-    this.error.set('');
-    this.chargement.set(true);
-    try {
-      // Every edition's snapshots, not just the current one's: the variant of
-      // an edition is another edition.
-      const instantanes = await this.planningApi.comparableSnapshots();
-      this.instantanes.set(instantanes);
-      if (this.varianteId() === '' && instantanes.length > 0) {
-        this.varianteId.set(String(instantanes[0].id));
-      }
-    } catch (error) {
-      this.error.set(errorMessage(error));
-    } finally {
-      this.chargement.set(false);
-    }
-  }
-
-  protected async comparer(): Promise<void> {
-    if (!this.pretAComparer()) {
-      return;
-    }
+  protected async comparer(base: string, variante: string): Promise<void> {
+    const request = ++this.request;
     this.chargement.set(true);
     this.error.set('');
     this.comparaison.set(null);
     try {
-      this.comparaison.set(
-        await this.planningApi.compareSnapshots(this.baseId(), this.varianteId()),
-      );
+      const resultat = await this.planningApi.compareSnapshots(base, variante);
+      if (request === this.request) {
+        this.comparaison.set(resultat);
+      }
     } catch (error) {
-      this.error.set(errorMessage(error));
+      if (request === this.request) {
+        this.error.set(errorMessage(error));
+      }
     } finally {
-      this.chargement.set(false);
+      if (request === this.request) {
+        this.chargement.set(false);
+      }
     }
-  }
-
-  /**
-   * Label of a snapshot in the picker: what it is, in which edition, when, and
-   * whether it is still current (issue #170). A comparison is a decision aid,
-   * so a side computed before its referential moved has to say so — here it
-   * changes nothing about what may be compared, only about what the numbers
-   * mean.
-   */
-  protected libelle(snapshot: PlanSnapshot): string {
-    const date = snapshot.creeLe ? new Date(snapshot.creeLe).toLocaleString(intlLocale()) : '';
-    const edition = snapshot.editionNom ?? snapshot.editionId;
-    const fraicheur = snapshot.perime ? $localize`:@@comparateur.option.perime:périmé` : '';
-    return [snapshot.libelle, edition, date, fraicheur]
-      .filter((part) => part.length > 0)
-      .join(' — ');
   }
 
   /**
@@ -167,7 +115,7 @@ export class ComparateurPage implements OnInit {
     if (!resultat) {
       return [];
     }
-    const byId = new Map(this.instantanes().map((snapshot) => [snapshot.id, snapshot]));
+    const byId = new Map(this.snapshots().map((snapshot) => [snapshot.id, snapshot]));
     return [resultat.base, resultat.variante]
       .map((cote) => (cote.snapshotId === null ? null : byId.get(cote.snapshotId)))
       .filter((snapshot): snapshot is PlanSnapshot => snapshot !== undefined && snapshot !== null)

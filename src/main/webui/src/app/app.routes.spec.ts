@@ -91,7 +91,7 @@ describe('app.routes', () => {
     // Le compte exact plutôt qu'un plancher : un plancher laisse supprimer six
     // titres sans rien dire, et c'est ce chiffre-là que les descriptions de PR
     // annonçaient de travers.
-    expect(titrees).toHaveLength(42);
+    expect(titrees).toHaveLength(40);
     for (const route of titrees) {
       // Une fonction, et non une chaîne : c'est ce qui permet au titre de
       // passer par $localize sans être évalué au chargement du module, avant
@@ -407,6 +407,13 @@ describe('app.routes', () => {
         '/consignes-solveur?onglet=consignes&date=2026-08-02&nouvelle=1',
       );
     });
+  });
+
+  /** The Autopsie, the Instantanés and the Comparateur became « Versions du plan » (issue #702). */
+  it('mène les trois anciennes adresses des versions à la nouvelle page', () => {
+    for (const path of ['kpi', 'instantanes', 'comparateur']) {
+      expect(allRoutes(routes).find((route) => route.path === path)?.redirectTo).toBe('/versions');
+    }
   });
 
   /** `/constraints` became « Règles du planning » (issue #720). */

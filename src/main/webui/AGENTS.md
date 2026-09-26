@@ -333,13 +333,13 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   mark somebody absent, repair the seats they held), `/marge` (« Marge
   disponible » — the day × timeslot grid of what is left: the animateurs
   available then minus the seats to staff, read either on the seats a solve
-  would have to fill or on the plan persisted), `/kpi` (« Autopsie du
-planning » — the table of every solve, and above it the « Rejeu » of one
-edition's solves: small multiples drawn by hand over the pure
-`pages/kpi/rejeu.ts`, a cursor and a play button that never runs under
-`prefers-reduced-motion`; `?edition=` — `*` for every edition — `?rang=`
-and `?dosage=` in the URL), `/comparateur`
-  (« Comparateur A/B » of two snapshots), `/instantanes` (« Instantanés »),
+  would have to fill or on the plan persisted), `/versions` (« Versions du
+  plan » — the finished solves and the snapshots of the edition in one
+  chronology over the pure `versions.ts`, `?editions=toutes` for every
+  edition's; two ticked rows, or one and « Plan en place », open the A/B
+  comparator as a panel beside the table, `?comparer=a,b` keeping the pair;
+  `/kpi`, `/instantanes` and `/comparateur` redirect there, the replay of the
+  former Autopsie is gone; the Solveur shows its five latest rows),
   `/ouvertures` (« Horaires des stands » — three
   views chosen by `?vue=`: the grid, the default, read and typed in one place —
   one field per stand and timeslot, an empty cell is closed, and behind each
