@@ -92,7 +92,7 @@
           <ul class="journee-changements-animateurs">
             @for (personne of personLines(); track personne.animateurId) {
               <li>
-                <a routerLink="/timeline" [queryParams]="{ animateur: personne.animateurId }">{{ personne.nomAffiche }}</a>
+                <a [routerLink]="['/animateurs', personne.animateurId]" [queryParams]="{ section: 'timeline' }">{{ personne.nomAffiche }}</a>
                 <ul>
                   @for (ligne of personne.changements; track $index) {
                     <li [class.journee-changements-retrait]="ligne.type === 'RETRAIT'">{{ ligne.libelle }}</li>
@@ -129,14 +129,14 @@
                     </td>
                     <td>
                       @if (ligne.avant; as avant) {
-                        <a routerLink="/timeline" [queryParams]="{ animateur: avant.animateurId }">{{ avant.nomAffiche }}</a>
+                        <a [routerLink]="['/animateurs', avant.animateurId]" [queryParams]="{ section: 'timeline' }">{{ avant.nomAffiche }}</a>
                       } @else {
                         <span class="journee-changements-vide" i18n="@@journee.changements.siegeVide">—</span>
                       }
                     </td>
                     <td>
                       @if (ligne.apres; as apres) {
-                        <a routerLink="/timeline" [queryParams]="{ animateur: apres.animateurId }">{{ apres.nomAffiche }}</a>
+                        <a [routerLink]="['/animateurs', apres.animateurId]" [queryParams]="{ section: 'timeline' }">{{ apres.nomAffiche }}</a>
                       } @else {
                         <span class="journee-changements-vide" i18n="@@journee.changements.siegeVide">—</span>
                       }

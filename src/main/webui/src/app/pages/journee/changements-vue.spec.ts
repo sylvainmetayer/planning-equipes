@@ -116,6 +116,18 @@ describe('ChangementsView', () => {
     expect(text()).toContain('horaires modifiés');
   });
 
+  // Every name of the Journée leads to the person's fiche, their planning open.
+  it("links each person's name to their fiche, on the per-person reading", async () => {
+    fixture.componentRef.setInput('reading', 'animateurs');
+    await fixture.whenStable();
+
+    const liens = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>('a'),
+    ).map((lien) => lien.getAttribute('href'));
+    expect(liens).toContain('/animateurs/alice?section=timeline');
+    expect(liens.some((lien) => lien?.startsWith('/timeline'))).toBe(false);
+  });
+
   it('counts what the filters kept, and says the figures are filtered', async () => {
     fixture.componentRef.setInput('stand', 'DIXIT');
     await fixture.whenStable();

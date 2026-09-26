@@ -11,7 +11,7 @@
 
 import { formatNumber, formatPercent } from '@angular/common';
 import { LigneEquite, RapportEquite } from '../../core/models';
-import { columnConstraint, formatColonne, libelleColonne, valeurColonne } from './equite';
+import { columnConstraint, formatColonne, libelleColonne, valeurColonne } from '../equite/equite';
 
 /** The five axes of the original idea: hours, evenings, week-ends, demanding seats, honoured wishes. */
 export const DEFAULT_AXES = [

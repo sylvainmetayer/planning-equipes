@@ -3,6 +3,7 @@
 
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { Animateur, PlanningEvenement, PosteAffectation, Stand } from '../../core/models';
 import { ValidationsStore } from '../../core/validations.store';
@@ -42,6 +43,7 @@ describe('ComparaisonView', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
+        provideRouter([]),
         { provide: ValidationsStore, useValue: { acceptedDays: () => new Set<string>() } },
       ],
     });

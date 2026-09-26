@@ -1,12 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { Animateur, AnimateurProfile, ProfileAdjustment } from '../../core/models';
 import {
+  CompetenceDraft,
   adjustmentScope,
+  applyCompetenceDrafts,
   availabilityStrip,
+  carriedDrafts,
   competenceRows,
+  competencesChanged,
   daysOffOutsideEvent,
+  initialSections,
+  readSection,
   regimeChanges,
   regimeLabel,
+  seatLabel,
   upcomingCount,
 } from './animateur-fiche';
 
@@ -177,5 +184,77 @@ describe('upcomingCount', () => {
         }),
       ),
     ).toBe(1);
+  });
+});
+
+describe('fiche sections, days and competence lines', () => {
+  it('opens the three first sections, plus the one an address names', () => {
+    expect([...initialSections(null)]).toEqual(['identite', 'disponibilites', 'timeline']);
+    expect(initialSections(readSection('equite')).has('equite')).toBe(true);
+    expect(readSection('inconnue')).toBeNull();
+    expect(readSection(null)).toBeNull();
+  });
+
+  it('words a seat as the strip panel names it', () => {
+    expect(
+      seatLabel({
+        standNom: 'Stand 01',
+        standId: 's1',
+        heureDebut: '18:00:00',
+        heureFin: '22:00:00',
+      }),
+    ).toBe('Stand 01 18:00–22:00');
+    expect(seatLabel({ standNom: null, standId: 's1', heureDebut: null, heureFin: null })).toBe(
+      's1 –',
+    );
+  });
+
+  it('turns the edited lines back into the fiche, dropping a line with neither level nor wish', () => {
+    const drafts: CompetenceDraft[] = [
+      { typologieId: 'JEU', niveau: 'REFERENT', wished: false },
+      { typologieId: 'CUBE', niveau: null, wished: true },
+      { typologieId: 'LOG', niveau: null, wished: false },
+    ];
+    expect(applyCompetenceDrafts(drafts)).toEqual({
+      competences: { JEU: 'REFERENT' },
+      souhaits: ['CUBE'],
+    });
+  });
+
+  it('knows when the lines no longer say what the fiche holds', () => {
+    const fiche = animateur({ competences: { JEU: 'REFERENT' }, souhaits: ['CUBE'] });
+    const same: CompetenceDraft[] = [
+      { typologieId: 'JEU', niveau: 'REFERENT', wished: false },
+      { typologieId: 'CUBE', niveau: null, wished: true },
+    ];
+    expect(competencesChanged(fiche, same)).toBe(false);
+    expect(
+      competencesChanged(fiche, [...same, { typologieId: 'LOG', niveau: null, wished: false }]),
+    ).toBe(false);
+    expect(competencesChanged(fiche, [{ ...same[0], niveau: 'AUTONOME' }, same[1]])).toBe(true);
+    expect(competencesChanged(fiche, [same[0], { ...same[1], wished: false }])).toBe(true);
+  });
+
+  it('carries unsaved lines across a reload, and takes the fiche once saved or for somebody else', () => {
+    const fiche = animateur({ competences: { JEU: 'REFERENT' } });
+    const read: CompetenceDraft[] = [{ typologieId: 'JEU', niveau: 'REFERENT', wished: false }];
+    const edited: CompetenceDraft[] = [{ typologieId: 'JEU', niveau: 'AUTONOME', wished: false }];
+    const source = { animateurId: 'a1', animateur: fiche, drafts: read };
+    const again = { ...source, drafts: [...read] };
+
+    // Untouched lines follow the fiche; edited ones survive a reload elsewhere.
+    expect(carriedDrafts(again, { source, value: read })).toBe(again.drafts);
+    expect(carriedDrafts(again, { source, value: edited })).toBe(edited);
+    // Saved: the fiche now says what the lines say, and its own lines are taken.
+    const saved = {
+      animateurId: 'a1',
+      animateur: animateur({ competences: { JEU: 'AUTONOME' } }),
+      drafts: edited.map((line) => ({ ...line })),
+    };
+    expect(carriedDrafts(saved, { source, value: edited })).toBe(saved.drafts);
+    // Another person: never somebody else's edits.
+    const other = { animateurId: 'a2', animateur: fiche, drafts: read };
+    expect(carriedDrafts(other, { source, value: edited })).toBe(other.drafts);
+    expect(carriedDrafts(source, undefined)).toBe(source.drafts);
   });
 });

@@ -106,8 +106,10 @@ describe('EquiteRadar', () => {
   it('marks the axis a switched-on solver rule measures', () => {
     const element = render();
     const penible = element.querySelectorAll('.equite-radar-label')[3];
-    expect(penible.querySelector('.equite-solveur-icon')).not.toBeNull();
-    expect(element.querySelectorAll('.equite-radar-label .equite-solveur-icon')).toHaveLength(1);
+    expect(penible.querySelector('.equite-radar-solver-icon')).not.toBeNull();
+    expect(element.querySelectorAll('.equite-radar-label .equite-radar-solver-icon')).toHaveLength(
+      1,
+    );
   });
 
   it('adds the optional axes and a second person', () => {

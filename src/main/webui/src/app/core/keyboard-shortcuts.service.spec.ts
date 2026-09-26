@@ -104,9 +104,9 @@ describe('KeyboardShortcutsService', () => {
   it('navigates to the picked entry once the palette closes', () => {
     const { dialog, router } = start();
     frapper('k', { ctrlKey: true });
-    dialog.ferme.next({ route: '/timeline', queryParams: { animateur: 'a1' } });
-    expect(router.navigate).toHaveBeenCalledWith(['/timeline'], {
-      queryParams: { animateur: 'a1' },
+    dialog.ferme.next({ route: '/marge', queryParams: { mode: 'tension' } });
+    expect(router.navigate).toHaveBeenCalledWith(['/marge'], {
+      queryParams: { mode: 'tension' },
     });
   });
 

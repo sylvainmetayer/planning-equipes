@@ -87,7 +87,7 @@ describe('classeCellule', () => {
  * axis now leads to the one screen where its breaches are actually corrected.
  */
 describe('cellLink', () => {
-  it('sends a day to the Journée screen, a stand to its calendar, a person to their timeline', () => {
+  it('sends a day to the Journée screen, a stand to its calendar, a person to their fiche', () => {
     expect(cellLink('JOUR', '2026-07-06', '2026-07-06')).toEqual({
       route: '/journee',
       queryParams: { jour: '2026-07-06' },
@@ -99,8 +99,8 @@ describe('cellLink', () => {
       label: 'Voir le planning de Pavillon Bleu',
     });
     expect(cellLink('ANIMATEUR', 'a1', 'Alice Martin')).toEqual({
-      route: '/timeline',
-      queryParams: { animateur: 'a1' },
+      route: '/animateurs/a1',
+      queryParams: { section: 'timeline' },
       label: 'Voir la journée de Alice Martin',
     });
   });
@@ -110,7 +110,7 @@ describe('cellLink', () => {
   it('links on the id and reads on the name', () => {
     const lien = cellLink('ANIMATEUR', 'a1', 'Alice Martin');
 
-    expect(lien.queryParams['animateur']).toBe('a1');
+    expect(lien.route).toBe('/animateurs/a1');
     expect(lien.label).toContain('Alice Martin');
   });
 });

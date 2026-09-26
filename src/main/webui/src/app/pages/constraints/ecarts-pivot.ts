@@ -133,14 +133,14 @@ export interface LienPivot {
  * A cell used to open on a count and stop there — a dead end. Each axis has
  * exactly one screen where its breaches are looked at and fixed: a day is read
  * on the Journée screen, a stand on the assignment calendar filtered on it, a
- * person on their own timeline. The label names the target rather than the
+ * person on their fiche, its planning section open. The label names the target rather than the
  * screen, because that is what the reader was looking at when they clicked.
  */
 export function cellLink(axe: AxePivot, cle: string, libelle: string): LienPivot {
   if (axe === 'ANIMATEUR') {
     return {
-      route: '/timeline',
-      queryParams: { animateur: cle },
+      route: `/animateurs/${cle}`,
+      queryParams: { section: 'timeline' },
       label: $localize`:@@constraints.pivot.detail.versTimeline:Voir la journée de ${libelle}:qui:`,
     };
   }

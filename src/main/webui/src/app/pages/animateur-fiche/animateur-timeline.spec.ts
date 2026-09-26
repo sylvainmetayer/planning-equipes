@@ -1,18 +1,14 @@
 // The builders below are pure and tested as such. The rendering half at the end
-// covers what the page does around them: which animateur it lands on (the URL
-// carries the selection, so a shared link must open on the right person), and
-// the three exports, which are the only actions of the screen — each of them
-// hands out a file or a mail carrying someone's personal planning.
+// covers what the « Planning » section of the fiche draws around them: the
+// person's days, what the plan says about them, and every shift a link to the
+// Journée with its seat open.
 
-import { Location } from '@angular/common';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute } from '@angular/router';
+import { provideRouter } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
 import { AnalysesApi } from '../../core/api/analyses-api';
-import { PlanningApi } from '../../core/api/planning-api';
 import { ConsignesStore } from '../../core/consignes.store';
-import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import {
   Animateur,
@@ -23,12 +19,11 @@ import {
   Stand,
 } from '../../core/models';
 import {
-  AnimateurTimelinePage,
-  buildAnimateurOptions,
+  AnimateurTimeline,
   buildAnimateurTimeline,
   buildStandsSummary,
   exportFilename,
-} from './animateur-timeline-page';
+} from './animateur-timeline';
 
 function creneau(overrides: Partial<Creneau> & { id: number; jour: number }): Creneau {
   return { date: '2026-08-01', heureDebut: '09:00', heureFin: '12:00', ...overrides };
@@ -288,73 +283,15 @@ describe('buildAnimateurTimeline', () => {
   });
 });
 
-describe('buildAnimateurOptions', () => {
-  it('lists each animateur once, sorted by display name', () => {
-    const options = buildAnimateurOptions([
-      poste({
-        id: 'p1',
-        creneau: creneau({ id: 1, jour: 1 }),
-        stand: stand('S1'),
-        animateur: animateur('B', 'Bob', 'Zed'),
-      }),
-      poste({
-        id: 'p2',
-        creneau: creneau({ id: 2, jour: 1 }),
-        stand: stand('S2'),
-        animateur: animateur('A', 'Alice', 'Young'),
-      }),
-      poste({
-        id: 'p3',
-        creneau: creneau({ id: 3, jour: 2 }),
-        stand: stand('S1'),
-        animateur: animateur('B', 'Bob', 'Zed'),
-      }),
-    ]);
-
-    expect(options).toEqual([
-      { id: 'A', label: 'Alice Young' },
-      { id: 'B', label: 'Bob Zed' },
-    ]);
-  });
-
-  it('disambiguates two animateurs sharing the same display name by appending their id', () => {
-    const options = buildAnimateurOptions([
-      poste({
-        id: 'p1',
-        creneau: creneau({ id: 1, jour: 1 }),
-        stand: stand('S1'),
-        animateur: animateur('id-1', 'Jean', 'Dupont'),
-      }),
-      poste({
-        id: 'p2',
-        creneau: creneau({ id: 2, jour: 1 }),
-        stand: stand('S2'),
-        animateur: animateur('id-2', 'Jean', 'Dupont'),
-      }),
-    ]);
-
-    expect(options.map((option) => option.label)).toEqual([
-      'Jean Dupont (id-1)',
-      'Jean Dupont (id-2)',
-    ]);
-  });
-});
-
 describe('exportFilename', () => {
   it('builds a readable filename from the animateur display name', () => {
-    expect(exportFilename([{ id: 'id-1', label: 'Jeanne Dupont' }], 'id-1', 'pdf')).toBe(
-      'planning-Jeanne-Dupont.pdf',
-    );
-    expect(exportFilename([{ id: 'id-1', label: 'Jeanne Dupont' }], 'id-1', 'ics')).toBe(
-      'planning-Jeanne-Dupont.ics',
-    );
+    expect(exportFilename('Jeanne Dupont', 'pdf')).toBe('planning-Jeanne-Dupont.pdf');
+    expect(exportFilename('Jeanne Dupont', 'ics')).toBe('planning-Jeanne-Dupont.ics');
   });
 
-  it('falls back on the id and strips path separators when the label is unusable', () => {
-    expect(exportFilename([], 'a/b', 'ics')).toBe('planning-a-b.ics');
-    expect(exportFilename([{ id: 'id-1', label: '///' }], 'id-1', 'pdf')).toBe(
-      'planning-animateur.pdf',
-    );
+  it('strips path separators, and falls back on a word when nothing is left', () => {
+    expect(exportFilename('a/b', 'ics')).toBe('planning-a-b.ics');
+    expect(exportFilename('///', 'pdf')).toBe('planning-animateur.pdf');
   });
 });
 
@@ -501,71 +438,52 @@ function twoAnimateurPlanning(): PlanningEvenement {
   } as unknown as PlanningEvenement;
 }
 
-describe('AnimateurTimelinePage', () => {
-  let fixture: ComponentFixture<AnimateurTimelinePage>;
-  let analysesApi: {
-    typologies: ReturnType<typeof vi.fn>;
-    breaks: ReturnType<typeof vi.fn>;
-    walks: ReturnType<typeof vi.fn>;
-  };
-  let planningApi: {
-    exportForAnimateur: ReturnType<typeof vi.fn>;
-    sendToAnimateur: ReturnType<typeof vi.fn>;
-  };
-  let notify: ReturnType<typeof vi.fn>;
-  let replaceState: ReturnType<typeof vi.fn>;
-  let planningState: {
-    loadForDisplay: ReturnType<typeof vi.fn>;
-    require: ReturnType<typeof vi.fn>;
-  };
-  let consignesStore: {
-    reload: ReturnType<typeof vi.fn>;
-    consigneOf: (date: string | null) => ConsigneEdition | null;
-  };
+describe('AnimateurTimeline', () => {
+  let fixture: ComponentFixture<AnimateurTimeline>;
+  let planningState: { loadForDisplay: ReturnType<typeof vi.fn> };
 
   async function rendre(
     evenement: PlanningEvenement | null,
-    options: { animateurEnParametre?: string | null; consignes?: ConsigneEdition[] } = {},
+    options: { animateurId?: string; consignes?: ConsigneEdition[] } = {},
     analyses: { breaks?: () => unknown; walks?: () => unknown } = {},
   ): Promise<void> {
-    consignesStore = {
+    const consignesStore = {
       reload: vi.fn(async () => undefined),
-      consigneOf: (date) => (options.consignes ?? []).find((each) => each.date === date) ?? null,
+      consigneOf: (date: string | null) =>
+        (options.consignes ?? []).find((each) => each.date === date) ?? null,
     };
-    analysesApi = {
+    const analysesApi = {
       typologies: vi.fn(async () => []),
       breaks: vi.fn(async () => analyses.breaks?.() ?? null),
       walks: vi.fn(async () => analyses.walks?.() ?? null),
     };
-    planningApi = {
-      exportForAnimateur: vi.fn(async () => 'Téléchargement démarré.'),
-      sendToAnimateur: vi.fn(async () => ({ envoyes: 1, echecs: [] })),
-    };
-    notify = vi.fn();
-    replaceState = vi.fn();
     planningState = {
-      loadForDisplay: vi.fn(async () => evenement),
-      require: vi.fn(async () => evenement),
+      loadForDisplay: vi.fn(async () => {
+        if (!evenement) {
+          throw new Error('boom');
+        }
+        return evenement;
+      }),
     };
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
+        provideRouter([]),
         { provide: AnalysesApi, useValue: analysesApi },
-        { provide: PlanningApi, useValue: planningApi },
-        { provide: NotificationService, useValue: { notify } },
         { provide: PlanningStateService, useValue: planningState },
         { provide: ConsignesStore, useValue: consignesStore },
-        { provide: Location, useValue: { path: () => '/timeline', replaceState } },
-        {
-          provide: ActivatedRoute,
-          useValue: {
-            snapshot: { queryParamMap: { get: () => options.animateurEnParametre ?? null } },
-          },
-        },
       ],
     });
-    fixture = TestBed.createComponent(AnimateurTimelinePage);
+    fixture = TestBed.createComponent(AnimateurTimeline);
+    fixture.componentRef.setInput('animateurId', options.animateurId ?? 'a1');
+    await fixture.whenStable();
+    // The plan is read on init, outside what `whenStable` waits for.
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(planningState.loadForDisplay).toHaveBeenCalled();
+      expect(racine().querySelector('mat-progress-bar')).toBeNull();
+    });
     await fixture.whenStable();
   }
 
@@ -573,61 +491,41 @@ describe('AnimateurTimelinePage', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  /** Le geste de l'écran : choisir quelqu'un d'autre dans la liste. */
-  function select(animateurId: string): void {
-    (fixture.componentInstance as unknown as { selectAnimateur(id: string): void }).selectAnimateur(
-      animateurId,
-    );
-  }
+  it('reads the plan again when the fiche says one of its gestures moved it', async () => {
+    await rendre(twoAnimateurPlanning(), { animateurId: 'a2' });
+    expect(racine().querySelectorAll('.timeline-day')).toHaveLength(1);
 
-  function bouton(libelle: string): HTMLButtonElement {
-    const trouve = Array.from(racine().querySelectorAll('button')).find((each) =>
-      each.textContent!.includes(libelle),
-    );
-    expect(trouve, `bouton « ${libelle} » absent`).toBeDefined();
-    return trouve as HTMLButtonElement;
-  }
-
-  it('lands on the first animateur when the URL names none', async () => {
-    await rendre(twoAnimateurPlanning());
-
-    expect(racine().querySelector('.timeline-animateur-select input')).not.toBeNull();
-    expect(racine().querySelectorAll('.timeline-day-card')).toHaveLength(1);
-    expect(racine().querySelector('.timeline-day-card h2')!.textContent!).toContain('Jour 1');
+    // Bob's seat was freed meanwhile: the next read no longer seats him.
+    planningState.loadForDisplay.mockResolvedValue({
+      ...twoAnimateurPlanning(),
+      postes: twoAnimateurPlanning().postes.filter((poste) => poste.animateur?.id !== 'a2'),
+    });
+    fixture.componentRef.setInput('version', 1);
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(planningState.loadForDisplay).toHaveBeenCalledTimes(2);
+      expect(racine().querySelectorAll('.timeline-day')).toHaveLength(0);
+    });
   });
 
-  it('opens on the animateur the URL names, so a shared link points at the right person', async () => {
-    await rendre(twoAnimateurPlanning(), { animateurEnParametre: 'a2' });
+  it('draws the days of the person it is given, and of nobody else', async () => {
+    await rendre(twoAnimateurPlanning(), { animateurId: 'a2' });
 
     // Bob holds one seat only, Alice two: the day list is what tells them apart.
+    expect(racine().querySelectorAll('.timeline-day')).toHaveLength(1);
     expect(racine().querySelectorAll('.timeline-block-list li')).toHaveLength(1);
   });
 
-  it('keeps the selection in the URL without piling up history entries', async () => {
-    await rendre(twoAnimateurPlanning());
+  it('links every shift to the Journée on its day, its seat open in the Siège panel', async () => {
+    const evenement = twoAnimateurPlanning();
+    await rendre(evenement);
 
-    // Written straight to the address bar, never through a router navigation:
-    // this page had its own copy of that effect until it joined the shared
-    // helper. See docs/decisions/0018-ecrire-l-url-de-vue-sans-naviguer.md.
-    expect(replaceState).toHaveBeenLastCalledWith('/timeline?animateur=a1');
-  });
-
-  it("suit le changement d'animateur dans l'URL, et c'est cette URL qui rouvre la même personne", async () => {
-    // Le lien qu'on partage sur cet écran, c'est « regarde le planning
-    // d'Untel » : changer de personne doit donc se voir dans la barre
-    // d'adresse, et cette adresse doit rouvrir la même personne.
-    await rendre(twoAnimateurPlanning());
-    expect(replaceState).toHaveBeenLastCalledWith('/timeline?animateur=a1');
-
-    select('a2');
-    await fixture.whenStable();
-
-    expect(replaceState).toHaveBeenLastCalledWith('/timeline?animateur=a2');
-
-    // Et le retour : cette URL-là, rechargée, rouvre bien Bob — une seule
-    // vacation, là où Alice en a deux.
-    await rendre(twoAnimateurPlanning(), { animateurEnParametre: 'a2' });
-    expect(racine().querySelectorAll('.timeline-block-list li')).toHaveLength(1);
+    const liens = Array.from(racine().querySelectorAll<HTMLAnchorElement>('a.timeline-block-link'));
+    expect(liens).toHaveLength(2);
+    const premier = evenement.postes.find((each) => each.animateur?.id === 'a1')!;
+    expect(liens[0].getAttribute('href')).toBe(
+      `/journee?date=${premier.creneau!.date}&siege=${premier.id}`,
+    );
   });
 
   it('tells the animateur when their day is under consigne, as the Journée tab and the PDF do', async () => {
@@ -663,69 +561,24 @@ describe('AnimateurTimelinePage', () => {
         each.textContent!.trim(),
       ),
     ).toEqual(['Dixit', 'Tir']);
-    expect(
-      racine().querySelector('.timeline-stands-card mat-card-subtitle')!.textContent!,
-    ).toContain('2 stand(s)');
+    expect(racine().querySelector('.timeline-stands-summary')!.textContent!).toContain(
+      '2 stand(s)',
+    );
   });
 
-  it('says what to do when there is no planning at all', async () => {
+  it('says so when the person holds no seat', async () => {
     await rendre({ postes: [] } as unknown as PlanningEvenement);
 
-    expect(racine().textContent!).toContain('Lancez une résolution depuis la page Solveur');
-    // Nothing to export: the three actions must not look available.
-    expect(bouton('Exporter le PDF').disabled).toBe(true);
-    expect(bouton("Exporter l'ICS").disabled).toBe(true);
-    expect(bouton('Envoyer par e-mail').disabled).toBe(true);
+    expect(racine().textContent!).toContain(
+      "Cet animateur n'a aucun poste dans le planning actuel.",
+    );
   });
 
   it('shows the load error instead of an empty timeline', async () => {
     await rendre(null);
-    planningState.loadForDisplay.mockRejectedValue(new Error('boom'));
-
-    bouton('Actualiser').click();
-    await fixture.whenStable();
 
     expect(racine().querySelector('[role="alert"]')!.textContent!).toContain('boom');
-  });
-
-  it('exports the displayed animateur, and only them', async () => {
-    await rendre(twoAnimateurPlanning());
-
-    bouton('Exporter le PDF').click();
-    await fixture.whenStable();
-
-    expect(planningApi.exportForAnimateur).toHaveBeenCalledOnce();
-    const [format, animateurId, filename, corps, contentType] = planningApi.exportForAnimateur.mock
-      .calls[0] as unknown as [string, string, string, unknown, string];
-    expect(format).toBe('pdf');
-    expect(animateurId).toBe('a1');
-    // Named after the person, not after their id: the file lands in a mailbox.
-    expect(filename).toBe('planning-Alice-Martin.pdf');
-    // The planning goes as the request body: what is exported is what is shown.
-    expect(corps).toEqual(await planningState.require.mock.results[0].value);
-    expect(contentType).toBe('application/pdf');
-    expect(notify.mock.calls.at(-1)![0].variant).toBe('success');
-  });
-
-  it('reports an export failure instead of failing silently', async () => {
-    await rendre(twoAnimateurPlanning());
-    planningApi.exportForAnimateur.mockRejectedValue(new Error('serveur indisponible'));
-
-    bouton("Exporter l'ICS").click();
-    await fixture.whenStable();
-
-    const dernier = notify.mock.calls.at(-1)![0];
-    expect(dernier.variant).toBe('error');
-    expect(dernier.message).toContain('serveur indisponible');
-  });
-
-  it('mails the planning of the displayed animateur', async () => {
-    await rendre(twoAnimateurPlanning());
-
-    bouton('Envoyer par e-mail').click();
-    await fixture.whenStable();
-
-    expect(planningApi.sendToAnimateur).toHaveBeenCalledWith('a1');
+    expect(racine().querySelector('.timeline-day')).toBeNull();
   });
 
   it('draws the breaks of the shown days on their track and lists them, the relay-less one flagged', async () => {
@@ -814,7 +667,7 @@ describe('AnimateurTimelinePage', () => {
     );
   });
 
-  it('still draws the tracks when the breaks cannot be read, and draws none without a selected animateur', async () => {
+  it('still draws the tracks when the breaks cannot be read', async () => {
     await rendre(
       twoAnimateurPlanning(),
       {},
@@ -824,23 +677,7 @@ describe('AnimateurTimelinePage', () => {
         },
       },
     );
-    expect(racine().querySelectorAll('.timeline-day-card').length).toBeGreaterThan(0);
+    expect(racine().querySelectorAll('.timeline-day').length).toBeGreaterThan(0);
     expect(racine().querySelector('.timeline-pause')).toBeNull();
-
-    await rendre(
-      { postes: [] } as unknown as PlanningEvenement,
-      {},
-      {
-        breaks: () => ({
-          journees: [],
-          journeesAnalysees: 0,
-          pausesDues: 0,
-          relaisManquants: 0,
-          message: '',
-        }),
-      },
-    );
-    expect(racine().querySelector('.timeline-pause')).toBeNull();
-    expect(racine().querySelector('.timeline-day-card')).toBeNull();
   });
 });

@@ -195,8 +195,8 @@
                   <p class="typologies-noms">
                     <ng-container i18n="@@typologies.affectation.column.affectes">Animateurs affectés</ng-container> ({{ ligne.animateursAffectes.length }}) :
                     @for (animateur of ligne.animateursAffectes; track animateur.animateurId) {
-                      <a class="typologies-lien" [routerLink]="['/timeline']"
-                         [queryParams]="{ animateur: animateur.animateurId }">{{ animateur.nom }}</a>
+                      <a class="typologies-lien" [routerLink]="['/animateurs', animateur.animateurId]"
+                         [queryParams]="{ section: 'timeline' }">{{ animateur.nom }}</a>
                     } @empty {
                       <span class="typologies-vide" i18n="@@detail.none">Aucun</span>
                     }
@@ -205,8 +205,8 @@
                     <p class="typologies-noms">
                       <ng-container i18n="@@typologies.detail.jamaisAffectes">Appréciés mais jamais affectés</ng-container> :
                       @for (animateur of ligne.competentsJamaisAffectes; track animateur.animateurId) {
-                        <a class="typologies-lien" [routerLink]="['/timeline']"
-                           [queryParams]="{ animateur: animateur.animateurId }">{{ animateur.nom }}</a>
+                        <a class="typologies-lien" [routerLink]="['/animateurs', animateur.animateurId]"
+                           [queryParams]="{ section: 'timeline' }">{{ animateur.nom }}</a>
                       }
                     </p>
                   }
@@ -214,8 +214,8 @@
                     <p class="typologies-noms">
                       <ng-container i18n="@@typologies.detail.sansCompetence">Affectés sans l'appréciation</ng-container> :
                       @for (animateur of ligne.affectesSansCompetence; track animateur.animateurId) {
-                        <a class="typologies-lien" [routerLink]="['/timeline']"
-                           [queryParams]="{ animateur: animateur.animateurId }">{{ animateur.nom }}</a>
+                        <a class="typologies-lien" [routerLink]="['/animateurs', animateur.animateurId]"
+                           [queryParams]="{ section: 'timeline' }">{{ animateur.nom }}</a>
                       }
                     </p>
                   }
@@ -255,8 +255,8 @@
                     <strong>{{ ligne.animateursAffectes.length }}</strong>
                     <span class="typologies-noms">
                       @for (animateur of ligne.animateursAffectes; track animateur.animateurId) {
-                        <a class="typologies-lien" [routerLink]="['/timeline']"
-                           [queryParams]="{ animateur: animateur.animateurId }">{{ animateur.nom }}</a>
+                        <a class="typologies-lien" [routerLink]="['/animateurs', animateur.animateurId]"
+                           [queryParams]="{ section: 'timeline' }">{{ animateur.nom }}</a>
                       }
                     </span>
                   </td>
@@ -268,8 +268,8 @@
                       <span class="typologies-ecart" i18n="@@typologies.affectation.jamaisAffectes">dont {{ ligne.competentsJamaisAffectes.length }} jamais affectés</span>
                       <span class="typologies-noms">
                         @for (animateur of ligne.competentsJamaisAffectes; track animateur.animateurId) {
-                          <a class="typologies-lien" [routerLink]="['/timeline']"
-                             [queryParams]="{ animateur: animateur.animateurId }">{{ animateur.nom }}</a>
+                          <a class="typologies-lien" [routerLink]="['/animateurs', animateur.animateurId]"
+                             [queryParams]="{ section: 'timeline' }">{{ animateur.nom }}</a>
                         }
                       </span>
                     }
@@ -277,8 +277,8 @@
                       <span class="typologies-ecart" i18n="@@typologies.affectation.sansCompetence">{{ ligne.affectesSansCompetence.length }} affectés sans la compétence</span>
                       <span class="typologies-noms">
                         @for (animateur of ligne.affectesSansCompetence; track animateur.animateurId) {
-                          <a class="typologies-lien" [routerLink]="['/timeline']"
-                             [queryParams]="{ animateur: animateur.animateurId }">{{ animateur.nom }}</a>
+                          <a class="typologies-lien" [routerLink]="['/animateurs', animateur.animateurId]"
+                             [queryParams]="{ section: 'timeline' }">{{ animateur.nom }}</a>
                         }
                       </span>
                     }

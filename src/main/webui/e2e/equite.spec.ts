@@ -1,6 +1,7 @@
 // L'écran Équité sur le planning ensemencé : le tableau liste les animateurs
 // affectés, le tri se pose dans l'URL et survit au rechargement, l'export CSV
-// répond, et un nom mène à la fiche de la personne.
+// répond, et un nom mène à la fiche de la personne — où l'ancienne lecture
+// « Fiche » de l'écran, radar compris, a déménagé.
 
 import { APIRequestContext, expect, test } from '@playwright/test';
 import { contexteAdmin, pageAdmin, SEED, seedPlanning } from './support';
@@ -101,18 +102,34 @@ test("l'export CSV répond avec une ligne par animateur", async ({ browser }) =>
   await page.context().close();
 });
 
-test('un clic sur un animateur ouvre sa fiche, qui mène à sa timeline', async ({ browser }) => {
+test('un clic sur un animateur ouvre sa fiche, son planning déplié et son radar à côté', async ({
+  browser,
+}) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/equite');
 
   await page.getByRole('link', { name: /Alice E2E/ }).click();
 
   await expect(page).toHaveURL(new RegExp(`/animateurs/${SEED.demandeur}$`));
-  await expect(page.locator('#contenu')).toContainText('Identité et régime');
-  await expect(page.locator('#contenu')).toContainText('Écart à la médiane');
+  await expect(page.locator('#contenu')).toContainText('Identité et contact');
+  await expect(page.locator('#fiche-section-timeline')).toHaveAttribute('open', '');
 
-  await page.getByRole('link', { name: 'Ouvrir sa timeline' }).click();
-  await expect(page).toHaveURL(new RegExp(String.raw`/timeline\?animateur=${SEED.demandeur}`));
-  await expect(page.locator('#contenu')).toContainText('Timeline animateur');
+  await page.getByRole('heading', { name: 'Charge et équité' }).click();
+  await expect(page.locator('#contenu')).toContainText('Écart à la médiane');
+  await expect(page.locator('app-equite-radar')).toBeVisible();
+  await page.context().close();
+});
+
+test("l'ancienne lecture « Fiche » mène à la section équité de la fiche, radar affiché", async ({
+  browser,
+}) => {
+  const page = await pageAdmin(browser, admin);
+  await page.goto(`/equite?vue=fiche&animateur=${SEED.demandeur}&axes=heuresJourFerie`);
+
+  await expect(page).toHaveURL(
+    new RegExp(`/animateurs/${SEED.demandeur}\\?section=equite&axes=heuresJourFerie$`),
+  );
+  await expect(page.locator('#fiche-section-equite')).toHaveAttribute('open', '');
+  await expect(page.locator('app-equite-radar')).toBeVisible();
   await page.context().close();
 });
