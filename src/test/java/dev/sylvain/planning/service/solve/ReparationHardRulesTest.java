@@ -111,11 +111,42 @@ class ReparationHardRulesTest {
                 .isInstanceOf(NullPointerException.class);
     }
 
+    /** « Placer » (the Siège panel) goes through the same check: the night rule is named, nothing written. */
+    @Test
+    void placingAMinorOnANightSlotIsRefusedNamingTheRule() {
+        PosteAffectation deNuit = new PosteAffectation("p0", plateau, nuit);
+
+        assertThatThrownBy(() -> whatIf().placeOnFreeSeat(plan(deNuit), "p0", "A2"))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessageContaining("nuit");
+    }
+
+    /** A seat somebody filled since the panel read the plan is not taken from them. */
+    @Test
+    void placingOnASeatNoLongerFreeIsAConflict() {
+        PosteAffectation tenu = new PosteAffectation("p0", plateau, matin);
+        tenu.setAnimateur(adulte);
+
+        assertThatThrownBy(() -> whatIf().placeOnFreeSeat(plan(tenu), "p0", "A2"))
+                .isInstanceOf(BusinessError.Conflict.class)
+                .hasMessageContaining("n'est plus libre");
+    }
+
+    @Test
+    void placingNobodyIsRefused() {
+        PosteAffectation libre = new PosteAffectation("p0", plateau, matin);
+
+        assertThatThrownBy(() -> whatIf().placeOnFreeSeat(plan(libre), "p0", " "))
+                .isInstanceOf(BusinessError.Invalid.class);
+    }
+
     @Test
     void anAcceptableSeatingGetsThroughToTheWrite() {
         PosteAffectation libre = new PosteAffectation("p0", plateau, matin);
 
         assertThatThrownBy(() -> whatIf().applyReparations(plan(libre), List.of("p0"), "A1"))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> whatIf().placeOnFreeSeat(plan(libre), "p0", "A1"))
                 .isInstanceOf(NullPointerException.class);
         assertThatCode(() -> whatIf().suggererReparations(plan(libre), "p0", null))
                 .doesNotThrowAnyException();

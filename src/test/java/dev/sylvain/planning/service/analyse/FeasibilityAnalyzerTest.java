@@ -538,10 +538,8 @@ class FeasibilityAnalyzerTest {
         assertThat(cause.actions())
                 .extracting(dev.sylvain.planning.service.diagnostic.BlockerPlaybook.ActionType::code)
                 .containsExactly("VOIR_BANC", "AJOUTER_COMPETENCE", "BAISSER_EFFECTIF", "REVOIR_INDISPONIBILITES");
-        assertThat(cause.actions().getFirst().route()).isEqualTo("/diagnostic");
-        assertThat(cause.actions().getFirst().parametres())
-                .containsEntry("onglet", "banc")
-                .containsEntry("creneau", "1");
+        assertThat(cause.actions().getFirst().route()).isEqualTo("/journee");
+        assertThat(cause.actions().getFirst().parametres()).containsEntry("creneau", "1");
         assertThat(cause.actions().get(1).parametres()).containsEntry("typologies", "STRATEGIE");
         assertThat(cause.actions().get(2).parametres()).containsEntry("stand", "stand-1");
     }

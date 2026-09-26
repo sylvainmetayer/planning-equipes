@@ -3,6 +3,7 @@
 
 import { ChangeDetectionStrategy, Component, Injectable, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import {
   MAT_DIALOG_DATA,
   MatDialog,
@@ -31,6 +32,15 @@ export interface ConfirmData {
    * blocks.
    */
   detail?: Promise<string>;
+  /** A box to tick alongside the answer — see {@link ConfirmService.askWithOption}. */
+  option?: ConfirmOption;
+}
+
+/** One checkbox under the message: what else the confirmed gesture should do. */
+export interface ConfirmOption {
+  label: string;
+  /** Its state when the dialog opens. */
+  checked: boolean;
 }
 
 /** `null` when the dialog was cancelled. */
@@ -39,13 +49,18 @@ export type ConfirmResult = boolean | null;
 
 @Component({
   selector: 'app-confirm-dialog',
-  imports: [MatDialogModule, MatButtonModule],
+  imports: [MatDialogModule, MatButtonModule, MatCheckboxModule],
   template: `
     <h2 mat-dialog-title>{{ data.title }}</h2>
     <mat-dialog-content>
       <p>{{ data.message }}</p>
       @if (detail(); as texte) {
         <p>{{ texte }}</p>
+      }
+      @if (data.option; as option) {
+        <mat-checkbox [checked]="optionChecked()" (change)="optionChecked.set($event.checked)">
+          {{ option.label }}
+        </mat-checkbox>
       }
     </mat-dialog-content>
     <mat-dialog-actions align="end">
@@ -77,6 +92,8 @@ export class ConfirmDialog {
   protected readonly defaultCancelLabel = $localize`:@@confirmDialog.cancel:Annuler`;
   /** Empty until {@link ConfirmData.detail} resolves, and after it rejects. */
   protected readonly detail = signal('');
+  /** The box of {@link ConfirmData.option}, read by the service once the dialog closes. */
+  readonly optionChecked = signal(this.data.option?.checked ?? false);
 
   constructor() {
     void this.data.detail?.then((text) => this.detail.set(text)).catch(() => undefined);
@@ -102,12 +119,29 @@ export class ConfirmService {
     return this.open(data);
   }
 
+  /**
+   * Same dialog with one box to tick under the message: `null` when it was
+   * not confirmed, else whether the box was left ticked.
+   */
+  async askWithOption(
+    data: ConfirmData & { option: ConfirmOption },
+  ): Promise<{ checked: boolean } | null> {
+    const dialogRef = this.openRef(data);
+    // Read before closing: MatDialogRef drops its component instance once closed.
+    const dialog = dialogRef.componentInstance;
+    const confirmed = (await firstValueFrom(dialogRef.afterClosed())) === true;
+    return confirmed ? { checked: dialog.optionChecked() } : null;
+  }
+
   private async open(data: ConfirmData): Promise<ConfirmResult> {
-    const dialogRef = this.dialog.open<ConfirmDialog, ConfirmData, ConfirmResult>(ConfirmDialog, {
+    return (await firstValueFrom(this.openRef(data).afterClosed())) ?? null;
+  }
+
+  private openRef(data: ConfirmData) {
+    return this.dialog.open<ConfirmDialog, ConfirmData, ConfirmResult>(ConfirmDialog, {
       data,
       width: '32rem',
       autoFocus: 'dialog',
     });
-    return (await firstValueFrom(dialogRef.afterClosed())) ?? null;
   }
 }

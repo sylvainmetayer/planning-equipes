@@ -5,6 +5,7 @@ import {
   inject,
   input,
   model,
+  output,
   resource,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
@@ -159,6 +160,31 @@ export class ChangementsView {
 
   protected chooseReading(reading: ChangementsReading): void {
     this.reading.set(reading);
+  }
+
+  /** A seat line was picked: the page opens the Siège panel on the seat as the plan holds it now. */
+  readonly seatRequested = output<{
+    date: string;
+    standId: string;
+    heureDebut: string;
+    heureFin: string;
+    animateurId: string | null;
+  }>();
+
+  protected openSeat(ligne: ChangementSiege): void {
+    this.seatRequested.emit({
+      date: ligne.date,
+      standId: ligne.standId,
+      heureDebut: ligne.heureDebut,
+      heureFin: ligne.heureFin,
+      animateurId: ligne.apres?.animateurId ?? null,
+    });
+  }
+
+  protected seatLabel(ligne: ChangementSiege): string {
+    const stand = ligne.standNom || ligne.standId;
+    const heures = this.hours(ligne);
+    return $localize`:@@journee.changements.siege:Ouvrir le siège ${stand}:stand:, ${heures}:heures:`;
   }
 
   /** « 14:00 – 18:00 », or « 14:00 – 20:00 → 18:00 – 20:00 » on a seat kept on other hours. */

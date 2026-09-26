@@ -614,6 +614,23 @@ function mentionOverlap(base: string, overlap: boolean): string {
   return $localize`:@@railJour.resume.chevauchement:${base}:ligne: — attention, deux vacations se chevauchent`;
 }
 
+/**
+ * The shift Space opens the Siège panel on, the keyboard's way into it: the
+ * line's first shift, or the one after the shift the panel is open on — a
+ * line of three shifts is walked by pressing again. Null when the line holds
+ * none.
+ */
+export function shiftToOpen(
+  blocs: readonly RailBloc[],
+  openSeatId: string | null,
+): RailBloc | null {
+  if (blocs.length === 0) {
+    return null;
+  }
+  const current = blocs.findIndex((bloc) => bloc.posteId === openSeatId);
+  return blocs[(current + 1) % blocs.length];
+}
+
 /** How many lines each status holds — the header's at-a-glance count. */
 export function compterStatuts(lignes: RailLigne[]): {
   affectes: number;

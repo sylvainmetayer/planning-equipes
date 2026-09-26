@@ -127,6 +127,64 @@ class AffectationExplanationResourceTest {
                 .body("message", notNullValue());
     }
 
+    /**
+     * The explanation of the persisted plan reads the edition's rules: a
+     * constraint the operator switched off no longer reproaches anybody,
+     * where a plan explained bare still named it.
+     */
+    @Test
+    void theExplanationOfThePersistedPlanLeavesADisabledConstraintOut() {
+        JsonPath solved = JsonPath.from(solveScenario());
+        List<String> postes = solved.getList("postes.findAll { it.animateur != null }.id");
+        String posteId = null;
+        String regle = null;
+        for (String candidat : postes) {
+            List<String> violees = persistedViolations(candidat);
+            if (!violees.isEmpty()) {
+                posteId = candidat;
+                regle = violees.get(0);
+                break;
+            }
+        }
+        assertThat(regle).as("the solved scenario reproaches at least one seat").isNotNull();
+
+        try {
+            given().contentType("application/json")
+                    .body("{\"actif\":false}")
+                    .when()
+                    .put("/api/constraints/" + regle)
+                    .then()
+                    .statusCode(200);
+
+            assertThat(persistedViolations(posteId)).doesNotContain(regle);
+        } finally {
+            given().contentType("application/json")
+                    .body("{\"actif\":true}")
+                    .when()
+                    .put("/api/constraints/" + regle)
+                    .then()
+                    .statusCode(200);
+        }
+    }
+
+    @Test
+    void theExplanationOfThePersistedPlanRefusesAnUnknownSeat() {
+        solveScenario();
+
+        given().when().get("/api/postes/POSTE-INEXISTANT/explication").then().statusCode(404);
+    }
+
+    private static List<String> persistedViolations(String posteId) {
+        return given().when()
+                .get("/api/postes/" + posteId + "/explication")
+                .then()
+                .statusCode(200)
+                .body("posteId", equalTo(posteId))
+                .extract()
+                .jsonPath()
+                .getList("contraintesViolees.name");
+    }
+
     @Test
     void simulationSwapCalculeUnDeltaDeScore() {
         String solvedJson = solveScenario();

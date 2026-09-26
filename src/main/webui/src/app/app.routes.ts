@@ -1,4 +1,5 @@
-import { RedirectFunction, Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { CanActivateFn, Params, RedirectFunction, Router, Routes } from '@angular/router';
 import type { CompetencesPage } from './pages/competences/competences-page';
 
 /**
@@ -66,6 +67,29 @@ function redirectToOnglet(page: string, onglet: string): RedirectFunction {
   };
 }
 
+/**
+ * The bench — the Banc de touche screen, then the `banc` tab of the
+ * Diagnostic — became « Qui peut tenir ce siège ? » in the Siège panel of the
+ * Journée. Its addresses land there with their `creneau` and `stand`: the
+ * page resolves them to a seat, moves to its day and opens the panel on it.
+ */
+export function benchToJournee(queryParams: Params): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(queryParams)) {
+    if (key !== 'onglet' && value !== undefined && value !== null) {
+      params.set(key, paramText(value as string | readonly string[]));
+    }
+  }
+  const query = params.toString();
+  return query ? `/journee?${query}` : '/journee';
+}
+
+/** `/diagnostic?onglet=banc…`: the tab is gone, its address goes to the Journée. */
+export const benchTabToJournee: CanActivateFn = (route) =>
+  route.queryParamMap.get('onglet') === 'banc'
+    ? inject(Router).parseUrl(benchToJournee(route.queryParams))
+    : true;
+
 const adminRoutes: Routes = [
   {
     // The home: where the edition stands in its cycle, before any screen
@@ -98,13 +122,15 @@ const adminRoutes: Routes = [
   {
     path: 'diagnostic',
     title: () => $localize`:@@route.diagnostic:Diagnostic`,
+    canActivate: [benchTabToJournee],
     loadComponent: () => import('./pages/diagnostic/diagnostic-page').then((m) => m.DiagnosticPage),
   },
-  // The four screens the Diagnostic page gathers, kept for the bookmarks.
+  // The screens the Diagnostic page gathers, kept for the bookmarks; the
+  // bench's own went on to the Journée with it.
   { path: 'problemes', redirectTo: redirectToDiagnostic('problemes') },
   { path: 'staffing', redirectTo: redirectToDiagnostic('besoin') },
   { path: 'fragilite', redirectTo: redirectToDiagnostic('fragilite') },
-  { path: 'banc-de-touche', redirectTo: redirectToDiagnostic('banc') },
+  { path: 'banc-de-touche', redirectTo: ({ queryParams }) => benchToJournee(queryParams) },
   {
     path: 'echanges',
     title: () => $localize`:@@route.echanges:Échanges`,

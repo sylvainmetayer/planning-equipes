@@ -87,10 +87,11 @@
                         } @else {
                           <span class="pauses-aucun-relais" i18n="@@pauses.relais.aucun">Personne d'autre sur le stand</span>
                           @if (ligne.creneauId !== null) {
-                            <!-- Who could come and relay: the bench on that timeslot. -->
-                            <a class="pauses-banc" routerLink="/diagnostic"
-                               [queryParams]="{ onglet: 'banc', creneau: ligne.creneauId, stand: ligne.standId }"
-                               i18n="@@pauses.banc">Banc de touche</a>
+                            <!-- Who could come and relay: the Siège panel on the seat of whoever takes the break. -->
+                            <button type="button" class="pauses-siege"
+                                    [attr.data-siege-cle]="ligne.creneauId + '|' + ligne.standId + '|' + ligne.animateurId"
+                                    (click)="openSeat(ligne.creneauId, ligne.standId, ligne.animateurId)"
+                                    i18n="@@pauses.siege">Ouvrir le siège</button>
                           }
                         }
                       </td>

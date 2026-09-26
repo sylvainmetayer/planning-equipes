@@ -1,8 +1,11 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
+  ElementRef,
   inject,
+  Injector,
   OnInit,
   signal,
   ViewEncapsulation,
@@ -48,6 +51,7 @@ import { ComparaisonView } from './comparaison-vue';
 import {
   isComparable,
   JourEvenement,
+  dayKey,
   defaultComparisonDay,
   JourneeView,
   jourSemaineVoisine,
@@ -58,6 +62,8 @@ import {
   resolveComparison,
 } from './journee';
 import { StatusMessage } from '../../shared/status-message';
+import { SeatPanel } from '../../shared/siege-panel/siege-panel';
+import { resolveSeat, SeatRequest } from '../../shared/siege-panel/seat';
 
 /** A stand or an animateur of the plan, as the two filter selectors list them. */
 interface Option {
@@ -97,6 +103,7 @@ interface Option {
     CalendarDayView,
     RailJourView,
     PausesView,
+    SeatPanel,
     // Rendered inside a `@defer` block only: `leaflet` travels with this
     // component and must not enter the chunk of the three other renderings.
     CarteJourView,
@@ -279,6 +286,34 @@ export class JourneePage implements OnInit {
   /** What the page says after a reading was recorded or withdrawn. */
   protected readonly message = signal('');
 
+  /*
+   * The Siège panel (`siege`): the seat it is open on, by its poste id. An
+   * older address names a timeslot instead (`creneau`, and `stand` when it
+   * had one — the Banc de touche's keys): the page resolves it to a seat once
+   * the plan is read, moves to its day, and writes `siege` in its place.
+   */
+  protected readonly openSeatId = signal<string | null>(null);
+  /** Drawn once a plan is on screen: before it, the panel could only say its seat is missing. */
+  protected readonly seatPanelShown = computed(
+    () => this.openSeatId() !== null && this.planning() !== null,
+  );
+  /** `creneau` as the address gave it, until the plan says which seat it means. */
+  private readonly creneauParam = signal<string | null>(null);
+  /** What the address asked for before the plan was known: resolved on the first read. */
+  private pendingSeat: SeatRequest | null = null;
+  /** Where the focus was when the panel opened: it goes back there when the panel closes. */
+  private seatOpener: HTMLElement | null = null;
+  /**
+   * The opener's `data-siege-cle`: a gesture re-reads the plan, the rendering
+   * is drawn again, and the element the focus came from is gone — its key
+   * finds the one drawn in its place.
+   */
+  private seatOpenerKey: string | null = null;
+  /** A key to give the focus back to once the plan being re-read is drawn. */
+  private focusKeyAfterLoad: string | null = null;
+  private readonly injector = inject(Injector);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+
   protected readonly jourPrecedentLabel = $localize`:@@journee.previousDay:Jour précédent`;
   protected readonly jourSuivantLabel = $localize`:@@journee.nextDay:Jour suivant`;
 
@@ -303,6 +338,15 @@ export class JourneePage implements OnInit {
     this.lectureChangements.set(readReading(params.get('lecture')));
     this.comparerDemande.set(params.get('comparer') || null);
     this.seulementEcarts.set(params.get('ecarts') === '1');
+    const siege = params.get('siege');
+    const creneau = Number(params.get('creneau'));
+    this.creneauParam.set(params.get('creneau'));
+    if (siege) {
+      this.openSeatId.set(siege);
+      this.pendingSeat = { posteId: siege };
+    } else if (Number.isFinite(creneau) && creneau > 0) {
+      this.pendingSeat = { creneauId: creneau, standId: params.get('stand') };
+    }
     // Every key of the screen, written by the one component that is always
     // mounted. The renderings hold their own state through `model()`, but a
     // rendering only writes while it is on screen: leaving the rail on
@@ -328,6 +372,8 @@ export class JourneePage implements OnInit {
       lecture: this.lectureChangements() === 'vacations' ? null : this.lectureChangements(),
       comparer: this.comparerParam(),
       ecarts: this.seulementEcarts() ? '1' : null,
+      siege: this.openSeatId(),
+      creneau: this.creneauParam(),
     }));
   }
 
@@ -381,6 +427,7 @@ export class JourneePage implements OnInit {
           ? groupedArrivals
           : null,
       );
+      this.resolvePendingSeat(planning);
       // The banner is refreshed with the plan it comments on: a solve that
       // withdrew readings must not leave the old count on screen.
       void this.validations.reload();
@@ -390,6 +437,9 @@ export class JourneePage implements OnInit {
       this.error.set(errorPrefix(error));
     } finally {
       this.loading.set(false);
+      if (this.focusKeyAfterLoad !== null) {
+        this.restoreFocusAfterRender();
+      }
     }
   }
 
@@ -399,12 +449,91 @@ export class JourneePage implements OnInit {
     await this.refresh();
   }
 
+  /**
+   * The seat an address named, once the plan is known: its day on screen,
+   * its panel open. A timeslot the plan holds no seat on is said, not guessed.
+   */
+  private resolvePendingSeat(planning: PlanningEvenement | null): void {
+    const request = this.pendingSeat;
+    if (!request) {
+      return;
+    }
+    this.pendingSeat = null;
+    this.creneauParam.set(null);
+    const poste = resolveSeat(planning?.postes ?? [], request);
+    if (!poste?.creneau) {
+      this.openSeatId.set(null);
+      this.message.set(
+        $localize`:@@journee.siege.introuvable:Ce siège n'est pas dans le planning enregistré : aucun siège sur ce créneau, ou créneau créé après la dernière résolution.`,
+      );
+      return;
+    }
+    this.navigation.select(dayKey(poste.creneau.jour, poste.creneau.date));
+    this.openSeatId.set(poste.id);
+  }
+
+  /** A cell of a rendering was clicked: the Siège panel opens on the seat it names. */
+  protected openSeat(request: SeatRequest): void {
+    const poste = resolveSeat(this.planning()?.postes ?? [], request);
+    if (!poste) {
+      this.message.set(
+        $localize`:@@journee.siege.absent:Ce siège n'est plus dans le planning affiché : actualisez la journée.`,
+      );
+      return;
+    }
+    const active = document.activeElement;
+    // The keyed element around the one clicked: the rail's line rather than
+    // the shift label inside its hidden track.
+    const opener = active instanceof HTMLElement ? active : null;
+    const keyed = opener?.closest<HTMLElement>('[data-siege-cle]') ?? null;
+    this.seatOpener = keyed ?? opener;
+    this.seatOpenerKey = keyed?.dataset['siegeCle'] ?? null;
+    this.openSeatId.set(poste.id);
+  }
+
+  /**
+   * « Fermer » or Escape: the panel goes, and the focus returns to the cell
+   * that opened it — or, a gesture having re-read the plan in between, to the
+   * cell drawn in its place, once the re-read plan is on screen.
+   */
+  protected closeSeat(): void {
+    this.openSeatId.set(null);
+    const opener = this.seatOpener;
+    this.seatOpener = null;
+    const key = this.seatOpenerKey;
+    this.seatOpenerKey = null;
+    if (opener?.isConnected) {
+      afterNextRender(() => opener.focus(), { injector: this.injector });
+      return;
+    }
+    this.focusKeyAfterLoad = key;
+    if (key !== null && !this.loading()) {
+      this.restoreFocusAfterRender();
+    }
+  }
+
+  /** Focus on the cell of {@link focusKeyAfterLoad}, after the rendering is drawn. */
+  private restoreFocusAfterRender(): void {
+    afterNextRender(
+      () => {
+        const key = this.focusKeyAfterLoad;
+        this.focusKeyAfterLoad = null;
+        const cells = this.host.nativeElement.querySelectorAll<HTMLElement>('[data-siege-cle]');
+        Array.from(cells)
+          .find((cell) => cell.dataset['siegeCle'] === key)
+          ?.focus();
+      },
+      { injector: this.injector },
+    );
+  }
+
   protected changeView(view: JourneeView): void {
     this.view.set(view);
   }
 
   protected selectJour(key: string): void {
     this.navigation.select(key);
+    this.openSeatId.set(null);
   }
 
   /** The map's event-wide load grid asks for another day, by its number. */
@@ -412,6 +541,7 @@ export class JourneePage implements OnInit {
     const jour = this.jours().find((candidat) => candidat.jour === numero);
     if (jour) {
       this.navigation.select(jour.key);
+      this.openSeatId.set(null);
     }
   }
 
@@ -421,6 +551,7 @@ export class JourneePage implements OnInit {
     const target = jours[index + delta];
     if (target) {
       this.navigation.select(target.key);
+      this.openSeatId.set(null);
     }
   }
 

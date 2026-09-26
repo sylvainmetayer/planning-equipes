@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { cibleDepot, resumeDeplacement, scoreLabel } from './deplacement';
-import type { DeplacementSimulation, PosteAffectation } from '../core/models';
+import { cibleDepot, moveTargets, resumeDeplacement, scoreLabel } from './deplacement';
+import type { Animateur, DeplacementSimulation, PosteAffectation, Stand } from '../core/models';
 
 function poste(id: string): PosteAffectation {
   return { id, stand: null, creneau: null, animateur: null };
@@ -61,7 +61,60 @@ describe('resumeDeplacement', () => {
     expect(resumeDeplacement(base, nomDe).message).toBe('Score : 0/-3/-1 → 0/-2/-1.');
   });
 
+  it('says who was placed on a seat that held nobody', () => {
+    expect(
+      resumeDeplacement({ ...base, animateurSourceId: null, posteCibleId: null }, nomDe).title,
+    ).toBe('Bruno est placé(e) sur ce siège.');
+  });
+
   it('formats a score on the three levels', () => {
     expect(scoreLabel({ hardScore: -1, mediumScore: 0, softScore: 12 })).toBe('-1/0/12');
+  });
+});
+
+describe('moveTargets', () => {
+  const seat = (
+    id: string,
+    standId: string,
+    heureDebut: string,
+    holder: string | null,
+    jour = 1,
+  ): PosteAffectation => ({
+    id,
+    stand: { id: standId, nom: standId } as Stand,
+    creneau: {
+      id: Number(heureDebut.slice(0, 2)) + jour * 100,
+      jour,
+      date: '',
+      heureDebut,
+      heureFin: '23:00',
+    },
+    animateur: holder ? ({ id: holder, prenom: holder, nom: 'X' } as Animateur) : null,
+  });
+  const source = seat('S', 'Tir', '10:00', 'Alice');
+  const postes = [
+    source,
+    seat('S2', 'Tir', '10:00', null),
+    seat('B1', 'Belote', '14:00', 'Bruno'),
+    seat('B2', 'Belote', '14:00', null),
+    seat('A1', 'Awalé', '10:00', null),
+    seat('D', 'Dames', '10:00', null, 2),
+  ];
+
+  // Every other line of the day, as the drop accepts it: free seats before
+  // held ones on a line, the day read in order — never the source's own line,
+  // never another day.
+  it('offers every other line of the day, in the order the day reads', () => {
+    const targets = moveTargets(postes, source, () => false);
+
+    expect(targets.map((target) => target.id)).toEqual(['A1', 'B2', 'B1']);
+    expect(targets[0].label).toBe('10:00–23:00 · Awalé — siège libre');
+    expect(targets[2].label).toBe('14:00–23:00 · Belote — échanger avec Bruno X');
+  });
+
+  it('leaves out the lines a lock closes', () => {
+    const targets = moveTargets(postes, source, (poste) => poste.stand?.id === 'Belote');
+
+    expect(targets.map((target) => target.id)).toEqual(['A1']);
   });
 });

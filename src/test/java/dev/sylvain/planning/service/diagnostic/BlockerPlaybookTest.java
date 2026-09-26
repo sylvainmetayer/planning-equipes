@@ -77,8 +77,8 @@ class BlockerPlaybookTest {
         ActionType first = actions.getFirst();
         assertThat(first.code()).isEqualTo(BlockerPlaybook.CODE_BENCH);
         assertThat(first.libelle()).isEqualTo("Voir qui pourrait venir");
-        assertThat(first.route()).isEqualTo("/diagnostic");
-        assertThat(first.parametres()).containsEntry("onglet", "banc").containsEntry("creneau", "42");
+        assertThat(first.route()).isEqualTo("/journee");
+        assertThat(first.parametres()).containsEntry("creneau", "42").doesNotContainKey("onglet");
     }
 
     @Test

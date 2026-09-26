@@ -2,7 +2,7 @@
   <mat-card-header>
     <h1 mat-card-title i18n="@@diagnostic.title">Diagnostic</h1>
     <mat-card-subtitle i18n="@@diagnostic.subtitle">
-      Pourquoi le planning ne tient pas, et ce qui se passerait si : problèmes, besoin, fragilité, qui former, banc de touche.
+      Pourquoi le planning ne tient pas, et ce qui se passerait si : problèmes, besoin, fragilité, qui former.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
@@ -24,10 +24,6 @@
         <mat-icon>school</mat-icon>
         <ng-container i18n="@@diagnostic.onglet.former">À former</ng-container>
       </mat-button-toggle>
-      <mat-button-toggle value="banc">
-        <mat-icon>airline_seat_recline_normal</mat-icon>
-        <ng-container i18n="@@diagnostic.onglet.banc">Banc de touche</ng-container>
-      </mat-button-toggle>
     </mat-button-toggle-group>
   </mat-card-content>
 </mat-card>
@@ -41,9 +37,6 @@
   }
   @case ('former') {
     <app-formation-page [entete]="false" />
-  }
-  @case ('banc') {
-    <app-banc-de-touche-page [entete]="false" />
   }
   @default {
     <app-problemes-page [entete]="false" />

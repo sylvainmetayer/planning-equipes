@@ -128,7 +128,7 @@ function suggestions(overrides: Partial<SuggestionsReparation> = {}): Suggestion
 interface ServiceStub {
   explique: ReturnType<typeof vi.fn>;
   suggererReparations: ReturnType<typeof vi.fn>;
-  appliquerReparation: ReturnType<typeof vi.fn>;
+  applyRepair: ReturnType<typeof vi.fn>;
 }
 
 function mount(
@@ -144,7 +144,7 @@ function mount(
         useValue: {
           explique: vi.fn(async () => explication()),
           suggererReparations: vi.fn(async () => suggestions()),
-          appliquerReparation: vi.fn(async () => undefined),
+          applyRepair: vi.fn(async () => undefined),
           ...service,
         },
       },
@@ -394,23 +394,23 @@ describe('AffectationExplanationDialog', () => {
     });
 
     it('applies a suggestion and closes with what changed, so the calendar can reload', async () => {
-      const appliquerReparation = vi.fn(async () => undefined);
+      const applyRepair = vi.fn(async () => undefined);
       const { fixture, close } = mount({
         suggererReparations: vi.fn(async () => suggestions({ suggestions: [suggestion('a2')] })),
-        appliquerReparation,
+        applyRepair,
       });
       await fixture.whenStable();
       await clickButton(fixture, 'Chercher des remplaçants viables');
       await clickButton(fixture, 'Appliquer');
 
-      expect(appliquerReparation).toHaveBeenCalledWith('p1', 'a2');
+      expect(applyRepair).toHaveBeenCalledWith('p1', 'a2');
       expect(close).toHaveBeenCalledWith({ posteId: 'p1', animateurId: 'a2' });
     });
 
     it('keeps the dialog open and shows why when applying is refused', async () => {
       const { fixture, close } = mount({
         suggererReparations: vi.fn(async () => suggestions({ suggestions: [suggestion('a2')] })),
-        appliquerReparation: vi.fn(async () => {
+        applyRepair: vi.fn(async () => {
           throw new Error('Ce poste est verrouillé');
         }),
       });

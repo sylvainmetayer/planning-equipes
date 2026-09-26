@@ -104,9 +104,11 @@
                   [cdkDropListDisabled]="!dragDropEnabled || editingLocked()"
                   (cdkDropListDropped)="onDrop($event)"
                   [attr.data-ligne]="index"
+                  [attr.data-siege-cle]="'animateur|' + ligne.animateurId"
                   [tabindex]="ligneCourante() === index ? 0 : -1"
                   (focus)="focusLigne(index)"
                   (keydown)="naviguer($event, index)"
+                  aria-keyshortcuts="Enter Space"
                   [attr.aria-label]="ligne.resume"
                 >
                   <span class="rail-track" aria-hidden="true" [style.background-size]="fondPiste(ligne)">
@@ -139,7 +141,7 @@
                              tab order: the keyboard way in is Enter on the line. -->
                           <button type="button" class="rail-bloc-poignee" cdkDragHandle tabindex="-1"
                                   (click)="openMove(ligne, bloc)">⠿</button
-                          ><span class="rail-bloc-label">{{ bloc.standNom }}</span></span>
+                          ><ng-container [ngTemplateOutlet]="libelleBloc" [ngTemplateOutletContext]="{ $implicit: bloc }" /></span>
                       } @else {
                         <span
                           class="rail-bloc"
@@ -149,7 +151,7 @@
                           [style.width.%]="bloc.widthPercent"
                           [title]="bloc.label"
                           [attr.data-poste-id]="bloc.posteId"
-                        ><span class="rail-bloc-label">{{ bloc.standNom }}</span></span>
+                        ><ng-container [ngTemplateOutlet]="libelleBloc" [ngTemplateOutletContext]="{ $implicit: bloc }" /></span>
                       }
                     }
                     @for (pause of ligne.pauses; track pause.heureDebut) {
@@ -181,3 +183,12 @@
     </mat-card-content>
   </mat-card>
 }
+
+<!-- A shift's label is a button: a click opens its Siège panel. Out of the tab
+     order like the handle — the keyboard reads the line: Space opens the
+     panel on its shift (the next one, pressed again), Enter moves. -->
+<ng-template #libelleBloc let-bloc>
+  <button type="button" class="rail-bloc-label" tabindex="-1"
+          [class.rail-bloc-ouvert]="openSeatId() === bloc.posteId"
+          (click)="openSeat(bloc)">{{ bloc.standNom }}</button>
+</ng-template>

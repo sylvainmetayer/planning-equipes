@@ -151,13 +151,32 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   read once by the page and handed to the rendering on screen — the views under
   `pages/calendar-day`, `pages/rail-jour`, `pages/carte-jour` and
   `pages/pauses`, and `pages/journee/changements-vue`, are its components, not
-  routes), `/constraints`,
-  `/diagnostic` (« Diagnostic » — the five analyses as tabs chosen by
-  `?onglet=problemes|besoin|fragilite|former|banc`: the problems, the staffing
-  need, the fragility, who to train, the bench; the tab components under
-  `pages/problemes`, `pages/staffing`, `pages/fragilite`, `pages/formation` and
-  `pages/banc-de-touche` keep their own view state in the URL next to the
-  page's key), `/echanges`, `/hours`, `/intendance` (« Intendance des repas » — the meal
+  routes; a click on any cell of them — a name or a free seat, a shift, a
+  stand of the map, a break without relay, a line of the changes — opens beside
+  the rendering the **Siège panel** (`shared/siege-panel/`, an `aside` labelled
+  by its title, focus moved to it and given back on close — to the cell drawn
+  in the opener's place, found by its `data-siege-cle`, when a gesture re-read
+  the plan meanwhile —, Escape handled on the panel itself; on the rail, whose
+  shift labels are out of the tab order, Space on a line opens it): the seat
+  explained, then Remplacer, Déplacer vers (the move dialog, whatever
+  `GLISSER_DEPOSER_ACTIF` says — the flag governs the pointer gesture only),
+  Libérer (ticked by default, it also locks the person off that timeslot, as
+  an accepted échange does), Verrouiller, the bench read-only, the fiche;
+  Libérer and Remplacer send the holder shown as `occupant`, a precondition
+  the write holds; on an empty seat « Qui peut tenir ce siège ? », the bench
+  of that seat in `bench-dialog.ts`, whose « Placer » — offered to nobody a
+  lock or a started timeslot would refuse — seats and, ticked by default,
+  locks, and « Poser un ajustement ».
+  It reads the plan the page loaded, never one per cell, and asks for the
+  candidates on demand; the seat is `?siege=<poste id>`, and `?creneau=` (with
+  `stand=`), the bench's old keys, is resolved to a seat once the plan is read), `/constraints`,
+  `/diagnostic` (« Diagnostic » — the four analyses as tabs chosen by
+  `?onglet=problemes|besoin|fragilite|former`: the problems, the staffing
+  need, the fragility, who to train; the tab components under
+  `pages/problemes`, `pages/staffing`, `pages/fragilite` and `pages/formation`
+  keep their own view state in the URL next to the page's key; the bench, once
+  a fifth tab, is the Siège panel's dialog, and `?onglet=banc` is sent to the
+  Journée by the route's `benchTabToJournee` guard), `/echanges`, `/hours`, `/intendance` (« Intendance des repas » — the meal
   breaks counted rather than named: how many people are out, hour by hour and
   per emplacement, « combien de sandwichs et où les porter »), `/typologies-planning` (« Planning par typologie » — the persisted plan read
   by typologie of jeu, under four renderings chosen on the page: the table, the
@@ -213,7 +232,8 @@ and `?dosage=` in the URL), `/comparateur`
   are the eight former screens `/day-calendar`, `/rail-jour`, `/carte-jour`,
   `/pauses`, `/problemes`, `/staffing`, `/fragilite` and `/banc-de-touche`,
   whose redirects carry their query params along, renamed where the page now
-  owns the key).
+  owns the key — `/banc-de-touche` landing on `/journee` with its `creneau`
+  and `stand`).
   Adding a functional block means adding a route, a `app/pages/<block>/`
   folder and its line in `shell/nav-groups.ts` (a group, or the off-menu
   list), never a new section inside an existing page.

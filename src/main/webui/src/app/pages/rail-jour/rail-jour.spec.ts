@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Animateur, ContrainteAdHoc, Creneau, PosteAffectation, Stand } from '../../core/models';
-import { RailLigne, buildRailJours, compterStatuts } from './rail-jour';
+import { RailBloc, RailLigne, buildRailJours, compterStatuts, shiftToOpen } from './rail-jour';
 
 function creneau(overrides: Partial<Creneau> & { id: number }): Creneau {
   return { jour: 1, date: '2026-08-01', heureDebut: '10:00', heureFin: '12:00', ...overrides };
@@ -678,5 +678,23 @@ describe('buildRailJours — covoiturage', () => {
     });
     expect(ligne(jours[0].lignes, 'Ines').resume).toContain('désaligné ce jour');
     expect(ligne(jours[0].lignes, 'Zoe').covoiturage).toBeNull();
+  });
+});
+
+describe('shiftToOpen', () => {
+  const bloc = (posteId: string) => ({ posteId }) as RailBloc;
+
+  it('opens the first shift, then walks the line and comes back round', () => {
+    const blocs = [bloc('p1'), bloc('p2'), bloc('p3')];
+
+    expect(shiftToOpen(blocs, null)?.posteId).toBe('p1');
+    expect(shiftToOpen(blocs, 'p1')?.posteId).toBe('p2');
+    expect(shiftToOpen(blocs, 'p3')?.posteId).toBe('p1');
+    // The panel open on a seat of another line: this line starts from its first.
+    expect(shiftToOpen(blocs, 'autre')?.posteId).toBe('p1');
+  });
+
+  it('opens nothing on a line without shifts', () => {
+    expect(shiftToOpen([], null)).toBeNull();
   });
 });
