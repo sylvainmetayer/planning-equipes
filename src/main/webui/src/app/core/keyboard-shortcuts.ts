@@ -171,7 +171,7 @@ function commandeAnimateur(animateur: Animateur): CommandePalette {
   };
 }
 
-/** A stand leads to the assignment calendar filtered on it — its schedule, in context. */
+/** A stand leads to the Planning page filtered on it — its schedule, in context. */
 function commandeStand(stand: Stand): CommandePalette {
   return {
     id: `stand:${stand.id}`,
@@ -179,12 +179,12 @@ function commandeStand(stand: Stand): CommandePalette {
     label: stand.nom,
     hint: stand.emplacement?.nom ?? stand.id,
     icon: 'storefront',
-    route: '/calendar',
+    route: '/journee',
     queryParams: { stand: stand.id },
   };
 }
 
-/** A créneau leads to the calendar opened on its day. */
+/** A créneau leads to the Planning page opened on its day. */
 function commandeCreneau(creneau: Creneau): CommandePalette {
   return {
     id: `creneau:${creneau.id}`,
@@ -192,8 +192,8 @@ function commandeCreneau(creneau: Creneau): CommandePalette {
     label: `${creneau.date} ${creneau.heureDebut}-${creneau.heureFin}`,
     hint: $localize`:@@palette.creneau.jour:Jour ${creneau.jour}:jour:`,
     icon: 'schedule',
-    route: '/calendar',
-    queryParams: { month: creneau.date.slice(0, 7), date: creneau.date },
+    route: '/journee',
+    queryParams: { date: creneau.date },
   };
 }
 

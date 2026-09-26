@@ -1,6 +1,8 @@
 <mat-card appearance="outlined" class="page-card journee-validation">
   <mat-card-header>
-    <h2 mat-card-title i18n="@@journee.validation.title">Relecture de la journée</h2>
+    @if (entete()) {
+      <h2 mat-card-title i18n="@@journee.validation.title">Relecture de la journée</h2>
+    }
     <mat-card-subtitle i18n="@@journee.validation.hint">
       Marquer cette journée relue et acceptée. Le verrouillage, lui, empêche le solveur d'y toucher.
     </mat-card-subtitle>

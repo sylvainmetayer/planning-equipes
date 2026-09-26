@@ -171,8 +171,8 @@ test.describe('glisser-déposer', () => {
     const page = await pageAdmin(browser, admin);
     try {
       await ouvrirLaJournee(page, 'calendrier');
-      const ligneUn = page.locator('.day-stand', { hasText: 'Stand Glisse un' });
-      const ligneDeux = page.locator('.day-stand', { hasText: 'Stand Glisse deux' });
+      const ligneUn = ligneDuStand(page, 'Stand Glisse un');
+      const ligneDeux = ligneDuStand(page, 'Stand Glisse deux');
       await expect(ligneUn).toBeVisible();
 
       // The drag is taken by the handle, not by the name (the name stays
@@ -206,8 +206,8 @@ test.describe('glisser-déposer', () => {
     const page = await pageAdmin(browser, admin);
     try {
       await ouvrirLaJournee(page, 'calendrier');
-      const ligneUn = page.locator('.day-stand', { hasText: 'Stand Glisse un' });
-      const ligneTrois = page.locator('.day-stand', { hasText: 'Stand Glisse trois' });
+      const ligneUn = ligneDuStand(page, 'Stand Glisse un');
+      const ligneTrois = ligneDuStand(page, 'Stand Glisse trois');
       await expect(ligneTrois.locator('.siege-libre')).toBeVisible();
 
       await glisser(
@@ -294,7 +294,7 @@ test.describe('déplacer au clavier', () => {
     const page = await pageAdmin(browser, admin);
     try {
       await page.goto(`/journee?vue=calendrier&date=${JOUR}`);
-      const ligneUn = page.locator('.day-stand', { hasText: 'Stand Glisse un' });
+      const ligneUn = ligneDuStand(page, 'Stand Glisse un');
       const poignee = ligneUn.getByRole('button', { name: /^Déplacer Anna/ });
       await poignee.focus();
       await page.keyboard.press('Enter');
@@ -359,15 +359,20 @@ test.describe('déplacer au clavier', () => {
   });
 });
 
+/**
+ * A stand's line on the table of the day: its name heads the row since issue
+ * #712, and the names and free seats sit in the row's cells.
+ */
+function ligneDuStand(page: Page, nom: string) {
+  return page.locator('.jour-table tbody tr', { hasText: nom }).locator('.day-stand');
+}
+
 /** The page opens on the event's first day, which other specs' créneaux may own: pick this spec's date. */
 async function ouvrirLaJournee(page: Page, vue: 'calendrier' | 'rail'): Promise<void> {
-  await page.goto(`/journee?vue=${vue}`);
-  await page.getByRole('combobox', { name: 'Journée' }).click();
-  await page.getByRole('option', { name: new RegExp(JOUR) }).click();
-  // The select's backdrop outlives the click by an animation frame, and a
-  // mousedown landing on it would start no drag at all.
+  // The day travels in the address (the selector is a mini-month): no
+  // overlay is left over whose backdrop could swallow the drag's mousedown.
+  await page.goto(`/journee?vue=${vue}&date=${JOUR}`);
   await expect(page.locator('.cdk-overlay-backdrop')).toHaveCount(0);
-  await expect(page.getByRole('listbox')).toHaveCount(0);
 }
 
 async function nomDe(animateurId: string): Promise<string> {

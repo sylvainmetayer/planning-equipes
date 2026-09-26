@@ -6,6 +6,7 @@ import {
   input,
   model,
   signal,
+  untracked,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
@@ -43,7 +44,11 @@ export interface OptionSelection {
     MatInputModule,
   ],
   template: `
-    <mat-form-field appearance="outline" class="selection-recherche">
+    <mat-form-field
+      appearance="outline"
+      class="selection-recherche"
+      [subscriptSizing]="compact() ? 'dynamic' : 'fixed'"
+    >
       <mat-label>{{ label() }}</mat-label>
       @if (multiple()) {
         <mat-chip-grid #grille [attr.aria-label]="label()">
@@ -79,7 +84,9 @@ export interface OptionSelection {
           <mat-option [value]="option.id">{{ option.label }}</mat-option>
         }
       </mat-autocomplete>
-      <mat-hint>{{ resume() }}</mat-hint>
+      @if (!compact()) {
+        <mat-hint>{{ resume() }}</mat-hint>
+      }
     </mat-form-field>
   `,
   styles: `
@@ -96,11 +103,18 @@ export class SelectionRecherche {
   readonly placeholder = input('');
   readonly multiple = input(false);
   readonly disabled = input(false);
+  /**
+   * A field of a filter bar: no hint under it, no room kept for one — the
+   * Planning page lines four of them up above the plan it has to leave room for.
+   */
+  readonly compact = input(false);
 
   /** Selected ids — one entry at most when `multiple` is false. */
   readonly valeurs = model<string[]>([]);
 
   protected readonly saisie = signal('');
+  /** The single pick the field last showed the label of — to clear it when the pick is withdrawn from outside. */
+  private dernierChoisi: string | null = null;
 
   protected readonly optionsChoisies = computed(() => {
     const choisies = new Set(this.valeurs());
@@ -141,8 +155,18 @@ export class SelectionRecherche {
       }
       const choisi = this.valeurs()[0];
       if (!choisi) {
+        // Withdrawn from outside — a page's « Réinitialiser la vue »: the field
+        // still shows the name, so it goes too. Typed over, the field no longer
+        // shows that name and keeps what is being typed.
+        const precedent = this.dernierChoisi;
+        this.dernierChoisi = null;
+        const label = this.options().find((option) => option.id === precedent)?.label;
+        if (label && untracked(this.saisie) === label) {
+          this.saisie.set('');
+        }
         return;
       }
+      this.dernierChoisi = choisi;
       // No label yet means the options have not loaded: leave the field alone
       // rather than blank it, this effect runs again when they arrive.
       const label = this.options().find((option) => option.id === choisi)?.label;

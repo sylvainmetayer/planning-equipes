@@ -3,18 +3,19 @@ import {
   Component,
   computed,
   inject,
-  OnInit,
+  input,
+  resource,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { errorPrefix } from '../../core/error-message';
 import { FenetreIntendance, JourneeIntendance, RapportIntendance } from '../../core/models';
+import { errorText } from '../../core/resource-state';
 import { formatHeure } from '../../core/time-of-day';
 import { OutputPanel } from '../../shared/output-panel';
 
@@ -116,66 +117,57 @@ function libelleCellule(personnes: number, mineurs: number): string {
 }
 
 /**
- * « Intendance des repas » (issue #598) : combien de personnes sont en coupure,
- * quand, et où.
+ * « Intendance des repas » (issue #598), under the breaks of the Planning
+ * page's « Pauses et repas » (issue #712): how many people are out for their
+ * meal on the day on screen, when, and where — « combien de sandwichs
+ * préparer, et où les porter ».
  *
- * The Pauses view answers animateur by animateur — the right reading to
- * organise a relay, the wrong one to prepare sandwiches. This one is the same
- * meal breaks, counted hour by hour and per emplacement, from
- * `GET /api/pauses/intendance`. A read-out of the persisted plan, never a
- * solve.
+ * The breaks above answer animateur by animateur, the right reading to
+ * organise a relay and the wrong one to prepare trays: this is the same meal
+ * breaks, counted hour by hour and per emplacement, from
+ * `GET /api/pauses/intendance`, read once and narrowed to the day. The whole
+ * event, every day of it, leaves as a CSV. A read-out of the persisted plan,
+ * never a solve.
  *
  * Nobody is named: the intendance needs a headcount and a place, and a minor
  * is counted, never identified — no name, no birth date (`docs/rgpd.md` §7).
  */
 @Component({
-  selector: 'app-intendance-page',
-  imports: [
-    MatButtonModule,
-    MatCardModule,
-    MatIconModule,
-    MatProgressBarModule,
-    MatTooltipModule,
-    OutputPanel,
-  ],
-  templateUrl: './intendance-page.html',
+  selector: 'app-intendance-jour',
+  imports: [MatButtonModule, MatIconModule, MatProgressBarModule, MatTooltipModule, OutputPanel],
+  templateUrl: './intendance-jour.html',
   // The table is the heatmap's, down to its cells: same shape, same reading, so
   // it wears the same stylesheet rather than a second copy of it; what this
-  // screen does differently is next door.
-  styleUrls: ['../../../styles/heatmap.css', './intendance-page.css'],
+  // table does differently is next door.
+  styleUrls: ['../../../styles/heatmap.css', './intendance-jour.css'],
   // Global by design (AGENTS.md): loaded with the route, unscoped like the heatmap.
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class IntendancePage implements OnInit {
-  protected readonly busy = signal(false);
-  protected readonly exportBusy = signal(false);
-  protected readonly output = signal('');
-  protected readonly rapport = signal<RapportIntendance | null>(null);
-
-  protected readonly tableaux = computed(() => tableauxIntendance(this.rapport()));
-  /** The server's own sentence when there is nothing to show; empty otherwise. */
-  protected readonly message = computed(() => this.rapport()?.message ?? '');
+export class IntendanceJour {
+  /** The day on screen, `AAAA-MM-JJ`; null shows nothing. */
+  readonly date = input<string | null>(null);
 
   private readonly analyses = inject(AnalysesApi);
 
-  ngOnInit(): void {
-    void this.load();
-  }
+  private readonly lecture = resource({ loader: () => this.analyses.intendance() });
+  protected readonly busy = this.lecture.isLoading;
+  protected readonly erreur = errorText(this.lecture);
+  protected readonly exportBusy = signal(false);
+  protected readonly output = signal('');
 
-  protected async load(): Promise<void> {
-    this.busy.set(true);
-    this.output.set('');
-    try {
-      this.rapport.set(await this.analyses.intendance());
-    } catch (error) {
-      this.rapport.set(null);
-      this.output.set(errorPrefix(error));
-    } finally {
-      this.busy.set(false);
-    }
-  }
+  private readonly rapport = computed<RapportIntendance | null>(() =>
+    this.lecture.hasValue() ? this.lecture.value() : null,
+  );
+  /** The tables of the day on screen: its meal windows, midday and evening. */
+  protected readonly tableaux = computed(() =>
+    tableauxIntendance(this.rapport()).filter((tableau) => tableau.titre === this.date()),
+  );
+  /** The server's own sentence when there is nothing to show; empty otherwise. */
+  protected readonly message = computed(() => this.rapport()?.message ?? '');
+  protected readonly aucuneDonnee = computed(() => (this.rapport()?.journees.length ?? 0) === 0);
 
+  /** The whole event, every day and every window, as the CSV the intendance prints. */
   protected async exporter(): Promise<void> {
     this.exportBusy.set(true);
     this.output.set($localize`:@@intendance.exporting:Construction de l'export CSV...`);

@@ -47,6 +47,11 @@ import {
  * a shift ends on screen at its minute; the television's own clock is never
  * read as a time of day. When the tiles do not fit, they turn by pages every
  * fifteen seconds. `?impression=1` lays the whole day out for print instead.
+ *
+ * <p>The same page serves « Imprimer cette journée » of the Planning page
+ * (`/impression/:date`, route data `apercu`): the whole day for print, read
+ * through the admin session from `GET /api/affichage-mural/apercu` — no token,
+ * no link created, and `/api/mural/` still names one route only.</p>
  */
 @Component({
   selector: 'app-mural-page',
@@ -62,6 +67,9 @@ export class MuralPage implements OnInit, OnDestroy {
   private readonly api = inject(AffichageMuralApi);
 
   private jeton = '';
+  /** `/impression/:date`: the admin's print of a day, read under the session. */
+  private apercu = false;
+  private date = '';
   private timers: ReturnType<typeof setInterval>[] = [];
 
   protected readonly impression = signal(false);
@@ -131,7 +139,9 @@ export class MuralPage implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.jeton = this.route.snapshot.paramMap.get('jeton') ?? '';
-    this.impression.set(this.route.snapshot.queryParamMap.get('impression') === '1');
+    this.apercu = this.route.snapshot.data?.['apercu'] === true;
+    this.date = this.route.snapshot.paramMap.get('date') ?? '';
+    this.impression.set(this.apercu || this.route.snapshot.queryParamMap.get('impression') === '1');
     void this.read();
     if (this.impression()) {
       return;
@@ -196,7 +206,7 @@ export class MuralPage implements OnInit, OnDestroy {
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       const view = await Promise.race([
-        this.api.view(this.jeton),
+        this.apercu ? this.api.preview(this.date) : this.api.view(this.jeton),
         new Promise<never>((_, reject) => {
           timer = setTimeout(() => reject(new Error('timeout')), READ_TIMEOUT_MS);
         }),

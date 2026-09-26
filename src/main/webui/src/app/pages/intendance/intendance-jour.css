@@ -34,3 +34,26 @@
   color: var(--mat-sys-on-surface-variant);
   font: var(--mat-sys-label-small);
 }
+
+.intendance-jour {
+  margin-top: 1rem;
+}
+
+.intendance-jour-entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.intendance-fenetre {
+  margin: 0.75rem 0 0.25rem;
+  font: var(--mat-sys-title-small);
+}
+
+.intendance-fenetre-total {
+  margin-inline-start: 0.5rem;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}

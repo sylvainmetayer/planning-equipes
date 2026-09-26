@@ -96,9 +96,8 @@ test.afterAll(async () => {
  * database is shared, and another spec's seeding may well own day 1.
  */
 async function ouvrirJourDeLaFixture(page: Page): Promise<void> {
-  await page.goto('/journee?vue=carte');
-  await page.getByRole('combobox', { name: 'Journée' }).click();
-  await page.getByRole('option', { name: new RegExp(SEED.jour) }).click();
+  // The day travels in the address: the day selector is a mini-month now.
+  await page.goto(`/journee?vue=carte&date=${SEED.jour}`);
   await expect(page.locator('[data-test="carte-jour-heure"]')).toHaveText('09:00');
 }
 

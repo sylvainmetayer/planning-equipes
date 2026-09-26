@@ -81,6 +81,8 @@ class AffichageMuralSecurityTest {
                 .then()
                 .statusCode(401);
         given().when().delete("/api/affichage-mural/1").then().statusCode(401);
+        // The admin's print of a day is a read of the same view, and the session guards it.
+        given().when().get("/api/affichage-mural/apercu").then().statusCode(401);
     }
 
     /**
@@ -97,7 +99,8 @@ class AffichageMuralSecurityTest {
         given().when().get("/api/espace-animateur/" + token).then().statusCode(404);
         given().when().get("/api/abonnements/" + token + "/planning.ics").then().statusCode(404);
         given().when().get("/api/mural/" + token + "/planning").then().statusCode(404);
-        for (String admin : List.of("/api/animateurs", "/api/planning/persiste", "/api/affichage-mural")) {
+        for (String admin : List.of(
+                "/api/animateurs", "/api/planning/persiste", "/api/affichage-mural", "/api/affichage-mural/apercu")) {
             given().header("Authorization", "Bearer " + token)
                     .queryParam("token", token)
                     .when()

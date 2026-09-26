@@ -10,26 +10,22 @@ import {
   Component,
   DestroyRef,
   computed,
-  effect,
   inject,
   input,
   model,
   output,
-  signal,
-  untracked,
   ViewEncapsulation,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { RouterLink } from '@angular/router';
 import { injectAppConfig } from '../../core/app-config';
 import { AffectationExplanationService } from '../../core/affectation-explanation.service';
-import { PlanningApi } from '../../core/api/planning-api';
 import { errorMessage } from '../../core/error-message';
 import { NotificationService } from '../../core/notification.service';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -39,6 +35,7 @@ import { VerrouillageStore } from '../../core/verrouillage.store';
 import { Creneau, PlanningEvenement, PosteAffectation, Stand } from '../../core/models';
 import { aUneAppreciationPour } from '../../shared/affectation-explanation-dialog';
 import { correspondAuFiltre } from '../../core/text-filter';
+import { formatHeure } from '../../core/time-of-day';
 
 interface AssignedEntry {
   poste: PosteAffectation;
@@ -49,6 +46,8 @@ interface StandLine {
   /** Identity of the line: two distinct stands may well share the same name. */
   standId: string;
   standNom: string;
+  /** The place the stand stands on, printed under its name; null when it has none. */
+  emplacementNom: string | null;
   /**
    * The window actually staffed by `entries` — the poste's effective window if
    * a partial stand closure (issue #60) narrowed it, otherwise the créneau's
@@ -98,15 +97,98 @@ interface DayCard {
 }
 
 /**
- * The day, stand by stand: each créneau of the day, and on each stand the
- * animateurs holding its seats. Also displays how many assignments are
- * currently persisted in database.
+ * What the seat chips of the relecture bar narrow the table to: every line,
+ * the lines with a seat nobody holds, or the lines a lock freezes.
+ */
+export type FiltreSieges = 'tous' | 'vides' | 'verrous';
+
+/** Reads the `sieges` query param; anything unknown is every line. */
+export function readFiltreSieges(value: string | null): FiltreSieges {
+  return value === 'vides' || value === 'verrous' ? value : 'tous';
+}
+
+/** One column of the table: a timeslot of the day, its hours without seconds. */
+export interface ColonneTableau {
+  slot: SlotCard;
+  /** `09:00–12:00`. */
+  label: string;
+}
+
+/**
+ * One cell: what a stand does in one timeslot — its lines (usually one; two
+ * when a partial closure cut the timeslot in two), or none when the stand
+ * does not open then, which the table says in a neutral « fermé ».
+ */
+export interface CelluleTableau {
+  slot: SlotCard;
+  lignes: StandLine[];
+}
+
+/** One row: a stand, and its cells in the columns' order. */
+export interface LigneTableau {
+  standId: string;
+  standNom: string;
+  emplacementNom: string | null;
+  cellules: CelluleTableau[];
+}
+
+/** The day as a table: stands down, timeslots across. */
+export interface TableauJour {
+  day: DayCard;
+  colonnes: ColonneTableau[];
+  lignes: LigneTableau[];
+}
+
+/**
+ * Pivots one day — built slot by slot — into stands × timeslots, the way the
+ * day is read on a wall: one row per stand, alphabetically, a column per
+ * timeslot. A row is kept when `garde` accepts one of its lines, and then
+ * kept whole: the other timeslot of a stand with an empty seat is the
+ * context the reader needs to fill it.
+ */
+export function tableauJour(day: DayCard, garde: (ligne: StandLine) => boolean): TableauJour {
+  const colonnes = day.slots.map((slot) => ({
+    slot,
+    label: `${formatHeure(slot.heureDebut)}–${formatHeure(slot.heureFin)}`,
+  }));
+  const stands = new Map<string, { nom: string; emplacementNom: string | null }>();
+  for (const slot of day.slots) {
+    for (const ligne of slot.stands) {
+      if (!stands.has(ligne.standId)) {
+        stands.set(ligne.standId, { nom: ligne.standNom, emplacementNom: ligne.emplacementNom });
+      }
+    }
+  }
+  const lignes: LigneTableau[] = [];
+  for (const [standId, stand] of stands) {
+    const cellules = day.slots.map((slot) => ({
+      slot,
+      lignes: slot.stands.filter((ligne) => ligne.standId === standId),
+    }));
+    if (cellules.some((cellule) => cellule.lignes.some(garde))) {
+      lignes.push({ standId, standNom: stand.nom, emplacementNom: stand.emplacementNom, cellules });
+    }
+  }
+  lignes.sort(
+    (gauche, droite) =>
+      gauche.standNom.localeCompare(droite.standNom) ||
+      gauche.standId.localeCompare(droite.standId),
+  );
+  return { day, colonnes, lignes };
+}
+
+/**
+ * The day as a table, stands × timeslots, the whole width of the screen: one
+ * row per stand with its location under its name, one name per chip, the
+ * seats nobody holds in red, a stand shut for a timeslot in a neutral « fermé »
+ * and a partial opening as a plain window, never as an alarm.
  *
- * One rendering of the Journée page (`pages/journee`), which owns the day,
- * the shared filters and the plan: this view draws the day it is handed
- * through the pure `buildDays()`, and keeps only its own switch — problem
- * lines only. A drop or a repair that rewrote the plan asks the page to
- * re-read it rather than fetching by itself.
+ * One rendering of the Planning page's « Par jour » axis (`pages/journee`),
+ * which owns the day, the shared filters and the plan: this view draws the
+ * day it is handed through the pure `buildDays()` and `tableauJour()`, and
+ * keeps only its own switches — problem lines only, and the seat filter of
+ * the relecture chips. A drop or a repair that rewrote the plan asks the page
+ * to re-read it rather than fetching by itself.
  */
 @Component({
   selector: 'app-calendar-day-vue',
@@ -117,13 +199,13 @@ interface DayCard {
     CdkDropListGroup,
     FormsModule,
     NgTemplateOutlet,
-    MatCardModule,
     MatCheckboxModule,
     MatIconModule,
     MatTooltipModule,
+    RouterLink,
   ],
   templateUrl: './calendar-day-vue.html',
-  styleUrls: ['../../../styles/calendar-day.css', '../../../styles/calendar-month.css'],
+  styleUrl: '../../../styles/calendar-day.css',
   // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -136,6 +218,13 @@ export class CalendarDayView {
   readonly filtre = input('');
   readonly stand = input('');
   readonly animateur = input('');
+  /**
+   * The stands the location and game-category filters leave, null when
+   * neither is set: the page resolves them once for every rendering.
+   */
+  readonly standsRetenus = input<ReadonlySet<string> | null>(null);
+  /** The relecture chips' filter: the lines with an empty seat, or those a lock freezes. */
+  readonly sieges = model<FiltreSieges>('tous');
   /**
    * Narrows the day to the stand lines that need attention — the view state
    * this rendering owns (`problemes`). An event day holds dozens of lines of
@@ -152,13 +241,10 @@ export class CalendarDayView {
 
   /** Bounds the repair-assistant callback to this view's life: it is lazy and rebuilt on every visit. */
   private readonly destroyRef = inject(DestroyRef);
-  protected readonly persistedCount = signal<string>('?');
-  protected readonly unassignedLabel = $localize`:@@calendarMonth.unassigned:(non assigné)`;
   protected readonly seatLabel = $localize`:@@calendarDay.siege.ouvrir:Ouvrir ce siège : pourquoi lui, le remplacer, le déplacer, le libérer`;
 
   protected readonly verrous = inject(VerrouillageStore);
 
-  private readonly planningApi = inject(PlanningApi);
   private readonly dialog = inject(MatDialog);
   private readonly explications = inject(AffectationExplanationService);
   private readonly notifications = inject(NotificationService);
@@ -180,45 +266,43 @@ export class CalendarDayView {
     return jours.find((day) => day.jour === this.jour()) ?? jours[0] ?? null;
   });
 
-  protected readonly days = computed<DayCard[]>(() => {
+  /** The day on screen as a table, narrowed by the page's filters and this view's own. */
+  protected readonly tableau = computed<TableauJour | null>(() => {
     const day = this.journee();
     if (!day) {
-      return [];
+      return null;
     }
     const filtre = this.filtre();
     const stand = this.stand();
     const animateur = this.animateur();
+    const retenus = this.standsRetenus();
     const problemes = this.seulementProblemes();
+    const sieges = this.sieges();
     const garde = (ligne: StandLine): boolean =>
       (!stand || ligne.standId === stand) &&
+      (!retenus || retenus.has(ligne.standId)) &&
       (!animateur || ligne.entries.some((entry) => entry.poste.animateur?.id === animateur)) &&
       correspondAuFiltre(filtre, [ligne.standNom, ...ligne.entries.map((entry) => entry.label)]) &&
       (!problemes ||
         this.isUnderstaffed(ligne) ||
         this.hasAppreciationMismatch(ligne) ||
-        ligne.entries.length === 0);
-    if (!filtre.trim() && !stand && !animateur && !problemes) {
-      return [day];
-    }
-    const slots = day.slots
-      .map((slot) => ({ ...slot, stands: slot.stands.filter(garde) }))
-      .filter((slot) => slot.stands.length > 0);
-    return slots.length === 0 ? [] : [{ ...day, slots }];
+        ligne.entries.length === 0) &&
+      (sieges !== 'vides' || ligne.postesLibres.length > 0) &&
+      (sieges !== 'verrous' ||
+        this.isDayLocked(day) ||
+        this.verrous.estStandVerrouille(ligne.standId) ||
+        ligne.entries.some((entry) => this.verrous.estCreneauVerrouille(entry.poste.creneau?.id)));
+    return tableauJour(day, garde);
   });
 
   constructor() {
-    // The count is read with the plan, and again each time the page re-reads it.
-    effect(() => {
-      this.planning();
-      untracked(() => void this.refreshPersistedCount());
-    });
     // Fire-and-forget: the padlocks are an indicator, never a reason to fail
     // the calendar the user came to read.
     void this.verrous.reload().catch(() => undefined);
   }
 
   /** True when the whole day is frozen by a JOUR lock on the edition. */
-  protected estJourVerrouille(day: DayCard): boolean {
+  protected isDayLocked(day: Pick<DayCard, 'date'>): boolean {
     return this.verrous.estJourVerrouille(day.date);
   }
 
@@ -232,6 +316,8 @@ export class CalendarDayView {
 
   protected readonly verrouilleTooltip = $localize`:@@verrouillages.indicator:Verrouillé : ces affectations ne bougeront plus à la prochaine résolution`;
   protected readonly siegeLibreLabel = $localize`:@@calendarDay.siegeLibre:siège libre`;
+  protected readonly fermeLabel = $localize`:@@calendarDay.ferme:fermé`;
+  protected readonly ficheStandLabel = $localize`:@@calendarDay.ficheStand:Ouvrir la fiche du stand`;
   protected readonly freeSeatTooltip = $localize`:@@calendarDay.siegeLibre.ouvrir:Ouvrir ce siège : qui peut le tenir, poser un ajustement`;
   protected readonly glisserTooltip = $localize`:@@calendarDay.glisser:Glisser vers un autre stand : sur un siège libre pour y déplacer la personne, sur une personne pour échanger leurs sièges. Refusé si une règle dure serait cassée.`;
 
@@ -302,7 +388,7 @@ export class CalendarDayView {
     if (
       this.editingLocked() ||
       this.estLigneVerrouillee(slotSource, ligneSource) ||
-      this.estJourVerrouille(day)
+      this.isDayLocked(day)
     ) {
       return;
     }
@@ -368,15 +454,6 @@ export class CalendarDayView {
       : animateurId;
   }
 
-  private async refreshPersistedCount(): Promise<void> {
-    try {
-      const status = await this.planningApi.persistedCount();
-      this.persistedCount.set(String(status.assignments));
-    } catch {
-      this.persistedCount.set($localize`:@@job.scoreUnavailable:n/d`);
-    }
-  }
-
   /** True for a stand-line with some, but fewer than its generated seats, animateurs — fully unassigned (0) is already flagged separately. */
   protected isUnderstaffed(stand: StandLine): boolean {
     return isStandLineUnderstaffed(stand);
@@ -386,6 +463,11 @@ export class CalendarDayView {
     return $localize`:@@calendarDay.understaffed:Sous-effectif : ${stand.entries.length}:count: / ${stand.effectifRequis}:min: animateur(s) affecté(s)`;
   }
 
+  /** `09:00` of a `09:00:00`: the table never prints seconds. */
+  protected heure(time: string): string {
+    return formatHeure(time);
+  }
+
   /** True for a meal-pause coverage line: reduced headcount on purpose, shown as an indication. */
   protected isCouverturePause(stand: StandLine): boolean {
     return stand.couverturePause;
@@ -393,16 +475,12 @@ export class CalendarDayView {
 
   protected readonly couverturePauseTooltip = $localize`:@@calendar.couverturePause:Effectif réduit pendant la pause repas — choix de couverture assumé, pas un manque d'animateurs`;
 
-  protected readonly dayUnderstaffedTooltip = $localize`:@@calendarMonth.cellUnderstaffed:Au moins un stand en sous-effectif ce jour-là`;
-
   /** True for a stand-line with at least one filled seat lacking the administrator's appreciation for it. */
   protected hasAppreciationMismatch(stand: StandLine): boolean {
     return isStandLineSansAppreciation(stand);
   }
 
   protected appreciationMismatchTooltip = $localize`:@@calendarDay.appreciationMismatch:Appréciation non couverte : au moins un animateur affecté n'a pas d'appréciation sur une typologie de ce stand`;
-
-  protected readonly dayAppreciationMismatchTooltip = $localize`:@@calendarMonth.cellAppreciationMismatch:Au moins un stand avec un écart d'appréciation ce jour-là`;
 
   /**
    * A seat was clicked — a name or a free seat: the page opens its Siège
@@ -507,6 +585,7 @@ export function buildDays(postes: PosteAffectation[]): DayCard[] {
             .map((entry) => ({
               standId: entry.stand.id,
               standNom: entry.stand.nom || entry.stand.id,
+              emplacementNom: entry.stand.emplacement?.nom ?? null,
               heureDebut: entry.heureDebut,
               heureFin: entry.heureFin,
               entries: entry.entries,
