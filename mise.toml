@@ -2,7 +2,7 @@
 "github:github/copilot-cli" = "latest"
 java = "temurin-25"
 node = "24"
-maven = "3.9.9"
+maven = "3.9.16"
 quarkus = "3.39.4"
 ggshield = "latest"
 git-cliff = "latest"
