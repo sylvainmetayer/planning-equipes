@@ -51,7 +51,7 @@
     @if (jour(); as jour) {
       <div class="accueil-jour" data-bloc="jour">
         <mat-icon aria-hidden="true">today</mat-icon>
-        <a class="accueil-jour-lien" routerLink="/jour-j">{{ jour }}</a>
+        <a class="accueil-jour-lien" routerLink="/aujourdhui">{{ jour }}</a>
         <a matButton routerLink="/parametres" [queryParams]="{ onglet: 'mural' }">
           <mat-icon>tv</mat-icon>
           <ng-container i18n="@@accueil.jour.tv">Afficher sur la TV</ng-container>

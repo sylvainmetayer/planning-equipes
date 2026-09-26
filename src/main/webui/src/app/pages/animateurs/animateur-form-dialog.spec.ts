@@ -370,7 +370,7 @@ describe('AnimateurFormDialog', () => {
     ).toEqual(['Retirer 2026-07-14', 'Retirer 2026-07-15']);
   });
 
-  it('saves the trimmed identity and an absent e-mail as null, never as an empty string', async () => {
+  it('saves the trimmed identity and an absent e-mail or phone as null, never as an empty string', async () => {
     const { fixture, save, close } = monter(null);
     await fixture.whenStable();
 
@@ -389,6 +389,7 @@ describe('AnimateurFormDialog', () => {
       dateNaissance: '1871-07-10',
       manager: false,
       email: null,
+      telephone: null,
       competences: {},
       souhaits: [],
       joursIndisponibles: [],
@@ -479,6 +480,7 @@ describe('AnimateurFormDialog', () => {
           ...animateur(),
           nom: 'Interrompue',
           email: '',
+          telephone: '',
           competences: [],
           modifieLe: null,
         },

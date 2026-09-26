@@ -120,6 +120,7 @@ function repairs(overrides: Partial<SuggestionsReparation> = {}): SuggestionsRep
     scoreAvant: score(0, 0, 0),
     contraintesVioleesAvant: [],
     candidatsEligibles: 3,
+    depuis: 0,
     candidatsEvalues: 3,
     plafond: 20,
     suggestions: [],

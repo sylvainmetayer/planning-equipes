@@ -187,6 +187,10 @@ final class ScenarioDtoAssembler {
                         // travels through a scenario file (regenerated from the
                         // database instead).
                         animateur.getEmail() == null || animateur.getEmail().isBlank() ? null : animateur.getEmail(),
+                        animateur.getTelephone() == null
+                                        || animateur.getTelephone().isBlank()
+                                ? null
+                                : animateur.getTelephone(),
                         animateur.getCompetences() == null ? Map.of() : new LinkedHashMap<>(animateur.getCompetences()),
                         animateur.getJoursIndisponibles() == null
                                 ? List.of()
@@ -197,8 +201,16 @@ final class ScenarioDtoAssembler {
                 .toList();
     }
 
+    /**
+     * The seats of the problem, one per seat to fill. The rest of a seat split
+     * on the day (ADR 0066) is left out: a scenario describes the seats to
+     * fill, never who held which part of one, and its seat carries no window —
+     * written out, the rest would come back as a second whole seat and double
+     * the crew of its timeslot.
+     */
     private static List<PosteDto> postes(List<PosteAffectation> postes) {
         return postes.stream()
+                .filter(poste -> poste.getSuiteDe() == null)
                 .map(poste -> new PosteDto(
                         poste.getId(),
                         poste.getStand().getId(),

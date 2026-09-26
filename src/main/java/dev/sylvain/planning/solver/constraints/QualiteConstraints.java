@@ -118,9 +118,21 @@ public final class QualiteConstraints {
         return poste.getAnimateur() == null ? "" : poste.getAnimateur().getId();
     }
 
+    /**
+     * The seats still held on the rest of their timeslot: every seat but the
+     * origin of a seat split on the day (ADR 0066), which ended where its
+     * remainder starts. A rule counting who is present on a stand × timeslot
+     * would otherwise count the person who left at 09:20 as there until noon.
+     * Every seat of a plan nobody split passes.
+     */
+    private static UniConstraintStream<PosteAffectation> stillHeld(UniConstraintStream<PosteAffectation> postes) {
+        return postes.ifNotExists(
+                PosteAffectation.class, Joiners.equal(PosteAffectation::getId, PosteAffectation::getSuiteDe));
+    }
+
     private Constraint standComplexeAvecReferent(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(
-                        constraintFactory.forEach(PosteAffectation.class), "standComplexeAvecReferent")
+        return stillHeld(ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "standComplexeAvecReferent"))
                 // The line is charged only while one of its staffed seats is
                 // still ahead of now (ADR 0044), folded next to the count.
                 .groupBy(
@@ -166,9 +178,9 @@ public final class QualiteConstraints {
     }
 
     private Constraint repartitionMineursParCreneau(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(
-                        constraintFactory.forEach(PosteAffectation.class), "repartitionMineursParCreneau")
-                .filter(poste -> poste.getAnimateur() != null && poste.getCreneau() != null)
+        return stillHeld(ConstraintToggleSupport.actif(
+                                constraintFactory.forEach(PosteAffectation.class), "repartitionMineursParCreneau")
+                        .filter(poste -> poste.getAnimateur() != null && poste.getCreneau() != null))
                 // The line is charged only while one of its seats is still
                 // ahead of now (ADR 0044), folded next to the two counts.
                 .groupBy(
@@ -257,13 +269,18 @@ public final class QualiteConstraints {
     /**
      * Seats a premium stand holds on its busiest créneau — its crew: the seats
      * of one (stand, créneau) counted, then the largest over the stand's
-     * créneaux. One seat exists per person to staff, so counting them is the
+     * créneaux, the remainder of a split seat not counted apart from its
+     * origin. One seat exists per person to staff, so counting them is the
      * same answer as reading the windows, without walking them at every move.
      */
     private static UniConstraintStream<Equipage> crewByStand(ConstraintFactory constraintFactory) {
         return constraintFactory
                 .forEach(PosteAffectation.class)
-                .filter(poste -> poste.getStand().isPremium())
+                // The remainder of a seat split on the day (ADR 0066) is the
+                // same place held by somebody else from 09:20: counting it
+                // would double the crew of that timeslot and let the stand
+                // rotate for free.
+                .filter(poste -> poste.getStand().isPremium() && poste.getSuiteDe() == null)
                 .groupBy(PosteAffectation::getStand, poste -> poste.getCreneau().getId(), ConstraintCollectors.count())
                 .map((stand, creneauId, sieges) -> new Equipage(stand, sieges.intValue()))
                 .groupBy(Equipage::stand, ConstraintCollectors.max(Equipage::sieges))

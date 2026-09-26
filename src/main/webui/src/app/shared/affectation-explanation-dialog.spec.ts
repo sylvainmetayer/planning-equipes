@@ -118,6 +118,7 @@ function suggestions(overrides: Partial<SuggestionsReparation> = {}): Suggestion
     scoreAvant: score(-2, 0, -35),
     contraintesVioleesAvant: [],
     candidatsEligibles: 1,
+    depuis: 0,
     candidatsEvalues: 1,
     plafond: 20,
     suggestions: [],
@@ -366,6 +367,7 @@ describe('AffectationExplanationDialog', () => {
         suggererReparations: vi.fn(async () =>
           suggestions({
             candidatsEligibles: 137,
+            depuis: 0,
             candidatsEvalues: 20,
             suggestions: [suggestion('a2')],
           }),
@@ -382,6 +384,7 @@ describe('AffectationExplanationDialog', () => {
         suggererReparations: vi.fn(async () =>
           suggestions({
             candidatsEligibles: 2,
+            depuis: 0,
             candidatsEvalues: 2,
             suggestions: [suggestion('a2')],
           }),

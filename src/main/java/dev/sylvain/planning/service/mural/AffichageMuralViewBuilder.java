@@ -12,6 +12,7 @@ import dev.sylvain.planning.service.mural.AffichageMuralView.MuralAlertType;
 import dev.sylvain.planning.service.mural.AffichageMuralView.MuralConsigne;
 import dev.sylvain.planning.service.mural.AffichageMuralView.MuralShift;
 import dev.sylvain.planning.service.mural.AffichageMuralView.MuralStand;
+import dev.sylvain.planning.service.solve.SeatSplit;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -19,11 +20,14 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * The wall display, computed from what the service read: pure and static, so
@@ -41,13 +45,25 @@ import java.util.Set;
  *       ending the next day.</li>
  *   <li><b>Names are minimised unless the link says otherwise</b>: the first
  *       name and the initial of the last one, on a screen anyone in the room
- *       reads. Never a phone number, an address, an age or a reason.</li>
+ *       reads — a second letter, then the whole last name, only where two
+ *       people of the day would read the same. Never a phone number, an
+ *       address, an age or a reason.</li>
  * </ul>
+ *
+ * <p><b>One calculation of the day's alerts</b>, shared by the wall display
+ * and the Aujourd'hui screen ({@code JourJService} reads {@link #newHoles}
+ * and the alerts of the admin view): what is new since the plan was
+ * published, the shift about to start with a seat empty, the break without
+ * relay within the hour — the breaks read from the Pauses screen's own
+ * {@code PauseAnalyzer}.</p>
  */
 public final class AffichageMuralViewBuilder {
 
-    /** How far ahead an empty seat becomes an alert. */
-    static final Duration HORIZON_EMPTY_SEATS = Duration.ofHours(2);
+    /** How soon a shift with an empty seat becomes an alert. */
+    static final Duration HORIZON_STARTING_SOON = Duration.ofMinutes(30);
+
+    /** How soon a break without relay becomes an alert. */
+    static final Duration HORIZON_BREAK = Duration.ofHours(1);
 
     private AffichageMuralViewBuilder() {}
 
@@ -83,9 +99,13 @@ public final class AffichageMuralViewBuilder {
     /**
      * Everything the service read, in one place.
      *
-     * @param jour the journée under way, as {@link #currentDay} reads it — the
-     *             service needs it first, to look the consigne and the breaks
-     *             of that day up
+     * @param jour      the journée under way, as {@link #currentDay} reads it —
+     *                  the service needs it first, to look the consigne and the
+     *                  breaks of that day up
+     * @param published the published plan's seats, {@code null} before the
+     *                  first publication: then no hole is new
+     * @param unpublishedChanges people whose schedule differs from the
+     *                  published plan
      */
     public record Inputs(
             String edition,
@@ -95,7 +115,9 @@ public final class AffichageMuralViewBuilder {
             List<Creneau> creneaux,
             List<PosteAffectation> postes,
             RapportPauses pauses,
-            ConsigneEdition consigne) {}
+            ConsigneEdition consigne,
+            List<PosteAffectation> published,
+            int unpublishedChanges) {}
 
     public static AffichageMuralView build(Inputs inputs, Settings settings) {
         LocalDateTime now = inputs.now();
@@ -112,9 +134,16 @@ public final class AffichageMuralViewBuilder {
                         .filter(poste -> settings.shows(poste.getStand()))
                         .toList();
 
-        List<MuralStand> stands = stands(postesDuJour, settings);
+        Set<String> nouveaux = newHoles(postesDuJour, inputs.published());
+        Map<String, String> noms = displayNames(
+                postesDuJour.stream()
+                        .map(PosteAffectation::getAnimateur)
+                        .filter(Objects::nonNull)
+                        .toList(),
+                settings.fullNames());
+        List<MuralStand> stands = stands(postesDuJour, nouveaux, noms);
         List<MuralAlert> alerts = new ArrayList<>(emptySeatAlerts(stands, now));
-        alerts.addAll(breakAlerts(inputs.pauses(), jour, now, postesDuJour, settings));
+        alerts.addAll(breakAlerts(inputs.pauses(), jour, now, postesDuJour, noms));
         alerts.sort(Comparator.comparing(MuralAlert::start)
                 .thenComparing(MuralAlert::type)
                 .thenComparing(MuralAlert::standNom, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)));
@@ -130,7 +159,149 @@ public final class AffichageMuralViewBuilder {
                 List.copyOf(alerts),
                 consigne == null
                         ? null
-                        : new MuralConsigne(consigne.fermetureDebut(), consigne.fermetureFin(), consigne.motif()));
+                        : new MuralConsigne(consigne.fermetureDebut(), consigne.fermetureFin(), consigne.motif()),
+                inputs.unpublishedChanges());
+    }
+
+    /**
+     * The empty seats the published plan did <b>not</b> have — opened since,
+     * by an absence or a release: « nouveau depuis ce matin », where every
+     * other hole is one everybody already knew. Compared cell by cell on the
+     * natural key of a shift (stand, day, effective hours — ADR 0025), since
+     * seats of one cell are interchangeable and their ids are renumbered by a
+     * solve. The remainder of a seat split on the day is a cell the published
+     * plan never had: its hole is new. A seat narrowed on the day (ADR 0066)
+     * is the hole it was, fewer minutes: a known hole of the stand and day
+     * whose window <b>covers</b> it accounts for it, so filling it at 09:20
+     * and freeing it again does not make it « nouveau ». Without a published
+     * plan nothing is new.
+     *
+     * @return the ids of the new empty seats
+     */
+    public static Set<String> newHoles(List<PosteAffectation> courant, List<PosteAffectation> publie) {
+        if (publie == null) {
+            return Set.of();
+        }
+        Map<String, List<LocalTime[]>> connus = new HashMap<>();
+        for (PosteAffectation poste : publie) {
+            if (poste.getAnimateur() == null && dayKey(poste) != null) {
+                connus.computeIfAbsent(dayKey(poste), unused -> new ArrayList<>())
+                        .add(new LocalTime[] {poste.heureDebutEffectif(), poste.heureFinEffectif()});
+            }
+        }
+        Set<String> nouveaux = new LinkedHashSet<>();
+        // Exact windows first, so that a narrowed seat never takes the known
+        // hole an untouched seat of the same window is.
+        List<PosteAffectation> vides = courant.stream()
+                .filter(poste -> poste.getAnimateur() == null && dayKey(poste) != null)
+                .sorted(Comparator.comparing(PosteAffectation::getId))
+                .toList();
+        List<PosteAffectation> restants = new ArrayList<>();
+        for (PosteAffectation poste : vides) {
+            if (!takeKnown(connus, poste, true)) {
+                restants.add(poste);
+            }
+        }
+        for (PosteAffectation poste : restants) {
+            if (!takeKnown(connus, poste, false)) {
+                nouveaux.add(poste.getId());
+            }
+        }
+        return nouveaux;
+    }
+
+    /** Takes the known hole of {@code poste}'s stand and day matching its window — equal, or covering it. */
+    private static boolean takeKnown(Map<String, List<LocalTime[]>> connus, PosteAffectation poste, boolean exact) {
+        List<LocalTime[]> fenetres = connus.getOrDefault(dayKey(poste), List.of());
+        LocalTime debut = poste.heureDebutEffectif();
+        LocalTime fin = poste.heureFinEffectif();
+        for (int index = 0; index < fenetres.size(); index++) {
+            LocalTime[] connu = fenetres.get(index);
+            boolean egal = Objects.equals(connu[0], debut) && Objects.equals(connu[1], fin);
+            if (egal || (!exact && covers(connu, debut, fin))) {
+                fenetres.remove(index);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Whether the known window runs from before {@code debut} to after {@code fin}, read from its start. */
+    private static boolean covers(LocalTime[] connu, LocalTime debut, LocalTime fin) {
+        if (connu[0] == null || connu[1] == null || debut == null || fin == null) {
+            return false;
+        }
+        int depart = offset(connu[0], debut);
+        return depart + length(debut, fin) <= length(connu[0], connu[1]);
+    }
+
+    /** Minutes from {@code origine} to the next {@code heure}, zero when they are equal. */
+    private static int offset(LocalTime origine, LocalTime heure) {
+        return Math.floorMod((heure.toSecondOfDay() - origine.toSecondOfDay()) / 60, 24 * 60);
+    }
+
+    /** The length of a window, a whole day when it ends where it starts — the way a timeslot reads it. */
+    private static int length(LocalTime debut, LocalTime fin) {
+        int minutes = offset(debut, fin);
+        return minutes == 0 ? 24 * 60 : minutes;
+    }
+
+    /** The stand and day a seat is compared on, before its window. */
+    private static String dayKey(PosteAffectation poste) {
+        if (poste.getStand() == null
+                || poste.getCreneau() == null
+                || poste.getCreneau().getDate() == null) {
+            return null;
+        }
+        return poste.getStand().getId() + "|" + poste.getCreneau().getDate();
+    }
+
+    /**
+     * The names of the day's holders, as the screen prints them: minimised to
+     * the first name and the initial by default, lengthened only where two of
+     * them would read the same — a second letter of the last name, then the
+     * whole of it. Two « Marie D. » are never homonyms on the wall.
+     */
+    static Map<String, String> displayNames(Collection<Animateur> animateurs, boolean fullNames) {
+        Map<String, Animateur> parId = new LinkedHashMap<>();
+        animateurs.forEach(animateur -> parId.putIfAbsent(animateur.getId(), animateur));
+        Map<String, String> noms = new HashMap<>();
+        if (fullNames) {
+            parId.values().forEach(animateur -> noms.put(animateur.getId(), displayName(animateur, true)));
+            return noms;
+        }
+        Map<String, List<Animateur>> parCourt = new LinkedHashMap<>();
+        parId.values()
+                .forEach(animateur -> parCourt.computeIfAbsent(abbreviated(animateur, 1), unused -> new ArrayList<>())
+                        .add(animateur));
+        for (List<Animateur> groupe : parCourt.values()) {
+            if (groupe.size() == 1) {
+                noms.put(groupe.getFirst().getId(), abbreviated(groupe.getFirst(), 1));
+                continue;
+            }
+            Map<String, Long> deuxLettres = groupe.stream()
+                    .collect(Collectors.groupingBy(animateur -> abbreviated(animateur, 2), Collectors.counting()));
+            for (Animateur animateur : groupe) {
+                String court = abbreviated(animateur, 2);
+                noms.put(
+                        animateur.getId(),
+                        deuxLettres.get(court) == 1 && !court.equals(displayName(animateur, true))
+                                ? court
+                                : displayName(animateur, true));
+            }
+        }
+        return noms;
+    }
+
+    /** The first name and the first {@code lettres} letters of the last name, a dot after them. */
+    private static String abbreviated(Animateur animateur, int lettres) {
+        String prenom = trimmed(animateur.getPrenom());
+        String nom = trimmed(animateur.getNom());
+        if (nom.isEmpty() || nom.codePointCount(0, nom.length()) <= lettres) {
+            return displayName(animateur, true);
+        }
+        String debut = nom.substring(0, nom.offsetByCodePoints(0, lettres)) + ".";
+        return prenom.isEmpty() ? debut : prenom + " " + debut;
     }
 
     /**
@@ -172,14 +343,20 @@ public final class AffichageMuralViewBuilder {
 
     /* ----------------------------- The stands ---------------------------- */
 
-    private static List<MuralStand> stands(List<PosteAffectation> postes, Settings settings) {
+    private static List<MuralStand> stands(
+            List<PosteAffectation> postes, Set<String> nouveaux, Map<String, String> noms) {
         Map<String, Map<List<LocalDateTime>, List<PosteAffectation>>> byStand = new LinkedHashMap<>();
         Map<String, Stand> standsById = new LinkedHashMap<>();
         for (PosteAffectation poste : postes) {
             Stand stand = poste.getStand();
             standsById.putIfAbsent(stand.getId(), stand);
-            LocalDateTime[] window = TimeslotWindows.window(
-                    poste.getCreneau().getDate(), poste.heureDebutEffectif(), poste.heureFinEffectif());
+            // On the calendar: the rest of a night timeslot split after
+            // midnight (ADR 0066) starts the next day. Never null here, the
+            // seats having been kept with a dated, timed window.
+            LocalDateTime[] window = SeatSplit.window(poste);
+            if (window == null) {
+                continue;
+            }
             byStand.computeIfAbsent(stand.getId(), unused -> new LinkedHashMap<>())
                     .computeIfAbsent(List.of(window[0], window[1]), unused -> new ArrayList<>())
                     .add(poste);
@@ -188,7 +365,7 @@ public final class AffichageMuralViewBuilder {
         byStand.forEach((standId, shifts) -> {
             Stand stand = standsById.get(standId);
             List<MuralShift> vacations = shifts.entrySet().stream()
-                    .map(shift -> shift(shift.getKey(), shift.getValue(), settings))
+                    .map(shift -> shift(shift.getKey(), shift.getValue(), nouveaux, noms))
                     .sorted(Comparator.comparing(MuralShift::start).thenComparing(MuralShift::end))
                     .toList();
             stands.add(new MuralStand(
@@ -210,31 +387,56 @@ public final class AffichageMuralViewBuilder {
         return List.copyOf(stands);
     }
 
-    private static MuralShift shift(List<LocalDateTime> window, List<PosteAffectation> seats, Settings settings) {
+    private static MuralShift shift(
+            List<LocalDateTime> window,
+            List<PosteAffectation> seats,
+            Set<String> nouveaux,
+            Map<String, String> displayNames) {
         List<String> noms = seats.stream()
                 .map(PosteAffectation::getAnimateur)
                 .filter(Objects::nonNull)
-                .map(animateur -> displayName(animateur, settings.fullNames()))
+                .map(animateur -> displayNames.get(animateur.getId()))
                 .sorted(String.CASE_INSENSITIVE_ORDER)
                 .toList();
         int empty =
                 (int) seats.stream().filter(seat -> seat.getAnimateur() == null).count();
-        return new MuralShift(window.get(0), window.get(1), noms, empty);
+        int nouveau = (int) seats.stream()
+                .filter(seat -> seat.getAnimateur() == null && nouveaux.contains(seat.getId()))
+                .count();
+        return new MuralShift(window.get(0), window.get(1), noms, empty, nouveau);
     }
 
     /* ----------------------------- The alerts ---------------------------- */
 
-    /** Empty seats on a shift under way, or starting within {@link #HORIZON_EMPTY_SEATS}. */
+    /**
+     * The seats opened since the publication on a shift not over yet — what is
+     * new —, and the shifts starting within {@link #HORIZON_STARTING_SOON}
+     * with a seat empty, new or known. A known hole of a shift later in the
+     * day stays in its tile: repeated in the band all day long, it would be
+     * the line everybody learns to skip.
+     */
     private static List<MuralAlert> emptySeatAlerts(List<MuralStand> stands, LocalDateTime now) {
-        LocalDateTime horizon = now.plus(HORIZON_EMPTY_SEATS);
+        LocalDateTime bientot = now.plus(HORIZON_STARTING_SOON);
         List<MuralAlert> alerts = new ArrayList<>();
         for (MuralStand stand : stands) {
             for (MuralShift shift : stand.vacations()) {
-                if (shift.emptySeats() > 0
-                        && shift.end().isAfter(now)
-                        && shift.start().isBefore(horizon)) {
+                if (!shift.end().isAfter(now)) {
+                    continue;
+                }
+                if (shift.newEmptySeats() > 0) {
                     alerts.add(new MuralAlert(
-                            MuralAlertType.EMPTY_SEATS,
+                            MuralAlertType.NEW_EMPTY_SEATS,
+                            stand.standNom(),
+                            shift.start(),
+                            shift.end(),
+                            shift.newEmptySeats(),
+                            null));
+                }
+                if (shift.emptySeats() > 0
+                        && shift.start().isAfter(now)
+                        && !shift.start().isAfter(bientot)) {
+                    alerts.add(new MuralAlert(
+                            MuralAlertType.STARTING_SOON,
                             stand.standNom(),
                             shift.start(),
                             shift.end(),
@@ -261,7 +463,7 @@ public final class AffichageMuralViewBuilder {
             LocalDate jour,
             LocalDateTime now,
             List<PosteAffectation> postesDuJour,
-            Settings settings) {
+            Map<String, String> noms) {
         if (pauses == null || pauses.journees() == null) {
             return List.of();
         }
@@ -288,7 +490,7 @@ public final class AffichageMuralViewBuilder {
                         continue;
                     }
                     LocalDateTime[] window = breakWindow(jour, sequence.debut(), pause.debut(), pause.fin());
-                    if (!window[1].isAfter(now)) {
+                    if (!window[1].isAfter(now) || !window[0].isBefore(now.plus(HORIZON_BREAK))) {
                         continue;
                     }
                     Animateur animateur = animateurs.get(journee.animateurId());
@@ -298,7 +500,7 @@ public final class AffichageMuralViewBuilder {
                             window[0],
                             window[1],
                             0,
-                            animateur == null ? null : displayName(animateur, settings.fullNames())));
+                            animateur == null ? null : noms.get(animateur.getId())));
                 }
             }
         }

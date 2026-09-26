@@ -30,6 +30,18 @@ public class PosteAffectation {
     private LocalTime heureFinEffective;
 
     /**
+     * The seat this one is the remainder of, when a seat was split at « now »
+     * on the day (ADR 0066, amending 0044): the original seat is cut short at
+     * that minute and keeps who held it, this one covers the rest of the
+     * timeslot. {@code null} — the overwhelming common case — for a seat the
+     * referential generated. Read by the rebuild of a problem, which replays
+     * the split rather than folding the remainder back onto its origin, and by
+     * the staffing counts, which must not count one place twice because two
+     * people held it one after the other.
+     */
+    private String suiteDe;
+
+    /**
      * A seat may stay empty during the search (and in an infeasible plan);
      * {@code posteDoitEtrePourvu} is what makes filling it a hard requirement.
      */
@@ -131,6 +143,14 @@ public class PosteAffectation {
         this.passe = passe;
     }
 
+    public String getSuiteDe() {
+        return suiteDe;
+    }
+
+    public void setSuiteDe(String suiteDe) {
+        this.suiteDe = suiteDe;
+    }
+
     public LocalTime getHeureDebutEffective() {
         return heureDebutEffective;
     }
@@ -161,6 +181,34 @@ public class PosteAffectation {
             return heureFinEffective;
         }
         return creneau != null ? creneau.getHeureFin() : null;
+    }
+
+    /**
+     * Whether this seat and {@code other}, two seats of one timeslot, are held
+     * at a common moment: their effective windows overlap. Two seats the
+     * referential generated always do; the origin of a seat split on the day
+     * (ADR 0066) ends where its remainder starts, and is over for every seat
+     * that starts there. Read from the timeslot's start, so a window past
+     * midnight of an overnight timeslot compares right. A seat missing its
+     * timeslot or its hours overlaps everything — the reading before splits
+     * existed.
+     */
+    public boolean overlaps(PosteAffectation other) {
+        if (creneau == null || creneau.getHeureDebut() == null || other.creneau == null) {
+            return true;
+        }
+        LocalTime origin = creneau.getHeureDebut();
+        if (heureDebutEffectif() == null || other.heureDebutEffectif() == null) {
+            return true;
+        }
+        int start = minutesAfter(origin, heureDebutEffectif());
+        int otherStart = minutesAfter(origin, other.heureDebutEffectif());
+        return start < otherStart + other.getDureeEffectiveMinutes() && otherStart < start + getDureeEffectiveMinutes();
+    }
+
+    private static int minutesAfter(LocalTime origin, LocalTime time) {
+        int minutes = (time.toSecondOfDay() - origin.toSecondOfDay()) / 60;
+        return minutes < 0 ? minutes + 24 * 60 : minutes;
     }
 
     /**

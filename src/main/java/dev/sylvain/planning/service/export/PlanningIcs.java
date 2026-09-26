@@ -6,10 +6,12 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.ProductName;
 import dev.sylvain.planning.service.analyse.PauseAnalyzer;
 import dev.sylvain.planning.service.edition.EtiquetteEdition;
+import dev.sylvain.planning.service.solve.SeatSplit;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.text.Normalizer;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -133,6 +135,13 @@ public class PlanningIcs {
                 .append("CALSCALE:GREGORIAN\r\n");
 
         for (PosteAffectation poste : postes) {
+            // Read on the calendar: the rest of a night timeslot split after
+            // midnight (ADR 0066) starts the next day, and a seat ending past
+            // midnight ends the next day.
+            LocalDateTime[] fenetre = SeatSplit.window(poste);
+            if (fenetre == null) {
+                continue;
+            }
             String uid = poste.getId() + "@" + uidDomain;
             builder.append("BEGIN:VEVENT\r\n")
                     .append("UID:")
@@ -144,18 +153,12 @@ public class PlanningIcs {
                     .append("DTSTART;TZID=")
                     .append(FUSEAU)
                     .append(":")
-                    .append(poste.getCreneau()
-                            .getDate()
-                            .atTime(poste.heureDebutEffectif())
-                            .format(DATE_HEURE_LOCALE))
+                    .append(fenetre[0].format(DATE_HEURE_LOCALE))
                     .append("\r\n")
                     .append("DTEND;TZID=")
                     .append(FUSEAU)
                     .append(":")
-                    .append(poste.getCreneau()
-                            .getDate()
-                            .atTime(poste.heureFinEffectif())
-                            .format(DATE_HEURE_LOCALE))
+                    .append(fenetre[1].format(DATE_HEURE_LOCALE))
                     .append("\r\n")
                     .append("SUMMARY:")
                     .append(escapeIcs(poste.getStand().getNom()))

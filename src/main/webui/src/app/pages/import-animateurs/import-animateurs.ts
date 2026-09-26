@@ -17,6 +17,7 @@ export const CHAMPS_IMPORT: readonly ChampImport[] = [
   'competences',
   'souhaits',
   'joursIndisponibles',
+  'telephone',
 ];
 
 /** Nothing mapped — what a file whose headers say nothing recognisable starts from. */
@@ -30,6 +31,7 @@ export function mappingVide(): AnimateurCsvMapping {
     competences: null,
     souhaits: null,
     joursIndisponibles: null,
+    telephone: null,
   };
 }
 

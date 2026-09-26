@@ -22,6 +22,7 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.scenario.ScenarioValidator;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EmptyReferenceData;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.referentiel.ReferenceData;
@@ -499,5 +500,31 @@ class ScenarioYamlWriterTest {
         ScenarioYamlReader.ScenarioImporte relu = ScenarioYamlReader.buildFromScenarioText(yaml, ParametresLegaux::new);
 
         assertThat(relu.sections().parametresQualite()).contains(reglee);
+    }
+
+    /**
+     * The phone number travels in the scenario file like the e-mail address
+     * and comes back on the fiche; a file carrying one longer than its column
+     * is refused in the reader's words, not by the database.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void thePhoneNumberTravelsInTheScenarioFileAndBack() {
+        animateur.setTelephone("06 12 34 56 78");
+        String yaml =
+                ScenarioYamlWriter.buildScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau), List.of());
+
+        Map<String, Object> parsed = new Yaml().load(yaml);
+        assertThat(((List<Map<String, Object>>) parsed.get("animateurs")).getFirst())
+                .containsEntry("telephone", "06 12 34 56 78");
+        ScenarioYamlReader.ScenarioImporte relu = ScenarioYamlReader.buildFromScenarioText(yaml, ParametresLegaux::new);
+        assertThat(relu.planning().getAnimateurs())
+                .singleElement()
+                .satisfies(lu -> assertThat(lu.getTelephone()).isEqualTo("06 12 34 56 78"));
+
+        String tropLong = yaml.replace("06 12 34 56 78", "+33 6 12 34 56 78 poste 1234567890");
+        assertThatThrownBy(() -> ScenarioYamlReader.buildFromScenarioText(tropLong, ParametresLegaux::new))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessageContaining("animateurs.telephone");
     }
 }

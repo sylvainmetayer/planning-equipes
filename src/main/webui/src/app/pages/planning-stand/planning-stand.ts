@@ -6,8 +6,8 @@
 
 import { intlLocale } from '../../core/locale';
 import { PosteAffectation } from '../../core/models';
+import { continuedSeatIds, seatMinutes } from '../../core/seat-places';
 import { correspondAuFiltre } from '../../core/text-filter';
-import { endMinutesOfDay, minutesOfDay } from '../../core/time-of-day';
 import { JourEvenement } from '../journee/journee';
 import { nomCourt } from '../planning-grille/jours-grille';
 import {
@@ -106,13 +106,6 @@ interface Accumulateur {
   minutesPourvues: number;
 }
 
-function seatMinutes(poste: PosteAffectation): number {
-  const creneau = poste.creneau!;
-  const debut = minutesOfDay(poste.heureDebutEffective ?? creneau.heureDebut);
-  const fin = endMinutesOfDay(poste.heureFinEffective ?? creneau.heureFin);
-  return Math.max(fin - debut, 0);
-}
-
 function heures(minutes: number): string {
   return (minutes / 60).toLocaleString(intlLocale(), { maximumFractionDigits: 1 });
 }
@@ -160,6 +153,9 @@ export function buildTableauStands(
 ): TableauStands {
   const byStand = new Map<string, Accumulateur>();
   const keyByDay = new Map(jours.map((jour) => [jour.jour, jour.key]));
+  // A seat split on the day (ADR 0066) is one place, counted on its
+  // continuation; both parts keep their names and their hours.
+  const continued = continuedSeatIds(postes);
   for (const poste of postes) {
     const stand = poste.stand;
     const creneau = poste.creneau;
@@ -214,12 +210,14 @@ export function buildTableauStands(
           ) || gauche.id.localeCompare(droite.id),
       );
       const tenus = daySeats.filter((poste) => poste.animateur);
-      sieges += daySeats.length;
-      pourvus += tenus.length;
+      const places = daySeats.filter((poste) => !continued.has(poste.id));
+      const placesTenues = places.filter((poste) => poste.animateur).length;
+      sieges += places.length;
+      pourvus += placesTenues;
       const base = {
-        statut: statusOf(daySeats.length, tenus.length),
-        sieges: daySeats.length,
-        pourvus: tenus.length,
+        statut: statusOf(places.length, placesTenues),
+        sieges: places.length,
+        pourvus: placesTenues,
         noms: tenus.map(noms),
         posteId: (daySeats.find((poste) => !poste.animateur) ?? daySeats[0])?.id ?? null,
       };

@@ -23,7 +23,7 @@
 import { parseDateKey, toDateKey } from '../../core/date-utils';
 import { PosteAffectation, Stand } from '../../core/models';
 import { compareCodeUnits } from '../../core/string-order';
-import { endMinutesOfDay, minutesOfDay } from '../../core/time-of-day';
+import { seatMinutes } from '../../core/seat-places';
 
 /** How the first level of the tree is formed. */
 export type TreemapGrouping = 'stand' | 'typologie';
@@ -86,16 +86,11 @@ export interface HoursInput {
   };
 }
 
-/** Minutes a seat covers: its own narrowed window when it has one, its timeslot's otherwise. */
-export function seatMinutes(poste: PosteAffectation): number {
-  const creneau = poste.creneau;
-  if (!creneau) {
-    return 0;
-  }
-  const start = minutesOfDay(poste.heureDebutEffective ?? creneau.heureDebut);
-  const end = endMinutesOfDay(poste.heureFinEffective ?? creneau.heureFin);
-  return Math.max(end - start, 0);
-}
+/**
+ * Minutes a seat covers — the shared reading of `core/seat-places`: both parts
+ * of a seat split on the day (ADR 0066) count, each on its own window.
+ */
+export { seatMinutes };
 
 /** Monday of the week a `yyyy-MM-dd` date falls in, as a date key. */
 export function mondayOf(date: string): string {

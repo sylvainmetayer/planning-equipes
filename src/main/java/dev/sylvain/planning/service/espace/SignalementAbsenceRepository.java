@@ -8,6 +8,7 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -123,38 +124,22 @@ public class SignalementAbsenceRepository {
      * @return whether the report was still open and is now settled
      */
     public boolean settle(long id, Statut statut, Instant le) {
-        // Not prepareScoped: the SET clause claims the first placeholders.
-        String sql = """
-                UPDATE signalement_absence SET statut = ?, traite_le = ?
-                WHERE edition_id = ? AND id = ? AND statut = 'SIGNALE'""";
-        return scope.writeAndReturn("Failed to settle an absence report", connection -> {
-                    try (PreparedStatement ps = connection.prepareStatement(sql)) {
-                        ps.setString(1, statut.name());
-                        ps.setTimestamp(2, Timestamp.from(le));
-                        ps.setString(3, scope.editionId());
-                        ps.setLong(4, id);
-                        return ps.executeUpdate();
-                    }
-                })
-                > 0;
+        return scope.writeAndReturn(
+                "Failed to settle an absence report", connection -> settle(connection, id, statut, le));
     }
 
-    /**
-     * Gives back a claim that could not be carried out: a report settled as
-     * {@code statut} returns to open. Nothing moves a settled report but
-     * this, so the claim given back is the caller's own.
-     */
-    public void reopen(long id, Statut statut) {
-        String sql = """
-                UPDATE signalement_absence SET statut = 'SIGNALE', traite_le = NULL
-                WHERE edition_id = ? AND id = ? AND statut = ?""";
-        scope.write("Failed to reopen an absence report", connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(connection, sql)) {
-                ps.setLong(2, id);
-                ps.setString(3, statut.name());
-                ps.executeUpdate();
-            }
-        });
+    /** The same move, on the caller's transaction: rolled back with whatever else it writes. */
+    public boolean settle(Connection connection, long id, Statut statut, Instant le) throws SQLException {
+        // Not prepareScoped: the SET clause claims the first placeholders.
+        try (PreparedStatement ps = connection.prepareStatement("""
+                UPDATE signalement_absence SET statut = ?, traite_le = ?
+                WHERE edition_id = ? AND id = ? AND statut = 'SIGNALE'""")) {
+            ps.setString(1, statut.name());
+            ps.setTimestamp(2, Timestamp.from(le));
+            ps.setString(3, scope.editionId());
+            ps.setLong(4, id);
+            return ps.executeUpdate() > 0;
+        }
     }
 
     private static List<SignalementAbsence> read(PreparedStatement ps) throws SQLException {

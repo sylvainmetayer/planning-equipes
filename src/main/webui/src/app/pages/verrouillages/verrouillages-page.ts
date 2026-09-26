@@ -23,6 +23,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
+import { placesOf } from '../../core/seat-places';
 import { SolverJobService } from '../../core/solver-job.service';
 import { VerrouillageStore } from '../../core/verrouillage.store';
 import {
@@ -265,7 +266,8 @@ export class VerrouillagesPage implements OnInit {
     if (postes.length === 0 || !this.cibleRenseignee()) {
       return null;
     }
-    const pourvus = postes.filter((poste) => poste.animateur);
+    // A seat split on the day (ADR 0066) is one seat, counted on its continuation.
+    const pourvus = placesOf(postes).filter((poste) => poste.animateur);
     switch (this.type()) {
       case 'ANIMATEUR':
         return pourvus.filter((poste) => poste.animateur?.id === this.animateurId()).length;

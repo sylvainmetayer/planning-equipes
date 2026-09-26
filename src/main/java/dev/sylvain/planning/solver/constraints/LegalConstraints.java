@@ -129,10 +129,15 @@ public final class LegalConstraints {
                         PosteAffectation.class,
                         Joiners.equal(PosteAffectation::getStand),
                         Joiners.equal(PosteAffectation::getCreneau),
+                        // An adult on the same stand and timeslot at the same
+                        // time: the origin of a seat split on the day (ADR
+                        // 0066) ended where the rest of the timeslot starts,
+                        // and supervises nobody after it.
                         Joiners.filtering((posteMineur, autrePoste) -> autrePoste.getAnimateur() != null
                                 && autrePoste
                                         .getAnimateur()
-                                        .isMajeurOn(autrePoste.getCreneau().getDate())))
+                                        .isMajeurOn(autrePoste.getCreneau().getDate())
+                                && posteMineur.overlaps(autrePoste)))
                 // A minor alone costs the flat cost of an eligibility breach: left
                 // at one hard point, it weighed what an empty seat weighs, and a
                 // plan that could not staff an evening could as well leave a

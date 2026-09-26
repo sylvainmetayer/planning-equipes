@@ -57,8 +57,9 @@ public class EditionRepository {
             // #172 ends with « Envoyer à all », mute without it); neither token
             // does: the column defaults mint fresh ones per edition, so an
             // espace link and a calendar subscription each keep designating
-            // exactly one edition.
-            new TableToCopy("animateur", "id, prenom, nom, date_naissance, manager, email"),
+            // exactly one edition. The phone number travels like the address:
+            // the day-of team calls the same people again next year.
+            new TableToCopy("animateur", "id, prenom, nom, date_naissance, manager, email, telephone"),
             new TableToCopy(
                     "stand",
                     "id, code, nom, effectif_min, effectif_max, reserve_majeurs, premium, emplacement_id, "

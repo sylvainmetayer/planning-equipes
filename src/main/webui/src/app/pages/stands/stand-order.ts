@@ -4,6 +4,7 @@
 // whose « précédent / suivant » walks the table in the order it was sorted.
 
 import { PlanningEvenement, RapportOuvertures, Stand } from '../../core/models';
+import { placesOf } from '../../core/seat-places';
 import { SortValue, sortRows } from '../../core/table-sort';
 import { SortState } from '../../core/view-query-params';
 
@@ -49,7 +50,8 @@ export function standCoverage(planning: PlanningEvenement | null): Map<string, S
     return new Map();
   }
   const coverage = new Map<string, StandCoverage>();
-  for (const poste of postes) {
+  // A seat split on the day (ADR 0066) is one place, counted on its continuation.
+  for (const poste of placesOf(postes)) {
     const standId = poste.stand?.id;
     if (!standId) {
       continue;

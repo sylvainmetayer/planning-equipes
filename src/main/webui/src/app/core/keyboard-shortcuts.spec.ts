@@ -98,23 +98,34 @@ describe('buildRaccourcisNavigation', () => {
 
   it('covers the reference-data pages, which are the most visited', () => {
     const parRoute = new Map(raccourcis.map((raccourci) => [raccourci.route, raccourci.touche]));
-    expect(parRoute.get('/animateurs')).toBe('a');
+    expect(parRoute.get('/animateurs')).toBe('n');
     expect(parRoute.get('/creneaux')).toBe('c');
     expect(parRoute.get('/typologies')).toBe('t');
     expect(parRoute.get('/')).toBe('g');
   });
 
-  // #709: a letter follows the initial of its label wherever it was free — the
-  // letters nobody could guess (`g l`, `g r`, `g x`) are gone.
+  // #709: a letter is read from the label it opens — the letters nobody could
+  // guess (`g l`, `g r`, `g x`) are gone. The initial wherever it was free; a
+  // letter further in the label (`g n` Animateurs, `g i` Diagnostic) when the
+  // initial belongs to a page visited more often on the day.
   it('reads each letter from the label it opens, the home aside', () => {
-    for (const raccourci of raccourcis.filter((r) => r.route !== '/')) {
-      const initiale = raccourci.label
+    const letters = (label: string) =>
+      label
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
-        .charAt(0)
         .toLowerCase();
-      expect(initiale, raccourci.label).toBe(raccourci.touche);
+    for (const raccourci of raccourcis.filter((r) => r.route !== '/')) {
+      expect(letters(raccourci.label), raccourci.label).toContain(raccourci.touche);
     }
+  });
+
+  it('gives the pages of the day of the event their initial, and moves the letters they took', () => {
+    const keyByRoute = new Map(raccourcis.map((raccourci) => [raccourci.route, raccourci.touche]));
+    expect(keyByRoute.get('/aujourdhui')).toBe('a');
+    expect(keyByRoute.get('/publication')).toBe('d');
+    expect(keyByRoute.get('/journee')).toBe('p');
+    expect(keyByRoute.get('/ouvertures')).toBe('h');
+    expect(keyByRoute.get('/diagnostic')).toBe('i');
   });
 });
 
@@ -142,7 +153,7 @@ describe('buildDestinationsNavigation', () => {
 
   it('shows the `g` sequence next to the pages that have one', () => {
     const animateurs = destinations.find((destination) => destination.id === 'route:/animateurs');
-    expect(animateurs?.raccourci).toBe('g a');
+    expect(animateurs?.raccourci).toBe('g n');
     const graphe = destinations.find((destination) => destination.id === 'route:/graphe');
     expect(graphe?.raccourci).toBeUndefined();
   });

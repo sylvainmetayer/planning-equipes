@@ -11,6 +11,8 @@ import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.referentiel.ContrainteAdHocContradictions.Contradiction;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -104,8 +106,13 @@ public class ContrainteAdHocService {
      * <p>Every contradiction is named, not just the first, for the same reason
      * a scenario import names them all: the answer has to be actionable in one
      * read.</p>
+     *
+     * <p>Written on the caller's transaction, rows and all: the gesture that
+     * needs it writes seats and claims a report with them, and nothing of it
+     * stays when any part is refused.</p>
      */
-    public List<ContrainteAdHoc> createAll(List<ContrainteAdHoc> contraintes) {
+    public List<ContrainteAdHoc> createAll(Connection connection, List<ContrainteAdHoc> contraintes)
+            throws SQLException {
         List<Creneau> creneaux = creneauService.list();
         List<ContrainteAdHoc> deja = new ArrayList<>(list());
         List<String> messages = new ArrayList<>();
@@ -129,7 +136,7 @@ public class ContrainteAdHocService {
             if (contrainte.getCreeLe() == null) {
                 contrainte.setCreeLe(Instant.now());
             }
-            repository.saveContrainte(contrainte, false);
+            repository.upsertContrainte(connection, contrainte);
         }
         changeTracker.markModified();
         return contraintes;

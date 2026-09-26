@@ -12,11 +12,13 @@ import {
   paginate,
   secondsSince,
   shiftKey,
+  standsFermes,
+  tableauImpression,
   tilesPerPage,
 } from './mural';
 
 function shift(start: string, end: string, noms: string[] = []): MuralShift {
-  return { start, end, noms, emptySeats: 0 };
+  return { start, end, noms, emptySeats: 0, newEmptySeats: 0 };
 }
 
 function stand(id: string, emplacementNom: string | null, vacations: MuralShift[]): MuralStand {
@@ -110,10 +112,69 @@ describe('mural — pagination', () => {
     expect(pageLabel(0, 1)).toBeNull();
   });
 
-  it('fits more tiles on a larger screen, and at least one on any', () => {
-    expect(tilesPerPage(1920, 1080)).toBe(6);
-    expect(tilesPerPage(1080, 1920)).toBe(8);
-    expect(tilesPerPage(300, 200)).toBe(1);
+  it('guesses before the first measure, and fits at least one tile on any screen', () => {
+    expect(tilesPerPage(null, 1920, 1080)).toBe(12);
+    expect(tilesPerPage(null, 300, 200)).toBe(1);
+  });
+
+  /**
+   * The acceptance criterion: 65 stands open on a 1080p television, tiles
+   * measured at 190 px, in six pages or fewer — where a tile guessed at 300 px
+   * turned them over ten.
+   */
+  it('reads the tiles as drawn: 65 open stands in six pages or fewer', () => {
+    const perPage = tilesPerPage(
+      { largeurGrille: 1872, hauteurDisponible: 840, hauteurTuile: 206, largeurTuile: 414 },
+      1920,
+      1080,
+    );
+    expect(perPage).toBe(16);
+    expect(
+      paginate(
+        Array.from({ length: 65 }, (_, index) => index),
+        perPage,
+      ).length,
+    ).toBeLessThanOrEqual(6);
+  });
+});
+
+describe('mural — the stands closed at the moment', () => {
+  const at = `${JOUR}T13:30:00`;
+
+  it('keeps them out of the pages, on one line per reopening hour', () => {
+    const moments = [
+      stand('Stand 12', null, [shift(`${JOUR}T18:00:00`, `${JOUR}T22:00:00`)]),
+      stand('Stand 14', null, [shift(`${JOUR}T18:00:00`, `${JOUR}T22:00:00`)]),
+      stand('Stand 3', null, [shift(`${JOUR}T14:00:00`, `${JOUR}T16:00:00`)]),
+      stand('Stand 7', null, [shift(`${JOUR}T09:00:00`, `${JOUR}T12:00:00`)]),
+      stand('Ouvert', null, [shift(`${JOUR}T13:00:00`, `${JOUR}T15:00:00`)]),
+    ].map((each) => momentOf(each, at));
+
+    expect(standsFermes(moments)).toEqual([
+      { reouverture: '14:00', noms: ['Stand 3'] },
+      { reouverture: '18:00', noms: ['Stand 12', 'Stand 14'] },
+      { reouverture: null, noms: ['Stand 7'] },
+    ]);
+  });
+});
+
+describe('mural — the day on paper', () => {
+  it('lays the stands against the shift windows of the day, in start order', () => {
+    const tableau = tableauImpression([
+      stand('a', null, [shift(`${JOUR}T14:00:00`, `${JOUR}T18:00:00`, ['Léo'])]),
+      stand('b', null, [
+        shift(`${JOUR}T09:00:00`, `${JOUR}T13:00:00`, ['Inès']),
+        shift(`${JOUR}T14:00:00`, `${JOUR}T18:00:00`),
+      ]),
+    ]);
+
+    expect(tableau.colonnes.map((colonne) => colonne.libelle)).toEqual([
+      '09:00–13:00',
+      '14:00–18:00',
+    ]);
+    expect(tableau.lignes[0].cellules[0]).toBeNull();
+    expect(tableau.lignes[0].cellules[1]?.noms).toEqual(['Léo']);
+    expect(tableau.lignes[1].cellules[0]?.noms).toEqual(['Inès']);
   });
 });
 

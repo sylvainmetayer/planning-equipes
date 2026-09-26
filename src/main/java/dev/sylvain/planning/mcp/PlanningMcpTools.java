@@ -2,6 +2,7 @@ package dev.sylvain.planning.mcp;
 
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.SeatPlaces;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.analyse.EquiteService;
 import dev.sylvain.planning.service.analyse.EquiteService.ColonneSolveur;
@@ -228,11 +229,14 @@ public class PlanningMcpTools {
         Map<String, LigneSynthese> parStand = new LinkedHashMap<>();
         Map<LocalDate, LigneSynthese> parJour = new TreeMap<>();
         Set<String> animateurs = new HashSet<>();
+        postes.stream()
+                .filter(poste -> poste.getAnimateur() != null)
+                .forEach(poste -> animateurs.add(poste.getAnimateur().getId()));
+        // A seat split on the day (ADR 0066) is one place, counted on its
+        // continuation: two people held it, it is staffed once.
+        postes = SeatPlaces.places(postes);
         for (PosteAffectation poste : postes) {
             boolean pourvu = poste.getAnimateur() != null;
-            if (pourvu) {
-                animateurs.add(poste.getAnimateur().getId());
-            }
             if (poste.getStand() != null) {
                 parStand.computeIfAbsent(
                                 poste.getStand().getId(),
@@ -384,7 +388,8 @@ public class PlanningMcpTools {
                     + "candidat : score après, delta, violations résolues et violations introduites. Là où simuler_swap "
                     + "note un animateur qu'on lui désigne, celui-ci les cherche. Ne persiste rien et ne relance aucune "
                     + "résolution ; le coût est borné par plafond, et candidatsEligibles/candidatsEvalues disent si la "
-                    + "recherche a été exhaustive.",
+                    + "recherche a été exhaustive. Sans candidat viable, rappeler avec depuis = depuis + "
+                    + "candidatsEvalues évalue les candidats suivants.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -397,14 +402,20 @@ public class PlanningMcpTools {
                             description = "Nombre maximum de candidats simulés (défaut : configuration serveur)",
                             required = false)
                     Integer plafond,
+            @ToolArg(
+                            description = "Rang du premier candidat éligible à simuler (défaut 0) : la suite d'une "
+                                    + "recherche restée sans candidat viable",
+                            required = false)
+                    Integer depuis,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        SuggestionsReparation suggestions = planningService.persistedSuggererReparations(posteId, plafond);
+        SuggestionsReparation suggestions = planningService.persistedSuggererReparations(posteId, plafond, depuis);
         return new SuggestionsView(
                 suggestions.posteId(),
                 suggestions.animateurActuelId(),
                 String.valueOf(suggestions.scoreAvant()),
                 toViews(suggestions.contraintesVioleesAvant()),
                 suggestions.candidatsEligibles(),
+                suggestions.depuis(),
                 suggestions.candidatsEvalues(),
                 suggestions.plafond(),
                 suggestions.suggestions().stream()
@@ -698,6 +709,7 @@ public class PlanningMcpTools {
             String scoreAvant,
             List<ContrainteImpactView> contraintesVioleesAvant,
             int candidatsEligibles,
+            int depuis,
             int candidatsEvalues,
             int plafond,
             List<SuggestionView> suggestions) {}

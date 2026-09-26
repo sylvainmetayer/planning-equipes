@@ -213,7 +213,7 @@ export function levelLabel(niveau: NiveauContrainte | null): string {
 }
 
 /** What the panel did last, and therefore what it proposes next. */
-export type SeatGesture = 'place' | 'replace' | 'move' | 'free' | 'lock' | 'unlock';
+export type SeatGesture = 'place' | 'replace' | 'move' | 'free' | 'absent' | 'lock' | 'unlock';
 
 export interface NextSteps {
   /** The plan now differs from what the animateurs were sent: « non publié : Prévenir ». */

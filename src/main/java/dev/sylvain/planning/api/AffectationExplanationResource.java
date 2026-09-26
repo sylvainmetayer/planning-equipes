@@ -89,14 +89,18 @@ public class AffectationExplanationResource {
      * Repair suggestions for one poste (issue #71): the assistant that
      * <em>looks for</em> candidates, where {@code simulation-swap} only scores
      * the one it is given. Nothing is persisted, and the cost is bounded —
-     * {@code plafond} caps how many candidates are simulated, and the answer
-     * reports both how many were eligible and how many were actually evaluated.
+     * {@code plafond} caps how many candidates are simulated, {@code depuis}
+     * says from which rank of the eligible list, and the answer reports both
+     * how many were eligible and how many were actually evaluated.
      */
     @POST
     @Path("/{posteId}/suggestions-reparation")
     public Response suggererReparations(
-            @PathParam("posteId") String posteId, @QueryParam("plafond") Integer plafond, PlanningEvenement planning) {
-        SuggestionsReparation suggestions = planningService.suggererReparations(planning, posteId, plafond);
+            @PathParam("posteId") String posteId,
+            @QueryParam("plafond") Integer plafond,
+            @QueryParam("depuis") Integer depuis,
+            PlanningEvenement planning) {
+        SuggestionsReparation suggestions = planningService.suggererReparations(planning, posteId, plafond, depuis);
         return Response.ok(suggestions).build();
     }
 

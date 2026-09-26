@@ -131,7 +131,7 @@ describe('KeyboardShortcutsService', () => {
     const { router } = start();
     frapper('g');
     frapper('a');
-    expect(router.navigateByUrl).toHaveBeenCalledWith('/animateurs');
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/aujourdhui');
   });
 
   it('does nothing on `g` followed by an unassigned letter', () => {
@@ -141,7 +141,7 @@ describe('KeyboardShortcutsService', () => {
     expect(router.navigateByUrl).not.toHaveBeenCalled();
   });
 
-  it('forgets the prefix after one key: `g` then `x` then `a` is not a navigation to /animateurs', () => {
+  it('forgets the prefix after one key: `g` then `x` then `a` is not a navigation to /aujourdhui', () => {
     const { router } = start();
     frapper('g');
     frapper('x');

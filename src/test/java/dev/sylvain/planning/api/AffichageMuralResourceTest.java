@@ -16,8 +16,13 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
+import jakarta.inject.Inject;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -28,6 +33,9 @@ import org.junit.jupiter.api.Test;
  */
 @QuarkusTest
 class AffichageMuralResourceTest {
+
+    @Inject
+    DataSource dataSource;
 
     private static final String JOUR = "2026-07-08";
 
@@ -192,8 +200,10 @@ class AffichageMuralResourceTest {
         assertThat(vue.getString("now")).isEqualTo(JOUR + "T13:30:00");
         assertThat(vue.getString("libelle")).isEqualTo("TV");
         assertThat(vue.getList("stands")).isNotEmpty();
+        // Minimised: an initial, a second letter where two of the day's people
+        // would read the same, the whole name only past that.
         List<String> noms = vue.getList("stands.vacations.flatten().noms.flatten()", String.class);
-        assertThat(noms).isNotEmpty().allSatisfy(nom -> assertThat(nom).matches(".+ \\p{Lu}\\."));
+        assertThat(noms).isNotEmpty().anySatisfy(nom -> assertThat(nom).matches(".+ \\p{Lu}\\."));
         given().when()
                 .get("/api/affichage-mural")
                 .then()
@@ -209,6 +219,42 @@ class AffichageMuralResourceTest {
         List<String> noms = view(token).getList("stands.vacations.flatten().noms.flatten()", String.class);
 
         assertThat(noms).isNotEmpty().noneSatisfy(nom -> assertThat(nom).matches(".+ \\p{Lu}\\."));
+    }
+
+    /**
+     * The television hangs in a public room: a phone number on every fiche
+     * reaches neither the view a link opens — full names or not — nor the
+     * admin's print of the day.
+     */
+    @Test
+    void noPhoneNumberReachesTheWall() throws SQLException {
+        solveScenario();
+        freezeClock(JOUR, "13:30");
+        try (Connection connection = dataSource.getConnection();
+                Statement statement = connection.createStatement()) {
+            statement.executeUpdate("UPDATE animateur SET telephone = '06 99 88 77 66'");
+        }
+        String initiales = create("{\"libelle\":\"TV\"}").getString("token");
+        String complets = create("{\"libelle\":\"TV noms\",\"fullNames\":true}").getString("token");
+
+        for (String token : List.of(initiales, complets)) {
+            assertThat(given().when()
+                            .get("/api/mural/" + token)
+                            .then()
+                            .statusCode(200)
+                            .extract()
+                            .asString())
+                    .isNotBlank()
+                    .doesNotContain("06 99 88 77 66");
+        }
+        assertThat(given().queryParam("date", JOUR)
+                        .when()
+                        .get("/api/affichage-mural/apercu")
+                        .then()
+                        .statusCode(200)
+                        .extract()
+                        .asString())
+                .doesNotContain("06 99 88 77 66");
     }
 
     /** A replacement made on the mode jour J screen shows at the next read, with no republication. */

@@ -25,6 +25,7 @@ import { PlanningEvenement, PosteAffectation, Stand } from '../../core/models';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceDataStore } from '../../core/reference-data.store';
+import { placesOf } from '../../core/seat-places';
 import { errorText } from '../../core/resource-state';
 import { SolverJobService } from '../../core/solver-job.service';
 import { formatHeure } from '../../core/time-of-day';
@@ -166,8 +167,9 @@ export class StandFichePage {
   protected readonly planComputed = computed(() =>
     (this.planning()?.postes ?? []).some((poste) => poste.animateur),
   );
+  /** Places held: a seat split on the day (ADR 0066) counts once, on its continuation. */
   protected readonly filled = computed(
-    () => this.seats().filter((poste) => poste.animateur).length,
+    () => placesOf(this.seats()).filter((poste) => poste.animateur).length,
   );
   protected readonly emptySeats = computed<EmptySeat[]>(() =>
     this.seats()

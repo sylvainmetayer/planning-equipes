@@ -3,6 +3,7 @@
 // two days are laid side by side in the comparison mode.
 
 import { PosteAffectation, RapportPauses } from '../../core/models';
+import { continuedSeatIds } from '../../core/seat-places';
 import { correspondAuFiltre } from '../../core/text-filter';
 import { endMinutesOfDay, formatHeure, minutesOfDay } from '../../core/time-of-day';
 
@@ -272,7 +273,11 @@ export function syntheseJournee(
   const daySeats = seatsOfDay(postes, jour).filter((poste) =>
     inScope(scope, poste.stand?.id, poste.animateur?.id),
   );
-  const pourvus = daySeats.filter((poste) => poste.animateur).length;
+  // A seat split on the day (ADR 0066) is one place, counted on its
+  // continuation; whoever held its first part was still there that day.
+  const continued = continuedSeatIds(postes);
+  const places = daySeats.filter((poste) => !continued.has(poste.id));
+  const pourvus = places.filter((poste) => poste.animateur).length;
   let unrelievedBreaks: number | null = null;
   if (pauses) {
     unrelievedBreaks = 0;
@@ -294,9 +299,9 @@ export function syntheseJournee(
   // to fill would claim a day without a single empty seat.
   const seatsKnown = !scope || 'standIds' in scope;
   return {
-    sieges: seatsKnown ? daySeats.length : null,
+    sieges: seatsKnown ? places.length : null,
     pourvus,
-    vides: seatsKnown ? daySeats.length - pourvus : null,
+    vides: seatsKnown ? places.length - pourvus : null,
     unrelievedBreaks,
     animateurs: animateurs.size,
     stands: new Set(daySeats.map((poste) => poste.stand?.id)).size,

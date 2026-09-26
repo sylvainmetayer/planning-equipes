@@ -148,6 +148,7 @@ public class AnimateurService {
      */
     private void validate(Animateur animateur) {
         requireIdentity(animateur);
+        requirePhoneFits(animateur.getTelephone(), null);
         // A typologie may be named by its code (ADR 0050): stored by its id.
         // One read of the referential for both lists, none when both are empty.
         boolean sansCompetences =
@@ -201,6 +202,22 @@ public class AnimateurService {
         String why =
                 birthDateMissing ? " ; sans date de naissance, tout le régime mineur / majeur est indéterminé" : "";
         throw new BusinessError.Invalid("Fiche incomplète : " + fields + verb + why + ".");
+    }
+
+    /**
+     * Refuses a phone number longer than its column, spaces around it aside
+     * (they are trimmed when written), in a 400 rather than the database's
+     * 500. The number itself is never quoted back: the sentence may travel
+     * over MCP, which no phone number leaves by.
+     *
+     * @param champ the field named in a file being read, {@code null} for a
+     *              fiche
+     */
+    public static void requirePhoneFits(String telephone, String champ) {
+        if (telephone != null && telephone.trim().length() > Animateur.TELEPHONE_MAX) {
+            throw new BusinessError.Invalid("Numéro de téléphone trop long : " + Animateur.TELEPHONE_MAX
+                    + " caractères au plus" + (champ == null ? "" : " (" + champ + ")") + ".");
+        }
     }
 
     /** See {@link AnimateurRepository#resolveAnimateurToken}. */

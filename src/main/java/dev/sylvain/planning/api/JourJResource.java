@@ -122,14 +122,17 @@ public class JourJResource {
      * The repair assistant of issue #71 over the <b>persisted</b> plan: same
      * search, same plafond (20 by default, 100 at most), but the caller names a
      * seat instead of uploading the whole planning — this screen runs on a
-     * phone in an aisle.
+     * phone in an aisle. {@code depuis} asks for the next batch of the ranked
+     * candidates, where a batch without anybody viable stopped.
      */
     @POST
     @Path("/postes/{posteId}/suggestions")
     @Consumes(MediaType.WILDCARD)
     public SuggestionsReparation suggestions(
-            @PathParam("posteId") String posteId, @QueryParam("plafond") Integer plafond) {
-        return jourJService.suggestions(posteId, plafond);
+            @PathParam("posteId") String posteId,
+            @QueryParam("plafond") Integer plafond,
+            @QueryParam("depuis") Integer depuis) {
+        return jourJService.suggestions(posteId, plafond, depuis);
     }
 
     /**

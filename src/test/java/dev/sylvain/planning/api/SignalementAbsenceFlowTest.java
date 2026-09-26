@@ -238,14 +238,17 @@ class SignalementAbsenceFlowTest {
     }
 
     /**
-     * The report is claimed before the absence is recorded, and given back
-     * when recording it is refused: a lock on Alice keeps her seat, the
-     * decision answers 400 and the report stays open — once the lock is
-     * lifted, it is decided like any other. A second decision on a report
-     * already decided is refused in 409, and records nothing twice.
+     * The report is claimed in the transaction that records the absence. A
+     * refusal met before anything is written — a lock on Alice — and one met
+     * inside that transaction, after the claim — her own forced assignment on
+     * the timeslot, which the absence would contradict — both answer 400 and
+     * leave the report open, her seat hers and no exception written: the
+     * claim is rolled back with the rest. Decided once the obstacle is gone,
+     * it settles; a second decision is refused in 409 and records nothing
+     * twice.
      */
     @Test
-    void aRefusedDecisionLeavesTheReportOpenAndASecondOneIsRefused() {
+    void aRefusedDecisionRollsTheClaimBackAndASecondOneIsRefused() {
         long id = signaler(
                         Map.of("portee", "POSTE", "date", JOUR.toString(), "creneauId", creneauId, "standId", "SIG-S1"))
                 .statusCode(200)
@@ -264,13 +267,29 @@ class SignalementAbsenceFlowTest {
                     .post("/api/jour-j/signalements/" + id + "/traitement")
                     .then()
                     .statusCode(400);
-            given().when()
-                    .get("/api/jour-j?date=" + JOUR)
-                    .then()
-                    .statusCode(200)
-                    .body("signalements.size()", equalTo(1));
+            assertReportOpenAndPlanUntouched();
         } finally {
             given().when().delete("/api/verrouillages/SIG-VERROU");
+        }
+
+        String affectationForcee = given().contentType(ContentType.JSON)
+                .body("""
+                        {"type":"AFFECTATION_FORCEE",
+                         "animateursConcernes":[{"id":"SIG-A"}],"creneau":{"id":%d}}""".formatted(creneauId))
+                .when()
+                .post("/api/contraintes-ad-hoc")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("contrainte.id");
+        try {
+            given().when()
+                    .post("/api/jour-j/signalements/" + id + "/traitement")
+                    .then()
+                    .statusCode(400);
+            assertReportOpenAndPlanUntouched();
+        } finally {
+            referenceData.deleteContrainteAdHoc(affectationForcee);
         }
 
         given().when()
@@ -309,6 +328,18 @@ class SignalementAbsenceFlowTest {
         signaler(Map.of("portee", "JOUR", "date", JOUR.toString()))
                 .statusCode(429)
                 .header("Retry-After", org.hamcrest.Matchers.notNullValue());
+    }
+
+    /** The report still open on the day's screen, Alice on both her seats, and no exception written. */
+    private void assertReportOpenAndPlanUntouched() {
+        given().when().get("/api/jour-j?date=" + JOUR).then().statusCode(200).body("signalements.size()", equalTo(1));
+        assertThat(persistence.loadPersistedPlanning().getPostes().stream()
+                        .filter(poste -> poste.getAnimateur() != null)
+                        .map(poste -> poste.getAnimateur().getId()))
+                .containsExactly("SIG-A", "SIG-A");
+        assertThat(referenceData.listContraintesAdHoc().stream()
+                        .filter(contrainte -> contrainte.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE))
+                .isEmpty();
     }
 
     private io.restassured.response.ValidatableResponse signaler(Map<String, Object> corps) {

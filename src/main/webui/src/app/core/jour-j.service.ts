@@ -13,7 +13,7 @@
 // UPDATE that starts no solve. There is no second write path.
 
 import { Injectable, inject } from '@angular/core';
-import { AbsenceMarquee, ApercuPublication, EtatJourJ, SuggestionsReparation } from './models';
+import { AbsenceMarquee, EtatJourJ, RapportPublication, SuggestionsReparation } from './models';
 import { ApiService } from './api.service';
 import { PlanningApi } from './api/planning-api';
 
@@ -77,23 +77,29 @@ export class JourJService {
   /**
    * Viable replacements for one seat, best impact first — also what the
    * Siège panel's « Remplacer » asks: the persisted plan, prepared under the
-   * edition's rules as the write that follows reads it.
+   * edition's rules as the write that follows reads it. `lot` asks for the
+   * next batch of the ranked candidates (« Chercher plus loin »).
    */
-  suggestions(posteId: string): Promise<SuggestionsReparation> {
+  suggestions(
+    posteId: string,
+    lot?: { depuis: number; plafond: number },
+  ): Promise<SuggestionsReparation> {
     return this.api.post<SuggestionsReparation>(
-      `/api/jour-j/postes/${encodeURIComponent(posteId)}/suggestions`,
+      `/api/jour-j/postes/${encodeURIComponent(posteId)}/suggestions${query({
+        plafond: lot === undefined ? undefined : String(lot.plafond),
+        depuis: lot === undefined ? undefined : String(lot.depuis),
+      })}`,
       null,
     );
   }
 
   /**
-   * How many people the next publication would write to — the count behind the
-   * "changements non publiés" banner. Read from the existing publication
-   * preview: this screen shows the number and links to the page that owns the
-   * button, it never sends anything itself.
+   * « Prévenir les N personnes »: the targeted publication of the Diffuser
+   * screen, to the people whose schedule moved and to nobody else — the one
+   * write path, never a mail of this screen's own.
    */
-  apercuPublication(): Promise<ApercuPublication> {
-    return this.planningApi.publicationPreview();
+  prevenir(animateurIds: readonly string[]): Promise<RapportPublication> {
+    return this.planningApi.publishTo(animateurIds);
   }
 }
 

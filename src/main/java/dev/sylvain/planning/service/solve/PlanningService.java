@@ -6,6 +6,7 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.analyse.Dosage;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
@@ -18,6 +19,8 @@ import dev.sylvain.planning.service.scenario.ScenarioYamlWriter;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -350,6 +353,12 @@ public class PlanningService {
         return whatIf.suggererReparations(solved, posteId, plafondDemande);
     }
 
+    /** @see PlanningWhatIf#suggererReparations */
+    public PlanningWhatIf.SuggestionsReparation suggererReparations(
+            PlanningEvenement solved, String posteId, Integer plafondDemande, Integer depuis) {
+        return whatIf.suggererReparations(solved, posteId, plafondDemande, depuis);
+    }
+
     /** @see PlanningWhatIf#creneauAvailability */
     public PlanningWhatIf.CreneauAvailability creneauAvailability(
             PlanningEvenement solved, Long creneauId, String standId, String posteId) {
@@ -357,8 +366,9 @@ public class PlanningService {
     }
 
     /** @see PlanningWhatIf#persistedSuggererReparations */
-    public PlanningWhatIf.SuggestionsReparation persistedSuggererReparations(String posteId, Integer plafondDemande) {
-        return whatIf.persistedSuggererReparations(posteId, plafondDemande);
+    public PlanningWhatIf.SuggestionsReparation persistedSuggererReparations(
+            String posteId, Integer plafondDemande, Integer depuis) {
+        return whatIf.persistedSuggererReparations(posteId, plafondDemande, depuis);
     }
 
     /** @see PlanningWhatIf#persistedCreneauAvailability */
@@ -384,8 +394,16 @@ public class PlanningService {
     }
 
     /** @see PlanningWhatIf#applyReparations */
-    public void applyReparations(PlanningEvenement persiste, List<String> posteIds, String animateurId) {
-        whatIf.applyReparations(persiste, posteIds, animateurId);
+    public List<PosteAffectation> applyReparations(
+            PlanningEvenement persiste, List<String> posteIds, String animateurId) {
+        return whatIf.applyReparations(persiste, posteIds, animateurId);
+    }
+
+    /** @see PlanningWhatIf#applyReparations(Connection, PlanningEvenement, List, String) */
+    public List<PosteAffectation> applyReparations(
+            Connection connection, PlanningEvenement persiste, List<String> posteIds, String animateurId)
+            throws SQLException {
+        return whatIf.applyReparations(connection, persiste, posteIds, animateurId);
     }
 
     /** @see PlanningWhatIf#simulateEchange */

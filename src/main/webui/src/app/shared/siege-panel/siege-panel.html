@@ -84,6 +84,10 @@
           <mat-icon>person_remove</mat-icon>
           <ng-container i18n="@@siege.liberer">Libérer</ng-container>
         </button>
+        <button matButton type="button" [disabled]="writesDisabled()" (click)="markAbsent()">
+          <mat-icon>person_off</mat-icon>
+          <ng-container i18n="@@siege.absent">Marquer absent</ng-container>
+        </button>
         @if (ownLock()) {
           <button matButton type="button" [disabled]="busy() || editingLocked()" (click)="unlock()">
             <mat-icon>lock_open</mat-icon>
