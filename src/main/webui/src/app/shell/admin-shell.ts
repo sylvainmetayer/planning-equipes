@@ -44,6 +44,7 @@ import { KeyboardShortcutsService } from '../core/keyboard-shortcuts.service';
 import { NotificationService } from '../core/notification.service';
 import { PlanningResolutionStore } from '../core/planning-resolution.store';
 import { ThemeService } from '../core/theme.service';
+import { NewsSeenService } from '../core/news-seen';
 import { ThemePreference } from '../core/theme-preference';
 import { SolverJobService } from '../core/solver-job.service';
 import { BrandLogo } from '../shared/brand-logo';
@@ -106,6 +107,7 @@ export class AdminShell {
   protected readonly editions = inject(EditionStore);
   protected readonly notifications = inject(NotificationService);
   protected readonly theme = inject(ThemeService);
+  protected readonly news = inject(NewsSeenService);
   protected readonly locale: AppLocale = getStoredLocale();
 
   private readonly router = inject(Router);
