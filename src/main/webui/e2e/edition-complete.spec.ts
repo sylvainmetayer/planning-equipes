@@ -7,14 +7,7 @@
 // petit jeu qui passe par toutes les capacités de l'outil.
 
 import { APIRequestContext, Page, expect, test } from '@playwright/test';
-import {
-  contexteAdmin,
-  shiftDate,
-  dialogueOuvert,
-  ouvrirSelect,
-  pageAdmin,
-  rowAction,
-} from './support';
+import { contexteAdmin, shiftDate, dialogueOuvert, pageAdmin, rowAction } from './support';
 import { repartirDeLaReference } from './reference';
 
 /**
@@ -94,19 +87,24 @@ async function affecterDates(
   await page.getByRole('button', { name: `Affecter ${attendu} date(s)` }).click();
 }
 
+/**
+ * « Ajouter un stand », guided: identity, game categories, location, hours —
+ * the hours left as offered (open everywhere), the grid below sets them. The
+ * creation lands on the new stand's fiche.
+ */
 async function creerStand(page: Page, code: string, nom: string): Promise<void> {
+  await page.goto('/stands');
   await page.getByRole('button', { name: 'Ajouter' }).click();
   const dialog = await dialogueOuvert(page);
   await dialog.getByLabel('Nom', { exact: true }).fill(nom);
   await dialog.getByLabel('Code', { exact: true }).fill(code);
   await dialog.getByLabel('Effectif minimum').fill('1');
   await dialog.getByLabel('Effectif maximum').fill('1');
-  await ouvrirSelect(dialog, 'Typologies de jeu');
-  await page.getByRole('option', { name: 'Jeux E2E' }).click();
-  await page.keyboard.press('Escape');
-  await expect(page.locator('.cdk-overlay-transparent-backdrop')).toHaveCount(0);
+  await dialog.getByRole('button', { name: 'Suivant' }).first().click();
+  await dialog.getByRole('option', { name: 'Jeux E2E' }).click();
   await dialog.getByRole('button', { name: 'Créer le stand' }).click();
   await expect(dialog).toBeHidden();
+  await expect(page).toHaveURL(/\/stands\/[^/?]+/);
 }
 
 async function creerAnimateur(
@@ -197,7 +195,8 @@ test('une édition saisie de bout en bout, résolue, et relue dans la grille des
   await expect(dialog).toBeHidden();
   await expect(page.getByRole('row', { name: /Jeux E2E/ })).toBeVisible();
 
-  await page.goto('/emplacements');
+  // Les lieux sont l'onglet « Lieux » de la page Stands.
+  await page.goto('/stands?onglet=lieux');
   await page.getByRole('button', { name: 'Ajouter' }).click();
   dialog = await dialogueOuvert(page);
   await dialog.getByLabel('Nom', { exact: true }).fill('Pavillon E2E');
@@ -239,7 +238,6 @@ test('une édition saisie de bout en bout, résolue, et relue dans la grille des
   await expect(page.locator('.creneaux-table .relais-repas-icon')).toHaveCount(4);
 
   // 4. Les stands, puis leur effectif par créneau dans la grille des ouvertures.
-  await page.goto('/stands');
   for (const stand of STANDS) {
     await creerStand(page, stand.code, stand.nom);
   }
@@ -333,10 +331,11 @@ test('une édition saisie de bout en bout, résolue, et relue dans la grille des
   // La fiche du stand porte son anomalie, l'accueil la compte à part.
   await page.goto('/stands');
   await page.getByLabel('Filtrer').fill('E2E-JT-S3');
-  await (await rowAction(page.getByRole('row', { name: /E2E-JT-S3/ }), 'Détail')).click();
-  await expect(page.getByRole('dialog')).toContainText('Ouvertures effectives');
-  await expect(page.getByRole('dialog')).toContainText('ne recoupe aucun créneau');
-  await page.keyboard.press('Escape');
+  await page
+    .getByRole('row', { name: /E2E-JT-S3/ })
+    .getByRole('link', { name: 'Stand trois E2E' })
+    .click();
+  await expect(page.locator('#stand-section-anomalies')).toContainText('ne recoupe aucun créneau');
   await page.goto('/');
   await expect(page.locator('li[data-ligne="ouvertures"]')).toContainText('hors de toute vacation');
 

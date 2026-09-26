@@ -193,3 +193,24 @@ test("l'instant du curseur survit à un rafraîchissement et se réinitialise", 
 
   await page.context().close();
 });
+
+// The « Lieu » column of the Stands table leads to the Lieux tab of the same
+// page: the router keeps the page, which has to follow its address.
+test('un lieu de la colonne « Lieu » ouvre l’onglet Lieux filtré sur lui, sans recharger', async ({
+  browser,
+}) => {
+  const page = await pageAdmin(browser, admin);
+  await page.goto('/stands');
+  await page.getByLabel('Filtrer').fill('Stand du matin');
+  await page
+    .getByRole('row', { name: /Stand du matin/ })
+    .getByRole('link', { name: 'Halle du matin' })
+    .click();
+
+  await expect(page).toHaveURL(/\/stands\?(.*&)?onglet=lieux/);
+  await expect(page.locator('app-lieux-map .leaflet-container')).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Stands rattachés' })).toBeVisible();
+  await expect(page.locator('#contenu table tbody tr')).toHaveCount(1);
+  await expect(page.locator('#contenu table tbody')).toContainText('Halle du matin');
+  await page.context().close();
+});

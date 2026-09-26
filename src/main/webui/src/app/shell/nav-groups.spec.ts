@@ -10,6 +10,7 @@ import { JOURNEE_VIEWS, readView } from '../pages/journee/journee';
 import { MARGIN_VIEW_PARAMS, readMarginView } from '../pages/marge/marge';
 import { OPENINGS_VIEW_PARAMS, readOpeningsView } from '../pages/ouvertures/ouvertures';
 import { ONGLETS_PARAMETRES, readOngletParametres } from '../pages/parametres/parametres';
+import { readOngletStands } from '../pages/stands/stands-onglet';
 import { NavLink, buildLegalLinks, buildNavGroups, buildOffMenuLinks } from './nav-groups';
 
 const menuLinks = (): NavLink[] => buildNavGroups().flatMap((group) => group.links);
@@ -67,6 +68,8 @@ const TAB_READERS: Record<string, TabReader | readonly TabReader[]> = {
     values: ONGLETS_PARAMETRES,
   },
   '/debug': { param: 'onglet', opens: (v) => readOngletDebug(v) === v, values: ONGLETS_DEBUG },
+  // The stands are the default tab: only the locations are named.
+  '/stands': { param: 'onglet', opens: (v) => readOngletStands(v) === v, values: ['lieux'] },
 };
 
 describe('buildNavGroups', () => {

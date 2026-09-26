@@ -10,7 +10,11 @@ import { NotificationService } from '../../core/notification.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { RapportImportReferentiel } from '../../core/models';
-import { ImportReferentielCard } from './import-referentiel-card';
+import {
+  ImportReferentielCard,
+  referentialParamsOf,
+  referentialRouteOf,
+} from './import-referentiel-card';
 
 function rapport(partial: Partial<RapportImportReferentiel> = {}): RapportImportReferentiel {
   return {
@@ -168,6 +172,13 @@ describe('ImportReferentielCard', () => {
    * After a write, the rows are one click away: the screen of the referential
    * they fill, narrowed to them — found again by their code, else their name.
    */
+  // The locations became the « Lieux » tab of the Stands page: their rows are there.
+  it('sends the imported locations to the Lieux tab of the Stands page', () => {
+    expect(referentialRouteOf('EMPLACEMENTS')).toBe('/stands');
+    expect(referentialParamsOf('EMPLACEMENTS')).toEqual({ onglet: 'lieux' });
+    expect(referentialParamsOf('STANDS')).toEqual({});
+  });
+
   it('links to the rows written, on their screen, narrowed to them', async () => {
     api.analyse.mockResolvedValue(rapport());
     const written = rapport({ applied: true, created: 1, updated: 1 });

@@ -1,0 +1,11 @@
+/* The « Lieux » tab: the map of every place above its table. */
+.lieux-onglet app-lieux-map {
+  display: block;
+  margin: 0.5rem 0;
+}
+
+.lieux-sans-position {
+  margin: 0.25rem 0 0;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}

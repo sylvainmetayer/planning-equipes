@@ -46,9 +46,11 @@ test('« ?edit= » opens the named animateur’s form, once only', async ({ brow
   await page.context().close();
 });
 
-test('« ?edit= » opens the named stand’s form', async ({ browser }) => {
+test('« ?edit= » opens the named stand’s fiche, its identity form open', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
   await ficheOuverte(page, `/stands?edit=${SEED.standDemandeur}`, /Modifier le stand Stand E2E un/);
+  // The stand has a page of its own: the link lands there.
+  await expect(page).toHaveURL(new RegExp(`/stands/${SEED.standDemandeur}$`));
   await page.context().close();
 });
 
@@ -62,10 +64,23 @@ test('« ?edit= » ouvre la fiche du créneau nommé', async ({ browser }) => {
   await page.context().close();
 });
 
-test("un id inconnu n'ouvre rien et laisse la liste", async ({ browser }) => {
+test('l’ancienne adresse des emplacements mène à l’onglet Lieux, carte comprise', async ({
+  browser,
+}) => {
+  const page = await pageAdmin(browser, admin);
+  await page.goto('/emplacements', { waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(/\/stands\?onglet=lieux/);
+  await expect(page.locator('app-lieux-map .leaflet-container')).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Stands rattachés' })).toBeVisible();
+  await page.context().close();
+});
+
+test("un id inconnu n'ouvre rien et le dit", async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/stands?edit=PERSONNE', { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('#contenu table')).toBeVisible();
+  await expect(page.locator('#contenu')).toContainText(
+    "Aucun stand ne porte l'identifiant « PERSONNE »",
+  );
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page).not.toHaveURL(/edit=/);
   await page.context().close();
