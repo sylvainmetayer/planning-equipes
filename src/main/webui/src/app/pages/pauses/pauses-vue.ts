@@ -27,6 +27,7 @@ import {
   planifieesDuJour,
   syntheseDuJour,
 } from './pauses';
+import { RouterLink } from '@angular/router';
 
 /**
  * « Pauses » : where the legal breaks fall, day by day and stand by stand —
@@ -52,6 +53,7 @@ import {
     MatIconModule,
     MatTooltipModule,
     WorkInProgressBanner,
+    RouterLink,
   ],
   templateUrl: './pauses-vue.html',
   styleUrl: './pauses-vue.css',

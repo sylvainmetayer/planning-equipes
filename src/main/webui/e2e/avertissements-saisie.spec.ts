@@ -261,11 +261,15 @@ test.describe('avertissements de saisie', () => {
     await (await rowAction(ligne, 'Modifier')).click();
     await expect(page.getByRole('dialog')).toContainText("Hors des jours de l'édition");
     await expect(page.getByRole('dialog')).toContainText(JOUR_HORS_BORNES);
+    await page.keyboard.press('Escape');
+
+    // Sa fiche, que le nom ouvre, le montre aussi, hors de la frise.
+    await ligne.getByRole('link', { name: new RegExp(ANIMATEUR) }).click();
+    await expect(page.locator('#contenu')).toContainText(JOUR_HORS_BORNES);
 
     // Le journal du navigateur survit à la déconnexion et se relit dans les
     // messages récents de l'accueil : la phrase qui dit qu'une personne est
     // mineure n'y est pas écrite (docs/rgpd.md §7).
-    await page.keyboard.press('Escape');
     await page.goto('/');
     await page.getByRole('button', { name: /Messages récents/ }).click();
     await expect(page.getByText(/point\(s\) à vérifier/).first()).toBeVisible();

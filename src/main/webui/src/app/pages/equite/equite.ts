@@ -223,17 +223,3 @@ export function indicateursFiche(
       };
     });
 }
-
-/** The row of one animateur, `null` when nobody is chosen or the report does not carry them. */
-export function ligneDe(lignes: LigneEquite[], animateurId: string): LigneEquite | null {
-  return lignes.find((ligne) => ligne.animateurId === animateurId) ?? null;
-}
-
-/**
- * What the autocomplete offers: the rows matching what was typed, capped — a
- * panel is read, not scrolled through 150 names. An empty search offers the
- * first ones rather than nothing, so the list opens on a click.
- */
-export function suggestions(lignes: LigneEquite[], recherche: string, limite = 10): LigneEquite[] {
-  return filterRows(lignes, recherche).slice(0, limite);
-}

@@ -213,6 +213,57 @@ class FrozenPastAcceptanceTest {
         assertThat(incremental.getInt("result.statistiques.postesPassesVides")).isEqualTo(postesPasses);
     }
 
+    /**
+     * « Indisponible ce jour » on the day under way (ADR 0056): the day is
+     * written, a seat already started stays with its holder and is only
+     * counted, the seats still ahead are freed.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void aDayOffOnTheDayUnderWayKeepsTheSeatsAlreadyStarted() {
+        solveComplet();
+        freezeClock(J3, "13:30");
+        String holder = null;
+        for (Map<String, Object> poste : affectationsPersistees()) {
+            Map<String, Object> animateur = (Map<String, Object>) poste.get("animateur");
+            if (animateur != null
+                    && J3.equals(String.valueOf(creneauOf(poste).get("date")))
+                    && MATIN.equals(heureDebut(poste))) {
+                holder = String.valueOf(animateur.get("id"));
+                break;
+            }
+        }
+        assertThat(holder).as("somebody seated on the Wednesday morning").isNotNull();
+        List<String> started = seatsOf(holder, true);
+        List<String> ahead = seatsOf(holder, false);
+
+        JsonPath reponse = given().when()
+                .put("/api/animateurs/" + holder + "/jours-indisponibles/" + J3)
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
+
+        assertThat(reponse.getInt("startedSeatsKept")).isEqualTo(started.size());
+        assertThat(reponse.getList("freedSeats.posteId", String.class)).containsExactlyInAnyOrderElementsOf(ahead);
+        assertThat(reponse.getList("lockedSeatsKept")).isEmpty();
+        assertThat(seatsOf(holder, true)).isEqualTo(started);
+        assertThat(seatsOf(holder, false)).isEmpty();
+    }
+
+    /** The ids of the Wednesday seats {@code animateurId} holds, the morning ones or the others. */
+    @SuppressWarnings("unchecked")
+    private static List<String> seatsOf(String animateurId, boolean morning) {
+        return affectationsPersistees().stream()
+                .filter(poste -> poste.get("animateur") != null
+                        && animateurId.equals(((Map<String, Object>) poste.get("animateur")).get("id")))
+                .filter(poste -> J3.equals(String.valueOf(creneauOf(poste).get("date"))))
+                .filter(poste -> MATIN.equals(heureDebut(poste)) == morning)
+                .map(poste -> String.valueOf(poste.get("id")))
+                .sorted()
+                .toList();
+    }
+
     /* ------------------------------- Helpers ------------------------------- */
 
     private static void freezeClock(String date, String heure) {

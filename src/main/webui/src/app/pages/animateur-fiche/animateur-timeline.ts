@@ -2,21 +2,19 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
-  OnInit,
+  input,
   signal,
+  untracked,
   ViewEncapsulation,
 } from '@angular/core';
-import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
-import { PlanningApi } from '../../core/api/planning-api';
 import { ConsignesStore } from '../../core/consignes.store';
 import {
   coupuresOf,
@@ -29,13 +27,10 @@ import {
   segmentsPause,
 } from '../../core/pauses-index';
 import { indexWalks, WalkSegment, walkSegments, walksOf } from '../../core/walks-index';
-import { uniqueById } from '../../core/date-utils';
 import { bandeLabel } from '../../core/consigne-wording';
 import { endMinutesOfDay, formatDuration, minutesOfDay } from '../../core/time-of-day';
-import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import {
-  Animateur,
   PlanningEvenement,
   PosteAffectation,
   TypologieItem,
@@ -49,18 +44,13 @@ import {
   typologieLabels,
   typologiePrincipale,
 } from '../../core/typologie-colors';
-import { SelectionRecherche } from '../../shared/selection-recherche';
-import { errorMessage, errorPrefix } from '../../core/error-message';
-import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
+import { errorPrefix } from '../../core/error-message';
 import { StatusMessage } from '../../shared/status-message';
-
-export interface AnimateurOption {
-  id: string;
-  label: string;
-}
 
 export interface TimelineBlock {
   posteId: string;
+  /** ISO date of the seat's day, what the link to the Journée names; null when the timeslot carries none. */
+  date: string | null;
   standNom: string;
   /** Typologie ids proposed by the stand — drives the colour of the recap chips. */
   typologies: string[];
@@ -125,40 +115,45 @@ export interface TimelineDay {
 }
 
 /**
- * Read-only per-animateur timeline for issue #69: daily amplitude, vacations
- * and the pauses/travel between them, at a glance — complements the global
- * heatmap (#68) with a view focused on one person, useful when manually
- * repairing a planning. Same read-only source and pure-builder pattern as
- * `calendar-day-page.ts` (`planningState.loadForDisplay()` + `buildDays()`);
- * no dedicated backend endpoint.
+ * The « Planning » section of the fiche animateur: one person's days read on
+ * time — the opening span of each day, the shifts, the meal breaks, the
+ * pauses and the walks between two stands — at a glance. It was the
+ * « Timeline animateur » screen until the fiche took it in: same read-only
+ * source and pure builder as `calendar-day-vue.ts`
+ * (`planningState.loadForDisplay()` + `buildAnimateurTimeline()`), no
+ * endpoint of its own, and read only once the section is shown.
+ *
+ * Every shift is a link to the Journée on its day with its seat open in the
+ * Siège panel: the place where a seat is acted on.
  */
 @Component({
-  selector: 'app-animateur-timeline-page',
+  selector: 'app-animateur-timeline',
   imports: [
     StatusMessage,
-    MatCardModule,
     MatButtonModule,
     RouterLink,
-    MatFormFieldModule,
-    MatSelectModule,
     MatIconModule,
     MatProgressBarModule,
     MatTooltipModule,
-    SelectionRecherche,
   ],
-  templateUrl: './animateur-timeline-page.html',
-  styleUrl: './animateur-timeline-page.css',
+  templateUrl: './animateur-timeline.html',
+  styleUrl: './animateur-timeline.css',
   // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AnimateurTimelinePage implements OnInit {
+export class AnimateurTimeline {
+  /** The person whose days are drawn. */
+  readonly animateurId = input.required<string>();
+  /**
+   * Raised by the fiche whenever one of its gestures moved the persisted plan:
+   * the plan, read once when the section opens, is read again.
+   */
+  readonly version = input(0);
+
   protected readonly loading = signal(false);
-  protected readonly exportBusy = signal(false);
-  protected readonly envoiBusy = signal(false);
   protected readonly error = signal('');
   protected readonly planning = signal<PlanningEvenement | null>(null);
-  protected readonly selectedAnimateurId = signal<string | null>(null);
   /** Typologie referential, only used to turn ids into display labels. */
   protected readonly typologies = signal<TypologieItem[]>([]);
   /** The breaks of the plan, drawn on the tracks; null when the request failed — the timeline still shows. */
@@ -167,33 +162,19 @@ export class AnimateurTimelinePage implements OnInit {
   protected readonly walks = signal<WalkSequenceReport | null>(null);
 
   private readonly analysesApi = inject(AnalysesApi);
-  private readonly planningApi = inject(PlanningApi);
-  private readonly notifications = inject(NotificationService);
   private readonly planningState = inject(PlanningStateService);
-  private readonly route = inject(ActivatedRoute);
   private readonly consignes = inject(ConsignesStore);
 
-  protected readonly animateurOptions = computed<AnimateurOption[]>(() =>
-    buildAnimateurOptions(this.planning()?.postes ?? []),
+  protected readonly days = computed<TimelineDay[]>(() =>
+    buildAnimateurTimeline(this.planning()?.postes ?? [], this.animateurId()),
   );
-
-  protected readonly days = computed<TimelineDay[]>(() => {
-    const animateurId = this.selectedAnimateurId();
-    if (!animateurId) {
-      return [];
-    }
-    return buildAnimateurTimeline(this.planning()?.postes ?? [], animateurId);
-  });
 
   private readonly indexPauses = computed(() => indexerPauses(this.pauses()));
 
   /** The breaks of each shown day, placed on that day's track; keyed by day number. */
   protected readonly pausesParJour = computed<Map<number, SegmentPause[]>>(() => {
-    const animateurId = this.selectedAnimateurId();
+    const animateurId = this.animateurId();
     const segments = new Map<number, SegmentPause[]>();
-    if (!animateurId) {
-      return segments;
-    }
     for (const day of this.days()) {
       const pauses = pausesDe(this.indexPauses(), day.date, animateurId);
       if (pauses.length > 0) {
@@ -214,11 +195,8 @@ export class AnimateurTimelinePage implements OnInit {
 
   /** The tight walks of each shown day, placed on that day's track; keyed by day number. */
   protected readonly walksByDay = computed<Map<number, WalkSegment[]>>(() => {
-    const animateurId = this.selectedAnimateurId();
+    const animateurId = this.animateurId();
     const segments = new Map<number, WalkSegment[]>();
-    if (!animateurId) {
-      return segments;
-    }
     for (const day of this.days()) {
       const walks = walksOf(this.walksIndex(), day.date, animateurId);
       if (walks.length > 0) {
@@ -243,11 +221,8 @@ export class AnimateurTimelinePage implements OnInit {
    * is the first thing an animateur reads their own planning for.
    */
   protected readonly coupuresByDay = computed<Map<number, SegmentCoupure[]>>(() => {
-    const animateurId = this.selectedAnimateurId();
+    const animateurId = this.animateurId();
     const segments = new Map<number, SegmentCoupure[]>();
-    if (!animateurId) {
-      return segments;
-    }
     for (const day of this.days()) {
       const coupures = coupuresOf(this.indexCoupures(), day.date, animateurId);
       if (coupures.length > 0) {
@@ -298,17 +273,11 @@ export class AnimateurTimelinePage implements OnInit {
   });
 
   constructor() {
-    this.selectedAnimateurId.set(this.route.snapshot.queryParamMap.get('animateur'));
-    // Keeps the selection in the URL so it survives a refresh (F5) and can be
-    // bookmarked/shared — « regarde le planning d'Untel » is a link, not a
-    // description. This page had its own copy of that effect, written before
-    // the shared helper existed and still navigating on every change; see
-    // `docs/decisions/0018-ecrire-l-url-de-vue-sans-naviguer.md`.
-    keepViewInQueryParams(() => ({ animateur: optionalParam(this.selectedAnimateurId()) }));
-  }
-
-  ngOnInit(): void {
-    void this.refresh();
+    // Read once the section is drawn, then again at every new version.
+    effect(() => {
+      this.version();
+      untracked(() => void this.refresh());
+    });
   }
 
   protected async refresh(): Promise<void> {
@@ -330,13 +299,6 @@ export class AnimateurTimelinePage implements OnInit {
       this.typologies.set(typologies);
       this.pauses.set(pauses && typeof pauses === 'object' && 'journees' in pauses ? pauses : null);
       this.walks.set(walks && typeof walks === 'object' && 'walks' in walks ? walks : null);
-      const options = this.animateurOptions();
-      if (
-        !this.selectedAnimateurId() ||
-        !options.some((option) => option.id === this.selectedAnimateurId())
-      ) {
-        this.selectedAnimateurId.set(options[0]?.id ?? null);
-      }
     } catch (error) {
       this.planning.set(null);
       this.error.set(errorPrefix(error));
@@ -345,132 +307,21 @@ export class AnimateurTimelinePage implements OnInit {
     }
   }
 
-  /** Bridges the picker's id list with the page's single selected id. */
-  protected readonly animateurSelection = computed(() => {
-    const id = this.selectedAnimateurId();
-    return id ? [id] : [];
-  });
-
-  protected onAnimateurSelection(ids: string[]): void {
-    this.selectAnimateur(ids[0] ?? '');
-  }
-
-  protected selectAnimateur(animateurId: string): void {
-    this.selectedAnimateurId.set(animateurId);
-  }
-
-  protected exportPdf(): Promise<void> {
-    return this.export('pdf', 'application/pdf');
-  }
-
-  protected exportIcs(): Promise<void> {
-    return this.export('ics', 'text/calendar');
-  }
-
-  /**
-   * Same server-side exports as the global archive of the Solveur page
-   * (`/api/planning/export/{pdf,ics}/animateur/{id}`), but for the animateur
-   * currently displayed only — the planning is POSTed as the request body, so
-   * what gets exported is exactly what the timeline shows.
-   */
-  private async export(format: 'pdf' | 'ics', contentType: string): Promise<void> {
-    const animateurId = this.selectedAnimateurId();
-    if (!animateurId || this.exportBusy()) {
-      return;
-    }
-    this.exportBusy.set(true);
-    try {
-      const planning = await this.planningState.require();
-      const filename = exportFilename(this.animateurOptions(), animateurId, format);
-      this.notifications.notify({
-        title: await this.planningApi.exportForAnimateur(
-          format,
-          animateurId,
-          filename,
-          planning,
-          contentType,
-        ),
-        variant: 'success',
-      });
-    } catch (error) {
-      const message = errorMessage(error);
-      this.notifications.notify({
-        title: $localize`:@@timeline.exportFailed:Export impossible`,
-        message,
-        variant: 'error',
-      });
-    } finally {
-      this.exportBusy.set(false);
-    }
+  /** The seat on its day in the Journée, opened in the Siège panel. */
+  protected seatQuery(block: TimelineBlock): Record<string, string> {
+    return block.date ? { date: block.date, siege: block.posteId } : { siege: block.posteId };
   }
 
   protected gapTooltip(gap: TimelineGap): string {
     return $localize`:@@timeline.gap.tooltip:Pause ou déplacement : ${formatDuration(gap.dureeMinutes)}:duree:`;
   }
-
-  /**
-   * Mails the displayed animateur their planning (PDF + espace link), built
-   * server-side from the persisted planning — the browser only triggers it.
-   */
-  protected async envoyerEmail(): Promise<void> {
-    const animateurId = this.selectedAnimateurId();
-    if (!animateurId || this.envoiBusy()) {
-      return;
-    }
-    const label =
-      this.animateurOptions().find((option) => option.id === animateurId)?.label ?? animateurId;
-    this.envoiBusy.set(true);
-    try {
-      await this.planningApi.sendToAnimateur(animateurId);
-      this.notifications.notify({
-        title: $localize`:@@timeline.envoi.succes:Planning envoyé à ${label}:animateur:`,
-        variant: 'success',
-      });
-    } catch (error) {
-      const message = errorMessage(error);
-      this.notifications.notify({
-        title: $localize`:@@timeline.envoi.echec:Envoi impossible`,
-        message,
-        variant: 'error',
-      });
-    } finally {
-      this.envoiBusy.set(false);
-    }
-  }
-}
-
-export function buildAnimateurOptions(postes: PosteAffectation[]): AnimateurOption[] {
-  const animateurs = uniqueById(
-    postes
-      .map((poste) => poste.animateur)
-      .filter((animateur): animateur is Animateur => !!animateur),
-  );
-  const labels = animateurs.map(
-    (animateur) => `${animateur.prenom ?? ''} ${animateur.nom ?? ''}`.trim() || animateur.id,
-  );
-  const counts = new Map<string, number>();
-  labels.forEach((label) => counts.set(label, (counts.get(label) ?? 0) + 1));
-  return animateurs
-    .map((animateur, index) => {
-      const label = labels[index];
-      return {
-        id: animateur.id,
-        label: (counts.get(label) ?? 0) > 1 ? `${label} (${animateur.id})` : label,
-      };
-    })
-    .sort((left, right) => left.label.localeCompare(right.label));
 }
 
 /**
  * `planning-Jeanne-Dupont.pdf` rather than the raw id, so a downloaded file
  * stays readable — every character a file system may choke on is folded to `-`.
  */
-export function exportFilename(
-  options: AnimateurOption[],
-  animateurId: string,
-  format: 'pdf' | 'ics',
-): string {
-  const label = options.find((option) => option.id === animateurId)?.label ?? animateurId;
+export function exportFilename(label: string, format: 'pdf' | 'ics'): string {
   const safeLabel = label.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || 'animateur';
   return `planning-${safeLabel}.${format}`;
 }
@@ -600,6 +451,7 @@ function buildTimelineDay(
       const heureFin = poste.heureFinEffective ?? creneau.heureFin;
       return {
         posteId: poste.id,
+        date: creneau.date ?? null,
         standNom: poste.stand?.nom || poste.stand?.id || '',
         typologies: standTypologies(poste.stand),
         coequipiers: (equipesParLigne.get(ligneKey(poste)) ?? [])
@@ -620,6 +472,7 @@ function buildTimelineDay(
 
   const blocks: TimelineBlock[] = spans.map((span) => ({
     posteId: span.posteId,
+    date: span.date,
     standNom: span.standNom,
     typologies: span.typologies,
     coequipiers: span.coequipiers,

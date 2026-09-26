@@ -393,7 +393,7 @@ outil MCP `analyser_enchainements`) lit le plan persisté avec le même calcul
 mais un filet plus large : **toutes** les paires consécutives, battement nul
 compris, et le passé aussi. Elle signale en plus un battement qui est aussi la
 pause légale quand le trajet en mange une part — « trajet pris sur la pause » —
-sans que la règle de pause change. Le Rail et la timeline y posent un chevron,
+sans que la règle de pause change. Le Rail et le planning de la fiche animateur y posent un chevron,
 la page Problèmes une ligne d'avertissement avec le lien vers le Rail du jour,
 et la fiche d'un emplacement donne le temps de marche vers chacun des autres.
 

@@ -28,6 +28,7 @@ import {
   SummaryScope,
   syntheseJournee,
 } from './journee';
+import { RouterLink } from '@angular/router';
 
 /**
  * Two days of the persisted plan side by side (the Journée page's comparison
@@ -52,6 +53,7 @@ import {
     MatCheckboxModule,
     MatIconModule,
     NgTemplateOutlet,
+    RouterLink,
   ],
   templateUrl: './comparaison-vue.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

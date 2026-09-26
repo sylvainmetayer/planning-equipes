@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   LOCALE_ID,
+  ViewEncapsulation,
   computed,
   inject,
   input,
@@ -9,7 +10,7 @@ import {
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { LigneEquite, RapportEquite } from '../../core/models';
-import { columnConstraint, libelleSolveur } from './equite';
+import { columnConstraint, libelleSolveur } from '../equite/equite';
 import {
   RADAR_SIZE,
   RadarAxis,
@@ -97,7 +98,7 @@ const LABEL_RATIO = 1.12;
               @if (label.axis.measuredBySolver) {
                 <mat-icon
                   inline
-                  class="equite-solveur-icon"
+                  class="equite-radar-solver-icon"
                   aria-hidden="false"
                   [matTooltip]="solverLabel(label.axis.column)"
                   [attr.aria-label]="solverLabel(label.axis.column)"
@@ -153,6 +154,9 @@ const LABEL_RATIO = 1.12;
       }
     </figure>
   `,
+  styleUrl: './equite-radar.css',
+  // Global by design (AGENTS.md): loaded with whichever route draws the radar.
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EquiteRadar {

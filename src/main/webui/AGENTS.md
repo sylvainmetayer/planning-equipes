@@ -124,17 +124,38 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   (`pages/parametres/horloge-simulee-card`, over `PUT /api/horloge`), shown
   only where the server allows a simulated clock, which the toolbar's
   hourglass links to; `?onglet=globaux`, its former name, is still read), `/stands`, `/emplacements`,
-  `/animateurs`, `/animateurs/:id` (« Fiche animateur » — one person on one
-  page, seven foldable sections read in one call from
+  `/animateurs` (every name a link to the fiche, Entrée on a row too,
+  carrying the list's view — `q`, `sort`/`dir`, the acknowledgement,
+  category, wish, minor and manager filters — in the fiche's URL; the
+  consultation dialog is gone), `/animateurs/:id` (« Fiche animateur »
+  — one person on one page and every gesture on them: a head of actions — the
+  espace link copied, the planning mailed through the service the MCP tool
+  `envoyer_planning_animateur` uses, the reminder, the PDF and the ICS, the
+  whole planning locked or released, the adjustment form pre-filled on the
+  person, the fiche's form — and « précédent / suivant » through the list's
+  view, rebuilt by the pure `pages/animateurs/animateur-roster.ts` the list
+  itself reads; seven foldable sections read in one call from
   `GET /api/animateurs/{id}/fiche`, which narrows the Équité and Fragilité
-  reports to that person rather than recomputing them; a read-out, the edit
-  stays the Animateurs page's form — the list's names and Entrée on a row lead
-  here, there is no consultation dialog any more), `/competences` (« Compétences » — the animateur × typologie
+  reports to that person rather than recomputing them, the first three open
+  and `?section=` — or a `#fragment` — opening and scrolling to another:
+  identity, the availability strip whose day, clicked, is made unavailable by
+  `PUT /api/animateurs/{id}/jours-indisponibles/{date}` — its seats of that
+  day freed in the same call and each offered to the bench dialog of the Siège
+  panel, a locked one kept in place and named with a link to the locks, ADR
+  0056 —, the planning read on time (`animateur-timeline.ts`, the former
+  `/timeline` screen, drawn only while its section is open and read again
+  after every gesture of the fiche that moves the plan, every shift a link to
+  `/journee?date=&siege=`), load and fairness with the radar
+  (`equite-radar.ts` over the pure `radar.ts`, `?axes=` and `?comparer=`),
+  the competences edited in place — one person's, the grid staying the bulk
+  entry —, the fragility with « Verrouiller » and « Former », the follow-up.
+  Every animateur name of the application links here), `/competences`
+  (« Compétences » — the animateur × typologie
   grid of appreciations and wishes — the heart of a cell, or S —, saved row by
   row; a spreadsheet block pastes from the current cell after a preview,
-  `?animateur=` narrows it to the person the Animateurs form sent — the only
-  entry of appreciations, the form shows them read-only, with no CSV export or
-  import),
+  `?animateur=` narrows it to the person the Animateurs form or the fiche sent
+  — the only bulk entry of appreciations, the form shows them read-only, with
+  no CSV export or import),
   `/fichiers` (« Fichiers » — the two halves of one gesture, export, correct
   in the spreadsheet, import back, and what closes an edition: three tabs
   chosen by `?onglet=importer|exporter|archive`. « Importer » is
@@ -219,15 +240,14 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   per emplacement, « combien de sandwichs et où les porter »), `/typologies-planning` (« Planning par typologie » — the persisted plan read
   by typologie of jeu, under four renderings chosen on the page: the table, the
   compared bars, the typologie × jour heatmap and the cards; four filters narrow
-  the rows and every animateur is a link to their timeline), `/equite` (« Équité » — one line per assigned animateur: evening, week-end and holiday hours, demanding seats, variety, honoured wishes, rest days, each with its distance to the median; `?vue=fiche&animateur=` reads one person, and puts next to their table a radar drawn by hand in SVG over the pure `radar.ts` — the person against the median and the min–max band, optional axes in `?axes=`, a second person in `?comparer=`),
+  the rows and every animateur is a link to their fiche, planning open), `/equite` (« Équité » — one line per assigned animateur: evening, week-end and holiday hours, demanding seats, variety, honoured wishes, rest days, each with its distance to the median, every name leading to the fiche; its former `?vue=fiche&animateur=` reading — one person and the radar — is the fiche's « Charge et équité » section, where the route's `equityFicheToAnimateur` guard sends it, `axes` and `comparer` kept),
   `/repos` (« Jours de repos » — who works, who
   rests, who was unavailable, under two renderings chosen by `?vue=grille|frise`:
   the animateur × day grid, whose cells print their hours only under
   `?densite=confort`, and the frise, one proportional bar per animateur that
   fits a month-long edition on a screen; `?date=` marks one day's column and
   puts the grid's tab stop on it), `/jour-j` (« Mode jour J » — the day-of screen:
-  mark somebody absent, repair the seats they held), `/timeline` (« Timeline
-  animateur »), `/heatmap` (« Heatmap de charge »), `/repartition-heures`
+  mark somebody absent, repair the seats they held), `/heatmap` (« Heatmap de charge »), `/repartition-heures`
   (« Répartition des heures » — a treemap of the seat-hours to staff, sized by
   the need and coloured by its coverage in the Heatmap's colours but on
   thresholds of its own (critique under 80 %, partiel 80–99 %, pourvu 100 %),
@@ -277,7 +297,9 @@ and `?dosage=` in the URL), `/comparateur`
   `/export-csv` and `/validateur-yaml` redirect to `/fichiers` with their
   params; `/data-transfer` and `/data-setup` are
   legacy redirects too, `/decoupage` now landing on `/creneaux` since the
-  slicing was removed, kept for old bookmarks/links, and so
+  slicing was removed, kept for old bookmarks/links; so is `/timeline`, the
+  former « Timeline animateur » — `?animateur=X` lands on
+  `/animateurs/X?section=timeline`, no person on `/animateurs` —, and so
   are the eight former screens `/day-calendar`, `/rail-jour`, `/carte-jour`,
   `/pauses`, `/problemes`, `/staffing`, `/fragilite` and `/banc-de-touche`,
   whose redirects carry their query params along, renamed where the page now

@@ -394,12 +394,13 @@ describe('MargePage', () => {
       expect(detail.textContent).toContain('Stand des échecs');
       expect(detail.textContent).toContain('Aucune typologie ninja');
 
-      const timeline = Array.from(detail.querySelectorAll('button')).find((each) =>
+      // The name leads to the person's fiche, their planning section open.
+      const fiche = Array.from(detail.querySelectorAll('button')).find((each) =>
         each.textContent!.includes('Alice Martin'),
       )!;
-      timeline.click();
-      expect(navigate).toHaveBeenCalledWith(['/timeline'], {
-        queryParams: { animateur: 'alice' },
+      fiche.click();
+      expect(navigate).toHaveBeenCalledWith(['/animateurs/alice'], {
+        queryParams: { section: 'timeline' },
       });
     });
 

@@ -33,7 +33,7 @@ test.afterAll(async () => {
 });
 
 test.describe('fiche animateur', () => {
-  test('créer, retrouver, consulter, puis supprimer un animateur avec e-mail', async ({
+  test('créer, retrouver, ouvrir sa fiche, puis supprimer un animateur avec e-mail', async ({
     browser,
   }) => {
     test.slow();
@@ -61,13 +61,14 @@ test.describe('fiche animateur', () => {
     await expect(await rowAction(ligne, 'Copier le lien de son espace animateur')).toBeEnabled();
     await page.keyboard.press('Escape');
 
-    // The name opens the fiche, which shows the new fields.
+    // The name opens the fiche, which shows the new fields; its trail leads
+    // back to the list, filtered as it was left.
     await ligne.getByRole('link', { name: /E2E-UI/ }).click();
     await expect(page).toHaveURL(/\/animateurs\/[^/?]+/);
-    await expect(page.getByText('uma@example.org')).toBeVisible();
-    await expect(page.getByText('Lien espace animateur')).toBeVisible();
-    await page.goBack();
-    await page.getByLabel('Filtrer').fill('E2E-UI');
+    await expect(page.locator('#contenu')).toContainText('uma@example.org');
+    await expect(page.locator('#contenu')).toContainText('Lien espace animateur');
+    await page.locator('.fiche-fil').getByRole('link', { name: 'Animateurs', exact: true }).click();
+    await expect(page).toHaveURL(/\/animateurs\?q=E2E-UI/);
     await expect(ligne).toBeVisible();
 
     // Regenerating the token rotates the espace link.
@@ -266,10 +267,10 @@ test.describe('typologies', () => {
     await expect(page.getByText('Aucune ligne ne correspond au filtre.')).toBeVisible();
     await page.getByRole('button', { name: 'Tout afficher' }).click();
 
-    // Every animateur name is a link to that person's timeline.
+    // Every animateur name is a link to that person's fiche, planning open.
     const lien = page.locator('a.typologies-lien').first();
     if (await lien.count()) {
-      await expect(lien).toHaveAttribute('href', /\/timeline\?animateur=/);
+      await expect(lien).toHaveAttribute('href', /\/animateurs\/[^?]+\?section=timeline/);
     }
     await page.context().close();
   });

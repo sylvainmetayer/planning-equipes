@@ -1,8 +1,11 @@
 package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.profile.AnimateurProfile;
 import dev.sylvain.planning.service.profile.AnimateurProfileService;
+import dev.sylvain.planning.service.profile.DayOffService;
+import dev.sylvain.planning.service.profile.DayOffService.DayOff;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.publication.RelanceManuelleService;
 import dev.sylvain.planning.service.referentiel.AnimateurCsvImportReport;
@@ -25,6 +28,8 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 /**
@@ -49,6 +54,8 @@ public class AnimateurResource {
 
     private final AnimateurProfileService profileService;
 
+    private final DayOffService dayOffService;
+
     @Inject
     public AnimateurResource(
             ReferenceDataService referenceDataService,
@@ -56,13 +63,15 @@ public class AnimateurResource {
             RelanceManuelleService relanceService,
             AnimateurCsvImportService csvImport,
             CompetencesGrilleService competencesGrille,
-            AnimateurProfileService profileService) {
+            AnimateurProfileService profileService,
+            DayOffService dayOffService) {
         this.referenceDataService = referenceDataService;
         this.confirmationService = confirmationService;
         this.relanceService = relanceService;
         this.csvImport = csvImport;
         this.competencesGrille = competencesGrille;
         this.profileService = profileService;
+        this.dayOffService = dayOffService;
     }
 
     @GET
@@ -82,6 +91,36 @@ public class AnimateurResource {
     @Path("/{id}/fiche")
     public AnimateurProfile profile(@PathParam("id") String id) {
         return profileService.profile(id);
+    }
+
+    /**
+     * « Indisponible ce jour », one click on the fiche's availability strip:
+     * the day written among the person's off days and, when the persisted plan
+     * seats them on it, those seats freed in the same call — a seat already
+     * started kept (ADR 0044), a locked one kept as well (ADR 0056). The answer
+     * names the freed seats, for the replacement to be sought, and the locked
+     * ones left in place.
+     */
+    @PUT
+    @Path("/{id}/jours-indisponibles/{date}")
+    public DayOff markDayOff(@PathParam("id") String id, @PathParam("date") String date) {
+        return dayOffService.markDayOff(id, day(date));
+    }
+
+    /** The same day made available again; no seat is handed back. */
+    @DELETE
+    @Path("/{id}/jours-indisponibles/{date}")
+    public DayOff cancelDayOff(@PathParam("id") String id, @PathParam("date") String date) {
+        return dayOffService.cancelDayOff(id, day(date));
+    }
+
+    /** A malformed date is a 400 naming it, not the 500 of a raw parse failure. */
+    private static LocalDate day(String date) {
+        try {
+            return LocalDate.parse(date);
+        } catch (DateTimeParseException _) {
+            throw new BusinessError.Invalid("Date illisible : « " + date + " » (attendu AAAA-MM-JJ).");
+        }
     }
 
     /**

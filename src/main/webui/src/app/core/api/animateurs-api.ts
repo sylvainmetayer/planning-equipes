@@ -7,6 +7,7 @@ import { ApiService } from '../api.service';
 import {
   AnimateurProfile,
   ConfirmationView,
+  DayOff,
   ImportCsvDemande,
   ImportCsvRapport,
   RapportRelance,
@@ -24,6 +25,24 @@ export class AnimateursApi {
   profile(animateurId: string): Promise<AnimateurProfile> {
     return this.api.get<AnimateurProfile>(
       `/api/animateurs/${encodeURIComponent(animateurId)}/fiche`,
+    );
+  }
+
+  /**
+   * « Indisponible ce jour » : the day written among the person's off days,
+   * and their seats of that day in the persisted plan freed with it.
+   */
+  markDayOff(animateurId: string, date: string): Promise<DayOff> {
+    return this.api.put<DayOff>(
+      `/api/animateurs/${encodeURIComponent(animateurId)}/jours-indisponibles/${encodeURIComponent(date)}`,
+      null,
+    );
+  }
+
+  /** The same day made available again; no seat is handed back. */
+  cancelDayOff(animateurId: string, date: string): Promise<void> {
+    return this.api.delete(
+      `/api/animateurs/${encodeURIComponent(animateurId)}/jours-indisponibles/${encodeURIComponent(date)}`,
     );
   }
 

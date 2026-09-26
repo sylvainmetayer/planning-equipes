@@ -171,13 +171,9 @@ test('les contraintes ad hoc sont respectées par le solve et visibles dans le f
     ).toBe(false);
   }
 
-  // The forced seat reads back in the frontend: Quentin's timeline shows it.
-  await page.goto('/timeline');
-  const champ = page.getByRole('combobox', { name: 'Animateur' });
-  await champ.click();
-  await champ.fill('Quentin');
-  await page.getByRole('option', { name: /Quentin Solve/ }).click();
-  await expect(page.locator('#contenu')).toContainText('Stand Solve un');
+  // The forced seat reads back in the frontend: Quentin's fiche shows it.
+  await page.goto('/animateurs/SOLV-Q?section=timeline');
+  await expect(page.locator('#fiche-section-timeline')).toContainText('Stand Solve un');
   await page.context().close();
 });
 

@@ -82,12 +82,6 @@ type PageInternals = {
   exportBusy: Signal<boolean>;
   sort: WritableSignal<Sort>;
   filtre: WritableSignal<string>;
-  vue: WritableSignal<'tableau' | 'fiche'>;
-  recherche: WritableSignal<string>;
-  animateurChoisi: WritableSignal<string>;
-  propositions: Signal<LigneEquite[]>;
-  ligneChoisie: Signal<LigneEquite | null>;
-  choisir: (animateurId: string) => void;
   colonnes: Signal<string[]>;
   lignesAffichees: Signal<LigneEquite[]>;
   heureSoiree: Signal<string>;
@@ -318,80 +312,6 @@ describe('EquitePage', () => {
       expect(page.output()).toContain('Export refusé.');
       expect(page.exportBusy()).toBe(false);
       expect(page.rapport()).not.toBeNull();
-    });
-  });
-
-  describe('fiche view', () => {
-    it("shows one person's indicators instead of the table, and says so before a name is typed", async () => {
-      const page = createPage();
-      await vi.waitFor(() => expect(page.rapport()).not.toBeNull());
-
-      page.vue.set('fiche');
-      expect(text()).toContain('Tapez un nom');
-      expect((fixture.nativeElement as HTMLElement).querySelector('table.equite-fiche')).toBeNull();
-
-      page.choisir('alice');
-      const rendu = text();
-      expect(rendu).toContain('Alice');
-      // The value, its gap to the median and the column's synthesis, on one
-      // line (numbers as the test locale writes them).
-      expect(rendu).toContain('12.0 h');
-      expect(rendu).toContain('-9');
-      expect(rendu).toContain('méd. 21');
-      expect((fixture.nativeElement as HTMLElement).querySelector('table[mat-table]')).toBeNull();
-    });
-
-    it('offers the rows matching what is typed, and keeps the name in the field once chosen', async () => {
-      const page = createPage();
-      await vi.waitFor(() => expect(page.rapport()).not.toBeNull());
-      page.vue.set('fiche');
-
-      page.recherche.set('ali');
-      expect(page.propositions().map((ligne) => ligne.animateurId)).toEqual(['alice']);
-
-      page.choisir('alice');
-      expect(page.recherche()).toBe('Alice');
-      expect(page.ligneChoisie()?.nom).toBe('Alice');
-    });
-
-    it('counts as a changed view, and « Réinitialiser » brings the table back', async () => {
-      const page = createPage();
-      await vi.waitFor(() => expect(page.rapport()).not.toBeNull());
-
-      page.vue.set('fiche');
-      page.choisir('alice');
-      expect(page.viewChanged()).toBe(true);
-
-      page.resetView();
-      expect(page.vue()).toBe('tableau');
-      expect(page.ligneChoisie()).toBeNull();
-      expect(page.viewChanged()).toBe(false);
-    });
-
-    it('opens on the person a deep link names, even though the field is still empty', async () => {
-      TestBed.resetTestingModule();
-      TestBed.configureTestingModule({
-        providers: [
-          provideZonelessChangeDetection(),
-          provideRouter([]),
-          { provide: PlanningApi, useValue: planningApi },
-          { provide: Location, useValue: { path: () => '/equite', replaceState: vi.fn() } },
-          {
-            provide: ActivatedRoute,
-            useValue: {
-              snapshot: {
-                queryParamMap: convertToParamMap({ vue: 'fiche', animateur: 'bob' }),
-              },
-            },
-          },
-        ],
-      });
-      const page = createPage();
-      await vi.waitFor(() => expect(page.rapport()).not.toBeNull());
-
-      expect(page.vue()).toBe('fiche');
-      expect(page.ligneChoisie()?.nom).toBe('Bob');
-      expect(text()).toContain('Bob');
     });
   });
 });

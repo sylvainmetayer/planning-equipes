@@ -130,7 +130,7 @@
               @for (animateurId of cellule.animateursIrremplacables; track animateurId) {
                 <li>
                   <ng-container i18n="@@tension.detail.irremplacable">Irremplaçable :</ng-container>
-                  <button type="button" class="tension-lien" (click)="aller('/timeline', { animateur: animateurId })">{{ nomAnimateur(animateurId) }}</button>
+                  <button type="button" class="tension-lien" (click)="aller('/animateurs/' + animateurId, { section: 'timeline' })">{{ nomAnimateur(animateurId) }}</button>
                 </li>
               }
               @for (standId of cellule.standsSansSpecialiste; track standId) {

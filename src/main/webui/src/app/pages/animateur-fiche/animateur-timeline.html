@@ -1,0 +1,127 @@
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+<app-status-message [text]="error()" tone="error" />
+
+@if (!error() && !loading()) {
+  @if (days().length === 0) {
+    <p class="empty-hint" i18n="@@timeline.noAssignment">Cet animateur n'a aucun poste dans le planning actuel.</p>
+  } @else {
+    <p class="timeline-stands-summary">{{ standsSummaryLabel() }}</p>
+    @if (standsSummary().legend.length > 0) {
+      <ul class="timeline-typologie-legend">
+        @for (item of standsSummary().legend; track item.id) {
+          <li class="timeline-typologie-legend-item">
+            <span class="typologie-dot" [class]="item.colorClass"></span>{{ item.label }}
+          </li>
+        }
+      </ul>
+    }
+    <ul class="timeline-stands-list">
+      @for (stand of standsSummary().stands; track stand.nom) {
+        <li class="timeline-stand-chip" [class]="stand.colorClass" [matTooltip]="stand.tooltip" [attr.aria-label]="stand.tooltip">{{ stand.nom }}</li>
+      }
+    </ul>
+    @for (day of days(); track day.jour) {
+      <section class="timeline-day" [attr.aria-labelledby]="'timeline-jour-' + day.jour">
+        <h3 class="timeline-day-title" [id]="'timeline-jour-' + day.jour">
+          {{ day.title }} <span class="timeline-day-amplitude">{{ day.amplitudeLabel }}</span>
+        </h3>
+        @if (consigneNote(day); as note) {
+          <p class="timeline-consigne-note">
+            <span class="timeline-badge-consigne">
+              <mat-icon inline>gavel</mat-icon>
+              <ng-container i18n="@@timeline.badge.sousConsigne">sous consigne</ng-container>
+            </span>
+            {{ note }}
+          </p>
+        }
+        <div class="timeline-track">
+          @for (gap of day.gaps; track $index) {
+            <div class="timeline-gap" [style.left.%]="gap.offsetPercent" [style.width.%]="gap.widthPercent" [matTooltip]="gapTooltip(gap)" [attr.aria-label]="gapTooltip(gap)"></div>
+          }
+          @for (block of day.blocks; track block.posteId) {
+            <div
+              class="timeline-block"
+              [style.left.%]="block.offsetPercent"
+              [style.width.%]="block.widthPercent"
+              [matTooltip]="blockTooltip(block)"
+              [attr.aria-label]="blockTooltip(block)"
+            >
+              <span class="timeline-block-label">{{ block.standNom }}</span>
+            </div>
+          }
+          @for (pause of pausesDuJour(day); track pause.heureDebut) {
+            <div
+              class="timeline-pause"
+              [class.timeline-pause-alerte]="pause.withoutRelais || pause.simultanee"
+              [style.left.%]="pause.offsetPercent"
+              [style.width.%]="pause.widthPercent"
+              [matTooltip]="pause.label"
+              [attr.aria-label]="pause.label"
+            ></div>
+          }
+          @for (walk of dayWalks(day); track walk.offsetPercent) {
+            <div
+              class="timeline-walk"
+              [class.timeline-walk-tight]="walk.tight"
+              [style.left.%]="walk.offsetPercent"
+              [style.width.%]="walk.widthPercent"
+              [matTooltip]="walk.label"
+              [attr.aria-label]="walk.label"
+            ><mat-icon inline aria-hidden="true">double_arrow</mat-icon></div>
+          }
+          @for (coupure of dayCoupures(day); track coupure.heureDebut) {
+            <div
+              class="timeline-coupure"
+              [style.left.%]="coupure.offsetPercent"
+              [style.width.%]="coupure.widthPercent"
+              [matTooltip]="coupure.label"
+              [attr.aria-label]="coupure.label"
+            ></div>
+          }
+        </div>
+        <ul class="timeline-block-list">
+          @for (block of day.blocks; track block.posteId) {
+            <li>
+              <!-- The shift on its day in the Journée, its seat open in the Siège panel. -->
+              <a class="timeline-block-link" routerLink="/journee" [queryParams]="seatQuery(block)">
+                <span class="timeline-block-list-time">{{ block.heureDebut }} – {{ block.heureFin }}</span>
+                {{ block.standNom }}
+              </a>
+              @if (block.coequipiers.length > 0) {
+                <span class="timeline-block-list-team" i18n="@@timeline.teammates">avec {{ block.coequipiers.join(', ') }}</span>
+              } @else {
+                <span class="timeline-block-list-team" i18n="@@timeline.alone">seul(e) sur ce stand</span>
+              }
+            </li>
+          }
+          @for (walk of dayWalks(day); track walk.offsetPercent) {
+            <li class="timeline-walk-item" [class.timeline-walk-item-tight]="walk.tight">
+              <mat-icon inline aria-hidden="true">directions_walk</mat-icon>
+              {{ walk.label }}
+            </li>
+          }
+          @for (coupure of dayCoupures(day); track coupure.heureDebut) {
+            <li class="timeline-coupure-item">
+              <mat-icon inline aria-hidden="true">restaurant</mat-icon>
+              {{ coupure.label }}
+            </li>
+          }
+          @for (pause of pausesDuJour(day); track pause.heureDebut) {
+            <li class="timeline-pause-item" [class.timeline-pause-item-alerte]="pause.withoutRelais || pause.simultanee">
+              <mat-icon inline aria-hidden="true">free_breakfast</mat-icon>
+              {{ pause.label }}
+              @if (pause.withoutRelais && pause.creneauId !== null) {
+                <!-- Who could come and relay: the Siège panel on that timeslot and stand. -->
+                <a class="timeline-banc" routerLink="/journee"
+                   [queryParams]="{ creneau: pause.creneauId, stand: pause.standId }"
+                   i18n="@@timeline.banc">Qui peut relayer</a>
+              }
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  }
+}

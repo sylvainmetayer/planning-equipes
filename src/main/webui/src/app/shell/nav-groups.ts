@@ -130,11 +130,6 @@ export function buildNavGroups(): NavGroup[] {
             tab('mode', 'tension', $localize`:@@nav.tab.margeTension:Tension`),
           ],
         },
-        {
-          path: '/timeline',
-          label: $localize`:@@nav.link.timeline:Timeline animateur`,
-          icon: 'timeline',
-        },
         { path: '/graphe', label: $localize`:@@nav.link.graphe:Graphe`, icon: 'hub' },
         {
           path: '/intendance',

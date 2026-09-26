@@ -328,7 +328,7 @@ describe('AdHocConstraintsPage', () => {
       expect(config.data.contrainte.id).toBe('X2');
     });
 
-    it('lists the pairs of a selected person, each with a link to the timeline', async () => {
+    it('lists the pairs of a selected person, each with a link to the fiche', async () => {
       const root = await mountNetwork([
         pair('X1', 'AFFINITE', ['A', 'B']),
         pair('X2', 'INCOMPATIBILITE', ['A', 'D']),
@@ -345,8 +345,8 @@ describe('AdHocConstraintsPage', () => {
       const liens = [...(selection?.querySelectorAll('a') ?? [])].map((a) =>
         a.getAttribute('href'),
       );
-      expect(liens).toContain('/timeline?animateur=B');
-      expect(liens).toContain('/timeline?animateur=A');
+      expect(liens).toContain('/animateurs/B');
+      expect(liens).toContain('/animateurs/A');
     });
 
     it('says so, with the creation button, when no pair is entered', async () => {

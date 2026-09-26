@@ -160,7 +160,8 @@ test.describe('navigation clavier des tables de référence', () => {
       .locator('tr[data-row-index="1"] a.referentiel-nom')
       .getAttribute('href');
     await page.keyboard.press('Enter');
-    await expect(page).toHaveURL(new RegExp(`${fiche}$`));
+    // The link carries the list's view (`?q=`…): compare the address as a whole.
+    await expect(page).toHaveURL((url) => `${url.pathname}${url.search}` === fiche);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await page.goBack();
     await expect(page.locator('tr[data-row-index]')).toHaveCount(4);

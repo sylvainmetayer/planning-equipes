@@ -9,6 +9,7 @@ import {
   LegalRegime,
   NiveauCompetence,
   ProfileAdjustment,
+  ProfileSeat,
   StatutConfirmation,
   TypeContrainteAdHoc,
   TypologieItem,
@@ -172,4 +173,144 @@ export function shortTime(value: string | null | undefined): string {
 /** How many seats are still ahead, the ones already started being listed dimmed. */
 export function upcomingCount(profile: AnimateurProfile): number {
   return profile.affectations.filter((seat) => !seat.passe).length;
+}
+
+/** The foldable sections of the fiche, in page order; `?section=` names one of them. */
+export type FicheSection =
+  'identite' | 'disponibilites' | 'timeline' | 'equite' | 'competences' | 'fragilite' | 'suivi';
+
+const SECTIONS: readonly FicheSection[] = [
+  'identite',
+  'disponibilites',
+  'timeline',
+  'equite',
+  'competences',
+  'fragilite',
+  'suivi',
+];
+
+/** Open on arrival: who, when, and where — the three questions a fiche is opened for. */
+export const OPEN_BY_DEFAULT: readonly FicheSection[] = ['identite', 'disponibilites', 'timeline'];
+
+/** The section a `?section=` or a `#fragment` names, or `null` for anything else. */
+export function readSection(value: string | null | undefined): FicheSection | null {
+  return SECTIONS.find((section) => section === value) ?? null;
+}
+
+/** The sections open on arrival: the three defaults, plus the one the address names. */
+export function initialSections(named: FicheSection | null): Set<FicheSection> {
+  const open = new Set<FicheSection>(OPEN_BY_DEFAULT);
+  if (named) {
+    open.add(named);
+  }
+  return open;
+}
+
+/** The person's seats on one day of the persisted plan, in time order as the server sent them. */
+export function seatsOnDay(profile: AnimateurProfile, date: string): ProfileSeat[] {
+  return profile.affectations.filter((seat) => seat.date === date);
+}
+
+/** « Stand 01 18:00–22:00 »: a seat in the words of the strip's panel. */
+export function seatLabel(seat: {
+  standNom: string | null;
+  standId: string | null;
+  heureDebut: string | null;
+  heureFin: string | null;
+}): string {
+  const stand = seat.standNom || seat.standId || '';
+  return `${stand} ${shortTime(seat.heureDebut)}–${shortTime(seat.heureFin)}`.trim();
+}
+
+/** One line of the inline competence editor: the level, and the wish. */
+export interface CompetenceDraft {
+  typologieId: string;
+  niveau: NiveauCompetence | null;
+  wished: boolean;
+}
+
+/** The editor's starting lines: every category the person is appreciated on or wishes. */
+export function competenceDrafts(rows: readonly CompetenceRow[]): CompetenceDraft[] {
+  return rows.map((row) => ({
+    typologieId: row.typologieId,
+    niveau: row.niveau,
+    wished: row.wished,
+  }));
+}
+
+/** What the lines say, as the fiche's two fields; a line with neither level nor wish drops out. */
+export function applyCompetenceDrafts(drafts: readonly CompetenceDraft[]): {
+  competences: Record<string, NiveauCompetence>;
+  souhaits: string[];
+} {
+  const competences: Record<string, NiveauCompetence> = {};
+  const souhaits: string[] = [];
+  for (const draft of drafts) {
+    if (draft.niveau) {
+      competences[draft.typologieId] = draft.niveau;
+    }
+    if (draft.wished) {
+      souhaits.push(draft.typologieId);
+    }
+  }
+  return { competences, souhaits };
+}
+
+/** True when the lines no longer say what the fiche holds. */
+export function competencesChanged(
+  animateur: Animateur,
+  drafts: readonly CompetenceDraft[],
+): boolean {
+  const { competences, souhaits } = applyCompetenceDrafts(drafts);
+  const before = animateur.competences ?? {};
+  const beforeWishes = new Set(animateur.souhaits ?? []);
+  const keys = new Set([...Object.keys(before), ...Object.keys(competences)]);
+  return (
+    [...keys].some((key) => (before[key] ?? null) !== (competences[key] ?? null)) ||
+    souhaits.length !== beforeWishes.size ||
+    souhaits.some((id) => !beforeWishes.has(id))
+  );
+}
+
+/** What the inline editor's lines are rebuilt from: the person, their fiche as read, and its lines. */
+export interface CompetenceSource {
+  animateurId: string;
+  animateur: Animateur | null;
+  drafts: CompetenceDraft[];
+}
+
+/** True when two sets of lines say the same thing, line for line. */
+function sameDrafts(left: readonly CompetenceDraft[], right: readonly CompetenceDraft[]): boolean {
+  return (
+    left.length === right.length &&
+    left.every(
+      (line, index) =>
+        line.typologieId === right[index].typologieId &&
+        line.niveau === right[index].niveau &&
+        line.wished === right[index].wished,
+    )
+  );
+}
+
+/**
+ * The editor's lines after the fiche was read again: the lines as edited are
+ * carried over while they hold something the fiche does not — an edit not yet
+ * saved, which a reload caused by another section must not wipe —, and the
+ * fiche's lines are taken otherwise: nothing was edited, the edit was just
+ * saved (the fiche now says the same), or the fiche is somebody else's.
+ */
+export function carriedDrafts(
+  source: CompetenceSource,
+  previous: { source: CompetenceSource; value: CompetenceDraft[] } | undefined,
+): CompetenceDraft[] {
+  if (
+    previous &&
+    previous.source.animateurId === source.animateurId &&
+    source.animateur !== null &&
+    !sameDrafts(previous.value, previous.source.drafts) &&
+    competencesChanged(source.animateur, previous.value)
+  ) {
+    return previous.value;
+  }
+  return source.drafts;
 }
