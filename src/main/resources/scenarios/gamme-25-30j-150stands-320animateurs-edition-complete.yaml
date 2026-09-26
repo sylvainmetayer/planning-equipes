@@ -22,9 +22,9 @@ parametresSolveur:
 
 contraintes:
   poids:
-    appreciationIncompatible: 3
-    experienceRequisePourStandsPremium: 2
-    maxJoursConsecutifsTravailles: 5
+    appreciationIncompatible: 15
+    experienceRequisePourStandsPremium: 10
+    maxJoursConsecutifsTravailles: 25
 
 typologies:
   - id: JEUX_DE_SOCIETE

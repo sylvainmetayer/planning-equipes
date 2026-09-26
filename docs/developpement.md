@@ -614,7 +614,7 @@ E2E_VIDEO=retain-on-failure npm run e2e   # ou 'on' ; .webm dans test-results/<t
 | `planning.solver.unimproved-seconds-limit` | `300` (`2` en `%test`), `0` = désactivé | Arrêt sur plateau, **conditionné à la faisabilité** |
 | `planning.solver.seconds-limit-max` | `3600` (`SOLVER_SECONDS_LIMIT_MAX`) | Plafond de ce qu'une édition règle ou qu'un lancement demande ; démarrage refusé s'il est sous `seconds-limit` |
 | `planning.solver.unimproved-seconds-limit-max` | celui de la durée (`SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX`) | Plafond du plateau d'une édition |
-| `planning.constraint-weights.<contrainte>` | `1` | Voir [`contraintes.md`](contraintes.md#pondérer-une-contrainte) |
+| `planning.constraint-weights.<contrainte>` | défaut du catalogue : `1` pour une règle dure, `5` pour les autres | Voir [`contraintes.md`](contraintes.md#pondérer-une-contrainte) |
 | `planning.jobs.reprise-au-demarrage` | `true` (`false` en `%test`) | Rejoue la file persistée. En test, une tâche laissée en file déclencherait un vrai solve au démarrage suivant |
 | `planning.diagnostic.mode` | `score-director` | Implémentation du diagnostic par contrainte. `solution-manager` est l'oracle du test de contrat, pas un mode dégradé de secours — voir [`0013`](decisions/0013-diagnostic-par-le-score-director.md) |
 

@@ -1,0 +1,89 @@
+<!-- The three guichets of the espace animateur: see `GuichetsCard`. -->
+<mat-card appearance="outlined" class="page-card" id="guichets">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@parametres.guichets.title">Guichets</h2>
+    <mat-card-subtitle i18n="@@parametres.guichets.subtitle">Ce que les animateurs peuvent faire depuis leur espace, et quand.</mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <section class="parametres-guichet" aria-labelledby="guichet-collecte">
+      <h3 id="guichet-collecte" i18n="@@parametres.guichets.collecte">Collecte des disponibilités</h3>
+      <mat-slide-toggle [checked]="collectionOpen()" [disabled]="collectionSaving() || collecte() === null"
+                        (change)="collectionOpen.set($event.checked)">
+        <ng-container i18n="@@parametres.guichets.collecteToggle">Collecte ouverte</ng-container>
+      </mat-slide-toggle>
+      <div class="parametres-guichet-dates">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label i18n="@@dispo.fenetre.debut">Début (facultatif)</mat-label>
+          <input matInput type="date" name="collecteDebut" [disabled]="collectionSaving()"
+                 [ngModel]="collecteDebut()" (ngModelChange)="collecteDebut.set($event)" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label i18n="@@dispo.fenetre.fin">Fin (facultatif)</mat-label>
+          <input matInput type="date" name="collecteFin" [disabled]="collectionSaving()"
+                 [ngModel]="collecteFin()" (ngModelChange)="collecteFin.set($event)" />
+        </mat-form-field>
+      </div>
+      @if (collectionOpen() && !collecte()?.collecteOuverte) {
+        <mat-checkbox [checked]="prevenir()" (change)="prevenir.set($event.checked)">
+          <ng-container i18n="@@dispo.fenetre.prevenir">Prévenir les animateurs par e-mail en ouvrant (lien vers leur espace)</ng-container>
+        </mat-checkbox>
+      }
+      <div class="card-actions">
+        <button matButton="filled" type="button" [disabled]="collectionSaving() || collecte() === null"
+                (click)="saveCollecte()">
+          <mat-icon>save</mat-icon>
+          <ng-container i18n="@@common.save">Enregistrer</ng-container>
+        </button>
+        <a matButton routerLink="/disponibilites" i18n="@@parametres.guichets.versDisponibilites">Voir les déclarations</a>
+      </div>
+    </section>
+
+    <section class="parametres-guichet" aria-labelledby="guichet-foire">
+      <h3 id="guichet-foire" i18n="@@parametres.guichets.foire">Foire au planning</h3>
+      <mat-slide-toggle [checked]="fairOpen()" [disabled]="fairSaving() || foire() === null"
+                        (change)="fairOpen.set($event.checked)">
+        <ng-container i18n="@@echanges.foireToggle">Foire au planning ouverte</ng-container>
+      </mat-slide-toggle>
+      @if (foire(); as etat) {
+        @if (etat.foireOuverte && !etat.ouverteAujourdhui) {
+          <p class="locked-hint" i18n="@@parametres.guichets.foireHorsFenetre">Ouverte, mais hors de ses dates : les animateurs ne peuvent rien proposer aujourd'hui.</p>
+        }
+      }
+      <div class="parametres-guichet-dates">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label i18n="@@echanges.foireFenetre.debut">À partir du</mat-label>
+          <input matInput type="date" name="foireDebut" [disabled]="fairSaving()"
+                 [ngModel]="foireDebut()" (ngModelChange)="foireDebut.set($event)" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label i18n="@@echanges.foireFenetre.fin">Jusqu'au</mat-label>
+          <input matInput type="date" name="foireFin" [disabled]="fairSaving()"
+                 [ngModel]="foireFin()" (ngModelChange)="foireFin.set($event)" />
+        </mat-form-field>
+      </div>
+      <p class="calendar-meta" i18n="@@parametres.guichets.datesAide">Une date vide ne borne pas ce côté ; fermé, le guichet reste fermé quelles que soient ses dates.</p>
+      <div class="card-actions">
+        <button matButton="filled" type="button" [disabled]="fairSaving() || foire() === null"
+                (click)="saveFoire()">
+          <mat-icon>save</mat-icon>
+          <ng-container i18n="@@common.save">Enregistrer</ng-container>
+        </button>
+        <a matButton routerLink="/echanges" i18n="@@parametres.guichets.versEchanges">Voir les demandes d'échange</a>
+      </div>
+    </section>
+
+    <section class="parametres-guichet" aria-labelledby="guichet-covoiturage">
+      <h3 id="guichet-covoiturage" i18n="@@parametres.guichets.covoiturage">Covoiturage</h3>
+      <p>
+        @if (collecte()?.collecteOuverte) {
+          <ng-container i18n="@@parametres.guichets.covoiturageOuvert">Ouvert avec la collecte : les animateurs peuvent demander « Je viens avec… ».</ng-container>
+        } @else {
+          <ng-container i18n="@@parametres.guichets.covoiturageFerme">Fermé avec la collecte : il suit ses dates et son interrupteur.</ng-container>
+        }
+      </p>
+      <a matButton routerLink="/disponibilites" [queryParams]="{ onglet: 'covoiturage' }"
+         i18n="@@parametres.guichets.versCovoiturage">Voir les demandes de covoiturage</a>
+    </section>
+    <app-status-message [text]="error()" tone="error" />
+  </mat-card-content>
+</mat-card>

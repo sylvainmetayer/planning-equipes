@@ -545,9 +545,13 @@ export function construireProblemes(
               ];
       }
       const liens: LienProbleme[] = [
-        // A violated rule is acted upon on the constraints screen: that is where
-        // its weight is explained and where it can be relaxed.
-        { route: '/constraints', libelle: $localize`:@@problemes.lien.contraintes:Voir la règle` },
+        // A violated rule is acted upon on « Règles du planning », its panel
+        // open: that is where it is explained and where it can be relaxed.
+        {
+          route: '/regles',
+          queryParams: { regle: contrainte.name },
+          libelle: $localize`:@@problemes.lien.contraintes:Voir la règle`,
+        },
       ];
       if (enCause.length > 0) {
         liens.push({

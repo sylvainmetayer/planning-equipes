@@ -6,17 +6,9 @@
 
 <mat-button-toggle-group class="parametres-onglets" [value]="onglet()" (change)="changerOnglet($event.value)"
                          aria-label="Onglet des paramètres" i18n-aria-label="@@parametres.onglet.label">
-  <mat-button-toggle value="legaux">
-    <mat-icon>gavel</mat-icon>
-    <ng-container i18n="@@parametres.onglet.legaux">Légaux</ng-container>
-  </mat-button-toggle>
   <mat-button-toggle value="edition">
     <mat-icon>event_note</mat-icon>
     <ng-container i18n="@@parametres.onglet.edition">Édition</ng-container>
-  </mat-button-toggle>
-  <mat-button-toggle value="emails">
-    <mat-icon>forward_to_inbox</mat-icon>
-    <ng-container i18n="@@parametres.onglet.emails">E-mails automatiques</ng-container>
   </mat-button-toggle>
   <mat-button-toggle value="mural">
     <mat-icon>tv</mat-icon>
@@ -28,118 +20,12 @@
   </mat-button-toggle>
 </mat-button-toggle-group>
 
+<p class="parametres-renvoi-regles">
+  <ng-container i18n="@@parametres.renvoiRegles">Ce qui décide du plan — paramètres légaux, seuils, importance des règles, budget de calcul — est dans</ng-container>
+  <a routerLink="/regles" i18n="@@nav.link.regles">Règles du planning</a>.
+</p>
+
 @switch (onglet()) {
-  @case ('edition') {
-    <mat-card appearance="outlined" class="page-card">
-      <mat-card-header>
-        <h2 mat-card-title i18n="@@typologies.field.ninja">Typologie ninja</h2>
-        <mat-card-subtitle i18n="@@typologies.field.ninjaHint">Un animateur qui possède cette typologie sait s'adapter : il peut être affecté à n'importe quel stand.</mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content>
-        <app-gel-notice family="TYPOLOGIES_EMPLACEMENTS" />
-      </mat-card-content>
-      @if (alerteNinjaManquant()) {
-        <mat-card-content class="parametres-alerte-ninja">
-          <app-status-message [text]="alerteNinjaManquant()" tone="warning" />
-        </mat-card-content>
-      }
-      <mat-card-actions class="card-actions">
-        <mat-form-field appearance="outline" class="ninja-select" subscriptSizing="dynamic">
-          <mat-label i18n="@@typologies.field.ninja">Typologie ninja</mat-label>
-          <mat-select name="ninja" [disabled]="editionLocked() || typologiesFrozen()" [ngModel]="typologieNinjaId()"
-                      (ngModelChange)="setNinja($event)">
-            <mat-option [value]="null" i18n="@@typologies.field.noNinja">Aucune</mat-option>
-            @for (typologie of store.typologies(); track typologie.id) {
-              <mat-option [value]="typologie.id">{{ typologie.label || typologie.id }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-        <a matButton routerLink="/typologies">
-          <mat-icon>category</mat-icon>
-          <ng-container i18n="@@parametres.versTypologies">Gérer les typologies</ng-container>
-        </a>
-      </mat-card-actions>
-    </mat-card>
-
-    <mat-card appearance="outlined" class="page-card" id="gel-referentiel">
-      <mat-card-header>
-        <h2 mat-card-title i18n="@@parametres.gel.title">Gel du référentiel</h2>
-        <mat-card-subtitle i18n="@@parametres.gel.subtitle">Une famille figée ne se modifie plus, par aucun chemin, jusqu'à la levée du gel.</mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content>
-        <app-gel-referentiel-card />
-      </mat-card-content>
-    </mat-card>
-
-    <app-parametres-qualite />
-
-    <mat-card appearance="outlined" class="page-card">
-      <mat-card-header>
-        <h2 mat-card-title i18n="@@parametres.ailleurs.title">Sur leur propre écran</h2>
-        <mat-card-subtitle i18n="@@parametres.ailleurs.subtitle">
-          Ces réglages et ces opérations de l'édition vivent sur l'écran qu'ils concernent directement :
-        </mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content>
-        <ul class="parametres-renvois">
-          <li>
-            <a routerLink="/solveur" i18n="@@parametres.renvoi.solveur">Durée de résolution du solveur — page Solveur</a>
-          </li>
-          <li>
-            <a routerLink="/echanges" i18n="@@parametres.renvoi.echanges">Ouverture et fermeture de la foire au planning — page Échanges</a>
-          </li>
-          <li>
-            <a routerLink="/disponibilites" i18n="@@parametres.renvoi.disponibilites">Ouverture et fermeture de la collecte des disponibilités et des souhaits — page Disponibilités</a>
-          </li>
-          <li>
-            <a routerLink="/constraints" i18n="@@parametres.renvoi.contraintes">Activation et désactivation des contraintes — page Contraintes</a>
-          </li>
-          <li>
-            <a routerLink="/creneaux" i18n="@@parametres.renvoi.grille">Grille des créneaux, journées types et contrôle de cohérence — page Créneaux</a>
-          </li>
-          <li>
-            <a routerLink="/fichiers" [queryParams]="{ cible: 'scenario' }" i18n="@@parametres.renvoi.importScenario.fichiers">Import d'un fichier scénario — page Fichiers, onglet Importer</a>
-          </li>
-          <li>
-            <a routerLink="/fichiers" [queryParams]="{ onglet: 'exporter' }" i18n="@@parametres.renvoi.exportScenario.fichiers">Export de l'édition en scénario — page Fichiers, onglet Exporter</a>
-          </li>
-          <li>
-            <a routerLink="/fichiers" [queryParams]="{ cible: 'exemples' }" i18n="@@parametres.renvoi.scenarioLivre.fichiers">Chargement d'un exemple livré avec l'application — page Fichiers, onglet Importer</a>
-          </li>
-        </ul>
-      </mat-card-content>
-    </mat-card>
-  }
-  @case ('emails') {
-    <mat-card appearance="outlined" class="page-card">
-      <mat-card-header>
-        <h2 mat-card-title i18n="@@parametres.mailFin.title">Prévenir par e-mail à la fin d'une résolution</h2>
-        <mat-card-subtitle i18n="@@parametres.mailFin.subtitle">
-          Recevez un e-mail à la fin de chaque résolution, avec l'édition, le score et la faisabilité du planning.
-        </mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content>
-        <mat-slide-toggle
-          [checked]="mailFinResolution()"
-          [disabled]="mailFinResolutionBusy() || adminEmail() === null"
-          (change)="basculerMailFinResolution($event.checked)"
-          i18n-matTooltip="@@parametres.mailFin.tooltip"
-          matTooltip="S'applique à cette édition : chaque résolution qui s'y termine écrit à l'administrateur."
-        >
-          <ng-container i18n="@@parametres.mailFin.toggle">M'écrire à la fin de chaque résolution de cette édition</ng-container>
-        </mat-slide-toggle>
-        @if (adminEmail(); as adresse) {
-          <p class="calendar-meta" i18n="@@parametres.mailFin.destinataire">Destinataire : {{ adresse }}</p>
-        } @else {
-          <p class="locked-hint" i18n="@@parametres.mailFin.sansAdresse">
-            Aucune adresse administrateur n'est configurée (variable MAIL_ADMIN) : aucun e-mail ne peut partir.
-          </p>
-        }
-      </mat-card-content>
-    </mat-card>
-
-    <app-parametres-notifications />
-  }
   @case ('mural') {
     <app-affichage-mural-links />
   }
@@ -290,7 +176,45 @@
     </mat-card>
   }
   @default {
-    <app-parametres-legaux />
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@parametres.nom.title">Nom de l'édition</h2>
+      </mat-card-header>
+      <mat-card-content>
+        <form class="parametres-nom" (ngSubmit)="renommer()">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label i18n="@@parametres.nom.label">Nom</mat-label>
+            <input matInput name="nomEdition" required [disabled]="renommage() || edition() === null"
+                   [ngModel]="nom()" (ngModelChange)="nomDraft.set($event)" />
+          </mat-form-field>
+          <button matButton="filled" type="submit" [disabled]="renommage() || !nomModifie()">
+            <mat-icon>save</mat-icon>
+            <ng-container i18n="@@common.save">Enregistrer</ng-container>
+          </button>
+          <a matButton routerLink="/editions" i18n="@@parametres.nom.versEditions">Toutes les éditions</a>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="page-card" id="gel-referentiel">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@parametres.gel.title">Gel du référentiel</h2>
+        <mat-card-subtitle i18n="@@parametres.gel.subtitle">Une famille figée ne se modifie plus, par aucun chemin, jusqu'à la levée du gel.</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <app-gel-referentiel-card />
+      </mat-card-content>
+    </mat-card>
+
+    <app-guichets-card />
+
+    <!-- The e-mails the edition sends of itself: the former « E-mails
+         automatiques » tab, reached by `?onglet=edition#emails`. -->
+    <div id="emails">
+      <app-parametres-notifications />
+    </div>
+
+    <app-contact-organisation-card />
   }
 }
 

@@ -10,58 +10,9 @@
   </button>
 </div>
 
-@if (configuration(); as config) {
-  <mat-card class="dispo-admin-declaration" appearance="outlined">
-    <mat-card-header>
-      <h2 mat-card-title i18n="@@dispo.fenetre.titre">Fenêtre de collecte</h2>
-      <mat-card-subtitle>
-        @if (config.collecteOuverte) {
-          <ng-container i18n="@@dispo.fenetre.ouverte"
-            >Ouverte : les animateurs peuvent déclarer depuis leur espace.</ng-container
-          >
-        } @else {
-          <ng-container i18n="@@dispo.fenetre.fermee"
-            >Fermée : les animateurs ne peuvent plus déclarer.</ng-container
-          >
-        }
-      </mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content>
-      <div class="dispo-admin-dates">
-        <mat-form-field appearance="outline">
-          <mat-label i18n="@@dispo.fenetre.debut">Début (facultatif)</mat-label>
-          <input matInput type="date" name="debut" [ngModel]="debut()" (ngModelChange)="debut.set($event)" />
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label i18n="@@dispo.fenetre.fin">Fin (facultatif)</mat-label>
-          <input matInput type="date" name="fin" [ngModel]="fin()" (ngModelChange)="fin.set($event)" />
-        </mat-form-field>
-      </div>
-      <mat-checkbox [checked]="prevenir()" (change)="prevenir.set($event.checked)">
-        <ng-container i18n="@@dispo.fenetre.prevenir"
-          >Prévenir les animateurs par e-mail en ouvrant (lien vers leur espace)</ng-container
-        >
-      </mat-checkbox>
-      <p class="dispo-admin-commentaire" i18n="@@dispo.fenetre.prevenirAide">
-        Inutile quand vous rouvrez la fenêtre après une correction.
-      </p>
-      <div class="dispo-admin-actions">
-        <button
-          matButton="filled"
-          [disabled]="fenetreEnCours()"
-          (click)="saveWindow(true)"
-        >
-          <mat-icon>lock_open</mat-icon>
-          <span i18n="@@dispo.fenetre.ouvrir">Ouvrir la collecte</span>
-        </button>
-        <button matButton [disabled]="fenetreEnCours()" (click)="saveWindow(false)">
-          <mat-icon>lock</mat-icon>
-          <span i18n="@@dispo.fenetre.fermer">Fermer la collecte</span>
-        </button>
-      </div>
-    </mat-card-content>
-  </mat-card>
-}
+<!-- The collection opens, closes and takes its dates on Paramètres ›
+     Édition: this screen keeps one line of its state and closing it. -->
+<app-guichet-etat guichet="collecte" (changed)="reload()" />
 
 @if (chargement()) {
   <mat-progress-bar mode="indeterminate" />

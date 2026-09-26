@@ -10,8 +10,8 @@ contraintes:
   desactivees:
     - eviterRoulementStandsPremium
   poids:
-    equilibrerCharge: 7
-    maxJoursConsecutifsTravailles: 3
+    equilibrerCharge: 35
+    maxJoursConsecutifsTravailles: 15
 
 creneaux:
   - id: J1-MATIN

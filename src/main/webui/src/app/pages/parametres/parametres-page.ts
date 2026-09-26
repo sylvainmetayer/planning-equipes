@@ -1,4 +1,5 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   ElementRef,
@@ -17,38 +18,34 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSelectModule } from '@angular/material/select';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AdminApi } from '../../core/api/admin-api';
+import { EditionsApi } from '../../core/api/editions-api';
+import { EditionStore } from '../../core/edition.store';
+import { ProblemesStore } from '../../core/problemes.store';
 import { BRANDING, slugMarque } from '../../core/branding';
 import { EtatSauvegarde } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
-import { ProblemesStore } from '../../core/problemes.store';
-import { ReferenceCrudService } from '../../core/reference-crud.service';
-import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
-import { SolverSettingsService } from '../../core/solver-settings.service';
 import { ScenarioImportService } from '../../core/scenario-import.service';
 import { ConfirmationRecopie } from '../../shared/confirmation-recopie';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
 import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
 import { OutputPanel } from '../../shared/output-panel';
-import { StatusMessage } from '../../shared/status-message';
 import { AffichageMuralLinks } from './affichage-mural-links';
-import { ParametresLegauxCard } from './parametres-legaux';
-import { ParametresQualiteCard } from './parametres-qualite';
+import { ContactOrganisationCard } from './contact-organisation-card';
+import { GuichetsCard } from './guichets-card';
 import { ParametresNotificationsPanel } from './parametres-notifications';
 import { errorPrefix } from '../../core/error-message';
 import { keepViewInQueryParams } from '../../core/view-query-params';
 import { OngletParametres, readOngletParametres } from './parametres';
 import { SingleKeyShortcutsToggle } from '../../shared/single-key-shortcuts-toggle';
-import { GelNotice } from '../../shared/gel-notice';
 import { GelReferentielCard } from '../../shared/gel-referentiel-card';
 import { HorlogeSimuleeCard } from './horloge-simulee-card';
 import { TODAY_ANCHOR } from '../../core/date-mock.service';
-import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 
 /**
  * Typed back before a SQL dump is replayed. Left untranslated on purpose: a
@@ -58,40 +55,35 @@ import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 export const REPLACE_KEYWORD = 'REMPLACER';
 
 /**
- * The settings page, five tabs instead of one long scroll (issue #606), the
- * same mechanics as Diagnostic and Imports — a toggle group, the tab carried
- * by `?onglet=`, the default tab writing nothing:
+ * The settings page, three tabs carried by `?onglet=` (issue #720), the same
+ * mechanics as Diagnostic and Imports — a toggle group, the default tab
+ * writing nothing:
  *
- * - "Légaux" (default) — the legal parameters and the meal break: the floor an
- *   edition is checked against, which is what this page is opened for.
- * - "Édition" — the rest of what the `X-Edition-Id` partition scopes: the
- *   ninja typologie, the organisational-quality thresholds, plus pointers to
- *   what stays on its own screen (solver duration, foire aux échanges,
- *   constraint toggles, découpage settings next to the generation that reads
- *   them, and the three scenario operations — load a bundled example, import
- *   a file, write one out, all three on Fichiers).
- * - "E-mails automatiques" — what the edition sends of its own accord: to the
- *   administrator at the end of a solve, to the animateurs as reminders and
- *   relances. Not "Notifications", which is the name of another page.
- * - "Affichage mural" — the links that open the control room's television
+ * - « Édition » (default) — what the `X-Edition-Id` partition scopes and no
+ *   rule reads: the edition's name, the freeze of its referential (the only
+ *   place it is edited), its guichets — the collection, the foire, the
+ *   covoiturage, each opened and closed here with its dates —, the e-mails it
+ *   sends of itself (`#emails`), and the organisation's contact shown in the
+ *   espace animateur. What decides the plan — legal parameters, quality
+ *   thresholds, weights, the solve budget, the ninja typologie — is « Règles
+ *   du planning ».
+ * - « Affichage mural » — the links that open the control room's television
  *   without an admin session (ADR 0053): per edition, created and revoked here.
- * - "Instance" — what the operator configured and what holds for the whole
- *   database, every edition included: the automatic backup, the SQL dump
+ * - « Instance » — what the operator configured and what holds for the whole
+ *   database, every edition included: the nightly backup, the SQL dump
  *   import/export, the single-key shortcuts of this browser, and the simulated
  *   clock where the server allows one (a demonstration or staging server).
  *
  * The feasibility banner stays above the tabs: it speaks of the edition, not
  * of a tab. So does the output panel — an error answered on one tab survives
  * a move to another.
- *
- * Also runs the solver-free feasibility check on entry, as the former Données
- * page did: a structurally impossible planning is called out here rather than
- * after a fruitless solve.
  */
 @Component({
   selector: 'app-parametres-page',
   imports: [
     AffichageMuralLinks,
+    ContactOrganisationCard,
+    GuichetsCard,
     SingleKeyShortcutsToggle,
     DatePipe,
     FormsModule,
@@ -100,17 +92,13 @@ export const REPLACE_KEYWORD = 'REMPLACER';
     MatButtonToggleModule,
     MatFormFieldModule,
     MatIconModule,
-    MatSelectModule,
-    MatTooltipModule,
+    MatInputModule,
     MatSlideToggleModule,
+    MatTooltipModule,
     RouterLink,
     FeasibilityBanner,
     OutputPanel,
-    ParametresLegauxCard,
-    ParametresQualiteCard,
     ParametresNotificationsPanel,
-    StatusMessage,
-    GelNotice,
     GelReferentielCard,
     HorlogeSimuleeCard,
   ],
@@ -127,52 +115,45 @@ export class ParametresPage implements OnInit {
   protected readonly output = signal('');
   protected readonly transferBusy = signal(false);
 
-  /** Admin address configured server-side, `null` when mail is disabled entirely. */
-  protected readonly adminEmail = signal<string | null>(null);
-  protected readonly mailFinResolutionBusy = signal(false);
-  protected readonly mailFinResolution = computed(() => this.solverSettings.mailFinResolution());
-
   /** The server-side solver lock: also covers a solve/analysis from another browser. */
   protected readonly solverBusy = computed(() => this.jobs.solverBusy());
-  /**
-   * Edition-scoped writes (legal parameters, ninja typologie) follow the
-   * per-edition lock: a solve running on ANOTHER edition leaves them
-   * available.
-   */
-  protected readonly editionLocked = computed(() => this.jobs.editingLocked());
-  /** The ninja typologie is one of the fields a TYPOLOGIES_EMPLACEMENTS freeze covers (ADR 0052). */
-  private readonly gel = injectGelReferentiel();
-  protected readonly typologiesFrozen = computed(() =>
-    this.gel.isFrozen('TYPOLOGIES_EMPLACEMENTS'),
-  );
   /** SQL dump replay rewrites the WHOLE database, every edition included: locked by any running job. */
   protected readonly transferLocked = computed(() => this.transferBusy() || this.solverBusy());
 
   private readonly sqlInput = viewChild.required<ElementRef<HTMLInputElement>>('sqlInput');
   /** Pre-solve diagnostic shown by the banner at the top of the page. */
   protected readonly problemes = inject(ProblemesStore);
-  protected readonly store = inject(ReferenceDataStore);
 
   private readonly adminApi = inject(AdminApi);
   // Replaying a dump replaces the same data a scenario import does: the stores
   // to reload afterwards are the import's own set, not a second list.
   private readonly scenarioImport = inject(ScenarioImportService);
-  private readonly crud = inject(ReferenceCrudService);
   private readonly recopie = inject(ConfirmationRecopie);
   private readonly instantane = inject(InstantaneAvantAction);
 
   private readonly jobs = inject(SolverJobService);
-  protected readonly solverSettings = inject(SolverSettingsService);
   private readonly notifications = inject(NotificationService);
+  private readonly editions = inject(EditionStore);
+  private readonly editionsApi = inject(EditionsApi);
 
-  protected readonly onglet = signal<OngletParametres>('legaux');
+  protected readonly onglet = signal<OngletParametres>('edition');
+
+  /* ---------------------------- The edition's name --------------------------- */
+
+  protected readonly edition = this.editions.courant;
+  protected readonly nomDraft = signal<string | null>(null);
+  protected readonly nom = computed(() => this.nomDraft() ?? this.edition()?.nom ?? '');
+  protected readonly nomModifie = computed(() => {
+    const nom = this.nomDraft()?.trim();
+    return !!nom && nom !== this.edition()?.nom;
+  });
+  protected readonly renommage = signal(false);
 
   private readonly route = inject(ActivatedRoute);
 
   constructor() {
     // Followed rather than read once, like Diagnostic: clicking « Paramètres »
-    // in the menu from `/parametres?onglet=instance`, or the « paramètres
-    // légaux » link of Pauses while another tab is open, navigates to this very
+    // in the menu from `/parametres?onglet=instance` navigates to this very
     // route with another `onglet`, and the router reuses the component instead
     // of building it again. `replaceState` (ADR 0018) emits nothing here, so
     // the effect below cannot feed this subscription.
@@ -188,14 +169,20 @@ export class ParametresPage implements OnInit {
       );
     });
     keepViewInQueryParams(() => ({
-      onglet: this.onglet() === 'legaux' ? null : this.onglet(),
+      onglet: this.onglet() === 'edition' ? null : this.onglet(),
     }));
     void this.problemes.reloadFeasibility();
-    void this.crud.reload();
+    // `#guichets`, `#emails`, `#contact`: the card a link named — the former
+    // `?onglet=emails` lands on its section. Programmatic, like the help's
+    // summary: what scrolls in this shell is the sidenav content, and the
+    // `<base href>` would resolve a bare fragment against the root.
+    const ancre = this.route.snapshot.fragment;
+    if (ancre) {
+      afterNextRender(() => document.getElementById(ancre)?.scrollIntoView?.({ block: 'start' }));
+    }
   }
 
   ngOnInit(): void {
-    void this.chargerReglagesNotification();
     void this.chargerSauvegarde();
   }
 
@@ -203,90 +190,31 @@ export class ParametresPage implements OnInit {
     this.onglet.set(onglet);
   }
 
-  /* --------------------- Notification de fin de résolution -------------------- */
-
   /**
-   * Loads the toggle's own state and the server's mail configuration. Both
-   * matter: without an admin address the setting is inert, and a switch that
-   * silently does nothing is worse than no switch at all.
+   * Renames the current edition, as the Éditions page does: an empty or
+   * unchanged name writes nothing. The switcher and the page title follow once
+   * the store has re-read the editions.
    */
-  private async chargerReglagesNotification(): Promise<void> {
-    await Promise.all([
-      this.solverSettings.refresh().catch(() => undefined),
-      this.adminApi
-        .mailConfig()
-        .then((config) => this.adminEmail.set(config.adminEmail))
-        .catch(() => this.adminEmail.set(null)),
-    ]);
-  }
-
-  protected async basculerMailFinResolution(actif: boolean): Promise<void> {
-    this.mailFinResolutionBusy.set(true);
+  protected async renommer(): Promise<void> {
+    const edition = this.edition();
+    const nom = this.nomDraft()?.trim();
+    if (!edition || !nom || nom === edition.nom) {
+      return;
+    }
+    this.renommage.set(true);
     try {
-      await this.solverSettings.setMailFinResolution(actif);
+      await this.editionsApi.rename(edition.id, nom);
+      await this.editions.reload();
+      this.nomDraft.set(null);
       this.notifications.notify({
-        title: actif
-          ? $localize`:@@parametres.mailFin.active:Notification de fin de résolution activée`
-          : $localize`:@@parametres.mailFin.desactive:Notification de fin de résolution désactivée`,
+        title: $localize`:@@parametres.nom.saved:Édition renommée`,
         variant: 'success',
         timeout: 4000,
       });
     } catch (error) {
       this.output.set(errorPrefix(error));
     } finally {
-      this.mailFinResolutionBusy.set(false);
-    }
-  }
-
-  /* ------------------------------ Ninja typologie ---------------------------- */
-
-  /**
-   * Warning text when no typologie is flagged ninja (and the referential is
-   * not simply empty): without it, no animateur is polyvalent — nobody can be
-   * seated outside their own competences, and `preserverBufferPolyvalents`
-   * (keep one polyvalent free per créneau to absorb last-minute absences)
-   * has nothing to protect. A silent degradation worth a visible sentence.
-   */
-  protected readonly alerteNinjaManquant = computed(() => {
-    if (
-      this.store.typologies().length === 0 ||
-      this.store.typologies().some((typologie) => typologie.ninja)
-    ) {
-      return '';
-    }
-    return $localize`:@@typologies.ninjaManquant:Aucune typologie « ninja » n'est désignée : aucun animateur n'est polyvalent, et la contrainte « préserver un polyvalent libre par créneau » ne protège plus rien.`;
-  });
-
-  /** Id of the typologie currently flagged ninja — at most one, `null` when none. */
-  protected readonly typologieNinjaId = computed(
-    () => this.store.typologies().find((typologie) => typologie.ninja)?.id ?? null,
-  );
-
-  /**
-   * Promotes `id` as the single ninja typologie, or clears the flag altogether
-   * when `id` is `null`. Only the newly selected typologie is sent: the server
-   * demotes the previous holder in the same transaction (a partial unique index
-   * makes two ninjas impossible anyway).
-   */
-  protected async setNinja(id: string | null): Promise<void> {
-    const label = $localize`:@@typologies.entityLabel:Typologie`;
-    const courante = this.store.typologies().find((typologie) => typologie.ninja) ?? null;
-    if ((courante?.id ?? null) === id) {
-      return;
-    }
-    if (id === null) {
-      if (courante) {
-        await this.crud.save('typologies', { ...courante, ninja: false }, courante.id, label, {
-          text: courante.label,
-        });
-      }
-      return;
-    }
-    const target = this.store.typologies().find((typologie) => typologie.id === id);
-    if (target) {
-      await this.crud.save('typologies', { ...target, ninja: true }, target.id, label, {
-        text: target.label,
-      });
+      this.renommage.set(false);
     }
   }
 

@@ -13,22 +13,6 @@
   margin: 0;
 }
 
-/* Wide enough that the label and hint never wrap onto the following mat-divider. */
-.solver-duration {
-  display: block;
-  width: 14rem;
-  max-width: 100%;
-  margin-bottom: 1rem;
-}
-
-/* Sits right of .solver-duration, so the value and its unit (s/min/h) read as one control. */
-.solver-duration-unit {
-  display: block;
-  width: 9rem;
-  max-width: 100%;
-  margin-bottom: 1rem;
-}
-
 /* #461 hosted the queue and the recap in two components. Each host wraps a
    single <mat-card-content>, which Material now sees as :first-child and
    :last-child of its parent and pads 16px top and bottom — in the pile of the

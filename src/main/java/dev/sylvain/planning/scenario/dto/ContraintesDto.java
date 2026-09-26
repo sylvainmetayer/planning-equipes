@@ -1,5 +1,6 @@
 package dev.sylvain.planning.scenario.dto;
 
+import dev.sylvain.planning.solver.ConstraintCatalog;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import java.util.List;
@@ -26,7 +27,11 @@ import java.util.Map;
  *                    verified with" means once a rule can ship switched off
  * @param poids       weight per constraint name, applied to the target
  *                    edition. What the file does not name keeps the
- *                    deployment default from {@code application.properties}
+ *                    deployment default from {@code application.properties};
+ *                    at most {@link ConstraintCatalog#MAX_WEIGHT}, the bound the
+ *                    settings accept
  */
 public record ContraintesDto(
-        List<String> desactivees, List<String> activees, Map<String, @Min(1) @Max(100) Integer> poids) {}
+        List<String> desactivees,
+        List<String> activees,
+        Map<String, @Min(1) @Max(ConstraintCatalog.MAX_WEIGHT) Integer> poids) {}

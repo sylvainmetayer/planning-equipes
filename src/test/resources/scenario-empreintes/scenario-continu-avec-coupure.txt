@@ -186,8 +186,8 @@
 .planning.parametresQualite[0]  b88694d9f3a53d10
 .planning.pastHorizon = null
 .planning.ponderationsContraintes.constraintWeightMap = (vide)
-.planning.ponderationsScenario{appreciationIncompatible} = 3
-.planning.ponderationsScenario{maxJoursConsecutifsTravailles} = 5
+.planning.ponderationsScenario{appreciationIncompatible} = 15
+.planning.ponderationsScenario{maxJoursConsecutifsTravailles} = 25
 .planning.postes[0]  6d22e56024e436e9
 .planning.postes[1]  3dc7874db0655d80
 .planning.postes[2]  3574548d978f175a
@@ -4166,8 +4166,8 @@
 .sections.consignes = null
 .sections.contraintes.activees = (vide)
 .sections.contraintes.desactivees = (vide)
-.sections.contraintes.poids{appreciationIncompatible} = 3
-.sections.contraintes.poids{maxJoursConsecutifsTravailles} = 5
+.sections.contraintes.poids{appreciationIncompatible} = 15
+.sections.contraintes.poids{maxJoursConsecutifsTravailles} = 25
 .sections.edition = null
 .sections.journeesTypes = null
 .sections.parametresLegaux.coupureRepasMidiDebut = 12:00

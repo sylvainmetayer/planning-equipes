@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ConsigneEdition;
+import dev.sylvain.planning.domain.ContactOrganisation;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
@@ -821,6 +822,14 @@ public class ReferenceDataService implements ReferenceData {
     /** @see ParametresService#solverBudgetBounds() */
     public SolverBudgetBounds getSolverBudgetBounds() {
         return parametres.solverBudgetBounds();
+    }
+
+    public ContactOrganisation getContactOrganisation() {
+        return parametres.getContactOrganisation();
+    }
+
+    public ContactOrganisation updateContactOrganisation(ContactOrganisation contact) {
+        return parametres.updateContactOrganisation(contact);
     }
 
     public ParametresNotifications getParametresNotifications() {

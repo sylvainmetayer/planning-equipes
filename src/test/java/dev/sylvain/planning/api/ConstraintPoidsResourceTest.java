@@ -30,6 +30,9 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class ConstraintPoidsResourceTest {
 
+    /** What a medium rule weighs when nobody set it: the « normale » of the three positions (ADR 0057). */
+    private static final int DEFAULT_WEIGHT = 5;
+
     private static final String HEADER = "X-Edition-Id";
 
     /** MEDIUM, « Qualité d'organisation » — one of the twelve meant to be dosed. */
@@ -119,8 +122,8 @@ class ConstraintPoidsResourceTest {
                 .get("/api/constraints")
                 .then()
                 .statusCode(200)
-                // A deployment that tuned nothing weighs everything at 1.
-                .body("contraintes.find { it.name == '" + DOSABLE + "' }.poids", equalTo(1))
+                // A deployment that tuned nothing weighs a quality rule at the « normale » position.
+                .body("contraintes.find { it.name == '" + DOSABLE + "' }.poids", equalTo(DEFAULT_WEIGHT))
                 .body("contraintes.find { it.name == '" + DOSABLE + "' }.dosable", equalTo(true))
                 .body("contraintes.find { it.name == '" + DOSABLE + "' }.protegee", equalTo(false))
                 // A rule of public order is protected, and never dosed: the UI
@@ -153,7 +156,7 @@ class ConstraintPoidsResourceTest {
 
         setPoids(defaut, DOSABLE, null, 200);
 
-        assertThat(readPoids(defaut, DOSABLE)).isEqualTo(1);
+        assertThat(readPoids(defaut, DOSABLE)).isEqualTo(DEFAULT_WEIGHT);
     }
 
     @Test
@@ -164,16 +167,16 @@ class ConstraintPoidsResourceTest {
         setPoids(defaut, DOSABLE, 0, 400);
         setPoids(defaut, DOSABLE, -3, 400);
 
-        assertThat(readPoids(defaut, DOSABLE)).isEqualTo(1);
+        assertThat(readPoids(defaut, DOSABLE)).isEqualTo(DEFAULT_WEIGHT);
     }
 
     @Test
     void aWeightAboveTheUpperBoundIsRefusedBeforeReachingTheDatabase() {
-        setPoids(defaut, DOSABLE, 101, 400);
+        setPoids(defaut, DOSABLE, 501, 400);
 
         // Refused by the application, so the caller gets a business message:
         // the database CHECK is the last net, not the first.
-        assertThat(readPoids(defaut, DOSABLE)).isEqualTo(1);
+        assertThat(readPoids(defaut, DOSABLE)).isEqualTo(DEFAULT_WEIGHT);
     }
 
     @Test
@@ -190,7 +193,7 @@ class ConstraintPoidsResourceTest {
         // This is the assertion that justifies migration V53: the setting
         // follows the event, not the deployment.
         assertThat(readPoids(defaut, DOSABLE)).isEqualTo(9);
-        assertThat(readPoids(annee2026, DOSABLE)).isEqualTo(1);
+        assertThat(readPoids(annee2026, DOSABLE)).isEqualTo(DEFAULT_WEIGHT);
 
         setPoids(annee2026, DOSABLE, 3, 200);
 
@@ -210,7 +213,7 @@ class ConstraintPoidsResourceTest {
         // the same name must not inherit the settings of the one it replaces —
         // and, its id being drawn afresh (ADR 0050), it never reuses the old one.
         assertThat(recreee).isNotEqualTo(premiere);
-        assertThat(readPoids(recreee, DOSABLE)).isEqualTo(1);
+        assertThat(readPoids(recreee, DOSABLE)).isEqualTo(DEFAULT_WEIGHT);
     }
 
     @Test

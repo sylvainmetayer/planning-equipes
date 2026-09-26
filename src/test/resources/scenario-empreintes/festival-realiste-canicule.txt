@@ -161,8 +161,8 @@
 .planning.parametresQualite[0]  b88694d9f3a53d10
 .planning.pastHorizon = null
 .planning.ponderationsContraintes.constraintWeightMap = (vide)
-.planning.ponderationsScenario{appreciationIncompatible} = 3
-.planning.ponderationsScenario{maxJoursConsecutifsTravailles} = 5
+.planning.ponderationsScenario{appreciationIncompatible} = 15
+.planning.ponderationsScenario{maxJoursConsecutifsTravailles} = 25
 .planning.postes[0]  1d34221fb2a1114c
 .planning.postes[1]  3dc7874db0655d80
 .planning.postes[2]  6be2ff5ca6ea3c71
@@ -2163,8 +2163,8 @@
 .sections.consignes = null
 .sections.contraintes.activees = (vide)
 .sections.contraintes.desactivees = (vide)
-.sections.contraintes.poids{appreciationIncompatible} = 3
-.sections.contraintes.poids{maxJoursConsecutifsTravailles} = 5
+.sections.contraintes.poids{appreciationIncompatible} = 15
+.sections.contraintes.poids{maxJoursConsecutifsTravailles} = 25
 .sections.edition.id = festival-realiste-canicule
 .sections.edition.nom = Festival réaliste — canicule
 .sections.journeesTypes = null

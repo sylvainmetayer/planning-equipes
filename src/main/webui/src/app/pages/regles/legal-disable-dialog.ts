@@ -42,8 +42,8 @@ import { LegalText } from '../../shared/legal-text';
 import { NewWindowLink } from '../../shared/new-window-link';
 
 export interface LegalDisableData {
-  /** Technical name of the rule, as shown on its card. */
-  name: string;
+  /** The rule in the organiser's words — its short label, never the technical name. */
+  libelle: string;
   /** Business description — for a legal rule, it is what cites the article of the Code du travail. */
   description: string;
   categorie: string;
@@ -84,7 +84,7 @@ export class LegalDisableConfirmService {
       LegalDisableDialog,
       {
         data: {
-          name: constraint.name,
+          libelle: constraint.libelleCourt || constraint.categorie,
           description: constraint.description,
           categorie: constraint.categorie,
           legale: constraint.legale,

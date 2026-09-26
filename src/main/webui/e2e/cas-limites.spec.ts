@@ -171,16 +171,18 @@ test.describe('cas limites', () => {
     const jeton = await jetonDe(admin, SEED.demandeur);
     await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
 
-    // The admin closes the foire from the Échanges screen.
+    // The admin closes the foire from the Échanges screen: its state line
+    // carries « Fermer » while it is open (configured on Paramètres › Édition).
     const pageEchanges = await pageAdmin(browser, admin);
     await pageEchanges.goto('/echanges');
-    const interrupteur = pageEchanges.getByRole('switch');
-    await expect(interrupteur).toBeVisible();
-    if ((await interrupteur.getAttribute('aria-checked')) === 'true') {
-      await interrupteur.click();
+    const etat = pageEchanges.locator('.guichet-etat');
+    await expect(etat).toBeVisible();
+    const fermer = etat.getByRole('button', { name: 'Fermer' });
+    if ((await fermer.count()) > 0) {
+      await fermer.click();
     }
     // The status line, not the transient snack bar carrying the same words.
-    await expect(pageEchanges.locator('.echanges-foire-etat')).toContainText('Fermée');
+    await expect(etat).toContainText('Foire au planning fermée');
 
     // The animateur can still browse — but not submit: no form, a clear banner.
     await page.goto(`/animateur/${jeton}/echanges`);
@@ -215,9 +217,14 @@ test.describe('cas limites', () => {
     expect(ics.status()).toBe(200);
     expect(await ics.text()).toContain('BEGIN:VCALENDAR');
 
-    // Reopening from the same switch restores the submission form.
-    await interrupteur.click();
-    await expect(pageEchanges.locator('.echanges-foire-etat')).toContainText('Ouverte');
+    // Reopening is configured on Paramètres › Édition, where the three
+    // guichets sit together; the Échanges state line then says so.
+    await pageEchanges.goto('/parametres?onglet=edition');
+    const guichetFoire = pageEchanges.locator('section[aria-labelledby="guichet-foire"]');
+    await guichetFoire.getByRole('switch', { name: 'Foire au planning ouverte' }).click();
+    await guichetFoire.getByRole('button', { name: 'Enregistrer' }).click();
+    await pageEchanges.goto('/echanges');
+    await expect(pageEchanges.locator('.guichet-etat')).toContainText('Foire au planning ouverte');
     await pageEchanges.context().close();
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.getByRole('link', { name: 'Mes échanges' }).click();

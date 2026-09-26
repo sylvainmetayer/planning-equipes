@@ -94,7 +94,7 @@ class BlockerPlaybookTest {
                         .anySatisfy(action -> {
                             assertThat(action.code()).isEqualTo(BlockerPlaybook.CODE_LOWER_WEIGHT);
                             assertThat(action.libelle()).isEqualTo("Baisser son poids");
-                            assertThat(action.route()).isEqualTo("/constraints");
+                            assertThat(action.route()).isEqualTo("/regles");
                             assertThat(action.parametres()).containsEntry("regle", definition.name());
                         }));
     }
@@ -222,7 +222,7 @@ class BlockerPlaybookTest {
             routes.add("/" + path.group(1));
         }
 
-        assertThat(routes).as("the scan reads the routes").contains("/constraints", "/diagnostic");
+        assertThat(routes).as("the scan reads the routes").contains("/regles", "/diagnostic");
         assertThat(BlockerPlaybook.everyAction())
                 .isNotEmpty()
                 .allSatisfy(action -> assertThat(routes).as(action.code()).contains(action.route()));

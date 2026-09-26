@@ -178,6 +178,17 @@ class ScenarioValidatorTest {
      * What only the whole file can tell — a stand or a créneau the section
      * names — is the import's to refuse, like every other cross-reference.
      */
+    /** The weights follow the settings' bound (ADR 0057): 500 is valid, 501 is not, whatever the old 100. */
+    @Test
+    void aWeightIsBoundedLikeTheSettings() {
+        assertThat(ScenarioValidator.validate(MINIMAL + "contraintes:\n  poids:\n    equilibrerCharge: 500\n"))
+                .isEmpty();
+        assertThat(ScenarioValidator.validate(MINIMAL + "contraintes:\n  poids:\n    equilibrerCharge: 501\n"))
+                .singleElement()
+                .asString()
+                .contains("poids");
+    }
+
     @Test
     void aConsigneWithoutABandStartOrAMotifIsReported() {
         String consigne = """

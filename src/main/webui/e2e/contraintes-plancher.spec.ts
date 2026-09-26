@@ -2,8 +2,9 @@
 // its points are a constant no solve will move, and until now nothing said so.
 // The seeded referential declares no wish on anybody, so after a real short
 // solve `souhaitsIncompatibles` has matched every filled seat. What only a
-// browser can prove is the last mile: the card carries the badge, names the
-// missing data, and the link lands on the screen where it is entered.
+// browser can prove is the last mile: the rule's row on « Règles du planning »
+// carries the mark, its panel names the missing data, and the link lands on
+// the screen where it is entered.
 
 import { APIRequestContext, Page, expect, test } from '@playwright/test';
 import {
@@ -53,12 +54,14 @@ test.afterAll(async () => {
   await admin.dispose();
 });
 
-/** The card of one constraint, located by the technical name it displays. */
-function carte(page: Page, nom: string) {
-  return page.locator('.constraint-card').filter({ has: page.getByText(nom, { exact: true }) });
+/** The row of one rule, located by its short label — the technical name is never shown. */
+function ligne(page: Page, libelle: string) {
+  return page
+    .locator('table.regles-table tbody tr')
+    .filter({ has: page.getByRole('rowheader', { name: libelle, exact: true }) });
 }
 
-test('une règle qui pénalise tout faute de donnée porte le badge, nomme la donnée et mène à sa saisie', async ({
+test('une règle qui pénalise tout faute de donnée porte la marque, nomme la donnée et mène à sa saisie', async ({
   browser,
 }) => {
   test.slow();
@@ -76,42 +79,22 @@ test('une règle qui pénalise tout faute de donnée porte le badge, nomme la do
   expect(catalogue.scoreHorsPlancher).not.toBe(catalogue.scoreGlobal);
 
   const page = await pageAdmin(browser, admin);
-  await page.goto('/constraints');
-  const cartePlancher = carte(page, AT_FLOOR);
-  await expect(cartePlancher).toBeVisible();
-  await expect(cartePlancher.getByText('Mesure une donnée absente')).toBeVisible();
-  await expect(cartePlancher).toContainText('souhait');
-  // Only the floored rule carries the badge: the equity rule has no per-item
+  await page.goto(`/regles?regle=${AT_FLOOR}`);
+  // The address names the rule: its tab opens, and its panel with it.
+  const rangee = ligne(page, regle.libelleCourt);
+  await expect(rangee).toBeVisible();
+  await expect(rangee.locator('.regles-plancher')).toBeVisible();
+  // Only the floored rule carries the mark: the equity rule has no per-item
   // reading, so it cannot be one.
-  await expect(carte(page, 'equilibrerCharge').getByText('Mesure une donnée absente')).toHaveCount(
-    0,
-  );
-  // The screen says what the run is worth once the constant is taken out.
-  await expect(page.getByText(/Hors plancher :/)).toBeVisible();
+  await expect(ligne(page, 'Équilibre de la charge').locator('.regles-plancher')).toHaveCount(0);
 
-  // The link is what turns the badge into an action: it lands on the fiches.
-  await cartePlancher.getByRole('link', { name: 'Saisir la donnée' }).click();
+  const panneau = page.locator('.regles-panneau');
+  await expect(panneau).toContainText('souhait');
+  await expect(panneau).toContainText('éléments évalués sont en écart');
+
+  // The link is what turns the mark into an action: it lands on the fiches.
+  await panneau.getByRole('link', { name: 'Saisir la donnée' }).click();
   await expect(page).toHaveURL(/\/animateurs$/);
-
-  await page.close();
-});
-
-test('trier par plancher met la règle au plancher en tête de sa catégorie', async ({ browser }) => {
-  const page = await pageAdmin(browser, admin);
-  await page.goto('/constraints');
-  await expect(carte(page, AT_FLOOR)).toBeVisible();
-
-  await page.getByRole('switch', { name: 'Trier par plancher' }).click();
-
-  // The dosable rules are one fieldset; a floored one comes first in it. Not
-  // necessarily the one named above: the reference scenario floors more than
-  // one rule (no wish, no referent), and two floors at 100 % tie.
-  const premiere = page
-    .locator('.constraint-fieldset')
-    .filter({ has: carte(page, AT_FLOOR) })
-    .locator('.constraint-card')
-    .first();
-  await expect(premiere.getByText('Mesure une donnée absente')).toBeVisible();
 
   await page.close();
 });

@@ -159,14 +159,15 @@ class ConstraintCatalogTest {
     }
 
     @Test
-    void uneRegleLegaleNeConseilleJamaisDeBaisserUnPoids() {
+    void aProtectedRuleNeverAdvisesLoweringItsImportance() {
         for (ConstraintCatalog.ConstraintDefinition definition : ConstraintCatalog.definitions()) {
             if (!definition.protegee()) {
                 continue;
             }
             assertThat(definition.remediation())
                     .as("consigne de %s : une règle protégée ne se dose pas", definition.name())
-                    .doesNotContain("baissez son poids");
+                    .doesNotContain("baissez son poids")
+                    .doesNotContain("baissez son importance");
         }
     }
 }

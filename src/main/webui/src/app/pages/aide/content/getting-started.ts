@@ -44,7 +44,7 @@ export function buildGettingStartedSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.start.guichets:Deux guichets s'ouvrent et se ferment à la main, et ce sont les seuls endroits où un animateur écrit quelque chose : la collecte des disponibilités avant la construction, la foire au planning après la publication. Chacun accepte en plus une période datée, mais l'interrupteur reste maître. La collecte est fermée tant que vous ne l'ouvrez pas ; la foire est ouverte par défaut.`,
+          text: $localize`:@@aide.start.guichets:Les guichets s'ouvrent et se ferment à la main, tous sur la page Paramètres, onglet Édition, et ce sont les seuls endroits où un animateur écrit quelque chose : la collecte des disponibilités — et le covoiturage, qui la suit — avant la construction, la foire au planning après la publication. Chacun accepte en plus une période datée, mais l'interrupteur reste maître. La collecte est fermée tant que vous ne l'ouvrez pas ; la foire est ouverte par défaut.`,
         },
         {
           kind: 'paragraph',

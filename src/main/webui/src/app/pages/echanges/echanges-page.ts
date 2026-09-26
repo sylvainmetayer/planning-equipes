@@ -12,11 +12,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { ActivatedRoute } from '@angular/router';
 import { EchangesApi } from '../../core/api/echanges-api';
 import {
@@ -24,16 +21,12 @@ import {
   statutDemandeClasse,
   statutDemandeLabel,
 } from '../../core/demande-echange-labels';
-import {
-  ConfigurationFoire,
-  DemandeEchangeView,
-  EchangeSimulation,
-  HardMediumSoftScore,
-} from '../../core/models';
+import { DemandeEchangeView, EchangeSimulation, HardMediumSoftScore } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { formatDeltaScore } from '../../core/score-format';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { GuichetEtat } from '../../shared/guichet-etat';
 import { PromptDialog } from '../../shared/prompt-dialog';
 import { errorMessage } from '../../core/error-message';
 import { keepViewInQueryParams } from '../../core/view-query-params';
@@ -59,19 +52,19 @@ interface DemandeRow extends DemandeEchangeView {
  * both animateurs on the créneau) or refuse (with a comment sent back to the
  * animateur). Nothing is ever applied without one of these clicks; relaunching
  * the solver afterwards stays a separate, deliberate action on the solver page.
+ * The foire itself — its switch and its dates — is configured on Paramètres ›
+ * Édition; this screen keeps one line of its state (issue #720).
  */
 @Component({
   selector: 'app-echanges-page',
   imports: [
     DatePipe,
+    GuichetEtat,
     MatButtonModule,
     MatCardModule,
     MatCheckboxModule,
-    MatFormFieldModule,
     MatIconModule,
-    MatInputModule,
     MatProgressBarModule,
-    MatSlideToggleModule,
   ],
   templateUrl: './echanges-page.html',
   styleUrl: '../../../styles/demandes.css',
@@ -96,25 +89,6 @@ export class EchangesPage implements OnInit {
   protected readonly impacts = signal<Record<string, EchangeSimulation>>({});
   protected readonly impactEnCours = signal<string | null>(null);
   protected readonly decisionEnCours = signal<string | null>(null);
-  /** `null` while the configuration has not been fetched yet. */
-  protected readonly foireOpen = signal<boolean | null>(null);
-
-  /**
-   * Optional bounds of the foire, same shape as the collection window of issue
-   * #291. `''` and `null` mean « pas de borne » alike — an emptied date input
-   * gives the former, the server the latter.
-   */
-  protected readonly debut = signal<string | null>(null);
-  protected readonly fin = signal<string | null>(null);
-
-  /**
-   * True when the switch is on but today is outside the bounds — the case the
-   * screen must not present as « ouverte ». The server decides it: it owns the
-   * bounds and the clock.
-   */
-  protected readonly horsFenetre = signal(false);
-  protected readonly foireEnCours = signal(false);
-
   /**
    * « À arbitrer seulement »: the requests only the admin's word is missing
    * from — the ones « À traiter aujourd'hui » counts — the longest waiting
@@ -159,66 +133,11 @@ export class EchangesPage implements OnInit {
   protected async reload(): Promise<void> {
     this.chargement.set(true);
     try {
-      const [demandes, configuration] = await Promise.all([
-        this.echangesApi.list(),
-        this.echangesApi.configuration(),
-      ]);
-      this.demandes.set(demandes);
-      this.apply(configuration);
+      this.demandes.set(await this.echangesApi.list());
     } catch (error) {
       this.report(error);
     } finally {
       this.chargement.set(false);
-    }
-  }
-
-  /** One place to fold the server's answer back into the screen. */
-  private apply(configuration: ConfigurationFoire): void {
-    this.foireOpen.set(configuration.foireOuverte);
-    this.debut.set(configuration.debut);
-    this.fin.set(configuration.fin);
-    this.horsFenetre.set(configuration.foireOuverte && !configuration.ouverteAujourdhui);
-  }
-
-  /** An emptied date input is « no bound », not an empty string to store. */
-  protected majDebut(valeur: string): void {
-    this.debut.set(valeur || null);
-  }
-
-  protected majFin(valeur: string): void {
-    this.fin.set(valeur || null);
-  }
-
-  /** Saves the bounds without touching the switch. */
-  protected async saveWindow(): Promise<void> {
-    await this.basculerFoire(this.foireOpen() === true);
-  }
-
-  /**
-   * Opens or closes the foire. Enforced server-side: closed, the espaces
-   * animateurs turn read-only (planning still consultable and downloadable).
-   */
-  protected async basculerFoire(open: boolean): Promise<void> {
-    this.foireEnCours.set(true);
-    try {
-      const configuration = await this.echangesApi.saveConfiguration({
-        foireOuverte: open,
-        debut: this.debut(),
-        fin: this.fin(),
-      });
-      this.apply(configuration);
-      this.notifications.notify({
-        title: configuration.foireOuverte
-          ? $localize`:@@echanges.foireOuverteNotif:Foire au planning ouverte : les animateurs peuvent proposer des échanges.`
-          : $localize`:@@echanges.foireFermeeNotif:Foire au planning fermée : les espaces animateurs passent en consultation seule.`,
-        variant: 'success',
-      });
-    } catch (error) {
-      this.report(error);
-      // Re-read the truth rather than guessing what the toggle should show.
-      void this.reload();
-    } finally {
-      this.foireEnCours.set(false);
     }
   }
 

@@ -101,7 +101,8 @@ test.describe('accessibilité — administration', () => {
     '/solveur',
     '/animateurs',
     '/ouvertures',
-    '/constraints',
+    '/regles',
+    '/regles?onglet=qualite',
     '/journee',
     '/parametres',
   ];

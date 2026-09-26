@@ -352,10 +352,7 @@ describe('construireProblemes', () => {
     expect(probleme.details[0]).toContain('C2 (1)');
     // The per-match lines stay: the attribution is prepended, not a replacement.
     expect(probleme.details).toContain('P1');
-    expect(probleme.liens.map((lien) => lien.route)).toEqual([
-      '/constraints',
-      '/ad-hoc-constraints',
-    ]);
+    expect(probleme.liens.map((lien) => lien.route)).toEqual(['/regles', '/ad-hoc-constraints']);
   });
 
   it('leaves a rule no ad hoc exception contributed to untouched', () => {
@@ -366,7 +363,8 @@ describe('construireProblemes', () => {
     );
 
     expect(probleme.details).toEqual(['Alice : 52 h semaine 2026-W28']);
-    expect(probleme.liens.map((lien) => lien.route)).toEqual(['/constraints']);
+    expect(probleme.liens.map((lien) => lien.route)).toEqual(['/regles']);
+    expect(probleme.liens[0].queryParams).toEqual({ regle: 'dureeHebdomadaireMax' });
   });
 
   it('gives every problem a distinct track key', () => {
