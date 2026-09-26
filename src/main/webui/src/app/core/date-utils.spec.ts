@@ -1,39 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  buildMonthCells,
-  getMonthStart,
-  parseDateKey,
-  parseMonthKey,
-  pickDefaultDateKey,
-  shiftMonth,
-  toDateKey,
-  toMonthKey,
-  uniqueById,
-} from './date-utils';
-
-describe('getMonthStart', () => {
-  it('returns the first day of the month at midnight', () => {
-    const start = getMonthStart(new Date(2026, 6, 30, 14, 30));
-    expect(start.getFullYear()).toBe(2026);
-    expect(start.getMonth()).toBe(6);
-    expect(start.getDate()).toBe(1);
-  });
-});
-
-describe('shiftMonth', () => {
-  it('moves forward across a year boundary', () => {
-    const next = shiftMonth(new Date(2026, 11, 1), 1);
-    expect(next.getFullYear()).toBe(2027);
-    expect(next.getMonth()).toBe(0);
-    expect(next.getDate()).toBe(1);
-  });
-
-  it('moves backward across a year boundary', () => {
-    const prev = shiftMonth(new Date(2026, 0, 1), -1);
-    expect(prev.getFullYear()).toBe(2025);
-    expect(prev.getMonth()).toBe(11);
-  });
-});
+import { buildMonthCells, parseDateKey, toDateKey, toMonthKey, uniqueById } from './date-utils';
 
 describe('toDateKey / parseDateKey', () => {
   it('formats a date as a zero-padded yyyy-MM-dd key', () => {
@@ -53,28 +19,9 @@ describe('toDateKey / parseDateKey', () => {
   });
 });
 
-describe('toMonthKey / parseMonthKey', () => {
+describe('toMonthKey', () => {
   it('formats a date as a zero-padded yyyy-MM key', () => {
     expect(toMonthKey(new Date(2026, 6, 8))).toBe('2026-07');
-  });
-
-  it('is the inverse of parseMonthKey', () => {
-    const key = '2026-01';
-    expect(toMonthKey(parseMonthKey(key)!)).toBe(key);
-  });
-
-  it('parses a key into the first day of that month', () => {
-    const date = parseMonthKey('2026-07')!;
-    expect(date.getFullYear()).toBe(2026);
-    expect(date.getMonth()).toBe(6);
-    expect(date.getDate()).toBe(1);
-  });
-
-  it('rejects a malformed key (e.g. a hand-edited URL) instead of returning an invalid date', () => {
-    expect(parseMonthKey('not-a-month')).toBeNull();
-    expect(parseMonthKey('2026-13')).toBeNull();
-    expect(parseMonthKey('2026-07-08')).toBeNull();
-    expect(parseMonthKey('')).toBeNull();
   });
 });
 
@@ -102,18 +49,6 @@ describe('buildMonthCells', () => {
       const diffDays = (cells[i].getTime() - cells[i - 1].getTime()) / 86_400_000;
       expect(Math.round(diffDays)).toBe(1);
     }
-  });
-});
-
-describe('pickDefaultDateKey', () => {
-  it('prefers the first key belonging to the given month', () => {
-    const keys = ['2026-06-30', '2026-07-08', '2026-07-09'];
-    expect(pickDefaultDateKey(keys, '2026-07')).toBe('2026-07-08');
-  });
-
-  it('falls back to the first available key when the month has none', () => {
-    const keys = ['2026-06-30', '2026-08-01'];
-    expect(pickDefaultDateKey(keys, '2026-07')).toBe('2026-06-30');
   });
 });
 

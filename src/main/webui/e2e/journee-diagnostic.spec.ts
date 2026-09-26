@@ -5,7 +5,7 @@
 // rendering with their parameters, and that Leaflet only travels with the map.
 
 import { APIRequestContext, expect, test, type Page } from '@playwright/test';
-import { contexteAdmin, pageAdmin, seedPlanning } from './support';
+import { contexteAdmin, pageAdmin, SEED, seedPlanning } from './support';
 import { repartirDeLaReference } from './reference';
 
 let admin: APIRequestContext;
@@ -37,8 +37,8 @@ test('la journée change de rendu sans relire le planning, et garde le jour choi
 }) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/journee');
-  await expect(page.locator('#contenu')).toContainText('Journée');
-  await expect(page.locator('.day-calendar-grid')).toBeVisible();
+  await expect(page.locator('#contenu')).toContainText('Planning');
+  await expect(page.locator('.jour-table')).toBeVisible();
 
   const appels = espionnerLApi(page);
   const rendus = page.getByRole('radiogroup', { name: 'Rendu de la journée' });
@@ -46,22 +46,18 @@ test('la journée change de rendu sans relire le planning, et garde le jour choi
   await expect(page.locator('.rail-table')).toBeVisible();
   await expect(page).toHaveURL(/vue=rail/);
 
-  await rendus.getByText('Pauses').click();
+  await rendus.getByText('Pauses et repas').click();
   await expect(page.locator('.pauses-message, .empty-hint').first()).toBeVisible();
   await expect(page).toHaveURL(/vue=pauses/);
 
-  await rendus.getByText('Calendrier').click();
-  await expect(page.locator('.day-calendar-grid')).toBeVisible();
+  await rendus.getByText('Tableau').click();
+  await expect(page.locator('.jour-table')).toBeVisible();
   await expect(page).not.toHaveURL(/vue=/);
 
   // Three switches, and the plan, the breaks and the referentials were read
-  // once, before the spy: nothing was fetched again. The calendar's persisted
-  // count is its own and cheap; it is re-read when the calendar comes back.
-  expect(
-    appels.filter(
-      (chemin) => chemin.startsWith('/api/planning') && chemin !== '/api/planning/persisted/count',
-    ),
-  ).toEqual([]);
+  // once, before the spy: nothing was fetched again — the table no longer
+  // re-reads a count of persisted assignments either (issue #712).
+  expect(appels.filter((chemin) => chemin.startsWith('/api/planning'))).toEqual([]);
   expect(appels.filter((chemin) => chemin === '/api/pauses')).toEqual([]);
   await page.context().close();
 });
@@ -85,6 +81,23 @@ test('les adresses des anciens écrans mènent au bon rendu, paramètres compris
   await page.goto('/carte-jour');
   await expect(page).toHaveURL(/\/journee\?.*vue=carte/);
 
+  // The three screens the Planning page absorbed (issue #712).
+  // The first day of the edition is the page's default: it writes no `date=`.
+  await page.goto(`/calendar?date=${SEED.jour}&stand=${SEED.standDemandeur}`);
+  await expect(page).toHaveURL(new RegExp(`/journee\\?.*stand=${SEED.standDemandeur}`));
+
+  await page.goto('/intendance');
+  await expect(page).toHaveURL(/\/journee\?.*vue=pauses/);
+  await expect(page.locator('#contenu')).toContainText('Combien de personnes mangent');
+
+  await page.goto('/graphe');
+  await expect(page).toHaveURL(/\/journee\?.*vue=carte/);
+
+  // A date in `jour` opens that day, where it used to be ignored in silence.
+  // Read as `date`, then left out of the address as the edition's first day.
+  await page.goto(`/journee?jour=${SEED.jour}`);
+  await expect(page).toHaveURL(/\/journee$/);
+
   await page.goto('/staffing');
   await expect(page).toHaveURL(/\/diagnostic\?.*onglet=besoin/);
   await expect(page.locator('#contenu')).toContainText('Minimum retenu');
@@ -92,6 +105,32 @@ test('les adresses des anciens écrans mènent au bon rendu, paramètres compris
   await page.goto('/problemes');
   await expect(page).toHaveURL(/\/diagnostic/);
   await expect(page.locator('#contenu')).toContainText('Diagnostic');
+  await page.context().close();
+});
+
+/**
+ * Issue #712: on a 1440 × 900 screen the first line of the plan shows without
+ * scrolling, whatever the rendering — the day, the filters, the relecture and
+ * the consigne fit above it.
+ */
+test('le planning se lit sans défiler, sur les cinq rendus', async ({ browser }) => {
+  const page = await pageAdmin(browser, admin);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const premiers: Record<string, string> = {
+    calendrier: '.jour-table tbody th',
+    rail: '.rail-table tbody th',
+    carte: '.leaflet-container',
+    pauses: '.pauses-message, .pauses-stand-titre, app-pauses-vue .empty-hint',
+    changements: '.journee-changements-toolbar',
+  };
+  for (const [vue, selecteur] of Object.entries(premiers)) {
+    await page.goto(`/journee?vue=${vue}&date=${SEED.jour}`);
+    const premier = page.locator(selecteur).first();
+    await expect(premier, `rendu ${vue}`).toBeVisible();
+    const boite = await premier.boundingBox();
+    expect(boite, `rendu ${vue}`).not.toBeNull();
+    expect(boite!.y, `premier nom du rendu ${vue} sous la ligne de flottaison`).toBeLessThan(900);
+  }
   await page.context().close();
 });
 

@@ -181,4 +181,32 @@ describe('SelectionRecherche', () => {
     await fixture.whenStable();
     expect(input.value).toBe('Émile Zola');
   });
+
+  // #712: the Planning page's filters are autocompletes in a bar — no hint
+  // under them — and its « Réinitialiser la vue » clears the pick from outside.
+  it('drops its hint in a compact bar', async () => {
+    fixture.componentRef.setInput('compact', true);
+    await fixture.whenStable();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('mat-hint')).toBeNull();
+  });
+
+  it('empties the field when the pick is withdrawn from outside, not while one types over it', async () => {
+    const champ = (): string =>
+      (fixture.nativeElement as HTMLElement).querySelector('input')!.value;
+    fixture.componentRef.setInput('valeurs', ['A3']);
+    await fixture.whenStable();
+    expect(champ()).toBe('Marcel Proust');
+
+    fixture.componentRef.setInput('valeurs', []);
+    await fixture.whenStable();
+    expect(champ()).toBe('');
+
+    fixture.componentRef.setInput('valeurs', ['A3']);
+    await fixture.whenStable();
+    picker.onSaisieSimple('Marc');
+    await fixture.whenStable();
+    expect(fixture.componentInstance.valeurs()).toEqual([]);
+    expect(champ()).toBe('Marc');
+  });
 });

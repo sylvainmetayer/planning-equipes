@@ -1,5 +1,3 @@
-<app-work-in-progress-banner [message]="messageEssai()" />
-
 <mat-card appearance="outlined" class="page-card">
   <mat-card-content>
     @if (!rapport() || rapport()!.journeesAnalysees === 0) {
@@ -170,3 +168,8 @@
     }
   </mat-card-content>
 </mat-card>
+
+<!-- Under the breaks, the meal ones counted rather than named: the intendance of the day. -->
+<app-intendance-jour [date]="jourCourant()?.date ?? date()" />
+
+<app-work-in-progress-banner [message]="messageEssai()" />

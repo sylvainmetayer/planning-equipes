@@ -84,7 +84,7 @@ type PageInternals = {
   viewChanged: Signal<boolean>;
   changeView: (vue: JourneeView) => void;
   selectJour: (key: string) => void;
-  decalerJour: (delta: number) => void;
+  applyChip: (pastille: 'aucune' | 'vides' | 'pauses' | 'verrous' | 'changements') => void;
   resetView: () => void;
   recharger: () => Promise<void>;
   openSeatId: Signal<string | null>;
@@ -102,6 +102,7 @@ describe('JourneePage', () => {
     emplacements: vi.fn(async () => []),
     walks: vi.fn(async () => null),
     groupedArrivals: vi.fn(async () => null),
+    intendance: vi.fn(async () => ({ pasMinutes: 60, journees: [], message: '' })),
   };
   const journeesApi = {
     changements: vi.fn(
@@ -317,7 +318,7 @@ describe('JourneePage', () => {
     const page = await monter({ siege: 'p1' });
     expect(page.openSeatId()).toBe('p1');
 
-    page.decalerJour(1);
+    page.selectJour('2026-08-02');
     await fixture.whenStable();
 
     expect(page.openSeatId()).toBeNull();
@@ -369,19 +370,71 @@ describe('JourneePage', () => {
     expect(TestBed.inject(Location).path()).not.toContain('jour=');
   });
 
-  it('steps from one day to the next and lands the day in the URL, nothing on the first day', async () => {
+  it('lands the day the selector chose in the URL, nothing on the first day', async () => {
     const page = await monter();
     expect(TestBed.inject(Location).path()).not.toContain('date=');
 
-    page.decalerJour(1);
+    page.selectJour('2026-08-02');
     TestBed.tick();
     await fixture.whenStable();
     expect(page.jourCourant()?.jour).toBe(2);
     expect(TestBed.inject(Location).path()).toContain('date=2026-08-02');
+  });
 
-    page.decalerJour(1);
-    await fixture.whenStable();
+  // #712: `?jour=2026-09-05` was ignored in silence.
+  it('opens the day a date in the jour param names', async () => {
+    const page = await monter({ jour: '2026-08-02' });
+
     expect(page.jourCourant()?.jour).toBe(2);
+    expect(TestBed.inject(Location).path()).toContain('date=2026-08-02');
+  });
+
+  it('puts the plan at the top: one title, the day selector, the filters as autocompletes', async () => {
+    await monter();
+
+    expect(racine().querySelector('h1')?.textContent?.trim()).toBe('Planning');
+    expect(racine().querySelector('app-mini-mois')).not.toBeNull();
+    expect(racine().querySelector('mat-select')).toBeNull();
+    expect(racine().querySelectorAll('app-selection-recherche')).toHaveLength(2);
+    expect(racine().querySelector('app-relecture-barre')).not.toBeNull();
+    expect(racine().querySelector('app-consigne-ligne')).not.toBeNull();
+  });
+
+  it('prints the day on screen and leads to the television link', async () => {
+    const page = await monter();
+    page.selectJour('2026-08-02');
+    await fixture.whenStable();
+
+    const liens = Array.from(racine().querySelectorAll<HTMLAnchorElement>('.planning-barre a'));
+    expect(liens.map((lien) => lien.getAttribute('href'))).toEqual([
+      '/impression/2026-08-02',
+      '/parametres?onglet=mural',
+    ]);
+    expect(liens[0].getAttribute('target')).toBe('_blank');
+  });
+
+  it('narrows the rendering on what a relecture chip counts, and widens it back', async () => {
+    const page = await monter({ vue: 'rail' });
+
+    page.applyChip('vides');
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(page.view()).toBe('calendrier');
+    expect(TestBed.inject(Location).path()).toContain('sieges=vides');
+
+    page.applyChip('pauses');
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(page.view()).toBe('pauses');
+    expect(TestBed.inject(Location).path()).toContain('relais=sans');
+    expect(TestBed.inject(Location).path()).not.toContain('sieges=');
+
+    page.applyChip('changements');
+    page.applyChip('aucune');
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(page.view()).toBe('calendrier');
+    expect(TestBed.inject(Location).path()).not.toContain('relais=');
   });
 
   it('carries the shared filters in the URL and clears them all in one action', async () => {
@@ -425,7 +478,7 @@ describe('JourneePage', () => {
   });
 
   it('leaves the reference to the server when nobody chose one, and shows the one it answered with', async () => {
-    journeesApi.changements.mockResolvedValueOnce({
+    const rienAComparer: ChangementsJournee = {
       jour: '2026-08-01',
       reference: 'RESOLUTION',
       referenceDisponible: false,
@@ -437,7 +490,11 @@ describe('JourneePage', () => {
       animateursConcernes: 0,
       parVacation: [],
       parAnimateur: [],
-    });
+    };
+    // Asked twice: by the relecture bar's chip, and by the rendering.
+    journeesApi.changements
+      .mockResolvedValueOnce(rienAComparer)
+      .mockResolvedValueOnce(rienAComparer);
     await monter({ vue: 'changements' });
     await fixture.whenStable();
 
@@ -469,7 +526,7 @@ describe('JourneePage', () => {
     expect(racine().querySelector('app-calendar-day-vue')).toBeNull();
     expect(racine().querySelector('[cdkdrag], .affectation-poignee')).toBeNull();
     // A reading covers one whole day, never a pair.
-    expect(racine().querySelector('app-validation-panel')).toBeNull();
+    expect(racine().querySelector('app-relecture-barre')).toBeNull();
     // Tir is open on the first day only: a line on both sides, closed on the second.
     expect(comparaison?.textContent).toContain('fermé ce jour-là');
     expect(TestBed.inject(Location).path()).toContain('comparer=2026-08-02');
@@ -479,7 +536,7 @@ describe('JourneePage', () => {
     await fixture.whenStable();
     expect(racine().querySelector('app-comparaison-vue')).toBeNull();
     expect(racine().querySelector('app-calendar-day-vue')).not.toBeNull();
-    expect(racine().querySelector('app-validation-panel')).not.toBeNull();
+    expect(racine().querySelector('app-relecture-barre')).not.toBeNull();
     expect(TestBed.inject(Location).path()).not.toContain('comparer=');
   });
 

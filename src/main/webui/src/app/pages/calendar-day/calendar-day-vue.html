@@ -1,170 +1,145 @@
-<mat-card appearance="outlined" class="page-card">
-  <mat-card-content>
-    <div class="calendar-toolbar">
-      <span class="calendar-meta" i18n="@@calendarDay.persistedCount">
-        Affectations enregistrées en base : <strong>{{ persistedCount() }}</strong>
-      </span>
-    </div>
+@if (tableau(); as tableau) {
+  <div class="jour-table-barre">
     <mat-checkbox class="calendar-filtre" [ngModel]="seulementProblemes()"
                   (ngModelChange)="seulementProblemes.set($event)"
                   i18n="@@calendarDay.filter.problemes">Afficher seulement les lignes à problème</mat-checkbox>
-
-    <ul class="calendar-legende">
-      <li><mat-icon inline class="understaffed-icon" aria-hidden="true">warning</mat-icon>
-        <span i18n="@@calendarDay.legend.understaffed">Sous-effectif : moins d'animateurs que de sièges générés</span></li>
-      <li><mat-icon inline class="couverture-pause-icon" aria-hidden="true">restaurant</mat-icon>
-        <span i18n="@@calendarDay.legend.couverturePause">Couverture de pause : demi-effectif voulu, pas un manque</span></li>
-      <li><mat-icon inline class="appreciation-mismatch-icon" aria-hidden="true">psychology</mat-icon>
-        <span i18n="@@calendarDay.legend.appreciation">L'appréciation de l'animateur ne couvre aucune typologie du stand</span></li>
-      <li><mat-icon inline class="verrouille-icon" aria-hidden="true">lock</mat-icon>
-        <span i18n="@@calendarDay.legend.verrouille">Ligne figée par un verrouillage</span></li>
-    </ul>
-
-    @if (dragDropEnabled) {
-      <p class="essai-bandeau">
-        <mat-icon inline aria-hidden="true">science</mat-icon>
-        <span i18n="@@commun.essai.glisserDeposer">Le glisser-déposer des affectations est en cours de test sur cet écran. Vérifiez le planning après un déplacement, et signalez ce qui vous surprend.</span>
-      </p>
-    }
-
-  </mat-card-content>
-</mat-card>
-
-@if (days().length === 0) {
-  <mat-card appearance="outlined" class="page-card">
-    <mat-card-content>
-      @if (planning()?.postes?.length) {
-        <p class="empty-hint" i18n="@@calendarDay.aucuneLigne">Aucune ligne ne correspond aux filtres pour cette journée.</p>
-      } @else {
-        <p class="empty-hint" i18n="@@calendarDay.empty">Aucune donnée de planning disponible pour le moment. Lancez une résolution depuis la page Solveur.</p>
-      }
-    </mat-card-content>
-  </mat-card>
-} @else {
-  <div class="day-calendar-grid">
-    @for (day of days(); track day.jour) {
-      <mat-card appearance="outlined" class="day-card" [class.has-understaffed]="day.understaffed" [class.has-appreciation-mismatch]="day.appreciationMismatch">
-        <mat-card-header>
-          <h2 mat-card-title>
-            {{ day.title }}
-            @if (day.understaffed) {
-              <mat-icon inline aria-hidden="false" class="understaffed-icon" [matTooltip]="dayUnderstaffedTooltip" [attr.aria-label]="dayUnderstaffedTooltip">
-                warning
-              </mat-icon>
-            }
-            @if (day.appreciationMismatch) {
-              <mat-icon inline aria-hidden="false" class="appreciation-mismatch-icon" [matTooltip]="dayAppreciationMismatchTooltip" [attr.aria-label]="dayAppreciationMismatchTooltip">
-                psychology
-              </mat-icon>
-            }
-            @if (estJourVerrouille(day)) {
-              <mat-icon inline aria-hidden="false" class="verrouille-icon" [matTooltip]="verrouilleTooltip" [attr.aria-label]="verrouilleTooltip">
-                lock
-              </mat-icon>
-            }
-          </h2>
-        </mat-card-header>
-        <mat-card-content cdkDropListGroup>
-          @for (slot of day.slots; track slot.creneauId) {
-            <div class="day-slot">
-              <div class="day-slot-title">
-                <mat-icon inline>schedule</mat-icon>
-                {{ slot.heureDebut }} – {{ slot.heureFin }}
-              </div>
-              @if (slot.stands.length === 0) {
-                <div class="day-slot-empty" i18n="@@calendarDay.noStand">Aucun stand</div>
-              } @else {
-                @for (stand of slot.stands; track stand.standId + stand.heureDebut) {
-                  <div class="day-stand" [class.empty-slot]="stand.entries.length === 0" [class.understaffed-slot]="isUnderstaffed(stand)" [class.appreciation-mismatch-slot]="hasAppreciationMismatch(stand)"
-                       cdkDropList [cdkDropListData]="stand" [cdkDropListSortingDisabled]="true"
-                       [cdkDropListEnterPredicate]="peutRecevoir"
-                       [cdkDropListDisabled]="!dragDropEnabled || editingLocked() || estLigneVerrouillee(slot, stand)"
-                       (cdkDropListDropped)="onDrop($event)">
-                    <strong>{{ stand.standNom }}</strong>
-                    @if (stand.heureDebut !== slot.heureDebut || stand.heureFin !== slot.heureFin) {
-                      <span class="day-stand-partial" i18n="@@calendarDay.partiallyClosed">
-                        (ouvert {{ stand.heureDebut }} – {{ stand.heureFin }} seulement)
-                      </span>
-                    }
-                    @if (isUnderstaffed(stand)) {
-                      <mat-icon inline aria-hidden="false" class="understaffed-icon" [matTooltip]="understaffedTooltip(stand)" [attr.aria-label]="understaffedTooltip(stand)">
-                        warning
-                      </mat-icon>
-                    }
-                    @if (isCouverturePause(stand)) {
-                      <mat-icon inline aria-hidden="false" class="couverture-pause-icon" [matTooltip]="couverturePauseTooltip" [attr.aria-label]="couverturePauseTooltip">
-                        restaurant
-                      </mat-icon>
-                    }
-                    @if (hasAppreciationMismatch(stand)) {
-                      <mat-icon inline aria-hidden="false" class="appreciation-mismatch-icon" [matTooltip]="appreciationMismatchTooltip" [attr.aria-label]="appreciationMismatchTooltip">
-                        psychology
-                      </mat-icon>
-                    }
-                    @if (estLigneVerrouillee(slot, stand)) {
-                      <mat-icon inline aria-hidden="false" class="verrouille-icon" [matTooltip]="verrouilleTooltip" [attr.aria-label]="verrouilleTooltip">
-                        lock
-                      </mat-icon>
-                    }
-                    @if (stand.entries.length === 0) {
-                      <span>{{ unassignedLabel }}</span>
-                    } @else {
-                      <span>
-                        @for (entry of stand.entries; track entry.poste.id; let isLast = $last) {
-                          <!-- Switched off for the instance, the name carries no
-                               cdkDrag and no move button at all: a day holds
-                               hundreds of names, each a drag ref for nothing,
-                               and the move dialog is switched off with the drag.
-                               A lock or a solve disables the drag instead, and
-                               the CSS hides the handle then. -->
-                          @if (dragDropEnabled) {
-                            <span
-                              class="affectation-glissable"
-                              cdkDrag
-                              [cdkDragData]="entry.poste"
-                              [cdkDragDisabled]="editingLocked() || estLigneVerrouillee(slot, stand) || estJourVerrouille(day)"
-                              [attr.data-poste-id]="entry.poste.id"
-                            >
-                              <!-- The handle is the only draggable surface: without
-                                   it the CDK sets touch-action: none and user-select:
-                                   none on the whole name, so a swipe no longer scrolls
-                                   the day and the name can no longer be selected.
-                                   A button too (RGAA 7.3, WCAG 2.5.7): a click or
-                                   Enter opens the same move as a dialog, for the
-                                   keyboard and for whoever cannot hold a drag. -->
-                              <button
-                                type="button"
-                                class="affectation-poignee"
-                                cdkDragHandle
-                                [attr.aria-label]="moveLabel(entry.label)"
-                                [title]="glisserTooltip"
-                                (click)="openMove(day, slot, stand, entry.poste, entry.label)"
-                              >⠿</button
-                              ><ng-container [ngTemplateOutlet]="nomAffecte" [ngTemplateOutletContext]="{ $implicit: entry }" />
-                            </span>
-                          } @else {
-                            <span class="affectation-glissable" [attr.data-poste-id]="entry.poste.id"
-                              ><ng-container [ngTemplateOutlet]="nomAffecte" [ngTemplateOutletContext]="{ $implicit: entry }"
-                            /></span>
-                          }{{ isLast ? '' : ', ' }}
-                        }
-                      </span>
-                    }
-                    @for (libre of stand.postesLibres; track libre.id) {
-                      <!-- A button as well as a drop target: the Siège panel says who could take the seat, and places them. -->
-                      <button type="button" class="siege-libre" [attr.data-poste-id]="libre.id" [attr.data-siege-cle]="libre.id" [title]="freeSeatTooltip"
-                              [class.siege-ouvert]="openSeatId() === libre.id" [attr.aria-pressed]="openSeatId() === libre.id"
-                              (click)="openSeat(libre.id)">{{ siegeLibreLabel }}</button>
-                    }
-                  </div>
-                }
-              }
-            </div>
-          }
-        </mat-card-content>
-      </mat-card>
+    @if (isDayLocked(tableau.day)) {
+      <span class="jour-table-verrou">
+        <mat-icon inline aria-hidden="true" class="verrouille-icon">lock</mat-icon>
+        <ng-container i18n="@@calendarDay.jourVerrouille">Journée verrouillée</ng-container>
+      </span>
     }
   </div>
+  @if (tableau.lignes.length === 0) {
+    <p class="empty-hint" i18n="@@calendarDay.aucuneLigne">Aucune ligne ne correspond aux filtres pour cette journée.</p>
+  } @else {
+    <div class="table-wrapper jour-table-defilement">
+      <table class="jour-table" cdkDropListGroup>
+        <caption class="visually-hidden" i18n="@@calendarDay.table.caption">
+          Une ligne par stand, une colonne par créneau de la journée : qui tient chaque siège
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col" class="jour-table-stand" i18n="@@calendarDay.column.stand">Stand</th>
+            @for (colonne of tableau.colonnes; track colonne.slot.creneauId) {
+              <th scope="col">{{ colonne.label }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (ligne of tableau.lignes; track ligne.standId) {
+            <tr>
+              <th scope="row" class="jour-table-stand">
+                <a class="jour-table-stand-lien" [routerLink]="['/stands', ligne.standId]"
+                   [title]="ficheStandLabel">{{ ligne.standNom }}</a>
+                @if (ligne.emplacementNom) {
+                  <span class="jour-table-emplacement">{{ ligne.emplacementNom }}</span>
+                }
+              </th>
+              @for (cellule of ligne.cellules; track cellule.slot.creneauId) {
+                <td [class.jour-table-ferme]="cellule.lignes.length === 0">
+                  @for (stand of cellule.lignes; track stand.heureDebut) {
+                    <div class="day-stand" [class.empty-slot]="stand.entries.length === 0" [class.understaffed-slot]="isUnderstaffed(stand)" [class.appreciation-mismatch-slot]="hasAppreciationMismatch(stand)"
+                         cdkDropList [cdkDropListData]="stand" [cdkDropListSortingDisabled]="true"
+                         [cdkDropListEnterPredicate]="peutRecevoir"
+                         [cdkDropListDisabled]="!dragDropEnabled || editingLocked() || estLigneVerrouillee(cellule.slot, stand)"
+                         (cdkDropListDropped)="onDrop($event)">
+                      @if (stand.heureDebut !== cellule.slot.heureDebut || stand.heureFin !== cellule.slot.heureFin) {
+                        <span class="day-stand-partial">{{ heure(stand.heureDebut) }}–{{ heure(stand.heureFin) }}</span>
+                      }
+                      @if (isUnderstaffed(stand)) {
+                        <mat-icon inline aria-hidden="false" class="understaffed-icon" [matTooltip]="understaffedTooltip(stand)" [attr.aria-label]="understaffedTooltip(stand)">
+                          warning
+                        </mat-icon>
+                      }
+                      @if (isCouverturePause(stand)) {
+                        <mat-icon inline aria-hidden="false" class="couverture-pause-icon" [matTooltip]="couverturePauseTooltip" [attr.aria-label]="couverturePauseTooltip">
+                          restaurant
+                        </mat-icon>
+                      }
+                      @if (hasAppreciationMismatch(stand)) {
+                        <mat-icon inline aria-hidden="false" class="appreciation-mismatch-icon" [matTooltip]="appreciationMismatchTooltip" [attr.aria-label]="appreciationMismatchTooltip">
+                          psychology
+                        </mat-icon>
+                      }
+                      @if (estLigneVerrouillee(cellule.slot, stand)) {
+                        <mat-icon inline aria-hidden="false" class="verrouille-icon" [matTooltip]="verrouilleTooltip" [attr.aria-label]="verrouilleTooltip">
+                          lock
+                        </mat-icon>
+                      }
+                      @for (entry of stand.entries; track entry.poste.id) {
+                        <!-- Switched off for the instance, the name carries no
+                             cdkDrag and no move button at all: a day holds
+                             hundreds of names, each a drag ref for nothing.
+                             A lock or a solve disables the drag instead, and
+                             the CSS hides the handle then. -->
+                        @if (dragDropEnabled) {
+                          <span
+                            class="affectation-glissable"
+                            cdkDrag
+                            [cdkDragData]="entry.poste"
+                            [cdkDragDisabled]="editingLocked() || estLigneVerrouillee(cellule.slot, stand) || isDayLocked(tableau.day)"
+                            [attr.data-poste-id]="entry.poste.id"
+                          >
+                            <!-- The handle is the only draggable surface, and a
+                                 button (RGAA 7.3, WCAG 2.5.7): a click or Enter
+                                 opens the same move as a dialog. -->
+                            <button
+                              type="button"
+                              class="affectation-poignee"
+                              cdkDragHandle
+                              [attr.aria-label]="moveLabel(entry.label)"
+                              [title]="glisserTooltip"
+                              (click)="openMove(tableau.day, cellule.slot, stand, entry.poste, entry.label)"
+                            >⠿</button
+                            ><ng-container [ngTemplateOutlet]="nomAffecte" [ngTemplateOutletContext]="{ $implicit: entry }" />
+                          </span>
+                        } @else {
+                          <span class="affectation-glissable" [attr.data-poste-id]="entry.poste.id"
+                            ><ng-container [ngTemplateOutlet]="nomAffecte" [ngTemplateOutletContext]="{ $implicit: entry }"
+                          /></span>
+                        }
+                      }
+                      @for (libre of stand.postesLibres; track libre.id) {
+                        <!-- A button as well as a drop target: the Siège panel says who could take the seat, and places them. -->
+                        <button type="button" class="siege-libre" [attr.data-poste-id]="libre.id" [attr.data-siege-cle]="libre.id" [title]="freeSeatTooltip"
+                                [class.siege-ouvert]="openSeatId() === libre.id" [attr.aria-pressed]="openSeatId() === libre.id"
+                                (click)="openSeat(libre.id)">{{ siegeLibreLabel }}</button>
+                      }
+                    </div>
+                  } @empty {
+                    <span class="jour-table-ferme-texte">{{ fermeLabel }}</span>
+                  }
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <ul class="calendar-legende">
+    <li><span class="siege-libre siege-legende" aria-hidden="true">{{ siegeLibreLabel }}</span>
+      <span i18n="@@calendarDay.legend.siegeLibre">Siège sans animateur : un clic dit qui peut le tenir</span></li>
+    <li><mat-icon inline class="understaffed-icon" aria-hidden="true">warning</mat-icon>
+      <span i18n="@@calendarDay.legend.understaffed">Sous-effectif : moins d'animateurs que de sièges générés</span></li>
+    <li><mat-icon inline class="couverture-pause-icon" aria-hidden="true">restaurant</mat-icon>
+      <span i18n="@@calendarDay.legend.couverturePause">Couverture de pause : demi-effectif voulu, pas un manque</span></li>
+    <li><mat-icon inline class="appreciation-mismatch-icon" aria-hidden="true">psychology</mat-icon>
+      <span i18n="@@calendarDay.legend.appreciation">L'appréciation de l'animateur ne couvre aucune typologie du stand</span></li>
+    <li><mat-icon inline class="verrouille-icon" aria-hidden="true">lock</mat-icon>
+      <span i18n="@@calendarDay.legend.verrouille">Ligne figée par un verrouillage</span></li>
+  </ul>
+
+  @if (dragDropEnabled) {
+    <p class="essai-bandeau">
+      <mat-icon inline aria-hidden="true">science</mat-icon>
+      <span i18n="@@commun.essai.glisserDeposer">Le glisser-déposer des affectations est en cours de test sur cet écran. Vérifiez le planning après un déplacement, et signalez ce qui vous surprend.</span>
+    </p>
+  }
+} @else {
+  <p class="empty-hint" i18n="@@calendarDay.empty">Aucune donnée de planning disponible pour le moment. Lancez une résolution depuis la page Solveur.</p>
 }
 
 <!-- One name of a stand line, drag handle or not: its Siège panel on click. -->

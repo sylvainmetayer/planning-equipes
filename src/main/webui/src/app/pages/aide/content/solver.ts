@@ -220,7 +220,7 @@ export function buildSolverSections(): HelpSection[] {
         {
           route: '/journee',
           queryParams: { vue: 'pauses' },
-          label: $localize`:@@aide.link.pauses:Pauses`,
+          label: $localize`:@@aide.link.pauses:Pauses et repas`,
         },
       ],
     },
@@ -297,7 +297,7 @@ export function buildSolverSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.results.term.pourquoiLui:« Pourquoi lui ? »`,
-              text: $localize`:@@aide.results.def.pourquoiLui:Un clic sur un animateur affecté explique cette affectation précise : les règles respectées ou non pour ce poste — dans le panneau du siège sur la Journée, dans ce dialogue sur le Calendrier des affectations. À la demande, l'écran cherche aussi qui pourrait le remplacer, et ne propose que les remplacements qui n'introduisent aucun écart dur, chacun avec son effet sur le score. La recherche est bornée et annonce combien de candidats elle a évalués : une liste courte ne prouve pas qu'il n'existe rien d'autre.`,
+              text: $localize`:@@aide.results.def.pourquoiLui:Un clic sur un animateur affecté explique cette affectation précise : les règles respectées ou non pour ce poste, dans le panneau du siège de la page Planning. À la demande, l'écran cherche aussi qui pourrait le remplacer, et ne propose que les remplacements qui n'introduisent aucun écart dur, chacun avec son effet sur le score. La recherche est bornée et annonce combien de candidats elle a évalués : une liste courte ne prouve pas qu'il n'existe rien d'autre.`,
             },
           ],
         },
@@ -307,7 +307,7 @@ export function buildSolverSections(): HelpSection[] {
         { route: '/constraints', label: $localize`:@@nav.link.constraints:Contraintes` },
         {
           route: '/journee',
-          label: $localize`:@@aide.link.dayCalendar:Calendrier journalier`,
+          label: $localize`:@@aide.link.dayCalendar:Tableau de la journée`,
         },
         { route: '/instantanes', label: $localize`:@@nav.link.snapshots:Instantanés` },
       ],
@@ -324,7 +324,7 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.tuning.playbook:Sous chaque problème du Diagnostic, le bloc « Que faire ? » propose les gestes qui le règlent, du plus probable au moins probable, chacun avec une phrase d'explication et un bouton qui ouvre l'écran déjà positionné. Aucun bouton n'écrit rien : l'écran ouvert garde ses propres aperçus et confirmations, et c'est vous qui décidez. Pour un créneau en sous-effectif : voir qui pourrait venir (le panneau du siège, sur la Journée du créneau, où « Placer » remplit la place), puis ajouter une compétence sur la typologie du stand, puis baisser l'effectif demandé, enfin revoir les indisponibilités du jour. Pour une règle légale en défaut : proposer une réparation depuis la Journée, ou chercher un remplaçant depuis le panneau du siège — une règle légale ne se règle pas. Pour une règle de qualité : baisser son poids, la page Contraintes s'ouvre sur sa ligne. Pour une règle en plancher : saisir d'abord la donnée manquante. Pour une pause sans relais : ouvrir une place de relais sur le stand, ou raccourcir la vacation. Pour des ajustements manuels ou un verrou en cause : les revoir, affichés seuls. Une journée déjà commencée ne propose rien qui la modifierait : son plan est figé tel que travaillé. L'explication d'une règle reprend mot pour mot le conseil de la page Contraintes.`,
+          text: $localize`:@@aide.tuning.playbook:Sous chaque problème du Diagnostic, le bloc « Que faire ? » propose les gestes qui le règlent, du plus probable au moins probable, chacun avec une phrase d'explication et un bouton qui ouvre l'écran déjà positionné. Aucun bouton n'écrit rien : l'écran ouvert garde ses propres aperçus et confirmations, et c'est vous qui décidez. Pour un créneau en sous-effectif : voir qui pourrait venir (le panneau du siège, sur la page Planning au jour du créneau, où « Placer » remplit la place), puis ajouter une compétence sur la typologie du stand, puis baisser l'effectif demandé, enfin revoir les indisponibilités du jour. Pour une règle légale en défaut : proposer une réparation depuis la page Planning, ou chercher un remplaçant depuis le panneau du siège — une règle légale ne se règle pas. Pour une règle de qualité : baisser son poids, la page Contraintes s'ouvre sur sa ligne. Pour une règle en plancher : saisir d'abord la donnée manquante. Pour une pause sans relais : ouvrir une place de relais sur le stand, ou raccourcir la vacation. Pour des ajustements manuels ou un verrou en cause : les revoir, affichés seuls. Une journée déjà commencée ne propose rien qui la modifierait : son plan est figé tel que travaillé. L'explication d'une règle reprend mot pour mot le conseil de la page Contraintes.`,
         },
         {
           kind: 'definitions',
