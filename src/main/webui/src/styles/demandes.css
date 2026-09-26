@@ -160,3 +160,16 @@
   font-size: 0.9rem;
   margin: -0.25rem 0 0.75rem;
 }
+
+/* Échanges: the count of what arrived since the last visit, and the note a
+   follow-up leaves on an accepted card. */
+.echanges-nouvelles {
+  margin: 0;
+  font-weight: 500;
+  color: var(--mat-sys-primary);
+}
+
+.echanges-suite-faite {
+  margin: 0.5rem 0 0;
+  color: var(--app-positive);
+}

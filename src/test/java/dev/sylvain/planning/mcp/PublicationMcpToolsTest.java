@@ -26,7 +26,20 @@ class PublicationMcpToolsTest {
     private static DestinatairePublication destinataire(
             String id, String nom, String email, boolean premiereDiffusion, List<String> changements) {
         return new DestinatairePublication(
-                id, nom, email, premiereDiffusion, changements, List.of(), 1, 0, 0, false, false, null, null);
+                id,
+                nom,
+                email,
+                premiereDiffusion,
+                changements,
+                List.of(),
+                1,
+                0,
+                0,
+                false,
+                false,
+                null,
+                null,
+                List.of());
     }
 
     @Test
@@ -74,7 +87,8 @@ class PublicationMcpToolsTest {
                 true,
                 true,
                 null,
-                null));
+                null,
+                List.of()));
 
         assertThat(vue.mineur()).isTrue();
         assertThat(vue.reporte()).isTrue();

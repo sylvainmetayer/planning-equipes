@@ -1,5 +1,6 @@
 package dev.sylvain.planning.api;
 
+import dev.sylvain.planning.service.publication.EtatEnvoisService;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
 import dev.sylvain.planning.service.publication.PlanPublicationService.ApercuPublication;
 import dev.sylvain.planning.service.publication.PlanPublicationService.RapportPublication;
@@ -37,14 +38,18 @@ public class PublicationResource {
 
     private final PublicationTraceRepository traceRepository;
 
+    private final EtatEnvoisService etatEnvoisService;
+
     @Inject
     public PublicationResource(
             PlanPublicationService publicationService,
             PlanPublieService planPublieService,
-            PublicationTraceRepository traceRepository) {
+            PublicationTraceRepository traceRepository,
+            EtatEnvoisService etatEnvoisService) {
         this.publicationService = publicationService;
         this.planPublieService = planPublieService;
         this.traceRepository = traceRepository;
+        this.etatEnvoisService = etatEnvoisService;
     }
 
     /** Who would be written to and what they would read — sends nothing. */
@@ -60,8 +65,12 @@ public class PublicationResource {
      *                   plan they were really told about, so they come back in
      *                   the next count. An absent body, or an empty list,
      *                   publishes to everybody concerned.
+     * @param cibles     when set, the only people to write to — « Prévenir les
+     *                   2 personnes » after an échange or a replacement.
+     *                   Everybody else concerned is deferred as an exclusion
+     *                   defers them
      */
-    public record DemandePublication(List<String> exclusions) {}
+    public record DemandePublication(List<String> exclusions, List<String> cibles) {}
 
     /**
      * Publishes, and writes to the concerned people the admin kept.
@@ -77,7 +86,9 @@ public class PublicationResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public RapportPublication publier(DemandePublication demande) {
-        return publicationService.publier(demande == null ? List.of() : demande.exclusions());
+        return demande == null
+                ? publicationService.publier(List.of())
+                : publicationService.publier(demande.exclusions(), demande.cibles());
     }
 
     /**
@@ -91,6 +102,17 @@ public class PublicationResource {
     public Response exportCsv() {
         return CsvDownload.attachment(
                 PlanPublicationService.generateCsv(publicationService.apercu()), "diff-publication.csv");
+    }
+
+    /**
+     * Who received which version, one line per animateur of the edition: the
+     * version they were last told about, how their latest planning mail went,
+     * the night's reminders and their acknowledgement. Reads only.
+     */
+    @GET
+    @Path("/etat")
+    public EtatEnvoisService.EtatEnvois etat() {
+        return etatEnvoisService.etat();
     }
 
     /**

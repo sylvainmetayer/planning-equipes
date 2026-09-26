@@ -18,7 +18,6 @@ import { PlanningApi } from '../../core/api/planning-api';
 import { errorPrefix } from '../../core/error-message';
 import { intlLocale } from '../../core/locale';
 import { ApercuPublication, DestinatairePublication } from '../../core/models';
-import { PlanningStateService } from '../../core/planning-state.service';
 import {
   libelleDernierePublication,
   libellePublier,
@@ -41,17 +40,19 @@ import {
   RecipientSort,
 } from './publication-diff';
 import { GelInvitation } from '../../core/gel-invitation';
+import { PublicationSelection } from './publication-selection';
 
 /**
- * What leaves the application once the planning is good enough: the documents
- * to print or archive, and the publication (issue #245) that mails every
- * animateur whose schedule changed. Both read the planning persisted for the
- * edition on screen, so they wait on the per-edition lock and nothing else.
+ * « Publier — N personnes concernées »: the publication (issue #245) that mails
+ * every animateur whose schedule changed and moves what their espace shows —
+ * both effects said in one sentence next to the button, not in a tooltip —
+ * with the review table of what each of them will read.
  *
- * <p>The panel owns the publication preview — who would be reached, and what
- * changes for them — and re-reads it after every publication. The page asks
- * for a re-read after a solve ({@link reloadPreview}) and is told what to put
- * in its output panel ({@link reported}).</p>
+ * <p>The panel owns the publication preview and re-reads it after every
+ * publication; it tells the page what to put in its output panel
+ * ({@link reported}) and that a publication left ({@link published}), so the
+ * permanent table under it reads the new states. Who is held back is shared
+ * with that table through {@link PublicationSelection}.</p>
  */
 @Component({
   selector: 'app-publication-panel',
@@ -70,14 +71,14 @@ import { GelInvitation } from '../../core/gel-invitation';
 export class PublicationPanel implements OnInit {
   private readonly planningApi = inject(PlanningApi);
   private readonly gelInvitation = inject(GelInvitation);
-  private readonly planningState = inject(PlanningStateService);
   private readonly confirm = inject(ConfirmService);
+  private readonly selection = inject(PublicationSelection);
   private readonly params = currentViewParams();
 
   /** The line the page shows in its output panel: a sentence, a summary, or an error. */
   readonly reported = output<string>();
-  /** Raised while an export is being built — the page names it as the reason its actions are locked. */
-  readonly exportBusyChange = output<boolean>();
+  /** A publication left: the states under the panel have moved. */
+  readonly published = output<void>();
 
   /**
    * The narrower, per-edition lock — what the diffusion actions wait on. They
@@ -87,8 +88,6 @@ export class PublicationPanel implements OnInit {
    * data-entry screens (see `docs/decisions/0001-cloisonnement-par-edition.md`, §5).
    */
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
-
-  protected readonly exportBusy = signal(false);
 
   /**
    * Publication state, read on demand — when the panel appears, when the list
@@ -114,13 +113,8 @@ export class PublicationPanel implements OnInit {
   protected readonly sortOrder = signal<RecipientSort>(readRecipientSort(this.params.get('tri')));
   protected readonly minorHidden = signal(this.params.get('mineurs') === 'masques');
 
-  /**
-   * Who the admin took out of this send. Not view state and deliberately not
-   * in the URL: it is a decision about to be carried out, not a way of looking
-   * at the list, and a shared link that silently carried somebody's exclusion
-   * would be the worst possible thing to paste into a chat.
-   */
-  private readonly excluded = signal<ReadonlySet<string>>(new Set());
+  /** Who the admin took out of this send — shared with the table under the panel. */
+  private readonly excluded = this.selection.excluded;
 
   protected readonly rows = computed(() =>
     sortRecipients(
@@ -138,6 +132,14 @@ export class PublicationPanel implements OnInit {
     () => (this.preview()?.nombreConcernes ?? 0) - this.excluded().size,
   );
   protected readonly publishLabel = computed(() => libellePublier(this.preview()));
+  /** What the button does, both effects in one sentence rather than in a tooltip. */
+  protected readonly publishSentence = computed(() => {
+    const count = this.notifiedCount();
+    if (count <= 0) {
+      return '';
+    }
+    return $localize`:@@diffuser.publier.phrase:Envoie leur nouveau planning aux ${count}:count: personne(s) dont il a changé et met à jour leur espace. Les autres ne reçoivent rien.`;
+  });
   protected readonly unavailableReason = computed(() => raisonIndisponible(this.preview()));
   protected readonly lastPublication = computed(() =>
     libelleDernierePublication(this.preview(), intlLocale()),
@@ -173,17 +175,11 @@ export class PublicationPanel implements OnInit {
   }
 
   protected isExcluded(animateurId: string): boolean {
-    return this.excluded().has(animateurId);
+    return this.selection.isExcluded(animateurId);
   }
 
   protected toggleExclusion(animateurId: string, prevenir: boolean): void {
-    const excluded = new Set(this.excluded());
-    if (prevenir) {
-      excluded.delete(animateurId);
-    } else {
-      excluded.add(animateurId);
-    }
-    this.excluded.set(excluded);
+    this.selection.setExcluded(animateurId, !prevenir);
   }
 
   protected changeSummaryOf(destinataire: DestinatairePublication): string {
@@ -200,78 +196,6 @@ export class PublicationPanel implements OnInit {
 
   protected toggleMinorFilter(masquer: boolean): void {
     this.minorHidden.set(masquer);
-  }
-
-  /** The same table as a file, for the reading that happens away from the screen. */
-  protected async exportDiff(): Promise<void> {
-    this.setExportBusy(true);
-    try {
-      this.reported.emit(await this.planningApi.exportPublicationDiff());
-    } catch (error) {
-      this.reported.emit(errorPrefix(error));
-    } finally {
-      this.setExportBusy(false);
-    }
-  }
-
-  /**
-   * Every per-animateur document in one archive, built from the planning the
-   * browser holds — what is exported is what is shown.
-   */
-  protected async exportBundle(): Promise<void> {
-    this.setExportBusy(true);
-    this.reported.emit($localize`:@@solver.exportBuilding:Construction de l'archive d'export...`);
-    try {
-      const planning = await this.planningState.require();
-      this.reported.emit(await this.planningApi.exportBundle(planning));
-    } catch (error) {
-      this.reported.emit(errorPrefix(error));
-    } finally {
-      this.setExportBusy(false);
-    }
-  }
-
-  /**
-   * The same plannings in the layout made for printing: one A4 landscape sheet
-   * per person, recto calendar and verso teams. The booklet stays the default
-   * everywhere else — this is the format the organisation folds and hands out.
-   */
-  protected async exportFeuilles(): Promise<void> {
-    this.setExportBusy(true);
-    this.reported.emit(
-      $localize`:@@solver.exportFeuillesBuilding:Construction des feuilles recto-verso...`,
-    );
-    try {
-      const planning = await this.planningState.require();
-      this.reported.emit(await this.planningApi.exportFeuilles(planning));
-    } catch (error) {
-      this.reported.emit(errorPrefix(error));
-    } finally {
-      this.setExportBusy(false);
-    }
-  }
-
-  /**
-   * The organiser's own copy: one PDF holding every assignment, laid out by
-   * day and by stand. A GET, unlike the per-animateur bundle above — the
-   * server reads the persisted planning itself rather than having the browser
-   * upload several megabytes of JSON just to get a document back.
-   */
-  protected async exportGlobalPdf(): Promise<void> {
-    this.setExportBusy(true);
-    this.reported.emit($localize`:@@solver.exportGlobalBuilding:Construction du PDF global...`);
-    try {
-      this.reported.emit(await this.planningApi.exportGlobalPdf());
-    } catch (error) {
-      this.reported.emit(errorPrefix(error));
-    } finally {
-      this.setExportBusy(false);
-    }
-  }
-
-  private setExportBusy(busy: boolean): void {
-    this.exportBusy.set(busy);
-    this.exportBusyChange.emit(busy);
   }
 
   /**
@@ -315,8 +239,9 @@ export class PublicationPanel implements OnInit {
         this.reported.emit(
           summary.details ? `${summary.titre} — ${summary.details}` : summary.titre,
         );
-        this.excluded.set(new Set());
+        this.selection.clear();
         this.listOpen.set(false);
+        this.published.emit();
         // The second milestone at which freezing is offered (ADR 0052).
         void this.gelInvitation.offer('publication');
       } catch (error) {
@@ -340,8 +265,7 @@ export class PublicationPanel implements OnInit {
       // An exclusion only means something about somebody the list still names:
       // a person whose change was undone between two reads must not stay
       // silently ticked off for the next publication.
-      const recipients = new Set(apercu.destinataires.map((each) => each.animateurId));
-      this.excluded.set(new Set([...this.excluded()].filter((id) => recipients.has(id))));
+      this.selection.retain(new Set(apercu.destinataires.map((each) => each.animateurId)));
       this.preview.set(apercu);
     } catch {
       // The block stays silent rather than announcing a count it did not read.

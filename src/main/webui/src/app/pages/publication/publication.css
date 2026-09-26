@@ -140,3 +140,135 @@
     padding: 0.1rem 0;
   }
 }
+
+/* Diffuser: the two tabs, the publish line, the permanent table and the four
+   documents. The failure is the only red of the screen — it is the one state
+   somebody has to act on. */
+.diffuser-onglets {
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.diffuser-onglets .mat-icon {
+  margin-right: 0.35rem;
+}
+
+.diffuser-publier-ligne {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+.diffuser-publier-phrase {
+  margin: 0;
+  max-width: 70ch;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.diffuser-envois {
+  margin-top: 1.5rem;
+}
+
+.diffuser-envois-tete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1rem;
+}
+
+.diffuser-envois-tete h2 {
+  margin: 0;
+  font: var(--mat-sys-title-large);
+}
+
+.diffuser-envois-derniere,
+.diffuser-relances {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.diffuser-relances-inactives {
+  color: var(--mat-sys-error);
+}
+
+.diffuser-filtres {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+}
+
+.diffuser-filtres mat-button-toggle-group {
+  flex-wrap: wrap;
+}
+
+.diffuser-jour {
+  min-width: 12rem;
+}
+
+.diffuser-table-cadre {
+  overflow-x: auto;
+}
+
+.diffuser-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.diffuser-table th,
+.diffuser-table td {
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  text-align: start;
+  vertical-align: top;
+}
+
+.diffuser-table thead th {
+  white-space: nowrap;
+  background: var(--mat-sys-surface-container);
+}
+
+.diffuser-table tbody th {
+  font-weight: 500;
+}
+
+.diffuser-ligne-a-prevenir {
+  background: var(--mat-sys-surface-container-low);
+}
+
+.diffuser-etat-ok {
+  color: var(--app-positive);
+}
+
+.diffuser-etat-echec {
+  color: var(--mat-sys-error);
+  font-weight: 600;
+}
+
+.diffuser-etat-attente,
+.diffuser-etat-neutre {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.diffuser-actions {
+  white-space: nowrap;
+}
+
+.diffuser-vide {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.diffuser-documents {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  gap: 1rem;
+}
+
+.diffuser-journee {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1rem;
+}

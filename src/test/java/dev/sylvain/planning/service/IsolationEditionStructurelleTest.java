@@ -106,6 +106,7 @@ class IsolationEditionStructurelleTest {
             "espace_acces",
             "plan_snapshot",
             "publication_destinataire",
+            "envoi_planning",
             "declaration_disponibilite",
             "declaration_coequipier",
             "parametres_collecte",

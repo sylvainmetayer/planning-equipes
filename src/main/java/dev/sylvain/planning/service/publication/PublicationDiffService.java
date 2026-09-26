@@ -81,7 +81,33 @@ public class PublicationDiffService {
      *                   animateur — the same one, so nothing is announced that
      *                   was not reviewed
      */
-    public record ChangementVacation(TypeChangement type, Vacation vacation, Vacation precedente, String libelle) {}
+    public record ChangementVacation(TypeChangement type, Vacation vacation, Vacation precedente, String libelle) {
+
+        /**
+         * Whether this change belongs to {@code jour}: the day of the vacation
+         * it announces. The one rule the Journée's « Changements » and the
+         * Diffuser screen's day filter share, so the two count the same people
+         * for the same day.
+         */
+        public boolean touches(LocalDate jour) {
+            return vacation != null && jour != null && jour.equals(vacation.date());
+        }
+    }
+
+    /**
+     * The days one person's changes belong to — see
+     * {@link ChangementVacation#touches}, sorted.
+     */
+    public static List<LocalDate> joursTouches(List<ChangementVacation> changements) {
+        return changements.stream()
+                .map(changement -> changement.vacation() == null
+                        ? null
+                        : changement.vacation().date())
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .sorted()
+                .toList();
+    }
 
     /**
      * How far a vacation may slide on the same stand before it is worth

@@ -1,18 +1,17 @@
 // Publishing (retour utilisateur, #333). Tens of seconds used to pass with no
 // sign at all, on the one action that writes to real people — and the natural
-// reflex in front of a screen that says nothing is to click again. The exports
-// share the panel: what they say goes to the page's output panel, and while
-// one runs the page names it as the reason its actions are locked.
+// reflex in front of a screen that says nothing is to click again. The
+// documents moved to their own tab (documents-panel.spec.ts).
 
 import { provideZonelessChangeDetection, Signal, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlanningApi } from '../../core/api/planning-api';
-import { PlanningStateService } from '../../core/planning-state.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { PublicationPanel } from './publication-panel';
 import { GelInvitation } from '../../core/gel-invitation';
+import { PublicationSelection } from './publication-selection';
 
 const gelOffer = vi.fn().mockResolvedValue(undefined);
 
@@ -20,11 +19,8 @@ type PanelInternals = {
   busy: Signal<boolean>;
   publishable: Signal<boolean>;
   recipientsInFlight: Signal<number>;
-  exportBusy: Signal<boolean>;
   publish: () => Promise<void>;
-  exportGlobalPdf: () => Promise<void>;
-  exportBundle: () => Promise<void>;
-  exportDiff: () => Promise<void>;
+  publishSentence: Signal<string>;
   rows: Signal<{ animateurId: string }[]>;
   minorCount: Signal<number>;
   notifiedCount: Signal<number>;
@@ -51,6 +47,7 @@ function recipient(partiel: Record<string, unknown>): Record<string, unknown> {
     reporte: false,
     confirmation: null,
     confirmeLe: null,
+    jours: ['2026-07-11'],
     ...partiel,
   };
 }
@@ -59,11 +56,7 @@ describe('PublicationPanel', () => {
   const planningApi = {
     publicationPreview: vi.fn(),
     publish: vi.fn(),
-    exportGlobalPdf: vi.fn(),
-    exportBundle: vi.fn(),
-    exportPublicationDiff: vi.fn(),
   };
-  const planningState = { require: vi.fn() };
   const confirm = { ask: vi.fn() };
   const editingLocked = signal(false);
 
@@ -75,24 +68,17 @@ describe('PublicationPanel', () => {
     nombreConcernes: 3,
     journeesNonValidees: 0,
     destinataires: [],
+    envoisEnEchec: 0,
   };
 
   let fixture: ComponentFixture<PublicationPanel>;
   /** Everything the panel said to the page's output panel, in order. */
   let messages: string[];
-  let exportBusyChanges: boolean[];
+  let published: number;
 
   beforeEach(() => {
     editingLocked.set(false);
-    for (const stub of [
-      planningApi.publicationPreview,
-      planningApi.publish,
-      planningApi.exportGlobalPdf,
-      planningApi.exportBundle,
-      planningApi.exportPublicationDiff,
-      planningState.require,
-      confirm.ask,
-    ]) {
+    for (const stub of [planningApi.publicationPreview, planningApi.publish, confirm.ask]) {
       stub.mockReset();
     }
     planningApi.publicationPreview.mockResolvedValue({});
@@ -100,7 +86,7 @@ describe('PublicationPanel', () => {
       providers: [
         provideZonelessChangeDetection(),
         { provide: PlanningApi, useValue: planningApi },
-        { provide: PlanningStateService, useValue: planningState },
+        PublicationSelection,
         { provide: ConfirmService, useValue: confirm },
         { provide: SolverJobService, useValue: { editingLocked: () => editingLocked() } },
         // The freeze invitation writes to localStorage: kept out of this file's storage.
@@ -112,9 +98,9 @@ describe('PublicationPanel', () => {
   function createPanel(): PanelInternals {
     fixture = TestBed.createComponent(PublicationPanel);
     messages = [];
-    exportBusyChanges = [];
+    published = 0;
     fixture.componentInstance.reported.subscribe((message) => messages.push(message));
-    fixture.componentInstance.exportBusyChange.subscribe((busy) => exportBusyChanges.push(busy));
+    fixture.componentInstance.published.subscribe(() => published++);
     return fixture.componentInstance as unknown as PanelInternals;
   }
 
@@ -241,40 +227,6 @@ describe('PublicationPanel', () => {
     expect(fixture.componentInstance.preview()).toBeNull();
   });
 
-  describe('the exports', () => {
-    it('tells the page an export is being built, then what came of it', async () => {
-      planningApi.exportGlobalPdf.mockResolvedValue('Téléchargement démarré.');
-      const panel = createPanel();
-
-      await panel.exportGlobalPdf();
-
-      expect(exportBusyChanges).toEqual([true, false]);
-      expect(messages).toEqual(['Construction du PDF global...', 'Téléchargement démarré.']);
-      expect(panel.exportBusy()).toBe(false);
-    });
-
-    it('sends the planning the browser holds for the per-animateur archive', async () => {
-      planningState.require.mockResolvedValue({ postes: [] });
-      planningApi.exportBundle.mockResolvedValue('Téléchargement démarré.');
-      const panel = createPanel();
-
-      await panel.exportBundle();
-
-      expect(planningApi.exportBundle).toHaveBeenCalledExactlyOnceWith({ postes: [] });
-      expect(messages.at(-1)).toBe('Téléchargement démarré.');
-    });
-
-    it('lowers the busy flag and reports the refusal when the server declines', async () => {
-      planningApi.exportGlobalPdf.mockRejectedValue(new Error('Planning vide.'));
-      const panel = createPanel();
-
-      await panel.exportGlobalPdf();
-
-      expect(exportBusyChanges.at(-1)).toBe(false);
-      expect(messages.at(-1)).toContain('Planning vide.');
-    });
-  });
-
   /* -------------------------- The review table --------------------------- */
 
   async function panelWith(destinataires: Record<string, unknown>[]): Promise<PanelInternals> {
@@ -310,6 +262,20 @@ describe('PublicationPanel', () => {
 
       expect(planningApi.publish).toHaveBeenCalledExactlyOnceWith(['a2']);
       expect(messages.at(-1)).toContain('Bruno Petit');
+      // The table under the panel is told to read the new states.
+      expect(published).toBe(1);
+    });
+
+    it('says both effects of the button in one sentence, counting the people kept', async () => {
+      const panel = await panelWith([
+        recipient({}),
+        recipient({ animateurId: 'a2', nomAffiche: 'Bruno Petit' }),
+      ]);
+
+      expect(panel.publishSentence()).toContain('2');
+      expect(panel.publishSentence()).toContain('met à jour leur espace');
+      panel.toggleExclusion('a2', false);
+      expect(panel.publishSentence()).toContain('1');
     });
 
     /**
@@ -371,17 +337,6 @@ describe('PublicationPanel', () => {
 
       expect(panel.isExcluded('a2')).toBe(false);
       expect(panel.notifiedCount()).toBe(1);
-    });
-
-    it('downloads the review table without sending anything', async () => {
-      planningApi.exportPublicationDiff.mockResolvedValue('Téléchargement démarré.');
-      const panel = await panelWith([recipient({})]);
-
-      await panel.exportDiff();
-
-      expect(planningApi.exportPublicationDiff).toHaveBeenCalledOnce();
-      expect(planningApi.publish).not.toHaveBeenCalled();
-      expect(messages.at(-1)).toBe('Téléchargement démarré.');
     });
   });
 });
