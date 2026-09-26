@@ -3,6 +3,7 @@ package dev.sylvain.planning.config;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -81,6 +82,11 @@ class OidcConfigurationTest {
             @Override
             public boolean sendInvitation() {
                 return true;
+            }
+
+            @Override
+            public List<String> invitationActions() {
+                return List.of("VERIFY_EMAIL", "webauthn-register-passwordless");
             }
         };
     }

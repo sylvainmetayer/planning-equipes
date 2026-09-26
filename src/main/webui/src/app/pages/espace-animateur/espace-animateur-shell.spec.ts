@@ -151,6 +151,22 @@ describe('EspaceAnimateurShell — quelle édition', () => {
 
     expect((fixture.nativeElement as HTMLElement).querySelector('.espace-edition')).toBeNull();
   });
+
+  /**
+   * Keycloak holds the passkeys: the menu points at its page, where one is
+   * registered on this phone or replaced once lost.
+   */
+  it('mène aux moyens de connexion depuis le menu du compte', async () => {
+    const menu = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      'button[aria-label="Mon compte et informations légales"]',
+    )!;
+    menu.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const lien = document.querySelector<HTMLAnchorElement>('a[href="/api/auth/oidc/compte"]');
+    expect(lien?.textContent).toContain('Ma passkey et mes moyens de connexion');
+  });
 });
 
 /**

@@ -9436,6 +9436,31 @@
         "tags" : [ "Auth Resource" ]
       }
     },
+    "/api/auth/oidc/compte" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Manage Sign In Methods",
+        "tags" : [ "Auth Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ ]
+        } ]
+      }
+    },
     "/api/auth/oidc/login" : {
       "get" : {
         "parameters" : [ {

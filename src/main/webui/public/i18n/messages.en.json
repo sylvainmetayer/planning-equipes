@@ -2483,7 +2483,7 @@
   "mentions.responsabilite.title": "Responsibility",
   "mentions.responsabilite.texte": " The organisation operating this application remains the employer or principal of the people being scheduled, and remains responsible for the data entered as well as for the schedule produced and shared: compliance with employment rules, accuracy of the information, assignment decisions. The application computes proposals and flags anomalies — it is a decision aid, never a legal validation. ",
   "mentions.chargementImpossible": "This information could not be loaded. Try again in a moment; if it persists, let the organisation know.",
-  "espace.menuLegal": "Legal information",
+  "espace.menuLegal": "My account and legal information",
   "espace.echanges.chercherRemplacants": "Who can replace me?",
   "espace.echanges.suggestionsAucune": "No swap holds with the current schedule. You may still propose one: the organisers will decide.",
   "espace.echanges.suggestionsIntro": "These swaps hold against the current schedule. Pick one: the colleague will have to agree, then the organisers will decide.",
@@ -4499,5 +4499,8 @@
   "aide.comptes.def.desactivation": "A deactivated account loses every role in the application, Keycloak realm roles included — the admin role too. Deactivating your own account therefore locks you out of the administration: the screen warns you first. An account is reactivated, never deleted; a right is taken back with “Withdraw” and stays listed, dated: the history must be able to say who held what, and when.",
   "aide.comptes.term.keycloak": "What stays with Keycloak",
   "aide.comptes.def.keycloak": "Passwords, two-factor authentication and the global roles (admin, mcp, animateur) are managed in the Keycloak console, never here; how to do it is in the operations documentation (docs/keycloak.md).",
-  "comptes.rights.close": "Close"
+  "comptes.rights.close": "Close",
+  "espace.menu.moyensConnexion": "My passkey and sign-in methods",
+  "espace.aide.acces.passkey": "No password to remember: the invitation has you create a passkey, which your phone unlocks with your face, your fingerprint or its code.",
+  "espace.aide.acces.passkeyPerdue": "Lost your passkey, or a new phone? After your address, choose another method: a six-digit code arrives by e-mail. Once signed in, “My passkey and sign-in methods”, in the menu at the top right, registers a new one."
 }
