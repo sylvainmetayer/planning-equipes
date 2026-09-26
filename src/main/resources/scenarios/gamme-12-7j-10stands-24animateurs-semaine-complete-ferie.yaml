@@ -4,14 +4,14 @@
 # jours, et les cinq mineurs gardent deux jours de repos consécutifs dans la
 # semaine. Le 14 juillet est férié : aucun mineur ne travaille ce jour-là.
 # Les mineurs n'ont de place que sur les deux stands de deux personnes, auprès
-# d'un majeur. Au-delà de cinq jours consécutifs, le coût monte (poids 5).
+# d'un majeur. Au-delà de cinq jours consécutifs, le coût monte (poids 25).
 
 festival:
   dateDebut: 2027-07-12
 
 contraintes:
   poids:
-    maxJoursConsecutifsTravailles: 5
+    maxJoursConsecutifsTravailles: 25
 
 creneaux:
   - id: J1-MATIN

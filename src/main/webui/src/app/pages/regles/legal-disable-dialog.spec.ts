@@ -14,6 +14,7 @@ import { LegalDisableConfirmService, LegalDisableDialog } from './legal-disable-
 function contrainte(overrides: Partial<ConstraintView> = {}): ConstraintView {
   return {
     name: 'travailDeNuitInterditPourMineur',
+    libelleCourt: 'Travail de nuit des mineurs',
     niveau: 'HARD',
     categorie: 'Légal (mineurs)',
     description: 'Pas de travail de nuit pour un mineur (art. L3163-1).',
@@ -88,7 +89,7 @@ describe('LegalDisableConfirmService', () => {
     expect(dialog.open).toHaveBeenCalledOnce();
     expect(dialog.open.mock.calls[0][0]).toBe(LegalDisableDialog);
     expect(dialog.open.mock.calls[0][1].data).toEqual({
-      name: 'travailDeNuitInterditPourMineur',
+      libelle: 'Travail de nuit des mineurs',
       description: 'Pas de travail de nuit pour un mineur (art. L3163-1).',
       categorie: 'Légal (mineurs)',
       legale: true,

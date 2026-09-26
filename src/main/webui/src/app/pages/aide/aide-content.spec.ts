@@ -380,7 +380,7 @@ describe('parametrer-pour-un-planning-complet', () => {
       '/stands',
       '/ouvertures',
       '/creneaux',
-      '/constraints',
+      '/regles',
       '/diagnostic',
       '/diagnostic',
       '/diagnostic',

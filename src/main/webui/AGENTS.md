@@ -117,17 +117,32 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   mail, Mailpit, pgAdmin; a guard on the route sends its former
   `?onglet=donnees` and `?onglet=yaml` to Fichiers' examples and validator),
   `/mcp-client`,
-  `/parametres` (« Paramètres » — five tabs chosen by
-  `?onglet=legaux|edition|emails|mural|instance`: the legal parameters and the
-  meal break, the edition's own settings — ninja typologie, organisational-quality
-  thresholds, the pointers to what lives on its own screen —, the e-mails the
-  edition sends of itself, the wall display links — created, shown once with
-  their QR code, revoked —, and « Instance », what the operator configured and
-  what holds for the whole database — nightly backup, SQL dump, the single-key
-  shortcuts of this browser, and « Date et heure simulées »
+  `/parametres` (« Paramètres » — three tabs chosen by
+  `?onglet=edition|mural|instance`: the edition's own settings that no rule
+  reads — its name, the freeze of its referential (the only place it is
+  edited), its guichets (the collection of availabilities, the foire au
+  planning, the covoiturage that follows the collection — each opened and
+  closed here with its dates, Échanges and Disponibilités keeping one line of
+  their state, `shared/guichet-etat.ts`), the e-mails it sends of itself
+  (`#emails`) and the organisation's contact shown in the espace —, the wall
+  display links — created, shown once with their QR code, revoked —, and
+  « Instance », what the operator configured and what holds for the whole
+  database — nightly backup, SQL dump, the single-key shortcuts of this
+  browser, and « Date et heure simulées »
   (`pages/parametres/horloge-simulee-card`, over `PUT /api/horloge`), shown
   only where the server allows a simulated clock, which the toolbar's
-  hourglass links to; `?onglet=globaux`, its former name, is still read),
+  hourglass links to; `?onglet=globaux`, its former name, reads as
+  `instance`, and a guard sends `?onglet=legaux` to `/regles?onglet=legal`
+  and `?onglet=emails` to `#emails`), `/regles`
+  (« Règles du planning » — three tabs chosen by `?onglet=legal|qualite|calcul`:
+  one dense row per hard rule — short label, article, on/off, the thresholds
+  it reads edited on the row —, the same table for the medium and soft rules
+  with their importance in three positions (faible 1 / normale 5 / forte 25,
+  `core/importance.ts`, ADR 0057), and the solve budget, the start of the
+  evening and the ninja typologie; nothing is written before the tab's
+  « Enregistrer », and `?regle=<name>` opens that rule's panel — long text,
+  exact weight, history of its settings — on its own tab, the stable address
+  the Diagnostic and the reading of the score link to),
   `/stands` (« Stands » — two tabs chosen by `?onglet=`: the table, filtered
   by `q` and by the `?typologie=` and `?emplacement=` chips, every column
   sorted by `?sort=&dir=`, a name — or Entrée — leading to the fiche with
@@ -296,7 +311,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   locks, and « Poser un ajustement ».
   It reads the plan the page loaded, never one per cell, and asks for the
   candidates on demand; the seat is `?siege=<poste id>`, and `?creneau=` (with
-  `stand=`), the bench's old keys, is resolved to a seat once the plan is read), `/constraints`,
+  `stand=`), the bench's old keys, is resolved to a seat once the plan is read),
   `/diagnostic` (« Diagnostic » — the four analyses as tabs chosen by
   `?onglet=problemes|besoin|fragilite|former`: the problems, the staffing
   need, the fragility, who to train; the tab components under
@@ -344,7 +359,8 @@ and `?dosage=` in the URL), `/comparateur`
   `/solveur`; `/imports` (its `onglet` becoming the Importer tab's `cible`),
   `/exports` (its `archive-evenement` fragment landing on the Archive tab),
   `/export-csv` and `/validateur-yaml` redirect to `/fichiers` with their
-  params; `/data-transfer` and `/data-setup` are
+  params, `/constraints` to `/regles` — its `?regle=` kept, a `#rule` anchor
+  turned into it; `/data-transfer` and `/data-setup` are
   legacy redirects too, `/decoupage` now landing on `/creneaux` since the
   slicing was removed, kept for old bookmarks/links; so are `/emplacements`,
   landing on `/stands?onglet=lieux` with its params, and `/timeline`, the

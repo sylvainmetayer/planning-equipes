@@ -1,8 +1,8 @@
-// The four tabs of the Paramètres page (issue #606): where each card lives,
+// The three tabs of the Paramètres page (issues #606, #720): where each card lives,
 // what stays above the tabs, and the case a tab group gets wrong — a page that
 // reads its query param once and never again.
 
-import { provideZonelessChangeDetection, signal } from '@angular/core';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, ParamMap } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
@@ -10,7 +10,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
 import { AffichageMuralApi } from '../../core/api/affichage-mural-api';
 import { AdminApi } from '../../core/api/admin-api';
-import { ConstraintsApi } from '../../core/api/constraints-api';
+import { DisponibilitesApi } from '../../core/api/disponibilites-api';
+import { EchangesApi } from '../../core/api/echanges-api';
 import { EditionStore } from '../../core/edition.store';
 import { NotificationService } from '../../core/notification.service';
 import { PlanSnapshotStore } from '../../core/plan-snapshot.store';
@@ -20,23 +21,10 @@ import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ScenarioImportService } from '../../core/scenario-import.service';
 import { SolverJobService } from '../../core/solver-job.service';
-import { SolverSettingsService } from '../../core/solver-settings.service';
 import { ConfirmationRecopie } from '../../shared/confirmation-recopie';
 import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
 import { ParametresPage } from './parametres-page';
 import type { FeasibilityReport } from '../../core/models';
-
-const LEGAUX = {
-  dureeHebdomadaireMaxMinutes: 48 * 60,
-  dureeHebdomadaireMaxMineurMinutes: 35 * 60,
-  reposQuotidienMinimalMinutes: 660,
-  coupureRepasMinutes: 60,
-  coupureRepasMidiDebut: '12:00:00',
-  coupureRepasMidiFin: '14:00:00',
-  coupureRepasSoirDebut: '19:00:00',
-  coupureRepasSoirFin: '21:00:00',
-  heureDebutSoiree: '20:00:00',
-};
 
 /** A dataset the pre-solve check found impossible: the banner then has something to say. */
 const INFAISABLE: FeasibilityReport = {
@@ -73,14 +61,30 @@ describe('ParametresPage — onglets', () => {
             // The reminders card renders nothing until the server answered.
             notificationSettings: vi.fn(async () => ({
               actives: false,
-              heureEnvoi: '07:00:00',
-              rappelVeille: true,
-              relanceNonAccuses: true,
-              signalementEchanges: true,
+              heureRappelVeille: '18:00:00',
+              delaiRelanceHeures: 72,
+              ancienneteEchangeJours: 3,
+            })),
+            organisationContact: vi.fn(async () => ({ telephone: null, email: null })),
+          },
+        },
+        {
+          provide: DisponibilitesApi,
+          useValue: {
+            configuration: vi.fn(async () => ({ collecteOuverte: true, debut: null, fin: null })),
+          },
+        },
+        {
+          provide: EchangesApi,
+          useValue: {
+            configuration: vi.fn(async () => ({
+              foireOuverte: false,
+              debut: null,
+              fin: null,
+              ouverteAujourdhui: false,
             })),
           },
         },
-        { provide: ConstraintsApi, useValue: { legalParameters: vi.fn(async () => LEGAUX) } },
         { provide: AffichageMuralApi, useValue: { list: vi.fn(async () => []) } },
         {
           provide: ReferenceCrudService,
@@ -90,7 +94,7 @@ describe('ParametresPage — onglets', () => {
             reportError: vi.fn(),
           },
         },
-        { provide: EditionStore, useValue: { courant: () => null } },
+        { provide: EditionStore, useValue: { courant: () => null, reload: vi.fn() } },
         {
           provide: ProblemesStore,
           useValue: {
@@ -106,14 +110,6 @@ describe('ParametresPage — onglets', () => {
             solverBusy: () => false,
             editingLocked: () => false,
             activeJobDescription: () => '',
-          },
-        },
-        {
-          provide: SolverSettingsService,
-          useValue: {
-            refresh: vi.fn(async () => undefined),
-            mailFinResolution: signal(false),
-            setMailFinResolution: vi.fn(),
           },
         },
         { provide: NotificationService, useValue: { notify: vi.fn() } },
@@ -168,37 +164,32 @@ describe('ParametresPage — onglets', () => {
     await rendre();
   });
 
-  it('names its five tabs and opens on the legal parameters', () => {
-    expect(onglets()).toEqual([
-      'Légaux',
-      'Édition',
-      'E-mails automatiques',
-      'Affichage mural',
-      'Instance',
-    ]);
-    expect(textOf()).toContain('Paramètres légaux');
-    expect(textOf()).toContain('Coupure repas');
-    // And none of the other tabs' cards is on screen with them.
+  it('names its three tabs and opens on the edition', () => {
+    expect(onglets()).toEqual(['Édition', 'Affichage mural', 'Instance']);
+    expect(textOf()).toContain("Nom de l'édition");
+    expect(textOf()).toContain('Gel du référentiel');
+    expect(textOf()).toContain('Guichets');
+    expect(textOf()).toContain('Rappels et relances automatiques');
+    expect(textOf()).toContain("Contact de l'organisation");
+    // What decides the plan is not here any more: one line points to it.
+    expect(textOf()).not.toContain('Paramètres légaux');
     expect(textOf()).not.toContain('Typologie ninja');
     expect(textOf()).not.toContain('Sauvegarde automatique');
   });
 
   it('puts each card under the tab that names it', async () => {
-    await cliquerOnglet('Édition');
-    expect(textOf()).toContain('Typologie ninja');
-    expect(textOf()).toContain("Qualité d'organisation");
-    expect(textOf()).toContain('Sur leur propre écran');
-
-    await cliquerOnglet('E-mails automatiques');
-    expect(textOf()).toContain("Prévenir par e-mail à la fin d'une résolution");
-    expect(textOf()).toContain('Rappels et relances automatiques');
-
     await cliquerOnglet('Affichage mural');
     expect(textOf()).toContain('Aucun lien actif.');
 
     await cliquerOnglet('Instance');
     expect(textOf()).toContain('Sauvegarde automatique');
     expect(textOf()).toContain('Export SQL');
+    expect(textOf()).toContain('Raccourcis clavier');
+  });
+
+  /** The covoiturage has no switch of its own: it says it follows the collection. */
+  it('says the covoiturage opens and closes with the collection', () => {
+    expect(textOf()).toContain('Ouvert avec la collecte');
   });
 
   /**
@@ -232,7 +223,7 @@ describe('ParametresPage — onglets', () => {
   it('opens on the default tab when the address names one it does not know', async () => {
     await rendre({ onglet: 'notifications' });
 
-    expect(textOf()).toContain('Paramètres légaux');
+    expect(textOf()).toContain('Guichets');
   });
 
   /** It speaks of the edition, not of a tab: hiding it behind one would lose it. */
@@ -246,23 +237,19 @@ describe('ParametresPage — onglets', () => {
   it('keeps the output panel under every tab', async () => {
     expect(racine().querySelector('app-output-panel')).not.toBeNull();
 
-    await cliquerOnglet('Édition');
+    await cliquerOnglet('Instance');
     expect(racine().querySelector('app-output-panel')).not.toBeNull();
   });
 
-  /** One page title, then the cards: the two section headings the tabs replaced are gone. */
+  /** One page title, then the cards: a third level only inside a card that has a title. */
   it('leaves a valid heading hierarchy in each tab', async () => {
-    for (const nom of [
-      'Légaux',
-      'Édition',
-      'E-mails automatiques',
-      'Affichage mural',
-      'Instance',
-    ]) {
+    for (const nom of ['Édition', 'Affichage mural', 'Instance']) {
       await cliquerOnglet(nom);
       expect(racine().querySelectorAll('h1')).toHaveLength(1);
-      expect(racine().querySelectorAll('h3')).toHaveLength(0);
       expect(racine().querySelectorAll('h2').length).toBeGreaterThan(0);
+      for (const h3 of Array.from(racine().querySelectorAll('h3'))) {
+        expect(h3.closest('mat-card')?.querySelector('h2')).not.toBeNull();
+      }
     }
   });
 });

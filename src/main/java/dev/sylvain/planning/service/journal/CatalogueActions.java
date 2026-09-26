@@ -128,6 +128,7 @@ public final class CatalogueActions {
     private static final String PARAMETRES_QUALITE_MODIFIES = "PARAMETRES_QUALITE_MODIFIES";
     private static final String PARAMETRES_SOLVEUR_MODIFIES = "PARAMETRES_SOLVEUR_MODIFIES";
     private static final String PARAMETRES_NOTIFICATIONS_MODIFIES = "PARAMETRES_NOTIFICATIONS_MODIFIES";
+    private static final String CONTACT_ORGANISATION_MODIFIE = "CONTACT_ORGANISATION_MODIFIE";
     private static final String CONTRAINTE_ACTIVEE = "CONTRAINTE_ACTIVEE";
     private static final String CONTRAINTE_DESACTIVEE = "CONTRAINTE_DESACTIVEE";
     private static final String CONTRAINTE_PONDEREE = "CONTRAINTE_PONDEREE";
@@ -340,6 +341,7 @@ public final class CatalogueActions {
         changesData(PARAMETRES_QUALITE_MODIFIES, "Paramètres de qualité modifiés", Entite.PARAMETRES);
         changesData(PARAMETRES_SOLVEUR_MODIFIES, "Paramètres du solveur modifiés", Entite.PARAMETRES);
         action(PARAMETRES_NOTIFICATIONS_MODIFIES, "Paramètres de notifications modifiés", Entite.PARAMETRES);
+        action(CONTACT_ORGANISATION_MODIFIE, "Contact de l'organisation modifié", Entite.PARAMETRES);
         changesData(CONTRAINTE_ACTIVEE, "Contrainte activée", Entite.PARAMETRES);
         changesData(CONTRAINTE_DESACTIVEE, "Contrainte désactivée", Entite.PARAMETRES);
         changesData(CONTRAINTE_PONDEREE, "Poids d'une contrainte modifié", Entite.PARAMETRES);
@@ -519,6 +521,7 @@ public final class CatalogueActions {
         route("ParametresResource#updateParametresQualite", PARAMETRES_QUALITE_MODIFIES);
         route("ParametresResource#updateParametresSolveur", PARAMETRES_SOLVEUR_MODIFIES);
         route("ParametresResource#updateParametresNotifications", PARAMETRES_NOTIFICATIONS_MODIFIES);
+        route("ParametresResource#updateContactOrganisation", CONTACT_ORGANISATION_MODIFIE);
         route("ConstraintResource#setActif", CONTRAINTE_ACTIVEE);
         route("ConstraintResource#setPoids", CONTRAINTE_PONDEREE);
         route("BackupResource#setActive", SAUVEGARDE_BASCULEE);

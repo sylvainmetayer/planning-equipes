@@ -103,7 +103,7 @@ function titreSynthese(cle: string, equite: RapportEquite | null): string {
       return $localize`:@@planningPersonne.col.nuitPaie.titre:Heures après 22 h, pour la paie : une borne fixe, qui n'est pas la soirée`;
     case 'heuresSoiree': {
       const heure = (equite?.heureDebutSoiree ?? '').slice(0, 5);
-      return $localize`:@@planningPersonne.col.soiree.titre:Heures après ${heure}:heure:, le début de soirée réglé dans les paramètres`;
+      return $localize`:@@planningPersonne.col.soiree.titre:Heures après ${heure}:heure:, le début de soirée réglé dans Règles du planning`;
     }
     default:
       return libelleSolveur(columnConstraint(equite, cle));

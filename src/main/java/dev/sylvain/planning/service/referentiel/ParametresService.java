@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.domain.ContactOrganisation;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresQualite;
@@ -112,6 +113,27 @@ public class ParametresService {
         ParametresValidator.checkParametresNotifications(parametres);
         repository.saveParametresNotifications(parametres);
         return parametres;
+    }
+
+    public ContactOrganisation getContactOrganisation() {
+        return repository.getContactOrganisation();
+    }
+
+    /**
+     * Saves who the animateurs of this edition call. Trimmed, a blank half
+     * stored as {@code null}; not tracked by {@link ReferenceDataChangeTracker}
+     * either — no solve reads it.
+     */
+    public ContactOrganisation updateContactOrganisation(ContactOrganisation contact) {
+        ContactOrganisation cleaned =
+                new ContactOrganisation(blankToNull(contact.telephone()), blankToNull(contact.email()));
+        ParametresValidator.checkContactOrganisation(cleaned);
+        repository.saveContactOrganisation(cleaned);
+        return cleaned;
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.strip();
     }
 
     /**
@@ -281,13 +303,13 @@ public class ParametresService {
     }
 
     /**
-     * {@code planning.constraint-weights.<nom>}, 1 when unset — the same read
-     * as {@code SolverConfiguration.readConfiguredWeights}, which the solve
-     * applies.
+     * {@code planning.constraint-weights.<nom>}, the catalogue's default when
+     * unset — the same read as {@code SolverConfiguration.readConfiguredWeights},
+     * which the solve applies.
      */
     public int configuredWeight(String nom) {
         return config.getOptionalValue("planning.constraint-weights." + nom, Integer.class)
-                .orElse(1);
+                .orElse(ConstraintCatalog.defaultWeight(nom));
     }
 
     private static boolean defaultActive(String nom) {

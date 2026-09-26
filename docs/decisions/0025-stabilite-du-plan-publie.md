@@ -1,6 +1,6 @@
 # 0025 — La stabilité après publication est une règle dosée, pas un gel
 
-- **Statut** : accepté, implémenté
+- **Statut** : accepté, implémenté ; le poids retenu (5) s'exprime 25 depuis que l'échelle a été multipliée par cinq — [0057](0057-importance-d-une-regle-en-trois-positions.md)
 - **Date** : septembre 2026
 - **Portée** : solveur, résultat des calculs, IHM
 

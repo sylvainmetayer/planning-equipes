@@ -13,7 +13,7 @@ import java.util.function.Function;
  * The settings every rule actually reads, with the value this edition stored
  * and the form that changes it.
  *
- * <p>The Contraintes screen used to describe a rule without ever saying what
+ * <p>The constraints screen used to describe a rule without ever saying what
  * it is set to: « pas plus de jours consécutifs que le plafond réglé sur la
  * page Paramètres » left the reader to open another screen, find the right
  * tab, and trust that the field they saw was the one the sentence meant. The
@@ -41,14 +41,17 @@ import java.util.function.Function;
  */
 public final class ConstraintParameters {
 
-    /** Angular route of the settings page — its two forms are tabs of it. */
-    private static final String ECRAN_PARAMETRES = "/parametres";
+    /**
+     * Angular route of « Règles du planning »: every setting a rule reads is
+     * edited there, on the rule's own row.
+     */
+    private static final String ECRAN_REGLES = "/regles";
 
-    /** Tab holding the legal framework, the meal window and the break policy. */
-    private static final String ONGLET_LEGAUX = "legaux";
+    /** Tab of the hard rules — the law, safety, the assignment itself. */
+    private static final String ONGLET_LEGAL = "legal";
 
-    /** Tab holding « Qualité d'organisation », the organiser's own thresholds. */
-    private static final String ONGLET_EDITION = "edition";
+    /** Tab of the medium and soft rules. */
+    private static final String ONGLET_QUALITE = "qualite";
 
     // Setting keys named both by a reference and by the rules that read them.
     private static final String DUREE_HEBDOMADAIRE_MAX_MINUTES = "dureeHebdomadaireMaxMinutes";
@@ -64,22 +67,25 @@ public final class ConstraintParameters {
      * One setting of one rule, ready to be shown: the label the form gives it,
      * the value this edition stored, and where to change it.
      *
-     * @param libelle the field's own label on the settings form, word for word
-     *                — a reader who clicks the link must recognise what they
-     *                land on
+     * @param libelle the field's own label, word for word — a reader who
+     *                clicks the link must recognise what they land on
      * @param valeur  the stored value, already formatted for a human (« 48 h »,
      *                « 20 min », « 8 jours »)
-     * @param lien    Angular route of the form
-     * @param onglet  which tab of that form, as the {@code onglet} query
-     *                parameter of the Paramètres page spells it
+     * @param lien    Angular route of the screen that edits it
+     * @param onglet  which tab of that screen, as its {@code onglet} query
+     *                parameter spells it: the tab of the rule, since the
+     *                setting is edited on the rule's row
+     * @param cle     the setting's key — the field of {@code ParametresLegaux}
+     *                or {@code ParametresQualite} it is stored in — so the
+     *                screen edits the right field without matching labels
      */
-    public record ConstraintParameter(String libelle, String valeur, String lien, String onglet) {}
+    public record ConstraintParameter(String libelle, String valeur, String lien, String onglet, String cle) {}
 
     /**
-     * What one setting is called and where it lives, without a value: the
+     * What one setting is called and how it is read, without a value: the
      * static half, which the catalogue can hold and a test can check.
      */
-    private record Reference(String libelle, String onglet, Function<Contexte, String> valeur) {}
+    private record Reference(String libelle, Function<Contexte, String> valeur) {}
 
     /** Both parameter records of an edition, so a reference reads one argument. */
     private record Contexte(ParametresLegaux legaux, ParametresQualite qualite) {}
@@ -89,31 +95,26 @@ public final class ConstraintParameters {
                     DUREE_HEBDOMADAIRE_MAX_MINUTES,
                     new Reference(
                             "Durée hebdomadaire maximale, majeurs",
-                            ONGLET_LEGAUX,
                             contexte -> duree(contexte.legaux().getDureeHebdomadaireMaxMinutes()))),
             Map.entry(
                     "dureeHebdomadaireMaxMineurMinutes",
                     new Reference(
                             "Durée hebdomadaire maximale, mineurs",
-                            ONGLET_LEGAUX,
                             contexte -> duree(contexte.legaux().getDureeHebdomadaireMaxMineurMinutes()))),
             Map.entry(
                     DUREE_PAUSE_MINUTES,
                     new Reference(
                             "Durée de la pause légale",
-                            ONGLET_LEGAUX,
                             contexte -> duree(contexte.legaux().getDureePauseMinutes()))),
             Map.entry(
                     COUPURE_REPAS_MINUTES,
                     new Reference(
                             "Durée de la coupure repas",
-                            ONGLET_LEGAUX,
                             contexte -> duree(contexte.legaux().getCoupureRepasMinutes()))),
             Map.entry(
                     COUPURE_REPAS_MIDI,
                     new Reference(
                             "Fenêtre du midi",
-                            ONGLET_LEGAUX,
                             contexte -> plage(
                                     contexte.legaux().getCoupureRepasMidiDebut(),
                                     contexte.legaux().getCoupureRepasMidiFin()))),
@@ -121,7 +122,6 @@ public final class ConstraintParameters {
                     COUPURE_REPAS_SOIR,
                     new Reference(
                             "Fenêtre du soir",
-                            ONGLET_LEGAUX,
                             contexte -> plage(
                                     contexte.legaux().getCoupureRepasSoirDebut(),
                                     contexte.legaux().getCoupureRepasSoirFin()))),
@@ -129,61 +129,51 @@ public final class ConstraintParameters {
                     "maxEmplacementsDistinctsParJour",
                     new Reference(
                             "Emplacements distincts par jour",
-                            ONGLET_EDITION,
                             contexte -> count(contexte.qualite().maxEmplacementsDistinctsParJour()))),
             Map.entry(
                     "typologiesDistinctesMax",
                     new Reference(
                             "Typologies distinctes par animateur",
-                            ONGLET_EDITION,
                             contexte -> count(contexte.qualite().typologiesDistinctesMax()))),
             Map.entry(
                     JOURS_CONSECUTIFS_MAX,
                     new Reference(
                             "Jours travaillés d'affilée",
-                            ONGLET_EDITION,
                             contexte -> jours(contexte.qualite().joursConsecutifsMax()))),
             Map.entry(
                     "vitesseMarcheKmH",
                     new Reference(
                             "Vitesse de marche",
-                            ONGLET_EDITION,
                             contexte -> decimal(contexte.qualite().vitesseMarcheKmH()) + " km/h")),
             Map.entry(
                     "facteurDetour",
                     new Reference(
                             "Facteur de détour",
-                            ONGLET_EDITION,
                             contexte -> decimal(contexte.qualite().facteurDetour()))),
             Map.entry(
                     "toleranceTrajetMinutes",
                     new Reference(
                             "Tolérance de trajet",
-                            ONGLET_EDITION,
                             contexte -> duree(contexte.qualite().toleranceTrajetMinutes()))),
             Map.entry(
                     "toleranceArriveeGroupeeMinutes",
                     new Reference(
                             "Tolérance d'une arrivée groupée",
-                            ONGLET_EDITION,
                             contexte -> duree(contexte.qualite().toleranceArriveeGroupeeMinutes()))),
             Map.entry(
                     "heureServiceTardif",
                     new Reference(
                             "Heure d'un service tardif",
-                            ONGLET_EDITION,
                             contexte -> heure(contexte.qualite().heureServiceTardif()))),
             Map.entry(
                     "heureServiceMatinal",
                     new Reference(
                             "Heure d'un service matinal",
-                            ONGLET_EDITION,
                             contexte -> heure(contexte.qualite().heureServiceMatinal()))),
             Map.entry(
                     "reposSouhaiteApresServiceTardifMinutes",
                     new Reference(
                             "Repos souhaité après un service tardif",
-                            ONGLET_EDITION,
                             contexte -> duree(contexte.qualite().reposSouhaiteApresServiceTardifMinutes()))));
 
     /**
@@ -234,11 +224,22 @@ public final class ConstraintParameters {
             return List.of();
         }
         Contexte contexte = new Contexte(legaux, qualite);
+        String onglet = ongletOf(name);
         return cles.stream()
-                .map(REFERENCES::get)
-                .map(reference -> new ConstraintParameter(
-                        reference.libelle(), reference.valeur().apply(contexte), ECRAN_PARAMETRES, reference.onglet()))
+                .map(cle -> {
+                    Reference reference = REFERENCES.get(cle);
+                    return new ConstraintParameter(
+                            reference.libelle(), reference.valeur().apply(contexte), ECRAN_REGLES, onglet, cle);
+                })
                 .toList();
+    }
+
+    /** The tab of « Règles du planning » that lists {@code name}: hard rules on one, the others on the next. */
+    private static String ongletOf(String name) {
+        ConstraintCatalog.ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(name);
+        return definition != null && definition.niveau() == ConstraintCatalog.Niveau.HARD
+                ? ONGLET_LEGAL
+                : ONGLET_QUALITE;
     }
 
     /** The setting keys each rule declares — read by the structural test. */

@@ -112,10 +112,10 @@ Les quatre façons de lancer un solve — synchrone, asynchrone depuis un probl�
 envoyé, asynchrone depuis le référentiel, incrémentale — passent toutes par
 `SolvePipeline` et font donc **toujours** la même chose : capturer le plan sur
 le point d'être écrasé, construire le problème, résoudre, persister,
-diagnostiquer, alimenter l'écran Contraintes, écrire la ligne de KPI, annoncer
+diagnostiquer, alimenter l'écran Règles du planning, écrire la ligne de KPI, annoncer
 la fin si l'édition l'a demandé.
 
-Un chemin qui s'arrêterait avant la fin laisserait l'écran Contraintes sur
+Un chemin qui s'arrêterait avant la fin laisserait l'écran Règles du planning sur
 l'analyse du solve précédent, sans lever d'erreur : le seul symptôme serait un
 écran qui ment. `SolveSynchronePipelineTest` verrouille les deux bouts.
 
@@ -962,6 +962,18 @@ trace, avec leur motif : les fichiers d'exemple, qui ne portent personne, et
 `/api/abonnements/{token}/planning.ics`, relu seul par l'agenda toutes les
 quelques heures — une ligne par relecture serait du bruit.
 
+## Contact de l'organisation
+
+`GET` / `PUT /api/parametres-contact` — le téléphone et l'adresse que l'espace
+animateur affiche, **par édition**, tous deux facultatifs. Le serveur les
+enregistre sans leurs blancs de bord, et une moitié vide comme `null` : `null`
+veut dire « non publié », pas « effacé par erreur ». Refusé en `400` : un
+téléphone qui porte autre chose que des chiffres, des espaces et `+ - . ( )`,
+une adresse sans `@`, ou plus longs que 40 et 254 caractères. La vue de
+l'espace (`GET /api/espace-animateur/{jeton}`) le porte dans `contact`. Il suit
+la duplication d'une édition : une organisation change rarement de numéro d'une
+année à l'autre.
+
 ## Notifications planifiées
 
 `GET` / `PUT /api/parametres-notifications` — ce que les envois de nuit ont le
@@ -1007,7 +1019,12 @@ des mineurs : l'IHM confirme avant désactivation) et `dosable` (les MEDIUM de
 « Qualité d'organisation », les seules dont l'importance relative varie
 réellement d'un organisateur à l'autre).
 
-Le poids va de **1 à 100** ; `0` est refusé. Une règle pesée zéro serait éteinte
+Le poids va de **1 à 500** ; `0` est refusé. L'écran Règles du planning n'offre
+que trois positions — faible 1, normale 5 (le défaut d'une règle moyenne ou
+souple), forte 25 — et le poids exact dans le panneau d'une règle ; l'API
+accepte tout entier de la plage, et `500` garde stockable ce qu'une édition
+avait réglé avant que l'échelle soit multipliée par cinq
+([0057](decisions/0057-importance-d-une-regle-en-trois-positions.md)). Une règle pesée zéro serait éteinte
 *en fait* tout en s'affichant active — et, pour une règle légale, sans passer
 par la confirmation. Éteindre passe par l'interrupteur. `poids: null` supprime
 la surcharge et rend la règle à la valeur du déploiement.
@@ -1103,7 +1120,7 @@ que le serveur envoie.
 
 C'est la question qu'on se pose *avant* de décider quoi corriger : les six
 journées d'amplitude excessive sont-elles le week-end, les référents manquants
-sont-ils tous sur le même pavillon. L'écran Contraintes la croise sous sa liste,
+sont-ils tous sur le même pavillon. L'écran Règles du planning la croise sous son tableau,
 dans un bloc replié par défaut, avec un sélecteur d'axe.
 
 Cliquer une case l'ouvre sur **quoi faire**, pas seulement sur combien : la

@@ -1982,6 +1982,9 @@
           },
           "onglet" : {
             "type" : "string"
+          },
+          "cle" : {
+            "type" : "string"
           }
         }
       },
@@ -2149,6 +2152,17 @@
             "items" : {
               "$ref" : "#/components/schemas/ScoreSentence"
             }
+          }
+        }
+      },
+      "ContactOrganisation" : {
+        "type" : "object",
+        "properties" : {
+          "telephone" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
           }
         }
       },
@@ -3289,7 +3303,7 @@
         }
       },
       "EspaceAnimateurView" : {
-        "required" : [ "foireOuverte" ],
+        "required" : [ "foireOuverte", "contact" ],
         "type" : "object",
         "properties" : {
           "animateurId" : {
@@ -3383,6 +3397,9 @@
             "items" : {
               "$ref" : "#/components/schemas/CarpoolDayView"
             }
+          },
+          "contact" : {
+            "$ref" : "#/components/schemas/ContactOrganisation"
           }
         }
       },
@@ -13344,6 +13361,53 @@
         },
         "summary" : "Saisir",
         "tags" : [ "Ouverture Stands Resource" ]
+      }
+    },
+    "/api/parametres-contact" : {
+      "put" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ContactOrganisation"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ContactOrganisation"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Update Contact Organisation",
+        "tags" : [ "Parametres Resource" ]
+      },
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ContactOrganisation"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Get Contact Organisation",
+        "tags" : [ "Parametres Resource" ]
       }
     },
     "/api/parametres-legaux" : {

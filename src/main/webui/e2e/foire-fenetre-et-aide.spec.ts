@@ -165,8 +165,8 @@ test.describe('Foire au planning : bornes datées', () => {
     await page.goto('/echanges');
 
     // L'interrupteur dit « ouverte » pendant que le serveur refuse tout :
-    // l'écran doit le dire, sinon il ment.
-    await expect(page.getByText('hors de la période', { exact: false })).toBeVisible();
+    // la ligne d'état de la foire doit le dire, sinon elle ment.
+    await expect(page.locator('.guichet-etat')).toContainText('hors de ses dates');
 
     await page.close();
   });

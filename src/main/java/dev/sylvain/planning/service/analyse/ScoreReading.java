@@ -95,7 +95,7 @@ public final class ScoreReading {
     /** Share of the comfort points the first soft rule must carry for its sentence to be worth reading. */
     static final double COMFORT_THRESHOLD = 0.5;
 
-    private static final String ROUTE_CONSTRAINTS = "/constraints";
+    private static final String ROUTE_RULES = "/regles";
     private static final String ROUTE_DAY = "/journee";
     private static final String ROUTE_ADJUSTMENTS = "/ad-hoc-constraints";
     private static final String SEATS_RULE = "posteDoitEtrePourvu";
@@ -658,7 +658,8 @@ public final class ScoreReading {
     }
 
     private static ReadingLink ruleLink(ConstraintDefinition definition) {
-        return new ReadingLink(definition.libelleCourt(), ROUTE_CONSTRAINTS, Map.of(), definition.name());
+        // The rule's own panel on « Règles du planning », which picks the tab from the rule.
+        return new ReadingLink(definition.libelleCourt(), ROUTE_RULES, Map.of("regle", definition.name()), null);
     }
 
     /** « samedi 12/07 », or {@code null} when the key is not an ISO date. */

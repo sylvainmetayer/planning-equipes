@@ -31,6 +31,21 @@ public final class ConstraintCatalog {
     private static final String CATEGORIE_PREFERENCES = "Préférences";
     private static final String CATEGORIE_AD_HOC = "Contraintes ad hoc";
 
+    /**
+     * The three positions of a rule's importance on the Règles du planning
+     * screen — faible, normale, forte — and the weights they write. A medium or
+     * soft rule ships at {@link #POIDS_NORMAL}, so an organiser can both lower
+     * and raise it by one step; a hard rule keeps {@link #POIDS_DUR}, since a
+     * hard breach is counted, never dosed. See ADR 0057.
+     */
+    public static final int POIDS_FAIBLE = 1;
+
+    public static final int POIDS_NORMAL = 5;
+    public static final int POIDS_FORT = 25;
+
+    /** What every hard rule weighs: one match, one point of hard score. */
+    public static final int POIDS_DUR = 1;
+
     /** The hard form of the run cap, shipped off (ADR 0045). */
     private static final String MAX_JOURS_CONSECUTIFS_DUR = "maxJoursConsecutifsTravaillesDur";
 
@@ -130,7 +145,7 @@ public final class ConstraintCatalog {
             Map.entry(
                     "equilibrerCharge",
                     "La charge est inégale : cherchez qui est très au-dessus sur l'écran Heures, et ouvrez "
-                            + "des disponibilités ailleurs — ou baissez le poids si l'écart vous convient."),
+                            + "des disponibilités ailleurs — ou baissez son importance si l'écart vous convient."),
             Map.entry(
                     "experienceRequisePourStandsPremium",
                     "Un stand premium est tenu sans animateur expérimenté : appréciez davantage "
@@ -138,50 +153,49 @@ public final class ConstraintCatalog {
             Map.entry(
                     "souhaitsIncompatibles",
                     "Les souhaits se contredisent ou sont hors d'atteinte : c'est une règle souple, "
-                            + "regardez les souhaits concernés sur les fiches, ou baissez son poids."),
+                            + "regardez les souhaits concernés sur les fiches, ou baissez son importance."),
             Map.entry(
                     "appreciationIncompatible",
                     "Le plan place des animateurs sur des typologies qu'ils n'apprécient pas : complétez "
-                            + "les appréciations, ou acceptez l'écart en baissant le poids."),
+                            + "les appréciations, ou acceptez l'écart en baissant son importance."),
             Map.entry(
                     "coupureRepasObligatoire",
                     "La journée ne laisse pas la place au repas : coupez la journée en deux vacations, "
-                            + "élargissez la fenêtre repas dans les paramètres légaux, ou raccourcissez le "
+                            + "élargissez la fenêtre repas sur sa ligne de Règles du planning, ou raccourcissez le "
                             + "créneau."),
             Map.entry(
                     "limiterTypologiesDistinctesParAnimateur",
-                    "Trop de typologies différentes pour une même personne : relevez le plafond dans les "
-                            + "paramètres légaux, ou baissez le poids de la règle."),
+                    "Trop de typologies différentes pour une même personne : relevez le plafond sur la ligne "
+                            + "de la règle, dans Règles du planning, ou baissez son importance."),
             Map.entry(
                     "stabiliteDuPlanPublie",
                     "Le plan s'écarte de ce qui a été publié : chaque écart est une vacation à "
-                            + "re-annoncer. Verrouillez ce qui doit tenir, ou montez le poids de la règle."),
+                            + "re-annoncer. Verrouillez ce qui doit tenir, ou montez l'importance de la règle."),
             Map.entry(
                     "limiterEmplacementsParJour",
-                    "Trop d'allers-retours entre emplacements dans la journée : relevez le plafond dans "
-                            + "les paramètres légaux, ou baissez le poids."),
+                    "Trop d'allers-retours entre emplacements dans la journée : relevez le plafond sur la "
+                            + "ligne de la règle, dans Règles du planning, ou baissez son importance."),
             Map.entry(
                     "arriveeGroupee",
                     "Un groupe de covoiturage n'arrive ou ne repart pas ensemble : vérifiez que ses membres ont "
-                            + "déclaré les mêmes jours d'indisponibilité, élargissez la tolérance sur la page "
-                            + "Paramètres, ou montez le poids de la règle."),
+                            + "déclaré les mêmes jours d'indisponibilité, élargissez la tolérance sur la ligne de la "
+                            + "règle, dans Règles du planning, ou montez son importance."),
             Map.entry(
                     "trajetInsuffisantEntrePostes",
                     "Le battement ne laisse pas le temps de marcher d'un emplacement à l'autre : élargissez "
                             + "le battement ou rapprochez les stands — ou ajustez la vitesse de marche, le facteur "
-                            + "de détour et la tolérance sur la page Paramètres."),
+                            + "de détour et la tolérance sur la ligne de la règle, dans Règles du planning."),
             Map.entry(
                     "maxJoursConsecutifsTravailles",
                     "Trop de jours d'affilée : ouvrez des disponibilités sur d'autres personnes pour "
-                            + "couvrir ces journées, ou baissez le poids de la règle si la série vous "
-                            + "convient. Le plafond de six jours n'est pas réglable — aucun paramètre "
-                            + "légal ne le porte."),
+                            + "couvrir ces journées, relevez le plafond sur la ligne de la règle, ou baissez son "
+                            + "importance si la série vous convient."),
             Map.entry(
                     MAX_JOURS_CONSECUTIFS_DUR,
                     "Trop de jours d'affilée, et cette édition tient la règle en dur : ouvrez des "
                             + "disponibilités sur d'autres personnes pour couvrir ces journées. Si la série "
                             + "doit rester possible, désactivez maxJoursConsecutifsTravaillesDur depuis "
-                            + "l'écran Contraintes — maxJoursConsecutifsTravailles continue alors de la "
+                            + "l'écran Règles du planning — maxJoursConsecutifsTravailles continue alors de la "
                             + "pénaliser sans bloquer le plan."));
 
     /** Read by the Contraintes screen when a rule has no lever of its own. */
@@ -196,7 +210,8 @@ public final class ConstraintCatalog {
             "Règle de sécurité posée par l'organisateur : ajoutez un majeur sur ces créneaux, ou "
                     + "assumez l'encadrement hors planning et laissez la règle éteinte.",
             CATEGORIE_ORGANISATION_REPAS,
-            "Réglez la fenêtre repas et sa durée dans les paramètres légaux, ou découpez les "
+            "Réglez la fenêtre repas et sa durée sur la ligne de la coupure repas, dans Règles du "
+                    + "planning, ou découpez les "
                     + "journées trop longues en deux vacations.",
             CATEGORIE_AFFECTATION,
             "Le plan ne peut pas tenir en l'état : ajoutez des animateurs disponibles, ou "
@@ -209,7 +224,7 @@ public final class ConstraintCatalog {
 
     /** The fallback of the fallback: a rule of a category nobody wrote a lever for. */
     private static final String REMEDIATION_PAR_DEFAUT =
-            "Cette règle arbitre du confort : baissez son poids si l'écart vous convient, montez-le si "
+            "Cette règle arbitre du confort : baissez son importance si l'écart vous convient, montez-la si "
                     + "elle compte plus que les autres du même niveau.";
 
     /**
@@ -324,7 +339,7 @@ public final class ConstraintCatalog {
                             + "même stand et le même créneau. Règle de sécurité posée par l'organisateur, pas une "
                             + "obligation du Code du travail : l'organisateur de l'évènement la remplit par ses "
                             + "managers, qui ne sont pas planifiés, et ne la demande donc pas au solveur. Une "
-                            + "organisation sans encadrant hors planning l'allume depuis l'écran Contraintes.",
+                            + "organisation sans encadrant hors planning l'allume depuis l'écran Règles du planning.",
                     "Encadrement des mineurs par un majeur"),
             new ConstraintDefinition(
                     "travailDeNuitInterditPourMineur",
@@ -504,7 +519,7 @@ public final class ConstraintCatalog {
                     CATEGORIE_AD_HOC,
                     "Groupe d'arrivée (covoiturage, 2 à 4 animateurs) : les membres travaillent les mêmes jours, "
                             + "arrivent et repartent ensemble, à la tolérance près (30 min par défaut, réglable sur "
-                            + "la page Paramètres). Chaque jour et chaque paire du groupe coûtent les minutes d'écart "
+                            + "la ligne de la règle). Chaque jour et chaque paire du groupe coûtent les minutes d'écart "
                             + "au-delà de la tolérance, à l'arrivée comme au départ, et un forfait de deux heures "
                             + "quand l'un travaille et l'autre non. Aucune contrainte de stand : les membres peuvent "
                             + "tenir des stands différents. Contrainte souple : elle cède devant les règles légales "
@@ -634,7 +649,7 @@ public final class ConstraintCatalog {
                     Niveau.MEDIUM,
                     CATEGORIE_QUALITE,
                     "Un animateur ne devrait pas travailler plus de jours consécutifs que le plafond réglé "
-                            + "sur la page Paramètres (huit par défaut) sans au moins un jour de repos : moins "
+                            + "sur la ligne de la règle (huit par défaut) sans au moins un jour de repos : moins "
                             + "est possible, plus ne devrait pas l'être. Règle d'organisation, dosable : aucun "
                             + "article du Code du travail n'impose un décompte glissant (L3132-1 se lit sur la "
                             + "semaine civile, Cass. soc. 13 nov. 2025, n° 24-10.733).",
@@ -645,10 +660,10 @@ public final class ConstraintCatalog {
                     CATEGORIE_QUALITE,
                     "Éteinte par défaut. Le même plafond de jours consécutifs, tenu en dur : au-delà, le "
                             + "plan est refusé au lieu d'être pénalisé. Le seuil est celui de l'édition, "
-                            + "réglable sur la page Paramètres : les deux formes le lisent au même endroit. "
+                            + "réglable sur la ligne de la règle : les deux formes le lisent au même endroit. "
                             + "Un poids ne change jamais le niveau "
                             + "d'une règle, d'où une contrainte séparée, qu'une édition allume depuis l'écran "
-                            + "Contraintes, par activer_contrainte ou par contraintes.activees d'un scénario. "
+                            + "Règles du planning, par activer_contrainte ou par contraintes.activees d'un scénario. "
                             + "Reste rangée en « Qualité d'organisation » et non en « Légal » : c'est une "
                             + "politique de l'organisateur, pas une obligation du Code du travail.",
                     "Jours travaillés d'affilée, tenus en dur"),
@@ -722,6 +737,18 @@ public final class ConstraintCatalog {
             }
         }
         return activeByDefault(nom);
+    }
+
+    /**
+     * The weight {@code nom} carries when neither the deployment nor the
+     * edition says otherwise: {@link #POIDS_DUR} for a hard rule, the middle
+     * position {@link #POIDS_NORMAL} for a medium or soft one — and for a name
+     * the catalogue does not carry, the hard weight, the one that changes no
+     * score.
+     */
+    public static int defaultWeight(String nom) {
+        ConstraintDefinition definition = PAR_NOM.get(nom);
+        return definition == null || definition.niveau() == Niveau.HARD ? POIDS_DUR : POIDS_NORMAL;
     }
 
     public static List<ConstraintDefinition> definitions() {

@@ -11,8 +11,8 @@ festival:
 
 contraintes:
   poids:
-    souhaitsIncompatibles: 3
-    experienceRequisePourStandsPremium: 3
+    souhaitsIncompatibles: 15
+    experienceRequisePourStandsPremium: 15
 
 typologies:
   - id: ENIGMES

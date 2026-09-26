@@ -1427,8 +1427,13 @@ export interface ParametreContrainte {
   valeur: string;
   /** Angular route of the form. */
   lien: string;
-  /** Which tab of it, as the `onglet` query parameter spells it. */
+  /** Which tab of it, as the `onglet` query parameter spells it: the tab of the rule. */
   onglet: string;
+  /**
+   * The setting's key — its field in `ParametresLegaux` or `ParametresQualite`
+   * — which « Règles du planning » edits on the rule's row. Absent on an older payload.
+   */
+  cle?: string;
 }
 
 /**
@@ -2827,6 +2832,12 @@ export interface EspaceAnimateurView {
    * others' seats. Empty when I belong to no group.
    */
   covoiturage?: CarpoolDayView[];
+  /**
+   * Who to call or write to about this edition, as Paramètres › Édition sets
+   * it; both halves `null` when the organisation published none. Shown by
+   * the espace from the next change on; optional for an older payload.
+   */
+  contact?: ContactOrganisation;
 }
 
 /**
@@ -3864,6 +3875,16 @@ export interface ImportCsvDemande {
   mapping: AnimateurCsvMapping | null;
   replaceAnimateurs: boolean;
   replaceJoursIndisponibles: boolean;
+}
+
+/**
+ * The organisation's contact (`/api/parametres-contact`), shown in the espace
+ * animateur: a phone number and an address, both optional — `null` when not
+ * published.
+ */
+export interface ContactOrganisation {
+  telephone: string | null;
+  email: string | null;
 }
 
 /** Per-edition settings of the scheduled notifications (`/api/parametres-notifications`). */

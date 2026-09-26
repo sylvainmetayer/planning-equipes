@@ -16,8 +16,8 @@ contraintes:
     - coupureRepasPlacementPrefere
     - limiterTypologiesDistinctesParAnimateur
   poids:
-    equilibrerCharge: 4
-    maxJoursConsecutifsTravailles: 5
+    equilibrerCharge: 20
+    maxJoursConsecutifsTravailles: 25
 
 creneaux:
   - id: J1-MATIN

@@ -324,10 +324,24 @@ export function buildNavGroups(): NavGroup[] {
           keywords: $localize`:@@nav.keywords.consignes:arrêté canicule fermeture`,
         },
         {
-          path: '/constraints',
-          label: $localize`:@@nav.link.constraints:Contraintes`,
+          // Every setting that decides the plan (issue #720): the hard rules
+          // and their thresholds, the quality rules and their importance, the
+          // solve budget.
+          path: '/regles',
+          label: $localize`:@@nav.link.regles:Règles du planning`,
           icon: 'fact_check',
-          keywords: $localize`:@@nav.keywords.constraints:règles poids`,
+          shortcut: 'r',
+          keywords: $localize`:@@nav.keywords.regles:contraintes poids importance paramètres légaux seuils`,
+          tabs: [
+            tab('onglet', 'legal', $localize`:@@regles.onglet.legal:Légal`),
+            tab('onglet', 'qualite', $localize`:@@regles.onglet.qualite:Qualité`),
+            tab(
+              'onglet',
+              'calcul',
+              $localize`:@@regles.onglet.calcul:Calcul`,
+              $localize`:@@nav.keywords.reglesCalcul:budget durée ninja soirée`,
+            ),
+          ],
         },
         {
           path: '/instantanes',
@@ -392,21 +406,9 @@ export function buildNavGroups(): NavGroup[] {
           tabs: [
             tab(
               'onglet',
-              'legaux',
-              $localize`:@@parametres.onglet.legaux:Légaux`,
-              $localize`:@@nav.keywords.legaux:paramètres légaux durée repos`,
-            ),
-            tab(
-              'onglet',
               'edition',
               $localize`:@@parametres.onglet.edition:Édition`,
-              $localize`:@@nav.keywords.parametresEdition:ninja seuils`,
-            ),
-            tab(
-              'onglet',
-              'emails',
-              $localize`:@@parametres.onglet.emails:E-mails automatiques`,
-              $localize`:@@nav.keywords.emails:relances rappels`,
+              $localize`:@@nav.keywords.parametresEdition:gel guichets collecte foire covoiturage e-mails contact`,
             ),
             tab(
               'onglet',
@@ -418,7 +420,7 @@ export function buildNavGroups(): NavGroup[] {
               'onglet',
               'instance',
               $localize`:@@parametres.onglet.instance:Instance`,
-              $localize`:@@nav.keywords.instance:sauvegarde sql raccourcis date simulée horloge`,
+              $localize`:@@nav.keywords.instance:sauvegarde sql raccourcis date simulée horloge globaux`,
             ),
           ],
         },

@@ -39,8 +39,8 @@ festival:
 # the product, so the demo reads the same wherever the file lands.
 contraintes:
   poids:
-    appreciationIncompatible: 3
-    maxJoursConsecutifsTravailles: 5
+    appreciationIncompatible: 15
+    maxJoursConsecutifsTravailles: 25
 
 typologies:
   - id: AMBIANCE

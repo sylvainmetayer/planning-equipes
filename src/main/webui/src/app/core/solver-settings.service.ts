@@ -1,9 +1,9 @@
 // The edition's solve budget, persisted server-side via /api/parametres-solveur
 // (not in localStorage, so every browser reads and writes the same value): the
 // longest a solve may run and how long a feasible planning may go without
-// improving, both edited on the Solveur page and applied by the server to every
-// job launched on the edition, whoever starts it; and whether a finished solve
-// mails its outcome to the admin, edited on the Paramètres page.
+// improving, applied by the server to every job launched on the edition,
+// whoever starts it; and whether a finished solve mails its outcome to the
+// admin. All three are edited on « Règles du planning › Calcul ».
 //
 // Everything travels in one payload, so every write sends everything: a PUT
 // carrying only one field would silently reset the others to their default.
@@ -57,26 +57,20 @@ export class SolverSettingsService {
   }
 
   /**
-   * Saves the edition's budget; `null` for either half follows the instance.
-   * The server refuses a value above the ceiling, or a plateau longer than the
-   * duration, and the caller shows why.
+   * Saves the edition's budget and the end-of-solve mail in one write;
+   * `null` for either half of the budget follows the instance. The server
+   * refuses a value above the ceiling, or a plateau longer than the duration,
+   * and the caller shows why.
    */
-  async setBudget(
+  async setSettings(
     dureeResolutionSecondes: number | null,
     plateauSecondes: number | null,
+    mailFinResolution: boolean,
   ): Promise<void> {
     await this.enregistrer({
       dureeResolutionSecondes: roundedOrNull(dureeResolutionSecondes),
       plateauSecondes: roundedOrNull(plateauSecondes),
-      mailFinResolution: this.mailFinResolution(),
-    });
-  }
-
-  async setMailFinResolution(actif: boolean): Promise<void> {
-    await this.enregistrer({
-      dureeResolutionSecondes: this.dureeResolutionSecondes(),
-      plateauSecondes: this.plateauSecondes(),
-      mailFinResolution: actif,
+      mailFinResolution,
     });
   }
 

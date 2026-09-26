@@ -3,7 +3,7 @@
 // through the real handler and not called directly), the three ways of
 // launching a solve, and `raisonVerrou`, the sentence that says why the
 // buttons are dead. The cards test themselves next door — `score-curve-card`,
-// `publication-panel`, `solve-recap`, `solver-queue`, `solver-duration-card`,
+// `publication-panel`, `solve-recap`, `solver-queue`,
 // `solver-volumetry`, `incremental-result` — and render here for real, on the
 // same mocks.
 

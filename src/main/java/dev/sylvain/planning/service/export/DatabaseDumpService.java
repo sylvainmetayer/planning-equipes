@@ -119,6 +119,7 @@ public class DatabaseDumpService {
             "parametres_collecte",
             "parametres_echange",
             "parametres_notifications",
+            "contact_organisation",
             // What the animateurs themselves said. Wishes and declarations are
             // the input the plan is built from, not a by-product of it, and a
             // restore that dropped them handed the organiser an edition whose

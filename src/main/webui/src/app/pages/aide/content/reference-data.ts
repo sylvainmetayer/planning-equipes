@@ -220,7 +220,11 @@ export function buildReferenceDataSections(): HelpSection[] {
       links: [
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
-        { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
+        {
+          route: '/regles',
+          queryParams: { onglet: 'legal' },
+          label: $localize`:@@nav.link.regles:Règles du planning`,
+        },
       ],
     },
     {

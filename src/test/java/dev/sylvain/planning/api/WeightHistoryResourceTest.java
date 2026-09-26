@@ -109,11 +109,11 @@ class WeightHistoryResourceTest {
                         WeightChange::weightAfter,
                         WeightChange::backToDefault,
                         WeightChange::origin)
-                .containsExactly(1, 20, false, WeightChangeOrigin.SCREEN);
-        // « 20 → défaut (1) »
+                .containsExactly(5, 20, false, WeightChangeOrigin.SCREEN);
+        // « 20 → défaut (5) »
         assertThat(changes.get(1))
                 .extracting(WeightChange::weightBefore, WeightChange::weightAfter, WeightChange::backToDefault)
-                .containsExactly(20, 1, true);
+                .containsExactly(20, 5, true);
         assertThat(changes.get(0).createdAt()).isNotNull();
     }
 
@@ -210,7 +210,7 @@ class WeightHistoryResourceTest {
         assertThat(inherited).singleElement().satisfies(change -> {
             assertThat(change.origin()).isEqualTo(WeightChangeOrigin.DUPLICATION);
             assertThat(change.sourceEdition()).isEqualTo(first);
-            assertThat(change.weightBefore()).isEqualTo(1);
+            assertThat(change.weightBefore()).isEqualTo(5);
             assertThat(change.weightAfter()).isEqualTo(6);
         });
     }
@@ -226,7 +226,7 @@ class WeightHistoryResourceTest {
         java.time.Instant start = java.time.Instant.now();
         String first = createEdition("Historique first");
         importScenario(first);
-        setWeight(first, "5");
+        setWeight(first, "6");
         String jobId = editionContext.executeIn(
                 first,
                 () -> solverJobs
@@ -250,9 +250,9 @@ class WeightHistoryResourceTest {
         Dosage dosage = kpi.dosage();
         assertThat(dosage).isNotNull();
         assertThat(dosage.weights())
-                .containsEntry(RULE, 5)
-                .containsEntry("appreciationIncompatible", 3)
-                .containsEntry("maxJoursConsecutifsTravailles", 5);
+                .containsEntry(RULE, 6)
+                .containsEntry("appreciationIncompatible", 15)
+                .containsEntry("maxJoursConsecutifsTravailles", 25);
         assertThat(dosage.isDefault()).isFalse();
 
         WeightHistoryService.ConstraintHistory history =
@@ -261,7 +261,7 @@ class WeightHistoryResourceTest {
                 .filteredOn(resolution -> resolution.createdAt().isAfter(start))
                 .singleElement()
                 .satisfies(resolution -> {
-                    assertThat(resolution.dosage().weights()).containsEntry(RULE, 5);
+                    assertThat(resolution.dosage().weights()).containsEntry(RULE, 6);
                     assertThat(resolution.score()).isNotNull();
                 });
     }

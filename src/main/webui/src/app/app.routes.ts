@@ -3,6 +3,7 @@ import { CanActivateFn, Params, RedirectFunction, Router, Routes } from '@angula
 import { TODAY_ANCHOR } from './core/date-mock.service';
 import type { CompetencesPage } from './pages/competences/competences-page';
 import { retiredOpeningsViews } from './pages/ouvertures/vues-retirees';
+import type { ReglesPage } from './pages/regles/regles-page';
 import type { StandFichePage } from './pages/stand-fiche/stand-fiche-page';
 
 /**
@@ -255,6 +256,54 @@ function redirectFormerDebugTabs(route: { queryParamMap: { get(name: string): st
       });
 }
 
+/**
+ * `/constraints` became « Règles du planning » (`/regles`). The rule a link
+ * named — `?regle=` from a « Que faire ? » action, or the `#rule` anchor the
+ * card of a rule used to carry — becomes the `regle` the page opens its panel
+ * on; the page picks the tab from the rule itself, which a redirection cannot
+ * know. A `#categorie-…` anchor named a card that no longer exists: dropped.
+ */
+export const redirectConstraintsToRegles: RedirectFunction = ({ queryParams, fragment }) => {
+  const params = new URLSearchParams();
+  for (const [key, valeur] of Object.entries(queryParams)) {
+    if (valeur !== undefined && valeur !== null) {
+      params.set(key, paramText(valeur));
+    }
+  }
+  if (!params.has('regle') && fragment && !fragment.startsWith('categorie-')) {
+    params.set('regle', fragment);
+  }
+  const query = params.toString();
+  return query ? `/regles?${query}` : '/regles';
+};
+
+/**
+ * Two tabs of Paramètres left the page (issue #720): the legal parameters are
+ * now the « Légal » tab of Règles du planning, on the row of each rule that
+ * reads them, and the automatic e-mails a section of « Édition », reached by
+ * its anchor. A bookmark on either lands where the setting went, the other
+ * query params kept; `globaux` is read as `instance` by the page itself.
+ */
+export const parametresOngletsDeplaces: CanActivateFn = (route) => {
+  const onglet = route.queryParamMap.get('onglet');
+  if (onglet !== 'legaux' && onglet !== 'emails') {
+    return true;
+  }
+  const router = inject(Router);
+  const queryParams: Record<string, string> = {};
+  for (const key of route.queryParamMap.keys) {
+    if (key !== 'onglet') {
+      queryParams[key] = route.queryParamMap.getAll(key).join(',');
+    }
+  }
+  return onglet === 'legaux'
+    ? router.createUrlTree(['/regles'], { queryParams: { ...queryParams, onglet: 'legal' } })
+    : router.createUrlTree(['/parametres'], {
+        queryParams: { ...queryParams, onglet: 'edition' },
+        fragment: 'emails',
+      });
+};
+
 const adminRoutes: Routes = [
   {
     // The home: where the edition stands in its cycle, before any screen
@@ -316,6 +365,7 @@ const adminRoutes: Routes = [
   {
     path: 'parametres',
     title: () => $localize`:@@route.parametres:Paramètres`,
+    canActivate: [parametresOngletsDeplaces],
     loadComponent: () => import('./pages/parametres/parametres-page').then((m) => m.ParametresPage),
   },
   {
@@ -497,11 +547,16 @@ const adminRoutes: Routes = [
     }),
   },
   {
-    path: 'constraints',
-    title: () => $localize`:@@route.constraints:Contraintes`,
-    loadComponent: () =>
-      import('./pages/constraints/constraints-page').then((m) => m.ConstraintsPage),
+    // Every setting that decides the plan, in one place (issue #720): the
+    // hard rules with the thresholds they read, the quality rules with their
+    // importance, and the solve budget.
+    path: 'regles',
+    title: () => $localize`:@@route.regles:Règles du planning`,
+    loadComponent: () => import('./pages/regles/regles-page').then((m) => m.ReglesPage),
+    // A row edited and not saved would silently survive, invisible, until the next reload.
+    canDeactivate: [(page: ReglesPage) => page.canLeave()],
   },
+  { path: 'constraints', redirectTo: redirectConstraintsToRegles },
   {
     path: 'ouvertures',
     title: () => $localize`:@@route.ouvertures:Horaires des stands`,

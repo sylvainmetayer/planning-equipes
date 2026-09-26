@@ -355,7 +355,8 @@ describe('buildLignes', () => {
     });
     expect(confirmations.lienSecondaire).toEqual({
       route: '/parametres',
-      queryParams: { onglet: 'emails' },
+      queryParams: { onglet: 'edition' },
+      fragment: 'emails',
       libelle: 'Activer',
     });
   });

@@ -155,7 +155,7 @@ Single Quarkus service, no separate solver microservice. Package root:
     `SolverJobRepository` and replayed at startup, so a restart no longer loses
     the planned runs; `SolverJobTasks` and `SolverJobPersistence` carry what
     does not hold the lock), `ConstraintAnalysisStore` (the score breakdown the
-    Contraintes screen shows, written by every solve and re-derivable from the
+    Règles du planning screen shows, written by every solve and re-derivable from the
     persisted plan alone — **nothing analyses by solving a plan it then throws
     away**; in memory, so the first read after a restart re-derives it from that
     plan instead of answering "never analysed"), `PlanningPersistenceService`,

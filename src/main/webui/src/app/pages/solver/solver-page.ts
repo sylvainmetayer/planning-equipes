@@ -63,7 +63,6 @@ import { ReplanificationDialog } from './replanification-dialog';
 import { RouterLink } from '@angular/router';
 import { ScoreCurveCard } from './score-curve-card';
 import { SolveRecap } from './solve-recap';
-import { SolverDurationCard } from './solver-duration-card';
 import { SolverQueue } from './solver-queue';
 import { SolverVolumetry } from './solver-volumetry';
 import { errorPrefix } from '../../core/error-message';
@@ -107,9 +106,9 @@ function detailCausesBloquantes(bloquantes: readonly CauseInfaisabilite[]): stri
  * sync. Seeding the database lives on the Data setup page, emptying it on the
  * Debug page.
  *
- * <p>An orchestrator: the budget, the queue, the score curve, the volumetry,
- * the recap and the incremental diff are each a component of their own next
- * door. What stays here is what the result handler has to write, and the three
+ * <p>An orchestrator: the queue, the score curve, the volumetry, the recap
+ * and the incremental diff are each a component of their own next door; the
+ * solve budget is set on « Règles du planning › Calcul ». What stays here is what the result handler has to write, and the three
  * ways of launching a solve.</p>
  *
  * <p>The <b>diffusion</b> is no longer one of them (issue #320): exporting the
@@ -130,7 +129,6 @@ function detailCausesBloquantes(bloquantes: readonly CauseInfaisabilite[]): stri
     FeasibilityBanner,
     ProblemSummaryBanner,
     OutputPanel,
-    SolverDurationCard,
     SolverQueue,
     ScoreCurveCard,
     SolverVolumetry,

@@ -10,12 +10,20 @@ import {
   Router,
   Routes,
   TitleStrategy,
+  UrlTree,
   provideRouter,
 } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { describe, expect, it } from 'vitest';
 
-import { benchTabToJournee, equityFicheUrl, standEditToFicheUrl, routes } from './app.routes';
+import {
+  benchTabToJournee,
+  equityFicheUrl,
+  parametresOngletsDeplaces,
+  redirectConstraintsToRegles,
+  standEditToFicheUrl,
+  routes,
+} from './app.routes';
 import { BRANDING } from './core/branding';
 import { BrandingTitleStrategy } from './core/branding-title.strategy';
 
@@ -373,6 +381,57 @@ describe('app.routes', () => {
 
     it('sert le Débogage pour tout le reste', async () => {
       expect(await naviguer('/debug?onglet=verifications')).toBe('/debug?onglet=verifications');
+    });
+  });
+
+  /** `/constraints` became « Règles du planning » (issue #720). */
+  describe("l'ancienne adresse des contraintes", () => {
+    function target(queryParams: Record<string, string>, fragment: string | null): string {
+      return redirectConstraintsToRegles({
+        queryParams,
+        fragment,
+      } as unknown as ActivatedRouteSnapshot) as string;
+    }
+
+    it('garde la règle demandée, que la page ouvre sur son onglet', () => {
+      expect(target({ regle: 'equilibrerCharge' }, null)).toBe('/regles?regle=equilibrerCharge');
+    });
+
+    it("fait de l'ancre d'une règle la règle à ouvrir, et oublie celle d'une catégorie", () => {
+      expect(target({}, 'coupureRepasObligatoire')).toBe('/regles?regle=coupureRepasObligatoire');
+      expect(target({}, 'categorie-legal-mineurs')).toBe('/regles');
+    });
+  });
+
+  /** Two tabs of Paramètres left the page (issue #720): the guard sends their bookmarks on. */
+  describe('les onglets déplacés des paramètres', () => {
+    function garde(queryParams: Record<string, string>): string | boolean {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [provideZonelessChangeDetection(), provideRouter([])],
+      });
+      const resultat = TestBed.runInInjectionContext(() =>
+        parametresOngletsDeplaces(
+          { queryParamMap: convertToParamMap(queryParams) } as ActivatedRouteSnapshot,
+          {} as RouterStateSnapshot,
+        ),
+      );
+      return typeof resultat === 'boolean'
+        ? resultat
+        : TestBed.inject(Router).serializeUrl(resultat as UrlTree);
+    }
+
+    it('envoie les paramètres légaux vers l’onglet Légal des règles', () => {
+      expect(garde({ onglet: 'legaux', x: '1' })).toBe('/regles?x=1&onglet=legal');
+    });
+
+    it('envoie les e-mails automatiques vers leur section de l’onglet Édition', () => {
+      expect(garde({ onglet: 'emails' })).toBe('/parametres?onglet=edition#emails');
+    });
+
+    it('laisse passer les onglets qui existent', () => {
+      expect(garde({ onglet: 'instance' })).toBe(true);
+      expect(garde({})).toBe(true);
     });
   });
 });

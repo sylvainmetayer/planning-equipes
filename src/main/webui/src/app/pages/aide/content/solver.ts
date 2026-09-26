@@ -91,23 +91,27 @@ export function buildSolverSections(): HelpSection[] {
           items: [
             {
               term: $localize`:@@aide.config.term.duree:Budget de calcul`,
-              text: $localize`:@@aide.config.def.duree:Réglé par édition sur la page Solveur, partagé par tous les navigateurs et appliqué par le serveur à tout calcul lancé sur l'édition, depuis l'écran comme depuis l'assistant. Deux réglages. La durée maximale (15 min par défaut) est celui qui compte le plus : commencez court — 1 à 3 min — pour révéler les blocages structurels, puis passez à 15 ou 30 min, voire davantage, pour la résolution finale. L'arrêt sans amélioration (5 min par défaut, 0 pour jamais) écourte un calcul qui ne progresse plus ; il ne compte qu'une fois le score dur à zéro, de sorte qu'un calcul n'abandonne jamais tant que des places restent à pourvoir. Les deux sont bornés par un plafond que fixe l'exploitant de l'instance, affiché sur la carte : une valeur au-dessus est refusée. Si l'exploitant abaisse ce plafond sous une valeur déjà enregistrée, le calcul tourne au plafond et le dit. « Revenir au défaut » rend l'édition aux valeurs de l'instance.`,
+              text: $localize`:@@aide.config.def.duree:Réglé par édition sur la page Règles du planning, onglet Calcul, partagé par tous les navigateurs et appliqué par le serveur à tout calcul lancé sur l'édition, depuis l'écran comme depuis l'assistant. Deux réglages. La durée maximale (15 min par défaut) est celui qui compte le plus : commencez court — 1 à 3 min — pour révéler les blocages structurels, puis passez à 15 ou 30 min, voire davantage, pour la résolution finale. L'arrêt sans amélioration (5 min par défaut, 0 pour jamais) écourte un calcul qui ne progresse plus ; il ne compte qu'une fois le score dur à zéro, de sorte qu'un calcul n'abandonne jamais tant que des places restent à pourvoir. Les deux sont bornés par un plafond que fixe l'exploitant de l'instance, affiché au-dessus des champs : une valeur au-dessus est refusée. Si l'exploitant abaisse ce plafond sous une valeur déjà enregistrée, le calcul tourne au plafond et le dit. « Revenir au défaut » rend l'édition aux valeurs de l'instance, à l'enregistrement.`,
             },
             {
               term: $localize`:@@aide.config.term.mailFin:Prévenir à la fin d'une résolution`,
-              text: $localize`:@@aide.config.def.mailFin:Un interrupteur de la page Paramètres fait écrire à l'administrateur dès qu'une résolution de cette édition se termine : l'édition, le score, et si le planning est faisable. De quoi lancer un calcul de trente minutes et partir. Il reste sans effet tant qu'aucune adresse administrateur n'est configurée sur le serveur.`,
+              text: $localize`:@@aide.config.def.mailFin:Un interrupteur de Règles du planning, onglet Calcul, fait écrire à l'administrateur dès qu'une résolution de cette édition se termine : l'édition, le score, et si le planning est faisable. De quoi lancer un calcul de trente minutes et partir. Il reste sans effet tant qu'aucune adresse administrateur n'est configurée sur le serveur.`,
             },
             {
               term: $localize`:@@aide.config.term.legaux:Paramètres légaux`,
-              text: $localize`:@@aide.config.def.legaux:Sur la page Paramètres. Les plafonds hebdomadaires (48 h pour les majeurs, 35 h pour les mineurs) sont d'ordre public : une valeur supérieure est refusée, une valeur inférieure reste libre. Le repos quotidien minimal (11 h, 9 h par accord collectif) se règle au même endroit, ainsi que la durée de la pause légale : au moins 20 minutes (art. L3121-16), portée à 30 pour un mineur (art. L3162-3), 30 par défaut. Rien n'impose d'écart entre deux vacations.`,
+              text: $localize`:@@aide.config.def.legaux:Sur la page Règles du planning, onglet Légal, chacun sur la ligne de la règle qui le lit : les plafonds hebdomadaires sur les durées hebdomadaires, la durée de la pause légale sur les durées et le travail continu, la fenêtre et la durée du repas sur la coupure repas. Les plafonds (48 h pour les majeurs, 35 h pour les mineurs) sont d'ordre public : une valeur supérieure est refusée, une valeur inférieure reste libre. La pause dure au moins 20 minutes (art. L3121-16), portée à 30 pour un mineur (art. L3162-3), 30 par défaut. Le repos quotidien minimal (11 h, 9 h par accord collectif) et la durée maximale d'une vacation, que seul le contrôle de la grille lit, se règlent sous le tableau. Rien n'impose d'écart entre deux vacations.`,
             },
             {
               term: $localize`:@@aide.config.term.contraintes:Activation des contraintes`,
-              text: $localize`:@@aide.config.def.contraintes:Chaque règle du catalogue se désactive depuis la page Contraintes. À utiliser pour diagnostiquer — « sans cette règle, le planning devient-il faisable ? » — bien plus que pour produire : désactiver une contrainte dure produit un planning que la réalité refusera. En revanche, désactiver une règle souple qui ne mesure rien, faute de donnée saisie, rend le score lisible sans rien changer au résultat.`,
+              text: $localize`:@@aide.config.def.contraintes:Chaque règle du catalogue se désactive sur sa ligne de la page Règles du planning, puis « Enregistrer ». À utiliser pour diagnostiquer — « sans cette règle, le planning devient-il faisable ? » — bien plus que pour produire : désactiver une contrainte dure produit un planning que la réalité refusera. En revanche, désactiver une règle souple qui ne mesure rien, faute de donnée saisie, rend le score lisible sans rien changer au résultat.`,
+            },
+            {
+              term: $localize`:@@aide.config.term.importance:Importance d'une règle`,
+              text: $localize`:@@aide.config.def.importance:Sur l'onglet Qualité, chaque règle de qualité ou de préférence a trois positions : faible, normale — son défaut — et forte, qui écrivent un poids de 1, 5 ou 25. À niveau égal, un écart d'une règle forte pèse cinq fois celui d'une règle normale, qui en pèse cinq d'une faible. Un autre poids, de 1 à 500, se saisit dans le panneau de la règle et s'affiche « personnalisée ». Une règle dure ne se dose pas : elle s'active ou non. Rien ne s'écrit avant « Enregistrer », et « Relancer le calcul », en pied de tableau, fait prendre en compte ce qui vient d'être enregistré.`,
             },
             {
               term: $localize`:@@aide.config.term.historique:Historique des réglages`,
-              text: $localize`:@@aide.config.def.historique:Le bouton d'historique d'une règle, sur la page Contraintes, montre chaque changement de son poids ou de son activation — valeur avant et après, défaut compris, date et origine : écran, assistant, import de scénario ou duplication d'édition — et, entre deux changements, les résolutions qui ont suivi avec leur score et le nombre d'écarts à cette règle, en liste datée et en petit graphique. Remettre la même valeur n'écrit rien. C'est une juxtaposition, pas une mesure d'effet : le référentiel a pu changer entre deux résolutions. L'historique appartient à l'édition et disparaît avec elle ; une édition dupliquée démarre avec le dosage hérité de sa source, pas avec l'historique de celle-ci.`,
+              text: $localize`:@@aide.config.def.historique:Le panneau d'une règle, qui s'ouvre d'un clic sur son nom dans Règles du planning, montre chaque changement de son poids ou de son activation — valeur avant et après, défaut compris, date et origine : écran, assistant, import de scénario ou duplication d'édition — et, entre deux changements, les résolutions qui ont suivi avec leur score et le nombre d'écarts à cette règle, en liste datée et en petit graphique. Remettre la même valeur n'écrit rien. C'est une juxtaposition, pas une mesure d'effet : le référentiel a pu changer entre deux résolutions. L'historique appartient à l'édition et disparaît avec elle ; une édition dupliquée démarre avec le dosage hérité de sa source, pas avec l'historique de celle-ci.`,
             },
             {
               term: $localize`:@@aide.config.term.adhoc:Ajustements manuels`,
@@ -134,7 +138,7 @@ export function buildSolverSections(): HelpSection[] {
       ],
       links: [
         { route: '/solveur', label: $localize`:@@nav.link.solver:Solveur` },
-        { route: '/constraints', label: $localize`:@@nav.link.constraints:Contraintes` },
+        { route: '/regles', label: $localize`:@@nav.link.regles:Règles du planning` },
         { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
         { route: '/verrouillages', label: $localize`:@@nav.link.verrouillages:Verrouillages` },
       ],
@@ -205,7 +209,7 @@ export function buildSolverSections(): HelpSection[] {
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
         { route: '/ouvertures', label: $localize`:@@nav.link.ouvertures:Horaires des stands` },
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
-        { route: '/constraints', label: $localize`:@@nav.link.constraints:Contraintes` },
+        { route: '/regles', label: $localize`:@@nav.link.regles:Règles du planning` },
         {
           route: '/diagnostic',
           queryParams: { onglet: 'besoin' },
@@ -253,7 +257,7 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.results.lecture:La « Lecture du score », en tête de la page Solveur et du Diagnostic et pour chaque plan du Comparateur, dit la même chose en quelques phrases : si les règles impératives sont respectées, combien de places restent vides et quel jour, quelles règles pèsent le plus sur l'organisation et pour quelle part, ce qui vient d'une donnée absente et quels ajustements manuels sont en cause. Juste après une résolution, une dernière phrase dit ce qui a changé par rapport au plan d'avant. Chaque règle citée mène à sa ligne de la page Contraintes, chaque jour à sa Journée ; aucune personne n'y est nommée.`,
+          text: $localize`:@@aide.results.lecture:La « Lecture du score », en tête de la page Solveur et du Diagnostic et pour chaque plan du Comparateur, dit la même chose en quelques phrases : si les règles impératives sont respectées, combien de places restent vides et quel jour, quelles règles pèsent le plus sur l'organisation et pour quelle part, ce qui vient d'une donnée absente et quels ajustements manuels sont en cause. Juste après une résolution, une dernière phrase dit ce qui a changé par rapport au plan d'avant. Chaque règle citée mène à son panneau dans Règles du planning, chaque jour à sa Journée ; aucune personne n'y est nommée.`,
         },
         {
           kind: 'paragraph',
@@ -262,7 +266,7 @@ export function buildSolverSections(): HelpSection[] {
         {
           kind: 'callout',
           title: $localize`:@@aide.results.callout.title:Des points qui ne mesurent rien`,
-          text: $localize`:@@aide.results.callout.text:Une contrainte qui pénalise chaque poste faute de donnée saisie — aucun souhait déclaré, aucun référent — produit un plancher constant, parfois l'essentiel du total. Sur la page Contraintes, une règle qui pénalise au moins 95 % de ce qu'elle évalue porte le badge « mesure une donnée absente », nomme cette donnée et renvoie vers l'écran où la saisir ; le score hors plancher s'affiche à côté du score brut. Rien n'est désactivé à votre place. Comparez des scores entre deux résolutions du même jeu de données, jamais leur valeur absolue.`,
+          text: $localize`:@@aide.results.callout.text:Une contrainte qui pénalise chaque poste faute de donnée saisie — aucun souhait déclaré, aucun référent — produit un plancher constant, parfois l'essentiel du total. Sur la page Règles du planning, une règle qui pénalise au moins 95 % de ce qu'elle évalue porte une marque dans sa colonne Écarts ; son panneau nomme la donnée manquante et renvoie vers l'écran où la saisir. Rien n'est désactivé à votre place. Comparez des scores entre deux résolutions du même jeu de données, jamais leur valeur absolue.`,
         },
         {
           kind: 'paragraph',
@@ -281,15 +285,15 @@ export function buildSolverSections(): HelpSection[] {
           items: [
             {
               term: $localize`:@@aide.results.term.faisabilite:Bandeau de faisabilité`,
-              text: $localize`:@@aide.results.def.faisabilite:Estimation de capacité calculée sans résoudre, en haut des pages Solveur et Contraintes, qui nomme les créneaux et stands en cause. Elle est optimiste : elle ignore le découpage en vacations et le cadre légal des mineurs, donc elle peut annoncer « réalisable » un planning que le solveur n'amènera pas à zéro. L'inverse n'arrive pas : si elle signale un manque de capacité, il est réel.`,
+              text: $localize`:@@aide.results.def.faisabilite:Estimation de capacité calculée sans résoudre, en haut des pages Solveur et Règles du planning, qui nomme les créneaux et stands en cause. Elle est optimiste : elle ignore le découpage en vacations et le cadre légal des mineurs, donc elle peut annoncer « réalisable » un planning que le solveur n'amènera pas à zéro. L'inverse n'arrive pas : si elle signale un manque de capacité, il est réel.`,
             },
             {
               term: $localize`:@@aide.results.term.problemes:Page Problèmes`,
               text: $localize`:@@aide.results.def.problemes:La liste complète et hiérarchisée des causes. Elle mêle deux sources : les infaisabilités structurelles, calculées sans résolution et visibles dès la saisie (capacité insuffisante sur une tranche, typologie que personne ne maîtrise, stand réservé aux majeurs sans majeur disponible), et les règles en défaut de la dernière analyse. Chaque ligne pointe vers l'écran où corriger. C'est le premier écran à ouvrir quand une résolution ne donne pas zéro, et un bon réflexe avant même de lancer la première.`,
             },
             {
-              term: $localize`:@@aide.results.term.contraintes:Page Contraintes`,
-              text: $localize`:@@aide.results.def.contraintes:Le catalogue des règles, chacune avec son niveau, son état et le résultat de la dernière analyse : combien de fois elle n'est pas respectée, et le détail des écarts. C'est ce qui transforme « -14 hard » en « quatorze postes non pourvus sur tel stand ».`,
+              term: $localize`:@@aide.results.term.contraintes:Page Règles du planning`,
+              text: $localize`:@@aide.results.def.contraintes:Le catalogue des règles en trois onglets — Légal, Qualité, Calcul —, chacune sur une ligne avec son fondement, son état, ses réglages et le résultat de la dernière analyse : combien de fois elle n'est pas respectée, et le détail des écarts dans son panneau. C'est ce qui transforme « -14 hard » en « quatorze postes non pourvus sur tel stand ».`,
             },
             {
               term: $localize`:@@aide.results.term.stabilite:Stabilité du plan publié`,
@@ -304,7 +308,7 @@ export function buildSolverSections(): HelpSection[] {
       ],
       links: [
         { route: '/diagnostic', label: $localize`:@@aide.link.problemes:Problèmes` },
-        { route: '/constraints', label: $localize`:@@nav.link.constraints:Contraintes` },
+        { route: '/regles', label: $localize`:@@nav.link.regles:Règles du planning` },
         {
           route: '/journee',
           label: $localize`:@@aide.link.dayCalendar:Tableau de la journée`,
@@ -324,7 +328,7 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.tuning.playbook:Sous chaque problème du Diagnostic, le bloc « Que faire ? » propose les gestes qui le règlent, du plus probable au moins probable, chacun avec une phrase d'explication et un bouton qui ouvre l'écran déjà positionné. Aucun bouton n'écrit rien : l'écran ouvert garde ses propres aperçus et confirmations, et c'est vous qui décidez. Pour un créneau en sous-effectif : voir qui pourrait venir (le panneau du siège, sur la page Planning au jour du créneau, où « Placer » remplit la place), puis ajouter une compétence sur la typologie du stand, puis baisser l'effectif demandé, enfin revoir les indisponibilités du jour. Pour une règle légale en défaut : proposer une réparation depuis la page Planning, ou chercher un remplaçant depuis le panneau du siège — une règle légale ne se règle pas. Pour une règle de qualité : baisser son poids, la page Contraintes s'ouvre sur sa ligne. Pour une règle en plancher : saisir d'abord la donnée manquante. Pour une pause sans relais : ouvrir une place de relais sur le stand, ou raccourcir la vacation. Pour des ajustements manuels ou un verrou en cause : les revoir, affichés seuls. Une journée déjà commencée ne propose rien qui la modifierait : son plan est figé tel que travaillé. L'explication d'une règle reprend mot pour mot le conseil de la page Contraintes.`,
+          text: $localize`:@@aide.tuning.playbook:Sous chaque problème du Diagnostic, le bloc « Que faire ? » propose les gestes qui le règlent, du plus probable au moins probable, chacun avec une phrase d'explication et un bouton qui ouvre l'écran déjà positionné. Aucun bouton n'écrit rien : l'écran ouvert garde ses propres aperçus et confirmations, et c'est vous qui décidez. Pour un créneau en sous-effectif : voir qui pourrait venir (le panneau du siège, sur la page Planning au jour du créneau, où « Placer » remplit la place), puis ajouter une compétence sur la typologie du stand, puis baisser l'effectif demandé, enfin revoir les indisponibilités du jour. Pour une règle légale en défaut : proposer une réparation depuis la page Planning, ou chercher un remplaçant depuis le panneau du siège — une règle légale ne se règle pas. Pour une règle de qualité : baisser son importance, la page Règles du planning s'ouvre sur son panneau. Pour une règle en plancher : saisir d'abord la donnée manquante. Pour une pause sans relais : ouvrir une place de relais sur le stand, ou raccourcir la vacation. Pour des ajustements manuels ou un verrou en cause : les revoir, affichés seuls. Une journée déjà commencée ne propose rien qui la modifierait : son plan est figé tel que travaillé. L'explication d'une règle reprend mot pour mot le conseil de son panneau dans Règles du planning.`,
         },
         {
           kind: 'definitions',
@@ -419,7 +423,7 @@ export function buildSolverSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.adHoc.term.arriveeGroupee:Arrivée groupée (covoiturage)`,
-              text: $localize`:@@aide.adHoc.def.arriveeGroupee:De 2 à 4 personnes qui arrivent et repartent ensemble. Une préférence, pas une règle dure : le solveur cherche à leur donner les mêmes jours, et des premières arrivées et derniers départs à la tolérance près — réglage « Tolérance d'une arrivée groupée », 30 min par défaut, page Paramètres, onglet Édition ; au-delà, chaque minute d'écart et chaque jour où un membre travaille sans les autres coûtent. Chacun peut tenir un stand différent. Ni créneau ni stand. Elle naît le plus souvent d'une demande « Je viens avec… » envoyée depuis l'onglet Covoiturage de l'espace et validée sur la page Disponibilités, onglet Covoiturage ; elle se crée aussi à la main ici. Celle qui vient d'une demande validée ne se modifie ni ne se supprime ici : ses boutons sont grisés et mènent à Disponibilités, onglet Covoiturage, où l'annuler prévient le groupe ; celle écrite à la main reste modifiable. Elle est refusée si deux de ses membres forment une incompatibilité sans stand ni créneau : on ne fait pas arriver ensemble deux personnes qu'on refuse de faire travailler ensemble.`,
+              text: $localize`:@@aide.adHoc.def.arriveeGroupee:De 2 à 4 personnes qui arrivent et repartent ensemble. Une préférence, pas une règle dure : le solveur cherche à leur donner les mêmes jours, et des premières arrivées et derniers départs à la tolérance près — réglage « Tolérance d'une arrivée groupée », 30 min par défaut, sur la ligne de la règle dans Règles du planning, onglet Qualité ; au-delà, chaque minute d'écart et chaque jour où un membre travaille sans les autres coûtent. Chacun peut tenir un stand différent. Ni créneau ni stand. Elle naît le plus souvent d'une demande « Je viens avec… » envoyée depuis l'onglet Covoiturage de l'espace et validée sur la page Disponibilités, onglet Covoiturage ; elle se crée aussi à la main ici. Celle qui vient d'une demande validée ne se modifie ni ne se supprime ici : ses boutons sont grisés et mènent à Disponibilités, onglet Covoiturage, où l'annuler prévient le groupe ; celle écrite à la main reste modifiable. Elle est refusée si deux de ses membres forment une incompatibilité sans stand ni créneau : on ne fait pas arriver ensemble deux personnes qu'on refuse de faire travailler ensemble.`,
             },
           ],
         },

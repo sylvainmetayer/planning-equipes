@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.domain.ContactOrganisation;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresQualite;
@@ -276,6 +277,40 @@ public class ParametresRepository {
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save notification parameters", e);
+        }
+    }
+
+    /* ------------------------- Organisation's contact ------------------------ */
+
+    public ContactOrganisation getContactOrganisation() {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = scope.prepareScoped(connection, """
+                        SELECT telephone, email
+                        FROM contact_organisation
+                        WHERE edition_id = ?""");
+                ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return new ContactOrganisation(rs.getString("telephone"), rs.getString("email"));
+            }
+            return ContactOrganisation.empty();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to load the organisation's contact", e);
+        }
+    }
+
+    public void saveContactOrganisation(ContactOrganisation contact) {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = scope.prepareScoped(connection, """
+                        INSERT INTO contact_organisation (edition_id, telephone, email)
+                        VALUES (?, ?, ?)
+                        ON CONFLICT (edition_id)
+                        DO UPDATE SET telephone = EXCLUDED.telephone,
+                        email = EXCLUDED.email""")) {
+            ps.setString(2, contact.telephone());
+            ps.setString(3, contact.email());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to save the organisation's contact", e);
         }
     }
 
