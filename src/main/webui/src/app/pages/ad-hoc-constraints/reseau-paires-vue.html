@@ -126,13 +126,13 @@
     <section class="reseau-selection" aria-live="polite">
       <h2 class="reseau-titre" i18n="@@adHoc.reseau.selection.titre">Paires de {{ noeud.label }}</h2>
       <p>
-        <a routerLink="/timeline" [queryParams]="{ animateur: noeud.id }" i18n="@@adHoc.reseau.selection.timeline">Voir sa timeline</a>
+        <a [routerLink]="['/animateurs', noeud.id]" i18n="@@adHoc.reseau.selection.fiche">Ouvrir sa fiche</a>
       </p>
       <ul class="reseau-paires">
         @for (paire of pairesSelection(); track paire.edge.arete.key) {
           <li>
             <span class="reseau-type" [class.reseau-type--incompatibilite]="paire.edge.arete.type === 'INCOMPATIBILITE'">{{ paire.edge.libelleType }}</span>
-            <a routerLink="/timeline" [queryParams]="{ animateur: paire.autre.id }">{{ paire.autre.label }}</a>
+            <a [routerLink]="['/animateurs', paire.autre.id]">{{ paire.autre.label }}</a>
             @if (paire.edge.arete.interne) {
               <strong class="reseau-signal" i18n="@@adHoc.reseau.interne.court">incompatibilité interne</strong>
             }

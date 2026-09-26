@@ -42,6 +42,8 @@ public final class CatalogueActions {
     private static final String STANDS_IMPORTES = "STANDS_IMPORTES";
     private static final String ANIMATEUR_COMPETENCES_GRILLE = "ANIMATEUR_COMPETENCES_GRILLE";
     private static final String ANIMATEURS_RELANCES = "ANIMATEURS_RELANCES";
+    private static final String ANIMATEUR_JOUR_INDISPONIBLE = "ANIMATEUR_JOUR_INDISPONIBLE";
+    private static final String ANIMATEUR_JOUR_DISPONIBLE = "ANIMATEUR_JOUR_DISPONIBLE";
     private static final String STAND_CREE = "STAND_CREE";
     private static final String STAND_MODIFIE = "STAND_MODIFIE";
     private static final String STAND_SUPPRIME = "STAND_SUPPRIME";
@@ -205,6 +207,13 @@ public final class CatalogueActions {
         changesData(STANDS_IMPORTES, "Stands importés depuis un fichier", Entite.STAND);
         changesData(ANIMATEUR_COMPETENCES_GRILLE, "Grille des compétences enregistrée", Entite.ANIMATEUR);
         action(ANIMATEURS_RELANCES, "Animateurs relancés à la main", Entite.ANIMATEUR);
+        // The off day moves what a solve is given, and its seats of that day
+        // may be freed with it: both halves are one line.
+        changesData(
+                ANIMATEUR_JOUR_INDISPONIBLE,
+                "Jour indisponible posé depuis la fiche (sièges de ce jour libérés)",
+                Entite.ANIMATEUR);
+        changesData(ANIMATEUR_JOUR_DISPONIBLE, "Jour indisponible levé depuis la fiche", Entite.ANIMATEUR);
 
         /* -------------------------- Stands -------------------------- */
         changesData(STAND_CREE, "Stand ajouté", Entite.STAND);
@@ -407,6 +416,8 @@ public final class CatalogueActions {
         route("AnimateurResource#importCsvAnimateurs", ANIMATEURS_IMPORTES);
         route("AnimateurResource#saveCompetencesGrid", ANIMATEUR_COMPETENCES_GRILLE);
         route("AnimateurResource#relancer", ANIMATEURS_RELANCES);
+        route("AnimateurResource#markDayOff", ANIMATEUR_JOUR_INDISPONIBLE);
+        route("AnimateurResource#cancelDayOff", ANIMATEUR_JOUR_DISPONIBLE);
 
         route("StandResource#createStand", STAND_CREE);
         route("StandResource#updateStand", STAND_MODIFIE);

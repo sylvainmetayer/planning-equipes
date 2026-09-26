@@ -86,6 +86,59 @@ export function benchToJournee(queryParams: Params): string {
   return query ? `/journee?${query}` : '/journee';
 }
 
+/**
+ * `/timeline?animateur=X`: the « Timeline animateur » screen became the
+ * « Planning » section of the fiche, which the address opens; without a person
+ * it lands on the list the fiches are reached from.
+ */
+export function timelineToFiche(queryParams: Params): string {
+  const animateur = queryParams['animateur'];
+  const id = typeof animateur === 'string' ? animateur.trim() : '';
+  return id ? `/animateurs/${encodeURIComponent(id)}?section=timeline` : '/animateurs';
+}
+
+/**
+ * `/equite?vue=fiche&animateur=X`: the « Fiche » reading of the Équité screen
+ * — one person's indicators and the radar — lives on the fiche animateur now,
+ * in its « Charge et équité » section, the radar's `axes` and `comparer`
+ * kept. Without a person, the address lands on the table, its other keys
+ * kept.
+ */
+export function equityFicheUrl(queryParams: Params): string | null {
+  if (queryParams['vue'] !== 'fiche') {
+    return null;
+  }
+  const animateur = queryParams['animateur'];
+  const id = typeof animateur === 'string' ? animateur.trim() : '';
+  const params = new URLSearchParams();
+  if (id) {
+    params.set('section', 'equite');
+    for (const key of ['axes', 'comparer']) {
+      const value = queryParams[key];
+      if (value !== undefined && value !== null && value !== '') {
+        params.set(key, paramText(value as string | readonly string[]));
+      }
+    }
+    return `/animateurs/${encodeURIComponent(id)}?${params.toString()}`;
+  }
+  for (const [key, value] of Object.entries(queryParams)) {
+    if (
+      !['vue', 'animateur', 'axes', 'comparer'].includes(key) &&
+      value !== undefined &&
+      value !== null
+    ) {
+      params.set(key, paramText(value as string | readonly string[]));
+    }
+  }
+  const query = params.toString();
+  return query ? `/equite?${query}` : '/equite';
+}
+
+export const equityFicheToAnimateur: CanActivateFn = (route) => {
+  const url = equityFicheUrl(route.queryParams);
+  return url ? inject(Router).parseUrl(url) : true;
+};
+
 /** `/diagnostic?onglet=banc…`: the tab is gone, its address goes to the Journée. */
 export const benchTabToJournee: CanActivateFn = (route) =>
   route.queryParamMap.get('onglet') === 'banc'
@@ -396,6 +449,8 @@ const adminRoutes: Routes = [
     path: 'equite',
     title: () => $localize`:@@route.equite:Équité`,
     loadComponent: () => import('./pages/equite/equite-page').then((m) => m.EquitePage),
+    // Its « Fiche » reading moved to the fiche animateur: the address follows it.
+    canActivate: [equityFicheToAnimateur],
   },
   {
     path: 'repos',
@@ -428,14 +483,8 @@ const adminRoutes: Routes = [
     title: () => $localize`:@@route.marge:Marge disponible`,
     loadComponent: () => import('./pages/marge/marge-page').then((m) => m.MargePage),
   },
-  {
-    path: 'timeline',
-    title: () => $localize`:@@route.timeline:Timeline animateur`,
-    loadComponent: () =>
-      import('./pages/animateur-timeline/animateur-timeline-page').then(
-        (m) => m.AnimateurTimelinePage,
-      ),
-  },
+  // The timeline became the « Planning » section of the fiche animateur.
+  { path: 'timeline', redirectTo: ({ queryParams }) => timelineToFiche(queryParams) },
   { path: '**', redirectTo: '' },
 ];
 

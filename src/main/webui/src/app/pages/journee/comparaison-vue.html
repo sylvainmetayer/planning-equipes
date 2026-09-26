@@ -84,7 +84,7 @@
             @for (ligne of lignesAnimateurs(); track ligne.animateurId) {
               <tr [class.journee-comparaison-difference]="ligne.different">
                 <th scope="row">
-                  {{ ligne.nom }}
+                  <a [routerLink]="['/animateurs', ligne.animateurId]">{{ ligne.nom }}</a>
                   @if (ligne.different) {
                     <span class="journee-comparaison-marque" i18n="@@journee.comparaison.marque">écart</span>
                   }

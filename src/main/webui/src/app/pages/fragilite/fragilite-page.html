@@ -107,7 +107,7 @@
                       <span class="fragilite-badge" i18n="@@fragilite.badge.ninja">ninja</span>
                     }
                     <!-- Their days, seat by seat: where a withdrawal would bite. -->
-                    <a class="fragilite-lien" routerLink="/timeline" [queryParams]="{ animateur: ligne.animateurId }"
+                    <a class="fragilite-lien" [routerLink]="['/animateurs', ligne.animateurId]" [queryParams]="{ section: 'timeline' }"
                        (click)="$event.stopPropagation()" i18n="@@fragilite.lien.timeline">Timeline</a>
                   </th>
                   <td>{{ ligne.affectations }}</td>

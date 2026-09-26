@@ -1,5 +1,29 @@
-<mat-card appearance="outlined" class="page-card">
+<mat-card appearance="outlined" class="page-card fiche-tete">
   <mat-card-header>
+    <nav class="fiche-fil" i18n-aria-label="@@fiche.fil" aria-label="Parcours de la liste">
+      <a routerLink="/animateurs" [queryParams]="rosterParams" i18n="@@nav.link.animateurs">Animateurs</a>
+      @if (neighbours().rank >= 0) {
+        <span class="fiche-rang">
+          @if (rosterNarrowed) {
+            <ng-container i18n="@@fiche.rang.filtre">{{ neighbours().rank + 1 }} / {{ rosterSize() }} de la liste filtrée</ng-container>
+          } @else {
+            {{ neighbours().rank + 1 }} / {{ rosterSize() }}
+          }
+        </span>
+      }
+      @if (neighbours().previous; as previous) {
+        <a class="fiche-voisin" [routerLink]="['/animateurs', previous.id]" [queryParams]="rosterParams" rel="prev">
+          <mat-icon aria-hidden="true">chevron_left</mat-icon>
+          <ng-container i18n="@@fiche.precedent">Précédent : {{ previous.prenom }} {{ previous.nom }}</ng-container>
+        </a>
+      }
+      @if (neighbours().next; as next) {
+        <a class="fiche-voisin" [routerLink]="['/animateurs', next.id]" [queryParams]="rosterParams" rel="next">
+          <ng-container i18n="@@fiche.suivant">Suivant : {{ next.prenom }} {{ next.nom }}</ng-container>
+          <mat-icon aria-hidden="true">chevron_right</mat-icon>
+        </a>
+      }
+    </nav>
     <h1 mat-card-title>
       @if (fullName()) {
         {{ fullName() }}
@@ -7,24 +31,64 @@
         <ng-container i18n="@@fiche.title">Fiche animateur</ng-container>
       }
     </h1>
-    <mat-card-subtitle i18n="@@fiche.subtitle">Tout ce que l'application sait de cette personne, sur une page.</mat-card-subtitle>
+    @if (profile(); as fiche) {
+      <mat-card-subtitle class="fiche-resume">
+        @if (fiche.regimeDebut; as debut) {
+          {{ regimeLabel(debut) }} ·
+        }
+        {{ fiche.animateur.email || '—' }} ·
+        <ng-container i18n="@@fiche.resume.postes">{{ fiche.affectations.length }} poste(s)</ng-container>
+        @if (hours(fiche); as heures) {
+          · {{ heures | number: '1.0-1' }} h
+        }
+      </mat-card-subtitle>
+    }
   </mat-card-header>
-  <mat-card-actions class="card-actions">
-    <a matButton routerLink="/animateurs">
-      <mat-icon>arrow_back</mat-icon>
-      <ng-container i18n="@@fiche.back">Tous les animateurs</ng-container>
-    </a>
-    <button matButton="tonal" type="button" [disabled]="loading()" (click)="reload()">
-      <mat-icon>refresh</mat-icon>
-      <ng-container i18n="@@common.refresh">Actualiser</ng-container>
-    </button>
-    @if (profile()) {
+  @if (profile(); as fiche) {
+    <mat-card-actions class="card-actions fiche-actions">
+      <button matButton="tonal" type="button" [disabled]="!espaceLink()" (click)="copyEspaceLink()">
+        <mat-icon>link</mat-icon>
+        <ng-container i18n="@@fiche.action.lien">Copier le lien d'espace</ng-container>
+      </button>
+      <button matButton="tonal" type="button" [disabled]="busy() !== null || !fiche.animateur.email || !fiche.planCalcule" (click)="sendPlanning()">
+        <mat-icon>outgoing_mail</mat-icon>
+        <ng-container i18n="@@fiche.action.envoyer">Envoyer son planning</ng-container>
+      </button>
+      <button matButton="tonal" type="button" [disabled]="busy() !== null || !fiche.dernierePublicationLe" (click)="remind()">
+        <mat-icon>notifications_active</mat-icon>
+        <ng-container i18n="@@fiche.action.relancer">Relancer</ng-container>
+      </button>
+      <button matButton="tonal" type="button" [disabled]="busy() !== null || !fiche.planCalcule" (click)="exportPdf()"
+              i18n-matTooltip="@@timeline.exportPdf.tooltip" matTooltip="Planning individuel de cet animateur au format PDF">
+        <mat-icon>picture_as_pdf</mat-icon>
+        <ng-container i18n="@@fiche.action.pdf">PDF</ng-container>
+      </button>
+      <button matButton="tonal" type="button" [disabled]="busy() !== null || !fiche.planCalcule" (click)="exportIcs()"
+              i18n-matTooltip="@@timeline.exportIcs.tooltip" matTooltip="Planning individuel de cet animateur au format calendrier (ICS)">
+        <mat-icon>event</mat-icon>
+        <ng-container i18n="@@fiche.action.ics">ICS</ng-container>
+      </button>
+      @if (wholeLock()) {
+        <button matButton="tonal" type="button" [disabled]="busy() !== null || editingLocked()" (click)="unlockAll()">
+          <mat-icon>lock_open</mat-icon>
+          <ng-container i18n="@@fiche.action.liberer">Libérer tout son planning</ng-container>
+        </button>
+      } @else {
+        <button matButton="tonal" type="button" [disabled]="busy() !== null || editingLocked()" (click)="lockAll()">
+          <mat-icon>lock</mat-icon>
+          <ng-container i18n="@@fiche.action.verrouiller">Verrouiller tout son planning</ng-container>
+        </button>
+      }
+      <button matButton="tonal" type="button" [disabled]="busy() !== null || editingLocked()" (click)="addAdjustment()">
+        <mat-icon>tune</mat-icon>
+        <ng-container i18n="@@fiche.suivi.lienAjustements">Poser un ajustement</ng-container>
+      </button>
       <button matButton="filled" type="button" [disabled]="editingLocked()" (click)="edit()">
         <mat-icon>edit</mat-icon>
         <ng-container i18n="@@fiche.edit">Modifier la fiche</ng-container>
       </button>
-    }
-  </mat-card-actions>
+    </mat-card-actions>
+  }
   <mat-card-content>
     @if (loading() && !profile()) {
       <mat-progress-bar mode="indeterminate" />
@@ -37,9 +101,9 @@
     }
 
     @if (profile(); as fiche) {
-      <!-- 1. Identity and legal regime -->
-      <details class="fiche-section" open>
-        <summary><h2 i18n="@@fiche.section.identite">Identité et régime</h2></summary>
+      <!-- 1. Identity and contact -->
+      <details class="fiche-section" id="fiche-section-identite" [open]="isOpen('identite')" (toggle)="onToggle('identite', $event)">
+        <summary><h2 i18n="@@fiche.section.identiteContact">Identité et contact</h2></summary>
         <dl class="detail-rows">
           <dt i18n="@@common.id">Id</dt>
           <dd>{{ fiche.animateur.id }}</dd>
@@ -75,8 +139,8 @@
           </dd>
           <dt i18n="@@animateurs.field.lienEspace">Lien espace animateur</dt>
           <dd>
-            @if (fiche.animateur.accessToken) {
-              <code>/animateur/{{ fiche.animateur.accessToken }}</code>
+            @if (espaceLink(); as lien) {
+              <code class="fiche-lien-espace">{{ lien }}</code>
             } @else {
               <span class="detail-muted" i18n="@@detail.none">Aucun</span>
             }
@@ -84,29 +148,120 @@
         </dl>
       </details>
 
-      <!-- 2. Availability -->
-      <details class="fiche-section" open>
+      <!-- 2. Availability: a click on a day makes it unavailable, the seats it frees offered to somebody else -->
+      <details class="fiche-section" id="fiche-section-disponibilites" [open]="isOpen('disponibilites')" (toggle)="onToggle('disponibilites', $event)">
         <summary><h2 i18n="@@fiche.section.disponibilites">Disponibilités</h2></summary>
         @if (strip().length === 0) {
           <p class="empty-hint" i18n="@@fiche.dispo.aucunJour">Aucun créneau : l'événement n'a pas encore de jours.</p>
         } @else {
+          <p class="empty-hint" i18n="@@fiche.dispo.aide">Un clic sur un jour : indisponible ou disponible, avec les postes touchés.</p>
           <ul class="fiche-frise" i18n-aria-label="@@fiche.dispo.frise" aria-label="Jours de l'événement">
             @for (jour of strip(); track jour.date) {
-              <li class="fiche-jour" [class.fiche-jour-off]="jour.declaredOff" [class.fiche-jour-force]="jour.forcedOff">
-                <span class="fiche-jour-date">{{ jour.date | date: 'EEE d/MM' }}</span>
-                <span class="fiche-jour-etat">
-                  @if (jour.declaredOff) {
-                    <ng-container i18n="@@fiche.dispo.indisponible">indisponible</ng-container>
-                  } @else if (jour.forcedOff) {
-                    <ng-container i18n="@@fiche.dispo.force">écarté par ajustement</ng-container>
-                  } @else {
-                    <ng-container i18n="@@fiche.dispo.disponible">disponible</ng-container>
-                  }
-                </span>
+              <li>
+                <button type="button" class="fiche-jour" [class.fiche-jour-off]="jour.declaredOff" [class.fiche-jour-force]="jour.forcedOff"
+                        [class.fiche-jour-choisi]="selectedDay() === jour.date" [attr.aria-expanded]="selectedDay() === jour.date"
+                        aria-controls="fiche-jour-panneau" (click)="selectDay(jour.date)">
+                  <span class="fiche-jour-date">{{ jour.date | date: 'EEE d/MM' }}</span>
+                  <span class="fiche-jour-etat">
+                    @if (jour.declaredOff) {
+                      <ng-container i18n="@@fiche.dispo.indisponible">indisponible</ng-container>
+                    } @else if (jour.forcedOff) {
+                      <ng-container i18n="@@fiche.dispo.force">écarté par ajustement</ng-container>
+                    } @else {
+                      <ng-container i18n="@@fiche.dispo.disponible">disponible</ng-container>
+                    }
+                  </span>
+                </button>
               </li>
             }
           </ul>
         }
+        <div id="fiche-jour-panneau" class="fiche-jour-panneau" aria-live="polite">
+          @if (selectedDayInfo(); as jour) {
+            <h3 id="fiche-jour-titre" tabindex="-1">{{ jour.date | date: 'EEEE d MMMM' }}</h3>
+            @if (dayBusy()) {
+              <mat-progress-bar mode="indeterminate" />
+            }
+            <app-status-message [text]="dayError()" tone="error" />
+            @if (jour.declaredOff) {
+              @if (dayOutcome(); as outcome) {
+                <p>
+                  <ng-container i18n="@@fiche.jour.pose">Indisponible ce jour.</ng-container>
+                  @if (outcome.freedSeats.length === 0) {
+                    <ng-container i18n="@@fiche.jour.aucunLibere">Aucun siège à libérer.</ng-container>
+                  } @else {
+                    <ng-container i18n="@@fiche.jour.liberes">{{ outcome.freedSeats.length }} siège(s) libéré(s) :</ng-container>
+                  }
+                  @if (outcome.startedSeatsKept > 0) {
+                    <ng-container i18n="@@fiche.jour.commences">{{ outcome.startedSeatsKept }} déjà commencé(s), gardé(s) tel(s) quel(s).</ng-container>
+                  }
+                </p>
+                @if (outcome.lockedSeatsKept.length > 0) {
+                  <p class="fiche-alerte fiche-sieges-verrouilles">
+                    <ng-container i18n="@@fiche.jour.verrouilles">{{ outcome.lockedSeatsKept.length }} siège(s) verrouillé(s) gardé(s) en place — tant que le verrou tient, le planning garde cette personne un jour où elle est indisponible :</ng-container>
+                    @for (seat of outcome.lockedSeatsKept; track seat.posteId; let last = $last) {
+                      {{ seatLabel(seat) }}@if (!last) {, }
+                    }
+                    <a [routerLink]="['/verrouillages']" [queryParams]="{ animateur: fiche.animateur.id }" i18n="@@fiche.jour.gererVerrous">Gérer les verrous</a>
+                  </p>
+                }
+                @if (freedLines().length > 0) {
+                  <ul class="fiche-liste fiche-sieges-liberes">
+                    @for (line of freedLines(); track line.seat.posteId) {
+                      <li>
+                        {{ seatLabel(line.seat) }}
+                        @if (line.placedName; as placed) {
+                          — <ng-container i18n="@@fiche.jour.place">{{ placed }} placé(e)</ng-container>
+                        } @else {
+                          <button matButton type="button" [disabled]="dayBusy() || editingLocked()" (click)="whoCanHold(line)">
+                            <mat-icon>person_search</mat-icon>
+                            <ng-container i18n="@@siege.quiPeut">Qui peut tenir ce siège ?</ng-container>
+                          </button>
+                        }
+                      </li>
+                    }
+                  </ul>
+                }
+              } @else {
+                <p i18n="@@fiche.jour.dejaIndisponible">Déclaré indisponible ce jour.</p>
+              }
+              <button matButton="tonal" type="button" [disabled]="dayBusy() || editingLocked()" (click)="cancelDayOff(jour.date)">
+                <mat-icon>undo</mat-icon>
+                <ng-container i18n="@@fiche.jour.annuler">Annuler l'absence</ng-container>
+              </button>
+            } @else {
+              @if (jour.ahead.length + jour.locked.length + jour.started === 0) {
+                <p i18n="@@fiche.jour.aucunPoste">Aucun poste ce jour dans le planning enregistré.</p>
+              } @else if (jour.ahead.length > 0) {
+                <p>
+                  <ng-container i18n="@@fiche.jour.postes">{{ jour.ahead.length }} poste(s) :</ng-container>
+                  @for (seat of jour.ahead; track seat.posteId; let last = $last) {
+                    {{ seatLabel(seat) }}@if (!last) {, }
+                  }
+                  <ng-container i18n="@@fiche.jour.liberesSiIndispo">— libéré(s) si le jour devient indisponible.</ng-container>
+                </p>
+              }
+              @if (jour.locked.length > 0) {
+                <p class="empty-hint">
+                  <ng-container i18n="@@fiche.jour.verrouillesSiIndispo">{{ jour.locked.length }} poste(s) verrouillé(s), gardé(s) en place :</ng-container>
+                  @for (seat of jour.locked; track seat.posteId; let last = $last) {
+                    {{ seatLabel(seat) }}@if (!last) {, }
+                  }
+                </p>
+              }
+              @if (jour.started > 0) {
+                <p class="empty-hint" i18n="@@fiche.jour.dejaCommences">{{ jour.started }} poste(s) déjà commencé(s) restent tels quels.</p>
+              }
+              @if (jour.forcedOff) {
+                <p class="empty-hint" i18n="@@fiche.jour.force">Un ajustement l'écarte déjà d'un créneau de ce jour.</p>
+              }
+              <button matButton="filled" type="button" [disabled]="dayBusy() || editingLocked()" (click)="markDayOff(jour.date)">
+                <mat-icon>event_busy</mat-icon>
+                <ng-container i18n="@@fiche.jour.marquer">Indisponible ce jour</ng-container>
+              </button>
+            }
+          }
+        </div>
         @if (offOutsideEvent().length > 0) {
           <p class="empty-hint" i18n="@@fiche.dispo.horsEvenement">Hors des jours de l'événement : {{ offOutsideEvent().join(', ') }}</p>
         }
@@ -126,16 +281,104 @@
         }
       </details>
 
-      <!-- 3. Appreciations and wishes -->
-      <details class="fiche-section" open>
+      <!-- 3. Planning: the days read on time, every shift a link to the Journée -->
+      <details class="fiche-section" id="fiche-section-timeline" [open]="isOpen('timeline')" (toggle)="onToggle('timeline', $event)">
+        <summary><h2 i18n="@@fiche.section.planning">Planning</h2></summary>
+        @if (!fiche.planCalcule) {
+          <p class="empty-hint" i18n="@@fiche.aucunPlan">Aucun planning calculé : rien à lire tant qu'une résolution n'a pas été enregistrée.</p>
+        } @else {
+          @if (fiche.affectations.length > 0) {
+            <p i18n="@@fiche.affectations.resume">{{ fiche.affectations.length }} poste(s), dont {{ upcoming() }} à venir ; ceux déjà commencés sont estompés.</p>
+          }
+          @if (isOpen('timeline')) {
+            <app-animateur-timeline [animateurId]="fiche.animateur.id" [version]="planVersion()" />
+          }
+        }
+      </details>
+
+      <!-- 4. Load and fairness: the indicators and the radar -->
+      <details class="fiche-section" id="fiche-section-equite" [open]="isOpen('equite')" (toggle)="onToggle('equite', $event)">
+        <summary><h2 i18n="@@fiche.section.chargeEquite">Charge et équité</h2></summary>
+        @if (!fiche.planCalcule) {
+          <p class="empty-hint" i18n="@@fiche.aucunPlan">Aucun planning calculé : rien à lire tant qu'une résolution n'a pas été enregistrée.</p>
+        } @else if (!equityLine()) {
+          <p class="empty-hint" i18n="@@fiche.equite.nonAffecte">Aucun poste dans le planning enregistré : l'écran Équité ne liste que les animateurs affectés.</p>
+        } @else if (isOpen('equite')) {
+          @let ligne = equityLine()!;
+          <div class="fiche-equite-corps">
+            <table class="fiche-table">
+              <caption class="visually-hidden" i18n="@@fiche.equite.caption">Indicateurs d'équité de cette personne et leur écart à la médiane</caption>
+              <thead>
+                <tr>
+                  <th scope="col" i18n="@@equite.fiche.indicateur">Indicateur</th>
+                  <th scope="col" i18n="@@equite.fiche.valeur">Valeur</th>
+                  <th scope="col" i18n="@@equite.fiche.ecart">Écart à la médiane</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (indicateur of indicators(); track indicateur.colonne) {
+                  <tr>
+                    <th scope="row">{{ indicateur.libelle }}</th>
+                    <td>
+                      @switch (formatColonne(indicateur.colonne)) {
+                        @case ('heures') {
+                          {{ indicateur.valeur | number: '1.1-1' }} h
+                        }
+                        @case ('taux') {
+                          {{ indicateur.valeur | percent: '1.0-0' }}
+                        }
+                        @default {
+                          {{ indicateur.valeur }}
+                        }
+                      }
+                    </td>
+                    <td [class]="gapClass(indicateur.ecart)">
+                      @if (indicateur.ecart !== null) {
+                        @switch (formatColonne(indicateur.colonne)) {
+                          @case ('taux') {
+                            {{ indicateur.ecart > 0 ? '+' : '' }}{{ indicateur.ecart * 100 | number: '1.0-0' }} pt
+                          }
+                          @default {
+                            {{ indicateur.ecart > 0 ? '+' : '' }}{{ indicateur.ecart | number: '1.0-1' }}
+                          }
+                        }
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+            <div class="fiche-radar">
+              <div class="fiche-radar-options" role="group" aria-label="Axes ajoutés au radar" i18n-aria-label="@@equite.radar.options">
+                @for (axe of optionalAxes; track axe) {
+                  <mat-checkbox [checked]="radarAxes().includes(axe)" (change)="toggleAxis(axe, $event.checked)">{{ libelleColonne(axe) }}</mat-checkbox>
+                }
+              </div>
+              <mat-form-field appearance="outline" class="fiche-comparer">
+                <mat-label i18n="@@equite.radar.compare.label">Comparer avec…</mat-label>
+                <mat-select [value]="comparedId() || null" (valueChange)="compareWith($event)">
+                  <mat-option [value]="null" i18n="@@fiche.comparer.personne">Personne</mat-option>
+                  @for (autre of comparables(); track autre.animateurId) {
+                    <mat-option [value]="autre.animateurId">{{ autre.nom }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+              <app-equite-radar [report]="fiche.equite" [row]="ligne" [second]="comparedRow()" [optionalAxes]="radarAxes()" />
+            </div>
+          </div>
+        }
+      </details>
+
+      <!-- 5. Appreciations and wishes, edited in place -->
+      <details class="fiche-section" id="fiche-section-competences" [open]="isOpen('competences')" (toggle)="onToggle('competences', $event)">
         <summary><h2 i18n="@@fiche.section.competences">Compétences et souhaits</h2></summary>
         @if (fiche.animateur.ninja) {
           <p i18n="@@fiche.competences.ninja">Ninja : compétent sur tous les stands.</p>
         }
-        @if (competences().length === 0) {
+        @if (competenceLines().length === 0) {
           <p class="empty-hint" i18n="@@fiche.competences.aucune">Ni appréciation ni souhait.</p>
         } @else {
-          <table class="fiche-table">
+          <table class="fiche-table fiche-competences">
             <caption class="visually-hidden" i18n="@@fiche.competences.caption">Appréciation et souhait par typologie</caption>
             <thead>
               <tr>
@@ -145,18 +388,23 @@
               </tr>
             </thead>
             <tbody>
-              @for (ligne of competences(); track ligne.typologieId) {
-                <tr [class.fiche-alerte]="ligne.wishedNotAppreciated">
-                  <th scope="row">{{ ligne.label }}</th>
-                  <td>{{ niveauLabel(ligne.niveau) }}</td>
+              @for (ligne of competenceLines(); track ligne.typologieId) {
+                <tr [class.fiche-alerte]="ligne.wished && !ligne.niveau">
+                  <th scope="row">{{ typologieName(ligne.typologieId) }}</th>
                   <td>
-                    @if (ligne.wished) {
-                      <ng-container i18n="@@common.oui">Oui</ng-container>
-                      @if (ligne.wishedNotAppreciated) {
-                        <span i18n="@@fiche.competences.nonAppreciee">— souhaitée sans être appréciée</span>
+                    <select class="fiche-niveau" [attr.aria-label]="typologieName(ligne.typologieId)" [disabled]="editingLocked() || competencesBusy()"
+                            (change)="onLevelChange(ligne.typologieId, $event)">
+                      @for (niveau of niveaux; track niveau) {
+                        <option [value]="niveau ?? ''" [selected]="niveau === ligne.niveau">{{ niveauLabel(niveau) }}</option>
                       }
-                    } @else {
-                      —
+                    </select>
+                  </td>
+                  <td>
+                    <mat-checkbox [checked]="ligne.wished" [disabled]="editingLocked() || competencesBusy()"
+                                  [aria-label]="typologieName(ligne.typologieId)"
+                                  (change)="setWish(ligne.typologieId, $event.checked)" />
+                    @if (ligne.wished && !ligne.niveau) {
+                      <span i18n="@@fiche.competences.nonAppreciee">— souhaitée sans être appréciée</span>
                     }
                   </td>
                 </tr>
@@ -164,67 +412,30 @@
             </tbody>
           </table>
         }
-        <p><a routerLink="/competences" i18n="@@fiche.competences.lien">Grille des compétences</a></p>
+        <div class="fiche-competences-actions">
+          @if (addableTypologies().length > 0) {
+            <mat-form-field appearance="outline" class="fiche-ajout-typologie">
+              <mat-label i18n="@@fiche.competences.ajouter">Ajouter une typologie</mat-label>
+              <mat-select [value]="null" [disabled]="editingLocked()" (valueChange)="addTypologie($event)">
+                @for (typologie of addableTypologies(); track typologie.id) {
+                  <mat-option [value]="typologie.id">{{ typologie.label || typologie.id }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          }
+          <button matButton="filled" type="button" [disabled]="!competencesModified() || competencesBusy() || editingLocked()" (click)="saveCompetences()">
+            <mat-icon>save</mat-icon>
+            <ng-container i18n="@@common.save">Enregistrer</ng-container>
+          </button>
+          <button matButton type="button" [disabled]="!competencesModified() || competencesBusy()" (click)="resetCompetences()">
+            <ng-container i18n="@@fiche.competences.annuler">Annuler les modifications</ng-container>
+          </button>
+          <a routerLink="/competences" [queryParams]="{ animateur: animateurId() }" i18n="@@fiche.competences.lien">Grille des compétences</a>
+        </div>
       </details>
 
-      <!-- 4. Equity -->
-      <details class="fiche-section" open>
-        <summary><h2 i18n="@@fiche.section.equite">Équité</h2></summary>
-        @if (!fiche.planCalcule) {
-          <p class="empty-hint" i18n="@@fiche.aucunPlan">Aucun planning calculé : rien à lire tant qu'une résolution n'a pas été enregistrée.</p>
-        } @else if (!equityLine()) {
-          <p class="empty-hint" i18n="@@fiche.equite.nonAffecte">Aucun poste dans le planning enregistré : l'écran Équité ne liste que les animateurs affectés.</p>
-        } @else {
-          <table class="fiche-table">
-            <caption class="visually-hidden" i18n="@@fiche.equite.caption">Indicateurs d'équité de cette personne et leur écart à la médiane</caption>
-            <thead>
-              <tr>
-                <th scope="col" i18n="@@equite.fiche.indicateur">Indicateur</th>
-                <th scope="col" i18n="@@equite.fiche.valeur">Valeur</th>
-                <th scope="col" i18n="@@equite.fiche.ecart">Écart à la médiane</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (indicateur of indicators(); track indicateur.colonne) {
-                <tr>
-                  <th scope="row">{{ indicateur.libelle }}</th>
-                  <td>
-                    @switch (formatColonne(indicateur.colonne)) {
-                      @case ('heures') {
-                        {{ indicateur.valeur | number: '1.1-1' }} h
-                      }
-                      @case ('taux') {
-                        {{ indicateur.valeur | percent: '1.0-0' }}
-                      }
-                      @default {
-                        {{ indicateur.valeur }}
-                      }
-                    }
-                  </td>
-                  <td [class]="gapClass(indicateur.ecart)">
-                    @if (indicateur.ecart !== null) {
-                      @switch (formatColonne(indicateur.colonne)) {
-                        @case ('taux') {
-                          {{ indicateur.ecart > 0 ? '+' : '' }}{{ indicateur.ecart * 100 | number: '1.0-0' }} pt
-                        }
-                        @default {
-                          {{ indicateur.ecart > 0 ? '+' : '' }}{{ indicateur.ecart | number: '1.0-1' }}
-                        }
-                      }
-                    }
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        }
-        <p>
-          <a routerLink="/equite" [queryParams]="{ vue: 'fiche', animateur: fiche.animateur.id }" i18n="@@fiche.equite.lien">Ouvrir l'écran Équité</a>
-        </p>
-      </details>
-
-      <!-- 5. Fragility -->
-      <details class="fiche-section" open>
+      <!-- 6. Fragility -->
+      <details class="fiche-section" id="fiche-section-fragilite" [open]="isOpen('fragilite')" (toggle)="onToggle('fragilite', $event)">
         <summary><h2 i18n="@@fiche.section.fragilite">Fragilité</h2></summary>
         @if (!fiche.planCalcule) {
           <p class="empty-hint" i18n="@@fiche.aucunPlan">Aucun planning calculé : rien à lire tant qu'une résolution n'a pas été enregistrée.</p>
@@ -245,6 +456,7 @@
                   <th scope="col" i18n="@@fragilite.colonne.creneau">Créneau</th>
                   <th scope="col" i18n="@@fiche.fragilite.effectif">Effectif</th>
                   <th scope="col" i18n="@@fiche.fragilite.remplacants">Remplaçants</th>
+                  <th scope="col" i18n="@@common.actions">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -259,6 +471,16 @@
                       } @else {
                         {{ poste.remplacants }}
                       }
+                    </td>
+                    <td class="fiche-gestes">
+                      <button matButton type="button" [disabled]="busy() !== null || editingLocked()" (click)="lockSeat(poste.creneauId)">
+                        <mat-icon>lock</mat-icon>
+                        <ng-container i18n="@@fiche.fragilite.verrouiller">Verrouiller</ng-container>
+                      </button>
+                      <a matButton routerLink="/diagnostic" [queryParams]="{ onglet: 'former' }">
+                        <mat-icon>school</mat-icon>
+                        <ng-container i18n="@@fiche.fragilite.former">Former</ng-container>
+                      </a>
                     </td>
                   </tr>
                 }
@@ -278,57 +500,13 @@
           }
         }
         <p>
-          <a routerLink="/diagnostic" [queryParams]="{ onglet: 'fragilite' }" i18n="@@fiche.fragilite.lien">Ouvrir l'écran Fragilité</a>
+          <a routerLink="/diagnostic" [queryParams]="{ onglet: 'fragilite', q: fullName() }" i18n="@@fiche.fragilite.lien">Ouvrir l'écran Fragilité</a>
         </p>
       </details>
 
-      <!-- 6. Seats -->
-      <details class="fiche-section" open>
-        <summary><h2 i18n="@@fiche.section.affectations">Affectations</h2></summary>
-        @if (!fiche.planCalcule) {
-          <p class="empty-hint" i18n="@@fiche.aucunPlan">Aucun planning calculé : rien à lire tant qu'une résolution n'a pas été enregistrée.</p>
-        } @else if (fiche.affectations.length === 0) {
-          <p class="empty-hint" i18n="@@fiche.affectations.aucune">Aucun poste dans le planning enregistré.</p>
-        } @else {
-          <p i18n="@@fiche.affectations.resume">{{ fiche.affectations.length }} poste(s), dont {{ upcoming() }} à venir ; ceux déjà commencés sont estompés.</p>
-          <table class="fiche-table">
-            <caption class="visually-hidden" i18n="@@fiche.affectations.caption">Postes de cette personne dans le planning enregistré</caption>
-            <thead>
-              <tr>
-                <th scope="col" i18n="@@fiche.affectations.quand">Quand</th>
-                <th scope="col" i18n="@@fragilite.colonne.stand">Stand</th>
-                <th scope="col" i18n="@@fiche.affectations.emplacement">Emplacement</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (poste of fiche.affectations; track poste.posteId) {
-                <tr [class.fiche-passe]="poste.passe">
-                  <th scope="row">
-                    {{ poste.date }} {{ shortTime(poste.heureDebut) }}→{{ shortTime(poste.heureFin) }}
-                    @if (poste.passe) {
-                      <span class="visually-hidden" i18n="@@fiche.affectations.passe">(déjà commencé)</span>
-                    }
-                  </th>
-                  <td>
-                    {{ poste.standNom || poste.standId }}
-                    @if (poste.verrouille) {
-                      <mat-icon inline i18n-aria-label="@@fiche.affectations.verrouille" aria-label="Verrouillé" aria-hidden="false">lock</mat-icon>
-                    }
-                  </td>
-                  <td>{{ poste.emplacementNom || '—' }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        }
-        <p>
-          <a routerLink="/timeline" [queryParams]="{ animateur: fiche.animateur.id }" i18n="@@fiche.affectations.lien">Ouvrir sa timeline</a>
-        </p>
-      </details>
-
-      <!-- 7. Follow-up -->
-      <details class="fiche-section" open>
-        <summary><h2 i18n="@@fiche.section.suivi">Suivi</h2></summary>
+      <!-- 7. Swaps and follow-up -->
+      <details class="fiche-section" id="fiche-section-suivi" [open]="isOpen('suivi')" (toggle)="onToggle('suivi', $event)">
+        <summary><h2 i18n="@@fiche.section.echangesSuivi">Échanges et suivi</h2></summary>
         <dl class="detail-rows">
           <dt i18n="@@fiche.suivi.publication">Dernière publication</dt>
           <dd>
@@ -363,8 +541,8 @@
               </li>
             }
           </ul>
+          <p><a routerLink="/echanges" i18n="@@fiche.suivi.lienEchanges">Ouvrir les échanges</a></p>
         }
-        <p><a routerLink="/echanges" i18n="@@fiche.suivi.lienEchanges">Ouvrir les échanges</a></p>
 
         <h3 i18n="@@fiche.suivi.ajustements">Ajustements manuels</h3>
         @if (fiche.ajustements.length === 0) {
@@ -383,10 +561,10 @@
               </li>
             }
           </ul>
+          <p>
+            <a routerLink="/ad-hoc-constraints" [queryParams]="{ vue: 'reseau', personne: fiche.animateur.id }" i18n="@@fiche.suivi.reseau">Voir ses paires dans le réseau</a>
+          </p>
         }
-        <p>
-          <a routerLink="/ad-hoc-constraints" [queryParams]="{ vue: 'reseau', personne: fiche.animateur.id }" i18n="@@fiche.suivi.lienAjustements">Poser un ajustement</a>
-        </p>
 
         <h3 i18n="@@fiche.suivi.verrous">Verrous</h3>
         @if (fiche.verrous.length === 0) {
@@ -406,8 +584,8 @@
               </li>
             }
           </ul>
+          <p><a routerLink="/verrouillages" i18n="@@fiche.suivi.lienVerrous">Ouvrir les verrouillages</a></p>
         }
-        <p><a routerLink="/verrouillages" i18n="@@fiche.suivi.lienVerrous">Ouvrir les verrouillages</a></p>
       </details>
     }
   </mat-card-content>

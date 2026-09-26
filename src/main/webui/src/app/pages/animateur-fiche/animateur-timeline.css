@@ -1,23 +1,30 @@
-/* Per-animateur timeline (issue #69): one horizontal amplitude bar per
-   festival day, with vacations and the gaps (pauses/travel) between them. */
+/* The « Planning » section of the fiche animateur: one horizontal bar per
+   day the person works, with the shifts and the gaps (pauses, walks) between
+   them. */
 
-.timeline-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
+.timeline-stands-summary {
+  margin: 0 0 0.5rem;
+  color: var(--mat-sys-on-surface-variant);
 }
 
-.timeline-animateur-select {
-  display: block;
-  width: 20rem;
-  max-width: 100%;
-  margin-bottom: -1.25rem;
+.timeline-day {
+  margin-top: 1rem;
 }
 
-.timeline-day-card {
-  margin-bottom: 1rem;
+.timeline-day-title {
+  margin: 0;
+  font: var(--mat-sys-title-small);
+}
+
+.timeline-day-amplitude {
+  margin-left: 0.5rem;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* A shift of the list: its hours and its stand, one link to the Journée. */
+.timeline-block-link {
+  color: inherit;
 }
 
 /* Same pill as the Journée tab: a day under consigne is told everywhere the
@@ -27,7 +34,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin: 0 1rem;
+  margin: 0.25rem 0;
   font-size: 0.875rem;
   color: var(--mat-sys-on-surface-variant);
 }
@@ -163,10 +170,6 @@
   color: var(--mat-sys-on-surface-variant);
   font-style: italic;
   margin-left: 0.4rem;
-}
-
-.timeline-stands-card {
-  margin-bottom: 1rem;
 }
 
 .timeline-stands-list {

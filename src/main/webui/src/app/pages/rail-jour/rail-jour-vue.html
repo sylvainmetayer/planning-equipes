@@ -77,7 +77,7 @@
             @for (ligne of lignesAffichees(); track ligne.animateurId; let index = $index) {
               <tr class="rail-ligne">
                 <th scope="row" class="rail-nom">
-                  <span class="rail-nom-label">{{ ligne.nom }}</span>
+                  <a class="rail-nom-label" [routerLink]="['/animateurs', ligne.animateurId]">{{ ligne.nom }}</a>
                   @if (ligne.statut === 'affecte') {
                     <span class="rail-nom-meta">{{ ligne.amplitudeDebut }} – {{ ligne.amplitudeFin }} · {{ ligne.dureeLabel }}</span>
                   } @else if (ligne.statut === 'indisponible') {

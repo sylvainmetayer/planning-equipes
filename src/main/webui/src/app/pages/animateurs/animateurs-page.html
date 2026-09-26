@@ -113,7 +113,7 @@
       <ng-container matColumnDef="nom">
         <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@common.nom">Nom</th>
         <td mat-cell *matCellDef="let animateur">
-          <a class="referentiel-nom" [routerLink]="['/animateurs', animateur.id]">{{ nom(animateur) }}</a>
+          <a class="referentiel-nom" [routerLink]="['/animateurs', animateur.id]" [queryParams]="ficheParams()">{{ nom(animateur) }}</a>
           @if (animateur.manager) {
             <span class="animateur-manager" i18n="@@animateurs.field.manager">Manager</span>
           }

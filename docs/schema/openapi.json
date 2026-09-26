@@ -2519,6 +2519,62 @@
         "type" : "string",
         "enum" : [ "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY" ]
       },
+      "DayOff" : {
+        "required" : [ "date", "unavailable", "freedSeats", "lockedSeatsKept", "startedSeatsKept" ],
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "unavailable" : {
+            "type" : "boolean"
+          },
+          "freedSeats" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/DaySeat"
+            }
+          },
+          "lockedSeatsKept" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/DaySeat"
+            }
+          },
+          "startedSeatsKept" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "DaySeat" : {
+        "type" : "object",
+        "required" : [ "posteId", "creneauId", "date", "heureDebut", "heureFin" ],
+        "properties" : {
+          "posteId" : {
+            "type" : "string"
+          },
+          "standId" : {
+            "type" : "string"
+          },
+          "standNom" : {
+            "type" : "string"
+          },
+          "creneauId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "heureDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "heureFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          }
+        }
+      },
       "Decision" : {
         "type" : "object",
         "properties" : {
@@ -9400,6 +9456,70 @@
           }
         },
         "summary" : "Profile",
+        "tags" : [ "Animateur Resource" ]
+      }
+    },
+    "/api/animateurs/{id}/jours-indisponibles/{date}" : {
+      "put" : {
+        "parameters" : [ {
+          "name" : "date",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DayOff"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Mark Day Off",
+        "tags" : [ "Animateur Resource" ]
+      },
+      "delete" : {
+        "parameters" : [ {
+          "name" : "date",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DayOff"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Cancel Day Off",
         "tags" : [ "Animateur Resource" ]
       }
     },

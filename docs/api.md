@@ -1108,9 +1108,10 @@ dans un bloc replié par défaut, avec un sélecteur d'axe.
 
 Cliquer une case l'ouvre sur **quoi faire**, pas seulement sur combien : la
 consigne de correction de la règle (`remediation`, ci-dessous), le lien vers
-l'écran où cet axe se corrige — la journée, le planning du stand, la timeline
-de la personne —, le poids actuel et ce qu'un assouplissement changerait, puis
-les lignes de violation quand le serveur les envoie.
+l'écran où cet axe se corrige — la journée, le planning du stand, la fiche
+de la personne, section « Planning » —, le poids actuel et ce qu'un
+assouplissement changerait, puis les lignes de violation quand le serveur les
+envoie.
 
 `remediation` accompagne chaque contrainte de `contraintes[]` : le levier que
 l'organisateur a réellement sur cette règle — recruter, ouvrir un stand plus

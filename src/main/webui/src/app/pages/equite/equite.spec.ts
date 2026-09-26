@@ -14,8 +14,6 @@ import {
   formatColonne,
   heureCourte,
   indicateursFiche,
-  ligneDe,
-  suggestions,
   libelleColonne,
   libelleSolveur,
   sortRows,
@@ -212,21 +210,5 @@ describe('indicateursFiche', () => {
   it('is empty without a report or without a chosen person', () => {
     expect(indicateursFiche(null, ALICE)).toEqual([]);
     expect(indicateursFiche(RAPPORT, null)).toEqual([]);
-  });
-});
-
-describe('ligneDe', () => {
-  it('finds the row of an id, and answers null for one the report does not carry', () => {
-    expect(ligneDe([ALICE, BRUNO], 'E2E-B')).toBe(BRUNO);
-    expect(ligneDe([ALICE, BRUNO], 'E2E-Z')).toBeNull();
-    expect(ligneDe([ALICE, BRUNO], '')).toBeNull();
-  });
-});
-
-describe('suggestions', () => {
-  it('offers what matches, everything while nothing is typed, and never more than the cap', () => {
-    expect(suggestions([ALICE, BRUNO], 'bru')).toEqual([BRUNO]);
-    expect(suggestions([ALICE, BRUNO], '')).toEqual([ALICE, BRUNO]);
-    expect(suggestions([ALICE, BRUNO], '', 1)).toEqual([ALICE]);
   });
 });

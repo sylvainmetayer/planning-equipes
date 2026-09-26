@@ -47,7 +47,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/stands', marker: 'Stands (' },
   { path: '/emplacements' },
   { path: '/animateurs', marker: 'Animateurs (', sheet: 'competence-row' },
-  { path: '/animateurs/E2E-A', marker: 'Identité et régime', sheet: 'fiche-section' },
+  { path: '/animateurs/E2E-A', marker: 'Identité et contact', sheet: 'fiche-section' },
   { path: '/competences', marker: 'Compétences', sheet: 'competences-legende' },
   { path: '/creneaux', marker: 'Créneaux (', sheet: 'creneau-probleme' },
   { path: '/typologies', marker: 'Typologies (' },
@@ -101,7 +101,8 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/heatmap', sheet: 'heatmap-toolbar' },
   { path: '/repartition-heures', marker: 'Répartition des heures', sheet: 'repartition-toolbar' },
   { path: '/marge', marker: 'Marge disponible', sheet: 'marge-synthese' },
-  { path: '/timeline', marker: 'Timeline animateur', sheet: 'timeline-toolbar' },
+  // The former timeline lands on a fiche's planning section; its own sheet is gone.
+  { path: '/animateurs/E2E-A?section=timeline', marker: 'Planning', sheet: 'timeline-day' },
   { path: '/journee?vue=rail', marker: 'Mobilisables', sheet: 'rail-toolbar' },
   {
     path: '/journee?vue=carte',
