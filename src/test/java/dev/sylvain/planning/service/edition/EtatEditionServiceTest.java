@@ -18,17 +18,23 @@ import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.TypeCauseInfaisa
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintDiagnostic;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.PlanningDiagnostic;
+import dev.sylvain.planning.service.analyse.ScoreReading;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
+import dev.sylvain.planning.service.backup.BackupRun;
 import dev.sylvain.planning.service.edition.EtatEditionService.Facts;
+import dev.sylvain.planning.service.edition.EtatEditionService.JourFacts;
 import dev.sylvain.planning.service.edition.EtatEditionService.TodayFacts;
+import dev.sylvain.planning.service.edition.EtatEditionView.Phase;
 import dev.sylvain.planning.service.edition.EtatEditionView.Statut;
+import dev.sylvain.planning.service.notification.JournalNotificationsRepository.Alerte;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService.SyntheseConfirmations;
 import dev.sylvain.planning.service.publication.PlanPublicationService.ApercuPublication;
 import dev.sylvain.planning.service.referentiel.CoherenceReferentielService.CoherenceReport;
 import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService.PlanningResolution;
 import dev.sylvain.planning.service.validation.ValidationPrerequisService.ProgressionValidations;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -1044,9 +1050,10 @@ class EtatEditionServiceTest {
     @Test
     void theEventIsOverOnlyOnceItsLastDayIsBehindToday() {
         assertThat(EtatEditionService.evenement(todayWithDays(List.of())))
-                .isEqualTo(new EtatEditionView.EtatEvenement(null, null, false));
+                .isEqualTo(new EtatEditionView.EtatEvenement(null, null, false, JOUR, Phase.PREPARATION, null));
         assertThat(EtatEditionService.evenement(todayWithDays(List.of(JOUR.minusDays(3), JOUR))))
-                .isEqualTo(new EtatEditionView.EtatEvenement(JOUR.minusDays(3), JOUR, false));
+                .isEqualTo(
+                        new EtatEditionView.EtatEvenement(JOUR.minusDays(3), JOUR, false, JOUR, Phase.EVENEMENT, null));
         assertThat(EtatEditionService.evenement(todayWithDays(List.of(JOUR.plusDays(1))))
                         .termine())
                 .isFalse();
@@ -1055,6 +1062,284 @@ class EtatEditionServiceTest {
                 .isTrue();
         assertThat(EtatEditionService.assemble(emptyFacts()).evenement().termine())
                 .isFalse();
+    }
+
+    /* ------------------------------ Phases ---------------------------------- */
+
+    /** A day the event runs, with the given day under way and the given night. */
+    private static TodayFacts duringTheEvent(
+            List<LocalDate> jours, JourFacts jour, List<Instant> echanges, List<Alerte> alertes, BackupRun sauvegarde) {
+        return new TodayFacts(JOUR, MAINTENANT, List.of(), echanges, 7, jours, false, 72, alertes, sauvegarde, jour);
+    }
+
+    @Test
+    void thePhaseIsPreparationBeforeTheFirstDayAndWithoutAnyDay() {
+        assertThat(EtatEditionService.phase(List.of(), JOUR)).isEqualTo(Phase.PREPARATION);
+        assertThat(EtatEditionService.phase(List.of(JOUR.plusDays(1), JOUR.plusDays(4)), JOUR))
+                .isEqualTo(Phase.PREPARATION);
+    }
+
+    @Test
+    void thePhaseIsTheEventFromTheFirstDayToTheLastBothIncluded() {
+        List<LocalDate> jours = List.of(JOUR.minusDays(2), JOUR.plusDays(2));
+
+        assertThat(EtatEditionService.phase(jours, JOUR.minusDays(2))).isEqualTo(Phase.EVENEMENT);
+        assertThat(EtatEditionService.phase(jours, JOUR)).isEqualTo(Phase.EVENEMENT);
+        assertThat(EtatEditionService.phase(jours, JOUR.plusDays(2))).isEqualTo(Phase.EVENEMENT);
+        assertThat(EtatEditionService.phase(jours, JOUR.plusDays(3))).isEqualTo(Phase.APRES);
+    }
+
+    /** « J5 · 60 stands ouverts · 23 places vides · 0 absent · 2 échanges à arbitrer ». */
+    @Test
+    void duringTheEventTheDayUnderWayIsReadWithItsRank() {
+        TodayFacts today = duringTheEvent(
+                List.of(JOUR.minusDays(4), JOUR.minusDays(1), JOUR, JOUR.plusDays(3)),
+                new JourFacts(JOUR, 60, 23, 0),
+                List.of(MAINTENANT.minusSeconds(60), MAINTENANT.minusSeconds(120)),
+                List.of(),
+                null);
+
+        EtatEditionView.EtatEvenement evenement = EtatEditionService.evenement(today);
+
+        assertThat(evenement.phase()).isEqualTo(Phase.EVENEMENT);
+        assertThat(evenement.aujourdhui()).isEqualTo(JOUR);
+        // Counted on the calendar from the first day: a day without a timeslot still counts.
+        assertThat(evenement.jour()).isEqualTo(new EtatEditionView.EtatJour(JOUR, 5, 60, 23, 0, 2));
+    }
+
+    @Test
+    void outsideTheEventThereIsNoDayToRead() {
+        TodayFacts avant =
+                duringTheEvent(List.of(JOUR.plusDays(1)), new JourFacts(JOUR, 60, 23, 0), List.of(), List.of(), null);
+
+        assertThat(EtatEditionService.evenement(avant).jour()).isNull();
+        assertThat(EtatEditionService.evenement(avant).phase()).isEqualTo(Phase.PREPARATION);
+    }
+
+    /**
+     * A night shift on the last day, 22:00–02:00: at one in the morning the
+     * calendar says the day after, the wall display and the mode jour J still
+     * say the last day — and so does the phase, which does not close the
+     * event under a shift still running.
+     */
+    @Test
+    void theNightShiftOfTheLastDayKeepsTheEventRunningPastMidnight() {
+        LocalDate dernier = JOUR.plusDays(2);
+        List<Creneau> creneaux = List.of(
+                new Creneau(1L, 0, JOUR, LocalTime.of(9, 0), LocalTime.of(18, 0)),
+                new Creneau(2L, 0, dernier, LocalTime.of(14, 0), LocalTime.of(22, 0)),
+                new Creneau(3L, 0, dernier, LocalTime.of(22, 0), LocalTime.of(2, 0)));
+        List<LocalDate> jours = List.of(JOUR, dernier);
+
+        LocalDate enCours =
+                EtatEditionService.dayUnderWayOf(creneaux, dernier.plusDays(1).atTime(1, 0));
+        TodayFacts nuit = new TodayFacts(
+                dernier.plusDays(1),
+                MAINTENANT,
+                List.of(),
+                List.of(),
+                7,
+                jours,
+                false,
+                72,
+                List.of(),
+                null,
+                null,
+                enCours);
+
+        assertThat(enCours).isEqualTo(dernier);
+        assertThat(EtatEditionService.evenement(nuit).phase()).isEqualTo(Phase.EVENEMENT);
+        assertThat(EtatEditionService.evenement(nuit).termine()).isFalse();
+        // Once the shift is over, the calendar date is the day again, and the event is behind.
+        LocalDate apres =
+                EtatEditionService.dayUnderWayOf(creneaux, dernier.plusDays(1).atTime(3, 0));
+        assertThat(apres).isEqualTo(dernier.plusDays(1));
+        assertThat(EtatEditionService.phase(jours, apres)).isEqualTo(Phase.APRES);
+    }
+
+    /* ------------------------- The alerts of the night ------------------------ */
+
+    private static Animateur fiche(String id, String email) {
+        Animateur animateur = new Animateur();
+        animateur.setId(id);
+        animateur.setEmail(email);
+        return animateur;
+    }
+
+    /**
+     * An alert says something true only while its cause stands: a fiche given
+     * an address since is written to by the next night, and somebody who has
+     * answered since has nobody left to chase them.
+     */
+    @Test
+    void anAlertOfTheNightCountsOnlyWhileItsCauseStands() {
+        List<Alerte> alertes = List.of(
+                alerte("RAPPEL_VEILLE_INJOIGNABLE", "A1|" + JOUR, MAINTENANT),
+                new Alerte("RAPPEL_VEILLE_INJOIGNABLE", "A2|" + JOUR, MAINTENANT, "libellé", "WARNING", "A2"),
+                new Alerte("RELANCE_INJOIGNABLE", "A3|x", MAINTENANT, "libellé", "WARNING", "A3"),
+                new Alerte("RELANCE_INJOIGNABLE", "A4|x", MAINTENANT, "libellé", "ALERTE", "A4"),
+                new Alerte("ALERTE_ECHANGE", "D1", MAINTENANT, "libellé", "WARNING", null));
+        List<Animateur> animateurs = List.of(
+                fiche("A1", " "), fiche("A2", "a2@example.org"), fiche("A3", null), fiche("A4", "a4@example.org"));
+
+        List<Alerte> restantes = EtatEditionService.stillStanding(alertes, animateurs, () -> Set.of("A4"));
+
+        assertThat(restantes).extracting(Alerte::cle).containsExactly("A1|" + JOUR, "A4|x", "D1");
+    }
+
+    /** Without a reminder alert to check, who is still silent is not even read. */
+    @Test
+    void theSilentAreReadOnlyWhenAReminderAlertIsThere() {
+        List<Alerte> alertes = List.of(alerte("ALERTE_ECHANGE", "D1", MAINTENANT));
+
+        List<Alerte> restantes = EtatEditionService.stillStanding(alertes, List.of(), () -> {
+            throw new AssertionError("read for nothing");
+        });
+
+        assertThat(restantes).hasSize(1);
+    }
+
+    private static Alerte alerte(String type, String cle, Instant declencheLe) {
+        return new Alerte(type, cle, declencheLe, "libellé", "WARNING", "A1");
+    }
+
+    /** A reminder for a day still ahead must be made by hand; one for a day gone says nothing any more. */
+    @Test
+    void anUnsentDayBeforeReminderCountsWhileItsDayIsAhead() {
+        List<Alerte> alertes = List.of(
+                alerte("RAPPEL_VEILLE_INJOIGNABLE", "A1|" + JOUR, MAINTENANT),
+                alerte("RAPPEL_VEILLE_INJOIGNABLE", "A2|" + JOUR.plusDays(1), MAINTENANT),
+                alerte("RAPPEL_VEILLE_INJOIGNABLE", "A3|" + JOUR.minusDays(1), MAINTENANT),
+                alerte("RAPPEL_VEILLE_INJOIGNABLE", "illisible", MAINTENANT),
+                alerte("ALERTE_ECHANGE", "D1", MAINTENANT));
+
+        EtatEditionView.EtatATraiter bloc = aTraiter(duringTheEvent(List.of(), null, List.of(), alertes, null));
+
+        assertThat(bloc.rappelsNonEnvoyes()).isEqualTo(2);
+    }
+
+    /** An unsent reminder of the silent is about the published plan; one about an older plan is not. */
+    @Test
+    void anUnsentReminderCountsOnlySinceTheLastPublication() {
+        Facts f = filledFacts();
+        Instant publieLe = f.confirmations().dernierePublicationLe();
+        List<Alerte> alertes = List.of(
+                alerte("RELANCE_INJOIGNABLE", "A1|x", publieLe.plusSeconds(3600)),
+                alerte("RELANCE_INJOIGNABLE", "A2|x", publieLe.minusSeconds(3600)));
+
+        EtatEditionView.EtatATraiter bloc = aTraiter(duringTheEvent(List.of(), null, List.of(), alertes, null));
+
+        assertThat(bloc.relancesNonEnvoyees()).isEqualTo(1);
+    }
+
+    @Test
+    void aFailedNightlyBackupIsToHandleWithItsTime() {
+        Instant nuit = MAINTENANT.minus(Duration.ofHours(5));
+        EtatEditionView.EtatATraiter echec = aTraiter(duringTheEvent(
+                List.of(), null, List.of(), List.of(), new BackupRun(nuit, false, null, "disque plein")));
+        EtatEditionView.EtatATraiter reussie = aTraiter(
+                duringTheEvent(List.of(), null, List.of(), List.of(), new BackupRun(nuit, true, "dump.sql", null)));
+        EtatEditionView.EtatATraiter sansSauvegarde =
+                aTraiter(duringTheEvent(List.of(), null, List.of(), List.of(), null));
+
+        assertThat(echec.sauvegardeEnEchec()).isTrue();
+        assertThat(echec.sauvegardeEchecLe()).isEqualTo(nuit);
+        assertThat(reussie.sauvegardeEnEchec()).isFalse();
+        assertThat(sansSauvegarde.sauvegardeEnEchec()).isFalse();
+        assertThat(sansSauvegarde.sauvegardeEchecLe()).isNull();
+    }
+
+    /* ----------------------------- Acknowledgements ---------------------------- */
+
+    private static EtatEditionView.EtatConfirmations confirmationsAfter(Duration depuisPublication, boolean armees) {
+        Facts f = filledFacts();
+        Instant publieLe = MAINTENANT.minus(depuisPublication);
+        TodayFacts today =
+                new TodayFacts(JOUR, MAINTENANT, List.of(), List.of(), 7, List.of(), armees, 72, List.of(), null, null);
+        return EtatEditionService.assemble(new Facts(
+                        f.edition(),
+                        f.stands(),
+                        f.animateurs(),
+                        f.creneaux(),
+                        f.typologiesOrphelines(),
+                        f.collecteOuverte(),
+                        f.declarationsEnAttente(),
+                        f.declarationsTraitees(),
+                        f.ouvertures(),
+                        f.staffing(),
+                        f.resolution(),
+                        f.diagnostic(),
+                        f.lastDataChange(),
+                        false,
+                        f.faisabilite(),
+                        f.publication(),
+                        new SyntheseConfirmations(10, 0, 143, publieLe, false),
+                        f.foireOuverte(),
+                        0,
+                        f.relecture(),
+                        NO_ISSUE,
+                        today))
+                .confirmations();
+    }
+
+    /** An hour after the publication, 143 silent people are not an alert yet: the reminder delay has not run out. */
+    @Test
+    void theSilentOnlyCallForAttentionPastTheReminderDelay() {
+        assertThat(confirmationsAfter(Duration.ofHours(1), true).statut()).isEqualTo(Statut.INFO);
+        assertThat(confirmationsAfter(Duration.ofHours(72), true).statut()).isEqualTo(Statut.ATTENTION);
+    }
+
+    @Test
+    void theAcknowledgementsSayWhetherTheReminderIsArmedAndAfterHowLong() {
+        EtatEditionView.EtatConfirmations eteintes = confirmationsAfter(Duration.ofHours(1), false);
+
+        assertThat(eteintes.relancesAutomatiques()).isFalse();
+        assertThat(eteintes.delaiRelanceHeures()).isEqualTo(72);
+        assertThat(confirmationsAfter(Duration.ofHours(1), true).relancesAutomatiques())
+                .isTrue();
+    }
+
+    /** The home screen reads the score in sentences: the reading travels with the line. */
+    @Test
+    void theResolutionCarriesTheReadingOfTheScore() {
+        Facts f = filledFacts();
+        List<ScoreReading.ScoreSentence> lecture = ScoreReading.read(f.diagnostic());
+
+        assertThat(EtatEditionService.assemble(withDiagnostic(f, f.diagnostic().withReading(lecture)))
+                        .resolution()
+                        .lecture())
+                .isEqualTo(lecture)
+                .isNotEmpty();
+        assertThat(EtatEditionService.assemble(withDiagnostic(f, null))
+                        .resolution()
+                        .lecture())
+                .isEmpty();
+    }
+
+    private static Facts withDiagnostic(Facts f, PlanningDiagnostic diagnostic) {
+        return new Facts(
+                f.edition(),
+                f.stands(),
+                f.animateurs(),
+                f.creneaux(),
+                f.typologiesOrphelines(),
+                f.collecteOuverte(),
+                f.declarationsEnAttente(),
+                f.declarationsTraitees(),
+                f.ouvertures(),
+                f.staffing(),
+                f.resolution(),
+                diagnostic,
+                f.lastDataChange(),
+                false,
+                f.faisabilite(),
+                f.publication(),
+                f.confirmations(),
+                f.foireOuverte(),
+                0,
+                f.relecture(),
+                NO_ISSUE,
+                f.today());
     }
 
     private static TodayFacts todayWithDays(List<LocalDate> jours) {

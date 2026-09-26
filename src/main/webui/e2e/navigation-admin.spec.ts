@@ -32,7 +32,8 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/', marker: "État de l'édition", sheet: 'accueil-ligne' },
   { path: '/solveur', marker: 'Calculer le planning', sheet: 'solver-volumetry' },
   { path: '/publication', marker: 'Diffusion du planning', sheet: 'publication-etat' },
-  { path: '/notifications', sheet: 'notification-jour' },
+  // The former Notifications page lands on « À traiter aujourd'hui ».
+  { path: '/notifications', marker: "À traiter aujourd'hui", sheet: 'notification-jour' },
   // One page over four tabs, each visited: a tab's stylesheet travels with the
   // page's chunk, and only a browser can tell that it arrived.
   { path: '/diagnostic', marker: 'Diagnostic', sheet: 'diagnostic-onglets' },

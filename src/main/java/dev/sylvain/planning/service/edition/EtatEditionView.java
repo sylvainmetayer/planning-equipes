@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.edition;
 
+import dev.sylvain.planning.service.analyse.ScoreReading;
 import dev.sylvain.planning.service.referentiel.GelReferentielService;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -57,16 +58,60 @@ public record EtatEditionView(
     }
 
     /**
+     * Where the edition stands against its own dates, which decides the form
+     * of the home screen: the checklist before, the day during, the archive
+     * after.
+     */
+    public enum Phase {
+        /** Before the first day, and always on an edition without a timeslot. */
+        PREPARATION,
+        /** From the first day to the last, both included. */
+        EVENEMENT,
+        /** The last day is behind today. */
+        APRES
+    }
+
+    /**
      * The event's bounds, derived from the timeslots and never stored — the
      * first and last day carrying one, {@code null} both when there is none,
      * for an edition without a timeslot has no bounds.
      *
-     * @param termine the last day is behind the day {@code JourJClock} says it
-     *                is: the screen then offers to archive the edition. Never
-     *                true without bounds
+     * @param termine    the last day is behind the day {@code JourJClock} says it
+     *                   is: the screen then offers to archive the edition. Never
+     *                   true without bounds
+     * @param aujourdhui the day {@code JourJClock} says it is, the simulated one
+     *                   when the clock is frozen
+     * @param phase      before, during or after the event, judged on {@code aujourdhui}
+     * @param jour       the day under way, only while the event runs — {@code null}
+     *                   otherwise
      */
-    @Schema(requiredProperties = {"termine"})
-    public record EtatEvenement(LocalDate premierJour, LocalDate dernierJour, boolean termine) {}
+    @Schema(requiredProperties = {"aujourdhui", "phase", "termine"})
+    public record EtatEvenement(
+            LocalDate premierJour,
+            LocalDate dernierJour,
+            boolean termine,
+            LocalDate aujourdhui,
+            Phase phase,
+            EtatJour jour) {}
+
+    /**
+     * The day under way, in the figures the home screen's first line reads
+     * during the event. Counted by the services that already count them — the
+     * wall display for the stands and the seats, the mode jour J for the
+     * absences — never a fourth time here.
+     *
+     * @param date              the journée under way: the evening that opened a
+     *                          shift still running after midnight, until it ends
+     * @param numero            its rank from the first day of the event, the first
+     *                          day being 1 (« J5 »)
+     * @param standsOuverts     stands holding at least one seat that day
+     * @param placesVides       seats of that day nobody holds
+     * @param absents           animateurs marked absent on one of its timeslots
+     * @param echangesAArbitrer swap requests waiting for the organisation's decision
+     */
+    @Schema(requiredProperties = {"absents", "date", "echangesAArbitrer", "numero", "placesVides", "standsOuverts"})
+    public record EtatJour(
+            LocalDate date, int numero, int standsOuverts, int placesVides, int absents, int echangesAArbitrer) {}
 
     /**
      * How many rows each referential holds; a zero anywhere is a step still to do.
@@ -143,8 +188,11 @@ public record EtatEditionView(
      * @param faisable         hard score at zero on the last analysis; {@code null} without one
      * @param dataStale        reference data changed after the solve — computed here, not by the screen
      * @param solveEnCours     a solve holds this edition right now
+     * @param lecture          the last analysis read out in sentences (« Lecture du
+     *                         score »), what the home screen shows in place of the
+     *                         raw score; empty without an analysis
      */
-    @Schema(requiredProperties = {"dataStale", "resolue", "solveEnCours", "statut"})
+    @Schema(requiredProperties = {"dataStale", "lecture", "resolue", "solveEnCours", "statut"})
     public record EtatResolution(
             boolean resolue,
             Instant resoluLe,
@@ -153,7 +201,8 @@ public record EtatEditionView(
             Boolean faisable,
             boolean dataStale,
             boolean solveEnCours,
-            Statut statut) {}
+            Statut statut,
+            List<ScoreReading.ScoreSentence> lecture) {}
 
     /**
      * @param bloquants        critical feasibility causes plus hard rules in default
@@ -186,9 +235,31 @@ public record EtatEditionView(
     public record EtatPublication(
             boolean jamaisPublie, Instant dernierePublicationLe, int personnesAPrevenir, Statut statut) {}
 
-    /** The acknowledgements of the published plan, over the people it seats. */
-    @Schema(requiredProperties = {"confirmes", "relances", "silencieux", "statut"})
-    public record EtatConfirmations(int confirmes, int relances, int silencieux, Statut statut) {}
+    /**
+     * The acknowledgements of the published plan, over the people it seats.
+     *
+     * @param relancesAutomatiques the nightly sends are armed on this edition
+     *                             (Paramètres › E-mails) — off by default, and
+     *                             the reminder of the silent is one of them
+     * @param delaiRelanceHeures   how long a silence lasts before it becomes a
+     *                             reminder: the line is only « à vérifier » past it
+     */
+    @Schema(
+            requiredProperties = {
+                "confirmes",
+                "delaiRelanceHeures",
+                "relances",
+                "relancesAutomatiques",
+                "silencieux",
+                "statut"
+            })
+    public record EtatConfirmations(
+            int confirmes,
+            int relances,
+            int silencieux,
+            Statut statut,
+            boolean relancesAutomatiques,
+            int delaiRelanceHeures) {}
 
     /**
      * @param ouverte           the switch, as the admin set it
@@ -226,6 +297,14 @@ public record EtatEditionView(
      *                                 solve runs, it will read the new data
      * @param personnesAPrevenir       what the next publication would announce, after a first one
      *                                 and outside a running solve
+     * @param rappelsNonEnvoyes        day-before reminders the nightly job could not send — a fiche
+     *                                 without an address — for a day still ahead, and whose fiche
+     *                                 still has none: the person has to be told by hand
+     * @param relancesNonEnvoyees      reminders of the silent that could not leave since the last
+     *                                 publication — the night's or a manual one, for want of an
+     *                                 address or a send that failed — about somebody still silent
+     * @param sauvegardeEnEchec        the last nightly backup failed
+     * @param sauvegardeEchecLe        when that attempt ran, {@code null} without a failure
      */
     @Schema(
             requiredProperties = {
@@ -237,6 +316,9 @@ public record EtatEditionView(
                 "horizonJours",
                 "journeesNonRelues",
                 "personnesAPrevenir",
+                "rappelsNonEnvoyes",
+                "relancesNonEnvoyees",
+                "sauvegardeEnEchec",
                 "seuilAncienneteJours",
                 "silenceJours",
                 "silencieuxARelancer"
@@ -254,5 +336,9 @@ public record EtatEditionView(
             int silencieuxARelancer,
             int silenceJours,
             boolean donneesModifiees,
-            int personnesAPrevenir) {}
+            int personnesAPrevenir,
+            int rappelsNonEnvoyes,
+            int relancesNonEnvoyees,
+            boolean sauvegardeEnEchec,
+            Instant sauvegardeEchecLe) {}
 }

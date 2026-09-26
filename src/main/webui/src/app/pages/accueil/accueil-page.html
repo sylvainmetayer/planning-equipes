@@ -38,21 +38,7 @@
         </div>
       </div>
     }
-    @if (today().length > 0) {
-      <section class="accueil-a-traiter" aria-labelledby="accueil-a-traiter-titre">
-        <h2 id="accueil-a-traiter-titre" class="accueil-a-traiter-titre" i18n="@@accueil.aTraiter.titre">À traiter aujourd'hui</h2>
-        <ul class="accueil-a-traiter-liste">
-          @for (item of today(); track item.id) {
-            <li [class.accueil-a-traiter-alerte]="item.alerte" [attr.data-sujet]="item.id">
-              <mat-icon aria-hidden="true">{{ item.alerte ? 'error_outline' : 'schedule' }}</mat-icon>
-              <span class="accueil-a-traiter-texte">@if (item.alerte) {<span class="visually-hidden" i18n="@@accueil.aTraiter.alerte">Alerte : </span>}{{ item.sentence }}</span>
-              <a class="accueil-a-traiter-lien" [routerLink]="item.lien.route" [queryParams]="item.lien.queryParams ?? null">{{ item.lien.libelle }}</a>
-            </li>
-          }
-        </ul>
-      </section>
-    }
-    @if (etatEdition()?.evenement?.termine) {
+    @if (phase() === 'APRES' && etatEdition()?.evenement?.termine) {
       <div class="accueil-archive" data-bloc="archive">
         <mat-icon aria-hidden="true">inventory_2</mat-icon>
         <p class="accueil-archive-texte" i18n="@@accueil.archive.texte">L'événement est terminé : gardez-en une archive avant de purger l'édition.</p>
@@ -62,7 +48,66 @@
         </a>
       </div>
     }
-    @if (etatEdition()) {
+    @if (jour(); as jour) {
+      <div class="accueil-jour" data-bloc="jour">
+        <mat-icon aria-hidden="true">today</mat-icon>
+        <a class="accueil-jour-lien" routerLink="/jour-j">{{ jour }}</a>
+        <a matButton routerLink="/parametres" [queryParams]="{ onglet: 'mural' }">
+          <mat-icon>tv</mat-icon>
+          <ng-container i18n="@@accueil.jour.tv">Afficher sur la TV</ng-container>
+        </a>
+      </div>
+    }
+    <section id="a-traiter" class="accueil-a-traiter" aria-labelledby="accueil-a-traiter-titre">
+      <h2 id="accueil-a-traiter-titre" class="accueil-a-traiter-titre" i18n="@@accueil.aTraiter.titre">À traiter aujourd'hui</h2>
+      @if (today().length > 0) {
+        <ul class="accueil-a-traiter-liste">
+          @for (item of today(); track item.id) {
+            <li [class.accueil-a-traiter-alerte]="item.alerte" [attr.data-sujet]="item.id">
+              <mat-icon aria-hidden="true">{{ item.alerte ? 'error_outline' : 'schedule' }}</mat-icon>
+              <span class="accueil-a-traiter-texte">@if (item.alerte) {<span class="visually-hidden" i18n="@@accueil.aTraiter.alerte">Alerte : </span>}{{ item.sentence }}</span>
+              <a class="accueil-a-traiter-lien" [routerLink]="item.lien.route" [queryParams]="item.lien.queryParams ?? null" [fragment]="item.lien.fragment" (click)="followOnPage(item.lien)">{{ item.lien.libelle }}</a>
+            </li>
+          }
+        </ul>
+      } @else if (etatEdition()) {
+        <p class="empty-hint" i18n="@@accueil.aTraiter.rien">Rien n'attend de décision aujourd'hui.</p>
+      }
+      <app-messages-recents [ouvert]="alertesDemandees()" />
+    </section>
+    @if (vide()) {
+      <section class="accueil-demarrer" data-bloc="demarrer" aria-labelledby="accueil-demarrer-titre">
+        <h2 id="accueil-demarrer-titre" class="accueil-a-traiter-titre" i18n="@@accueil.demarrer.titre">Démarrer</h2>
+        <p class="empty-hint" i18n="@@accueil.demarrer.intro">Cette édition est vide : trois façons de la remplir.</p>
+        <div class="card-actions">
+          <a matButton="filled" routerLink="/fichiers">
+            <mat-icon>upload_file</mat-icon>
+            <ng-container i18n="@@accueil.demarrer.importer">Importer un fichier</ng-container>
+          </a>
+          <a matButton="outlined" routerLink="/editions">
+            <mat-icon>content_copy</mat-icon>
+            <ng-container i18n="@@accueil.demarrer.dupliquer">Repartir d'une édition</ng-container>
+          </a>
+          <a matButton="outlined" routerLink="/fichiers" [queryParams]="{ onglet: 'importer', cible: 'exemples' }">
+            <mat-icon>auto_awesome</mat-icon>
+            <ng-container i18n="@@accueil.demarrer.exemple">Charger un exemple</ng-container>
+          </a>
+        </div>
+      </section>
+    } @else if (etatEdition()) {
+      @if (phase() === 'EVENEMENT') {
+        <button matButton type="button" class="accueil-checklist-bascule" [attr.aria-controls]="checklistOpen() ? 'accueil-checklist' : null"
+                [attr.aria-expanded]="checklistOpen()" (click)="toggleChecklist()">
+          <mat-icon>{{ checklistOpen() ? 'expand_less' : 'expand_more' }}</mat-icon>
+          @if (checklistOpen()) {
+            <ng-container i18n="@@accueil.checklist.masquer">Masquer les étapes du cycle</ng-container>
+          } @else {
+            <ng-container i18n="@@accueil.checklist.afficher">Afficher les étapes du cycle</ng-container>
+          }
+        </button>
+      }
+      @if (checklistOpen()) {
+      <div id="accueil-checklist">
       @if (bilan(); as bilan) {
         <p class="accueil-bilan">
           @if (bilan.info > 0) {
@@ -85,12 +130,23 @@
                 <span class="accueil-statut">{{ statutLabel(ligne.statut) }}</span>
               </div>
               <p class="accueil-detail">{{ ligne.detail }}</p>
+              @if (ligne.lecture?.length) {
+                <app-lecture-score class="accueil-lecture" [sentences]="ligne.lecture" [hideHeading]="true" />
+              }
             </div>
             @if (ligne.lien; as lien) {
-              <a matButton class="accueil-lien" [routerLink]="lien.route" [queryParams]="lien.queryParams ?? null">
-                {{ lien.libelle }}
-                <mat-icon iconPositionEnd>arrow_forward</mat-icon>
-              </a>
+              <div class="accueil-liens">
+                <a matButton class="accueil-lien" [routerLink]="lien.route" [queryParams]="lien.queryParams ?? null" [fragment]="lien.fragment">
+                  {{ lien.libelle }}
+                  <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+                </a>
+                @if (ligne.lienSecondaire; as second) {
+                  <a matButton class="accueil-lien accueil-lien-secondaire" [routerLink]="second.route" [queryParams]="second.queryParams ?? null" [fragment]="second.fragment">
+                    {{ second.libelle }}
+                    <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+                  </a>
+                }
+              </div>
             } @else if (ligne.panneau === 'coherence') {
               <button matButton type="button" class="accueil-lien"
                       [attr.aria-controls]="coherenceOpen() ? 'accueil-coherence-panneau' : null"
@@ -102,22 +158,6 @@
                 }
                 <mat-icon iconPositionEnd>{{ coherenceOpen() ? 'expand_less' : 'expand_more' }}</mat-icon>
               </button>
-            } @else if (ligne.panneau === 'gel') {
-              <button matButton type="button" class="accueil-lien"
-                      [attr.aria-controls]="gelOpen() ? 'accueil-gel-panneau' : null"
-                      [attr.aria-expanded]="gelOpen()" (click)="toggleGel()">
-                @if (gelOpen()) {
-                  <ng-container i18n="@@accueil.gel.masquer">Masquer les familles</ng-container>
-                } @else {
-                  <ng-container i18n="@@accueil.gel.voir">Figer ou lever</ng-container>
-                }
-                <mat-icon iconPositionEnd>{{ gelOpen() ? 'expand_less' : 'expand_more' }}</mat-icon>
-              </button>
-            }
-            @if (ligne.panneau === 'gel' && gelOpen()) {
-              <div id="accueil-gel-panneau" class="accueil-panneau">
-                <app-gel-referentiel-card (changed)="gelChanged()" />
-              </div>
             }
             @if (ligne.panneau === 'coherence' && coherenceOpen()) {
               <div id="accueil-coherence-panneau" class="accueil-panneau">
@@ -145,6 +185,8 @@
           </li>
         }
       </ol>
+      </div>
+      }
     }
   </mat-card-content>
 </mat-card>

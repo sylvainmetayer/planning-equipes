@@ -663,6 +663,31 @@ describe('AdminShell', () => {
       expect(shell.notificationBadgeDescription()).toContain('Alerte');
     });
 
+    /** Already on `/#a-traiter`, the router goes nowhere: the shell scrolls the section back itself. */
+    it('scrolls back to « À traiter » when the bell is pressed from there', async () => {
+      const fixture = createFixture();
+      const section = document.createElement('section');
+      section.id = 'a-traiter';
+      section.scrollIntoView = vi.fn();
+      document.body.appendChild(section);
+      try {
+        const bell = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>(
+          'a.notifications-toggle',
+        )!;
+        bell.click();
+        await fixture.whenStable();
+        expect(TestBed.inject(Router).url).toBe('/#a-traiter');
+        expect(section.scrollIntoView).not.toHaveBeenCalled();
+
+        bell.click();
+
+        expect(section.scrollIntoView).toHaveBeenCalledOnce();
+      } finally {
+        section.remove();
+        await TestBed.inject(Router).navigateByUrl('/');
+      }
+    });
+
     it('goes back to the count once the alert has been read', () => {
       const shell = createShell();
       pushAlert(true);

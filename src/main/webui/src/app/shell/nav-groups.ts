@@ -66,6 +66,8 @@ export function buildNavGroups(): NavGroup[] {
           icon: 'checklist',
           // The historic « go home » pair, kept: `e` is Échanges'.
           shortcut: 'g',
+          // The bell's destination: « À traiter aujourd'hui » and the recent messages.
+          keywords: $localize`:@@nav.keywords.accueil:à traiter notifications messages alertes démarrer`,
         },
       ],
     },
@@ -441,7 +443,7 @@ export function buildNavGroups(): NavGroup[] {
 
 /**
  * The screens served everywhere but listed in no group: the raw technical
- * page, the bell's page, the news and the Quarkus Dev UI. The palette finds
+ * page, the news and the Quarkus Dev UI. The palette finds
  * them on a query and never on an empty one; an address still answers.
  */
 export function buildOffMenuLinks(devMode: boolean): NavLink[] {
@@ -465,12 +467,6 @@ export function buildOffMenuLinks(devMode: boolean): NavLink[] {
           $localize`:@@nav.keywords.debugVerifications.brut:mailpit mail test exception pgadmin`,
         ),
       ],
-    },
-    {
-      path: '/notifications',
-      label: $localize`:@@nav.link.notifications:Notifications`,
-      icon: 'notifications',
-      shortcut: 'n',
     },
     {
       path: '/nouveautes',

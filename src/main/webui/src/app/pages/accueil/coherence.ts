@@ -11,15 +11,86 @@ import {
   CoherenceSeverity,
   FamilyCount,
 } from '../../core/models';
-import { LienEtat } from './accueil';
+import type { LienEtat } from './accueil';
 
 /** One line of the panel, ready to render. */
 export interface CoherenceLine {
   gravite: CoherenceSeverity;
   severityLabel: string;
-  /** The source's sentence, unchanged. */
+  /** The source's sentence, prefixed by its count when identical anomalies were merged into it. */
   sentence: string;
   lien: LienEtat;
+  /** How many anomalies of the report this line stands for. */
+  count: number;
+}
+
+/** Identical anomalies, merged: the first of them, and how many there were. */
+export interface MergedIssue {
+  issue: CoherenceIssue;
+  /** The message with its leading date taken off, when it had one. */
+  message: string;
+  count: number;
+  /** The dates the merged anomalies fell on, in the report's order. */
+  dates: string[];
+}
+
+/**
+ * The message an anomaly shares with its twins on other days: its leading
+ * ISO date taken off — « 2026-09-01 : rien entre 12:00 et 13:00 … » is the
+ * same gap as the one of the 2nd, and the date is in the issue's own field.
+ */
+function datelessMessage(issue: CoherenceIssue): string {
+  if (issue.date && issue.message.startsWith(issue.date)) {
+    return issue.message
+      .slice(issue.date.length)
+      .replace(/^\s*[:—-]\s*/, '')
+      .trim();
+  }
+  return issue.message;
+}
+
+/**
+ * Merges the anomalies that say the same thing about the same object: same
+ * family, severity, code, subject and message once its date is taken off.
+ * The key is the whole of what the line would say and link to, so nothing
+ * different is ever folded into a count — sixteen days of the same gap in
+ * the grid become one line, two different gaps stay two.
+ */
+export function mergeIdentical(issues: readonly CoherenceIssue[]): MergedIssue[] {
+  const merged = new Map<string, MergedIssue>();
+  for (const issue of issues) {
+    const message = datelessMessage(issue);
+    const key = [
+      issue.famille,
+      issue.gravite,
+      issue.code,
+      issue.objet,
+      issue.objetId ?? '',
+      message,
+    ].join('\u0000');
+    const current = merged.get(key);
+    if (current) {
+      current.count++;
+      if (issue.date) {
+        current.dates.push(issue.date);
+      }
+    } else {
+      merged.set(key, { issue, message, count: 1, dates: issue.date ? [issue.date] : [] });
+    }
+  }
+  return [...merged.values()];
+}
+
+/** « 16 jours : rien entre 12:00 et 13:00 … », or the source's sentence when it stands alone. */
+export function mergedSentence(merged: MergedIssue): string {
+  if (merged.count === 1) {
+    return merged.issue.message;
+  }
+  const count = merged.count;
+  const message = merged.message;
+  return merged.dates.length === merged.count
+    ? $localize`:@@accueil.coherence.fusion.jours:${count}:count: jours : ${message}:message:`
+    : $localize`:@@accueil.coherence.fusion.fois:${message}:message: (${count}:count: fois)`;
 }
 
 /** One family of the panel: its title, its counts in words, its lines. */
@@ -156,21 +227,31 @@ function editionLink(famille: CoherenceFamily): LienEtat {
   }
 }
 
-/** The panel: the families holding at least one line, in the server's order, lines as sorted there. */
+/** One line per set of identical anomalies, with its count, in the report's order. */
+export function coherenceLines(issues: readonly CoherenceIssue[]): CoherenceLine[] {
+  return mergeIdentical(issues).map((merged) => ({
+    gravite: merged.issue.gravite,
+    severityLabel: severityLabel(merged.issue.gravite),
+    sentence: mergedSentence(merged),
+    lien: coherenceLink(merged.issue),
+    count: merged.count,
+  }));
+}
+
+/**
+ * The panel: the families holding at least one line, in the server's order,
+ * lines as sorted there — identical anomalies merged into one line with their
+ * count.
+ */
 export function coherenceGroups(rapport: CoherenceReport): CoherenceGroup[] {
   return rapport.familles
     .map((comptage) => ({
       famille: comptage.famille,
       titre: familyTitle(comptage.famille),
       comptage: familyCounts(comptage),
-      lignes: rapport.anomalies
-        .filter((ligne) => ligne.famille === comptage.famille)
-        .map((ligne) => ({
-          gravite: ligne.gravite,
-          severityLabel: severityLabel(ligne.gravite),
-          sentence: ligne.message,
-          lien: coherenceLink(ligne),
-        })),
+      lignes: coherenceLines(
+        rapport.anomalies.filter((ligne) => ligne.famille === comptage.famille),
+      ),
     }))
     .filter((groupe) => groupe.lignes.length > 0);
 }

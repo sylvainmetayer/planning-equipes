@@ -6,7 +6,7 @@ import { Route } from '@angular/router';
 import { describe, expect, it } from 'vitest';
 import { routes } from '../../app.routes';
 import { CoherenceIssue, CoherenceReport, CoherenceSubject } from '../../core/models';
-import { coherenceGroups, coherenceLink, familyCounts } from './coherence';
+import { coherenceGroups, coherenceLink, familyCounts, mergeIdentical } from './coherence';
 
 function allRoutes(list: Route[]): Route[] {
   return list.flatMap((route) => [route, ...allRoutes(route.children ?? [])]);
@@ -111,5 +111,50 @@ describe('coherenceGroups', () => {
     expect(familyCounts({ famille: 'STANDS', bloquants: 0, aVerifier: 0, informations: 0 })).toBe(
       '',
     );
+  });
+});
+
+describe('mergeIdentical', () => {
+  const gap = (date: string, heures = '12:00 et 13:00') =>
+    issue({
+      famille: 'CRENEAUX',
+      code: 'TROU_DANS_LA_JOURNEE',
+      objet: 'EDITION',
+      objetId: null,
+      date,
+      message: `${date} : rien entre ${heures}.`,
+    });
+
+  it('merges the same anomaly on several days into one line with its count', () => {
+    const merged = mergeIdentical([gap('2026-09-01'), gap('2026-09-02'), gap('2026-09-03')]);
+    expect(merged).toHaveLength(1);
+    expect(merged[0]).toMatchObject({
+      count: 3,
+      message: 'rien entre 12:00 et 13:00.',
+      dates: ['2026-09-01', '2026-09-02', '2026-09-03'],
+    });
+  });
+
+  /** The key is all a line says and links to: nothing different is ever folded into a count. */
+  it('keeps apart what differs by its message, its object or its severity', () => {
+    expect(mergeIdentical([gap('2026-09-01'), gap('2026-09-02', '18:00 et 19:00')])).toHaveLength(
+      2,
+    );
+    expect(mergeIdentical([issue({ objetId: 'S1' }), issue({ objetId: 'S2' })])).toHaveLength(2);
+    expect(mergeIdentical([issue(), issue({ gravite: 'BLOQUANT' })])).toHaveLength(2);
+  });
+
+  it('writes the merged line with its count of days', () => {
+    const report: CoherenceReport = {
+      bloquants: 0,
+      aVerifier: 2,
+      informations: 0,
+      familles: [{ famille: 'CRENEAUX', bloquants: 0, aVerifier: 2, informations: 0 }],
+      anomalies: [gap('2026-09-01'), gap('2026-09-02')],
+    };
+    const [groupe] = coherenceGroups(report);
+    expect(groupe.lignes).toHaveLength(1);
+    expect(groupe.lignes[0].sentence).toBe('2 jours : rien entre 12:00 et 13:00.');
+    expect(groupe.lignes[0].count).toBe(2);
   });
 });

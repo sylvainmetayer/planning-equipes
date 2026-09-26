@@ -300,6 +300,16 @@ public class BackupService {
         }
     }
 
+    /**
+     * The outcome of the last night's attempt, {@code null} when no backup
+     * directory is configured — nothing is planned, so nothing can fail. What
+     * the home screen's « À traiter aujourd'hui » reads, without listing the
+     * directory as {@link #state()} does.
+     */
+    public BackupRun lastConfiguredRun() {
+        return configuration.targetDirectory().isPresent() ? repository.lastRun() : null;
+    }
+
     /** The screen's whole view of the feature, in one read. */
     public BackupState state() {
         Optional<Path> directory = configuration.targetDirectory();

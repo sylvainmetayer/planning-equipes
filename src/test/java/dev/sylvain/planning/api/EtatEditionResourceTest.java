@@ -7,6 +7,8 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
+import dev.sylvain.planning.config.DevMode;
+import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 
@@ -49,7 +51,11 @@ class EtatEditionResourceTest {
                 .body("publication.jamaisPublie", equalTo(true))
                 .body("publication.statut", equalTo("A_FAIRE"))
                 .body("confirmations.statut", equalTo("A_FAIRE"))
-                .body("foire.statut", equalTo("A_FAIRE"));
+                .body("foire.statut", equalTo("A_FAIRE"))
+                // Without a timeslot the edition has no dates: still preparing, no day to read.
+                .body("evenement.phase", equalTo("PREPARATION"))
+                .body("evenement.jour", nullValue())
+                .body("resolution.lecture", hasSize(0));
 
         seedScenario();
     }
@@ -143,6 +149,59 @@ class EtatEditionResourceTest {
                 .doesNotContainIgnoringCase("dateNaissance")
                 .doesNotContainIgnoringCase("email")
                 .doesNotContain("destinataires");
+    }
+
+    /** A server launched with {@code quarkus:dev}, as far as the simulated clock can tell. */
+    private static final class DevModeActif extends DevMode {
+        @Override
+        public boolean isActive() {
+            return true;
+        }
+    }
+
+    /**
+     * On a day of the event the home screen reads the day under way — the
+     * wall display's open stands and empty seats, the mode jour J's absences —
+     * ranked from the first day, on the simulated clock like every screen.
+     */
+    @Test
+    void onADayOfTheEventTheDayUnderWayIsRead() {
+        seedScenario();
+        String premierJour = given().when()
+                .get("/api/editions/courant/etat")
+                .then()
+                .statusCode(200)
+                .body("evenement.phase", notNullValue())
+                .extract()
+                .path("evenement.premierJour");
+        QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
+        try {
+            given().contentType("application/json")
+                    .body("{\"dateDuJour\":\"" + premierJour + "\",\"heureDuJour\":\"08:00\"}")
+                    .when()
+                    .put("/api/horloge")
+                    .then()
+                    .statusCode(200);
+
+            given().when()
+                    .get("/api/editions/courant/etat")
+                    .then()
+                    .statusCode(200)
+                    .body("evenement.aujourdhui", equalTo(premierJour))
+                    .body("evenement.phase", equalTo("EVENEMENT"))
+                    .body("evenement.jour.date", equalTo(premierJour))
+                    .body("evenement.jour.numero", equalTo(1))
+                    .body("evenement.jour.standsOuverts", notNullValue())
+                    .body("evenement.jour.placesVides", notNullValue())
+                    .body("evenement.jour.absents", equalTo(0));
+        } finally {
+            given().contentType("application/json")
+                    .body("{\"dateDuJour\":null}")
+                    .when()
+                    .put("/api/horloge")
+                    .then()
+                    .statusCode(200);
+        }
     }
 
     private static void seedScenario() {

@@ -1,6 +1,7 @@
 import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import {
+  DOCUMENT,
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
@@ -111,6 +112,7 @@ export class AdminShell {
   protected readonly locale: AppLocale = getStoredLocale();
 
   private readonly router = inject(Router);
+  private readonly document = inject(DOCUMENT);
   private readonly dialog = inject(MatDialog);
   private readonly shortcuts = inject(KeyboardShortcutsService);
   private readonly announcer = inject(LiveAnnouncer);
@@ -134,6 +136,17 @@ export class AdminShell {
       ? $localize`:@@nav.notificationsBadge.alert:Alerte non lue`
       : $localize`:@@nav.notificationsBadge.count:${this.notifications.unreadCount()}:count: notification(s) non lue(s)`,
   );
+  /**
+   * The bell while the address is `/#a-traiter` already: the router does not
+   * navigate to the URL it is on, so the home screen never hears of the click
+   * — the shell scrolls the section back into view itself.
+   */
+  protected toATraiter(): void {
+    if (this.router.url === '/#a-traiter') {
+      this.document.getElementById('a-traiter')?.scrollIntoView?.({ block: 'start' });
+    }
+  }
+
   /** The link's name: « Notifications », and what the badge shows when it shows anything. */
   protected readonly notificationsLabel = computed(() => {
     const nom = $localize`:@@shell.notifications:Notifications`;
@@ -236,7 +249,7 @@ export class AdminShell {
    * is why the same menu worked from there.</p>
    *
    * <p>Nothing is lost by dismissing it: {@code NotificationService.notify}
-   * also files every message on the Notifications page, badge included.</p>
+   * also files every message on the recent messages of the home page, badge included.</p>
    */
   private ecarterLeBandeauDuMenu(): void {
     effect(() => {

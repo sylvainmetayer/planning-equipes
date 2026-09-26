@@ -5,10 +5,9 @@
 
 import { provideZonelessChangeDetection, Signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
-import { By } from '@angular/platform-browser';
-import { GelReferentielCard } from '../../shared/gel-referentiel-card';
+import { provideRouter, Router } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AnalysesApi } from '../../core/api/analyses-api';
 import { EditionsApi } from '../../core/api/editions-api';
 import { ConsignesStore } from '../../core/consignes.store';
 import { EtatEdition } from '../../core/models';
@@ -57,6 +56,7 @@ function etat(partial: Partial<EtatEdition> = {}): EtatEdition {
       dataStale: false,
       solveEnCours: false,
       statut: 'A_FAIRE',
+      lecture: [],
     },
     problemes: { bloquants: 0, avertissements: 0, reglesAnalysees: true, statut: 'FAIT' },
     relecture: { journees: 0, journeesValidees: 0, statut: 'A_FAIRE' },
@@ -66,7 +66,14 @@ function etat(partial: Partial<EtatEdition> = {}): EtatEdition {
       personnesAPrevenir: 0,
       statut: 'A_FAIRE',
     },
-    confirmations: { confirmes: 0, relances: 0, silencieux: 0, statut: 'A_FAIRE' },
+    confirmations: {
+      confirmes: 0,
+      relances: 0,
+      silencieux: 0,
+      statut: 'A_FAIRE',
+      relancesAutomatiques: true,
+      delaiRelanceHeures: 72,
+    },
     foire: { ouverte: true, demandesEnAttente: 0, statut: 'A_FAIRE' },
     aTraiter: {
       aujourdhui: '2026-07-10',
@@ -82,8 +89,19 @@ function etat(partial: Partial<EtatEdition> = {}): EtatEdition {
       silenceJours: 3,
       donneesModifiees: false,
       personnesAPrevenir: 0,
+      rappelsNonEnvoyes: 0,
+      relancesNonEnvoyees: 0,
+      sauvegardeEnEchec: false,
+      sauvegardeEchecLe: null,
     },
-    evenement: { premierJour: null, dernierJour: null, termine: false },
+    evenement: {
+      premierJour: null,
+      dernierJour: null,
+      termine: false,
+      aujourdhui: '2026-07-10',
+      phase: 'PREPARATION',
+      jour: null,
+    },
     ...partial,
   };
 }
@@ -111,6 +129,7 @@ type PageInternals = {
 
 describe('AccueilPage', () => {
   const editionsApi = { etat: vi.fn(), coherence: vi.fn() };
+  const analysesApi = { alerts: vi.fn(async () => []) };
   const jobs = {
     onResult: vi.fn<(type: string, handler: () => void) => () => void>(() => () => undefined),
   };
@@ -138,6 +157,7 @@ describe('AccueilPage', () => {
           },
         },
         { provide: SolverJobService, useValue: jobs },
+        { provide: AnalysesApi, useValue: analysesApi },
       ],
     });
   });
@@ -210,7 +230,16 @@ describe('AccueilPage', () => {
 
   it('links every line to its screen, tab and filter included', async () => {
     editionsApi.etat.mockResolvedValue(
-      etat({ confirmations: { confirmes: 1, relances: 0, silencieux: 2, statut: 'ATTENTION' } }),
+      etat({
+        confirmations: {
+          confirmes: 1,
+          relances: 0,
+          silencieux: 2,
+          statut: 'ATTENTION',
+          relancesAutomatiques: true,
+          delaiRelanceHeures: 72,
+        },
+      }),
     );
     const page = createPage();
     await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
@@ -221,6 +250,7 @@ describe('AccueilPage', () => {
     );
     expect(hrefs).toEqual([
       '/stands',
+      '/parametres?onglet=edition#gel-referentiel',
       '/disponibilites',
       '/ouvertures',
       '/diagnostic?onglet=besoin',
@@ -313,54 +343,50 @@ describe('AccueilPage', () => {
     }
   });
 
-  // A switch moved in the unfolded panel: the « Gel du référentiel » line
-  // follows at once, not only once the panel is folded again.
-  it('refreshes the freeze line when a switch moves, the panel still open', async () => {
+  // The freeze is set in Paramètres only: the home screen says its state and
+  // leads there, with no switch of its own.
+  it('states the freeze and leads to Paramètres, with no editable panel', async () => {
     editionsApi.etat.mockResolvedValue(etat());
     const page = createPage();
     await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
     await fixture.whenStable();
-    element().querySelector<HTMLButtonElement>('li[data-ligne="gel"] button.accueil-lien')!.click();
-    await fixture.whenStable();
-    expect(editionsApi.etat).toHaveBeenCalledOnce();
 
-    const card = fixture.debugElement.query(By.directive(GelReferentielCard));
-    (card.componentInstance as GelReferentielCard).changed.emit('TYPOLOGIES_EMPLACEMENTS');
-
-    await vi.waitFor(() => expect(editionsApi.etat).toHaveBeenCalledTimes(2));
-    expect(element().querySelector('#accueil-gel-panneau')).not.toBeNull();
+    const ligne = element().querySelector<HTMLElement>('li[data-ligne="gel"]')!;
+    expect(ligne.querySelector('button')).toBeNull();
+    expect(ligne.querySelector('a')!.getAttribute('href')).toBe(
+      '/parametres?onglet=edition#gel-referentiel',
+    );
+    expect(element().querySelector('app-gel-referentiel-card')).toBeNull();
   });
 
-  // The coherence line unfolds its detail below itself, read only then; each
+  // Several subjects: the coherence line unfolds its detail below itself; each
   // anomaly links to the fiche that fixes it.
-  it('unfolds the coherence checklist under its line, read only once asked for', async () => {
+  it('unfolds the coherence checklist under its line when it holds several subjects', async () => {
     editionsApi.etat.mockResolvedValue(
-      etat({ coherence: { bloquants: 0, aVerifier: 1, informations: 0, statut: 'ATTENTION' } }),
+      etat({ coherence: { bloquants: 0, aVerifier: 2, informations: 0, statut: 'ATTENTION' } }),
     );
+    const horsOuverture = {
+      famille: 'CRENEAUX' as const,
+      gravite: 'A_VERIFIER' as const,
+      code: 'CRENEAU_HORS_OUVERTURE_STANDS',
+      message: "Aucun des 2 stands de l'édition n'est ouvert pendant le créneau.",
+      objet: 'CRENEAU' as const,
+      objetId: '7',
+      date: null,
+    };
     editionsApi.coherence.mockResolvedValue({
       bloquants: 0,
-      aVerifier: 1,
+      aVerifier: 2,
       informations: 0,
       familles: [
         { famille: 'STANDS', bloquants: 0, aVerifier: 0, informations: 0 },
-        { famille: 'CRENEAUX', bloquants: 0, aVerifier: 1, informations: 0 },
+        { famille: 'CRENEAUX', bloquants: 0, aVerifier: 2, informations: 0 },
       ],
-      anomalies: [
-        {
-          famille: 'CRENEAUX',
-          gravite: 'A_VERIFIER',
-          code: 'CRENEAU_HORS_OUVERTURE_STANDS',
-          message: "Aucun des 2 stands de l'édition n'est ouvert pendant le créneau.",
-          objet: 'CRENEAU',
-          objetId: '7',
-          date: null,
-        },
-      ],
+      anomalies: [horsOuverture, { ...horsOuverture, objetId: '8' }],
     });
     const page = createPage();
     await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
     await fixture.whenStable();
-    expect(editionsApi.coherence).not.toHaveBeenCalled();
 
     const bouton = element().querySelector<HTMLButtonElement>(
       'li[data-ligne="coherence"] button.accueil-lien',
@@ -368,7 +394,10 @@ describe('AccueilPage', () => {
     expect(bouton.getAttribute('aria-expanded')).toBe('false');
     // Nothing to point at while folded: the panel is not in the page.
     expect(bouton.hasAttribute('aria-controls')).toBe(false);
+    // Nor read: the counts are in the state, the detail waits to be asked for.
+    expect(editionsApi.coherence).not.toHaveBeenCalled();
     bouton.click();
+    await fixture.whenStable();
     await vi.waitFor(() => expect(editionsApi.coherence).toHaveBeenCalledOnce());
     await fixture.whenStable();
 
@@ -393,17 +422,22 @@ describe('AccueilPage', () => {
     expect(panneau.querySelector('a')!.getAttribute('href')).toBe('/creneaux?edit=7');
   });
 
-  it("draws « À traiter aujourd'hui » above the checklist only when something waits", async () => {
+  it("keeps « À traiter aujourd'hui » where the bell lands, its list only when something waits", async () => {
     editionsApi.etat.mockResolvedValueOnce(etat());
     const page = createPage();
     await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
-    expect(element().querySelector('.accueil-a-traiter')).toBeNull();
+    expect(element().querySelector('#a-traiter')).not.toBeNull();
+    expect(element().querySelector('.accueil-a-traiter-liste')).toBeNull();
+    expect(text()).toContain("Rien n'attend de décision aujourd'hui.");
+    expect(element().querySelector('app-messages-recents')).not.toBeNull();
 
     editionsApi.etat.mockResolvedValueOnce(
       etat({ aTraiter: { ...etat().aTraiter, echangesAArbitrer: 2, echangesEnAlerte: 1 } }),
     );
     page.recharger();
-    await vi.waitFor(() => expect(element().querySelector('.accueil-a-traiter')).not.toBeNull());
+    await vi.waitFor(() =>
+      expect(element().querySelector('.accueil-a-traiter-liste')).not.toBeNull(),
+    );
     const sujet = element().querySelector<HTMLElement>('li[data-sujet="echanges"]')!;
     expect(sujet.classList.contains('accueil-a-traiter-alerte')).toBe(true);
     // Said, not only coloured: the icon is decorative.
@@ -420,7 +454,14 @@ describe('AccueilPage', () => {
 
     editionsApi.etat.mockResolvedValueOnce(
       etat({
-        evenement: { premierJour: '2026-07-04', dernierJour: '2026-07-08', termine: true },
+        evenement: {
+          premierJour: '2026-07-04',
+          dernierJour: '2026-07-08',
+          termine: true,
+          aujourdhui: '2026-07-10',
+          phase: 'APRES',
+          jour: null,
+        },
       }),
     );
     page.recharger();
@@ -428,5 +469,123 @@ describe('AccueilPage', () => {
     const lien = element().querySelector('[data-bloc="archive"] a')!;
     expect(lien.textContent).toContain("Archiver l'édition");
     expect(lien.getAttribute('href')).toBe('/fichiers?onglet=archive');
+  });
+
+  it('offers three ways to start on an empty edition, and never the Débogage', async () => {
+    editionsApi.etat.mockResolvedValue(
+      etat({
+        referentiels: {
+          stands: 0,
+          animateurs: 0,
+          creneaux: 0,
+          typologiesOrphelines: 0,
+          statut: 'A_FAIRE',
+        },
+      }),
+    );
+    const page = createPage();
+    await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+    await fixture.whenStable();
+
+    const bloc = element().querySelector<HTMLElement>('[data-bloc="demarrer"]')!;
+    expect(Array.from(bloc.querySelectorAll('a')).map((lien) => lien.getAttribute('href'))).toEqual(
+      ['/fichiers', '/editions', '/fichiers?onglet=importer&cible=exemples'],
+    );
+    expect(element().querySelectorAll('li.accueil-ligne')).toHaveLength(0);
+    expect(text()).not.toContain('Débogage');
+  });
+
+  it('opens the event on the day under way, the checklist folded', async () => {
+    editionsApi.etat.mockResolvedValue(
+      etat({
+        evenement: {
+          premierJour: '2026-07-06',
+          dernierJour: '2026-07-20',
+          termine: false,
+          aujourdhui: '2026-07-10',
+          phase: 'EVENEMENT',
+          jour: {
+            date: '2026-07-10',
+            numero: 5,
+            standsOuverts: 60,
+            placesVides: 23,
+            absents: 0,
+            echangesAArbitrer: 2,
+          },
+        },
+      }),
+    );
+    const page = createPage();
+    await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+    await fixture.whenStable();
+
+    const jour = element().querySelector<HTMLElement>('[data-bloc="jour"]')!;
+    expect(jour.querySelector('a.accueil-jour-lien')!.getAttribute('href')).toBe('/jour-j');
+    expect(jour.textContent).toContain('J5');
+    expect(jour.textContent).toContain('Afficher sur la TV');
+    expect(element().querySelectorAll('li.accueil-ligne')).toHaveLength(0);
+
+    element().querySelector<HTMLButtonElement>('button.accueil-checklist-bascule')!.click();
+    await fixture.whenStable();
+    expect(element().querySelectorAll('li.accueil-ligne')).toHaveLength(12);
+  });
+
+  /** Unfolded, the checklist of the referential follows a solve; folded, it is read when opened. */
+  it('reads the coherence detail again when a solve lands while it is shown', async () => {
+    editionsApi.etat.mockResolvedValue(
+      etat({ coherence: { bloquants: 0, aVerifier: 1, informations: 0, statut: 'ATTENTION' } }),
+    );
+    editionsApi.coherence.mockResolvedValue({
+      bloquants: 0,
+      aVerifier: 1,
+      informations: 0,
+      familles: [],
+      anomalies: [],
+    });
+    const page = createPage();
+    await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+    await fixture.whenStable();
+    const [[, surSolve]] = jobs.onResult.mock.calls;
+
+    surSolve();
+    await vi.waitFor(() => expect(editionsApi.etat).toHaveBeenCalledTimes(2));
+    expect(editionsApi.coherence).not.toHaveBeenCalled();
+
+    element()
+      .querySelector<HTMLButtonElement>('li[data-ligne="coherence"] button.accueil-lien')!
+      .click();
+    await vi.waitFor(() => expect(editionsApi.coherence).toHaveBeenCalledOnce());
+    surSolve();
+    await vi.waitFor(() => expect(editionsApi.coherence).toHaveBeenCalledTimes(2));
+  });
+
+  /**
+   * « Voir qui » while the address already names the alerts: the router goes
+   * nowhere, so the page unfolds them — folded by the reader meanwhile — and
+   * scrolls to them itself.
+   */
+  it('unfolds and scrolls to the alerts of the night when their line is followed from there', async () => {
+    const scroll = vi.fn();
+    Element.prototype.scrollIntoView = scroll;
+    await TestBed.inject(Router).navigateByUrl('/#alertes-nuit');
+    editionsApi.etat.mockResolvedValue(
+      etat({ aTraiter: { ...etat().aTraiter, rappelsNonEnvoyes: 1 } }),
+    );
+    const page = createPage();
+    await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+    await fixture.whenStable();
+    expect(element().querySelector('#alertes-nuit')).not.toBeNull();
+
+    element().querySelector<HTMLButtonElement>('.messages-recents-bascule')!.click();
+    await fixture.whenStable();
+    expect(element().querySelector('#alertes-nuit')).toBeNull();
+    scroll.mockClear();
+
+    element().querySelector<HTMLAnchorElement>('li[data-sujet="rappels"] a')!.click();
+    await fixture.whenStable();
+
+    expect(element().querySelector('#alertes-nuit')).not.toBeNull();
+    await vi.waitFor(() => expect(scroll).toHaveBeenCalled());
+    await TestBed.inject(Router).navigateByUrl('/');
   });
 });

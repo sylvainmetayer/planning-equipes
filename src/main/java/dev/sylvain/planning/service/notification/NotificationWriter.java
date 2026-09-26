@@ -41,7 +41,7 @@ public class NotificationWriter {
      * « samedi 11 juillet » — the same way a planning is read aloud.
      *
      * <p>Package-private rather than private: {@code RappelVeilleJob} words the
-     * same day in the alert it leaves on the Notifications screen, and two
+     * same day in the alert it leaves on the recent messages of the home screen, and two
      * definitions would drift into a mail saying « samedi 11 juillet » next to
      * an alert saying « 2026-07-11 ».</p>
      */

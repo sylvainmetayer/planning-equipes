@@ -861,8 +861,8 @@ ce qui rouvre la relance. Le compte rendu ne
 porte que des ids, un par liste — `envoyes`, `dejaConfirmes`, `sansEmail`,
 `dejaRelancesPourCettePublication`, `echecs`, `sansPoste` — et un envoi
 échoué est **compté**, pas avalé : le geste est explicite, contrairement à
-la notification de nuit. Un échec **rend la clé** et laisse une alerte sur
-l'écran Notifications : le statut n'a pas bougé, la personne reste silencieuse,
+la notification de nuit. Un échec **rend la clé** et laisse une alerte dans
+les « Messages récents » de l'accueil : le statut n'a pas bougé, la personne reste silencieuse,
 et réessayer est possible — de la main comme de la nuit. Une fiche sans adresse
 laisse la même trace. Refusé `400` tant que rien n'a jamais été publié, ou si
 un id ne désigne personne — alors rien ne part, pas même aux ids valides qui le

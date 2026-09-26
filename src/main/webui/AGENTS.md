@@ -68,8 +68,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   entries), its letter and the tabs or views the palette indexes;
   `buildOffMenuLinks()` the **routes served but listed in no group** —
   `/debug` (raw technical information, reached by Ctrl+K or its address),
-  `/notifications` (the bell), `/nouveautes` (the foot of the menu) and the
-  Quarkus Dev UI in development; `buildLegalLinks()` the legal pages.
+  `/nouveautes` (the foot of the menu) and the Quarkus Dev UI in development; `buildLegalLinks()` the legal pages.
   `nav-groups.spec.ts` fails on a route of `app.routes.ts` that none of the
   three knows. The standalone routes `/login`, `/animateur/:jeton` (espace animateur, issue
   #165) and `/mural/:jeton` (« Affichage mural » — the control room's
@@ -94,9 +93,18 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   never a second route, and a route may be served without a menu entry. The
   palette indexes the tabs and views declared in `shell/nav-groups.ts`, not
   only the routes. Admin routes (children of the shell):
-  `/` (default, « État de l'édition » — the checklist of the cycle, one line
-  per step with its state and a link to the screen that moves it, read in one
-  call from `GET /api/editions/courant/etat`), `/solveur` (the solver page,
+  `/` (default, « État de l'édition » — read in one call from
+  `GET /api/editions/courant/etat`, its form decided by the server's phase:
+  while preparing, the checklist of the cycle, one line per step with its
+  state and a link to the screen that moves it — the solve read in sentences,
+  identical coherence anomalies merged with their count, the freeze a state
+  linking to Paramètres; during the event, the day under way first, opening
+  `/jour-j`, and the checklist folded; after it, the archive first; on an
+  empty edition, a « Démarrer » block. « À traiter aujourd'hui »
+  (`#a-traiter`, where the toolbar's bell lands) is always drawn, and folds
+  under it `pages/accueil/messages-recents` — the night's alerts and the
+  local history of the application's messages, what `/notifications`, now a
+  redirect to `/#a-traiter`, used to show), `/solveur` (the solver page,
   the former home),
   `/debug` (« Débogage » — the raw and the technical only, served everywhere
   and reached by its address or Ctrl+K: two tabs chosen by
@@ -104,7 +112,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   the API docs, and the checks — test notification, test exception, test
   mail, Mailpit, pgAdmin; a guard on the route sends its former
   `?onglet=donnees` and `?onglet=yaml` to Fichiers' examples and validator),
-  `/mcp-client`, `/notifications`,
+  `/mcp-client`,
   `/parametres` (« Paramètres » — five tabs chosen by
   `?onglet=legaux|edition|emails|mural|instance`: the legal parameters and the
   meal break, the edition's own settings — ninja typologie, organisational-quality
