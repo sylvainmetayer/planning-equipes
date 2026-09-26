@@ -51,6 +51,10 @@ commit_parsers = [
   # files it under the same heading WITHOUT claiming a major bump. Before
   # `^feat`, so the scope wins over the type.
   { message = '^[a-z]+\(contraintes-legales\)', group = "<!-- 0 -->⚠️ Attention" },
+  # Any other change an operator must act on at upgrade time without it being
+  # a MAJOR rupture (a rescaled setting, a value to convert by hand): the
+  # reserved `attention` scope, same heading, same rule as above.
+  { message = '^[a-z]+\(attention\)', group = "<!-- 0 -->⚠️ Attention" },
   { message = "^feat", group = "<!-- 1 -->Fonctionnalités" },
   { message = "^fix\\(deps\\)", group = "<!-- 5 -->Dépendances" },
   { message = "^fix", group = "<!-- 2 -->Corrections" },
