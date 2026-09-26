@@ -230,6 +230,31 @@ describe('CreneauxPage', () => {
     });
   });
 
+  /** `?ids=`: the timeslots an import just wrote, opened by « Voir les N lignes importées ». */
+  it('lists only the timeslots an import wrote, and all of them again on « Tout afficher »', async () => {
+    await TestBed.inject(Router).navigateByUrl('/?ids=12,14');
+    seedStore(referenceData, 'creneaux', [
+      creneau({ id: 12, jour: 1 }),
+      creneau({ id: 13, jour: 1 }),
+      creneau({ id: 14, jour: 2 }),
+    ]);
+    const fixture = TestBed.createComponent(CreneauxPage);
+    const page = fixture.componentInstance as unknown as PageInternals;
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(page.creneauxAffiches().map((row) => row.id)).toEqual([12, 14]);
+    expect(element.textContent).toContain('Filtre : lignes importées (2)');
+
+    Array.from(element.querySelectorAll('button'))
+      .find((button) => (button.textContent ?? '').includes('Tout afficher'))!
+      .click();
+    await fixture.whenStable();
+
+    expect(page.creneauxAffiches()).toHaveLength(3);
+    await TestBed.inject(Router).navigateByUrl('/');
+  });
+
   it('loads the referential and the diagnostic on entry', () => {
     createPage();
 

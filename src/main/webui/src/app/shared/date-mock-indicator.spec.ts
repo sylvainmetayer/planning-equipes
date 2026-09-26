@@ -6,7 +6,7 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { describe, expect, it } from 'vitest';
-import { TODAY_ANCHOR, DateMockService } from '../core/date-mock.service';
+import { CLOCK_CARD_ANCHOR, TODAY_ANCHOR, DateMockService } from '../core/date-mock.service';
 import { DateMockIndicator } from './date-mock-indicator';
 
 describe('DateMockIndicator', () => {
@@ -65,12 +65,13 @@ describe('DateMockIndicator', () => {
    * clear it, so the link carries the anchor of the field itself — not just the
    * page it lives on.
    */
-  it('deep-links to the field, not merely to the debug page', async () => {
+  it('deep-links to the field of Paramètres › Instance, not merely to the page', async () => {
     await rendre('2026-07-08');
 
     const href = racine().querySelector('a')!.getAttribute('href');
-    expect(href).toContain('/debug');
+    expect(href).toContain('/parametres');
+    expect(href).toContain('onglet=instance');
     expect(href).toContain(`focus=${TODAY_ANCHOR}`);
-    expect(href).toContain(`#${TODAY_ANCHOR}`);
+    expect(href).toContain(`#${CLOCK_CARD_ANCHOR}`);
   });
 });

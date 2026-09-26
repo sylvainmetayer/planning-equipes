@@ -74,12 +74,12 @@ describe('ImportScenarioCard', () => {
     await fixture.whenStable();
   }
 
-  it('sends the validator link to the YAML tab of the Débogage page', async () => {
+  it('sends the validator link to its card of Fichiers › Importer', async () => {
     const racine = await monter();
     const lien = Array.from(racine.querySelectorAll('a')).find((each) =>
-      (each.textContent ?? '').includes('Valider un fichier'),
+      (each.textContent ?? '').includes("Vérifier un fichier sans l'importer"),
     );
-    expect(lien?.getAttribute('href')).toBe('/debug?onglet=yaml');
+    expect(lien?.getAttribute('href')).toBe('/fichiers?cible=verifier');
   });
 
   it('hands the picked file to the shared import, content and name', async () => {

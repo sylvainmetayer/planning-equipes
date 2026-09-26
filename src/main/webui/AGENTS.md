@@ -68,8 +68,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   entries), its letter and the tabs or views the palette indexes;
   `buildOffMenuLinks()` the **routes served but listed in no group** —
   `/debug` (raw technical information, reached by Ctrl+K or its address),
-  `/notifications` (the bell), `/nouveautes` (the foot of the menu) and the
-  Quarkus Dev UI in development; `buildLegalLinks()` the legal pages.
+  `/nouveautes` (the foot of the menu) and the Quarkus Dev UI in development; `buildLegalLinks()` the legal pages.
   `nav-groups.spec.ts` fails on a route of `app.routes.ts` that none of the
   three knows. The standalone routes `/login`, `/animateur/:jeton` (espace animateur, issue
   #165) and `/mural/:jeton` (« Affichage mural » — the control room's
@@ -94,23 +93,37 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   never a second route, and a route may be served without a menu entry. The
   palette indexes the tabs and views declared in `shell/nav-groups.ts`, not
   only the routes. Admin routes (children of the shell):
-  `/` (default, « État de l'édition » — the checklist of the cycle, one line
-  per step with its state and a link to the screen that moves it, read in one
-  call from `GET /api/editions/courant/etat`), `/solveur` (the solver page,
+  `/` (default, « État de l'édition » — read in one call from
+  `GET /api/editions/courant/etat`, its form decided by the server's phase:
+  while preparing, the checklist of the cycle, one line per step with its
+  state and a link to the screen that moves it — the solve read in sentences,
+  identical coherence anomalies merged with their count, the freeze a state
+  linking to Paramètres; during the event, the day under way first, opening
+  `/jour-j`, and the checklist folded; after it, the archive first; on an
+  empty edition, a « Démarrer » block. « À traiter aujourd'hui »
+  (`#a-traiter`, where the toolbar's bell lands) is always drawn, and folds
+  under it `pages/accueil/messages-recents` — the night's alerts and the
+  local history of the application's messages, what `/notifications`, now a
+  redirect to `/#a-traiter`, used to show), `/solveur` (the solver page,
   the former home),
-  `/debug` (« Débogage » — four tabs chosen by
-  `?onglet=resolution|verifications|donnees|yaml`: the raw analysis with the
-  version and the API docs, the checks — test notification, test exception,
-  test mail, Mailpit, and the frozen date where the server allows it —, the
-  database and the bundled scenarios, and the YAML validator),
-  `/mcp-client`, `/notifications`,
+  `/debug` (« Débogage » — the raw and the technical only, served everywhere
+  and reached by its address or Ctrl+K: two tabs chosen by
+  `?onglet=resolution|verifications`, the raw analysis with the version and
+  the API docs, and the checks — test notification, test exception, test
+  mail, Mailpit, pgAdmin; a guard on the route sends its former
+  `?onglet=donnees` and `?onglet=yaml` to Fichiers' examples and validator),
+  `/mcp-client`,
   `/parametres` (« Paramètres » — five tabs chosen by
-  `?onglet=legaux|edition|emails|mural|globaux`: the legal parameters and the
+  `?onglet=legaux|edition|emails|mural|instance`: the legal parameters and the
   meal break, the edition's own settings — ninja typologie, organisational-quality
   thresholds, the pointers to what lives on its own screen —, the e-mails the
   edition sends of itself, the wall display links — created, shown once with
-  their QR code, revoked —, and the whole-database settings — nightly backup and
-  SQL dump), `/stands`, `/emplacements`,
+  their QR code, revoked —, and « Instance », what the operator configured and
+  what holds for the whole database — nightly backup, SQL dump, the single-key
+  shortcuts of this browser, and « Date et heure simulées »
+  (`pages/parametres/horloge-simulee-card`, over `PUT /api/horloge`), shown
+  only where the server allows a simulated clock, which the toolbar's
+  hourglass links to; `?onglet=globaux`, its former name, is still read), `/stands`, `/emplacements`,
   `/animateurs`, `/animateurs/:id` (« Fiche animateur » — one person on one
   page, seven foldable sections read in one call from
   `GET /api/animateurs/{id}/fiche`, which narrows the Équité and Fragilité
@@ -118,11 +131,25 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   stays the Animateurs page's form), `/competences` (« Compétences » — the animateur × typologie
   grid of appreciations, saved row by row — the only bulk entry, with no CSV
   export or import),
-  `/imports`, `/exports` (« Export » — the data the edition writes of itself:
-  the CSV archive and the scenario file the import screen reads back, and the
-  end-of-event archive — several of those exports in one ZIP the server
-  streams, `pages/exports/archive-evenement-card`, which the home screen links
-  to once the event's last day is past),
+  `/fichiers` (« Fichiers » — the two halves of one gesture, export, correct
+  in the spreadsheet, import back, and what closes an edition: three tabs
+  chosen by `?onglet=importer|exporter|archive`. « Importer » is
+  `pages/imports/importer-panel`, one card chosen by `?cible=` — the referential
+  imports in the order data is entered, the stand matrix, the scenario file,
+  « Exemples » (`pages/imports/exemples-card`, the bundled scenarios under a
+  readable name and one sentence from the pure `exemples.ts`, never a file
+  name) and « Vérifier un fichier » (the YAML validator); every referential
+  card also takes cells pasted from a spreadsheet (`collage-tableur.ts` over
+  the pure `collage.ts`, which reads the quoting of Excel and LibreOffice) and,
+  once written, links to the screen of its rows narrowed to them — `?ids=`
+  (`core/imported-rows.ts`), read by the Stands, Typologies, Emplacements,
+  Créneaux and Animateurs lists and shown there as a filter to drop.
+  « Exporter » is `pages/exports/exporter-panel`, the CSV archive and the
+  scenario file; « Archive » the end-of-event ZIP the server streams,
+  `pages/exports/archive-evenement-card`, which the home screen links to once
+  the event's last day is past. The referential screens open the same import
+  card in a dialog through `shared/import-button.ts`, without leaving the
+  list),
   `/publication` (« Publication » — what reaches real people: the planning
   documents to print or archive, and the mailing to every animateur whose
   schedule changed; a screen of its own under Solveur since issue #320, so the
@@ -225,8 +252,10 @@ and `?dosage=` in the URL), `/comparateur`
   `/politique-confidentialite` and `/declaration-accessibilite` (the
   accessibility statement, filled from `planning.legal.accessibilite.*` by the
   deployment it describes), and `/aide` (`/solver` redirects to
-  `/solveur` and `/export-csv` to `/exports`;
-  `/data-transfer`, `/data-setup` and `/validateur-yaml` are
+  `/solveur`; `/imports` (its `onglet` becoming the Importer tab's `cible`),
+  `/exports` (its `archive-evenement` fragment landing on the Archive tab),
+  `/export-csv` and `/validateur-yaml` redirect to `/fichiers` with their
+  params; `/data-transfer` and `/data-setup` are
   legacy redirects too, `/decoupage` now landing on `/creneaux` since the
   slicing was removed, kept for old bookmarks/links, and so
   are the eight former screens `/day-calendar`, `/rail-jour`, `/carte-jour`,
@@ -396,7 +425,8 @@ and `?dosage=` in the URL), `/comparateur`
   variants, `bulk-actions.css`, `detail.css`, `typologie-colors.css`, fonts and
   branding); everything a single route draws is that page's `styleUrl`
   (`pages/<block>/<block>-page.css`, or a shared file in `src/styles/` when two
-  pages draw the same thing — the two calendars, the two imports), declared
+  pages draw the same thing — the two calendars, the imports that Fichiers and
+  the import dialog of the referential screens both host), declared
   with `encapsulation: ViewEncapsulation.None` so its selectors mean exactly
   what they did as a global partial, and shipped in the route's lazy chunk
   rather than in the initial bundle. Each file holds its own `@media` rules.

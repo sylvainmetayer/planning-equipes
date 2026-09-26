@@ -1,5 +1,6 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Params, RedirectFunction, Router, Routes } from '@angular/router';
+import { TODAY_ANCHOR } from './core/date-mock.service';
 import type { CompetencesPage } from './pages/competences/competences-page';
 
 /**
@@ -90,6 +91,57 @@ export const benchTabToJournee: CanActivateFn = (route) =>
     ? inject(Router).parseUrl(benchToJournee(route.queryParams))
     : true;
 
+/**
+ * A former screen of what Fichiers gathers: its address lands on a tab of the
+ * page (`onglet`), and on one card of the Importer tab (`cible`) when the
+ * former screen named one — the Imports page's own `onglet` becomes that
+ * `cible`. Every other query param travels along.
+ */
+function redirectToFichiers(onglet: string, importCard?: string): RedirectFunction {
+  return ({ queryParams, fragment }) => {
+    const params = new URLSearchParams();
+    // The end-of-event archive was a fragment of the Export page.
+    params.set('onglet', fragment === 'archive-evenement' ? 'archive' : onglet);
+    const former = queryParams['onglet'];
+    const card = importCard ?? (onglet === 'importer' && former ? paramText(former) : undefined);
+    if (card !== undefined) {
+      params.set('cible', card);
+    }
+    for (const [key, valeur] of Object.entries(queryParams)) {
+      if (key !== 'onglet' && key !== 'cible' && valeur !== undefined && valeur !== null) {
+        params.set(key, paramText(valeur));
+      }
+    }
+    return `/fichiers?${params.toString()}`;
+  };
+}
+
+/**
+ * The two tabs Débogage gave up to Fichiers — the bundled scenarios and the
+ * YAML validator — redirect before the page is built, and so does the
+ * simulated clock's field (`?focus=date-du-jour`, the toolbar's former link),
+ * which lives in Paramètres › Instance now; every other address of `/debug`
+ * is served as it is.
+ */
+const FORMER_DEBUG_TABS: Readonly<Record<string, string>> = {
+  donnees: 'exemples',
+  yaml: 'verifier',
+};
+
+function redirectFormerDebugTabs(route: { queryParamMap: { get(name: string): string | null } }) {
+  if (route.queryParamMap.get('focus') === TODAY_ANCHOR) {
+    return inject(Router).createUrlTree(['/parametres'], {
+      queryParams: { onglet: 'instance', focus: TODAY_ANCHOR },
+    });
+  }
+  const card = FORMER_DEBUG_TABS[route.queryParamMap.get('onglet') ?? ''];
+  return card === undefined
+    ? true
+    : inject(Router).createUrlTree(['/fichiers'], {
+        queryParams: { onglet: 'importer', cible: card },
+      });
+}
+
 const adminRoutes: Routes = [
   {
     // The home: where the edition stands in its cycle, before any screen
@@ -106,14 +158,13 @@ const adminRoutes: Routes = [
   {
     path: 'debug',
     title: () => $localize`:@@route.debug:Débogage`,
+    canActivate: [redirectFormerDebugTabs],
     loadComponent: () => import('./pages/debug/debug-page').then((m) => m.DebugPage),
   },
-  {
-    path: 'notifications',
-    title: () => $localize`:@@route.notifications:Notifications`,
-    loadComponent: () =>
-      import('./pages/notifications/notifications-page').then((m) => m.NotificationsPage),
-  },
+  // The alerts of the night and the history of the application's messages
+  // live under « À traiter aujourd'hui » of the home screen now: the bell and
+  // the former address land there.
+  { path: 'notifications', redirectTo: () => '/#a-traiter' },
   {
     path: 'jour-j',
     title: () => $localize`:@@route.jourJ:Jour J`,
@@ -198,7 +249,7 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/editions/editions-page').then((m) => m.EditionsPage),
   },
   // The solver was the home page until #485, under `/exports` and `/solver`.
-  // `/exports` is now the export screen, which is what the word says; only
+  // `/exports` became the export screen, now a tab of Fichiers; only
   // `/solver` still lands on the solver.
   { path: 'solver', redirectTo: 'solveur' },
   // Pre-Paramètres URLs (bookmarks, aide links): the pages were merged there.
@@ -207,9 +258,9 @@ const adminRoutes: Routes = [
   // The découpage had a page of its own, then a card on Paramètres, then
   // nothing: a grid is made of vacations, so the address lands on the grid.
   { path: 'decoupage', redirectTo: 'creneaux' },
-  // The tab it became, not the page's default one: the address named the
-  // validator, and a redirection that drops it lands on the raw analysis.
-  { path: 'validateur-yaml', redirectTo: redirectToOnglet('debug', 'yaml') },
+  // The card it became, not the page's default one: the address named the
+  // validator, and a redirection that drops it lands on the typologies.
+  { path: 'validateur-yaml', redirectTo: redirectToFichiers('importer', 'verifier') },
   {
     path: 'stands',
     title: () => $localize`:@@route.stands:Stands`,
@@ -246,24 +297,25 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/creneaux/creneaux-page').then((m) => m.CreneauxPage),
   },
   {
-    path: 'imports',
-    title: () => $localize`:@@route.imports:Imports`,
-    loadComponent: () => import('./pages/imports/imports-page').then((m) => m.ImportsPage),
+    // Imports, Export and the end-of-event archive: the two halves of one
+    // gesture and what closes an edition, on one page of three tabs.
+    path: 'fichiers',
+    title: () => $localize`:@@route.fichiers:Fichiers`,
+    loadComponent: () => import('./pages/fichiers/fichiers-page').then((m) => m.FichiersPage),
   },
+  // The two screens Fichiers gathers, kept for the bookmarks: the Imports
+  // page's `onglet` names a card of the Importer tab.
+  { path: 'imports', redirectTo: redirectToFichiers('importer') },
   {
-    // The planning leaves through here, the data through /exports (issue #320).
+    // The planning leaves through here, the data through /fichiers (issue #320).
     path: 'publication',
     title: () => $localize`:@@route.publication:Publication`,
     loadComponent: () =>
       import('./pages/publication/publication-page').then((m) => m.PublicationPage),
   },
-  {
-    path: 'exports',
-    title: () => $localize`:@@route.exports:Export`,
-    loadComponent: () => import('./pages/exports/exports-page').then((m) => m.ExportsPage),
-  },
+  { path: 'exports', redirectTo: redirectToFichiers('exporter') },
   // The CSV archive was the whole screen until the scenario export joined it.
-  { path: 'export-csv', redirectTo: 'exports' },
+  { path: 'export-csv', redirectTo: redirectToFichiers('exporter') },
   {
     path: 'typologies',
     title: () => $localize`:@@route.typologies:Typologies`,

@@ -32,7 +32,8 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/', marker: "État de l'édition", sheet: 'accueil-ligne' },
   { path: '/solveur', marker: 'Calculer le planning', sheet: 'solver-volumetry' },
   { path: '/publication', marker: 'Diffusion du planning', sheet: 'publication-etat' },
-  { path: '/notifications', sheet: 'notification-jour' },
+  // The former Notifications page lands on « À traiter aujourd'hui ».
+  { path: '/notifications', marker: "À traiter aujourd'hui", sheet: 'notification-jour' },
   // One page over four tabs, each visited: a tab's stylesheet travels with the
   // page's chunk, and only a browser can tell that it arrived.
   { path: '/diagnostic', marker: 'Diagnostic', sheet: 'diagnostic-onglets' },
@@ -50,23 +51,35 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/competences', marker: 'Compétences', sheet: 'competences-legende' },
   { path: '/creneaux', marker: 'Créneaux (', sheet: 'creneau-probleme' },
   { path: '/typologies', marker: 'Typologies (' },
-  // Un seul écran d'imports, un onglet par fichier (les trois référentiels
-  // partagent une carte, les deux plus anciens sont rendus tels quels).
-  { path: '/imports', marker: 'Imports', sheet: 'imports-onglets' },
-  { path: '/imports?onglet=stands' },
-  // Les deux onglets du calendrier partagent la carte des référentiels, et
-  // leur marqueur vise ce que seul l'onglet visé dit.
-  { path: '/imports?onglet=creneaux', marker: 'heureDebut' },
-  { path: '/imports?onglet=journees-types', marker: 'relais repas' },
+  // Fichiers: three tabs, and under Importer one card per file (the
+  // referentials share a card, the two older imports are rendered as they are).
+  { path: '/fichiers', marker: 'Fichiers', sheet: 'fichiers-onglets' },
+  { path: '/fichiers?cible=typologies', sheet: 'imports-onglets' },
+  { path: '/fichiers?cible=stands' },
+  // Les deux cartes du calendrier partagent la carte des référentiels, et
+  // leur marqueur vise ce que seule la carte visée dit.
+  { path: '/fichiers?cible=creneaux', marker: 'heureDebut' },
+  { path: '/fichiers?cible=journees-types', marker: 'relais repas' },
   {
     // Le titre de l'écran est celui des onglets : le marqueur vise ce que
-    // seul cet onglet-ci dit.
-    path: '/imports?onglet=animateurs',
+    // seule cette carte-ci dit.
+    path: '/fichiers?cible=animateurs',
     marker: 'date de naissance est obligatoire',
     sheet: 'import-compteurs',
   },
-  { path: '/imports?onglet=grille-stands', sheet: 'import-compteurs' },
-  { path: '/exports', marker: 'Export CSV', sheet: 'export-csv-liste' },
+  { path: '/fichiers?cible=grille-stands', sheet: 'import-compteurs' },
+  { path: '/fichiers?cible=scenario', marker: 'Un fichier scénario' },
+  { path: '/fichiers?cible=exemples', marker: 'Charger cet exemple', sheet: 'exemples-select' },
+  {
+    path: '/fichiers?cible=verifier',
+    marker: "Vérifier un fichier sans l'importer",
+    sheet: 'yaml-validator-result',
+  },
+  { path: '/fichiers?onglet=exporter', marker: 'Export CSV', sheet: 'export-csv-liste' },
+  { path: '/fichiers?onglet=archive', marker: "Archive de fin d'événement" },
+  // The former addresses land on their tab.
+  { path: '/imports?onglet=animateurs', marker: 'date de naissance est obligatoire' },
+  { path: '/exports', marker: 'Export CSV' },
   { path: '/calendar', marker: 'Calendrier des affectations', sheet: 'calendar-nav' },
   // Same for the day and its four renderings.
   { path: '/journee', marker: 'Journée', sheet: 'journee-toolbar' },
@@ -109,17 +122,20 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/ad-hoc-constraints' },
   { path: '/verrouillages', marker: 'Verrouiller une partie du planning' },
   { path: '/consignes', marker: 'Consignes', sheet: 'consigne-prereglage' },
-  // Paramètres and Débogage are tab pages since issue #606: the default tab
+  // Paramètres and Débogage are tab pages: the default tab
   // carries the marker and the route's own stylesheet, and one other tab of
   // each is visited to prove the `?onglet=` addresses land where they say.
   { path: '/parametres', marker: 'Paramètres légaux', sheet: 'parametres-onglets' },
   { path: '/parametres?onglet=edition', marker: 'Typologie ninja', sheet: 'parametres-renvois' },
+  { path: '/parametres?onglet=instance', marker: 'Sauvegarde automatique' },
+  // Its former name is still read.
   { path: '/parametres?onglet=globaux', marker: 'Sauvegarde automatique' },
   { path: '/mcp-client', marker: 'Se connecter au serveur MCP', sheet: 'mcp-pre' },
-  { path: '/imports?onglet=scenario', marker: 'Un fichier scénario' },
   { path: '/debug', marker: 'Dernière analyse', sheet: 'debug-onglets' },
-  { path: '/debug?onglet=donnees', marker: 'Scénarios', sheet: 'scenario-select' },
-  { path: '/debug?onglet=yaml', marker: 'Validateur YAML' },
+  { path: '/debug?onglet=verifications', marker: 'Envoyer un mail de test' },
+  // The two tabs Débogage gave up land on their Fichiers cards.
+  { path: '/debug?onglet=donnees', marker: 'Charger cet exemple' },
+  { path: '/debug?onglet=yaml', marker: "Vérifier un fichier sans l'importer" },
 ];
 
 /** True when a loaded stylesheet has a rule naming `.${classe}` — the route's chunk brought its CSS. */

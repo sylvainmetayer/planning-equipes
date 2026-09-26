@@ -259,7 +259,7 @@ coûte peu à l'écriture, les rattraper coûte cher.
   tableau croisé des contraintes : tabindex itinérant, Entrée), jamais un
   `(click)` sur un `<td>` seul.
 - **Les raccourcis à une touche se coupent** (WCAG 2.1.4) : une case dans le
-  dialogue « ? » et dans Paramètres, onglet Globaux, réglage du navigateur
+  dialogue « ? » et dans Paramètres, onglet Instance, réglage du navigateur
   (`core/single-key-shortcuts.ts`). Un nouveau raccourci à une touche passe par
   `KeyboardShortcutsService`, qui respecte ce réglage.
 - **Une longue liste se filtre, elle ne se déroule pas** :
@@ -405,8 +405,10 @@ gamme, les quinze cas extrêmes — sont **à plat** dans le seul dossier
 `scenarios/` ailleurs sur le classpath : `ScenarioYamlReader.scenarioPath`
 refuse un nom qui porte un composant de chemin, et `getResource("scenarios")`
 ne rend que la **première** occurrence du classpath, jamais leur union. Un
-fichier rangé autrement est un fichier que personne ne peut charger depuis le
-sélecteur de la page Débogage.
+fichier rangé autrement est un fichier que personne ne peut charger depuis la
+carte « Exemples » de Fichiers › Importer. Un fichier ajouté au dossier y
+apparaît sans rien coder, sous un nom tiré du fichier ; son libellé lisible et
+sa phrase s'ajoutent dans `pages/imports/exemples.ts` (et leur traduction).
 
 Côté tests, `ScenariosLivres` est la seule lecture de ce dossier :
 
@@ -566,8 +568,8 @@ c'est dire qu'elle résout une fixture réelle, ou qu'il lui faut la pile de
 ranger un test lent. En local, `npm run e2e -- --grep @lourd` la joue seule.
 
 `passe-fige.spec.ts` est l'autre spec `@lourd`, pour une autre raison : elle
-rejoue `FrozenPastAcceptanceTest` depuis l'écran — la date posée sur la page
-Débogage, trois résolutions, les journées passées identiques, le compte rendu
+rejoue `FrozenPastAcceptanceTest` depuis l'écran — la date posée dans
+Paramètres › Instance, trois résolutions, les journées passées identiques, le compte rendu
 « N postes déjà commencés » et le refus d'un déplacement sur une journée
 passée — et il lui faut une pile qui accepte l'horloge simulée. `e2e-lourd.yml`
 passe `horloge-simulee: true` à `e2e-suite.yml`, qui monte alors l'application

@@ -1,7 +1,8 @@
-// The bundled-scenario picker, on the Débogage screen. Three things matter and
-// nothing else does: the dropdown always has a target so the button cannot fire
-// on nothing, the import goes through the shared choreography (which is what
-// confirms and snapshots), and a solve running on this edition closes the door.
+// The bundled examples, on Fichiers › Importer. Four things matter and nothing
+// else does: the dropdown always has a target so the button cannot fire on
+// nothing, no file name ever reaches the screen, the import goes through the
+// shared choreography (which is what confirms and snapshots), and a solve
+// running on this edition closes the door.
 
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -12,7 +13,7 @@ import { PlanningApi } from '../../core/api/planning-api';
 import { EtatGel } from '../../core/models';
 import { ScenarioImportService } from '../../core/scenario-import.service';
 import { SolverJobService } from '../../core/solver-job.service';
-import { ScenarioPreenregistre } from './scenario-preenregistre';
+import { ExemplesCard } from './exemples-card';
 
 /** What `GET /api/editions/courant/gel` answers when two families are frozen. */
 const FROZEN_STATES: EtatGel[] = [
@@ -22,13 +23,13 @@ const FROZEN_STATES: EtatGel[] = [
   { famille: 'COMPETENCES', libelle: 'Compétences', fige: false, figeLe: null },
 ];
 
-describe('ScenarioPreenregistre', () => {
+describe('ExemplesCard', () => {
   const planningApi = { scenarioNames: vi.fn() };
   const scenarioImport = { importer: vi.fn(), recapitulatif: vi.fn() };
   const editingLocked = signal(false);
   const gel = vi.fn<() => Promise<EtatGel[]>>();
 
-  let fixture: ComponentFixture<ScenarioPreenregistre>;
+  let fixture: ComponentFixture<ExemplesCard>;
 
   type Internals = {
     onSelectScenario: (name: string) => void;
@@ -45,7 +46,9 @@ describe('ScenarioPreenregistre', () => {
     planningApi.scenarioNames.mockResolvedValue([
       'extreme-10-sans-animateur.yaml',
       'gamme-01-1j-2stands-3animateurs.yaml',
+      'festival-realiste-canicule.yaml',
       'scenario-complet.yaml',
+      'exemple-animateurs.csv',
     ]);
     scenarioImport.importer.mockResolvedValue({ status: 'imported', result: null });
     scenarioImport.recapitulatif.mockImplementation(
@@ -72,7 +75,7 @@ describe('ScenarioPreenregistre', () => {
   });
 
   async function monter(): Promise<{ page: Internals; racine: HTMLElement }> {
-    fixture = TestBed.createComponent(ScenarioPreenregistre);
+    fixture = TestBed.createComponent(ExemplesCard);
     await fixture.whenStable();
     return {
       page: fixture.componentInstance as unknown as Internals,
@@ -83,18 +86,36 @@ describe('ScenarioPreenregistre', () => {
   function bouton(): HTMLButtonElement {
     const trouve = Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll('button'),
-    ).find((each) => each.textContent!.includes('Charger le scénario sélectionné'));
+    ).find((each) => each.textContent!.includes('Charger cet exemple'));
     expect(trouve, 'bouton « Charger » absent').toBeDefined();
     return trouve as HTMLButtonElement;
   }
 
-  it('lists the bundled scenarios and preselects one, so the button always has a target', async () => {
+  it('preselects the realistic example by its readable name, so the button always has a target', async () => {
     const { racine } = await monter();
 
     expect(
-      racine.querySelector('.scenario-select .mat-mdc-select-value')!.textContent!.trim(),
-    ).toBe('extreme-10-sans-animateur.yaml');
+      racine.querySelector('.exemples-select .mat-mdc-select-value')!.textContent!.trim(),
+    ).toBe('Festival réaliste — canicule');
+    expect(racine.querySelector('.exemples-phrase')!.textContent).toContain('16 jour(s)');
     expect(bouton().disabled).toBe(false);
+  });
+
+  it('never shows a file name', async () => {
+    const { racine } = await monter();
+
+    expect(racine.textContent).not.toMatch(/\.ya?ml|\.csv/);
+  });
+
+  it('loads the realistic example by its file name, which the screen never shows', async () => {
+    const { page } = await monter();
+
+    await page.onLoadSample();
+
+    expect(scenarioImport.importer).toHaveBeenCalledExactlyOnceWith({
+      kind: 'name',
+      name: 'festival-realiste-canicule.yaml',
+    });
   });
 
   it('imports the selected scenario by name, through the shared choreography', async () => {
@@ -117,7 +138,7 @@ describe('ScenarioPreenregistre', () => {
     await page.onLoadSample();
     await fixture.whenStable();
 
-    expect(racine.textContent).not.toContain('Planning d');
+    expect(racine.textContent).not.toContain('» chargé');
   });
 
   it('refuses to write while a solve holds this edition', async () => {

@@ -744,7 +744,7 @@ export interface Avertissement {
  * Warning types whose sentence must not be written to the notification log.
  *
  * Every notification is appended to a 200-entry journal kept in `localStorage`,
- * which outlives the logout and is readable from the Notifications page by
+ * which outlives the logout and is readable from the recent messages of the home page by
  * anyone reopening that browser profile. A sentence saying that a named person
  * is a minor — and, when they turn 18 during the event, saying exactly when —
  * has no business surviving the screen it was shown on (`docs/rgpd.md` §7).
@@ -2792,7 +2792,7 @@ export interface EspaceAnimateurView {
    */
   changementsLe: string | null;
   /**
-   * The date a developer froze on this server (`/api/debug/date-du-jour`),
+   * The date a developer froze on this server (`/api/horloge`),
    * `null` on the real clock — always `null` where the simulated clock is not allowed. The day
    * marker then reads it in place of the phone's date, and the toolbar says so.
    */
@@ -2899,7 +2899,7 @@ export interface ConfigurationFoire {
 /**
  * An alert raised by one of the nightly jobs (issues #298, #299, #300).
  *
- * Server-side on purpose, unlike the rest of the Notifications page: these
+ * Server-side on purpose, unlike the rest of the recent messages of the home page: these
  * happen at four in the morning with nobody watching, so a log kept in this
  * browser's `localStorage` would never see them.
  */
@@ -3559,7 +3559,7 @@ export interface EtatSauvegarde {
 /* --------------------------- Mode « jour J » ------------------------------ */
 
 /**
- * `/api/debug/date-du-jour`: the development- and staging-only override of the server's
+ * `/api/horloge`: the development-, demonstration- and staging-only override of the server's
  * notion of today, and whether this server would accept one.
  */
 export interface DateJourJView {
@@ -3970,6 +3970,8 @@ export interface EtatResolution {
   dataStale: boolean;
   solveEnCours: boolean;
   statut: StatutEtat;
+  /** The last analysis read out in sentences — what the home screen shows instead of the raw score. */
+  lecture: ScoreSentence[];
 }
 
 export interface EtatProblemes {
@@ -3995,7 +3997,11 @@ export interface EtatConfirmations {
   confirmes: number;
   relances: number;
   silencieux: number;
+  /** « À vérifier » only once `delaiRelanceHeures` have passed since the publication. */
   statut: StatutEtat;
+  /** The nightly sends are armed on this edition (Paramètres › E-mails): off by default. */
+  relancesAutomatiques: boolean;
+  delaiRelanceHeures: number;
 }
 
 export interface EtatFoire {
@@ -4044,6 +4050,29 @@ export interface EtatEvenement {
   premierJour: string | null;
   dernierJour: string | null;
   termine: boolean;
+  /** The server's today, the simulated one when the clock is frozen. */
+  aujourdhui: string;
+  /** Which form the home screen takes. */
+  phase: PhaseEvenement;
+  /** The day under way, only while the event runs. */
+  jour: EtatJour | null;
+}
+
+/** Before the first day (or without any day), from the first to the last, after it. */
+export type PhaseEvenement = 'PREPARATION' | 'EVENEMENT' | 'APRES';
+
+/**
+ * The day under way, counted by the wall display (stands, empty seats) and
+ * the mode jour J (absences): « J5 · 60 stands ouverts · 23 places vides ».
+ */
+export interface EtatJour {
+  date: string;
+  /** Rank from the first day of the event, the first being 1. */
+  numero: number;
+  standsOuverts: number;
+  placesVides: number;
+  absents: number;
+  echangesAArbitrer: number;
 }
 
 /**
@@ -4069,6 +4098,13 @@ export interface EtatATraiter {
   silenceJours: number;
   donneesModifiees: boolean;
   personnesAPrevenir: number;
+  /** Day-before reminders the night could not send (no address), for a day still ahead. */
+  rappelsNonEnvoyes: number;
+  /** Reminders of the silent the night could not send, since the last publication. */
+  relancesNonEnvoyees: number;
+  /** The last nightly backup failed. */
+  sauvegardeEnEchec: boolean;
+  sauvegardeEchecLe: string | null;
 }
 
 /** The families the coherence checklist is grouped by, in reading order. */

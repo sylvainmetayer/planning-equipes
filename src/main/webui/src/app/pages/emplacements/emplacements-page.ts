@@ -17,12 +17,14 @@ import {
 } from '../../core/distance';
 import { Emplacement } from '../../core/models';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
+import { ImportedRowsFilter } from '../../shared/imported-rows-filter';
 import { TableFilter } from '../../shared/table-filter';
 import { EmplacementBulkEditData, EmplacementBulkEditDialog } from './emplacement-bulk-edit-dialog';
 import { buildEmplacementDetail } from './emplacement-detail';
 import { EmplacementFormData, EmplacementFormDialog } from './emplacement-form-dialog';
 import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 import { GelNotice } from '../../shared/gel-notice';
+import { ImportButton } from '../../shared/import-button';
 
 /** Mirrors `QualiteConstraints.DISTANCE_ELOIGNEE_METRES` on the server. */
 const SEUIL_ELOIGNEMENT_METRES = 300;
@@ -39,6 +41,8 @@ const SEUIL_ELOIGNEMENT_METRES = 300;
 @Component({
   selector: 'app-emplacements-page',
   imports: [
+    ImportedRowsFilter,
+    ImportButton,
     MatCardModule,
     MatButtonModule,
     MatCheckboxModule,

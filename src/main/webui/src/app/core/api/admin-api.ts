@@ -1,5 +1,5 @@
 // The administrator's plumbing: backups, the SQL dump, the mail checks of the
-// Débogage screen, the legal notice, the scheduled notifications, the session.
+// Débogage page, the legal notice, the scheduled notifications, the session.
 
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';

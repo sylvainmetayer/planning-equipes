@@ -1,0 +1,73 @@
+<div class="messages-recents">
+  <button matButton type="button" class="messages-recents-bascule" [attr.aria-controls]="deplie() ? 'messages-recents-contenu' : null"
+          [attr.aria-expanded]="deplie()" (click)="basculer()">
+    <mat-icon>{{ deplie() ? 'expand_less' : 'expand_more' }}</mat-icon>
+    <ng-container i18n="@@accueil.messages.titre">Messages récents ({{ notifications.notifications().length }})</ng-container>
+  </button>
+  @if (deplie()) {
+    <div id="messages-recents-contenu">
+      <section id="alertes-nuit" aria-labelledby="alertes-nuit-titre">
+        <h3 id="alertes-nuit-titre" class="notification-jour" i18n="@@notifications.alertes.titre">Alertes des envois de nuit ({{ alertes().length }})</h3>
+        @if (alertes().length === 0) {
+          <p class="empty-hint" i18n="@@notifications.alertes.aucune">Aucune alerte laissée par les envois de nuit.</p>
+        } @else {
+          <p class="empty-hint" i18n="@@notifications.alertes.description.accueil">Chaque alerte se referme en traitant ce qu'elle signale.</p>
+          <div class="notification-list">
+            @for (alerte of alertes(); track alerte.type + '|' + alerte.cle) {
+              <div class="notification-item notification-item-{{ alerteVariante(alerte) }}">
+                <mat-icon class="notification-icon">{{ alerteIcon(alerte.severite) }}</mat-icon>
+                <div class="notification-body">
+                  @if (alerteQui(alerte); as qui) {
+                    <span class="notification-title">{{ qui }}</span>
+                  }
+                  <span class="notification-message">{{ alerte.libelle }}</span>
+                </div>
+                <span class="notification-timestamp">{{ formattedDateTime(alerte.declencheLe) }}</span>
+              </div>
+            }
+          </div>
+        }
+      </section>
+
+      <section aria-labelledby="messages-app-titre">
+        <h3 id="messages-app-titre" class="notification-jour" i18n="@@notifications.historique.titre">Messages de l'application</h3>
+        <div class="card-actions">
+          <button matButton type="button" [disabled]="notifications.unreadCount() === 0" (click)="notifications.markAllRead()">
+            <mat-icon>done_all</mat-icon>
+            <ng-container i18n="@@notifications.markAllRead">Tout marquer comme lu</ng-container>
+          </button>
+          <button matButton type="button" [disabled]="notifications.notifications().length === 0" (click)="notifications.clear()">
+            <mat-icon>delete_sweep</mat-icon>
+            <ng-container i18n="@@notifications.clear">Effacer l'historique</ng-container>
+          </button>
+        </div>
+        @if (notifications.notifications().length === 0) {
+          <p class="empty-hint" i18n="@@notifications.empty">Aucune notification pour le moment.</p>
+        } @else {
+          @for (journee of journees(); track journee.cle) {
+            <h4 class="notification-jour">{{ journee.libelle }}</h4>
+            <div class="notification-list">
+              @for (notification of journee.notifications; track notification.id) {
+                <button
+                  type="button"
+                  class="notification-item notification-item-{{ notification.severity }}"
+                  [class.notification-item-unread]="!notification.read"
+                  (click)="notifications.markRead(notification.id)"
+                >
+                  <mat-icon class="notification-icon">{{ icon(notification.severity) }}</mat-icon>
+                  <span class="notification-body">
+                    <span class="notification-title">{{ notification.title }}</span>
+                    @if (notification.message) {
+                      <span class="notification-message">{{ notification.message }}</span>
+                    }
+                  </span>
+                  <span class="notification-timestamp">{{ formattedTime(notification.timestamp) }}</span>
+                </button>
+              }
+            </div>
+          }
+        }
+      </section>
+    </div>
+  }
+</div>

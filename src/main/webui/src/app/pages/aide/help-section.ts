@@ -13,6 +13,8 @@ export interface HelpLink {
   route?: string;
   /** With `route`: the rendering or the tab of a page gathering several screens (`?vue=`, `?onglet=`). */
   queryParams?: Record<string, string>;
+  /** An anchor of the destination: « À traiter aujourd'hui » on the home screen. */
+  fragment?: string;
   href?: string;
   label: string;
 }

@@ -5,6 +5,7 @@ import {
   computed,
   inject,
   input,
+  output,
   signal,
   viewChild,
 } from '@angular/core';
@@ -12,6 +13,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { RouterLink } from '@angular/router';
 import { ImportsApi } from '../../core/api/imports-api';
 import { errorMessage } from '../../core/error-message';
 import {
@@ -25,6 +27,41 @@ import { ConfirmService } from '../../shared/confirm-dialog';
 import { GelNotice } from '../../shared/gel-notice';
 import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 import { FreezeFamily } from '../../core/models';
+import { CollageTableur } from './collage-tableur';
+import { PASTE_FILE_NAME } from './collage';
+import { importedRowIds } from './imported-rows';
+import { IMPORTED_IDS_PARAM } from '../../core/imported-rows';
+
+/** The referential screen a file of this target fills: where « Voir les lignes importées » leads. */
+export function referentialRouteOf(target: ReferentielImportTarget): string {
+  switch (target) {
+    case 'TYPOLOGIES':
+      return '/typologies';
+    case 'EMPLACEMENTS':
+      return '/emplacements';
+    case 'STANDS':
+      return '/stands';
+    case 'CRENEAUX':
+    case 'JOURNEES_TYPES':
+      return '/creneaux';
+  }
+}
+
+/** « Voir les stands »: the link when the imported rows cannot be singled out on that screen. */
+export function referentialLinkLabel(target: ReferentielImportTarget): string {
+  switch (target) {
+    case 'TYPOLOGIES':
+      return $localize`:@@importRef.voir.typologies:Voir les typologies`;
+    case 'EMPLACEMENTS':
+      return $localize`:@@importRef.voir.emplacements:Voir les emplacements`;
+    case 'STANDS':
+      return $localize`:@@importRef.voir.stands:Voir les stands`;
+    case 'CRENEAUX':
+      return $localize`:@@importRef.voir.creneaux:Voir les créneaux`;
+    case 'JOURNEES_TYPES':
+      return $localize`:@@importRef.voir.journeesTypes:Voir les journées types`;
+  }
+}
 
 /** The family a file of this referential writes (ADR 0052); the day templates are none. */
 export function frozenFamilyOf(target: ReferentielImportTarget): FreezeFamily | null {
@@ -57,14 +94,23 @@ const ICONE_ACTION: Record<ActionImportReferentiel, string> = {
  * One referential read from a CSV: pick the file, read what would happen, then
  * and only then write it.
  *
- * <p>The three referentials it serves — typologies, emplacements, stands —
- * differ only by their columns and their words, so they share one component
- * rather than three near-copies. The file is posted as text, twice on purpose
- * (the write re-reads and re-checks it), and never kept on either side.</p>
+ * <p>The referentials it serves — typologies, emplacements, stands,
+ * timeslots, day templates — differ only by their columns and their words, so
+ * they share one component rather than five near-copies. The file — or the
+ * cells pasted from a spreadsheet — is posted as text, twice on purpose (the
+ * write re-reads and re-checks it), and never kept on either side.</p>
  */
 @Component({
   selector: 'app-import-referentiel',
-  imports: [GelNotice, MatButtonModule, MatCardModule, MatIconModule, MatProgressBarModule],
+  imports: [
+    CollageTableur,
+    GelNotice,
+    MatButtonModule,
+    MatCardModule,
+    MatIconModule,
+    MatProgressBarModule,
+    RouterLink,
+  ],
   templateUrl: './import-referentiel-card.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -73,6 +119,14 @@ export class ImportReferentielCard {
   /** What the tab says the file must hold, in the words of that referential. */
   readonly colonnes = input.required<string>();
   readonly aide = input.required<string>();
+  /**
+   * False inside the Importer dialog of the referential screen itself: the
+   * rows are then on the page the dialog closes onto, and a link to it would
+   * lead nowhere new.
+   */
+  readonly lienReferentiel = input(true);
+  /** A write went through: the host reloads what it shows. */
+  readonly imported = output<void>();
 
   private readonly api = inject(ImportsApi);
   private readonly notifications = inject(NotificationService);
@@ -102,6 +156,35 @@ export class ImportReferentielCard {
   protected readonly telechargementEnCours = signal(false);
 
   protected readonly fichierCharge = computed(() => this.nomFichier() !== '');
+  /**
+   * Once a write went through: the screen its rows live on, opened on those
+   * rows alone (`?ids=`) — or on the whole list, said so, when they cannot be
+   * singled out there (the day templates). `null` before, and when the write
+   * created and updated nothing.
+   */
+  protected readonly lienLignes = computed(() => {
+    const rapport = this.rapport();
+    if (!rapport?.applied || rapport.created + rapport.updated === 0) {
+      return null;
+    }
+    const target = this.target();
+    const route = referentialRouteOf(target);
+    const ids = importedRowIds(target, rapport.rows, {
+      typologies: this.store.typologies(),
+      emplacements: this.store.emplacements(),
+      stands: this.store.stands(),
+      creneaux: this.store.creneaux(),
+    });
+    if (ids === null || ids.length === 0) {
+      return { route, queryParams: null, libelle: referentialLinkLabel(target) };
+    }
+    const count = ids.length;
+    return {
+      route,
+      queryParams: { [IMPORTED_IDS_PARAM]: ids.join(',') },
+      libelle: $localize`:@@importRef.voirLignes:Voir les ${count}:count: lignes importées`,
+    };
+  });
   protected readonly peutImporter = computed(
     () =>
       this.fichierCharge() &&
@@ -142,10 +225,23 @@ export class ImportReferentielCard {
     if (!file) {
       return;
     }
+    await this.load(file.name, await file.text());
+  }
+
+  /** Cells pasted from a spreadsheet: read exactly as a file of that content would be. */
+  protected onColle(csv: string): Promise<void> {
+    return this.load(PASTE_FILE_NAME, csv);
+  }
+
+  /**
+   * A text to read, whichever way it came in — a file or a paste: the last
+   * answer forgotten, the text held under its name, then previewed.
+   */
+  private async load(name: string, content: string): Promise<void> {
     this.derniereAnalyse++;
     this.rapport.set(null);
-    this.nomFichier.set(file.name);
-    this.contenu.set(await file.text());
+    this.nomFichier.set(name);
+    this.contenu.set(content);
     await this.analyser();
   }
 
@@ -192,6 +288,7 @@ export class ImportReferentielCard {
       const applique = await this.api.importer(this.target(), this.demande());
       this.rapport.set(applique);
       await this.store.reload();
+      this.imported.emit();
       this.notifications.notify({
         title: $localize`:@@importRef.succes.titre:Import terminé`,
         message: $localize`:@@importRef.succes.message:${applique.created}:crees: création(s), ${applique.updated}:majs: mise(s) à jour, ${applique.rejected}:refus: ligne(s) refusée(s).`,

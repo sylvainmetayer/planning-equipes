@@ -15,6 +15,7 @@
       <mat-icon>add</mat-icon>
       <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
+    <app-import-button card="animateurs" [disabled]="editingLocked()" />
     <mat-form-field appearance="outline" subscriptSizing="dynamic" class="accuses-filter">
       <mat-label i18n="@@animateurs.accuses.label">Accusés</mat-label>
       <mat-select [ngModel]="accuses()" (ngModelChange)="accuses.set($event)">
@@ -42,6 +43,16 @@
         <mat-chip (removed)="clearTypologie()" [removable]="true">
           <ng-container i18n="@@animateurs.filtreTypologie">Typologie : {{ typologieLabel() }}</ng-container>
           <button matChipRemove i18n-aria-label="@@animateurs.filtreTypologie.clear" aria-label="Retirer le filtre par typologie">
+            <mat-icon>cancel</mat-icon>
+          </button>
+        </mat-chip>
+      </mat-chip-set>
+    }
+    @if (importedIds(); as ids) {
+      <mat-chip-set class="animateurs-typologie-filtre" aria-label="Lignes importées" i18n-aria-label="@@animateurs.filtreImport.label">
+        <mat-chip (removed)="clearImportedIds()" [removable]="true">
+          <ng-container i18n="@@animateurs.filtreImport">Lignes importées ({{ ids.size }})</ng-container>
+          <button matChipRemove i18n-aria-label="@@animateurs.filtreImport.clear" aria-label="Retirer le filtre des lignes importées">
             <mat-icon>cancel</mat-icon>
           </button>
         </mat-chip>

@@ -84,8 +84,8 @@ const EXCEPTIONS_ASSUMEES = {
     "une ligne de la liste qui détaille le bilan, lequel est déjà annoncé : l'annoncer aussi la lirait deux fois",
   'app/pages/ouvertures/ouvertures-page.html {{ anomalie.message }}':
     "une ligne de la liste d'anomalies de l'écran, du contenu et non le résultat d'une action",
-  'app/pages/notifications/notifications-page.html {{ notification.message }}':
-    'une entrée du journal des notifications, du contenu ; chacune a été annoncée par le snack-bar en arrivant',
+  'app/pages/accueil/messages-recents.html {{ notification.message }}':
+    'une entrée du journal des messages récents, du contenu ; chacune a été annoncée par le snack-bar en arrivant',
   'app/shared/siege-panel/siege-panel.html {{ done.message }}':
     'la première ligne du compte rendu d\'un geste, annoncé en bloc par le role="status" de `.siege-panel-outcome`',
   'app/shared/confirm-dialog.ts {{ data.message }}':

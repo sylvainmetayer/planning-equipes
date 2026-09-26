@@ -49,7 +49,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * cost the thirty people selected on the eve of the event their reminder for
  * good: the hand refused them as already reminded, the night skipped them as
  * already recorded, and the summary counted them as reminded while nothing had
- * reached them. A failure now leaves an alert on the Notifications screen,
+ * reached them. A failure now leaves an alert on the recent messages of the home screen,
  * which outlives the nine seconds of a bubble.</p>
  */
 @ApplicationScoped
@@ -253,7 +253,7 @@ public class RelanceManuelleService {
             Log.errorf(e, "Failed to mail the confirmation reminder to animateur %s", animateurId);
             // The reservation goes back, so a retry is possible at all —
             // holding it would refuse the hand and the night alike — and the
-            // failure is left on the Notifications screen rather than in a
+            // failure is left on the recent messages of the home screen rather than in a
             // bubble that disappears.
             journal.release(JournalNotificationsRepository.Type.RELANCE_CONFIRMATION, cle);
             journal.claim(

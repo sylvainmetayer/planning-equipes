@@ -1,14 +1,14 @@
 // « Le passé est figé » (ADR 0044) from the screen: the scenario of
 // FrozenPastAcceptanceTest, replayed through a browser on the packaged
-// application. The clock is set on the Débogage page — the e2e-lourd stack
-// is launched with HORLOGE_SIMULEE_AUTORISEE=true, a staging server's
-// configuration — first before the event, then on the Wednesday at 13:30;
+// application. The clock is set on Paramètres › Instance — the e2e-lourd
+// stack is launched with HORLOGE_SIMULEE_AUTORISEE=true, a demonstration or
+// staging server's configuration — first before the event, then on the Wednesday at 13:30;
 // three solves follow, and the days already worked come out of each one
 // exactly as they went in. The recap says how many seats it froze, and a move
 // on a day already worked is refused with the rule's own sentence.
 //
-// What a unit test cannot see is the chain: that the date typed on the
-// Débogage page is the one the solver reads, that the recap of a solve
+// What a unit test cannot see is the chain: that the date typed in the
+// « Date et heure simulées » card is the one the solver reads, that the recap of a solve
 // launched from the button carries the count, and that the day view shows
 // the refusal instead of swallowing it.
 //
@@ -66,7 +66,7 @@ test.afterAll(async () => {
   // read July 2027 as today — and a failure to hand it back must be loud, since
   // every spec dated by `shiftDate` would then find its days already begun.
   try {
-    const horlogeRendue = await admin.put('/api/debug/date-du-jour', {
+    const horlogeRendue = await admin.put('/api/horloge', {
       data: { dateDuJour: null },
     });
     expect(horlogeRendue.ok(), await horlogeRendue.text()).toBe(true);
@@ -76,9 +76,9 @@ test.afterAll(async () => {
   }
 });
 
-/** Sets the server's clock from the Débogage page, the way a tester would. */
+/** Sets the server's clock from Paramètres › Instance, the way a tester would. */
 async function figerHorloge(page: Page, date: string, heure?: string): Promise<void> {
-  await page.goto('/debug?onglet=verifications');
+  await page.goto('/parametres?onglet=instance');
   const champDate = page.locator('#date-du-jour');
   await champDate.fill(date);
   await expect.poll(async () => (await horloge()).dateDuJour).toBe(date);
@@ -88,11 +88,11 @@ async function figerHorloge(page: Page, date: string, heure?: string): Promise<v
     await champHeure.fill(heure);
     await expect.poll(async () => (await horloge()).heureDuJour?.slice(0, 5)).toBe(heure);
   }
-  await expect(page.locator('#contenu')).toContainText('Date figée');
+  await expect(page.locator('#contenu')).toContainText('Date simulée :');
 }
 
 async function horloge(): Promise<{ dateDuJour: string | null; heureDuJour?: string | null }> {
-  const reponse = await admin.get('/api/debug/date-du-jour');
+  const reponse = await admin.get('/api/horloge');
   expect(reponse.ok()).toBe(true);
   return (await reponse.json()) as { dateDuJour: string | null; heureDuJour?: string | null };
 }

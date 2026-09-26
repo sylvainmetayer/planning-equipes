@@ -1,13 +1,13 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <h1 mat-card-title i18n="@@imports.title">Imports</h1>
+    <h2 mat-card-title i18n="@@fichiers.importer.title">Importer</h2>
     <mat-card-subtitle i18n="@@imports.subtitle">
       Remplir une édition depuis les fichiers que vous avez déjà, dans l'ordre où les données se tiennent. Rien n'est écrit avant votre validation, et aucun fichier n'est conservé.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
-    <mat-button-toggle-group class="imports-onglets" [value]="onglet()" (change)="changerOnglet($event.value)"
-                             aria-label="Onglet des imports" i18n-aria-label="@@imports.onglet.label">
+    <mat-button-toggle-group class="imports-onglets" [value]="card()" (change)="selectCard($event.value)"
+                             aria-label="Ce qu'il faut importer" i18n-aria-label="@@imports.cible.label">
       <mat-button-toggle value="typologies">
         <mat-icon>category</mat-icon>
         <ng-container i18n="@@nav.link.typologies">Typologies</ng-container>
@@ -40,23 +40,19 @@
         <mat-icon>description</mat-icon>
         <ng-container i18n="@@imports.onglet.scenario">Scénario</ng-container>
       </mat-button-toggle>
+      <mat-button-toggle value="exemples">
+        <mat-icon>auto_awesome</mat-icon>
+        <ng-container i18n="@@imports.onglet.exemples">Exemples</ng-container>
+      </mat-button-toggle>
+      <mat-button-toggle value="verifier">
+        <mat-icon>fact_check</mat-icon>
+        <ng-container i18n="@@imports.onglet.verifier">Vérifier un fichier</ng-container>
+      </mat-button-toggle>
     </mat-button-toggle-group>
   </mat-card-content>
 </mat-card>
 
-@switch (onglet()) {
-  @case ('emplacements') {
-    <app-import-referentiel target="EMPLACEMENTS" [colonnes]="colonnesEmplacements" [aide]="aideEmplacements" />
-  }
-  @case ('stands') {
-    <app-import-referentiel target="STANDS" [colonnes]="colonnesStands" [aide]="aideStands" />
-  }
-  @case ('creneaux') {
-    <app-import-referentiel target="CRENEAUX" [colonnes]="colonnesCreneaux" [aide]="aideCreneaux" />
-  }
-  @case ('journees-types') {
-    <app-import-referentiel target="JOURNEES_TYPES" [colonnes]="colonnesJourneesTypes" [aide]="aideJourneesTypes" />
-  }
+@switch (card()) {
   @case ('animateurs') {
     <app-import-animateurs-page [entete]="false" />
   }
@@ -66,7 +62,17 @@
   @case ('scenario') {
     <app-import-scenario-card />
   }
+  @case ('exemples') {
+    <app-exemples-card />
+  }
+  @case ('verifier') {
+    <app-yaml-validator />
+  }
   @default {
-    <app-import-referentiel target="TYPOLOGIES" [colonnes]="colonnesTypologies" [aide]="aideTypologies" />
+    <!-- Tracked by target: a card of another referential is a new card, never
+         the previous one holding a file of the wrong kind. -->
+    @for (carte of referentialCard(); track carte.target) {
+      <app-import-referentiel [target]="carte.target" [colonnes]="carte.colonnes" [aide]="carte.aide" />
+    }
   }
 }

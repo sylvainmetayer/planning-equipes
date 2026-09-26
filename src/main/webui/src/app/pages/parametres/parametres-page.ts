@@ -46,6 +46,8 @@ import { OngletParametres, readOngletParametres } from './parametres';
 import { SingleKeyShortcutsToggle } from '../../shared/single-key-shortcuts-toggle';
 import { GelNotice } from '../../shared/gel-notice';
 import { GelReferentielCard } from '../../shared/gel-referentiel-card';
+import { HorlogeSimuleeCard } from './horloge-simulee-card';
+import { TODAY_ANCHOR } from '../../core/date-mock.service';
 import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 
 /**
@@ -66,16 +68,17 @@ export const REPLACE_KEYWORD = 'REMPLACER';
  *   ninja typologie, the organisational-quality thresholds, plus pointers to
  *   what stays on its own screen (solver duration, foire aux échanges,
  *   constraint toggles, découpage settings next to the generation that reads
- *   them, and the three scenario operations — load a bundled one on Débogage,
- *   import a file under Imports, write one out under Exports).
+ *   them, and the three scenario operations — load a bundled example, import
+ *   a file, write one out, all three on Fichiers).
  * - "E-mails automatiques" — what the edition sends of its own accord: to the
  *   administrator at the end of a solve, to the animateurs as reminders and
  *   relances. Not "Notifications", which is the name of another page.
  * - "Affichage mural" — the links that open the control room's television
  *   without an admin session (ADR 0053): per edition, created and revoked here.
- * - "Globaux" — the SQL dump import/export and the automatic backup: both take
- *   the WHOLE database, every edition included, so neither belongs to any
- *   edition.
+ * - "Instance" — what the operator configured and what holds for the whole
+ *   database, every edition included: the automatic backup, the SQL dump
+ *   import/export, the single-key shortcuts of this browser, and the simulated
+ *   clock where the server allows one (a demonstration or staging server).
  *
  * The feasibility banner stays above the tabs: it speaks of the edition, not
  * of a tab. So does the output panel — an error answered on one tab survives
@@ -109,6 +112,7 @@ export const REPLACE_KEYWORD = 'REMPLACER';
     StatusMessage,
     GelNotice,
     GelReferentielCard,
+    HorlogeSimuleeCard,
   ],
   templateUrl: './parametres-page.html',
   styleUrl: './parametres.css',
@@ -167,13 +171,21 @@ export class ParametresPage implements OnInit {
 
   constructor() {
     // Followed rather than read once, like Diagnostic: clicking « Paramètres »
-    // in the menu from `/parametres?onglet=globaux`, or the « paramètres
+    // in the menu from `/parametres?onglet=instance`, or the « paramètres
     // légaux » link of Pauses while another tab is open, navigates to this very
     // route with another `onglet`, and the router reuses the component instead
     // of building it again. `replaceState` (ADR 0018) emits nothing here, so
     // the effect below cannot feed this subscription.
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
-      this.onglet.set(readOngletParametres(params.get('onglet')));
+      // `?focus=date-du-jour` names the simulated clock's field, which lives
+      // on the Instance tab: the toolbar indicator's link lands on it even
+      // when it names no tab.
+      const demande = params.get('onglet');
+      this.onglet.set(
+        demande === null && params.get('focus') === TODAY_ANCHOR
+          ? 'instance'
+          : readOngletParametres(demande),
+      );
     });
     keepViewInQueryParams(() => ({
       onglet: this.onglet() === 'legaux' ? null : this.onglet(),

@@ -1,0 +1,15 @@
+/* The Fichiers page: one row of tabs above the panels; each panel brings its own stylesheet. */
+
+.fichiers-onglets {
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.fichiers-onglets .mat-icon {
+  margin-right: 0.35rem;
+}
+
+/* The examples picker sits inline with its « Charger » button. */
+.exemples-select {
+  min-width: 20rem;
+}

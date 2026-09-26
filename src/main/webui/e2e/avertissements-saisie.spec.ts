@@ -244,11 +244,12 @@ test.describe('avertissements de saisie', () => {
     await ligne.getByRole('button', { name: 'Consulter le détail' }).click();
     await expect(page.getByRole('dialog')).toContainText(JOUR_HORS_BORNES);
 
-    // Le journal du navigateur survit à la déconnexion et se relit depuis la
-    // page Notifications : la phrase qui dit qu'une personne est mineure n'y
-    // est pas écrite (docs/rgpd.md §7), l'indisponibilité si.
+    // Le journal du navigateur survit à la déconnexion et se relit dans les
+    // messages récents de l'accueil : la phrase qui dit qu'une personne est
+    // mineure n'y est pas écrite (docs/rgpd.md §7), l'indisponibilité si.
     await page.keyboard.press('Escape');
-    await page.goto('/notifications');
+    await page.goto('/');
+    await page.getByRole('button', { name: /Messages récents/ }).click();
     await expect(page.getByText(/point\(s\) à vérifier/).first()).toBeVisible();
     await expect(page.getByText(/est mineur pendant tout l'événement/)).toHaveCount(0);
     await expect(page.getByText(/Indisponibilité hors de l'événement/).first()).toBeVisible();

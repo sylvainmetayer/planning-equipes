@@ -1,8 +1,8 @@
-// Emptying the database is the most destructive button of the admin interface,
-// and it is one click away from a diagnostic screen people open to look at a
-// score. What is tested here is only that gate: the reset asks for the current
-// edition's name to be typed back, it names that edition rather than promising
-// something wider, and nothing is sent when the answer is not exactly it.
+// Emptying an edition is one of the most destructive buttons of the admin
+// interface. What is tested here is only that gate: the reset asks for the
+// current edition's name to be typed back, it names that edition and what is
+// left rather than promising something wider, and nothing is sent when the
+// answer is not exactly it.
 
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -20,15 +20,15 @@ import { SolverSettingsService } from '../../core/solver-settings.service';
 import { ConfirmationRecopie } from '../../shared/confirmation-recopie';
 import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
 import { PlanningApi } from '../../core/api/planning-api';
-import { DebugPage, CLEAR_KEYWORD } from './debug-page';
+import { EmptyEditionCard, CLEAR_KEYWORD } from './empty-edition-card';
 import type { DemandeRecopie } from '../../shared/confirmation-recopie';
 import type { Edition, EtatGel } from '../../core/models';
 
 /** Reaches the protected handler the template binds the button to. */
-type PageInternals = { onResetDatabase: () => Promise<void> };
+type PageInternals = { empty: () => Promise<void> };
 
 function page(): PageInternals {
-  return TestBed.createComponent(DebugPage).componentInstance as unknown as PageInternals;
+  return TestBed.createComponent(EmptyEditionCard).componentInstance as unknown as PageInternals;
 }
 
 /** What `GET /api/editions/courant/gel` answers when two families are frozen. */
@@ -39,7 +39,7 @@ const FROZEN_STATES: EtatGel[] = [
   { famille: 'COMPETENCES', libelle: 'Compétences', fige: false, figeLe: null },
 ];
 
-describe('DebugPage reset', () => {
+describe('EmptyEditionCard', () => {
   const api = { get: vi.fn(), post: vi.fn() };
   const planningApi = { reset: vi.fn() };
   const recopie = { demander: vi.fn() };
@@ -95,8 +95,8 @@ describe('DebugPage reset', () => {
     return recopie.demander.mock.calls[0][0] as DemandeRecopie;
   }
 
-  it('empties the database once the edition name has been typed back', async () => {
-    await page().onResetDatabase();
+  it('empties the edition once its name has been typed back', async () => {
+    await page().empty();
 
     expect(demande().valeurAttendue).toBe('Année 2026');
     expect(instantane.proposer).toHaveBeenCalledOnce();
@@ -108,7 +108,7 @@ describe('DebugPage reset', () => {
   it('sends nothing when the confirmation was refused', async () => {
     recopie.demander.mockResolvedValue(false);
 
-    await page().onResetDatabase();
+    await page().empty();
 
     expect(instantane.proposer).not.toHaveBeenCalled();
     expect(api.post).not.toHaveBeenCalled();
@@ -117,11 +117,15 @@ describe('DebugPage reset', () => {
   // The reset deletes where `edition_id` matches: a message hinting at the
   // whole instance would scare the user out of a safe operation, and one
   // hinting at nothing would let them empty the wrong edition.
-  it('names the edition it is about to empty, and clears the other ones', async () => {
-    await page().onResetDatabase();
+  it('names the edition it is about to empty, and says what is left', async () => {
+    await page().empty();
 
+    expect(demande().title).toContain('Année 2026');
     expect(demande().message).toContain('Année 2026');
-    expect(demande().message).toContain('Les autres éditions ne sont pas touchées');
+    expect(demande().message).toContain('les autres éditions');
+    expect(demande().message).toContain("l'instance");
+    // An edition is what it empties, and nothing wider.
+    expect(`${demande().title} ${demande().message}`).not.toContain('base de données');
   });
 
   // Le shell recharge les éditions sans attendre : arriver ici par un lien
@@ -130,7 +134,7 @@ describe('DebugPage reset', () => {
   it('reloads the editions before asking, rather than degrading the transcription', async () => {
     courant.mockReturnValueOnce(null).mockReturnValue({ id: 'e1', nom: 'Année 2026' } as Edition);
 
-    await page().onResetDatabase();
+    await page().empty();
 
     expect(rechargerEditions).toHaveBeenCalled();
     expect(demande().valeurAttendue).toBe('Année 2026');
@@ -139,7 +143,7 @@ describe('DebugPage reset', () => {
   it('falls back to a keyword when the edition stays unknown after the reload', async () => {
     courant.mockReturnValue(null);
 
-    await page().onResetDatabase();
+    await page().empty();
 
     expect(demande().valeurAttendue).toBe(CLEAR_KEYWORD);
     expect(demande().message).toContain("l'édition courante");
@@ -150,7 +154,7 @@ describe('DebugPage reset', () => {
   it('treats a blank edition name as no name at all', async () => {
     courant.mockReturnValue({ id: 'e1', nom: '   ' } as Edition);
 
-    await page().onResetDatabase();
+    await page().empty();
 
     expect(demande().valeurAttendue).toBe(CLEAR_KEYWORD);
   });
@@ -165,7 +169,7 @@ describe('DebugPage reset', () => {
       },
     });
 
-    await page().onResetDatabase();
+    await page().empty();
 
     expect(recopie.demander).not.toHaveBeenCalled();
     expect(api.post).not.toHaveBeenCalled();
@@ -181,7 +185,7 @@ describe('DebugPage reset', () => {
     const internals = page();
     await TestBed.inject(GelReferentielStore).ensureLoaded();
 
-    await internals.onResetDatabase();
+    await internals.empty();
 
     expect(recopie.demander).not.toHaveBeenCalled();
     expect(instantane.proposer).not.toHaveBeenCalled();

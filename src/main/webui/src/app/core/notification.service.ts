@@ -4,7 +4,7 @@
 // Every call also appends to a persisted log (localStorage) so warnings that
 // would otherwise vanish with the snack bar — post-solve feasibility issues,
 // failed constraints, solver job status, CRUD errors — stay reviewable from
-// the Notifications page.
+// the recent messages of the home page.
 
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { MatSnackBar, MatSnackBarConfig } from '@angular/material/snack-bar';
@@ -30,7 +30,7 @@ const MAX_NOTIFICATIONS = 200;
 
 export type ToastVariant = 'info' | 'success' | 'warning' | 'error';
 
-/** The three severities surfaced on the Notifications page. */
+/** The three severities surfaced on the recent messages of the home page. */
 export type NotificationSeverity = 'info' | 'warning' | 'alert';
 
 export interface NotifyOptions {
@@ -138,7 +138,7 @@ export class NotificationService {
     }
   }
 
-  /** Appends an entry straight to the Notifications page, e.g. from the debug test actions. */
+  /** Appends an entry straight to the recent messages of the home page, e.g. from the debug test actions. */
   push(severity: NotificationSeverity, title: string, message = ''): void {
     const entry: AppNotification = {
       id: crypto.randomUUID(),
@@ -153,7 +153,7 @@ export class NotificationService {
   }
 
   /**
-   * Logs a post-solve feasibility issue to the Notifications page, so
+   * Logs a post-solve feasibility issue to the recent messages of the home page, so
    * it stays reviewable even for whoever isn't looking at the Solveur or
    * Contraintes page when the background job completes — both already show
    * the same wording inline via `app-feasibility-banner`, so this is always

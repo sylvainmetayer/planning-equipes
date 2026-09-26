@@ -1,0 +1,29 @@
+<h1 class="page-title" i18n="@@nav.link.fichiers">Fichiers</h1>
+
+<mat-button-toggle-group class="fichiers-onglets" [value]="onglet()" (change)="changerOnglet($event.value)"
+                         aria-label="Onglet des fichiers" i18n-aria-label="@@fichiers.onglet.label">
+  <mat-button-toggle value="importer">
+    <mat-icon>upload_file</mat-icon>
+    <ng-container i18n="@@fichiers.onglet.importer">Importer</ng-container>
+  </mat-button-toggle>
+  <mat-button-toggle value="exporter">
+    <mat-icon>file_download</mat-icon>
+    <ng-container i18n="@@fichiers.onglet.exporter">Exporter</ng-container>
+  </mat-button-toggle>
+  <mat-button-toggle value="archive">
+    <mat-icon>inventory_2</mat-icon>
+    <ng-container i18n="@@fichiers.onglet.archive">Archive</ng-container>
+  </mat-button-toggle>
+</mat-button-toggle-group>
+
+@switch (onglet()) {
+  @case ('exporter') {
+    <app-exporter-panel />
+  }
+  @case ('archive') {
+    <app-archive-evenement-card />
+  }
+  @default {
+    <app-importer-panel />
+  }
+}

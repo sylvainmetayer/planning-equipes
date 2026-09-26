@@ -23,7 +23,7 @@ import org.jboss.logging.Logger;
  *
  * <p>So each demande is alerted on <b>exactly once</b>, and the journal key is
  * its id — not its id plus a date, not a threshold tier. A demande that ages
- * further does not come back; it is already on the Notifications screen, with
+ * further does not come back; it is already on the recent messages of the home screen, with
  * the date it got there, and the Échanges screen is where it gets closed.</p>
  *
  * <p>The age is counted from the moment the demande landed on the <b>admin's

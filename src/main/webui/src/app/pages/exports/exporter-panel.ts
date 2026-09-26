@@ -16,7 +16,6 @@ import { RouterLink } from '@angular/router';
 import { ExportCsvApi } from '../../core/api/export-csv-api';
 import { CIBLES_EXPORT_CSV } from '../../core/api/imports-api';
 import { PlanningApi } from '../../core/api/planning-api';
-import { ArchiveEvenementCard } from './archive-evenement-card';
 import { errorMessage, errorPrefix } from '../../core/error-message';
 import { ExportCsvTarget, VolumesExportCsv } from '../../core/models';
 
@@ -29,8 +28,8 @@ interface LigneExport {
 }
 
 /**
- * « Export »: the <b>data</b> the current edition can write of itself, facing
- * the import screen that reads it back. The planning itself leaves through
+ * Fichiers › Exporter: the <b>data</b> the current edition can write of
+ * itself, facing the Importer tab that reads it back. The planning itself leaves through
  * « Publication » (issue #320), which is a different act on a different
  * audience: this screen writes files for the team, that one mails schedules to
  * people.
@@ -40,15 +39,14 @@ interface LigneExport {
  * from one year to the next does not necessarily take its animateurs along,
  * and a team replaying its calendar takes only the timeslots and the day
  * templates. The scenario file carries the whole edition at once — which is
- * what the imports' « Scénario » tab reads back.</p>
+ * what the Importer tab's « Scénario » card reads back.</p>
  *
- * <p>The third card, the end-of-event archive, takes several exports of the
- * edition — these two among them — at once, for whoever closes the edition.</p>
+ * <p>The end-of-event archive, which takes several exports of the edition —
+ * these two among them — at once, is the Fichiers page's third tab.</p>
  */
 @Component({
-  selector: 'app-exports-page',
+  selector: 'app-exporter-panel',
   imports: [
-    ArchiveEvenementCard,
     MatButtonModule,
     MatCardModule,
     MatCheckboxModule,
@@ -56,13 +54,13 @@ interface LigneExport {
     MatProgressBarModule,
     RouterLink,
   ],
-  templateUrl: './exports-page.html',
+  templateUrl: './exporter-panel.html',
   styleUrl: '../../../styles/import-animateurs.css',
   // Global by design (AGENTS.md): loaded with the route, unscoped like the import screens it mirrors.
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ExportsPage implements OnInit {
+export class ExporterPanel implements OnInit {
   private readonly api = inject(ExportCsvApi);
   private readonly planningApi = inject(PlanningApi);
 

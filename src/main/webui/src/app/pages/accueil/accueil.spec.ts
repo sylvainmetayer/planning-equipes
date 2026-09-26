@@ -6,7 +6,15 @@ import { Route } from '@angular/router';
 import { describe, expect, it } from 'vitest';
 import { routes } from '../../app.routes';
 import { EtatEdition } from '../../core/models';
-import { buildLignes, buildToday, statutIcon, statutLabel, summarizeLignes } from './accueil';
+import {
+  buildJour,
+  buildLignes,
+  buildToday,
+  isEmptyEdition,
+  statutIcon,
+  statutLabel,
+  summarizeLignes,
+} from './accueil';
 
 /** The routes of the application, children included. */
 function allRoutes(liste: Route[]): Route[] {
@@ -57,6 +65,7 @@ function etatVide(partial: Partial<EtatEdition> = {}): EtatEdition {
       dataStale: false,
       solveEnCours: false,
       statut: 'A_FAIRE',
+      lecture: [],
     },
     problemes: { bloquants: 0, avertissements: 0, reglesAnalysees: true, statut: 'A_FAIRE' },
     relecture: { journees: 0, journeesValidees: 0, statut: 'A_FAIRE' },
@@ -66,7 +75,14 @@ function etatVide(partial: Partial<EtatEdition> = {}): EtatEdition {
       personnesAPrevenir: 0,
       statut: 'A_FAIRE',
     },
-    confirmations: { confirmes: 0, relances: 0, silencieux: 0, statut: 'A_FAIRE' },
+    confirmations: {
+      confirmes: 0,
+      relances: 0,
+      silencieux: 0,
+      statut: 'A_FAIRE',
+      relancesAutomatiques: true,
+      delaiRelanceHeures: 72,
+    },
     foire: { ouverte: true, demandesEnAttente: 0, statut: 'A_FAIRE' },
     aTraiter: {
       aujourdhui: '2026-07-10',
@@ -82,8 +98,19 @@ function etatVide(partial: Partial<EtatEdition> = {}): EtatEdition {
       silenceJours: 3,
       donneesModifiees: false,
       personnesAPrevenir: 0,
+      rappelsNonEnvoyes: 0,
+      relancesNonEnvoyees: 0,
+      sauvegardeEnEchec: false,
+      sauvegardeEchecLe: null,
     },
-    evenement: { premierJour: null, dernierJour: null, termine: false },
+    evenement: {
+      premierJour: null,
+      dernierJour: null,
+      termine: false,
+      aujourdhui: '2026-07-10',
+      phase: 'PREPARATION',
+      jour: null,
+    },
     ...partial,
   };
 }
@@ -123,6 +150,7 @@ function etatComplet(partial: Partial<EtatEdition> = {}): EtatEdition {
       dataStale: false,
       solveEnCours: false,
       statut: 'FAIT',
+      lecture: [],
     },
     problemes: { bloquants: 0, avertissements: 0, reglesAnalysees: true, statut: 'FAIT' },
     relecture: { journees: 12, journeesValidees: 12, statut: 'FAIT' },
@@ -132,7 +160,14 @@ function etatComplet(partial: Partial<EtatEdition> = {}): EtatEdition {
       personnesAPrevenir: 0,
       statut: 'FAIT',
     },
-    confirmations: { confirmes: 40, relances: 0, silencieux: 0, statut: 'FAIT' },
+    confirmations: {
+      confirmes: 40,
+      relances: 0,
+      silencieux: 0,
+      statut: 'FAIT',
+      relancesAutomatiques: true,
+      delaiRelanceHeures: 72,
+    },
     foire: { ouverte: true, demandesEnAttente: 0, statut: 'FAIT' },
     ...partial,
   });
@@ -224,7 +259,18 @@ describe('buildLignes', () => {
       route: '/diagnostic',
       queryParams: { onglet: 'besoin' },
     });
-    expect(liens.get('resolution')?.route).toBe('/solveur');
+    // Solved: the line leads to the plan, on the server's today.
+    expect(liens.get('resolution')).toMatchObject({
+      route: '/journee',
+      queryParams: { date: '2026-07-10' },
+      libelle: 'Voir le planning',
+    });
+    // The freeze is set in Paramètres only: the line says its state and leads there.
+    expect(liens.get('gel')).toMatchObject({
+      route: '/parametres',
+      queryParams: { onglet: 'edition' },
+      fragment: 'gel-referentiel',
+    });
     expect(liens.get('problemes')).toMatchObject({
       route: '/diagnostic',
       queryParams: { onglet: 'problemes' },
@@ -264,7 +310,14 @@ describe('buildLignes', () => {
 
   it('filters the animateurs on the silent ones as soon as somebody has not answered', () => {
     const etat = etatComplet({
-      confirmations: { confirmes: 30, relances: 4, silencieux: 6, statut: 'ATTENTION' },
+      confirmations: {
+        confirmes: 30,
+        relances: 4,
+        silencieux: 6,
+        statut: 'ATTENTION',
+        relancesAutomatiques: true,
+        delaiRelanceHeures: 72,
+      },
     });
     const confirmations = buildLignes(etat).find((ligne) => ligne.id === 'confirmations')!;
     expect(confirmations.lien).toEqual({
@@ -272,7 +325,57 @@ describe('buildLignes', () => {
       queryParams: { confirmation: 'jamais' },
       libelle: "Voir qui n'a pas répondu",
     });
-    expect(confirmations.detail).toBe('30 confirmé(s) · 4 relancé(s) · 6 silencieux');
+    expect(confirmations.detail).toBe(
+      '30 confirmé(s) · 4 relancé(s) · 6 silencieux · relance automatique après 72 h',
+    );
+  });
+
+  /**
+   * Off by default: the detail says so; the line still leads to who has not
+   * answered, and offers to arm the reminders beside it while somebody was
+   * never reminded.
+   */
+  it('says the automatic reminders are off, and offers them beside who has not answered', () => {
+    const etat = etatComplet({
+      confirmations: {
+        confirmes: 10,
+        relances: 0,
+        silencieux: 143,
+        statut: 'INFO',
+        relancesAutomatiques: false,
+        delaiRelanceHeures: 72,
+      },
+    });
+    const confirmations = buildLignes(etat).find((ligne) => ligne.id === 'confirmations')!;
+    expect(confirmations.detail).toContain('relances automatiques désactivées');
+    expect(confirmations.lien).toEqual({
+      route: '/animateurs',
+      queryParams: { confirmation: 'jamais' },
+      libelle: "Voir qui n'a pas répondu",
+    });
+    expect(confirmations.lienSecondaire).toEqual({
+      route: '/parametres',
+      queryParams: { onglet: 'emails' },
+      libelle: 'Activer',
+    });
+  });
+
+  /** Everybody answered: there is nobody left for a reminder to reach. */
+  it('offers no reminders to arm once everybody has answered', () => {
+    const etat = etatComplet({
+      confirmations: {
+        confirmes: 153,
+        relances: 0,
+        silencieux: 0,
+        statut: 'FAIT',
+        relancesAutomatiques: false,
+        delaiRelanceHeures: 72,
+      },
+    });
+    const confirmations = buildLignes(etat).find((ligne) => ligne.id === 'confirmations')!;
+    expect(confirmations.detail).toContain('relances automatiques désactivées');
+    expect(confirmations.lien).toEqual({ route: '/animateurs', libelle: 'Voir les animateurs' });
+    expect(confirmations.lienSecondaire).toBeUndefined();
   });
 
   it('says the solve is running rather than describing a plan about to be replaced', () => {
@@ -315,7 +418,7 @@ describe('buildLignes', () => {
     expect(problemes.detail).toBe('8 avertissement(s), rien de bloquant');
   });
 
-  it('reads the score, its floor-free twin, the broken hard rules and the stale data on one line', () => {
+  it('never shows the raw score: the date, the stale data, and the reading in sentences', () => {
     const etat = etatComplet({
       resolution: {
         resolue: true,
@@ -326,14 +429,26 @@ describe('buildLignes', () => {
         dataStale: true,
         solveEnCours: false,
         statut: 'ATTENTION',
+        lecture: [],
       },
     });
     const resolution = buildLignes(etat).find((ligne) => ligne.id === 'resolution')!;
     expect(resolution.detail).toContain('Résolue le ');
-    expect(resolution.detail).toContain('score -2hard/0medium/-120soft');
-    expect(resolution.detail).toContain('hors plancher -2hard/0medium/-20soft');
+    expect(resolution.detail).not.toMatch(/hard|medium|soft/);
+    // Without a reading to say it, the broken hard rules are said in words.
     expect(resolution.detail).toContain('règles dures en défaut');
     expect(resolution.detail).toContain('données modifiées depuis');
+
+    const lecture = [
+      { sujet: 'VERDICT', niveau: 'BLOQUANT', texte: '2 règles impératives…', liens: [] },
+      { sujet: 'COUVERTURE', niveau: 'ATTENTION', texte: '3 sièges vides…', liens: [] },
+      { sujet: 'CONFORT', niveau: 'INFO', texte: 'Le confort…', liens: [] },
+    ] as EtatEdition['resolution']['lecture'];
+    const lue = buildLignes(etatComplet({ resolution: { ...etat.resolution, lecture } })).find(
+      (ligne) => ligne.id === 'resolution',
+    )!;
+    expect(lue.lecture).toEqual(lecture.slice(0, 2));
+    expect(lue.detail).not.toContain('règles dures en défaut');
   });
 
   it('omits the floor-free score when it equals the score, and the score when there is no analysis', () => {
@@ -480,6 +595,10 @@ describe('buildToday', () => {
           silencieuxARelancer: 4,
           donneesModifiees: true,
           personnesAPrevenir: 5,
+          rappelsNonEnvoyes: 0,
+          relancesNonEnvoyees: 0,
+          sauvegardeEnEchec: false,
+          sauvegardeEchecLe: null,
         },
       }),
     );
@@ -547,11 +666,113 @@ describe('buildToday', () => {
           silencieuxARelancer: 1,
           donneesModifiees: true,
           personnesAPrevenir: 1,
+          rappelsNonEnvoyes: 2,
+          relancesNonEnvoyees: 1,
+          sauvegardeEnEchec: true,
+          sauvegardeEchecLe: '2026-07-10T02:00:00Z',
         },
       }),
     );
     for (const item of items) {
       expect(declarees, item.lien.route).toContain(item.lien.route.slice(1));
     }
+  });
+});
+
+describe('the alerts of the night', () => {
+  const nuit = (partial: Partial<EtatEdition['aTraiter']>) =>
+    buildToday(etatComplet({ aTraiter: { ...etatComplet().aTraiter, ...partial } }));
+
+  it('says a failed backup, as an alert leading to Paramètres › Instance', () => {
+    const [item] = nuit({ sauvegardeEnEchec: true, sauvegardeEchecLe: '2026-07-10T02:00:00Z' });
+    expect(item.id).toBe('sauvegarde');
+    expect(item.alerte).toBe(true);
+    expect(item.sentence).toContain('La sauvegarde de nuit a échoué le ');
+    expect(item.lien).toMatchObject({ route: '/parametres', queryParams: { onglet: 'instance' } });
+  });
+
+  it('counts the reminders that could not leave, and leads to who', () => {
+    const items = nuit({ rappelsNonEnvoyes: 2, relancesNonEnvoyees: 1 });
+    expect(items.map((item) => item.id)).toEqual(['rappels', 'relances']);
+    expect(items[0].sentence).toContain('2 rappel(s) de la veille non envoyé(s)');
+    expect(items[0].lien).toMatchObject({ route: '/', fragment: 'alertes-nuit' });
+    // A manual reminder writes the same alert: the sentence does not date it to the night.
+    expect(items[1].sentence).toBe('1 relance(s) non partie(s) depuis la publication');
+  });
+
+  it('says nothing of a quiet night', () => {
+    expect(nuit({})).toEqual([]);
+  });
+});
+
+describe('the forms of the home screen', () => {
+  it('reads the day under way during the event only', () => {
+    const pendant = etatComplet({
+      evenement: {
+        premierJour: '2026-07-06',
+        dernierJour: '2026-07-20',
+        termine: false,
+        aujourdhui: '2026-07-10',
+        phase: 'EVENEMENT',
+        jour: {
+          date: '2026-07-10',
+          numero: 5,
+          standsOuverts: 60,
+          placesVides: 23,
+          absents: 0,
+          echangesAArbitrer: 2,
+        },
+      },
+    });
+    expect(buildJour(pendant)).toBe(
+      "Aujourd'hui — J5 · 60 stand(s) ouvert(s) · 23 place(s) vide(s) · 0 absent(s) · 2 échange(s) à arbitrer",
+    );
+    expect(buildJour(etatComplet())).toBeNull();
+  });
+
+  it('knows an edition with nothing entered, where it offers to start', () => {
+    expect(isEmptyEdition(etatVide())).toBe(true);
+    expect(isEmptyEdition(etatComplet())).toBe(false);
+  });
+});
+
+describe('the coherence line', () => {
+  const coherence = { bloquants: 0, aVerifier: 16, informations: 0, statut: 'ATTENTION' as const };
+  const gap = (date: string) => ({
+    famille: 'CRENEAUX' as const,
+    gravite: 'A_VERIFIER' as const,
+    code: 'TROU_DANS_LA_JOURNEE',
+    message: `${date} : rien entre 12:00 et 13:00 (60 min). Aucun stand ne peut être armé sur cette plage.`,
+    objet: 'EDITION' as const,
+    objetId: null,
+    date,
+  });
+  const report = {
+    bloquants: 0,
+    aVerifier: 16,
+    informations: 0,
+    familles: [],
+    anomalies: Array.from({ length: 16 }, (_, index) =>
+      gap(`2026-09-${String(index + 1).padStart(2, '0')}`),
+    ),
+  };
+
+  it('counts a single subject once the detail is read, and still unfolds in place', () => {
+    const ligne = buildLignes(etatComplet({ coherence }), report).find(
+      (candidate) => candidate.id === 'coherence',
+    )!;
+    expect(ligne.detail).toBe('1 sujet(s) · 16 à vérifier');
+    expect(ligne.lien).toBeUndefined();
+    expect(ligne.panneau).toBe('coherence');
+  });
+
+  it('counts its subjects, and unfolds, when there are several', () => {
+    const autre = { ...gap('2026-09-01'), message: '2026-09-01 : rien entre 18:00 et 19:00.' };
+    const ligne = buildLignes(etatComplet({ coherence: { ...coherence, aVerifier: 17 } }), {
+      ...report,
+      anomalies: [...report.anomalies, autre],
+    }).find((candidate) => candidate.id === 'coherence')!;
+    expect(ligne.detail).toBe('2 sujet(s) · 17 à vérifier');
+    expect(ligne.panneau).toBe('coherence');
   });
 });

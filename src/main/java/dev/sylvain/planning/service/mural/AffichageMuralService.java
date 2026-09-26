@@ -189,6 +189,34 @@ public class AffichageMuralService {
      * since a night seat of the eve or of the morning after can relay a break.
      */
     private AffichageMuralView build(ResolvedLink link) {
+        return build(
+                link.editionNom(),
+                link.libelle(),
+                new AffichageMuralViewBuilder.Settings(
+                        link.fullNames(),
+                        link.restricted(),
+                        link.restricted() ? Set.copyOf(repository.emplacementsOf(link.id())) : Set.of()),
+                true);
+    }
+
+    /**
+     * The day under way of the current edition, as the wall display would
+     * show it for the whole edition — what the home screen's « Aujourd'hui »
+     * line counts its open stands and empty seats on, so that the television
+     * and the home screen cannot tell two stories about the same day. Initials
+     * only: the reader counts, and names nobody.
+     *
+     * <p>Without the band of alerts: the break report and the consigne only
+     * feed that band, never the stands or their empty seats, and the home
+     * screen reads the counts alone — the analysis of three days of breaks
+     * would be paid on every read of it for nothing.</p>
+     */
+    public AffichageMuralView currentEditionView() {
+        return build(null, null, AffichageMuralViewBuilder.Settings.wholeEdition(false), false);
+    }
+
+    private AffichageMuralView build(
+            String editionNom, String libelle, AffichageMuralViewBuilder.Settings settings, boolean withBand) {
         LocalDateTime now = clock.dateTime();
         PlanningEvenement plan = persistenceService.loadPersistedPlanning();
         List<PosteAffectation> postes = plan.getPostes() == null ? List.of() : plan.getPostes();
@@ -200,18 +228,15 @@ public class AffichageMuralService {
         LocalDate jour = AffichageMuralViewBuilder.currentDay(creneaux, now);
         return AffichageMuralViewBuilder.build(
                 new AffichageMuralViewBuilder.Inputs(
-                        link.editionNom(),
-                        link.libelle(),
+                        editionNom,
+                        libelle,
                         now,
                         jour,
                         creneaux,
                         postes,
-                        breaksAround(plan, postes, jour),
-                        consigneService.find(jour).orElse(null)),
-                new AffichageMuralViewBuilder.Settings(
-                        link.fullNames(),
-                        link.restricted(),
-                        link.restricted() ? Set.copyOf(repository.emplacementsOf(link.id())) : Set.of()));
+                        withBand ? breaksAround(plan, postes, jour) : null,
+                        withBand ? consigneService.find(jour).orElse(null) : null),
+                settings);
     }
 
     /** The break report over the seats of {@code jour} and of the days either side of it. */

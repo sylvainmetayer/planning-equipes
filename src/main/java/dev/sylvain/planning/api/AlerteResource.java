@@ -14,7 +14,7 @@ import java.util.List;
  * What the scheduled jobs left on the organiser's desk (issues #298, #299,
  * #300).
  *
- * <p>The Notifications screen used to be a purely local log: things this
+ * <p>The recent messages of the home screen used to be a purely local log: things this
  * browser saw happen, kept in {@code localStorage}. Everything on this route
  * happened at four in the morning with nobody watching, so it cannot come from
  * there — a swap request rotting for a week, or five people the J-1 reminder

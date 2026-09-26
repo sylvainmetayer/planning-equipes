@@ -190,7 +190,12 @@ describe('chercherCommandes', () => {
     ['probl', '/diagnostic', { onglet: 'problemes' }],
     ['mural', '/parametres', { onglet: 'mural' }],
     ['légaux', '/parametres', { onglet: 'legaux' }],
-    ['yaml', '/imports', { onglet: 'scenario' }],
+    ['yaml', '/fichiers', { cible: 'scenario' }],
+    ['exemples', '/fichiers', { cible: 'exemples' }],
+    ['démonstration', '/fichiers', { cible: 'exemples' }],
+    ['archive', '/fichiers', { onglet: 'archive' }],
+    ['date simulée', '/parametres', { onglet: 'instance' }],
+    ['horloge', '/parametres', { onglet: 'instance' }],
   ])('finds « %s » and opens the right tab', (query, route, queryParams) => {
     const trouve = chercherCommandes(query, sources).find(
       (commande) => commande.route === route && commande.queryParams !== undefined,
