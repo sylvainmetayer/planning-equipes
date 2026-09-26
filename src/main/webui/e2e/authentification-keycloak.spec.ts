@@ -21,6 +21,8 @@ import {
   COMPTE_ADMIN,
   COMPTE_ANIMATRICE,
   COMPTE_SANS_ROLE,
+  KEYCLOAK_URL,
+  REALM,
   attendreLeCompte,
   compteKeycloak,
   connexionKeycloak,
@@ -223,6 +225,85 @@ test.describe('provisioning des comptes animateurs', () => {
     await expect
       .poll(async () => (await compteKeycloak(request, email))?.enabled, { timeout: 15_000 })
       .toBe(false);
+  });
+});
+
+test.describe('import et invitations', () => {
+  /**
+   * Un import crée les comptes sans écrire à personne ; « Envoyer les
+   * invitations » écrit ensuite à ceux-là seulement, une fois.
+   */
+  test("un import crée le compte sans mail, puis le bouton l'invite", async ({ page, request }) => {
+    await connexionKeycloak(page, COMPTE_ADMIN);
+    const email = `${PREFIXE.toLowerCase()}importee@example.org`;
+    const enTetes = { 'X-Edition-Id': EDITION_REFERENCE };
+    // The import refuses an edition without a single créneau: it could not
+    // place an unavailability day. One, removed at the end.
+    const creneau = await page.request.post('/api/creneaux', {
+      headers: enTetes,
+      data: { date: '2030-01-03', heureDebut: '18:00:00', heureFin: '22:00:00' },
+    });
+    expect(creneau.ok(), await creneau.text()).toBe(true);
+    const creneauId = ((await creneau.json()) as { creneau: { id: number } }).creneau.id;
+
+    const importation = await page.request.post('/api/animateurs/import-csv', {
+      headers: enTetes,
+      data: {
+        fileName: 'kc-import.csv',
+        content: `prénom;nom;date de naissance;email\nImportée;Bénévole;1990-05-06;${email}\n`,
+        mapping: null,
+        replaceAnimateurs: false,
+        replaceJoursIndisponibles: false,
+      },
+    });
+    expect(importation.ok(), await importation.text()).toBe(true);
+
+    const compte = await attendreLeCompte(request, email);
+    expect(compte.emailVerified).toBe(false);
+    const etat = await page.request.get('/api/animateurs/invitations', { headers: enTetes });
+    expect(((await etat.json()) as { enAttente: number }).enAttente).toBeGreaterThanOrEqual(1);
+
+    const envoi = await page.request.post('/api/animateurs/invitations', {
+      headers: enTetes,
+      data: {},
+    });
+    expect(envoi.ok(), await envoi.text()).toBe(true);
+    const bilan = (await envoi.json()) as { invites: number; echecs: number };
+    expect(bilan.invites).toBeGreaterThanOrEqual(1);
+    expect(bilan.echecs).toBe(0);
+    expect((await compteKeycloak(request, email))?.emailVerified).toBe(true);
+
+    const apres = await page.request.get('/api/animateurs/invitations', { headers: enTetes });
+    expect(((await apres.json()) as { enAttente: number }).enAttente).toBe(0);
+
+    await page.request.delete(`/api/creneaux/${creneauId}`, { headers: enTetes });
+  });
+});
+
+test.describe('administrateurs', () => {
+  /**
+   * Le rôle se pose dans le realm, par le compte de service qui n'a que
+   * manage-users : seul un vrai serveur dit si ce droit suffit.
+   */
+  test('inviter un administrateur pose le rôle admin dans le realm', async ({ page, request }) => {
+    await connexionKeycloak(page, COMPTE_ADMIN);
+    const email = `${PREFIXE.toLowerCase()}second-admin@example.org`;
+
+    const invitation = await page.request.post('/api/comptes/administrateurs', {
+      data: { email, nom: 'Second Admin' },
+    });
+    expect(invitation.ok(), await invitation.text()).toBe(true);
+
+    const compte = await attendreLeCompte(request, email);
+    const jeton = await jetonClientCredentials(request, CLIENT_PROVISIONING);
+    const roles = await request.get(
+      `${KEYCLOAK_URL}/admin/realms/${REALM}/users/${compte.id}/role-mappings/realm`,
+      { headers: { Authorization: `Bearer ${jeton}` } },
+    );
+    expect(roles.ok(), await roles.text()).toBe(true);
+    const noms = ((await roles.json()) as { name: string }[]).map((role) => role.name);
+    expect(noms).toContain('admin');
+    expect(noms).not.toContain('animateur');
   });
 });
 

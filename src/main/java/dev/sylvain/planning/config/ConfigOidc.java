@@ -86,13 +86,14 @@ public interface ConfigOidc {
 
         /**
          * The Keycloak required actions the invitation carries, in the order
-         * the mail lists them. By default the person confirms the address,
-         * then registers a passkey — no password at all: the realm offers the
-         * code by e-mail to an account without one, which is also the way
-         * back in once the passkey is lost (docs/keycloak.md).
+         * the mail lists them. By default the person only confirms the
+         * address — no password: the realm offers the code by e-mail to an
+         * account without one. A passkey stays optional, added afterwards
+         * from the account console: made compulsory here, it locked out every
+         * browser or device without WebAuthn (docs/keycloak.md).
          * {@code UPDATE_PASSWORD} restores the "choose a password" invitation.
          */
-        @WithDefault("VERIFY_EMAIL,webauthn-register-passwordless")
+        @WithDefault("VERIFY_EMAIL")
         List<String> invitationActions();
     }
 }

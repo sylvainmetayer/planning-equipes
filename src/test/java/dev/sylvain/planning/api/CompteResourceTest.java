@@ -4,6 +4,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
@@ -34,6 +35,24 @@ class CompteResourceTest {
                 .statusCode(200)
                 .body("desactiveLe", nullValue());
         given().when().get("/api/comptes").then().statusCode(200).body("id", hasItem(id));
+    }
+
+    /**
+     * The admin role lives in the realm, where the login flow asks its TOTP:
+     * without provisioning there is nowhere to grant it from here, and the
+     * refusal leaves no half-made account behind.
+     */
+    @Test
+    void sansProvisioningLeRoleAdminSeDonneDansLaConsole() {
+        String email = unique("compte-admin");
+        given().contentType(ContentType.JSON)
+                .body("{\"email\":\"" + email + "\",\"nom\":\"Nouvel admin\"}")
+                .when()
+                .post("/api/comptes/administrateurs")
+                .then()
+                .statusCode(409)
+                .body("message", containsString("console Keycloak"));
+        given().when().get("/api/comptes").then().statusCode(200).body("email", not(hasItem(email)));
     }
 
     @Test

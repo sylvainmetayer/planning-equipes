@@ -32,7 +32,7 @@ import { keepViewInQueryParams, optionalParam } from '../../core/view-query-para
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { StatusMessage } from '../../shared/status-message';
 import { TableFilter } from '../../shared/table-filter';
-import { AddAccountDialog } from './add-account-dialog';
+import { AddAccountData, AddAccountDialog } from './add-account-dialog';
 import {
   RightState,
   editionLabel,
@@ -265,6 +265,31 @@ export class ComptesPage {
         timeout: 4000,
       });
       this.showRights(compte);
+    }
+  }
+
+  /**
+   * Makes someone an administrator. The role is Keycloak's, where the login
+   * flow asks its second factor; the account appears here too, so the list
+   * shows the person before their first sign-in.
+   */
+  protected async openInviteAdmin(): Promise<void> {
+    const compte = await firstValueFrom(
+      this.dialog
+        .open<AddAccountDialog, AddAccountData, Compte>(AddAccountDialog, {
+          width: '32rem',
+          maxWidth: '95vw',
+          data: { administrateur: true },
+        })
+        .afterClosed(),
+    );
+    if (compte) {
+      this.replace(compte);
+      this.notifications.notify({
+        title: $localize`:@@comptes.admin.invited:${compte.email}:email: est administrateur.`,
+        variant: 'success',
+        timeout: 4000,
+      });
     }
   }
 

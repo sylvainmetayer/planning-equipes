@@ -21,6 +21,15 @@ export class ComptesApi {
     return this.api.post<Compte>('/api/comptes', nouveau);
   }
 
+  /**
+   * Makes someone an administrator, in the realm where the login flow asks
+   * their TOTP: the account created and invited when missing. 409 without
+   * Keycloak provisioning.
+   */
+  inviteAdministrator(nouveau: NouveauCompte): Promise<Compte> {
+    return this.api.post<Compte>('/api/comptes/administrateurs', nouveau);
+  }
+
   /** Strips every role of the application, realm ones included. */
   deactivate(compteId: string): Promise<Compte> {
     return this.api.post<Compte>(

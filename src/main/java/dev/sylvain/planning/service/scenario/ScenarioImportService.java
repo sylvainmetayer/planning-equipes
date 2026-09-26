@@ -9,6 +9,7 @@ import dev.sylvain.planning.service.consigne.ConsigneRepository;
 import dev.sylvain.planning.service.consigne.ConsigneService;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.journal.JournalActionService;
+import dev.sylvain.planning.service.keycloak.KeycloakUserProvisioning;
 import dev.sylvain.planning.service.referentiel.GelReferentielService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.WeightChangeOrigin;
@@ -60,6 +61,10 @@ public class ScenarioImportService {
 
     /** The account of the request: the author of the ajustements an import creates. */
     private final JournalActionService journal;
+
+    /** No-op unless the Keycloak provisioning is on. */
+    @Inject
+    KeycloakUserProvisioning comptes;
 
     @Inject
     public ScenarioImportService(
@@ -136,6 +141,9 @@ public class ScenarioImportService {
             applyJourneesTypes(sections);
             applyContraintes(sections);
             applyConsignes(sections);
+            // Inside the target edition, once its fiches are written: their
+            // accounts, and no mail — the invitations wait for the organiser.
+            comptes.provisionMissing(referenceDataService.listAnimateurs());
         });
     }
 

@@ -27,6 +27,17 @@ resource "keycloak_realm" "planning" {
   access_token_lifespan    = var.access_token_lifespan
   sso_session_idle_timeout = var.sso_session_idle_timeout
   sso_session_max_lifespan = var.sso_session_max_lifespan
+  # Le lien d'une invitation vit 48 h, pas les 12 h par défaut : un animateur
+  # ne lit pas toujours ses mails le jour même.
+  action_token_generated_by_admin_lifespan = "48h"
+
+  # Pages et e-mails en français : sans langue par défaut, Keycloak écrit en
+  # anglais — l'invitation comme le code de connexion. L'anglais reste au choix
+  # de la personne sur la page de connexion.
+  internationalization {
+    supported_locales = ["fr", "en"]
+    default_locale    = "fr"
+  }
 
   # Le thème « planning » de l'image du dépôt : page de connexion et e-mails
   # aux couleurs du produit, visuels du client montés dans brand/.

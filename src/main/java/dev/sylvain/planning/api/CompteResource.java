@@ -47,6 +47,20 @@ public class CompteResource {
         return comptes.create(nouveau == null ? null : nouveau.email(), nouveau == null ? null : nouveau.nom());
     }
 
+    /**
+     * Makes someone an administrator — the one global role granted from here,
+     * and granted <b>in the realm</b>, where the login flow asks its TOTP.
+     * The account is created and invited when the person has none; the next
+     * sign-in asks them to configure their second factor. {@code 409} without
+     * Keycloak provisioning: the console is then where the role is given.
+     */
+    @POST
+    @Path("/administrateurs")
+    public Compte inviteAdministrator(NouveauCompte nouveau) {
+        return comptes.inviteAdministrator(
+                nouveau == null ? null : nouveau.email(), nouveau == null ? null : nouveau.nom());
+    }
+
     /** Closes every door of the application to this person, whatever the realm says. */
     @POST
     @Path("/{id}/desactivation")

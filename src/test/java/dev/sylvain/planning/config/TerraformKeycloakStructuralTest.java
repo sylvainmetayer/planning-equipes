@@ -83,6 +83,19 @@ class TerraformKeycloakStructuralTest {
     }
 
     @Test
+    void anInvitationLinkLastsTwoDaysAsInDevelopment() {
+        assertThat(realm.path("actionTokenGeneratedByAdminLifespan").asInt()).isEqualTo(48 * 3600);
+        assertThat(resources.get("keycloak_realm.planning"))
+                .containsPattern("action_token_generated_by_admin_lifespan\\s*=\\s*\"48h\"");
+    }
+
+    @Test
+    void mailsAndPagesAreInFrenchByDefaultAsInDevelopment() {
+        assertThat(realm.path("defaultLocale").asText()).isEqualTo("fr");
+        assertThat(resources.get("keycloak_realm.planning")).containsPattern("default_locale\\s*=\\s*\"fr\"");
+    }
+
+    @Test
     void theLoginFlowIsTheSameTreeOnBothSides() {
         assertThat(terraformFlowTree())
                 .as("terraform/keycloak/main.tf against docker/keycloak/realm-planning.json")
