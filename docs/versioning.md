@@ -82,6 +82,14 @@ convention en dit, le signe d'une rupture MAJOR, et ce que
 même section « ⚠️ Attention » (`cliff.toml`), sans que le même caractère ait
 à signifier MAJOR ici et MINOR là.
 
+**Les autres ruptures d'exploitation non majeures** — un réglage dont
+l'échelle change, une valeur à convertir à la main dans un fichier, une
+variable d'environnement ou un dump d'avant la mise à jour — suivent la même
+règle : MINOR, avec une entrée « ⚠️ Attention ». Leur marqueur est le **scope
+réservé `attention`** (`feat(attention): …`) ; le corps du commit dit ce que
+l'exploitant doit faire. `contraintes-legales` reste réservé aux contraintes
+légales, pour que la section se lise d'un coup d'œil.
+
 ## 3. Fabriquer une release
 
 Rien ne change au quotidien : `main` reste la seule branche de développement,

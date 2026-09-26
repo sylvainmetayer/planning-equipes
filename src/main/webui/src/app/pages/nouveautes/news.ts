@@ -68,10 +68,12 @@ export interface NewsRelease {
  * subject, and `filter_unconventional` drops both rather than guessing.
  */
 const PARSERS: readonly { readonly pattern: RegExp; readonly heading: NewsHeading }[] = [
-  // A `!` is the breaking marker, and the scope below warns without bumping the
-  // major: both file the same heading. Before `^feat`, so they win over the type.
+  // A `!` is the breaking marker, and the two reserved scopes below warn without
+  // bumping the major: all three file the same heading. Before `^feat`, so they
+  // win over the type.
   { pattern: /^[a-z]+(\(.*\))?!:/, heading: 'attention' },
   { pattern: /^[a-z]+\(contraintes-legales\)/, heading: 'attention' },
+  { pattern: /^[a-z]+\(attention\)/, heading: 'attention' },
   { pattern: /^feat/, heading: 'feature' },
   { pattern: /^fix\(deps\)/, heading: 'deps' },
   { pattern: /^fix/, heading: 'fix' },
