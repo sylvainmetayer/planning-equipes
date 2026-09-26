@@ -263,10 +263,10 @@ export class ScenarioImportService {
 
   /**
    * The line the caller's own panel shows once the import went through. Here
-   * rather than on a page because the two imports now live on two screens —
-   * the pre-recorded scenarios under Débogage, the file upload under Imports —
-   * and a recap that differs between them would describe the same operation
-   * twice, differently.
+   * rather than on a page because the two imports are two cards — the
+   * bundled examples and the file upload, both on Fichiers › Importer — and a
+   * recap that differs between them would describe the same operation twice,
+   * differently.
    */
   recapitulatif(result: ImportScenarioResult | null, fallback: string): string {
     if (!result?.editionId) {

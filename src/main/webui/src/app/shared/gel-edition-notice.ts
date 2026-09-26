@@ -68,7 +68,7 @@ export class GelEditionNotice {
   protected readonly message = computed(() => {
     const names = this.families();
     return this.operation() === 'reset'
-      ? $localize`:@@gel.edition.reset:Référentiel figé dans cette édition (${names}:familles:) : vider la base est impossible jusqu'à la levée du gel.`
+      ? $localize`:@@gel.edition.reset:Référentiel figé dans cette édition (${names}:familles:) : la vider est impossible jusqu'à la levée du gel.`
       : $localize`:@@gel.edition.scenario:Référentiel figé dans cette édition (${names}:familles:) : un scénario importé dans celle-ci sera refusé jusqu'à la levée du gel. Un fichier qui vise une autre édition reste importable.`;
   });
 }

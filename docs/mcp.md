@@ -938,3 +938,4 @@ pré-sélection n'écrivent rien.
 | Espace animateur (`/api/espace-animateur/{jeton}`, abonnement ICS) | Le côté animateur du produit, derrière un jeton personnel. MCP est l'outil de l'organisation : il voit les demandes et les déclarations **côté admin**, jamais l'espace de quelqu'un |
 | Rotation du jeton d'espace d'un animateur | Invalide le lien déjà imprimé sur un PDF distribué : une conséquence hors de l'application, que personne ne peut annuler depuis une conversation |
 | `/api/auth`, `/api/branding`, `/api/mentions-legales`, `/api/debug` | La session admin, l'habillage de l'interface et les bacs à sable de développement : rien qu'un assistant puisse en faire |
+| `/api/horloge` | L'horloge simulée d'un serveur de démonstration ou de recette, réglée dans Paramètres › Instance : elle déplace pour tout le monde le mode jour J, le passé figé et les espaces animateurs — un réglage de l'instance, pas une question d'organisation |

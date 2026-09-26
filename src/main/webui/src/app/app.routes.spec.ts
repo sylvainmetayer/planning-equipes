@@ -7,6 +7,7 @@ import {
   RedirectFunction,
   RouterStateSnapshot,
   ResolveFn,
+  Router,
   Routes,
   TitleStrategy,
   provideRouter,
@@ -33,10 +34,14 @@ function allRoutes(list: Routes): Routes {
 }
 
 /** Where the legacy route `path` redirects, given these query params. */
-function redirectTarget(path: string, queryParams: Record<string, string>): string {
+function redirectTarget(
+  path: string,
+  queryParams: Record<string, string>,
+  fragment: string | null = null,
+): string {
   const route = allRoutes(routes).find((candidate) => candidate.path === path);
   const redirectTo = route?.redirectTo as RedirectFunction;
-  return redirectTo({ queryParams } as unknown as ActivatedRouteSnapshot) as string;
+  return redirectTo({ queryParams, fragment } as unknown as ActivatedRouteSnapshot) as string;
 }
 
 /**
@@ -78,7 +83,7 @@ describe('app.routes', () => {
     // Le compte exact plutôt qu'un plancher : un plancher laisse supprimer six
     // titres sans rien dire, et c'est ce chiffre-là que les descriptions de PR
     // annonçaient de travers.
-    expect(titrees).toHaveLength(55);
+    expect(titrees).toHaveLength(54);
     for (const route of titrees) {
       // Une fonction, et non une chaîne : c'est ce qui permet au titre de
       // passer par $localize sans être évalué au chargement du module, avant
@@ -175,6 +180,71 @@ describe('app.routes', () => {
       );
       expect(guard({ onglet: 'fragilite' })).toBe(true);
       expect(guard({})).toBe(true);
+    });
+  });
+
+  /**
+   * Imports, Export and the validator became one Fichiers page: each former
+   * address lands on its tab, the Imports page's own tab on its card.
+   */
+  describe('les anciennes adresses de Fichiers', () => {
+    it("mène d'Imports à la carte de l'onglet Importer qu'il nommait", () => {
+      expect(redirectTarget('imports', { onglet: 'stands' })).toBe(
+        '/fichiers?onglet=importer&cible=stands',
+      );
+      expect(redirectTarget('imports', {})).toBe('/fichiers?onglet=importer');
+    });
+
+    it("mène d'Export à l'onglet Exporter, ou à l'archive par son ancien fragment", () => {
+      expect(redirectTarget('exports', {})).toBe('/fichiers?onglet=exporter');
+      expect(redirectTarget('export-csv', {})).toBe('/fichiers?onglet=exporter');
+      expect(redirectTarget('exports', {}, 'archive-evenement')).toBe('/fichiers?onglet=archive');
+    });
+
+    it('mène du validateur à sa carte', () => {
+      expect(redirectTarget('validateur-yaml', {})).toBe(
+        '/fichiers?onglet=importer&cible=verifier',
+      );
+    });
+  });
+
+  /** The two tabs of Débogage that moved to Fichiers: a guard, since `/debug` itself still answers. */
+  describe('les onglets du Débogage partis vers Fichiers', () => {
+    async function naviguer(url: string): Promise<string> {
+      TestBed.configureTestingModule({
+        providers: [
+          provideZonelessChangeDetection(),
+          provideRouter(
+            routes
+              .flatMap((route) => route.children ?? [])
+              .filter((route) => ['debug', 'fichiers', 'parametres'].includes(route.path ?? ''))
+              .map((route) => ({ ...route, loadComponent: undefined, component: PageVide })),
+          ),
+        ],
+      });
+      const harness = await RouterTestingHarness.create();
+      await harness.navigateByUrl(url);
+      return TestBed.inject(Router).url;
+    }
+
+    it('envoie les scénarios livrés vers les exemples', async () => {
+      expect(await naviguer('/debug?onglet=donnees')).toBe(
+        '/fichiers?onglet=importer&cible=exemples',
+      );
+    });
+
+    it('envoie le validateur vers sa carte', async () => {
+      expect(await naviguer('/debug?onglet=yaml')).toBe('/fichiers?onglet=importer&cible=verifier');
+    });
+
+    it('sends the simulated clock field to Paramètres › Instance, where it lives now', async () => {
+      expect(await naviguer('/debug?onglet=verifications&focus=date-du-jour')).toBe(
+        '/parametres?onglet=instance&focus=date-du-jour',
+      );
+    });
+
+    it('sert le Débogage pour tout le reste', async () => {
+      expect(await naviguer('/debug?onglet=verifications')).toBe('/debug?onglet=verifications');
     });
   });
 });

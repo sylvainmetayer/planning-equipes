@@ -10,9 +10,13 @@
       <mat-icon>add</mat-icon>
       <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
+    <app-import-button card="emplacements" [disabled]="creationLocked()" />
     <app-table-filter [(value)]="filtre" [matches]="emplacementsFiltres().length"
                       [total]="store.emplacements().length"
                       (enterTable)="navigation.focusCurrent()" />
+    @if (importedIds(); as ids) {
+      <app-imported-rows-filter [count]="ids.size" (cleared)="showAllRows()" />
+    }
   </mat-card-actions>
   <mat-card-content class="table-wrapper">
     @if (selection.hasSelection()) {

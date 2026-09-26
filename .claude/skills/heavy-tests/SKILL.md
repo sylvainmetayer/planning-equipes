@@ -56,8 +56,8 @@ the default run and `-Pscenario-tests`, and run only with `-Pscenario-extreme`,
 one class at a time, with `-DargLine=-Xmx3g` and nothing else testing.
 
 Both sets, and the hand-written fixtures beside them, live in the **single**
-classpath folder `src/main/resources/scenarios/`, flat: the Débogage screen
-lists that folder and `ScenarioYamlReader.scenarioPath` refuses a name carrying
+classpath folder `src/main/resources/scenarios/`, flat: the examples of Fichiers › Importer list
+that folder and `ScenarioYamlReader.scenarioPath` refuses a name carrying
 a path component, so a scenario in a subfolder — or in a second `scenarios/`
 directory, which `getResource` would hide entirely — is one nobody can pick.
 `ScenariosLivres` in the tests is what reads it: `all()` for the checks that

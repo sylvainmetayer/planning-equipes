@@ -33,26 +33,26 @@ class HorlogeSimuleeRecetteTest {
     }
 
     @AfterEach
-    void rendreLHorloge() {
+    void handTheClockBack() {
         given().contentType("application/json")
                 .body("{\"dateDuJour\":null}")
                 .when()
-                .put("/api/debug/date-du-jour")
+                .put("/api/horloge")
                 .then()
                 .statusCode(200);
     }
 
     @Test
-    void laRecetteAnnonceQueLeChampPeutServir() {
-        given().when().get("/api/debug/date-du-jour").then().statusCode(200).body("modifiable", equalTo(true));
+    void aStagingServerAdvertisesThatTheCardMayBeUsed() {
+        given().when().get("/api/horloge").then().statusCode(200).body("modifiable", equalTo(true));
     }
 
     @Test
-    void laRecetteFigeLaDateEtLHeureHorsModeDeveloppement() {
+    void aStagingServerFreezesTheDateAndTimeOutsideDevMode() {
         given().contentType("application/json")
                 .body("{\"dateDuJour\":\"" + JOUR + "\",\"heureDuJour\":\"14:30\"}")
                 .when()
-                .put("/api/debug/date-du-jour")
+                .put("/api/horloge")
                 .then()
                 .statusCode(200)
                 .body("dateDuJour", equalTo(JOUR))
@@ -60,7 +60,7 @@ class HorlogeSimuleeRecetteTest {
 
         // Read back too: the guard sits on the read as well as on the write.
         given().when()
-                .get("/api/debug/date-du-jour")
+                .get("/api/horloge")
                 .then()
                 .statusCode(200)
                 .body("dateDuJour", equalTo(JOUR))

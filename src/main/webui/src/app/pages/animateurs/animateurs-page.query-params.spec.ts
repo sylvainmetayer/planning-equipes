@@ -49,6 +49,7 @@ type PageInternals = {
   souhaitLabel: Signal<string>;
   clearTypologie(): void;
   clearSouhait(): void;
+  clearImportedIds(): void;
   resetView(): void;
 };
 
@@ -246,6 +247,25 @@ describe('AnimateursPage query-param sync', () => {
       expect(replaceState).toHaveBeenLastCalledWith('/animateurs?typologie=ESCAPE');
 
       page.clearTypologie();
+      await fixture.whenStable();
+
+      expect(page.animateursFiltres().map((each) => each.id)).toEqual(['alice', 'bob']);
+      expect(replaceState).toHaveBeenLastCalledWith('/animateurs');
+    });
+  });
+
+  /** `?ids=`: the fiches an import just wrote, opened by « Voir les N lignes importées ». */
+  describe('the imported rows filter', () => {
+    it('keeps only the fiches named, as a chip, and drops it with the chip', async () => {
+      const { fixture, page, replaceState } = setUp({ ids: 'bob' });
+      await fixture.whenStable();
+
+      expect(page.animateursFiltres().map((each) => each.id)).toEqual(['bob']);
+      expect((fixture.nativeElement as HTMLElement).textContent).toContain('Lignes importées (1)');
+      expect(page.viewChanged()).toBe(true);
+      expect(replaceState).toHaveBeenLastCalledWith('/animateurs?ids=bob');
+
+      page.clearImportedIds();
       await fixture.whenStable();
 
       expect(page.animateursFiltres().map((each) => each.id)).toEqual(['alice', 'bob']);

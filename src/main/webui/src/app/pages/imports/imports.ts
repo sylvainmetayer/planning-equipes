@@ -1,7 +1,7 @@
-// The pure side of the Imports page: which of the eight tabs a query param names.
+// The pure side of Fichiers › Importer: which card the `cible` query param names.
 
-/** The eight tabs, and the values of the `onglet` query param, in the order data is entered. */
-export type OngletImports =
+/** The cards of the Importer tab, and the values of the `cible` query param, in the order data is entered. */
+export type ImportCard =
   | 'typologies'
   | 'emplacements'
   | 'stands'
@@ -9,9 +9,11 @@ export type OngletImports =
   | 'journees-types'
   | 'animateurs'
   | 'grille-stands'
-  | 'scenario';
+  | 'scenario'
+  | 'exemples'
+  | 'verifier';
 
-export const ONGLETS_IMPORTS: readonly OngletImports[] = [
+export const IMPORT_CARDS: readonly ImportCard[] = [
   'typologies',
   'emplacements',
   'stands',
@@ -21,14 +23,23 @@ export const ONGLETS_IMPORTS: readonly OngletImports[] = [
   'journees-types',
   'animateurs',
   'grille-stands',
-  // Last, and apart: a scenario is not a referential added to the edition but
-  // the whole edition, replacing it.
+  // Apart: a scenario is not a referential added to the edition but the whole
+  // edition, replacing it — from a file, or from the examples bundled with the
+  // application; checking a file writes nothing at all.
   'scenario',
+  'exemples',
+  'verifier',
 ];
 
-/** Reads the `onglet` query param; anything unknown is the typologies tab, where an edition starts. */
-export function readOngletImports(value: string | null): OngletImports {
-  return (ONGLETS_IMPORTS as readonly string[]).includes(value ?? '')
-    ? (value as OngletImports)
+/** The cards a referential screen's « Importer » button opens in a dialog: one referential each. */
+export type ReferentialImportCard = Extract<
+  ImportCard,
+  'typologies' | 'emplacements' | 'stands' | 'creneaux' | 'journees-types' | 'animateurs'
+>;
+
+/** Reads the `cible` query param; anything unknown is the typologies card, where an edition starts. */
+export function readImportCard(value: string | null): ImportCard {
+  return (IMPORT_CARDS as readonly string[]).includes(value ?? '')
+    ? (value as ImportCard)
     : 'typologies';
 }

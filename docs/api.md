@@ -124,7 +124,7 @@ Pendant l'événement, chaque construction de problème depuis le référentiel
 reprend du plan enregistré les places des créneaux déjà commencés — date
 passée, ou aujourd'hui avec un début effectif atteint — et les épingle,
 titulaire gardé même devenu indisponible, place vide restée vide. « Aujourd'hui »
-est celui de [l'horloge du jour J](#figer-la-date-du-jour--développement-et-recette-uniquement).
+est celui de [l'horloge du jour J](#figer-la-date-du-jour--développement-démonstration-et-recette-uniquement).
 Ces places comptent dans les règles et ne sont jamais reprochées ; le score
 d'un solve pendant l'événement se lit donc sur ce qui reste à jouer. Un
 problème envoyé dans le corps de la requête voit ses places passées épinglées
@@ -555,8 +555,8 @@ Ce qui suit est ce que le schéma ne dit pas.
 **Jours à venir seulement.** Poser, modifier et lever refusent (`400`) une
 date qui n'est pas strictement après *aujourd'hui* — et *aujourd'hui* est
 celui de l'horloge du jour J, donc de la date figée par
-`/api/debug/date-du-jour` en développement et en recette (voir
-[*Figer la date du jour*](#figer-la-date-du-jour--développement-et-recette-uniquement)).
+`/api/horloge` en développement, en démonstration et en recette (voir
+[*Figer la date du jour*](#figer-la-date-du-jour--développement-démonstration-et-recette-uniquement)).
 `GET /api/consignes` renvoie `aujourdhui` pour que l'écran calcule la même
 frontière que le serveur. Une date déjà travaillée garde pour toujours la
 consigne qui l'a gouvernée ; une date sans créneau est refusée (« rien à
@@ -1543,22 +1543,26 @@ compétent partout, et cette vue lit ce verdict au lieu d'en produire un second.
 Elle ne mesure aucune rareté de compétence — c'est le sujet du goulot par
 compétence, où un renfort ne compte jamais comme **spécialiste**.
 
-### Figer la date du jour — développement et recette uniquement
+### Figer la date du jour — développement, démonstration et recette uniquement
 
-Cet écran ne se teste, sinon, que le jour de l'événement. `/api/debug/date-du-jour`
-remplace donc la date que le serveur considère comme « aujourd'hui ».
+Cet écran ne se teste, sinon, que le jour de l'événement. `/api/horloge`
+remplace donc la date que le serveur considère comme « aujourd'hui ». L'écran
+qui la règle est la carte « Date et heure simulées » de *Paramètres*, onglet
+*Instance*, affichée seulement là où l'instance l'autorise ; le sablier de la
+barre du haut y mène tant qu'une date est posée.
 
 | Endpoint | Effet |
 | --- | --- |
-| `GET /api/debug/date-du-jour` | `{ "dateDuJour": "2026-07-08"\|null, "heureDuJour": "14:30"\|null, "modifiable": true\|false }`. |
-| `PUT /api/debug/date-du-jour` | `{ "dateDuJour": "2026-07-08", "heureDuJour": "14:30" }` fige la date, et l'heure si elle est donnée ; une date vide ou `null` rend la main à l'horloge de la machine, heure comprise. Une heure sans date répond `400`. |
+| `GET /api/horloge` | `{ "dateDuJour": "2026-07-08"\|null, "heureDuJour": "14:30"\|null, "modifiable": true\|false }`. |
+| `PUT /api/horloge` | `{ "dateDuJour": "2026-07-08", "heureDuJour": "14:30" }` fige la date, et l'heure si elle est donnée ; une date vide ou `null` rend la main à l'horloge de la machine, heure comprise. Une heure sans date répond `400`. |
 
 **Refusé (400) sur toute instance qui n'a été lancée ni avec `quarkus:dev`, ni
 avec `HORLOGE_SIMULEE_AUTORISEE=true`.** La variable existe pour un serveur de
-recette, où jour J et l'espace animateur se répètent sur un vrai déploiement
-hors saison ; elle vaut `false` par défaut et doit le rester en production.
-`/debug` est une route d'administration ordinaire, disponible en production : un
-mock activable là-bas ferait mentir l'écran jour J sur un vrai événement. Le
+démonstration ou de recette, où jour J et l'espace animateur se montrent sur un
+vrai déploiement hors saison ; elle vaut `false` par défaut et doit le rester en
+production. `/api/horloge` est une route d'administration ordinaire, disponible
+en production : un mock activable là-bas ferait mentir l'écran jour J sur un
+vrai événement. Le
 garde-fou est donc **sur l'écriture, côté serveur**, pas sur l'affichage du
 champ — `modifiable` n'existe que pour que l'IHM masque un contrôle inutilisable,
 et l'endpoint refuse quoi que croie l'appelant.

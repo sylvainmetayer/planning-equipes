@@ -73,7 +73,7 @@ class FrozenPastAcceptanceTest {
         given().contentType(ContentType.JSON)
                 .body("{\"dateDuJour\":null}")
                 .when()
-                .put("/api/debug/date-du-jour")
+                .put("/api/horloge")
                 .then()
                 .statusCode(200);
         given().when().post("/api/planning/reset").then().statusCode(200);
@@ -222,7 +222,7 @@ class FrozenPastAcceptanceTest {
         given().contentType(ContentType.JSON)
                 .body(corps)
                 .when()
-                .put("/api/debug/date-du-jour")
+                .put("/api/horloge")
                 .then()
                 .statusCode(200);
     }

@@ -91,8 +91,8 @@ public class PlanningService {
 
     /**
      * @param jourJClock the server's notion of today (ADR 0044): the machine's
-     *                   clock in production, the date frozen from the Débogage
-     *                   screen where the simulated clock is allowed
+     *                   clock in production, the date frozen from Paramètres ›
+     *                   Instance where the simulated clock is allowed
      * @param passeFige  {@code planning.solver.passe-fige} — the kill-switch
      *                   of the freeze, off under {@code %test} so the fixtures
      *                   dated in the past keep solving

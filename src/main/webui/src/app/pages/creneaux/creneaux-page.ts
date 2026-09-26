@@ -27,7 +27,18 @@ import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
-import { consumeQueryParam } from '../../core/view-query-params';
+import {
+  consumeQueryParam,
+  currentViewParams,
+  keepViewInQueryParams,
+} from '../../core/view-query-params';
+import {
+  IMPORTED_IDS_PARAM,
+  importedIdsParam,
+  keptByImportedIds,
+  readImportedIds,
+} from '../../core/imported-rows';
+import { ImportedRowsFilter } from '../../shared/imported-rows-filter';
 import { CreneauxApi } from '../../core/api/creneaux-api';
 import { ConsignesStore } from '../../core/consignes.store';
 import { JoursFeriesService } from '../../core/jours-feries.service';
@@ -60,6 +71,7 @@ import { CreneauDerivationData, CreneauDerivationDialog } from './creneau-deriva
 import { CreneauSerieData, CreneauSerieDialog } from './creneau-serie-dialog';
 import { JourneesTypesCard } from './journees-types-card';
 import { bilanGrille, gridAnomalyIcon, trierAnomalies } from './grille-creneaux';
+import { ImportButton } from '../../shared/import-button';
 
 /**
  * Timeslots CRUD: event day, date and hours of every schedulable slot,
@@ -76,6 +88,8 @@ import { bilanGrille, gridAnomalyIcon, trierAnomalies } from './grille-creneaux'
 @Component({
   selector: 'app-creneaux-page',
   imports: [
+    ImportButton,
+    ImportedRowsFilter,
     FormsModule,
     MatCardModule,
     MatCheckboxModule,
@@ -134,11 +148,21 @@ export class CreneauxPage implements OnInit {
   protected readonly sort = signal<Sort>({ active: '', direction: '' });
 
   /**
+   * `?ids=`: the timeslots an import just wrote, which its « Voir les N lignes
+   * importées » opens the page on — shown as a filter, dropped by « Tout
+   * afficher ». `null` when the address names none.
+   */
+  protected readonly importedIds = signal<ReadonlySet<string> | null>(
+    readImportedIds(currentViewParams().get(IMPORTED_IDS_PARAM)),
+  );
+
+  /**
    * `store.creneaux()` is already chronological (jour, heureDebut); the sort
    * below is stable, so an unsorted view keeps that order.
    */
   protected readonly creneauxAffiches = computed(() => {
-    const creneaux = [...this.store.creneaux()];
+    const ids = this.importedIds();
+    const creneaux = this.store.creneaux().filter((creneau) => keptByImportedIds(ids, creneau.id));
     const { active, direction } = this.sort();
     if (!active || !direction) {
       return creneaux;
@@ -224,6 +248,7 @@ export class CreneauxPage implements OnInit {
   });
 
   constructor() {
+    keepViewInQueryParams(() => ({ [IMPORTED_IDS_PARAM]: importedIdsParam(this.importedIds()) }));
     const chargement = this.crud.reload();
     void this.problemes.reloadFeasibility();
     void this.consignes.reload();
@@ -242,6 +267,11 @@ export class CreneauxPage implements OnInit {
 
   ngOnInit(): void {
     void this.chargerGrille();
+  }
+
+  /** « Tout afficher »: the whole grid again. */
+  protected showAllRows(): void {
+    this.importedIds.set(null);
   }
 
   /* -------------------------- The grid as a whole -------------------------- */

@@ -45,7 +45,7 @@ class AffichageMuralResourceTest {
         given().contentType(ContentType.JSON)
                 .body("{\"dateDuJour\":null}")
                 .when()
-                .put("/api/debug/date-du-jour")
+                .put("/api/horloge")
                 .then()
                 .statusCode(200);
         for (Object id : given().when().get("/api/affichage-mural").jsonPath().getList("id")) {
@@ -311,7 +311,7 @@ class AffichageMuralResourceTest {
         given().contentType(ContentType.JSON)
                 .body(Map.of("dateDuJour", date, "heureDuJour", heure))
                 .when()
-                .put("/api/debug/date-du-jour")
+                .put("/api/horloge")
                 .then()
                 .statusCode(200);
     }

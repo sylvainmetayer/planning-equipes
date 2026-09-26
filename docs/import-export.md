@@ -65,13 +65,19 @@ scénario YAML.
 
 ## Où se fait chaque opération de scénario
 
-Trois gestes, trois écrans, parce qu'ils ne s'adressent pas aux mêmes personnes :
+Tout se passe sur l'écran **Fichiers** (`/fichiers`), qui réunit les deux
+moitiés d'un même geste — exporter, corriger, réimporter — et l'archive de fin
+d'événement, en trois onglets portés par `?onglet=importer|exporter|archive` ;
+la carte de l'onglet Importer est portée par `?cible=`. Les anciennes adresses
+`/imports`, `/exports`, `/export-csv` et `/validateur-yaml` y redirigent,
+paramètres compris, tout comme `/debug?onglet=donnees` et `?onglet=yaml`.
 
-| Geste | Écran | Pourquoi là |
+| Geste | Où | Pourquoi là |
 | --- | --- | --- |
-| Importer un fichier scénario | **Imports**, onglet Scénario (`/imports?onglet=scenario`) | C'est un fichier qu'un organisateur apporte, comme les cinq CSV d'à côté |
-| Exporter l'édition en scénario | **Exports** (`/exports`) | Le seul écran qui écrit des fichiers depuis l'édition courante |
-| Charger un scénario pré-enregistré | **Débogage**, onglet *Données* (`/debug?onglet=donnees`) | Le sélecteur liste les cinquante et quelques fichiers livrés — gamme et cas extrêmes compris : un catalogue de développement, pas d'organisation |
+| Importer un fichier scénario | **Fichiers**, Importer, carte Scénario (`/fichiers?cible=scenario`) | C'est un fichier qu'un organisateur apporte, comme les CSV d'à côté |
+| Vérifier un fichier sans l'importer | **Fichiers**, Importer, carte Vérifier un fichier (`/fichiers?cible=verifier`) | À côté de l'import qu'il prépare, et sans rien écrire |
+| Charger un exemple livré | **Fichiers**, Importer, carte Exemples (`/fichiers?cible=exemples`) | La démonstration d'un organisateur autant que le catalogue d'un testeur : chaque fichier y porte un nom lisible et une phrase (taille, jours, particularité), rangé « pour découvrir », « pour tester un cas » ou « extrêmes », et aucun nom de fichier n'est affiché |
+| Exporter l'édition en scénario | **Fichiers**, Exporter (`/fichiers?onglet=exporter`) | Là où l'édition écrit ses fichiers |
 
 ## Ce que l'import d'un scénario remplace
 
@@ -356,16 +362,31 @@ référentiels du fichier.
 
 **Un scénario résolu depuis son fichier ne les applique pas.** La couche
 consigne est posée par `StandService.resolve` sur le référentiel ; un
-scénario chargé directement depuis `src/main/resources/scenarios/` (écran
-Débogage, `buildExample`) est résolu sur sa grille nominale. Les consignes
+scénario chargé directement depuis `src/main/resources/scenarios/`
+(`buildExample`) est résolu sur sa grille nominale. Les consignes
 d'un fichier prennent effet une fois le fichier **importé**.
 
 ## Import CSV des référentiels
 
-L'écran **Imports** (`/imports`) réunit les sept imports CSV du produit, un
-onglet chacun, l'onglet ouvert étant porté par `?onglet=` ; un huitième onglet,
-**Scénario**, porte l'import du fichier YAML décrit plus haut — il ne complète
-pas l'édition, il la remplace. Cinq référentiels s'y
+L'onglet **Importer** de l'écran **Fichiers** (`/fichiers`) réunit les sept
+imports CSV du produit, une carte chacun, la carte ouverte étant portée par
+`?cible=` ; la carte **Scénario** porte l'import du fichier YAML décrit plus
+haut — il ne complète pas l'édition, il la remplace —, suivie des **Exemples**
+et de la vérification d'un fichier. Chaque écran de référentiel (typologies,
+emplacements, stands, créneaux, animateurs) ouvre la même carte dans un
+dialogue par son bouton « Importer », sans quitter la liste. Chaque carte de
+référentiel accepte aussi un **collage depuis un tableur** : les cellules
+copiées, séparées par des tabulations — une cellule que le tableur a mise entre
+guillemets parce qu'elle contient un retour à la ligne ou un guillemet reste une
+seule cellule —, sont réécrites en CSV à `;` avec chaque
+cellule entre guillemets — le serveur, qui reconnaît `,`, `;` et la tabulation
+en comptant ceux qu'il trouve hors guillemets, ne peut alors pas prendre les
+virgules d'une cellule (« 09:00-12:00, 12:00-13:00 R ») pour le séparateur —
+et envoyées comme un fichier `collage.csv`, aperçu compris. Une fois l'import
+écrit, « Voir les N lignes importées » ouvre l'écran du référentiel sur ces seules
+lignes (`?ids=`, retrouvées par leur code ou leur nom, un créneau par sa date et
+ses heures), un filtre que « Tout afficher » retire ; les journées types, qu'aucune
+liste ne filtre, ouvrent l'écran Créneaux par « Voir les journées types ». Cinq référentiels s'y
 remplissent d'un fichier de quelques colonnes : les **typologies** (`code` et `libelle`
 obligatoires, `ninja` facultative), les **emplacements** (`code` et `nom`
 obligatoires, `latitude` et `longitude` facultatives), les **stands** (`code`,
@@ -450,13 +471,13 @@ ligne fautive est refusée seule, avec sa raison, sans bloquer les autres — et
 une ligne refusée ne laisse rien derrière elle, pas même la typologie qu'elle
 citait.
 
-Les deux autres onglets sont les imports historiques, décrits plus bas : les
+Les deux autres cartes sont les imports historiques, décrits plus bas : les
 **animateurs** et la **grille des stands**.
 
-L'écran **Exports** (`/exports`) fait le chemin inverse. Sa première carte,
+L'onglet **Exporter** (`/fichiers?onglet=exporter`) fait le chemin inverse. Sa première carte,
 l'**export CSV** : les six référentiels de l'édition
 courante réécrits dans une archive ZIP, un fichier par référentiel et dans la
-forme exacte que ces onglets relisent, chacun à cocher. Le fichier des
+forme exacte que ces cartes relisent, chacun à cocher. Le fichier des
 animateurs reprend l'en-tête de `scenarios/exemple-animateurs.csv`, celui que
 la correspondance de colonnes propose d'elle-même ; il ne se réimporte que dans
 une édition qui a déjà ses créneaux, puisque sans dates un jour
@@ -475,15 +496,16 @@ trois virgules par ligne contre deux points-virgules d'en-tête, et le fichier
 qu'on vient d'écrire se relisait comme un fichier à virgules.
 
 Sa seconde carte porte l'**export du scénario** : l'édition entière dans un seul
-fichier YAML, celui que l'onglet Scénario des imports relit. Ce que cet
+fichier YAML, celui que la carte Scénario de l'onglet Importer relit. Ce que cet
 aller-retour garantit — et ce qu'il ne garantit pas — est plus haut, *Ce que
 l'export garantit*.
 
 ## Import CSV des animateurs
 
 Un import **partiel** : il ne touche que les animateurs, une ligne à la fois, et
-il ne supprime rien tant qu'on ne le lui demande pas. Quatrième onglet de
-l'écran **Imports**, `/imports?onglet=animateurs` ; endpoints dans
+il ne supprime rien tant qu'on ne le lui demande pas. Carte Animateurs de
+**Fichiers**, onglet Importer, `/fichiers?cible=animateurs`, et bouton
+« Importer » de la page Animateurs ; endpoints dans
 [`api.md`](api.md#import-csv-des-animateurs).
 
 ### Un fichier d'exemple est livré avec l'application
@@ -710,7 +732,7 @@ caractères et 5 000 lignes de données, en plus du plafond de corps HTTP de
 
 ## Import de la grille des stands
 
-Le cinquième onglet de l'écran **Imports**, `/imports?onglet=grille-stands`,
+La carte Grille des stands de **Fichiers**, onglet Importer, `/fichiers?cible=grille-stands`,
 pour la matrice que l'organisateur tient déjà dans son classeur : stands en lignes, jours et
 créneaux en colonnes, un effectif par case. Il transpose les règles de l'import
 des animateurs — deux appels, rejoué, en mémoire, sans suppression — et diffère
@@ -1043,8 +1065,8 @@ doublons à chaque synchronisation.
 
 ## Archive de fin d'événement
 
-`GET /api/exports/archive-evenement` (carte « Archive de fin d'événement » de
-l'écran Exports) écrit en un seul ZIP les exports d'une édition terminée, partie
+`GET /api/exports/archive-evenement` (onglet Archive de l'écran Fichiers,
+`/fichiers?onglet=archive`) écrit en un seul ZIP les exports d'une édition terminée, partie
 par partie. Chaque partie est **opt-in** par un paramètre booléen, comme
 l'archive des référentiels : n'en demander aucune est un `400`, pas un ZIP qui
 ne porterait que son manifeste.

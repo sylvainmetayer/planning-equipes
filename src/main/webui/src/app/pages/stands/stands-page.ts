@@ -27,12 +27,14 @@ import { RapportOuvertures, Stand, TypologieItem } from '../../core/models';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
 import { GelNotice } from '../../shared/gel-notice';
 import { injectGelReferentiel } from '../../core/gel-referentiel.store';
+import { ImportedRowsFilter } from '../../shared/imported-rows-filter';
 import { TableFilter } from '../../shared/table-filter';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { StandBulkEditData, StandBulkEditDialog } from './stand-bulk-edit-dialog';
 import { buildStandDetail } from './stand-detail';
 import { MAX_STANDS_COMPARES, MIN_STANDS_COMPARES } from '../ouvertures/comparaison-ouvertures';
 import { StandFormData, StandFormDialog } from './stand-form-dialog';
+import { ImportButton } from '../../shared/import-button';
 
 /**
  * Stands CRUD: identity, staffing bounds, adults-only flag and typologies.
@@ -47,6 +49,8 @@ import { StandFormData, StandFormDialog } from './stand-form-dialog';
 @Component({
   selector: 'app-stands-page',
   imports: [
+    ImportedRowsFilter,
+    ImportButton,
     MatCardModule,
     MatButtonModule,
     MatCheckboxModule,

@@ -10,12 +10,16 @@
       <mat-icon>add</mat-icon>
       <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
+    <app-import-button card="typologies" [disabled]="creationLocked()" />
     <a matButton routerLink="/parametres" [queryParams]="{ onglet: 'edition' }">
       <mat-icon>settings</mat-icon>
       <ng-container i18n="@@typologies.ninjaVersParametres">La typologie ninja se choisit dans les Paramètres</ng-container>
     </a>
     <app-table-filter [(value)]="filtre" [matches]="typologiesFiltrees().length" [total]="store.typologies().length"
                       (enterTable)="navigation.focusCurrent()" />
+    @if (importedIds(); as ids) {
+      <app-imported-rows-filter [count]="ids.size" (cleared)="showAllRows()" />
+    }
     <mat-checkbox [checked]="aTraiterSeulement()" (change)="toggleATraiter($event.checked)"
                   i18n="@@typologies.aTraiterSeulement">Seulement les typologies à traiter</mat-checkbox>
     @if (viewChanged()) {

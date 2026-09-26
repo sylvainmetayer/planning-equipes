@@ -1,7 +1,6 @@
 [
   "core/affectation-explanation.service.ts",
   "core/branding.ts",
-  "core/date-mock.service.ts",
   "core/espace-animateur.service.ts",
   "core/jour-j.service.ts",
   "core/observability.ts",

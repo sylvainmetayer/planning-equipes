@@ -5,8 +5,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { NotificationService } from '../core/notification.service';
 
 /**
- * Monospaced result panel shared by the action pages (Données, Débogage,
- * Validateur YAML).
+ * Monospaced result panel shared by the action pages (Fichiers, Débogage,
+ * Paramètres).
  *
  * It is a live region: these panels are where "import terminé", "3 erreurs de
  * validation" or a stack trace land, and they were previously written into

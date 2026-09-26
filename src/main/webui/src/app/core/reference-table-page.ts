@@ -12,7 +12,13 @@ import { SolverJobService } from './solver-job.service';
 import { TableNavigation } from './table-navigation';
 import { TableSelection } from './table-selection';
 import { correspondAuFiltre } from './text-filter';
-import { consumeQueryParam } from './view-query-params';
+import {
+  IMPORTED_IDS_PARAM,
+  importedIdsParam,
+  keptByImportedIds,
+  readImportedIds,
+} from './imported-rows';
+import { consumeQueryParam, currentViewParams, keepViewInQueryParams } from './view-query-params';
 
 /** What `correspondAuFiltre` knows how to compare. */
 type ChampFiltrable = string | number | null | undefined;
@@ -112,6 +118,13 @@ export abstract class ReferenceTablePage<T> {
   /** Quick filter of the table, on the fields the config names. */
   protected readonly filtre = signal('');
 
+  /**
+   * `?ids=`: the rows an import just wrote, which its « Voir les N lignes
+   * importées » opens the list on — shown as a filter and dropped by « Tout
+   * afficher » ({@link showAllRows}). `null` when the address names none.
+   */
+  protected readonly importedIds = signal<ReadonlySet<string> | null>(null);
+
   protected readonly lignesFiltrees: Signal<readonly T[]>;
 
   /** Keyed on the filtered rows, so "tout sélectionner" follows what the table shows. */
@@ -134,8 +147,10 @@ export abstract class ReferenceTablePage<T> {
       this.refine(
         config
           .rows(this.store)
-          .filter((ligne) =>
-            correspondAuFiltre(this.filtre(), config.champsFiltre(ligne, this.store)),
+          .filter(
+            (ligne) =>
+              keptByImportedIds(this.importedIds(), config.id(ligne)) &&
+              correspondAuFiltre(this.filtre(), config.champsFiltre(ligne, this.store)),
           ),
       ),
     );
@@ -153,6 +168,8 @@ export abstract class ReferenceTablePage<T> {
       },
       announcer: inject(LiveAnnouncer),
     });
+    this.importedIds.set(readImportedIds(currentViewParams().get(IMPORTED_IDS_PARAM)));
+    keepViewInQueryParams(() => ({ [IMPORTED_IDS_PARAM]: importedIdsParam(this.importedIds()) }));
     const chargement = this.crud.reload();
     const drafts = config.drafts;
     if (drafts) {
@@ -181,6 +198,11 @@ export abstract class ReferenceTablePage<T> {
         this.edit(ligne);
       }
     });
+  }
+
+  /** « Tout afficher »: the whole referential again, the rest of the view untouched. */
+  protected showAllRows(): void {
+    this.importedIds.set(null);
   }
 
   /**

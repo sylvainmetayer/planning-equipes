@@ -13,7 +13,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import { provideRouter, Router } from '@angular/router';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
 import { StandsApi } from '../../core/api/stands-api';
 import { NotificationService } from '../../core/notification.service';
@@ -189,6 +189,37 @@ describe('StandsPage', () => {
       await Promise.resolve();
 
       expect(dialog.open).not.toHaveBeenCalled();
+    });
+  });
+
+  /** `?ids=`: the rows an import just wrote, opened by « Voir les N lignes importées ». */
+  describe('the rows an import just wrote', () => {
+    afterEach(async () => {
+      await TestBed.inject(Router).navigateByUrl('/');
+    });
+
+    it('lists them alone, says so, and brings the whole list back on « Tout afficher »', async () => {
+      await TestBed.inject(Router).navigateByUrl('/?ids=S1,S3');
+      seedStore(referenceData, 'stands', [
+        stand({ id: 'S1', nom: 'Escape' }),
+        stand({ id: 'S2', nom: 'Cirque' }),
+        stand({ id: 'S3', nom: 'Magie' }),
+      ]);
+      const fixture = TestBed.createComponent(StandsPage);
+      const page = fixture.componentInstance as unknown as { standsFiltres: () => Stand[] };
+      await fixture.whenStable();
+      const element = fixture.nativeElement as HTMLElement;
+
+      expect(page.standsFiltres().map((each) => each.id)).toEqual(['S1', 'S3']);
+      expect(element.textContent).toContain('Filtre : lignes importées (2)');
+
+      Array.from(element.querySelectorAll('button'))
+        .find((button) => (button.textContent ?? '').includes('Tout afficher'))!
+        .click();
+      await fixture.whenStable();
+
+      expect(page.standsFiltres()).toHaveLength(3);
+      expect(element.textContent).not.toContain('lignes importées');
     });
   });
 
