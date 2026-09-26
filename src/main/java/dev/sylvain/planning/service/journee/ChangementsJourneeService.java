@@ -325,7 +325,7 @@ public class ChangementsJourneeService {
         List<AnimateurLine> lignes = new ArrayList<>();
         for (ChangementAnimateur changement : changements) {
             List<AnimateurChange> duJour = changement.changements().stream()
-                    .filter(vacation -> jour.equals(vacation.vacation().date()))
+                    .filter(vacation -> vacation.touches(jour))
                     .map(vacation -> new AnimateurChange(vacation.type(), vacation.libelle()))
                     .toList();
             if (!duJour.isEmpty()) {

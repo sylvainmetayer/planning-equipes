@@ -285,7 +285,7 @@ class EtatEditionServiceTest {
                 f.lastDataChange(),
                 false,
                 f.faisabilite(),
-                new ApercuPublication(false, false, false, RESOLU_LE.minusSeconds(3600), 3, 0, List.of()),
+                new ApercuPublication(false, false, false, RESOLU_LE.minusSeconds(3600), 3, 0, List.of(), 0),
                 new SyntheseConfirmations(1, 1, 0, RESOLU_LE.minusSeconds(3600), false),
                 f.foireOuverte(),
                 2,
@@ -781,7 +781,7 @@ class EtatEditionServiceTest {
     void beforeAnyPublicationNobodyIsSilentNorToTell() {
         EtatEditionView.EtatATraiter bloc = aTraiter(
                 NOTHING_TODAY,
-                new ApercuPublication(true, false, false, null, 12, 0, List.of()),
+                new ApercuPublication(true, false, false, null, 12, 0, List.of(), 0),
                 new SyntheseConfirmations(0, 0, 0, null, true),
                 filledFacts().relecture(),
                 false,
@@ -796,7 +796,7 @@ class EtatEditionServiceTest {
         Facts f = filledFacts();
         EtatEditionView.EtatATraiter bloc = aTraiter(
                 NOTHING_TODAY,
-                new ApercuPublication(false, false, false, RESOLU_LE, 4, 0, List.of()),
+                new ApercuPublication(false, false, false, RESOLU_LE, 4, 0, List.of(), 0),
                 f.confirmations(),
                 f.relecture(),
                 false,
@@ -816,7 +816,7 @@ class EtatEditionServiceTest {
                 .isTrue();
         EtatEditionView.EtatATraiter enCours = aTraiter(
                 NOTHING_TODAY,
-                new ApercuPublication(false, false, true, RESOLU_LE, 4, 0, List.of()),
+                new ApercuPublication(false, false, true, RESOLU_LE, 4, 0, List.of(), 0),
                 f.confirmations(),
                 f.relecture(),
                 true,
@@ -968,7 +968,7 @@ class EtatEditionServiceTest {
                 null,
                 false,
                 new FeasibilityReport(true, 0, List.of(), 0, 0, 0, "Réalisable."),
-                new ApercuPublication(true, true, false, null, 0, 0, List.of()),
+                new ApercuPublication(true, true, false, null, 0, 0, List.of(), 0),
                 new SyntheseConfirmations(0, 0, 0, null, true),
                 true,
                 0,
@@ -999,7 +999,7 @@ class EtatEditionServiceTest {
                 RESOLU_LE.minusSeconds(60),
                 false,
                 new FeasibilityReport(true, 0, List.of(), 0, 0, 0, "Réalisable."),
-                new ApercuPublication(false, false, false, publieLe, 0, 0, List.of()),
+                new ApercuPublication(false, false, false, publieLe, 0, 0, List.of(), 0),
                 new SyntheseConfirmations(2, 0, 0, publieLe, false),
                 true,
                 0,

@@ -47,6 +47,9 @@ class IdColumnsInventoryStructuralTest {
                     "demande_echange.stand_cible_id",
                     "the stand a directed swap aims at; no key since V46, the swap outliving a deleted stand"),
             Map.entry(
+                    "envoi_planning.animateur_id",
+                    "who a delivery of a planning was for; the ledger outlives the fiche"),
+            Map.entry(
                     "journal_action.acteur_id",
                     "an animateur id when the actor is one, « admin » or « mcp » otherwise"),
             Map.entry(

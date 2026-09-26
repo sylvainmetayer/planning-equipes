@@ -29,7 +29,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
           items: [
             {
               term: $localize`:@@aide.foire.term.ecran:Écran Échanges`,
-              text: $localize`:@@aide.foire.def.ecran:Les demandes en attente, avec pour chacune son impact mesuré : échange croisé ou simple reprise, effet sur le score, règles dures qui seraient cassées. Accepter applique l'échange immédiatement, exactement comme simulé, et le verrouille sur son créneau : une régénération ne le défera pas. Refuser ne modifie rien, et le motif est transmis à l'animateur. Une demande décidée reste marquée « pas encore communiquée » tant que vous n'avez pas publié.`,
+              text: $localize`:@@aide.foire.def.ecran:L'écran s'ouvre sur la file : les demandes en attente de votre décision, avec pour chacune son impact mesuré — échange croisé ou simple reprise, effet sur le score, règles dures qui seraient cassées. Accepter applique l'échange immédiatement, exactement comme simulé, et le verrouille sur son créneau : une régénération ne le défera pas. Sa carte propose alors les deux suites sur place : « Prévenir les 2 personnes » publie pour ces deux-là seulement, « Corriger le reste » lance une résolution incrémentale, et « Voir la journée » ouvre le jour concerné. Refuser ne modifie rien, et le motif est transmis à l'animateur. Une demande décidée reste marquée « pas encore communiquée » tant qu'elle n'a pas été publiée. L'en-tête compte les demandes arrivées depuis votre dernière visite sur ce navigateur.`,
             },
             {
               term: $localize`:@@aide.foire.term.espace:Ce que l'animateur voit`,
@@ -49,25 +49,34 @@ export function buildAnimateurSideSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.foire.term.envoi:Publier le planning`,
-              text: $localize`:@@aide.foire.def.envoi:Le bouton « Publier » de la page Publication porte son décompte : « Publier — 3 personnes concernées ». Il n'écrit qu'aux animateurs dont l'emploi du temps a changé depuis la dernière publication, et le message dit ce qui change pour chacun. Dix corrections d'affilée ne font donc pas dix courriels : elles remplissent une file que vous videz quand vous avez fini. Le compte rendu nomme les animateurs sans adresse et les envois en échec. Sur un gros effectif, l'envoi prend plusieurs dizaines de secondes.`,
+              text: $localize`:@@aide.foire.def.envoi:En tête de l'onglet Envoyer de la page Diffuser, le bouton porte son décompte : « Publier — 3 personnes concernées », et la phrase à côté dit ses deux effets — il envoie leur nouveau planning aux seules personnes dont il a changé et met à jour leur espace. Dix corrections d'affilée ne font donc pas dix courriels : elles remplissent une file que vous videz quand vous avez fini. Le compte rendu nomme les animateurs sans adresse et les envois en échec. Sur un gros effectif, l'envoi prend plusieurs dizaines de secondes.`,
             },
             {
               term: $localize`:@@aide.foire.term.relecture:Relire la liste avant d'envoyer`,
-              text: $localize`:@@aide.foire.def.relecture:« Voir qui est concerné » ouvre une ligne par personne : ce qui change pour elle, sa dernière confirmation, et une case cochée. Triez par ampleur pour commencer par les plus gros changements, repliez les changements mineurs — même stand, un quart d'heure de décalage au plus — et exportez le tout en CSV pour le relire ailleurs. Le filtre ne décide rien : les lignes repliées partent quand même.`,
+              text: $localize`:@@aide.foire.def.relecture:« Voir ce qui change pour chacune » ouvre une ligne par personne : ce qui change pour elle, sa dernière confirmation, et une case cochée. Triez par ampleur pour commencer par les plus gros changements et repliez les changements mineurs — même stand, un quart d'heure de décalage au plus. Le filtre ne décide rien : les lignes repliées partent quand même. L'onglet Documents en donne le détail en CSV, pour le relire ailleurs.`,
+            },
+            {
+              term: $localize`:@@aide.diffuser.term.table:Qui a reçu quelle version`,
+              text: $localize`:@@aide.diffuser.def.table:Sous le bouton, une table permanente liste toute l'édition, qu'il reste ou non quelqu'un à prévenir : la version reçue (« v3 · 01/09 »), l'état de l'envoi — envoyé, échec avec sa cause, sans e-mail, différé —, le rappel de la veille, la relance et l'accusé de réception. Un envoi en échec n'est plus seulement une ligne du journal du serveur : la table le montre, et l'accueil ne dit plus « à jour » tant qu'il en reste. Sur chaque ligne, « Renvoyer son planning » renvoie le planning publié, « Relancer » envoie le rappel de confirmation et « Différer » retire la personne de la prochaine publication. Les filtres isolent les personnes à prévenir, les envois en échec, les fiches sans e-mail, les silencieux et les différés ; « Ce qui change le » ne garde que les personnes dont les changements tombent ce jour-là, selon la règle de l'onglet « Changements » de la Journée. Un bandeau dit si les relances automatiques sont activées, avec le lien pour le faire.`,
+            },
+            {
+              term: $localize`:@@aide.diffuser.term.documents:Les documents`,
+              text: $localize`:@@aide.diffuser.def.documents:L'onglet Documents donne les quatre fichiers que devient le planning, chacun avec son destinataire : une feuille recto-verso par personne à remettre en main propre, l'archive des plannings individuels (PDF et calendrier), le classeur de l'organisateur et le détail des changements en CSV. Imprimer une journée se fait depuis la Journée.`,
             },
             {
               term: $localize`:@@aide.foire.term.differer:Ne pas prévenir quelqu'un ce soir`,
-              text: $localize`:@@aide.foire.def.differer:Décochez une personne et son message est différé, pas perdu : elle ne reçoit rien, et la publication suivante la nomme à nouveau avec l'écart cumulé depuis son dernier message — celui qu'elle a vraiment reçu, pas le plan publié entre-temps. C'est le geste de « je l'appelle d'abord ». Tout décocher est refusé : publier sans prévenir personne n'aurait aucun sens.`,
+              text: $localize`:@@aide.foire.def.differer:Décochez une personne, ou cliquez « Différer » sur sa ligne de la table, et son message est différé, pas perdu : elle ne reçoit rien, et la publication suivante la nomme à nouveau avec l'écart cumulé depuis son dernier message — celui qu'elle a vraiment reçu, pas le plan publié entre-temps. C'est le geste de « je l'appelle d'abord ». Tout décocher est refusé : publier sans prévenir personne n'aurait aucun sens.`,
             },
           ],
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.foire.notifications:Si la messagerie est configurée, vous êtes prévenu par e-mail à chaque soumission. L'animateur, lui, apprend le sort de ses demandes à la publication suivante : accepter un échange change le plan de travail, pas encore celui qu'il a reçu.`,
+          text: $localize`:@@aide.foire.notifications:Si la messagerie est configurée, vous êtes prévenu par e-mail à chaque soumission. L'animateur, lui, apprend le sort de ses demandes à la publication suivante — ou tout de suite, si vous cliquez « Prévenir les 2 personnes » : accepter un échange change le plan de travail, pas encore celui qu'il a reçu.`,
         },
       ],
       links: [
         { route: '/echanges', label: $localize`:@@nav.link.echanges:Échanges` },
+        { route: '/publication', label: $localize`:@@nav.link.diffuser:Diffuser` },
         { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
         {
           route: '/consignes-solveur',
@@ -174,7 +183,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.rappels.term.relanceManuelle:Relancer à la main`,
-              text: $localize`:@@aide.rappels.def.relanceManuelle:La veille de l'événement, une nuit de plus est une nuit de trop. Sur la page Animateurs, le filtre « Accusés » isole les personnes jamais confirmées ou silencieuses depuis N jours ; sélectionnez-les et « Relancer maintenant » leur envoie le même rappel que la nuit. La règle ne change pas : une seule relance par personne et par publication, et le compte rendu nomme ceux qu'elle a laissés de côté.`,
+              text: $localize`:@@aide.rappels.def.relanceManuelle:La veille de l'événement, une nuit de plus est une nuit de trop. Sur la page Diffuser, le filtre « Silencieux » isole les personnes jamais confirmées ; « Relancer » sur une ligne, ou « Relancer les N silencieux » au-dessus de la table, leur envoie le même rappel que la nuit. La page Animateurs le permet aussi, sur une sélection. La règle ne change pas : une seule relance par personne et par publication, et le compte rendu dit combien de relances sont parties.`,
             },
             {
               term: $localize`:@@aide.rappels.term.echanges:Les demandes d'échange qui dorment`,
@@ -188,6 +197,11 @@ export function buildAnimateurSideSections(): HelpSection[] {
         },
       ],
       links: [
+        {
+          route: '/publication',
+          queryParams: { filtre: 'silencieux' },
+          label: $localize`:@@aide.lien.diffuserSilencieux:Diffuser — les silencieux`,
+        },
         { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
         {
           route: '/parametres',

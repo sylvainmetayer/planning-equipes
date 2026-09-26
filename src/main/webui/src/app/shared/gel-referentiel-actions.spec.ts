@@ -18,6 +18,7 @@ describe('phaseReminder', () => {
           jamaisPublie: false,
           dernierePublicationLe: null,
           personnesAPrevenir: 0,
+          envoisEnEchec: 0,
           statut: 'FAIT',
         },
         resolution: {
@@ -39,6 +40,7 @@ describe('phaseReminder', () => {
           jamaisPublie: true,
           dernierePublicationLe: null,
           personnesAPrevenir: 0,
+          envoisEnEchec: 0,
           statut: 'A_FAIRE',
         },
         resolution: {
@@ -60,6 +62,7 @@ describe('phaseReminder', () => {
           jamaisPublie: true,
           dernierePublicationLe: null,
           personnesAPrevenir: 0,
+          envoisEnEchec: 0,
           statut: 'A_FAIRE',
         },
         resolution: {

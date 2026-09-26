@@ -31,7 +31,12 @@ test.afterAll(async () => {
 const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/', marker: "État de l'édition", sheet: 'accueil-ligne' },
   { path: '/solveur', marker: 'Ce calcul tiendra compte de', sheet: 'solver-modes' },
-  { path: '/publication', marker: 'Diffusion du planning', sheet: 'publication-etat' },
+  { path: '/publication', marker: 'Qui a reçu quelle version', sheet: 'diffuser-onglets' },
+  {
+    path: '/publication?onglet=documents',
+    marker: "Le classeur de l'organisateur",
+    sheet: 'diffuser-documents',
+  },
   // The former Notifications page lands on « À traiter aujourd'hui ».
   { path: '/notifications', marker: "À traiter aujourd'hui", sheet: 'notification-jour' },
   // One page over four tabs, each visited: a tab's stylesheet travels with the

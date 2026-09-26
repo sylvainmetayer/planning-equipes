@@ -230,10 +230,16 @@ public record EtatEditionView(
 
     /**
      * @param personnesAPrevenir people whose schedule the next publication would announce
+     * @param envoisEnEchec      people whose latest planning mail failed: the
+     *                           line is never « à jour » while one is left
      */
-    @Schema(requiredProperties = {"jamaisPublie", "personnesAPrevenir", "statut"})
+    @Schema(requiredProperties = {"jamaisPublie", "personnesAPrevenir", "statut", "envoisEnEchec"})
     public record EtatPublication(
-            boolean jamaisPublie, Instant dernierePublicationLe, int personnesAPrevenir, Statut statut) {}
+            boolean jamaisPublie,
+            Instant dernierePublicationLe,
+            int personnesAPrevenir,
+            Statut statut,
+            int envoisEnEchec) {}
 
     /**
      * The acknowledgements of the published plan, over the people it seats.

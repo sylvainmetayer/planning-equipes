@@ -64,6 +64,7 @@ function etat(partial: Partial<EtatEdition> = {}): EtatEdition {
       jamaisPublie: true,
       dernierePublicationLe: null,
       personnesAPrevenir: 0,
+      envoisEnEchec: 0,
       statut: 'A_FAIRE',
     },
     confirmations: {
@@ -258,7 +259,7 @@ describe('AccueilPage', () => {
       '/diagnostic?onglet=problemes',
       '/journee',
       '/publication',
-      '/animateurs?confirmation=jamais',
+      '/publication?filtre=silencieux',
       '/echanges',
     ]);
   });

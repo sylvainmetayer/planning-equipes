@@ -73,6 +73,7 @@ function etatVide(partial: Partial<EtatEdition> = {}): EtatEdition {
       jamaisPublie: true,
       dernierePublicationLe: null,
       personnesAPrevenir: 0,
+      envoisEnEchec: 0,
       statut: 'A_FAIRE',
     },
     confirmations: {
@@ -158,6 +159,7 @@ function etatComplet(partial: Partial<EtatEdition> = {}): EtatEdition {
       jamaisPublie: false,
       dernierePublicationLe: '2026-05-01T11:00:00Z',
       personnesAPrevenir: 0,
+      envoisEnEchec: 0,
       statut: 'FAIT',
     },
     confirmations: {
@@ -308,7 +310,7 @@ describe('buildLignes', () => {
     }
   });
 
-  it('filters the animateurs on the silent ones as soon as somebody has not answered', () => {
+  it("opens Diffuser's table on the silent ones as soon as somebody has not answered", () => {
     const etat = etatComplet({
       confirmations: {
         confirmes: 30,
@@ -321,13 +323,31 @@ describe('buildLignes', () => {
     });
     const confirmations = buildLignes(etat).find((ligne) => ligne.id === 'confirmations')!;
     expect(confirmations.lien).toEqual({
-      route: '/animateurs',
-      queryParams: { confirmation: 'jamais' },
+      route: '/publication',
+      queryParams: { filtre: 'silencieux' },
       libelle: "Voir qui n'a pas répondu",
     });
     expect(confirmations.detail).toBe(
       '30 confirmé(s) · 4 relancé(s) · 6 silencieux · relance automatique après 72 h',
     );
+  });
+
+  /** A publication whose mails bounced is not « à jour »: the line says so and opens the failures. */
+  it('never says « à jour » while a planning mail has failed', () => {
+    const etat = etatComplet({
+      publication: {
+        jamaisPublie: false,
+        dernierePublicationLe: '2026-09-01T08:01:00Z',
+        personnesAPrevenir: 0,
+        statut: 'ATTENTION',
+        envoisEnEchec: 153,
+      },
+    });
+    const publication = buildLignes(etat).find((ligne) => ligne.id === 'publication')!;
+
+    expect(publication.detail).toBe('153 envoi(s) en échec');
+    expect(publication.detail).not.toContain('À jour');
+    expect(publication.lien?.queryParams).toEqual({ filtre: 'echec' });
   });
 
   /**
@@ -349,8 +369,8 @@ describe('buildLignes', () => {
     const confirmations = buildLignes(etat).find((ligne) => ligne.id === 'confirmations')!;
     expect(confirmations.detail).toContain('relances automatiques désactivées');
     expect(confirmations.lien).toEqual({
-      route: '/animateurs',
-      queryParams: { confirmation: 'jamais' },
+      route: '/publication',
+      queryParams: { filtre: 'silencieux' },
       libelle: "Voir qui n'a pas répondu",
     });
     expect(confirmations.lienSecondaire).toEqual({
@@ -492,6 +512,7 @@ describe('buildLignes', () => {
         jamaisPublie: false,
         dernierePublicationLe: '2026-05-01T11:00:00Z',
         personnesAPrevenir: 7,
+        envoisEnEchec: 0,
         statut: 'ATTENTION',
       },
       foire: { ouverte: true, demandesEnAttente: 2, statut: 'ATTENTION' },

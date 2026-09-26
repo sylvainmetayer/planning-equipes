@@ -139,6 +139,9 @@ public class DatabaseDumpService {
             // the same thing.
             "plan_snapshot",
             "publication_destinataire",
+            // Which of those mails reached their recipient: without it, a
+            // restore says « envoyé » of nothing and hides every failure.
+            "envoi_planning",
             // Its edition_id carries no foreign key, so the dump's DELETE FROM
             // edition never reached it either: an operator restoring a dump
             // kept whatever history the target already had and lost the one
@@ -213,6 +216,8 @@ public class DatabaseDumpService {
             // BIGSERIAL too, V40 and V54, for the same reason.
             "plan_snapshot",
             "publication_destinataire",
+            // BIGSERIAL since V110.
+            "envoi_planning",
             // BIGSERIAL since V103.
             "ponderation_contrainte_historique");
 

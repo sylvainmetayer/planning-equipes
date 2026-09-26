@@ -337,7 +337,7 @@ export function buildOperationsSections(): HelpSection[] {
           queryParams: { vue: 'pauses' },
           label: $localize`:@@aide.link.pauses:Pauses et repas`,
         },
-        { route: '/publication', label: $localize`:@@nav.link.publication:Publication` },
+        { route: '/publication', label: $localize`:@@nav.link.diffuser:Diffuser` },
         {
           route: '/diagnostic',
           queryParams: { onglet: 'besoin', section: 'former' },

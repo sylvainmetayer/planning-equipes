@@ -3379,6 +3379,8 @@ export interface DestinatairePublication {
   /** Where their « j'ai lu » stands on the plan they were last sent. */
   confirmation: string | null;
   confirmeLe: string | null;
+  /** The days their changes belong to (`AAAA-MM-JJ`) — the rule the Journée's « Changements » applies. */
+  jours: string[];
 }
 
 /** `/api/planning/publication`: who is concerned, and what publishing would say. */
@@ -3398,6 +3400,69 @@ export interface ApercuPublication {
    */
   journeesNonValidees: number;
   destinataires: DestinatairePublication[];
+  /** People whose latest planning mail failed: nothing changed for them, they never received it. */
+  envoisEnEchec: number;
+}
+
+/** Why a planning mail went out: a publication, or the resend of one person's planning. */
+export type NatureEnvoi = 'PUBLICATION' | 'RENVOI';
+
+/** How a planning mail went: sent, failed, no address, or deferred by the admin. */
+export type StatutEnvoi = 'ENVOYE' | 'ECHEC' | 'SANS_EMAIL' | 'EXCLU';
+
+/** Why a send failed — a short code, never the mail server's message. */
+export type CauseEchec = 'ADRESSE_REFUSEE' | 'BOITE_PLEINE' | 'SERVEUR_INJOIGNABLE' | 'AUTRE';
+
+/** One published version: « v3 · 01/09 ». */
+export interface VersionPubliee {
+  snapshotId: number;
+  numero: number;
+  publieLe: string | null;
+}
+
+/** The latest planning mail of one person. */
+export interface DernierEnvoi {
+  nature: NatureEnvoi;
+  statut: StatutEnvoi;
+  cause: CauseEchec | null;
+  envoyeLe: string;
+  /** The version it carried, when there was one. */
+  numero: number | null;
+}
+
+/** One person of the Diffuser table (`/api/planning/publication/etat`). */
+export interface LigneEnvoi {
+  animateurId: string;
+  nomAffiche: string;
+  /** An address is on their fiche; the address itself stays there. */
+  email: boolean;
+  /** The published plan gives them a seat: an acknowledgement is expected. */
+  affecte: boolean;
+  /** The version they were last told about, null when never told. */
+  version: VersionPubliee | null;
+  envoi: DernierEnvoi | null;
+  rappelVeilleLe: string | null;
+  rappelVeilleEchec: boolean;
+  relanceLe: string | null;
+  relanceEchec: boolean;
+  /** `NON_VU`, `CONFIRME` or `RELANCE`. */
+  confirmation: string;
+  confirmeLe: string | null;
+  /** The next publication would write to them. */
+  aPrevenir: boolean;
+  /** A publication deferred them and nothing has reached them since. */
+  differe: boolean;
+  /** The days their pending changes belong to. */
+  joursAPrevenir: string[];
+}
+
+/** « Qui a reçu quelle version » — the whole Diffuser table. */
+export interface EtatEnvois {
+  derniereVersion: VersionPubliee | null;
+  /** The night's sends are armed on this edition — off by default. */
+  relancesAutomatiques: boolean;
+  nombreConcernes: number;
+  personnes: LigneEnvoi[];
 }
 
 /** Outcome of a publication: display names, ready to show. */
@@ -4057,6 +4122,8 @@ export interface EtatPublication {
   dernierePublicationLe: string | null;
   personnesAPrevenir: number;
   statut: StatutEtat;
+  /** People whose latest planning mail failed: the line is never « à jour » while one is left. */
+  envoisEnEchec: number;
 }
 
 export interface EtatConfirmations {
