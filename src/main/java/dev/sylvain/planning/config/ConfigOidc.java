@@ -2,6 +2,7 @@ package dev.sylvain.planning.config;
 
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -82,5 +83,16 @@ public interface ConfigOidc {
          */
         @WithDefault("true")
         boolean sendInvitation();
+
+        /**
+         * The Keycloak required actions the invitation carries, in the order
+         * the mail lists them. By default the person confirms the address,
+         * then registers a passkey — no password at all: the realm offers the
+         * code by e-mail to an account without one, which is also the way
+         * back in once the passkey is lost (docs/keycloak.md).
+         * {@code UPDATE_PASSWORD} restores the "choose a password" invitation.
+         */
+        @WithDefault("VERIFY_EMAIL,webauthn-register-passwordless")
+        List<String> invitationActions();
     }
 }

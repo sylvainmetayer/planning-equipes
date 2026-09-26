@@ -158,6 +158,31 @@ class RolesKeycloakTest {
     }
 
     /**
+     * The way to one's own passkeys: open to an animateur, whom the rest of
+     * the API refuses, and pointing at the realm the session came from.
+     */
+    @Test
+    void unAnimateurAtteintSesMoyensDeConnexionDansKeycloak() {
+        given().header("Authorization", porteur("roles-passkey@example.org", "user", "animateur"))
+                .redirects()
+                .follow(false)
+                .when()
+                .get("/api/auth/oidc/compte")
+                .then()
+                .statusCode(303)
+                .header(
+                        "Location",
+                        org.hamcrest.Matchers.endsWith("/realms/quarkus" + AuthResource.PAGE_MOYENS_DE_CONNEXION));
+        given().redirects()
+                .follow(false)
+                .when()
+                .get("/api/auth/oidc/compte")
+                .then()
+                // Without a session, the way there goes through signing in first.
+                .statusCode(302);
+    }
+
+    /**
      * A Keycloak session has no password to re-type: revealing the MCP key
      * reads the moment of the last sign-in instead, and a session older than
      * five minutes is told to sign in again.

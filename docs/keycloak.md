@@ -302,6 +302,12 @@ console.log(String(((h[o]&127)<<24|h[o+1]<<16|h[o+2]<<8|h[o+3])%1e6).padStart(6,
 Le code par e-mail se voit dans Mailpit : « Essayer une autre méthode » après
 l'adresse, puis « Code par e-mail ».
 
+Une **passkey** ne s'essaie pas sur cette pile : WebAuthn n'accepte `http` que
+sur `localhost`, et le navigateur refuse d'enrôler une passkey pour
+`http://keycloak:8081`. Pour la tester, depuis un téléphone surtout, il faut
+Keycloak derrière du HTTPS — un tunnel (Cloudflare Tunnel, ngrok) ou une recette
+sur un vrai domaine.
+
 ## Provisioning des comptes animateurs
 
 Avec `OIDC_PROVISIONING_ENABLED=true`, créer une fiche animateur crée le compte
@@ -311,7 +317,7 @@ d'autre.
 
 | Événement sur la fiche | Effet dans le realm |
 | --- | --- |
-| Création | Compte créé s'il n'existe pas (clé : l'adresse), rôle `animateur`, invitation « définissez votre mot de passe » envoyée par Keycloak |
+| Création | Compte créé s'il n'existe pas (clé : l'adresse), rôle `animateur`, invitation envoyée par Keycloak : vérifier l'adresse, puis créer une passkey — aucun mot de passe |
 | Modification | Compte créé s'il manque (une fiche qui gagne une adresse, une fiche d'avant le provisioning), prénom et nom alignés. Un compte désactivé à la console le reste |
 | Adresse changée | Le compte de la **nouvelle** adresse est retrouvé ou créé ; l'ancien n'est pas renommé — il appartient peut-être à quelqu'un d'autre |
 | Suppression | Compte **désactivé**, et seulement si plus aucune fiche, dans aucune édition, ne porte l'adresse. Jamais supprimé |
@@ -321,6 +327,31 @@ ce mode, le compte *est* l'accès. Supprimer une fiche **n'échoue jamais**
 là-dessus : la fiche est partie de toute façon, et un compte resté actif n'ouvre
 rien par lui-même. `OIDC_PROVISIONING_SEND_INVITATION=false` crée une saison
 entière de comptes sans envoyer 150 invitations d'un coup.
+
+### Un animateur n'a pas de mot de passe
+
+L'invitation porte les actions de `OIDC_PROVISIONING_INVITATION_ACTIONS`, par
+défaut `VERIFY_EMAIL,webauthn-register-passwordless` : la personne confirme son
+adresse, puis enregistre une passkey sur son téléphone (visage, empreinte ou
+code de l'appareil). Elle ne choisit jamais de mot de passe.
+
+- **Se connecter** : le téléphone propose la passkey dès l'écran de l'adresse
+  (`webAuthnPolicyPasswordlessPasskeysEnabled`, `passwordless_passkeys_enabled`
+  en Terraform) ; taper l'adresse puis choisir la passkey marche aussi.
+- **Passkey perdue, nouveau téléphone** : après l'adresse, « Essayer une autre
+  méthode » envoie un code à six chiffres par e-mail — la méthode de repli, que
+  Keycloak propose d'emblée à un compte sans mot de passe ni passkey. Une fois
+  dans l'espace, le menu « Ma passkey et mes moyens de connexion » mène à la
+  page de la console de compte Keycloak (`GET /api/auth/oidc/compte`) où
+  enregistrer la nouvelle passkey et retirer l'ancienne.
+- **Un appareil sans passkey** : l'invitation échoue à la seconde étape, l'adresse
+  est pourtant vérifiée, et le code par e-mail suffit à se connecter.
+
+Le repli par e-mail fait de la boîte aux lettres la clé du compte : c'est le
+niveau de l'ancien code de l'espace, et il ne vaut que pour un rôle qui n'ouvre
+que son propre planning. Les administrateurs gardent le TOTP après **toute**
+méthode. `OIDC_PROVISIONING_INVITATION_ACTIONS=UPDATE_PASSWORD,VERIFY_EMAIL`
+rétablit l'invitation « choisissez votre mot de passe ».
 
 Le compte de service n'a que `manage-users` et il faut y tenir en écrivant le
 code qui s'en sert : lire la définition d'un rôle du realm demanderait
@@ -508,6 +539,7 @@ l'application.
 | `OIDC_PROVISIONING_REALM` | `planning` |
 | `OIDC_PROVISIONING_CLIENT_ID` / `_SECRET` | Le compte de service `planning-provisioning` |
 | `OIDC_PROVISIONING_SEND_INVITATION` | `false` pour créer en masse sans envoyer d'invitation |
+| `OIDC_PROVISIONING_INVITATION_ACTIONS` | `VERIFY_EMAIL,webauthn-register-passwordless` par défaut : adresse vérifiée, puis passkey, sans mot de passe |
 | `ADMIN_SECOURS_ENABLED` | `false` par défaut : le compte de secours est fermé |
 | `ADMIN_PASSWORD` | Le mot de passe du compte de secours, obligatoire même fermé |
 

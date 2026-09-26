@@ -441,6 +441,16 @@ class RealmPlanningStructuralTest {
     }
 
     /**
+     * The phone proposes its passkey on the address screen, before anything is
+     * typed ({@code TerraformKeycloakStructuralTest} holds production to it).
+     */
+    @Test
+    void passkeysAreOfferedFromTheAddressScreen() {
+        assertThat(realm.path("webAuthnPolicyPasswordlessPasskeysEnabled").asBoolean())
+                .isTrue();
+    }
+
+    /**
      * Google must not be believed about who owns an address: with
      * {@code trustEmail} on, anyone able to create a Google account bearing an
      * animateur's address would be handed that animateur's account.
