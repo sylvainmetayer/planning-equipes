@@ -143,9 +143,8 @@ test.describe('cas limites', () => {
     // Retenir l'échange d'un jour contre un autre remplit le formulaire — le
     // collègue ET le créneau repris — sans rien soumettre de lui-même.
     await dirige.getByRole('button', { name: 'Choisir' }).first().click();
-    await expect(
-      page.locator('mat-form-field').filter({ hasText: 'Échanger avec' }).first(),
-    ).toContainText('Denis E2E');
+    // A search field: the colleague is its input's value, not its text.
+    await expect(page.getByRole('combobox', { name: 'Échanger avec' })).toHaveValue('Denis E2E');
     await expect(
       page
         .locator('mat-form-field')
@@ -205,9 +204,12 @@ test.describe('cas limites', () => {
     // The planning stays consultable and downloadable. The band is carried
     // under all three tabs since issue #615, so the day one answers here; the
     // ICS file is a fallback of the subscription's panel, one fold further.
+    // The two PDF layouts sit in the « Emporter » menu of the tab row.
     await page.getByRole('link', { name: 'Mon planning' }).click();
-    await expect(page.getByRole('link', { name: 'Livret PDF' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Feuille A4' })).toBeVisible();
+    await page.getByRole('button', { name: 'Emporter mon planning' }).click();
+    await expect(page.getByRole('menuitem', { name: 'Livret PDF' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Feuille A4' })).toBeVisible();
+    await page.keyboard.press('Escape');
     await page.getByRole('button', { name: "Copier l'adresse, ou la remplacer" }).click();
     await expect(page.getByRole('link', { name: 'Fichier ICS' })).toBeVisible();
     const pdf = await page.request.get(`/api/espace-animateur/${jeton}/planning.pdf`);

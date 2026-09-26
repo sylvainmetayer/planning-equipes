@@ -141,6 +141,23 @@ class DeclarationDisponibiliteFlowTest {
                 .statusCode(400);
     }
 
+    /** The espace offers the declaration and covoiturage pages only while the collection is open. */
+    @Test
+    void theEspaceViewSaysWhenTheCollectionIsOpen() {
+        given().when()
+                .get("/api/espace-animateur/" + aliceToken())
+                .then()
+                .statusCode(200)
+                .body("collecteOuverte", is(false));
+        openWindow(null, null, false);
+
+        given().when()
+                .get("/api/espace-animateur/" + aliceToken())
+                .then()
+                .statusCode(200)
+                .body("collecteOuverte", is(true));
+    }
+
     @Test
     void aDeclarationStaysPendingAndLeavesTheReferentialUntouched() {
         openWindow(null, null, false);

@@ -32,6 +32,8 @@ import {
 } from './echange-brouillon';
 import { errorMessage } from '../../core/error-message';
 import { ApiError } from '../../core/api.service';
+import { EspaceContact } from './espace-contact';
+import { OptionSelection, SelectionRecherche } from '../../shared/selection-recherche';
 
 interface DemandeRow extends DemandeEchangeView {
   statutLabel: string;
@@ -59,6 +61,8 @@ interface DemandeRow extends DemandeEchangeView {
 @Component({
   selector: 'app-espace-echanges-page',
   imports: [
+    EspaceContact,
+    SelectionRecherche,
     DatePipe,
     FormsModule,
     MatButtonModule,
@@ -102,6 +106,22 @@ export class EspaceEchangesPage {
   protected readonly rechercheEnCours = signal(false);
   protected readonly brouillons = signal<BrouillonDemande[]>([]);
   protected readonly envoiEnCours = signal(false);
+
+  /** The colleagues as the search offers them: typed, never scrolled. */
+  protected readonly optionsCollegues = computed<OptionSelection[]>(() =>
+    (this.espace.view()?.collegues ?? []).map((collegue) => ({
+      id: collegue.id,
+      label: collegue.nomComplet,
+    })),
+  );
+
+  /** The colleague picked, as the search holds it: one id at most. */
+  protected readonly chosenTarget = computed(() => (this.cibleId() ? [this.cibleId()] : []));
+
+  /** `18:00:00` → `18:00`: the server sends whole times, a phone reads hours. */
+  protected heure(valeur: string | null | undefined): string {
+    return valeur ? valeur.slice(0, 5) : '';
+  }
 
   protected readonly formulaireComplet = computed(() =>
     brouillonComplet(this.posteChoisi(), this.cibleId()),

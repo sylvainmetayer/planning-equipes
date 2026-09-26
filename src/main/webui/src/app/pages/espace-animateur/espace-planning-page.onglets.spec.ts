@@ -33,6 +33,9 @@ function poste(overrides: Partial<PosteAnimateurView> = {}): PosteAnimateurView 
 function view(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView {
   return {
     signalements: [],
+    collecteOuverte: false,
+    collecteFermeLe: null,
+    dernierEnvoi: null,
     joursRepos: [],
     animateurId: 'alice',
     prenom: 'Alice',
@@ -318,7 +321,36 @@ describe('EspacePlanningPage — les trois onglets', () => {
     expect(textOf()).toContain('Aucune affectation pour le moment');
 
     await cliquerOnglet('Aperçu');
-    expect(racine().querySelector('.espace-agenda-abonnement')).not.toBeNull();
+    expect(racine().querySelector('button.espace-emporter')).not.toBeNull();
     expect(racine().querySelector('.espace-frise')).toBeNull();
+  });
+
+  /**
+   * « Je fais quoi, là ? » and the confirmation due are above the tabs, so the
+   * « Aperçu » and « Coéquipiers » tabs answer them too (issue #724).
+   */
+  it('keeps « en ce moment » and the confirmation band on every tab', async () => {
+    await rendre(view({ statutConfirmation: 'NON_VU' }), { onglet: 'coequipiers' });
+
+    expect(racine().querySelector('.espace-entete-maintenant')!.textContent).toContain(
+      'En ce moment',
+    );
+    expect(racine().querySelector('.espace-confirmation-bande')!.textContent).toContain(
+      "J'ai lu et je serai là",
+    );
+  });
+
+  /** « Communiqué le » only when the mail left: a failed or impossible send is said instead. */
+  it('says the mail did not leave instead of claiming it was communicated', async () => {
+    await rendre(view({ dernierEnvoi: { statut: 'ECHEC', le: '2026-07-01T10:00:00Z' } }));
+
+    expect(textOf()).toContain("n'a pas pu partir");
+    expect(textOf()).not.toContain('Planning communiqué le');
+
+    await rendre(view({ dernierEnvoi: { statut: 'SANS_EMAIL', le: '2026-07-01T10:00:00Z' } }));
+    expect(textOf()).toContain('Aucune adresse e-mail connue');
+
+    await rendre(view({ dernierEnvoi: { statut: 'ENVOYE', le: '2026-07-01T10:00:00Z' } }));
+    expect(textOf()).toContain('Planning communiqué le');
   });
 });

@@ -148,18 +148,22 @@
         <mat-icon>swap_horiz</mat-icon>
         <span i18n="@@espace.nav.echanges">Mes échanges</span>
       </a>
-      <a matButton [routerLink]="['/animateur', jeton(), 'disponibilites']" routerLinkActive="espace-nav-active"
-         #rlaDispo="routerLinkActive"
-         [attr.aria-current]="rlaDispo.isActive ? 'page' : null">
-        <mat-icon>event_available</mat-icon>
-        <span i18n="@@espace.nav.disponibilites">Mes disponibilités</span>
-      </a>
-      <a matButton [routerLink]="['/animateur', jeton(), 'covoiturage']" routerLinkActive="espace-nav-active"
-         #rlaCovoiturage="routerLinkActive"
-         [attr.aria-current]="rlaCovoiturage.isActive ? 'page' : null">
-        <mat-icon>directions_car</mat-icon>
-        <span i18n="@@espace.nav.covoiturage">Covoiturage</span>
-      </a>
+      <!-- Deux guichets qui n'ouvrent qu'avec la collecte : hors d'elle, ils
+           n'étaient que deux onglets morts pendant tout l'événement. -->
+      @if (collectionOpen()) {
+        <a matButton [routerLink]="['/animateur', jeton(), 'disponibilites']" routerLinkActive="espace-nav-active"
+           #rlaDispo="routerLinkActive"
+           [attr.aria-current]="rlaDispo.isActive ? 'page' : null">
+          <mat-icon>event_available</mat-icon>
+          <span i18n="@@espace.nav.disponibilites">Mes disponibilités</span>
+        </a>
+        <a matButton [routerLink]="['/animateur', jeton(), 'covoiturage']" routerLinkActive="espace-nav-active"
+           #rlaCovoiturage="routerLinkActive"
+           [attr.aria-current]="rlaCovoiturage.isActive ? 'page' : null">
+          <mat-icon>directions_car</mat-icon>
+          <span i18n="@@espace.nav.covoiturage">Covoiturage</span>
+        </a>
+      }
       <!-- Taille de son contenu, là où les deux premiers se partagent le reste :
            « Aide » est un mot court, et trois onglets à parts égales rognaient
            les deux libellés utiles sur un téléphone étroit. -->
@@ -170,7 +174,20 @@
         <span i18n="@@espace.nav.aide">Aide</span>
       </a>
     </nav>
+    @if (collectionOpen()) {
+      <p class="espace-collecte-bandeau">
+        <mat-icon inline>event_available</mat-icon>
+        @if (espace.view()?.collecteFermeLe; as fin) {
+          <span i18n="@@espace.collecte.bandeauFin">La collecte des disponibilités est ouverte jusqu'au {{ fin | date: 'd MMMM' }} : déclarez vos absences et votre covoiturage.</span>
+        } @else {
+          <span i18n="@@espace.collecte.bandeau">La collecte des disponibilités est ouverte : déclarez vos absences et votre covoiturage.</span>
+        }
+      </p>
+    }
     <router-outlet />
+    <!-- Qui appeler : sur chaque page de l'espace, là où cinq phrases disaient
+         « rapprochez-vous de l'organisation » sans jamais dire comment. -->
+    <p class="espace-contact-pied"><app-espace-contact /></p>
   }
 </main>
 
