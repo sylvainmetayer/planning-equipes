@@ -276,7 +276,7 @@ export function linksOfViolation(violation: ViolationReference): LienProbleme[] 
       libelle: $localize`:@@problemes.lien.standFiche:Fiche stand`,
     });
   }
-  if (violation.creneauId !== null && violation.creneauId !== undefined) {
+  if (violation.creneauId != null) {
     liens.push({
       route: '/creneaux',
       queryParams: { edit: String(violation.creneauId) },
@@ -295,7 +295,7 @@ export function causeLinks(
   nomsStands: LabelIndex = new Map(),
 ): LienProbleme[] {
   const liens: LienProbleme[] = [];
-  if (cause.creneauId !== null && cause.creneauId !== undefined) {
+  if (cause.creneauId != null) {
     // Straight to the fiche, open for editing: the reader came to fix it.
     liens.push({
       route: '/creneaux',
@@ -348,7 +348,7 @@ export function causeDetails(
   nomsStands: LabelIndex = new Map(),
 ): string[] {
   const details: string[] = [];
-  if (cause.creneauId !== null && cause.creneauId !== undefined) {
+  if (cause.creneauId != null) {
     const creneauId = String(cause.creneauId);
     const date = cause.date ?? '';
     const heures =

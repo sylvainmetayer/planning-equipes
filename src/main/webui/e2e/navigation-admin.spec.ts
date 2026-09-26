@@ -42,7 +42,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/regles?onglet=qualite', sheet: 'regles-importance' },
   { path: '/regles?onglet=calcul', marker: 'Budget de calcul' },
   { path: '/echanges', marker: 'Échanges de créneaux', sheet: 'espace-demande-horsgroupe' },
-  { path: '/instantanes', sheet: 'snapshot-auto-chip' },
+  { path: '/versions', marker: 'Plan en place', sheet: 'versions-toolbar' },
   { path: '/aide', marker: "Aide à l'utilisation", sheet: 'aide-search' },
   { path: '/nouveautes', marker: 'Nouveautés', sheet: 'news-release' },
   { path: '/editions', marker: 'Nouvelle édition', sheet: 'edition-nom-input' },
@@ -112,7 +112,6 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
     marker: 'Emplacements à cette heure-là',
     sheet: 'carte-jour-curseur',
   },
-  { path: '/comparateur', sheet: 'comparateur-selection' },
   { path: '/historique', sheet: 'historique-controles' },
   { path: '/journee?vue=pauses', sheet: 'pauses-message' },
   // The meal intendance, under the breaks since the Planning page absorbed it.
@@ -127,7 +126,6 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
     sheet: 'journee-changements-toolbar',
   },
   { path: '/disponibilites', sheet: 'espace-dispo-intro' },
-  { path: '/kpi' },
   // Three screens became the tabs of « Consignes au solveur » (issue #719):
   // the default tab, and the other two by their `?onglet=`.
   {

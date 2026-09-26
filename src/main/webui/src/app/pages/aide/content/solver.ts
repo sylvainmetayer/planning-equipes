@@ -39,7 +39,7 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.calculer.entrees:La page s'ouvre sur ce qui empêche un planning sans écart — faisabilité et alertes —, puis sur « Ce calcul tiendra compte de » : les verrouillages, les ajustements manuels, les consignes et leurs dates, les déclarations de disponibilité encore en attente — que le calcul ne verra pas —, les règles désactivées et les modifications faites depuis la dernière résolution. Chaque compteur mène à l'écran qui les liste ; un compteur à zéro reste affiché, en retrait. Viennent ensuite les trois boutons, chacun avec sa phrase. Après un calcul, son résultat se lit en phrases, et « Voir le planning », « Relire » — la première journée pas encore relue — et « Publier » sont juste dessous. La volumétrie du problème est repliée en bas de page ; le budget de calcul se règle dans Règles du planning, onglet Calcul.`,
+          text: $localize`:@@aide.calculer.entrees:La page s'ouvre sur ce qui empêche un planning sans écart — faisabilité et alertes —, puis sur « Ce calcul tiendra compte de » : les verrouillages, les ajustements manuels, les consignes et leurs dates, les déclarations de disponibilité encore en attente — que le calcul ne verra pas —, les règles désactivées et les modifications faites depuis la dernière résolution. Chaque compteur mène à l'écran qui les liste ; un compteur à zéro reste affiché, en retrait. Viennent ensuite les trois boutons, chacun avec sa phrase. Après un calcul, son résultat se lit en phrases, et « Voir le planning », « Relire » — la première journée pas encore relue — et « Publier » sont juste dessous, suivis des cinq dernières versions du plan. La volumétrie du problème est repliée en bas de page ; le budget de calcul se règle dans Règles du planning, onglet Calcul.`,
         },
         {
           kind: 'paragraph',
@@ -269,7 +269,7 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.results.lecture:La « Lecture du score », en tête de la page Solveur et du Diagnostic et pour chaque plan du Comparateur, dit la même chose en quelques phrases : si les règles impératives sont respectées, combien de places restent vides et quel jour, quelles règles pèsent le plus sur l'organisation et pour quelle part, ce qui vient d'une donnée absente et quels ajustements manuels sont en cause. Juste après une résolution, une dernière phrase dit ce qui a changé par rapport au plan d'avant. Chaque règle citée mène à son panneau dans Règles du planning, chaque jour à sa Journée ; aucune personne n'y est nommée.`,
+          text: $localize`:@@aide.results.lecture:La « Lecture du score », en tête de la page Solveur et du Diagnostic et pour chaque plan comparé dans Versions du plan, dit la même chose en quelques phrases : si les règles impératives sont respectées, combien de places restent vides et quel jour, quelles règles pèsent le plus sur l'organisation et pour quelle part, ce qui vient d'une donnée absente et quels ajustements manuels sont en cause. Juste après une résolution, une dernière phrase dit ce qui a changé par rapport au plan d'avant. Chaque règle citée mène à son panneau dans Règles du planning, chaque jour à sa Journée ; aucune personne n'y est nommée.`,
         },
         {
           kind: 'paragraph',
@@ -286,7 +286,7 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.results.instantanes:Un seul planning est enregistré à la fois, et chaque résolution écrase le précédent : c'est la page Instantanés qui garde les autres. Une capture y est prise automatiquement avant chaque résolution. Un plan que vous voulez garder se met de côté explicitement, avec un libellé : celui-là n'est jamais purgé, et sert de terme de comparaison au Comparateur A/B. Restaurer pendant une résolution est refusé par le serveur : la résolution écraserait le plan qu'on vient de remettre en place.`,
+          text: $localize`:@@aide.results.instantanes:Un seul planning est enregistré à la fois, et chaque résolution écrase le précédent : ce sont les instantanés, sur la page Versions du plan, qui gardent les autres. Une capture est prise automatiquement avant chaque résolution. Un plan que vous voulez garder se met de côté explicitement, avec « Enregistrer cet état » et un libellé : celui-là n'est jamais purgé, et sert de terme de comparaison. Restaurer pendant une résolution est refusé par le serveur : la résolution écraserait le plan qu'on vient de remettre en place.`,
         },
         {
           kind: 'paragraph',
@@ -325,7 +325,7 @@ export function buildSolverSections(): HelpSection[] {
           route: '/journee',
           label: $localize`:@@aide.link.dayCalendar:Tableau de la journée`,
         },
-        { route: '/instantanes', label: $localize`:@@nav.link.snapshots:Instantanés` },
+        { route: '/versions', label: $localize`:@@nav.link.versions:Versions du plan` },
       ],
     },
     {

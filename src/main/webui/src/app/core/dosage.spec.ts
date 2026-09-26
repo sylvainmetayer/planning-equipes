@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dosageDifferences, dosageKey, dosageLines, dosageSummary, dosageToken } from './dosage';
+import { dosageDifferences, dosageKey, dosageLines, dosageSummary } from './dosage';
 import { Dosage } from './models';
 
 const NONE: Dosage = {
@@ -28,13 +28,12 @@ describe('dosage', () => {
       weights: { appreciationIncompatible: 3, souhaitsIncompatibles: 5 },
     };
     expect(dosageKey(reordered)).toBe(dosageKey(RETUNED));
-    expect(dosageToken(reordered)).toBe(dosageToken(RETUNED));
     expect(dosageKey(NONE)).not.toBe(dosageKey(RETUNED));
   });
 
   it('never matches an unknown dosage, not even another unknown', () => {
     expect(dosageKey(null)).toBeNull();
-    expect(dosageToken(undefined)).toBeNull();
+    expect(dosageKey(undefined)).toBeNull();
   });
 
   it('tells the instance changing apart from the edition retuning', () => {

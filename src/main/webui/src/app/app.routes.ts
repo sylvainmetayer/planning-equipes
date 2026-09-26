@@ -257,8 +257,10 @@ function redirectFormerDebugTabs(route: { queryParamMap: { get(name: string): st
       queryParams: { onglet: 'instance', focus: TODAY_ANCHOR },
     });
   }
-  const card = FORMER_DEBUG_TABS[route.queryParamMap.get('onglet') ?? ''];
-  return card === undefined
+  // Own keys only: `?onglet=constructor` must not read Object's prototype.
+  const tab = route.queryParamMap.get('onglet') ?? '';
+  const card = Object.hasOwn(FORMER_DEBUG_TABS, tab) ? FORMER_DEBUG_TABS[tab] : null;
+  return card === null
     ? true
     : inject(Router).createUrlTree(['/fichiers'], {
         queryParams: { onglet: 'importer', cible: card },
@@ -285,6 +287,15 @@ export const redirectConstraintsToRegles: RedirectFunction = ({ queryParams, fra
   const query = params.toString();
   return query ? `/regles?${query}` : '/regles';
 };
+
+/**
+ * `/kpi` (the Autopsie) became « Versions du plan » (issue #702). Its
+ * `?edition=*` listed every edition's solves, which the page still does under
+ * `?editions=toutes`; a single edition, a rank of the replay or a dosage
+ * filter has nothing left to land on.
+ */
+export const redirectKpiToVersions: RedirectFunction = ({ queryParams }) =>
+  queryParams['edition'] === '*' ? '/versions?editions=toutes' : '/versions';
 
 /**
  * Two tabs of Paramètres left the page (issue #720): the legal parameters are
@@ -395,21 +406,19 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/aide/aide-page').then((m) => m.AidePage),
   },
   {
-    path: 'kpi',
-    title: () => $localize`:@@route.kpi:KPI`,
-    loadComponent: () => import('./pages/kpi/kpi-page').then((m) => m.KpiPage),
+    // The finished solves and the snapshots of the edition in one chronology,
+    // the comparator as a panel beside it (issue #702).
+    path: 'versions',
+    title: () => $localize`:@@route.versions:Versions du plan`,
+    loadComponent: () => import('./pages/versions/versions-page').then((m) => m.VersionsPage),
   },
-  {
-    path: 'comparateur',
-    title: () => $localize`:@@route.comparateur:Comparateur A/B`,
-    loadComponent: () =>
-      import('./pages/comparateur/comparateur-page').then((m) => m.ComparateurPage),
-  },
-  {
-    path: 'instantanes',
-    title: () => $localize`:@@route.instantanes:Instantanés`,
-    loadComponent: () => import('./pages/snapshots/snapshots-page').then((m) => m.SnapshotsPage),
-  },
+  // The Autopsie, the Instantanés and the Comparateur became that one page.
+  // Their params named the replay (`edition`, `rang`) and a dosage filter,
+  // neither of which survived: the address alone is kept — but for the
+  // Autopsie's every-edition view, which the page keeps as a view of its own.
+  { path: 'kpi', redirectTo: redirectKpiToVersions },
+  { path: 'instantanes', redirectTo: '/versions' },
+  { path: 'comparateur', redirectTo: '/versions' },
   {
     path: 'editions',
     title: () => $localize`:@@route.editions:Éditions`,

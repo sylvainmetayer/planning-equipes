@@ -1,7 +1,6 @@
-// Reading a Dosage — the weighting a solve ran under — the same way on the
-// three screens that show one: the Autopsie (a column and a filter), the
-// Comparateur (a banner when two plans differ) and the weight history of the
-// Contraintes page. Pure, so it is unit tested without rendering.
+// Reading a Dosage — the weighting a solve ran under — the same way wherever
+// one is shown: the comparison of « Versions du plan » (a banner when two
+// plans differ) and the weight history of « Règles du planning ». Pure, so it is unit tested without rendering.
 
 import { Dosage } from './models';
 import { compareCodeUnits } from './string-order';
@@ -21,20 +20,6 @@ export function dosageKey(dosage: Dosage | null | undefined): string | null {
     [...(dosage.disabled ?? [])].sort(compareCodeUnits),
     [...(dosage.enabled ?? [])].sort(compareCodeUnits),
   ]);
-}
-
-/** A short, stable token for a dosage, fit for a URL; `null` for an unknown one. */
-export function dosageToken(dosage: Dosage | null | undefined): string | null {
-  const key = dosageKey(dosage);
-  if (key === null) {
-    return null;
-  }
-  // djb2, base 36: a URL token, not a security boundary.
-  let hash = 5381;
-  for (let i = 0; i < key.length; i++) {
-    hash = ((hash << 5) + hash + key.charCodeAt(i)) | 0;
-  }
-  return (hash >>> 0).toString(36);
 }
 
 /** How many rules the edition moved away from a default: reweighted, switched off, switched on. */

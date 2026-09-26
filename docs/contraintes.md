@@ -637,7 +637,7 @@ stockés et leur historique, et les scénarios livrés portent leurs poids à la
 nouvelle échelle. Le classement des plans ne change pas ; leurs scores medium
 et soft sont multipliés par cinq. Le dosage mémorisé par une résolution passée
 et son score, eux, ne sont pas touchés : ils disent sous quels poids ce plan a
-été calculé, et le Comparateur dit à juste titre qu'un plan d'avant et un plan
+été calculé, et la comparaison de Versions du plan dit à juste titre qu'un plan d'avant et un plan
 d'après ne se comparent pas à poids égaux. Voir
 [0057](decisions/0057-importance-d-une-regle-en-trois-positions.md).
 
@@ -647,9 +647,9 @@ Un dosage se règle à tâtons, et le tâtonnement ne vaut que si l'on peut
 relire ce qu'il a donné. Chaque changement effectif de poids ou d'activation
 est donc historisé par édition, valeurs comprises, et chaque résolution
 mémorise le dosage sous lequel elle a été **lancée** : le panneau d'une règle,
-dans Règles du planning, pose les changements et les scores qui ont suivi, l'Autopsie
-filtre les résolutions calculées sous le même dosage, et le Comparateur signale
-deux plans que des poids différents rendent incomparables. Ce rapprochement est
+dans Règles du planning, pose les changements et les scores qui ont suivi, et
+la comparaison de Versions du plan signale deux plans que des poids
+différents rendent incomparables. Ce rapprochement est
 une juxtaposition, pas une mesure d'effet — voir
 [`api.md`](api.md#historique-des-réglages-de-pondération).
 
@@ -750,7 +750,7 @@ rien, elle ne coûte rien, et « satisfaite » est exact.
 Le **score hors plancher** — le score brut moins, niveau par niveau, ce que
 coûtent les règles signalées — est la part qu'une résolution peut faire
 bouger : il s'affiche à côté du score brut sur le
-récapitulatif du Solveur, dans le Comparateur A/B et l'Autopsie (`kpi`
+récapitulatif du Solveur, dans la comparaison de Versions du plan (`kpi`
 d'un instantané ; absent, jamais zéro, sur un instantané pris avant la
 mesure). Le plancher est signé comme le score dont il vient.
 
