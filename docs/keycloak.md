@@ -53,9 +53,12 @@ un compte dont personne n'a confirmé l'adresse (import en masse, faute de frapp
 d'un administrateur), et l'accepter ici donnerait l'espace de quelqu'un à qui
 saurait créer un tel compte.
 
-Un compte fraîchement provisionné porte `email_verified: false` jusqu'à ce que
-son invitation soit allée au bout. La connexion réussit, puis l'espace refuse :
-ce n'est pas une panne, c'est l'invitation qui attend.
+Un compte créé par l'enregistrement d'une fiche naît **vérifié** : il n'a pas de
+mot de passe, et la seule porte est un code envoyé à cette même adresse — la
+preuve que « vérifiée » désigne, refaite à chaque connexion. Un compte créé par
+un import naît non vérifié, ce qui le marque « à inviter » ; saisir le bon code
+par e-mail le vérifie de toute façon (l'extension le fait), si bien qu'une
+personne qui se connecte avant son invitation entre dans son espace.
 
 ## Les rôles, et ce qu'ils ouvrent
 
@@ -73,6 +76,15 @@ politiques HTTP.
 `/mcp` n'accepte que `mcp`, jamais `admin` : porter le rôle d'administration
 n'est pas porter celui du serveur MCP. Un `403` sur `/api/*` veut dire
 « connecté, mais pas administrateur ».
+
+Un administrateur en fait un autre depuis l'écran **Comptes et droits**
+(« Inviter un administrateur », `POST /api/comptes/administrateurs`) : le
+compte de service pose le rôle de realm `admin` — dans le realm et non dans la
+base, puisque c'est sur ce rôle que le flow exige le TOTP —, crée et invite le
+compte s'il manque, et la prochaine connexion impose de configurer le second
+facteur. Sans provisioning, la route répond `409` : le rôle se donne alors à la
+console, ou par le playbook. Le retirer : désactiver le compte dans
+l'application (effet immédiat), ou retirer le rôle à la console.
 
 ### `user` n'ouvre rien, et c'est le point
 
@@ -317,7 +329,9 @@ d'autre.
 
 | Événement sur la fiche | Effet dans le realm |
 | --- | --- |
-| Création | Compte créé s'il n'existe pas (clé : l'adresse), rôle `animateur`, invitation envoyée par Keycloak : vérifier l'adresse, puis créer une passkey — aucun mot de passe |
+| Création | Compte créé s'il n'existe pas (clé : l'adresse), adresse vérifiée, rôle `animateur`, invitation envoyée par Keycloak (en français, lien valable 48 h) — aucun mot de passe, passkey facultative |
+| Import CSV, import de scénario, duplication d'une édition | Comptes manquants créés, **sans aucun mail** : non vérifiés, donc « à inviter ». Un échec de Keycloak n'annule pas l'import, il est journalisé |
+| « Envoyer les invitations » (écran Animateurs) | Chaque personne de l'édition jamais invitée reçoit son invitation, son compte créé s'il manquait, puis compte comme invitée : un second clic n'écrit à personne deux fois |
 | Modification | Compte créé s'il manque (une fiche qui gagne une adresse, une fiche d'avant le provisioning), prénom et nom alignés. Un compte désactivé à la console le reste |
 | Adresse changée | Le compte de la **nouvelle** adresse est retrouvé ou créé ; l'ancien n'est pas renommé — il appartient peut-être à quelqu'un d'autre |
 | Suppression | Compte **désactivé**, et seulement si plus aucune fiche, dans aucune édition, ne porte l'adresse. Jamais supprimé |
@@ -326,26 +340,40 @@ Créer ou modifier une fiche **échoue** si le compte ne peut pas être écrit :
 ce mode, le compte *est* l'accès. Supprimer une fiche **n'échoue jamais**
 là-dessus : la fiche est partie de toute façon, et un compte resté actif n'ouvre
 rien par lui-même. `OIDC_PROVISIONING_SEND_INVITATION=false` crée une saison
-entière de comptes sans envoyer 150 invitations d'un coup.
+entière de comptes sans envoyer 150 invitations d'un coup ; le bouton « Envoyer
+les invitations » les envoie ensuite, quel que soit ce réglage — c'est un
+geste explicite.
 
-### Un animateur n'a pas de mot de passe
+Le lien d'une invitation vit **48 h** (`actionTokenGeneratedByAdminLifespan`,
+`action_token_generated_by_admin_lifespan` en Terraform) plutôt que les 12 h
+par défaut : un animateur ne lit pas toujours ses mails le jour même. Passé ce
+délai, le code par e-mail suffit à se connecter. Pages et mails sont en
+**français** par défaut (`defaultLocale: fr`) : sans langue par défaut,
+Keycloak écrit en anglais.
+
+### Un animateur n'a pas de mot de passe, la passkey est facultative
 
 L'invitation porte les actions de `OIDC_PROVISIONING_INVITATION_ACTIONS`, par
-défaut `VERIFY_EMAIL,webauthn-register-passwordless` : la personne confirme son
-adresse, puis enregistre une passkey sur son téléphone (visage, empreinte ou
-code de l'appareil). Elle ne choisit jamais de mot de passe.
+défaut `VERIFY_EMAIL` : la personne confirme son adresse, et c'est tout. Elle ne
+choisit jamais de mot de passe : elle se connecte avec un code à six chiffres
+reçu par e-mail, que Keycloak propose d'emblée à un compte sans mot de passe.
 
-- **Se connecter** : le téléphone propose la passkey dès l'écran de l'adresse
+- **Code par e-mail et adresse vérifiée** : saisir le bon code prouve la boîte
+  aux lettres, et l'extension marque alors l'adresse vérifiée. Une personne qui
+  n'a pas suivi son invitation entre donc quand même dans son espace — sans
+  cela, elle se connectait puis lisait « ce compte n'ouvre pas cet espace ».
+- **Ajouter une passkey (facultatif)** : dans l'espace, le menu « Ma passkey et
+  mes moyens de connexion » mène à la page de la console de compte Keycloak
+  (`GET /api/auth/oidc/compte`) où l'enregistrer, la remplacer ou la retirer.
+  Le téléphone la propose ensuite dès l'écran de l'adresse
   (`webAuthnPolicyPasswordlessPasskeysEnabled`, `passwordless_passkeys_enabled`
-  en Terraform) ; taper l'adresse puis choisir la passkey marche aussi.
+  en Terraform).
 - **Passkey perdue, nouveau téléphone** : après l'adresse, « Essayer une autre
-  méthode » envoie un code à six chiffres par e-mail — la méthode de repli, que
-  Keycloak propose d'emblée à un compte sans mot de passe ni passkey. Une fois
-  dans l'espace, le menu « Ma passkey et mes moyens de connexion » mène à la
-  page de la console de compte Keycloak (`GET /api/auth/oidc/compte`) où
-  enregistrer la nouvelle passkey et retirer l'ancienne.
-- **Un appareil sans passkey** : l'invitation échoue à la seconde étape, l'adresse
-  est pourtant vérifiée, et le code par e-mail suffit à se connecter.
+  méthode » renvoie au code par e-mail.
+- **Pourquoi pas imposée** : `VERIFY_EMAIL,webauthn-register-passwordless` fait
+  enregistrer la passkey dès l'invitation, mais bloque tout navigateur ou
+  appareil sans WebAuthn (« WebAuthn is not supported by this browser »), et
+  tout accès hors HTTPS.
 
 Le repli par e-mail fait de la boîte aux lettres la clé du compte : c'est le
 niveau de l'ancien code de l'espace, et il ne vaut que pour un rôle qui n'ouvre
@@ -521,7 +549,9 @@ personne qui part. Il est idempotent et ne fait **jamais** trois choses :
   vient de créer (`-e keycloak_reinviter=<adresse>` pour la renvoyer à la main).
 
 Il refuse `user` comme privilège, et le rôle `animateur`, qui appartient à
-l'application.
+l'application. Pour un administrateur ajouté en cours de saison, « Inviter un
+administrateur » dans l'écran Comptes et droits évite de repasser par le
+playbook.
 
 ### Variables de l'application
 
@@ -539,7 +569,7 @@ l'application.
 | `OIDC_PROVISIONING_REALM` | `planning` |
 | `OIDC_PROVISIONING_CLIENT_ID` / `_SECRET` | Le compte de service `planning-provisioning` |
 | `OIDC_PROVISIONING_SEND_INVITATION` | `false` pour créer en masse sans envoyer d'invitation |
-| `OIDC_PROVISIONING_INVITATION_ACTIONS` | `VERIFY_EMAIL,webauthn-register-passwordless` par défaut : adresse vérifiée, puis passkey, sans mot de passe |
+| `OIDC_PROVISIONING_INVITATION_ACTIONS` | `VERIFY_EMAIL` par défaut : adresse vérifiée, sans mot de passe ; la passkey reste facultative |
 | `ADMIN_SECOURS_ENABLED` | `false` par défaut : le compte de secours est fermé |
 | `ADMIN_PASSWORD` | Le mot de passe du compte de secours, obligatoire même fermé |
 

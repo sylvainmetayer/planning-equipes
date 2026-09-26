@@ -972,6 +972,23 @@
           }
         }
       },
+      "BilanComptes" : {
+        "type" : "object",
+        "properties" : {
+          "crees" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "invites" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "echecs" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
       "BorneRetenue" : {
         "type" : "string",
         "enum" : [ "PIC_SIMULTANE", "PIC_AVEC_PAUSE", "CHARGE_HORAIRE", "ROTATION_JOURS", "COUPURE_REPAS" ]
@@ -3586,6 +3603,18 @@
           },
           "statut" : {
             "$ref" : "#/components/schemas/Statut"
+          }
+        }
+      },
+      "EtatInvitations" : {
+        "type" : "object",
+        "properties" : {
+          "actif" : {
+            "type" : "boolean"
+          },
+          "enAttente" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -9230,6 +9259,40 @@
         "tags" : [ "Animateur Resource" ]
       }
     },
+    "/api/animateurs/invitations" : {
+      "post" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BilanComptes"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Send Invitations",
+        "tags" : [ "Animateur Resource" ]
+      },
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EtatInvitations"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Invitation Status",
+        "tags" : [ "Animateur Resource" ]
+      }
+    },
     "/api/animateurs/relances" : {
       "post" : {
         "requestBody" : {
@@ -9677,6 +9740,37 @@
           }
         },
         "summary" : "Create",
+        "tags" : [ "Compte Resource" ]
+      }
+    },
+    "/api/comptes/administrateurs" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/NouveauCompte"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Compte"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Invite Administrator",
         "tags" : [ "Compte Resource" ]
       }
     },

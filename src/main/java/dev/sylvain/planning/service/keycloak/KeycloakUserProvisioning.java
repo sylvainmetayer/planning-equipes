@@ -8,8 +8,12 @@ import io.quarkus.logging.Log;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.keycloak.OAuth2Constants;
@@ -58,10 +62,14 @@ import org.keycloak.representations.idm.UserRepresentation;
  *       error, for an operator to disable the account by hand.</li>
  * </ul>
  *
- * <p>Bulk paths — the CSV import, a scenario import, duplicating an edition —
- * do not provision: an import would otherwise send one invitation per row
- * before anyone reviewed it. Those accounts are created on the next save of
- * the fiche (docs/keycloak.md).</p>
+ * <h2>Bulk paths create, and invite later</h2>
+ * <p>The CSV import, a scenario import and duplicating an edition create the
+ * missing accounts — {@link #provisionMissing} — but send nothing: an import
+ * would otherwise mail one invitation per row before anyone reviewed the
+ * list. The organiser sends them afterwards, in one gesture, from the
+ * animateurs screen ({@link #inviteAwaiting}). Until then the person can
+ * still sign in, with the code by e-mail: entering it proves the mailbox, and
+ * the authenticator marks the address verified.</p>
  *
  * <p>Accounts are <b>disabled, never deleted</b> — and only once no fiche in
  * any edition still carries the address. Deleting would destroy the sign-in
@@ -72,6 +80,44 @@ import org.keycloak.representations.idm.UserRepresentation;
 public class KeycloakUserProvisioning {
 
     private static final int HTTP_CREATED = 201;
+
+    /** The realm role of administrators, the one the login flow asks a TOTP of. */
+    private static final String ADMIN = "admin";
+
+    /** How many accounts one page of the realm's user listing carries. */
+    private static final int PAGE_UTILISATEURS = 200;
+
+    /**
+     * What a bulk pass did, address by address — one person counted once,
+     * however many fiches carry their address.
+     *
+     * @param crees   accounts created
+     * @param invites invitations Keycloak accepted to send
+     * @param echecs  addresses the realm refused, detailed in the log
+     */
+    public record BilanComptes(int crees, int invites, int echecs) {
+        static final BilanComptes RIEN = new BilanComptes(0, 0, 0);
+    }
+
+    /**
+     * @param actif     whether this application provisions accounts at all
+     * @param enAttente addresses of the edition whose owner was never
+     *                  invited: no account, or one a bulk path created — what
+     *                  {@link #inviteAwaiting} would mail
+     */
+    public record EtatInvitations(boolean actif, int enAttente) {}
+
+    /** Where one address stands in the realm. */
+    enum Situation {
+        /** No account: created, then invited. */
+        SANS_COMPTE,
+        /** An account created by a bulk path, never invited nor signed in: invited. */
+        NON_VERIFIE,
+        /** Nothing to do. */
+        PRET,
+        /** Closed by an administrator: left alone, never reopened by a bulk pass. */
+        DESACTIVE
+    }
 
     @Inject
     ConfigOidc config;
@@ -119,13 +165,229 @@ public class KeycloakUserProvisioning {
             if (existant.isPresent()) {
                 update(realm, existant.get(), animateur, nouvelleAdresse);
             } else {
-                create(realm, animateur, email.get());
+                create(realm, animateur, email.get(), config.provisioning().sendInvitation());
             }
         } catch (RuntimeException e) {
             Log.errorf(e, "Keycloak provisioning failed for animateur %s", animateur.getId());
             throw new BusinessError.Conflict("Le compte Keycloak de cette fiche n'a pas pu être créé ou mis à "
                     + "jour (" + e.getMessage() + ") : sans compte, son titulaire ne peut pas ouvrir son "
                     + "espace. Réessayez d'enregistrer la fiche.");
+        }
+    }
+
+    /**
+     * Creates, without mailing anyone, the accounts the given fiches lack —
+     * the bulk paths' half of provisioning (see the class javadoc).
+     *
+     * <p>Never throws: the import it follows is already written, and undoing
+     * it because the identity provider is down would lose the organiser's
+     * work over something a later pass repairs. A failure is logged and
+     * counted; {@link #invitationStatus} still reports the address as waiting,
+     * and {@link #inviteAwaiting} creates what is missing.</p>
+     */
+    public BilanComptes provisionMissing(Collection<Animateur> fiches) {
+        if (!actif()) {
+            return BilanComptes.RIEN;
+        }
+        Map<String, Animateur> parAdresse = byAddress(fiches);
+        if (parAdresse.isEmpty()) {
+            return BilanComptes.RIEN;
+        }
+        try {
+            RealmResource realm = realm();
+            Map<String, UserRepresentation> comptes = accountsByAddress(realm);
+            int crees = 0;
+            int echecs = 0;
+            for (Map.Entry<String, Animateur> entree : parAdresse.entrySet()) {
+                if (situation(comptes.get(entree.getKey())) != Situation.SANS_COMPTE) {
+                    continue;
+                }
+                try {
+                    create(realm, entree.getValue(), entree.getKey(), false);
+                    crees++;
+                } catch (RuntimeException e) {
+                    Log.errorf(e, "Keycloak account could not be created for %s", entree.getKey());
+                    echecs++;
+                }
+            }
+            return new BilanComptes(crees, 0, echecs);
+        } catch (RuntimeException e) {
+            Log.errorf(e, "Keycloak unreachable: %d account(s) left to create", parAdresse.size());
+            return new BilanComptes(0, 0, parAdresse.size());
+        }
+    }
+
+    /**
+     * How many of these fiches' owners were never invited. Answers
+     * {@code actif = false} rather than failing when provisioning is off, so
+     * the screen simply shows nothing.
+     */
+    public EtatInvitations invitationStatus(Collection<Animateur> fiches) {
+        if (!actif()) {
+            return new EtatInvitations(false, 0);
+        }
+        Map<String, Animateur> parAdresse = byAddress(fiches);
+        if (parAdresse.isEmpty()) {
+            return new EtatInvitations(true, 0);
+        }
+        Map<String, UserRepresentation> comptes = readAccounts();
+        long enAttente = parAdresse.keySet().stream()
+                .map(adresse -> situation(comptes.get(adresse)))
+                .filter(KeycloakUserProvisioning::awaitsInvitation)
+                .count();
+        return new EtatInvitations(true, (int) enAttente);
+    }
+
+    /**
+     * The organiser's explicit gesture after an import: every owner of these
+     * fiches who was never invited receives the invitation — the account
+     * created first when missing — and counts as invited from then on, so a
+     * second press mails nobody twice.
+     *
+     * <p>Sent whatever {@code OIDC_PROVISIONING_SEND_INVITATION} says: that
+     * setting governs the mail a single save sends on its own, and this is
+     * someone pressing « send ».</p>
+     */
+    public BilanComptes inviteAwaiting(Collection<Animateur> fiches) {
+        if (!actif()) {
+            throw new BusinessError.Conflict(
+                    "La création des comptes Keycloak est désactivée : il n'y a pas d'invitation à envoyer.");
+        }
+        Map<String, Animateur> parAdresse = byAddress(fiches);
+        if (parAdresse.isEmpty()) {
+            return BilanComptes.RIEN;
+        }
+        RealmResource realm = realm();
+        Map<String, UserRepresentation> comptes = readAccounts();
+        int crees = 0;
+        int invites = 0;
+        int echecs = 0;
+        for (Map.Entry<String, Animateur> entree : parAdresse.entrySet()) {
+            String adresse = entree.getKey();
+            UserRepresentation compte = comptes.get(adresse);
+            Situation situation = situation(compte);
+            if (!awaitsInvitation(situation)) {
+                continue;
+            }
+            try {
+                String id;
+                if (situation == Situation.SANS_COMPTE) {
+                    id = create(realm, entree.getValue(), adresse, false);
+                    crees++;
+                } else {
+                    id = compte.getId();
+                }
+                sendInvitation(realm, id);
+                markInvited(realm, id);
+                invites++;
+            } catch (RuntimeException e) {
+                Log.errorf(e, "Keycloak invitation could not be sent to %s", adresse);
+                echecs++;
+            }
+        }
+        Log.infof("Keycloak invitations: %d sent, %d account(s) created, %d failed", invites, crees, echecs);
+        return new BilanComptes(crees, invites, echecs);
+    }
+
+    /** The first fiche for each address, addresses normalised; fiches without one are skipped. */
+    static Map<String, Animateur> byAddress(Collection<Animateur> fiches) {
+        Map<String, Animateur> parAdresse = new LinkedHashMap<>();
+        for (Animateur fiche : fiches) {
+            emailOf(fiche).ifPresent(adresse -> parAdresse.putIfAbsent(adresse, fiche));
+        }
+        return parAdresse;
+    }
+
+    static Situation situation(UserRepresentation compte) {
+        if (compte == null) {
+            return Situation.SANS_COMPTE;
+        }
+        if (!Boolean.TRUE.equals(compte.isEnabled())) {
+            return Situation.DESACTIVE;
+        }
+        return Boolean.TRUE.equals(compte.isEmailVerified()) ? Situation.PRET : Situation.NON_VERIFIE;
+    }
+
+    static boolean awaitsInvitation(Situation situation) {
+        return situation == Situation.SANS_COMPTE || situation == Situation.NON_VERIFIE;
+    }
+
+    /**
+     * The realm's accounts, for a screen or a gesture that must report a
+     * Keycloak it cannot reach rather than pretend there is nothing to do.
+     */
+    private Map<String, UserRepresentation> readAccounts() {
+        try {
+            return accountsByAddress(realm());
+        } catch (RuntimeException e) {
+            Log.errorf(e, "Keycloak accounts could not be listed");
+            throw new BusinessError.Conflict(
+                    "Keycloak ne répond pas (" + e.getMessage() + ") : réessayez dans un instant.");
+        }
+    }
+
+    /**
+     * Every account of the realm, by address, read page by page: one listing
+     * rather than one search per fiche, which an import of a few hundred rows
+     * would otherwise cost.
+     */
+    private Map<String, UserRepresentation> accountsByAddress(RealmResource realm) {
+        Map<String, UserRepresentation> parAdresse = new HashMap<>();
+        for (int debut = 0; ; debut += PAGE_UTILISATEURS) {
+            List<UserRepresentation> page = realm.users().list(debut, PAGE_UTILISATEURS);
+            if (page == null) {
+                break;
+            }
+            for (UserRepresentation compte : page) {
+                if (compte.getEmail() != null && !compte.getEmail().isBlank()) {
+                    parAdresse.put(compte.getEmail().trim().toLowerCase(Locale.ROOT), compte);
+                }
+            }
+            if (page.size() < PAGE_UTILISATEURS) {
+                break;
+            }
+        }
+        return parAdresse;
+    }
+
+    /**
+     * Makes {@code email} an administrator: its account created when missing
+     * — verified, invited like an animateur's — then the realm role
+     * {@code admin} granted. The realm role and not a right of this
+     * application's own: the login flow imposes the TOTP second factor on
+     * that role, so an administrator made anywhere else would sign in without
+     * one. The next sign-in asks for the TOTP to be configured.
+     *
+     * @return whether the account was created, hence invited, just now
+     */
+    public boolean grantAdmin(String email, String nom) {
+        if (!actif()) {
+            throw new BusinessError.Conflict("La création des comptes Keycloak est désactivée : donnez le rôle " + ADMIN
+                    + " depuis la console Keycloak.");
+        }
+        String adresse = email.trim().toLowerCase(Locale.ROOT);
+        try {
+            RealmResource realm = realm();
+            Optional<UserRepresentation> existant = findByEmail(realm, adresse);
+            if (existant.isPresent() && !Boolean.TRUE.equals(existant.get().isEnabled())) {
+                throw new BusinessError.Conflict("Le compte Keycloak de " + adresse
+                        + " est désactivé : réactivez-le depuis la console Keycloak avant d'en faire un"
+                        + " administrateur.");
+            }
+            String id = existant.isPresent() ? existant.get().getId() : createAccount(realm, adresse, nom, null, true);
+            if (!assignRole(realm, id, ADMIN)) {
+                // Logged, not thrown, for an animateur; an administrator
+                // who is not one after all is a failure to report.
+                throw new IllegalStateException("le rôle " + ADMIN + " n'existe pas dans le realm");
+            }
+            Log.infof("Keycloak realm role %s granted to %s", ADMIN, adresse);
+            return existant.isEmpty();
+        } catch (BusinessError e) {
+            throw e;
+        } catch (RuntimeException e) {
+            Log.errorf(e, "Keycloak realm role %s could not be granted to %s", ADMIN, adresse);
+            throw new BusinessError.Conflict(
+                    "Keycloak n'a pas accepté le rôle administrateur (" + e.getMessage() + ") : réessayez.");
         }
     }
 
@@ -156,18 +418,33 @@ public class KeycloakUserProvisioning {
         }
     }
 
-    private void create(RealmResource realm, Animateur animateur, String email) {
+    /** @return the id Keycloak gave the account */
+    private String create(RealmResource realm, Animateur animateur, String email, boolean inviter) {
+        String id = createAccount(realm, email, animateur.getPrenom(), animateur.getNom(), inviter);
+        assignRole(realm, id, config.animateurRole());
+        return id;
+    }
+
+    /**
+     * The account alone, no role: an animateur's gets {@code animateur}, an
+     * administrator's {@code admin} — and neither the other's.
+     *
+     * @return the id Keycloak gave the account
+     */
+    private String createAccount(RealmResource realm, String email, String prenom, String nom, boolean inviter) {
         UserRepresentation utilisateur = new UserRepresentation();
         utilisateur.setUsername(email);
         utilisateur.setEmail(email);
-        utilisateur.setFirstName(animateur.getPrenom());
-        utilisateur.setLastName(animateur.getNom());
+        utilisateur.setFirstName(prenom);
+        utilisateur.setLastName(nom);
         utilisateur.setEnabled(true);
-        // Unverified on purpose: the invitation below is what makes the
-        // address verified, and OidcAuthentication refuses a session whose
-        // email_verified is false. Marking it verified here would hand the
-        // espace to whoever the address was mistyped into.
-        utilisateur.setEmailVerified(false);
+        // Verified from the start when the invitation leaves with it: the
+        // account has no password, so the only way in is a code sent to this
+        // very mailbox — the proof "verified" stands for, made at each sign-in
+        // (the email-code authenticator marks it too). Left unverified by a
+        // bulk path, which invites nobody: that is how inviteAwaiting knows
+        // who still waits for their invitation.
+        utilisateur.setEmailVerified(inviter);
         // `var` rather than the declared JAX-RS type: this class lives in
         // service/, which LayeringStructuralTest keeps free of transport types
         // — the admin client returns one, it is closed here, and it never
@@ -180,11 +457,11 @@ public class KeycloakUserProvisioning {
         }
         UserRepresentation cree = findByEmail(realm, email)
                 .orElseThrow(() -> new IllegalStateException("Compte créé puis introuvable pour " + email));
-        assignRole(realm, cree.getId());
-        if (config.provisioning().sendInvitation()) {
+        if (inviter) {
             invite(realm, cree.getId(), email);
         }
         Log.infof("Keycloak account created for %s", email);
+        return cree.getId();
     }
 
     /**
@@ -210,7 +487,7 @@ public class KeycloakUserProvisioning {
             realm.users().get(utilisateur.getId()).update(utilisateur);
         }
         if (nouvelleAdresse) {
-            assignRole(realm, utilisateur.getId());
+            assignRole(realm, utilisateur.getId(), config.animateurRole());
         }
     }
 
@@ -244,8 +521,7 @@ public class KeycloakUserProvisioning {
      * administrator can add from the console once the log says which one is
      * missing.</p>
      */
-    private void assignRole(RealmResource realm, String userId) {
-        String attendu = config.animateurRole();
+    private boolean assignRole(RealmResource realm, String userId, String attendu) {
         var roles = realm.users().get(userId).roles().realmLevel();
 
         Optional<RoleRepresentation> assignable = roles.listAvailable().stream()
@@ -253,16 +529,17 @@ public class KeycloakUserProvisioning {
                 .findFirst();
         if (assignable.isPresent()) {
             roles.add(List.of(assignable.get()));
-            return;
+            return true;
         }
 
         boolean dejaPorte = roles.listAll().stream().anyMatch(porte -> attendu.equals(porte.getName()));
         if (!dejaPorte) {
             Log.errorf(
-                    "Le rôle « %s » n'existe pas dans le realm %s : le compte %s a été créé sans accès à son"
-                            + " espace. Vérifiez OIDC_ANIMATEUR_ROLE et les rôles du realm.",
+                    "Le rôle « %s » n'existe pas dans le realm %s : le compte %s a été créé sans ce rôle."
+                            + " Vérifiez les rôles du realm (et OIDC_ANIMATEUR_ROLE pour les animateurs).",
                     attendu, config.provisioning().realm(), userId);
         }
+        return dejaPorte;
     }
 
     /**
@@ -275,11 +552,26 @@ public class KeycloakUserProvisioning {
      */
     private void invite(RealmResource realm, String userId, String email) {
         try {
-            UserResource utilisateur = realm.users().get(userId);
-            utilisateur.executeActionsEmail(config.provisioning().invitationActions());
+            sendInvitation(realm, userId);
         } catch (RuntimeException e) {
             Log.warnf(e, "Keycloak invitation mail could not be sent to %s; the account exists", email);
         }
+    }
+
+    /**
+     * Invited now counts as verified, as for an account created by a save:
+     * the next round does not mail the same person again.
+     */
+    private void markInvited(RealmResource realm, String userId) {
+        UserResource utilisateur = realm.users().get(userId);
+        UserRepresentation representation = utilisateur.toRepresentation();
+        representation.setEmailVerified(true);
+        utilisateur.update(representation);
+    }
+
+    private void sendInvitation(RealmResource realm, String userId) {
+        UserResource utilisateur = realm.users().get(userId);
+        utilisateur.executeActionsEmail(config.provisioning().invitationActions());
     }
 
     private Optional<UserRepresentation> findByEmail(RealmResource realm, String email) {

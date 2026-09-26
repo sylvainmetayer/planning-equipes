@@ -30,6 +30,7 @@ import {
   Animateur,
   ConfirmationView,
   StatutConfirmation,
+  EtatInvitations,
   SyntheseConfirmations,
 } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
@@ -229,6 +230,9 @@ export class AnimateursPage implements OnInit {
   /** The same answers in three numbers, for the head of the page; `null` until read, or when unreadable. */
   protected readonly synthese = signal<SyntheseConfirmations | null>(null);
 
+  /** Who was never invited to their Keycloak account; null while unknown. */
+  protected readonly invitations = signal<EtatInvitations | null>(null);
+
   /** « Confirmés 12 · Relancés 3 · Silencieux 5 — Dernière publication le … », or nothing to say yet. */
   protected readonly syntheseLabel = computed(() => {
     const synthese = this.synthese();
@@ -410,6 +414,54 @@ export class AnimateursPage implements OnInit {
 
   ngOnInit(): void {
     void this.chargerConfirmations();
+    void this.loadInvitations();
+  }
+
+  /**
+   * Silent on failure, like the acknowledgements: without an answer the
+   * button simply does not show, and the rest of the page works.
+   */
+  private async loadInvitations(): Promise<void> {
+    try {
+      this.invitations.set(await this.animateursApi.invitationStatus());
+    } catch {
+      this.invitations.set(null);
+    }
+  }
+
+  /**
+   * « Envoyer les invitations »: an import creates the Keycloak accounts but
+   * mails nobody, so the organiser reviews the list first, then invites
+   * everyone still waiting in one gesture.
+   */
+  protected async sendInvitations(): Promise<void> {
+    const awaiting = this.invitations()?.enAttente ?? 0;
+    const confirmed = await this.confirmDialog.ask({
+      title: $localize`:@@animateurs.invitations.titre:Inviter ${awaiting}:count: animateur(s) ?`,
+      message: $localize`:@@animateurs.invitations.message:Chacun recevra un e-mail pour confirmer son adresse, valable 48 heures ; ensuite, la connexion par code e-mail reste possible. Personne n'est invité deux fois.`,
+      confirmLabel: $localize`:@@animateurs.invitations.confirm:Envoyer`,
+    });
+    if (!confirmed) {
+      return;
+    }
+    try {
+      const bilan = await this.animateursApi.sendInvitations();
+      this.notifications.notify({
+        title: $localize`:@@animateurs.invitations.envoyees:${bilan.invites}:count: invitation(s) envoyée(s)`,
+        message:
+          bilan.echecs > 0
+            ? $localize`:@@animateurs.invitations.echecs:${bilan.echecs}:count: envoi(s) en échec : réessayez, le bouton ne reprend que ceux-là.`
+            : '',
+        variant: bilan.echecs > 0 ? 'warning' : 'success',
+      });
+    } catch (error) {
+      this.notifications.notify({
+        title: $localize`:@@crud.error:Erreur`,
+        message: errorMessage(error),
+        variant: 'error',
+      });
+    }
+    await this.loadInvitations();
   }
 
   /**

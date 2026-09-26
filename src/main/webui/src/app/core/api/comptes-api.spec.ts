@@ -35,6 +35,15 @@ describe('ComptesApi', () => {
     });
   });
 
+  it('invites an administrator on its own route', async () => {
+    await comptes.inviteAdministrator({ email: 'admin2@example.org', nom: 'Dominique' });
+
+    expect(api.post).toHaveBeenCalledWith('/api/comptes/administrateurs', {
+      email: 'admin2@example.org',
+      nom: 'Dominique',
+    });
+  });
+
   it('deactivates and reactivates without a body, the id escaped', async () => {
     await comptes.deactivate('a/b');
     await comptes.reactivate('a/b');

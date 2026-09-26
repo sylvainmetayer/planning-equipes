@@ -146,6 +146,22 @@ public class AnimateurService {
     }
 
     /**
+     * Whose owner, in this edition, was never invited to their Keycloak
+     * account — the count behind the « Envoyer les invitations » button.
+     */
+    public KeycloakUserProvisioning.EtatInvitations getInvitationStatus() {
+        return comptes.invitationStatus(repository.listAnimateurs());
+    }
+
+    /**
+     * Sends the invitations an import held back, for this edition's fiches
+     * (see {@link KeycloakUserProvisioning#inviteAwaiting}).
+     */
+    public KeycloakUserProvisioning.BilanComptes sendInvitations() {
+        return comptes.inviteAwaiting(repository.listAnimateurs());
+    }
+
+    /**
      * Removes the animateur, and vacates the seats they held (see
      * {@link AnimateurRepository#deleteAnimateur}).
      *

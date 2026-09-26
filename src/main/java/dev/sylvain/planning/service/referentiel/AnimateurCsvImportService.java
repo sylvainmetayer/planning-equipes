@@ -7,6 +7,7 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteRepository;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService;
+import dev.sylvain.planning.service.keycloak.KeycloakUserProvisioning;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -188,6 +189,10 @@ public class AnimateurCsvImportService {
 
     private final GelReferentielService gel;
 
+    /** No-op unless the Keycloak provisioning is on. */
+    @Inject
+    KeycloakUserProvisioning comptes;
+
     @Inject
     public AnimateurCsvImportService(
             AnimateurRepository animateurs,
@@ -266,6 +271,9 @@ public class AnimateurCsvImportService {
         }
         animateurs.importAnimateurs(analysis.toWrite(), analysis.toDelete());
         changeTracker.markModified();
+        // The accounts, without a single mail: the organiser reviews the list,
+        // then sends the invitations in one gesture (docs/keycloak.md).
+        comptes.provisionMissing(animateurs.listAnimateurs());
         // A created fiche has its id only now, drawn by the write: the report
         // names it, so the operator can find who was just added.
         List<AnimateurCsvImportReport.ImportedRow> rows = analysis.outcomes().stream()

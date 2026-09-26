@@ -111,4 +111,24 @@ class AnimateurResourceTest {
                 .body("find { it.id == '" + createdId + "' }.nom", equalTo("Martin"))
                 .body("find { it.id == '" + createdId + "' }.dateNaissance", equalTo("1990-01-01"));
     }
+
+    /**
+     * Without provisioning the screen shows no invitation button, and pressing
+     * « send » anyway is refused rather than answered « nothing to send ».
+     */
+    @Test
+    void withoutProvisioningThereIsNoInvitationToSend() {
+        given().when()
+                .get("/api/animateurs/invitations")
+                .then()
+                .statusCode(200)
+                .body("actif", equalTo(false))
+                .body("enAttente", equalTo(0));
+        given().contentType(ContentType.JSON)
+                .body("{}")
+                .when()
+                .post("/api/animateurs/invitations")
+                .then()
+                .statusCode(409);
+    }
 }

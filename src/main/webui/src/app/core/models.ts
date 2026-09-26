@@ -2951,6 +2951,23 @@ export interface RelanceDemande {
  * one-reminder rule (`dejaRelancesPourCettePublication`) holds across the
  * night and the hand.
  */
+/**
+ * Who, in this edition, was never invited to their Keycloak account: an
+ * import creates the accounts and mails nobody. `actif` is false without
+ * provisioning.
+ */
+export interface EtatInvitations {
+  actif: boolean;
+  enAttente: number;
+}
+
+/** What « Envoyer les invitations » did, one person counted once. */
+export interface BilanComptes {
+  crees: number;
+  invites: number;
+  echecs: number;
+}
+
 export interface RapportRelance {
   envoyes: string[];
   dejaConfirmes: string[];

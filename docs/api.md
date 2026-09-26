@@ -68,6 +68,9 @@ répond `409`. Ouvert, il répond `429` après cinq échecs depuis la même
 adresse, **y compris avec le bon mot de passe** ([`securite.md`](securite.md)).
 
 **Comptes et habilitations.** `GET/POST /api/comptes`,
+`POST /api/comptes/administrateurs` (`{ email, nom }` : rôle de realm `admin`
+posé dans Keycloak, compte créé et invité s'il manque ; `409` sans
+provisioning),
 `POST /api/comptes/{id}/desactivation|reactivation`,
 `POST /api/comptes/{id}/habilitations`,
 `DELETE /api/comptes/{id}/habilitations/{habilitationId}`. Un compte est créé à
@@ -2698,6 +2701,15 @@ Deux endpoints, même corps, et un seul écrit :
 | `POST` | `/api/animateurs/import-csv/analyse` | Lit le fichier et rend le rapport ligne par ligne. **N'ouvre aucune transaction** |
 | `POST` | `/api/animateurs/import-csv` | Relit le même fichier, rejoue toutes les vérifications, puis écrit les lignes acceptées en **une** transaction |
 | `GET` | `/api/animateurs/import-csv/exemple` | Rend le CSV d'exemple versionné (`text/csv`, en pièce jointe). Lecture pure, hors édition — le fichier est une ressource du classpath, pas une donnée |
+
+Avec le provisioning Keycloak, l'import crée les comptes manquants **sans
+envoyer de mail** (de même l'import de scénario et la duplication d'une
+édition) ; les invitations partent ensuite d'un geste :
+
+| Méthode | Chemin | Effet |
+| --- | --- | --- |
+| `GET` | `/api/animateurs/invitations` | `{ actif, enAttente }` : combien de personnes de l'édition n'ont jamais été invitées. `actif: false` sans provisioning |
+| `POST` | `/api/animateurs/invitations` | Invite chacune, son compte créé s'il manque ; rend `{ crees, invites, echecs }`. `409` sans provisioning ou si Keycloak ne répond pas |
 
 Le corps est identique aux deux : `{ fileName, content, mapping,
 replaceAnimateurs, replaceJoursIndisponibles }`. `content` est le texte du

@@ -192,6 +192,8 @@ describe('AnimateursPage table', () => {
     confirmations: ReturnType<typeof vi.fn>;
     syntheseConfirmations: ReturnType<typeof vi.fn>;
     remind: ReturnType<typeof vi.fn>;
+    invitationStatus: ReturnType<typeof vi.fn>;
+    sendInvitations: ReturnType<typeof vi.fn>;
   };
   const editingLocked = signal(false);
 
@@ -268,6 +270,8 @@ describe('AnimateursPage table', () => {
         echecs: [],
         sansPoste: [],
       })),
+      invitationStatus: vi.fn(async () => ({ actif: false, enAttente: 0 })),
+      sendInvitations: vi.fn(async () => ({ crees: 1, invites: 3, echecs: 0 })),
     };
     TestBed.configureTestingModule({
       providers: [
@@ -294,6 +298,31 @@ describe('AnimateursPage table', () => {
       ],
     });
     referenceData = TestBed.inject(ReferenceDataStore);
+  });
+
+  /** An import creates the accounts and mails nobody: the button sends what it held back. */
+  it('offers to send the invitations an import held back, and sends them once confirmed', async () => {
+    animateursApi.invitationStatus.mockResolvedValue({ actif: true, enAttente: 3 });
+    confirm.ask.mockResolvedValue(true);
+    await rendre([]);
+
+    const bouton = Array.from(racine().querySelectorAll('button')).find((each) =>
+      each.textContent!.includes('Envoyer les invitations (3)'),
+    );
+    expect(bouton).toBeDefined();
+    bouton!.click();
+    await fixture.whenStable();
+
+    expect(animateursApi.sendInvitations).toHaveBeenCalledOnce();
+    expect(notify).toHaveBeenCalledWith(
+      expect.objectContaining({ title: '3 invitation(s) envoyée(s)', variant: 'success' }),
+    );
+  });
+
+  it('shows no invitation button without provisioning', async () => {
+    await rendre([]);
+
+    expect(racine().textContent).not.toContain('Envoyer les invitations');
   });
 
   it('renders one row per animateur, with the derived majority and no appreciation column', async () => {

@@ -159,8 +159,12 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
               text: $localize`:@@aide.comptes.def.desactivation:Un compte désactivé perd tous ses rôles dans l'application, ceux du realm Keycloak compris — le rôle admin aussi. Désactiver son propre compte ferme donc l'administration à soi-même : l'écran prévient avant. Un compte se réactive, il ne se supprime jamais ; un droit se retire par « Retirer » et reste listé, daté : l'historique doit pouvoir dire qui détenait quoi, et quand.`,
             },
             {
+              term: $localize`:@@aide.comptes.term.admin:Inviter un administrateur`,
+              text: $localize`:@@aide.comptes.def.admin:« Inviter un administrateur » donne le rôle admin à une adresse, dans Keycloak : le compte est créé et invité s'il n'existait pas, et la prochaine connexion demande de configurer la double authentification. Pour retirer ce rôle, désactivez le compte ici ou retirez-le dans la console Keycloak.`,
+            },
+            {
               term: $localize`:@@aide.comptes.term.keycloak:Ce qui reste à Keycloak`,
-              text: $localize`:@@aide.comptes.def.keycloak:Les mots de passe, la double authentification et les rôles globaux (admin, mcp, animateur) se gèrent dans la console Keycloak, jamais ici ; la marche à suivre est dans la documentation d'exploitation (docs/keycloak.md).`,
+              text: $localize`:@@aide.comptes.def.keycloak:Les mots de passe, la double authentification et les rôles mcp et animateur se gèrent dans la console Keycloak, jamais ici ; la marche à suivre est dans la documentation d'exploitation (docs/keycloak.md).`,
             },
           ],
         },

@@ -4,6 +4,8 @@ import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.IdGenerator;
+import dev.sylvain.planning.service.keycloak.KeycloakUserProvisioning;
+import dev.sylvain.planning.service.referentiel.AnimateurRepository;
 import dev.sylvain.planning.service.referentiel.ParametresService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -26,6 +28,13 @@ public class EditionService {
 
     /** Opens a duplicated edition's weight history with the dosage it inherited. */
     private final ParametresService parametres;
+
+    /** No-op unless the Keycloak provisioning is on. */
+    @Inject
+    KeycloakUserProvisioning comptes;
+
+    @Inject
+    AnimateurRepository animateurs;
 
     @Inject
     public EditionService(
@@ -92,6 +101,11 @@ public class EditionService {
         // The copy starts its weight history with what it inherited — one
         // line per rule off the default — rather than the source's own past.
         editionContext.executeIn(cree.getId(), () -> parametres.recordInheritedDosage(sourceId));
+        if (avecAnimateurs) {
+            // Last year's people mostly have their account already; the ones
+            // who do not get it now, without a mail (docs/keycloak.md).
+            editionContext.executeIn(cree.getId(), () -> comptes.provisionMissing(animateurs.listAnimateurs()));
+        }
         return cree;
     }
 

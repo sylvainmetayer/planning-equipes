@@ -42,6 +42,7 @@ public final class CatalogueActions {
     private static final String STANDS_IMPORTES = "STANDS_IMPORTES";
     private static final String ANIMATEUR_COMPETENCES_GRILLE = "ANIMATEUR_COMPETENCES_GRILLE";
     private static final String ANIMATEURS_RELANCES = "ANIMATEURS_RELANCES";
+    private static final String ANIMATEURS_INVITES = "ANIMATEURS_INVITES";
     private static final String STAND_CREE = "STAND_CREE";
     private static final String STAND_MODIFIE = "STAND_MODIFIE";
     private static final String STAND_SUPPRIME = "STAND_SUPPRIME";
@@ -155,6 +156,7 @@ public final class CatalogueActions {
     private static final String COMPTE_CREE = "COMPTE_CREE";
     private static final String COMPTE_DESACTIVE = "COMPTE_DESACTIVE";
     private static final String COMPTE_REACTIVE = "COMPTE_REACTIVE";
+    private static final String ADMINISTRATEUR_INVITE = "ADMINISTRATEUR_INVITE";
     private static final String HABILITATION_ACCORDEE = "HABILITATION_ACCORDEE";
     private static final String HABILITATION_RETIREE = "HABILITATION_RETIREE";
     private static final String TELECHARGEMENT_ESPACE_PDF = "TELECHARGEMENT_ESPACE_PDF";
@@ -208,6 +210,7 @@ public final class CatalogueActions {
         changesData(STANDS_IMPORTES, "Stands importés depuis un fichier", Entite.STAND);
         changesData(ANIMATEUR_COMPETENCES_GRILLE, "Grille des compétences enregistrée", Entite.ANIMATEUR);
         action(ANIMATEURS_RELANCES, "Animateurs relancés à la main", Entite.ANIMATEUR);
+        action(ANIMATEURS_INVITES, "Invitations aux comptes Keycloak envoyées", Entite.ANIMATEUR);
 
         /* -------------------------- Stands -------------------------- */
         changesData(STAND_CREE, "Stand ajouté", Entite.STAND);
@@ -370,6 +373,7 @@ public final class CatalogueActions {
         action(COMPTE_CREE, "Compte créé", Entite.PARAMETRES);
         action(COMPTE_DESACTIVE, "Compte désactivé", Entite.PARAMETRES);
         action(COMPTE_REACTIVE, "Compte réactivé", Entite.PARAMETRES);
+        action(ADMINISTRATEUR_INVITE, "Administrateur invité", Entite.PARAMETRES);
         action(HABILITATION_ACCORDEE, "Habilitation accordée", Entite.PARAMETRES);
         action(HABILITATION_RETIREE, "Habilitation retirée", Entite.PARAMETRES);
         // One line per explicit download, never per page shown: « a-t-il bien
@@ -415,6 +419,7 @@ public final class CatalogueActions {
         route("AnimateurResource#importCsvAnimateurs", ANIMATEURS_IMPORTES);
         route("AnimateurResource#saveCompetencesGrid", ANIMATEUR_COMPETENCES_GRILLE);
         route("AnimateurResource#relancer", ANIMATEURS_RELANCES);
+        route("AnimateurResource#sendInvitations", ANIMATEURS_INVITES);
 
         route("StandResource#createStand", STAND_CREE);
         route("StandResource#updateStand", STAND_MODIFIE);
@@ -526,6 +531,7 @@ public final class CatalogueActions {
         route("CompteResource#create", COMPTE_CREE);
         route("CompteResource#deactivate", COMPTE_DESACTIVE);
         route("CompteResource#reactivate", COMPTE_REACTIVE);
+        route("CompteResource#inviteAdministrator", ADMINISTRATEUR_INVITE);
         route("CompteResource#grant", HABILITATION_ACCORDEE);
         route("CompteResource#withdraw", HABILITATION_RETIREE);
 

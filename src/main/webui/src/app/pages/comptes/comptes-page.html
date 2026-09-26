@@ -20,6 +20,10 @@
       <mat-icon>person_add</mat-icon>
       <ng-container i18n="@@comptes.add.open">Ajouter un compte</ng-container>
     </button>
+    <button matButton="tonal" type="button" [disabled]="busy()" (click)="openInviteAdmin()">
+      <mat-icon>admin_panel_settings</mat-icon>
+      <ng-container i18n="@@comptes.admin.open">Inviter un administrateur</ng-container>
+    </button>
     <button matButton type="button" [disabled]="loading()" (click)="reload()">
       <mat-icon>refresh</mat-icon>
       <ng-container i18n="@@common.refresh">Actualiser</ng-container>
