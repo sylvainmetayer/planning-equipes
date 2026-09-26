@@ -11,6 +11,7 @@
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
+    <app-voir-planning-button />
     <button matButton type="button" [disabled]="chargement()" (click)="recharger()">
       <mat-icon>refresh</mat-icon>
       <ng-container i18n="@@common.refresh">Actualiser</ng-container>

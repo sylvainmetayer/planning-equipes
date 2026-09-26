@@ -91,7 +91,7 @@ test("un créneau sans siège dans le plan s'explique au lieu d'échouer", async
 /**
  * The screen ships on trial, and says so: it reads and changes nothing, so the
  * banner is the read-only wording, not the one the jour-J screen uses. It is
- * a tab of the Diagnostic page, reached from « Planning ».
+ * a tab of the Diagnostic page, reached from « Construire ».
  */
 test("l'écran s'annonce comme livré à l'essai", async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
@@ -100,7 +100,7 @@ test("l'écran s'annonce comme livré à l'essai", async ({ browser }) => {
 
   await expect(page.locator('#contenu')).toContainText("Cet écran est livré à l'essai");
   await expect(
-    page.locator('#nav-group-planning').getByRole('link', { name: 'Diagnostic' }),
+    page.locator('#nav-group-construire').getByRole('link', { name: 'Diagnostic' }),
   ).toBeVisible();
   await page.context().close();
 });

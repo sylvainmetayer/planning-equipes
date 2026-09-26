@@ -27,7 +27,7 @@ export function buildGettingStartedSections(): HelpSection[] {
           kind: 'steps',
           items: [
             $localize`:@@aide.start.step1:Choisir ou créer l'édition. Rien ne circule d'une édition à l'autre.`,
-            $localize`:@@aide.start.step2:Saisir les référentiels dans l'ordre du menu : typologies, emplacements, créneaux (c'est là que l'édition prend ses dates), stands, animateurs. Chacun s'importe aussi depuis un fichier CSV ; un scénario YAML remplace l'étape entière.`,
+            $localize`:@@aide.start.step2:Saisir les référentiels dans l'ordre du groupe Préparer : typologies, créneaux (c'est là que l'édition prend ses dates), emplacements, stands, animateurs. Chacun s'importe aussi depuis un fichier CSV ; un scénario YAML remplace l'étape entière.`,
             $localize`:@@aide.start.step3:Ouvrir la collecte des disponibilités, case « prévenir » cochée : chacun reçoit le lien de son espace et y déclare ses absences et ses souhaits. Les fiches animateurs et les créneaux doivent donc déjà exister.`,
             $localize`:@@aide.start.step4:Appliquer ou refuser les déclarations reçues, puis fermer la collecte.`,
             $localize`:@@aide.start.step5:Vérifier les ouvertures des stands, puis le besoin en animateurs. Ces deux écrans répondent avant tout calcul.`,
@@ -41,6 +41,10 @@ export function buildGettingStartedSections(): HelpSection[] {
         {
           kind: 'paragraph',
           text: $localize`:@@aide.start.guichets:Deux guichets s'ouvrent et se ferment à la main, et ce sont les seuls endroits où un animateur écrit quelque chose : la collecte des disponibilités avant la construction, la foire au planning après la publication. Chacun accepte en plus une période datée, mais l'interrupteur reste maître. La collecte est fermée tant que vous ne l'ouvrez pas ; la foire est ouverte par défaut.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.start.menu:Le menu suit ce cycle : Préparer pour les référentiels, Construire pour le calcul et ce qu'il doit respecter, Diffuser pour l'envoi, Aujourd'hui pour l'événement lui-même, et Planning pour lire le plan sous tous ses angles. « Voir le planning », sur l'accueil et sur le Solveur, ouvre la journée du jour.`,
         },
         {
           kind: 'paragraph',

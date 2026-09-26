@@ -155,3 +155,58 @@ mat-sidenav-content {
     padding: 0.75rem;
   }
 }
+
+/* #706: the news of an update, signalled next to the Aide entry by a small
+   link of its own, laid over the right end of that row. */
+.nav-entry {
+  position: relative;
+}
+
+.nav-news-marker {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  transform: translateY(-50%);
+  padding: 0 0.5rem;
+  border-radius: var(--mat-sys-corner-full);
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+  font: var(--mat-sys-label-small);
+  line-height: 1.5rem;
+  text-decoration: none;
+}
+
+.nav-news-marker:hover {
+  text-decoration: underline;
+}
+
+/* The same news on the foot's link, which stays in sight when the group folds. */
+.nav-news-dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-left: 0.3rem;
+  border-radius: 50%;
+  background: var(--mat-sys-tertiary);
+  vertical-align: middle;
+}
+
+/* #706: the foot of the menu, in text, like the foot of a page. */
+.nav-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  padding: 0.75rem 1rem 1rem;
+  font: var(--mat-sys-body-small);
+}
+
+.nav-footer a {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* The page on screen, as the group entries say it: text weight, no pill. */
+.nav-footer a.active-link {
+  background: none;
+  color: var(--mat-sys-on-surface);
+  font-weight: 600;
+}

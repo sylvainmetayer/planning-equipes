@@ -10,6 +10,7 @@ import {
   viewChild,
   ViewEncapsulation,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
@@ -17,7 +18,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceDataStore } from '../../core/reference-data.store';
@@ -36,9 +37,7 @@ import {
   adHocDescription,
 } from './ad-hoc-constraint-form-dialog';
 import { FiltreTypesPaires, readFiltreTypes, ReseauPairesView } from './reseau-paires-vue';
-
-/** The two readings of the page, and the values of the `vue` query param. */
-export type AdjustmentsView = 'liste' | 'reseau';
+import { AdjustmentsView, readAdjustmentsView } from './reseau-paires';
 
 /** Called lazily (never at module scope, see `app.ts`'s `buildNavGroups`). */
 function contrainteTypeLabel(value: TypeContrainteAdHoc): string {
@@ -111,6 +110,7 @@ export class AdHocConstraintsPage {
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
   protected readonly editingLocked = this.jobs.editingLocked;
 
+  private readonly route = inject(ActivatedRoute);
   private readonly injector = inject(Injector);
   private readonly pageTitle = viewChild<ElementRef<HTMLElement>>('pageTitle');
   private readonly crud = inject(ReferenceCrudService);
@@ -145,8 +145,13 @@ export class AdHocConstraintsPage {
   }
 
   constructor() {
+    // The reading is followed rather than read once: the palette's
+    // « Ajustements manuels › Réseau » navigates to this very route, and the
+    // router reuses the component.
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((query) => {
+      this.view.set(readAdjustmentsView(query.get('vue')));
+    });
     const params = currentViewParams();
-    this.view.set(params.get('vue') === 'reseau' ? 'reseau' : 'liste');
     this.filtreReseau.set(params.get('personne') ?? '');
     this.typesReseau.set(readFiltreTypes(params.get('paires')));
     keepViewInQueryParams(() => ({

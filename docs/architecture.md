@@ -241,8 +241,12 @@ Quinoa lance `npm ci && npm run build` pendant `mvn package` et copie le bundle
 dans les ressources statiques : déploiement unique. En `quarkus:dev`, il démarre
 `ng serve` et proxifie le 4200 pour le rechargement à chaud.
 
-**Un bloc fonctionnel = une route = une page**, en lazy loading. On n'ajoute pas
-une section dans une page existante. Les services de `core/` portent l'état
+**Une question = un écran, ses variantes en onglets ou en vues dans l'URL**, en
+lazy loading. On n'ajoute pas une section dans une page existante ; une
+variante de la même question est un onglet (`?onglet=`) ou une vue (`?vue=`)
+de sa page. Le menu (`shell/nav-groups.ts`) est le même pour tout le monde et
+suit le cycle d'une édition ; une route peut être servie sans entrée de menu
+(Débogage), la palette Ctrl+K la trouve. Les services de `core/` portent l'état
 partagé et les appels HTTP ; les composants ne font pas de `fetch`.
 
 L'état circule dans un seul sens : la page Solveur pousse le planning résolu,

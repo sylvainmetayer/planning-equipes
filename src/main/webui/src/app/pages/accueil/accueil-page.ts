@@ -21,6 +21,7 @@ import { buildLignes, buildToday, statutIcon, statutLabel, summarizeLignes } fro
 import { coherenceGroups } from './coherence';
 import { bandeLabel, libelleDate } from '../../core/consigne-wording';
 import { GelReferentielCard } from '../../shared/gel-referentiel-card';
+import { VoirPlanningButton } from '../../shared/voir-planning-button';
 
 /**
  * « État de l'édition », the home screen (issue #485): the cycle of the
@@ -36,6 +37,7 @@ import { GelReferentielCard } from '../../shared/gel-referentiel-card';
 @Component({
   selector: 'app-accueil-page',
   imports: [
+    VoirPlanningButton,
     GelReferentielCard,
     MatButtonModule,
     MatCardModule,

@@ -23,13 +23,15 @@ test.afterAll(async () => {
   await admin.dispose();
 });
 
-test("le mode jour J est rangé dans le groupe « Pendant l'événement »", async ({ browser }) => {
+test("le mode jour J est rangé dans le groupe « Aujourd'hui »", async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/');
 
-  const groupe = page.locator('#nav-group-pendant-evenement');
+  const groupe = page.locator('#nav-group-aujourdhui');
   await expect(groupe.getByRole('link', { name: 'Mode jour J' })).toBeVisible();
-  await expect(groupe.getByRole('link', { name: 'Échanges' })).toBeVisible();
+  await expect(
+    page.locator('#nav-group-diffuser').getByRole('link', { name: 'Échanges' }),
+  ).toBeVisible();
   // Et nulle part ailleurs : un écran qui écrit ne doit pas se lire comme
   // acquis depuis le groupe Planning.
   await expect(page.getByRole('link', { name: 'Mode jour J' })).toHaveCount(1);

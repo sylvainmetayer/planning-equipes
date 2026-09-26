@@ -7,6 +7,31 @@
 import { CelluleMarge, JourMarge, ModeMarge, RapportMarge } from '../../core/models';
 
 /**
+ * The three readings of the page: the margin before and after a solve, and the
+ * tension map that crosses the second with the fragility of the same plan.
+ */
+export type MarginView = ModeMarge | 'TENSION';
+
+/** The `mode` query param of each reading; the default one leaves the URL bare. */
+export const MARGIN_VIEW_PARAMS: Readonly<Record<MarginView, string | null>> = {
+  AVANT: null,
+  APRES: 'apres',
+  TENSION: 'tension',
+};
+
+/**
+ * Reads the `mode` query param. Anything but the values this page knows is the
+ * margin before a solve: an unknown mode would otherwise show the « après »
+ * grid under the « avant » toggle.
+ */
+export function readMarginView(param: string | null): MarginView {
+  if (param === 'apres') {
+    return 'APRES';
+  }
+  return param === 'tension' ? 'TENSION' : 'AVANT';
+}
+
+/**
  * The divergent scale. Five steps and not three: a cell at −1 and a cell at −6
  * are two very different mornings, and a scale that flattens them says
  * « quelque part, ça coince » where the screen exists to say where.

@@ -15,6 +15,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { ActivatedRoute } from '@angular/router';
 import { intlLocale } from '../../core/locale';
+import { NewsSeenService } from '../../core/news-seen';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 import { APP_VERSION } from '../../version';
 import { NEWS_COMMITS } from './news-data';
@@ -85,6 +86,8 @@ export class NewsPage {
   );
 
   constructor() {
+    // Opening the page is reading the news: the marker on Aide goes out (#706).
+    inject(NewsSeenService).markSeen();
     const params = this.route.snapshot.queryParamMap;
     this.heading.set(readHeading(params.get('type')));
     this.search.set(params.get('q') ?? '');
