@@ -50,6 +50,7 @@ function poste(overrides: Partial<PosteAnimateurView> = {}): PosteAnimateurView 
 
 function view(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView {
   return {
+    signalements: [],
     joursRepos: [],
     animateurId: 'alice',
     prenom: 'Alice',

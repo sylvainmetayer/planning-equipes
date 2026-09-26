@@ -366,6 +366,15 @@ complètes. Quatre points sont connus et se consignent :
   alerte qui ne nomme plus personne. Ce journal n'a pas de purge propre : il
   disparaît avec son édition, en cascade sur `edition_id`, donc à la purge
   annuelle ;
+- **un empêchement signalé depuis l'espace** (`signalement_absence`) dit
+  qu'une personne ne sera pas là un jour donné, ou sur un poste. Il ne porte
+  **aucun texte libre** : le motif, facultatif, est une liste fermée — raison
+  personnelle, transport, autre —, choisie précisément pour qu'aucune raison
+  de santé ou de famille n'y soit jamais écrite. Le courriel qui prévient
+  l'organisation nomme la personne, la journée, le poste et ce motif, comme la
+  notification d'une déclaration de disponibilités. La ligne suit la fiche, le
+  créneau et le stand qu'elle nomme (suppression en cascade) et disparaît avec
+  l'édition ;
 - **l'état de chaque envoi du planning est conservé** (`envoi_planning`) :
   pour chaque publication et chaque renvoi, une ligne par personne qui dit si
   le courriel est parti, a échoué, n'a pas pu partir faute d'adresse ou a été

@@ -24,6 +24,7 @@ registerLocaleData(localeFr, 'fr');
 
 function view(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView {
   return {
+    signalements: [],
     joursRepos: [],
     animateurId: 'alice',
     prenom: 'Alice',

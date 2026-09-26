@@ -10,6 +10,7 @@ import dev.sylvain.planning.service.espace.EspaceAccesService;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.DemandeEchangeView;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.EspaceAnimateurView;
+import dev.sylvain.planning.service.espace.SignalementAbsenceService;
 import dev.sylvain.planning.service.espace.TeammateRequestService;
 import dev.sylvain.planning.service.espace.TeammateRequestService.NewCarpoolRequest;
 import dev.sylvain.planning.service.export.FormatPlanning;
@@ -20,6 +21,7 @@ import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -78,6 +80,8 @@ public class EspaceAnimateurResource {
 
     private final TeammateRequestService teammateRequestService;
 
+    private final SignalementAbsenceService signalementService;
+
     @Inject
     public EspaceAnimateurResource(
             EspaceAccesService espaceAccesService,
@@ -89,7 +93,8 @@ public class EspaceAnimateurResource {
             PlanningExportService planningExportService,
             ConfirmationPlanningService confirmationService,
             ReferenceDataService referenceDataService,
-            TeammateRequestService teammateRequestService) {
+            TeammateRequestService teammateRequestService,
+            SignalementAbsenceService signalementService) {
         this.espaceAccesService = espaceAccesService;
         this.espaceAnimateurService = espaceAnimateurService;
         this.demandeEchangeService = demandeEchangeService;
@@ -100,6 +105,7 @@ public class EspaceAnimateurResource {
         this.confirmationService = confirmationService;
         this.referenceDataService = referenceDataService;
         this.teammateRequestService = teammateRequestService;
+        this.signalementService = signalementService;
     }
 
     /** Who I am, my persisted planning (with teammates) and the colleagues I can swap with. */
@@ -255,6 +261,39 @@ public class EspaceAnimateurResource {
         }
         return Response.ok(espaceAnimateurService.buildDeclarationView(animateurCourant()))
                 .build();
+    }
+
+    /**
+     * « Je ne pourrai pas être là » (issue #533): reports an absence on a whole
+     * day or on one seat of the published plan. The second write the espace
+     * opened, and open all edition long — the foire and the collection closed
+     * included. Changes nothing in the plan: the organisation observes it.
+     * Answers my reports, the new one included; {@code 429} with a
+     * {@code Retry-After} over the ceiling, like the declaration.
+     */
+    @POST
+    @Path("/{jeton}/signalements")
+    @EspaceSessionRequired
+    public Response reportAbsence(SignalementAbsenceService.NouveauSignalement nouveau) {
+        try {
+            signalementService.report(animateurCourant(), nouveau);
+        } catch (SignalementAbsenceService.TooManyRequests e) {
+            return Response.status(429)
+                    .header(HttpHeaders.RETRY_AFTER, e.secondsBeforeNextTry())
+                    .entity(new ValidationError(e.getMessage()))
+                    .build();
+        }
+        return Response.ok(signalementService.ofAnimateur(animateurCourant())).build();
+    }
+
+    /** Withdraws one of my reports while the organisation has not settled it; {@code 409} after. */
+    @DELETE
+    @Path("/{jeton}/signalements/{signalementId}")
+    @EspaceSessionRequired
+    public List<SignalementAbsenceService.SignalementView> withdrawAbsenceReport(
+            @PathParam("signalementId") long signalementId) {
+        signalementService.withdraw(animateurCourant(), signalementId);
+        return signalementService.ofAnimateur(animateurCourant());
     }
 
     /**

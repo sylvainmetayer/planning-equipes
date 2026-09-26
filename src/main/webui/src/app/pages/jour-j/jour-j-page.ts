@@ -24,7 +24,9 @@ import {
   EtatJourJ,
   PosteAPourvoir,
   SuggestionsReparation,
+  SignalementJourJ,
 } from '../../core/models';
+import { motifLabel } from '../../core/signalement-wording';
 import { NotificationService } from '../../core/notification.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { compareDelta } from '../../shared/affectation-explanation-rules';
@@ -149,6 +151,20 @@ export class JourJPage implements OnInit {
     })),
   );
 
+  /** Absences reported from the espaces and not settled yet (issue #533), worded. */
+  protected readonly signalements = computed(() =>
+    (this.etat()?.signalements ?? []).map((signalement: SignalementJourJ) => ({
+      ...signalement,
+      objet:
+        signalement.portee === 'JOUR'
+          ? $localize`:@@jourJ.signalement.journee:toute la journée`
+          : `${signalement.standNom ?? signalement.standId ?? ''} · ${plage(signalement.heureDebut, signalement.heureFin)}`,
+      motifLibelle: signalement.motif ? motifLabel(signalement.motif) : '',
+    })),
+  );
+  /** The report being settled right now, so only its buttons wait. */
+  protected readonly reportBusy = signal<number | null>(null);
+
   protected readonly absences = computed(() =>
     (this.etat()?.absences ?? []).map((absence: AbsenceJourJ) => ({
       ...absence,
@@ -243,6 +259,55 @@ export class JourJPage implements OnInit {
         message: messageDe(error),
         variant: 'error',
       });
+    }
+  }
+
+  /* ------------------ Reports from the espaces (issue #533) --------------- */
+
+  /**
+   * « Marquer absent et remplacer »: the absence the animateur reported is
+   * observed — marked on the day or on the one timeslot — and the freed seats
+   * go straight to their replacement search, like a « marquer absent ».
+   */
+  protected async traiterSignalement(signalementId: number): Promise<void> {
+    this.reportBusy.set(signalementId);
+    try {
+      const marquee = await this.jourJ.traiterSignalement(signalementId);
+      this.notifications.notify({
+        title: $localize`:@@jourJ.absence.faite:${marquee.nomAffiche}:nom: est marqué absent`,
+        message: $localize`:@@jourJ.absence.detail:${marquee.entrees.length}:creneaux: créneau(x) indisponibles, ${marquee.postesLiberes.length}:postes: poste(s) libéré(s).`,
+        variant: 'success',
+      });
+      await this.recharger();
+      for (const poste of marquee.postesLiberes) {
+        await this.chercherRemplacants(poste.posteId);
+      }
+    } catch (error) {
+      this.notifications.notify({
+        title: $localize`:@@jourJ.absence.refusee:Absence refusée`,
+        message: messageDe(error),
+        variant: 'error',
+        timeout: 0,
+      });
+    } finally {
+      this.reportBusy.set(null);
+    }
+  }
+
+  /** « Classer »: read, and nothing to change in the plan. */
+  protected async classerSignalement(signalementId: number): Promise<void> {
+    this.reportBusy.set(signalementId);
+    try {
+      await this.jourJ.classerSignalement(signalementId);
+      await this.recharger();
+    } catch (error) {
+      this.notifications.notify({
+        title: $localize`:@@jourJ.signalement.classementEchec:Classement impossible`,
+        message: messageDe(error),
+        variant: 'error',
+      });
+    } finally {
+      this.reportBusy.set(null);
     }
   }
 

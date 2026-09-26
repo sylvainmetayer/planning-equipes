@@ -241,3 +241,19 @@
     flex-basis: 100%;
   }
 }
+
+/* Reports from the espaces (#533): who, which day or seat, why, then the two
+   ways to settle it. */
+.jour-j-signalement {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+}
+
+.jour-j-signalement-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}

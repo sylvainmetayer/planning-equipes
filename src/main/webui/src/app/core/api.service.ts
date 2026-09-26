@@ -58,6 +58,11 @@ export class ApiService {
     return this.run(this.http.delete<void>(url));
   }
 
+  /** DELETE whose answer carries a body — the state left once the thing is gone. */
+  deleteReturning<T>(url: string): Promise<T> {
+    return this.run(this.http.delete<T>(url));
+  }
+
   /** Sends a raw (non JSON) payload such as a SQL dump or a CSV file. */
   postRaw<T>(url: string, body: string, contentType: string): Promise<T> {
     return this.run(this.http.post<T>(url, body, { headers: { 'Content-Type': contentType } }));

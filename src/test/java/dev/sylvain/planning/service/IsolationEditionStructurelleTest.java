@@ -109,6 +109,7 @@ class IsolationEditionStructurelleTest {
             "envoi_planning",
             "declaration_disponibilite",
             "declaration_coequipier",
+            "signalement_absence",
             "parametres_collecte",
             "confirmation_planning",
             "parametres_notifications",

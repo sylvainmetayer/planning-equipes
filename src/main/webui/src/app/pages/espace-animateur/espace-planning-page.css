@@ -470,3 +470,39 @@
 .espace-agenda-detail {
   margin-top: 1rem;
 }
+
+/* « Je ne pourrai pas venir » (#533): the report and its state, then the
+   gesture — one line each, never above the day's seats. */
+.espace-signalement {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+}
+
+.espace-signaler {
+  margin: 0.25rem 0 0.5rem;
+}
+
+.espace-poste-signaler {
+  margin-top: 0.25rem;
+}
+
+.espace-signalement-choix {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.espace-signalement-jour {
+  margin-top: 0;
+  font-weight: 500;
+}
+
+.espace-signalement-question {
+  margin: 1rem 0 0.25rem;
+}
+
+.espace-signalement-aide {
+  color: var(--mat-sys-on-surface-variant);
+}

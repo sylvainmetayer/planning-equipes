@@ -12,6 +12,7 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -24,7 +25,25 @@ import {
 import { parseDateKey } from '../../core/date-utils';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
 import { errorMessage } from '../../core/error-message';
-import { PauseAnimateurView, PosteAnimateurView } from '../../core/models';
+import {
+  NouveauSignalement,
+  PauseAnimateurView,
+  PosteAnimateurView,
+  SignalementView,
+} from '../../core/models';
+import {
+  EspaceSignalementDialog,
+  PosteSignalable,
+  SignalementDialogData,
+} from './espace-signalement-dialog';
+import {
+  dayReported,
+  motifLabel,
+  objectLabel,
+  reportsOfDay,
+  seatReported,
+  statutLabel,
+} from './espace-signalements';
 import {
   aujourdhuiLocal,
   JourPlanning,
@@ -90,6 +109,93 @@ import { NewWindowLink } from '../../shared/new-window-link';
 })
 export class EspacePlanningPage {
   protected readonly espace = inject(EspaceAnimateurService);
+  private readonly dialog = inject(MatDialog);
+
+  /* --------- « Je ne pourrai pas venir » (issue #533) ---------- */
+
+  private readonly signalements = computed(() => this.espace.view()?.signalements ?? []);
+  protected readonly reportBusy = signal(false);
+  /** Message of a refused report or withdrawal, `null` while everything is fine. */
+  protected readonly erreurSignalement = signal<string | null>(null);
+
+  /** My reports of the day on screen, withdrawn ones left out. */
+  protected reportsOf(date: string): SignalementView[] {
+    return reportsOfDay(this.signalements(), date);
+  }
+
+  /** The seats of a day that can still be reported: not over yet. */
+  private signalables(jour: JourPlanning): PosteAnimateurView[] {
+    return jour.postes.filter((poste) => !this.isPosteTermine(poste));
+  }
+
+  /** « Je ne pourrai pas venir » is offered on a day with a seat still ahead, not already reported whole. */
+  protected canReportDay(jour: JourPlanning): boolean {
+    return this.signalables(jour).length > 0 && !dayReported(this.signalements(), jour.date);
+  }
+
+  protected canReportSeat(jour: JourPlanning, poste: PosteAnimateurView): boolean {
+    return (
+      !this.isPosteTermine(poste) &&
+      !dayReported(this.signalements(), jour.date) &&
+      !seatReported(this.signalements(), poste.creneauId, poste.standId)
+    );
+  }
+
+  protected reportObject(signalement: SignalementView): string {
+    return objectLabel(signalement);
+  }
+
+  protected reportState(signalement: SignalementView): string {
+    const motif = signalement.motif ? ` · ${motifLabel(signalement.motif)}` : '';
+    return `${statutLabel(signalement.statut)}${motif}`;
+  }
+
+  /** Opens the two-tap dialog on the day, or on the seat the gesture came from. */
+  protected async signaler(jour: JourPlanning, poste?: PosteAnimateurView): Promise<void> {
+    const postes: PosteSignalable[] = this.signalables(jour)
+      .filter(
+        (candidat) => !seatReported(this.signalements(), candidat.creneauId, candidat.standId),
+      )
+      .map((candidat) => ({
+        creneauId: candidat.creneauId,
+        standId: candidat.standId,
+        libelle: `${candidat.standNom}, ${this.heure(candidat.heureDebut)}–${this.heure(candidat.heureFin)}`,
+      }));
+    const data: SignalementDialogData = {
+      date: jour.date,
+      postes,
+      choix: poste ? `${poste.creneauId}|${poste.standId}` : 'jour',
+    };
+    const nouveau = await new Promise<NouveauSignalement | undefined>((resolve) =>
+      this.dialog
+        .open<EspaceSignalementDialog, SignalementDialogData, NouveauSignalement>(
+          EspaceSignalementDialog,
+          { data, width: '28rem', maxWidth: '95vw', autoFocus: 'first-tabbable' },
+        )
+        .afterClosed()
+        .subscribe(resolve),
+    );
+    if (!nouveau) {
+      return;
+    }
+    await this.runReport(() => this.espace.signaler(nouveau));
+  }
+
+  protected async retirer(signalement: SignalementView): Promise<void> {
+    await this.runReport(() => this.espace.retirerSignalement(signalement.id));
+  }
+
+  private async runReport(action: () => Promise<void>): Promise<void> {
+    this.reportBusy.set(true);
+    this.erreurSignalement.set(null);
+    try {
+      await action();
+    } catch (error) {
+      this.erreurSignalement.set(errorMessage(error));
+    } finally {
+      this.reportBusy.set(false);
+    }
+  }
 
   /* ------------- Days with hours modified by a consigne (issue #4) ------------- */
 

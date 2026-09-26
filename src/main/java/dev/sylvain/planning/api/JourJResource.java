@@ -4,6 +4,7 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.espace.JourJService;
 import dev.sylvain.planning.service.espace.JourJService.AbsenceMarquee;
 import dev.sylvain.planning.service.espace.JourJService.EtatJourJ;
+import dev.sylvain.planning.service.espace.SignalementAbsenceService;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.SuggestionsReparation;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -15,6 +16,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
@@ -47,9 +49,12 @@ public class JourJResource {
 
     private final JourJService jourJService;
 
+    private final SignalementAbsenceService signalementService;
+
     @Inject
-    public JourJResource(JourJService jourJService) {
+    public JourJResource(JourJService jourJService, SignalementAbsenceService signalementService) {
         this.jourJService = jourJService;
+        this.signalementService = signalementService;
     }
 
     /** The whole screen: remaining timeslots, who is on duty, the holes, the absences. */
@@ -70,7 +75,33 @@ public class JourJResource {
             DemandeAbsence demande, @QueryParam("date") String date, @QueryParam("maintenant") String maintenant) {
         String animateurId = demande == null ? null : demande.animateurId();
         return jourJService.recordAbsence(
-                animateurId, demande == null ? null : demande.raison(), jour(date), moment(maintenant));
+                animateurId,
+                demande == null ? null : demande.raison(),
+                jour(date),
+                moment(maintenant),
+                demande == null ? null : demande.creneauId());
+    }
+
+    /**
+     * « Marquer absent et remplacer » on an absence reported from an espace
+     * (issue #533): the absence marked — the whole day, or the one timeslot of
+     * the reported seat — and the report settled. Answers the seats it freed,
+     * for the replacement.
+     */
+    @POST
+    @Path("/signalements/{signalementId}/traitement")
+    @Consumes(MediaType.WILDCARD)
+    public AbsenceMarquee treatAbsenceReport(@PathParam("signalementId") long signalementId) {
+        return signalementService.observe(signalementId);
+    }
+
+    /** « Classer »: the report read and filed, nothing touched in the plan. */
+    @POST
+    @Path("/signalements/{signalementId}/classement")
+    @Consumes(MediaType.WILDCARD)
+    public Response fileAbsenceReport(@PathParam("signalementId") long signalementId) {
+        signalementService.file(signalementId);
+        return Response.noContent().build();
     }
 
     /**
@@ -128,8 +159,12 @@ public class JourJResource {
         }
     }
 
-    /** Body of « marquer absent ». The reason is optional and lands in the exception's trace. */
-    public record DemandeAbsence(String animateurId, String raison) {}
+    /**
+     * Body of « marquer absent ». The reason is optional and lands in the
+     * exception's trace; {@code creneauId} narrows the absence to one timeslot
+     * — the Siège panel's shift — where its absence covers the rest of the day.
+     */
+    public record DemandeAbsence(String animateurId, String raison, Long creneauId) {}
 
     /** How many exceptions a cancellation removed. */
     @Schema(requiredProperties = {"supprimees"})

@@ -1,0 +1,7 @@
+{nom} a signalé depuis son espace ne pas pouvoir être là {#if poste}le {jour}, sur le poste {poste}{#else}le {jour}, toute la journée{/if}{#if motif} (motif : {motif}){/if}.
+
+Rien n'est modifié au planning tant que vous n'avez pas constaté l'absence.
+{#if lien}
+
+À traiter depuis l'écran du jour : {lien}
+{/if}
