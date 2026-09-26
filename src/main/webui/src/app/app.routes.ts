@@ -3,6 +3,7 @@ import { CanActivateFn, Params, RedirectFunction, Router, Routes } from '@angula
 import { TODAY_ANCHOR } from './core/date-mock.service';
 import type { CompetencesPage } from './pages/competences/competences-page';
 import { retiredOpeningsViews } from './pages/ouvertures/vues-retirees';
+import type { StandFichePage } from './pages/stand-fiche/stand-fiche-page';
 
 /**
  * One route per functional block; every page is lazy-loaded. A `title` names
@@ -85,6 +86,78 @@ export function benchToJournee(queryParams: Params): string {
   const query = params.toString();
   return query ? `/journee?${query}` : '/journee';
 }
+
+/**
+ * `/timeline?animateur=X`: the « Timeline animateur » screen became the
+ * « Planning » section of the fiche, which the address opens; without a person
+ * it lands on the list the fiches are reached from.
+ */
+export function timelineToFiche(queryParams: Params): string {
+  const animateur = queryParams['animateur'];
+  const id = typeof animateur === 'string' ? animateur.trim() : '';
+  return id ? `/animateurs/${encodeURIComponent(id)}?section=timeline` : '/animateurs';
+}
+
+/**
+ * `/stands?edit=S1` — the eight links that name a stand to fix (a problem, a
+ * warning, the combined calendar…): the stand has a page of its own, which
+ * the link opens with its identity form. The locations tab keeps its own
+ * `edit`, which names a location.
+ */
+export function standEditToFicheUrl(queryParams: Params): string | null {
+  const edit = queryParams['edit'];
+  if (typeof edit !== 'string' || edit.trim() === '' || queryParams['onglet'] === 'lieux') {
+    return null;
+  }
+  return `/stands/${encodeURIComponent(edit.trim())}?modifier=1`;
+}
+
+export const standEditToFiche: CanActivateFn = (route) => {
+  const url = standEditToFicheUrl(route.queryParams);
+  return url ? inject(Router).parseUrl(url) : true;
+};
+
+/**
+ * `/equite?vue=fiche&animateur=X`: the « Fiche » reading of the Équité screen
+ * — one person's indicators and the radar — lives on the fiche animateur now,
+ * in its « Charge et équité » section, the radar's `axes` and `comparer`
+ * kept. Without a person, the address lands on the table, its other keys
+ * kept.
+ */
+export function equityFicheUrl(queryParams: Params): string | null {
+  if (queryParams['vue'] !== 'fiche') {
+    return null;
+  }
+  const animateur = queryParams['animateur'];
+  const id = typeof animateur === 'string' ? animateur.trim() : '';
+  const params = new URLSearchParams();
+  if (id) {
+    params.set('section', 'equite');
+    for (const key of ['axes', 'comparer']) {
+      const value = queryParams[key];
+      if (value !== undefined && value !== null && value !== '') {
+        params.set(key, paramText(value as string | readonly string[]));
+      }
+    }
+    return `/animateurs/${encodeURIComponent(id)}?${params.toString()}`;
+  }
+  for (const [key, value] of Object.entries(queryParams)) {
+    if (
+      !['vue', 'animateur', 'axes', 'comparer'].includes(key) &&
+      value !== undefined &&
+      value !== null
+    ) {
+      params.set(key, paramText(value as string | readonly string[]));
+    }
+  }
+  const query = params.toString();
+  return query ? `/equite?${query}` : '/equite';
+}
+
+export const equityFicheToAnimateur: CanActivateFn = (route) => {
+  const url = equityFicheUrl(route.queryParams);
+  return url ? inject(Router).parseUrl(url) : true;
+};
 
 /** `/diagnostic?onglet=banc…`: the tab is gone, its address goes to the Journée. */
 export const benchTabToJournee: CanActivateFn = (route) =>
@@ -266,13 +339,21 @@ const adminRoutes: Routes = [
     path: 'stands',
     title: () => $localize`:@@route.stands:Stands`,
     loadComponent: () => import('./pages/stands/stands-page').then((m) => m.StandsPage),
+    canActivate: [standEditToFiche],
+    // A « Voir la fiche » link names `?edit=` while the table is on screen: a
+    // query-only change, on which the guard must run again to open the fiche.
+    runGuardsAndResolvers: 'paramsOrQueryParamsChange',
   },
   {
-    path: 'emplacements',
-    title: () => $localize`:@@route.emplacements:Emplacements`,
+    path: 'stands/:id',
+    title: () => $localize`:@@route.standFiche:Fiche stand`,
     loadComponent: () =>
-      import('./pages/emplacements/emplacements-page').then((m) => m.EmplacementsPage),
+      import('./pages/stand-fiche/stand-fiche-page').then((m) => m.StandFichePage),
+    // Unsaved cells of its grid would vanish with the page: it asks first.
+    canDeactivate: [(page: StandFichePage) => page.canLeave()],
   },
+  // The locations became the « Lieux » tab of the Stands page, map included.
+  { path: 'emplacements', redirectTo: redirectToOnglet('stands', 'lieux') },
   {
     path: 'animateurs',
     title: () => $localize`:@@route.animateurs:Animateurs`,
@@ -396,6 +477,8 @@ const adminRoutes: Routes = [
     path: 'equite',
     title: () => $localize`:@@route.equite:Équité`,
     loadComponent: () => import('./pages/equite/equite-page').then((m) => m.EquitePage),
+    // Its « Fiche » reading moved to the fiche animateur: the address follows it.
+    canActivate: [equityFicheToAnimateur],
   },
   {
     path: 'repos',
@@ -428,14 +511,8 @@ const adminRoutes: Routes = [
     title: () => $localize`:@@route.marge:Marge disponible`,
     loadComponent: () => import('./pages/marge/marge-page').then((m) => m.MargePage),
   },
-  {
-    path: 'timeline',
-    title: () => $localize`:@@route.timeline:Timeline animateur`,
-    loadComponent: () =>
-      import('./pages/animateur-timeline/animateur-timeline-page').then(
-        (m) => m.AnimateurTimelinePage,
-      ),
-  },
+  // The timeline became the « Planning » section of the fiche animateur.
+  { path: 'timeline', redirectTo: ({ queryParams }) => timelineToFiche(queryParams) },
   { path: '**', redirectTo: '' },
 ];
 

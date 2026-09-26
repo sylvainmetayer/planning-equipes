@@ -17,6 +17,7 @@ dev/sylvain/planning/api/AdminLoginLimiterTest.java
 dev/sylvain/planning/api/AffectationExplanationResourceTest.java
 dev/sylvain/planning/api/AffichageMuralResourceTest.java
 dev/sylvain/planning/api/AffichageMuralSecurityTest.java
+dev/sylvain/planning/api/AnimateurDayOffResourceTest.java
 dev/sylvain/planning/api/AnimateurProfileResourceTest.java
 dev/sylvain/planning/api/AnimateurResourceTest.java
 dev/sylvain/planning/api/ArchiveEvenementResourceTest.java

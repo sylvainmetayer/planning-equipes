@@ -330,6 +330,21 @@ describe('AnimateursPage table', () => {
     );
   });
 
+  it('carries the view of the list in the link to the fiche, for its « précédent / suivant »', async () => {
+    queryParams = { q: 'Amélie', manager: '1', sort: 'nom', dir: 'desc' };
+    await rendre([person('alice', { prenom: 'Amélie', nom: 'Nothomb', manager: true })]);
+
+    const href = racine().querySelector('tbody a.referentiel-nom')!.getAttribute('href')!;
+    const url = new URL(href, 'http://localhost');
+    expect(url.pathname).toBe('/animateurs/alice');
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      q: 'Amélie',
+      manager: '1',
+      sort: 'nom',
+      dir: 'desc',
+    });
+  });
+
   it('says the age is unknown rather than guessing it without a birth date', async () => {
     await rendre([person('alice', { dateNaissance: '' })]);
 

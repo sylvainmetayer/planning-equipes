@@ -4573,6 +4573,31 @@ export interface AnimateurProfile {
   declarationEnAttente: DeclarationAdminView | null;
 }
 
+/** One seat of the day an off day was written on: freed, and offered to a replacement, or kept under a lock. */
+export interface DaySeat {
+  posteId: string;
+  standId: string | null;
+  standNom: string | null;
+  creneauId: number;
+  date: string;
+  heureDebut: string;
+  heureFin: string;
+}
+
+/**
+ * What one click on the fiche's availability strip did
+ * (`PUT`/`DELETE /api/animateurs/{id}/jours-indisponibles/{date}`): the day's
+ * state, the seats marking it freed, the ones a lock kept in place, and how
+ * many already started it kept (ADR 0056).
+ */
+export interface DayOff {
+  date: string;
+  unavailable: boolean;
+  freedSeats: DaySeat[];
+  lockedSeatsKept: DaySeat[];
+  startedSeatsKept: number;
+}
+
 /* ----------------------------- Wall display ----------------------------- */
 
 /** A live wall display link, as the admin lists it — never its token. */

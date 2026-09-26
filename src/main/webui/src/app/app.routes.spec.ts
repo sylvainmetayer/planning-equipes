@@ -15,7 +15,7 @@ import {
 import { RouterTestingHarness } from '@angular/router/testing';
 import { describe, expect, it } from 'vitest';
 
-import { benchTabToJournee, routes } from './app.routes';
+import { benchTabToJournee, equityFicheUrl, standEditToFicheUrl, routes } from './app.routes';
 import { BRANDING } from './core/branding';
 import { BrandingTitleStrategy } from './core/branding-title.strategy';
 
@@ -83,7 +83,7 @@ describe('app.routes', () => {
     // Le compte exact plutôt qu'un plancher : un plancher laisse supprimer six
     // titres sans rien dire, et c'est ce chiffre-là que les descriptions de PR
     // annonçaient de travers.
-    expect(titrees).toHaveLength(53);
+    expect(titrees).toHaveLength(52);
     for (const route of titrees) {
       // Une fonction, et non une chaîne : c'est ce qui permet au titre de
       // passer par $localize sans être évalué au chargement du module, avant
@@ -160,6 +160,50 @@ describe('app.routes', () => {
       expect(redirectTarget('banc-de-touche', {})).toBe('/journee');
     });
 
+    // The locations became the « Lieux » tab of the Stands page.
+    it('sends the locations to the Lieux tab of the Stands page, their params kept', () => {
+      expect(redirectTarget('emplacements', {})).toBe('/stands?onglet=lieux');
+      expect(redirectTarget('emplacements', { edit: 'L1' })).toBe('/stands?onglet=lieux&edit=L1');
+    });
+
+    // `?edit=` on the stands: the stand has a page, which opens with its identity form.
+    it('sends a stand named by `?edit=` to its fiche, form open, and leaves the Lieux tab its own', () => {
+      expect(standEditToFicheUrl({ edit: 'S 1' })).toBe('/stands/S%201?modifier=1');
+      expect(standEditToFicheUrl({})).toBeNull();
+      expect(standEditToFicheUrl({ edit: ' ' })).toBeNull();
+      expect(standEditToFicheUrl({ onglet: 'lieux', edit: 'L1' })).toBeNull();
+    });
+
+    // The timeline became the « Planning » section of the fiche animateur.
+    it('sends the timeline to the fiche of its person, section open, or to the list without one', () => {
+      expect(redirectTarget('timeline', { animateur: 'A 7' })).toBe(
+        '/animateurs/A%207?section=timeline',
+      );
+      expect(redirectTarget('timeline', {})).toBe('/animateurs');
+      expect(redirectTarget('timeline', { animateur: ' ' })).toBe('/animateurs');
+    });
+
+    // The « Fiche » reading of Équité became the fiche's « Charge et équité » section.
+    it('sends the Fiche reading of Équité to the fiche, its radar kept, and the table without a person', () => {
+      expect(
+        equityFicheUrl({
+          vue: 'fiche',
+          animateur: 'A 7',
+          axes: 'heuresJourFerie',
+          comparer: 'a2',
+          q: 'x',
+        }),
+      ).toBe('/animateurs/A%207?section=equite&axes=heuresJourFerie&comparer=a2');
+      expect(equityFicheUrl({ vue: 'fiche', animateur: 'a1' })).toBe(
+        '/animateurs/a1?section=equite',
+      );
+      expect(equityFicheUrl({ vue: 'fiche', sort: 'heuresTotal', dir: 'desc' })).toBe(
+        '/equite?sort=heuresTotal&dir=desc',
+      );
+      expect(equityFicheUrl({ vue: 'fiche' })).toBe('/equite');
+      expect(equityFicheUrl({ q: 'Alice' })).toBeNull();
+    });
+
     it('sends the former bench tab of the Diagnostic to the Journée, and no other tab', () => {
       TestBed.configureTestingModule({
         providers: [provideZonelessChangeDetection(), provideRouter([])],
@@ -205,6 +249,45 @@ describe('app.routes', () => {
       expect(redirectTarget('validateur-yaml', {})).toBe(
         '/fichiers?onglet=importer&cible=verifier',
       );
+    });
+  });
+
+  /** Addresses a guard sends elsewhere, followed through the router. */
+  describe('les adresses que la page ne sert plus', () => {
+    async function harness(paths: string[]): Promise<RouterTestingHarness> {
+      TestBed.configureTestingModule({
+        providers: [
+          provideZonelessChangeDetection(),
+          provideRouter(
+            routes
+              .flatMap((route) => route.children ?? [])
+              .filter((route) => paths.includes(route.path ?? ''))
+              .map((route) => ({
+                ...route,
+                loadComponent: undefined,
+                canDeactivate: undefined,
+                component: PageVide,
+              })),
+          ),
+        ],
+      });
+      return RouterTestingHarness.create();
+    }
+
+    // The snack bar's « Voir la fiche » names `/stands?edit=` while the table is on screen.
+    it('opens the fiche of a stand named by `?edit=` from the Stands page itself', async () => {
+      const router = await harness(['stands', 'stands/:id']);
+      await router.navigateByUrl('/stands?sort=nom');
+      await router.navigateByUrl('/stands?edit=S1');
+      expect(TestBed.inject(Router).url).toBe('/stands/S1?modifier=1');
+    });
+
+    it('lands a former Fiche address of Équité on the fiche animateur', async () => {
+      const router = await harness(['equite', 'animateurs/:id']);
+      await router.navigateByUrl('/equite?vue=fiche&animateur=a1&comparer=a2');
+      expect(TestBed.inject(Router).url).toBe('/animateurs/a1?section=equite&comparer=a2');
+      await router.navigateByUrl('/equite?q=Alice');
+      expect(TestBed.inject(Router).url).toBe('/equite?q=Alice');
     });
   });
 

@@ -67,7 +67,7 @@
                   @for (ligne of groupe.lignes; track ligne.animateurId + ligne.debut) {
                     <tr [class.pauses-ligne-alerte]="!ligne.relaisDisponible || ligne.simultanee">
                       <th scope="row">
-                        {{ ligne.nomComplet }}
+                        <a [routerLink]="['/animateurs', ligne.animateurId]">{{ ligne.nomComplet }}</a>
                         @if (ligne.mineur) {
                           <span class="pauses-mineur" i18n="@@pauses.mineur">mineur</span>
                         }
@@ -127,7 +127,7 @@
                 <tbody>
                   @for (coupure of coupuresRepas(); track coupure.animateurId + coupure.libelle) {
                     <tr [class.pauses-ligne-alerte]="!coupure.satisfaite">
-                      <td>{{ coupure.nomComplet }}</td>
+                      <td><a [routerLink]="['/animateurs', coupure.animateurId]">{{ coupure.nomComplet }}</a></td>
                       <td>{{ coupure.libelle }} · {{ heure(coupure.fenetreDebut) }}–{{ heure(coupure.fenetreFin) }}</td>
                       <td>{{ coupure.dureeRequiseMinutes }} min</td>
                       <td>
@@ -158,7 +158,7 @@
             <ul class="pauses-planifiees-liste">
               @for (pause of planifiees(); track pause.animateurId + pause.debut) {
                 <li>
-                  <span class="pauses-planifiee-nom">{{ pause.nomComplet }}</span>
+                  <a class="pauses-planifiee-nom" [routerLink]="['/animateurs', pause.animateurId]">{{ pause.nomComplet }}</a>
                   <span>{{ heure(pause.debut) }}–{{ heure(pause.fin) }}</span>
                   <span class="pauses-planifiee-duree">{{ pause.minutes }} min</span>
                 </li>

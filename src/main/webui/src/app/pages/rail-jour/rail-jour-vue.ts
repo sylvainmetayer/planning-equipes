@@ -50,6 +50,7 @@ import {
   compterStatuts,
   shiftToOpen,
 } from './rail-jour';
+import { RouterLink } from '@angular/router';
 
 /** Which lines the rail keeps: everyone, only the mobilisable ones, only the working ones. */
 export type RailVue = 'tous' | 'libres' | 'affectes';
@@ -86,6 +87,7 @@ interface RailLegendItem {
     MatCardModule,
     MatIconModule,
     NgTemplateOutlet,
+    RouterLink,
   ],
   templateUrl: './rail-jour-vue.html',
   styleUrl: './rail-jour-vue.css',

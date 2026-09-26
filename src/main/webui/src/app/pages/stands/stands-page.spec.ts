@@ -23,9 +23,7 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { TableSelection } from '../../core/table-selection';
 import { ConfirmService } from '../../shared/confirm-dialog';
-import { CauseInfaisabilite, Emplacement, EtatGel, HoraireStand, Stand } from '../../core/models';
-import { DetailDialog } from '../../shared/detail-dialog';
-import { StandFormDialog } from './stand-form-dialog';
+import { CauseInfaisabilite, Emplacement, EtatGel, Stand } from '../../core/models';
 import { StandsPage } from './stands-page';
 import { seedStore } from '../../core/testing/seed-store';
 import { rowMenuItem } from '../../core/testing/row-menu';
@@ -53,32 +51,18 @@ function emplacement(id: string, nom: string): Emplacement {
 }
 
 /** One recurring rule holding `fenetres` windows — a rule is one row, not `fenetres` rows. */
-function horaire(fenetres: number): HoraireStand {
-  return {
-    id: null,
-    mode: 'OUVERTURE',
-    jours: 'TOUS',
-    joursSemaine: [],
-    dateDebut: null,
-    dateFin: null,
-    dates: [],
-    fenetres: Array.from({ length: fenetres }, () => ({ heureDebut: '10:00', heureFin: '12:00' })),
-    motif: null,
-  };
-}
-
 /** Reaches the protected members the template binds to. */
 type PageInternals = {
-  columns: string[];
+  columns: Signal<string[]>;
   filtre: { set: (value: string) => void };
   standsFiltres: Signal<Stand[]>;
   selection: TableSelection<string>;
   compactageEnCours: Signal<boolean>;
   editingLocked: Signal<boolean>;
-  typologiesLabel: (stand: Stand) => string;
+  typologiesOf: (stand: Stand) => { id: string; label: string }[];
   effectifSuffix: (stand: Stand) => string;
   emplacementLabel: (stand: Stand) => string;
-  horairesLabel: (stand: Stand) => string;
+  ouvertLabel: (stand: Stand) => string;
   compacterHoraires: () => Promise<void>;
   remove: (stand: Stand) => Promise<void>;
   removeSelection: () => Promise<void>;
@@ -167,32 +151,55 @@ describe('StandsPage', () => {
   }
 
   /**
-   * `?edit=<id>` (issue #489): a problem or a warning names a stand, and its
-   * link lands here with the fiche already open. The référentiel is loaded
-   * first — the row has to exist before its form can be filled.
+   * `?edit=<id>` (issue #489): a problem or a warning names a stand. The route
+   * sends it to the stand's fiche, which opens its form: the table itself
+   * opens nothing — a form opened here as well would be a second one.
    */
-  describe('the edit deep link', () => {
-    it('opens the form of the stand named in the URL once the référentiel is in', async () => {
-      await arriveWith('S1');
-      createPage([stand({ id: 'S1', nom: 'Escape' })]);
-      await Promise.resolve();
+  it('leaves the edit deep link to the route, which opens the fiche', async () => {
+    await arriveWith('S1');
+    createPage([stand({ id: 'S1', nom: 'Escape' })]);
+    await Promise.resolve();
 
-      expect(dialog.open).toHaveBeenCalledOnce();
-      const [component, config] = dialog.open.mock.calls[0] as unknown as [
-        unknown,
-        { data: { stand: Stand } },
-      ];
-      expect(component).toBe(StandFormDialog);
-      expect(config.data.stand.id).toBe('S1');
-    });
+    expect(dialog.open).not.toHaveBeenCalled();
+  });
 
-    it('opens nothing for a stand the référentiel does not hold', async () => {
-      await arriveWith('S9');
-      createPage([stand({ id: 'S1' })]);
-      await Promise.resolve();
+  it('leaves the filter and the sort of a link to the Lieux tab to the Lieux table', async () => {
+    await TestBed.inject(Router).navigateByUrl('/?onglet=lieux&q=Hall&sort=nom&dir=asc');
+    const page = createPage([stand({ id: 'S1', nom: 'Hall des jeux' })]) as unknown as {
+      onglet: Signal<string>;
+      filtre: Signal<string>;
+      sort: Signal<{ active: string; direction: string }>;
+    };
 
-      expect(dialog.open).not.toHaveBeenCalled();
-    });
+    expect(page.onglet()).toBe('lieux');
+    // Coming back to the stands shows them all, in the order of their ids.
+    expect(page.filtre()).toBe('');
+    expect(page.sort().active).toBe('');
+  });
+
+  // A location of the « Lieu » column, or the palette's « Stands › Lieux »:
+  // the same route with another `onglet`, where the router keeps the page.
+  it('follows a navigation to the Lieux tab and back while the page is on screen', async () => {
+    const router = TestBed.inject(Router);
+    await router.navigateByUrl('/?sort=nom&dir=asc');
+    const page = createPage([stand({ id: 'S1', nom: 'Hall des jeux' })]) as unknown as {
+      onglet: Signal<string>;
+      filtre: Signal<string>;
+      sort: Signal<{ active: string; direction: string }>;
+      emplacementFiltre: Signal<string>;
+    };
+    expect(page.onglet()).toBe('stands');
+    expect(page.sort().active).toBe('nom');
+
+    await router.navigateByUrl('/?onglet=lieux&q=Hall');
+    expect(page.onglet()).toBe('lieux');
+    expect(page.filtre()).toBe('');
+    expect(page.sort().active).toBe('');
+
+    await router.navigateByUrl('/?emplacement=L1&q=jeux');
+    expect(page.onglet()).toBe('stands');
+    expect(page.emplacementFiltre()).toBe('L1');
+    expect(page.filtre()).toBe('jeux');
   });
 
   /** `?ids=`: the rows an import just wrote, opened by « Voir les N lignes importées ». */
@@ -349,7 +356,7 @@ describe('StandsPage', () => {
     it('renders a dash rather than an empty cell for a stand without typologie or emplacement', () => {
       const page = createPage();
 
-      expect(page.typologiesLabel(stand({ id: 'tir' }))).toBe('—');
+      expect(page.typologiesOf(stand({ id: 'tir' }))).toEqual([]);
       expect(page.emplacementLabel(stand({ id: 'tir' }))).toBe('—');
     });
 
@@ -361,9 +368,11 @@ describe('StandsPage', () => {
       ]);
       const page = createPage();
 
-      expect(page.typologiesLabel(stand({ id: 'tir', typologiesProposees: ['T1', 'T2'] }))).toBe(
-        "Jeux d'ambiance, Stratégie",
-      );
+      expect(
+        page
+          .typologiesOf(stand({ id: 'tir', typologiesProposees: ['T1', 'T2'] }))
+          .map((typologie) => typologie.label),
+      ).toEqual(["Jeux d'ambiance", 'Stratégie']);
     });
 
     it('finds a stand by the label of one of its typologies', () => {
@@ -418,26 +427,11 @@ describe('StandsPage', () => {
       expect(suffix).not.toContain('épuisant');
     });
 
-    // Summarised rather than counted raw: the old column read "24" for a stand
-    // simply open twice a day, which said nothing about its schedule.
-    it('summarises the opening hours as rules and exceptions, never as a window count', () => {
+    // The days a stand opens and the seats they ask for, from the openings report.
+    it('counts the open days and the seats of a stand, a dash before the report is in', () => {
       const page = createPage();
 
-      expect(page.horairesLabel(stand({ id: 'tir' }))).toBe('—');
-
-      const label = page.horairesLabel(
-        stand({
-          id: 'tir',
-          // One rule, twelve windows: what the column must say is "1 rule".
-          horaires: [horaire(12)],
-          ouvertures: [
-            { id: null, date: '2026-08-01', heureDebut: '10:00', heureFin: '12:00', motif: null },
-          ],
-        }),
-      );
-
-      expect(label).toContain('1');
-      expect(label).not.toContain('12');
+      expect(page.ouvertLabel(stand({ id: 'tir' }))).toBe('—');
     });
   });
 
@@ -516,8 +510,10 @@ describe('StandsPage', () => {
   it('keeps a checkbox column and an actions column around the data ones', () => {
     const page = createPage();
 
-    expect(page.columns[0]).toBe('select');
-    expect(page.columns.at(-1)).toBe('actions');
+    expect(page.columns()[0]).toBe('select');
+    expect(page.columns().at(-1)).toBe('actions');
+    // No plan held yet: nothing to cover.
+    expect(page.columns()).not.toContain('couverture');
   });
 });
 
@@ -555,6 +551,18 @@ describe('StandsPage table', () => {
 
   function action(indexLigne: number, nom: string): Promise<HTMLButtonElement> {
     return rowMenuItem(fixture, racine().querySelectorAll('tbody tr')[indexLigne], nom);
+  }
+
+  /** An entry of the header's « Plus » menu, rendered in the overlay once opened. */
+  async function moreMenuItem(libelle: string): Promise<HTMLButtonElement> {
+    racine().querySelector<HTMLButtonElement>('button.stands-plus')!.click();
+    await fixture.whenStable();
+    const panel = Array.from(document.querySelectorAll('.mat-mdc-menu-panel')).at(-1);
+    const item = Array.from(
+      panel?.querySelectorAll<HTMLButtonElement>('.mat-mdc-menu-item') ?? [],
+    ).find((each) => each.textContent?.includes(libelle));
+    expect(item, `entrée « ${libelle} » du menu Plus`).toBeDefined();
+    return item!;
   }
 
   function boutonCarte(libelle: string): HTMLButtonElement {
@@ -627,17 +635,21 @@ describe('StandsPage table', () => {
       stand({ id: 's2', nom: 'Dixit' }),
     ]);
 
-    expect(racine().querySelector('h1')!.textContent!).toContain('Stands (2)');
+    expect(racine().querySelector('h1')!.textContent!.trim()).toBe('Stands');
+    expect(racine().querySelector('mat-card h2')!.textContent!).toContain('Stands (2)');
     expect(lignes()[0][4]).toBe('2–4 · majeurs · premium');
     expect(lignes()[0][5]).toBe('ambiance, expert');
     expect(lignes()[1][5]).toBe('—');
   });
 
-  it('summarises the horaires as rules and exceptions, not as a raw window count', async () => {
-    await rendre([stand({ id: 's1', horaires: [horaire(3), horaire(2)] })]);
+  it('links the name to the fiche and says how much of the event the stand opens', async () => {
+    await rendre([stand({ id: 's1', nom: 'Loup-Garou' })]);
 
-    // A stand open 10:00-12:00 then 14:00-20:00 every day used to read "24".
-    expect(lignes()[0][7]).toBe('2 règle(s)');
+    const lien = racine().querySelector<HTMLAnchorElement>('tbody tr a.referentiel-nom')!;
+    expect(lien.getAttribute('href')).toBe('/stands/s1');
+    expect(lien.textContent!.trim()).toBe('Loup-Garou');
+    // No openings report row: the column says nothing rather than a false zero.
+    expect(lignes()[0][7]).toBe('—');
   });
 
   it('flags a stand named by a feasibility cause, for a screen reader too', async () => {
@@ -696,9 +708,8 @@ describe('StandsPage table', () => {
 
     expect((await action(0, 'Modifier')).disabled).toBe(true);
     expect((await action(0, 'Supprimer')).disabled).toBe(true);
-    expect((await action(0, 'Détail')).disabled).toBe(false);
     // The compaction rewrites every stand's horaires: it is a write like any other.
-    expect(boutonCarte('Compacter les horaires').disabled).toBe(true);
+    expect((await moreMenuItem('Compacter les horaires')).disabled).toBe(true);
     expect(boutonCarte('Ajouter').disabled).toBe(true);
   });
 
@@ -711,7 +722,8 @@ describe('StandsPage table', () => {
 
     expect(racine().querySelector('app-gel-notice .gel-notice')).not.toBeNull();
     expect(boutonCarte('Ajouter').disabled).toBe(true);
-    expect(boutonCarte('Compacter les horaires').disabled).toBe(true);
+    expect(boutonCarte('Édition groupée').disabled).toBe(true);
+    expect((await moreMenuItem('Compacter les horaires')).disabled).toBe(true);
     expect((await action(0, 'Supprimer')).disabled).toBe(true);
     // A rename or a new location stays open: the form shows the frozen fields read-only.
     expect((await action(0, 'Modifier')).disabled).toBe(false);
@@ -753,15 +765,34 @@ describe('StandsPage table', () => {
     expect(racine().querySelectorAll('th[mat-sort-header]')).toHaveLength(7);
   });
 
-  it('opens the read-only detail, and hands over to the form when the user asks to edit', async () => {
-    await rendre([stand({ id: 's1', nom: 'Loup-Garou' })]);
-    dialog.open.mockReturnValue({ afterClosed: () => of('edit') });
+  it('keeps in its header Ajouter, Importer and Édition groupée, the rest under « Plus »', async () => {
+    await rendre([stand({ id: 's1', nom: 'Loup-Garou' }), stand({ id: 's2', nom: 'Dixit' })]);
 
-    (await action(0, 'Détail')).click();
-    await fixture.whenStable();
+    const header = Array.from(
+      racine().querySelectorAll('mat-card-actions > button, mat-card-actions > a'),
+    )
+      .map((each) => each.textContent!.trim())
+      .filter((texte) => texte !== '');
+    expect(header.some((texte) => texte.endsWith('Compacter les horaires'))).toBe(false);
+    expect(header.some((texte) => texte.endsWith('Saisir en grille'))).toBe(false);
+    expect((await moreMenuItem('Saisir en grille')).getAttribute('href')).toBe(
+      '/ouvertures?vue=saisie',
+    );
 
-    expect(dialog.open.mock.calls[0][0]).toBe(DetailDialog);
-    expect(dialog.open.mock.calls[1][0]).toBe(StandFormDialog);
-    expect(dialog.open.mock.calls[1][1].data.stand.id).toBe('s1');
+    // Nothing ticked: the bulk edit takes every stand the table shows.
+    boutonCarte('Édition groupée').click();
+    expect(dialog.open.mock.calls.at(-1)![1].data.stands.map((each: Stand) => each.id)).toEqual([
+      's1',
+      's2',
+    ]);
+  });
+
+  it('proposes an example when the edition has no stand yet', async () => {
+    await rendre([]);
+
+    const exemple = Array.from(racine().querySelectorAll<HTMLAnchorElement>('a')).find((lien) =>
+      lien.textContent!.includes('Charger un exemple'),
+    );
+    expect(exemple?.getAttribute('href')).toBe('/fichiers?onglet=importer&cible=exemples');
   });
 });

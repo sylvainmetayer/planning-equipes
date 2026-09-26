@@ -262,7 +262,7 @@ async function hrefs(view: string): Promise<string[]> {
 
 /**
  * The links out of a fragile row (issue #489): an irreplaceable person leads
- * to their timeline, a scarce competence to the animateurs holding it.
+ * to their fiche, planning open, a scarce competence to the animateurs holding it.
  */
 describe('FragilitePage contextual links', () => {
   const analysesApi = { fragility: vi.fn() };
@@ -279,12 +279,12 @@ describe('FragilitePage contextual links', () => {
     });
   });
 
-  it('leads from an irreplaceable person to their timeline', async () => {
+  it('leads from an irreplaceable person to their fiche, planning open', async () => {
     analysesApi.fragility.mockResolvedValue(
       rapport({ animateurs: [animateur()], animateursIrremplacables: 1 }),
     );
 
-    expect(await hrefs('')).toEqual(['/timeline?animateur=a1']);
+    expect(await hrefs('')).toEqual(['/animateurs/a1?section=timeline']);
   });
 
   it('leads from a scarce competence to the animateurs holding its typologies', async () => {

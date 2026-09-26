@@ -36,7 +36,6 @@ import {
   Animateur,
   ConfirmationView,
   NiveauCompetence,
-  StatutConfirmation,
   SyntheseConfirmations,
 } from '../../core/models';
 import { ApiService } from '../../core/api.service';
@@ -60,15 +59,7 @@ import { animateurName } from '../../core/reference-labels';
 import { SolverJobService } from '../../core/solver-job.service';
 import { TableNavigation, trackRowById } from '../../core/table-navigation';
 import { TableSelection } from '../../core/table-selection';
-import { correspondAuFiltre } from '../../core/text-filter';
-import {
-  NO_SORT,
-  consumeQueryParam,
-  keepViewInQueryParams,
-  optionalParam,
-  readSort,
-  sortQueryParams,
-} from '../../core/view-query-params';
+import { NO_SORT, consumeQueryParam, keepViewInQueryParams } from '../../core/view-query-params';
 import { SESSION_DRAFT_STORAGE } from '../../core/brouillon-formulaire';
 import { reportOrphanDrafts } from '../../shared/brouillon-dialog';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
@@ -78,13 +69,20 @@ import { TableFilter } from '../../shared/table-filter';
 import { AnimateurBulkEditData, AnimateurBulkEditDialog } from './animateur-bulk-edit-dialog';
 import { AnimateurFormData, AnimateurFormDialog } from './animateur-form-dialog';
 import { errorMessage } from '../../core/error-message';
+import { ModeAccuses, SILENCE_JOURS_DEFAUT } from './confirmation-filter';
 import {
-  ModeAccuses,
-  SILENCE_JOURS_DEFAUT,
-  readModeAccuses,
-  readNeverReminded,
-  keptByAcknowledgement,
-} from './confirmation-filter';
+  RosterView,
+  ageOn,
+  confirmationLabel,
+  filterRoster,
+  firstDay,
+  nomAffiche,
+  readRosterView,
+  rosterLinkParams,
+  rosterViewParams,
+  seatCounts,
+  sortRoster,
+} from './animateur-roster';
 import { resumeRelance } from './relance-resume';
 import { typologieLabel, typologieLabels } from '../../core/typologie-colors';
 import { ImportButton } from '../../shared/import-button';
@@ -100,8 +98,8 @@ import { ImportButton } from '../../shared/import-button';
  *
  * Rows are multi-selectable, for a bulk delete or a bulk edit of the fields
  * animateurs share (appréciation, souhaits, manager, indisponibilités). The
- * appréciation has no column of its own — it is a list per row, unreadable in
- * a cell — and is read in the detail dialog, edited in the form.
+ * appréciations show as pastilles, and are read on the fiche, edited in the
+ * Compétences grid.
  *
  * The acknowledgement column (issue #293) grew two URL-borne filters and one
  * bulk action (issue #504): « jamais confirmés », « silencieux depuis N
@@ -210,10 +208,9 @@ export class AnimateursPage implements OnInit {
   protected readonly managers = signal(false);
 
   /** The edition's first day, from its timeslots: the day a minor is a minor on; today when there is none. */
-  private readonly premierJour = computed(() => {
-    const dates = this.store.creneaux().map((creneau) => creneau.date);
-    return dates.length === 0 ? null : dates.reduce((min, date) => (date < min ? date : min));
-  });
+  private readonly premierJour = computed(() =>
+    firstDay(this.store.creneaux().map((creneau) => creneau.date)),
+  );
 
   /** Every filter in force, as a chip above the table: a filter that narrows a list must be seen doing it. */
   protected readonly chips = computed<FilterChip[]>(() => {
@@ -273,45 +270,30 @@ export class AnimateursPage implements OnInit {
       this.chips().length > 0 ||
       (this.sort().active !== '' && this.sort().direction !== ''),
   );
+  /** The list's view as one value: what the rows and the fiche's « précédent / suivant » both read. */
+  protected readonly view = computed<RosterView>(() => ({
+    sort: this.sort(),
+    filtre: this.filtre(),
+    accuses: this.accuses(),
+    silenceJours: this.silenceJours(),
+    neverReminded: this.neverReminded(),
+    typologie: this.typologie(),
+    souhait: this.souhait(),
+    mineurs: this.mineurs(),
+    managers: this.managers(),
+  }));
+  /** The query params a link to a fiche carries, so its « précédent / suivant » walks this very list. */
+  protected readonly ficheParams = computed(() => rosterLinkParams(this.view()));
   protected readonly animateursFiltres = computed(() => {
-    const mode = this.accuses();
-    const jours = this.silenceJours();
-    const neverReminded = this.neverReminded();
-    const confirmations = this.confirmations();
-    const lastPublishedAt = this.synthese()?.dernierePublicationLe ?? null;
-    const maintenant = new Date();
-    const typologies = typologieLabels(this.store.typologies());
     const importedIds = this.importedIds();
-    return this.store.animateurs().filter(
-      (animateur) =>
-        keptByImportedIds(importedIds, animateur.id) &&
-        keptByAcknowledgement(
-          mode,
-          jours,
-          confirmations.get(animateur.id),
-          lastPublishedAt,
-          maintenant,
-          neverReminded,
-        ) &&
-        this.matchesTypologieFilter(animateur) &&
-        (this.souhait() === '' || (animateur.souhaits ?? []).includes(this.souhait())) &&
-        (!this.mineurs() || majorite(animateur, this.premierJour()) === 'mineur') &&
-        (!this.managers() || animateur.manager) &&
-        correspondAuFiltre(this.filtre(), [
-          animateur.id,
-          animateur.prenom,
-          animateur.nom,
-          // The label is what the screen shows; the id stays findable too.
-          ...Object.keys(animateur.competences ?? {}).flatMap((id) => [
-            id,
-            typologieLabel(typologies, id),
-          ]),
-          // The acknowledgement label travels with the row so the existing
-          // quick filter finds « relancé » or « silencieux » without a control
-          // of its own (issue #293).
-          this.confirmationLabel(animateur),
-        ]),
-    );
+    return filterRoster(this.store.animateurs(), this.view(), {
+      confirmations: this.confirmations(),
+      lastPublishedAt: this.synthese()?.dernierePublicationLe ?? null,
+      typologies: typologieLabels(this.store.typologies()),
+      now: new Date(),
+      premierJour: this.premierJour(),
+      postes: this.seatsByAnimateur(),
+    }).filter((animateur) => keptByImportedIds(importedIds, animateur.id));
   });
 
   /**
@@ -342,23 +324,13 @@ export class AnimateursPage implements OnInit {
    * The rows in the order of the chosen column, ties and the unsorted table
    * in the natural order of the ids (A2 before A10).
    */
-  protected readonly sortedAnimateurs = computed(() => {
-    const animateurs = this.animateursFiltres();
-    const { active, direction } = this.sort();
-    const byId = (a: Animateur, b: Animateur) => compareNatural(a.id, b.id);
-    if (!active || !direction) {
-      return [...animateurs].sort(byId);
-    }
-    const contexte: ContexteTri = {
+  protected readonly sortedAnimateurs = computed(() =>
+    sortRoster(this.animateursFiltres(), this.sort(), {
       confirmations: this.confirmations(),
       premierJour: this.premierJour(),
       postes: this.seatsByAnimateur(),
-    };
-    const factor = direction === 'asc' ? 1 : -1;
-    return [...animateurs].sort(
-      (a, b) => factor * compareByColumn(a, b, active, contexte) || byId(a, b),
-    );
-  });
+    }),
+  );
 
   protected readonly store = inject(ReferenceDataStore);
   protected readonly jobs = inject(SolverJobService);
@@ -374,7 +346,7 @@ export class AnimateursPage implements OnInit {
 
   /**
    * Roving tabindex over the rows: the arrows move the focus, Entrée opens the
-   * detail, Espace ticks the row. `core/table-navigation.ts` holds the whole
+   * fiche, Espace ticks the row. `core/table-navigation.ts` holds the whole
    * mechanism, shared with the other reference-data tables.
    */
   /** Rows kept across a reload of the store, and the focus with them. */
@@ -385,7 +357,7 @@ export class AnimateursPage implements OnInit {
     host: () => this.hote.nativeElement,
     selection: this.selection,
     open: (animateur: Animateur) => {
-      void this.router.navigate(['/animateurs', animateur.id]);
+      this.openFiche(animateur);
       return true;
     },
     announcer: inject(LiveAnnouncer),
@@ -478,18 +450,19 @@ export class AnimateursPage implements OnInit {
   });
 
   constructor() {
-    const params = this.route.snapshot.queryParamMap;
-    this.sort.set(readSort(params));
-    this.filtre.set(params.get('q') ?? '');
-    const accuses = readModeAccuses(params.get('confirmation'), params.get('silence'));
-    this.accuses.set(accuses.mode);
-    this.silenceJours.set(accuses.jours);
-    this.neverReminded.set(readNeverReminded(params.get('relance')));
-    this.typologie.set(params.get('typologie') ?? '');
-    this.souhait.set(params.get('souhait')?.trim() ?? '');
-    this.importedIds.set(readImportedIds(params.get(IMPORTED_IDS_PARAM)));
-    this.mineurs.set(params.get('mineurs') === '1');
-    this.managers.set(params.get('manager') === '1');
+    const view = readRosterView(this.route.snapshot.queryParamMap);
+    this.sort.set(view.sort);
+    this.filtre.set(view.filtre);
+    this.accuses.set(view.accuses);
+    this.silenceJours.set(view.silenceJours);
+    this.neverReminded.set(view.neverReminded);
+    this.typologie.set(view.typologie);
+    this.souhait.set(view.souhait);
+    this.mineurs.set(view.mineurs);
+    this.managers.set(view.managers);
+    this.importedIds.set(
+      readImportedIds(this.route.snapshot.queryParamMap.get(IMPORTED_IDS_PARAM)),
+    );
     const chargement = this.crud.reload();
     void chargement.then((loaded) => {
       if (loaded) {
@@ -504,16 +477,8 @@ export class AnimateursPage implements OnInit {
     });
     void this.problemes.reloadFeasibility();
     keepViewInQueryParams(() => ({
-      ...sortQueryParams(this.sort()),
-      q: optionalParam(this.filtre()),
-      confirmation: this.accuses() === 'jamais' ? 'jamais' : null,
-      silence: this.accuses() === 'silence' ? String(this.silenceJours()) : null,
-      relance: this.accuses() !== 'tous' && this.neverReminded() ? 'jamais' : null,
-      typologie: optionalParam(this.typologie()),
-      souhait: optionalParam(this.souhait()),
+      ...rosterViewParams(this.view()),
       [IMPORTED_IDS_PARAM]: importedIdsParam(this.importedIds()),
-      mineurs: this.mineurs() ? '1' : null,
-      manager: this.managers() ? '1' : null,
     }));
     // `?edit=<id>`: a link from a symptom (a problem, a warning) lands here
     // with the fiche to open. Followed rather than read once — the link often
@@ -539,14 +504,7 @@ export class AnimateursPage implements OnInit {
    */
   private async loadSeats(): Promise<void> {
     try {
-      const planning = await this.planningState.loadForDisplay();
-      const postes = new Map<string, number>();
-      for (const poste of planning?.postes ?? []) {
-        if (poste.animateur) {
-          postes.set(poste.animateur.id, (postes.get(poste.animateur.id) ?? 0) + 1);
-        }
-      }
-      this.seatsByAnimateur.set(postes.size === 0 ? null : postes);
+      this.seatsByAnimateur.set(seatCounts(await this.planningState.loadForDisplay()));
     } catch {
       this.seatsByAnimateur.set(null);
     }
@@ -647,11 +605,7 @@ export class AnimateursPage implements OnInit {
 
   /** Wording of the acknowledgement column, and the text its quick filter matches on. */
   protected confirmationLabel(animateur: Animateur): string {
-    const confirmation = this.confirmations().get(animateur.id);
-    if (!confirmation?.affecte) {
-      return '';
-    }
-    return CONFIRMATION_LABELS[confirmation.statut]();
+    return confirmationLabel(this.confirmations().get(animateur.id));
   }
 
   /**
@@ -726,11 +680,6 @@ export class AnimateursPage implements OnInit {
     this.filtre.set('');
     this.clearChips();
     this.sort.set(NO_SORT);
-  }
-
-  private matchesTypologieFilter(animateur: Animateur): boolean {
-    const ids = this.typologiesFiltrees();
-    return ids.length === 0 || ids.some((id) => id in (animateur.competences ?? {}));
   }
 
   private indisponibiliteCritiqueMessage(jour: string, cause: string): string {
@@ -906,6 +855,11 @@ export class AnimateursPage implements OnInit {
     await this.crud.saveMany('animateurs', plan.rows, labelAnimateursPluriel());
   }
 
+  /** The row's fiche, carrying this list's view so its « précédent / suivant » walks the same rows. */
+  protected openFiche(animateur: Animateur): void {
+    void this.router.navigate(['/animateurs', animateur.id], { queryParams: this.ficheParams() });
+  }
+
   protected openCreate(): void {
     this.openDialog(null);
   }
@@ -955,163 +909,6 @@ export class AnimateursPage implements OnInit {
       },
     );
   }
-}
-
-/**
- * Called from a method, never at module scope: `$localize` only resolves once
- * `main.ts` has loaded the translations.
- */
-const CONFIRMATION_LABELS: Record<StatutConfirmation, () => string> = {
-  NON_VU: () => $localize`:@@animateurs.confirmation.nonVu:Silencieux`,
-  CONFIRME: () => $localize`:@@animateurs.confirmation.confirme:Confirmé`,
-  RELANCE: () => $localize`:@@animateurs.confirmation.relance:Relancé`,
-};
-
-/** What a column is sorted against, beside the rows themselves. */
-interface ContexteTri {
-  confirmations: Map<string, ConfirmationView>;
-  premierJour: string | null;
-  postes: ReadonlyMap<string, number> | null;
-}
-
-/**
- * Order of one column, ascending. Every column here is sorted on something the
- * cell actually shows, so the result reads as sorted rather than shuffled — and
- * where the value is not a text, the ranking is chosen to put what still needs
- * doing on top of the ascending order:
- *
- *   - `age` on the age at the edition's first day, the youngest — the minors
- *     the regime protects — first;
- *   - `competences`, `indisponibilites` and `postes` show a list or a count,
- *     so the count is what is compared;
- *   - `confirmation` is a status with no natural order: silencieux, then
- *     relancé, then confirmé, and last the people who were asked nothing —
- *     ascending is then "who is left to chase".
- *
- * An unknown column answers 0, which leaves the rows in source order: a link
- * carrying a `?sort=` of a column since removed degrades to an unsorted table
- * (see `core/view-query-params.ts`).
- */
-function compareByColumn(
-  a: Animateur,
-  b: Animateur,
-  column: string,
-  contexte: ContexteTri,
-): number {
-  switch (column) {
-    case 'id':
-      return compareTexte(a.id, b.id);
-    case 'nom':
-      // On the string the cell shows, not on the family name: the column reads
-      // « Prénom Nom », and sorting on anything else looks broken on screen.
-      return compareTexte(nomAffiche(a), nomAffiche(b));
-    case 'age':
-      return (
-        (ageOn(a, contexte.premierJour) ?? Infinity) - (ageOn(b, contexte.premierJour) ?? Infinity)
-      );
-    case 'majorite':
-      return rankMajorite(a) - rankMajorite(b);
-    case 'manager':
-      return rankBooleen(a.manager) - rankBooleen(b.manager);
-    case 'competences':
-      return Object.keys(a.competences ?? {}).length - Object.keys(b.competences ?? {}).length;
-    case 'indisponibilites':
-      return (a.joursIndisponibles?.length ?? 0) - (b.joursIndisponibles?.length ?? 0);
-    case 'postes':
-      return (contexte.postes?.get(a.id) ?? 0) - (contexte.postes?.get(b.id) ?? 0);
-    case 'confirmation':
-      return (
-        rankConfirmation(a, contexte.confirmations) - rankConfirmation(b, contexte.confirmations)
-      );
-    default:
-      return 0;
-  }
-}
-
-/**
- * Numeric-aware and accent-insensitive: ids run A1, A2 … A10, which a plain
- * code-point comparison files as A1, A10, A2 — and « Élodie » must not land
- * after « Zoé ».
- */
-function compareTexte(left: string, right: string): number {
-  return (left ?? '').localeCompare(right ?? '', intlLocale(), {
-    numeric: true,
-    sensitivity: 'base',
-  });
-}
-
-function nomAffiche(animateur: Animateur): string {
-  return `${animateur.prenom ?? ''} ${animateur.nom ?? ''}`.trim();
-}
-
-/** "Oui" first, like {@link rankMajorite}. */
-function rankBooleen(valeur: boolean): number {
-  return valeur ? 0 : 1;
-}
-
-function rankConfirmation(
-  animateur: Animateur,
-  confirmations: Map<string, ConfirmationView>,
-): number {
-  const confirmation = confirmations.get(animateur.id);
-  if (!confirmation?.affecte) {
-    // Nothing was asked of them: last, because there is nothing to chase.
-    return 3;
-  }
-  return CONFIRMATION_RANKS[confirmation.statut];
-}
-
-const CONFIRMATION_RANKS: Record<StatutConfirmation, number> = {
-  NON_VU: 0,
-  RELANCE: 1,
-  CONFIRME: 2,
-};
-
-function rankMajorite(animateur: Animateur): number {
-  const statut = majorite(animateur);
-  if (statut === 'majeur') {
-    return 0;
-  }
-  if (statut === 'mineur') {
-    return 1;
-  }
-  return 2;
-}
-
-/**
- * Age in whole years on `date` (`AAAA-MM-JJ`, today when `null`), `null`
- * without a readable birth date. Derived, never stored: the legal regime
- * hangs on the day, and the edition's first day is when it starts to apply.
- */
-function ageOn(animateur: Animateur, date: string | null): number | null {
-  const dateNaissance = animateur.dateNaissance;
-  if (!dateNaissance) {
-    return null;
-  }
-  const [year, month, day] = dateNaissance.split('-').map(Number);
-  if (!year || !month || !day) {
-    return null;
-  }
-  const now = new Date();
-  const [refYear, refMonth, refDay] = date
-    ? date.split('-').map(Number)
-    : [now.getFullYear(), now.getMonth() + 1, now.getDate()];
-  let age = refYear - year;
-  if (refMonth < month || (refMonth === month && refDay < day)) {
-    age -= 1;
-  }
-  return age;
-}
-
-function majorite(
-  animateur: Animateur,
-  date: string | null = null,
-): 'majeur' | 'mineur' | 'inconnu' {
-  const age = ageOn(animateur, date);
-  if (age === null) {
-    return 'inconnu';
-  }
-  return age >= 18 ? 'majeur' : 'mineur';
 }
 
 /** A pasted yes or no, in the words a spreadsheet uses; `null` for anything else. */

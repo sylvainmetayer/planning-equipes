@@ -104,15 +104,15 @@ export function buildReferenceDataSections(): HelpSection[] {
           items: [
             {
               term: $localize`:@@aide.data.term.animateurs:Animateurs`,
-              text: $localize`:@@aide.data.def.animateurs:Identité, date de naissance, compétences par typologie avec un niveau (débutant, autonome, référent), jours d'indisponibilité. Le régime légal — moins de 16 ans, 16-18 ans, majeur — ne se saisit jamais : il est recalculé à la date de chaque créneau. Par défaut un animateur est disponible, ne saisissez que les absences : dans la fiche, un clic sur un jour de la frise le marque absent, et « Absent du » … « au » pose une plage d'un geste. Les appréciations se saisissent dans la grille des compétences, que « Saisir dans la grille (ligne pré-filtrée) » ouvre sur la personne. La colonne « Âge / régime » dit l'âge au premier jour de l'édition. Le nom mène à la fiche complète ; « Filtrer » réduit la liste aux mineurs, aux managers, à une compétence ou à un souhait, chaque filtre restant affiché au-dessus du tableau. Une fois un planning calculé, la colonne « Postes » compte les sièges de chacun.`,
+              text: $localize`:@@aide.data.def.animateurs:Identité, date de naissance, compétences par typologie avec un niveau (débutant, autonome, référent), jours d'indisponibilité. Le régime légal — moins de 16 ans, 16-18 ans, majeur — ne se saisit jamais : il est recalculé à la date de chaque créneau. Par défaut un animateur est disponible, ne saisissez que les absences : le plus court est un clic sur le jour, dans la frise de sa fiche ; dans le formulaire, un clic sur un jour de la frise le marque absent, et « Absent du » … « au » pose une plage d'un geste. Les appréciations se saisissent en masse dans la grille des compétences, que « Saisir dans la grille (ligne pré-filtrée) » ouvre sur la personne. La colonne « Âge / régime » dit l'âge au premier jour de l'édition. Le nom ouvre la fiche de la personne, qui garde le filtre et le tri de la liste pour « Précédent » et « Suivant » ; « Filtrer » réduit la liste aux mineurs, aux managers, à une compétence ou à un souhait, chaque filtre restant affiché au-dessus du tableau. Une fois un planning calculé, la colonne « Postes » compte les sièges de chacun.`,
             },
             {
               term: $localize`:@@aide.data.term.stands:Stands`,
-              text: $localize`:@@aide.data.def.stands:Typologies proposées, effectif minimum et maximum simultané, restriction éventuelle aux majeurs, indicateurs premium et effort, horaires d'ouverture. Les horaires se saisissent en règles valables tous les jours, sur une ligne : « 10:00-12:00, 14:00- », une fin vide courant jusqu'à la fermeture. « Cas particulier » restreint une règle à certains jours ou en fait une fermeture, et des exceptions datées priment sur les règles du jour qu'elles nomment. Chaque fenêtre peut nommer son propre effectif — « @2 » — pour un stand qui tient à deux le matin et à quatre l'après-midi ; sans cela, elle reprend le minimum du stand.`,
+              text: $localize`:@@aide.data.def.stands:Typologies proposées, effectif minimum et maximum simultané, restriction éventuelle aux majeurs, indicateurs premium et effort, horaires d'ouverture. « Ajouter » guide la création en quatre étapes — identité, typologies, lieu, horaires : les créneaux de l'édition sont proposés ouverts, on décoche ceux où le stand est fermé, on tape combien de personnes il tient sur chacun et on décoche les jours de la semaine où il n'ouvre pas ; aucune règle à écrire. Le tableau se trie sur chaque colonne ; « Ouvert » compte ses jours ouverts et ses postes, et « Couverture » apparaît une fois un planning calculé. « Édition groupée » modifie d'un coup les stands cochés, ou à défaut tous ceux que le tableau affiche ; « Saisir en grille », « Importer la grille » et « Compacter les horaires » sont rangés dans le menu « Plus ». Le nom ouvre la fiche du stand : sa grille jour × créneau se modifie sur place, comme sa ligne dans la grille des Horaires des stands — une case vide ferme, un bloc se colle depuis un tableur, « Recopier ce jour » pose un jour sur les autres, Ctrl+D reprend le jour du dessus —, puis ses anomalies d'ouverture, ses sièges après calcul (un siège vide s'ouvre dans le panneau du siège de la Journée), « Comparer avec… » et l'historique de ses modifications. « Modifier l'identité » ne montre que les champs d'identité. La section « Règles », repliée, donne la forme condensée que la grille enregistre — règles valables tous les jours sur une ligne comme « 10:00-12:00, 14:00- », cas particuliers, exceptions datées, fenêtre qui nomme son propre effectif « @2 » — pour qui veut la lire ou l'écrire avec « Modifier les règles ».`,
             },
             {
-              term: $localize`:@@aide.data.term.autres:Emplacements et typologies`,
-              text: $localize`:@@aide.data.def.autres:Un emplacement est un lieu géolocalisé auquel rattacher un stand : il sert à éviter les allers-retours d'un créneau à l'autre. Une typologie est le vocabulaire commun entre les compétences d'un animateur et les jeux d'un stand — sans typologie partagée, l'animateur ne peut pas tenir le stand. Cochez aussi, dans la colonne « Typologie ninja » de l'écran Typologies, la typologie dont les porteurs sont polyvalents : le solveur essaie d'en garder un libre sur chaque créneau. Sans elle, cette réserve n'existe pas.`,
+              term: $localize`:@@aide.data.term.lieux:Lieux et typologies`,
+              text: $localize`:@@aide.data.def.autres:Un lieu — un emplacement — est un endroit géolocalisé auquel rattacher un stand : il sert à éviter les allers-retours d'un créneau à l'autre. Les lieux sont l'onglet « Lieux » de la page Stands : une carte les montre tous avec leurs stands, et faire glisser un marqueur y corrige la position sans ouvrir de fiche ; le tableau, trié à volonté, dit quels stands sont rattachés à chacun. Le formulaire d'un stand propose « Nouveau lieu… » sans quitter la page. Une typologie est le vocabulaire commun entre les compétences d'un animateur et les jeux d'un stand — sans typologie partagée, l'animateur ne peut pas tenir le stand. Cochez aussi, dans la colonne « Typologie ninja » de l'écran Typologies, la typologie dont les porteurs sont polyvalents : le solveur essaie d'en garder un libre sur chaque créneau. Sans elle, cette réserve n'existe pas.`,
             },
           ],
         },
@@ -156,7 +156,11 @@ export function buildReferenceDataSections(): HelpSection[] {
       links: [
         { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
-        { route: '/emplacements', label: $localize`:@@nav.link.emplacements:Emplacements` },
+        {
+          route: '/stands',
+          queryParams: { onglet: 'lieux' },
+          label: $localize`:@@stands.onglet.lieuxCourt:Lieux`,
+        },
         { route: '/typologies', label: $localize`:@@nav.link.typologies:Typologies` },
         {
           route: '/diagnostic',
@@ -268,7 +272,7 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.ouvertures.fermetures:Un stand n'a pas à déclarer ses fermetures : tout jour non déclaré est fermé. « Compacter les horaires », sur la page Stands, retire les fermetures devenues inutiles après avoir vérifié qu'aucune ouverture ne bouge.`,
+          text: $localize`:@@aide.ouvertures.fermetures:Un stand n'a pas à déclarer ses fermetures : tout jour non déclaré est fermé. « Compacter les horaires », dans le menu « Plus » de la page Stands, retire les fermetures devenues inutiles après avoir vérifié qu'aucune ouverture ne bouge.`,
         },
       ],
       links: [

@@ -157,6 +157,17 @@ describe('RailJourView', () => {
     expect(racine().querySelectorAll('.rail-cell-indisponible')).toHaveLength(1);
   });
 
+  // Every name of the Journée leads to the person's fiche.
+  it("links each line's name to the person's fiche", async () => {
+    await rendre(planningDeuxJours());
+
+    const liens = Array.from(racine().querySelectorAll<HTMLAnchorElement>('a.rail-nom-label'));
+    expect(liens.map((lien) => lien.getAttribute('href'))).toEqual(
+      expect.arrayContaining([expect.stringMatching(/^\/animateurs\/[^/?]+$/)]),
+    );
+    expect(liens).toHaveLength(3);
+  });
+
   // Same warning as the day calendar, on the other screen that carries the
   // gesture: wherever the instance offers it, it is there every time the page
   // is opened.

@@ -129,9 +129,9 @@ describe('TypologiesPlanningPage', () => {
 
   /**
    * The point of the rework: a nominative list one cannot act on is a dead end.
-   * Every name is a link to that person's timeline, on every rendering.
+   * Every name is a link to that person's fiche, its planning open, on every rendering.
    */
-  it('links every animateur to their own timeline', async () => {
+  it('links every animateur to their own fiche', async () => {
     const { fixture, page } = mount();
     await page.load();
     await fixture.whenStable();
@@ -141,12 +141,12 @@ describe('TypologiesPlanningPage', () => {
         (lien as HTMLAnchorElement).getAttribute('href'),
       );
 
-    expect(liens()).toContain('/timeline?animateur=ada');
-    expect(liens()).toContain('/timeline?animateur=bob');
+    expect(liens()).toContain('/animateurs/ada?section=timeline');
+    expect(liens()).toContain('/animateurs/bob?section=timeline');
 
     page.onglet.set('cartes');
     await fixture.whenStable();
-    expect(liens()).toContain('/timeline?animateur=ada');
+    expect(liens()).toContain('/animateurs/ada?section=timeline');
   });
 
   it('draws each of the four renderings without failing', async () => {

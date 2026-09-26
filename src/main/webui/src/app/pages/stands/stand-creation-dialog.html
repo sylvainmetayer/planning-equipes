@@ -1,0 +1,119 @@
+<h2 mat-dialog-title i18n="@@stands.creation.titre">Ajouter un stand</h2>
+<mat-dialog-content>
+  <mat-stepper orientation="vertical" [linear]="true" (selectionChange)="onStep($event.selectedIndex)">
+    <mat-step [completed]="identityValid()">
+      <ng-template matStepLabel><ng-container i18n="@@stands.creation.identite">Identité</ng-container></ng-template>
+      <div class="stand-creation-champs">
+        <mat-form-field appearance="outline">
+          <mat-label i18n="@@stands.field.nom">Nom</mat-label>
+          <input matInput name="nom" required [ngModel]="nom()" (ngModelChange)="nom.set($event)" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label i18n="@@referentiel.field.code">Code</mat-label>
+          <input matInput name="code" maxlength="64" [ngModel]="code()" (ngModelChange)="code.set($event)" />
+          <mat-hint i18n="@@referentiel.hint.code">Clé lisible citée par les fichiers d'import (facultatif)</mat-hint>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="stand-creation-nombre">
+          <mat-label i18n="@@stands.field.effectifMin">Effectif minimum</mat-label>
+          <input matInput name="effectifMin" type="number" min="1" [ngModel]="effectifMin()" (ngModelChange)="effectifMin.set(+$event)" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="stand-creation-nombre">
+          <mat-label i18n="@@stands.field.effectifMax">Effectif maximum</mat-label>
+          <input matInput name="effectifMax" type="number" min="1" [ngModel]="effectifMax()" (ngModelChange)="effectifMax.set(+$event)" />
+        </mat-form-field>
+        <mat-checkbox [checked]="reserveMajeurs()" (change)="reserveMajeurs.set($event.checked)"
+                      i18n="@@stands.field.reserveMajeurs">Réservé aux majeurs</mat-checkbox>
+      </div>
+      <div class="stand-creation-suite">
+        <button matButton="filled" matStepperNext type="button" [disabled]="!identityValid()" i18n="@@stands.creation.suivant">Suivant</button>
+      </div>
+    </mat-step>
+
+    <mat-step [completed]="typologiesValid()">
+      <ng-template matStepLabel><ng-container i18n="@@stands.field.typologies">Typologies de jeu</ng-container></ng-template>
+      <mat-chip-listbox multiple i18n-aria-label="@@stands.field.typologies" aria-label="Typologies de jeu">
+        @for (typologie of store.typologies(); track typologie.id) {
+          <mat-chip-option [selected]="typologies().includes(typologie.id)"
+                           (selectionChange)="toggleTypologie(typologie.id, $event.selected)">{{ typologie.label || typologie.id }}</mat-chip-option>
+        }
+      </mat-chip-listbox>
+      @if (store.typologies().length === 0) {
+        <p class="empty-hint" i18n="@@stands.creation.aucuneTypologie">Aucune typologie : créez-en une sur l'écran Typologies.</p>
+      }
+      <div class="stand-creation-suite">
+        <button matButton matStepperPrevious type="button" i18n="@@stands.creation.retour">Retour</button>
+        <button matButton="filled" matStepperNext type="button" [disabled]="!typologiesValid()" i18n="@@stands.creation.suivant">Suivant</button>
+      </div>
+    </mat-step>
+
+    <mat-step>
+      <ng-template matStepLabel><ng-container i18n="@@stands.creation.lieu">Lieu</ng-container></ng-template>
+      <mat-form-field appearance="outline" class="stand-creation-lieu">
+        <mat-label i18n="@@stands.field.emplacement">Emplacement</mat-label>
+        <mat-select [value]="emplacementId()" (valueChange)="chooseLocation($event)">
+          <mat-option [value]="null" i18n="@@stands.field.noEmplacement">Aucun</mat-option>
+          @for (emplacement of store.emplacements(); track emplacement.id) {
+            <mat-option [value]="emplacement.id">{{ emplacement.nom || emplacement.id }}</mat-option>
+          }
+          <mat-option [value]="newLocation" [disabled]="locationsFrozen()" i18n="@@stands.field.nouveauLieu">Nouveau lieu…</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <div class="stand-creation-suite">
+        <button matButton matStepperPrevious type="button" i18n="@@stands.creation.retour">Retour</button>
+        <button matButton="filled" matStepperNext type="button" i18n="@@stands.creation.suivant">Suivant</button>
+      </div>
+    </mat-step>
+
+    <mat-step>
+      <ng-template matStepLabel><ng-container i18n="@@stands.creation.horaires">Horaires</ng-container></ng-template>
+      @if (windows().length === 0) {
+        <p class="empty-hint" i18n="@@stands.creation.sansCreneaux">Aucun créneau dans l'édition : le stand sera ouvert sur tous ceux à venir. Sa grille se règle ensuite sur sa fiche.</p>
+      } @else {
+        <p class="empty-hint" i18n="@@stands.creation.aideHoraires">Décochez ce que le stand n'ouvre pas ; le nombre dit combien de personnes le tiennent.</p>
+        <table class="stand-creation-fenetres">
+          <caption class="visually-hidden" i18n="@@stands.creation.fenetres">Créneaux ouverts et effectif</caption>
+          <thead>
+            <tr>
+              <th scope="col" i18n="@@stands.creation.creneau">Créneau</th>
+              <th scope="col" i18n="@@stands.column.effectif">Effectif</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (window of windows(); track window.key; let index = $index) {
+              <tr>
+                <th scope="row">
+                  <mat-checkbox [checked]="window.open" (change)="setWindow(index, { open: $event.checked })">{{ window.label }}</mat-checkbox>
+                </th>
+                <td>
+                  <input class="stand-creation-effectif" type="number" min="0" [value]="window.effectif" [disabled]="!window.open"
+                         [attr.aria-label]="window.label" (change)="onEffectif(index, $event)" />
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        <fieldset class="stand-creation-jours">
+          <legend i18n="@@stands.creation.jours">Ouvert le</legend>
+          @for (weekday of weekdays(); track weekday.day) {
+            <mat-checkbox [checked]="weekday.open" (change)="toggleWeekday(weekday.day, $event.checked)">{{ weekdayLabel(weekday.day) }}</mat-checkbox>
+          }
+        </fieldset>
+      }
+      <div class="stand-creation-suite">
+        <button matButton matStepperPrevious type="button" i18n="@@stands.creation.retour">Retour</button>
+      </div>
+    </mat-step>
+  </mat-stepper>
+  <app-status-message [text]="hoursError()" tone="error" />
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancel()" i18n="@@common.cancel">Annuler</button>
+  <button matButton="filled" type="button" [disabled]="!identityValid() || !typologiesValid() || saving() || editingLocked()" (click)="create()">
+    <mat-icon>{{ createdId() ? 'refresh' : 'add' }}</mat-icon>
+    @if (createdId()) {
+      <ng-container i18n="@@stands.creation.reessayer">Réessayer</ng-container>
+    } @else {
+      <ng-container i18n="@@stands.submit.create">Créer le stand</ng-container>
+    }
+  </button>
+</mat-dialog-actions>

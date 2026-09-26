@@ -188,24 +188,33 @@ test.describe('avertissements de saisie', () => {
     const page = await pageAdmin(browser, admin);
     await page.goto('/stands');
 
+    // The guided creation: identity, then a typologie — a stand always carries
+    // one (issue #343), the creation refuses to go on without it.
     await page.getByRole('button', { name: 'Ajouter' }).first().click();
+    const creation = await dialogueOuvert(page);
+    await creation.getByLabel('Nom', { exact: true }).fill('Stand du matin');
+    await creation.getByLabel('Code', { exact: true }).fill(STAND_MATIN);
+    await creation.getByRole('button', { name: 'Suivant' }).first().click();
+    await creation.getByRole('option', { name: 'STRATEGIE' }).click();
+    await creation.getByRole('button', { name: 'Créer le stand' }).click();
+    await expect(creation).toBeHidden();
+    await expect(page).toHaveURL(/\/stands\/[^/?]+/);
+
+    // The rules, the condensed form of the fiche: the whole day's windows on
+    // one line — the morning, before the only créneau.
+    await page.getByRole('heading', { name: 'Règles', exact: true }).click();
+    await page.getByRole('button', { name: 'Modifier les règles' }).click();
     const dialog = await dialogueOuvert(page);
-    await dialog.getByLabel('Nom').fill('Stand du matin');
-    await dialog.getByLabel('Code', { exact: true }).fill(STAND_MATIN);
-    // A stand always carries a typologie (issue #343): the form refuses to submit without one.
-    await dialog.getByLabel('Typologies de jeu').click();
-    await page.getByRole('option', { name: 'STRATEGIE' }).click();
-    await page.keyboard.press('Escape');
     await dialog.getByRole('button', { name: "Ajouter une règle d'horaire" }).click();
-    // The whole day's windows on one line: the morning, before the only créneau.
     await dialog.getByLabel('Fenêtres de la journée').fill('08:00-10:00');
-    await dialog.getByRole('button', { name: 'Créer le stand' }).click();
+    await dialog.getByRole('button', { name: 'Modifier le stand' }).click();
     await expect(dialog).toBeHidden();
 
     // The message names the day and the window, and says the stand is written.
     await expect(page.getByText(/ne recoupent aucun créneau/)).toBeVisible();
-    await expect(page.getByText(/08:00/)).toBeVisible();
+    await expect(page.locator('mat-snack-bar-container')).toContainText('08:00');
     await page.getByRole('button', { name: 'Fermer' }).click();
+    await page.goto('/stands');
     await expect(page.getByRole('row', { name: /Stand du matin/ })).toHaveCount(1);
 
     await page.context().close();
@@ -261,11 +270,15 @@ test.describe('avertissements de saisie', () => {
     await (await rowAction(ligne, 'Modifier')).click();
     await expect(page.getByRole('dialog')).toContainText("Hors des jours de l'édition");
     await expect(page.getByRole('dialog')).toContainText(JOUR_HORS_BORNES);
+    await page.keyboard.press('Escape');
+
+    // Sa fiche, que le nom ouvre, le montre aussi, hors de la frise.
+    await ligne.getByRole('link', { name: new RegExp(ANIMATEUR) }).click();
+    await expect(page.locator('#contenu')).toContainText(JOUR_HORS_BORNES);
 
     // Le journal du navigateur survit à la déconnexion et se relit dans les
     // messages récents de l'accueil : la phrase qui dit qu'une personne est
     // mineure n'y est pas écrite (docs/rgpd.md §7).
-    await page.keyboard.press('Escape');
     await page.goto('/');
     await page.getByRole('button', { name: /Messages récents/ }).click();
     await expect(page.getByText(/point\(s\) à vérifier/).first()).toBeVisible();

@@ -1,29 +1,7 @@
-/* Fiche animateur: seven foldable sections, each a native <details> so the
+/* Fiche animateur: a head of actions, then seven foldable sections, each a native <details> so the
    keyboard and the screen reader get the disclosure for free. */
 
-.fiche-section {
-  border-top: 1px solid var(--mat-sys-outline-variant);
-  padding: 0.5rem 0 0.75rem;
-}
-
-.fiche-section > summary {
-  cursor: pointer;
-  list-style-position: outside;
-}
-
-.fiche-section > summary h2 {
-  display: inline;
-  font: var(--mat-sys-title-medium);
-  color: var(--app-accent);
-}
-
-.fiche-section h3 {
-  font: var(--mat-sys-title-small);
-  margin: 1rem 0 0.25rem;
-}
-
-.fiche-introuvable,
-.fiche-alerte {
+.fiche-introuvable {
   color: var(--mat-sys-error);
 }
 
@@ -90,11 +68,6 @@
   opacity: 0.55;
 }
 
-.fiche-liste {
-  margin: 0.25rem 0;
-  padding-left: 1.25rem;
-}
-
 .fiche-severite {
   display: inline-block;
   margin-right: 0.5rem;
@@ -114,4 +87,110 @@
   .fiche-table {
     width: 100%;
   }
+}
+
+/* The head: the way back to the list and its neighbours, then the name. */
+.fiche-fil {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 1rem;
+  font: var(--mat-sys-body-medium);
+}
+
+.fiche-rang {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.fiche-voisin {
+  display: inline-flex;
+  align-items: center;
+}
+
+.fiche-actions {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.fiche-lien-espace {
+  word-break: break-all;
+}
+
+/* A day of the strip is a button: the gesture « indisponible ce jour » starts there. */
+button.fiche-jour {
+  cursor: pointer;
+  text-align: left;
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+}
+
+button.fiche-jour:hover {
+  background: var(--mat-sys-surface-container-high);
+}
+
+.fiche-jour-choisi {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 1px;
+}
+
+.fiche-jour-panneau:not(:empty) {
+  margin: 0.5rem 0 1rem;
+  padding: 0.5rem 1rem 0.75rem;
+  border-left: 3px solid var(--mat-sys-primary);
+  background: var(--mat-sys-surface-container-low);
+}
+
+.fiche-jour-panneau h3 {
+  margin-top: 0.25rem;
+}
+
+.fiche-sieges-liberes li {
+  margin: 0.25rem 0;
+}
+
+/* The indicators and the radar side by side, the radar under the table when
+   the width runs out. The table stays first: it is the complete reading. */
+.fiche-equite-corps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1rem 2rem;
+}
+
+.fiche-equite-corps > .fiche-table {
+  flex: 1 1 24rem;
+}
+
+.fiche-radar {
+  flex: 1 1 24rem;
+  min-width: 0;
+}
+
+.fiche-radar-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 1rem;
+}
+
+.fiche-comparer,
+.fiche-ajout-typologie {
+  width: 16rem;
+  max-width: 100%;
+}
+
+.fiche-niveau {
+  font: inherit;
+  padding: 0.15rem 0.25rem;
+}
+
+.fiche-competences-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+}
+
+.fiche-gestes {
+  white-space: nowrap;
 }

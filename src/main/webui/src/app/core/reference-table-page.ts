@@ -1,7 +1,7 @@
 import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { ElementRef, Signal, computed, inject, signal } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Params } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { reportOrphanDrafts } from '../shared/brouillon-dialog';
 import { DetailData, DetailDialog } from '../shared/detail-dialog';
@@ -60,8 +60,12 @@ export interface ReferenceTableConfig<T> {
    */
   champsFiltre: (row: T, store: ReferenceDataStore) => readonly ChampFiltrable[];
 
-  /** Read-only detail shown by {@link ReferenceTablePage.consult}. */
-  detail: (row: T, store: ReferenceDataStore) => DetailData;
+  /**
+   * Read-only detail shown by {@link ReferenceTablePage.consult}. Absent on a
+   * page whose rows have a page of their own — the stands, since their fiche,
+   * which `open` leads to.
+   */
+  detail?: (row: T, store: ReferenceDataStore) => DetailData;
 
   /** Opens the create/edit form. `null` means create. */
   formulaire: (row: T | null, dialog: MatDialog) => void;
@@ -116,6 +120,21 @@ export interface ReferenceTableConfig<T> {
    * entity has one; the edit form otherwise.
    */
   open?: (row: T) => void;
+
+  /**
+   * The query param naming a row to open in its form on arrival — `edit` by
+   * default; `null` for a page whose `?edit=` is answered elsewhere (the stands,
+   * redirected to their fiche by the route).
+   */
+  editParam?: string | null;
+
+  /**
+   * The keys `q`, `sort` and `dir` this table writes in the URL, given the
+   * ones its view asks for — all of them by default. A page holding a second
+   * table in a tab (the Stands and their Lieux) leaves them to that tab while
+   * it is on screen, since the tab's own table owns the same keys then.
+   */
+  viewParams?: (view: Params) => Params;
 }
 
 /**
@@ -194,10 +213,10 @@ export abstract class ReferenceTablePage<T> {
       this.filtre.set(params.get('q') ?? '');
       this.sort.set(readSort(params));
     }
-    keepViewInQueryParams(() => ({
-      q: optionalParam(this.filtre()),
-      ...sortQueryParams(this.sort()),
-    }));
+    keepViewInQueryParams(() => {
+      const view = { q: optionalParam(this.filtre()), ...sortQueryParams(this.sort()) };
+      return config.viewParams ? config.viewParams(view) : view;
+    });
     this.lignesFiltrees = computed(() =>
       sortRows(
         this.refine(
@@ -251,13 +270,16 @@ export abstract class ReferenceTablePage<T> {
     // with the fiche to open. Followed rather than read once — the link very
     // often points at the screen already displayed, where nothing is
     // constructed — then dropped, so a reload does not open the fiche again.
-    consumeQueryParam('edit', async (edit) => {
-      await chargement;
-      const ligne = config.rows(this.store).find((candidat) => config.id(candidat) === edit);
-      if (ligne) {
-        this.edit(ligne);
-      }
-    });
+    const editParam = config.editParam === undefined ? 'edit' : config.editParam;
+    if (editParam) {
+      consumeQueryParam(editParam, async (edit) => {
+        await chargement;
+        const ligne = config.rows(this.store).find((candidat) => config.id(candidat) === edit);
+        if (ligne) {
+          this.edit(ligne);
+        }
+      });
+    }
   }
 
   /** « Tout afficher »: the whole referential again, the rest of the view untouched. */
@@ -341,10 +363,14 @@ export abstract class ReferenceTablePage<T> {
    * usual form dialog — locked, there as here, while a solve is running.
    */
   protected async consult(ligne: T): Promise<void> {
+    const detail = this.config.detail;
+    if (!detail) {
+      return;
+    }
     const result = await firstValueFrom(
       this.dialog
         .open(DetailDialog, {
-          data: this.config.detail(ligne, this.store),
+          data: detail(ligne, this.store),
           width: '40rem',
           maxWidth: '95vw',
         })

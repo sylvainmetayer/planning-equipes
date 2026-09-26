@@ -10,7 +10,12 @@ import {
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import {
+  MAT_DIALOG_DATA,
+  MatDialog,
+  MatDialogModule,
+  MatDialogRef,
+} from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -51,11 +56,18 @@ import {
   versStand,
 } from './stand-draft';
 import { copyName } from '../../core/duplicate';
+import { NEW_LOCATION, createLocation } from './new-location';
 
 export interface StandFormData {
   stand: Stand | null;
   /** « Dupliquer »: a creation, prefilled from this stand. */
   modele?: Stand | null;
+  /**
+   * The fiche stand's « Modifier l'identité » : name, code, headcounts,
+   * typologies, location and the three flags, without the schedule — the
+   * fiche edits that in its grid, and « Règles » opens the whole form.
+   */
+  identityOnly?: boolean;
 }
 
 /**
@@ -123,6 +135,11 @@ export class StandFormDialog {
   }
 
   protected readonly editingId = signal<string | null>(this.data.stand?.id ?? null);
+  protected readonly identityOnly = this.data.identityOnly ?? false;
+  protected readonly newLocation = NEW_LOCATION;
+  /** Creating a location is what a TYPOLOGIES_EMPLACEMENTS freeze refuses (ADR 0052). */
+  protected readonly locationsFrozen = computed(() => this.gel.isFrozen('TYPOLOGIES_EMPLACEMENTS'));
+  private readonly dialog = inject(MatDialog);
   /** A new stand is a creation, which a STANDS freeze refuses whole. */
   protected readonly creationFrozen = computed(() => this.standsFrozen() && !this.editingId());
   private readonly initial =
@@ -265,6 +282,20 @@ export class StandFormDialog {
   /** Day label of the preview strip: `08/07`, short enough for a dozen cells in a row. */
   protected libelleJour(date: string): string {
     return libelleJour(date);
+  }
+
+  /** The location select; « Nouveau lieu… » creates one over this dialog and selects it. */
+  protected async chooseLocation(value: string | null): Promise<void> {
+    if (value !== NEW_LOCATION) {
+      this.patch({ emplacementId: value });
+      return;
+    }
+    // The select shows what was chosen until the new one exists.
+    this.patch({ emplacementId: this.draft().emplacementId });
+    const created = await createLocation(this.dialog, this.store);
+    if (created) {
+      this.patch({ emplacementId: created });
+    }
   }
 
   protected patch(patch: Partial<StandDraft>): void {

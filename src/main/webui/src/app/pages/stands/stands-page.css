@@ -1,0 +1,8 @@
+/* Stands: the two tabs, the table's links, and the coverage short of a full plan. */
+.stands-onglets {
+  margin-top: 0.25rem;
+}
+
+.stand-couverture-incomplete {
+  color: var(--mat-sys-error);
+}

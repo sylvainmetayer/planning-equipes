@@ -1,7 +1,34 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <h1 mat-card-title i18n="@@stands.list.title">Stands ({{ store.stands().length }})</h1>
+    <h1 mat-card-title i18n="@@nav.link.stands">Stands</h1>
     <mat-card-subtitle i18n="@@stands.form.description">Un stand est doté d'un effectif à chaque créneau, entre son effectif minimum et maximum.</mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <mat-button-toggle-group class="stands-onglets" [value]="onglet()" (change)="changerOnglet($event.value)"
+                             aria-label="Onglet de la page Stands" i18n-aria-label="@@stands.onglet.label">
+      <mat-button-toggle value="stands">
+        <mat-icon>storefront</mat-icon>
+        <ng-container i18n="@@stands.onglet.stands">Stands ({{ store.stands().length }})</ng-container>
+      </mat-button-toggle>
+      <mat-button-toggle value="lieux">
+        <mat-icon>place</mat-icon>
+        <ng-container i18n="@@stands.onglet.lieux">Lieux ({{ store.emplacements().length }})</ng-container>
+      </mat-button-toggle>
+    </mat-button-toggle-group>
+  </mat-card-content>
+</mat-card>
+
+@if (onglet() === 'lieux') {
+  <!-- The map pulls Leaflet: a chunk of its own, never the table's. -->
+  @defer (on immediate) {
+    <app-emplacements-page />
+  } @placeholder {
+    <p class="empty-hint" i18n="@@stands.lieux.chargement">Chargement de la carte des lieux…</p>
+  }
+} @else {
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@stands.list.title">Stands ({{ store.stands().length }})</h2>
   </mat-card-header>
   <mat-card-content>
     <app-gel-notice family="STANDS" />
@@ -16,25 +43,39 @@
       </button>
       <app-import-button card="stands" [disabled]="standsLocked()" />
     }
-    <button matButton type="button" [disabled]="standsLocked() || compactageEnCours()"
-            i18n-matTooltip="@@stands.compactage.tooltip"
-            matTooltip="Réécrit les plages datées répétées en règles d'horaire équivalentes, avec un aperçu avant d'écrire."
-            (click)="compacterHoraires()">
-      <mat-icon>compress</mat-icon>
-      <ng-container i18n="@@stands.compactage.action">Compacter les horaires</ng-container>
+    <button matButton type="button" [disabled]="standsLocked() || standsFiltres().length === 0" (click)="bulkEdit()"
+            i18n-matTooltip="@@stands.editionGroupee.tooltip"
+            matTooltip="Les stands cochés, ou à défaut tous ceux que le tableau affiche, en une seule modification.">
+      <mat-icon>edit_note</mat-icon>
+      <ng-container i18n="@@stands.editionGroupee.action">Édition groupée</ng-container>
     </button>
-    <a matButton routerLink="/ouvertures" [queryParams]="{ vue: 'saisie' }"
-       i18n-matTooltip="@@stands.grille.tooltip"
-       matTooltip="Les horaires de tous les stands en une grille stand × jour × créneau, un effectif par case, comme dans un tableur.">
-      <mat-icon>grid_on</mat-icon>
-      <ng-container i18n="@@stands.grille.action">Saisir en grille</ng-container>
-    </a>
-    <a matButton routerLink="/fichiers" [queryParams]="{ cible: 'grille-stands' }"
-       i18n-matTooltip="@@stands.importGrille.tooltip"
-       matTooltip="Charger un fichier CSV — stands en lignes, jours et créneaux en colonnes — avec un aperçu avant d'écrire.">
-      <mat-icon>upload_file</mat-icon>
-      <ng-container i18n="@@stands.importGrille.action">Importer la grille</ng-container>
-    </a>
+    <!-- What sends elsewhere, and the maintenance of the hours, in a secondary menu. -->
+    <button matButton type="button" class="stands-plus" [matMenuTriggerFor]="plus">
+      <mat-icon>more_horiz</mat-icon>
+      <ng-container i18n="@@stands.plus">Plus</ng-container>
+      <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
+    </button>
+    <mat-menu #plus="matMenu">
+      <a mat-menu-item routerLink="/ouvertures" [queryParams]="{ vue: 'saisie' }"
+         i18n-matTooltip="@@stands.grille.tooltip"
+         matTooltip="Les horaires de tous les stands en une grille stand × jour × créneau, un effectif par case, comme dans un tableur.">
+        <mat-icon>grid_on</mat-icon>
+        <span i18n="@@stands.grille.action">Saisir en grille</span>
+      </a>
+      <a mat-menu-item routerLink="/fichiers" [queryParams]="{ cible: 'grille-stands' }"
+         i18n-matTooltip="@@stands.importGrille.tooltip"
+         matTooltip="Charger un fichier CSV — stands en lignes, jours et créneaux en colonnes — avec un aperçu avant d'écrire.">
+        <mat-icon>upload_file</mat-icon>
+        <span i18n="@@stands.importGrille.action">Importer la grille</span>
+      </a>
+      <button mat-menu-item type="button" [disabled]="standsLocked() || compactageEnCours()"
+              i18n-matTooltip="@@stands.compactage.tooltip"
+              matTooltip="Réécrit les plages datées répétées en règles d'horaire équivalentes, avec un aperçu avant d'écrire."
+              (click)="compacterHoraires()">
+        <mat-icon>compress</mat-icon>
+        <span i18n="@@stands.compactage.action">Compacter les horaires</span>
+      </button>
+    </mat-menu>
     <button matButton type="button" [disabled]="standsFiltres().length === 0" (click)="exportList()">
       <mat-icon>download</mat-icon>
       <ng-container i18n="@@referentiel.exporterListe">Exporter cette liste</ng-container>
@@ -62,7 +103,7 @@
     <p class="referentiel-collage-hint" i18n="@@referentiel.collageHint">Collez un bloc copié d'un tableur sur une ligne (Ctrl+V) : un aperçu montre les cases modifiées avant d'enregistrer.</p>
     <table mat-table [dataSource]="standsFiltres()" [trackBy]="trackById" matSort [matSortActive]="sort().active"
            [matSortDirection]="sort().direction" (matSortChange)="sort.set($event)" (paste)="onPaste($event)">
-      <caption class="visually-hidden" i18n="@@stands.table.caption">Stands du référentiel : nom, effectifs, typologies, emplacement et actions</caption>
+      <caption class="visually-hidden" i18n="@@stands.table.caption.tri">Stands du référentiel : nom, effectifs, typologies, lieu, ouverture, couverture et actions</caption>
       <ng-container matColumnDef="select">
         <th mat-header-cell scope="col" *matHeaderCellDef>
           <mat-checkbox i18n-aria-label="@@bulk.selectAll" aria-label="Tout sélectionner"
@@ -86,7 +127,7 @@
       <ng-container matColumnDef="nom">
         <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@common.nom">Nom</th>
         <td mat-cell *matCellDef="let stand">
-          <button type="button" class="referentiel-nom" (click)="openRow(stand)">{{ stand.nom || stand.id }}</button>
+          <a class="referentiel-nom" [routerLink]="['/stands', stand.id]" [queryParams]="ficheParams()">{{ stand.nom || stand.id }}</a>
           <app-row-warning [messages]="warnings(stand)" />
           @if (problemes.causeParStandId().get(stand.id); as cause) {
             <mat-icon aria-hidden="false" class="row-problem-icon" [matTooltip]="cause.message" [attr.aria-label]="cause.message">
@@ -103,31 +144,42 @@
       </ng-container>
       <ng-container matColumnDef="typologies">
         <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@stands.column.typologies">Typologies</th>
-        <td mat-cell *matCellDef="let stand">{{ typologiesLabel(stand) }}</td>
+        <td mat-cell *matCellDef="let stand">
+          @for (typologie of typologiesOf(stand); track typologie.id; let last = $last) {
+            <a routerLink="/typologies" [queryParams]="{ q: typologie.label }">{{ typologie.label }}</a>@if (!last) {, }
+          } @empty {
+            —
+          }
+        </td>
       </ng-container>
       <ng-container matColumnDef="emplacement">
-        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@stands.field.emplacement">Emplacement</th>
-        <td mat-cell *matCellDef="let stand">{{ emplacementLabel(stand) }}</td>
+        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@stands.column.lieu">Lieu</th>
+        <td mat-cell *matCellDef="let stand">
+          @if (stand.emplacement; as lieu) {
+            <a routerLink="/stands" [queryParams]="{ onglet: 'lieux', q: lieu.nom || lieu.id }">{{ emplacementLabel(stand) }}</a>
+          } @else {
+            —
+          }
+        </td>
       </ng-container>
-      <ng-container matColumnDef="horaires">
-        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@stands.column.horaires">Horaires</th>
-        <td mat-cell *matCellDef="let stand">{{ horairesLabel(stand) }}</td>
+      <ng-container matColumnDef="ouvert">
+        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@stands.column.ouvert">Ouvert</th>
+        <td mat-cell *matCellDef="let stand">{{ ouvertLabel(stand) }}</td>
+      </ng-container>
+      <ng-container matColumnDef="couverture">
+        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@stands.column.couverture">Couverture</th>
+        <td mat-cell *matCellDef="let stand" [class.stand-couverture-incomplete]="coverageIncomplete(stand)">{{ coverageLabel(stand) }}</td>
       </ng-container>
       <ng-container matColumnDef="actions" stickyEnd>
         <th mat-header-cell scope="col" *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
         <td mat-cell *matCellDef="let stand" class="row-actions">
           <app-row-menu [name]="stand.nom || stand.id" [editDisabled]="editingLocked()"
                         [duplicateDisabled]="standsLocked()" [removeDisabled]="standsLocked()"
-                        (edit)="edit(stand)" (duplicate)="duplicate(stand)" (remove)="remove(stand)">
-            <button mat-menu-item type="button" (click)="consult(stand)">
-              <mat-icon>visibility</mat-icon>
-              <span i18n="@@rowMenu.detail">Détail</span>
-            </button>
-          </app-row-menu>
+                        (edit)="edit(stand)" (duplicate)="duplicate(stand)" (remove)="remove(stand)" />
         </td>
       </ng-container>
-      <tr mat-header-row *matHeaderRowDef="columns"></tr>
-      <tr mat-row *matRowDef="let row; columns: columns; let i = index"
+      <tr mat-header-row *matHeaderRowDef="columns()"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns(); let i = index"
           [attr.data-row-index]="i"
           [tabindex]="navigation.isCurrent(i) ? 0 : -1"
           [class.row-selected]="selection.isSelected(row.id)"
@@ -146,3 +198,4 @@
     }
   </mat-card-content>
 </mat-card>
+}

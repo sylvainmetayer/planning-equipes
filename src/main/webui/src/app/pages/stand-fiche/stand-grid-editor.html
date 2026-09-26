@@ -1,0 +1,68 @@
+<p class="empty-hint" i18n="@@standFiche.grille.aide">Une case = combien de personnes sur ce créneau ; vide = fermé. Collez un bloc depuis un tableur ; Ctrl+D reprend le jour du dessus.</p>
+<div class="stand-grille-actions">
+  @if (modified()) {
+    <span class="stand-grille-modifie" i18n="@@standFiche.grille.modifie">modifié, non enregistré</span>
+  }
+  <button matButton="filled" type="button" [disabled]="!modified() || saving() || locked()" (click)="save()">
+    <mat-icon>save</mat-icon>
+    <ng-container i18n="@@common.save">Enregistrer</ng-container>
+  </button>
+  <button matButton type="button" [disabled]="!modified() || saving()" (click)="reset()">
+    <ng-container i18n="@@fiche.competences.annuler">Annuler les modifications</ng-container>
+  </button>
+</div>
+@if (grid().windows.length === 0) {
+  <p class="empty-hint" i18n="@@standFiche.grille.aucunCreneau">Aucun créneau : la grille du stand se remplit une fois les créneaux de l'édition posés.</p>
+} @else {
+  <div class="stand-grille-defilement">
+    <table class="stand-grille">
+      <caption class="visually-hidden" i18n="@@standFiche.grille.caption">Effectif du stand par jour et par créneau</caption>
+      <thead>
+        <tr>
+          <th scope="col" i18n="@@standFiche.grille.jour">Jour</th>
+          @for (window of grid().windows; track window.key) {
+            <th scope="col" class="stand-grille-creneau">{{ window.heureDebut }}–{{ window.heureFin }}</th>
+          }
+          <th scope="col" i18n="@@standFiche.grille.apercu">Aperçu</th>
+          <th scope="col"><span class="visually-hidden" i18n="@@common.actions">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (day of grid().days; track day.date; let dayIndex = $index) {
+          <tr [class.stand-grille-ferie]="day.ferie">
+            <th scope="row" class="stand-grille-jour">
+              {{ day.date }}
+              @if (day.template) {
+                <span class="stand-grille-type">· {{ day.template }}</span>
+              }
+            </th>
+            @for (colonne of day.cells; track $index; let windowIndex = $index) {
+              <td>
+                @if (colonne) {
+                  <input class="stand-grille-case" type="text" inputmode="numeric" [placeholder]="closed"
+                         [class.stand-grille-case-modifiee]="isChanged(colonne)"
+                         [class.stand-grille-case-partielle]="isPartial(colonne)"
+                         [value]="value(colonne)" [disabled]="locked()"
+                         [attr.aria-label]="cellLabel(day, windowIndex)"
+                         (change)="onChange(colonne, $event)"
+                         (paste)="onPaste(dayIndex, windowIndex, $event)"
+                         (keydown)="onKeydown(dayIndex, $event)" />
+                } @else {
+                  <span class="stand-grille-absent" aria-hidden="true">·</span>
+                }
+              </td>
+            }
+            <td class="stand-grille-apercu">{{ preview(day) }}</td>
+            <td>
+              <button matButton type="button" [disabled]="locked()" (click)="copyDay(day)"
+                      i18n-matTooltip="@@standFiche.grille.recopier.aide" matTooltip="Pose ces effectifs sur tous les autres jours aux mêmes créneaux">
+                <ng-container i18n="@@standFiche.grille.recopier">Recopier ce jour</ng-container>
+                <mat-icon iconPositionEnd>east</mat-icon>
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

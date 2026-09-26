@@ -131,7 +131,9 @@ test.describe('écriture du référentiel pendant une résolution', () => {
       await expect(page.getByRole('menuitem', { name: 'Supprimer', exact: true })).toBeDisabled();
       await page.keyboard.press('Escape');
       await expect(page.getByRole('button', { name: 'Ajouter' })).toBeDisabled();
-      await expect(page.getByRole('button', { name: 'Compacter les horaires' })).toBeDisabled();
+      await page.getByRole('button', { name: 'Plus', exact: true }).click();
+      await expect(page.getByRole('menuitem', { name: 'Compacter les horaires' })).toBeDisabled();
+      await page.keyboard.press('Escape');
 
       // 2. And the server refuses on its own — the button is not the guard.
       //    Same session, same edition: what a stale tab or a script would get.
