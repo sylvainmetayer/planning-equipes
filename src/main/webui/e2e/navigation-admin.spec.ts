@@ -92,7 +92,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
     marker: 'Qui tient quoi, et pour quel volume',
     sheet: 'typologies-barre-piste',
   },
-  { path: '/ouvertures', marker: 'Ouvertures des stands', sheet: 'ouvertures-synthese' },
+  { path: '/ouvertures', marker: 'Horaires des stands', sheet: 'ouvertures-synthese' },
   { path: '/diagnostic?onglet=besoin', marker: 'Minimum retenu', sheet: 'staffing-summary' },
   { path: '/diagnostic?onglet=former', marker: 'À former' },
   { path: '/diagnostic?onglet=fragilite', marker: 'Fragilité', sheet: 'fragilite-message' },

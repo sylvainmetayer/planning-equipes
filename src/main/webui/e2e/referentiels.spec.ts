@@ -360,12 +360,13 @@ test.describe('horaires de stand', () => {
     expect(cible.ouvertures[0].date).toBe(SEED.jour);
     expect(cible.ouvertures[0].id).not.toBe(modele.ouvertures[0].id);
 
-    // The Ouvertures page reads the store afresh: the seeded day now opens at 11:00.
+    // The openings grid reads the store afresh: the seeded day now opens at 11:00,
+    // which the cells of that day say on hover.
     await page.goto('/ouvertures');
     await expect(page.getByRole('button', { name: 'Actualiser' })).toBeVisible();
     const ligneOuvertures = page.getByRole('row', { name: /Stand E2E deux/ });
     await expect(ligneOuvertures).toBeVisible();
-    await expect(ligneOuvertures).toContainText('11:00');
+    await expect(ligneOuvertures.locator('input[title*="11:00"]').first()).toBeAttached();
     await page.context().close();
   });
 

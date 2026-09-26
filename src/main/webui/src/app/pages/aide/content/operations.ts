@@ -419,7 +419,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.shortcuts.grilles:Les trois grilles de saisie — « Ouvertures des stands », par date et par journée type, et « Compétences » — se remplissent comme un tableur : les flèches passent d'une case à l'autre, Entrée descend, et deux gestes évitent de retaper ce qui se répète. Rien n'est enregistré avant « Enregistrer » : une reprise de trop s'annule avec le reste des modifications.`,
+          text: $localize`:@@aide.shortcuts.grilles:Les trois grilles de saisie — « Horaires des stands », par date et par journée type, et « Compétences » — se remplissent comme un tableur : les flèches passent d'une case à l'autre, Entrée descend, et deux gestes évitent de retaper ce qui se répète. Rien n'est enregistré avant « Enregistrer » : une reprise de trop s'annule avec le reste des modifications.`,
         },
         {
           kind: 'definitions',

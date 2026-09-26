@@ -212,7 +212,7 @@ function editionLink(famille: CoherenceFamily): LienEtat {
     case 'STANDS':
       return {
         route: '/ouvertures',
-        libelle: $localize`:@@accueil.coherence.lien.ouvertures:Ouvertures des stands`,
+        libelle: $localize`:@@accueil.coherence.lien.ouvertures:Horaires des stands`,
       };
     case 'ANIMATEURS':
       return {

@@ -181,19 +181,15 @@ export function buildNavGroups(): NavGroup[] {
         { path: '/stands', label: $localize`:@@nav.link.stands:Stands`, icon: 'storefront' },
         {
           path: '/ouvertures',
-          label: $localize`:@@nav.link.ouvertures:Ouvertures des stands`,
+          label: $localize`:@@nav.link.ouvertures:Horaires des stands`,
           icon: 'door_front',
-          shortcut: 'o',
-          keywords: $localize`:@@nav.keywords.ouvertures:horaires`,
+          keywords: $localize`:@@nav.keywords.ouvertures:ouvertures saisie calendrier combiné`,
           tabs: [
-            tab('vue', 'saisie', $localize`:@@ouvertures.vue.saisir:Saisir`),
             tab(
               'vue',
               'journees-types',
               $localize`:@@ouvertures.vue.journeesTypes:Par journée type`,
             ),
-            tab('vue', 'journee', $localize`:@@ouvertures.vue.journee:Journée`),
-            tab('vue', 'calendrier', $localize`:@@ouvertures.vue.calendrier:Calendrier combiné`),
             tab('vue', 'comparer', $localize`:@@ouvertures.vue.comparer:Comparer`),
           ],
         },

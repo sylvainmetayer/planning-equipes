@@ -228,5 +228,5 @@ export function lienCellule(
   if (mode === 'APRES') {
     return creneauId === null ? null : { route: '/journee', queryParams: { creneau: creneauId } };
   }
-  return date === null ? null : { route: '/ouvertures', queryParams: { vue: 'journee', date } };
+  return date === null ? null : { route: '/ouvertures', queryParams: { du: date, au: date } };
 }
