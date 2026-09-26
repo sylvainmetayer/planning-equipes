@@ -8,12 +8,12 @@
 
 import { APIRequestContext, Page, expect, test } from '@playwright/test';
 import {
-  choisirOption,
   contexteAdmin,
   shiftDate,
   dialogueOuvert,
   ouvrirSelect,
   pageAdmin,
+  rowAction,
 } from './support';
 import { repartirDeLaReference } from './reference';
 
@@ -121,9 +121,6 @@ async function creerAnimateur(
   await dialog.getByLabel('Nom', { exact: true }).fill(nom);
   await dialog.getByLabel('Date de naissance').fill('1990-01-01');
   await dialog.getByLabel('E-mail').fill(email);
-  await dialog.getByRole('button', { name: 'Ajouter une appréciation' }).click();
-  await choisirOption(dialog, 'Typologie', 'Jeux E2E');
-  await choisirOption(dialog, 'Niveau', 'AUTONOME');
   await dialog.getByRole('button', { name: "Créer l'animateur" }).click();
   await expect(dialog).toBeHidden();
 }
@@ -300,10 +297,7 @@ test('une édition saisie de bout en bout, résolue, et relue dans la grille des
   // Enregistrée, et signalée sans effet.
   await page.goto('/stands');
   await page.getByLabel('Filtrer').fill('E2E-JT-S3');
-  await page
-    .getByRole('row', { name: /E2E-JT-S3/ })
-    .getByRole('button', { name: 'Modifier' })
-    .click();
+  await (await rowAction(page.getByRole('row', { name: /E2E-JT-S3/ }), 'Modifier')).click();
   const fiche = await dialogueOuvert(page);
   await fiche.getByRole('button', { name: 'Ajouter une ouverture' }).click();
   // Le fieldset propre aux ouvertures : celui dont c'est la légende, pas le
@@ -339,10 +333,7 @@ test('une édition saisie de bout en bout, résolue, et relue dans la grille des
   // La fiche du stand porte son anomalie, l'accueil la compte à part.
   await page.goto('/stands');
   await page.getByLabel('Filtrer').fill('E2E-JT-S3');
-  await page
-    .getByRole('row', { name: /E2E-JT-S3/ })
-    .getByRole('button', { name: 'Consulter le détail' })
-    .click();
+  await (await rowAction(page.getByRole('row', { name: /E2E-JT-S3/ }), 'Détail')).click();
   await expect(page.getByRole('dialog')).toContainText('Ouvertures effectives');
   await expect(page.getByRole('dialog')).toContainText('ne recoupe aucun créneau');
   await page.keyboard.press('Escape');
@@ -355,6 +346,17 @@ test('une édition saisie de bout en bout, résolue, et relue dans la grille des
     await creerAnimateur(page, animateur.email, animateur.prenom, animateur.nom);
   }
   await expect(page.getByRole('row', { name: /Journee/ })).toHaveCount(3);
+  // Their levels go in the skills grid, the only place they are entered: the
+  // edition has one game category, so each row has one cell, autonome (2).
+  await page.goto('/competences');
+  await page.getByLabel('Filtrer par nom').fill('Journee');
+  await page.getByLabel('Filtrer par nom').press('ArrowDown');
+  for (let row = 0; row < ANIMATEURS.length; row++) {
+    await page.keyboard.press('2');
+    await page.keyboard.press('Enter');
+  }
+  await page.getByRole('button', { name: /Enregistrer/ }).click();
+  await expect(page.getByText('Compétences enregistrées')).toBeVisible();
 
   // 7. Un solve court, depuis la page Solveur.
   const parametres = await page.request.put('/api/parametres-solveur', {

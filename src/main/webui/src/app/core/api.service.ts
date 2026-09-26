@@ -98,6 +98,15 @@ export class ApiService {
     return this.saveAs(response.body ?? new Blob(), filename, contentType);
   }
 
+  /**
+   * A file the page built itself — a list exported as it is displayed —
+   * saved the way a server download is, and answered with the same status
+   * line.
+   */
+  saveText(content: string, filename: string, contentType: string): string {
+    return this.saveAs(new Blob([content], { type: contentType }), filename, contentType);
+  }
+
   private async run<T>(request: Observable<T>): Promise<T> {
     try {
       return await firstValueFrom(request);

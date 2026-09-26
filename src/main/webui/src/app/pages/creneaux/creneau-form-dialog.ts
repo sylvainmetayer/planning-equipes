@@ -43,6 +43,8 @@ interface CreneauDraft {
 
 export interface CreneauFormData {
   creneau: Creneau | null;
+  /** « Dupliquer »: a creation, prefilled from this timeslot — typically to move it to another date. */
+  modele?: Creneau | null;
 }
 
 /** Add/edit dialog for a timeslot: event day, date, hours and planning group. Stand availability is edited from the stand itself (see stands page). */
@@ -77,7 +79,11 @@ export class CreneauFormDialog {
   private readonly crud = inject(ReferenceCrudService);
 
   protected readonly editingId = signal<number | null>(this.data.creneau?.id ?? null);
-  protected readonly draft = signal<CreneauDraft>(toDraft(this.data.creneau));
+  protected readonly draft = signal<CreneauDraft>(
+    this.data.creneau || !this.data.modele
+      ? toDraft(this.data.creneau)
+      : { ...toDraft(this.data.modele), modifieLe: null },
+  );
   private readonly feries = inject(JoursFeriesService);
   /** The public holiday the typed date falls on, said under the field — never a refusal. */
   protected readonly ferie = computed(() => this.feries.label(this.draft().date));

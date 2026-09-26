@@ -171,4 +171,24 @@ class IntendanceRepasAnalyzerTest {
         poste.setAnimateur(animateur);
         return poste;
     }
+
+    /** A name a spreadsheet would run goes out behind a quote; a band start and a negative number stay as they are. */
+    @Test
+    void theCsvQuotesAFormulaNameButLeavesTimesAndNegativeNumbersAlone() {
+        LigneEmplacement ligne = new LigneEmplacement("E1", "=1+1", List.of(-1), List.of(0), -1, 0);
+        FenetreIntendance fenetre = new FenetreIntendance(
+                "Déjeuner",
+                LocalTime.of(12, 30),
+                LocalTime.of(13, 30),
+                List.of(LocalTime.of(12, 30)),
+                List.of(ligne),
+                -1,
+                0);
+        RapportIntendance rapport = new RapportIntendance(
+                60,
+                List.of(new IntendanceRepasAnalyzer.JourneeIntendance(LocalDate.of(2026, 8, 1), List.of(fenetre))),
+                null);
+
+        assertThat(analyzer.generateCsv(rapport)).endsWith("\n2026-08-01;Déjeuner;'=1+1;12:30;-1;0\n");
+    }
 }

@@ -25,6 +25,11 @@ import java.util.List;
  * and counting the newlines a quoted cell contains. That number is the only
  * thing the operator can act on: a report saying "row 34" of a file whose row
  * 12 spans three lines points at the wrong row.</p>
+ *
+ * <p>A cell our own exports wrote behind a quote, so that a spreadsheet would
+ * not run it as a formula, comes back without it ({@link CsvFormulaGuard}):
+ * every import reads through here, so an exported file re-imports
+ * unchanged.</p>
  */
 public final class CsvParser {
 
@@ -151,7 +156,7 @@ public final class CsvParser {
                 }
             }
             if (!cell.isEmpty() || !values.isEmpty()) {
-                values.add(cell.toString());
+                values.add(CsvFormulaGuard.restore(cell.toString()));
                 rows.add(new Row(startLine, List.copyOf(values)));
             }
             return rows;
@@ -193,7 +198,7 @@ public final class CsvParser {
         }
 
         private void endCell() {
-            values.add(cell.toString());
+            values.add(CsvFormulaGuard.restore(cell.toString()));
             cell.setLength(0);
         }
 

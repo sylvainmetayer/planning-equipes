@@ -282,6 +282,37 @@ class HistoriqueResourceTest {
                 .body("dernieres", empty());
     }
 
+    /**
+     * The list the Animateurs screen builds in the browser never reaches the
+     * server: the screen announces it first, and that call alone writes the
+     * export line — naming nothing of what left, changing no data.
+     */
+    @Test
+    void theBrowserBuiltAnimateurListLeavesAnExportLine() {
+        String avant = Instant.now().toString();
+        given().contentType(ContentType.JSON)
+                .when()
+                .post("/api/animateurs/export-liste")
+                .then()
+                .statusCode(204);
+
+        given().queryParam("nature", "exports")
+                .when()
+                .get("/api/historique")
+                .then()
+                .statusCode(200)
+                .body("find { it.action == 'EXPORT_LISTE_ANIMATEURS' }.acteur", equalTo("ADMIN"))
+                .body("find { it.action == 'EXPORT_LISTE_ANIMATEURS' }.resultat", equalTo("SUCCES"))
+                .body("find { it.action == 'EXPORT_LISTE_ANIMATEURS' }.statut", equalTo(204))
+                .body("find { it.action == 'EXPORT_LISTE_ANIMATEURS' }.champs", empty());
+        given().queryParam("depuis", avant)
+                .when()
+                .get("/api/historique/changements")
+                .then()
+                .statusCode(200)
+                .body("total", equalTo(0));
+    }
+
     /** A refused export is written too, as refused: asking for nothing is a 400. */
     @Test
     void aRefusedExportIsRecordedAsRefused() {

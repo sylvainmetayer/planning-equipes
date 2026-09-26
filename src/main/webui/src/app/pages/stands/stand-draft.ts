@@ -290,6 +290,22 @@ export function toDraft(stand: Stand | null): StandDraft {
   };
 }
 
+/**
+ * « Dupliquer »: a new stand prefilled from `source` — its bounds, its game
+ * categories, its location and its whole schedule, every id reset — under
+ * `nom`, with no code (unique within the edition) and no write stamp.
+ */
+export function duplicateDraft(source: Stand, nom: string): StandDraft {
+  return {
+    ...toDraft(source),
+    ...horairesCopiedFrom(source),
+    id: '',
+    code: '',
+    nom,
+    modifieLe: null,
+  };
+}
+
 /** The entity to send, resolved against the emplacements the store knows. */
 export function versStand(draft: StandDraft, emplacements: readonly Emplacement[]): Stand {
   return {

@@ -120,6 +120,7 @@ public final class CatalogueActions {
     private static final String EXPORT_INTENDANCE = "EXPORT_INTENDANCE";
     private static final String EXPORT_ARCHIVE_EVENEMENT = "EXPORT_ARCHIVE_EVENEMENT";
     private static final String EXPORT_FORMATION = "EXPORT_FORMATION";
+    private static final String EXPORT_LISTE_ANIMATEURS = "EXPORT_LISTE_ANIMATEURS";
     private static final String SCENARIO_IMPORTE = "SCENARIO_IMPORTE";
     private static final String BASE_IMPORTEE = "BASE_IMPORTEE";
     private static final String PARAMETRES_LEGAUX_MODIFIES = "PARAMETRES_LEGAUX_MODIFIES";
@@ -321,6 +322,9 @@ public final class CatalogueActions {
         // carried, rather than one per file nobody downloaded on its own.
         export(EXPORT_ARCHIVE_EVENEMENT, "Archive de fin d'événement exportée", Entite.PLANNING);
         export(EXPORT_FORMATION, "Plan de formation exporté en CSV", Entite.PLANNING);
+        // Built in the browser from the rows the screen shows: the file never
+        // reaches the server, the screen announces it before saving it.
+        export(EXPORT_LISTE_ANIMATEURS, "Liste des animateurs exportée en CSV", Entite.PLANNING);
 
         /* ------------------ Imports and scenarios ------------------- */
         changesData(SCENARIO_IMPORTE, "Scénario importé", Entite.PLANNING);
@@ -500,6 +504,7 @@ public final class CatalogueActions {
         route("PauseResource#exportIntendance", EXPORT_INTENDANCE);
         route("ArchiveEvenementResource#export", EXPORT_ARCHIVE_EVENEMENT);
         route("FormationResource#exportCsv", EXPORT_FORMATION);
+        route("AnimateurResource#recordListExport", EXPORT_LISTE_ANIMATEURS);
         route("DatabaseResource#importDump", BASE_IMPORTEE);
         route("ReferenceDataResource#importScenario", SCENARIO_IMPORTE);
         route("ReferenceDataResource#importScenarioFile", SCENARIO_IMPORTE);

@@ -6,12 +6,13 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { JourneesTypesApi } from '../../core/api/journees-types-api';
+import { EditionsApi } from '../../core/api/editions-api';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
-import { JourneeType } from '../../core/models';
+import { EtatGel, JourneeType } from '../../core/models';
 import { JourneeTypeDialog } from './journee-type-dialog';
 
-function monter(journeeType: JourneeType | null) {
+function monter(journeeType: JourneeType | null, gel: EtatGel[] = []) {
   const create = vi.fn(async (payload: JourneeType) => ({ ...payload, id: 9 }));
   const update = vi.fn(async (id: number, payload: JourneeType) => ({ ...payload, id }));
   const close = vi.fn();
@@ -21,6 +22,7 @@ function monter(journeeType: JourneeType | null) {
       provideZonelessChangeDetection(),
       { provide: SolverJobService, useValue: { editingLocked: signal(false) } },
       { provide: JourneesTypesApi, useValue: { create, update } },
+      { provide: EditionsApi, useValue: { gel: vi.fn(async () => gel) } },
       { provide: ReferenceCrudService, useValue: { reportError: vi.fn() } },
       { provide: MatDialogRef, useValue: { close } },
       { provide: MAT_DIALOG_DATA, useValue: { journeeType } },
@@ -46,6 +48,39 @@ function submit(fixture: ComponentFixture<JourneeTypeDialog>): void {
 describe('JourneeTypeDialog', () => {
   beforeEach(() => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  });
+
+  it('lays the timeslots once without keeping a template, no name needed', async () => {
+    const { fixture, create, close } = monter(null);
+    await fixture.whenStable();
+
+    saisir(fixture, 'vacations', '9h-12h, 14:00-20:00');
+    await fixture.whenStable();
+    const bouton = Array.from(racine(fixture).querySelectorAll('button')).find((each) =>
+      each.textContent!.includes('Appliquer sans mémoriser'),
+    ) as HTMLButtonElement;
+    expect(bouton.disabled).toBe(false);
+    bouton.click();
+
+    expect(create).not.toHaveBeenCalled();
+    expect(close).toHaveBeenCalledWith({ fenetres: '09:00-12:00, 14:00-20:00' });
+  });
+
+  it('refuses to lay the timeslots once under a timeslots freeze, the template itself staying open', async () => {
+    const { fixture, close } = monter(null, [
+      { famille: 'CRENEAUX', libelle: 'Créneaux', fige: true, figeLe: '2026-07-01T08:00:00Z' },
+    ]);
+    await fixture.whenStable();
+    await fixture.whenStable();
+
+    saisir(fixture, 'vacations', '9h-12h');
+    await fixture.whenStable();
+    const bouton = Array.from(racine(fixture).querySelectorAll('button')).find((each) =>
+      each.textContent!.includes('Appliquer sans mémoriser'),
+    ) as HTMLButtonElement;
+    expect(bouton.disabled).toBe(true);
+    bouton.click();
+    expect(close).not.toHaveBeenCalled();
   });
 
   it('creates a template from the name and the line, relay marker included', async () => {

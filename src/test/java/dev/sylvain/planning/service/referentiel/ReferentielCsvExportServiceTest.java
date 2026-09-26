@@ -44,7 +44,8 @@ class ReferentielCsvExportServiceTest {
         SOURCE = createEdition("Export CSV source");
         CIBLE = createEdition("Export CSV cible");
         // A complete referential, carrying what breaks a naive CSV: a
-        // semicolon inside a name, accents, several values per cell.
+        // semicolon inside a name, accents, several values per cell — and
+        // names a spreadsheet would run as formulas.
         importer(
                 SOURCE,
                 "/api/typologies/import-csv",
@@ -52,11 +53,11 @@ class ReferentielCsvExportServiceTest {
         importer(
                 SOURCE,
                 "/api/emplacements/import-csv",
-                "code;nom;latitude;longitude\nEXP-P;Pavillon;46.65;-0.24\nEXP-E;Esplanade;;\n");
+                "code;nom;latitude;longitude\nEXP-P;Pavillon;46.65;-0.24\nEXP-E;-Esplanade;;\n");
         importer(SOURCE, "/api/stands/import-csv", """
                 code;nom;typologies;effectifMin;effectifMax
                 EXP-S1;"Stand un; et demi";EXP-A|EXP-B;2;3
-                EXP-S2;Stand deux;EXP-B;1;1
+                EXP-S2;=1+1;EXP-B;1;1
                 """);
         // The grid and the day templates the two new files carry: a meal
         // relay, a night vacation ending past midnight, and a template whose
@@ -168,6 +169,12 @@ class ReferentielCsvExportServiceTest {
 
         // The BOM opens each entry for a spreadsheet; the import strips it itself.
         assertThat(entrees.get("typologies.csv")).startsWith("﻿");
+        // A name a spreadsheet would run goes out behind a quote, a negative
+        // longitude stays the number it is.
+        assertThat(entrees.get("stands.csv")).contains("EXP-S2;'=1+1;");
+        assertThat(entrees.get("emplacements.csv"))
+                .contains("EXP-E;'-Esplanade;")
+                .contains(";-0.24\n");
 
         reimporter(entrees.get("typologies.csv"), "/api/typologies/import-csv", 2);
         reimporter(entrees.get("emplacements.csv"), "/api/emplacements/import-csv", 2);
@@ -221,7 +228,9 @@ class ReferentielCsvExportServiceTest {
                 .then()
                 .body("find { it.code == 'EXP-S1' }.nom", equalTo("Stand un; et demi"))
                 .body("find { it.code == 'EXP-S1' }.typologiesProposees.size()", equalTo(2))
-                .body("find { it.code == 'EXP-S1' }.effectifMax", equalTo(3));
+                .body("find { it.code == 'EXP-S1' }.effectifMax", equalTo(3))
+                // The quote came off on the way back in.
+                .body("find { it.code == 'EXP-S2' }.nom", equalTo("=1+1"));
         given().header(HEADER, CIBLE)
                 .when()
                 .get("/api/typologies")
@@ -231,7 +240,9 @@ class ReferentielCsvExportServiceTest {
                 .when()
                 .get("/api/emplacements")
                 .then()
-                .body("find { it.code == 'EXP-P' }.latitude", equalTo(46.65f));
+                .body("find { it.code == 'EXP-P' }.latitude", equalTo(46.65f))
+                .body("find { it.code == 'EXP-P' }.longitude", equalTo(-0.24f))
+                .body("find { it.code == 'EXP-E' }.nom", equalTo("-Esplanade"));
 
         // The grid crossed over whole, meal relay and night vacation included.
         given().header(HEADER, CIBLE)

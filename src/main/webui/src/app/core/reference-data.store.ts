@@ -30,6 +30,8 @@ export interface BulkResult {
    * snack bar, not fifty.
    */
   avertissements: Avertissement[];
+  /** The same warnings, by the row that raised them: what stays marked on the row once the snack bar is gone. */
+  avertissementsParId?: Map<string | number, Avertissement[]>;
 }
 
 /**
@@ -239,7 +241,9 @@ export class ReferenceDataStore {
     const result: BulkResult = { succes: [], echecs: [], avertissements: [] };
     for (const id of ids) {
       try {
-        result.avertissements.push(...avertissementsDe(await action(id)));
+        const avertissements = avertissementsDe(await action(id));
+        result.avertissements.push(...avertissements);
+        (result.avertissementsParId ??= new Map()).set(id, avertissements);
         result.succes.push(id);
       } catch (error) {
         result.echecs.push({

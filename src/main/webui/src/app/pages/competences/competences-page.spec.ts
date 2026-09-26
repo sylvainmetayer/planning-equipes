@@ -23,6 +23,7 @@ import {
   TypologieItem,
 } from '../../core/models';
 import { CompetencesPage } from './competences-page';
+import { PastePreviewData, PastePreviewService } from '../../shared/paste-preview-dialog';
 
 const TYPOLOGIES: TypologieItem[] = [
   { id: 'jeux', label: 'Jeux de société', ninja: false },
@@ -64,6 +65,8 @@ function mount(
     rapport?: RapportSaisieCompetences;
     choixConflit?: boolean | null;
     confirme?: boolean;
+    /** The fiches the bulk save of the wishes refuses; none by default. */
+    refusedWishes?: string[];
   } = {},
 ) {
   const animateurs = signal(roster());
@@ -88,6 +91,10 @@ function mount(
   const ask = vi.fn(async (_data: ConfirmData) => options.confirme ?? true);
   const askThreeWay = vi.fn(async (_data: ConfirmData) => options.choixConflit ?? null);
   const notify = vi.fn();
+  const saveManyWritten = vi.fn(async (_resource: string, fiches: { id: string }[]) =>
+    fiches.map((fiche) => fiche.id).filter((id) => !(options.refusedWishes ?? []).includes(id)),
+  );
+  const previewConfirm = vi.fn(async (_data: PastePreviewData) => true);
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
@@ -95,7 +102,8 @@ function mount(
       provideRouter([]),
       { provide: AnimateursApi, useValue: { saveCompetencesGrid } },
       { provide: ReferenceDataStore, useValue: store },
-      { provide: ReferenceCrudService, useValue: { reportError: vi.fn() } },
+      { provide: ReferenceCrudService, useValue: { reportError: vi.fn(), saveManyWritten } },
+      { provide: PastePreviewService, useValue: { confirm: previewConfirm } },
       {
         provide: SolverJobService,
         useValue: { editingLocked: signal(options.editingLocked ?? false) },
@@ -110,7 +118,17 @@ function mount(
     ],
   });
   const fixture = TestBed.createComponent(CompetencesPage);
-  return { fixture, store, animateurs, saveCompetencesGrid, ask, askThreeWay, notify };
+  return {
+    fixture,
+    store,
+    animateurs,
+    saveCompetencesGrid,
+    ask,
+    askThreeWay,
+    notify,
+    saveManyWritten,
+    previewConfirm,
+  };
 }
 
 function root(fixture: ComponentFixture<CompetencesPage>): HTMLElement {
@@ -610,5 +628,92 @@ describe('CompetencesPage', () => {
     combinaison(cellule(fixture, 'B2', 'jeux'), 'd', { ctrlKey: true });
     await fixture.whenStable();
     expect(cellule(fixture, 'B2', 'jeux').dataset['niveau']).toBe('');
+  });
+
+  it('lays a block pasted from a spreadsheet from the focused cell, after a preview, unsaved', async () => {
+    const { fixture, previewConfirm, saveCompetencesGrid } = mount();
+    await fixture.whenStable();
+    const depart = cellule(fixture, 'A1', 'jeux');
+    depart.dispatchEvent(new FocusEvent('focus'));
+    const collage = new Event('paste', { bubbles: true, cancelable: true }) as ClipboardEvent;
+    Object.defineProperty(collage, 'clipboardData', {
+      value: { getData: () => 'A\t3\nD\tréférent\n' },
+    });
+    depart.dispatchEvent(collage);
+    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve));
+    await fixture.whenStable();
+
+    expect(collage.defaultPrevented).toBe(true);
+    const apercu = previewConfirm.mock.calls[0][0];
+    expect(apercu.changes.map((change) => [change.row, change.column, change.after])).toEqual([
+      ['Alice Martin', 'Jeux de société', 'Autonome'],
+      ['Alice Martin', 'Ateliers', 'Référent'],
+      ['Bruno Lefèvre', 'Jeux de société', 'Débutant'],
+      ['Bruno Lefèvre', 'Ateliers', 'Référent'],
+    ]);
+    expect(cellule(fixture, 'B2', 'ateliers').dataset['niveau']).toBe('REFERENT');
+    // Written in the grid only: « Enregistrer » stays the one way to the server.
+    expect(saveCompetencesGrid).not.toHaveBeenCalled();
+    expect(bouton(fixture, 'Enregistrer').textContent).toContain('(2)');
+  });
+
+  it('toggles a wish from its heart or S, and writes it with « Enregistrer »', async () => {
+    const { fixture, saveManyWritten, saveCompetencesGrid } = mount();
+    await fixture.whenStable();
+
+    const coeur = cellule(fixture, 'B2', 'jeux')
+      .closest('td')!
+      .querySelector<HTMLButtonElement>('.souhait-toggle')!;
+    expect(coeur.getAttribute('aria-pressed')).toBe('false');
+    coeur.click();
+    await fixture.whenStable();
+    expect(coeur.getAttribute('aria-pressed')).toBe('true');
+    touche(cellule(fixture, 'A1', 'ateliers'), 's');
+    await fixture.whenStable();
+
+    bouton(fixture, 'Enregistrer').click();
+    await fixture.whenStable();
+    expect(saveManyWritten).toHaveBeenCalledWith(
+      'animateurs',
+      [
+        expect.objectContaining({ id: 'A1', souhaits: [] }),
+        expect.objectContaining({ id: 'B2', souhaits: ['jeux'] }),
+      ],
+      expect.anything(),
+    );
+    // No appreciation changed: the grid's own write has nothing to send.
+    expect(saveCompetencesGrid).not.toHaveBeenCalled();
+  });
+
+  it('keeps the wish toggles of a refused fiche on screen, still to save', async () => {
+    const { fixture } = mount({ refusedWishes: ['A1'] });
+    await fixture.whenStable();
+    const coeur = (animateurId: string, typologieId: string) =>
+      cellule(fixture, animateurId, typologieId)
+        .closest('td')!
+        .querySelector<HTMLButtonElement>('.souhait-toggle')!;
+
+    coeur('B2', 'jeux').click();
+    touche(cellule(fixture, 'A1', 'ateliers'), 's');
+    await fixture.whenStable();
+    const before = coeur('A1', 'ateliers').getAttribute('aria-pressed');
+
+    bouton(fixture, 'Enregistrer').click();
+    await fixture.whenStable();
+
+    expect(coeur('A1', 'ateliers').getAttribute('aria-pressed')).toBe(before);
+    expect(bouton(fixture, 'Enregistrer').textContent).toContain('(1)');
+  });
+
+  it('narrows to the one row of ?animateur=, names it a link to the fiche, and heads columns with their typologie', async () => {
+    const { fixture } = mount({ query: { animateur: 'B2' } });
+    await fixture.whenStable();
+
+    const noms = Array.from(root(fixture).querySelectorAll('tbody a.animateur-nom'));
+    expect(noms.map((nom) => nom.getAttribute('href'))).toEqual(['/animateurs/B2']);
+    expect(root(fixture).textContent).toContain('Seul « Bruno Lefèvre » est affiché.');
+    const entete = root(fixture).querySelector('th.colonne-typologie a')!;
+    expect(entete.getAttribute('href')).toBe('/typologies?edit=jeux');
   });
 });

@@ -1,3 +1,4 @@
+import { libelleNiveau } from '../../core/niveau-competence';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -51,6 +52,8 @@ export interface AnimateurBulkEditData {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AnimateurBulkEditDialog {
+  protected readonly libelleNiveau = libelleNiveau;
+
   protected readonly niveaux = NIVEAUX;
   protected readonly store = inject(ReferenceDataStore);
   protected readonly jobs = inject(SolverJobService);

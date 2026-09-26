@@ -333,4 +333,24 @@ class FormationAnalyzerTest {
         }
         return postes;
     }
+
+    /** A label or a name a spreadsheet would run goes out behind a quote; a negative number stays a number. */
+    @Test
+    void theCsvQuotesAFormulaLabelButLeavesANegativeNumberAlone() {
+        TypologieAFormer ligne = new TypologieAFormer(
+                "T1",
+                "=1+1",
+                false,
+                -2,
+                0,
+                1,
+                0,
+                0,
+                List.of(),
+                List.of(new CandidatFormation("A-1", "@SOMME(A1)", NiveauCompetence.DEBUTANT, true, 0)));
+
+        String csv = FormationAnalyzer.generateCsv(new PlanFormation(List.of(ligne), true, false, false));
+
+        assertThat(csv).endsWith("\n'=1+1;-2;1;0;0;0;'@SOMME(A1);DEBUTANT;oui;0\n");
+    }
 }

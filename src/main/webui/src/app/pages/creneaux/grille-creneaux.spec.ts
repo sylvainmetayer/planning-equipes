@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { AnomalieGrille, RapportGrille } from '../../core/models';
+import { AnomalieGrille, RapportGrille, RapportOuvertures } from '../../core/models';
 import {
   bilanGrille,
   datesFromText,
   erreursIntroduites,
   grilleBloquee,
   gridAnomalyIcon,
+  openingsByCreneau,
   regleDepuis,
   serieVide,
   signatureSerie,
@@ -227,5 +228,66 @@ describe('verdict', () => {
     expect(triees.map((each) => each.message)).toEqual(['c', 'a', 'b']);
     expect(gridAnomalyIcon(triees[0])).toBe('error');
     expect(gridAnomalyIcon(triees[1])).toBe('warning');
+  });
+});
+
+describe('openingsByCreneau', () => {
+  /**
+   * Timeslot 7 (14:00–20:00) cut at 17:00 because stand B closes then: stand
+   * A's one segment, 4 people all afternoon, shows in both columns, clipped.
+   */
+  function rapport(relay = false): RapportOuvertures {
+    const segment = (heureDebut: string, heureFin: string, effectif: number) => ({
+      heureDebut,
+      heureFin,
+      effectif,
+    });
+    const cell = (tranche: number, segments: ReturnType<typeof segment>[]) => ({
+      creneauId: 7,
+      tranche,
+      effectif: segments.length === 0 ? null : Math.max(...segments.map((each) => each.effectif)),
+      partiel: false,
+      segments,
+    });
+    const day = (creneaux: ReturnType<typeof cell>[]) => ({ date: '2026-07-08', creneaux });
+    return {
+      jours: [
+        {
+          date: '2026-07-08',
+          creneaux: [
+            { id: 7, tranche: 0, heureDebut: '14:00', heureFin: '17:00', couverturePause: relay },
+            { id: 7, tranche: 1, heureDebut: '17:00', heureFin: '20:00', couverturePause: relay },
+          ],
+        },
+      ],
+      stands: [
+        {
+          standId: 'A',
+          jours: [
+            day([cell(0, [segment('14:00', '17:00', 4)]), cell(1, [segment('17:00', '20:00', 4)])]),
+          ],
+        },
+        {
+          standId: 'B',
+          jours: [day([cell(0, [segment('14:00', '17:00', 2)]), cell(1, [])])],
+        },
+      ],
+    } as unknown as RapportOuvertures;
+  }
+
+  it('counts a segment spread over the columns of its timeslot once, not once per column', () => {
+    expect(openingsByCreneau(rapport()).get(7)).toEqual({ stands: 2, postes: 6 });
+  });
+
+  it('halves each segment once on a meal relay, rounded up', () => {
+    expect(openingsByCreneau(rapport(true)).get(7)).toEqual({ stands: 2, postes: 3 });
+  });
+
+  it('keeps two headcounts of one timeslot as two segments', () => {
+    const report = rapport();
+    report.stands[0].jours[0].creneaux[1].segments = [
+      { heureDebut: '17:00', heureFin: '20:00', effectif: 5 },
+    ];
+    expect(openingsByCreneau(report).get(7)).toEqual({ stands: 2, postes: 11 });
   });
 });

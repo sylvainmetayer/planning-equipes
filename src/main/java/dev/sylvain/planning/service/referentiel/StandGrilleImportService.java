@@ -155,7 +155,9 @@ public class StandGrilleImportService {
     }
 
     private static void appendStand(StringBuilder csv, OuvertureStandsAnalyzer.LigneStand ligne, String libelle) {
-        csv.append(csv(libelle));
+        // A stand named « =1+1 » goes out behind a quote, which the import's
+        // CsvParser takes off again: the example stays re-importable as is.
+        csv.append(csv(CsvFormulaGuard.neutralise(libelle)));
         for (OuvertureStandsAnalyzer.CelluleJour jour : ligne.jours()) {
             for (OuvertureStandsAnalyzer.CelluleCreneau cellule : jour.creneaux()) {
                 csv.append(';').append(cellule.effectif() == null ? "" : cellule.effectif());

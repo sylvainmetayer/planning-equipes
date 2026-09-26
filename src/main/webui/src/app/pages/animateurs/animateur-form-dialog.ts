@@ -10,13 +10,17 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
-import { injectGelReferentiel } from '../../core/gel-referentiel.store';
-import { GelNotice } from '../../shared/gel-notice';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { animateurName } from '../../core/reference-labels';
 import { SolverJobService } from '../../core/solver-job.service';
 import { urlLegifrance } from '../../core/legifrance';
+import { intlLocale } from '../../core/locale';
 import { Animateur, NiveauCompetence, TypologieItem } from '../../core/models';
+import { COMPETENCE_LEVELS, libelleNiveau } from '../../core/niveau-competence';
+import { injectGelReferentiel } from '../../core/gel-referentiel.store';
+import { typologieLabel, typologieLabels } from '../../core/typologie-colors';
+import { Router } from '@angular/router';
+import { addRange, editionDays, toggleDayOff } from './jours-indisponibles';
 import { DraftBanner, FormDraft } from '../../shared/brouillon-dialog';
 import { StatusMessage } from '../../shared/status-message';
 import { NewWindowLink } from '../../shared/new-window-link';
@@ -28,10 +32,14 @@ import {
   toDraft,
 } from './animateur-brouillon';
 
-const NIVEAUX: NiveauCompetence[] = ['DEBUTANT', 'AUTONOME', 'REFERENT'];
-
 export interface AnimateurFormData {
   animateur: Animateur | null;
+  /**
+   * « Dupliquer »: a new person prefilled from this fiche — appreciations,
+   * wishes, days off, manager — the identity left blank: two people never
+   * share one.
+   */
+  modele?: Animateur | null;
 }
 
 /**
@@ -56,14 +64,11 @@ export interface AnimateurFormData {
     MatButtonModule,
     MatIconModule,
     MatTooltipModule,
-    GelNotice,
   ],
   templateUrl: './animateur-form-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AnimateurFormDialog {
-  protected readonly niveaux = NIVEAUX;
-
   // The two obligations the under-16 warning says stay outside the application:
   // whoever has to satisfy them should be able to read them.
   protected readonly articleAutorisationInspection = urlLegifrance('L4153-3');
@@ -78,15 +83,32 @@ export class AnimateurFormDialog {
   private readonly crud = inject(ReferenceCrudService);
 
   protected readonly editingId = signal<string | null>(this.data.animateur?.id ?? null);
+  private readonly router = inject(Router);
   private readonly gel = injectGelReferentiel();
   /**
-   * A COMPETENCES freeze (ADR 0052) covers the fiches already in the roster:
-   * a new animateur arrives with theirs, so the section stays open on a creation.
+   * The appreciations are typed in the grid of `/competences`, and the form
+   * only reads them — except on a creation under a COMPETENCES freeze (ADR
+   * 0052): the freeze covers the fiches already in the roster and locks that
+   * grid, while a new animateur still arrives with theirs, so the form takes
+   * them itself.
    */
-  protected readonly competencesFrozen = computed(
-    () => this.editingId() !== null && this.gel.isFrozen('COMPETENCES'),
+  protected readonly competencesEditable = computed(
+    () => this.editingId() === null && this.gel.isFrozen('COMPETENCES'),
   );
-  private readonly initial = toDraft(this.data.animateur);
+  protected readonly levels = COMPETENCE_LEVELS;
+  protected readonly levelLabel = libelleNiveau;
+  private readonly initial: AnimateurDraft =
+    this.data.animateur || !this.data.modele
+      ? toDraft(this.data.animateur)
+      : {
+          ...toDraft(this.data.modele),
+          id: '',
+          prenom: '',
+          nom: '',
+          dateNaissance: '',
+          email: '',
+          modifieLe: null,
+        };
   protected readonly draft = signal<AnimateurDraft>(this.initial);
 
   /**
@@ -106,7 +128,44 @@ export class AnimateurFormDialog {
     dialogRef: this.dialogRef,
     cancelResult: false,
   });
-  protected readonly newJour = signal('');
+  /** « Absent du … au … »: the range the user is typing. */
+  protected readonly rangeStart = signal('');
+  protected readonly rangeEnd = signal('');
+  /** Said under the range once applied: how many edition days it marked. */
+  protected readonly rangeResult = signal<string | null>(null);
+
+  /** The edition's days, from its timeslots: the frieze a day off is ticked on. */
+  protected readonly editionDays = computed(() => editionDays(this.store.creneaux()));
+
+  /** The frieze as the template binds it: one button per day of the edition. */
+  protected readonly frise = computed(() => {
+    const away = new Set(this.draft().joursIndisponibles);
+    const format = new Intl.DateTimeFormat(intlLocale(), {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'numeric',
+      timeZone: 'UTC',
+    });
+    return this.editionDays().map((date) => {
+      const libelle = format.format(new Date(`${date}T00:00:00Z`));
+      return { date, libelle, absent: away.has(date) };
+    });
+  });
+
+  /** Days off outside the edition's days — typed before the timeslots moved: listed apart, removable. */
+  protected readonly daysOutsideEdition = computed(() => {
+    const edition = new Set(this.editionDays());
+    return this.draft().joursIndisponibles.filter((date) => !edition.has(date));
+  });
+
+  /** The appreciations, read-only: they are typed in the grid, not here. */
+  protected readonly appreciations = computed(() => {
+    const typologies = typologieLabels(this.store.typologies());
+    return this.draft().competences.map((row) => ({
+      label: typologieLabel(typologies, row.typologie),
+      niveau: libelleNiveau(row.niveau as NiveauCompetence),
+    }));
+  });
   /**
    * Names the animateur as the fiche was loaded. A dialog title is never
    * logged, so it may carry the identity the notifications keep out of their
@@ -201,37 +260,82 @@ export class AnimateurFormDialog {
     }
   }
 
+  /** A day of the frieze, clicked: away, or back. */
+  protected toggleDay(date: string): void {
+    this.draft.update((draft) => ({
+      ...draft,
+      joursIndisponibles: toggleDayOff(draft.joursIndisponibles, date),
+    }));
+  }
+
+  /** « Absent du 8 au 12 » in one gesture: the edition's days of the range, marked away. */
+  protected addRange(): void {
+    const from = this.rangeStart();
+    const to = this.rangeEnd() || from;
+    if (!from) {
+      return;
+    }
+    const result = addRange(this.draft().joursIndisponibles, from, to, this.editionDays());
+    this.draft.update((draft) => ({ ...draft, joursIndisponibles: result.days }));
+    this.rangeResult.set(
+      $localize`:@@animateurs.indispo.plageResultat:${result.added}:count: jour(s) de l'édition marqué(s) absent(s).`,
+    );
+    this.rangeStart.set('');
+    this.rangeEnd.set('');
+  }
+
+  protected jourLabel(jour: { libelle: string; absent: boolean }): string {
+    return jour.absent
+      ? $localize`:@@animateurs.indispo.jourAbsent:${jour.libelle}:jour: : absent`
+      : $localize`:@@animateurs.indispo.jourPresent:${jour.libelle}:jour: : disponible`;
+  }
+
+  protected removeJour(date: string): void {
+    this.draft.update((draft) => ({
+      ...draft,
+      joursIndisponibles: draft.joursIndisponibles.filter((day) => day !== date),
+    }));
+  }
+
   /**
-   * The typologies a given row may still take: all of them, minus the ones the
-   * other rows already hold. An animateur carries ONE appreciation per
-   * typologie — the model is a map — so two rows on the same typologie collapse
-   * into one on save, the last silently winning over the level the user had
-   * entered. Making the duplicate unselectable is the only fix that also covers
-   * the user picking it by hand.
+   * « Saisir dans la grille »: the competences grid narrowed to this person.
+   * Leaving goes through the draft's own close, which asks before throwing a
+   * modified form away; the grid opens only once the form is gone.
    */
-  protected typologiesDisponibles(index: number): TypologieItem[] {
-    const prises = new Set(
+  protected async openGrid(id: string): Promise<void> {
+    if (await this.formDraft.close()) {
+      void this.router.navigate(['/competences'], { queryParams: { animateur: id } });
+    }
+  }
+
+  /**
+   * The game categories one row may still take: all of them, minus the ones
+   * the other rows hold — an animateur carries one appreciation per
+   * category, and a duplicate row would collapse into one on save.
+   */
+  protected availableTypologies(index: number): TypologieItem[] {
+    const taken = new Set(
       this.draft()
         .competences.filter((_, position) => position !== index)
         .map((row) => row.typologie),
     );
-    return this.store.typologies().filter((typologie) => !prises.has(typologie.id));
+    return this.store.typologies().filter((typologie) => !taken.has(typologie.id));
   }
 
-  /** No typologie left to appreciate: the row would only be a duplicate. */
-  protected readonly toutesTypologiesPrises = computed(() => {
-    const prises = new Set(this.draft().competences.map((row) => row.typologie));
-    return this.store.typologies().every((typologie) => prises.has(typologie.id));
+  /** Every game category already appreciated: another row could only be a duplicate. */
+  protected readonly allTypologiesTaken = computed(() => {
+    const taken = new Set(this.draft().competences.map((row) => row.typologie));
+    return this.store.typologies().every((typologie) => taken.has(typologie.id));
   });
 
   protected addCompetence(): void {
-    const libre = this.typologiesDisponibles(-1)[0];
-    if (!libre) {
+    const free = this.availableTypologies(-1)[0];
+    if (!free) {
       return;
     }
     this.draft.update((draft) => ({
       ...draft,
-      competences: [...draft.competences, { typologie: libre.id, niveau: 'AUTONOME' }],
+      competences: [...draft.competences, { typologie: free.id, niveau: 'AUTONOME' }],
     }));
   }
 
@@ -248,27 +352,6 @@ export class AnimateurFormDialog {
       competences: draft.competences.map((row, position) =>
         position === index ? { ...row, ...patch } : row,
       ),
-    }));
-  }
-
-  protected addJour(): void {
-    const date = this.newJour();
-    if (!date) {
-      return;
-    }
-    this.draft.update((draft) => ({
-      ...draft,
-      joursIndisponibles: draft.joursIndisponibles.includes(date)
-        ? draft.joursIndisponibles
-        : [...draft.joursIndisponibles, date],
-    }));
-    this.newJour.set('');
-  }
-
-  protected removeJour(date: string): void {
-    this.draft.update((draft) => ({
-      ...draft,
-      joursIndisponibles: draft.joursIndisponibles.filter((day) => day !== date),
     }));
   }
 

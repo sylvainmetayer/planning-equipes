@@ -59,6 +59,15 @@ class CsvParserTest {
         assertThat(table.rows().get(0).values()).containsExactly("Durand", "dit \"Mimi\"");
     }
 
+    /** The quote an export puts before a formula-looking text comes off, quoted cell or not. */
+    @Test
+    void takesOffTheQuoteAnExportPutBeforeAFormula() {
+        CsvParser.Table table = CsvParser.parse("nom;note;x\n'=1+1;\"'-a; b\";'texte\n'@SUM;-3;\n");
+
+        assertThat(table.rows().get(0).values()).containsExactly("=1+1", "-a; b", "'texte");
+        assertThat(table.rows().get(1).values()).containsExactly("@SUM", "-3", "");
+    }
+
     /** A quoted cell may hold a line break, and the next row's line number must survive it. */
     @Test
     void keepsALineBreakInsideACellAndStillCountsPhysicalLines() {

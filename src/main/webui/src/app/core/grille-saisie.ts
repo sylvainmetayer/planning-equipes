@@ -124,3 +124,82 @@ function writeCellules<C, V>(
   }
   return { cellules: resultat, changees };
 }
+
+/**
+ * A block copied from a spreadsheet: its lines, each cut at its tabs. The
+ * trailing newline every spreadsheet copy carries is not a line, and a
+ * carriage return is never part of a value.
+ */
+export function blockRows(text: string): string[][] {
+  const lignes = text.replaceAll('\r', '').split('\n');
+  if (lignes.length > 1 && lignes.at(-1) === '') {
+    lignes.pop();
+  }
+  return lignes.map((ligne) => ligne.split('\t'));
+}
+
+/** One cell a pasted block would change, before anything is written: what the preview lists. */
+export interface CelluleCollee<V> {
+  ligneId: string;
+  colonneId: string;
+  before: V | undefined;
+  after: V;
+}
+
+/**
+ * A block pasted from `depuis`, laid over the displayed rows and columns:
+ * one line per row, one tab-separated value per column. Cells past the last
+ * row or column are dropped and counted, a value `lire` does not understand
+ * leaves its cell alone and is counted too, and a value equal to the cell's
+ * is no change. Nothing is written: the grid shows what would change, and
+ * writes it on the user's say-so with {@link applyPaste}.
+ */
+export function planCollage<C, V>(
+  cellules: C,
+  text: string,
+  depuis: GrilleAddress,
+  ligneIds: readonly string[],
+  colonneIds: readonly string[],
+  lire: (texte: string) => V | undefined,
+  acces: AccesGrille<C, V>,
+): { cellules: CelluleCollee<V>[]; horsGrille: number; illisibles: string[] } {
+  const ligne0 = ligneIds.indexOf(depuis.ligneId);
+  const colonne0 = colonneIds.indexOf(depuis.colonneId);
+  const plan = { cellules: [] as CelluleCollee<V>[], horsGrille: 0, illisibles: [] as string[] };
+  if (ligne0 < 0 || colonne0 < 0) {
+    return plan;
+  }
+  blockRows(text).forEach((valeurs, i) => {
+    valeurs.forEach((texte, j) => {
+      const ligneId = ligneIds[ligne0 + i];
+      const colonneId = colonneIds[colonne0 + j];
+      if (ligneId === undefined || colonneId === undefined) {
+        plan.horsGrille++;
+        return;
+      }
+      const lu = lire(texte);
+      if (lu === undefined) {
+        plan.illisibles.push(texte);
+        return;
+      }
+      const before = acces.read(cellules, ligneId, colonneId);
+      if (before !== lu) {
+        plan.cellules.push({ ligneId, colonneId, before, after: lu });
+      }
+    });
+  });
+  return plan;
+}
+
+/** The cells of a paste plan, written locally — « Enregistrer » stays the only thing that reaches the server. */
+export function applyPaste<C, V>(
+  cellules: C,
+  collees: readonly CelluleCollee<V>[],
+  acces: AccesGrille<C, V>,
+): RecopieGrille<C> {
+  let resultat = cellules;
+  for (const cellule of collees) {
+    resultat = acces.write(resultat, cellule.ligneId, cellule.colonneId, cellule.after);
+  }
+  return { cellules: resultat, changees: collees.length };
+}

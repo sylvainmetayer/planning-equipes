@@ -13,7 +13,7 @@
       <section class="journees-types-liste" aria-labelledby="journees-types-liste-titre">
         <h3 id="journees-types-liste-titre" i18n="@@journeesTypes.liste.title">Journées</h3>
         @if (journeesTypes().length === 0) {
-          <p class="empty-hint" i18n="@@journeesTypes.liste.vide">Aucune journée type. Créez-en une, ou reconnaissez-les depuis les créneaux existants.</p>
+          <p class="empty-hint" i18n="@@journeesTypes.liste.vide">Aucune journée type : décrivez-en une, puis posez-la sur les dates de l'édition.</p>
         }
         <ul class="journees-types-items">
           @for (journeeType of journeesTypes(); track journeeType.id) {
@@ -48,12 +48,6 @@
           <button matButton="filled" type="button" [disabled]="verrouille()" (click)="ouvrir(null)">
             <mat-icon>add</mat-icon>
             <ng-container i18n="@@journeesTypes.creer">Nouvelle journée type</ng-container>
-          </button>
-          <button matButton type="button" [disabled]="verrouille() || ecriture()" (click)="reconnaitre()"
-                  i18n-matTooltip="@@journeesTypes.reconnaitre.tooltip"
-                  matTooltip="Lit les journées types que les créneaux actuels impliquent : chaque date aux mêmes vacations est la même journée.">
-            <mat-icon>auto_fix_high</mat-icon>
-            <ng-container i18n="@@journeesTypes.reconnaitre.action">Reconnaître depuis les créneaux</ng-container>
           </button>
         </div>
       </section>

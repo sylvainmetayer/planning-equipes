@@ -188,17 +188,17 @@ export class FormDraft<T> {
    * Leaves the form without saving. An unmodified one closes at once; a
    * modified one asks first, and its draft is dropped only once the user
    * confirmed — answering « no » leaves both the form and the draft as they
-   * were.
+   * were. Answers whether the form is gone.
    */
-  async close(): Promise<void> {
+  async close(): Promise<boolean> {
     if (this.asking) {
-      return;
+      return false;
     }
     if (!untracked(this.modified)) {
       this.closed = true;
       this.cancelPendingWrite();
       this.options.dialogRef.close(this.options.cancelResult);
-      return;
+      return true;
     }
     this.asking = true;
     try {
@@ -213,6 +213,7 @@ export class FormDraft<T> {
         this.complete();
         this.options.dialogRef.close(this.options.cancelResult);
       }
+      return discard;
     } finally {
       this.asking = false;
     }

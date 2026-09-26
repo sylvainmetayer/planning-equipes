@@ -5,7 +5,9 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { JourneesTypesApi } from '../../core/api/journees-types-api';
+import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { JourneeType } from '../../core/models';
@@ -18,6 +20,24 @@ import {
 
 export interface JourneeTypeDialogData {
   journeeType: JourneeType | null;
+}
+
+/**
+ * « Appliquer sans mémoriser »: the day's timeslots, as the series dialog
+ * reads them, to be laid on dates without keeping a template — what « Créer
+ * une série » used to do from a button of its own.
+ */
+export interface OneOffSeries {
+  fenetres: string;
+}
+
+/** What the dialog closes with: the template written, a series to lay, or nothing. */
+export type JourneeTypeDialogResult = JourneeType | OneOffSeries | null;
+
+export function isOneOffSeries(
+  result: JourneeTypeDialogResult | undefined,
+): result is OneOffSeries {
+  return !!result && 'fenetres' in result;
 }
 
 /**
@@ -34,14 +54,21 @@ export interface JourneeTypeDialogData {
     MatInputModule,
     MatButtonModule,
     MatIconModule,
+    MatTooltipModule,
   ],
   templateUrl: './journee-type-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class JourneeTypeDialog {
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
+  private readonly gel = injectGelReferentiel();
+  /**
+   * « Appliquer sans mémoriser » writes timeslots, which a CRENEAUX freeze
+   * refuses (ADR 0052); the template itself is not the grid and stays open.
+   */
+  protected readonly creneauxFrozen = computed(() => this.gel.isFrozen('CRENEAUX'));
   protected readonly dialogRef =
-    inject<MatDialogRef<JourneeTypeDialog, JourneeType | null>>(MatDialogRef);
+    inject<MatDialogRef<JourneeTypeDialog, JourneeTypeDialogResult>>(MatDialogRef);
   private readonly data = inject<JourneeTypeDialogData>(MAT_DIALOG_DATA);
   private readonly api = inject(JourneesTypesApi);
   private readonly crud = inject(ReferenceCrudService);
@@ -69,6 +96,25 @@ export class JourneeTypeDialog {
   );
 
   protected readonly libelleVacation = libelleVacation;
+
+  /** The timeslots are enough to lay them once: a name is only needed to keep them. */
+  protected readonly oneOffImpossible = computed(
+    () => this.saisie().erreur !== null || this.ligne().trim() === '',
+  );
+
+  /**
+   * The day's timeslots laid on dates by the series dialog, the template kept
+   * nowhere. A meal relay does not travel: a series writes plain timeslots.
+   */
+  protected applyWithoutKeeping(): void {
+    const vacations = this.saisie().vacations;
+    if (this.oneOffImpossible() || this.creneauxFrozen() || !vacations) {
+      return;
+    }
+    this.dialogRef.close({
+      fenetres: vacations.map((vacation) => libelleVacation(vacation).replace('–', '-')).join(', '),
+    });
+  }
 
   protected async save(): Promise<void> {
     const vacations = this.saisie().vacations;

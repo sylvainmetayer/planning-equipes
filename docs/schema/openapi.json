@@ -9181,6 +9181,22 @@
         "tags" : [ "Animateur Resource" ]
       }
     },
+    "/api/animateurs/export-liste" : {
+      "post" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          }
+        },
+        "summary" : "Record List Export",
+        "tags" : [ "Animateur Resource" ]
+      }
+    },
     "/api/animateurs/import-csv" : {
       "post" : {
         "requestBody" : {

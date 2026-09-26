@@ -495,6 +495,21 @@ candidats hors guillemets sur tout le fichier : une colonne de vacations pose
 trois virgules par ligne contre deux points-virgules d'en-tête, et le fichier
 qu'on vient d'écrire se relisait comme un fichier à virgules.
 
+Un texte qu'un tableur exécuterait comme une formule — qui commence par `=`,
+`+`, `-`, `@`, une tabulation ou un retour chariot — sort **précédé d'une
+apostrophe**, la marque qu'Excel et LibreOffice lisent comme « ceci est du
+texte » : un nom saisi dans un formulaire ne doit pas devenir une formule dans
+le tableur de l'organisateur. Un nombre n'en porte pas — une longitude négative
+reste un nombre, et une heure ou un total d'heures (`12:30`, `-1,50`) aussi.
+La règle vaut pour chaque CSV que rend le serveur, pas seulement pour ceux de
+cette carte : `heures-planning.csv`, `equite-planning.csv`,
+`plan-formation.csv`, `intendance-repas.csv`, `diff-publication.csv` (le
+`publication.csv` de l'archive de fin d'événement) et l'exemple
+`grille-stands.csv` de la grille des stands. Chaque import CSV retire cette
+apostrophe à la lecture, si bien qu'un fichier exporté se réimporte à
+l'identique. « Exporter cette liste », sur les écrans de référentiel,
+applique la même règle dans le navigateur, et le collage d'un bloc copié depuis le tableur retire l'apostrophe de la même façon.
+
 Sa seconde carte porte l'**export du scénario** : l'édition entière dans un seul
 fichier YAML, celui que la carte Scénario de l'onglet Importer relit. Ce que cet
 aller-retour garantit — et ce qu'il ne garantit pas — est plus haut, *Ce que

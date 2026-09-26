@@ -389,9 +389,13 @@ public class ReferentielCsvExportService {
      * the file we just wrote comes back read as comma-separated. Quoting takes
      * those characters out of the count entirely, which is the only reliable
      * way to keep the dialect ours.</p>
+     *
+     * <p>A text a spreadsheet would run as a formula goes out behind a quote
+     * first ({@link CsvFormulaGuard}), and {@link CsvParser} takes it off on
+     * the way back in: the round trip stays exact.</p>
      */
     private static String echappe(String valeur) {
-        String cellule = valeur == null ? "" : valeur;
+        String cellule = valeur == null ? "" : CsvFormulaGuard.neutralise(valeur);
         if (cellule.indexOf(SEPARATEUR) >= 0
                 || cellule.indexOf(',') >= 0
                 || cellule.indexOf('\t') >= 0

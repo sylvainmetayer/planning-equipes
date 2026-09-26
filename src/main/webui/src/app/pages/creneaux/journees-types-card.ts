@@ -35,7 +35,12 @@ import { ConfirmService } from '../../shared/confirm-dialog';
 import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 import { JoursFeriesService } from '../../core/jours-feries.service';
 import { PastilleFerie } from '../../shared/pastille-ferie';
-import { JourneeTypeDialog, JourneeTypeDialogData } from './journee-type-dialog';
+import {
+  JourneeTypeDialog,
+  JourneeTypeDialogData,
+  JourneeTypeDialogResult,
+  isOneOffSeries,
+} from './journee-type-dialog';
 import {
   JourneesTypesApplicationData,
   JourneesTypesApplicationDialog,
@@ -91,6 +96,8 @@ export class JourneesTypesCard implements OnInit {
   readonly verrouille = input(false);
   /** The calendar was applied: the page reloads the grid, its verdict and its mode. */
   readonly applique = output<RapportApplicationJourneesTypes>();
+  /** « Appliquer sans mémoriser » in a template's dialog: the page lays these timeslots as a series. */
+  readonly serie = output<string>();
 
   private readonly destroyRef = inject(DestroyRef);
   private readonly api = inject(JourneesTypesApi);
@@ -192,7 +199,7 @@ export class JourneesTypesCard implements OnInit {
     if (this.verrouille()) {
       return;
     }
-    const ref = this.dialog.open<JourneeTypeDialog, JourneeTypeDialogData, JourneeType | null>(
+    const ref = this.dialog.open<JourneeTypeDialog, JourneeTypeDialogData, JourneeTypeDialogResult>(
       JourneeTypeDialog,
       { data: { journeeType }, width: '40rem', maxWidth: '95vw', autoFocus: 'first-tabbable' },
     );
@@ -200,6 +207,10 @@ export class JourneesTypesCard implements OnInit {
       .afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((ecrit) => {
+        if (isOneOffSeries(ecrit)) {
+          this.serie.emit(ecrit.fenetres);
+          return;
+        }
         if (ecrit) {
           if (this.journeeTypeChoisie() === null) {
             this.journeeTypeChoisie.set(ecrit.id ?? null);
@@ -319,8 +330,12 @@ export class JourneesTypesCard implements OnInit {
       });
   }
 
-  /** What the grid implies replaces the templates and the calendar — said before it is done. */
-  protected async reconnaitre(): Promise<void> {
+  /**
+   * What the grid implies replaces the templates and the calendar — said
+   * before it is done. Public: the page offers it in « Autres façons de créer
+   * la grille ».
+   */
+  async reconnaitre(): Promise<void> {
     if (this.verrouille() || this.ecriture()) {
       return;
     }
