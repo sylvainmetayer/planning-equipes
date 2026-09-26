@@ -128,8 +128,11 @@ public final class PivotEcarts {
         }
     }
 
-    /** Same walk as {@code ViolationFormatter}: a fact may be a collection of facts. */
-    private static List<Object> flatten(List<Object> facts) {
+    /**
+     * Same walk as {@code ViolationFormatter}: a fact may be a collection of
+     * facts. Shared with {@link BreachHotspots}, which reads the same facts.
+     */
+    static List<Object> flatten(List<Object> facts) {
         List<Object> flat = new ArrayList<>();
         for (Object fact : facts) {
             if (fact instanceof Collection<?> collection) {

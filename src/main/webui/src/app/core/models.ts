@@ -1173,7 +1173,7 @@ export interface ActionType {
   code: string;
   /** The words of the button. */
   libelle: string;
-  /** Why this gesture — for a rule, its remediation word for word. */
+  /** Why this gesture — for a rule's first, its remediation word for word unless it speaks of the weight. */
   explication: string;
   route: string;
   /** Query parameters positioning the target screen; empty when the problem names nothing precise. */
@@ -1435,6 +1435,24 @@ export interface ConstraintView {
    * Code du travail, has no field to fill. Absent on an older payload.
    */
   parametres?: ParametreContrainte[];
+  /**
+   * The three stands and timeslots gathering most of this rule's breaches on
+   * the last analysis, most first — where the Problèmes card says the rule
+   * bites. Ids only; empty when never analysed or when the breaches name no
+   * place. Absent on an older payload.
+   */
+  hotspots?: Hotspot[];
+}
+
+/** One place a rule bites: a stand on a timeslot of a day, or whatever part of it the breaches name. */
+export interface Hotspot {
+  standId?: string | null;
+  /** ISO date. */
+  date?: string | null;
+  /** The timeslot the Journée opens the Siège panel on. */
+  creneauId?: number | null;
+  /** Breaches of the rule naming this place. */
+  ecarts: number;
 }
 
 /**
