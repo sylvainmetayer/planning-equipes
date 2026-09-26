@@ -13,7 +13,7 @@
 // UPDATE that starts no solve. There is no second write path.
 
 import { Injectable, inject } from '@angular/core';
-import { AbsenceMarquee, ApercuPublication, EtatJourJ, SuggestionsReparation } from './models';
+import { AbsenceMarquee, EtatJourJ, RapportPublication, SuggestionsReparation } from './models';
 import { ApiService } from './api.service';
 import { PlanningApi } from './api/planning-api';
 
@@ -87,13 +87,12 @@ export class JourJService {
   }
 
   /**
-   * How many people the next publication would write to — the count behind the
-   * "changements non publiés" banner. Read from the existing publication
-   * preview: this screen shows the number and links to the page that owns the
-   * button, it never sends anything itself.
+   * « Prévenir les N personnes »: the targeted publication of the Diffuser
+   * screen, to the people whose schedule moved and to nobody else — the one
+   * write path, never a mail of this screen's own.
    */
-  apercuPublication(): Promise<ApercuPublication> {
-    return this.planningApi.publicationPreview();
+  prevenir(animateurIds: readonly string[]): Promise<RapportPublication> {
+    return this.planningApi.publishTo(animateurIds);
   }
 }
 

@@ -357,6 +357,7 @@ final class ScenarioDomainMapper {
                 required(dto.dateNaissance(), "animateurs.dateNaissance"),
                 Boolean.TRUE.equals(dto.manager()));
         animateur.setEmail(dto.email());
+        animateur.setTelephone(dto.telephone());
         Map<String, NiveauCompetence> competences = new HashMap<>();
         if (dto.competences() != null) {
             competences.putAll(dto.competences());

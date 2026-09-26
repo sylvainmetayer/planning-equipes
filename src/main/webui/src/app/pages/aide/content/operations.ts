@@ -67,7 +67,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.consignes.demain:« Fermer des stands demain », sur le Solveur et en Mode jour J, ouvre le formulaire sur le lendemain. Pas sur aujourd'hui : une journée commencée garde la consigne qui l'a gouvernée.`,
+          text: $localize`:@@aide.consignes.demain:« Fermer des stands demain », sur le Solveur et sur Aujourd'hui, ouvre le formulaire sur le lendemain. Pas sur aujourd'hui : une journée commencée garde la consigne qui l'a gouvernée.`,
         },
         {
           kind: 'steps',
@@ -111,21 +111,24 @@ export function buildOperationsSections(): HelpSection[] {
     {
       id: 'jour-j',
       icon: 'emergency',
-      title: $localize`:@@aide.jourJ.title:Mode jour J`,
-      summary: $localize`:@@aide.jourJ.summary:Quelqu'un ne s'est pas présenté : le marquer absent, trouver un remplaçant, appliquer — sans relancer de calcul.`,
+      title: $localize`:@@aide.aujourdhui.title:Aujourd'hui (jour J)`,
+      summary: $localize`:@@aide.aujourdhui.summary:Le jour même : trouver qui manque, le marquer absent, le remplacer — créneau en cours compris — et prévenir les personnes concernées, sans relancer de calcul.`,
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.jourJ.intro:Tous les autres écrans travaillent en amont. Celui-ci est pensé pour le jour même, debout dans l'allée, sur un téléphone : peu de clics, de grandes cibles, et trois étapes dans l'ordre du geste — qui manque, quelles places cela ouvre, qui peut les reprendre.`,
-        },
-        {
-          kind: 'callout',
-          title: $localize`:@@aide.jourJ.callout.title:Cet écran agit vraiment`,
-          text: $localize`:@@aide.jourJ.callout.text:Il est encore en cours de développement, et il se distingue des autres écrans à l'essai sur un point : marquer un absent écrit de vraies indisponibilités et vide de vrais sièges du planning enregistré, tout de suite. Aucune résolution ne revérifie l'ensemble entre-temps. Relancez-en une dès que la situation le permet.`,
+          text: $localize`:@@aide.aujourdhui.intro:Tous les autres écrans travaillent en amont. Celui-ci est pensé pour le jour même, debout dans l'allée, sur un téléphone. En tête : la date et l'heure du serveur, le numéro du jour, les stands ouverts et les vacations restantes, puis des compteurs qui mènent chacun où l'on s'en occupe — absents, places vides nouvelles et connues, échanges à arbitrer, personnes à prévenir, consigne du jour. « Afficher sur la TV » crée un lien d'affichage mural et montre son QR code ; « Fermer des stands demain » ouvre une consigne préremplie.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.jourJ.portee:Marquer quelqu'un absent le déclare indisponible sur les créneaux restants de la journée, et sur ceux-là seulement. Un créneau est restant tant qu'il n'est pas terminé, celui en cours compris. Les créneaux passés ne sont jamais touchés : la personne les a réellement tenus. Le siège d'un créneau déjà commencé n'est pas vidé non plus — le passé ne se modifie plus, l'absence y est seulement enregistrée.`,
+          text: $localize`:@@aide.aujourdhui.recherche:On ne cherche plus quelqu'un dans une liste : le champ « Chercher une personne » trouve un nom, un prénom ou un identifiant dès deux lettres, accents ignorés, avec son numéro de téléphone s'il est sur la fiche. « Marquer absent » le déclare indisponible sur les créneaux restants de la journée, et sur ceux-là seulement ; le même geste existe sur un siège, depuis le panneau Siège de la Journée.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.aujourdhui.enCours:Le créneau en cours se répare. Quelqu'un manque à 9 h sur 9 h – 12 h et on le constate à 9 h 20 : son siège est coupé à 9 h 20. Ce qu'il a tenu reste à son nom — l'historique garde qui a tenu 9 h – 9 h 20 —, et le reste du créneau devient une place à pourvoir, « Remplacer sur le reste du créneau ». Seul un siège déjà terminé ne se modifie plus.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.aujourdhui.nouveau:« Nouveau depuis ce matin » réunit ce qui a changé depuis la publication : les places qu'une absence a ouvertes, les empêchements signalés depuis les espaces et les alertes de l'affichage mural — la vacation qui commence dans la demi-heure avec une place vide, la pause sans relais dans l'heure. « Places vides connues », estompées, sont les trous du planning tel qu'il a été publié ; « Qui peut tenir ce siège ? » y cherche aussi un remplaçant.`,
         },
         {
           kind: 'paragraph',
@@ -141,7 +144,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.jourJ.horsJour:Hors du jour même, pour un siège encore à venir, la page Planning fait les mêmes gestes un par un : son panneau du siège remplace, libère, déplace, et « Placer » remplit un siège vide depuis « Qui peut tenir ce siège ? ». Le mode jour J reste l'écran de l'absence du jour, qui libère d'un coup tous les sièges restants de la personne.`,
+          text: $localize`:@@aide.aujourdhui.horsJour:Hors du jour même, pour un siège encore à venir, la page Planning fait les mêmes gestes un par un : son panneau du siège remplace, libère, déplace, marque absent sur ce créneau, et « Placer » remplit un siège vide depuis « Qui peut tenir ce siège ? ». Aujourd'hui reste l'écran de l'absence du jour, qui libère d'un coup tous les sièges restants de la personne.`,
         },
         {
           kind: 'paragraph',
@@ -149,7 +152,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.jourJ.publication:Rien n'est envoyé aux animateurs depuis cet écran : leur espace continue d'afficher le planning publié tant que vous n'avez pas republié. Le bandeau rappelle combien de personnes attendent un changement et renvoie vers le bouton Publier, sur la page Publication.`,
+          text: $localize`:@@aide.aujourdhui.prevenir:Après un remplacement, l'écran dit combien de personnes ont un planning différent de celui qu'elles ont reçu, et « Prévenir les N personnes » leur envoie leur planning à jour — à elles seulement, après confirmation. C'est la publication ciblée de l'écran Diffuser : la version envoyée y est tracée comme les autres.`,
         },
         {
           kind: 'paragraph',
@@ -161,7 +164,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
       ],
       links: [
-        { route: '/jour-j', label: $localize`:@@nav.link.jourJ:Mode jour J` },
+        { route: '/aujourdhui', label: $localize`:@@nav.link.aujourdhui:Aujourd'hui` },
         {
           route: '/consignes-solveur',
           queryParams: { onglet: 'ajustements' },
@@ -186,19 +189,19 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.mural.ecran:L'écran regroupe les stands ouverts du jour par emplacement. Chaque tuile montre la vacation en cours et la suivante, avec les noms et, en rouge, chaque place libre ; un stand fermé à cet instant est estompé avec son heure de réouverture. En bas, les places à pourvoir dans les deux heures, les pauses sans relais et la consigne du jour. Quand tout ne tient pas, les pages tournent toutes les quinze secondes.`,
+          text: $localize`:@@aide.mural.ecranAligne:L'écran regroupe les stands ouverts à cet instant par emplacement. Chaque tuile montre la vacation en cours et la suivante, avec les noms : une place libre depuis ce matin en rouge, un trou déjà connu à la publication estompé. Les stands fermés à cet instant ne prennent pas de tuile : une ligne les réunit par heure de réouverture. En bas, ce qui est nouveau, la vacation qui commence dans la demi-heure avec une place vide, la pause sans relais dans l'heure et la consigne du jour — le même calcul que l'écran Aujourd'hui. Les tuiles sont mesurées à l'écran, et quand tout ne tient pas, les pages tournent toutes les quinze secondes.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.mural.donnees:C'est le planning enregistré qui s'affiche, pas celui envoyé aux animateurs : un remplacement fait en Mode jour J apparaît à la minute suivante, sans republier. L'heure est celle du serveur, jamais celle de la TV. Si le réseau tombe, l'écran garde ce qu'il montrait et indique depuis quand il est hors ligne.`,
+          text: $localize`:@@aide.mural.donneesAligne:C'est le planning enregistré qui s'affiche, pas celui envoyé aux animateurs : un remplacement fait depuis Aujourd'hui apparaît à la minute suivante, sans republier. Quand des plannings diffèrent de ce qui a été envoyé, l'écran le dit, avec le nombre de personnes concernées ; sinon il n'en dit rien. L'heure est celle du serveur, jamais celle de la TV. Si le réseau tombe, l'écran garde ce qu'il montrait et indique depuis quand il est hors ligne.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.mural.noms:Par défaut, l'écran montre le prénom et l'initiale du nom : tout le monde le voit dans la pièce. Le nom complet est une option du lien, à choisir à sa création. Ni téléphone, ni âge, ni motif d'absence n'y figurent jamais.`,
+          text: $localize`:@@aide.mural.nomsDesambigues:Par défaut, l'écran montre le prénom et l'initiale du nom : tout le monde le voit dans la pièce. Deux personnes du jour qui se liraient pareil gagnent une deuxième lettre, puis le nom entier. Le nom complet pour tous est une option du lien, à choisir à sa création. Ni téléphone, ni âge, ni motif d'absence n'y figurent jamais.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.mural.securite:Le lien n'ouvre que cet écran, pour cette édition, en lecture seule. La liste des liens donne la date du dernier accès ; révoquer un lien coupe l'écran à sa lecture suivante, et supprimer l'édition emporte ses liens. Pour une affiche grand format de la journée entière, ajoutez ?impression=1 à l'adresse et imprimez la page — ou, sans lien, « Imprimer cette journée » sur la page Planning, derrière votre session.`,
+          text: $localize`:@@aide.mural.securiteTableau:Le lien n'ouvre que cet écran, pour cette édition, en lecture seule. La liste des liens donne la date du dernier accès ; révoquer un lien coupe l'écran à sa lecture suivante, et supprimer l'édition emporte ses liens. Pour une affiche de la journée entière, ajoutez ?impression=1 à l'adresse et imprimez la page : un tableau des stands et des vacations — ou, sans lien, « Imprimer cette journée » sur la page Planning, derrière votre session.`,
         },
       ],
       links: [
@@ -207,7 +210,7 @@ export function buildOperationsSections(): HelpSection[] {
           queryParams: { onglet: 'mural' },
           label: $localize`:@@aide.link.affichageMural:Paramètres — Affichage mural`,
         },
-        { route: '/jour-j', label: $localize`:@@nav.link.jourJ:Mode jour J` },
+        { route: '/aujourdhui', label: $localize`:@@nav.link.aujourdhui:Aujourd'hui` },
       ],
     },
     {

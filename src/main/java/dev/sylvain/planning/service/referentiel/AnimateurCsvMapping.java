@@ -35,6 +35,7 @@ import java.util.Map;
  * @param competences        multi-valued, {@code typologie} or {@code typologie:NIVEAU}
  * @param souhaits           multi-valued typologie ids
  * @param joursIndisponibles multi-valued dates
+ * @param telephone          phone number, to call a replacement on the day
  */
 public record AnimateurCsvMapping(
         Integer prenom,
@@ -44,7 +45,8 @@ public record AnimateurCsvMapping(
         Integer manager,
         Integer competences,
         Integer souhaits,
-        Integer joursIndisponibles) {
+        Integer joursIndisponibles,
+        Integer telephone) {
 
     /* The field keys of ALIASES, as {@link #match} is asked for them. */
     private static final String FIELD_PRENOM = "prenom";
@@ -55,6 +57,7 @@ public record AnimateurCsvMapping(
     private static final String FIELD_COMPETENCES = "competences";
     private static final String FIELD_SOUHAITS = "souhaits";
     private static final String FIELD_JOURS_INDISPONIBLES = "joursIndisponibles";
+    private static final String FIELD_TELEPHONE = "telephone";
 
     /**
      * The header spellings each field answers to, accents and case removed.
@@ -65,10 +68,11 @@ public record AnimateurCsvMapping(
      * have failed on the first file whose author called the column
      * « Date de naiss. ».</p>
      */
-    private static final Map<String, List<String>> ALIASES = Map.of(
-            FIELD_PRENOM, List.of("prenom", "firstname", "first name", "given name"),
-            FIELD_NOM, List.of("nom", "nom de famille", "lastname", "last name", "surname", "name"),
-            FIELD_DATE_NAISSANCE,
+    private static final Map<String, List<String>> ALIASES = Map.ofEntries(
+            Map.entry(FIELD_PRENOM, List.of("prenom", "firstname", "first name", "given name")),
+            Map.entry(FIELD_NOM, List.of("nom", "nom de famille", "lastname", "last name", "surname", "name")),
+            Map.entry(
+                    FIELD_DATE_NAISSANCE,
                     List.of(
                             "date de naissance",
                             "datenaissance",
@@ -78,12 +82,15 @@ public record AnimateurCsvMapping(
                             "nee le",
                             "birthdate",
                             "birth date",
-                            "date of birth"),
-            FIELD_EMAIL, List.of("email", "e mail", "mail", "adresse mail", "courriel", "adresse electronique"),
-            FIELD_MANAGER, List.of("manager", "responsable", "encadrant", "chef"),
-            FIELD_COMPETENCES, List.of("competences", "competence", "typologies", "typologie", "skills"),
-            FIELD_SOUHAITS, List.of("souhaits", "souhait", "voeux", "preferences", "wishes"),
-            FIELD_JOURS_INDISPONIBLES,
+                            "date of birth")),
+            Map.entry(
+                    FIELD_EMAIL,
+                    List.of("email", "e mail", "mail", "adresse mail", "courriel", "adresse electronique")),
+            Map.entry(FIELD_MANAGER, List.of("manager", "responsable", "encadrant", "chef")),
+            Map.entry(FIELD_COMPETENCES, List.of("competences", "competence", "typologies", "typologie", "skills")),
+            Map.entry(FIELD_SOUHAITS, List.of("souhaits", "souhait", "voeux", "preferences", "wishes")),
+            Map.entry(
+                    FIELD_JOURS_INDISPONIBLES,
                     List.of(
                             "jours indisponibles",
                             "joursindisponibles",
@@ -93,7 +100,10 @@ public record AnimateurCsvMapping(
                             "indispo",
                             "absences",
                             "jours d absence",
-                            "unavailable days"));
+                            "unavailable days")),
+            Map.entry(
+                    FIELD_TELEPHONE,
+                    List.of("telephone", "tel", "portable", "mobile", "numero de telephone", "phone", "phone number")));
 
     /**
      * Everything unmapped — what a file whose headers say nothing recognisable
@@ -102,7 +112,7 @@ public record AnimateurCsvMapping(
      * <b>missing</b> mapping asks {@link #propose} for a guess.
      */
     public static AnimateurCsvMapping empty() {
-        return new AnimateurCsvMapping(null, null, null, null, null, null, null, null);
+        return new AnimateurCsvMapping(null, null, null, null, null, null, null, null, null);
     }
 
     /**
@@ -123,7 +133,8 @@ public record AnimateurCsvMapping(
                 match(normalised, taken, FIELD_MANAGER),
                 match(normalised, taken, FIELD_COMPETENCES),
                 match(normalised, taken, FIELD_SOUHAITS),
-                match(normalised, taken, FIELD_JOURS_INDISPONIBLES));
+                match(normalised, taken, FIELD_JOURS_INDISPONIBLES),
+                match(normalised, taken, FIELD_TELEPHONE));
     }
 
     /**

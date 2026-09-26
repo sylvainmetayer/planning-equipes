@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -19,8 +20,6 @@ import { AffectationExplanationService } from '../../core/affectation-explanatio
 import { JourJService } from '../../core/jour-j.service';
 import {
   AbsenceJourJ,
-  AnimateurAffecte,
-  ApercuPublication,
   EtatJourJ,
   PosteAPourvoir,
   SuggestionsReparation,
@@ -31,41 +30,56 @@ import { NotificationService } from '../../core/notification.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { compareDelta } from '../../shared/affectation-explanation-rules';
 import { bandeLabel } from '../../core/consigne-wording';
-import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
+import { ConfirmService } from '../../shared/confirm-dialog';
 import {
+  alerteLibelle,
   aucuneSuggestion,
   blocageDuPoste,
   chargeRestante,
+  searchPeople,
+  dayCounters,
   dejaDeService,
-  libelleCreneau,
+  dayHeader,
+  heureDe,
   nomDuCandidat,
+  nonPublieLibelle,
   plage,
   porteeDesSuggestions,
-  rappelPublication,
+  prevenirLibelle,
   resumeDuJour,
 } from './jour-j-wording';
 import { StatusMessage } from '../../shared/status-message';
+import { AujourdhuiTv } from './aujourdhui-tv';
+
+/** A hole of the day, labelled once: the template never calls a function per row. */
+interface Trou extends PosteAPourvoir {
+  plage: string;
+  blocage: string;
+}
 
 /**
- * Mode « jour J » — the first screen of this application written for the day of
- * the event rather than for the weeks before it: somebody did not show up, and
- * their seats have to change hands now.
+ * « Aujourd'hui » — the hub of the event day (formerly « Mode jour J »):
+ * somebody did not show up, and their seats have to change hands now.
  *
- * <p>Three sections, in the order the gesture actually goes: who is missing →
- * which seats that opened → who can take one. Nothing navigates away, because
- * the person holding the phone is standing in an aisle with somebody waiting.
+ * <p>Read top down as the gesture goes: the day at a glance and a search to
+ * find anybody among the roster → what is new since this morning (the absences
+ * and the seats they opened, the reports from the espaces, the wall display's
+ * alerts) → the holes everybody already knew, faded. A seat of the timeslot
+ * under way is repaired too: the server splits it at « now » and the
+ * replacement covers the rest of it (ADR 0066).
  *
- * <p>Two things it deliberately does *not* do. It never starts a solve — every
- * write is the repair assistant's surgical UPDATE. And it never sends a mail:
- * the publication count is shown as a reminder with a link to the page that
- * owns the button, because a "write to 150 people" control one tap away inside
- * an emergency screen gets pressed by accident.
+ * <p>It never starts a solve — every write is the repair assistant's surgical
+ * UPDATE. The one mail it sends is « Prévenir les N personnes », the targeted
+ * publication of the Diffuser screen, to the people whose schedule moved and to
+ * nobody else, after a confirmation.
  */
 @Component({
   selector: 'app-jour-j-page',
   imports: [
+    AujourdhuiTv,
     StatusMessage,
     FormsModule,
+    NgTemplateOutlet,
     RouterLink,
     MatButtonModule,
     MatCardModule,
@@ -73,7 +87,6 @@ import { StatusMessage } from '../../shared/status-message';
     MatIconModule,
     MatInputModule,
     MatProgressBarModule,
-    WorkInProgressBanner,
   ],
   templateUrl: './jour-j-page.html',
   styleUrl: './jour-j-page.css',
@@ -85,6 +98,7 @@ export class JourJPage implements OnInit {
   private readonly jourJ = inject(JourJService);
   private readonly reparations = inject(AffectationExplanationService);
   private readonly notifications = inject(NotificationService);
+  private readonly confirm = inject(ConfirmService);
   /**
    * A solve holding the edition refuses this write in 409 — its landing
    * rewrites every seat from the plan it started on: the buttons wait for it.
@@ -92,9 +106,12 @@ export class JourJPage implements OnInit {
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
 
   protected readonly etat = signal<EtatJourJ | null>(null);
-  protected readonly apercu = signal<ApercuPublication | null>(null);
   protected readonly chargement = signal(false);
   protected readonly erreur = signal('');
+
+  /** The name typed in the search: the roster is found, never scrolled. */
+  protected readonly recherche = signal('');
+  protected readonly trouves = computed(() => searchPeople(this.etat(), this.recherche()));
 
   /** Which animateur's "marquer absent" panel is open. Only ever one at a time. */
   protected readonly candidatAbsence = signal<string | null>(null);
@@ -107,18 +124,12 @@ export class JourJPage implements OnInit {
   protected readonly rechercheEnCours = signal<string[]>([]);
   /** Poste id being written right now, so only its buttons are disabled. */
   protected readonly affectationEnCours = signal<string | null>(null);
-
-  /**
-   * The default banner wording says the data entered here "may still change"
-   * and that the solver "may not take it into account". Both are too gentle for
-   * this screen: it is the only one under trial that <em>writes</em>, and what
-   * it writes lands in the persisted plan straight away. Somebody has to
-   * understand, before tapping, that they are changing the plan and that
-   * nothing revalidates the whole of it until the next solve.
-   */
-  protected readonly avertissement = $localize`:@@jourJ.wip.message:Écran en cours de développement, et il agit : marquer un absent écrit de vraies indisponibilités et vide de vrais sièges du planning enregistré. Ses effets ne sont pas encore garantis.`;
+  /** The targeted publication in flight. */
+  protected readonly notifyBusy = signal(false);
 
   protected readonly resume = computed(() => resumeDuJour(this.etat()));
+  protected readonly entete = computed(() => dayHeader(this.etat()));
+  protected readonly heureServeur = computed(() => heureDe(this.etat()?.maintenant));
   /** The day's consigne (issue #4), worded for the banner; empty on an ordinary day. */
   protected readonly consigne = computed(() => {
     const consigne = this.etat()?.consigne ?? null;
@@ -126,30 +137,35 @@ export class JourJPage implements OnInit {
       ? { bande: bandeLabel(consigne.fermetureDebut, consigne.fermetureFin), motif: consigne.motif }
       : null;
   });
-  protected readonly rappel = computed(() => rappelPublication(this.apercu()));
 
-  /** Pre-labelled rows: the template never calls a function per row. */
-  protected readonly deService = computed(() =>
-    (this.etat()?.animateursDeService ?? []).map((animateur: AnimateurAffecte) => ({
-      ...animateur,
-      charge: chargeRestante(animateur),
+  protected readonly aPrevenir = computed(() => this.etat()?.aPrevenir ?? []);
+  protected readonly prevenir = computed(() => prevenirLibelle(this.aPrevenir().length));
+  protected readonly nonPublie = computed(() => nonPublieLibelle(this.aPrevenir().length));
+
+  protected readonly alertes = computed(() =>
+    (this.etat()?.alertes ?? []).map((alerte) => ({
+      cle: `${alerte.type}-${alerte.standNom}-${alerte.start}-${alerte.nom ?? ''}`,
+      libelle: alerteLibelle(alerte),
     })),
   );
 
-  protected readonly creneaux = computed(() =>
-    (this.etat()?.creneauxRestants ?? []).map((creneau) => ({
-      id: creneau.id,
-      libelle: libelleCreneau(creneau),
-    })),
-  );
-
-  protected readonly trous = computed(() =>
+  private readonly trous = computed<Trou[]>(() =>
     (this.etat()?.postesAPourvoir ?? []).map((poste: PosteAPourvoir) => ({
       ...poste,
       plage: plage(poste.heureDebut, poste.heureFin),
       blocage: blocageDuPoste(poste),
     })),
   );
+  /** Seats the published plan had somebody on: opened this morning, by an absence. */
+  protected readonly trousNouveaux = computed(() => this.trous().filter((trou) => trou.nouveau));
+  /** The holes of the plan as it was published: everybody already knew them. */
+  protected readonly trousConnus = computed(() => this.trous().filter((trou) => !trou.nouveau));
+
+  /** The header's counters, worded once. */
+  protected readonly compteurs = computed(() => {
+    const etat = this.etat();
+    return etat ? dayCounters(etat, this.trousNouveaux().length, this.trousConnus().length) : null;
+  });
 
   /** Absences reported from the espaces and not settled yet (issue #533), worded. */
   protected readonly signalements = computed(() =>
@@ -193,13 +209,15 @@ export class JourJPage implements OnInit {
     } finally {
       this.chargement.set(false);
     }
-    // The publication count is a reminder, not part of the day's state: a
-    // failure to read it must not blank the screen the operator came for.
-    try {
-      this.apercu.set(await this.jourJ.apercuPublication());
-    } catch {
-      this.apercu.set(null);
-    }
+  }
+
+  /** The counters of the header lead to a section of this very page. */
+  protected allerA(section: string): void {
+    document.getElementById(section)?.scrollIntoView({ block: 'start' });
+  }
+
+  protected charge(postesRestants: number): string {
+    return chargeRestante({ postesRestants });
   }
 
   /* ------------------------------- Absence ------------------------------- */
@@ -216,16 +234,17 @@ export class JourJPage implements OnInit {
 
   /**
    * Writes the absence and goes straight to the holes it opened: the freed
-   * seats come back in the answer, so their suggestions are fetched one after
-   * the other rather than all at once — each call costs the server twenty full
-   * analyses of the plan, and firing five in parallel would make the screen
-   * slower, not faster.
+   * seats come back in the answer — the rest of the timeslot under way
+   * included, split at « now » —, so their suggestions are fetched one after
+   * the other rather than all at once: each call costs the server twenty full
+   * analyses of the plan.
    */
-  protected async marquerAbsent(animateurId: string): Promise<void> {
+  protected async markAbsent(animateurId: string): Promise<void> {
     this.enCoursDAbsence.set(true);
     try {
       const marquee = await this.jourJ.marquerAbsent(animateurId, this.raison());
       this.fermerAbsence();
+      this.recherche.set('');
       this.notifications.notify({
         title: $localize`:@@jourJ.absence.faite:${marquee.nomAffiche}:nom: est marqué absent`,
         message: $localize`:@@jourJ.absence.detail:${marquee.entrees.length}:creneaux: créneau(x) indisponibles, ${marquee.postesLiberes.length}:postes: poste(s) libéré(s).`,
@@ -249,7 +268,7 @@ export class JourJPage implements OnInit {
     }
   }
 
-  protected async annulerAbsence(animateurId: string, creneauId?: number): Promise<void> {
+  protected async cancelAbsence(animateurId: string, creneauId?: number): Promise<void> {
     try {
       await this.jourJ.annulerAbsence(animateurId, undefined, creneauId);
       await this.recharger();
@@ -329,16 +348,20 @@ export class JourJPage implements OnInit {
     return aucuneSuggestion(this.suggestionsDe(posteId));
   }
 
-  /** The candidates of one hole, already named and ranked by the server. */
+  /** The candidates of one hole, already named and ranked by the server — and reachable. */
   protected candidats(posteId: string) {
     const suggestions = this.suggestionsDe(posteId);
+    const etat = this.etat();
     return (suggestions?.suggestions ?? []).map((suggestion) => ({
       animateurId: suggestion.animateurId,
-      nom: nomDuCandidat(this.etat(), suggestion.animateurId),
+      nom: nomDuCandidat(etat, suggestion.animateurId),
+      telephone:
+        etat?.animateurs.find((animateur) => animateur.animateurId === suggestion.animateurId)
+          ?.telephone ?? null,
       ameliore: compareDelta(suggestion.delta) === 'better',
       // Worth saying on the button: taking this seat adds to a day they are
       // already working, rather than filling an idle one.
-      dejaDeService: dejaDeService(this.etat(), suggestion.animateurId),
+      dejaDeService: dejaDeService(etat, suggestion.animateurId),
     }));
   }
 
@@ -379,7 +402,7 @@ export class JourJPage implements OnInit {
       this.suggestionsParPoste.set({});
       this.notifications.notify({
         title: $localize`:@@jourJ.affectation.faite:Poste pourvu`,
-        message: $localize`:@@jourJ.affectation.detail:${nomDuCandidat(this.etat(), animateurId)}:nom: prend ce poste. Le planning publié ne bouge pas tant que vous n'avez pas republié.`,
+        message: $localize`:@@aujourdhui.affectation.detail:${nomDuCandidat(this.etat(), animateurId)}:nom: prend ce poste. Prévenez les personnes concernées depuis cet écran.`,
         variant: 'success',
       });
       await this.recharger();
@@ -398,6 +421,47 @@ export class JourJPage implements OnInit {
       });
     } finally {
       this.affectationEnCours.set(null);
+    }
+  }
+
+  /* ----------------------- Warning the people moved ---------------------- */
+
+  /**
+   * « Prévenir les N personnes »: the targeted publication, to the people whose
+   * schedule differs from what they received and to nobody else. Real mail,
+   * so confirmed first.
+   */
+  protected async notifyConcerned(): Promise<void> {
+    const cibles = this.aPrevenir();
+    if (cibles.length === 0) {
+      return;
+    }
+    const ok = await this.confirm.ask({
+      title: this.prevenir(),
+      message: $localize`:@@aujourdhui.prevenir.confirmation:Chacune reçoit son planning à jour par e-mail. Personne d'autre n'est écrit.`,
+      confirmLabel: $localize`:@@aujourdhui.prevenir.envoyer:Envoyer`,
+    });
+    if (!ok) {
+      return;
+    }
+    this.notifyBusy.set(true);
+    try {
+      const rapport = await this.jourJ.prevenir(cibles);
+      this.notifications.notify({
+        title: $localize`:@@aujourdhui.prevenir.fait:${rapport.envoyes}:count: planning(s) envoyé(s)`,
+        message: [...rapport.sansEmail, ...rapport.echecs].join(', '),
+        variant: rapport.echecs.length > 0 || rapport.sansEmail.length > 0 ? 'warning' : 'success',
+      });
+      await this.recharger();
+    } catch (error) {
+      this.notifications.notify({
+        title: $localize`:@@aujourdhui.prevenir.echec:Envoi impossible`,
+        message: messageDe(error),
+        variant: 'error',
+        timeout: 0,
+      });
+    } finally {
+      this.notifyBusy.set(false);
     }
   }
 }

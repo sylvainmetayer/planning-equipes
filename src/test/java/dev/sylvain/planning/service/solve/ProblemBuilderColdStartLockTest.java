@@ -68,6 +68,11 @@ class ProblemBuilderColdStartLockTest {
             public Map<String, List<String>> loadAnimateursByStandCreneau() {
                 return Map.of(PlanningPersistenceService.standCreneauKey("S1", 1L), List.of("A1"));
             }
+
+            @Override
+            public Map<String, List<PlanningPersistenceService.Siege>> loadSplitCells() {
+                return Map.of();
+            }
         };
     }
 

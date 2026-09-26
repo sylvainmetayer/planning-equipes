@@ -75,8 +75,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   television, opened by a dedicated token and no session, ADR 0053: the stands
   of the day with the shift under way and the next one, over the pure
   `pages/mural/mural.ts`; it reads the server every minute and keeps its last
-  state offline, turns its pages every fifteen seconds, and `?impression=1`
-  lays the whole day out for print) render outside it — no admin navigation,
+  state offline, turns its pages every fifteen seconds — as many tiles as the
+  tiles measured let fit, the closed stands on one line out of the rotation —,
+  and `?impression=1` lays the whole day out for print as a table of stands ×
+  shifts) render outside it — no admin navigation,
   no admin polling. So does `/impression/:date` (« Impression de la journée »
   — « Imprimer cette journée » of the Planning page: the same print layout of
   `pages/mural`, route data `apercu`, read under the admin session from
@@ -103,7 +105,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   state and a link to the screen that moves it — the solve read in sentences,
   identical coherence anomalies merged with their count, the freeze a state
   linking to Paramètres; during the event, the day under way first, opening
-  `/jour-j`, and the checklist folded; after it, the archive first; on an
+  `/aujourdhui`, and the checklist folded; after it, the archive first; on an
   empty edition, a « Démarrer » block. « À traiter aujourd'hui »
   (`#a-traiter`, where the toolbar's bell lands) is always drawn, and folds
   under it `pages/accueil/messages-recents` — the night's alerts and the
@@ -360,8 +362,13 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   aimed at those two through `PlanningApi.publishTo`, and « Corriger le
   reste », the incremental solve, on its card; the header counts the requests
   arrived since this browser's last visit, `core/derniere-visite`, a chrome
-  preference), `/jour-j` (« Mode jour J » — the day-of screen:
-  mark somebody absent, repair the seats they held), `/versions` (« Versions du
+  preference), `/aujourdhui` (« Aujourd'hui » — the day-of hub,
+  `pages/jour-j/`, `/jour-j` redirecting to it with its query params: a
+  search over the whole roster, mark somebody absent, repair the seats they
+  held — the timeslot under way included, split at « now » server-side (ADR
+  0066) —, the new holes told from the published ones, « Prévenir les N
+  personnes » through the targeted publication, « Fermer des stands demain »,
+  the TV link), `/versions` (« Versions du
   plan » — the finished solves and the snapshots of the edition in one
   chronology over the pure `versions.ts`, `?editions=toutes` for every
   edition's; two ticked rows, or one and « Plan en place », open the A/B

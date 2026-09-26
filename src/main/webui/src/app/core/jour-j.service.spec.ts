@@ -81,10 +81,12 @@ describe('JourJService', () => {
     expect(api.post).toHaveBeenCalledWith('/api/jour-j/postes/P%202/suggestions', null);
   });
 
-  it('reads the publication count from the existing preview, and sends nothing', async () => {
-    await service.apercuPublication();
+  it('warns the people it names through the targeted publication, and nobody else', async () => {
+    await service.prevenir(['A1', 'A2']);
 
-    expect(api.get).toHaveBeenCalledWith('/api/planning/publication');
-    expect(api.post).not.toHaveBeenCalled();
+    expect(api.post).toHaveBeenCalledWith('/api/planning/publication', {
+      exclusions: [],
+      cibles: ['A1', 'A2'],
+    });
   });
 });

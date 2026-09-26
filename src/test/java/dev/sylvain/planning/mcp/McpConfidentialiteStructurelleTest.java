@@ -23,7 +23,8 @@ import org.junit.jupiter.api.Test;
  * covered), this walks <em>every</em> {@code @Tool} method of the package and
  * refuses, recursively through generics and record components, any return
  * type that could carry a personal field — the raw {@link Animateur} domain
- * class, or a component named {@code prenom}/{@code dateNaissance}. A new
+ * class, or a component named {@code prenom}/{@code dateNaissance}/{@code
+ * telephone}. A new
  * tool returning a domain object instead of a filtered view fails here.
  *
  * <p>The free texts a person types are refused by name too — a comment, the
@@ -39,6 +40,9 @@ class McpConfidentialiteStructurelleTest {
             "datenaissance",
             "nomdefamille",
             "email",
+            // The phone number of the fiche: an admin screen reads it, an
+            // assistant never does (docs/rgpd.md).
+            "telephone",
             "accesstoken",
             "commentaire",
             "commentaireadmin",

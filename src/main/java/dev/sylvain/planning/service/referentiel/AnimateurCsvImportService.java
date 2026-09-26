@@ -140,6 +140,9 @@ public class AnimateurCsvImportService {
 
     static final int MAX_EMAIL = 255;
 
+    /** {@code telephone VARCHAR(32)} (V113). */
+    static final int MAX_TELEPHONE = 32;
+
     /** The four bytes every ZIP archive — hence every {@code .xlsx} — starts with. */
     private static final String ZIP_SIGNATURE = "PK\u0003\u0004";
 
@@ -613,6 +616,8 @@ public class AnimateurCsvImportService {
         checkLength("Prénom trop long", prenom, MAX_NOM, reasons);
         checkLength("Nom trop long", nom, MAX_NOM, reasons);
         checkLength("Adresse e-mail trop longue", email, MAX_EMAIL, reasons);
+        String telephone = cell(row, mapping.telephone());
+        checkLength("Numéro de téléphone trop long", telephone, MAX_TELEPHONE, reasons);
 
         Resolution resolution = resolve(email, prenom, nom, label, index, reasons);
         Animateur existant = resolution.existant();
@@ -667,6 +672,7 @@ public class AnimateurCsvImportService {
         animateur.setDateNaissance(dateNaissance);
         animateur.setManager(manager);
         animateur.setEmail(effectiveEmail(email, existant));
+        animateur.setTelephone(cellOrFiche(telephone, existant, Animateur::getTelephone));
         animateur.setCompetences(competences);
         animateur.setSouhaits(souhaits);
         animateur.setJoursIndisponibles(jours);

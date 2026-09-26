@@ -26,9 +26,16 @@ const VIEW: AffichageMuralView = {
           start: `${JOUR}T09:00:00`,
           end: `${JOUR}T13:00:00`,
           noms: ['Camille D.'],
-          emptySeats: 1,
+          emptySeats: 2,
+          newEmptySeats: 1,
         },
-        { start: `${JOUR}T14:00:00`, end: `${JOUR}T18:00:00`, noms: ['Léo M.'], emptySeats: 0 },
+        {
+          start: `${JOUR}T14:00:00`,
+          end: `${JOUR}T18:00:00`,
+          noms: ['Léo M.'],
+          emptySeats: 0,
+          newEmptySeats: 0,
+        },
       ],
     },
     {
@@ -36,12 +43,20 @@ const VIEW: AffichageMuralView = {
       standNom: 'Buvette',
       emplacementId: 'nord',
       emplacementNom: 'Zone nord',
-      vacations: [{ start: `${JOUR}T15:00:00`, end: `${JOUR}T19:00:00`, noms: [], emptySeats: 2 }],
+      vacations: [
+        {
+          start: `${JOUR}T15:00:00`,
+          end: `${JOUR}T19:00:00`,
+          noms: [],
+          emptySeats: 2,
+          newEmptySeats: 0,
+        },
+      ],
     },
   ],
   alerts: [
     {
-      type: 'EMPTY_SEATS',
+      type: 'NEW_EMPTY_SEATS',
       standNom: 'Jeux géants',
       start: `${JOUR}T09:00:00`,
       end: `${JOUR}T13:00:00`,
@@ -50,7 +65,27 @@ const VIEW: AffichageMuralView = {
     },
   ],
   consigne: null,
+  unpublishedChanges: 0,
 };
+
+/** Six stands open at 10:00, for the pages to turn over. */
+function ouverts(nombre: number): AffichageMuralView['stands'] {
+  return Array.from({ length: nombre }, (_, index) => ({
+    standId: `s${index}`,
+    standNom: `Stand ${index + 1}`,
+    emplacementId: null,
+    emplacementNom: null,
+    vacations: [
+      {
+        start: `${JOUR}T09:00:00`,
+        end: `${JOUR}T13:00:00`,
+        noms: [],
+        emptySeats: 0,
+        newEmptySeats: 0,
+      },
+    ],
+  }));
+}
 
 describe('MuralPage', () => {
   let fixture: ComponentFixture<MuralPage>;
@@ -102,31 +137,56 @@ describe('MuralPage', () => {
     vi.useRealTimers();
   });
 
-  it('shows the shift under way, the next one, the empty seats and the closed stands', async () => {
+  it('shows the shift under way, the next one, the new and the known empty seats', async () => {
     await rendre();
 
     expect(view).toHaveBeenCalledWith('abc');
     expect(text()).toContain('Zone nord');
     expect(text()).toContain('09:00–13:00');
     expect(text()).toContain('Camille D.');
-    expect(text()).toContain('Place libre');
+    const racine = fixture.nativeElement as HTMLElement;
+    // One seat opened this morning, in red; one the published plan already had, faded.
+    expect(racine.querySelectorAll('.mural-tuile .mural-place-libre')).toHaveLength(1);
+    expect(racine.querySelectorAll('.mural-tuile .mural-place-connue')).toHaveLength(1);
     expect(text()).toContain('Ensuite 14:00–18:00');
-    expect(text()).toContain('Jeux géants : 1 × place libre 09:00–13:00');
-    expect(text()).toContain('Planning de travail');
+    expect(text()).toContain('Jeux géants : 1 × place libre depuis ce matin 09:00–13:00');
   });
 
-  /** jsdom's 1024 × 768 holds one large tile: the second stand waits for the next page. */
+  /** A closed stand is one line, not a tile of its own in the rotation. */
+  it('keeps the closed stands out of the tiles, on one line', async () => {
+    await rendre();
+
+    const tuiles = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('.mural-tuile h3'),
+    );
+    expect(tuiles.map((titre) => titre.textContent)).toEqual(['Jeux géants']);
+    expect(text()).toContain("Fermés jusqu'à 15:00 : Buvette");
+  });
+
+  /** « Peut différer » only when something differs, and with how many people. */
+  it('says the screen may differ from what was sent only when it does', async () => {
+    await rendre();
+    expect(text()).not.toContain('Peut différer');
+
+    fixture.destroy();
+    TestBed.resetTestingModule();
+    view.mockResolvedValue({ ...VIEW, unpublishedChanges: 3 });
+    await rendre();
+    expect(text()).toContain('Peut différer du planning envoyé : 3 personnes');
+  });
+
+  /** Before any measure, jsdom's 1024 × 768 holds four tiles: six open stands take two pages. */
   it('turns the pages every fifteen seconds, saying which one is on screen', async () => {
+    view.mockResolvedValue({ ...VIEW, stands: ouverts(6), alerts: [] });
     await rendre();
     expect(text()).toContain('Page 1/2');
-    expect(text()).not.toContain('Buvette');
+    expect(text()).not.toContain('Stand 5');
 
     await vi.advanceTimersByTimeAsync(15_000);
     fixture.detectChanges();
 
     expect(text()).toContain('Page 2/2');
-    expect(text()).toContain('Buvette');
-    expect(text()).toContain('Fermé — réouverture à 15:00');
+    expect(text()).toContain('Stand 5');
   });
 
   it('keeps the last state when a read fails, and says it is offline', async () => {
@@ -219,8 +279,15 @@ describe('MuralPage', () => {
               end: `${JOUR}T14:00:00`,
               noms: ['Camille D.'],
               emptySeats: 0,
+              newEmptySeats: 0,
             },
-            { start: `${JOUR}T12:00:00`, end: `${JOUR}T16:00:00`, noms: ['Léo M.'], emptySeats: 1 },
+            {
+              start: `${JOUR}T12:00:00`,
+              end: `${JOUR}T16:00:00`,
+              noms: ['Léo M.'],
+              emptySeats: 1,
+              newEmptySeats: 1,
+            },
           ],
         },
       ],
@@ -234,8 +301,13 @@ describe('MuralPage', () => {
     expect(text()).toContain('Place libre');
   });
 
-  it('lays out every shift of the day for print, with neither clock nor band', async () => {
+  it('lays out the day for print as a table of stands × shifts, with neither clock nor band', async () => {
     await rendre({ impression: '1' });
+
+    const entetes = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('.mural-tableau thead th'),
+    ).map((cellule) => cellule.textContent?.trim());
+    expect(entetes).toEqual(['Stand', '09:00–13:00', '14:00–18:00', '15:00–19:00']);
 
     expect(text()).toContain('09:00–13:00');
     expect(text()).toContain('14:00–18:00');

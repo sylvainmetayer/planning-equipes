@@ -26,7 +26,9 @@
         } @else if (!impression() && misAJourIlYa() !== null) {
           <p i18n="@@mural.misAJour">Mis à jour il y a {{ misAJourIlYa() }} s</p>
         }
-        <p class="mural-avertissement" i18n="@@mural.planDeTravail">Planning de travail, peut différer de celui envoyé</p>
+        @if (view.unpublishedChanges > 0) {
+          <p class="mural-avertissement">{{ peutDiffererText(view.unpublishedChanges) }}</p>
+        }
         @if (!impression() && pagination(); as page) {
           <p class="mural-pagination" i18n="@@mural.pagination">Page {{ page }}</p>
         }
@@ -42,7 +44,39 @@
         }
       </div>
     } @else if (impression()) {
-      @for (groupe of groupesJournee(); track $index) {
+      <!-- La journée sur papier : un tableau stands × vacations, pas une tuile par stand. -->
+      <table class="mural-tableau">
+        <thead>
+          <tr>
+            <th scope="col" i18n="@@mural.tableau.stand">Stand</th>
+            @for (colonne of tableau().colonnes; track colonne.cle) {
+              <th scope="col">{{ colonne.libelle }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (ligne of tableau().lignes; track ligne.stand.standId) {
+            <tr>
+              <th scope="row">{{ ligne.stand.standNom }}</th>
+              @for (cellule of ligne.cellules; track $index) {
+                <td>
+                  @if (cellule) {
+                    {{ cellule.noms.join(', ') }}
+                    @for (libre of placesNouvelles(cellule); track libre) {
+                      <span class="mural-place-libre" i18n="@@mural.placeLibre">Place libre</span>
+                    }
+                    @for (libre of placesConnues(cellule); track libre) {
+                      <span class="mural-place-connue" i18n="@@mural.placeLibre">Place libre</span>
+                    }
+                  }
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else {
+      @for (groupe of groupes(); track $index) {
         <section class="mural-groupe">
           @if (groupe.emplacementNom) {
             <h2>{{ groupe.emplacementNom }}</h2>
@@ -51,15 +85,36 @@
             @for (moment of groupe.stands; track moment.stand.standId) {
               <article class="mural-tuile">
                 <h3>{{ moment.stand.standNom }}</h3>
-                @for (vacation of moment.stand.vacations; track shiftKey(vacation)) {
+                @for (current of moment.current; track shiftKey(current)) {
                   <div class="mural-vacation">
-                    <p class="mural-heures">{{ timeOf(vacation.start) }}–{{ timeOf(vacation.end) }}</p>
+                    <p class="mural-heures">{{ timeOf(current.start) }}–{{ timeOf(current.end) }}</p>
                     <ul class="mural-noms">
-                      @for (nom of vacation.noms; track $index) {
+                      @for (nom of current.noms; track $index) {
                         <li>{{ nom }}</li>
                       }
-                      @for (libre of placesLibres(vacation); track libre) {
+                      @for (libre of placesNouvelles(current); track libre) {
                         <li class="mural-place-libre" i18n="@@mural.placeLibre">Place libre</li>
+                      }
+                      @for (libre of placesConnues(current); track libre) {
+                        <li class="mural-place-connue" i18n="@@mural.placeLibre">Place libre</li>
+                      }
+                    </ul>
+                  </div>
+                }
+                @if (moment.next; as next) {
+                  <div class="mural-vacation mural-next">
+                    <p class="mural-heures">
+                      <span i18n="@@mural.ensuite">Ensuite</span> {{ timeOf(next.start) }}–{{ timeOf(next.end) }}
+                    </p>
+                    <ul class="mural-noms">
+                      @for (nom of next.noms; track $index) {
+                        <li>{{ nom }}</li>
+                      }
+                      @for (libre of placesNouvelles(next); track libre) {
+                        <li class="mural-place-libre" i18n="@@mural.placeLibre">Place libre</li>
+                      }
+                      @for (libre of placesConnues(next); track libre) {
+                        <li class="mural-place-connue" i18n="@@mural.placeLibre">Place libre</li>
                       }
                     </ul>
                   </div>
@@ -69,54 +124,12 @@
           </div>
         </section>
       }
-    } @else {
-      @for (groupe of groupes(); track $index) {
-        <section class="mural-groupe">
-          @if (groupe.emplacementNom) {
-            <h2>{{ groupe.emplacementNom }}</h2>
+      @if (fermes().length > 0) {
+        <div class="mural-fermes">
+          @for (ligne of fermes(); track ligne.reouverture) {
+            <p>{{ fermesText(ligne) }}</p>
           }
-          <div class="mural-grille">
-            @for (moment of groupe.stands; track moment.stand.standId) {
-              <article class="mural-tuile" [class.mural-tuile-fermee]="moment.current.length === 0">
-                <h3>{{ moment.stand.standNom }}</h3>
-                @for (current of moment.current; track shiftKey(current)) {
-                  <div class="mural-vacation">
-                    <p class="mural-heures">{{ timeOf(current.start) }}–{{ timeOf(current.end) }}</p>
-                    <ul class="mural-noms">
-                      @for (nom of current.noms; track $index) {
-                        <li>{{ nom }}</li>
-                      }
-                      @for (libre of placesLibres(current); track libre) {
-                        <li class="mural-place-libre" i18n="@@mural.placeLibre">Place libre</li>
-                      }
-                    </ul>
-                  </div>
-                } @empty {
-                  @if (moment.next; as next) {
-                    <p class="mural-ferme" i18n="@@mural.fermeReouverture">Fermé — réouverture à {{ timeOf(next.start) }}</p>
-                  } @else {
-                    <p class="mural-ferme" i18n="@@mural.fermeJournee">Fermé pour la journée</p>
-                  }
-                }
-                @if (moment.current.length > 0 && moment.next; as next) {
-                  <div class="mural-vacation mural-next">
-                    <p class="mural-heures">
-                      <span i18n="@@mural.ensuite">Ensuite</span> {{ timeOf(next.start) }}–{{ timeOf(next.end) }}
-                    </p>
-                    <ul class="mural-noms">
-                      @for (nom of next.noms; track $index) {
-                        <li>{{ nom }}</li>
-                      }
-                      @for (libre of placesLibres(next); track libre) {
-                        <li class="mural-place-libre" i18n="@@mural.placeLibre">Place libre</li>
-                      }
-                    </ul>
-                  </div>
-                }
-              </article>
-            }
-          </div>
-        </section>
+        </div>
       }
     }
 

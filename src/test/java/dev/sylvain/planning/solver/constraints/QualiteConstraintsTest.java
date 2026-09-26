@@ -269,6 +269,22 @@ class QualiteConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(0);
     }
 
+    /**
+     * A seat split on the day (ADR 0066) is one place held by two people one
+     * after the other, not two places: the crew of the timeslot stays one, so
+     * the second face on it is the rotation it is.
+     */
+    @Test
+    void aSeatSplitOnTheDayDoesNotDoubleTheCrewOfItsTimeslot() {
+        PosteAffectation origine = poste(standPremium, creneauMatin, referentMajeur("A1"));
+        origine.setHeureFinEffective(LocalTime.of(9, 20));
+        PosteAffectation suite = poste(standPremium, creneauMatin, referentMajeur("A2"));
+        suite.setHeureDebutEffective(LocalTime.of(9, 20));
+        suite.setSuiteDe(origine.getId());
+
+        verify("eviterRoulementStandsPremium").given(origine, suite).penalizesBy(1);
+    }
+
     @Test
     void deuxAnimateursDifferentsSurStandPremiumAuMemeCreneauNEstPasPenalise() {
         // Simultaneous multi-staffing on the same slot is not a rotation: the

@@ -257,13 +257,18 @@ public final class QualiteConstraints {
     /**
      * Seats a premium stand holds on its busiest créneau — its crew: the seats
      * of one (stand, créneau) counted, then the largest over the stand's
-     * créneaux. One seat exists per person to staff, so counting them is the
+     * créneaux, the remainder of a split seat not counted apart from its
+     * origin. One seat exists per person to staff, so counting them is the
      * same answer as reading the windows, without walking them at every move.
      */
     private static UniConstraintStream<Equipage> crewByStand(ConstraintFactory constraintFactory) {
         return constraintFactory
                 .forEach(PosteAffectation.class)
-                .filter(poste -> poste.getStand().isPremium())
+                // The remainder of a seat split on the day (ADR 0066) is the
+                // same place held by somebody else from 09:20: counting it
+                // would double the crew of that timeslot and let the stand
+                // rotate for free.
+                .filter(poste -> poste.getStand().isPremium() && poste.getSuiteDe() == null)
                 .groupBy(PosteAffectation::getStand, poste -> poste.getCreneau().getId(), ConstraintCollectors.count())
                 .map((stand, creneauId, sieges) -> new Equipage(stand, sieges.intValue()))
                 .groupBy(Equipage::stand, ConstraintCollectors.max(Equipage::sieges))

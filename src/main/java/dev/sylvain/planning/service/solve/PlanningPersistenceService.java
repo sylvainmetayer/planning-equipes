@@ -399,8 +399,8 @@ public class PlanningPersistenceService {
 
         String insert = """
  INSERT INTO poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id,
- heure_debut_effective, heure_fin_effective)
- VALUES (?, ?, ?, ?, ?, ?, ?)""";
+ heure_debut_effective, heure_fin_effective, suite_de)
+ VALUES (?, ?, ?, ?, ?, ?, ?, ?)""";
         int count = 0;
         try (PreparedStatement ps = scope.prepareScoped(connection, insert)) {
             for (PosteAffectation poste : postes) {
@@ -414,6 +414,7 @@ public class PlanningPersistenceService {
                         5, poste.getAnimateur() != null ? poste.getAnimateur().getId() : null);
                 ps.setObject(6, poste.getHeureDebutEffective());
                 ps.setObject(7, poste.getHeureFinEffective());
+                ps.setString(8, poste.getSuiteDe());
                 ps.addBatch();
                 count++;
             }
@@ -571,6 +572,96 @@ public class PlanningPersistenceService {
                 }
             }
         });
+    }
+
+    /**
+     * One seat cut at a minute of the day (ADR 0066): the original keeps its
+     * holder up to {@code at}, the continuation — already built, its window
+     * and {@code suiteDe} set — covers the rest.
+     */
+    public record Scission(String posteId, LocalTime at, PosteAffectation suite) {}
+
+    /**
+     * The splits of the seats under way, then the seats changing hands — one
+     * transaction: a split whose continuation never got its new holder would
+     * leave the rest of the timeslot with nobody, and a holder written onto a
+     * continuation that was never inserted would change nothing at all.
+     * Refused while a solve holds the edition, like every seat write.
+     *
+     * @param animateurParPoste the seats to write, continuations included;
+     *                          {@code null} empties a seat
+     */
+    public void splitAndReassign(List<Scission> scissions, Map<String, String> animateurParPoste) {
+        solverJobs.refuseIfSolving();
+        scope.write("Failed to split and reassign the seats", connection -> {
+            // Not prepareScoped: the SET clause claims placeholder 1.
+            try (PreparedStatement raccourcir = connection.prepareStatement(
+                            "UPDATE poste_affectation SET heure_fin_effective = ? WHERE edition_id = ? AND id = ?");
+                    PreparedStatement inserer = scope.prepareScoped(connection, """
+                            INSERT INTO poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id,
+                            heure_debut_effective, heure_fin_effective, suite_de)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)""")) {
+                for (Scission scission : scissions) {
+                    raccourcir.setObject(1, scission.at());
+                    raccourcir.setString(2, editionId());
+                    raccourcir.setString(3, scission.posteId());
+                    if (raccourcir.executeUpdate() == 0) {
+                        throw new SQLException("Aucun poste " + scission.posteId() + " dans cette édition");
+                    }
+                    PosteAffectation suite = scission.suite();
+                    inserer.setString(2, suite.getId());
+                    inserer.setString(3, suite.getStand().getId());
+                    inserer.setLong(4, suite.getCreneau().getId());
+                    inserer.setString(
+                            5,
+                            suite.getAnimateur() == null
+                                    ? null
+                                    : suite.getAnimateur().getId());
+                    inserer.setObject(6, suite.getHeureDebutEffective());
+                    inserer.setObject(7, suite.getHeureFinEffective());
+                    inserer.setString(8, suite.getSuiteDe());
+                    inserer.executeUpdate();
+                }
+            }
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "UPDATE poste_affectation SET animateur_id = ? WHERE edition_id = ? AND id = ?")) {
+                ps.setString(2, editionId());
+                for (Map.Entry<String, String> entree : animateurParPoste.entrySet()) {
+                    ps.setString(1, entree.getValue());
+                    ps.setString(3, entree.getKey());
+                    if (ps.executeUpdate() == 0) {
+                        throw new SQLException("Aucun poste " + entree.getKey() + " dans cette édition");
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * The persisted seats of every stand × créneau holding a split (ADR 0066),
+     * by {@link #standCreneauKey}: what a rebuild of the problem replays over
+     * the seats it generates. Empty — the ordinary case — when nothing was
+     * ever split.
+     */
+    public Map<String, List<Siege>> loadSplitCells() {
+        List<Siege> sieges = readSieges();
+        Set<String> scindees = new LinkedHashSet<>();
+        for (Siege siege : sieges) {
+            if (siege.suiteDe() != null) {
+                scindees.add(standCreneauKey(siege.standId(), siege.creneauId()));
+            }
+        }
+        Map<String, List<Siege>> parCellule = new LinkedHashMap<>();
+        if (scindees.isEmpty()) {
+            return parCellule;
+        }
+        for (Siege siege : sieges) {
+            String key = standCreneauKey(siege.standId(), siege.creneauId());
+            if (scindees.contains(key)) {
+                parCellule.computeIfAbsent(key, unused -> new ArrayList<>()).add(siege);
+            }
+        }
+        return parCellule;
     }
 
     private int reaffecterSiege(
@@ -755,7 +846,20 @@ public class PlanningPersistenceService {
             String animateurId,
             LocalTime heureDebutEffective,
             LocalTime heureFinEffective,
-            VacationSnapshot vacation) {
+            VacationSnapshot vacation,
+            String suiteDe) {
+
+        /** A seat of a snapshot, which no split names (see {@code suiteDe} on the full form). */
+        public Siege(
+                String posteId,
+                String standId,
+                long creneauId,
+                String animateurId,
+                LocalTime heureDebutEffective,
+                LocalTime heureFinEffective,
+                VacationSnapshot vacation) {
+            this(posteId, standId, creneauId, animateurId, heureDebutEffective, heureFinEffective, vacation, null);
+        }
 
         /** A seat that has nothing but ids to say, and a référentiel to say it against. */
         public Siege(
@@ -765,7 +869,7 @@ public class PlanningPersistenceService {
                 String animateurId,
                 LocalTime heureDebutEffective,
                 LocalTime heureFinEffective) {
-            this(posteId, standId, creneauId, animateurId, heureDebutEffective, heureFinEffective, null);
+            this(posteId, standId, creneauId, animateurId, heureDebutEffective, heureFinEffective, null, null);
         }
     }
 
@@ -827,6 +931,7 @@ public class PlanningPersistenceService {
             }
             poste.setHeureDebutEffective(siege.heureDebutEffective());
             poste.setHeureFinEffective(siege.heureFinEffective());
+            poste.setSuiteDe(siege.suiteDe());
             postes.add(poste);
         }
 
@@ -880,7 +985,7 @@ public class PlanningPersistenceService {
     private List<Siege> readSieges() {
         List<Siege> sieges = new ArrayList<>();
         String sql = """
- SELECT id, stand_id, creneau_id, animateur_id, heure_debut_effective, heure_fin_effective
+ SELECT id, stand_id, creneau_id, animateur_id, heure_debut_effective, heure_fin_effective, suite_de
  FROM poste_affectation
  WHERE edition_id = ?
  ORDER BY id""";
@@ -894,7 +999,9 @@ public class PlanningPersistenceService {
                         rs.getLong("creneau_id"),
                         rs.getString("animateur_id"),
                         rs.getObject("heure_debut_effective", LocalTime.class),
-                        rs.getObject("heure_fin_effective", LocalTime.class)));
+                        rs.getObject("heure_fin_effective", LocalTime.class),
+                        null,
+                        rs.getString("suite_de")));
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to load persisted planning", e);

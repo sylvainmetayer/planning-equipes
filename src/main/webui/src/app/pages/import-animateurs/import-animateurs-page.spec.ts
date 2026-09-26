@@ -35,6 +35,7 @@ const MAPPING: AnimateurCsvMapping = {
   competences: null,
   souhaits: null,
   joursIndisponibles: null,
+  telephone: null,
 };
 
 function rapport(applied: boolean): ImportCsvRapport {

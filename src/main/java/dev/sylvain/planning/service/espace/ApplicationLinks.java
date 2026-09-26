@@ -42,7 +42,7 @@ public class ApplicationLinks {
      * Admin screen of the day under way, where an absence reported from an
      * espace is observed and repaired.
      */
-    private static final String ECRAN_JOUR = "jour-j";
+    private static final String ECRAN_JOUR = "aujourdhui";
 
     /**
      * Admin screen holding the instance-wide settings, the automatic backup

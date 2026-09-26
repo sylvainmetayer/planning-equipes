@@ -97,17 +97,110 @@ export function heureOf(iso: string): string {
   return iso.slice(11, 16);
 }
 
-/** How many tiles fit a screen of that size: large tiles, readable at three metres. */
-export function tilesPerPage(largeur: number, hauteur: number): number {
-  const colonnes = Math.max(1, Math.floor(largeur / 520));
-  // Header and bottom band take about 30 % of the height.
-  const lignes = Math.max(1, Math.floor((hauteur * 0.7) / 300));
+/** What the screen measured of its own layout, in CSS pixels. */
+export interface ScreenMeasure {
+  /** Width of the tile grid. */
+  largeurGrille: number;
+  /** Height left for the tiles: the window, less the header and the band. */
+  hauteurDisponible: number;
+  /** The tallest tile rendered, its gap included. */
+  hauteurTuile: number;
+  /** One tile's width, its gap included. */
+  largeurTuile: number;
+}
+
+/**
+ * How many tiles fit, read from the tiles <b>as drawn</b>: a tile guessed at
+ * 300 px that measures 190 used to turn 65 stands over ten pages where six
+ * would do. Before the first measure, a conservative guess.
+ */
+export function tilesPerPage(
+  mesure: ScreenMeasure | null,
+  largeur: number,
+  hauteur: number,
+): number {
+  if (!mesure || mesure.hauteurTuile <= 0 || mesure.largeurTuile <= 0) {
+    const colonnes = Math.max(1, Math.floor(largeur / 420));
+    const lignes = Math.max(1, Math.floor((hauteur * 0.7) / 220));
+    return colonnes * lignes;
+  }
+  const colonnes = Math.max(1, Math.floor(mesure.largeurGrille / mesure.largeurTuile));
+  const lignes = Math.max(1, Math.floor(mesure.hauteurDisponible / mesure.hauteurTuile));
   return colonnes * lignes;
 }
 
-/** The items cut into pages of `parPage`; always at least one page, even empty. */
-export function paginate<T>(items: readonly T[], parPage: number): T[][] {
-  const taille = Math.max(1, Math.floor(parPage));
+/** Stands closed at the moment, gathered by the hour they reopen — one line, out of the rotation. */
+export interface StandsFermes {
+  /** `HH:mm` of the reopening, `null` for « fermé pour la journée ». */
+  reouverture: string | null;
+  noms: string[];
+}
+
+/**
+ * The stands with no shift under way, out of the pages: a page of « Fermé —
+ * réouverture à 18:00 » tiles is a page nobody reads. One line per reopening
+ * hour, earliest first, then the stands closed for the day.
+ */
+export function standsFermes(moments: readonly StandMoment[]): StandsFermes[] {
+  const byTime = new Map<string | null, string[]>();
+  for (const moment of moments.filter((each) => each.current.length === 0)) {
+    const heure = moment.next ? heureOf(moment.next.start) : null;
+    byTime.set(heure, [...(byTime.get(heure) ?? []), moment.stand.standNom]);
+  }
+  return [...byTime.entries()]
+    .map(([reouverture, noms]) => ({ reouverture, noms }))
+    .sort((a, b) =>
+      a.reouverture === null
+        ? 1
+        : b.reouverture === null
+          ? -1
+          : a.reouverture.localeCompare(b.reouverture),
+    );
+}
+
+/** One column of the printed table: a shift window of the day. */
+export interface ColonneImpression {
+  cle: string;
+  libelle: string;
+}
+
+/** One row of the printed table: a stand, and its shift in each column (or none). */
+export interface LigneImpression {
+  stand: MuralStand;
+  cellules: (MuralShift | null)[];
+}
+
+/**
+ * The day on paper as a table, stands × shifts: one column per distinct shift
+ * window of the day, in start order, and each stand's shift in its column —
+ * where one tile per stand used to lay 20 groups over 6 000 px.
+ */
+export function tableauImpression(stands: readonly MuralStand[]): {
+  colonnes: ColonneImpression[];
+  lignes: LigneImpression[];
+} {
+  const fenetres = new Map<string, MuralShift>();
+  for (const stand of stands) {
+    for (const shift of stand.vacations) {
+      fenetres.set(shiftKey(shift), shift);
+    }
+  }
+  const colonnes = [...fenetres.values()]
+    .sort((a, b) => minutesOf(a.start) - minutesOf(b.start) || minutesOf(a.end) - minutesOf(b.end))
+    .map((shift) => ({
+      cle: shiftKey(shift),
+      libelle: `${heureOf(shift.start)}–${heureOf(shift.end)}`,
+    }));
+  const lignes = stands.map((stand) => {
+    const byKey = new Map(stand.vacations.map((shift) => [shiftKey(shift), shift]));
+    return { stand, cellules: colonnes.map((colonne) => byKey.get(colonne.cle) ?? null) };
+  });
+  return { colonnes, lignes };
+}
+
+/** The items cut into pages of `perPage`; always at least one page, even empty. */
+export function paginate<T>(items: readonly T[], perPage: number): T[][] {
+  const taille = Math.max(1, Math.floor(perPage));
   const pages: T[][] = [];
   for (let debut = 0; debut < items.length; debut += taille) {
     pages.push(items.slice(debut, debut + taille));

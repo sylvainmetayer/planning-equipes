@@ -78,9 +78,11 @@
   color: var(--mat-sys-primary);
 }
 
+/* 24rem: four columns on a 1080p television, where 30rem left three and a
+   tile guessed twice its height left ten pages for 65 stands. */
 .mural-grille {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 30rem), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr));
   gap: 1rem;
 }
 
@@ -98,13 +100,14 @@
   line-height: 1.15;
 }
 
-.mural-tuile-fermee {
-  opacity: 0.55;
+/* The stands closed at the moment: one line per reopening hour, out of the
+   rotation. */
+.mural-fermes {
+  color: var(--mat-sys-on-surface-variant);
 }
 
-.mural-ferme {
-  margin: 0;
-  font-size: 1.1em;
+.mural-fermes p {
+  margin: 0.15rem 0;
 }
 
 .mural-vacation + .mural-vacation {
@@ -133,9 +136,36 @@
   font-size: clamp(1.75rem, 1.9vw, 2.5rem);
 }
 
+/* A seat opened since the publication: what the room has to act on. */
 .mural-place-libre {
   font-weight: 700;
   color: var(--mat-sys-error);
+}
+
+/* A hole the published plan already had: known to all, faded. */
+.mural-place-connue {
+  color: var(--mat-sys-on-surface-variant);
+  opacity: 0.7;
+}
+
+/* The day on paper: stands × shifts. */
+.mural-tableau {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.8em;
+}
+
+.mural-tableau th,
+.mural-tableau td {
+  border: 1px solid var(--mat-sys-outline-variant);
+  padding: 0.25rem 0.5rem;
+  text-align: start;
+  vertical-align: top;
+}
+
+.mural-tableau .mural-place-libre,
+.mural-tableau .mural-place-connue {
+  display: block;
 }
 
 .mural-bandeau {

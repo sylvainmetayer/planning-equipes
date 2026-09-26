@@ -59,9 +59,9 @@ describe('mapping predicates', () => {
     expect(mappingNommeQuelquun(withColonne(mappingVide(), 'email', 0))).toBe(true);
   });
 
-  it('offers the eight fields of an animateur fiche, never an id', () => {
-    expect(CHAMPS_IMPORT).toHaveLength(8);
-    expect(new Set(CHAMPS_IMPORT).size).toBe(8);
+  it('offers the nine fields of an animateur fiche, never an id', () => {
+    expect(CHAMPS_IMPORT).toHaveLength(9);
+    expect(new Set(CHAMPS_IMPORT).size).toBe(9);
     expect(CHAMPS_IMPORT as readonly string[]).not.toContain('id');
   });
 });

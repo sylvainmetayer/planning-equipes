@@ -1,8 +1,7 @@
-// Le mode jour J tel qu'il est livré : en cours de développement, et celui des
-// deux écrans du groupe qui vide des sièges — « Échanges » écrit aussi, mais en
-// appliquant un accord. Ce que ces tests verrouillent est ce qu'un
-// opérateur voit avant d'agir — le classement dans le menu et l'avertissement —,
-// plus la garde qui empêche une instance déployée de figer sa date.
+// Aujourd'hui (ex-« Mode jour J ») tel qu'il est livré : l'écran du jour, rangé
+// dans son groupe, que l'ancienne adresse ouvre encore, qui trouve quelqu'un
+// par une recherche plutôt que dans une liste de boutons — plus la garde qui
+// empêche une instance déployée de figer sa date.
 //
 // Tout est statique : aucune attente sur une durée, la CI rejoue ces assertions
 // à chaque poussée.
@@ -23,37 +22,56 @@ test.afterAll(async () => {
   await admin.dispose();
 });
 
-test("le mode jour J est rangé dans le groupe « Aujourd'hui »", async ({ browser }) => {
+test("l'écran Aujourd'hui est rangé dans son groupe, et nulle part ailleurs", async ({
+  browser,
+}) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/');
 
   const groupe = page.locator('#nav-group-aujourdhui');
-  await expect(groupe.getByRole('link', { name: 'Mode jour J' })).toBeVisible();
+  await expect(groupe.getByRole('link', { name: "Aujourd'hui" })).toBeVisible();
   await expect(
     page.locator('#nav-group-diffuser').getByRole('link', { name: 'Échanges' }),
   ).toBeVisible();
-  // Et nulle part ailleurs : un écran qui écrit ne doit pas se lire comme
-  // acquis depuis le groupe Planning.
-  await expect(page.getByRole('link', { name: 'Mode jour J' })).toHaveCount(1);
-  // Le groupe « En cours de développement » n'existe plus : ces écrans sont
-  // livrés, et un organisateur n'ouvre pas un écran étiqueté « en cours ».
-  await expect(page.getByRole('navigation', { name: 'Navigation principale' })).not.toContainText(
-    'En cours de développement',
-  );
+  await expect(
+    page.getByRole('navigation', { name: 'Navigation principale' }).getByRole('link', {
+      name: "Aujourd'hui",
+    }),
+  ).toHaveCount(1);
   await page.context().close();
 });
 
-test("l'écran avertit qu'il agit sur le planning enregistré", async ({ browser }) => {
+test("l'ancienne adresse /jour-j ouvre Aujourd'hui, sans bandeau « en cours »", async ({
+  browser,
+}) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/jour-j');
 
-  const banniere = page.locator('.work-in-progress-banner');
-  await expect(banniere).toBeVisible();
-  // Le texte par défaut du bandeau parle de données « qui peuvent encore
-  // évoluer » : trop tiède ici, puisque le geste écrit tout de suite.
-  await expect(banniere).toContainText('il agit');
-  await expect(banniere).toContainText('planning enregistré');
-  await expect(banniere).toContainText('ne sont pas encore garantis');
+  await expect(page).toHaveURL(/\/aujourdhui$/);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText("Aujourd'hui");
+  await expect(page.locator('.work-in-progress-banner')).toHaveCount(0);
+  await page.context().close();
+});
+
+/**
+ * Trouver une personne parmi tout l'effectif se fait par une recherche, sur
+ * téléphone : aucun bouton « Marquer absent » avant d'avoir cherché — là où
+ * l'écran en alignait un par personne de service.
+ */
+test('on cherche une personne au lieu de parcourir une liste', async ({ browser }) => {
+  const page = await pageAdmin(browser, admin);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/aujourdhui');
+
+  const contenu = page.locator('#contenu');
+  await expect(contenu.getByRole('button', { name: 'Marquer absent' })).toHaveCount(0);
+  const animateurs = (await (await admin.get('/api/animateurs')).json()) as {
+    prenom: string;
+    nom: string;
+  }[];
+  const cible = animateurs[0];
+  await page.getByLabel('Chercher une personne').fill(`${cible.prenom} ${cible.nom}`);
+  await expect(contenu).toContainText(`${cible.prenom} ${cible.nom}`);
   await page.context().close();
 });
 
@@ -64,7 +82,7 @@ test("l'écran avertit qu'il agit sur le planning enregistré", async ({ browser
  */
 test('une date sans créneau programmé se lit comme telle', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/jour-j');
+  await page.goto('/aujourdhui');
 
   const contenu = page.locator('#contenu');
   await expect(contenu).toContainText('Aucun créneau');

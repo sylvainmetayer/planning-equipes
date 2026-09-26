@@ -202,6 +202,9 @@
           },
           "heureFinEffective" : {
             "type" : "string"
+          },
+          "suiteDe" : {
+            "type" : "string"
           }
         }
       },
@@ -254,7 +257,7 @@
         }
       },
       "AffichageMuralView" : {
-        "required" : [ "edition", "jour", "now", "stands", "alerts" ],
+        "required" : [ "edition", "jour", "now", "stands", "alerts", "unpublishedChanges" ],
         "type" : "object",
         "properties" : {
           "edition" : {
@@ -286,6 +289,10 @@
           },
           "consigne" : {
             "$ref" : "#/components/schemas/MuralConsigne"
+          },
+          "unpublishedChanges" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -335,6 +342,9 @@
             "type" : "boolean"
           },
           "email" : {
+            "type" : "string"
+          },
+          "telephone" : {
             "type" : "string"
           },
           "accessToken" : {
@@ -537,6 +547,10 @@
           "joursIndisponibles" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "telephone" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -609,6 +623,9 @@
             "type" : "string"
           },
           "nomAffiche" : {
+            "type" : "string"
+          },
+          "telephone" : {
             "type" : "string"
           }
         }
@@ -3842,7 +3859,7 @@
         }
       },
       "EtatJourJ" : {
-        "required" : [ "creneauxDuJour", "signalements" ],
+        "required" : [ "creneauxDuJour", "signalements", "jourNumero", "standsOuverts", "alertes", "aPrevenir", "echangesAArbitrer" ],
         "type" : "object",
         "properties" : {
           "date" : {
@@ -3893,6 +3910,30 @@
             "items" : {
               "$ref" : "#/components/schemas/SignalementJourJ"
             }
+          },
+          "jourNumero" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "standsOuverts" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "alertes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/MuralAlert"
+            }
+          },
+          "aPrevenir" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "echangesAArbitrer" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -5822,7 +5863,7 @@
       },
       "MuralAlertType" : {
         "type" : "string",
-        "enum" : [ "EMPTY_SEATS", "BREAK_WITHOUT_RELAY" ]
+        "enum" : [ "NEW_EMPTY_SEATS", "STARTING_SOON", "BREAK_WITHOUT_RELAY" ]
       },
       "MuralConsigne" : {
         "type" : "object",
@@ -5841,7 +5882,7 @@
       },
       "MuralShift" : {
         "type" : "object",
-        "required" : [ "start", "end", "noms", "emptySeats" ],
+        "required" : [ "start", "end", "noms", "emptySeats", "newEmptySeats" ],
         "properties" : {
           "start" : {
             "$ref" : "#/components/schemas/LocalDateTime"
@@ -5856,6 +5897,10 @@
             }
           },
           "emptySeats" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "newEmptySeats" : {
             "type" : "integer",
             "format" : "int32"
           }
@@ -6527,7 +6572,7 @@
       },
       "PosteAPourvoir" : {
         "type" : "object",
-        "required" : [ "creneauId", "verrouille" ],
+        "required" : [ "creneauId", "verrouille", "nouveau", "resteDuCreneau" ],
         "properties" : {
           "posteId" : {
             "type" : "string"
@@ -6550,6 +6595,12 @@
           },
           "verrouille" : {
             "type" : "boolean"
+          },
+          "nouveau" : {
+            "type" : "boolean"
+          },
+          "resteDuCreneau" : {
+            "type" : "boolean"
           }
         }
       },
@@ -6570,6 +6621,9 @@
           },
           "heureFinEffective" : {
             "$ref" : "#/components/schemas/LocalTime"
+          },
+          "suiteDe" : {
+            "type" : "string"
           },
           "animateur" : {
             "$ref" : "#/components/schemas/Animateur"

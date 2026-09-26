@@ -1382,9 +1382,20 @@ sont évalués en premier, pour que la troncature garde les plus prometteurs.
 Appliquer une suggestion réaffecte **ce seul siège** dans `poste_affectation`,
 sans relancer de solveur ni réécrire le reste du plan : le résultat est
 exactement le plan simulé. Un poste couvert par un verrouillage est refusé
-(400) — déverrouillez-le d'abord. Un poste dont le créneau est déjà commencé
+(400) — déverrouillez-le d'abord. Un poste dont le créneau est **terminé**
 l'est aussi, à la suggestion comme à l'application (400, « Ce créneau est
 déjà commencé : le passé ne se modifie plus », [ADR 0044](decisions/0044-le-passe-est-fige.md)).
+
+**Un poste dont le créneau est en cours est scindé, pas refusé**
+([ADR 0066](decisions/0066-le-passe-est-fige-a-la-minute.md)). L'écriture coupe
+le siège à la minute courante de l'horloge du jour J : l'origine garde son
+titulaire jusqu'à cette minute, et c'est la **suite** — un siège nouveau,
+d'identifiant `<id>~HHmm`, qui porte `suiteDe` — qui reçoit l'écriture. Le
+piège : l'identifiant écrit n'est pas celui qu'on a envoyé. Un appelant qui relit
+le siège après coup relit le plan (`GET /api/planning/persisted`) ou la réponse
+de `POST /api/jour-j/absences`, dont `postesLiberes` nomme les suites. Les
+suggestions d'un tel siège sont calculées sur sa suite, exactement comme
+l'écriture la fera.
 
 C'est un `UPDATE` nu : hors verrouillage, il ne revérifie rien. Une liste de
 suggestions calculée **avant** une autre écriture est donc périmée, et l'appliquer
@@ -1413,13 +1424,13 @@ aucune précondition : l'outil MCP `affecter_poste` et le mode jour J
 
 ## Mode « jour J »
 
-L'écran du jour même (`/jour-j`) : quelqu'un ne s'est pas présenté, et ses
+L'écran du jour même (`/aujourdhui` ; `/jour-j` y redirige) : quelqu'un ne s'est pas présenté, et ses
 sièges doivent changer de mains **maintenant**. Rien de neuf sous le capot — ce
 sont les briques ci-dessus, appelées dans l'ordre du geste.
 
 | Endpoint | Effet |
 | --- | --- |
-| `GET /api/jour-j?date=&maintenant=` | L'écran complet : créneaux restants, animateurs de service, places vides, absences du jour. Ne lit que. |
+| `GET /api/jour-j?date=&maintenant=` | L'écran complet : créneaux restants, animateurs de service, places vides — chacune `nouveau` (le plan publié avait quelqu'un dessus) ou connue, `resteDuCreneau` pour la suite d'un siège scindé —, absences du jour, signalements, rang du jour, stands ouverts, alertes de l'affichage mural (le même calcul, sur la journée en cours seulement), `aPrevenir` (les personnes dont le planning diffère du plan publié, cibles de « Prévenir les N personnes ») et échanges à arbitrer ; l'effectif nommé porte le téléphone de la fiche. Ne lit que. |
 | `POST /api/jour-j/absences?date=&maintenant=` | `{ "animateurId": "A1", "raison": "…" }` — une `INDISPONIBILITE_FORCEE` par créneau restant, et les sièges tenus sur ces créneaux vidés. Écrit. |
 | `DELETE /api/jour-j/absences/{animateurId}?date=&creneauId=` | Annule l'absence : un créneau si `creneauId` est donné, toute la journée sinon. |
 | `POST /api/jour-j/postes/{posteId}/suggestions?plafond=N` | L'assistant de réparation ci-dessus, sur le **plan enregistré** au lieu d'un plan envoyé dans le corps. |

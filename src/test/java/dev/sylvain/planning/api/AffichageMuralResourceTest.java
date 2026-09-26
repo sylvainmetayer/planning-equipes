@@ -192,8 +192,10 @@ class AffichageMuralResourceTest {
         assertThat(vue.getString("now")).isEqualTo(JOUR + "T13:30:00");
         assertThat(vue.getString("libelle")).isEqualTo("TV");
         assertThat(vue.getList("stands")).isNotEmpty();
+        // Minimised: an initial, a second letter where two of the day's people
+        // would read the same, the whole name only past that.
         List<String> noms = vue.getList("stands.vacations.flatten().noms.flatten()", String.class);
-        assertThat(noms).isNotEmpty().allSatisfy(nom -> assertThat(nom).matches(".+ \\p{Lu}\\."));
+        assertThat(noms).isNotEmpty().anySatisfy(nom -> assertThat(nom).matches(".+ \\p{Lu}\\."));
         given().when()
                 .get("/api/affichage-mural")
                 .then()

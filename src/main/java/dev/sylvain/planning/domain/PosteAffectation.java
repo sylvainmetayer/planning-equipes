@@ -30,6 +30,18 @@ public class PosteAffectation {
     private LocalTime heureFinEffective;
 
     /**
+     * The seat this one is the remainder of, when a seat was split at « now »
+     * on the day (ADR 0066, amending 0044): the original seat is cut short at
+     * that minute and keeps who held it, this one covers the rest of the
+     * timeslot. {@code null} — the overwhelming common case — for a seat the
+     * referential generated. Read by the rebuild of a problem, which replays
+     * the split rather than folding the remainder back onto its origin, and by
+     * the staffing counts, which must not count one place twice because two
+     * people held it one after the other.
+     */
+    private String suiteDe;
+
+    /**
      * A seat may stay empty during the search (and in an infeasible plan);
      * {@code posteDoitEtrePourvu} is what makes filling it a hard requirement.
      */
@@ -129,6 +141,14 @@ public class PosteAffectation {
     @JsonIgnore
     public void setPasse(boolean passe) {
         this.passe = passe;
+    }
+
+    public String getSuiteDe() {
+        return suiteDe;
+    }
+
+    public void setSuiteDe(String suiteDe) {
+        this.suiteDe = suiteDe;
     }
 
     public LocalTime getHeureDebutEffective() {

@@ -221,7 +221,7 @@ class NotificationWriterTest {
                 .contains("sur le poste Cirque 09:00-12:00")
                 .contains("(motif : transport)")
                 .contains("Rien n'est modifié au planning")
-                .contains("https://planning.example.org/jour-j");
+                .contains("https://planning.example.org/aujourdhui");
     }
 
     @Test

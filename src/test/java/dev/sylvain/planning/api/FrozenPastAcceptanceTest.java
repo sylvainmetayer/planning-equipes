@@ -179,6 +179,97 @@ class FrozenPastAcceptanceTest {
                 .statusCode(200);
     }
 
+    /**
+     * The acceptance criterion of ADR 0066: somebody missing at 10:00, noticed
+     * at 10:20. Marking them absent splits their seat at 10:20 — the history
+     * keeps them on 10:00–10:20 — and the rest of the timeslot is repaired
+     * without a 400; the repair then goes through, and a full solve keeps the
+     * split as it found it.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void aSeatOfTheTimeslotUnderWayIsSplitAtNowAndItsRestRepaired() {
+        solveComplet();
+        freezeClock(J3, "10:20");
+        String absent = null;
+        for (Map<String, Object> poste : affectationsPersistees()) {
+            Map<String, Object> animateur = (Map<String, Object>) poste.get("animateur");
+            if (animateur != null
+                    && J3.equals(String.valueOf(creneauOf(poste).get("date")))
+                    && MATIN.equals(heureDebut(poste))) {
+                absent = String.valueOf(animateur.get("id"));
+                break;
+            }
+        }
+        assertThat(absent).as("somebody on the Wednesday morning").isNotNull();
+
+        JsonPath marquee = given().contentType(ContentType.JSON)
+                .body(Map.of("animateurId", absent))
+                .when()
+                .post("/api/jour-j/absences")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
+        List<Map<String, Object>> liberes = marquee.getList("postesLiberes");
+        Map<String, Object> reste = liberes.stream()
+                .filter(poste -> "10:20:00".equals(String.valueOf(poste.get("heureDebut"))))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("No seat split at 10:20 in " + liberes));
+        String resteId = String.valueOf(reste.get("posteId"));
+        assertThat(resteId).endsWith("~1020");
+
+        // The history keeps who held 10:00–10:20.
+        String absentId = absent;
+        assertThat(seatsByDay().get(J3))
+                .anySatisfy(siege -> assertThat(siege).endsWith("@10:00:00|10:20:00|" + absentId));
+        // Aujourd'hui offers it as the rest of the timeslot, new since the publication.
+        List<Map<String, Object>> aPourvoir = given().when()
+                .get("/api/jour-j")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("postesAPourvoir");
+        assertThat(aPourvoir)
+                .filteredOn(poste -> resteId.equals(poste.get("posteId")))
+                .singleElement()
+                .satisfies(poste -> assertThat(poste.get("resteDuCreneau")).isEqualTo(true));
+
+        List<String> candidats = given().when()
+                .post("/api/jour-j/postes/" + resteId + "/suggestions")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("suggestions.animateurId");
+        assertThat(candidats).isNotEmpty();
+        given().when()
+                .post("/api/postes/" + resteId + "/affectation?animateurId=" + candidats.getFirst())
+                .then()
+                .statusCode(204);
+        assertThat(seatsByDay().get(J3))
+                .anySatisfy(
+                        siege -> assertThat(siege).endsWith("@10:20:00|" + morningEnd() + "|" + candidats.getFirst()));
+
+        // A full solve rebuilds the problem from the referential: it replays the
+        // split instead of folding the two holders back onto one seat.
+        solveComplet();
+        assertThat(seatsByDay().get(J3))
+                .anySatisfy(siege -> assertThat(siege).endsWith("@10:00:00|10:20:00|" + absentId))
+                .anySatisfy(siege -> assertThat(siege).contains("@10:20:00|"));
+    }
+
+    /** The end of the Wednesday morning timeslot, as the scenario sets it. */
+    private static String morningEnd() {
+        return affectationsPersistees().stream()
+                .filter(poste -> J3.equals(String.valueOf(creneauOf(poste).get("date"))))
+                .filter(poste -> MATIN.equals(String.valueOf(creneauOf(poste).get("heureDebut"))))
+                .map(poste -> String.valueOf(creneauOf(poste).get("heureFin")))
+                .findFirst()
+                .orElseThrow();
+    }
+
     /** After the last day, a solve — full or incremental — has nothing to plan and says so. */
     @Test
     void aSolveWithEveryTimeslotAlreadyStartedIsRefused() {

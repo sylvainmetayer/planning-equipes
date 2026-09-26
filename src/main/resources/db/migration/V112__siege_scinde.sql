@@ -1,0 +1,15 @@
+-- La réparation du créneau en cours (ADR 0066, amende 0044) : quand quelqu'un
+-- manque sur un créneau déjà commencé, son siège est scindé à « maintenant ».
+-- Le siège d'origine est raccourci (`heure_fin_effective`) — ce qui a été tenu
+-- reste figé, et l'historique garde qui a tenu 09:00-09:20 —, et un second
+-- siège couvre le reste du créneau (`heure_debut_effective`), vide et
+-- réparable.
+--
+-- `suite_de` nomme le siège dont celui-ci est le reste. C'est ce qui permet à
+-- une résolution, qui régénère les sièges depuis le référentiel, de rejouer la
+-- scission au lieu de rabattre le reste sur le siège d'origine, et aux
+-- contraintes d'effectif de ne pas compter deux fois une même place tenue par
+-- deux personnes l'une après l'autre. Pas de clé étrangère : les identifiants
+-- de sièges sont renumérotés à chaque écriture complète du plan, qui réécrit
+-- ce lien avec eux.
+ALTER TABLE poste_affectation ADD COLUMN suite_de VARCHAR(64);

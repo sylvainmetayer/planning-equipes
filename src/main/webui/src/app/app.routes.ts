@@ -213,6 +213,20 @@ export const benchTabToJournee: CanActivateFn = (route) =>
     ? inject(Router).parseUrl(benchToJournee(route.queryParams))
     : true;
 
+/** A renamed page: its former address lands on the new one, every query param along. */
+function redirectKeepingQuery(path: string): RedirectFunction {
+  return ({ queryParams }) => {
+    const params = new URLSearchParams();
+    for (const [key, valeur] of Object.entries(queryParams)) {
+      if (valeur !== undefined && valeur !== null) {
+        params.set(key, paramText(valeur));
+      }
+    }
+    const query = params.toString();
+    return query ? `/${path}?${query}` : `/${path}`;
+  };
+}
+
 /**
  * A former screen of what Fichiers gathers: its address lands on a tab of the
  * page (`onglet`), and on one card of the Importer tab (`cible`) when the
@@ -373,10 +387,14 @@ const adminRoutes: Routes = [
   // the former address land there.
   { path: 'notifications', redirectTo: () => '/#a-traiter' },
   {
-    path: 'jour-j',
-    title: () => $localize`:@@route.jourJ:Jour J`,
+    // The event day's hub (ADR 0066): what « Mode jour J » became.
+    path: 'aujourdhui',
+    title: () => $localize`:@@route.aujourdhui:Aujourd'hui`,
     loadComponent: () => import('./pages/jour-j/jour-j-page').then((m) => m.JourJPage),
   },
+  // The former address, kept for the bookmarks and the links already sent;
+  // its query parameters travel with it.
+  { path: 'jour-j', redirectTo: redirectKeepingQuery('aujourdhui') },
   {
     path: 'diagnostic',
     title: () => $localize`:@@route.diagnostic:Diagnostic`,

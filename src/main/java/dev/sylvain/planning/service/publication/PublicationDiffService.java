@@ -217,6 +217,30 @@ public class PublicationDiffService {
         return List.copyOf(resultat);
     }
 
+    /**
+     * The ids of the people whose schedule differs between the working plan
+     * and the published one — what « peut différer » counts on the wall
+     * display and whom « Prévenir » targets on Aujourd'hui: the diff the
+     * publication writes from, never a second reading. Empty before the first
+     * publication: there is nothing to differ from yet.
+     */
+    public List<String> changedPeople(PlanningEvenement courant, PlanningEvenement publie) {
+        if (publie == null) {
+            return List.of();
+        }
+        Map<String, Identite> identites = new LinkedHashMap<>();
+        for (PlanningEvenement plan : List.of(courant, publie)) {
+            if (plan.getAnimateurs() != null) {
+                plan.getAnimateurs()
+                        .forEach(animateur ->
+                                identites.putIfAbsent(animateur.getId(), new Identite(animateur.getId(), null)));
+            }
+        }
+        return comparer(vacationsByAnimateur(publie), vacationsByAnimateur(courant), identites, false).stream()
+                .map(ChangementAnimateur::animateurId)
+                .toList();
+    }
+
     /** Display name and address of one animateur — all the diff needs of a fiche. */
     public record Identite(String nomAffiche, String email) {}
 

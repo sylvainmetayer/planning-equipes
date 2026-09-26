@@ -74,6 +74,11 @@ export interface Animateur {
   joursIndisponibles: string[];
   /** Contact address for the échange notifications (issue #165); null when not collected. */
   email?: string | null;
+  /**
+   * Phone number, to call a replacement on the day. Shown on the fiche and on
+   * Aujourd'hui only: never on the wall display, in a PDF or a CSV export.
+   */
+  telephone?: string | null;
   /** Access token of the espace animateur — the link printed on their PDF planning. Read-only: rotated via `/api/animateurs/{id}/token`. */
   accessToken?: string | null;
 }
@@ -874,6 +879,12 @@ export interface PosteAffectation {
    */
   heureDebutEffective?: string | null;
   heureFinEffective?: string | null;
+  /**
+   * The seat this one continues, when a seat of the timeslot under way was
+   * split at « now » (ADR 0066): the origin kept who held its first part, this
+   * one covers the rest. Null on every other seat.
+   */
+  suiteDe?: string | null;
 }
 
 export interface ContrainteAdHoc {
@@ -3765,6 +3776,13 @@ export interface PosteAPourvoir {
   heureFin: string;
   /** A lock covers it: the repair assistant refuses to write here until it is lifted. */
   verrouille: boolean;
+  /**
+   * The published plan had somebody on it — opened since, by an absence:
+   * « nouveau depuis ce matin », where the others are holes everybody knew.
+   */
+  nouveau: boolean;
+  /** The rest of a seat split at « now »: repairing it covers what is left of the timeslot. */
+  resteDuCreneau: boolean;
 }
 
 /** One timeslot of an absence, with the trace the ad hoc exception carries. */
@@ -3791,6 +3809,8 @@ export interface AbsenceJourJ {
 export interface AnimateurNomme {
   animateurId: string;
   nomAffiche: string;
+  /** The fiche's phone number, `null` when it has none — the replacement has to be called. */
+  telephone: string | null;
 }
 
 /** `/api/jour-j`: the whole event-day screen in one answer. */
@@ -3818,6 +3838,19 @@ export interface EtatJourJ {
   consigne: ConsigneJourJ | null;
   /** Absences reported from the espaces and not settled yet, from this day on (issue #533). */
   signalements: SignalementJourJ[];
+  /** « J5 »: the day's rank from the event's first day. */
+  jourNumero: number;
+  /** Stands holding a seat over the remaining timeslots. */
+  standsOuverts: number;
+  /** The wall display's alerts — one calculation for both screens —, on the day under way only. */
+  alertes: MuralAlert[];
+  /**
+   * The people whose schedule differs from the published plan: « Prévenir les
+   * N personnes » publishes to them and nobody else.
+   */
+  aPrevenir: string[];
+  /** Swap requests waiting for a decision. */
+  echangesAArbitrer: number;
 }
 
 /** An absence reported from an espace and not settled yet, named for the organisation. */
@@ -3861,6 +3894,7 @@ export interface AnimateurCsvMapping {
   competences: number | null;
   souhaits: number | null;
   joursIndisponibles: number | null;
+  telephone: number | null;
 }
 
 /** What one row of the file does. */
@@ -4830,14 +4864,22 @@ export interface QrCodeView {
   rows: string[];
 }
 
-export type MuralAlertType = 'EMPTY_SEATS' | 'BREAK_WITHOUT_RELAY';
+/**
+ * What the band shouts about: seats opened since the publication, a shift
+ * starting within half an hour with a seat nobody holds, a break without relay
+ * within the hour. The holes the published plan already had stay in the tiles.
+ */
+export type MuralAlertType = 'NEW_EMPTY_SEATS' | 'STARTING_SOON' | 'BREAK_WITHOUT_RELAY';
 
 /** One shift of a stand; `end` falls on the next day for a shift crossing midnight. */
 export interface MuralShift {
   start: string;
   end: string;
+  /** Disambiguated among the day's holders: a second letter of the last name, then all of it. */
   noms: string[];
   emptySeats: number;
+  /** Among `emptySeats`, those the published plan had somebody on: « nouveau ». */
+  newEmptySeats: number;
 }
 
 export interface MuralStand {
@@ -4874,4 +4916,9 @@ export interface AffichageMuralView {
   stands: MuralStand[];
   alerts: MuralAlert[];
   consigne: MuralConsigne | null;
+  /**
+   * People whose schedule differs from the published plan: « peut différer de
+   * celui envoyé » is said only when this is not zero, with the number.
+   */
+  unpublishedChanges: number;
 }

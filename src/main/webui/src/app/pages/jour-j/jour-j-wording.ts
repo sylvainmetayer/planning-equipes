@@ -8,9 +8,9 @@
 
 import type {
   AnimateurAffecte,
-  ApercuPublication,
   CreneauJourJ,
   EtatJourJ,
+  MuralAlert,
   PosteAPourvoir,
   SuggestionsReparation,
 } from '../../core/models';
@@ -57,22 +57,173 @@ export function resumeDuJour(etat: EtatJourJ | null): string {
 }
 
 /**
- * The banner of issue #245's publication count. It is a *reminder*, never an
- * action: putting a mail-to-150-people button one tap away inside an emergency
- * screen is exactly the mistake this wording exists to avoid — the screen says
- * how many are waiting and links to the page that owns the button.
+ * « J5 · 60 stands ouverts · 2 vacations restantes »: the day at a glance, as
+ * the header of Aujourd'hui states it. The rank is left out before the event
+ * (a day before the first one has none).
  */
-export function rappelPublication(apercu: ApercuPublication | null): string {
-  if (!apercu || apercu.nombreConcernes === 0) {
+export function dayHeader(etat: EtatJourJ | null): string {
+  if (!etat) {
     return '';
   }
-  return apercu.nombreConcernes === 1
-    ? $localize`:@@jourJ.publication.une:1 personne est concernée par un changement non publié.`
-    : $localize`:@@jourJ.publication.plusieurs:${apercu.nombreConcernes}:count: personnes sont concernées par des changements non publiés.`;
+  const stands =
+    etat.standsOuverts === 1
+      ? $localize`:@@aujourdhui.entete.stand:1 stand ouvert`
+      : $localize`:@@aujourdhui.entete.stands:${etat.standsOuverts}:count: stands ouverts`;
+  const restants = etat.creneauxRestants.length;
+  const vacations =
+    restants === 1
+      ? $localize`:@@aujourdhui.entete.vacation:1 vacation restante`
+      : $localize`:@@aujourdhui.entete.vacations:${restants}:count: vacations restantes`;
+  const parties =
+    etat.jourNumero > 0 ? [`J${etat.jourNumero}`, stands, vacations] : [stands, vacations];
+  return parties.join(' · ');
+}
+
+/** The counters of the header of Aujourd'hui, each one a link to where it is dealt with. */
+export interface DayCounters {
+  missing: string;
+  nouvelles: string;
+  connues: string;
+  echanges: string;
+  aPrevenir: string;
+}
+
+/** « 3 absents », « 1 place vide nouvelle »…: singular and plural said whole, never « (s) ». */
+export function dayCounters(etat: EtatJourJ, nouvelles: number, connues: number): DayCounters {
+  const missing = etat.absences.length;
+  const echanges = etat.echangesAArbitrer;
+  const aPrevenir = etat.aPrevenir.length;
+  return {
+    missing:
+      missing === 0
+        ? $localize`:@@aujourdhui.compteur.absents.aucun:Aucun absent`
+        : missing === 1
+          ? $localize`:@@aujourdhui.compteur.absents.un:1 absent`
+          : $localize`:@@aujourdhui.compteur.absents:${missing}:count: absents`,
+    nouvelles:
+      nouvelles === 0
+        ? $localize`:@@aujourdhui.compteur.nouvelles.aucune:Aucune place vide nouvelle`
+        : nouvelles === 1
+          ? $localize`:@@aujourdhui.compteur.nouvelles.une:1 place vide nouvelle`
+          : $localize`:@@aujourdhui.compteur.nouvelles:${nouvelles}:count: places vides nouvelles`,
+    connues:
+      connues === 0
+        ? $localize`:@@aujourdhui.compteur.connues.aucune:Aucune place vide connue`
+        : connues === 1
+          ? $localize`:@@aujourdhui.compteur.connues.une:1 place vide connue`
+          : $localize`:@@aujourdhui.compteur.connues:${connues}:count: places vides connues`,
+    echanges:
+      echanges === 0
+        ? $localize`:@@aujourdhui.compteur.echanges.aucun:Aucun échange à arbitrer`
+        : echanges === 1
+          ? $localize`:@@aujourdhui.compteur.echanges.un:1 échange à arbitrer`
+          : $localize`:@@aujourdhui.compteur.echanges:${echanges}:count: échanges à arbitrer`,
+    aPrevenir:
+      aPrevenir === 0
+        ? $localize`:@@aujourdhui.compteur.aPrevenir.aucun:Rien de non publié`
+        : aPrevenir === 1
+          ? $localize`:@@aujourdhui.compteur.aPrevenir.un:1 personne à prévenir`
+          : $localize`:@@aujourdhui.compteur.aPrevenir:${aPrevenir}:count: personnes à prévenir`,
+  };
+}
+
+/**
+ * What is left unpublished, said where the replacement was made: « Prévenir
+ * les N personnes » publishes to them and nobody else. Empty when nothing
+ * differs from what was sent.
+ */
+export function prevenirLibelle(nombre: number): string {
+  if (nombre === 0) {
+    return '';
+  }
+  return nombre === 1
+    ? $localize`:@@aujourdhui.prevenir.une:Prévenir la personne concernée`
+    : $localize`:@@aujourdhui.prevenir.plusieurs:Prévenir les ${nombre}:count: personnes`;
+}
+
+/** The sentence above that button: what still differs from the plan sent. */
+export function nonPublieLibelle(nombre: number): string {
+  if (nombre === 0) {
+    return $localize`:@@aujourdhui.nonPublie.aucun:Tout le monde a reçu la dernière version de son planning.`;
+  }
+  return nombre === 1
+    ? $localize`:@@aujourdhui.nonPublie.une:1 personne a un planning différent de celui qu'elle a reçu.`
+    : $localize`:@@aujourdhui.nonPublie.plusieurs:${nombre}:count: personnes ont un planning différent de celui qu'elles ont reçu.`;
+}
+
+/** One person found by the search: named, reachable, and what marking them absent frees. */
+export interface PersonneTrouvee {
+  animateurId: string;
+  nomAffiche: string;
+  telephone: string | null;
+  /** Seats held over the remaining timeslots, 0 for somebody not on duty. */
+  postesRestants: number;
+  absent: boolean;
+}
+
+/** Lower case, accents dropped: « Hélène » is found by « helene ». */
+function plie(haystack: string): string {
+  return haystack
+    .normalize('NFD')
+    .replace(/\p{M}+/gu, '')
+    .toLowerCase();
+}
+
+/**
+ * The search of Aujourd'hui: every word typed must appear in the name or the
+ * id. Nothing below two characters — a single letter matches half the roster
+ * and the list would be the 86 buttons this search replaced. At most
+ * {@link RESULTATS_MAX} people, on duty first.
+ */
+export function searchPeople(etat: EtatJourJ | null, requete: string): PersonneTrouvee[] {
+  const mots = plie(requete.trim()).split(/\s+/).filter(Boolean);
+  if (!etat || mots.join('').length < 2) {
+    return [];
+  }
+  const onDuty = new Map(
+    etat.animateursDeService.map((animateur) => [animateur.animateurId, animateur]),
+  );
+  return etat.animateurs
+    .filter((animateur) => {
+      const haystack = plie(`${animateur.nomAffiche} ${animateur.animateurId}`);
+      return mots.every((mot) => haystack.includes(mot));
+    })
+    .map((animateur) => ({
+      animateurId: animateur.animateurId,
+      nomAffiche: animateur.nomAffiche,
+      telephone: animateur.telephone,
+      postesRestants: onDuty.get(animateur.animateurId)?.postesRestants ?? 0,
+      absent: onDuty.get(animateur.animateurId)?.absent ?? false,
+    }))
+    .sort(
+      (gauche, droite) =>
+        Number(droite.postesRestants > 0) - Number(gauche.postesRestants > 0) ||
+        gauche.nomAffiche.localeCompare(droite.nomAffiche),
+    )
+    .slice(0, RESULTATS_MAX);
+}
+
+/** How many people the search lists at most: a phone screen, not a roster. */
+export const RESULTATS_MAX = 8;
+
+/** The wall display's alert, worded for Aujourd'hui — the same calculation, read on a phone. */
+export function alerteLibelle(alerte: MuralAlert): string {
+  const bornes = plage(heureDe(alerte.start), heureDe(alerte.end));
+  switch (alerte.type) {
+    case 'NEW_EMPTY_SEATS':
+      return $localize`:@@aujourdhui.alerte.nouveaux:${alerte.standNom}:stand: · ${bornes}:bornes: : ${alerte.count}:count: place(s) vide(s) depuis ce matin`;
+    case 'STARTING_SOON':
+      return $localize`:@@aujourdhui.alerte.bientot:${alerte.standNom}:stand: · commence à ${heureDe(alerte.start)}:heure: avec ${alerte.count}:count: place(s) vide(s)`;
+    case 'BREAK_WITHOUT_RELAY':
+      return $localize`:@@aujourdhui.alerte.pause:${alerte.standNom}:stand: · pause de ${alerte.nom ?? ''}:nom: sans relais, ${bornes}:bornes:`;
+  }
 }
 
 /** « 2 créneaux restants » under a name, so the tap target says what it costs. */
-export function chargeRestante(animateur: AnimateurAffecte): string {
+export function chargeRestante(animateur: Pick<AnimateurAffecte, 'postesRestants'>): string {
+  if (animateur.postesRestants === 0) {
+    return $localize`:@@aujourdhui.charge.aucune:Pas de service sur les créneaux restants`;
+  }
   return animateur.postesRestants === 1
     ? $localize`:@@jourJ.charge.un:1 créneau restant`
     : $localize`:@@jourJ.charge.plusieurs:${animateur.postesRestants}:count: créneaux restants`;

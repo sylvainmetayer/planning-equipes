@@ -509,7 +509,12 @@ Une lecture, pour **une** édition : les stands ouverts du jour, qui les tient
 (prénom et initiale du nom, ou nom complet si le lien a été créé ainsi), les
 places libres, les pauses sans relais et la consigne du jour. Rien d'autre : pas
 le référentiel, pas les exports, pas l'espace animateur, aucune écriture. Ni
-téléphone, ni e-mail, ni âge, ni motif d'absence. Le jeton ne fonctionne sur
+téléphone, ni e-mail, ni âge, ni motif d'absence — le numéro de téléphone que
+la fiche porte désormais ne sort que vers une session d'administration (fiche,
+écran Aujourd'hui) : la vue murale n'a aucun champ qui puisse le recevoir, et
+le nombre de « changements non publiés » qu'elle affiche est un compte, jamais
+une liste de noms. Création d'un lien depuis Aujourd'hui (« Afficher sur la
+TV ») : le même lien que depuis les Paramètres, toute l'édition, initiales. Le jeton ne fonctionne sur
 aucune autre route, et un jeton d'espace ou d'abonnement ne fonctionne pas sur
 celle-ci : `AffichageMuralSecurityTest` le vérifie sous la vraie politique
 d'authentification.

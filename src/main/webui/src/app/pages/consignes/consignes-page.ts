@@ -168,7 +168,7 @@ export class ConsignesPage implements OnInit {
     // A day already begun is not ticked: the server would refuse it, and the
     // form says so rather than letting « Enregistrer » find out.
     // `date=demain` is what « Fermer des stands demain » sends from the Solveur
-    // and the Mode jour J, which do not read the server's day: resolved here,
+    // and Aujourd'hui, which do not read the server's day: resolved here,
     // against the day the server says it is (simulated date included).
     consumeQueryParam('nouvelle', async () => {
       await Promise.all([referentiel, this.store.reload()]);

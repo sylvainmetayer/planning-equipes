@@ -235,10 +235,12 @@ public final class PlanningWhatIf {
      *                       default, anything above {@link #SUGGESTIONS_PLAFOND_MAX} is clamped
      */
     public SuggestionsReparation suggererReparations(PlanningEvenement solved, String posteId, Integer plafondDemande) {
-        PosteAffectation poste = findPoste(solved, posteId);
-        // A past seat has no candidate: nothing the assistant proposes there
-        // could be applied (ADR 0044).
-        refuseIfPast(poste);
+        // A seat of a timeslot under way is looked at as the rest of it (ADR
+        // 0066): split here in the throwaway plan, exactly as the write will
+        // split it, so the candidates are scored on what they would hold. A
+        // seat already over has no candidate: nothing proposed there could be
+        // applied (ADR 0044).
+        PosteAffectation poste = seatAhead(solved, findPoste(solved, posteId), horizon.get(), null);
         Animateur actuel = poste.getAnimateur();
         int plafond = effectiveCandidateCap(plafondDemande);
 
@@ -786,8 +788,9 @@ public final class PlanningWhatIf {
      *                    called in sick is the one gesture that must never be
      *                    blocked by the plan it is repairing
      */
-    public void applyReparations(PlanningEvenement persiste, List<String> posteIds, String animateurId) {
-        writeSeating(persiste, posteIds, animateurId, null, false);
+    public List<PosteAffectation> applyReparations(
+            PlanningEvenement persiste, List<String> posteIds, String animateurId) {
+        return writeSeating(persiste, posteIds, animateurId, null, false).sieges();
     }
 
     /**
@@ -816,7 +819,7 @@ public final class PlanningWhatIf {
         }
         SeatingScores scores = writeSeating(persiste, List.of(posteId), animateurId, SeatPrecondition.FREE, true);
         return new DeplacementSimulation(
-                posteId,
+                scores.sieges().getFirst().getId(),
                 null,
                 null,
                 animateurId,
@@ -870,10 +873,10 @@ public final class PlanningWhatIf {
         if (persistence != null) {
             persistence.refuseIfSolving();
         }
-        List<PosteAffectation> postes =
+        List<PosteAffectation> demandes =
                 posteIds.stream().map(id -> findPoste(persiste, id)).toList();
         if (precondition != null) {
-            for (PosteAffectation poste : postes) {
+            for (PosteAffectation poste : demandes) {
                 String holder = poste.getAnimateur() == null
                         ? null
                         : poste.getAnimateur().getId();
@@ -883,9 +886,8 @@ public final class PlanningWhatIf {
             }
         }
         Animateur repreneur = animateurId == null ? null : findAnimateur(persiste, animateurId);
-        refuseIfPast(postes.toArray(PosteAffectation[]::new));
         List<VerrouillagePlanning> verrouillages = referenceDataService.listVerrouillages();
-        for (PosteAffectation poste : postes) {
+        for (PosteAffectation poste : demandes) {
             if (verrouillages.stream().anyMatch(verrouillage -> verrouillage.couvre(poste))) {
                 throw new BusinessError.Invalid(
                         "Ce poste est verrouillé : déverrouillez-le avant d'y appliquer une réparation.");
@@ -894,15 +896,75 @@ public final class PlanningWhatIf {
                 refuseIfReceiverLocked(verrouillages, animateurId, poste);
             }
         }
+        // Read once, so every seat of the gesture is judged against the same
+        // minute. A seat over is refused; a seat under way is split at « now »
+        // and the write lands on its remainder (ADR 0066).
+        PastHorizon moment = horizon.get();
+        List<PersistenceSplit> scissions = new ArrayList<>();
+        List<PosteAffectation> postes = demandes.stream()
+                .map(poste -> seatAhead(persiste, poste, moment, scissions))
+                .toList();
         SeatingScores scores = refuseIfBreaksHardRules(persiste, postes, repreneur);
-        for (PosteAffectation poste : postes) {
-            if (precondition == null) {
-                persistence.reaffecterPoste(poste.getId(), animateurId);
-            } else if (!persistence.reassignSeatIfHeldBy(poste.getId(), animateurId, precondition.holderId())) {
-                throw precondition.refusal();
+        if (scissions.isEmpty()) {
+            for (PosteAffectation poste : postes) {
+                if (precondition == null) {
+                    persistence.reaffecterPoste(poste.getId(), animateurId);
+                } else if (!persistence.reassignSeatIfHeldBy(poste.getId(), animateurId, precondition.holderId())) {
+                    throw precondition.refusal();
+                }
             }
+        } else {
+            // The precondition was checked on the plan read above; the split
+            // and its write land in one transaction.
+            Map<String, String> ecritures = new java.util.LinkedHashMap<>();
+            postes.forEach(poste -> ecritures.put(poste.getId(), animateurId));
+            persistence.splitAndReassign(
+                    scissions.stream()
+                            .map(scission -> new PlanningPersistenceService.Scission(
+                                    scission.origine(), scission.at(), scission.suite()))
+                            .toList(),
+                    ecritures);
         }
-        return scores;
+        return new SeatingScores(
+                scores == null ? null : scores.avant(), scores == null ? null : scores.apres(), postes);
+    }
+
+    /** A split decided by a gesture, written with it. */
+    private record PersistenceSplit(String origine, java.time.LocalTime at, PosteAffectation suite) {}
+
+    /**
+     * The seat a gesture really writes: {@code poste} itself when it is ahead,
+     * or started this very minute; its remainder when its timeslot is under
+     * way — split in {@code plan} at the current minute, the continuation
+     * added to the plan and recorded in {@code scissions} when the split is to
+     * be written. A seat whose window is over is refused (ADR 0044).
+     *
+     * <p>The seat returned is never marked past, whatever the preparation of
+     * the plan said: it is the future part, and the score has to read what a
+     * candidate would break on it.</p>
+     */
+    private static PosteAffectation seatAhead(
+            PlanningEvenement plan, PosteAffectation poste, PastHorizon moment, List<PersistenceSplit> scissions) {
+        if (moment == null || !FrozenPast.isPast(poste, moment)) {
+            return poste;
+        }
+        if (SeatSplit.isOver(poste, moment)) {
+            throw new BusinessError.Invalid(FrozenPast.PAST_SEAT_REFUSAL);
+        }
+        if (!SeatSplit.needsSplit(poste, moment)) {
+            poste.setPasse(false);
+            return poste;
+        }
+        java.time.LocalTime at = SeatSplit.minute(moment);
+        PosteAffectation suite = SeatSplit.split(poste, at);
+        suite.setPasse(false);
+        List<PosteAffectation> sieges = new ArrayList<>(plan.getPostes());
+        sieges.add(suite);
+        plan.setPostes(sieges);
+        if (scissions != null) {
+            scissions.add(new PersistenceSplit(poste.getId(), at, suite));
+        }
+        return suite;
     }
 
     /**
@@ -994,7 +1056,17 @@ public final class PlanningWhatIf {
     }
 
     /** The plan's score on either side of a seating the checks accepted. */
-    private record SeatingScores(HardMediumSoftScore avant, HardMediumSoftScore apres) {}
+    /**
+     * The plan's score on either side of a seating the checks accepted —
+     * {@code null} when seats are only emptied — and the seats actually
+     * written: the remainders, for a seat that was split.
+     */
+    private record SeatingScores(HardMediumSoftScore avant, HardMediumSoftScore apres, List<PosteAffectation> sieges) {
+
+        SeatingScores(HardMediumSoftScore avant, HardMediumSoftScore apres) {
+            this(avant, apres, List.of());
+        }
+    }
 
     /**
      * The rules a refused gesture would break, as the sentence that names them.

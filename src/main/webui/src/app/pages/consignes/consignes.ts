@@ -26,7 +26,7 @@ import { compareCodeUnits } from '../../core/string-order';
 
 /**
  * The `?date=` of a link, `demain` read as the day after the server's today:
- * the Solveur and the Mode jour J offer « Fermer des stands demain » without
+ * the Solveur and Aujourd'hui offer « Fermer des stands demain » without
  * reading the server's day themselves. Anything else is kept as it came.
  */
 export function resolveDateParam(date: string | null, aujourdhui: string | null): string | null {
