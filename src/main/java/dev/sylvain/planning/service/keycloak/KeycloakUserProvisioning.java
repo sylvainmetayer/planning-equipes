@@ -71,9 +71,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 @ApplicationScoped
 public class KeycloakUserProvisioning {
 
-    /** Keycloak required actions: set a password, then confirm the address. */
-    private static final List<String> ACTIONS_INVITATION = List.of("UPDATE_PASSWORD", "VERIFY_EMAIL");
-
     private static final int HTTP_CREATED = 201;
 
     @Inject
@@ -270,14 +267,16 @@ public class KeycloakUserProvisioning {
 
     /**
      * The one mail this application does not send itself: Keycloak owns the
-     * password, so Keycloak is what invites. A failure here does not undo the
+     * credentials, so Keycloak is what invites — by default to confirm the
+     * address and register a passkey, with no password ever chosen
+     * ({@code OIDC_PROVISIONING_INVITATION_ACTIONS}). A failure here does not undo the
      * account — an invitation can be resent from the console, an account that
      * exists nowhere cannot.
      */
     private void invite(RealmResource realm, String userId, String email) {
         try {
             UserResource utilisateur = realm.users().get(userId);
-            utilisateur.executeActionsEmail(ACTIONS_INVITATION);
+            utilisateur.executeActionsEmail(config.provisioning().invitationActions());
         } catch (RuntimeException e) {
             Log.warnf(e, "Keycloak invitation mail could not be sent to %s; the account exists", email);
         }

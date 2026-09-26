@@ -49,6 +49,10 @@ resource "keycloak_realm" "planning" {
     require_resident_key              = "Yes"
     user_verification_requirement     = "required"
     attestation_conveyance_preference = "none"
+    # Le téléphone propose sa passkey dès l'écran de l'adresse, qu'il n'y a
+    # alors même pas à taper. Taper l'adresse reste possible, et mène au code
+    # par e-mail quand la passkey est perdue.
+    passwordless_passkeys_enabled = true
   }
 
   smtp_server {

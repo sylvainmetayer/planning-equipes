@@ -473,6 +473,7 @@
   "webAuthnPolicyPasswordlessAuthenticatorAttachment": "not specified",
   "webAuthnPolicyPasswordlessRequireResidentKey": "Yes",
   "webAuthnPolicyPasswordlessUserVerificationRequirement": "required",
+  "webAuthnPolicyPasswordlessPasskeysEnabled": true,
   "webAuthnPolicyPasswordlessCreateTimeout": 0,
   "webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister": false,
   "webAuthnPolicyPasswordlessAcceptableAaguids": [],
