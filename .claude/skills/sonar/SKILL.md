@@ -12,7 +12,7 @@ the build, no CI step, no `sonar-project.properties`. Its only configuration is
 | Setting | Value |
 | --- | --- |
 | Organization | `sylvainmetayer-github` |
-| Project key | `sylvainmetayer_planning-equipes` (the key SonarCloud gives a GitHub import — check it with `sonar-list-projects` before relying on it) |
+| Project key | `sylvainmetayer_planning-equipes` |
 | Analysis | automatic, on every push and pull request |
 | Configuration | `.sonarcloud.properties` (exclusions only) |
 
