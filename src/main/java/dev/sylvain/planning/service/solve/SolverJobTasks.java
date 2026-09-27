@@ -9,6 +9,7 @@ import dev.sylvain.planning.service.solve.SolverJobService.ResultatSolveIncremen
 import dev.sylvain.planning.service.solve.SolverJobService.SolverJob;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
@@ -87,7 +88,8 @@ public class SolverJobTasks {
                             probleme.postesPassesVides()),
                     resolution.impactPublication(),
                     resolution.impactValidations(),
-                    resolution.interruption());
+                    resolution.interruption(),
+                    resolution.feasibilityFirst());
         };
     }
 
@@ -108,7 +110,8 @@ public class SolverJobTasks {
                     resolution.previousPlan(),
                     resolution.impactPublication(),
                     resolution.impactValidations(),
-                    resolution.interruption());
+                    resolution.interruption(),
+                    resolution.feasibilityFirst());
         };
     }
 
@@ -119,15 +122,29 @@ public class SolverJobTasks {
                 null,
                 resolution.impactPublication(),
                 resolution.impactValidations(),
-                resolution.interruption());
+                resolution.interruption(),
+                resolution.feasibilityFirst());
     }
 
     private Consumer<Solver<PlanningEvenement>> onSolverReady(SolverJob job) {
+        // A solve may hand over two solvers, one per stage (FeasibilityFirstSolve):
+        // the job holds the latest, the curve goes on from the first.
+        AtomicBoolean followed = new AtomicBoolean();
         return solver -> {
             // Holding it first: attachSolver honours a cancel that arrived
             // while the problem was being built, by terminating the solver
             // before it ever starts.
             job.attachSolver(solver);
+            // Timefold clears a stop requested before solve() started — a
+            // cancel that raced the hand-over, or one that reached the second
+            // stage of a two-stage solve before it began. Asked again at each
+            // new best, the job's own flag, which nothing clears, has the last
+            // word.
+            solver.addEventListener(event -> {
+                if (job.isStopRequested() && !solver.isTerminateEarly()) {
+                    solver.terminateEarly();
+                }
+            });
             if (job.isCancelRequested()) {
                 // And then there is nothing to follow. Starting a trace anyway
                 // would clear the previous run's curve and replace it with an
@@ -135,7 +152,11 @@ public class SolverJobTasks {
                 // solve that finished minutes ago.
                 return;
             }
-            scoreTrace.follow(job.getId(), job.getEditionId(), solver);
+            if (followed.compareAndSet(false, true)) {
+                scoreTrace.follow(job.getId(), job.getEditionId(), solver);
+            } else {
+                scoreTrace.followNext(job.getId(), solver);
+            }
         };
     }
 }

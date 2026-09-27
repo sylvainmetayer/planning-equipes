@@ -889,10 +889,23 @@ faisabilité du solveur porte pour cela un sélecteur *ruin and recreate*
 restreint aux sièges de l'heure d'un trou (`HoleNeighbourPosteFilter`,
 `solverConfig.xml`), qui évalue la chaîne comme un seul mouvement : 0 écart
 dur en moins de trois minutes sur le même cas, une dizaine de personnes de
-plus dérangées que le plan à trous, moitié moins que sans la règle. Si un
-calcul finit malgré tout avec des écarts durs, les recours sont, dans
-l'ordre, « Corriger après un changement », un second « Calculer le
-planning », et la désactivation de la règle pour ce calcul.
+plus dérangées que le plan à trous, moitié moins que sans la règle.
+
+**La faisabilité d'abord, la stabilité ensuite.** Le *ruin and recreate* ne
+suffit pas toujours : resserrer une règle après publication, ou recalculer
+une édition publiée dont le référentiel a bougé, laissait des calculs calés
+sur des écarts durs que la même grille, jamais publiée, atteignait en quelques
+minutes. Le contournement était manuel : éteindre la règle, calculer, la
+rallumer, calculer encore. Dès qu'un plan est publié et que la règle est
+active, la résolution le fait elle-même, en **deux étapes dans le même job** :
+la faisabilité d'abord, stabilité pesée à zéro en mémoire, au plus deux tiers
+du budget ; puis le polissage, stabilité rétablie, qui rend leurs sièges
+publiés à autant de personnes que les règles dures et le temps restant le
+permettent. Le récapitulatif de
+la page Solveur le dit, avec le nombre de places rendues. Sur une édition dont
+le plan publié reste faisable, l'étape 1 s'arrête en quelques secondes. Le
+détail et les mesures sont dans
+[0067](decisions/0067-la-faisabilite-avant-la-stabilite-apres-publication.md).
 
 **Le mur des six jours, et la chaîne qui le franchit.** Un autre trou résiste
 au *ruin and recreate* parce que sa chaîne ne passe pas par l'heure du trou

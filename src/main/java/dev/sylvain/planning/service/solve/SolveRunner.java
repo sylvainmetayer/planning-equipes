@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service.solve;
 
+import ai.timefold.solver.core.api.domain.solution.ConstraintWeightOverrides;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.Solver;
 import ai.timefold.solver.core.api.solver.SolverFactory;
 import ai.timefold.solver.core.config.score.director.ScoreDirectorFactoryConfig;
@@ -22,6 +24,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import org.jboss.logging.Logger;
 
 /**
  * Runs a solve, and fills the problem with the server-side facts first.
@@ -37,6 +40,8 @@ import java.util.function.Supplier;
  * points as a façade.</p>
  */
 final class SolveRunner {
+
+    private static final Logger LOG = Logger.getLogger(SolveRunner.class);
 
     private final SolverConfiguration configuration;
     private final ReferenceData referenceDataService;
@@ -88,14 +93,137 @@ final class SolveRunner {
     /** The same, under a whole {@link SolveBudget} — duration and plateau — as a job resolves it. */
     public PlanningEvenement solve(
             PlanningEvenement problem, SolveBudget budget, Consumer<Solver<PlanningEvenement>> onSolverReady) {
+        return solveReporting(problem, budget, onSolverReady).planning();
+    }
+
+    /**
+     * The same solve, telling whether it ran in two stages
+     * ({@link FeasibilityFirstSolve}) and what each did. {@code onSolverReady}
+     * then receives one solver per stage, in order: a caller holding the solver
+     * to stop it must hold the latest, and one following the score must keep
+     * one curve across both.
+     */
+    Solved solveReporting(
+            PlanningEvenement problem, SolveBudget budget, Consumer<Solver<PlanningEvenement>> onSolverReady) {
         prepareProblem(problem);
         FrozenPast.pin(problem.getPostes());
+        if (FeasibilityFirstSolve.applies(problem)) {
+            return solveFeasibilityFirst(problem, budget, onSolverReady);
+        }
         Solver<PlanningEvenement> solver =
                 configuration.resolveSolverFactory(budget, problem).buildSolver();
         if (onSolverReady != null) {
             onSolverReady.accept(solver);
         }
-        return solver.solve(problem);
+        return new Solved(solver.solve(problem), null);
+    }
+
+    /** A solved plan, and the report of its two stages when it had two; {@code null} otherwise. */
+    record Solved(PlanningEvenement planning, FeasibilityFirstReport feasibilityFirst) {}
+
+    /**
+     * The two stages of {@link FeasibilityFirstSolve}, on a prepared problem:
+     * the stability rule weighed at zero until feasibility (or two thirds of the
+     * budget), then its own weight again, from the plan the first stage reached,
+     * on what is left. The second stage runs even when the first fell short —
+     * it starts from the best plan found, and Timefold keeps the best one — but
+     * never after a stop: a cancel or a shutdown that ended the first stage
+     * ends the job there.
+     */
+    private Solved solveFeasibilityFirst(
+            PlanningEvenement problem, SolveBudget budget, Consumer<Solver<PlanningEvenement>> onSolverReady) {
+        long totalMillis = configuration.secondsOf(budget) * 1000L;
+        long feasibilityShare = FeasibilityFirstSolve.feasibilityMillis(totalMillis);
+        ConstraintWeightOverrides<HardMediumSoftScore> weights = problem.getPonderationsContraintes();
+        LOG.infof(
+                "Two-stage solve: a plan is published; stage 1, feasibility with the published plan's"
+                        + " stability suspended, at most %d ms",
+                feasibilityShare);
+
+        long start = System.nanoTime();
+        PlanningEvenement feasible;
+        boolean stopped;
+        problem.setPonderationsContraintes(
+                SolverConfiguration.suspending(weights, FeasibilityFirstSolve.STABILITY_RULE));
+        try {
+            Solver<PlanningEvenement> feasibility = configuration
+                    .feasibilityStageFactory(problem, budget, feasibilityShare)
+                    .buildSolver();
+            if (onSolverReady != null) {
+                onSolverReady.accept(feasibility);
+            }
+            feasible = feasibility.solve(problem);
+            // Read after solve(): Timefold clears a stop requested before it
+            // started, never one requested while it ran.
+            stopped = feasibility.isTerminateEarly() || Thread.currentThread().isInterrupted();
+        } finally {
+            // The caller's problem goes back as it came, whatever happened.
+            problem.setPonderationsContraintes(weights);
+        }
+        long feasibilityMillis = millisSince(start);
+        boolean reached = feasible.getScore() != null && feasible.getScore().isFeasible();
+        int changedAfterFeasibility = FeasibilityFirstSolve.publishedSeatsChanged(feasible);
+        // The solved clone carries the first stage's weights: the second stage
+        // judges with the edition's own again, and so does the dosage the
+        // pipeline reads from the plan it returns.
+        feasible.setPonderationsContraintes(weights);
+        if (stopped) {
+            LOG.infof(
+                    "Two-stage solve: stopped during stage 1 after %d ms, %s; no stage 2",
+                    feasibilityMillis, reached ? "feasible" : "not feasible");
+            return firstStageOnly(feasible, reached, feasibilityMillis, changedAfterFeasibility);
+        }
+        LOG.infof(
+                "Two-stage solve: stage 1 ended in %d ms, %s, %d published seats changed;"
+                        + " stage 2, polishing with stability restored",
+                feasibilityMillis, reached ? "feasible" : "not feasible", changedAfterFeasibility);
+
+        long polishingStart = System.nanoTime();
+        Solver<PlanningEvenement> polishing = configuration
+                .polishingStageFactory(feasible, budget, Math.max(1, totalMillis - millisSince(start)))
+                .buildSolver();
+        if (onSolverReady != null) {
+            onSolverReady.accept(polishing);
+        }
+        // A cancel that landed between the two stages is held by the solver
+        // just handed over, and solve() would clear it: honoured here instead.
+        if (polishing.isTerminateEarly()) {
+            LOG.info("Two-stage solve: stopped between the stages; no stage 2");
+            return firstStageOnly(feasible, reached, feasibilityMillis, changedAfterFeasibility);
+        }
+        PlanningEvenement polished = polishing.solve(feasible);
+        long polishingMillis = millisSince(polishingStart);
+        int changed = FeasibilityFirstSolve.publishedSeatsChanged(polished);
+        LOG.infof(
+                "Two-stage solve: stage 2 ended in %d ms, %s, %d published seats changed",
+                polishingMillis, polished.getScore(), changed);
+        return new Solved(
+                polished,
+                new FeasibilityFirstReport(
+                        reached,
+                        FeasibilityFirstSolve.roundUpToSeconds(feasibilityMillis),
+                        FeasibilityFirstSolve.roundUpToSeconds(polishingMillis),
+                        changedAfterFeasibility,
+                        changed,
+                        false));
+    }
+
+    /** A two-stage solve a stop ended after its first stage: the plan it reached, and no polishing. */
+    private static Solved firstStageOnly(
+            PlanningEvenement feasible, boolean reached, long feasibilityMillis, int changedAfterFeasibility) {
+        return new Solved(
+                feasible,
+                new FeasibilityFirstReport(
+                        reached,
+                        FeasibilityFirstSolve.roundUpToSeconds(feasibilityMillis),
+                        0,
+                        changedAfterFeasibility,
+                        changedAfterFeasibility,
+                        true));
+    }
+
+    private static long millisSince(long nanoStart) {
+        return (System.nanoTime() - nanoStart) / 1_000_000L;
     }
 
     /**
@@ -110,6 +238,15 @@ final class SolveRunner {
     public PlanningEvenement solveUntilFeasible(PlanningEvenement problem, long secondsLimitSecurite) {
         prepareProblem(problem);
         FrozenPast.pin(problem.getPostes());
+        // The first stage of a two-stage solve (FeasibilityFirstSolve) is
+        // exactly this search — until feasibility, stability suspended — so a
+        // scenario test validates what production runs.
+        ConstraintWeightOverrides<HardMediumSoftScore> weights = problem.getPonderationsContraintes();
+        boolean suspend = FeasibilityFirstSolve.applies(problem);
+        if (suspend) {
+            problem.setPonderationsContraintes(
+                    SolverConfiguration.suspending(weights, FeasibilityFirstSolve.STABILITY_RULE));
+        }
         SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
         solverConfig.setScoreDirectorFactoryConfig(
                 new ScoreDirectorFactoryConfig().withConstraintProviderClass(PlanningConstraintProvider.class));
@@ -120,7 +257,13 @@ final class SolveRunner {
         SolverConfiguration.adaptToProblem(solverConfig, problem);
         Solver<PlanningEvenement> solver =
                 SolverFactory.<PlanningEvenement>create(solverConfig).buildSolver();
-        return solver.solve(problem);
+        try {
+            PlanningEvenement solved = solver.solve(problem);
+            solved.setPonderationsContraintes(weights);
+            return solved;
+        } finally {
+            problem.setPonderationsContraintes(weights);
+        }
     }
 
     /**

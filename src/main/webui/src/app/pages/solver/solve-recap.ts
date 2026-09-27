@@ -12,6 +12,7 @@ import { MatCardModule } from '@angular/material/card';
 import { errorPrefix } from '../../core/error-message';
 import { intlLocale } from '../../core/locale';
 import {
+  FeasibilityFirstReport,
   ImpactPublication,
   ImpactValidations,
   ScoreSentence,
@@ -56,6 +57,8 @@ export class SolveRecap {
   readonly impact = input<ImpactPublication | null>(null);
   /** The readings that solve withdrew; null when it withdrew none. */
   readonly impactValidations = input<ImpactValidations | null>(null);
+  /** The two stages of the last solve, when it had two (ADR 0067). */
+  readonly feasibilityFirst = input<FeasibilityFirstReport | null>(null);
   /** What the last solve replaced; null when there is nothing to compare against. */
   readonly previousPlan = input<PreviousPlan | null>(null);
   /** Full score of the last solve, the other half of the comparison. */
@@ -110,6 +113,29 @@ export class SolveRecap {
   private passesLabel(postesPasses: number): string {
     return $localize`:@@solver.reamorcage.passes:${postesPasses}:count: postes déjà commencés, figés tels que travaillés.`;
   }
+
+  /**
+   * « Deux étapes… » — why the published plan moved more than the stability
+   * rule would suggest: feasibility was searched with that rule suspended, and
+   * the second stage brought back what it could. Silent for a single-stage
+   * solve, which is every solve before the first publication.
+   */
+  protected readonly feasibilityFirstLabel = computed(() => {
+    const stages = this.feasibilityFirst();
+    if (!stages) {
+      return '';
+    }
+    const givenBack = Math.max(
+      0,
+      stages.publishedSeatsChangedAfterFeasibility - stages.publishedSeatsChanged,
+    );
+    if (stages.stoppedAfterFeasibility) {
+      return $localize`:@@solver.feasibilityFirst.stopped:Deux étapes, puisqu'un planning est publié : le calcul a été arrêté après la recherche de faisabilité sans la stabilité (${stages.feasibilitySeconds}:first: s), avant le polissage.`;
+    }
+    return stages.feasibilityReached
+      ? $localize`:@@solver.feasibilityFirst.reached:Deux étapes, puisqu'un planning est publié : faisabilité sans la stabilité en ${stages.feasibilitySeconds}:first: s, puis polissage en ${stages.polishingSeconds}:second: s, qui a rendu ${givenBack}:back: place(s) publiée(s) à leur titulaire.`
+      : $localize`:@@solver.feasibilityFirst.notReached:Deux étapes, puisqu'un planning est publié : la faisabilité, cherchée sans la stabilité en ${stages.feasibilitySeconds}:first: s, n'a pas été atteinte ; le polissage (${stages.polishingSeconds}:second: s) est parti du meilleur plan trouvé.`;
+  });
 
   /**
    * The past seats the saved plan gave nobody: a solve started during the

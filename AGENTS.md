@@ -60,7 +60,7 @@ Read before working on constraints or the domain model:
 
 ### Costly test jobs
 
-Four scenario tests solve large fixtures to hard-feasibility and are tagged
+Five scenario tests solve large fixtures to hard-feasibility and are tagged
 `@Tag("scenario-lent")`, excluded from the default `./mvnw test`/`verify` and
 from the main CI workflow; the scenario ladder (the `gamme-…` files) and the
 extreme scenarios (the `extreme-…` files, `@Tag("scenario-extreme")`) sit

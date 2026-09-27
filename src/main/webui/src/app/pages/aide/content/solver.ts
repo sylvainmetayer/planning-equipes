@@ -312,6 +312,10 @@ export function buildSolverSections(): HelpSection[] {
               text: $localize`:@@aide.results.def.stabilite:Une fois un planning publié, chaque personne déplacée d'un siège qu'elle tenait coûte un point medium : un calcul relancé après un changement tardif ne bouscule les gens déjà prévenus que si le gain vaut le dérangement. La règle se dose comme les autres et reste muette tant que rien n'a été publié. Ce n'est pas un gel : pour figer, il y a les verrouillages.`,
             },
             {
+              term: $localize`:@@aide.results.term.recalculApresPublication:Recalculer après une publication`,
+              text: $localize`:@@aide.results.def.recalculApresPublication:Dès qu'un planning est publié, le calcul se fait en deux étapes dans le même job : d'abord trouver un planning sans écart dur, sans tenir compte de la stabilité, puis un polissage qui ramène sur leur siège publié autant de personnes que les règles dures et le temps restant le permettent. Sans cela, la stabilité pouvait empêcher d'atteindre zéro en dur. Le récapitulatif du calcul dit combien de places publiées la seconde étape a rendues à leur titulaire. Resserrer une règle après publication, comme allumer la règle dure des jours d'affilée ou baisser un seuil, déplace forcément du monde, et la prochaine publication préviendra chacun. Pour déplacer moins de monde, resserrez avant la première publication, ou verrouillez les journées qui ne doivent plus bouger.`,
+            },
+            {
               term: $localize`:@@aide.results.term.pourquoiLui:« Pourquoi lui ? »`,
               text: $localize`:@@aide.results.def.pourquoiLui:Un clic sur un animateur affecté explique cette affectation précise : les règles respectées ou non pour ce poste, dans le panneau du siège de la page Planning. À la demande, l'écran cherche aussi qui pourrait le remplacer, et ne propose que les remplacements qui n'introduisent aucun écart dur, chacun avec son effet sur le score. La recherche est bornée et annonce combien de candidats elle a évalués : une liste courte ne prouve pas qu'il n'existe rien d'autre.`,
             },
