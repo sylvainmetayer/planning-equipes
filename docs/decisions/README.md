@@ -85,6 +85,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0065](0065-empechement-signale-declaration-constatee.md) | « Je ne pourrai pas être là », signalé depuis l'espace sur une journée ou un poste, est une déclaration constatée : rien ne s'écrit au planning tant que l'organisation n'a pas marqué l'absence ou classé le signalement ; motif en liste fermée, jamais de texte libre | Accepté · voisine de 0047 |
 | [0066](0066-le-passe-est-fige-a-la-minute.md) | Le passé est figé à la minute, pas au créneau : le siège d'un créneau en cours est scindé à « maintenant » en deux sièges réels — l'origine écourtée garde qui l'a tenue, la suite se répare — et les reconstructions rejouent la scission | Accepté · assouplit 0044 |
 | [0067](0067-la-faisabilite-avant-la-stabilite-apres-publication.md) | Dès qu'un plan est publié, une résolution cherche d'abord la faisabilité sans la stabilité du plan publié, au plus deux tiers du budget, puis polit avec elle dans le même job | Accepté · complète 0025, prolonge 0049 |
+| [0068](0068-sous-la-regle-dure-la-construction-suit-le-calendrier.md) | Sous la règle dure des jours d'affilée, l'heuristique de construction place les sièges par date croissante, puis par rareté dans un même jour ; toute autre édition garde l'ordre par rareté | Accepté · prolonge 0049 |
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,

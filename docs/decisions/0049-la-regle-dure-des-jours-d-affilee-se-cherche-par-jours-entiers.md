@@ -1,6 +1,6 @@
 # 0049 — La règle dure des jours d'affilée se cherche par jours entiers
 
-- **Statut** : accepté, implémenté ; le cas d'un plan publié est prolongé par [0067](0067-la-faisabilite-avant-la-stabilite-apres-publication.md)
+- **Statut** : accepté, implémenté ; le cas d'un plan publié est prolongé par [0067](0067-la-faisabilite-avant-la-stabilite-apres-publication.md), l'ordre de construction par [0068](0068-sous-la-regle-dure-la-construction-suit-le-calendrier.md)
 - **Date** : septembre 2026
 - **Portée** : solveur (phase de faisabilité, mouvement de relocalisation à travers la semaine)
 - **Prolonge** : [0045](0045-le-niveau-de-la-regle-des-jours-d-affilee.md)

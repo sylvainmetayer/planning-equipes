@@ -248,6 +248,13 @@ les dix-huit sièges vides qui restaient après vingt minutes deviennent six :
 mieux, pas faisable, et aucun plan ne prouve que cette grille le soit. Sur une édition dont
 le besoin tient, le solveur atteint zéro écart dur. Le détail et les mesures
 sont dans [0049](decisions/0049-la-regle-dure-des-jours-d-affilee-se-cherche-par-jours-entiers.md).
+Depuis, la construction place aussi les sièges **par date** plutôt que par
+rareté : dans l'ordre par rareté, le montage que tout le monde sait tenir
+passait en dernier, quand les séries qui le suivent étaient déjà longues, et
+restait vide. Une grille tenable atteint le zéro dur plus tôt ; une grille qui
+ne tient pas, comme `festival-hivernal` à six jours, garde quelques sièges
+vides de plus que les six mesurés ci-dessus
+([0068](decisions/0068-sous-la-regle-dure-la-construction-suit-le-calendrier.md)).
 
 Le niveau par défaut sort d'un banc de comparaison, pas d'une intuition. Sur
 `festival-hivernal` — la grille de l'organisateur, 153 animateurs, 600 s — la
