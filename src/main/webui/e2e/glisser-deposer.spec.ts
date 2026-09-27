@@ -306,8 +306,12 @@ test.describe('déplacer au clavier', () => {
       await page.keyboard.type('Boris');
       // The filtered option has to be on screen before the arrow can reach it:
       // on a slow runner the keys otherwise land on an empty panel.
-      await expect(page.getByRole('option', { name: /Boris Glisse/ })).toBeVisible();
+      const option = page.getByRole('option', { name: /Boris Glisse/ });
+      await expect(option).toBeVisible();
       await page.keyboard.press('ArrowDown');
+      // And highlighted before Enter picks it: an Enter that beats the arrow
+      // selects nothing, and the button stays disabled.
+      await expect(option).toHaveClass(/mat-mdc-option-active/);
       await page.keyboard.press('Enter');
       const deplacer = dialogue.getByRole('button', { name: 'Déplacer' });
       await expect(deplacer).toBeEnabled();
@@ -341,8 +345,12 @@ test.describe('déplacer au clavier', () => {
       await page.keyboard.type('Cléo');
       // The filtered option has to be on screen before the arrow can reach it:
       // on a slow runner the keys otherwise land on an empty panel.
-      await expect(page.getByRole('option', { name: /Cléo Glisse/ })).toBeVisible();
+      const option = page.getByRole('option', { name: /Cléo Glisse/ });
+      await expect(option).toBeVisible();
       await page.keyboard.press('ArrowDown');
+      // And highlighted before Enter picks it: an Enter that beats the arrow
+      // selects nothing, and the button stays disabled.
+      await expect(option).toHaveClass(/mat-mdc-option-active/);
       await page.keyboard.press('Enter');
       const deplacer = dialogue.getByRole('button', { name: 'Déplacer' });
       await expect(deplacer).toBeEnabled();
