@@ -217,6 +217,9 @@ public class SolverJobService {
      * @param interruption set when the server stopped under the run, and says
      *                     whether its partial plan was kept; {@code null} for
      *                     a solve that finished
+     * @param feasibilityFirst set when the solve ran in two stages, feasibility
+     *                     first and the published plan's stability after
+     *                     (ADR 0067); {@code null} for a single-stage solve
      */
     public record ResultatSolve(
             PlanningDiagnosticService.PlanningDiagnostic diagnostic,
@@ -224,7 +227,8 @@ public class SolverJobService {
             ReamorcageEffectue reamorcage,
             SolvePipeline.ImpactPublication impactPublication,
             SolvePipeline.ImpactValidations impactValidations,
-            SolvePipeline.Interruption interruption) {}
+            SolvePipeline.Interruption interruption,
+            FeasibilityFirstReport feasibilityFirst) {}
 
     /**
      * Where a full solve actually started from (issue #174), for the
@@ -282,7 +286,8 @@ public class SolverJobService {
             PreviousPlan previousPlan,
             SolvePipeline.ImpactPublication impactPublication,
             SolvePipeline.ImpactValidations impactValidations,
-            SolvePipeline.Interruption interruption) {}
+            SolvePipeline.Interruption interruption,
+            FeasibilityFirstReport feasibilityFirst) {}
 
     /**
      * Incremental re-solve (issue #86): starts from the persisted plan, pins
@@ -1057,6 +1062,11 @@ public class SolverJobService {
 
         boolean isCancelRequested() {
             return cancelRequested;
+        }
+
+        /** Whether a cancel or a shutdown asked the solver to stop — never cleared once set. */
+        boolean isStopRequested() {
+            return stopRequested;
         }
 
         public boolean isFinished() {

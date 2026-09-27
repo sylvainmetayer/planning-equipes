@@ -461,6 +461,12 @@ public class PlanningService {
         return solveRunner.solve(problem, budget, onSolverReady);
     }
 
+    /** @see SolveRunner#solveReporting */
+    SolveRunner.Solved solveReporting(
+            PlanningEvenement problem, SolveBudget budget, Consumer<Solver<PlanningEvenement>> onSolverReady) {
+        return solveRunner.solveReporting(problem, budget, onSolverReady);
+    }
+
     /** @see SolverConfiguration#dosageOf(PlanningEvenement) */
     public Dosage dosageOf(PlanningEvenement ranWith) {
         return solverConfiguration.dosageOf(ranWith);

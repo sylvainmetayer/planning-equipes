@@ -49,6 +49,41 @@ class SolverScoreTraceTest {
         assertThat(points()).containsExactly(new Point(0, -40, -10, -1000), new Point(1000, -20, -6, -800));
     }
 
+    /**
+     * A solve in two stages hands over a second solver whose clock starts at
+     * zero again (ADR 0067): its points go on the same curve, after the first
+     * stage's, instead of restarting it.
+     */
+    @Test
+    void theSecondStageOfASolveGoesOnTheSameCurve() {
+        trace.start("job-1", "edition-1");
+        trace.recordEvent("job-1", event(0, -40, -10, -1000));
+        trace.recordEvent("job-1", event(4000, 0, -12, -1000));
+
+        assertThat(trace.nextStage("job-1")).isNotNegative();
+        assertThat(trace.nextStage("another-job")).isZero();
+        trace.recordEvent("job-1", event(0, 0, -11, -1000), 5000);
+        trace.recordEvent("job-1", event(2000, 0, -9, -1000), 5000);
+
+        assertThat(points()).extracting(Point::tempsMs).containsExactly(0L, 4000L, 5000L, 7000L);
+    }
+
+    /**
+     * The first stage's last best closes its part of the curve, once: it is
+     * where the second stage starts, and finish() does not add it again.
+     */
+    @Test
+    void theFirstStagesLastBestClosesItsPartOfTheCurveOnce() {
+        trace.start("job-1", "edition-1");
+        trace.recordEvent("job-1", event(0, -40, -10, -1000));
+        trace.recordEvent("job-1", event(300, 0, -8, -900));
+
+        trace.nextStage("job-1");
+        trace.finish("job-1");
+
+        assertThat(points()).extracting(Point::hard).containsExactly(-40L, 0L);
+    }
+
     @Test
     void aSolutionNotInitializedYetIsNotPlotted() {
         trace.start("job-1", "edition-1");

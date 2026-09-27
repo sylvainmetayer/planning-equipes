@@ -20,7 +20,10 @@ last two run the **anonymised real-world fixtures**
 animateurs, 65 stands, 45 premium, per-stand recurring schedules) — the only ones whose
 stands carry recurring horaires, which a plain-Java harness must expand with
 `HoraireStandResolver.appliquer` before building postes or it solves a problem
-five times too large. They are tagged `@Tag("scenario-lent")`, excluded from the
+five times too large. `PlanningServiceScenarioPublishedRunCapTest` reuses the
+canicule fixture for the two-stage solve of ADR 0067: it solves it, publishes
+it, then solves it again under the hard run-of-days rule tightened to six, on a
+120 s budget — about 140 s in all. They are tagged `@Tag("scenario-lent")`, excluded from the
 default
 `./mvnw test`/`./mvnw verify` run via the `test.excludedGroups` property in
 `pom.xml`, and not run by the main CI workflow (`.github/workflows/tests.yml`

@@ -27,6 +27,7 @@ import {
   JobType,
   JobView,
   PerimetreReplanification,
+  FeasibilityFirstReport,
   PlanningDiagnostic,
   PlanningEvenement,
   ImpactPublication,
@@ -850,6 +851,14 @@ export function extraireImpactValidations(result: unknown): ImpactValidations | 
     return null;
   }
   return (result as Partial<ResultatSolve>).impactValidations ?? null;
+}
+
+/** The two stages of a solve that had two (ADR 0067), or `null` for a single-stage one. */
+export function extraireFeasibilityFirst(result: unknown): FeasibilityFirstReport | null {
+  if (!result || typeof result !== 'object') {
+    return null;
+  }
+  return (result as Partial<ResultatSolve>).feasibilityFirst ?? null;
 }
 
 /**

@@ -267,10 +267,34 @@ final class SolverConfiguration {
 
     /** {@link #effectiveConstraintWeights()} turned into what Timefold applies at solve time. */
     ConstraintWeightOverrides<HardMediumSoftScore> constraintWeightOverrides(Map<String, Integer> scenario) {
+        return overridesOf(effectiveConstraintWeights(scenario));
+    }
+
+    /**
+     * {@code prepared} with one rule weighed at zero for this solve only — the
+     * first stage of {@link FeasibilityFirstSolve}. Built from the weights the
+     * problem was prepared with rather than read again: the two stages and the
+     * dosage recorded afterwards must describe the same run. Zero is what no
+     * screen, file or tool may store (a rule nobody wants is switched off, not
+     * dosed to nothing); here it lives for one stage of one job, and the
+     * rule's toggle is left as the edition set it.
+     */
+    static ConstraintWeightOverrides<HardMediumSoftScore> suspending(
+            ConstraintWeightOverrides<HardMediumSoftScore> prepared, String suspended) {
         Map<String, HardMediumSoftScore> overrides = new HashMap<>();
-        Map<String, Integer> poids = effectiveConstraintWeights(scenario);
+        if (prepared != null) {
+            for (String name : prepared.getKnownConstraintIds()) {
+                overrides.put(name, prepared.getConstraintWeight(name));
+            }
+        }
+        overrides.put(suspended, HardMediumSoftScore.ZERO);
+        return ConstraintWeightOverrides.of(overrides);
+    }
+
+    private static ConstraintWeightOverrides<HardMediumSoftScore> overridesOf(Map<String, Integer> weights) {
+        Map<String, HardMediumSoftScore> overrides = new HashMap<>();
         for (ConstraintCatalog.ConstraintDefinition definition : ConstraintCatalog.definitions()) {
-            int weight = poids.getOrDefault(definition.name(), 1);
+            int weight = weights.getOrDefault(definition.name(), 1);
             if (weight == 1) {
                 continue;
             }
@@ -361,7 +385,38 @@ final class SolverConfiguration {
         return solverConfig;
     }
 
-    private long secondsOf(SolveBudget budget) {
+    /**
+     * The first stage of {@link FeasibilityFirstSolve}: the problem's own
+     * search, stopped on feasibility or after {@code millis}, whichever comes
+     * first. Built per solve: the two-stage path only runs once a plan is
+     * published, and a cache keyed on its share of the budget would keep
+     * factories alive for nothing.
+     */
+    SolverFactory<PlanningEvenement> feasibilityStageFactory(
+            PlanningEvenement problem, SolveBudget budget, long millis) {
+        SolverConfig solverConfig = solverConfigFor(budget);
+        solverConfig.setTerminationConfig(
+                new TerminationConfig().withMillisecondsSpentLimit(millis).withBestScoreFeasible(true));
+        adaptToProblem(solverConfig, problem);
+        return SolverFactory.create(solverConfig);
+    }
+
+    /**
+     * The second stage: the problem's own search on what is left of the
+     * budget, in milliseconds, with the plateau {@code budget} carries — the one a single-stage
+     * solve would have had.
+     */
+    SolverFactory<PlanningEvenement> polishingStageFactory(PlanningEvenement problem, SolveBudget budget, long millis) {
+        SolverConfig solverConfig = solverConfigFor(budget);
+        TerminationConfig termination = solverConfig.getTerminationConfig();
+        termination.setSecondsSpentLimit(null);
+        termination.setMillisecondsSpentLimit(millis);
+        adaptToProblem(solverConfig, problem);
+        return SolverFactory.create(solverConfig);
+    }
+
+    /** The duration {@code budget} resolves to, the deployment's when it names none. */
+    long secondsOf(SolveBudget budget) {
         return budget == null || budget.secondsLimit() == null ? defaultSecondsLimit : budget.secondsLimit();
     }
 

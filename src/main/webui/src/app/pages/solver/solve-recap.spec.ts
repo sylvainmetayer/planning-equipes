@@ -17,6 +17,7 @@ import { SolveRecap } from './solve-recap';
 type RecapInternals = {
   reamorcageLabel: Signal<string>;
   passesVidesLabel: Signal<string>;
+  feasibilityFirstLabel: Signal<string>;
   impactLabel: Signal<string>;
   comparison: Signal<{ avant: string; apres: string } | null>;
   horsPlancherLabel: Signal<string>;
@@ -79,6 +80,45 @@ describe('SolveRecap', () => {
   function text(): string {
     return (fixture.nativeElement as HTMLElement).textContent!.replace(/\s+/g, ' ');
   }
+
+  it('says a solve ran in two stages, what the second gave back, and nothing otherwise', () => {
+    const recap = createRecap({
+      feasibilityFirst: {
+        feasibilityReached: true,
+        feasibilitySeconds: 1,
+        polishingSeconds: 299,
+        publishedSeatsChangedAfterFeasibility: 55,
+        publishedSeatsChanged: 20,
+        stoppedAfterFeasibility: false,
+      },
+    });
+    expect(recap.feasibilityFirstLabel()).toContain('Deux étapes');
+    expect(recap.feasibilityFirstLabel()).toContain('rendu 35 place(s)');
+
+    fixture.componentRef.setInput('feasibilityFirst', {
+      feasibilityReached: false,
+      feasibilitySeconds: 200,
+      polishingSeconds: 100,
+      publishedSeatsChangedAfterFeasibility: 900,
+      publishedSeatsChanged: 700,
+      stoppedAfterFeasibility: false,
+    });
+    expect(recap.feasibilityFirstLabel()).toContain("n'a pas été atteinte");
+
+    fixture.componentRef.setInput('feasibilityFirst', {
+      feasibilityReached: true,
+      feasibilitySeconds: 4,
+      polishingSeconds: 0,
+      publishedSeatsChangedAfterFeasibility: 55,
+      publishedSeatsChanged: 55,
+      stoppedAfterFeasibility: true,
+    });
+    expect(recap.feasibilityFirstLabel()).toContain('avant le polissage');
+    expect(recap.feasibilityFirstLabel()).not.toContain('rendu');
+
+    fixture.componentRef.setInput('feasibilityFirst', null);
+    expect(recap.feasibilityFirstLabel()).toBe('');
+  });
 
   it('recaps a re-seeded solve, with the seats it had to leave free', () => {
     const recap = createRecap({

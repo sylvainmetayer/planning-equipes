@@ -13,6 +13,9 @@
 # coupure méridienne, matrice de compétences irrégulière — et c'est là que la
 # convergence a historiquement cassé sans qu'aucun scénario fabriqué ne le
 # voie. Il pèse l'essentiel de la durée du job.
+# PlanningServiceScenarioPublishedRunCapTest résout la fixture canicule, la
+# publie, puis la résout de nouveau sous la règle dure des jours d'affilée
+# resserrée à six : la résolution en deux étapes de l'ADR 0067.
 #
 # Ils sont pourtant le seul filet contre une régression de convergence, et
 # rien ne les déclenchait : un réglage du solveur pouvait partir en production
@@ -130,7 +133,7 @@ jobs:
       - name: Run the large-scenario tests
         run: >-
           ./mvnw -B --no-transfer-progress test -Pscenario-tests
-          -Dtest='PlanningServiceScenarioCompletTest,PlanningServiceScenarioContinuTest,PlanningServiceScenarioFestivalRealisteTest,PlanningServiceScenarioFestivalHivernalTest,ScenarioLadderLargeTest'
+          -Dtest='PlanningServiceScenarioCompletTest,PlanningServiceScenarioContinuTest,PlanningServiceScenarioFestivalRealisteTest,PlanningServiceScenarioFestivalHivernalTest,PlanningServiceScenarioPublishedRunCapTest,ScenarioLadderLargeTest'
 
       - name: Upload test reports
         if: always()

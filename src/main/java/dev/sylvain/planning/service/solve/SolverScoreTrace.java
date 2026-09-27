@@ -132,6 +132,36 @@ public class SolverScoreTrace {
         solver.addEventListener(event -> recordEvent(jobId, event));
     }
 
+    /**
+     * Follows one more solver of the same job on the same curve: the second
+     * stage of a solve that runs in two ({@code FeasibilityFirstSolve}). Its
+     * clock starts at zero like any solver's, so its points are shifted by the
+     * time the job's curve had already run — one curve, not a restart that
+     * would erase the first stage from the screen.
+     */
+    public void followNext(String jobId, Solver<PlanningEvenement> solver) {
+        long offsetMs = nextStage(jobId);
+        solver.addEventListener(event -> recordEvent(jobId, event, offsetMs));
+    }
+
+    /**
+     * Opens the next stage of {@code jobId}'s curve and says how long it has
+     * run so far; 0 when another job holds the trace. The first stage's last
+     * best closes its part of the curve — it is where the second stage starts
+     * — but it was scored without the stability rule, so it is no longer the
+     * job's score and {@link #finish} will not flush it as the final point.
+     */
+    synchronized long nextStage(String jobId) {
+        if (!Objects.equals(this.jobId, jobId) || debut == null) {
+            return 0;
+        }
+        if (dernier != null && (points.isEmpty() || points.get(points.size() - 1) != dernier)) {
+            points.add(dernier);
+        }
+        dernier = null;
+        return Duration.between(debut, Instant.now()).toMillis();
+    }
+
     synchronized void start(String jobId, String editionId) {
         this.jobId = jobId;
         this.editionId = editionId;
@@ -151,13 +181,19 @@ public class SolverScoreTrace {
      * down or what breaks it.
      */
     synchronized void recordEvent(String jobId, BestSolutionChangedEvent<PlanningEvenement> event) {
+        recordEvent(jobId, event, 0);
+    }
+
+    /** The same, for a solver whose clock started {@code offsetMs} into the curve. */
+    synchronized void recordEvent(String jobId, BestSolutionChangedEvent<PlanningEvenement> event, long offsetMs) {
         if (!Objects.equals(this.jobId, jobId) || termine) {
             return;
         }
         if (!event.isNewBestSolutionInitialized() || !(event.getNewBestScore() instanceof HardMediumSoftScore score)) {
             return;
         }
-        Point point = new Point(event.getTimeMillisSpent(), score.hardScore(), score.mediumScore(), score.softScore());
+        Point point = new Point(
+                offsetMs + event.getTimeMillisSpent(), score.hardScore(), score.mediumScore(), score.softScore());
         dernier = point;
         if (points.isEmpty() || point.tempsMs() - dernierAjoutMs >= intervalleMs) {
             append(point);
