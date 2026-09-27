@@ -67,6 +67,12 @@
     @if (liens().length === 0) {
       <p class="locked-hint" i18n="@@parametres.mural.aucun">Aucun lien actif.</p>
     } @else {
+      <div>
+        <button matButton type="button" (click)="refresh()" [disabled]="refreshing()">
+          <mat-icon>refresh</mat-icon>
+          <ng-container i18n="@@parametres.mural.actualiser">Actualiser</ng-container>
+        </button>
+      </div>
       <div class="table-wrapper">
         <table mat-table [dataSource]="liens()">
           <ng-container matColumnDef="libelle">
