@@ -10,7 +10,7 @@
   <input matInput name="nom" required maxlength="80" placeholder="Jour normal" autocomplete="off"
          [ngModel]="nom()" (ngModelChange)="nom.set($event)" />
 </mat-form-field>
-<mat-form-field appearance="outline" class="span-2">
+<mat-form-field subscriptSizing="dynamic" appearance="outline" class="span-2">
   <mat-label i18n="@@journeesTypes.field.vacations">Vacations de la journée</mat-label>
   <input matInput name="vacations" required placeholder="09:00-12:00, 12:00-13:00 R, 13:00-14:00 R, 14:00-20:00"
          autocomplete="off" spellcheck="false"

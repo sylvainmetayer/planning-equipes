@@ -6,7 +6,7 @@
 @if (editingLocked()) {
   <p class="locked-hint span-2" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
 }
-<mat-form-field appearance="outline">
+<mat-form-field subscriptSizing="dynamic" appearance="outline">
   <mat-label i18n="@@creneaux.field.date">Date</mat-label>
   <input matInput name="date" type="date" required
          [ngModel]="draft().date" (ngModelChange)="patch({ date: $event })" />

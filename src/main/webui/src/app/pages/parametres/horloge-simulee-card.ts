@@ -68,7 +68,7 @@ import { StatusMessage } from '../../shared/status-message';
               (ngModelChange)="onDate($event)"
             />
           </mat-form-field>
-          <mat-form-field appearance="outline" class="horloge-simulee-champ">
+          <mat-form-field subscriptSizing="dynamic" appearance="outline" class="horloge-simulee-champ">
             <mat-label i18n="@@parametres.horloge.heure">Heure (facultative)</mat-label>
             <input
               matInput

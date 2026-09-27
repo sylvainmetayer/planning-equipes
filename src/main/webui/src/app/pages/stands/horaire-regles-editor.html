@@ -71,7 +71,7 @@
     }
     @if (!horaire.detail) {
       <div class="horaire-ligne">
-        <mat-form-field appearance="outline" class="horaire-ligne-champ">
+        <mat-form-field subscriptSizing="dynamic" appearance="outline" class="horaire-ligne-champ">
           <mat-label i18n="@@stands.horaires.ligne">Fenêtres de la journée</mat-label>
           <input matInput [name]="nom('fenetresLigne') + indexHoraire" placeholder="10:00-12:00@2, 14:00-"
                  autocomplete="off" spellcheck="false"

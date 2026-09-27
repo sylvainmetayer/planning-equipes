@@ -18,7 +18,7 @@
     <section class="consigne-form-bande" aria-labelledby="consigne-form-bande-titre">
       <h3 id="consigne-form-bande-titre" i18n="@@consignes.form.bande.title">Bande fermée</h3>
       <div class="form-grid consigne-form-grille">
-        <mat-form-field appearance="outline" class="span-2">
+        <mat-form-field subscriptSizing="dynamic" appearance="outline" class="span-2">
           <mat-label i18n="@@consignes.form.prereglage">Préréglage</mat-label>
           <mat-select name="prereglage" [ngModel]="prereglageId()" (ngModelChange)="choisirPrereglage($event)">
             <mat-option [value]="null" i18n="@@consignes.form.prereglage.aucun">Saisie libre</mat-option>
@@ -28,7 +28,7 @@
           </mat-select>
           <mat-hint i18n="@@consignes.form.prereglage.hint">Remplit la bande, le motif et les fenêtres</mat-hint>
         </mat-form-field>
-        <mat-form-field appearance="outline" class="span-2">
+        <mat-form-field subscriptSizing="dynamic" appearance="outline" class="span-2">
           <mat-label i18n="@@consignes.form.dates">Dates</mat-label>
           <mat-select name="dates" multiple [ngModel]="dates()" (ngModelChange)="onDates($event)">
             @for (option of datesOffertes(); track option.date) {
@@ -41,7 +41,7 @@
           <mat-label i18n="@@consignes.form.fermetureDebut">Fermé à partir de</mat-label>
           <input matInput name="fermetureDebut" type="time" required [ngModel]="fermetureDebut()" (ngModelChange)="fermetureDebut.set($event); apercu.set(null)" />
         </mat-form-field>
-        <mat-form-field appearance="outline">
+        <mat-form-field subscriptSizing="dynamic" appearance="outline">
           <mat-label i18n="@@consignes.form.fermetureFin">Jusqu'à</mat-label>
           <input matInput name="fermetureFin" type="time" [ngModel]="fermetureFin()" (ngModelChange)="fermetureFin.set($event); apercu.set(null)" />
           <mat-hint i18n="@@consignes.form.fermetureFin.hint">Vide : jusqu'à minuit</mat-hint>

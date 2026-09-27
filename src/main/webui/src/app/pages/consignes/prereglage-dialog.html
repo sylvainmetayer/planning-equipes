@@ -14,7 +14,7 @@
   <mat-label i18n="@@consignes.form.fermetureDebut">Fermé à partir de</mat-label>
   <input matInput name="fermetureDebut" type="time" required [ngModel]="fermetureDebut()" (ngModelChange)="fermetureDebut.set($event)" />
 </mat-form-field>
-<mat-form-field appearance="outline">
+<mat-form-field subscriptSizing="dynamic" appearance="outline">
   <mat-label i18n="@@consignes.form.fermetureFin">Jusqu'à</mat-label>
   <input matInput name="fermetureFin" type="time" [ngModel]="fermetureFin()" (ngModelChange)="fermetureFin.set($event)" />
   <mat-hint i18n="@@consignes.form.fermetureFin.hint">Vide : jusqu'à minuit</mat-hint>
@@ -23,7 +23,7 @@
   <mat-label i18n="@@consignes.form.motif">Motif</mat-label>
   <input matInput name="motif" required maxlength="200" [ngModel]="motif()" (ngModelChange)="motif.set($event)" />
 </mat-form-field>
-<mat-form-field appearance="outline" class="span-2">
+<mat-form-field subscriptSizing="dynamic" appearance="outline" class="span-2">
   <mat-label i18n="@@consignes.prereglage.field.fenetres">Fenêtres de compensation par défaut</mat-label>
   <input matInput name="fenetres" placeholder="18:00-22:00, 09:00-12:00" autocomplete="off" spellcheck="false"
          [ngModel]="ligne()" (ngModelChange)="ligne.set($event)" />

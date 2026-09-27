@@ -41,7 +41,7 @@
         <p class="journee-validation-note" i18n="@@journee.validation.malgreTout">
           Un prérequis non satisfait n'empêche pas d'accepter la journée : dites pourquoi dans le commentaire.
         </p>
-        <mat-form-field appearance="outline" class="journee-validation-commentaire-champ">
+        <mat-form-field subscriptSizing="dynamic" appearance="outline" class="journee-validation-commentaire-champ">
           <mat-label i18n="@@journee.validation.commentaire.label">Commentaire de relecture</mat-label>
           <input matInput [value]="commentaire()" (input)="onCommentaire($event)" maxlength="500" />
           <mat-hint i18n="@@journee.validation.commentaire.hint">Facultatif</mat-hint>
