@@ -4,6 +4,7 @@ import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
+import ai.timefold.solver.core.api.score.stream.DefaultConstraintJustification;
 import ai.timefold.solver.core.api.score.stream.Joiners;
 import ai.timefold.solver.core.api.score.stream.quad.QuadConstraintBuilder;
 import ai.timefold.solver.core.api.score.stream.quad.QuadConstraintCollector;
@@ -521,19 +522,36 @@ public final class LegalConstraints {
      * a rest straddling the Monday belongs to both weeks, and its real length
      * is only visible with the seats of both. Grouping per week and joining the
      * neighbouring week's occupations would keep the incrementality, at the
-     * price of a join this rule is not hot enough to warrant — an animateur
-     * holds a couple of dozen seats over a whole event, so the sweep is a few
-     * dozen operations; it is merely re-run when any of their seats moves
-     * instead of when one of that week's does. Revisit if a profile ever shows
-     * this rule high.</p>
+     * price of a join — an animateur holds a couple of dozen seats over a whole
+     * event, so the sweep is a few dozen operations; it is merely re-run when
+     * any of their seats moves instead of when one of that week's does.</p>
+     *
+     * <p>A profile of a sixteen-day edition held to six days in a row showed
+     * the rule high — an eighth of the solver's time — but not for the
+     * grouping: the sweep sorted and built {@code LocalDateTime}s, and ran
+     * twice per update, once for the filter and once for the penalty. It now
+     * runs once, on seconds since the epoch, with the same result: the solve
+     * follows the same trajectory move for move, faster. The grouping stays
+     * per animateur.</p>
      */
     private Constraint reposHebdomadaireMinimal(ConstraintFactory constraintFactory) {
         return ConstraintToggleSupport.actif(
                         constraintFactory.forEach(PosteAffectation.class), "reposHebdomadaireMinimal")
                 .filter(poste -> poste.getAnimateur() != null && horaireConnu(poste))
                 .groupBy(PosteAffectation::getAnimateur, ConstraintCollectors.toList())
-                .filter((animateur, postes) -> deficitReposHebdomadaireMinutes(postes) > 0)
-                .penalize(HardMediumSoftScore.ONE_HARD, (animateur, postes) -> deficitReposHebdomadaireMinutes(postes))
+                // The sweep runs once per update of the group, its result
+                // carried to the filter and the penalty: the profile had it
+                // high, computed twice.
+                .map(
+                        (animateur, postes) -> animateur,
+                        (animateur, postes) -> postes,
+                        (animateur, postes) -> deficitReposHebdomadaireMinutes(postes))
+                .filter((animateur, postes, deficit) -> deficit > 0)
+                .penalize(HardMediumSoftScore.ONE_HARD, (animateur, postes, deficit) -> deficit)
+                // The facts the diagnostic reads stay the person and their
+                // seats, as they were before the deficit joined the tuple.
+                .justifyWith((animateur, postes, deficit, score) ->
+                        DefaultConstraintJustification.of(score, animateur, postes))
                 .asConstraint("reposHebdomadaireMinimal");
     }
 
@@ -720,79 +738,97 @@ public final class LegalConstraints {
      * its 35 hours is history.</p>
      */
     static int deficitReposHebdomadaireMinutes(List<PosteAffectation> postes) {
-        List<PosteAffectation> tries = postes.stream()
-                .sorted(Comparator.comparing(LegalConstraints::debut))
-                .toList();
-        List<LocalDateTime[]> occupations = mergedOccupations(tries);
-        java.util.TreeSet<LocalDateTime> semaines = new java.util.TreeSet<>();
-        for (PosteAffectation poste : tries) {
+        int count = postes.size();
+        if (count == 0) {
+            return 0;
+        }
+        // Seconds since the epoch, packed with the seat's duration so that one
+        // primitive sort orders the seats by start: the sweep allocates no
+        // LocalDateTime, which is what it spent its time on. Seconds, not
+        // minutes, so that a rest is floored to the minute where the
+        // LocalDateTime version floored it — on the whole rest, not on each end.
+        long[] seats = new long[count];
+        long[] weeks = new long[count];
+        int weekCount = 0;
+        for (int i = 0; i < count; i++) {
+            PosteAffectation poste = postes.get(i);
+            long epochDay = poste.getCreneau().getDate().toEpochDay();
+            long start = epochDay * SECONDS_PER_DAY + poste.heureDebutEffectif().toSecondOfDay();
+            seats[i] = (start << DURATION_BITS) | (poste.getDureeEffectiveMinutes() * 60L);
             if (PastSeats.reproachable(poste)) {
-                semaines.add(debutSemaine(poste.getCreneau().getDate()));
+                // The Monday of its ISO week: 1970-01-01, epoch day 0, was a Thursday.
+                weeks[weekCount++] = (epochDay - Math.floorMod(epochDay + 3, 7)) * SECONDS_PER_DAY;
             }
         }
+        Arrays.sort(seats);
+        long[] starts = new long[count];
+        long[] ends = new long[count];
+        int occupations = 0;
+        for (long seat : seats) {
+            long start = seat >> DURATION_BITS;
+            long end = start + (seat & DURATION_MASK);
+            if (occupations > 0 && start <= ends[occupations - 1]) {
+                ends[occupations - 1] = Math.max(ends[occupations - 1], end);
+            } else {
+                starts[occupations] = start;
+                ends[occupations] = end;
+                occupations++;
+            }
+        }
+        Arrays.sort(weeks, 0, weekCount);
         int deficit = 0;
-        for (LocalDateTime debutSemaine : semaines) {
-            long meilleur = longestCreditedRestMinutes(occupations, debutSemaine);
-            if (meilleur < PlafondsLegauxMajeurs.REPOS_HEBDOMADAIRE_MIN_MINUTES) {
-                deficit += (int) (PlafondsLegauxMajeurs.REPOS_HEBDOMADAIRE_MIN_MINUTES - meilleur);
+        for (int w = 0; w < weekCount; w++) {
+            if (w > 0 && weeks[w] == weeks[w - 1]) {
+                continue;
+            }
+            long best = longestCreditedRestMinutes(starts, ends, occupations, weeks[w]);
+            if (best < PlafondsLegauxMajeurs.REPOS_HEBDOMADAIRE_MIN_MINUTES) {
+                deficit += (int) (PlafondsLegauxMajeurs.REPOS_HEBDOMADAIRE_MIN_MINUTES - best);
             }
         }
         return deficit;
     }
 
-    /** The seats' occupations merged: [start, end] pairs, non-overlapping, in order ({@code tries} sorted by start). */
-    private static List<LocalDateTime[]> mergedOccupations(List<PosteAffectation> tries) {
-        List<LocalDateTime[]> occupations = new java.util.ArrayList<>();
-        for (PosteAffectation poste : tries) {
-            LocalDateTime debut = debut(poste);
-            LocalDateTime fin = fin(poste);
-            if (!occupations.isEmpty() && !debut.isAfter(occupations.get(occupations.size() - 1)[1])) {
-                LocalDateTime[] derniere = occupations.get(occupations.size() - 1);
-                if (fin.isAfter(derniere[1])) {
-                    derniere[1] = fin;
-                }
-            } else {
-                occupations.add(new LocalDateTime[] {debut, fin});
-            }
+    private static final long SECONDS_PER_DAY = 24L * 60 * 60;
+
+    /** Bits of a packed seat holding its duration in seconds; a seat lasts at most a day, under 2^17. */
+    private static final int DURATION_BITS = 17;
+
+    private static final long DURATION_MASK = (1L << DURATION_BITS) - 1;
+
+    /** Marks a rest with no known end on that side, before the first seat or after the last. */
+    private static final long UNBOUNDED = Long.MIN_VALUE;
+
+    /**
+     * The best rest credited to the week starting at {@code weekStart}
+     * (seconds since the epoch), in minutes: before the first occupation,
+     * between two of them, or after the last.
+     */
+    private static long longestCreditedRestMinutes(long[] starts, long[] ends, int occupations, long weekStart) {
+        long weekEnd = weekStart + 7 * SECONDS_PER_DAY;
+        long best = creditReposMinutes(UNBOUNDED, starts[0], weekStart, weekEnd);
+        for (int i = 1; i < occupations; i++) {
+            best = Math.max(best, creditReposMinutes(ends[i - 1], starts[i], weekStart, weekEnd));
         }
-        return occupations;
+        return Math.max(best, creditReposMinutes(ends[occupations - 1], UNBOUNDED, weekStart, weekEnd));
     }
 
     /**
-     * The best rest credited to the week starting at {@code debutSemaine}:
-     * before the first occupation, between two of them, or after the last.
+     * Minutes of the rest period {@code [restStart, restEnd]} credited to the
+     * week {@code [weekStart, weekEnd)}, all four in seconds since the epoch:
+     * its part inside the week plus the adjoining daily rest, capped at its
+     * real length, each floored to the minute. {@link #UNBOUNDED} means the
+     * rest has no known end on that side.
      */
-    private static long longestCreditedRestMinutes(List<LocalDateTime[]> occupations, LocalDateTime debutSemaine) {
-        LocalDateTime finSemaine = debutSemaine.plusDays(7);
-        long meilleur = creditReposMinutes(null, occupations.get(0)[0], debutSemaine, finSemaine);
-        for (int i = 1; i < occupations.size(); i++) {
-            meilleur = Math.max(
-                    meilleur,
-                    creditReposMinutes(occupations.get(i - 1)[1], occupations.get(i)[0], debutSemaine, finSemaine));
-        }
-        return Math.max(
-                meilleur,
-                creditReposMinutes(occupations.get(occupations.size() - 1)[1], null, debutSemaine, finSemaine));
-    }
-
-    /**
-     * Minutes of the rest period {@code [debutRepos, finRepos]} credited to the
-     * week {@code [debutSemaine, finSemaine)}: its part inside the week plus the
-     * adjoining daily rest, capped at its real length. A {@code null} bound
-     * means the rest has no known end on that side.
-     */
-    private static long creditReposMinutes(
-            LocalDateTime debutRepos, LocalDateTime finRepos, LocalDateTime debutSemaine, LocalDateTime finSemaine) {
-        LocalDateTime debutDansSemaine =
-                debutRepos == null || debutRepos.isBefore(debutSemaine) ? debutSemaine : debutRepos;
-        LocalDateTime finDansSemaine = finRepos == null || finRepos.isAfter(finSemaine) ? finSemaine : finRepos;
-        if (!finDansSemaine.isAfter(debutDansSemaine)) {
+    private static long creditReposMinutes(long restStart, long restEnd, long weekStart, long weekEnd) {
+        long startInWeek = restStart == UNBOUNDED || restStart < weekStart ? weekStart : restStart;
+        long endInWeek = restEnd == UNBOUNDED || restEnd > weekEnd ? weekEnd : restEnd;
+        if (endInWeek <= startInWeek) {
             return 0;
         }
-        long dansSemaine = Duration.between(debutDansSemaine, finDansSemaine).toMinutes();
-        long credit = dansSemaine + REPOS_QUOTIDIEN_ADJOINT_MINUTES;
-        if (debutRepos != null && finRepos != null) {
-            credit = Math.min(credit, Duration.between(debutRepos, finRepos).toMinutes());
+        long credit = (endInWeek - startInWeek) / 60 + REPOS_QUOTIDIEN_ADJOINT_MINUTES;
+        if (restStart != UNBOUNDED && restEnd != UNBOUNDED) {
+            credit = Math.min(credit, (restEnd - restStart) / 60);
         }
         return credit;
     }

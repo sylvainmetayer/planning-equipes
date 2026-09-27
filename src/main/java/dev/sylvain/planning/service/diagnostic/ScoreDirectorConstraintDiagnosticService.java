@@ -241,10 +241,13 @@ public final class ScoreDirectorConstraintDiagnosticService implements Constrain
      * justifications. Returning the raw set would report a larger count for the
      * same planning.</p>
      *
-     * <p>No constraint in this project justifies itself with anything but the
-     * tuple it matched on, so today the two coincide — but "coincide today" is
-     * exactly the kind of equivalence that breaks quietly the first time a
-     * constraint narrows its own justification.</p>
+     * <p>One constraint narrows its own justification:
+     * {@code reposHebdomadaireMinimal} carries its deficit in the tuple and
+     * justifies itself with the animateur and their seats alone. It groups by
+     * animateur, so each of its justifications is still distinct and the two
+     * coincide — but "coincide today" is exactly the kind of equivalence that
+     * breaks quietly the next time a constraint narrows its own
+     * justification.</p>
      *
      * <p>A justification's identity is its facts and nothing else — the impact
      * it carried is not part of it. So two matches over the same facts fold
