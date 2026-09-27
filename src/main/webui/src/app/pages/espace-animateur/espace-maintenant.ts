@@ -13,7 +13,7 @@
 // development: see `maintenantEffectif`.
 
 import { toDateKey } from '../../core/date-utils';
-import { PauseAnimateurView, PosteAnimateurView } from '../../core/models';
+import { EspaceAnimateurView, PauseAnimateurView, PosteAnimateurView } from '../../core/models';
 
 /** One day of the animateur's planning, as the page groups it. */
 export interface JourPlanning {
@@ -92,6 +92,20 @@ export function maintenantEffectif(
     heure ? Number(heure[1]) : horloge.getHours(),
     heure ? Number(heure[2]) : horloge.getMinutes(),
     heure ? Number(heure[3] ?? 0) : horloge.getSeconds(),
+  );
+}
+
+/**
+ * Today as the espace reads it, for a page that only needs the date: the
+ * phone's, unless the server's clock was frozen — the day the planning marks,
+ * and the one a window's opening is judged on.
+ */
+export function espaceToday(
+  view: Pick<EspaceAnimateurView, 'dateDuJourFigee' | 'heureDuJourFigee'> | null,
+  horloge: Date = new Date(),
+): string {
+  return aujourdhuiLocal(
+    maintenantEffectif(horloge, view?.dateDuJourFigee ?? null, view?.heureDuJourFigee ?? null),
   );
 }
 

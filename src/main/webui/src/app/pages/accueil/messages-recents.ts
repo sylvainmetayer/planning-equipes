@@ -10,6 +10,7 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { AnalysesApi } from '../../core/api/analyses-api';
+import { DateMockService } from '../../core/date-mock.service';
 import { intlLocale } from '../../core/locale';
 import { AlerteView } from '../../core/models';
 import {
@@ -50,6 +51,7 @@ export class MessagesRecents {
 
   protected readonly notifications = inject(NotificationService);
   private readonly analysesApi = inject(AnalysesApi);
+  private readonly dates = inject(DateMockService);
 
   /**
    * Folded by default. The reader's click decides until the page asks again:
@@ -125,22 +127,13 @@ export class MessagesRecents {
     return journees;
   });
 
-  /** "Aujourd'hui" / "Hier" beat a date the reader has to decode. */
+  /**
+   * "Aujourd'hui" / "Hier" beat a date the reader has to decode — judged on
+   * the server's today, the frozen recette date included, like every other
+   * screen that says "today".
+   */
   private libelleJour(date: Date): string {
-    const jour = new Date(date).setHours(0, 0, 0, 0);
-    const aujourdhui = new Date().setHours(0, 0, 0, 0);
-    const unJour = 24 * 60 * 60 * 1000;
-    if (jour === aujourdhui) {
-      return $localize`:@@notifications.today:Aujourd'hui`;
-    }
-    if (jour === aujourdhui - unJour) {
-      return $localize`:@@notifications.yesterday:Hier`;
-    }
-    return date.toLocaleDateString(intlLocale(), {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-    });
+    return dayLabel(date, serverToday(this.dates.dateDuJour()));
   }
 
   protected icon(severity: AppNotification['severity']): string {
@@ -154,4 +147,30 @@ export class MessagesRecents {
       minute: '2-digit',
     });
   }
+}
+
+/** The server's today at local midnight: the frozen date when there is one, the clock otherwise. */
+export function serverToday(dateDuJour: string): Date {
+  const frozen = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateDuJour);
+  return frozen
+    ? new Date(Number(frozen[1]), Number(frozen[2]) - 1, Number(frozen[3]))
+    : new Date();
+}
+
+/** "Aujourd'hui", "Hier", or the long date of `date`, seen from `today`. */
+export function dayLabel(date: Date, today: Date): string {
+  const day = new Date(date).setHours(0, 0, 0, 0);
+  const reference = new Date(today).setHours(0, 0, 0, 0);
+  const oneDay = 24 * 60 * 60 * 1000;
+  if (day === reference) {
+    return $localize`:@@notifications.today:Aujourd'hui`;
+  }
+  if (day === reference - oneDay) {
+    return $localize`:@@notifications.yesterday:Hier`;
+  }
+  return date.toLocaleDateString(intlLocale(), {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  });
 }

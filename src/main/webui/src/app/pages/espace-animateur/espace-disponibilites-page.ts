@@ -16,7 +16,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
-import { toDateKey } from '../../core/date-utils';
 import { errorMessage } from '../../core/error-message';
 import { DeclarationView } from '../../core/models';
 import {
@@ -30,6 +29,7 @@ import {
 } from './declaration-brouillon';
 import { StatusMessage } from '../../shared/status-message';
 import { EspaceContact } from './espace-contact';
+import { espaceToday } from './espace-maintenant';
 
 /**
  * « Mes disponibilités » (issue #291): the animateur declares the days they
@@ -66,6 +66,9 @@ import { EspaceContact } from './espace-contact';
 export class EspaceDisponibilitesPage implements OnInit {
   protected readonly espace = inject(EspaceAnimateurService);
 
+  /** Today as the espace reads it: the server's frozen date, when there is one. */
+  private readonly aujourdhui = computed(() => espaceToday(this.espace.view()));
+
   protected readonly chargement = signal(true);
   protected readonly envoiEnCours = signal(false);
   protected readonly erreur = signal<string | null>(null);
@@ -91,7 +94,7 @@ export class EspaceDisponibilitesPage implements OnInit {
    * opening in two weeks is already over.
    */
   protected readonly pasEncoreOuverte = computed(() =>
-    ouvertureAVenir(this.view(), toDateKey(new Date())),
+    ouvertureAVenir(this.view(), this.aujourdhui()),
   );
 
   ngOnInit(): void {

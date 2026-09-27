@@ -16,7 +16,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
-import { toDateKey } from '../../core/date-utils';
 import { errorMessage } from '../../core/error-message';
 import {
   CARPOOL_MAX,
@@ -29,6 +28,7 @@ import {
 } from './covoiturage-brouillon';
 import { StatusMessage } from '../../shared/status-message';
 import { EspaceContact } from './espace-contact';
+import { espaceToday } from './espace-maintenant';
 
 /**
  * « Covoiturage »: the animateur names up to three teammates they come with —
@@ -65,6 +65,9 @@ import { EspaceContact } from './espace-contact';
 export class EspaceCovoituragePage implements OnInit {
   protected readonly espace = inject(EspaceAnimateurService);
 
+  /** Today as the espace reads it: the server's frozen date, when there is one. */
+  private readonly aujourdhui = computed(() => espaceToday(this.espace.view()));
+
   protected readonly loading = signal(true);
   protected readonly sending = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -80,7 +83,7 @@ export class EspaceCovoituragePage implements OnInit {
   protected readonly view = computed(() => this.espace.carpool());
   protected readonly locked = computed(() => carpoolLocked(this.view()));
   protected readonly modified = computed(() => carpoolModified(this.view(), this.draft()));
-  protected readonly notOpenYet = computed(() => openingAhead(this.view(), toDateKey(new Date())));
+  protected readonly notOpenYet = computed(() => openingAhead(this.view(), this.aujourdhui()));
 
   private readonly names = computed(
     () =>

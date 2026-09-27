@@ -7,7 +7,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { NotificationService } from '../../core/notification.service';
-import { MessagesRecents } from './messages-recents';
+import { DateMockService } from '../../core/date-mock.service';
+import { MessagesRecents, dayLabel, serverToday } from './messages-recents';
 
 describe('MessagesRecents', () => {
   const analysesApi = { alerts: vi.fn() };
@@ -32,6 +33,7 @@ describe('MessagesRecents', () => {
       providers: [
         provideZonelessChangeDetection(),
         { provide: AnalysesApi, useValue: analysesApi },
+        { provide: DateMockService, useValue: { dateDuJour: () => '' } },
       ],
     });
     fixture = TestBed.createComponent(MessagesRecents);
@@ -102,5 +104,16 @@ describe('MessagesRecents', () => {
     await fixture.whenStable();
 
     expect(text()).toContain('Alertes des envois de nuit');
+  });
+
+  it("says today and yesterday from the server's day, the frozen recette date included", () => {
+    const frozenToday = serverToday('2026-07-10');
+    expect(dayLabel(new Date(2026, 6, 10, 18, 5), frozenToday)).toBe("Aujourd'hui");
+    expect(dayLabel(new Date(2026, 6, 9, 9, 0), frozenToday)).toBe('Hier');
+    expect(dayLabel(new Date(2026, 6, 8, 9, 0), frozenToday)).not.toMatch(/Aujourd'hui|Hier/);
+  });
+
+  it('falls back to the clock when no date is frozen', () => {
+    expect(dayLabel(new Date(), serverToday(''))).toBe("Aujourd'hui");
   });
 });

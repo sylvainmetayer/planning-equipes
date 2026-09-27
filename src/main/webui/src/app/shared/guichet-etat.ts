@@ -12,6 +12,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { DisponibilitesApi } from '../core/api/disponibilites-api';
+import { DateMockService } from '../core/date-mock.service';
 import { EchangesApi } from '../core/api/echanges-api';
 import { errorPrefix } from '../core/error-message';
 import { toDateKey } from '../core/date-utils';
@@ -124,8 +125,30 @@ export class GuichetEtat implements OnInit {
   private readonly echangesApi = inject(EchangesApi);
   private readonly disponibilitesApi = inject(DisponibilitesApi);
   private readonly notifications = inject(NotificationService);
+  private readonly dates = inject(DateMockService);
 
-  protected readonly etat = signal<EtatGuichet | null>(null);
+  /**
+   * What the server answered. The foire's « open today » comes from the
+   * server; the collection's is judged here, on read, so that a clock read
+   * after the configuration — a direct load — or a simulated date changed
+   * meanwhile still counts.
+   */
+  private readonly loaded = signal<{ state: EtatGuichet; judgeToday: boolean } | null>(null);
+  protected readonly etat = computed<EtatGuichet | null>(() => {
+    const loaded = this.loaded();
+    if (!loaded) {
+      return null;
+    }
+    const { state, judgeToday } = loaded;
+    if (!judgeToday) {
+      return state;
+    }
+    const today = this.dates.dateDuJour() || toDateKey(new Date());
+    return {
+      ...state,
+      ouvertAujourdhui: state.ouvert && withinDates(state.debut, state.fin, today),
+    };
+  });
   protected readonly saving = signal(false);
   protected readonly phrase = computed(() => {
     const etat = this.etat();
@@ -140,26 +163,30 @@ export class GuichetEtat implements OnInit {
     try {
       if (this.guichet() === 'foire') {
         const configuration = await this.echangesApi.configuration();
-        this.etat.set({
-          ouvert: configuration.foireOuverte,
-          debut: configuration.debut,
-          fin: configuration.fin,
-          ouvertAujourdhui: configuration.ouverteAujourdhui,
+        this.loaded.set({
+          state: {
+            ouvert: configuration.foireOuverte,
+            debut: configuration.debut,
+            fin: configuration.fin,
+            ouvertAujourdhui: configuration.ouverteAujourdhui,
+          },
+          judgeToday: false,
         });
       } else {
         const configuration = await this.disponibilitesApi.configuration();
-        this.etat.set({
-          ouvert: configuration.collecteOuverte,
-          debut: configuration.debut,
-          fin: configuration.fin,
-          ouvertAujourdhui:
-            configuration.collecteOuverte &&
-            withinDates(configuration.debut, configuration.fin, toDateKey(new Date())),
+        this.loaded.set({
+          state: {
+            ouvert: configuration.collecteOuverte,
+            debut: configuration.debut,
+            fin: configuration.fin,
+            ouvertAujourdhui: false,
+          },
+          judgeToday: true,
         });
       }
     } catch {
       // The line is a reminder: without it the page still works.
-      this.etat.set(null);
+      this.loaded.set(null);
     }
   }
 
@@ -194,7 +221,7 @@ export class GuichetEtat implements OnInit {
         });
       }
       const ferme = { ...etat, ouvert: false, ouvertAujourdhui: false };
-      this.etat.set(ferme);
+      this.loaded.set({ state: ferme, judgeToday: false });
       this.changed.emit(ferme);
     } catch (error) {
       this.notifications.notify({ title: errorPrefix(error), variant: 'error' });

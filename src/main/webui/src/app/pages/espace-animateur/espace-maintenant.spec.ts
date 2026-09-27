@@ -7,6 +7,7 @@ import { PauseAnimateurView, PosteAnimateurView } from '../../core/models';
 import {
   aujourdhuiLocal,
   duringTheEvent,
+  espaceToday,
   isPasse,
   JourPlanning,
   maintenantEffectif,
@@ -318,5 +319,23 @@ describe('maintenantEffectif', () => {
   it('ignores a value that is not a date rather than folding every day away', () => {
     const horloge = new Date(2026, 8, 14, 15, 42);
     expect(maintenantEffectif(horloge, 'le 11 juillet')).toBe(horloge);
+  });
+});
+
+describe('espaceToday', () => {
+  const horloge = new Date(2026, 8, 14, 23, 30);
+
+  it("reads the server's frozen date over the phone's", () => {
+    expect(espaceToday({ dateDuJourFigee: '2026-07-11', heureDuJourFigee: null }, horloge)).toBe(
+      '2026-07-11',
+    );
+  });
+
+  it("falls back on the phone's own date, in its own timezone", () => {
+    expect(espaceToday({ dateDuJourFigee: null, heureDuJourFigee: null }, horloge)).toBe(
+      '2026-09-14',
+    );
+    // The espace view not read yet: the phone's date still answers.
+    expect(espaceToday(null, horloge)).toBe('2026-09-14');
   });
 });

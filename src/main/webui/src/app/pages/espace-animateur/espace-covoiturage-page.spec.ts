@@ -4,7 +4,7 @@
 
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
 import { CarpoolEspaceView } from '../../core/models';
 import { EspaceCovoituragePage } from './espace-covoiturage-page';
@@ -32,6 +32,7 @@ describe('EspaceCovoituragePage', () => {
 
   async function render(
     initial: CarpoolEspaceView,
+    dateDuJourFigee: string | null = null,
   ): Promise<ComponentFixture<EspaceCovoituragePage>> {
     carpool = signal<CarpoolEspaceView | null>(null);
     TestBed.resetTestingModule();
@@ -42,7 +43,9 @@ describe('EspaceCovoituragePage', () => {
           provide: EspaceAnimateurService,
           useValue: {
             carpool,
-            view: signal(null),
+            view: signal(
+              dateDuJourFigee === null ? null : { dateDuJourFigee, heureDuJourFigee: null },
+            ),
             loadCarpool: vi.fn(async () => carpool.set(initial)),
             requestCarpool,
           },
@@ -78,6 +81,22 @@ describe('EspaceCovoituragePage', () => {
     requestCarpool = vi.fn(async () =>
       carpool.set(view({ teammateIds: ['A2'], status: 'EN_ATTENTE' })),
     );
+  });
+
+  afterEach(() => vi.useRealTimers());
+
+  // The server's clock frozen before the window opens: « pas encore ouvertes »,
+  // though the phone's date is already past its start.
+  it("judges the window's opening on the server's frozen date, not the phone's", async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 7, 15, 10, 0));
+    const closed = view({ collectionOpen: false, collectionStart: '2026-07-01' });
+
+    const frozen = await render(closed, '2026-06-20');
+    expect(text(frozen)).toContain('pas encore ouvertes');
+
+    const realClock = await render(closed);
+    expect(text(realClock)).not.toContain('pas encore ouvertes');
   });
 
   it('picks a teammate by name and sends the request on its own', async () => {
