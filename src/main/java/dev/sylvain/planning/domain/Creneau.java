@@ -301,10 +301,22 @@ public class Creneau {
         if (date == null) {
             return "?";
         }
-        int annee = date.get(IsoFields.WEEK_BASED_YEAR);
-        int semaine = date.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
-        return String.format(Locale.ROOT, "%d-W%02d", annee, semaine);
+        return SEMAINES_ISO.computeIfAbsent(
+                date,
+                jour -> String.format(
+                        Locale.ROOT,
+                        "%d-W%02d",
+                        jour.get(IsoFields.WEEK_BASED_YEAR),
+                        jour.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)));
     }
+
+    /**
+     * The label per date, formatted once: the weekly constraints group by it on
+     * every move the solver evaluates, and {@code String.format} showed in the
+     * profile. An event spans a few dozen dates, so the map stays that small.
+     */
+    private static final java.util.concurrent.ConcurrentMap<LocalDate, String> SEMAINES_ISO =
+            new java.util.concurrent.ConcurrentHashMap<>();
 
     /**
      * The Monday of {@link #semaineIso()}, {@code null} without a date. The same

@@ -133,7 +133,17 @@ public class Animateur {
      * needs at least one competence among the stand's typologies.
      */
     public boolean hasCompetenceFor(Stand stand) {
-        return ninja || stand.getTypologiesProposees().stream().anyMatch(competences::containsKey);
+        if (ninja) {
+            return true;
+        }
+        // A loop rather than a stream: the move filter asks it of every
+        // candidate the solver draws, and the stream showed in the profile.
+        for (String typologie : stand.getTypologiesProposees()) {
+            if (competences.containsKey(typologie)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean isReferentFor(Stand stand) {
