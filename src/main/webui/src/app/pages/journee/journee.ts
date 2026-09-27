@@ -2,6 +2,8 @@
 // five renderings a query param names, how a day is keyed in the URL, and how
 // two days are laid side by side in the comparison mode.
 
+import { parseDateKey, toDateKey } from '../../core/date-utils';
+import { intlLocale } from '../../core/locale';
 import { PosteAffectation, RapportPauses } from '../../core/models';
 import { continuedSeatIds } from '../../core/seat-places';
 import { correspondAuFiltre } from '../../core/text-filter';
@@ -112,6 +114,39 @@ export function jourDemande(
     jours.find((jour) => jour.key === key) ??
     (numero ? (jours.find((jour) => jour.jour === Number(numero[1])) ?? null) : null)
   );
+}
+
+/**
+ * The sentence saying a requested day is not one of the plan's, so the page
+ * shows the first one instead: `null` when the key names a day, when nothing
+ * was asked, and while the plan is not known yet.
+ */
+export function jourInconnu(jours: readonly JourEvenement[], key: string | null): string | null {
+  if (key === null || jours.length === 0 || jourDemande(jours, key) !== null) {
+    return null;
+  }
+  const demande = requestedDayLabel(key);
+  return $localize`:@@journee.jourInconnu:Le ${demande}:jour: n'est pas un jour du planning : voici le premier jour.`;
+}
+
+/**
+ * A requested key as the reader wrote it: a real date with its year — a
+ * bookmark from another edition names the same day and month as a day of
+ * this one —, anything else, an impossible date included, as it was typed.
+ */
+function requestedDayLabel(key: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) {
+    return key;
+  }
+  const date = parseDateKey(key);
+  if (toDateKey(date) !== key) {
+    return key;
+  }
+  return date.toLocaleDateString(intlLocale(), {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
 }
 
 /* ------------------------------ Comparing two days ------------------------------ */

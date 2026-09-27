@@ -447,6 +447,23 @@ describe('JourneePage', () => {
     expect(TestBed.inject(Location).path()).toContain('date=2026-08-02');
   });
 
+  // #728: a day the edition does not hold opened the first one in silence.
+  it('says the day asked for is not one of the edition, then drops it once another is chosen', async () => {
+    const page = await monter({ jour: '2026-10-05' });
+
+    expect(page.jourCourant()?.jour).toBe(1);
+    // An <output>: the implicit live region of role="status".
+    const notice = racine().querySelector('output.journee-jour-inconnu');
+    expect(notice?.textContent?.replace(/\s+/g, ' ').trim()).toContain(
+      "Le 05/10/2026 n'est pas un jour du planning : voici le premier jour.",
+    );
+
+    page.selectJour('2026-08-02');
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(racine().querySelector('.journee-jour-inconnu')).toBeNull();
+  });
+
   it('puts the plan at the top: one title, the day selector, the filters as autocompletes', async () => {
     await monter();
 
