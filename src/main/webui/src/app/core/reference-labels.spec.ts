@@ -3,6 +3,7 @@ import { Animateur, Emplacement, Stand } from './models';
 import {
   animateurName,
   animateurNames,
+  creneauName,
   emplacementNames,
   labelOf,
   labelsOf,
@@ -10,6 +11,12 @@ import {
 } from './reference-labels';
 
 describe('reference labels', () => {
+  it('names a timeslot by its day and its hours, never with the seconds the API sends', () => {
+    expect(creneauName({ date: '2026-07-14', heureDebut: '18:00:00', heureFin: '22:00:00' })).toBe(
+      '2026-07-14 18:00–22:00',
+    );
+  });
+
   it('names a stand by its nom and falls back to the id when unknown', () => {
     const noms = standNames([{ id: 'S1', nom: 'Bourse aux jeux' } as Stand]);
     expect(labelOf(noms, 'S1')).toBe('Bourse aux jeux');

@@ -300,11 +300,12 @@ export class EspaceEchangesPage {
         motif: this.motif() || null,
         creneauCibleId: posteCible?.creneauId ?? null,
         standCibleId: posteCible?.standId ?? null,
-        creneauLabel: `${poste.date ?? ''} ${poste.heureDebut}–${poste.heureFin}`.trim(),
+        creneauLabel:
+          `${poste.date ?? ''} ${this.heure(poste.heureDebut)}–${this.heure(poste.heureFin)}`.trim(),
         standNom: poste.standNom,
         cibleNom: target?.nomComplet ?? this.cibleId(),
         creneauCibleLabel: posteCible
-          ? `${posteCible.date ?? ''} ${posteCible.heureDebut}–${posteCible.heureFin} · ${posteCible.standNom}`.trim()
+          ? `${posteCible.date ?? ''} ${this.heure(posteCible.heureDebut)}–${this.heure(posteCible.heureFin)} · ${posteCible.standNom}`.trim()
           : null,
       }),
     );

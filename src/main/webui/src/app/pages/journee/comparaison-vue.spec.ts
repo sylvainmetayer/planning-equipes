@@ -10,7 +10,8 @@ import { ValidationsStore } from '../../core/validations.store';
 import { ComparaisonView } from './comparaison-vue';
 import { JourEvenement } from './journee';
 
-const SAMEDI = { id: 1, jour: 1, date: '2026-07-12', heureDebut: '10:00', heureFin: '12:00' };
+// Hours as the API sends them, seconds included.
+const SAMEDI = { id: 1, jour: 1, date: '2026-07-12', heureDebut: '10:00:00', heureFin: '12:00:00' };
 const SAMEDI_SUIVANT = {
   id: 2,
   jour: 8,
@@ -74,6 +75,9 @@ describe('ComparaisonView', () => {
     // The cells render through their templates: the stand closed on B says so.
     expect(pageText()).toContain('fermé ce jour-là');
     expect(pageText()).toContain('1 / 1 sièges pourvus');
+    // The hours of a line, to the minute.
+    expect(pageText()).toContain('10:00–12:00');
+    expect(pageText()).not.toContain('10:00:00');
   });
 
   it('sums up the lines the filters keep, and says the banner is filtered', async () => {

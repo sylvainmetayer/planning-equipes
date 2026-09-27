@@ -29,6 +29,7 @@ import {
   syntheseJournee,
 } from './journee';
 import { RouterLink } from '@angular/router';
+import { HhmmPipe } from '../../shared/hhmm-pipe';
 
 /**
  * Two days of the persisted plan side by side (the Journée page's comparison
@@ -47,6 +48,7 @@ import { RouterLink } from '@angular/router';
 @Component({
   selector: 'app-comparaison-vue',
   imports: [
+    HhmmPipe,
     FormsModule,
     MatButtonToggleModule,
     MatCardModule,

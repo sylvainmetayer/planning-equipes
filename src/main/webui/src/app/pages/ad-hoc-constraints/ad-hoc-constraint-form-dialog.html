@@ -44,7 +44,7 @@
     <mat-option value="" i18n="@@adHoc.field.anyCreneau">Tout créneau</mat-option>
     @for (creneau of store.creneaux(); track creneau.id) {
       <mat-option [value]="creneau.id">
-        J{{ creneau.jour }} · {{ creneau.date }} {{ creneau.heureDebut }}–{{ creneau.heureFin }}
+        J{{ creneau.jour }} · {{ creneau.date }} {{ creneau.heureDebut | hhmm }}–{{ creneau.heureFin | hhmm }}
       </mat-option>
     }
   </mat-select>

@@ -128,6 +128,7 @@ import {
   segmentSpans,
   windowSpans,
 } from './rendu-grille';
+import { formatHeure } from '../../core/time-of-day';
 
 /** What a cell whose dates disagree shows: the template view never flattens one. */
 const ECART = '≠';
@@ -760,7 +761,7 @@ export class OuverturesPage implements OnInit {
       phrase: this.explications().get(dayCell) ?? null,
       postes: jour?.postes ?? 0,
       horsGrille: (journee?.lignes[0]?.horsGrille ?? []).map(
-        (fenetre) => `${fenetre.heureDebut}–${fenetre.heureFin}`,
+        (fenetre) => `${formatHeure(fenetre.heureDebut)}–${formatHeure(fenetre.heureFin)}`,
       ),
       partielle: this.partielles().has(clef)
         ? this.infobullePartielle(active.standId, active.colonneId)

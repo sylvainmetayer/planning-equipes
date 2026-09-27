@@ -72,7 +72,7 @@
             <app-pastille-ferie [libelle]="jour.ferie" />
           }
           @for (vacation of jour.vacations; track $index) {
-            <span class="vacation-chip">{{ vacation.heureDebut }}–{{ vacation.heureFin }}</span>
+            <span class="vacation-chip">{{ vacation.heureDebut | hhmm }}–{{ vacation.heureFin | hhmm }}</span>
           }
         </p>
       }

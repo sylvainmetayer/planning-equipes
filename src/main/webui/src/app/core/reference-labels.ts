@@ -9,6 +9,7 @@
 // (`typologieLabels` / `typologieLabel`), which this file does not duplicate.
 
 import { Animateur, Creneau, Emplacement, Stand } from './models';
+import { formatHeure } from './time-of-day';
 
 /** Display name by id; built once per list, read many times. */
 export type LabelIndex = ReadonlyMap<string, string>;
@@ -23,7 +24,7 @@ export function animateurName(animateur: Pick<Animateur, 'prenom' | 'nom'>): str
  * and its numeric id tells a reader nothing.
  */
 export function creneauName(creneau: Pick<Creneau, 'date' | 'heureDebut' | 'heureFin'>): string {
-  return `${creneau.date} ${creneau.heureDebut}–${creneau.heureFin}`;
+  return `${creneau.date} ${formatHeure(creneau.heureDebut)}–${formatHeure(creneau.heureFin)}`;
 }
 
 /** Index of rows by id, keeping only the ones whose label is not blank. */

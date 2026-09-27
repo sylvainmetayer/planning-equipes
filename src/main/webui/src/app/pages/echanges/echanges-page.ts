@@ -39,6 +39,7 @@ import { PromptDialog } from '../../shared/prompt-dialog';
 import { errorMessage } from '../../core/error-message';
 import { keepViewInQueryParams } from '../../core/view-query-params';
 import { TO_ARBITRATE, oldestWaitingFirst, readToArbitrate } from './echanges-filter';
+import { HhmmPipe } from '../../shared/hhmm-pipe';
 
 interface DemandeRow extends DemandeEchangeView {
   statutLabel: string;
@@ -72,6 +73,7 @@ interface DemandeRow extends DemandeEchangeView {
 @Component({
   selector: 'app-echanges-page',
   imports: [
+    HhmmPipe,
     DatePipe,
     GuichetEtat,
     MatButtonModule,

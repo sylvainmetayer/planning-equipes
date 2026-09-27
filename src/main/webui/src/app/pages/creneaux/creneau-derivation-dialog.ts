@@ -18,6 +18,7 @@ import { dayMonth, holidayDays, summarizeVacationsByDay } from './jours-resume';
 import { JoursFeriesService } from '../../core/jours-feries.service';
 import { PastilleFerie } from '../../shared/pastille-ferie';
 import { bilanGrille, grilleBloquee, gridAnomalyIcon, trierAnomalies } from './grille-creneaux';
+import { HhmmPipe } from '../../shared/hhmm-pipe';
 
 export interface CreneauDerivationData {
   /** Where the grid's dates already run, to prefill the range; `null` when the grid is empty. */
@@ -43,6 +44,7 @@ export interface DerivationDraft {
 @Component({
   selector: 'app-creneau-derivation-dialog',
   imports: [
+    HhmmPipe,
     FormsModule,
     MatDialogModule,
     MatFormFieldModule,

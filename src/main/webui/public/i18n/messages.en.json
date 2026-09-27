@@ -780,7 +780,7 @@
   "stands.ouvertures.hint": "On that day the stand is open only during the listed windows; also wins over the rules.",
   "stands.ouvertures.date": "Date",
   "stands.ouvertures.heureDebut": "Start",
-  "stands.ouvertures.heureFin": "End (empty = closing)",
+  "stands.ouvertures.heureFin": "End (empty = until closing)",
   "stands.ouvertures.effectif": "Headcount (empty = the stand's)",
   "stands.ouvertures.motif": "Reason (optional)",
   "stands.ouvertures.invalid": "Every opening needs a date and a start time; the end time, when set, must be after the start time.",

@@ -36,6 +36,7 @@ import {
 } from './ad-hoc-constraint-form-dialog';
 import { TableFilter } from '../../shared/table-filter';
 import { correspondAuFiltre } from '../../core/text-filter';
+import { formatHeure } from '../../core/time-of-day';
 
 /** Called lazily (never at module scope, see `app.ts`'s `buildNavGroups`). */
 function contrainteTypeLabel(value: TypeContrainteAdHoc): string {
@@ -199,7 +200,9 @@ export class AdHocConstraintsPage {
     if (!creneau) {
       return $localize`:@@adHoc.scope.creneauSupprime:créneau supprimé`;
     }
-    return $localize`:@@adHoc.scope.creneau:créneau J${creneau.jour}:jour: · ${creneau.date}:date: ${creneau.heureDebut}:heureDebut:–${creneau.heureFin}:heureFin:`;
+    const debut = formatHeure(creneau.heureDebut);
+    const fin = formatHeure(creneau.heureFin);
+    return $localize`:@@adHoc.scope.creneau:créneau J${creneau.jour}:jour: · ${creneau.date}:date: ${debut}:heureDebut:–${fin}:heureFin:`;
   }
 
   protected openCreate(): void {

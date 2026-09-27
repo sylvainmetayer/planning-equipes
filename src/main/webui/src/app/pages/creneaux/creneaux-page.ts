@@ -94,6 +94,7 @@ import {
   trierAnomalies,
 } from './grille-creneaux';
 import { ImportButton } from '../../shared/import-button';
+import { HhmmPipe } from '../../shared/hhmm-pipe';
 
 /**
  * Timeslots CRUD: event day, date and hours of every schedulable slot,
@@ -110,6 +111,7 @@ import { ImportButton } from '../../shared/import-button';
 @Component({
   selector: 'app-creneaux-page',
   imports: [
+    HhmmPipe,
     ImportButton,
     ImportedRowsFilter,
     FormsModule,

@@ -23,6 +23,7 @@ import { JoursFeriesService } from '../../core/jours-feries.service';
 import { PastilleFerie } from '../../shared/pastille-ferie';
 import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 import { GelNotice } from '../../shared/gel-notice';
+import { formatHeure } from '../../core/time-of-day';
 
 /** Sentinel `mat-select` value that reveals the "new group" name field. */
 
@@ -94,7 +95,7 @@ export class CreneauFormDialog {
   protected readonly formTitle = computed(() => {
     const creneau = this.data.creneau;
     return creneau
-      ? $localize`:@@creneaux.form.editTitle:Modifier le créneau du ${creneau.date}:date: ${creneau.heureDebut}:heure:`
+      ? $localize`:@@creneaux.form.editTitle:Modifier le créneau du ${creneau.date}:date: ${formatHeure(creneau.heureDebut)}:heure:`
       : $localize`:@@creneaux.form.newTitle:Nouveau créneau`;
   });
   protected readonly submitLabel = computed(() =>

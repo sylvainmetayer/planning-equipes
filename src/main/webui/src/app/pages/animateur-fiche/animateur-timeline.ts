@@ -28,7 +28,7 @@ import {
 } from '../../core/pauses-index';
 import { indexWalks, WalkSegment, walkSegments, walksOf } from '../../core/walks-index';
 import { bandeLabel } from '../../core/consigne-wording';
-import { endMinutesOfDay, formatDuration, minutesOfDay } from '../../core/time-of-day';
+import { endMinutesOfDay, formatDuration, formatHeure, minutesOfDay } from '../../core/time-of-day';
 import { PlanningStateService } from '../../core/planning-state.service';
 import {
   PlanningEvenement,
@@ -46,6 +46,7 @@ import {
 } from '../../core/typologie-colors';
 import { errorPrefix } from '../../core/error-message';
 import { StatusMessage } from '../../shared/status-message';
+import { HhmmPipe } from '../../shared/hhmm-pipe';
 
 export interface TimelineBlock {
   posteId: string;
@@ -129,6 +130,7 @@ export interface TimelineDay {
 @Component({
   selector: 'app-animateur-timeline',
   imports: [
+    HhmmPipe,
     StatusMessage,
     MatButtonModule,
     RouterLink,
@@ -259,7 +261,7 @@ export class AnimateurTimeline {
 
   /** Stand, hours and — the point of the addition — who else is on that line. */
   protected blockTooltip(block: TimelineBlock): string {
-    const base = `${block.standNom} : ${block.heureDebut} – ${block.heureFin}`;
+    const base = `${block.standNom} : ${formatHeure(block.heureDebut)} – ${formatHeure(block.heureFin)}`;
     if (block.coequipiers.length === 0) {
       return $localize`:@@timeline.tooltip.alone:${base}:poste: — seul(e) sur ce stand`;
     }

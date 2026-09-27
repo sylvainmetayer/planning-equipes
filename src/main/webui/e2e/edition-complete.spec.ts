@@ -305,7 +305,7 @@ test('une édition saisie de bout en bout, résolue, et relue dans la grille des
   // ligne ajoutée est la dernière.
   await ouvertures.getByLabel('Date', { exact: true }).last().fill(JOUR3);
   await ouvertures.getByLabel('Début', { exact: true }).last().fill('07:00');
-  await ouvertures.getByLabel('Fin (vide = fermeture)').last().fill('08:00');
+  await ouvertures.getByLabel("Fin (vide = jusqu'à la fermeture)").last().fill('08:00');
   await fiche.getByRole('button', { name: 'Modifier le stand' }).click();
   await expect(fiche).toBeHidden();
   await expect(page.getByText(/ne recoupe aucun créneau/)).toBeVisible();

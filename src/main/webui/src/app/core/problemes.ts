@@ -555,7 +555,9 @@ export function causeDetails(
     const creneauId = String(cause.creneauId);
     const date = cause.date ?? '';
     const heures =
-      cause.heureDebut && cause.heureFin ? `${cause.heureDebut}–${cause.heureFin}` : '';
+      cause.heureDebut && cause.heureFin
+        ? `${formatHeure(cause.heureDebut)}–${formatHeure(cause.heureFin)}`
+        : '';
     details.push(
       $localize`:@@problemes.detail.creneau:Créneau ${creneauId}:id: ${date}:date: ${heures}:hours:`,
     );

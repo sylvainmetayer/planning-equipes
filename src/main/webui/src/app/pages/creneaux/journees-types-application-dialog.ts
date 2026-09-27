@@ -8,6 +8,7 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { RapportApplicationJourneesTypes } from '../../core/models';
 import { bilanGrille, gridAnomalyIcon, trierAnomalies } from './grille-creneaux';
+import { HhmmPipe } from '../../shared/hhmm-pipe';
 
 export interface JourneesTypesApplicationData {
   /** The preview the card took before opening: what « Appliquer » will do. */
@@ -22,7 +23,7 @@ export interface JourneesTypesApplicationData {
  */
 @Component({
   selector: 'app-journees-types-application-dialog',
-  imports: [MatDialogModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
+  imports: [HhmmPipe, MatDialogModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
   templateUrl: './journees-types-application-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
