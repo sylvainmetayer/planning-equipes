@@ -82,6 +82,7 @@ import {
   readAxe,
   requestedKey,
   jourDemande,
+  jourInconnu,
   planningDays,
   readView,
   resolveComparison,
@@ -280,6 +281,10 @@ export class JourneePage implements OnInit {
    */
   protected readonly jourCourant = computed<JourEvenement | null>(
     () => jourDemande(this.jours(), this.navigation.selected()) ?? this.navigation.current(),
+  );
+  /** The day the URL asked for is none of the plan's: said, rather than opening the first in silence. */
+  protected readonly jourDemandeInconnu = computed(() =>
+    jourInconnu(this.jours(), this.navigation.selected()),
   );
   /** What the `date` param carries: nothing on the first day, which is the default. */
   private readonly dateParam = computed(() => {

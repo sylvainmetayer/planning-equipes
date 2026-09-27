@@ -2661,6 +2661,7 @@
   "journee.comparaison.quitter": "Leave the comparison",
   "journee.comparaison.ignoree.identique": "Comparison ignored: the requested day is the one already on screen.",
   "journee.comparaison.ignoree.inconnu": "Comparison ignored: this day does not exist in the schedule.",
+  "journee.jourInconnu": "{$jour} is not a day of the plan: here is the first day.",
   "journee.comparaison.titre": "Comparing two days",
   "journee.comparaison.lectureSeule": "Read-only: leave the comparison to move someone.",
   "journee.comparaison.synthese.caption": "Summary of both days and difference B − A",

@@ -512,7 +512,8 @@ app-mini-mois {
   margin-bottom: 0.5rem;
 }
 
-.journee-comparaison-ignoree {
+.journee-comparaison-ignoree,
+.journee-jour-inconnu {
   display: flex;
   align-items: center;
   gap: 0.35rem;

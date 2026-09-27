@@ -160,6 +160,12 @@
     </button>
   </div>
 }
+@if (axe() === 'jour' && jourDemandeInconnu(); as notice) {
+  <output class="journee-jour-inconnu status-paragraph">
+    <mat-icon inline aria-hidden="true">info</mat-icon>
+    {{ notice }}
+  </output>
+}
 @if (comparableView() && comparaisonIgnoree()) {
   <output class="journee-comparaison-ignoree status-paragraph">
     <mat-icon inline aria-hidden="true">info</mat-icon>
