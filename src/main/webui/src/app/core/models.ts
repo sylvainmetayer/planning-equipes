@@ -4373,6 +4373,8 @@ export interface EtatATraiter {
   rappelsNonEnvoyes: number;
   /** Reminders of the silent the night could not send, since the last publication. */
   relancesNonEnvoyees: number;
+  /** People whose latest planning mail failed: Diffuser's « échec » filter lists them. */
+  envoisEnEchec: number;
   /** The last nightly backup failed. */
   sauvegardeEnEchec: boolean;
   sauvegardeEchecLe: string | null;

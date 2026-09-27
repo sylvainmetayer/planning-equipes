@@ -309,6 +309,9 @@ public record EtatEditionView(
      * @param relancesNonEnvoyees      reminders of the silent that could not leave since the last
      *                                 publication — the night's or a manual one, for want of an
      *                                 address or a send that failed — about somebody still silent
+     * @param envoisEnEchec            people whose latest planning mail failed — a publication or a
+     *                                 resend —, the rows Diffuser lists under « En échec »: nothing
+     *                                 reached them since
      * @param sauvegardeEnEchec        the last nightly backup failed
      * @param sauvegardeEchecLe        when that attempt ran, {@code null} without a failure
      */
@@ -319,6 +322,7 @@ public record EtatEditionView(
                 "donneesModifiees",
                 "echangesAArbitrer",
                 "echangesEnAlerte",
+                "envoisEnEchec",
                 "horizonJours",
                 "journeesNonRelues",
                 "personnesAPrevenir",
@@ -345,6 +349,7 @@ public record EtatEditionView(
             int personnesAPrevenir,
             int rappelsNonEnvoyes,
             int relancesNonEnvoyees,
+            int envoisEnEchec,
             boolean sauvegardeEnEchec,
             Instant sauvegardeEchecLe) {}
 }

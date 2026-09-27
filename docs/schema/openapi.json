@@ -3514,7 +3514,7 @@
         }
       },
       "EtatATraiter" : {
-        "required" : [ "aujourdhui", "declarationsEnAttente", "donneesModifiees", "echangesAArbitrer", "echangesEnAlerte", "horizonJours", "journeesNonRelues", "personnesAPrevenir", "rappelsNonEnvoyes", "relancesNonEnvoyees", "sauvegardeEnEchec", "seuilAncienneteJours", "silenceJours", "silencieuxARelancer" ],
+        "required" : [ "aujourdhui", "declarationsEnAttente", "donneesModifiees", "echangesAArbitrer", "echangesEnAlerte", "envoisEnEchec", "horizonJours", "journeesNonRelues", "personnesAPrevenir", "rappelsNonEnvoyes", "relancesNonEnvoyees", "sauvegardeEnEchec", "seuilAncienneteJours", "silenceJours", "silencieuxARelancer" ],
         "type" : "object",
         "properties" : {
           "aujourdhui" : {
@@ -3574,6 +3574,10 @@
             "format" : "int32"
           },
           "relancesNonEnvoyees" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "envoisEnEchec" : {
             "type" : "integer",
             "format" : "int32"
           },

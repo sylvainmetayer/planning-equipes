@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.export.PlanningExportService;
+import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.publication.PublicationTraceRepository.StatutEnvoi;
 import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import io.quarkus.logging.Log;
@@ -40,16 +41,20 @@ public class PlanningDeliveryService {
 
     private final EnvoiPlanningRepository envois;
 
+    private final JournalActionService journal;
+
     @Inject
     public PlanningDeliveryService(
             PlanPublieService planPublieService,
             PlanningExportService planningExportService,
             MailService mailService,
-            EnvoiPlanningRepository envois) {
+            EnvoiPlanningRepository envois,
+            JournalActionService journal) {
         this.planPublieService = planPublieService;
         this.planningExportService = planningExportService;
         this.mailService = mailService;
         this.envois = envois;
+        this.journal = journal;
     }
 
     /**
@@ -95,6 +100,9 @@ public class PlanningDeliveryService {
         } catch (RuntimeException e) {
             Log.errorf(e, "Failed to mail the planning of animateur %s", animateur.getId());
             record(animateur.getId(), version, StatutEnvoi.ECHEC, EnvoiPlanningRepository.CauseEchec.of(e));
+            // The route's own journal line records the request; this one says
+            // it failed, as a failed publication mail does — by id.
+            journal.recordAdminFailure("PUBLICATION_ECHEC", animateur.getId());
             return new DeliveryReport(0, List.of(), List.of("Échec de l'envoi à " + animateur.getEmail()));
         }
         record(animateur.getId(), version, StatutEnvoi.ENVOYE, null);

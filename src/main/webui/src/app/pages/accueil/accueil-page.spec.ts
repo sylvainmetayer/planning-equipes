@@ -92,6 +92,7 @@ function etat(partial: Partial<EtatEdition> = {}): EtatEdition {
       personnesAPrevenir: 0,
       rappelsNonEnvoyes: 0,
       relancesNonEnvoyees: 0,
+      envoisEnEchec: 0,
       sauvegardeEnEchec: false,
       sauvegardeEchecLe: null,
     },
