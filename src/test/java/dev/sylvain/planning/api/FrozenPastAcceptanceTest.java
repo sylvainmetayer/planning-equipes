@@ -244,17 +244,23 @@ class FrozenPastAcceptanceTest {
         assertThat(seatsByDay().get(J3))
                 .anySatisfy(siege -> assertThat(siege).endsWith("@10:00:00|10:20:00|" + absentId));
         // Aujourd'hui offers it as the rest of the timeslot, new since the publication.
-        List<Map<String, Object>> aPourvoir = given().when()
+        JsonPath jourJ = given().when()
                 .get("/api/jour-j")
                 .then()
                 .statusCode(200)
                 .extract()
-                .jsonPath()
-                .getList("postesAPourvoir");
+                .jsonPath();
+        List<Map<String, Object>> aPourvoir = jourJ.getList("postesAPourvoir");
         assertThat(aPourvoir)
                 .filteredOn(poste -> resteId.equals(poste.get("posteId")))
                 .singleElement()
                 .satisfies(poste -> assertThat(poste.get("resteDuCreneau")).isEqualTo(true));
+        // The part already over is history: neither a seat to fill nor a duty
+        // the absent person is still counted on.
+        String origineId = resteId.substring(0, resteId.indexOf('~'));
+        assertThat(aPourvoir).noneMatch(poste -> origineId.equals(poste.get("posteId")));
+        assertThat(jourJ.getList("animateursDeService.animateurId", String.class))
+                .doesNotContain(absentId);
 
         List<String> candidats = given().when()
                 .post("/api/jour-j/postes/" + resteId + "/suggestions")
