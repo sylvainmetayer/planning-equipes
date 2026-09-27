@@ -367,6 +367,59 @@ class AffichageMuralResourceTest {
         given().when().get("/api/mural/" + token).then().statusCode(404);
     }
 
+    /**
+     * A television reads its link with no edition header: the last read is
+     * stamped on the link's own edition, which is where the admin of that
+     * edition lists it — and nothing is stamped on the default edition.
+     */
+    @Test
+    void theLastReadIsListedInTheLinksOwnEdition() {
+        String edition = given().contentType(ContentType.JSON)
+                .body("{\"nom\":\"Mural dernier accès\"}")
+                .when()
+                .post("/api/editions")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("id");
+        try {
+            JsonPath cree = given().header("X-Edition-Id", edition)
+                    .contentType(ContentType.JSON)
+                    .body("{\"libelle\":\"TV\"}")
+                    .when()
+                    .post("/api/affichage-mural")
+                    .then()
+                    .statusCode(201)
+                    .extract()
+                    .jsonPath();
+            long id = cree.getLong("link.id");
+            assertThat(listIn(edition).getString("find { it.id == " + id + " }.libelle"))
+                    .isEqualTo("TV");
+            assertThat(listIn(edition).getString("find { it.id == " + id + " }.lastAccessAt"))
+                    .as("never read yet")
+                    .isNull();
+
+            given().when().get("/api/mural/" + cree.getString("token")).then().statusCode(200);
+
+            assertThat(listIn(edition).getString("find { it.id == " + id + " }.lastAccessAt"))
+                    .isNotNull();
+            assertThat(given().when().get("/api/affichage-mural").jsonPath().getList("id"))
+                    .doesNotContain((int) id);
+        } finally {
+            given().when().delete("/api/editions/" + edition);
+        }
+    }
+
+    private static JsonPath listIn(String edition) {
+        return given().header("X-Edition-Id", edition)
+                .when()
+                .get("/api/affichage-mural")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
+    }
+
     @Test
     void theQrCodeIsAGridOfModules() {
         JsonPath qr = given().contentType(ContentType.JSON)

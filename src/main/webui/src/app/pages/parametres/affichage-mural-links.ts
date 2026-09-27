@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   inject,
   OnInit,
   signal,
@@ -24,6 +25,12 @@ import { NotificationService } from '../../core/notification.service';
 import { qrPath } from '../../core/qr-path';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { ConfirmService } from '../../shared/confirm-dialog';
+
+/**
+ * How often the list is read again while the tab is on screen: a television
+ * reads its link every minute, and « Dernier accès » has to follow it.
+ */
+export const LINKS_REFRESH_MS = 60_000;
 
 /** A link just created: the one moment its address can be copied. */
 interface CreatedLink {
@@ -76,6 +83,7 @@ export class AffichageMuralLinks implements OnInit {
   protected readonly liens = signal<AffichageMuralLink[]>([]);
   protected readonly created = signal<CreatedLink | null>(null);
   protected readonly busy = signal(false);
+  protected readonly refreshing = signal(false);
 
   protected libelle = '';
   protected fullNames = false;
@@ -84,6 +92,20 @@ export class AffichageMuralLinks implements OnInit {
   private readonly nomsEmplacements = computed(
     () => new Map(this.referenceData.emplacements().map((each) => [each.id, each.nom])),
   );
+
+  constructor() {
+    // The list is read when the tab opens, and the last read of a link moves
+    // while it stays open — typically right after a link is created and
+    // opened on the television.
+    // Silent, and skipped while the page is hidden: a background read that
+    // fails during a redeploy must not stack an error a minute.
+    const timer = setInterval(() => {
+      if (!document.hidden) {
+        void this.load(true);
+      }
+    }, LINKS_REFRESH_MS);
+    inject(DestroyRef).onDestroy(() => clearInterval(timer));
+  }
 
   ngOnInit(): void {
     void this.load();
@@ -172,11 +194,37 @@ export class AffichageMuralLinks implements OnInit {
     }
   }
 
-  private async load(): Promise<void> {
+  protected async refresh(): Promise<void> {
+    this.refreshing.set(true);
     try {
-      this.liens.set(await this.api.list());
+      await this.load();
+    } finally {
+      this.refreshing.set(false);
+    }
+  }
+
+  /** Bumped by every read. */
+  private readSequence = 0;
+
+  /**
+   * The newest read whose answer is on screen: an older answer arriving late
+   * is dropped — a revoked link stays gone —, but a later read that failed
+   * does not throw away the answer of an earlier one that succeeded.
+   */
+  private lastApplied = 0;
+
+  private async load(background = false): Promise<void> {
+    const ticket = ++this.readSequence;
+    try {
+      const liens = await this.api.list();
+      if (ticket > this.lastApplied) {
+        this.lastApplied = ticket;
+        this.liens.set(liens);
+      }
     } catch (error) {
-      this.notifyError(error);
+      if (!background) {
+        this.notifyError(error);
+      }
     }
   }
 
