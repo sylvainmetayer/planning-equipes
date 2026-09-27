@@ -26,7 +26,7 @@
   <mat-label i18n="@@stands.field.nom">Nom</mat-label>
   <input matInput name="nom" required [ngModel]="draft().nom" (ngModelChange)="patch({ nom: $event })" />
 </mat-form-field>
-<mat-form-field appearance="outline">
+<mat-form-field subscriptSizing="dynamic" appearance="outline">
   <mat-label i18n="@@referentiel.field.code">Code</mat-label>
   <input matInput name="code" maxlength="64" [ngModel]="draft().code" (ngModelChange)="patch({ code: $event })" />
   <mat-hint i18n="@@referentiel.hint.code">Clé lisible citée par les fichiers d'import (facultatif)</mat-hint>
@@ -94,7 +94,7 @@
     Mêmes horaires sur plusieurs stands ? Cochez-les dans la liste, puis « Modifier la sélection ».
   </p>
   @if (standsModeles().length > 0) {
-    <mat-form-field appearance="outline" class="stand-copie-horaires">
+    <mat-form-field subscriptSizing="dynamic" appearance="outline" class="stand-copie-horaires">
       <mat-label i18n="@@stands.copieHoraires.label">Copier les horaires de…</mat-label>
       <mat-select name="copyHorairesFrom" [disabled]="frozenLocked()"
                   [ngModel]="standSource()?.id ?? null" (ngModelChange)="copyHorairesFrom($event)">

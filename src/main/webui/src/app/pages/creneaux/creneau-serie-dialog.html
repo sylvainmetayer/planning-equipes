@@ -8,7 +8,7 @@
 <p class="empty-hint span-2" i18n="@@creneaux.serie.hint">
   Une règle crée les créneaux d'une journée type sur les jours choisis ; les créneaux existants ne sont pas touchés, la série s'ajoute.
 </p>
-<mat-form-field appearance="outline" class="span-2">
+<mat-form-field subscriptSizing="dynamic" appearance="outline" class="span-2">
   <mat-label i18n="@@creneaux.serie.fenetres">Créneaux d'une journée</mat-label>
   <input matInput name="fenetres" placeholder="09:00-12:00, 14:00-18:00" autocomplete="off" spellcheck="false"
          [ngModel]="draft().fenetres" (ngModelChange)="patch({ fenetres: $event })" />
