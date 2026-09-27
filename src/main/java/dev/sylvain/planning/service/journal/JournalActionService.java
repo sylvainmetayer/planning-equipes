@@ -112,6 +112,19 @@ public class JournalActionService {
      * joined when the history is read.</p>
      */
     public void recordAdminAction(String code, String entiteId) {
+        recordAdmin(code, entiteId, Resultat.SUCCES);
+    }
+
+    /**
+     * The same line for an act that failed — a mail the server refused: it
+     * reads as a refusal in the history, not as the success of the request
+     * that attempted it, whose own line the route or the tool writes.
+     */
+    public void recordAdminFailure(String code, String entiteId) {
+        recordAdmin(code, entiteId, Resultat.REFUS);
+    }
+
+    private void recordAdmin(String code, String entiteId, Resultat resultat) {
         ActionJournalisee action = CatalogueActions.systeme(code);
         append(new EntreeJournal(
                 0,
@@ -122,7 +135,7 @@ public class JournalActionService {
                 action.entite() == null ? null : action.entite().name(),
                 entiteId,
                 List.of(),
-                Resultat.SUCCES,
+                resultat,
                 null));
     }
 

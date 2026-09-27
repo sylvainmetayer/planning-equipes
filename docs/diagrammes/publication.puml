@@ -43,6 +43,7 @@ loop chaque personne retenue
     mails -> smtp : planning + PDF
     alt l'envoi lève
       mails --> publication : exception, attrapée pour cette personne : ECHEC
+      publication -> publication : action PUBLICATION_ECHEC au journal
     else
       mails --> publication : ENVOYE
     end

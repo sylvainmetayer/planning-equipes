@@ -11,10 +11,12 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.publication.EnvoiPlanningRepository;
 import dev.sylvain.planning.service.publication.EnvoiPlanningRepository.CauseEchec;
 import dev.sylvain.planning.service.publication.EnvoiPlanningRepository.NatureEnvoi;
+import dev.sylvain.planning.service.publication.MailService;
 import dev.sylvain.planning.service.publication.PublicationTraceRepository.StatutEnvoi;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import io.quarkus.mailer.MockMailbox;
+import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
@@ -150,6 +152,81 @@ class EtatEnvoisResourceTest {
                         .jsonPath()
                         .getInt("envoisEnEchec"))
                 .isZero();
+    }
+
+    /**
+     * Every mail of a publication bouncing: the home screen puts it in
+     * « À traiter aujourd'hui », and the history keeps one line per person
+     * never told — by id, never by name.
+     */
+    @Test
+    void failedPublicationMailsAreToHandleTodayAndJournalledPerPerson() {
+        QuarkusMock.installMockForType(new BouncingMailService(), MailService.class);
+        List<Map<String, Object>> avant = publicationFailuresJournalled();
+
+        JsonPath rapport = publier(Map.of());
+
+        assertThat(rapport.getInt("envoyes")).isZero();
+        assertThat(rapport.getList("echecs")).hasSize(2);
+        JsonPath accueil = given().when()
+                .get("/api/editions/courant/etat")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
+        assertThat(accueil.getInt("aTraiter.envoisEnEchec")).isEqualTo(2);
+        List<Map<String, Object>> echecs = publicationFailuresJournalled();
+        assertThat(echecs.subList(0, echecs.size() - avant.size()))
+                .extracting(entree -> entree.get("entiteId"))
+                .containsExactlyInAnyOrder("ETAT-A", "ETAT-B");
+        assertThat(echecs).allSatisfy(entree -> {
+            assertThat(entree.get("entite")).isEqualTo("ANIMATEUR");
+            assertThat(entree.get("resultat")).isEqualTo("REFUS");
+        });
+
+        // A resend from Diffuser that bounces too is journalled the same way:
+        // the home screen counts it, the history must say it.
+        given().contentType(ContentType.JSON)
+                .when()
+                .post("/api/planning/envoi/animateur/ETAT-A")
+                .then()
+                .statusCode(500);
+        List<Map<String, Object>> afterResend = publicationFailuresJournalled();
+        assertThat(afterResend).hasSize(echecs.size() + 1);
+        assertThat(afterResend.getFirst().get("entiteId")).isEqualTo("ETAT-A");
+        assertThat(afterResend.getFirst().get("resultat")).isEqualTo("REFUS");
+    }
+
+    /** The history's PUBLICATION_ECHEC lines, newest first. */
+    private static List<Map<String, Object>> publicationFailuresJournalled() {
+        List<Map<String, Object>> historique = given().when()
+                .get("/api/historique?limite=200")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("");
+        return historique.stream()
+                .filter(entree -> "PUBLICATION_ECHEC".equals(entree.get("action")))
+                .toList();
+    }
+
+    /** A mail server refusing every recipient. */
+    private static final class BouncingMailService extends MailService {
+        BouncingMailService() {
+            super(null, null, null, null, null);
+        }
+
+        @Override
+        public void sendPlanningPublie(String emailAnimateur, byte[] pdf, String fileName, PlanningPublie message) {
+            throw new IllegalStateException("550 5.1.1 recipient refused");
+        }
+
+        @Override
+        public void sendIndividualPlanning(
+                String emailAnimateur, String prenom, String lienEspace, byte[] pdf, String fileName) {
+            throw new IllegalStateException("550 5.1.1 recipient refused");
+        }
     }
 
     /**

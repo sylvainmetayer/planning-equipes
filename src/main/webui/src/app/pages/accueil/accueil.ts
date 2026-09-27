@@ -682,6 +682,20 @@ export function buildToday(etat: EtatEdition): TodayItem[] {
       },
     });
   }
+  if (bloc.envoisEnEchec > 0) {
+    const count = bloc.envoisEnEchec;
+    items.push({
+      id: 'envois',
+      sentence: $localize`:@@accueil.aTraiter.envois:${count}:count: personne(s) sans leur planning : l'envoi a échoué`,
+      alerte: true,
+      lien: {
+        // The rows Diffuser lists under this filter are the ones counted.
+        route: '/publication',
+        queryParams: { filtre: 'echec' },
+        libelle: $localize`:@@accueil.lien.publication.echecs:Voir les envois en échec`,
+      },
+    });
+  }
   if (bloc.personnesAPrevenir > 0) {
     const count = bloc.personnesAPrevenir;
     items.push({

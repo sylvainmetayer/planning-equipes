@@ -805,6 +805,28 @@ class EtatEditionServiceTest {
         assertThat(bloc.personnesAPrevenir()).isEqualTo(4);
     }
 
+    /**
+     * A publication whose mails bounced is something to do today, solve or
+     * not: those people were never told, and nothing about the plan will tell
+     * them. Zero on a clean publication.
+     */
+    @Test
+    void failedPlanningMailsAreToHandleEvenWhileASolveRuns() {
+        Facts f = filledFacts();
+
+        EtatEditionView.EtatATraiter bloc = aTraiter(
+                NOTHING_TODAY,
+                new ApercuPublication(false, false, true, RESOLU_LE, 0, 0, List.of(), 3),
+                f.confirmations(),
+                f.relecture(),
+                true,
+                f.lastDataChange());
+
+        assertThat(bloc.envoisEnEchec()).isEqualTo(3);
+        assertThat(EtatEditionService.assemble(filledFacts()).aTraiter().envoisEnEchec())
+                .isZero();
+    }
+
     /** Stale data is said, except while a solve runs: it is reading the new data. */
     @Test
     void staleDataIsSaidExceptWhileASolveRuns() {

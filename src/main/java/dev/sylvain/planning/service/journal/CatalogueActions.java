@@ -311,6 +311,7 @@ public final class CatalogueActions {
         action(INSTANTANE_SUPPRIME, "Instantané supprimé", Entite.INSTANTANE);
         action(PLANNING_PUBLIE, "Planning publié aux animateurs", Entite.PLANNING);
         action("PUBLICATION_DIFFEREE", "Message de publication différé pour une personne", Entite.ANIMATEUR);
+        action("PUBLICATION_ECHEC", "Envoi du planning publié en échec pour une personne", Entite.ANIMATEUR);
         action(PLANNING_ENVOYE, "Planning envoyé à un animateur", Entite.ANIMATEUR);
         action(MAIL_TEST_ENVOYE, "Mail de test envoyé", Entite.PARAMETRES);
         action(KPI_SUPPRIME, "Ligne d'historique KPI supprimée", Entite.PLANNING);

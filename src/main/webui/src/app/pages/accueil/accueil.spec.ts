@@ -101,6 +101,7 @@ function etatVide(partial: Partial<EtatEdition> = {}): EtatEdition {
       personnesAPrevenir: 0,
       rappelsNonEnvoyes: 0,
       relancesNonEnvoyees: 0,
+      envoisEnEchec: 0,
       sauvegardeEnEchec: false,
       sauvegardeEchecLe: null,
     },
@@ -619,6 +620,7 @@ describe('buildToday', () => {
           personnesAPrevenir: 5,
           rappelsNonEnvoyes: 0,
           relancesNonEnvoyees: 0,
+          envoisEnEchec: 0,
           sauvegardeEnEchec: false,
           sauvegardeEchecLe: null,
         },
@@ -690,6 +692,7 @@ describe('buildToday', () => {
           personnesAPrevenir: 1,
           rappelsNonEnvoyes: 2,
           relancesNonEnvoyees: 1,
+          envoisEnEchec: 3,
           sauvegardeEnEchec: true,
           sauvegardeEchecLe: '2026-07-10T02:00:00Z',
         },
@@ -720,6 +723,14 @@ describe('the alerts of the night', () => {
     expect(items[0].lien).toMatchObject({ route: '/', fragment: 'alertes-nuit' });
     // A manual reminder writes the same alert: the sentence does not date it to the night.
     expect(items[1].sentence).toBe('1 relance(s) non partie(s) depuis la publication');
+  });
+
+  it('counts the people whose planning mail failed, leading to Diffuser filtered on them', () => {
+    const [item] = nuit({ envoisEnEchec: 3 });
+    expect(item.id).toBe('envois');
+    expect(item.alerte).toBe(true);
+    expect(item.sentence).toBe("3 personne(s) sans leur planning : l'envoi a échoué");
+    expect(item.lien).toMatchObject({ route: '/publication', queryParams: { filtre: 'echec' } });
   });
 
   it('says nothing of a quiet night', () => {

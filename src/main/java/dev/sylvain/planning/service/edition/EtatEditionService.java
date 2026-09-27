@@ -1020,6 +1020,7 @@ public class EtatEditionService {
                 aPrevenir,
                 unsentDayBeforeReminders(today.alertesNuit(), aujourdhui),
                 unsentReminders(today.alertesNuit(), confirmations),
+                publication.envoisEnEchec(),
                 sauvegardeEnEchec,
                 sauvegardeEnEchec ? sauvegarde.attemptedAt() : null);
     }

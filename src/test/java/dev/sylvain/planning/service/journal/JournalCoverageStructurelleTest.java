@@ -438,7 +438,7 @@ class JournalCoverageStructurelleTest {
      */
     private static Set<String> codesQuotedBySources() throws IOException {
         Pattern cite = Pattern.compile(
-                "(?:recordSystemAction|recordAdminAction|currentAction\\.action)\\((?:[^)\"]|\"(?![A-Z_]++\"))*+\"([A-Z_]+)\"");
+                "(?:recordSystemAction|recordAdminAction|recordAdminFailure|currentAction\\.action)\\((?:[^)\"]|\"(?![A-Z_]++\"))*+\"([A-Z_]+)\"");
         Set<String> codes = new TreeSet<>();
         try (Stream<Path> fichiers = Files.walk(Path.of("src/main/java/dev/sylvain/planning"))) {
             for (Path fichier :

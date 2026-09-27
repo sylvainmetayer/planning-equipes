@@ -557,7 +557,12 @@ public class PlanPublicationService {
             switch (statut) {
                 case ENVOYE -> envoyes++;
                 case SANS_EMAIL -> sansEmail.add(destinataire.nomAffiche());
-                case ECHEC -> echecs.add(destinataire.nomAffiche());
+                case ECHEC -> {
+                    echecs.add(destinataire.nomAffiche());
+                    // One line per person, by id: the history says who was
+                    // never told, the report on screen is gone once closed.
+                    journal.recordAdminFailure("PUBLICATION_ECHEC", destinataire.animateurId());
+                }
                 case EXCLU -> {
                     // Never an outcome of a send: excluded recipients are traced apart, unsent.
                 }
