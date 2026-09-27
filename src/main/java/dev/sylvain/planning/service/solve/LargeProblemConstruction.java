@@ -26,7 +26,9 @@ import java.util.List;
  * solving that would share it out is Enterprise-only.</p>
  *
  * <p>Past {@link #THRESHOLD} seat-candidate pairs, the same placer — seats still
- * taken hardest first, the eligibility filter still applied — scores only
+ * taken in the order of {@code PosteAffectationDifficultyComparatorFactory}
+ * (hardest first; under the hard run of days, earliest day first — ADR 0068),
+ * the eligibility filter still applied — scores only
  * {@link #CANDIDATES_PER_SEAT} eligible animateurs drawn at random for each seat. The
  * first plan is worse on the medium level, and the time it saves goes to the
  * local search that polishes it; below the threshold, which every real edition

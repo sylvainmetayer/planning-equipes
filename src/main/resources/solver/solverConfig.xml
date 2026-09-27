@@ -59,6 +59,9 @@
         later, regularly leaving several postes unpourvus/double-booked
         (hard violations) for local search to repair from a bad starting
         point — a major source of the run-to-run inconsistency this fixes.
+        Under maxJoursConsecutifsTravaillesDur the same comparator puts the
+        calendar first, earliest day first, then scarcity within a day
+        (ADR 0068).
 
         The animateurRange value range spans every animateur (~150): eligibility
         depends on the target poste, not on a static animateur property, so it
