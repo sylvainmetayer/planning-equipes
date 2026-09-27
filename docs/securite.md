@@ -96,10 +96,19 @@ ses styles dans la page.
 | --- | --- | --- |
 | `MAX_BODY_SIZE` | `10M` | Taille maximale d'un corps de requête. C'est l'**import de dump SQL** (`POST /api/database/import`, un script rejoué en entier) qui la dimensionne : un déploiement qui n'utilise pas l'import gagne à la descendre franchement |
 | `MAX_CONNECTIONS` | `500` | Connexions simultanées acceptées |
+| `HTTP_IDLE_TIMEOUT` | `PT16M` | Délai au bout duquel une connexion restée muette est fermée — et libère sa place dans `MAX_CONNECTIONS` |
 
 Le plafond de connexions est ce qui empêche d'épuiser le serveur en ouvrant des
 connexions sans jamais rien envoyer. `500` est large au regard de l'usage réel,
 donc sans effet sur le trafic légitime.
+
+Les deux réglages vont ensemble : une connexion inactive compte dans le plafond
+jusqu'à ce que le délai d'inactivité la ferme. Celui de Quarkus (30 min) est
+ramené à 16 min, juste au-dessus du plus long appel synchrone de l'API — un
+calcul lancé par `POST /api/planning/solve`, qui n'écrit rien avant sa fin
+(900 s par défaut). Qui autorise des calculs synchrones plus longs relève
+`HTTP_IDLE_TIMEOUT` d'autant ; le reverse proxy reste le bon endroit pour couper
+plus tôt les clients inactifs.
 
 L'**import CSV des animateurs** ajoute deux bornes qui lui sont propres, plus
 serrées que `MAX_BODY_SIZE` et écrites dans le code plutôt qu'en configuration :

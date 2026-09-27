@@ -149,6 +149,7 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `HSTS` | `max-age=31536000; includeSubDomains` | En-tête HSTS, envoyé uniquement sur une visite HTTPS ; vide = désactivé |
 | `MAX_BODY_SIZE` | `10M` | Taille maximale d'un corps de requête — dimensionnée par l'import de dump SQL |
 | `MAX_CONNECTIONS` | `500` | Connexions HTTP simultanées acceptées |
+| `HTTP_IDLE_TIMEOUT` | `PT16M` | Délai avant fermeture d'une connexion HTTP inactive — au-dessus du plus long calcul synchrone, voir [`securite.md`](docs/securite.md) |
 | `ESPACE_CODE_MAX_DEMANDES` | `3` | Codes d'accès non utilisés tolérés par animateur avant `429` — voir [`securite.md`](docs/securite.md) |
 | `ESPACE_CODE_FENETRE` | `PT10M` | Fenêtre sur laquelle ce plafond se compte |
 | `CONNEXION_MAX_ECHECS` | `5` | Échecs de connexion admin tolérés par adresse avant verrouillage |
