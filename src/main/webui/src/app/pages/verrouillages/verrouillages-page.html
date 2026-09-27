@@ -62,7 +62,7 @@
             <mat-select name="creneauId" [ngModel]="creneauId()" (ngModelChange)="creneauId.set($event)" [disabled]="editingLocked()">
               @for (creneau of store.creneaux(); track creneau.id) {
                 <mat-option [value]="creneau.id">
-                  {{ creneau.date }} {{ creneau.heureDebut }}–{{ creneau.heureFin }}
+                  {{ creneau.date }} {{ creneau.heureDebut | hhmm }}–{{ creneau.heureFin | hhmm }}
                 </mat-option>
               }
             </mat-select>

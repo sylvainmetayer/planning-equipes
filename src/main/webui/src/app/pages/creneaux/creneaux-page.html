@@ -173,7 +173,7 @@
         <ng-container matColumnDef="horaires">
           <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@creneaux.column.horaires">Horaires</th>
           <td mat-cell *matCellDef="let creneau">
-            {{ creneau.heureDebut }}–{{ creneau.heureFin }}
+            {{ creneau.heureDebut | hhmm }}–{{ creneau.heureFin | hhmm }}
             @if (creneau.couverturePause) {
               <mat-icon inline aria-hidden="false" class="relais-repas-icon" [matTooltip]="relaisRepasTooltip" [attr.aria-label]="relaisRepasTooltip">restaurant</mat-icon>
             }

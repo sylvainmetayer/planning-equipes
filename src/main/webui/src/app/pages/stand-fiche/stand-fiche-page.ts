@@ -37,6 +37,7 @@ import { anomalyLabel, scheduleRows } from '../stands/stand-detail';
 import { StandFormData, StandFormDialog } from '../stands/stand-form-dialog';
 import { sortStands, standCoverage, standOpenings } from '../stands/stand-order';
 import { StandGridEditor } from './stand-grid-editor';
+import { HhmmPipe } from '../../shared/hhmm-pipe';
 
 /** One seat of this stand nobody holds, as the fiche links it to the Siège panel. */
 interface EmptySeat {
@@ -63,6 +64,7 @@ interface EmptySeat {
 @Component({
   selector: 'app-stand-fiche-page',
   imports: [
+    HhmmPipe,
     MatButtonModule,
     MatCardModule,
     MatFormFieldModule,

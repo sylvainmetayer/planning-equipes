@@ -126,7 +126,7 @@
             <ul class="fiche-liste">
               @for (seat of emptySeats(); track seat.posteId) {
                 <li>
-                  <a routerLink="/journee" [queryParams]="seatQuery(seat)">{{ seat.date }} {{ seat.heureDebut }}–{{ seat.heureFin }}</a>
+                  <a routerLink="/journee" [queryParams]="seatQuery(seat)">{{ seat.date }} {{ seat.heureDebut | hhmm }}–{{ seat.heureFin | hhmm }}</a>
                 </li>
               }
             </ul>

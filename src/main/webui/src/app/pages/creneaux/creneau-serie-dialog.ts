@@ -28,6 +28,7 @@ import {
   signatureSerie,
   trierAnomalies,
 } from './grille-creneaux';
+import { HhmmPipe } from '../../shared/hhmm-pipe';
 
 export interface CreneauSerieData {
   /** The grid's current verdict, so only the errors the rule introduces block it. */
@@ -47,6 +48,7 @@ export interface CreneauSerieData {
 @Component({
   selector: 'app-creneau-serie-dialog',
   imports: [
+    HhmmPipe,
     FormsModule,
     MatDialogModule,
     MatFormFieldModule,

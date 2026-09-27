@@ -15,7 +15,7 @@
       </p>
       <ul class="journees-types-supprimes">
         @for (creneau of apercu.supprimesAvecPostes; track creneau.id) {
-          <li>{{ creneau.date }} {{ creneau.heureDebut }}–{{ creneau.heureFin }}</li>
+          <li>{{ creneau.date }} {{ creneau.heureDebut | hhmm }}–{{ creneau.heureFin | hhmm }}</li>
         }
       </ul>
     }

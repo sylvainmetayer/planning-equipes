@@ -86,7 +86,7 @@
             <li>
               <!-- The shift on its day in the Journée, its seat open in the Siège panel. -->
               <a class="timeline-block-link" routerLink="/journee" [queryParams]="seatQuery(block)">
-                <span class="timeline-block-list-time">{{ block.heureDebut }} – {{ block.heureFin }}</span>
+                <span class="timeline-block-list-time">{{ block.heureDebut | hhmm }} – {{ block.heureFin | hhmm }}</span>
                 {{ block.standNom }}
               </a>
               @if (block.coequipiers.length > 0) {

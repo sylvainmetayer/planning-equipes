@@ -11,6 +11,7 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { Animateur, ContrainteAdHoc, TypeContrainteAdHoc } from '../../core/models';
 import { animateurNames, labelsOf } from '../../core/reference-labels';
+import { HhmmPipe } from '../../shared/hhmm-pipe';
 
 const CONTRAINTE_TYPE_VALUES: TypeContrainteAdHoc[] = [
   'INDISPONIBILITE_FORCEE',
@@ -81,6 +82,7 @@ export interface AdHocConstraintFormData {
 @Component({
   selector: 'app-ad-hoc-constraint-form-dialog',
   imports: [
+    HhmmPipe,
     FormsModule,
     MatDialogModule,
     MatFormFieldModule,

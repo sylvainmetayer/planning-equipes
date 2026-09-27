@@ -134,7 +134,7 @@
     <ul class="journee-comparaison-plages">
       @for (plage of cellule.plages; track plage.heureDebut + plage.heureFin) {
         <li>
-          <strong>{{ plage.heureDebut }}–{{ plage.heureFin }}</strong>
+          <strong>{{ plage.heureDebut | hhmm }}–{{ plage.heureFin | hhmm }}</strong>
           @if (plage.noms.length > 0) {
             · {{ plage.noms.join(', ') }}
           }
@@ -154,7 +154,7 @@
     <div class="journee-comparaison-compte">{{ formatDuration(cellule.minutes) }}</div>
     <ul class="journee-comparaison-plages">
       @for (vacation of cellule.vacations; track vacation.heureDebut + vacation.standId) {
-        <li><strong>{{ vacation.heureDebut }}–{{ vacation.heureFin }}</strong> · {{ vacation.standNom }}</li>
+        <li><strong>{{ vacation.heureDebut | hhmm }}–{{ vacation.heureFin | hhmm }}</strong> · {{ vacation.standNom }}</li>
       }
     </ul>
   } @else {

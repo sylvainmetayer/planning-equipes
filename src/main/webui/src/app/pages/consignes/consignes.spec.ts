@@ -633,5 +633,7 @@ describe('the stands list', () => {
     expect(formatFenetresSaisie([fenetre('18:00', '22:00'), fenetre('20:00', '')])).toBe(
       '18:00-22:00, 20:00-',
     );
+    // A preset read back from the server carries seconds: the line does not.
+    expect(formatFenetresSaisie([fenetre('18:00:00', '22:00:00')])).toBe('18:00-22:00');
   });
 });

@@ -21,6 +21,7 @@ import {
   Stand,
 } from '../../core/models';
 import { compareCodeUnits } from '../../core/string-order';
+import { formatHeure } from '../../core/time-of-day';
 
 /* ---------------------------------- dates ---------------------------------- */
 
@@ -687,5 +688,7 @@ export function parseFenetresSaisie(text: string): FenetreSaisie[] | null {
 
 /** The inverse of {@link parseFenetresSaisie}: what a preset's windows read as on one line. */
 export function formatFenetresSaisie(fenetres: readonly FenetreSaisie[]): string {
-  return fenetres.map((fenetre) => `${fenetre.debut}-${fenetre.fin}`).join(', ');
+  return fenetres
+    .map((fenetre) => `${formatHeure(fenetre.debut)}-${formatHeure(fenetre.fin)}`)
+    .join(', ');
 }

@@ -156,7 +156,7 @@ test.describe('avertissements de saisie', () => {
 
     // Et la ligne est là : avertir, jamais bloquer.
     await page.getByRole('button', { name: 'Fermer' }).click();
-    await expect(page.getByRole('row', { name: /10:00:00/ })).toHaveCount(1);
+    await expect(page.getByRole('row', { name: /10:00–18:00/ })).toHaveCount(1);
 
     await page.context().close();
   });

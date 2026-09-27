@@ -10,6 +10,7 @@
 import { NavLink, buildLegalLinks, buildNavGroups, buildOffMenuLinks } from '../shell/nav-groups';
 import { correspondAuFiltre } from './text-filter';
 import { Animateur, Creneau, Stand } from './models';
+import { formatHeure } from './time-of-day';
 
 /**
  * True when the key press is aimed at a field the user is typing in.
@@ -189,7 +190,7 @@ function commandeCreneau(creneau: Creneau): CommandePalette {
   return {
     id: `creneau:${creneau.id}`,
     famille: 'creneau',
-    label: `${creneau.date} ${creneau.heureDebut}-${creneau.heureFin}`,
+    label: `${creneau.date} ${formatHeure(creneau.heureDebut)}-${formatHeure(creneau.heureFin)}`,
     hint: $localize`:@@palette.creneau.jour:Jour ${creneau.jour}:jour:`,
     icon: 'schedule',
     route: '/journee',

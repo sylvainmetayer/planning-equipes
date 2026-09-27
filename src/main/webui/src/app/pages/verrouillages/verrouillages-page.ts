@@ -42,6 +42,7 @@ import { ConfirmService } from '../../shared/confirm-dialog';
 import { RouterLink } from '@angular/router';
 import { errorMessage } from '../../core/error-message';
 import { compareCodeUnits } from '../../core/string-order';
+import { HhmmPipe } from '../../shared/hhmm-pipe';
 
 /** Manually creatable types: ANIMATEUR_CRENEAU locks are only ever posed by an accepted échange (issue #165). */
 type TypeVerrouillageManuel = Exclude<TypeVerrouillage, 'ANIMATEUR_CRENEAU'>;
@@ -102,6 +103,7 @@ function phrases(avertissements: readonly Avertissement[]): string {
 @Component({
   selector: 'app-verrouillages-page',
   imports: [
+    HhmmPipe,
     FormsModule,
     MatCardModule,
     MatButtonModule,
