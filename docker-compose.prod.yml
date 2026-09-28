@@ -20,7 +20,12 @@ services:
     # comme les mots de passe. Voir docs/versioning.md § Déployer.
     image: ghcr.io/sylvainmetayer/planning-equipes:${APP_VERSION:?APP_VERSION est obligatoire — une version nommée, ex. 1.2.0, voir docs/versioning.md}
     restart: unless-stopped
-    mem_limit: 1g
+    # L'image donne à la JVM les trois quarts de cette limite pour son tas
+    # (JDK_JAVA_OPTIONS, voir le Dockerfile) : 1,5 Go ici, ce que le solveur
+    # demande pour ne pas passer son temps à collecter. Sous 1 Go, il ne
+    # resterait pas assez hors du tas et le conteneur serait tué en plein
+    # calcul. Voir docs/exploitation.md § La mémoire de l'application.
+    mem_limit: 2g
     # Sur la boucle locale seulement : le reverse proxy est le seul chemin
     # d'entrée, et l'origine ne doit pas être joignable sans passer par lui —
     # c'est ce qui rend dignes de confiance les en-têtes X-Forwarded-*.
