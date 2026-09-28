@@ -456,6 +456,38 @@ class RealmPlanningStructuralTest {
         assertThat(realm.path("actionTokenGeneratedByAdminLifespan").asInt()).isEqualTo(48 * 3600);
     }
 
+    /**
+     * The name and the address are the organisation's, from the fiche: the
+     * account console shows them and edits nothing but the credentials. Only
+     * the admin side — the provisioning's service account — writes them. And
+     * no name is required, or an administrator invited by address alone would
+     * meet, at sign-in, a profile form they cannot fill.
+     */
+    @Test
+    void theNameAndTheAddressAreReadOnlyInTheAccountConsole() throws Exception {
+        JsonNode profil = new com.fasterxml.jackson.databind.ObjectMapper()
+                .readTree(realm.path("components")
+                        .path("org.keycloak.userprofile.UserProfileProvider")
+                        .path(0)
+                        .path("config")
+                        .path("kc.user.profile.config")
+                        .path(0)
+                        .asText());
+        List<String> attributs = stream(profil.path("attributes"))
+                .map(attribut -> attribut.path("name").asText())
+                .toList();
+        assertThat(attributs).containsExactlyInAnyOrder("username", "email", "firstName", "lastName");
+        stream(profil.path("attributes")).forEach(attribut -> {
+            String nom = attribut.path("name").asText();
+            assertThat(attribut.path("permissions").path("edit").toString())
+                    .as(nom)
+                    .isEqualTo("[\"admin\"]");
+            if (nom.equals("firstName") || nom.equals("lastName")) {
+                assertThat(attribut.has("required")).as(nom).isFalse();
+            }
+        });
+    }
+
     /** Without a default locale Keycloak writes in English — the invitation and the sign-in code alike. */
     @Test
     void mailsAndPagesAreInFrenchByDefault() {

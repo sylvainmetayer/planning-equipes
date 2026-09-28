@@ -37,6 +37,16 @@
     <span class="visually-hidden" i18n="@@shell.switchLanguage">Changer de langue</span>
     {{ locale === 'fr' ? 'EN' : 'FR' }}
   </button>
+  <!-- Keycloak's own account page, the whole window: the password, the
+       passkeys and the second factor are set there; the name and the address
+       are the organisation's, shown read-only. Only under Keycloak — the
+       break-glass account has nothing to manage there. -->
+  @if (modeOidc) {
+    <a matIconButton href="/api/auth/oidc/compte"
+       i18n-aria-label="@@shell.compte" aria-label="Mon compte : mot de passe, passkey, double authentification">
+      <mat-icon>account_circle</mat-icon>
+    </a>
+  }
   <button matIconButton (click)="logout()" i18n-aria-label="@@shell.logout" aria-label="Se déconnecter">
     <mat-icon>logout</mat-icon>
   </button>
