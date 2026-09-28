@@ -69,6 +69,7 @@ import {
 } from '../planning-personne/planning-personne';
 import { PlanningPersonneView } from '../planning-personne/planning-personne-vue';
 import { GridSpan, readGridSpan } from '../planning-grille/jours-grille';
+import { TRI_NOM } from '../planning-grille/planning-grille';
 import { PlanningTypologieView } from '../planning-typologie/planning-typologie-vue';
 import { RepartitionHeuresView } from '../repartition-heures/repartition-heures-vue';
 import { ComparaisonView } from './comparaison-vue';
@@ -155,6 +156,16 @@ function filtersShown(
         ? EVERY_FILTER
         : { ...NO_FILTER, name: true, stand: true, animateur: true };
   }
+}
+
+/**
+ * The person axis's rendering an address without `vue` implies: a summary
+ * sort or `colonnes=toutes` — the links written before the summary left the
+ * day grid, `/equite` redirects included — name the synthesis.
+ */
+function impliedPersonView(query: ParamMap): string | null {
+  const sort = query.get('sort');
+  return (sort && sort !== TRI_NOM) || query.get('colonnes') === 'toutes' ? 'synthese' : null;
 }
 
 /** A stand or an animateur of the plan, as the two filter selectors list them. */
@@ -499,12 +510,27 @@ export class JourneePage implements OnInit {
     return view === 'changements' ? 'changements' : 'aucune';
   });
 
-  /** What the `portee` param carries: on the two grids only, and absent for the week. */
+  /**
+   * The sort the address carries: the person axis's, except a summary column's
+   * on the day grid, which shows only the names — kept in memory for the
+   * synthesis, never written where nothing on screen says it.
+   */
+  private readonly shownPersonSort = computed<SortState>(() => {
+    if (this.axe() !== 'personne') {
+      return NO_SORT;
+    }
+    const tri = this.triPersonne();
+    return this.personView() === 'grille' && tri.active !== TRI_NOM ? NO_SORT : tri;
+  });
+
+  /**
+   * What the `portee` param carries: on the two axes whose grids read it, as
+   * `densite` is, so that a reload on the frise or the synthesis keeps it for
+   * the way back to the grid; absent for the week.
+   */
   private readonly gridSpanParam = computed(() => {
-    const grid =
-      (this.axe() === 'stand' && this.standView() === 'grille') ||
-      (this.axe() === 'personne' && this.personView() === 'grille');
-    return grid && this.gridSpan() !== 'semaine' ? this.gridSpan() : null;
+    const axis = this.axe() === 'stand' || this.axe() === 'personne';
+    return axis && this.gridSpan() !== 'semaine' ? this.gridSpan() : null;
   });
 
   /** True as soon as a filter or a view's own switch narrows the day; the day and the rendering are navigation. */
@@ -518,8 +544,8 @@ export class JourneePage implements OnInit {
       this.densiteStand() !== 'noms' ||
       this.densitePersonne() !== 'detail' ||
       this.gridSpanParam() !== null ||
-      this.triPersonne().active !== '' ||
-      this.allColumns() ||
+      this.shownPersonSort().active !== '' ||
+      (this.allColumns() && this.axe() === 'personne' && this.personView() === 'synthese') ||
       this.noRestOnly() ||
       this.lignesRail() !== 'tous' ||
       this.instantCarte() !== null ||
@@ -634,8 +660,11 @@ export class JourneePage implements OnInit {
       vue: this.viewParam(),
       densite: this.densiteParam(),
       portee: this.gridSpanParam(),
-      ...sortQueryParams(this.axe() === 'personne' ? this.triPersonne() : NO_SORT),
-      colonnes: this.axe() === 'personne' && this.allColumns() ? 'toutes' : null,
+      ...sortQueryParams(this.shownPersonSort()),
+      colonnes:
+        this.axe() === 'personne' && this.personView() === 'synthese' && this.allColumns()
+          ? 'toutes'
+          : null,
       sansRepos: this.axe() === 'personne' && this.noRestOnly() ? '1' : null,
       q: optionalParam(this.filtre()),
       stand: optionalParam(this.stand()),
@@ -865,7 +894,7 @@ export class JourneePage implements OnInit {
     if (this.axe() === 'stand') {
       this.standView.set(readStandView(requestedView));
     } else if (this.axe() === 'personne') {
-      this.personView.set(readPersonView(requestedView));
+      this.personView.set(readPersonView(requestedView ?? impliedPersonView(query)));
     } else if (this.axe() === 'jour') {
       this.view.set(readView(requestedView));
     }

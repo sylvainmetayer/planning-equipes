@@ -51,11 +51,15 @@ export function readDensitePersonne(value: string | null): DensitePersonne {
   return value === 'compact' ? 'compact' : 'detail';
 }
 
-/** The grid, or the frise: one proportional bar per person, a month on one screen. */
-export type PersonView = 'grille' | 'frise';
+/**
+ * The grid of the days; the frise, one proportional bar per person, a month
+ * on one screen; the synthesis, the Équité and payroll columns in a table of
+ * their own — beside the days they took a screen's width the days needed.
+ */
+export type PersonView = 'grille' | 'frise' | 'synthese';
 
 export function readPersonView(value: string | null): PersonView {
-  return value === 'frise' ? 'frise' : 'grille';
+  return value === 'frise' || value === 'synthese' ? value : 'grille';
 }
 
 /** The summary column of the distance to the median of the hours. */
@@ -506,7 +510,7 @@ export function buildTableauPersonnes(
     colonnes,
     vides,
     pied: {
-      libelle: $localize`:@@planningPersonne.footer.label:Au repos ce jour-là ; à droite, le total des personnes affichées`,
+      libelle: $localize`:@@planningPersonne.footer.label:Au repos ce jour-là`,
       cases: jours.map((jour) => String(totaux[dayColumn.get(jour.jour) ?? -1]?.repos ?? '')),
       synthese: totals,
     },

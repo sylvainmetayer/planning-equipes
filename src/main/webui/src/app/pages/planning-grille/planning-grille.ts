@@ -104,9 +104,12 @@ export const TRI_NOM = 'nom';
 
 /**
  * The grid the Planning page's « Par stand » and « Par personne » axes share
- * (issue #713): one line per stand or per animateur, one column per day of the
- * event, summary columns at the right, a footer of totals. The first column
- * stays put while the days scroll under it, the headers too; the body of the
+ * (issue #713): one line per stand or per animateur, one column per day the
+ * caller hands it — the week of the page's day, by default —, summary columns
+ * at the right, a footer of totals. It is as wide as the page: the days share
+ * its width and their text wraps. The first column and the headers stay put
+ * while the lines scroll under them, and a screen too narrow for even the
+ * shrunk columns still scrolls sideways under the first one; the body of the
  * grid is one tab stop, the arrows move inside it — from a line's header,
  * through its days, to its summary (roving tabindex, Home and End to the ends
  * of a line) — and Enter or a click opens the cell: the page opens the Siège
@@ -223,7 +226,7 @@ export const TRI_NOM = 'nom';
             <tr>
               <th scope="row" class="planning-grille-entete">{{ pied.libelle }}</th>
               @for (texte of pied.cases; track $index) {
-                <td class="planning-grille-pied" [class.planning-grille-semaine]="jours()[$index]?.debutSemaine">{{ texte }}</td>
+                <td class="planning-grille-pied" [class.planning-grille-semaine]="jours()[$index]?.debutSemaine">{{ breakable(texte) }}</td>
               }
               @for (colonne of syntheses(); track colonne.key) {
                 <td class="planning-grille-synthese planning-grille-pied">{{ pied.synthese[colonne.key] ?? '' }}</td>
@@ -285,9 +288,9 @@ export class PlanningGrille<T extends LigneGrille> {
 
   constructor() {
     // The day the page moves to becomes the column the tab stop sits in, and
-    // comes into view — the grid of a month-long edition scrolls sideways.
-    // The nearest edge, not the centre: a week that fits is left where it
-    // starts, rather than slid half under the frozen first column.
+    // comes into view where the grid is still wider than a narrow screen —
+    // by the nearest edge, not the centre, so that a grid that fits is left
+    // where it starts rather than slid half under the frozen first column.
     effect(() => {
       const marque = this.jourMarque();
       const colonne = this.jours().findIndex((jour) => jour.key === marque);
@@ -303,6 +306,16 @@ export class PlanningGrille<T extends LigneGrille> {
         { injector: this.injector },
       );
     });
+  }
+
+  /**
+   * A day's total with a break allowed after its slash: « 212/240 » is one
+   * unbreakable number to the line breaker, and sixteen of them side by side
+   * would hold the grid wider than the page. A zero-width space, so the text
+   * a reader copies or hears is unchanged.
+   */
+  protected breakable(texte: string): string {
+    return texte.replace('/', '/\u200B');
   }
 
   protected isCurrent(ligne: number, colonne: number): boolean {

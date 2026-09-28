@@ -66,6 +66,12 @@
   margin: 0.25rem 0 0.5rem;
 }
 
+/* A sentence of the bar saying why a switch beside it is off. */
+.planning-axe-note {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
 /* The legend of an axis: one swatch per state a cell can be in. */
 .planning-grille-legende {
   display: flex;

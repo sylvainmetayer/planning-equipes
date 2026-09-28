@@ -154,6 +154,7 @@ function tableau(filtres: Partial<FiltresPersonne> = {}) {
 describe('Par personne', () => {
   it('reads its view and its density tolerantly, the Jours de repos keys included', () => {
     expect(readPersonView('frise')).toBe('frise');
+    expect(readPersonView('synthese')).toBe('synthese');
     expect(readPersonView('treemap')).toBe('grille');
     expect(readDensitePersonne('compact')).toBe('compact');
     expect(readDensitePersonne('confort')).toBe('detail');
