@@ -18,20 +18,20 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
         {
           kind: 'list',
           items: [
-            $localize`:@@aide.exchange.item.fichiers:La page Fichiers réunit les deux moitiés d'un même geste — exporter, corriger dans le tableur, réimporter — et l'archive qui clôt une édition, en trois onglets : Importer, Exporter, Archive. Chaque écran de référentiel a aussi son bouton « Importer », qui ouvre la même carte sans quitter l'écran.`,
-            $localize`:@@aide.exchange.item.scenario.fichiers:Import d'un scénario YAML (Fichiers, onglet Importer, carte Scénario) : la façon la plus rapide de remplir une édition vide. Un fichier invalide donne une notification détaillée plutôt qu'un import partiel.`,
+            $localize`:@@aide.exchange.item.fichiers:La page Fichiers a trois onglets : Importer, Exporter, Archive. On y exporte, on corrige dans le tableur, on réimporte, et on y trouve l'archive qui clôt une édition. Chaque écran de référentiel a aussi son bouton « Importer », qui ouvre la même carte sans quitter l'écran.`,
+            $localize`:@@aide.exchange.item.scenario.fichiers:Import d'un scénario YAML (Fichiers, onglet Importer, carte Scénario) : la façon la plus rapide de remplir une édition vide. Un fichier invalide n'importe rien, même en partie, et donne une notification détaillée.`,
             $localize`:@@aide.exchange.item.exemples:Exemples (Fichiers, onglet Importer) : les plannings livrés avec l'application, rangés « pour découvrir », « pour tester un cas » et « extrêmes », chacun avec sa taille et ce qu'il montre.`,
             $localize`:@@aide.exchange.item.collage:Coller depuis un tableur : chaque carte d'import de référentiel accepte aussi les cellules copiées, en-têtes compris, et les lit comme un fichier ; l'aperçu passe avant toute écriture. Après un import, « Voir les … lignes importées » ouvre l'écran du référentiel sur ces seules lignes ; « Tout afficher » y rend la liste entière.`,
             $localize`:@@aide.exchange.item.csvAnimateurs:Import CSV des animateurs : reprendre votre tableur sans le ressaisir. Le format attendu a sa propre section dans ce guide.`,
-            $localize`:@@aide.exchange.item.exports.fichiers:Exports (Fichiers, onglet Exporter) : les référentiels de l'édition en une archive ZIP, ou l'édition entière en un scénario — dans la forme exacte que l'onglet Importer relit.`,
-            $localize`:@@aide.exchange.item.archive.fichiers:Archive de fin d'événement (Fichiers, onglet Archive) : les exports d'une édition terminée en un seul ZIP — planning global, équité, heures, référentiels, scénario, relecture, plannings individuels au choix — avec un manifeste LISEZMOI.txt qui dit de quel plan ils viennent. Aucun jeton d'accès n'y figure, mais les noms, dates de naissance et adresses, si : une fois téléchargée, sa conservation vous revient. L'État de l'édition la propose une fois le dernier jour passé.`,
+            $localize`:@@aide.exchange.item.exports.fichiers:Exports (Fichiers, onglet Exporter) : les référentiels de l'édition en une archive ZIP, ou l'édition entière en un scénario, sous la forme exacte que relit l'onglet Importer.`,
+            $localize`:@@aide.exchange.item.archive.fichiers:Archive de fin d'événement (Fichiers, onglet Archive) : les exports d'une édition terminée en un seul ZIP (planning global, équité, heures, référentiels, scénario, relecture, plannings individuels au choix), avec un manifeste LISEZMOI.txt qui dit de quel plan ils viennent. Aucun jeton d'accès n'y figure, mais les noms, dates de naissance et adresses, si : une fois téléchargée, sa conservation vous revient. L'État de l'édition la propose une fois le dernier jour passé.`,
             $localize`:@@aide.exchange.item.sql:Export et import d'un dump SQL complet, pour dupliquer ou restaurer un jeu de données entier.`,
             $localize`:@@aide.exchange.item.pdfIcs:Export du planning d'un animateur en PDF ou en ICS, à l'unité ou en archive ZIP pour tout le monde. Un fichier ICS est une photo : pour un agenda qui suit les republications, c'est l'abonnement de l'espace animateur qu'il faut.`,
             $localize`:@@aide.exchange.item.yamlValidator.fichiers:Vérifier un fichier sans l'importer (Fichiers, onglet Importer) : contrôle la structure d'un fichier scénario sans rien écrire.`,
-            $localize`:@@aide.exchange.item.notifications.accueil:Messages récents (accueil, sous « À traiter aujourd'hui ») : l'historique des messages de l'application — fin de résolution, import, erreur — et les alertes des envois de nuit. La cloche de la barre du haut y mène et compte les messages non lus.`,
-            $localize`:@@aide.exchange.item.debug.brut:Débogage : l'état brut renvoyé par le serveur, la version, la documentation de l'API et les vérifications techniques — notification, erreur, e-mail de test, Mailpit. Utile pour rapporter un problème précisément. Il n'est pas dans le menu : Ctrl+K puis « débogage », ou son adresse /debug.`,
-            $localize`:@@aide.exchange.item.nouveautes:Nouveautés : ce que la version installée a apporté, regroupé par version — « À venir » rassemble ce qui est fait mais pas encore publié. La liste est construite depuis l'historique du dépôt, donc personne ne la tient à jour et elle ne peut pas mentir sur ce qui tourne. « À surveiller » en tête signale les changements qui demandent une vérification avant de relancer un calcul.`,
-            $localize`:@@aide.exchange.item.sauvegarde.instance:Sauvegarde de nuit (page Paramètres, onglet Instance) : la base entière est copiée sur le disque du serveur chaque nuit, et l'écran dit où, lesquelles existent et si la dernière s'est bien passée. Elle ne se télécharge pas — elle porte les noms, les dates de naissance et les adresses de tout le monde — et la restauration est une opération de l'exploitant.`,
+            $localize`:@@aide.exchange.item.notifications.accueil:Messages récents (accueil, sous « À traiter aujourd'hui ») : l'historique des messages de l'application (fin de résolution, import, erreur) et les alertes des envois de nuit. La cloche de la barre du haut y mène et compte les messages non lus.`,
+            $localize`:@@aide.exchange.item.debug.brut:Débogage : l'état brut renvoyé par le serveur, la version, la documentation de l'API et les vérifications techniques (notification, erreur, e-mail de test, Mailpit). Utile pour rapporter un problème précisément. Il n'est pas dans le menu : Ctrl+K puis « débogage », ou son adresse /debug.`,
+            $localize`:@@aide.exchange.item.nouveautes:Nouveautés : ce que la version installée a apporté, regroupé par version. « À venir » rassemble ce qui est fait mais pas encore publié. La liste est construite depuis l'historique du dépôt, donc personne ne la tient à jour et elle ne peut pas mentir sur ce qui tourne. « À surveiller » en tête signale les changements qui demandent une vérification avant de relancer un calcul.`,
+            $localize`:@@aide.exchange.item.sauvegarde.instance:Sauvegarde de nuit (page Paramètres, onglet Instance) : la base entière est copiée sur le disque du serveur chaque nuit, et l'écran dit où, lesquelles existent et si la dernière s'est bien passée. Elle ne se télécharge pas, car elle porte les noms, les dates de naissance et les adresses de tout le monde. La restauration est une opération de l'exploitant.`,
           ],
         },
       ],
@@ -64,28 +64,28 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.historique.intro:La page déroule, du plus récent au plus ancien, ce qui a été fait dans l'édition courante : l'heure, l'action, l'objet visé, les champs qu'une modification a réellement changés, et l'auteur. C'est la page à ouvrir quand une donnée a changé sans que personne ne se souvienne de l'avoir touchée. Une action refusée y figure aussi, marquée « refusée » : c'est souvent la ligne qu'on cherche — un import qui n'a rien écrit, une publication tentée pendant une résolution, un lien d'espace périmé.`,
+          text: $localize`:@@aide.historique.intro:La page déroule, du plus récent au plus ancien, ce qui a été fait dans l'édition courante : l'heure, l'action, l'objet visé, les champs qu'une modification a réellement changés, et l'auteur. C'est la page à ouvrir quand une donnée a changé sans que personne ne se souvienne de l'avoir touchée. Une action refusée y figure aussi, marquée « refusée » : c'est souvent la ligne qu'on cherche, par exemple un import qui n'a rien écrit, une publication tentée pendant une résolution ou un lien d'espace périmé.`,
         },
         {
           kind: 'definitions',
           items: [
             {
               term: $localize`:@@aide.historique.term.acteurs:Les cinq auteurs`,
-              text: $localize`:@@aide.historique.def.acteurs:« Administration » : quelqu'un connecté à l'administration. « Animateurs » : une action faite depuis un espace animateur. « Non identifié » : un appel sans justificatif valable, un lien d'espace faux ou périmé — ces lignes sont des refus. « Assistant » : un appel venu du MCP. « Application » : les tâches de nuit. Chaque famille a son bouton de filtre, et « Abouti / Refusé » se filtre à part.`,
+              text: $localize`:@@aide.historique.def.acteurs:« Administration » : quelqu'un connecté à l'administration. « Animateurs » : une action faite depuis un espace animateur. « Non identifié » : un appel sans justificatif valable, un lien d'espace faux ou périmé ; ces lignes sont des refus. « Assistant » : un appel venu du MCP. « Application » : les tâches de nuit. Chaque famille a son bouton de filtre, et « Abouti / Refusé » se filtre à part.`,
             },
             {
               term: $localize`:@@aide.historique.term.contenu:Ce qu'une ligne ne dit pas`,
-              text: $localize`:@@aide.historique.def.contenu:Aucune valeur : « nom, e-mail » dit ce qui a bougé, jamais ce que c'est devenu. L'historique n'est pas une sauvegarde et ne permet pas de revenir en arrière — c'est le rôle des instantanés. Aucune identité non plus : la ligne garde un identifiant, si bien qu'une fiche supprimée depuis laisse une ligne qui ne nomme plus personne. Sont tracées les écritures et les sorties de données — exports, dumps, envois de courriel — jamais les consultations ni les calculs qui n'écrivent rien.`,
+              text: $localize`:@@aide.historique.def.contenu:Aucune valeur : « nom, e-mail » dit ce qui a bougé, jamais ce que c'est devenu. L'historique n'est pas une sauvegarde et ne permet pas de revenir en arrière ; pour cela, il y a les instantanés. Aucune identité non plus : la ligne garde un identifiant, si bien qu'une fiche supprimée depuis laisse une ligne qui ne nomme plus personne. Sont tracées les écritures et les sorties de données (exports, dumps, envois de courriel), mais ni les consultations ni les calculs qui n'écrivent rien.`,
             },
             {
               term: $localize`:@@aide.historique.term.portee:Ce que la page charge`,
-              text: $localize`:@@aide.historique.def.portee:Les deux cents dernières actions de l'édition consultée, et les filtres travaillent sur elles : une recherche qui ne rend rien ne prouve donc pas que l'action n'a pas eu lieu, seulement qu'elle est sortie de cette fenêtre. « Exports » fait exception : le serveur cherche alors les deux cents derniers fichiers sortis sur toute la durée conservée, quel que soit le nombre de modifications survenues depuis. Au-delà, une rétention borne la table — quatre-vingt-dix jours par défaut, réglée par l'exploitant. Un journal qu'on peut modifier n'est pas un journal : aucun bouton de cet écran n'efface quoi que ce soit.`,
+              text: $localize`:@@aide.historique.def.portee:Les deux cents dernières actions de l'édition consultée, et les filtres travaillent sur elles : une recherche qui ne rend rien ne prouve donc pas que l'action n'a pas eu lieu, seulement qu'elle est sortie de cette fenêtre. « Exports » fait exception : le serveur cherche alors les deux cents derniers fichiers sortis sur toute la durée conservée, quel que soit le nombre de modifications survenues depuis. Au-delà, la table est limitée par une durée de rétention, quatre-vingt-dix jours par défaut, que règle l'exploitant. L'historique est un journal en lecture seule : aucun bouton de cet écran n'efface quoi que ce soit.`,
             },
           ],
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.historique.filtres:Cinq filtres se combinent : la recherche libre, l'objet, l'auteur, le résultat et « Exports ». Ils restent dans l'adresse de la page, donc dans un lien que vous envoyez. Un cas courant : une fiche animateur qui n'est plus celle qu'on croyait — filtrez sur l'objet « ANIMATEUR » et tapez son identifiant, la ligne dit quand, par qui, et quels champs ont changé. « Exports » ne garde que les fichiers sortis de l'application — exports de l'administration, dump de la base, plannings téléchargés depuis un espace : c'est la réponse à « qui a sorti la liste des animateurs, et quand ? », et à « a-t-il bien récupéré son planning ? ».`,
+          text: $localize`:@@aide.historique.filtres:Cinq filtres se combinent : la recherche libre, l'objet, l'auteur, le résultat et « Exports ». Ils restent dans l'adresse de la page, donc dans un lien que vous envoyez. Un cas courant : une fiche animateur n'est plus celle qu'on croyait. Filtrez sur l'objet « ANIMATEUR » et tapez son identifiant ; la ligne dit quand, par qui et quels champs ont changé. « Exports » ne garde que les fichiers sortis de l'application : exports de l'administration, dump de la base, plannings téléchargés depuis un espace. Ce filtre répond à « qui a sorti la liste des animateurs, et quand ? » et à « a-t-il bien récupéré son planning ? ».`,
         },
       ],
       links: [
@@ -102,11 +102,11 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
       id: 'assistant-mcp',
       icon: 'smart_toy',
       title: $localize`:@@aide.mcp.title:Piloter l'application par un assistant (MCP)`,
-      summary: $localize`:@@aide.mcp.summary:Brancher un assistant IA sur l'édition pour la consulter et la modifier — avec une clé qui ouvre tout.`,
+      summary: $localize`:@@aide.mcp.summary:Brancher un assistant IA sur l'édition pour la consulter et la modifier, avec une clé qui ouvre tout.`,
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.mcp.intro:MCP est le protocole par lequel un assistant parle à une application. Branché sur celle-ci, il répond en langage naturel — « combien de sièges vides samedi après-midi ? », « relance une résolution » — et il agit vraiment : il passe par les mêmes services que les écrans, avec les mêmes contrôles et les mêmes refus. La page MCP donne le point d'entrée et la configuration à coller dans le client.`,
+          text: $localize`:@@aide.mcp.intro:MCP est le protocole par lequel un assistant parle à une application. Branché sur celle-ci, il répond aux demandes en langage naturel (« combien de sièges vides samedi après-midi ? », « relance une résolution ») et il agit réellement, en passant par les mêmes services que les écrans, avec les mêmes contrôles et les mêmes refus. La page MCP donne le point d'entrée et la configuration à coller dans le client.`,
         },
         {
           kind: 'definitions',
@@ -117,15 +117,15 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
             },
             {
               term: $localize`:@@aide.mcp.term.pouvoir:Ce que la clé permet`,
-              text: $localize`:@@aide.mcp.def.pouvoir:Tout ce que fait l'administration, écriture comprise : créer et supprimer des données, lancer une résolution, publier, vider une édition. Elle n'est propre à personne et n'expire pas : traitez-la comme un mot de passe et faites-la remplacer au moindre doute. Un assistant branché dessus agit sans confirmation à l'écran — avant de lui faire toucher une édition réelle, prenez un instantané.`,
+              text: $localize`:@@aide.mcp.def.pouvoir:Tout ce que fait l'administration, écriture comprise : créer et supprimer des données, lancer une résolution, publier, vider une édition. Elle n'est propre à personne et n'expire pas : traitez-la comme un mot de passe et faites-la remplacer au moindre doute. Un assistant branché dessus agit sans confirmation à l'écran. Avant de lui faire toucher une édition réelle, prenez un instantané.`,
             },
             {
               term: $localize`:@@aide.mcp.term.donnees:Ce qui ne sort jamais par là`,
-              text: $localize`:@@aide.mcp.def.donnees:Ni nom, ni prénom, ni date de naissance, ni adresse e-mail. Un assistant désigne une personne par son identifiant d'animateur, et ne connaît d'elle que ses attributs de planification et son régime — mineur, moins de seize ans, majeur — déduit de la date sans que la date circule. Une réponse par identifiants se relit sur la page Animateurs, dont le filtre les accepte.`,
+              text: $localize`:@@aide.mcp.def.donnees:Ni nom, ni prénom, ni date de naissance, ni adresse e-mail. Un assistant désigne une personne par son identifiant d'animateur, et ne connaît d'elle que ses attributs de planification et son régime (mineur, moins de seize ans, majeur), déduit de la date sans que la date circule. Une réponse par identifiants se relit sur la page Animateurs, dont le filtre les accepte.`,
             },
             {
               term: $localize`:@@aide.mcp.term.proxy:Derrière un proxy d'accès`,
-              text: $localize`:@@aide.mcp.def.proxy:Quand l'application est publiée derrière un proxy d'accès, la page le détecte et l'annonce : chaque appel doit alors présenter en plus un jeton du proxy, que la configuration proposée porte déjà. Un détail qui coûte une demi-heure quand on l'ignore : la clé se passe dans son en-tête dédié, jamais dans « Authorization », qu'un proxy consomme souvent pour lui-même.`,
+              text: $localize`:@@aide.mcp.def.proxy:Quand l'application est publiée derrière un proxy d'accès, la page le détecte et l'annonce : chaque appel doit alors présenter en plus un jeton du proxy, que la configuration proposée porte déjà. La clé se passe dans son en-tête dédié, jamais dans « Authorization », qu'un proxy consomme souvent pour lui-même. Qui ne le sait pas y perd une demi-heure.`,
             },
             {
               term: $localize`:@@aide.mcp.term.prompts:Prompts prêts à l'emploi`,
@@ -135,7 +135,7 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.mcp.journal:Rien de ce qu'un assistant écrit n'est invisible : chaque écriture laisse une ligne dans l'historique des actions, sous l'auteur « Assistant ».`,
+          text: $localize`:@@aide.mcp.journal:Chaque écriture d'un assistant laisse une ligne dans l'historique des actions, sous l'auteur « Assistant ».`,
         },
       ],
       links: [
@@ -157,15 +157,15 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
           ? [
               {
                 kind: 'paragraph' as const,
-                text: $localize`:@@aide.contact.mail:Pour une question d'utilisation ou un doute sur un résultat, écrivez à ${supportEmail}:email: — joignez si possible une capture d'écran et la version affichée en bas de page.`,
+                text: $localize`:@@aide.contact.mail:Pour une question d'utilisation ou un doute sur un résultat, écrivez à ${supportEmail}:email:. Joignez si possible une capture d'écran et la version affichée en bas de page.`,
               },
             ]
           : []),
         {
           kind: 'paragraph',
           text: supportEmail
-            ? $localize`:@@aide.contact.issue:Pour une erreur métier reproductible — un score faux, une contrainte non respectée, un export incorrect — ouvrez un rapport de problème sur GitHub : le formulaire guide la description. GitHub est public : désignez les personnes par leur identifiant d'animateur, jamais par leur nom. Les données nominatives passent par l'e-mail ci-dessus.`
-            : $localize`:@@aide.contact.issueSansMail:Pour une erreur métier reproductible — un score faux, une contrainte non respectée, un export incorrect — ouvrez un rapport de problème sur GitHub : le formulaire guide la description. GitHub est public : désignez les personnes par leur identifiant d'animateur, jamais par leur nom.`,
+            ? $localize`:@@aide.contact.issue:Pour une erreur métier reproductible (un score faux, une contrainte non respectée, un export incorrect), ouvrez un rapport de problème sur GitHub : le formulaire guide la description. GitHub est public : désignez les personnes par leur identifiant d'animateur, jamais par leur nom. Les données nominatives passent par l'e-mail ci-dessus.`
+            : $localize`:@@aide.contact.issueSansMail:Pour une erreur métier reproductible (un score faux, une contrainte non respectée, un export incorrect), ouvrez un rapport de problème sur GitHub : le formulaire guide la description. GitHub est public : désignez les personnes par leur identifiant d'animateur, jamais par leur nom.`,
         },
       ],
       links: [

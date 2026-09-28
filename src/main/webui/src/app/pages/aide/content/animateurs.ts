@@ -18,22 +18,22 @@ export function buildAnimateurSideSections(): HelpSection[] {
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.foire.intro:Chaque animateur a un espace personnel, ouvert par un lien qui lui est propre. Aucun compte à créer, mais un code envoyé à l'adresse e-mail de sa fiche lui est demandé une fois par appareil : le planning se télécharge depuis l'espace, un minimum d'authentification s'impose. Un animateur sans adresse ne peut pas y entrer — ajoutez-la.`,
+          text: $localize`:@@aide.foire.intro:Chaque animateur a un espace personnel, ouvert par un lien qui lui est propre. Il n'y a pas de compte à créer, mais un code envoyé à l'adresse e-mail de sa fiche lui est demandé une fois par appareil : comme le planning se télécharge depuis l'espace, un minimum d'authentification s'impose. Un animateur sans adresse ne peut pas y entrer, pensez à l'ajouter.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.foire.echange:Il y consulte son planning à jour et peut proposer d'échanger un créneau avec un collègue, soit en le cédant simplement, soit en désignant en plus le créneau qu'il veut récupérer. Le collègue donne d'abord son accord depuis son propre espace : une demande n'arrive sur votre écran Échanges qu'une fois les deux d'accord, et un refus la clôt sans arbitrage. Chaque demande est prévalidée contre les règles dures ; une demande irréalisable est signalée, mais transmise quand même — c'est vous qui tranchez.`,
+          text: $localize`:@@aide.foire.echange:Il y consulte son planning à jour et peut proposer d'échanger un créneau avec un collègue, soit en le cédant simplement, soit en désignant en plus le créneau qu'il veut récupérer. Le collègue donne d'abord son accord depuis son propre espace : une demande n'arrive sur votre écran Échanges qu'une fois les deux d'accord, et un refus la clôt sans arbitrage. Chaque demande est prévalidée contre les règles dures ; une demande irréalisable est signalée mais vous est transmise quand même, et c'est vous qui tranchez.`,
         },
         {
           kind: 'definitions',
           items: [
             {
               term: $localize`:@@aide.foire.term.ecran:Écran Échanges`,
-              text: $localize`:@@aide.foire.def.ecran:L'écran s'ouvre sur la file : les demandes en attente de votre décision, avec pour chacune son impact mesuré — échange croisé ou simple reprise, effet sur le score, règles dures qui seraient cassées. Accepter applique l'échange immédiatement, exactement comme simulé, et le verrouille sur son créneau : une régénération ne le défera pas. Sa carte propose alors les deux suites sur place : « Prévenir les 2 personnes » publie pour ces deux-là seulement, « Corriger le reste » lance une résolution incrémentale, et « Voir la journée » ouvre le jour concerné. Refuser ne modifie rien, et le motif est transmis à l'animateur. Une demande décidée reste marquée « pas encore communiquée » tant qu'elle n'a pas été publiée. L'en-tête compte les demandes arrivées depuis votre dernière visite sur ce navigateur.`,
+              text: $localize`:@@aide.foire.def.ecran:L'écran s'ouvre sur la file : les demandes en attente de votre décision, avec pour chacune son impact mesuré (échange croisé ou simple reprise, effet sur le score, règles dures qui seraient cassées). Accepter applique l'échange immédiatement, exactement comme simulé, et le verrouille sur son créneau : une régénération ne le défera pas. Sa carte propose alors trois suites sur place : « Prévenir les 2 personnes » publie pour ces deux-là seulement, « Corriger le reste » lance une résolution incrémentale, et « Voir la journée » ouvre le jour concerné. Refuser ne modifie rien, et le motif est transmis à l'animateur. Une demande décidée reste marquée « pas encore communiquée » tant qu'elle n'a pas été publiée. L'en-tête compte les demandes arrivées depuis votre dernière visite sur ce navigateur.`,
             },
             {
               term: $localize`:@@aide.foire.term.espace:Ce que l'animateur voit`,
-              text: $localize`:@@aide.foire.def.espace:Il monte sa liste de demandes puis la soumet en une fois. Quand il n'a personne en tête, « qui peut me remplacer ? » cherche les collègues avec qui l'échange tient réellement. Il suit ensuite le statut de chacune, avec votre commentaire, et peut annuler tant que rien n'est décidé. Le lien de son espace se copie — et se régénère, si un PDF a fuité — depuis sa fiche sur la page Animateurs.`,
+              text: $localize`:@@aide.foire.def.espace:Il monte sa liste de demandes puis la soumet en une fois. Quand il n'a personne en tête, « qui peut me remplacer ? » cherche les collègues avec qui l'échange tient réellement. Il suit ensuite le statut de chacune, avec votre commentaire, et peut annuler tant que rien n'est décidé. Le lien de son espace se copie depuis sa fiche, sur la page Animateurs, où on le régénère aussi si un PDF a fuité.`,
             },
             {
               term: $localize`:@@aide.foire.term.planPublie:Plan publié et plan de travail`,
@@ -41,23 +41,23 @@ export function buildAnimateurSideSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.foire.term.abonnement:Abonnement au calendrier`,
-              text: $localize`:@@aide.foire.def.abonnement:Un animateur peut donner à son agenda une adresse d'abonnement permanente, au lieu de télécharger un ICS qui se périme. Ce que l'agenda relit à chaque synchronisation, c'est le planning publié : « mon agenda ne se met pas à jour » veut donc presque toujours dire que le changement n'a pas encore été publié. Cette adresse est un second identifiant, distinct du lien de l'espace : régénérer le lien ne coupe pas son abonnement, et l'animateur remplace lui-même son adresse si elle a fuité. Vous ne la voyez pas.`,
+              text: $localize`:@@aide.foire.def.abonnement:Un animateur peut donner à son agenda une adresse d'abonnement permanente, au lieu de télécharger un ICS qui se périme. À chaque synchronisation, l'agenda relit le planning publié : si « mon agenda ne se met pas à jour », c'est presque toujours que le changement n'a pas encore été publié. Cette adresse est un second identifiant, distinct du lien de l'espace : régénérer le lien ne coupe pas son abonnement, et l'animateur remplace lui-même son adresse si elle a fuité. Vous ne la voyez pas.`,
             },
             {
               term: $localize`:@@aide.foire.term.ouverture:Ouverture et fermeture`,
-              text: $localize`:@@aide.foire.def.ouverture:L'interrupteur de la foire, sur la page Paramètres, onglet Édition, carte Guichets, l'ouvre ou la ferme pour l'édition courante ; elle est ouverte par défaut. L'écran Échanges en garde une ligne d'état, avec un bouton pour la fermer. Fermée, les espaces passent en consultation seule : le planning reste visible et téléchargeable, mais plus aucune demande n'est acceptée, et le refus vient du serveur. Vous pouvez aussi borner la foire par deux dates — l'interrupteur reste maître. Avant la date d'ouverture, l'espace annonce « pas encore ouverte » et la date de retour, jamais « fermée ».`,
+              text: $localize`:@@aide.foire.def.ouverture:L'interrupteur de la foire, sur la page Paramètres, onglet Édition, carte Guichets, l'ouvre ou la ferme pour l'édition courante ; elle est ouverte par défaut. L'écran Échanges en garde une ligne d'état, avec un bouton pour la fermer. Une fois la foire fermée, les espaces passent en consultation seule : le planning reste visible et téléchargeable, mais plus aucune demande n'est acceptée, et le refus vient du serveur. Vous pouvez aussi borner la foire par deux dates, mais l'interrupteur reste maître. Avant la date d'ouverture, l'espace annonce « pas encore ouverte » et la date de retour, jamais « fermée ».`,
             },
             {
               term: $localize`:@@aide.foire.term.envoi:Publier le planning`,
-              text: $localize`:@@aide.foire.def.envoi:En tête de l'onglet Envoyer de la page Diffuser, le bouton porte son décompte : « Publier — 3 personnes concernées », et la phrase à côté dit ses deux effets — il envoie leur nouveau planning aux seules personnes dont il a changé et met à jour leur espace. Dix corrections d'affilée ne font donc pas dix courriels : elles remplissent une file que vous videz quand vous avez fini. Le compte rendu nomme les animateurs sans adresse et les envois en échec. Sur un gros effectif, l'envoi prend plusieurs dizaines de secondes.`,
+              text: $localize`:@@aide.foire.def.envoi:En tête de l'onglet Envoyer de la page Diffuser, le bouton porte son décompte : « Publier — 3 personnes concernées ». La phrase à côté dit ses deux effets : il envoie leur nouveau planning aux seules personnes dont il a changé, et il met à jour leur espace. Dix corrections d'affilée ne font donc pas dix courriels : elles remplissent une file que vous videz quand vous avez fini. Le compte rendu nomme les animateurs sans adresse et les envois en échec. Sur un gros effectif, l'envoi prend plusieurs dizaines de secondes.`,
             },
             {
               term: $localize`:@@aide.foire.term.relecture:Relire la liste avant d'envoyer`,
-              text: $localize`:@@aide.foire.def.relecture:« Voir ce qui change pour chacune » ouvre une ligne par personne : ce qui change pour elle, sa dernière confirmation, et une case cochée. Triez par ampleur pour commencer par les plus gros changements et repliez les changements mineurs — même stand, un quart d'heure de décalage au plus. Le filtre ne décide rien : les lignes repliées partent quand même. L'onglet Documents en donne le détail en CSV, pour le relire ailleurs.`,
+              text: $localize`:@@aide.foire.def.relecture:« Voir ce qui change pour chacune » ouvre une ligne par personne : ce qui change pour elle, sa dernière confirmation, et une case cochée. Triez par ampleur pour commencer par les plus gros changements et repliez les changements mineurs (même stand, un quart d'heure de décalage au plus). Le filtre ne décide rien : les lignes repliées partent quand même. L'onglet Documents en donne le détail en CSV, pour le relire ailleurs.`,
             },
             {
               term: $localize`:@@aide.diffuser.term.table:Qui a reçu quelle version`,
-              text: $localize`:@@aide.diffuser.def.table:Sous le bouton, une table permanente liste toute l'édition, qu'il reste ou non quelqu'un à prévenir : la version reçue (« v3 · 01/09 »), l'état de l'envoi — envoyé, échec avec sa cause, sans e-mail, différé —, le rappel de la veille, la relance et l'accusé de réception. Un envoi en échec n'est plus seulement une ligne du journal du serveur : la table le montre, et l'accueil ne dit plus « à jour » tant qu'il en reste. Sur chaque ligne, « Renvoyer son planning » renvoie le planning publié, « Relancer » envoie le rappel de confirmation et « Différer » retire la personne de la prochaine publication. Les filtres isolent les personnes à prévenir, les envois en échec, les fiches sans e-mail, les silencieux et les différés ; « Ce qui change le » ne garde que les personnes dont les changements tombent ce jour-là, selon la règle de l'onglet « Changements » de la Journée. Un bandeau dit si les relances automatiques sont activées, avec le lien pour le faire.`,
+              text: $localize`:@@aide.diffuser.def.table:Sous le bouton, une table permanente liste toute l'édition, qu'il reste ou non quelqu'un à prévenir : la version reçue (« v3 · 01/09 »), l'état de l'envoi (envoyé, échec avec sa cause, sans e-mail, différé), le rappel de la veille, la relance et l'accusé de réception. Un envoi en échec apparaît dans la table, et pas seulement dans le journal du serveur ; l'accueil n'affiche pas « à jour » tant qu'il en reste. Sur chaque ligne, « Renvoyer son planning » renvoie le planning publié, « Relancer » envoie le rappel de confirmation et « Différer » retire la personne de la prochaine publication. Les filtres isolent les personnes à prévenir, les envois en échec, les fiches sans e-mail, les silencieux et les différés ; « Ce qui change le » ne garde que les personnes dont les changements tombent ce jour-là, selon la règle de l'onglet « Changements » de la Journée. Un bandeau dit si les relances automatiques sont activées, avec le lien pour le faire.`,
             },
             {
               term: $localize`:@@aide.diffuser.term.documents:Les documents`,
@@ -65,13 +65,13 @@ export function buildAnimateurSideSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.foire.term.differer:Ne pas prévenir quelqu'un ce soir`,
-              text: $localize`:@@aide.foire.def.differer:Décochez une personne, ou cliquez « Différer » sur sa ligne de la table, et son message est différé, pas perdu : elle ne reçoit rien, et la publication suivante la nomme à nouveau avec l'écart cumulé depuis son dernier message — celui qu'elle a vraiment reçu, pas le plan publié entre-temps. C'est le geste de « je l'appelle d'abord ». Tout décocher est refusé : publier sans prévenir personne n'aurait aucun sens.`,
+              text: $localize`:@@aide.foire.def.differer:Décochez une personne, ou cliquez « Différer » sur sa ligne de la table, et son message est différé : elle ne reçoit rien pour l'instant, et la publication suivante la nomme à nouveau. L'écart est alors cumulé depuis le dernier message qu'elle a vraiment reçu, et non depuis un plan publié entre-temps. C'est ce qu'on fait quand on préfère l'appeler d'abord. Tout décocher est refusé, puisque publier sans prévenir personne n'aurait aucun sens.`,
             },
           ],
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.foire.notifications:Si la messagerie est configurée, vous êtes prévenu par e-mail à chaque soumission. L'animateur, lui, apprend le sort de ses demandes à la publication suivante — ou tout de suite, si vous cliquez « Prévenir les 2 personnes » : accepter un échange change le plan de travail, pas encore celui qu'il a reçu.`,
+          text: $localize`:@@aide.foire.notifications:Si la messagerie est configurée, vous êtes prévenu par e-mail à chaque soumission. L'animateur apprend le sort de ses demandes à la publication suivante, ou tout de suite si vous cliquez « Prévenir les 2 personnes ». Accepter un échange change en effet le plan de travail, et pas encore celui qu'il a reçu.`,
         },
       ],
       links: [
@@ -116,11 +116,11 @@ export function buildAnimateurSideSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.dispo.term.covoiturage:Covoiturage : un onglet à part`,
-              text: $localize`:@@aide.dispo.def.covoiturage:Pendant la même fenêtre, l'espace de chaque animateur porte un onglet « Covoiturage » : « Je viens avec… », de un à trois coéquipiers, jamais soi-même. La demande est envoyée et décidée à part de la déclaration — appliquer ou refuser une déclaration ne la touche jamais. Elle arrive sur l'onglet « Covoiturage » de cette page (le nombre en attente s'affiche sur l'onglet), une carte par demande : « Confirmé par tous » quand chaque membre a nommé exactement le même groupe, et le nombre de jours où leurs indisponibilités déclarées divergent — ces jours-là, ils ne pourront pas arriver ensemble.`,
+              text: $localize`:@@aide.dispo.def.covoiturage:Pendant la même fenêtre, l'espace de chaque animateur porte un onglet « Covoiturage » : « Je viens avec… », de un à trois coéquipiers, jamais soi-même. La demande est envoyée et décidée à part de la déclaration : appliquer ou refuser une déclaration ne la touche jamais. Elle arrive sur l'onglet « Covoiturage » de cette page (le nombre en attente s'affiche sur l'onglet), une carte par demande : « Confirmé par tous » quand chaque membre a nommé exactement le même groupe, et le nombre de jours où leurs indisponibilités déclarées divergent. Ces jours-là, ils ne pourront pas arriver ensemble.`,
             },
             {
               term: $localize`:@@aide.dispo.term.covoiturageDecision:Valider ou écarter un covoiturage`,
-              text: $localize`:@@aide.dispo.def.covoiturageDecision:Chaque demande se décide seule. « Valider l'arrivée groupée » crée un ajustement manuel « Arrivée groupée » qui nomme le demandeur et ses coéquipiers ; les demandes des autres membres qui nomment le même groupe sont validées avec elle, et un groupe identique déjà présent est rejoint plutôt que doublé. Le planning n'en tient compte qu'à la prochaine résolution. « Écarter » n'écrit rien : un motif facultatif (500 caractères au plus) est lu par l'animateur dans son espace, et il peut envoyer une nouvelle demande tant que la collecte est ouverte. Dans les deux cas, les personnes concernées reçoivent un e-mail — chaque membre pour une validation, le demandeur pour un écart ; un envoi qui échoue n'annule pas la décision. Une fois validé, le groupe ne se modifie plus depuis l'espace, ni depuis l'onglet Ajustements de Consignes au solveur : il s'annule d'ici.`,
+              text: $localize`:@@aide.dispo.def.covoiturageDecision:Chaque demande se décide seule. « Valider l'arrivée groupée » crée un ajustement manuel « Arrivée groupée » qui nomme le demandeur et ses coéquipiers ; les demandes des autres membres qui nomment le même groupe sont validées avec elle, et un groupe identique déjà présent est rejoint plutôt que doublé. Le planning n'en tient compte qu'à la prochaine résolution. « Écarter » n'écrit rien : un motif facultatif (500 caractères au plus) est lu par l'animateur dans son espace, et il peut envoyer une nouvelle demande tant que la collecte est ouverte. Dans les deux cas, les personnes concernées reçoivent un e-mail (chaque membre pour une validation, le demandeur pour un écart), et un envoi qui échoue n'annule pas la décision. Une fois validé, le groupe ne se modifie plus depuis l'espace, ni depuis l'onglet Ajustements de Consignes au solveur : il s'annule d'ici.`,
             },
             {
               term: $localize`:@@aide.dispo.term.covoiturageAnnulation:Annuler une arrivée groupée validée`,
@@ -128,7 +128,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.dispo.term.competences:Ce qui ne se déclare pas`,
-              text: $localize`:@@aide.dispo.def.competences:Les compétences restent décidées avec vous : une compétence auto-déclarée alimente des règles dures — qui a le droit de tenir quel stand — là où une indisponibilité ou un souhait se rattrapent. Un animateur qui déclare un jour hors des dates de l'événement, ou une typologie inexistante, est refusé à l'envoi.`,
+              text: $localize`:@@aide.dispo.def.competences:Les compétences restent décidées avec vous : une compétence auto-déclarée alimente des règles dures (qui a le droit de tenir quel stand), là où une indisponibilité ou un souhait se rattrapent. Un animateur qui déclare un jour hors des dates de l'événement, ou une typologie inexistante, est refusé à l'envoi.`,
             },
           ],
         },
@@ -148,7 +148,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
       id: 'rappels',
       icon: 'notifications_active',
       title: $localize`:@@aide.rappels.title:Accusés de réception et rappels`,
-      summary: $localize`:@@aide.rappels.summary:Savoir qui a lu son planning, et laisser l'application relancer les autres — une fois.`,
+      summary: $localize`:@@aide.rappels.summary:Savoir qui a lu son planning, et laisser l'application relancer les autres, une seule fois.`,
       blocks: [
         {
           kind: 'paragraph',
@@ -183,7 +183,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.rappels.term.relanceManuelle:Relancer à la main`,
-              text: $localize`:@@aide.rappels.def.relanceManuelle:La veille de l'événement, une nuit de plus est une nuit de trop. Sur la page Diffuser, le filtre « Silencieux » isole les personnes jamais confirmées ; « Relancer » sur une ligne, ou « Relancer les N silencieux » au-dessus de la table, leur envoie le même rappel que la nuit. La page Animateurs le permet aussi, sur une sélection. La règle ne change pas : une seule relance par personne et par publication, et le compte rendu dit combien de relances sont parties.`,
+              text: $localize`:@@aide.rappels.def.relanceManuelle:À la veille de l'événement, vous ne pouvez plus attendre une nuit de plus. Sur la page Diffuser, le filtre « Silencieux » isole les personnes jamais confirmées ; « Relancer » sur une ligne, ou « Relancer les N silencieux » au-dessus de la table, leur envoie le même rappel que celui de la nuit. La page Animateurs le permet aussi, sur une sélection. La règle ne change pas : une seule relance par personne et par publication, et le compte rendu dit combien de relances sont parties.`,
             },
             {
               term: $localize`:@@aide.rappels.term.echanges:Les demandes d'échange qui dorment`,
