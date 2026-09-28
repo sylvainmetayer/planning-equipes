@@ -212,6 +212,7 @@
               [animateur]="animateur()"
               [filtre]="filtre()"
               [(densite)]="densiteStand"
+              [(span)]="gridSpan"
               (seatRequested)="openSeatOnDay($event)"
             />
           }
@@ -226,6 +227,7 @@
             [filtre]="filtre()"
             [view]="personView()"
             [(densite)]="densitePersonne"
+            [(span)]="gridSpan"
             [(tri)]="triPersonne"
             [(allColumns)]="allColumns"
             [(noRestOnly)]="noRestOnly"

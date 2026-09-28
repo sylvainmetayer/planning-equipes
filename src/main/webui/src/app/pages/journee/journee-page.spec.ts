@@ -569,6 +569,35 @@ describe('JourneePage', () => {
     expect(filtres()).toEqual(['Emplacement']);
   });
 
+  it('keeps the span of the grids in the address, the week left out', async () => {
+    const page = (await monter({ axe: 'personne', portee: 'jour' })) as PageInternals & {
+      gridSpan: Signal<string> & { set: (span: 'jour' | 'semaine' | 'evenement') => void };
+      changeView: (view: string) => void;
+    };
+    const location = TestBed.inject(Location);
+    expect(page.gridSpan()).toBe('jour');
+    expect(racine().querySelector('.planning-grille-portee-jour')).not.toBeNull();
+    expect(location.path()).toContain('portee=jour');
+
+    // The one span serves both grids.
+    page.changeAxe('stand');
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(location.path()).toContain('portee=jour');
+
+    // The day's own renderings read no span: the key leaves with the grids.
+    page.changeAxe('jour');
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(location.path()).not.toContain('portee=');
+
+    page.changeAxe('personne');
+    page.gridSpan.set('semaine');
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(location.path()).not.toContain('portee=');
+  });
+
   it('clears the keys of the treemap once it leaves the screen', async () => {
     const page = (await monter({ axe: 'stand' })) as PageInternals & {
       standView: { set: (view: 'grille' | 'treemap') => void };

@@ -286,6 +286,8 @@ export class PlanningGrille<T extends LigneGrille> {
   constructor() {
     // The day the page moves to becomes the column the tab stop sits in, and
     // comes into view — the grid of a month-long edition scrolls sideways.
+    // The nearest edge, not the centre: a week that fits is left where it
+    // starts, rather than slid half under the frozen first column.
     effect(() => {
       const marque = this.jourMarque();
       const colonne = this.jours().findIndex((jour) => jour.key === marque);
@@ -297,7 +299,7 @@ export class PlanningGrille<T extends LigneGrille> {
         () =>
           this.hote.nativeElement
             .querySelector<HTMLElement>('.planning-grille-marque')
-            ?.scrollIntoView?.({ block: 'nearest', inline: 'center' }),
+            ?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' }),
         { injector: this.injector },
       );
     });

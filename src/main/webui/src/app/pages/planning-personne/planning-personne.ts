@@ -172,10 +172,18 @@ function gapClass(amount: number | null): string {
   return amount > 0 ? 'planning-personne-au-dessus' : 'planning-personne-en-dessous';
 }
 
+/** One stretch of a day on one stand: `10:00–13:00` and its stand. */
+export interface SeatSpan {
+  hours: string;
+  stand: string;
+}
+
 /** One day of one person: the stands and the windows held, and the seat a click opens. */
 interface JourneePersonne {
   stands: string[];
   fenetres: string[];
+  /** The seats in the order of the day, back-to-back seats on one stand joined into one stretch. */
+  seats: { stand: string; start: string; end: string }[];
   posteId: string;
   /** A window running past the start of the evening. */
   soiree: boolean;
@@ -187,6 +195,8 @@ export interface CasePersonne extends CaseGrille {
   stands: string;
   /** `09:00–12:00, 18:00–22:00`. */
   heures: string;
+  /** One line per stretch: the hours and the stand together, which the two lists above keep apart. */
+  seats: SeatSpan[];
   posteId: string | null;
 }
 
@@ -246,6 +256,7 @@ function detailsByDay(
     const journee = byDay.get(creneau.jour) ?? {
       stands: [],
       fenetres: [],
+      seats: [],
       posteId: poste.id,
       soiree: false,
     };
@@ -254,6 +265,16 @@ function detailsByDay(
       journee.stands.push(stand);
     }
     journee.fenetres.push(`${formatHeure(debut)}–${formatHeure(fin)}`);
+    const previous = journee.seats.at(-1);
+    if (
+      previous &&
+      previous.stand === stand &&
+      minutesOfDay(previous.end) === minutesOfDay(debut)
+    ) {
+      previous.end = fin;
+    } else {
+      journee.seats.push({ stand, start: debut, end: fin });
+    }
     if (debutSoiree !== null && endMinutesOfDay(fin) > Math.max(debutSoiree, minutesOfDay(debut))) {
       journee.soiree = true;
     }
@@ -412,6 +433,10 @@ export function buildTableauPersonnes(
         statut,
         stands,
         heures: dayHours,
+        seats: (journee?.seats ?? []).map((seat) => ({
+          hours: `${formatHeure(seat.start)}–${formatHeure(seat.end)}`,
+          stand: seat.stand,
+        })),
         posteId: journee?.posteId ?? null,
         classe: classes.join(' '),
         libelle: journee

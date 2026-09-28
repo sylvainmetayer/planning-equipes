@@ -316,7 +316,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   a hidden one. « Par
   stand » and « Par personne » are two readings of the shared
   `pages/planning-grille` (a frozen first column, one tab stop moved by the
-  arrows, templates for the header and the cell, a sort asked of the caller):
+  arrows, templates for the header and the cell, a sort asked of the caller),
+  shown over the week of the page's day unless `?portee=jour|evenement` asks
+  for the day alone or the whole event — the summary columns stay the
+  event's whatever the span, the frise and the treemap ignore it:
   per stand, a density in `?densite=noms|compteurs|couverture`, closed told
   from empty, a total per day, and the treemap of the former Répartition des
   heures as `?vue=treemap` (`pages/repartition-heures`, its day in

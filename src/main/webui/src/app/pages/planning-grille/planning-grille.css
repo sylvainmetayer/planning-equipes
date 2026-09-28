@@ -8,6 +8,8 @@
 .table-wrapper.planning-grille-defilement {
   overflow: auto;
   max-height: calc(100vh - 15rem);
+  /* A day scrolled into view stops beside the frozen first column, not under it. */
+  scroll-padding-inline-start: 11rem;
 }
 
 .planning-grille {
@@ -95,6 +97,12 @@ th.planning-grille-marque {
   vertical-align: top;
   white-space: nowrap;
   min-width: 2.25rem;
+}
+
+/* One day on screen: its column takes the width the page has, and its
+   content flows across it instead of down. */
+.planning-grille-portee-jour .planning-grille-case {
+  white-space: normal;
 }
 
 .planning-grille-case-active {

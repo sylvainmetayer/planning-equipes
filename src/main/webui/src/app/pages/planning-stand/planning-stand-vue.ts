@@ -11,7 +11,8 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { RouterLink } from '@angular/router';
 import { PlanningEvenement } from '../../core/models';
 import { JourEvenement } from '../journee/journee';
-import { joursGrille } from '../planning-grille/jours-grille';
+import { GridSpan, joursGrille, sliceDays, spanWindow } from '../planning-grille/jours-grille';
+import { GridSpanToggle } from '../planning-grille/grid-span-toggle';
 import {
   CaseActivee,
   GrilleCase,
@@ -42,7 +43,14 @@ import {
  */
 @Component({
   selector: 'app-planning-stand-vue',
-  imports: [MatButtonToggleModule, RouterLink, PlanningGrille, GrilleEntete, GrilleCase],
+  imports: [
+    MatButtonToggleModule,
+    RouterLink,
+    PlanningGrille,
+    GrilleEntete,
+    GrilleCase,
+    GridSpanToggle,
+  ],
   template: `
     <div class="planning-axe-barre">
       <mat-button-toggle-group [value]="densite()" (change)="densite.set($event.value)"
@@ -51,6 +59,7 @@ import {
         <mat-button-toggle value="compteurs" i18n="@@planningStand.densite.compteurs">Compteurs</mat-button-toggle>
         <mat-button-toggle value="couverture" i18n="@@planningStand.densite.couverture">Couverture</mat-button-toggle>
       </mat-button-toggle-group>
+      <app-grid-span-toggle [(span)]="span" />
       <ul class="planning-grille-legende">
         <li><span class="planning-grille-pastille planning-stand-pourvu"></span><ng-container i18n="@@planningStand.legende.pourvu">pourvu</ng-container></li>
         <li><span class="planning-grille-pastille planning-stand-partiel"></span><ng-container i18n="@@planningStand.legende.partiel">partiel</ng-container></li>
@@ -58,7 +67,7 @@ import {
         <li><span class="planning-grille-pastille planning-stand-ferme"></span><ng-container i18n="@@planningStand.legende.ferme">fermé</ng-container></li>
       </ul>
     </div>
-    @if (tableau().lignes.length === 0) {
+    @if (visibleTable().lignes.length === 0) {
       @if (planning()?.postes?.length) {
         <p class="empty-hint" i18n="@@planningStand.aucun">Aucun stand ne correspond aux filtres.</p>
       } @else {
@@ -66,15 +75,15 @@ import {
       }
     } @else {
       <app-planning-grille
-        [class]="'planning-stand-densite-' + densite()"
+        [class]="'planning-stand-densite-' + densite() + ' planning-grille-portee-' + span()"
         caption="Par stand : une ligne par stand, une colonne par journée, qui tient ses sièges, puis ce qu'il reste à pourvoir"
         i18n-caption="@@planningStand.caption"
         header="Stand"
         i18n-header="@@planningStand.enTete"
-        [jours]="colonnes()"
-        [lignes]="tableau().lignes"
+        [jours]="visibleColumns()"
+        [lignes]="visibleTable().lignes"
         [syntheses]="syntheses"
-        [pied]="tableau().pied"
+        [pied]="visibleTable().pied"
         [jourMarque]="jourMarque()"
         (caseActivee)="open($event)"
       >
@@ -123,6 +132,8 @@ export class PlanningStandView {
   readonly filtre = input('');
   /** What a cell shows — the view state this rendering owns (`densite`). */
   readonly densite = model<DensiteStand>('noms');
+  /** How many days the grid shows around the marked one (`portee`). */
+  readonly span = model<GridSpan>('semaine');
   /** A cell was opened: the page opens the Siège panel on the seat, and moves to its day. */
   readonly seatRequested = output<{ posteId: string; jour: string }>();
 
@@ -138,6 +149,15 @@ export class PlanningStandView {
     }),
   );
 
+  private readonly dayWindow = computed(() =>
+    spanWindow(this.colonnes(), this.jourMarque(), this.span()),
+  );
+  protected readonly visibleColumns = computed(() =>
+    this.colonnes().slice(this.dayWindow().start, this.dayWindow().end),
+  );
+  /** Built over every day, so the summary columns stay the event's; then narrowed to the span. */
+  protected readonly visibleTable = computed(() => sliceDays(this.tableau(), this.dayWindow()));
+
   /** The grid's templates are handed its generic line: read back as the line this axis built. */
   protected stand(ligne: LigneGrille): LigneStand {
     return ligne as LigneStand;
@@ -148,7 +168,7 @@ export class PlanningStandView {
   }
 
   protected open(event: CaseActivee<LigneStand>): void {
-    const posteId = event.ligne.cases[this.colonnes().indexOf(event.jour)]?.posteId;
+    const posteId = event.ligne.cases[this.visibleColumns().indexOf(event.jour)]?.posteId;
     if (posteId) {
       this.seatRequested.emit({ posteId, jour: event.jour.key });
     }

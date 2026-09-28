@@ -52,14 +52,41 @@
   color: var(--mat-sys-error);
 }
 
-.planning-personne-stand,
-.planning-personne-heures {
+/* A stretch of the day: its hours over its stand. A bounded width, and the
+   stand wraps under it — a column as wide as its longest list of stands is
+   what took a week of cells off the screen. */
+.planning-personne-siege {
   display: block;
+  inline-size: 9rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
   line-height: 1.25;
 }
 
+.planning-personne-siege + .planning-personne-siege {
+  margin-block-start: 0.25rem;
+}
+
 .planning-personne-heures {
+  display: block;
   font: var(--mat-sys-label-small);
+}
+
+/* One day: the stretches side by side, hours and stand on one line. */
+.planning-grille-portee-jour .planning-personne-siege {
+  display: inline-block;
+  inline-size: auto;
+  margin-inline-end: 1rem;
+  white-space: nowrap;
+}
+
+.planning-grille-portee-jour .planning-personne-siege + .planning-personne-siege {
+  margin-block-start: 0;
+}
+
+.planning-grille-portee-jour .planning-personne-heures {
+  display: inline;
+  margin-inline-end: 0.25rem;
 }
 
 .planning-personne-densite-compact .planning-grille-case {

@@ -5,6 +5,7 @@
       <mat-button-toggle value="detail" i18n="@@planningPersonne.densite.detail">Stand et heures</mat-button-toggle>
       <mat-button-toggle value="compact" i18n="@@planningPersonne.densite.compact">Couleur seule</mat-button-toggle>
     </mat-button-toggle-group>
+    <app-grid-span-toggle [(span)]="span" />
   }
   <mat-checkbox [checked]="noRestOnly()" (change)="noRestOnly.set($event.checked)"
                 i18n="@@repos.filter.sansRepos">Seulement sans jour de repos</mat-checkbox>
@@ -92,15 +93,15 @@
   </div>
 } @else {
   <app-planning-grille
-    [class]="'planning-personne-densite-' + densite()"
+    [class]="'planning-personne-densite-' + densite() + ' planning-grille-portee-' + span()"
     caption="Par personne : une ligne par animateur, une colonne par journée, le stand et les heures de chaque jour, puis ce que chacun a reçu"
     i18n-caption="@@planningPersonne.caption"
     header="Animateur"
     i18n-header="@@repos.column.animateur"
-    [jours]="colonnesJours()"
-    [lignes]="tableau().lignes"
-    [syntheses]="tableau().colonnes"
-    [pied]="tableau().pied"
+    [jours]="visibleColumns()"
+    [lignes]="visibleTable().lignes"
+    [syntheses]="visibleTable().colonnes"
+    [pied]="visibleTable().pied"
     [jourMarque]="jourMarque()"
     [triable]="true"
     [(tri)]="tri"
@@ -116,9 +117,13 @@
     </ng-template>
     <ng-template appGrilleCase let-ligne let-index="index">
       @let cellule = cellOf(ligne, index);
-      @if (densite() === 'detail' && cellule.stands) {
-        <span class="planning-personne-stand">{{ cellule.stands }}</span>
-        <span class="planning-personne-heures">{{ cellule.heures }}</span>
+      @if (densite() === 'detail') {
+        @for (seat of cellule.seats; track $index) {
+          <span class="planning-personne-siege">
+            <span class="planning-personne-heures">{{ seat.hours }}</span>
+            {{ seat.stand }}
+          </span>
+        }
       }
     </ng-template>
   </app-planning-grille>
