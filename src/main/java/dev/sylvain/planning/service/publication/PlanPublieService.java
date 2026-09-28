@@ -144,16 +144,42 @@ public class PlanPublieService {
                 continue;
             }
             PlanSnapshotService.SnapshotDetail detail = snapshotService.load(id);
-            parSnapshot.put(id, detail == null ? Optional.empty() : Optional.of(vacations(detail, nomsDeStand)));
+            parSnapshot.put(
+                    id, detail == null ? Optional.empty() : Optional.of(vacations(detail.affectations(), nomsDeStand)));
         }
         return parSnapshot;
     }
 
-    private static Map<String, List<Vacation>> vacations(
-            PlanSnapshotService.SnapshotDetail detail, Map<String, String> nomsDeStand) {
+    /**
+     * The vacations of one snapshot, by animateur, read as {@link
+     * PublicationDiffService#vacationsByAnimateur} reads the working plan: a
+     * seat split on the day (ADR 0066) whose rest its own holder kept is one
+     * vacation, from the origin's start to the rest's end. Read as two here and
+     * as one there, the same seat was an écart at every publication, and its
+     * holder never left the recipients.
+     */
+    static Map<String, List<Vacation>> vacations(
+            List<PlanSnapshotService.AffectationSnapshot> affectations, Map<String, String> nomsDeStand) {
+        Map<String, PlanSnapshotService.AffectationSnapshot> byId = new HashMap<>();
+        Map<String, PlanSnapshotService.AffectationSnapshot> suites = new HashMap<>();
+        for (PlanSnapshotService.AffectationSnapshot affectation : affectations) {
+            byId.putIfAbsent(affectation.posteId(), affectation);
+            if (affectation.suiteDe() != null) {
+                suites.putIfAbsent(affectation.suiteDe(), affectation);
+            }
+        }
         Map<String, List<Vacation>> parAnimateur = new LinkedHashMap<>();
-        for (PlanSnapshotService.AffectationSnapshot affectation : detail.affectations()) {
-            Vacation vacation = vacation(affectation, nomsDeStand);
+        for (PlanSnapshotService.AffectationSnapshot affectation : affectations) {
+            if (keptByItsHolder(affectation, byId)) {
+                continue;
+            }
+            PlanSnapshotService.AffectationSnapshot derniere = affectation;
+            for (PlanSnapshotService.AffectationSnapshot suite = suites.get(derniere.posteId());
+                    suite != null && keptByItsHolder(suite, byId);
+                    suite = suites.get(derniere.posteId())) {
+                derniere = suite;
+            }
+            Vacation vacation = vacation(affectation, derniere, nomsDeStand);
             if (vacation != null) {
                 parAnimateur
                         .computeIfAbsent(affectation.animateurId(), unused -> new ArrayList<>())
@@ -163,14 +189,31 @@ public class PlanPublieService {
         return parAnimateur;
     }
 
-    /** The vacation one snapshot row describes, {@code null} for an empty seat or a row missing its day or hours. */
+    /** Whether this row is the rest of a seat the same person held — part of the origin's vacation, not one more. */
+    private static boolean keptByItsHolder(
+            PlanSnapshotService.AffectationSnapshot affectation,
+            Map<String, PlanSnapshotService.AffectationSnapshot> byId) {
+        PlanSnapshotService.AffectationSnapshot origine =
+                affectation.suiteDe() == null ? null : byId.get(affectation.suiteDe());
+        return origine != null
+                && affectation.animateurId() != null
+                && affectation.animateurId().equals(origine.animateurId());
+    }
+
+    /**
+     * The vacation a snapshot row describes, ending where {@code derniere} —
+     * the last part its holder kept, the row itself otherwise — ends;
+     * {@code null} for an empty seat or a row missing its day or hours.
+     */
     private static Vacation vacation(
-            PlanSnapshotService.AffectationSnapshot affectation, Map<String, String> nomsDeStand) {
+            PlanSnapshotService.AffectationSnapshot affectation,
+            PlanSnapshotService.AffectationSnapshot derniere,
+            Map<String, String> nomsDeStand) {
         if (affectation.animateurId() == null || affectation.standId() == null || affectation.date() == null) {
             return null;
         }
         LocalTime debut = heure(affectation.heureDebutEffective(), affectation.heureDebut());
-        LocalTime fin = heure(affectation.heureFinEffective(), affectation.heureFin());
+        LocalTime fin = heure(derniere.heureFinEffective(), derniere.heureFin());
         if (debut == null || fin == null) {
             return null;
         }
