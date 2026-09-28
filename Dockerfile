@@ -61,4 +61,18 @@ RUN install -d -o 1000 -g 1000 /backup \
 COPY --from=build --chown=1000:1000 /workspace/target/quarkus-app/ /app/
 USER 1000
 EXPOSE 8080
+# Le solveur vit de sa mémoire : sa recherche locale alloue sans relâche, et
+# avec le tas par défaut de la JVM (25 % de la limite du conteneur, 256 Mo sous
+# 1 Go) il passe son temps à collecter. Trois quarts de la limite pour le tas,
+# et le collecteur parallèle, fait pour le débit (le défaut est G1, ou Serial
+# sous 2 cœurs ou 1,8 Go), au prix de pauses de l'ordre du dixième de seconde :
+# sur une petite machine, les deux ensemble font évaluer au calcul plus de deux
+# fois plus de coups par seconde qu'avec les défauts sous 1 Go. Le pourcentage
+# suppose une limite de mémoire sur le conteneur : sans elle, c'est 75 % de
+# l'hôte.
+#
+# `JDK_JAVA_OPTIONS` plutôt que `JAVA_TOOL_OPTIONS` : seul le lanceur `java` le
+# lit, et un exploitant le remplace entièrement en le redéfinissant dans son
+# environnement. Voir docs/exploitation.md § La mémoire de l'application.
+ENV JDK_JAVA_OPTIONS="-XX:MaxRAMPercentage=75 -XX:+UseParallelGC"
 ENTRYPOINT ["java", "-jar", "/app/quarkus-run.jar"]
