@@ -18,7 +18,7 @@ export function buildSolverSections(): HelpSection[] {
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.calculer.intro:La page Solveur ne demande pas de choisir un mécanisme, mais de dire ce que vous voulez : le meilleur planning possible, une correction qui bouge le moins possible, ou une page blanche. Les trois lisent les mêmes données et respectent les mêmes règles ; ce qui change, c'est d'où le calcul part.`,
+          text: $localize`:@@aide.calculer.intro:Sur la page Solveur, vous dites ce que vous voulez : le meilleur planning possible, une correction qui bouge le moins possible, ou une page blanche. Les trois lisent les mêmes données et respectent les mêmes règles ; seul change le point de départ du calcul.`,
         },
         {
           kind: 'definitions',
@@ -39,26 +39,26 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.calculer.entrees:La page s'ouvre sur ce qui empêche un planning sans écart — faisabilité et alertes —, puis sur « Ce calcul tiendra compte de » : les verrouillages, les ajustements manuels, les consignes et leurs dates, les déclarations de disponibilité encore en attente — que le calcul ne verra pas —, les règles désactivées et les modifications faites depuis la dernière résolution. Chaque compteur mène à l'écran qui les liste ; un compteur à zéro reste affiché, en retrait. Viennent ensuite les trois boutons, chacun avec sa phrase. Après un calcul, son résultat se lit en phrases, et « Voir le planning », « Relire » — la première journée pas encore relue — et « Publier » sont juste dessous, suivis des cinq dernières versions du plan. La volumétrie du problème est repliée en bas de page ; le budget de calcul se règle dans Règles du planning, onglet Calcul.`,
+          text: $localize`:@@aide.calculer.entrees:La page s'ouvre sur ce qui empêche un planning sans écart (faisabilité et alertes), puis sur « Ce calcul tiendra compte de » : les verrouillages, les ajustements manuels, les consignes et leurs dates, les déclarations de disponibilité encore en attente (le calcul ne les verra pas), les règles désactivées et les modifications faites depuis la dernière résolution. Chaque compteur mène à l'écran qui les liste ; un compteur à zéro reste affiché, en retrait. Viennent ensuite les trois boutons, chacun avec sa phrase. Après un calcul, son résultat se lit en phrases. Juste dessous se trouvent « Voir le planning », « Relire » (la première journée pas encore relue) et « Publier », puis les cinq dernières versions du plan. La volumétrie du problème est repliée en bas de page ; le budget de calcul se règle dans Règles du planning, onglet Calcul.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.calculer.verrous:Les verrouillages ne sont pas un quatrième mode : ils s'appliquent aux trois. Un animateur, un stand, une journée ou un créneau verrouillé n'est touché ni par un calcul complet ni par une correction.`,
+          text: $localize`:@@aide.calculer.verrous:Les verrouillages s'appliquent aux trois modes. Un animateur, un stand, une journée ou un créneau verrouillé n'est touché ni par un calcul complet ni par une correction.`,
         },
         {
           kind: 'definitions',
           items: [
             {
               term: $localize`:@@aide.calculer.term.passe:Le passé est figé`,
-              text: $localize`:@@aide.calculer.def.passe.instance:Pendant l'événement, les trois calculs reprennent du planning enregistré les postes des créneaux déjà commencés — journée passée, ou créneau d'aujourd'hui dont l'heure est atteinte — et les figent tels qu'ils ont été travaillés, même si la personne a depuis déclaré la journée indisponible, même si le poste est resté vide. Ces postes comptent dans les repos, les cumuls et les jours d'affilée, mais aucune règle ne les reproche : le zéro dur se lit sur ce qui reste à jouer. Le compte rendu les annonce (« postes déjà commencés »). En développement, en démonstration ou en recette, la date que lit cette règle se pose depuis Paramètres, onglet Instance ; en exploitation, la variable PASSE_FIGE=false la coupe, pour rejouer une édition ancienne.`,
+              text: $localize`:@@aide.calculer.def.passe.instance:Pendant l'événement, les trois calculs reprennent du planning enregistré les postes des créneaux déjà commencés (journée passée, ou créneau d'aujourd'hui dont l'heure est atteinte) et les figent tels qu'ils ont été travaillés, même si la personne a depuis déclaré la journée indisponible, même si le poste est resté vide. Ces postes comptent dans les repos, les cumuls et les jours d'affilée, mais aucune règle ne les reproche : le zéro dur se lit sur ce qui reste à jouer. Le compte rendu les annonce (« postes déjà commencés »). En développement, en démonstration ou en recette, la date que lit cette règle se pose depuis Paramètres, onglet Instance ; en exploitation, la variable PASSE_FIGE=false la coupe, pour rejouer une édition ancienne.`,
             },
             {
               term: $localize`:@@aide.calculer.term.passeGestes:Le passé ne se modifie plus`,
-              text: $localize`:@@aide.calculer.def.passeGestes:Les gestes à la main suivent la même règle : déplacer une affectation sur une vue journalière, accepter un échange, appliquer ou demander une réparation sur un poste dont le créneau est déjà commencé est refusé — « Ce créneau est déjà commencé : le passé ne se modifie plus » — depuis l'écran, l'API ou un assistant. Le mode jour J continue d'agir sur les créneaux restants de la journée ; le siège d'un créneau en cours reste tel qu'il est, l'absence y est seulement enregistrée. Quand PASSE_FIGE=false, rien n'est refusé.`,
+              text: $localize`:@@aide.calculer.def.passeGestes:Les gestes à la main suivent la même règle. Déplacer une affectation sur une vue journalière, accepter un échange, appliquer ou demander une réparation sur un poste dont le créneau est déjà commencé est refusé depuis l'écran, l'API ou un assistant, avec le message « Ce créneau est déjà commencé : le passé ne se modifie plus ». Le mode jour J continue d'agir sur les créneaux restants de la journée ; le siège d'un créneau en cours reste tel qu'il est, l'absence y est seulement enregistrée. Quand PASSE_FIGE=false, rien n'est refusé.`,
             },
             {
               term: $localize`:@@aide.calculer.term.rienAPlanifier:Rien à planifier`,
-              text: $localize`:@@aide.calculer.def.rienAPlanifier:Un calcul lancé alors que tous les créneaux sont déjà commencés — l'édition est terminée, ou la date simulée est après l'événement — est refusé au lieu de produire un planning vide à zéro dur ; le job le dit dans son erreur. Quand des postes passés sont restés vides (aucun titulaire enregistré, par exemple au premier calcul lancé pendant l'événement), le calcul a lieu et le compte rendu l'annonce : « N sièges passés sont restés vides ».`,
+              text: $localize`:@@aide.calculer.def.rienAPlanifier:Un calcul lancé alors que tous les créneaux sont déjà commencés (l'édition est terminée, ou la date simulée est après l'événement) est refusé au lieu de produire un planning vide à zéro dur ; le job le dit dans son erreur. Quand des postes passés sont restés vides (aucun titulaire enregistré, par exemple au premier calcul lancé pendant l'événement), le calcul a lieu et le compte rendu l'annonce : « N sièges passés sont restés vides ».`,
             },
             {
               term: $localize`:@@aide.calculer.term.plancherPasse:Un plancher pendant l'événement`,
@@ -68,7 +68,7 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.calculer.bloquants:Quand le bandeau de faisabilité porte un problème qu'aucun calcul ne peut résoudre — deux ajustements manuels qui se contredisent, une affectation forcée que personne ne peut tenir — les trois boutons demandent confirmation avant de partir, et nomment la cause : le calcul finirait en score dur négatif quel que soit le temps qu'il tourne. Lancer quand même reste possible, le reste du planning s'améliore. Un manque d'animateurs, lui, ne demande rien : le solveur remplit encore ce qu'il peut.`,
+          text: $localize`:@@aide.calculer.bloquants:Quand le bandeau de faisabilité porte un problème qu'aucun calcul ne peut résoudre (deux ajustements manuels qui se contredisent, une affectation forcée que personne ne peut tenir), les trois boutons demandent confirmation avant de partir et nomment la cause : le calcul finirait en score dur négatif quel que soit le temps qu'il tourne. Vous pouvez lancer quand même, et le reste du planning s'améliore. Un manque d'animateurs ne demande aucune confirmation : le solveur remplit encore ce qu'il peut.`,
         },
         {
           kind: 'paragraph',
@@ -99,7 +99,7 @@ export function buildSolverSections(): HelpSection[] {
           items: [
             {
               term: $localize`:@@aide.config.term.duree:Budget de calcul`,
-              text: $localize`:@@aide.config.def.duree:Réglé par édition sur la page Règles du planning, onglet Calcul, partagé par tous les navigateurs et appliqué par le serveur à tout calcul lancé sur l'édition, depuis l'écran comme depuis l'assistant. Deux réglages. La durée maximale (15 min par défaut) est celui qui compte le plus : commencez court — 1 à 3 min — pour révéler les blocages structurels, puis passez à 15 ou 30 min, voire davantage, pour la résolution finale. L'arrêt sans amélioration (5 min par défaut, 0 pour jamais) écourte un calcul qui ne progresse plus ; il ne compte qu'une fois le score dur à zéro, de sorte qu'un calcul n'abandonne jamais tant que des places restent à pourvoir. Les deux sont bornés par un plafond que fixe l'exploitant de l'instance, affiché au-dessus des champs : une valeur au-dessus est refusée. Si l'exploitant abaisse ce plafond sous une valeur déjà enregistrée, le calcul tourne au plafond et le dit. « Revenir au défaut » rend l'édition aux valeurs de l'instance, à l'enregistrement.`,
+              text: $localize`:@@aide.config.def.duree:Réglé par édition sur la page Règles du planning, onglet Calcul, partagé par tous les navigateurs et appliqué par le serveur à tout calcul lancé sur l'édition, depuis l'écran comme depuis l'assistant. Deux réglages. La durée maximale (15 min par défaut) est celui qui compte le plus : commencez court (1 à 3 min) pour révéler les blocages structurels, puis passez à 15 ou 30 min, voire davantage, pour la résolution finale. L'arrêt sans amélioration (5 min par défaut, 0 pour jamais) écourte un calcul qui ne progresse plus ; il ne compte qu'une fois le score dur à zéro, de sorte qu'un calcul n'abandonne jamais tant que des places restent à pourvoir. Les deux sont bornés par un plafond que fixe l'exploitant de l'instance, affiché au-dessus des champs : une valeur au-dessus est refusée. Si l'exploitant abaisse ce plafond sous une valeur déjà enregistrée, le calcul tourne au plafond et le dit. « Revenir au défaut » rend l'édition aux valeurs de l'instance, à l'enregistrement.`,
             },
             {
               term: $localize`:@@aide.config.term.mailFin:Prévenir à la fin d'une résolution`,
@@ -111,23 +111,23 @@ export function buildSolverSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.config.term.contraintes:Activation des contraintes`,
-              text: $localize`:@@aide.config.def.contraintes:Chaque règle du catalogue se désactive sur sa ligne de la page Règles du planning, puis « Enregistrer ». À utiliser pour diagnostiquer — « sans cette règle, le planning devient-il faisable ? » — bien plus que pour produire : désactiver une contrainte dure produit un planning que la réalité refusera. En revanche, désactiver une règle souple qui ne mesure rien, faute de donnée saisie, rend le score lisible sans rien changer au résultat.`,
+              text: $localize`:@@aide.config.def.contraintes:Chaque règle du catalogue se désactive sur sa ligne de la page Règles du planning, puis « Enregistrer ». À utiliser pour diagnostiquer (« sans cette règle, le planning devient-il faisable ? ») bien plus que pour produire : désactiver une contrainte dure produit un planning que la réalité refusera. Désactiver une règle souple qui ne mesure rien, faute de donnée saisie, rend en revanche le score lisible sans rien changer au résultat.`,
             },
             {
               term: $localize`:@@aide.config.term.importance:Importance d'une règle`,
-              text: $localize`:@@aide.config.def.importance:Sur l'onglet Qualité, chaque règle de qualité ou de préférence a trois positions : faible, normale — son défaut — et forte, qui écrivent un poids de 1, 5 ou 25. À niveau égal, un écart d'une règle forte pèse cinq fois celui d'une règle normale, qui en pèse cinq d'une faible. Un autre poids, de 1 à 500, se saisit dans le panneau de la règle et s'affiche « personnalisée ». Une règle dure ne se dose pas : elle s'active ou non ; un poids qu'elle aurait gardé d'avant s'affiche « poids personnalisé » sous son nom, et son panneau la fait « Revenir à 1 ». Rien ne s'écrit avant « Enregistrer », et « Relancer le calcul », en pied de tableau, fait prendre en compte ce qui vient d'être enregistré.`,
+              text: $localize`:@@aide.config.def.importance:Sur l'onglet Qualité, chaque règle de qualité ou de préférence a trois positions : faible, normale (son défaut) et forte, qui écrivent un poids de 1, 5 ou 25. À niveau égal, un écart d'une règle forte pèse cinq fois celui d'une règle normale, qui en pèse cinq d'une faible. Un autre poids, de 1 à 500, se saisit dans le panneau de la règle et s'affiche « personnalisée ». Une règle dure ne se dose pas : elle s'active ou non ; un poids qu'elle aurait gardé d'avant s'affiche « poids personnalisé » sous son nom, et son panneau la fait « Revenir à 1 ». Rien ne s'écrit avant « Enregistrer », et « Relancer le calcul », en pied de tableau, fait prendre en compte ce qui vient d'être enregistré.`,
             },
             {
               term: $localize`:@@aide.config.term.historique:Historique des réglages`,
-              text: $localize`:@@aide.config.def.historique:Le panneau d'une règle, qui s'ouvre d'un clic sur son nom dans Règles du planning, montre chaque changement de son poids ou de son activation — valeur avant et après, défaut compris, date et origine : écran, assistant, import de scénario ou duplication d'édition — et, entre deux changements, les résolutions qui ont suivi avec leur score et le nombre d'écarts à cette règle, en liste datée et en petit graphique. Remettre la même valeur n'écrit rien. C'est une juxtaposition, pas une mesure d'effet : le référentiel a pu changer entre deux résolutions. L'historique appartient à l'édition et disparaît avec elle ; une édition dupliquée démarre avec le dosage hérité de sa source, pas avec l'historique de celle-ci.`,
+              text: $localize`:@@aide.config.def.historique:Le panneau d'une règle, qui s'ouvre d'un clic sur son nom dans Règles du planning, montre chaque changement de son poids ou de son activation : valeur avant et après, défaut compris, date et origine (écran, assistant, import de scénario ou duplication d'édition). Entre deux changements, il montre aussi les résolutions qui ont suivi, avec leur score et le nombre d'écarts à cette règle, en liste datée et en petit graphique. Remettre la même valeur n'écrit rien. Les deux sont mis côte à côte sans mesurer d'effet, car le référentiel a pu changer entre deux résolutions. L'historique appartient à l'édition et disparaît avec elle ; une édition dupliquée démarre avec le dosage hérité de sa source, pas avec l'historique de celle-ci.`,
             },
             {
               term: $localize`:@@aide.config.term.adhoc:Ajustements manuels`,
-              text: $localize`:@@aide.config.def.adhoc:Exceptions saisies au cas par cas, avec une raison tracée : indisponibilité forcée, incompatibilité, affectation forcée. Elles sont traitées au même niveau que les contraintes dures, donc jamais contournées — et chacune retire des possibilités au solveur. Un ajustement mal posé bloque un planning aussi sûrement qu'un manque d'effectif.`,
+              text: $localize`:@@aide.config.def.adhoc:Exceptions saisies au cas par cas, avec une raison tracée : indisponibilité forcée, incompatibilité, affectation forcée. Elles sont traitées au même niveau que les contraintes dures, donc jamais contournées, et chacune retire des possibilités au solveur : un ajustement mal posé bloque un planning aussi sûrement qu'un manque d'effectif.`,
             },
             {
               term: $localize`:@@aide.config.term.verrouillages:Verrouillages`,
-              text: $localize`:@@aide.config.def.verrouillages:Geler un animateur, un stand, une journée ou un créneau pour que la prochaine résolution n'y touche plus et optimise le reste. Une place non pourvue n'est jamais gelée, et les places gelées continuent d'être évaluées : un verrou laisse donc une alerte visible plutôt que de masquer un problème — et quand ce que vous figez casse déjà une règle dure, l'enregistrement le dit, pour que le score dur négatif du prochain calcul ne soit pas une surprise. Ils se posent sur l'onglet Verrouillages de la page Consignes au solveur, sur un animateur par défaut ; avant d'enregistrer, l'aperçu compte les affectations que le verrou figera et mène à la Journée qui les montre. Ce n'est pas un ajustement manuel — voir l'encart « Ajustement manuel ou verrouillage ? ».`,
+              text: $localize`:@@aide.config.def.verrouillages:Geler un animateur, un stand, une journée ou un créneau pour que la prochaine résolution n'y touche plus et optimise le reste. Une place non pourvue n'est jamais gelée, et les places gelées continuent d'être évaluées : un verrou laisse donc une alerte visible au lieu de masquer un problème. Quand ce que vous figez casse déjà une règle dure, l'enregistrement le dit, pour que le score dur négatif du prochain calcul ne soit pas une surprise. Ils se posent sur l'onglet Verrouillages de la page Consignes au solveur, sur un animateur par défaut ; avant d'enregistrer, l'aperçu compte les affectations que le verrou figera et mène à la Journée qui les montre. Ce n'est pas un ajustement manuel : voir l'encart « Ajustement manuel ou verrouillage ? ».`,
             },
           ],
         },
@@ -137,7 +137,7 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.config.saisieEnCours:Un calcul ne lit que ce qui est enregistré. « Calculer » demande donc confirmation quand une fiche animateur, une fiche stand ou une consigne est en cours de saisie sans avoir été enregistrée, dans cet onglet ou laissée en brouillon. À l'inverse, si un calcul démarre pendant que vous saisissez — depuis un autre onglet, un autre poste, l'assistant ou une routine —, le formulaire le dit, avec l'heure de fin au plus tard : votre saisie reste à l'écran et s'enregistre à la fin du calcul. Les décisions de la page Disponibilités attendent aussi la fin du calcul. Un assistant peut, lui, continuer à écrire certaines données pendant un calcul ; sa réponse l'avertit alors que le calcul en cours n'en tiendra pas compte.`,
+          text: $localize`:@@aide.config.saisieEnCours:Un calcul ne lit que ce qui est enregistré. « Calculer » demande donc confirmation quand une fiche animateur, une fiche stand ou une consigne est en cours de saisie sans avoir été enregistrée, dans cet onglet ou laissée en brouillon. À l'inverse, si un calcul démarre pendant que vous saisissez (depuis un autre onglet, un autre poste, l'assistant ou une routine), le formulaire le dit, avec l'heure de fin au plus tard : votre saisie reste à l'écran et s'enregistre à la fin du calcul. Les décisions de la page Disponibilités attendent aussi la fin du calcul. Un assistant peut, lui, continuer à écrire certaines données pendant un calcul ; sa réponse l'avertit alors que le calcul en cours n'en tiendra pas compte.`,
         },
         {
           kind: 'paragraph',
@@ -178,11 +178,11 @@ export function buildSolverSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.setup.term.creneaux:Des blocs, et ce que coûte une coupe`,
-              text: $localize`:@@aide.setup.def.creneaux:Le solveur affecte une personne par créneau et par siège. Des vacations qui se touchent s'enchaînent librement : rien n'impose d'écart entre deux d'entre elles, et un trou plus court que la pause légale compte comme du travail. Préférez tout de même des blocs — matin, midi, après-midi, nocturne — et gardez la relève de midi comme trou planifié : c'est la pause déjeuner. Découper un après-midi en deux sessions ne réduit jamais le besoin en personnes.`,
+              text: $localize`:@@aide.setup.def.creneaux:Le solveur affecte une personne par créneau et par siège. Des vacations qui se touchent s'enchaînent librement : rien n'impose d'écart entre deux d'entre elles, et un trou plus court que la pause légale compte comme du travail. Préférez tout de même des blocs (matin, midi, après-midi, nocturne) et gardez la relève de midi comme trou planifié : c'est la pause déjeuner. Découper un après-midi en deux sessions ne réduit jamais le besoin en personnes.`,
             },
             {
               term: $localize`:@@aide.setup.term.pause:La pause légale : un trou, ou un relais`,
-              text: $localize`:@@aide.setup.def.pause:Le Code du travail impose une pause dès six heures d'affilée (quatre heures et demie pour un mineur). L'outil la reconnaît de deux manières, et pas d'une troisième : un trou d'au moins la durée réglée dans la grille — il coupe la séquence, plus rien n'est dû — ou un relais, un collègue du même stand qui tient une place pendant toute la pause. Une pause que personne ne peut prendre est un écart dur.`,
+              text: $localize`:@@aide.setup.def.pause:Le Code du travail impose une pause dès six heures d'affilée (quatre heures et demie pour un mineur). L'outil la reconnaît de deux manières seulement. Soit un trou d'au moins la durée réglée dans la grille, qui coupe la séquence : plus rien n'est dû. Soit un relais : un collègue du même stand tient une place pendant toute la pause. Une pause que personne ne peut prendre est un écart dur.`,
             },
             {
               term: $localize`:@@aide.setup.term.surPoste:Une relève enchaînée à l'après-midi reste possible`,
@@ -214,7 +214,7 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.setup.repere:Un repère pour arbitrer : une grille dont la borne d'effectif est plus basse ne se résout pas forcément mieux. La borne dit ce qui est impossible, jamais ce qui est faisable — seule la résolution tranche.`,
+          text: $localize`:@@aide.setup.repere:Un repère pour arbitrer : une grille dont la borne d'effectif est plus basse ne se résout pas forcément mieux. La borne dit ce qui est impossible, jamais ce qui est faisable : seule la résolution tranche.`,
         },
       ],
       links: [
@@ -278,11 +278,11 @@ export function buildSolverSections(): HelpSection[] {
         {
           kind: 'callout',
           title: $localize`:@@aide.results.callout.title:Des points qui ne mesurent rien`,
-          text: $localize`:@@aide.results.callout.text:Une contrainte qui pénalise chaque poste faute de donnée saisie — aucun souhait déclaré, aucun référent — produit un plancher constant, parfois l'essentiel du total. Sur la page Règles du planning, une règle qui pénalise au moins 95 % de ce qu'elle évalue porte une marque dans sa colonne Écarts ; son panneau nomme la donnée manquante et renvoie vers l'écran où la saisir. Rien n'est désactivé à votre place. Comparez des scores entre deux résolutions du même jeu de données, jamais leur valeur absolue.`,
+          text: $localize`:@@aide.results.callout.text:Une contrainte qui pénalise chaque poste faute de donnée saisie (aucun souhait déclaré, aucun référent) produit un plancher constant, parfois l'essentiel du total. Sur la page Règles du planning, une règle qui pénalise au moins 95 % de ce qu'elle évalue porte une marque dans sa colonne Écarts ; son panneau nomme la donnée manquante et renvoie vers l'écran où la saisir. Rien n'est désactivé à votre place. Comparez des scores entre deux résolutions du même jeu de données, jamais leur valeur absolue.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.results.previousPlan:Un calcul relancé repart du plan enregistré et ne peut pas finir en dessous de lui à données égales. Il peut quand même le dégrader si le référentiel a changé entre-temps, ou si vous avez recommencé de zéro. La page Solveur affiche donc le score d'avant à côté de celui d'après et signale une résolution moins bonne — un dur toujours à zéro ne veut pas dire que rien n'a été perdu, l'écart se lit sur le medium. « Revenir au plan d'avant » remet le planning précédent ; ne tardez pas, seuls les cinq derniers instantanés automatiques sont conservés par édition.`,
+          text: $localize`:@@aide.results.previousPlan:Un calcul relancé repart du plan enregistré et ne peut pas finir en dessous de lui à données égales. Il peut quand même le dégrader si le référentiel a changé entre-temps, ou si vous avez recommencé de zéro. La page Solveur affiche donc le score d'avant à côté de celui d'après et signale une résolution moins bonne. Un dur toujours à zéro ne veut pas dire que rien n'a été perdu : l'écart se lit sur le medium. « Revenir au plan d'avant » remet le planning précédent ; ne tardez pas, seuls les cinq derniers instantanés automatiques sont conservés par édition.`,
         },
         {
           kind: 'paragraph',
@@ -290,7 +290,7 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.results.fraicheur:Chaque instantané indique s'il est encore à jour. « Périmé » veut dire que les données — stands, animateurs, créneaux, paramètres, règles — ont été modifiées après la capture, et l'infobulle donne la date. Le restaurer n'est pas interdit, mais demande une confirmation à part : remettre ce plan en place annulerait la prise en compte de ce qui a changé depuis. Le plus souvent, mieux vaut relancer une résolution.`,
+          text: $localize`:@@aide.results.fraicheur:Chaque instantané indique s'il est encore à jour. « Périmé » veut dire que les données (stands, animateurs, créneaux, paramètres, règles) ont été modifiées après la capture, et l'infobulle donne la date. Le restaurer reste possible, avec une confirmation à part : remettre ce plan en place annulerait la prise en compte de ce qui a changé depuis. Le plus souvent, mieux vaut relancer une résolution.`,
         },
         {
           kind: 'definitions',
@@ -305,7 +305,7 @@ export function buildSolverSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.results.term.contraintes:Page Règles du planning`,
-              text: $localize`:@@aide.results.def.contraintes:Le catalogue des règles en trois onglets — Légal, Qualité, Calcul —, chacune sur une ligne avec son fondement, son état, ses réglages et le résultat de la dernière analyse : combien de fois elle n'est pas respectée, et le détail des écarts dans son panneau. C'est ce qui transforme « -14 hard » en « quatorze postes non pourvus sur tel stand ».`,
+              text: $localize`:@@aide.results.def.contraintes:Le catalogue des règles en trois onglets (Légal, Qualité, Calcul), chacune sur une ligne avec son fondement, son état, ses réglages et le résultat de la dernière analyse : combien de fois elle n'est pas respectée, et le détail des écarts dans son panneau. C'est ce qui transforme « -14 hard » en « quatorze postes non pourvus sur tel stand ».`,
             },
             {
               term: $localize`:@@aide.results.term.stabilite:Stabilité du plan publié`,
@@ -344,22 +344,22 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.tuning.playbookGestes:Sous chaque problème du Diagnostic, le bloc « Que faire ? » propose les gestes qui le règlent, dans l'ordre que le catalogue des règles leur donne, chacun avec une phrase d'explication. Un seul s'accomplit sur place : « Qui peut tenir ce siège ? » ouvre la liste de qui pourrait tenir un siège libre du créneau, et son « Placer » le remplit sans quitter le Diagnostic. Les autres ouvrent l'écran déjà positionné, qui garde ses propres aperçus et confirmations. Pour un créneau en sous-effectif : qui peut tenir ce siège, puis saisir la compétence sur la typologie du stand, puis baisser l'effectif demandé, enfin revoir les indisponibilités du jour. Quand l'écart tombe sur un siège tenu par une seule personne, le même geste s'appelle « Qui peut remplacer ? » et ouvre la page Planning sur ce siège-là, dont le panneau propose « Remplacer ». Pour une règle légale en défaut : proposer une réparation depuis la page Planning, ou chercher un remplaçant depuis le panneau du siège — une règle légale ne se règle pas. Pour une règle de qualité : le geste qui change le plan ou le référentiel d'abord — le siège, la compétence, la fiche du stand, le plafond de la règle, la charge par personne, le verrou —, et « Baisser l'importance » toujours en dernier, masqué quand l'importance est déjà au plus bas. Pour une règle en plancher : saisir d'abord la donnée manquante. Pour une pause sans relais : ouvrir une place de relais sur le stand, ou raccourcir la vacation. Pour des ajustements manuels ou un verrou en cause : les revoir, affichés seuls. Une journée déjà commencée ne propose rien qui la modifierait : son plan est figé tel que travaillé. L'explication du premier geste d'une règle reprend mot pour mot son conseil, sauf quand ce conseil propose de baisser l'importance : seul le dernier bouton en parle.`,
+          text: $localize`:@@aide.tuning.playbookGestes:Sous chaque problème du Diagnostic, le bloc « Que faire ? » propose les gestes qui le règlent, dans l'ordre que le catalogue des règles leur donne, chacun avec une phrase d'explication. Un seul s'accomplit sur place : « Qui peut tenir ce siège ? » ouvre la liste de qui pourrait tenir un siège libre du créneau, et son « Placer » le remplit sans quitter le Diagnostic. Les autres ouvrent l'écran déjà positionné, qui garde ses propres aperçus et confirmations. Pour un créneau en sous-effectif : qui peut tenir ce siège, puis saisir la compétence sur la typologie du stand, puis baisser l'effectif demandé, enfin revoir les indisponibilités du jour. Quand l'écart tombe sur un siège tenu par une seule personne, le même geste s'appelle « Qui peut remplacer ? » et ouvre la page Planning sur ce siège-là, dont le panneau propose « Remplacer ». Pour une règle légale en défaut : proposer une réparation depuis la page Planning, ou chercher un remplaçant depuis le panneau du siège ; une règle légale ne se règle pas. Pour une règle de qualité : d'abord le geste qui change le plan ou le référentiel (le siège, la compétence, la fiche du stand, le plafond de la règle, la charge par personne, le verrou), et « Baisser l'importance » toujours en dernier, masqué quand l'importance est déjà au plus bas. Pour une règle en plancher : saisir d'abord la donnée manquante. Pour une pause sans relais : ouvrir une place de relais sur le stand, ou raccourcir la vacation. Pour des ajustements manuels ou un verrou en cause : les revoir, affichés seuls. Une journée déjà commencée ne propose rien qui la modifierait : son plan est figé tel que travaillé. L'explication du premier geste d'une règle reprend mot pour mot son conseil, sauf quand ce conseil propose de baisser l'importance : seul le dernier bouton en parle.`,
         },
         {
           kind: 'definitions',
           items: [
             {
               term: $localize`:@@aide.tuning.term.postesVides:Des postes restent non pourvus`,
-              text: $localize`:@@aide.tuning.def.postesVides:Regardez d'abord le besoin en animateurs : si l'effectif saisi est sous le minimum estimé, il manque des animateurs, pas du temps de calcul. Sinon, la page Problèmes dit quels créneaux sont concernés — c'est souvent une poignée de créneaux de pointe, un stand ouvert par erreur, ou une typologie que presque personne ne maîtrise.`,
+              text: $localize`:@@aide.tuning.def.postesVides:Regardez d'abord le besoin en animateurs : si l'effectif saisi est sous le minimum estimé, il manque des animateurs, pas du temps de calcul. Sinon, la page Problèmes dit quels créneaux sont concernés : c'est souvent une poignée de créneaux de pointe, un stand ouvert par erreur, ou une typologie que presque personne ne maîtrise.`,
             },
             {
               term: $localize`:@@aide.tuning.term.plateau:Le score dur stagne près de zéro`,
-              text: $localize`:@@aide.tuning.def.plateau:C'est le cas typique où allonger la durée paie : doublez-la et relancez. Si deux résolutions longues s'arrêtent exactement au même score, le problème n'est plus le temps mais la structure — identifiez la contrainte en défaut et regardez ses écarts un par un.`,
+              text: $localize`:@@aide.tuning.def.plateau:C'est le cas typique où allonger la durée paie : doublez-la et relancez. Si deux résolutions longues s'arrêtent exactement au même score, c'est la structure qui bloque : identifiez la contrainte en défaut et regardez ses écarts un par un.`,
             },
             {
               term: $localize`:@@aide.tuning.term.legal:Les écarts portent sur le temps de travail`,
-              text: $localize`:@@aide.tuning.def.legal:Les plafonds hebdomadaires et le repos entre journées se heurtent au découpage. Revoyez la grille plutôt que les plafonds légaux. Quand une séquence de plus de six heures bloque, la réponse est presque toujours une place de plus sur le stand à l'heure de la pause, ou un trou dans la grille — pas un plafond relevé.`,
+              text: $localize`:@@aide.tuning.def.legal:Les plafonds hebdomadaires et le repos entre journées se heurtent au découpage. Revoyez la grille plutôt que les plafonds légaux. Quand une séquence de plus de six heures bloque, la réponse est presque toujours une place de plus sur le stand à l'heure de la pause, ou un trou dans la grille, plutôt qu'un plafond relevé.`,
             },
             {
               term: $localize`:@@aide.tuning.term.mineurs:Les écarts concernent les mineurs`,
@@ -371,7 +371,7 @@ export function buildSolverSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.tuning.term.gelerBloc:Une part du planning est acquise et ralentit la recherche`,
-              text: $localize`:@@aide.tuning.def.gelerBloc:Le montage et le démontage sont volumineux et sans difficulté, mais le solveur y consacre une part de ses mouvements proportionnelle à leur nombre de places. Une fois qu'une résolution les a correctement pourvus, posez un verrouillage de type Stand : les places restent au planning, nominatives et comptées dans les plafonds légaux, mais le solveur concentre son budget ailleurs. À ne faire qu'après vérification — le verrou fige ces personnes sur ces places — et il se retire à tout moment.`,
+              text: $localize`:@@aide.tuning.def.gelerBloc:Le montage et le démontage sont volumineux et sans difficulté, mais le solveur y consacre une part de ses mouvements proportionnelle à leur nombre de places. Une fois qu'une résolution les a correctement pourvus, posez un verrouillage de type Stand : les places restent au planning, nominatives et comptées dans les plafonds légaux, mais le solveur concentre son budget ailleurs. À ne faire qu'après vérification, puisque le verrou fige ces personnes sur ces places ; il se retire à tout moment.`,
             },
             {
               term: $localize`:@@aide.tuning.term.incremental:Un changement tombe après validation du planning`,
@@ -379,7 +379,7 @@ export function buildSolverSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.tuning.term.mediumEleve:Le score medium ou souple paraît énorme`,
-              text: $localize`:@@aide.tuning.def.mediumEleve:Vérifiez d'abord qu'il ne s'agit pas d'un plancher lié à une donnée absente — souhaits, niveau référent. Enrichir les compétences et les souhaits améliore ces composantes bien plus que n'importe quel réglage du solveur.`,
+              text: $localize`:@@aide.tuning.def.mediumEleve:Vérifiez d'abord qu'il ne s'agit pas d'un plancher lié à une donnée absente (souhaits, niveau référent). Enrichir les compétences et les souhaits améliore ces composantes bien plus que n'importe quel réglage du solveur.`,
             },
           ],
         },
@@ -416,7 +416,7 @@ export function buildSolverSections(): HelpSection[] {
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.adHoc.intro:Un ajustement manuel est une exception que vous saisissez sur vos propres données, à côté des règles du catalogue — premier onglet de la page Consignes au solveur, avec les verrouillages et les consignes. Trois des quatre types sont appliqués au même niveau que le cadre légal : le solveur ne les contournera jamais, quitte à rendre un planning en défaut. Chacun se saisit avec une raison, lisible partout où l'ajustement est cité.`,
+          text: $localize`:@@aide.adHoc.intro:Un ajustement manuel est une exception que vous saisissez sur vos propres données, à côté des règles du catalogue. Il se saisit sur le premier onglet de la page Consignes au solveur, qui porte aussi les verrouillages et les consignes. Trois des quatre types sont appliqués au même niveau que le cadre légal : le solveur ne les contournera jamais, quitte à rendre un planning en défaut. Chacun se saisit avec une raison, lisible partout où l'ajustement est cité.`,
         },
         {
           kind: 'callout',
@@ -432,29 +432,29 @@ export function buildSolverSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.adHoc.term.affectation:Affectation forcée`,
-              text: $localize`:@@aide.adHoc.def.affectation:Exige qu'au moins un poste du périmètre soit tenu par la personne. Attention : si vous nommez plusieurs animateurs, l'ajustement est satisfait dès que l'un d'eux tient le poste — c'est un « l'un de ces animateurs », jamais un « tous ». Pour imposer deux personnes, saisissez deux ajustements.`,
+              text: $localize`:@@aide.adHoc.def.affectation:Exige qu'au moins un poste du périmètre soit tenu par la personne. Attention : si vous nommez plusieurs animateurs, l'ajustement est satisfait dès que l'un d'eux tient le poste : c'est un « l'un de ces animateurs », jamais un « tous ». Pour imposer deux personnes, saisissez deux ajustements.`,
             },
             {
               term: $localize`:@@aide.adHoc.term.incompatibilite:Incompatibilité`,
-              text: $localize`:@@aide.adHoc.def.incompatibilite:Interdit à deux personnes de travailler sur le même créneau. Elle porte sur le créneau, pas sur le stand : deux stands différents à la même heure sont tout autant interdits. Seuls les deux premiers animateurs de la liste sont pris en compte — pour trois personnes, saisissez les trois paires.`,
+              text: $localize`:@@aide.adHoc.def.incompatibilite:Interdit à deux personnes de travailler sur le même créneau. Elle porte sur le créneau, pas sur le stand : deux stands différents à la même heure sont tout autant interdits. Seuls les deux premiers animateurs de la liste sont pris en compte ; pour trois personnes, saisissez les trois paires.`,
             },
             {
               term: $localize`:@@aide.adHoc.term.affinite:Affinité (paire à privilégier)`,
-              text: $localize`:@@aide.adHoc.def.affinite:Pas une règle dure : une préférence, récompensée chaque fois que les deux personnes tiennent un poste sur le même stand au même créneau. Elle ne force rien.`,
+              text: $localize`:@@aide.adHoc.def.affinite:Une préférence, pas une règle dure : elle est récompensée chaque fois que les deux personnes tiennent un poste sur le même stand au même créneau, sans rien forcer.`,
             },
             {
               term: $localize`:@@aide.adHoc.term.arriveeGroupee:Arrivée groupée (covoiturage)`,
-              text: $localize`:@@aide.adHoc.def.arriveeGroupee:De 2 à 4 personnes qui arrivent et repartent ensemble. Une préférence, pas une règle dure : le solveur cherche à leur donner les mêmes jours, et des premières arrivées et derniers départs à la tolérance près — réglage « Tolérance d'une arrivée groupée », 30 min par défaut, sur la ligne de la règle dans Règles du planning, onglet Qualité ; au-delà, chaque minute d'écart et chaque jour où un membre travaille sans les autres coûtent. Chacun peut tenir un stand différent. Ni créneau ni stand. Elle naît le plus souvent d'une demande « Je viens avec… » envoyée depuis l'onglet Covoiturage de l'espace et validée sur la page Disponibilités, onglet Covoiturage ; elle se crée aussi à la main ici. Celle qui vient d'une demande validée ne se modifie ni ne se supprime ici : ses boutons sont grisés et mènent à Disponibilités, onglet Covoiturage, où l'annuler prévient le groupe ; celle écrite à la main reste modifiable. Elle est refusée si deux de ses membres forment une incompatibilité sans stand ni créneau : on ne fait pas arriver ensemble deux personnes qu'on refuse de faire travailler ensemble.`,
+              text: $localize`:@@aide.adHoc.def.arriveeGroupee:De 2 à 4 personnes qui arrivent et repartent ensemble. Une préférence, pas une règle dure : le solveur cherche à leur donner les mêmes jours, et des premières arrivées et derniers départs à la tolérance près (réglage « Tolérance d'une arrivée groupée », 30 min par défaut, sur la ligne de la règle dans Règles du planning, onglet Qualité). Au-delà, chaque minute d'écart et chaque jour où un membre travaille sans les autres coûtent. Chacun peut tenir un stand différent : elle ne désigne ni créneau ni stand. Elle naît le plus souvent d'une demande « Je viens avec… » envoyée depuis l'onglet Covoiturage de l'espace et validée sur la page Disponibilités, onglet Covoiturage ; elle se crée aussi à la main ici. Celle qui vient d'une demande validée ne se modifie ni ne se supprime ici : ses boutons sont grisés et mènent à Disponibilités, onglet Covoiturage, où l'annuler prévient le groupe ; celle écrite à la main reste modifiable. Elle est refusée si deux de ses membres forment une incompatibilité sans stand ni créneau : on ne fait pas arriver ensemble deux personnes qu'on refuse de faire travailler ensemble.`,
             },
           ],
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.adHoc.perimetre:Le créneau et le stand sont facultatifs, et les laisser vides veut dire « partout » : une indisponibilité forcée sans périmètre écarte la personne de tout l'événement. Un ajustement conserve l'identifiant du créneau visé — si ce créneau disparaît, la colonne Périmètre affiche « créneau supprimé » et l'ajustement ne s'applique plus à rien. Après un découpage ou l'application d'un calendrier, revérifiez ceux qui visaient un créneau.`,
+          text: $localize`:@@aide.adHoc.perimetre:Le créneau et le stand sont facultatifs, et les laisser vides veut dire « partout » : une indisponibilité forcée sans périmètre écarte la personne de tout l'événement. Un ajustement conserve l'identifiant du créneau visé : si ce créneau disparaît, la colonne Périmètre affiche « créneau supprimé » et l'ajustement ne s'applique plus à rien. Après un découpage ou l'application d'un calendrier, revérifiez ceux qui visaient un créneau.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.adHoc.contradictions:Deux ajustements qui ne peuvent pas tenir ensemble sont refusés à l'enregistrement, avec un message qui les nomme tous les deux — plutôt qu'un planning déclaré infaisable plusieurs minutes plus tard. Cinq situations sont refusées :`,
+          text: $localize`:@@aide.adHoc.contradictions:Deux ajustements qui ne peuvent pas tenir ensemble sont refusés à l'enregistrement, avec un message qui les nomme tous les deux, au lieu d'un planning déclaré infaisable plusieurs minutes plus tard. Cinq situations sont refusées :`,
         },
         {
           kind: 'list',
@@ -476,7 +476,7 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.adHoc.intenable:Trois autres situations sont signalées sans être refusées, parce que ce qui casse l'affectation forcée arrive le plus souvent après elle : tous les animateurs nommés se sont déclarés indisponibles sur tout le périmètre ; aucune place du périmètre ne peut les accueillir au regard d'une règle dure — un mineur la nuit, un jour férié, un stand réservé aux majeurs, un plafond quotidien dépassé ; leur emploi du temps est verrouillé sur tout le périmètre sans qu'ils y tiennent déjà de place. Un message le dit à l'enregistrement, la page Problèmes le reprend comme cause bloquante tant que ça tient, et « Calculer » demande confirmation avant de partir.`,
+          text: $localize`:@@aide.adHoc.intenable:Trois autres situations sont signalées sans être refusées, parce que ce qui casse l'affectation forcée arrive le plus souvent après elle : tous les animateurs nommés se sont déclarés indisponibles sur tout le périmètre ; aucune place du périmètre ne peut les accueillir au regard d'une règle dure (un mineur la nuit, un jour férié, un stand réservé aux majeurs, un plafond quotidien dépassé) ; leur emploi du temps est verrouillé sur tout le périmètre sans qu'ils y tiennent déjà de place. Un message le dit à l'enregistrement, la page Problèmes le reprend comme cause bloquante tant que ça tient, et « Calculer » demande confirmation avant de partir.`,
         },
         {
           kind: 'paragraph',
@@ -488,15 +488,15 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.adHoc.apres:Quand une résolution se termine malgré tout en défaut, la page Problèmes nomme les ajustements que le solveur n'a pas pu honorer, avec le nombre d'écarts de chacun — c'est ce qui distingue « le solveur n'y arrive pas » de « ces trois exceptions-là sont à arbitrer ».`,
+          text: $localize`:@@aide.adHoc.apres:Quand une résolution se termine malgré tout en défaut, la page Problèmes nomme les ajustements que le solveur n'a pas pu honorer, avec le nombre d'écarts de chacun. C'est ce qui distingue « le solveur n'y arrive pas » de « ces trois exceptions-là sont à arbitrer ».`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.adHoc.liste:Le dialogue commence par la personne, puis le type : on pense « Alice », pas « incompatibilité ». Le champ « Personne » au-dessus de la liste ne garde que les ajustements qui nomment quelqu'un — par son nom ou son identifiant ; la fiche d'un animateur y mène filtrée sur lui. L'adresse garde le filtre.`,
+          text: $localize`:@@aide.adHoc.liste:Le dialogue commence par la personne, puis le type : on pense « Alice », pas « incompatibilité ». Le champ « Personne » au-dessus de la liste ne garde que les ajustements qui nomment quelqu'un (par son nom ou son identifiant) ; la fiche d'un animateur y mène filtrée sur lui. L'adresse garde le filtre.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.consignesSolveur.relancer:Après toute saisie sur l'un des trois onglets — un ajustement, un verrou, une consigne —, la page propose « Relancer le calcul » sur place. Après une consigne, c'est une correction quand un plan existe : elle ne rouvre que les places que la bande a ôtées ou ajoutées. Après un ajustement ou un verrou, c'est un calcul complet qui repart du plan : une correction figerait toutes les places encore valides, et l'affectation imposée ou le verrou levé n'y changerait rien. Le Solveur compte ces saisies dans « Ce calcul tiendra compte de ».`,
+          text: $localize`:@@aide.consignesSolveur.relancer:Après toute saisie sur l'un des trois onglets (un ajustement, un verrou, une consigne), la page propose « Relancer le calcul » sur place. Après une consigne, c'est une correction quand un plan existe : elle ne rouvre que les places que la bande a ôtées ou ajoutées. Après un ajustement ou un verrou, c'est un calcul complet qui repart du plan : une correction figerait toutes les places encore valides, et l'affectation imposée ou le verrou levé n'y changerait rien. Le Solveur compte ces saisies dans « Ce calcul tiendra compte de ».`,
         },
       ],
       links: [

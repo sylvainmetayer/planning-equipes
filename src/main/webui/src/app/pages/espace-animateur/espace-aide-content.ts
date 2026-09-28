@@ -116,7 +116,7 @@ export function buildEspaceAideSections(
             },
             {
               term: $localize`:@@espace.aide.planning.term.lieu:Le lieu`,
-              text: $localize`:@@espace.aide.planning.def.lieu:L'endroit où le stand est installé, quand il en a un — « Hall B », « Château ». S'il est placé sur une carte, le nom est un lien qui l'ouvre.`,
+              text: $localize`:@@espace.aide.planning.def.lieu:L'endroit où le stand est installé, quand il en a un (« Hall B », « Château »). S'il est placé sur une carte, le nom est un lien qui l'ouvre.`,
             },
             {
               term: $localize`:@@espace.aide.planning.term.coequipiers:Les coéquipiers`,
@@ -130,7 +130,7 @@ export function buildEspaceAideSections(
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@espace.aide.planning.repos:Les journées où vous n'êtes affecté nulle part apparaissent quand même, marquées « Repos ». C'est voulu : rien n'a été oublié.`,
+          text: $localize`:@@espace.aide.planning.repos:Les journées où vous n'êtes affecté nulle part apparaissent quand même, marquées « Repos » : elles n'ont pas été oubliées.`,
         },
         {
           kind: 'paragraph',
@@ -138,7 +138,7 @@ export function buildEspaceAideSections(
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@espace.aide.planning.changements:Après une republication qui vous concerne, le bandeau « Ce qui a changé pour vous » reprend, au-dessus de vos journées, ce que disait le message reçu — pratique si vous l'avez manqué. Il est replié, avec le nombre de changements dans son titre ; touchez-le pour lire. Il s'efface une fois votre présence confirmée.`,
+          text: $localize`:@@espace.aide.planning.changements:Après une republication qui vous concerne, le bandeau « Ce qui a changé pour vous », au-dessus de vos journées, reprend ce que disait le message reçu, au cas où vous l'auriez manqué. Il est replié, avec le nombre de changements dans son titre ; touchez-le pour lire. Il s'efface une fois votre présence confirmée.`,
         },
         {
           kind: 'paragraph',
@@ -159,7 +159,7 @@ export function buildEspaceAideSections(
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@espace.aide.confirmer.pourquoi:Le bouton apparaît dès que votre planning est publié. Un clic suffit : l'organisation voit que vous êtes au courant et n'a pas à vous relancer. Sans réponse au bout de quelques jours, un rappel automatique part — une seule fois.`,
+          text: $localize`:@@espace.aide.confirmer.pourquoi:Le bouton apparaît dès que votre planning est publié. Un clic suffit : l'organisation voit que vous êtes au courant et n'a pas à vous relancer. Sans réponse au bout de quelques jours, un rappel automatique part, une seule fois.`,
         },
         {
           kind: 'paragraph',
@@ -179,7 +179,7 @@ export function buildEspaceAideSections(
       id: 'emporter',
       icon: 'download',
       question: $localize`:@@espace.aide.emporter.question:Puis-je emporter mon planning ?`,
-      resume: $localize`:@@espace.aide.emporter.resume:Oui — le mieux est de vous y abonner, pour qu'il se tienne à jour tout seul.`,
+      resume: $localize`:@@espace.aide.emporter.resume:Oui. Le mieux est de vous y abonner, pour qu'il se tienne à jour tout seul.`,
       cible: 'planning',
       blocks: [
         {
@@ -189,9 +189,9 @@ export function buildEspaceAideSections(
         {
           kind: 'list',
           items: [
-            $localize`:@@espace.aide.emporter.item0:« S'abonner dans mon agenda » — à privilégier : donnée une fois à votre agenda, l'adresse le tient à jour à chaque nouvelle publication. Rien à refaire ensuite.`,
+            $localize`:@@espace.aide.emporter.item0:« S'abonner dans mon agenda », à privilégier : l'adresse, donnée une seule fois à votre agenda, le tient à jour à chaque nouvelle publication sans que vous ayez rien à refaire.`,
             $localize`:@@espace.aide.emporter.item1:« Livret PDF » : une vue d'ensemble de vos journées, leur détail, puis vos coéquipiers et vos lieux.`,
-            $localize`:@@espace.aide.emporter.itemFeuille:« Feuille A4 » : le même planning sur une seule feuille, calendrier au recto, équipes et lieux au verso — celle qui tient dans une poche.`,
+            $localize`:@@espace.aide.emporter.itemFeuille:« Feuille A4 » : le même planning sur une seule feuille qui tient dans une poche, calendrier au recto, équipes et lieux au verso.`,
             $localize`:@@espace.aide.emporter.item2:« Fichier ICS » : chaque créneau devient un rendez-vous, versé une seule fois dans votre agenda.`,
           ],
         },
@@ -295,7 +295,7 @@ export function buildEspaceAideSections(
             },
             {
               term: $localize`:@@echanges.statut.acceptee:Acceptée`,
-              text: $localize`:@@espace.aide.suivi.def.acceptee:L'échange est validé. Il apparaît dans votre planning à la publication suivante : tant que c'est l'ancien créneau qui s'affiche, elle n'a pas encore eu lieu — la demande le dit sous son statut.`,
+              text: $localize`:@@espace.aide.suivi.def.acceptee:L'échange est validé. Il apparaît dans votre planning à la publication suivante. Tant que l'ancien créneau s'affiche, cette publication n'a pas encore eu lieu, et la demande le signale sous son statut.`,
             },
             {
               term: $localize`:@@echanges.statut.refusee:Refusée`,
@@ -313,7 +313,7 @@ export function buildEspaceAideSections(
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@espace.aide.suivi.alerte:Un encadré « cet échange poserait un problème » signale que l'échange se heurte à une règle : temps de repos trop court, horaire déjà occupé, stand qui vous attend au même moment. C'est un avertissement, pas un refus : la demande est transmise quand même.`,
+          text: $localize`:@@espace.aide.suivi.alerte:Un encadré « cet échange poserait un problème » signale que l'échange se heurte à une règle : temps de repos trop court, horaire déjà occupé, stand qui vous attend au même moment. Ce n'est qu'un avertissement : la demande est transmise quand même.`,
         },
         {
           kind: 'paragraph',
@@ -364,7 +364,7 @@ export function buildEspaceAideSections(
             $localize`:@@espace.aide.dispo.etape1:Touchez chaque jour où vous ne pouvez pas venir. Les jours que vous ne touchez pas veulent dire « je suis disponible ».`,
             $localize`:@@espace.aide.dispo.etape2:Choisissez les types de jeux qui vous plairaient. Un souhait n'est pas une garantie : il est suivi quand le planning le permet.`,
             $localize`:@@espace.aide.dispo.etape3:Ajoutez un mot si votre situation ne tient pas dans des cases (« je pars dimanche après le déjeuner »).`,
-            $localize`:@@espace.aide.dispo.etape4:Envoyez. Le formulaire s'ouvre déjà sur ce que l'organisation sait de vous : vous corrigez, vous ne repartez pas de zéro.`,
+            $localize`:@@espace.aide.dispo.etape4:Envoyez. Le formulaire s'ouvre déjà rempli avec ce que l'organisation sait de vous, il suffit de le corriger.`,
           ],
         },
         {
@@ -433,7 +433,7 @@ export function buildEspaceAideSections(
           blocks: [
             {
               kind: 'paragraph',
-              text: $localize`:@@espace.aide.empechement.geste:Dans « Mon planning », ouvrez la journée concernée : « Je ne pourrai pas venir » signale toute la journée, et le même bouton sur la carte d'un poste ne signale que celui-là. Un motif est proposé — raison personnelle, transport, autre — et vous pouvez ne pas le préciser. Le geste reste ouvert toute l'édition, même quand la collecte et la foire sont fermées.`,
+              text: $localize`:@@espace.aide.empechement.geste:Dans « Mon planning », ouvrez la journée concernée : « Je ne pourrai pas venir » signale toute la journée, et le même bouton sur la carte d'un poste ne signale que celui-là. Un motif est proposé (raison personnelle, transport, autre), mais vous pouvez ne pas le préciser. Le geste reste ouvert toute l'édition, même quand la collecte et la foire sont fermées.`,
             },
             {
               kind: 'paragraph',
@@ -441,7 +441,7 @@ export function buildEspaceAideSections(
             },
             {
               kind: 'paragraph',
-              text: $localize`:@@espace.aide.empechement.urgence:Le jour même, pour un poste qui commence dans l'heure, appelez aussi l'organisation : un signalement se lit, un appel s'entend.`,
+              text: $localize`:@@espace.aide.empechement.urgence:Le jour même, pour un poste qui commence dans l'heure, appelez aussi l'organisation : un appel est entendu tout de suite, un signalement attend d'être lu.`,
             },
           ],
         },
@@ -449,11 +449,11 @@ export function buildEspaceAideSections(
       id: 'foire-fermee',
       icon: 'lock',
       question: $localize`:@@espace.aide.foire.question:Pourquoi je ne peux pas proposer d'échange ?`,
-      resume: $localize`:@@espace.aide.foire.resume:La foire au planning n'est pas ouverte — pas encore, ou plus.`,
+      resume: $localize`:@@espace.aide.foire.resume:La foire au planning n'est pas encore ouverte, ou elle est déjà fermée.`,
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@espace.aide.foire.intro:La foire au planning est la période pendant laquelle l'organisation accepte les échanges. Une fois fermée — le planning est figé, ou l'événement a commencé — vous gardez l'accès à votre planning et à vos demandes passées, mais vous ne pouvez plus en proposer, en accorder ni en annuler.`,
+          text: $localize`:@@espace.aide.foire.intro:La foire au planning est la période pendant laquelle l'organisation accepte les échanges. Une fois qu'elle est fermée (le planning est figé, ou l'événement a commencé), vous gardez l'accès à votre planning et à vos demandes passées, mais vous ne pouvez plus en proposer, en accorder ni en annuler.`,
         },
         {
           kind: 'paragraph',
@@ -478,7 +478,7 @@ export function buildEspaceAideSections(
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@espace.aide.veille.contenu:Si l'organisation a activé les rappels, vous recevez la veille au soir la liste de vos créneaux du lendemain : horaire et stand, rien de plus. C'est ce que cette page affiche déjà — un rappel ne vous annonce jamais un changement.`,
+          text: $localize`:@@espace.aide.veille.contenu:Si l'organisation a activé les rappels, vous recevez la veille au soir la liste de vos créneaux du lendemain : horaire et stand, rien de plus. Il reprend ce que cette page affiche déjà et ne vous annonce jamais un changement.`,
         },
         {
           kind: 'paragraph',

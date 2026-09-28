@@ -21,7 +21,7 @@ export function buildGettingStartedSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.start.classeur:Trois choses changent par rapport à un tableur. Le cadre légal est vérifié en continu. Un changement tardif se rejoue sans tout refaire. Et le planning diffusé est daté : l'application sait qui a reçu quelle version.`,
+          text: $localize`:@@aide.start.classeur:Par rapport à un tableur, l'application vérifie le cadre légal en continu et rejoue un changement tardif sans tout refaire. Elle date aussi le planning diffusé, et sait donc qui a reçu quelle version.`,
         },
         {
           kind: 'steps',
@@ -35,7 +35,7 @@ export function buildGettingStartedSections(): HelpSection[] {
             $localize`:@@aide.start.step7:Lancer une résolution courte, lire la page Problèmes, corriger, puis relancer sur une durée longue. Ne changez qu'une chose à la fois entre deux essais.`,
             $localize`:@@aide.start.step8:Publier : seules les personnes dont l'emploi du temps a changé reçoivent un message. C'est aussi le seul moment où les agendas abonnés bougent.`,
             $localize`:@@aide.start.step9:Suivre les accusés de réception sur la page Animateurs, et activer les envois de nuit sur la page Paramètres pour relancer les silencieux.`,
-            $localize`:@@aide.start.step10:Vérifier que la foire au planning est ouverte — elle l'est par défaut — puis la fermer quand le planning est figé. Le jour même, le mode jour J prend le relais.`,
+            $localize`:@@aide.start.step10:Vérifier que la foire au planning est ouverte (elle l'est par défaut), puis la fermer quand le planning est figé. Le jour même, le mode jour J prend le relais.`,
           ],
         },
         {
@@ -44,7 +44,7 @@ export function buildGettingStartedSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.start.guichets:Les guichets s'ouvrent et se ferment à la main, tous sur la page Paramètres, onglet Édition, et ce sont les seuls endroits où un animateur écrit quelque chose : la collecte des disponibilités — et le covoiturage, qui la suit — avant la construction, la foire au planning après la publication. Chacun accepte en plus une période datée, mais l'interrupteur reste maître. La collecte est fermée tant que vous ne l'ouvrez pas ; la foire est ouverte par défaut.`,
+          text: $localize`:@@aide.start.guichets:Les guichets sont les seuls endroits où un animateur écrit quelque chose : la collecte des disponibilités (et le covoiturage, qui la suit) avant la construction, la foire au planning après la publication. Ils s'ouvrent et se ferment à la main, tous sur la page Paramètres, onglet Édition. Chacun accepte aussi une période datée, mais c'est l'interrupteur qui décide. La collecte reste fermée tant que vous ne l'ouvrez pas ; la foire est ouverte par défaut.`,
         },
         {
           kind: 'paragraph',
@@ -52,7 +52,7 @@ export function buildGettingStartedSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.start.accueil.phases:La page d'accueil prend la forme du moment. Pendant la préparation, elle reprend ces étapes en checklist : chaque ligne dit où vous en êtes, avec le chiffre qui compte et un lien vers l'écran qui fait avancer ; la dernière résolution s'y lit en phrases, et le gel du référentiel y est rappelé avec le lien vers les Paramètres, le seul endroit où il se règle. Du premier au dernier jour de l'événement, la première ligne est celle du jour — « Aujourd'hui — J5 · stands ouverts · places vides · absents · échanges à arbitrer » — et ouvre le mode jour J ; « Afficher sur la TV » mène à l'affichage mural, et la checklist se déplie à la demande. Une fois l'événement passé, l'archive vient en tête. Sur une édition vide, un bloc « Démarrer » propose d'importer un fichier, de repartir d'une édition ou de charger un exemple.`,
+          text: $localize`:@@aide.start.accueil.phases:La page d'accueil change selon la phase de l'édition. Pendant la préparation, elle reprend ces étapes en checklist : chaque ligne dit où vous en êtes, avec le chiffre qui compte et un lien vers l'écran qui fait avancer. La dernière résolution s'y lit en phrases, et le gel du référentiel y est rappelé avec le lien vers les Paramètres, le seul endroit où il se règle. Du premier au dernier jour de l'événement, la première ligne est celle du jour (« Aujourd'hui — J5 · stands ouverts · places vides · absents · échanges à arbitrer ») et ouvre le mode jour J ; « Afficher sur la TV » mène à l'affichage mural, et la checklist se déplie à la demande. Une fois l'événement passé, l'archive vient en tête. Sur une édition vide, un bloc « Démarrer » propose d'importer un fichier, de repartir d'une édition ou de charger un exemple.`,
         },
         {
           kind: 'paragraph',
@@ -60,11 +60,11 @@ export function buildGettingStartedSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.start.aTraiter.accueil:En tête de page, l'encadré « À traiter aujourd'hui » liste ce qui attend une décision : déclarations de disponibilité à appliquer, demandes d'échange à arbitrer — en alerte au-delà de l'ancienneté réglée dans les paramètres de notifications —, journées pas encore relues dans la semaine qui vient, personnes silencieuses depuis la publication et jamais relancées, données modifiées depuis la dernière résolution, personnes à prévenir, et ce qui n'a pas pu partir, tant que la cause demeure : un rappel de la veille à une fiche toujours sans adresse, une relance — de la nuit ou à la main — à quelqu'un toujours silencieux, une sauvegarde de nuit en échec, un planning publié ou renvoyé dont l'envoi a échoué. Chaque ligne ouvre son écran avec le filtre déjà appliqué. Dessous, « Messages récents » déplie les alertes des envois de nuit, nommément, et l'historique des messages de l'application, à marquer comme lus ou à effacer ; la cloche de la barre du haut mène à cet encadré. « Aujourd'hui » est celui du serveur, la date simulée quand elle est posée.`,
+          text: $localize`:@@aide.start.aTraiter.accueil:En tête de page, l'encadré « À traiter aujourd'hui » liste ce qui attend une décision : déclarations de disponibilité à appliquer, demandes d'échange à arbitrer (en alerte au-delà de l'ancienneté réglée dans les paramètres de notifications), journées pas encore relues dans la semaine qui vient, personnes silencieuses depuis la publication et jamais relancées, données modifiées depuis la dernière résolution, personnes à prévenir. S'y ajoute ce qui n'a pas pu partir, tant que la cause demeure : un rappel de la veille à une fiche toujours sans adresse, une relance (de la nuit ou à la main) à quelqu'un toujours silencieux, une sauvegarde de nuit en échec, un planning publié ou renvoyé dont l'envoi a échoué. Chaque ligne ouvre son écran avec le filtre déjà appliqué. Dessous, « Messages récents » déplie les alertes des envois de nuit, nommément, et l'historique des messages de l'application, à marquer comme lus ou à effacer ; la cloche de la barre du haut mène à cet encadré. « Aujourd'hui » est celui du serveur, la date simulée quand elle est posée.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.start.coherence.fusion:Un avertissement fermé n'est pas perdu : la ligne « Cohérence du référentiel » de l'accueil rejoue tous les contrôles sur l'ensemble de ce qui est saisi — animateurs, créneaux, stands et ouvertures, ajustements manuels, besoin en animateurs. Elle compte les anomalies ; « Voir le détail » les déplie, les anomalies identiques réunies en une ligne avec leur compte, « 16 jours : rien entre 12:00 et 13:00 », une ligne par sujet avec sa gravité et le lien vers la fiche qui la corrige. Un créneau devenu hors ouverture parce qu'un stand a changé ensuite s'y voit, alors qu'aucun message ne l'a signalé à l'enregistrement du stand.`,
+          text: $localize`:@@aide.start.coherence.fusion:Un avertissement fermé se retrouve sur l'accueil : sa ligne « Cohérence du référentiel » rejoue tous les contrôles sur l'ensemble de ce qui est saisi (animateurs, créneaux, stands et ouvertures, ajustements manuels, besoin en animateurs). Elle compte les anomalies, et « Voir le détail » les déplie : une ligne par sujet, avec sa gravité et le lien vers la fiche qui la corrige, les anomalies identiques étant réunies en une seule ligne avec leur compte (« 16 jours : rien entre 12:00 et 13:00 »). Un créneau devenu hors ouverture parce qu'un stand a changé ensuite s'y voit, alors qu'aucun message ne l'a signalé à l'enregistrement du stand.`,
         },
         {
           kind: 'paragraph',
