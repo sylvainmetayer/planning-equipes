@@ -88,7 +88,7 @@ export function buildEspaceAideSections(options?: EspaceAideOptions): EspaceAide
           kind: 'list',
           items: [
             $localize`:@@espace.aide.acces.item1:Pas reçu d'invitation pour créer votre compte ? Regardez dans les indésirables, puis contactez l'organisation.`,
-            $localize`:@@espace.aide.acces.passkey:Pas de mot de passe à retenir : après votre adresse, un code à six chiffres arrive par e-mail. Pour aller plus vite, vous pouvez ajouter une passkey, que votre téléphone déverrouille par votre visage, votre empreinte ou son code : « Ma passkey et mes moyens de connexion », dans le menu en haut à droite.`,
+            $localize`:@@espace.aide.acces.passkey:Pas de mot de passe à retenir : après votre adresse, un code à six chiffres arrive par e-mail. Pour aller plus vite, vous pouvez ajouter une passkey, que votre téléphone déverrouille par votre visage, votre empreinte ou son code : « Mon compte : mot de passe, passkey… », dans le menu en haut à droite.`,
             $localize`:@@espace.aide.acces.passkeyPerdue:Passkey perdue, ou nouveau téléphone ? Après votre adresse, choisissez une autre méthode : le code par e-mail reste toujours possible. Une fois connecté, le même menu en enregistre une nouvelle.`,
             $localize`:@@espace.aide.acces.item2:« Ce compte n'ouvre pas cet espace » : vous êtes connecté avec une autre adresse que celle de votre fiche. Déconnectez-vous, puis reconnectez-vous avec la bonne.`,
             $localize`:@@espace.aide.acces.item3:Ne transférez pas votre lien : la personne qui l'ouvre voit votre planning.`,

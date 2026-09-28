@@ -362,8 +362,8 @@ reçu par e-mail, que Keycloak propose d'emblée à un compte sans mot de passe.
   aux lettres, et l'extension marque alors l'adresse vérifiée. Une personne qui
   n'a pas suivi son invitation entre donc quand même dans son espace — sans
   cela, elle se connectait puis lisait « ce compte n'ouvre pas cet espace ».
-- **Ajouter une passkey (facultatif)** : dans l'espace, le menu « Ma passkey et
-  mes moyens de connexion » mène à la page de la console de compte Keycloak
+- **Ajouter une passkey (facultatif)** : dans l'espace, le menu « Mon compte : mot
+  de passe, passkey… » mène à la page de la console de compte Keycloak
   (`GET /api/auth/oidc/compte`) où l'enregistrer, la remplacer ou la retirer.
   Le téléphone la propose ensuite dès l'écran de l'adresse
   (`webAuthnPolicyPasswordlessPasskeysEnabled`, `passwordless_passkeys_enabled`
@@ -386,6 +386,27 @@ code qui s'en sert : lire la définition d'un rôle du realm demanderait
 `view-realm`, que ce compte n'a pas — Keycloak répondrait `403` et le compte
 serait créé **sans son rôle**. Le rôle se cherche parmi les rôles *assignables
 à cet utilisateur*.
+
+### Le compte de chacun : identifiants à la personne, identité à l'organisation
+
+Administrateur ou animateur, chacun règle ses propres moyens de connexion dans
+la console de compte Keycloak : mot de passe, passkey, second facteur. Deux
+entrées y mènent, toutes deux par `GET /api/auth/oidc/compte`, qui renvoie à la
+page « Connexion » de la console (`/account/account-security/signing-in`) :
+
+- côté administration, l'icône de compte de la barre du haut, à gauche de la
+  déconnexion ;
+- côté espace, « Mon compte : mot de passe, passkey… » dans le menu en haut à
+  droite.
+
+Le nom, le prénom, l'adresse et l'identifiant y restent **en lecture seule** :
+ils viennent de la fiche, et l'adresse est la clé qui relie la personne à son
+espace. Le profil utilisateur du realm le déclare (`permissions.edit =
+["admin"]`, lu dans `components` du realm JSON et dans
+`keycloak_realm_user_profile.planning` en Terraform) : seul le compte de
+service du provisioning les écrit, depuis la fiche. Nom et prénom n'y sont pas
+exigés, pour qu'un administrateur invité par sa seule adresse ne soit pas
+arrêté à la connexion par un formulaire qu'il ne peut pas remplir.
 
 ## Le serveur MCP en OAuth2
 

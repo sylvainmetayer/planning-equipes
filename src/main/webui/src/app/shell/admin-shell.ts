@@ -47,6 +47,7 @@ import { PlanningResolutionStore } from '../core/planning-resolution.store';
 import { ThemeService } from '../core/theme.service';
 import { NewsSeenService } from '../core/news-seen';
 import { ThemePreference } from '../core/theme-preference';
+import { injectAppConfig } from '../core/app-config';
 import { signOut } from '../core/session';
 import { SolverJobService } from '../core/solver-job.service';
 import { BrandLogo } from '../shared/brand-logo';
@@ -433,6 +434,9 @@ export class AdminShell {
   }
 
   private readonly adminApi = inject(AdminApi);
+
+  /** Keycloak signs people in: the account link then has somewhere to lead. */
+  protected readonly modeOidc = injectAppConfig().authOidc;
 
   /**
    * Ends the session and hard-navigates away — to the identity provider's

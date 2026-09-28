@@ -205,7 +205,7 @@ describe('EspaceAnimateurShell — quelle édition', () => {
     await fixture.whenStable();
 
     const lien = document.querySelector<HTMLAnchorElement>('a[href="/api/auth/oidc/compte"]');
-    expect(lien?.textContent).toContain('Ma passkey et mes moyens de connexion');
+    expect(lien?.textContent).toContain('Mon compte : mot de passe, passkey…');
   });
 });
 
