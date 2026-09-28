@@ -72,6 +72,12 @@
              sun.misc.Unsafe usage no longer warns on this version, so only
              the JNA-related flag is still needed here. -->
         <jvm.args>--enable-native-access=ALL-UNNAMED</jvm.args>
+        <!-- Read by quarkus:dev, which otherwise stops the JIT at C1 for a
+             faster startup: the solver then runs two to four times slower than
+             the packaged application, and a solve timed in dev mode measures
+             dev mode. -DforceC2=false gives the startup back for a session
+             that solves nothing. See docs/developpement.md. -->
+        <forceC2>true</forceC2>
     </properties>
 
     <dependencyManagement>

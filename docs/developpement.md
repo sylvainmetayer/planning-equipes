@@ -16,6 +16,14 @@ cd src/main/webui && npm test          # Vitest
 `quarkus:dev` suffit : Quinoa démarre `ng serve` et le proxifie. Le frontend est
 désactivé sur le profil `%test`.
 
+**Le compilateur C2 reste actif sous `quarkus:dev`** (propriété `forceC2` du
+`pom.xml`). Par défaut, le mode dev arrête la JVM au compilateur C1
+(`-XX:TieredStopAtLevel=1`) pour démarrer plus vite ; le solveur y tourne alors
+deux à quatre fois moins vite que l'application packagée, et un calcul
+chronométré en dev mesurait le mode dev, pas le solveur. Le démarrage y perd un
+peu ; pour le retrouver le temps d'une session qui ne lance aucun calcul :
+`./mvnw quarkus:dev -DforceC2=false`.
+
 Les métriques Prometheus sont sur un second port, l'interface de management :
 `http://localhost:9000/q/metrics` en dev. Sous `%test`, ce port est tiré au
 hasard (`quarkus.management.test-port=0`) pour que deux suites lancées côte à
