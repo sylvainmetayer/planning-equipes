@@ -200,7 +200,6 @@
   "animateurs.invitations.confirm": "Send",
   "animateurs.invitations.envoyees": "{$count} invitation(s) sent",
   "animateurs.invitations.echecs": "{$count} failed: try again, the button only picks those up.",
-  "animateurs.empty": "No staff yet.",
   "animateurs.form.editTitle": "Edit staff member {$nom}",
   "animateurs.form.newTitle": "New staff member",
   "animateurs.submit.edit": "Update staff member",
@@ -1481,6 +1480,7 @@
   "creneaux.probleme.manque": "{$INTERPOLATION} staff member(s) missing",
   "creneaux.probleme.aucun": "None",
   "shell.logout": "Log out",
+  "shell.compte": "My account: password, passkey, two-factor authentication",
   "nav.link.echanges": "Swaps",
   "verrouillages.type.animateurCreneau": "Staff member on a time slot",
   "login.titre": "{$INTERPOLATION} — administration",
@@ -5402,9 +5402,9 @@
   "aide.comptes.term.keycloak": "What stays with Keycloak",
   "aide.comptes.term.admin": "Inviting an administrator",
   "aide.comptes.def.admin": "“Invite an administrator” gives the admin role to an address, in Keycloak: the account is created and invited if it did not exist, and the next sign-in asks for two-factor authentication to be set up. To take the role back, deactivate the account here or remove it in the Keycloak console.",
-  "aide.comptes.def.keycloak": "Passwords, two-factor authentication and the mcp and animateur roles are managed in the Keycloak console, never here; the procedure is in the operations documentation (docs/keycloak.md).",
+  "aide.comptes.def.keycloak": "The mcp and animateur roles are managed in the Keycloak console, never here. Everyone sets their own password, passkey and two-factor authentication in their Keycloak account — the account icon, top right, leads there; the first name, last name and address stay read-only there. The procedure is in the operations documentation (docs/keycloak.md).",
   "comptes.rights.close": "Close",
-  "espace.menu.moyensConnexion": "My passkey and sign-in methods",
-  "espace.aide.acces.passkey": "No password to remember: after your address, a six-digit code arrives by e-mail. To go faster, you can add a passkey, which your phone unlocks with your face, your fingerprint or its code: “My passkey and sign-in methods”, in the menu at the top right.",
+  "espace.menu.moyensConnexion": "My account: password, passkey…",
+  "espace.aide.acces.passkey": "No password to remember: after your address, a six-digit code arrives by e-mail. To go faster, you can add a passkey, which your phone unlocks with your face, your fingerprint or its code: “My account: password, passkey…”, in the menu at the top right.",
   "espace.aide.acces.passkeyPerdue": "Lost your passkey, or a new phone? After your address, choose another method: the code by e-mail always remains possible. Once signed in, the same menu registers a new one."
 }

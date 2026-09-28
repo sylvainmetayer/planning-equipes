@@ -571,6 +571,122 @@ resource "keycloak_required_action" "recovery_codes" {
   priority       = 70
 }
 
+# ------------------------------------------------- profil utilisateur --
+
+# Nom, prénom et adresse viennent de la fiche de l'organisation : la console
+# de compte les montre, sans les laisser modifier (`edit = ["admin"]`, ce
+# qu'écrit le compte de service du provisioning). Le mot de passe, la passkey
+# et le second facteur, eux, restent à la personne. Nom et prénom ne sont pas
+# exigés : un administrateur invité par sa seule adresse n'est pas arrêté à
+# la connexion par un formulaire qu'il ne peut pas remplir.
+resource "keycloak_realm_user_profile" "planning" {
+  realm_id = keycloak_realm.planning.id
+
+  attribute {
+    name         = "username"
+    display_name = "$${username}"
+    multi_valued = false
+
+    validator {
+      name = "length"
+
+      config = {
+        min = "3"
+        max = "255"
+      }
+    }
+
+    validator {
+      name = "username-prohibited-characters"
+    }
+
+    validator {
+      name = "up-username-not-idn-homograph"
+    }
+
+    permissions {
+      view = ["admin", "user"]
+      edit = ["admin"]
+    }
+  }
+
+  attribute {
+    name               = "email"
+    display_name       = "$${email}"
+    multi_valued       = false
+    required_for_roles = ["user"]
+
+    validator {
+      name = "email"
+    }
+
+    validator {
+      name = "length"
+
+      config = {
+        max = "255"
+      }
+    }
+
+    permissions {
+      view = ["admin", "user"]
+      edit = ["admin"]
+    }
+  }
+
+  attribute {
+    name         = "firstName"
+    display_name = "$${firstName}"
+    multi_valued = false
+
+    validator {
+      name = "length"
+
+      config = {
+        max = "255"
+      }
+    }
+
+    validator {
+      name = "person-name-prohibited-characters"
+    }
+
+    permissions {
+      view = ["admin", "user"]
+      edit = ["admin"]
+    }
+  }
+
+  attribute {
+    name         = "lastName"
+    display_name = "$${lastName}"
+    multi_valued = false
+
+    validator {
+      name = "length"
+
+      config = {
+        max = "255"
+      }
+    }
+
+    validator {
+      name = "person-name-prohibited-characters"
+    }
+
+    permissions {
+      view = ["admin", "user"]
+      edit = ["admin"]
+    }
+  }
+
+  group {
+    name                = "user-metadata"
+    display_header      = "User metadata"
+    display_description = "Attributes, which refer to user metadata"
+  }
+}
+
 # ------------------------------------------------------------------ Google --
 
 # `trust_email = false` est le cœur de cette ressource. Avec la confiance,

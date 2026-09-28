@@ -888,6 +888,21 @@ describe('AdminShell', () => {
     });
   });
 
+  describe('the account link', () => {
+    // Keycloak owns the credentials: the toolbar leads to its account page,
+    // where the password, the passkeys and the second factor are set.
+    it('leads to the Keycloak account page under Keycloak', () => {
+      createShell();
+
+      const lien = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>(
+        'a[href="/api/auth/oidc/compte"]',
+      );
+      expect(lien?.getAttribute('aria-label')).toBe(
+        'Mon compte : mot de passe, passkey, double authentification',
+      );
+    });
+  });
+
   describe('logging out', () => {
     // A reload rather than a router navigation: it also resets every store the
     // shell preloaded, so nothing keeps polling behind the login page.
