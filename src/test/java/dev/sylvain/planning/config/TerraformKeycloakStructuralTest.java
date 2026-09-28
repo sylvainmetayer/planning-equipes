@@ -89,6 +89,24 @@ class TerraformKeycloakStructuralTest {
                 .containsPattern("action_token_generated_by_admin_lifespan\\s*=\\s*\"48h\"");
     }
 
+    /** Read-only names and address, as in the realm the compose imports. */
+    @Test
+    void theNameAndTheAddressAreReadOnlyAsInDevelopment() {
+        String profil = resources.get("keycloak_realm_user_profile.planning");
+        assertThat(profil).isNotNull();
+        for (String attribut : List.of("username", "email", "firstName", "lastName")) {
+            assertThat(profil).containsPattern("name\\s*=\\s*\"" + attribut + "\"");
+        }
+        assertThat(Pattern.compile("edit\\s*=\\s*\\[\"admin\"\\]")
+                        .matcher(profil)
+                        .results())
+                .hasSize(4);
+        assertThat(profil).doesNotContain("edit = [\"admin\", \"user\"]");
+        assertThat(Pattern.compile("required_for_roles").matcher(profil).results())
+                .as("the address only: a name required would stop an administrator invited by address")
+                .hasSize(1);
+    }
+
     @Test
     void mailsAndPagesAreInFrenchByDefaultAsInDevelopment() {
         assertThat(realm.path("defaultLocale").asText()).isEqualTo("fr");

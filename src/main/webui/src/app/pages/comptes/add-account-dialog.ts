@@ -69,11 +69,11 @@ export interface AddAccountData {
       <mat-dialog-actions align="end">
         <button matButton type="button" (click)="dialogRef.close()" i18n="@@common.cancel">Annuler</button>
         <button matButton="filled" type="submit" [disabled]="busy()">
+          <!-- One icon outside the @if, so the button projects it into its icon slot. -->
+          <mat-icon>{{ administrateur ? 'admin_panel_settings' : 'person_add' }}</mat-icon>
           @if (administrateur) {
-            <mat-icon>admin_panel_settings</mat-icon>
             <ng-container i18n="@@comptes.admin.submit">Inviter</ng-container>
           } @else {
-            <mat-icon>person_add</mat-icon>
             <ng-container i18n="@@comptes.add.submit">Créer le compte</ng-container>
           }
         </button>

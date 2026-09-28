@@ -221,7 +221,7 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
             },
             {
               term: $localize`:@@aide.comptes.term.keycloak:Ce qui reste à Keycloak`,
-              text: $localize`:@@aide.comptes.def.keycloak:Les mots de passe, la double authentification et les rôles mcp et animateur se gèrent dans la console Keycloak, jamais ici ; la marche à suivre est dans la documentation d'exploitation (docs/keycloak.md).`,
+              text: $localize`:@@aide.comptes.def.keycloak:Les rôles mcp et animateur se gèrent dans la console Keycloak, jamais ici. Son mot de passe, sa passkey et sa double authentification, chacun les règle dans son compte Keycloak — l'icône de compte, en haut à droite, y mène ; le nom, le prénom et l'adresse y restent en lecture seule. La marche à suivre est dans la documentation d'exploitation (docs/keycloak.md).`,
             },
           ],
         },
