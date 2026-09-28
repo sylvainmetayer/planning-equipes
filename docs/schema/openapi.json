@@ -1804,6 +1804,15 @@
           }
         }
       },
+      "ConfigurationSignalements" : {
+        "required" : [ "actifs" ],
+        "type" : "object",
+        "properties" : {
+          "actifs" : {
+            "type" : "boolean"
+          }
+        }
+      },
       "ConfirmationView" : {
         "type" : "object",
         "required" : [ "affecte" ],
@@ -3398,7 +3407,7 @@
         }
       },
       "EspaceAnimateurView" : {
-        "required" : [ "foireOuverte", "contact", "signalements", "collecteOuverte" ],
+        "required" : [ "foireOuverte", "contact", "signalements", "collecteOuverte", "signalementsActifs" ],
         "type" : "object",
         "properties" : {
           "animateurId" : {
@@ -3501,6 +3510,9 @@
             "items" : {
               "$ref" : "#/components/schemas/SignalementView"
             }
+          },
+          "signalementsActifs" : {
+            "type" : "boolean"
           },
           "collecteOuverte" : {
             "type" : "boolean"
@@ -13242,6 +13254,53 @@
           }
         },
         "summary" : "Suggestions",
+        "tags" : [ "Jour J Resource" ]
+      }
+    },
+    "/api/jour-j/signalements/configuration" : {
+      "put" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ConfigurationSignalements"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConfigurationSignalements"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Configure Absence Reports",
+        "tags" : [ "Jour J Resource" ]
+      },
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConfigurationSignalements"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Absence Reports Configuration",
         "tags" : [ "Jour J Resource" ]
       }
     },

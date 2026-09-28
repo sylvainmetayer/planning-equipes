@@ -118,6 +118,7 @@ public class DatabaseDumpService {
             // what it does as surely as its legal parameters do.
             "parametres_collecte",
             "parametres_echange",
+            "parametres_signalement",
             "parametres_notifications",
             "contact_organisation",
             // What the animateurs themselves said. Wishes and declarations are

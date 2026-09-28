@@ -2921,6 +2921,11 @@ export interface EspaceAnimateurView {
    */
   signalements: SignalementView[];
   /**
+   * The edition offers « Je ne pourrai pas venir » (Paramètres › Édition).
+   * Off, the espace hides the gesture, and `signalements` is empty.
+   */
+  signalementsActifs: boolean;
+  /**
    * The availability collection — and the covoiturage requests that live with
    * it — is open today: the espace offers those two pages only then.
    */
@@ -3034,6 +3039,11 @@ export interface RapportRelance {
   dejaRelancesPourCettePublication: string[];
   echecs: string[];
   sansPoste: string[];
+}
+
+/** « Je ne pourrai pas venir », offered to the espaces of the edition or not — on by default. */
+export interface ConfigurationSignalements {
+  actifs: boolean;
 }
 
 /**

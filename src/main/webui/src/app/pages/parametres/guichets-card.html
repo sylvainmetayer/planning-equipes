@@ -1,4 +1,4 @@
-<!-- The three guichets of the espace animateur: see `GuichetsCard`. -->
+<!-- The guichets of the espace animateur: see `GuichetsCard`. -->
 <mat-card appearance="outlined" class="page-card" id="guichets">
   <mat-card-header>
     <h2 mat-card-title i18n="@@parametres.guichets.title">Guichets</h2>
@@ -83,6 +83,14 @@
       </p>
       <a matButton routerLink="/disponibilites" [queryParams]="{ onglet: 'covoiturage' }"
          i18n="@@parametres.guichets.versCovoiturage">Voir les demandes de covoiturage</a>
+    </section>
+    <section class="parametres-guichet" aria-labelledby="guichet-signalements">
+      <h3 id="guichet-signalements" i18n="@@parametres.guichets.signalements">Empêchements</h3>
+      <mat-slide-toggle [checked]="reportsEnabled()" [disabled]="reportsSaving() || signalements() === null"
+                        (change)="saveSignalements($event)">
+        <ng-container i18n="@@parametres.guichets.signalementsToggle">« Je ne pourrai pas venir » proposé aux animateurs</ng-container>
+      </mat-slide-toggle>
+      <p class="calendar-meta" i18n="@@parametres.guichets.signalementsAide">Sur une journée ou un poste, toute l'édition ; vous tranchez depuis l'écran du jour. Désactivé, le bouton disparaît des espaces et les signalements reçus ne s'affichent plus.</p>
     </section>
     <app-status-message [text]="error()" tone="error" />
   </mat-card-content>

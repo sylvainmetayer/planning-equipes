@@ -1,0 +1,12 @@
+{#include mail/layout}
+{#body}
+{#if prenom}
+<p style="margin:0 0 12px;">Bonjour {prenom},</p>
+{/if}
+<p style="margin:0 0 12px;">L'organisation a lu votre signalement {#if poste}pour le poste {poste} du {jour}{#else}pour la journée du {jour}{/if} et l'a classé : il ne modifie pas votre planning.</p>
+<p style="margin:0{#if lienEspace} 0 12px{/if};">Votre espace montre vos postes tels qu'ils sont ; en cas de doute, contactez l'organisation.</p>
+{#if lienEspace}
+<p style="margin:0;"><a href="{lienEspace}" style="color:{accent};">{lienEspace}</a></p>
+{/if}
+{/body}
+{/include}

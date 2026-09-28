@@ -15,6 +15,7 @@ import { ApiService } from '../../core/api.service';
 import { AdminApi } from '../../core/api/admin-api';
 import { DisponibilitesApi } from '../../core/api/disponibilites-api';
 import { EchangesApi } from '../../core/api/echanges-api';
+import { JourJService } from '../../core/jour-j.service';
 import { EditionsApi } from '../../core/api/editions-api';
 import { EditionStore } from '../../core/edition.store';
 import { NotificationService } from '../../core/notification.service';
@@ -59,6 +60,7 @@ describe('ParametresPage rendering', () => {
   let notify: ReturnType<typeof vi.fn>;
   let rename: ReturnType<typeof vi.fn>;
   let saveFoire: ReturnType<typeof vi.fn>;
+  let saveSignalements: ReturnType<typeof vi.fn>;
   const editingLocked = signal(false);
 
   const SAUVEGARDE: EtatSauvegarde = {
@@ -102,6 +104,7 @@ describe('ParametresPage rendering', () => {
     editingLocked.set(false);
     notify = vi.fn();
     rename = vi.fn(async () => undefined);
+    saveSignalements = vi.fn(async (actifs: boolean) => ({ actifs }));
     saveFoire = vi.fn(async (configuration: { foireOuverte: boolean }) => ({
       ...configuration,
       debut: null,
@@ -151,6 +154,13 @@ describe('ParametresPage rendering', () => {
           useValue: {
             configuration: vi.fn(async () => ({ collecteOuverte: false, debut: null, fin: null })),
             saveConfiguration: vi.fn(),
+          },
+        },
+        {
+          provide: JourJService,
+          useValue: {
+            configurationSignalements: vi.fn(async () => ({ actifs: true })),
+            configureSignalements: saveSignalements,
           },
         },
         {
@@ -278,6 +288,44 @@ describe('ParametresPage rendering', () => {
       debut: null,
       fin: null,
     });
+  });
+
+  /** « Je ne pourrai pas venir » has no dates: the switch writes at once. */
+  it('switches « Je ne pourrai pas venir » off from the guichets, at once', async () => {
+    await rendre();
+    const section = carte('Guichets').querySelector(
+      'section[aria-labelledby="guichet-signalements"]',
+    ) as HTMLElement;
+    const bascule = section.querySelector(
+      'mat-slide-toggle button[role="switch"]',
+    ) as HTMLButtonElement;
+    expect(bascule.getAttribute('aria-checked')).toBe('true');
+
+    bascule.click();
+    await fixture.whenStable();
+
+    expect(saveSignalements).toHaveBeenCalledExactlyOnceWith(false);
+    expect(notify).toHaveBeenCalledWith(
+      expect.objectContaining({ title: expect.stringContaining("n'est plus proposé") }),
+    );
+    expect(bascule.getAttribute('aria-checked')).toBe('false');
+  });
+
+  it('keeps the reason on screen when the switch could not be saved', async () => {
+    await rendre();
+    saveSignalements.mockRejectedValueOnce(new Error('serveur indisponible'));
+    const section = carte('Guichets').querySelector(
+      'section[aria-labelledby="guichet-signalements"]',
+    ) as HTMLElement;
+    const bascule = section.querySelector(
+      'mat-slide-toggle button[role="switch"]',
+    ) as HTMLButtonElement;
+
+    bascule.click();
+    await fixture.whenStable();
+
+    expect(carte('Guichets').textContent).toContain('serveur indisponible');
+    expect(bascule.getAttribute('aria-checked')).toBe('true');
   });
 
   it("shows the organisation's contact the espace will display", async () => {

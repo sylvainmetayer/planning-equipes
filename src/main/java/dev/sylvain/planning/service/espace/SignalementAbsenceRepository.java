@@ -54,11 +54,42 @@ public class SignalementAbsenceRepository {
             ON CONFLICT DO NOTHING
             RETURNING id""";
 
+    private static final String SELECT_ACTIFS =
+            "SELECT signalements_actifs FROM parametres_signalement WHERE edition_id = ?";
+
+    private static final String UPSERT_ACTIFS = """
+            INSERT INTO parametres_signalement (edition_id, signalements_actifs)
+            VALUES (?, ?)
+            ON CONFLICT (edition_id) DO UPDATE SET signalements_actifs = EXCLUDED.signalements_actifs""";
+
     private final JdbcEditionScope scope;
 
     @Inject
     public SignalementAbsenceRepository(JdbcEditionScope scope) {
         this.scope = scope;
+    }
+
+    /**
+     * Whether the edition offers « Je ne pourrai pas venir » — on until the
+     * organisation switched it off: the row only exists once it decided.
+     */
+    public boolean enabled() {
+        return scope.read("Failed to read whether absence reports are enabled", connection -> {
+            try (PreparedStatement ps = scope.prepareScoped(connection, SELECT_ACTIFS);
+                    ResultSet rs = ps.executeQuery()) {
+                return !rs.next() || rs.getBoolean(1);
+            }
+        });
+    }
+
+    /** Switches the gesture on or off for the edition. */
+    public void setEnabled(boolean enabled) {
+        scope.write("Failed to store whether absence reports are enabled", connection -> {
+            try (PreparedStatement ps = scope.prepareScoped(connection, UPSERT_ACTIFS)) {
+                ps.setBoolean(2, enabled);
+                ps.executeUpdate();
+            }
+        });
     }
 
     /** Every report of the edition, by day then by arrival. */

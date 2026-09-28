@@ -17,7 +17,10 @@ describe('EspaceAidePage — headings', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        { provide: EspaceAnimateurService, useValue: { jeton: signal('jeton-1') } },
+        {
+          provide: EspaceAnimateurService,
+          useValue: { jeton: signal('jeton-1'), view: signal(null) },
+        },
       ],
     });
     fixture = TestBed.createComponent(EspaceAidePage);

@@ -2425,6 +2425,20 @@ l'absence est refusée (un verrou, une contradiction, une résolution en cours),
 la réservation est annulée avec elle — rien à rendre à la main — et le
 signalement reste ouvert pour une autre décision.
 
+L'animateur apprend la décision par courriel, au mieux lui aussi : « pris en
+compte » après « Marquer absent et remplacer », envoyé seulement une fois
+l'absence écrite — un refus le laisse attendu où il était —, « classé » après
+« Classer », qui ne touche pas au planning. Le courriel nomme la journée et le
+poste, jamais le motif qu'il a lui-même choisi, et renvoie vers son espace.
+
+**Désactivable par édition** (`GET`/`PUT /api/jour-j/signalements/configuration`,
+table `parametres_signalement`, V114), activé par défaut comme la foire : une
+organisation qui tient le planning tel que publié éteint le geste. Éteint, il
+disparaît **partout** : l'espace ne le propose plus (`signalementsActifs`) et
+refuse un envoi, et les signalements déjà reçus ne s'affichent plus, ni dans
+l'espace ni sur l'écran Aujourd'hui ; les annuler, les classer ou les traiter
+répond `400`. Ils restent en base : rallumer les rend tels qu'ils étaient.
+
 `POST /api/jour-j/absences` prend désormais un `creneauId` facultatif : l'absence
 porte alors sur ce créneau seul, au lieu du reste de la journée — le geste du
 poste signalé, et celui du panneau Siège.

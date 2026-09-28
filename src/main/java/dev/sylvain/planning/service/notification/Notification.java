@@ -60,6 +60,30 @@ public sealed interface Notification {
             implements Notification {}
 
     /**
+     * The organisation filed an absence reported from an espace (« Classer »):
+     * told to the one who reported it, so that silence never reads as « it was
+     * taken into account ». The plan was left as it stood.
+     *
+     * @param poste      the seat, worded (« Stand 07 09:00-12:00 »), {@code null}
+     *                   for a whole day
+     * @param espaceLink their espace, {@code null} when no public URL is
+     *                   configured or the fiche carries no token
+     */
+    record AbsenceReportFiled(String email, String prenom, LocalDate jour, String poste, String espaceLink)
+            implements Notification {}
+
+    /**
+     * The organisation recorded the absence reported from an espace
+     * (« Marquer absent et remplacer »): the one who reported it is no longer
+     * expected there, and hears it.
+     *
+     * @param poste      the seat, worded, {@code null} for a whole day
+     * @param espaceLink their espace, {@code null} when none can be printed
+     */
+    record AbsenceReportAccepted(String email, String prenom, LocalDate jour, String poste, String espaceLink)
+            implements Notification {}
+
+    /**
      * The organisation validated a covoiturage: one notification per member of
      * the grouped arrival, the declarant and the teammates alike — each of
      * them now rides in a car they can no longer change from their espace.

@@ -152,6 +152,10 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
+          text: $localize`:@@aide.jourJ.signalementsSuite:L'animateur reçoit un e-mail quand vous tranchez : pris en compte, il n'est plus attendu ; classé, son planning ne change pas. Une organisation qui ne veut pas de ce geste l'éteint dans Paramètres › Édition, carte « Guichets » : le bouton disparaît des espaces, et les signalements déjà reçus ne s'affichent plus, ici comme dans les espaces, jusqu'à ce qu'on le rallume.`,
+        },
+        {
+          kind: 'paragraph',
           text: $localize`:@@aide.aujourdhui.prevenir:Après un remplacement, l'écran dit combien de personnes ont un planning différent de celui qu'elles ont reçu, et « Prévenir les N personnes » leur envoie leur planning à jour — à elles seulement, après confirmation. C'est la publication ciblée de l'écran Diffuser : la version envoyée y est tracée comme les autres.`,
         },
         {

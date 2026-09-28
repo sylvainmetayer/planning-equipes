@@ -135,13 +135,24 @@ export class EspacePlanningPage {
     return jour.postes.filter((poste) => !this.isPosteTermine(poste));
   }
 
+  /**
+   * The edition offers the gesture: the organisation may have switched it off
+   * (Paramètres › Édition), and then the server refuses a report anyway.
+   */
+  private readonly reportsEnabled = computed(() => this.espace.view()?.signalementsActifs ?? true);
+
   /** « Je ne pourrai pas venir » is offered on a day with a seat still ahead, not already reported whole. */
   protected canReportDay(jour: JourPlanning): boolean {
-    return this.signalables(jour).length > 0 && !dayReported(this.signalements(), jour.date);
+    return (
+      this.reportsEnabled() &&
+      this.signalables(jour).length > 0 &&
+      !dayReported(this.signalements(), jour.date)
+    );
   }
 
   protected canReportSeat(jour: JourPlanning, poste: PosteAnimateurView): boolean {
     return (
+      this.reportsEnabled() &&
       !this.isPosteTermine(poste) &&
       !dayReported(this.signalements(), jour.date) &&
       !seatReported(this.signalements(), poste.creneauId, poste.standId)

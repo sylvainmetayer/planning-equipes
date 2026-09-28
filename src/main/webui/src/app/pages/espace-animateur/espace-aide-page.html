@@ -22,7 +22,7 @@
 </mat-card>
 
 <mat-accordion class="espace-aide-accordeon" multi>
-  @for (section of sections; track section.id) {
+  @for (section of sections(); track section.id) {
     <mat-expansion-panel [id]="section.id" [expanded]="toutDeplie()">
       <!-- The heading wraps the header rather than sitting inside it: the header
            is a button, whose children are presentational, so an <h2> inside

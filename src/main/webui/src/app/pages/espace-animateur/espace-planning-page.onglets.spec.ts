@@ -33,6 +33,7 @@ function poste(overrides: Partial<PosteAnimateurView> = {}): PosteAnimateurView 
 function view(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView {
   return {
     signalements: [],
+    signalementsActifs: true,
     collecteOuverte: false,
     collecteFermeLe: null,
     dernierEnvoi: null,
