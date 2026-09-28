@@ -35,6 +35,13 @@
   line-height: 1.3;
 }
 
+/* One day: the names follow one another across the page's width. */
+.planning-grille-portee-jour .planning-stand-nom,
+.planning-grille-portee-jour .planning-stand-manquants {
+  display: inline-block;
+  margin-inline-end: 0.75rem;
+}
+
 .planning-stand-manquants {
   color: var(--mat-sys-error);
   font-weight: 600;

@@ -28,7 +28,8 @@ import { NO_SORT, SortState } from '../../core/view-query-params';
 import { OutputPanel } from '../../shared/output-panel';
 import { StatusMessage } from '../../shared/status-message';
 import { JourEvenement } from '../journee/journee';
-import { joursGrille } from '../planning-grille/jours-grille';
+import { GridSpan, joursGrille, sliceDays, spanWindow } from '../planning-grille/jours-grille';
+import { GridSpanToggle } from '../planning-grille/grid-span-toggle';
 import {
   CaseActivee,
   GrilleCase,
@@ -78,6 +79,7 @@ import {
     PlanningGrille,
     GrilleEntete,
     GrilleCase,
+    GridSpanToggle,
   ],
   templateUrl: './planning-personne-vue.html',
   styleUrl: './planning-personne-vue.css',
@@ -99,6 +101,8 @@ export class PlanningPersonneView {
   /* The view state, kept by the page in the URL: `vue` is switched in its header, the rest here. */
   readonly view = input<PersonView>('grille');
   readonly densite = model<DensitePersonne>('detail');
+  /** How many days the grid shows around the marked one (`portee`); the frise always draws the event. */
+  readonly span = model<GridSpan>('semaine');
   readonly tri = model<SortState>(NO_SORT);
   readonly allColumns = model(false);
   readonly noRestOnly = model(false);
@@ -140,6 +144,15 @@ export class PlanningPersonneView {
     ),
   );
 
+  private readonly dayWindow = computed(() =>
+    spanWindow(this.colonnesJours(), this.jourMarque(), this.span()),
+  );
+  protected readonly visibleColumns = computed(() =>
+    this.colonnesJours().slice(this.dayWindow().start, this.dayWindow().end),
+  );
+  /** Built over every day, so the footer's totals at the right stay the event's; then narrowed to the span. */
+  protected readonly visibleTable = computed(() => sliceDays(this.tableau(), this.dayWindow()));
+
   /** `20:00`, the start of the evening every screen reads. */
   protected readonly heureSoiree = computed(() =>
     this.equite.hasValue() ? this.equite.value().heureDebutSoiree.slice(0, 5) : '',
@@ -161,7 +174,7 @@ export class PlanningPersonneView {
   }
 
   protected open(event: CaseActivee<LignePersonne>): void {
-    const posteId = event.ligne.cases[this.colonnesJours().indexOf(event.jour)]?.posteId;
+    const posteId = event.ligne.cases[this.visibleColumns().indexOf(event.jour)]?.posteId;
     if (posteId) {
       this.seatRequested.emit({ posteId, jour: event.jour.key });
     }

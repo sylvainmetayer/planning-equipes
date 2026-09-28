@@ -170,6 +170,29 @@ describe('Par personne', () => {
     expect(alice.cases[0].posteId).toBe('p1');
   });
 
+  it('lists each stretch with its hours, joining back-to-back seats on one stand', () => {
+    const midi: Creneau = { ...MATIN, id: 4, heureDebut: '12:00', heureFin: '14:00' };
+    const planning: PlanningEvenement = {
+      ...PLANNING,
+      postes: [...PLANNING.postes, siege('p5', TIR, midi, ALICE)],
+    };
+    const alice = buildTableauPersonnes(planning, planningDays(planning.postes), EQUITE, HEURES, {
+      animateur: 'a',
+      standsRetenus: null,
+      recherche: '',
+      sansReposSeulement: false,
+      toutesColonnes: false,
+      tri: NO_SORT,
+    }).lignes[0];
+
+    expect(alice.cases[0].seats).toEqual([
+      { hours: '09:00–14:00', stand: 'Tir' },
+      { hours: '18:00–22:00', stand: 'Dixit' },
+    ]);
+    // The accessible label still names every window.
+    expect(alice.cases[0].heures).toBe('09:00–12:00, 12:00–14:00, 18:00–22:00');
+  });
+
   it('tells rest from unavailable, and a rest day opens nothing', () => {
     const lignes = tableau().lignes;
     const bruno = lignes.find((ligne) => ligne.animateurId === 'b')!;

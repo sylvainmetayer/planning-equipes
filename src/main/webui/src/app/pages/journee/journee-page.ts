@@ -68,6 +68,7 @@ import {
   PersonView,
 } from '../planning-personne/planning-personne';
 import { PlanningPersonneView } from '../planning-personne/planning-personne-vue';
+import { GridSpan, readGridSpan } from '../planning-grille/jours-grille';
 import { PlanningTypologieView } from '../planning-typologie/planning-typologie-vue';
 import { RepartitionHeuresView } from '../repartition-heures/repartition-heures-vue';
 import { ComparaisonView } from './comparaison-vue';
@@ -250,6 +251,8 @@ export class JourneePage implements OnInit {
   protected readonly densiteStand = signal<DensiteStand>('noms');
   protected readonly personView = signal<PersonView>('grille');
   protected readonly densitePersonne = signal<DensitePersonne>('detail');
+  /** How many days the two grids show around the page's day (`portee`); one value for both axes. */
+  protected readonly gridSpan = signal<GridSpan>('semaine');
   protected readonly triPersonne = signal<SortState>(NO_SORT);
   protected readonly allColumns = signal(false);
   protected readonly noRestOnly = signal(false);
@@ -496,6 +499,14 @@ export class JourneePage implements OnInit {
     return view === 'changements' ? 'changements' : 'aucune';
   });
 
+  /** What the `portee` param carries: on the two grids only, and absent for the week. */
+  private readonly gridSpanParam = computed(() => {
+    const grid =
+      (this.axe() === 'stand' && this.standView() === 'grille') ||
+      (this.axe() === 'personne' && this.personView() === 'grille');
+    return grid && this.gridSpan() !== 'semaine' ? this.gridSpan() : null;
+  });
+
   /** True as soon as a filter or a view's own switch narrows the day; the day and the rendering are navigation. */
   protected readonly viewChanged = computed(
     () =>
@@ -506,6 +517,7 @@ export class JourneePage implements OnInit {
       this.typologie() !== '' ||
       this.densiteStand() !== 'noms' ||
       this.densitePersonne() !== 'detail' ||
+      this.gridSpanParam() !== null ||
       this.triPersonne().active !== '' ||
       this.allColumns() ||
       this.noRestOnly() ||
@@ -589,6 +601,7 @@ export class JourneePage implements OnInit {
     } else if (this.axe() === 'personne') {
       this.densitePersonne.set(readDensitePersonne(params.get('densite')));
     }
+    this.gridSpan.set(readGridSpan(params.get('portee')));
     this.triPersonne.set(readSort(params));
     this.allColumns.set(params.get('colonnes') === 'toutes');
     this.noRestOnly.set(params.get('sansRepos') === '1');
@@ -620,6 +633,7 @@ export class JourneePage implements OnInit {
       jour: this.jours().length > 0 ? null : this.route.snapshot.queryParamMap.get('jour'),
       vue: this.viewParam(),
       densite: this.densiteParam(),
+      portee: this.gridSpanParam(),
       ...sortQueryParams(this.axe() === 'personne' ? this.triPersonne() : NO_SORT),
       colonnes: this.axe() === 'personne' && this.allColumns() ? 'toutes' : null,
       sansRepos: this.axe() === 'personne' && this.noRestOnly() ? '1' : null,
@@ -953,6 +967,7 @@ export class JourneePage implements OnInit {
     this.typologie.set('');
     this.densiteStand.set('noms');
     this.densitePersonne.set('detail');
+    this.gridSpan.set('semaine');
     this.triPersonne.set(NO_SORT);
     this.allColumns.set(false);
     this.noRestOnly.set(false);
