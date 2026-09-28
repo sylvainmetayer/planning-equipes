@@ -1,0 +1,12 @@
+{#include mail/layout}
+{#body}
+{#if prenom}
+<p style="margin:0 0 12px;">Bonjour {prenom},</p>
+{/if}
+<p style="margin:0 0 12px;">L'organisation a pris en compte votre absence {#if poste}sur le poste {poste} du {jour}{#else}le {jour}{/if} : vous n'y êtes plus attendu(e), et elle s'occupe de vous remplacer.</p>
+<p style="margin:0{#if lienEspace} 0 12px{/if};">Votre espace montrera votre planning à jour dès que l'organisation vous l'aura communiqué.</p>
+{#if lienEspace}
+<p style="margin:0;"><a href="{lienEspace}" style="color:{accent};">{lienEspace}</a></p>
+{/if}
+{/body}
+{/include}

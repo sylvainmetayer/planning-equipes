@@ -1,0 +1,11 @@
+{#if prenom}
+Bonjour {prenom},
+
+{/if}
+L'organisation a lu votre signalement {#if poste}pour le poste {poste} du {jour}{#else}pour la journée du {jour}{/if} et l'a classé : il ne modifie pas votre planning.
+
+Votre espace montre vos postes tels qu'ils sont ; en cas de doute, contactez l'organisation.
+{#if lienEspace}
+
+{lienEspace}
+{/if}

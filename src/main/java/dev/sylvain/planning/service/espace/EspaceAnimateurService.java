@@ -283,12 +283,15 @@ public class EspaceAnimateurService {
      *                 used to be dead tabs all event long
      * @param collecteFermeLe the collection's last day, {@code null} when it
      *                 is closed or has no end
+     * @param signalementsActifs whether the edition offers « Je ne pourrai
+     *                 pas venir »: off, the espace hides the gesture, and
+     *                 {@code signalements} is empty
      * @param dernierEnvoi the last time the organisation mailed me my
      *                 planning, and how it went — what « Planning communiqué
      *                 le … » can only claim when the mail actually left;
      *                 {@code null} when nothing was ever sent
      */
-    @Schema(requiredProperties = {"foireOuverte", "contact", "signalements", "collecteOuverte"})
+    @Schema(requiredProperties = {"foireOuverte", "contact", "signalements", "collecteOuverte", "signalementsActifs"})
     public record EspaceAnimateurView(
             String animateurId,
             String prenom,
@@ -315,6 +318,7 @@ public class EspaceAnimateurService {
             List<CarpoolDayView> covoiturage,
             ContactOrganisation contact,
             List<SignalementAbsenceService.SignalementView> signalements,
+            boolean signalementsActifs,
             boolean collecteOuverte,
             LocalDate collecteFermeLe,
             EnvoiEspaceView dernierEnvoi) {}
@@ -485,6 +489,7 @@ public class EspaceAnimateurService {
                 carpoolDaysOf(planning, animateurId),
                 referenceDataService.getContactOrganisation(),
                 signalementService.ofAnimateur(animateurId),
+                signalementService.enabled(),
                 collecteOuverte,
                 collecteOuverte ? collecte.fin() : null,
                 lastDelivery(animateurId));

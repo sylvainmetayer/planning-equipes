@@ -104,6 +104,7 @@ public final class CatalogueActions {
     private static final String EMPECHEMENT_RETIRE = "EMPECHEMENT_RETIRE";
     private static final String EMPECHEMENT_TRAITE = "EMPECHEMENT_TRAITE";
     private static final String EMPECHEMENT_CLASSE = "EMPECHEMENT_CLASSE";
+    private static final String SIGNALEMENTS_CONFIGURES = "SIGNALEMENTS_CONFIGURES";
     private static final String INSTANTANE_CAPTURE = "INSTANTANE_CAPTURE";
     private static final String INSTANTANE_RESTAURE = "INSTANTANE_RESTAURE";
     private static final String INSTANTANE_SUPPRIME = "INSTANTANE_SUPPRIME";
@@ -304,6 +305,7 @@ public final class CatalogueActions {
         action(EMPECHEMENT_RETIRE, "Empêchement retiré depuis l'espace", Entite.PLANNING);
         action(EMPECHEMENT_TRAITE, "Empêchement constaté : absence marquée", Entite.PLANNING);
         action(EMPECHEMENT_CLASSE, "Empêchement classé", Entite.PLANNING);
+        action(SIGNALEMENTS_CONFIGURES, "Signalements d'empêchement activés ou désactivés", Entite.EDITION);
 
         /* -------------- Snapshots, publication, sends --------------- */
         action(INSTANTANE_CAPTURE, "Instantané du planning capturé", Entite.INSTANTANE);
@@ -500,6 +502,7 @@ public final class CatalogueActions {
         route("JourJResource#cancelAbsence", ABSENCE_ANNULEE);
         route("JourJResource#treatAbsenceReport", EMPECHEMENT_TRAITE);
         route("JourJResource#fileAbsenceReport", EMPECHEMENT_CLASSE);
+        route("JourJResource#configureAbsenceReports", SIGNALEMENTS_CONFIGURES);
 
         route("PlanSnapshotResource#capture", INSTANTANE_CAPTURE);
         route("PlanSnapshotResource#restore", INSTANTANE_RESTAURE);

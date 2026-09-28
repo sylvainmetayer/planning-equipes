@@ -72,6 +72,8 @@ public class NotificationWriter {
             case Notification.DemandesSoumises n -> demandesSoumises(n);
             case Notification.DeclarationSoumise n -> declarationSoumise(n);
             case Notification.EmpechementSignale n -> empechementSignale(n);
+            case Notification.AbsenceReportFiled n -> absenceReportFiled(n);
+            case Notification.AbsenceReportAccepted n -> absenceReportAccepted(n);
             case Notification.CarpoolValidated n -> carpoolValidated(n);
             case Notification.CarpoolSetAside n -> carpoolSetAside(n);
             case Notification.CarpoolCancelled n -> carpoolCancelled(n);
@@ -122,6 +124,38 @@ public class NotificationWriter {
                         "poste", n.poste(),
                         "motif", n.motif(),
                         "lien", liens.jourScreen().orElse(null))));
+    }
+
+    /** The one who reported an absence hears it was filed, and that their planning was left as it was. */
+    private Optional<MailDraft> absenceReportFiled(Notification.AbsenceReportFiled n) {
+        if (withoutRecipient(n.email())) {
+            return Optional.empty();
+        }
+        return Optional.of(draft(
+                n.email(),
+                "mail/signalement-classe",
+                productName.subject("votre signalement a été classé"),
+                MailTemplates.values(
+                        "prenom", blankToNull(n.prenom()),
+                        "jour", JOUR.format(n.jour()),
+                        "poste", n.poste(),
+                        "lienEspace", n.espaceLink())));
+    }
+
+    /** The one who reported an absence hears it was recorded: they are no longer expected there. */
+    private Optional<MailDraft> absenceReportAccepted(Notification.AbsenceReportAccepted n) {
+        if (withoutRecipient(n.email())) {
+            return Optional.empty();
+        }
+        return Optional.of(draft(
+                n.email(),
+                "mail/signalement-accepte",
+                productName.subject("votre absence est prise en compte"),
+                MailTemplates.values(
+                        "prenom", blankToNull(n.prenom()),
+                        "jour", JOUR.format(n.jour()),
+                        "poste", n.poste(),
+                        "lienEspace", n.espaceLink())));
     }
 
     /**

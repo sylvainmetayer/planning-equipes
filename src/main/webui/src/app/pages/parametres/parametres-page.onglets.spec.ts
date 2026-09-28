@@ -12,6 +12,7 @@ import { AffichageMuralApi } from '../../core/api/affichage-mural-api';
 import { AdminApi } from '../../core/api/admin-api';
 import { DisponibilitesApi } from '../../core/api/disponibilites-api';
 import { EchangesApi } from '../../core/api/echanges-api';
+import { JourJService } from '../../core/jour-j.service';
 import { EditionStore } from '../../core/edition.store';
 import { NotificationService } from '../../core/notification.service';
 import { PlanSnapshotStore } from '../../core/plan-snapshot.store';
@@ -73,6 +74,10 @@ describe('ParametresPage — onglets', () => {
           useValue: {
             configuration: vi.fn(async () => ({ collecteOuverte: true, debut: null, fin: null })),
           },
+        },
+        {
+          provide: JourJService,
+          useValue: { configurationSignalements: vi.fn(async () => ({ actifs: true })) },
         },
         {
           provide: EchangesApi,

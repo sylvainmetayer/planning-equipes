@@ -241,9 +241,13 @@ public class JourJService {
     /**
      * The absences reported from the espaces and not settled yet, from the
      * journée looked at onwards: tomorrow's report has to be read today (issue
-     * #533). By day, then by arrival.
+     * #533). By day, then by arrival. None while the edition has the gesture
+     * switched off: what was reported before is hidden, not settled.
      */
     private List<SignalementJourJ> signalementsOuverts(LocalDate depuis, Map<String, Identite> identites) {
+        if (!signalements.enabled()) {
+            return List.of();
+        }
         Map<String, dev.sylvain.planning.domain.Stand> stands = new HashMap<>();
         referenceDataService.listStands().forEach(stand -> stands.putIfAbsent(stand.getId(), stand));
         Map<Long, Creneau> creneaux = creneauxById(referenceDataService.listCreneaux());

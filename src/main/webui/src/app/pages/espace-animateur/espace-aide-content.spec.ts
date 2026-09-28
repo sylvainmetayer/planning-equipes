@@ -90,6 +90,17 @@ describe('buildEspaceAideSections', () => {
     }
   });
 
+  it('stops mentioning « Je ne pourrai pas venir » when the edition has it switched off', () => {
+    const withoutReports = buildEspaceAideSections({ signalementsActifs: false });
+    const text = withoutReports.map(textOf).join('\n');
+
+    expect(withoutReports.find((each) => each.id === 'empechement')).toBeUndefined();
+    expect(text).not.toContain('Je ne pourrai pas venir');
+    // Where an impediment goes instead: straight to the organisation.
+    expect(text).toContain("prévenez directement l'organisation");
+    expect(text).toContain("un empêchement se dit directement à l'organisation");
+  });
+
   it('answers the covoiturage tab: a wish, when, how many, and who decides', () => {
     const section = sections.find((each) => each.id === 'covoiturage')!;
     const text = textOf(section);

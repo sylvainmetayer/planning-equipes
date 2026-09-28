@@ -1,0 +1,11 @@
+{#if prenom}
+Bonjour {prenom},
+
+{/if}
+L'organisation a pris en compte votre absence {#if poste}sur le poste {poste} du {jour}{#else}le {jour}{/if} : vous n'y êtes plus attendu(e), et elle s'occupe de vous remplacer.
+
+Votre espace montrera votre planning à jour dès que l'organisation vous l'aura communiqué.
+{#if lienEspace}
+
+{lienEspace}
+{/if}

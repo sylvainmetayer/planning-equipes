@@ -25,6 +25,7 @@ registerLocaleData(localeFr, 'fr');
 function view(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView {
   return {
     signalements: [],
+    signalementsActifs: true,
     collecteOuverte: false,
     collecteFermeLe: null,
     dernierEnvoi: null,

@@ -28,6 +28,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.jboss.logging.Logger;
 
 /**
  * « Je ne pourrai pas être là » (issue #533): the second write the espace
@@ -47,10 +48,20 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * yet; one open report per person and object (a partial unique index); and a
  * ceiling of sends per window ({@code 429} + {@code Retry-After}). The reason
  * is a closed list and optional, never free text. The organisation is told at
- * once, best effort, through {@code service/notification/}.</p>
+ * once, best effort, through {@code service/notification/}, and the animateur
+ * hears the outcome the same way once it is decided.</p>
+ *
+ * <p><b>Switched off per edition</b> ({@link #setEnabled}), on by default: an
+ * organisation that holds the plan as published does not want the gesture.
+ * Off, it is gone everywhere — the espace no longer offers it and refuses a
+ * send, and the reports already received are hidden from the espace and from
+ * the day's screen, and can no longer be withdrawn nor settled. They stay in
+ * the database: switching it back on shows them as they were.</p>
  */
 @ApplicationScoped
 public class SignalementAbsenceService {
+
+    private static final Logger LOG = Logger.getLogger(SignalementAbsenceService.class);
 
     private final SignalementAbsenceRepository repository;
 
@@ -66,6 +77,8 @@ public class SignalementAbsenceService {
 
     private final Event<Notification> notifications;
 
+    private final ApplicationLinks links;
+
     @Inject
     public SignalementAbsenceService(
             SignalementAbsenceRepository repository,
@@ -74,7 +87,8 @@ public class SignalementAbsenceService {
             ReferenceDataService referenceDataService,
             JourJClock clock,
             JourJService jourJService,
-            Event<Notification> notifications) {
+            Event<Notification> notifications,
+            ApplicationLinks links) {
         this.repository = repository;
         this.rateLimiter = rateLimiter;
         this.planPublieService = planPublieService;
@@ -82,6 +96,27 @@ public class SignalementAbsenceService {
         this.clock = clock;
         this.jourJService = jourJService;
         this.notifications = notifications;
+        this.links = links;
+    }
+
+    /** What every gesture on a report answers while the edition has them switched off. */
+    static final String DISABLED = "L'organisation ne reçoit pas les signalements d'empêchement pour cette édition : "
+            + "prévenez-la directement.";
+
+    /** Whether the edition offers « Je ne pourrai pas venir »: on until the organisation switches it off. */
+    public boolean enabled() {
+        return repository.enabled();
+    }
+
+    /** Paramètres › Édition: offers the gesture to the espaces, or withdraws it and hides what was reported. */
+    public void setEnabled(boolean enabled) {
+        repository.setEnabled(enabled);
+    }
+
+    private void requireEnabled() {
+        if (!repository.enabled()) {
+            throw new BusinessError.Invalid(DISABLED);
+        }
     }
 
     /** Over the ceiling of reports per window: the resource answers {@code 429} with the delay left. */
@@ -132,7 +167,8 @@ public class SignalementAbsenceService {
     /**
      * Records a report of {@code animateurId}.
      *
-     * @throws BusinessError.Invalid   a day or a seat they do not hold in the
+     * @throws BusinessError.Invalid   the edition has the gesture switched
+     *                                 off; a day or a seat they do not hold in the
      *                                 published plan, or one already over
      * @throws BusinessError.Conflict  the same report is already open
      * @throws TooManyRequests         over the ceiling
@@ -141,6 +177,10 @@ public class SignalementAbsenceService {
         if (nouveau == null || nouveau.portee() == null || nouveau.date() == null) {
             throw new BusinessError.Invalid("Indiquez la journée, et le poste s'il ne s'agit que d'un créneau.");
         }
+        // A gesture the edition switched off is refused before it is counted,
+        // like a closed collection: a stale page tapping it must not spend the
+        // quota of the first real report once it is switched back on.
+        requireEnabled();
         // Before any other validation and any write, like the declaration:
         // the point is to stop a loop, not to describe its last payload.
         RateLimitVerdict verdict = rateLimiter.submitReport(animateurId);
@@ -191,10 +231,12 @@ public class SignalementAbsenceService {
     /**
      * Withdraws one of their own reports while nobody has settled it.
      *
+     * @throws BusinessError.Invalid   the edition has the gesture switched off
      * @throws BusinessError.NotFound  no such report of theirs
      * @throws BusinessError.Conflict  already settled by the organisation
      */
     public void withdraw(String animateurId, long id) {
+        requireEnabled();
         SignalementAbsence signalement = repository
                 .byId(id)
                 .filter(existant -> existant.animateurId().equals(animateurId))
@@ -205,8 +247,11 @@ public class SignalementAbsenceService {
         }
     }
 
-    /** Their reports, as the espace shows them back, by day. */
+    /** Their reports, as the espace shows them back, by day; none while the edition has them switched off. */
     public List<SignalementView> ofAnimateur(String animateurId) {
+        if (!repository.enabled()) {
+            return List.of();
+        }
         Map<String, Stand> stands = standsById();
         Map<Long, dev.sylvain.planning.domain.Creneau> creneaux = creneauxById();
         return repository.listForAnimateur(animateurId).stream()
@@ -218,15 +263,18 @@ public class SignalementAbsenceService {
 
     /**
      * Files a report without touching the plan — « l'organisation l'a vu, rien
-     * à faire ».
+     * à faire ». The animateur is told their planning was left as it was.
      *
+     * @throws BusinessError.Invalid  the edition has the gesture switched off
      * @throws BusinessError.Conflict already settled, or withdrawn
      */
     public void file(long id) {
+        requireEnabled();
         SignalementAbsence signalement = open(id);
         if (!repository.settle(signalement.id(), Statut.CLASSE, Instant.now())) {
             throw alreadySettled();
         }
+        tellReporter(signalement, false);
     }
 
     /**
@@ -243,22 +291,85 @@ public class SignalementAbsenceService {
      * claim is rolled back with it and the report stays open for another
      * decision.</p>
      *
+     * <p>The animateur is told once the absence is recorded, never before: a
+     * refused recording leaves them expected where they were.</p>
+     *
+     * @throws BusinessError.Invalid  the edition has the gesture switched off
      * @throws BusinessError.Conflict already settled, or withdrawn
      */
     public AbsenceMarquee observe(long id) {
+        requireEnabled();
         SignalementAbsence signalement = open(id);
         String raison =
                 "signalé depuis l'espace" + (signalement.motif() == null ? "" : ", " + motif(signalement.motif()));
         Instant le = Instant.now();
-        return jourJService.recordAbsence(
+        AbsenceMarquee marquee = jourJService.recordAbsence(
                 signalement.animateurId(), raison, signalement.jour(), null, signalement.creneauId(), connection -> {
                     if (!repository.settle(connection, signalement.id(), Statut.TRAITE, le)) {
                         throw alreadySettled();
                     }
                 });
+        tellReporter(signalement, true);
+        return marquee;
     }
 
     /* ------------------------------- Internals ------------------------------ */
+
+    /**
+     * The animateur hears what the organisation decided about their report:
+     * withdrawn from what they reported ({@code accepted}), or filed with the
+     * plan as it stood. Best effort, like every notification; a fiche the
+     * referential no longer knows hears nothing.
+     *
+     * <p>Runs after the decision committed, so nothing here may undo it: a
+     * failure to word the mail is logged and swallowed, the policy
+     * {@code NotificationDispatcher} applies to the send itself.</p>
+     */
+    private void tellReporter(SignalementAbsence signalement, boolean accepted) {
+        try {
+            fireOutcome(signalement, accepted);
+        } catch (RuntimeException e) {
+            LOG.warnf(e, "The outcome of absence report %d could not be told to its animateur", signalement.id());
+        }
+    }
+
+    private void fireOutcome(SignalementAbsence signalement, boolean accepted) {
+        referenceDataService.listAnimateurs().stream()
+                .filter(animateur -> animateur.getId().equals(signalement.animateurId()))
+                .findFirst()
+                .ifPresent(animateur -> {
+                    String poste = seatLabel(signalement);
+                    String lien =
+                            links.espaceAnimateur(animateur.getAccessToken()).orElse(null);
+                    notifications.fire(
+                            accepted
+                                    ? new Notification.AbsenceReportAccepted(
+                                            animateur.getEmail(),
+                                            animateur.getPrenom(),
+                                            signalement.jour(),
+                                            poste,
+                                            lien)
+                                    : new Notification.AbsenceReportFiled(
+                                            animateur.getEmail(),
+                                            animateur.getPrenom(),
+                                            signalement.jour(),
+                                            poste,
+                                            lien));
+                });
+    }
+
+    /** « Stand 07 09:00-12:00 » for a seat, {@code null} for a whole day. */
+    private String seatLabel(SignalementAbsence signalement) {
+        if (signalement.portee() != Portee.POSTE) {
+            return null;
+        }
+        SignalementView vue = view(signalement, standsById(), creneauxById());
+        String stand = vue.standNom() == null ? signalement.standId() : vue.standNom();
+        if (vue.heureDebut() == null || vue.heureFin() == null) {
+            return stand;
+        }
+        return stand + " " + vue.heureDebut() + "-" + vue.heureFin();
+    }
 
     private SignalementAbsence open(long id) {
         SignalementAbsence signalement =

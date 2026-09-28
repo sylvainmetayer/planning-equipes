@@ -13,7 +13,13 @@
 // UPDATE that starts no solve. There is no second write path.
 
 import { Injectable, inject } from '@angular/core';
-import { AbsenceMarquee, EtatJourJ, RapportPublication, SuggestionsReparation } from './models';
+import {
+  AbsenceMarquee,
+  ConfigurationSignalements,
+  EtatJourJ,
+  RapportPublication,
+  SuggestionsReparation,
+} from './models';
 import { ApiService } from './api.service';
 import { PlanningApi } from './api/planning-api';
 
@@ -63,6 +69,21 @@ export class JourJService {
   /** « Classer »: the report read and filed, nothing touched in the plan. */
   classerSignalement(signalementId: number): Promise<void> {
     return this.api.post<void>(`/api/jour-j/signalements/${signalementId}/classement`, null);
+  }
+
+  /** Whether the edition offers « Je ne pourrai pas venir » to the espaces. */
+  configurationSignalements(): Promise<ConfigurationSignalements> {
+    return this.api.get<ConfigurationSignalements>('/api/jour-j/signalements/configuration');
+  }
+
+  /**
+   * Offers the gesture to the espaces, or withdraws it: off, the espaces refuse
+   * a report and what was already reported is hidden, there and on this screen.
+   */
+  configureSignalements(actifs: boolean): Promise<ConfigurationSignalements> {
+    return this.api.put<ConfigurationSignalements>('/api/jour-j/signalements/configuration', {
+      actifs,
+    });
   }
 
   /** Undoes an absence: one timeslot when `creneauId` is given, the whole day otherwise. */

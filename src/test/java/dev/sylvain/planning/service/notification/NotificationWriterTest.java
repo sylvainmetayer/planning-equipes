@@ -233,6 +233,52 @@ class NotificationWriterTest {
     }
 
     @Test
+    void aFiledReportTellsTheAnimateurTheirPlanningWasLeftAsItWas() {
+        MailDraft siege = rediger(new Notification.AbsenceReportFiled(
+                "alice@example.org",
+                "Alice",
+                java.time.LocalDate.of(2026, 7, 11),
+                "Cirque 09:00-12:00",
+                "https://planning.example.org/animateur/t0k"));
+        MailDraft journee = rediger(new Notification.AbsenceReportFiled(
+                "alice@example.org", " ", java.time.LocalDate.of(2026, 7, 12), null, null));
+
+        assertThat(siege.destinataire()).isEqualTo("alice@example.org");
+        assertThat(siege.sujet()).contains("votre signalement a été classé");
+        assertThat(siege.corps())
+                .contains("Bonjour Alice")
+                .contains("pour le poste Cirque 09:00-12:00 du samedi 11 juillet")
+                .contains("ne modifie pas votre planning")
+                .contains("https://planning.example.org/animateur/t0k");
+        assertThat(siege.html()).contains("Cirque 09:00-12:00").contains("https://planning.example.org/animateur/t0k");
+        assertThat(journee.corps())
+                .contains("pour la journée du dimanche 12 juillet")
+                .doesNotContain("Bonjour")
+                .doesNotContain("http");
+    }
+
+    @Test
+    void anAcceptedReportTellsTheAnimateurTheyAreNoLongerExpected() {
+        MailDraft siege = rediger(new Notification.AbsenceReportAccepted(
+                "alice@example.org",
+                "Alice",
+                java.time.LocalDate.of(2026, 7, 11),
+                "Cirque 09:00-12:00",
+                "https://planning.example.org/animateur/t0k"));
+        MailDraft journee = rediger(new Notification.AbsenceReportAccepted(
+                "alice@example.org", "Alice", java.time.LocalDate.of(2026, 7, 12), null, null));
+
+        assertThat(siege.destinataire()).isEqualTo("alice@example.org");
+        assertThat(siege.sujet()).contains("votre absence est prise en compte");
+        assertThat(siege.corps())
+                .contains("sur le poste Cirque 09:00-12:00 du samedi 11 juillet")
+                .contains("plus attendu")
+                .contains("https://planning.example.org/animateur/t0k");
+        assertThat(siege.html()).contains("Cirque 09:00-12:00");
+        assertThat(journee.corps()).contains("votre absence le dimanche 12 juillet");
+    }
+
+    @Test
     void withoutAnAdminAddressNoDeclarationIsNotified() {
         redacteur = writer(adminAddress(null), linksTo("https://planning.example.org"));
 
@@ -371,13 +417,19 @@ class NotificationWriterTest {
     }
 
     @Test
-    void aCarpoolDecisionWithoutAnAddressIsWrittenToNobody() {
+    void aDecisionToldToAnAnimateurWithoutAnAddressIsWrittenToNobody() {
         assertThat(redacteur.rediger(new Notification.CarpoolValidated(null, "Bob", List.of("Alice"), null)))
                 .isEmpty();
         assertThat(redacteur.rediger(new Notification.CarpoolSetAside(" ", "Alice", null, null)))
                 .isEmpty();
         assertThat(redacteur.rediger(
                         new Notification.CarpoolCancelled(null, "Alice", List.of("Bob"), null, true, null)))
+                .isEmpty();
+        assertThat(redacteur.rediger(new Notification.AbsenceReportFiled(
+                        null, "Alice", java.time.LocalDate.of(2026, 7, 11), null, null)))
+                .isEmpty();
+        assertThat(redacteur.rediger(new Notification.AbsenceReportAccepted(
+                        " ", "Alice", java.time.LocalDate.of(2026, 7, 11), null, null)))
                 .isEmpty();
     }
 }

@@ -29,13 +29,25 @@ export interface EspaceAideSection {
   cible?: EspaceHelpTarget;
 }
 
+/** What the edition offers, when the help depends on it. */
+export interface EspaceAideOptions {
+  /**
+   * « Je ne pourrai pas venir » is offered (Paramètres › Édition). Off, the
+   * help neither describes the gesture nor sends anybody to it.
+   */
+  signalementsActifs: boolean;
+}
+
 /**
  * Built lazily (never at module scope): `$localize` only resolves once
  * `main.ts` has loaded the translation catalog, which happens after this
  * module is imported. Same reasoning as `buildHelpSections()` next door.
  */
-export function buildEspaceAideSections(): EspaceAideSection[] {
-  return [
+export function buildEspaceAideSections(
+  options: EspaceAideOptions = { signalementsActifs: true },
+): EspaceAideSection[] {
+  const signalements = options.signalementsActifs;
+  const sections: (EspaceAideSection | null)[] = [
     {
       id: 'mon-espace',
       icon: 'home',
@@ -342,7 +354,9 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@espace.aide.dispo.onglets:Les onglets « Mes disponibilités » et « Covoiturage » n'apparaissent que pendant la collecte, et un bandeau sous les onglets l'annonce quand elle s'ouvre. Le reste du temps, il n'y a rien à y faire : un empêchement se signale avec « Je ne pourrai pas venir ».`,
+          text: signalements
+            ? $localize`:@@espace.aide.dispo.onglets:Les onglets « Mes disponibilités » et « Covoiturage » n'apparaissent que pendant la collecte, et un bandeau sous les onglets l'annonce quand elle s'ouvre. Le reste du temps, il n'y a rien à y faire : un empêchement se signale avec « Je ne pourrai pas venir ».`
+            : $localize`:@@espace.aide.dispo.ongletsSansSignalement:Les onglets « Mes disponibilités » et « Covoiturage » n'apparaissent que pendant la collecte, et un bandeau sous les onglets l'annonce quand elle s'ouvre. Le reste du temps, il n'y a rien à y faire : un empêchement se dit directement à l'organisation.`,
         },
         {
           kind: 'steps',
@@ -408,27 +422,29 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
         },
       ],
     },
-    {
-      id: 'empechement',
-      icon: 'event_busy',
-      question: $localize`:@@espace.aide.empechement.question:Je ne pourrai pas venir : comment prévenir ?`,
-      resume: $localize`:@@espace.aide.empechement.resume:« Je ne pourrai pas venir », sur la journée ou sur un poste, toute l'édition.`,
-      cible: 'planning',
-      blocks: [
-        {
-          kind: 'paragraph',
-          text: $localize`:@@espace.aide.empechement.geste:Dans « Mon planning », ouvrez la journée concernée : « Je ne pourrai pas venir » signale toute la journée, et le même bouton sur la carte d'un poste ne signale que celui-là. Un motif est proposé — raison personnelle, transport, autre — et vous pouvez ne pas le préciser. Le geste reste ouvert toute l'édition, même quand la collecte et la foire sont fermées.`,
+    !signalements
+      ? null
+      : {
+          id: 'empechement',
+          icon: 'event_busy',
+          question: $localize`:@@espace.aide.empechement.question:Je ne pourrai pas venir : comment prévenir ?`,
+          resume: $localize`:@@espace.aide.empechement.resume:« Je ne pourrai pas venir », sur la journée ou sur un poste, toute l'édition.`,
+          cible: 'planning',
+          blocks: [
+            {
+              kind: 'paragraph',
+              text: $localize`:@@espace.aide.empechement.geste:Dans « Mon planning », ouvrez la journée concernée : « Je ne pourrai pas venir » signale toute la journée, et le même bouton sur la carte d'un poste ne signale que celui-là. Un motif est proposé — raison personnelle, transport, autre — et vous pouvez ne pas le préciser. Le geste reste ouvert toute l'édition, même quand la collecte et la foire sont fermées.`,
+            },
+            {
+              kind: 'paragraph',
+              text: $localize`:@@espace.aide.empechement.suite:L'organisation est prévenue aussitôt. Votre planning ne change pas tout seul : c'est elle qui constate votre absence et vous remplace, ou qui classe le signalement. Sa ligne sous la journée dit où il en est ; tant qu'il est en attente, « Annuler » le retire.`,
+            },
+            {
+              kind: 'paragraph',
+              text: $localize`:@@espace.aide.empechement.urgence:Le jour même, pour un poste qui commence dans l'heure, appelez aussi l'organisation : un signalement se lit, un appel s'entend.`,
+            },
+          ],
         },
-        {
-          kind: 'paragraph',
-          text: $localize`:@@espace.aide.empechement.suite:L'organisation est prévenue aussitôt. Votre planning ne change pas tout seul : c'est elle qui constate votre absence et vous remplace, ou qui classe le signalement. Sa ligne sous la journée dit où il en est ; tant qu'il est en attente, « Annuler » le retire.`,
-        },
-        {
-          kind: 'paragraph',
-          text: $localize`:@@espace.aide.empechement.urgence:Le jour même, pour un poste qui commence dans l'heure, appelez aussi l'organisation : un signalement se lit, un appel s'entend.`,
-        },
-      ],
-    },
     {
       id: 'foire-fermee',
       icon: 'lock',
@@ -443,10 +459,14 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
           kind: 'paragraph',
           text: $localize`:@@espace.aide.foire.avant:Deux situations se ressemblent à l'écran. Si la foire n'est pas encore ouverte, l'onglet annonce la date à partir de laquelle revenir : rien à faire d'ici là. Si elle est fermée, c'est par l'organisation que passe toute demande.`,
         },
-        {
-          kind: 'paragraph',
-          text: $localize`:@@espace.aide.foire.suite:Un empêchement après la fermeture ? « Je ne pourrai pas venir », dans « Mon planning », reste ouvert : l'organisation est prévenue aussitôt.`,
-        },
+        ...(signalements
+          ? [
+              {
+                kind: 'paragraph' as const,
+                text: $localize`:@@espace.aide.foire.suite:Un empêchement après la fermeture ? « Je ne pourrai pas venir », dans « Mon planning », reste ouvert : l'organisation est prévenue aussitôt.`,
+              },
+            ]
+          : []),
       ],
     },
     {
@@ -476,7 +496,9 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
           kind: 'list',
           items: [
             $localize`:@@espace.aide.contact.item1:Une affectation vous semble fausse, ou une indisponibilité annoncée n'a pas été prise en compte : signalez-le. Hors période de collecte, vous ne pouvez pas corriger vos données vous-même.`,
-            $localize`:@@espace.aide.contact.item2:Empêchement de dernière minute : signalez-le avec « Je ne pourrai pas venir » et, pour un poste qui commence bientôt, appelez aussi l'organisation.`,
+            signalements
+              ? $localize`:@@espace.aide.contact.item2:Empêchement de dernière minute : signalez-le avec « Je ne pourrai pas venir » et, pour un poste qui commence bientôt, appelez aussi l'organisation.`
+              : $localize`:@@espace.aide.contact.item2SansSignalement:Empêchement de dernière minute : prévenez directement l'organisation, par téléphone pour un poste qui commence bientôt.`,
             $localize`:@@espace.aide.contact.item4:Le téléphone ou l'adresse de l'organisation, quand elle les a donnés, sont en bas de chaque page de cet espace.`,
             $localize`:@@espace.aide.contact.item3:Ce que l'application sait de vous et ce qu'elle en fait est décrit dans la politique de confidentialité, dans le menu en haut à droite.`,
           ],
@@ -484,4 +506,5 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
       ],
     },
   ];
+  return sections.filter((section): section is EspaceAideSection => section !== null);
 }

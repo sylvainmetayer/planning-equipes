@@ -112,6 +112,7 @@ class SignalementAbsenceFlowTest {
         try (Connection connection = dataSource.getConnection();
                 Statement statement = connection.createStatement()) {
             statement.executeUpdate("DELETE FROM signalement_absence");
+            statement.executeUpdate("DELETE FROM parametres_signalement");
             statement.executeUpdate("DELETE FROM plan_snapshot");
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to clear the fixture", e);
@@ -232,6 +233,13 @@ class SignalementAbsenceFlowTest {
                         .map(poste -> poste.getCreneau().getId()))
                 .containsExactly(9502L);
         given().when().get("/api/jour-j?date=" + JOUR).then().statusCode(200).body("signalements.size()", equalTo(0));
+        // Alice hears she is no longer expected on that seat.
+        List<Mail> aAlice = mailbox.getMailsSentTo(EMAIL_ALICE);
+        assertThat(aAlice).hasSize(1);
+        assertThat(aAlice.get(0).getSubject()).contains("votre absence est prise en compte");
+        assertThat(aAlice.get(0).getText())
+                .contains("Stand signalé 09:00-12:00")
+                .contains("plus attendu");
         referenceData.listContraintesAdHoc().stream()
                 .filter(contrainte -> contrainte.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE)
                 .forEach(contrainte -> referenceData.deleteContrainteAdHoc(contrainte.getId()));
@@ -306,6 +314,94 @@ class SignalementAbsenceFlowTest {
         referenceData.listContraintesAdHoc().stream()
                 .filter(contrainte -> contrainte.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE)
                 .forEach(contrainte -> referenceData.deleteContrainteAdHoc(contrainte.getId()));
+    }
+
+    /** « Classer »: the report settles, the plan stays, and the one who reported it is told so. */
+    @Test
+    void filingAReportTellsTheAnimateurTheirPlanningStands() {
+        long id = signaler(Map.of("portee", "JOUR", "date", JOUR.toString()))
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getLong("[0].id");
+        RestAssured.requestSpecification = null;
+
+        given().when()
+                .post("/api/jour-j/signalements/" + id + "/classement")
+                .then()
+                .statusCode(204);
+
+        List<Mail> aAlice = mailbox.getMailsSentTo(EMAIL_ALICE);
+        assertThat(aAlice).hasSize(1);
+        assertThat(aAlice.get(0).getSubject()).contains("votre signalement a été classé");
+        assertThat(aAlice.get(0).getText())
+                .contains("pour la journée du")
+                .contains("ne modifie pas votre planning")
+                .contains("/animateur/" + token);
+        assertThat(persistence.loadPersistedPlanning().getPostes().stream()
+                        .filter(poste -> poste.getAnimateur() != null)
+                        .map(poste -> poste.getAnimateur().getId()))
+                .containsExactly("SIG-A", "SIG-A");
+    }
+
+    /**
+     * Switched off for the edition, the gesture is gone everywhere: the espace
+     * says so and refuses a report, and what was already reported is hidden
+     * from the espace and from the day's screen, and can be neither withdrawn
+     * nor settled. Switched back on, the report is there as it was.
+     */
+    @Test
+    void aSwitchedOffEditionHidesTheGestureAndWhatWasReported() {
+        long id = signaler(Map.of("portee", "JOUR", "date", JOUR.toString()))
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getLong("[0].id");
+        io.restassured.specification.RequestSpecification espace = RestAssured.requestSpecification;
+        RestAssured.requestSpecification = null;
+        given().when()
+                .get("/api/jour-j/signalements/configuration")
+                .then()
+                .statusCode(200)
+                .body("actifs", equalTo(true));
+
+        given().contentType(ContentType.JSON)
+                .body(Map.of("actifs", false))
+                .when()
+                .put("/api/jour-j/signalements/configuration")
+                .then()
+                .statusCode(200)
+                .body("actifs", equalTo(false));
+
+        given().when().get("/api/jour-j?date=" + JOUR).then().statusCode(200).body("signalements.size()", equalTo(0));
+        given().when()
+                .post("/api/jour-j/signalements/" + id + "/classement")
+                .then()
+                .statusCode(400);
+        RestAssured.requestSpecification = espace;
+        given().when()
+                .get("/api/espace-animateur/" + token)
+                .then()
+                .statusCode(200)
+                .body("signalementsActifs", equalTo(false))
+                .body("signalements.size()", equalTo(0));
+        signaler(Map.of("portee", "POSTE", "date", JOUR.toString(), "creneauId", creneauId, "standId", "SIG-S1"))
+                .statusCode(400);
+        given().when()
+                .delete("/api/espace-animateur/" + token + "/signalements/" + id)
+                .then()
+                .statusCode(400);
+
+        RestAssured.requestSpecification = null;
+        given().contentType(ContentType.JSON)
+                .body(Map.of("actifs", true))
+                .when()
+                .put("/api/jour-j/signalements/configuration")
+                .then()
+                .statusCode(200)
+                .body("actifs", equalTo(true));
+        assertReportOpenAndPlanUntouched();
+        assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).isEmpty();
     }
 
     /**

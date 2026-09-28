@@ -11,6 +11,7 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -94,6 +95,35 @@ public class JourJResource {
     public AbsenceMarquee treatAbsenceReport(@PathParam("signalementId") long signalementId) {
         return signalementService.observe(signalementId);
     }
+
+    /**
+     * Whether the edition offers « Je ne pourrai pas venir » to the espaces,
+     * as Paramètres › Édition sets it.
+     */
+    @GET
+    @Path("/signalements/configuration")
+    public ConfigurationSignalements absenceReportsConfiguration() {
+        return new ConfigurationSignalements(signalementService.enabled());
+    }
+
+    /**
+     * Offers the gesture to the espaces, or withdraws it: off, the espaces
+     * refuse a report and what was already reported is hidden from them and
+     * from this screen. Answers the configuration now in force.
+     */
+    @PUT
+    @Path("/signalements/configuration")
+    public ConfigurationSignalements configureAbsenceReports(ConfigurationSignalements configuration) {
+        if (configuration == null) {
+            throw new BusinessError.Invalid("Indiquez si les signalements d'empêchement sont proposés.");
+        }
+        signalementService.setEnabled(configuration.actifs());
+        return new ConfigurationSignalements(signalementService.enabled());
+    }
+
+    /** « Je ne pourrai pas venir », offered to the espaces of the edition or not. */
+    @Schema(requiredProperties = {"actifs"})
+    public record ConfigurationSignalements(boolean actifs) {}
 
     /** « Classer »: the report read and filed, nothing touched in the plan. */
     @POST

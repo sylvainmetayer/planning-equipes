@@ -382,7 +382,9 @@ complètes. Quatre points sont connus et se consignent :
   personnelle, transport, autre —, choisie précisément pour qu'aucune raison
   de santé ou de famille n'y soit jamais écrite. Le courriel qui prévient
   l'organisation nomme la personne, la journée, le poste et ce motif, comme la
-  notification d'une déclaration de disponibilités. La ligne suit la fiche, le
+  notification d'une déclaration de disponibilités. Le courriel qui répond à
+  l'animateur, quand l'organisation tranche, ne porte que la journée et le
+  poste — pas le motif — et part à sa propre adresse. La ligne suit la fiche, le
   créneau et le stand qu'elle nomme (suppression en cascade) et disparaît avec
   l'édition ;
 - **l'état de chaque envoi du planning est conservé** (`envoi_planning`) :

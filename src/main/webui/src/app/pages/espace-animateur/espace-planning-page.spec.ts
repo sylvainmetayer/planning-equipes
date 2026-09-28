@@ -26,6 +26,7 @@ import { EspacePlanningPage } from './espace-planning-page';
 function view(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView {
   return {
     signalements: [],
+    signalementsActifs: true,
     collecteOuverte: false,
     collecteFermeLe: null,
     dernierEnvoi: null,
@@ -621,6 +622,32 @@ describe("EspacePlanningPage — la page pendant l'événement", () => {
     );
     // And it is the seat in progress, said as such.
     expect(racine().querySelector('.espace-poste-badge-encours')).not.toBeNull();
+  });
+
+  /* -------- « Je ne pourrai pas venir » (#533), switched off per edition -------- */
+
+  it('offers « Je ne pourrai pas venir » on the day and on a seat still ahead', async () => {
+    await rendre(
+      new Date(2026, 6, 10, 8, 0),
+      view({ postes: [poste()], signalementsActifs: true }),
+    );
+
+    expect(racine().querySelector('.espace-signaler')?.textContent).toContain(
+      'Je ne pourrai pas venir',
+    );
+    expect(racine().querySelector('.espace-poste-signaler')?.textContent).toContain(
+      'Je ne pourrai pas venir sur ce poste',
+    );
+  });
+
+  it('offers neither button when the edition has the gesture switched off', async () => {
+    await rendre(
+      new Date(2026, 6, 10, 8, 0),
+      view({ postes: [poste()], signalementsActifs: false }),
+    );
+
+    expect(racine().querySelector('.espace-signaler')).toBeNull();
+    expect(racine().querySelector('.espace-poste-signaler')).toBeNull();
   });
 
   it("annonce le prochain poste quand aucun n'est en cours", async () => {

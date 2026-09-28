@@ -102,6 +102,7 @@ class IsolationEditionStructurelleTest {
             "creneau_stand_ouvert",
             "demande_echange",
             "parametres_echange",
+            "parametres_signalement",
             "espace_session",
             "espace_acces",
             "plan_snapshot",

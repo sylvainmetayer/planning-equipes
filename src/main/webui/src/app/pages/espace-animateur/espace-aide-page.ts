@@ -1,4 +1,5 @@
 import {
+  computed,
   ChangeDetectionStrategy,
   Component,
   inject,
@@ -49,7 +50,10 @@ import { EspaceHelpTarget, buildEspaceAideSections } from './espace-aide-content
 export class EspaceAidePage {
   private readonly espace = inject(EspaceAnimateurService);
 
-  protected readonly sections = buildEspaceAideSections();
+  /** Rebuilt when the espace loads: without « Je ne pourrai pas venir », the help stops mentioning it. */
+  protected readonly sections = computed(() =>
+    buildEspaceAideSections({ signalementsActifs: this.espace.view()?.signalementsActifs ?? true }),
+  );
   protected readonly jeton = this.espace.jeton;
 
   /**
