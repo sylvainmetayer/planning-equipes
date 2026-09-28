@@ -569,6 +569,28 @@ describe('JourneePage', () => {
     expect(filtres()).toEqual(['Emplacement']);
   });
 
+  it('draws the days and the synthesis of the person axis apart, each in the width', async () => {
+    const page = (await monter({ axe: 'personne' })) as PageInternals & {
+      personView: { set: (view: 'grille' | 'frise' | 'synthese') => void };
+    };
+    const entetes = () =>
+      Array.from(racine().querySelectorAll('.planning-grille thead th')).map((th) =>
+        th.textContent?.trim(),
+      );
+    expect(racine().querySelector('.planning-grille-jour')).not.toBeNull();
+    expect(entetes()).not.toContain('Écart méd.');
+
+    page.personView.set('synthese');
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(racine().querySelector('.planning-grille-jour')).toBeNull();
+    expect(entetes()).toContain('Écart méd.');
+    const location = TestBed.inject(Location);
+    expect(location.path()).toContain('vue=synthese');
+    // No day column: the span has nothing to narrow.
+    expect(location.path()).not.toContain('portee=');
+  });
+
   it('keeps the span of the grids in the address, the week left out', async () => {
     const page = (await monter({ axe: 'personne', portee: 'jour' })) as PageInternals & {
       gridSpan: Signal<string> & { set: (span: 'jour' | 'semaine' | 'evenement') => void };
@@ -596,6 +618,43 @@ describe('JourneePage', () => {
     TestBed.tick();
     await fixture.whenStable();
     expect(location.path()).not.toContain('portee=');
+  });
+
+  it('reads an old summary link as the synthesis, and keeps its sort off the day grid', async () => {
+    // What /journee?axe=personne carried before the summary left the grid.
+    const page = (await monter({
+      axe: 'personne',
+      sort: 'heuresTotal',
+      dir: 'desc',
+    })) as PageInternals & {
+      personView: Signal<string> & { set: (view: 'grille' | 'frise' | 'synthese') => void };
+    };
+    const location = TestBed.inject(Location);
+    expect(page.personView()).toBe('synthese');
+    expect(location.path()).toContain('vue=synthese');
+    expect(location.path()).toContain('sort=heuresTotal');
+
+    // On the day grid the sort names a column nobody sees: it leaves the
+    // address, and comes back with the synthesis.
+    page.personView.set('grille');
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(page.personView()).toBe('grille');
+    expect(location.path()).not.toContain('sort=');
+
+    page.personView.set('synthese');
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(location.path()).toContain('sort=heuresTotal');
+  });
+
+  it('holds every cell to its colour over the whole event, and says why', async () => {
+    await monter({ axe: 'personne', portee: 'evenement' });
+    expect(racine().querySelector('.planning-personne-densite-compact')).not.toBeNull();
+    const note = racine().querySelector('#planning-grille-couleur-imposee');
+    expect(note?.textContent).toContain('couleur');
+    const densite = racine().querySelector('mat-button-toggle-group[aria-describedby]');
+    expect(densite?.getAttribute('aria-describedby')).toBe('planning-grille-couleur-imposee');
   });
 
   it('clears the keys of the treemap once it leaves the screen', async () => {

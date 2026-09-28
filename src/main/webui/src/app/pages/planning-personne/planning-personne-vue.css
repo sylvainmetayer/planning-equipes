@@ -52,14 +52,10 @@
   color: var(--mat-sys-error);
 }
 
-/* A stretch of the day: its hours over its stand. A bounded width, and the
-   stand wraps under it — a column as wide as its longest list of stands is
-   what took a week of cells off the screen. */
+/* A stretch of the day: its hours over its stand, which wraps in the width
+   its day column gets. */
 .planning-personne-siege {
   display: block;
-  inline-size: 9rem;
-  white-space: normal;
-  overflow-wrap: anywhere;
   line-height: 1.25;
 }
 
@@ -75,9 +71,7 @@
 /* One day: the stretches side by side, hours and stand on one line. */
 .planning-grille-portee-jour .planning-personne-siege {
   display: inline-block;
-  inline-size: auto;
   margin-inline-end: 1rem;
-  white-space: nowrap;
 }
 
 .planning-grille-portee-jour .planning-personne-siege + .planning-personne-siege {
@@ -212,4 +206,17 @@ a.personne-frise-nom {
   .personne-frise-nom {
     flex-basis: 8.5rem;
   }
+}
+
+/* The synthesis is a score of narrow figures under long titles: tighter
+   cells, and titles that break — hyphenated where the browser can, anywhere
+   as a last resort — keep all of its columns on the page. */
+.planning-personne-synthese .planning-grille-synthese {
+  padding-inline: 0.3rem;
+}
+
+.planning-personne-synthese thead .planning-grille-synthese {
+  font: var(--mat-sys-label-small);
+  hyphens: auto;
+  overflow-wrap: anywhere;
 }

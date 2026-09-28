@@ -77,6 +77,14 @@ export function readGridSpan(value: string | null): GridSpan {
   return value === 'jour' || value === 'evenement' ? value : 'semaine';
 }
 
+/** The id of the note saying so, which the density switches are described by. */
+export const COLOUR_NOTE_ID = 'planning-grille-couleur-imposee';
+
+/** Why the density switch is off over the whole event, where every cell holds its colour alone. */
+export function colourForcedLabel(): string {
+  return $localize`:@@planningGrille.couleurImposee:Sur tout l'événement, les cases n'affichent que leur couleur : le détail se lit sur la semaine ou le jour`;
+}
+
 /** The columns a span keeps, `[start, end)`. */
 export interface DayWindow {
   start: number;

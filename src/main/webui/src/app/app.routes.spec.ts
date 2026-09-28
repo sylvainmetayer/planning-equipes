@@ -176,10 +176,10 @@ describe('app.routes', () => {
         redirectTarget('repos', { vue: 'frise', densite: 'confort', date: '2026-09-05', q: 'a' }),
       ).toBe('/journee?axe=personne&vue=frise&densite=confort&date=2026-09-05&q=a');
       expect(redirectTarget('hours', { sort: 'nuit', dir: 'desc' })).toBe(
-        '/journee?axe=personne&sort=heuresNuit&dir=desc',
+        '/journee?axe=personne&vue=synthese&sort=heuresNuit&dir=desc',
       );
       expect(redirectTarget('equite', { q: 'ali', sort: 'heuresSoiree', dir: 'asc' })).toBe(
-        '/journee?axe=personne&q=ali&sort=heuresSoiree&dir=asc',
+        '/journee?axe=personne&vue=synthese&q=ali&sort=heuresSoiree&dir=asc',
       );
     });
 
@@ -190,7 +190,7 @@ describe('app.routes', () => {
       expect(redirectTarget('equite', { vue: 'fiche', animateur: 'A7' })).toBe(
         '/animateurs/A7?section=equite',
       );
-      expect(redirectTarget('equite', { vue: 'fiche' })).toBe('/journee?axe=personne');
+      expect(redirectTarget('equite', { vue: 'fiche' })).toBe('/journee?axe=personne&vue=synthese');
     });
 
     it('sends the treemap to the stand axis, its day under a key of its own', () => {
@@ -379,7 +379,7 @@ describe('app.routes', () => {
       await router.navigateByUrl('/equite?vue=fiche&animateur=a1&comparer=a2');
       expect(TestBed.inject(Router).url).toBe('/animateurs/a1?section=equite&comparer=a2');
       await router.navigateByUrl('/equite?q=Alice');
-      expect(TestBed.inject(Router).url).toBe('/journee?axe=personne&q=Alice');
+      expect(TestBed.inject(Router).url).toBe('/journee?axe=personne&vue=synthese&q=Alice');
     });
   });
 

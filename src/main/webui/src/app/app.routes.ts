@@ -97,13 +97,13 @@ const HOURS_SORT = {
 };
 
 /**
- * The Équité table is « Par personne » now, sorted by the same fields; its
+ * The Équité table is the « Synthèse » of « Par personne » now, sorted by the same fields; its
  * « fiche » reading of one person — the radar with it — is that person's fiche.
  */
 const equiteToPlanning: RedirectFunction = (route) =>
   equityFicheUrl(route.queryParams) ??
   redirectToPlanning(
-    { axe: 'personne' },
+    { axe: 'personne', vue: 'synthese' },
     {
       vue: '',
       axes: '',
@@ -598,7 +598,10 @@ const adminRoutes: Routes = [
   // key of its own, `date` being the page's day.
   { path: 'heatmap', redirectTo: heatmapToPlanning },
   { path: 'repos', redirectTo: redirectToPlanning({ axe: 'personne' }) },
-  { path: 'hours', redirectTo: redirectToPlanning({ axe: 'personne' }, { sort: HOURS_SORT }) },
+  {
+    path: 'hours',
+    redirectTo: redirectToPlanning({ axe: 'personne', vue: 'synthese' }, { sort: HOURS_SORT }),
+  },
   { path: 'equite', redirectTo: equiteToPlanning },
   {
     path: 'repartition-heures',

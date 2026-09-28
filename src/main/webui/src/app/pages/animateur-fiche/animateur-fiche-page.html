@@ -377,7 +377,7 @@
         }
         @if (fiche.planCalcule) {
           <p>
-            <a routerLink="/journee" [queryParams]="{ axe: 'personne', animateur: fiche.animateur.id }" i18n="@@fiche.equite.lien">Voir sa ligne dans Planning, par personne</a>
+            <a routerLink="/journee" [queryParams]="{ axe: 'personne', vue: 'synthese', animateur: fiche.animateur.id }" i18n="@@fiche.equite.lien">Voir sa ligne dans Planning, par personne</a>
           </p>
         }
       </details>

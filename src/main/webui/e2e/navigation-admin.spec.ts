@@ -102,6 +102,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
     sheet: 'planning-personne-travaille',
   },
   { path: '/journee?axe=personne&vue=frise', sheet: 'personne-frise-ligne' },
+  { path: '/journee?axe=personne&vue=synthese', marker: 'Écart méd.', sheet: 'planning-grille' },
   { path: '/journee?axe=typologie', marker: 'Compétents', sheet: 'planning-typologie-table' },
   { path: '/ouvertures', marker: 'Horaires des stands', sheet: 'ouvertures-synthese' },
   { path: '/diagnostic?onglet=besoin', marker: 'Minimum retenu', sheet: 'staffing-summary' },

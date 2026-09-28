@@ -317,15 +317,20 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   stand » and « Par personne » are two readings of the shared
   `pages/planning-grille` (a frozen first column, one tab stop moved by the
   arrows, templates for the header and the cell, a sort asked of the caller),
-  shown over the week of the page's day unless `?portee=jour|evenement` asks
-  for the day alone or the whole event — the summary columns stay the
-  event's whatever the span, the frise and the treemap ignore it:
+  as wide as the page — the days share its width and their text wraps, so a
+  reading scrolls sideways only on a screen too narrow for its shrunk
+  columns —, shown over
+  the week of the page's day unless `?portee=jour|evenement` asks for the
+  day alone or the whole event, where every cell holds its colour alone
+  whatever the density; the summary columns stay the event's whatever the
+  span, the frise and the treemap ignore it:
   per stand, a density in `?densite=noms|compteurs|couverture`, closed told
   from empty, a total per day, and the treemap of the former Répartition des
   heures as `?vue=treemap` (`pages/repartition-heures`, its day in
-  `?jourTreemap=`); per person, the Équité and payroll columns, all sortable,
-  the always-empty ones hidden until `?colonnes=toutes`, the frise as
-  `?vue=frise`, and the two CSV files. « Par typologie » is a table whose
+  `?jourTreemap=`); per person, the days alone in the grid, and the Équité and
+  payroll columns, all sortable, in a table of their own as `?vue=synthese`
+  (where `/equite` and `/hours` land), the always-empty ones hidden until
+  `?colonnes=toutes`, the frise as `?vue=frise`, and the two CSV files. « Par typologie » is a table whose
   figures are links. The one evening is `EquiteService`'s settable start; the
   fixed 22:00 is the payroll's night alone (ADR 0055). The plan and the breaks
   read once by the page and handed to the rendering on screen — the views under

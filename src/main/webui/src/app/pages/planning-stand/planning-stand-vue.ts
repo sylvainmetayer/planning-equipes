@@ -11,7 +11,13 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { RouterLink } from '@angular/router';
 import { PlanningEvenement } from '../../core/models';
 import { JourEvenement } from '../journee/journee';
-import { GridSpan, joursGrille, sliceDays, spanWindow } from '../planning-grille/jours-grille';
+import {
+  COLOUR_NOTE_ID,
+  GridSpan,
+  joursGrille,
+  sliceDays,
+  spanWindow,
+} from '../planning-grille/jours-grille';
 import { GridSpanToggle } from '../planning-grille/grid-span-toggle';
 import {
   CaseActivee,
@@ -53,7 +59,9 @@ import {
   ],
   template: `
     <div class="planning-axe-barre">
-      <mat-button-toggle-group [value]="densite()" (change)="densite.set($event.value)"
+      <mat-button-toggle-group [value]="effectiveDensite()" (change)="densite.set($event.value)"
+                               [disabled]="colourForced()" [disabledInteractive]="true"
+                               [attr.aria-describedby]="colourForced() ? colourNoteId : null"
                                aria-label="Contenu des cases" i18n-aria-label="@@planningStand.densite.label">
         <mat-button-toggle value="noms" i18n="@@planningStand.densite.noms">Noms</mat-button-toggle>
         <mat-button-toggle value="compteurs" i18n="@@planningStand.densite.compteurs">Compteurs</mat-button-toggle>
@@ -75,7 +83,7 @@ import {
       }
     } @else {
       <app-planning-grille
-        [class]="'planning-stand-densite-' + densite() + ' planning-grille-portee-' + span()"
+        [class]="'planning-stand-densite-' + effectiveDensite() + ' planning-grille-portee-' + span()"
         caption="Par stand : une ligne par stand, une colonne par journée, qui tient ses sièges, puis ce qu'il reste à pourvoir"
         i18n-caption="@@planningStand.caption"
         header="Stand"
@@ -96,7 +104,7 @@ import {
         </ng-template>
         <ng-template appGrilleCase let-ligne let-index="index">
           @let cellule = cellOf(ligne, index);
-          @switch (densite()) {
+          @switch (effectiveDensite()) {
             @case ('noms') {
               @for (nom of cellule.noms; track $index) {
                 <span class="planning-stand-nom">{{ nom }}</span>
@@ -157,6 +165,17 @@ export class PlanningStandView {
   );
   /** Built over every day, so the summary columns stay the event's; then narrowed to the span. */
   protected readonly visibleTable = computed(() => sliceDays(this.tableau(), this.dayWindow()));
+
+  /**
+   * Over the whole event a cell holds its coverage colour alone: sixteen
+   * columns of names do not fit a screen, the colours do. The chosen density
+   * is kept for the week and the day.
+   */
+  protected readonly colourForced = computed(() => this.span() === 'evenement');
+  protected readonly effectiveDensite = computed<DensiteStand>(() =>
+    this.colourForced() ? 'couverture' : this.densite(),
+  );
+  protected readonly colourNoteId = COLOUR_NOTE_ID;
 
   /** The grid's templates are handed its generic line: read back as the line this axis built. */
   protected stand(ligne: LigneGrille): LigneStand {

@@ -28,7 +28,13 @@ import { NO_SORT, SortState } from '../../core/view-query-params';
 import { OutputPanel } from '../../shared/output-panel';
 import { StatusMessage } from '../../shared/status-message';
 import { JourEvenement } from '../journee/journee';
-import { GridSpan, joursGrille, sliceDays, spanWindow } from '../planning-grille/jours-grille';
+import {
+  COLOUR_NOTE_ID,
+  GridSpan,
+  joursGrille,
+  sliceDays,
+  spanWindow,
+} from '../planning-grille/jours-grille';
 import { GridSpanToggle } from '../planning-grille/grid-span-toggle';
 import {
   CaseActivee,
@@ -36,6 +42,7 @@ import {
   GrilleEntete,
   LigneGrille,
   PlanningGrille,
+  TRI_NOM,
 } from '../planning-grille/planning-grille';
 import {
   buildTableauPersonnes,
@@ -139,7 +146,9 @@ export class PlanningPersonneView {
         recherche: this.filtre(),
         sansReposSeulement: this.noRestOnly(),
         toutesColonnes: this.allColumns(),
-        tri: this.tri(),
+        // The day grid shows the names alone: a summary column's sort, kept for
+        // the synthesis, would order its lines by nothing on screen.
+        tri: this.view() === 'grille' && this.tri().active !== TRI_NOM ? NO_SORT : this.tri(),
       },
     ),
   );
@@ -150,8 +159,30 @@ export class PlanningPersonneView {
   protected readonly visibleColumns = computed(() =>
     this.colonnesJours().slice(this.dayWindow().start, this.dayWindow().end),
   );
-  /** Built over every day, so the footer's totals at the right stay the event's; then narrowed to the span. */
-  protected readonly visibleTable = computed(() => sliceDays(this.tableau(), this.dayWindow()));
+  /** The days of the span, and nothing else: the summary is the synthesis's. */
+  protected readonly daysTable = computed(() => sliceDays(this.tableau(), this.dayWindow()));
+  /** The summary alone, over the whole event: no day column, the totals of the people shown. */
+  protected readonly synthesisTable = computed(() => {
+    const table = sliceDays(this.tableau(), { start: 0, end: 0 });
+    return {
+      ...table,
+      pied: {
+        ...table.pied,
+        libelle: $localize`:@@planningPersonne.footer.synthese:Total des personnes affichées`,
+      },
+    };
+  });
+
+  /**
+   * Over the whole event a cell holds its colour alone: sixteen columns of
+   * stands and hours do not fit a screen, the colours do. The chosen density
+   * is kept for the week and the day.
+   */
+  protected readonly colourForced = computed(() => this.span() === 'evenement');
+  protected readonly effectiveDensite = computed<DensitePersonne>(() =>
+    this.colourForced() ? 'compact' : this.densite(),
+  );
+  protected readonly colourNoteId = COLOUR_NOTE_ID;
 
   /** `20:00`, the start of the evening every screen reads. */
   protected readonly heureSoiree = computed(() =>
