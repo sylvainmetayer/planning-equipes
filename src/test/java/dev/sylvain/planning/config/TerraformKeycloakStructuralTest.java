@@ -89,6 +89,23 @@ class TerraformKeycloakStructuralTest {
                 .containsPattern("action_token_generated_by_admin_lifespan\\s*=\\s*\"48h\"");
     }
 
+    /** Events kept seven days, admin ones with their representation, as in development. */
+    @Test
+    void userAndAdminEventsAreKeptSevenDaysAsInDevelopment() {
+        assertThat(realm.path("eventsExpiration").asInt()).isEqualTo(604800);
+        String evenements = resources.get("keycloak_realm_events.planning");
+        assertThat(evenements)
+                .isNotNull()
+                .containsPattern("events_enabled\\s*=\\s*true")
+                .containsPattern("events_expiration\\s*=\\s*var\\.events_expiration_seconds")
+                .containsPattern("admin_events_enabled\\s*=\\s*true")
+                .containsPattern("admin_events_details_enabled\\s*=\\s*true");
+        assertThat(resources.get("keycloak_realm.planning"))
+                .containsPattern("adminEventsExpiration\\s*=\\s*tostring\\(var\\.events_expiration_seconds\\)");
+        assertThat(KeycloakConfigFiles.read(Path.of("terraform/keycloak/variables.tf")))
+                .containsPattern("(?s)variable \"events_expiration_seconds\".*?default\\s*=\\s*604800");
+    }
+
     /** Read-only names and address, as in the realm the compose imports. */
     @Test
     void theNameAndTheAddressAreReadOnlyAsInDevelopment() {

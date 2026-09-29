@@ -92,6 +92,24 @@ test.describe('connexion administrateur', () => {
     await expect(page.locator('#username')).toBeVisible();
   });
 
+  /**
+   * L'icône de compte mène à la console de compte Keycloak, au thème du
+   * produit : le logo de brand/, et le chemin du retour vers l'application
+   * que la console affiche d'elle-même quand on la lui nomme.
+   */
+  test('la console de compte porte le logo et le chemin du retour', async ({ page, baseURL }) => {
+    await connexionKeycloak(page, COMPTE_ADMIN);
+
+    await page.getByRole('link', { name: /^Mon compte/ }).click();
+
+    await expect(page).toHaveURL(/\/realms\/[^/]+\/account\//);
+    await expect(page.locator('img[src*="brand/logo.svg"]').first()).toBeVisible();
+    const retour = page.locator(`a[href="${new URL('/', baseURL).href}"]`).first();
+    await expect(retour).toBeVisible();
+    await retour.click();
+    await expect(page.getByRole('navigation', { name: 'Navigation principale' })).toBeVisible();
+  });
+
   test("le compte de secours fermé, la page n'offre que Keycloak", async ({ page }) => {
     await page.goto('/login');
     await expect(page.getByRole('button', { name: 'Se connecter', exact: true })).toBeVisible();

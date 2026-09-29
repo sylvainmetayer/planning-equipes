@@ -25,7 +25,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatDialog } from '@angular/material/dialog';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
-import { AdminApi } from '../core/api/admin-api';
+import { AdminApi, accountUrl } from '../core/api/admin-api';
 import {
   LOCAL_DRAFT_STORAGE,
   SESSION_DRAFT_STORAGE,
@@ -437,6 +437,9 @@ export class AdminShell {
 
   /** Keycloak signs people in: the account link then has somewhere to lead. */
   protected readonly modeOidc = injectAppConfig().authOidc;
+
+  /** The account page, and the admin's home as the way back. */
+  protected readonly accountHref = accountUrl('/');
 
   /**
    * Ends the session and hard-navigates away — to the identity provider's

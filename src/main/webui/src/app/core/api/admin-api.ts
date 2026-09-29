@@ -15,6 +15,17 @@ import {
   StatutSession,
 } from '../models';
 
+/**
+ * Keycloak's account page (password, passkey, second factor), with `retour`
+ * — a path of this application — as the way back: the server hands it to the
+ * console, which shows « Retour à Planning Équipes » to it. A plain function
+ * rather than a method: it reads nothing, and the two shells call it while
+ * they render.
+ */
+export function accountUrl(retour: string): string {
+  return `/api/auth/oidc/compte?retour=${encodeURIComponent(retour)}`;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AdminApi {
   private readonly api = inject(ApiService);

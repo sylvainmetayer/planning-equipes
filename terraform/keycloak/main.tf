@@ -39,10 +39,19 @@ resource "keycloak_realm" "planning" {
     default_locale    = "fr"
   }
 
-  # Le thème « planning » de l'image du dépôt : page de connexion et e-mails
-  # aux couleurs du produit, visuels du client montés dans brand/.
-  login_theme = var.login_theme
-  email_theme = var.email_theme
+  # Le thème « planning » de l'image du dépôt : page de connexion, console de
+  # compte et e-mails aux couleurs du produit, visuels du client montés dans
+  # brand/.
+  login_theme   = var.login_theme
+  account_theme = var.account_theme
+  email_theme   = var.email_theme
+
+  # Les événements d'administration ne se gardent que 7 jours, comme ceux des
+  # utilisateurs (keycloak_realm_events) : Keycloak ne porte cette durée que
+  # dans les attributs du realm.
+  attributes = {
+    adminEventsExpiration = tostring(var.events_expiration_seconds)
+  }
 
   otp_policy {
     type      = "totp"
@@ -161,7 +170,8 @@ resource "keycloak_openid_audience_protocol_mapper" "mcp_audience" {
 resource "keycloak_openid_client" "app" {
   realm_id    = keycloak_realm.planning.id
   client_id   = var.client_app
-  name        = "Planning Équipes — application web"
+  # Le nom que la console de compte affiche dans « Retour à … ».
+  name        = "Planning Équipes"
   description = "Client confidentiel du code flow, PKCE S256 exigé : c'est lui que Quarkus utilise pour connecter administrateurs et animateurs."
   enabled     = true
 
@@ -569,6 +579,29 @@ resource "keycloak_required_action" "recovery_codes" {
   enabled        = var.recovery_codes_enabled
   default_action = false
   priority       = 70
+}
+
+# -------------------------------------------------------------- événements --
+
+# Qui s'est connecté, qui a échoué, qui a changé quoi dans le realm : de quoi
+# répondre à « je n'arrive pas à me connecter » ou « qui a retiré ce rôle ? »
+# depuis la console (Événements), sans fouiller les journaux du serveur.
+# Gardés 7 jours, pas plus : ce sont des adresses, des IP et des horodatages,
+# des données personnelles qui n'ont rien à faire là passé le diagnostic.
+resource "keycloak_realm_events" "planning" {
+  realm_id = keycloak_realm.planning.id
+
+  events_enabled    = true
+  events_expiration = var.events_expiration_seconds
+  # Vide : tous les types d'événements utilisateur.
+  enabled_event_types = []
+  events_listeners    = ["jboss-logging"]
+
+  admin_events_enabled = true
+  # La représentation de l'objet modifié (le corps de la requête
+  # d'administration), sans quoi un événement dit « un utilisateur a été mis
+  # à jour » sans dire comment.
+  admin_events_details_enabled = true
 }
 
 # ------------------------------------------------- profil utilisateur --

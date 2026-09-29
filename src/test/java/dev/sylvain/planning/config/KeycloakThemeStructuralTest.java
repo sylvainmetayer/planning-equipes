@@ -40,10 +40,12 @@ class KeycloakThemeStructuralTest {
 
         assertThat(realm.path("loginTheme").asText()).isEqualTo("planning");
         assertThat(realm.path("emailTheme").asText()).isEqualTo("planning");
+        assertThat(realm.path("accountTheme").asText()).isEqualTo("planning");
         assertThat(KeycloakConfigFiles.read(KeycloakConfigFiles.TERRAFORM))
                 .as("the production realm gets the same theme by default")
-                .contains("login_theme = var.login_theme")
-                .contains("email_theme = var.email_theme");
+                .containsPattern("login_theme\\s+= var.login_theme")
+                .containsPattern("account_theme\\s+= var.account_theme")
+                .containsPattern("email_theme\\s+= var.email_theme");
     }
 
     @Test
@@ -63,6 +65,27 @@ class KeycloakThemeStructuralTest {
         assertThat(Files.readString(THEME.resolve("email/theme.properties")))
                 .contains("parent=base")
                 .contains("brandAccent=${env.KEYCLOAK_BRAND_ACCENT:}");
+    }
+
+    /**
+     * The account console — where a password, a passkey and a second factor
+     * are set — is the native React one: the theme only names a logo from
+     * brand/ and the stylesheets, and copies no template that would drift at
+     * each Keycloak upgrade.
+     */
+    @Test
+    void theAccountThemeExtendsTheNativeConsoleWithTheBrandLogo() throws IOException {
+        String properties = Files.readString(THEME.resolve("account/theme.properties"));
+
+        assertThat(properties)
+                .contains("parent=keycloak.v3")
+                .contains("logo=/brand/logo.svg")
+                .containsPattern("styles=css/planning-account\\.css brand/brand\\.css");
+        assertThat(THEME.resolve("account/resources/css/planning-account.css")).isRegularFile();
+        try (Stream<Path> fichiers = Files.walk(THEME.resolve("account"))) {
+            assertThat(fichiers.map(p -> p.getFileName().toString()).filter(n -> n.endsWith(".ftl")))
+                    .isEmpty();
+        }
     }
 
     @Test
@@ -100,6 +123,7 @@ class KeycloakThemeStructuralTest {
         // logo the login page does not have, or the reverse.
         assertThat(dockerfile).contains("ln -s ../../brand /opt/keycloak/themes/planning/login/resources/brand");
         assertThat(dockerfile).contains("ln -s ../../brand /opt/keycloak/themes/planning/email/resources/brand");
+        assertThat(dockerfile).contains("ln -s ../../brand /opt/keycloak/themes/planning/account/resources/brand");
         assertThat(dockerfile)
                 .as("the server never runs as root: the image drops back to the official unprivileged user")
                 .containsPattern("(?m)^USER 1000\\s*$");

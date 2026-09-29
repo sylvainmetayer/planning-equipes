@@ -243,7 +243,11 @@ complètes. Cinq points sont connus et se consignent :
   depuis l'[ADR 0070](decisions/0070-keycloak-obligatoire-comptes-nominatifs.md).
   Le realm détient le prénom, le nom et l'adresse e-mail de chaque personne qui
   a un compte (administrateurs, animateurs), son second facteur et l'historique
-  de ses connexions ; l'application garde de son côté la table `compte`
+  de ses connexions — les **événements** du realm (connexions, échecs, et
+  modifications d'administration avec l'objet modifié : adresse IP, adresse
+  e-mail, horodatage), **conservés 7 jours** puis purgés par Keycloak
+  (`eventsExpiration` et `adminEventsExpiration`, `events_expiration_seconds`
+  en Terraform) ; l'application garde de son côté la table `compte`
   (adresse, nom, dernière connexion, désactivation) et les habilitations. Trois
   conséquences, à écrire telles quelles : le realm **sort du périmètre des
   sauvegardes** du §5 comme de la purge du §6, et `compte` / `habilitation` ne
