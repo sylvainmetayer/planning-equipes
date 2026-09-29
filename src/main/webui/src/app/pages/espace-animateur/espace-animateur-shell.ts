@@ -26,7 +26,7 @@ import {
   RouterOutlet,
 } from '@angular/router';
 import { filter, map } from 'rxjs';
-import { AdminApi } from '../../core/api/admin-api';
+import { AdminApi, accountUrl } from '../../core/api/admin-api';
 import { APP_CONFIG } from '../../core/app-config';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
 import { PageFocusService } from '../../core/page-focus.service';
@@ -101,6 +101,12 @@ export class EspaceAnimateurShell {
       initialValue: null,
     },
   );
+
+  /**
+   * Keycloak's account page, with this espace as the way back: the console
+   * shows « Retour à Planning Équipes » and lands the person here again.
+   */
+  protected readonly accountHref = computed(() => accountUrl(`/animateur/${this.jeton() ?? ''}`));
 
   private readonly router = inject(Router);
   private readonly pageFocus = inject(PageFocusService);

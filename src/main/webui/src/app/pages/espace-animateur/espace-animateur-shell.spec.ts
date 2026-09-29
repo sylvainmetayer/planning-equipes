@@ -204,7 +204,10 @@ describe('EspaceAnimateurShell — quelle édition', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    const lien = document.querySelector<HTMLAnchorElement>('a[href="/api/auth/oidc/compte"]');
+    // The way back is this espace: the console shows « Retour à … » to it.
+    const lien = document.querySelector<HTMLAnchorElement>(
+      'a[href="/api/auth/oidc/compte?retour=%2Fanimateur%2Fjeton-1"]',
+    );
     expect(lien?.textContent).toContain('Mon compte : mot de passe, passkey…');
   });
 });

@@ -167,12 +167,33 @@ class RolesKeycloakTest {
                 .redirects()
                 .follow(false)
                 .when()
-                .get("/api/auth/oidc/compte")
+                .get("/api/auth/oidc/compte?retour=/animateur/jeton-1")
                 .then()
                 .statusCode(303)
                 .header(
                         "Location",
-                        org.hamcrest.Matchers.endsWith("/realms/quarkus" + AuthResource.PAGE_MOYENS_DE_CONNEXION));
+                        org.hamcrest.Matchers.containsString(
+                                "/realms/quarkus" + AuthResource.PAGE_MOYENS_DE_CONNEXION + "?referrer=planning-app"))
+                // The way back is the page the person left, on this host.
+                .header(
+                        "Location",
+                        org.hamcrest.Matchers.endsWith("&referrer_uri="
+                                + java.net.URLEncoder.encode(
+                                        "http://localhost:8081/animateur/jeton-1",
+                                        java.nio.charset.StandardCharsets.UTF_8)));
+        // A way back to another site is not offered: it falls back to the root.
+        given().header("Authorization", porteur("roles-passkey@example.org", "user", "animateur"))
+                .redirects()
+                .follow(false)
+                .when()
+                .get("/api/auth/oidc/compte?retour=//ailleurs.example.org/")
+                .then()
+                .statusCode(303)
+                .header(
+                        "Location",
+                        org.hamcrest.Matchers.endsWith("&referrer_uri="
+                                + java.net.URLEncoder.encode(
+                                        "http://localhost:8081/", java.nio.charset.StandardCharsets.UTF_8)));
         given().redirects()
                 .follow(false)
                 .when()
