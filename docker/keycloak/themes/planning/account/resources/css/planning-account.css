@@ -1,0 +1,92 @@
+/*
+ * Console de compte, couche commune — la même que la page de connexion
+ * (login/resources/css/planning.css) : une seule variable, --planning-accent,
+ * colore tout ce qui est coloré, et les variables globales de PatternFly 5
+ * sont redirigées vers elle plutôt que redéfinies composant par composant.
+ *
+ * Un client change la couleur ou la taille du logo dans brand/brand.css, lu
+ * après ce fichier. KEYCLOAK_BRAND_ACCENT, lui, ne vaut que pour la connexion
+ * et les e-mails : la console de compte n'offre aucun crochet où poser une
+ * valeur lue dans l'environnement (docs/keycloak.md § Le thème).
+ */
+:root {
+    --planning-accent: #3a6ea5;
+    --planning-accent-dark: color-mix(in srgb, var(--planning-accent) 78%, black);
+    --planning-accent-soft: color-mix(in srgb, var(--planning-accent) 10%, white);
+    --planning-logo-height: 40px;
+
+    --pf-v5-global--primary-color--100: var(--planning-accent);
+    --pf-v5-global--primary-color--200: var(--planning-accent-dark);
+    --pf-v5-global--active-color--100: var(--planning-accent);
+    --pf-v5-global--link--Color: var(--planning-accent);
+    --pf-v5-global--link--Color--hover: var(--planning-accent-dark);
+    --pf-v5-global--FontFamily--sans-serif: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    --pf-v5-global--FontFamily--heading-sans-serif: var(--pf-v5-global--FontFamily--sans-serif);
+}
+
+/* Un bandeau clair, souligné de la couleur du produit : le logo d'un client
+   est dessiné pour un fond clair, et le bandeau sombre du thème natif le
+   rendait illisible. */
+.pf-v5-c-masthead {
+    --pf-v5-c-masthead--BackgroundColor: #ffffff;
+    --pf-v5-c-masthead--m-display-inline__main--BorderRightColor: transparent;
+    --pf-v5-c-masthead--item-border-color--base: transparent;
+    color: #1f2937;
+    border-bottom: 4px solid var(--planning-accent);
+}
+
+.pf-v5-c-masthead .pf-v5-c-button.pf-m-plain,
+.pf-v5-c-masthead .pf-v5-c-menu-toggle,
+.pf-v5-c-masthead .pf-v5-c-menu-toggle.pf-m-plain {
+    color: #1f2937;
+    --pf-v5-c-menu-toggle--Color: #1f2937;
+    --pf-v5-c-menu-toggle--m-plain--Color: #1f2937;
+}
+
+/* Le logo, à hauteur du bandeau, sans jamais déborder sur la navigation. */
+.pf-v5-c-masthead__brand img,
+.pf-v5-c-brand {
+    height: var(--planning-logo-height);
+    max-height: var(--planning-logo-height);
+    width: auto;
+}
+
+/* « Retour à Planning Équipes » : le chemin du retour se voit, il ne se
+   cherche pas. */
+.pf-v5-c-masthead a[href]:not(.pf-v5-c-masthead__brand) {
+    color: var(--planning-accent);
+    font-weight: 600;
+}
+
+.pf-v5-c-page__main-section.pf-m-light,
+.pf-v5-c-page__main-section {
+    --pf-v5-c-page__main-section--m-light--BackgroundColor: #ffffff;
+}
+
+.pf-v5-c-page {
+    --pf-v5-c-page--BackgroundColor: #eef2f7;
+}
+
+.pf-v5-c-nav__link.pf-m-current,
+.pf-v5-c-nav__link.pf-m-current:hover {
+    --pf-v5-c-nav__link--m-current--BackgroundColor: var(--planning-accent-soft);
+    --pf-v5-c-nav__link--m-current--Color: var(--planning-accent-dark);
+}
+
+.pf-v5-c-button.pf-m-primary {
+    --pf-v5-c-button--m-primary--BackgroundColor: var(--planning-accent);
+    --pf-v5-c-button--m-primary--hover--BackgroundColor: var(--planning-accent-dark);
+    --pf-v5-c-button--m-primary--focus--BackgroundColor: var(--planning-accent-dark);
+    --pf-v5-c-button--m-primary--active--BackgroundColor: var(--planning-accent-dark);
+    border-radius: 8px;
+}
+
+.pf-v5-c-button.pf-m-secondary {
+    --pf-v5-c-button--m-secondary--Color: var(--planning-accent);
+    --pf-v5-c-button--m-secondary--BorderColor: var(--planning-accent);
+    border-radius: 8px;
+}
+
+.pf-v5-c-card {
+    border-radius: 12px;
+}

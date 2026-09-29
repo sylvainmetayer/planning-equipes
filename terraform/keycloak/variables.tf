@@ -32,6 +32,18 @@ variable "login_theme" {
   default     = "planning"
 }
 
+variable "events_expiration_seconds" {
+  description = "Durée de conservation des événements utilisateur et d'administration du realm, en secondes. 7 jours par défaut : des données personnelles, gardées le temps d'un diagnostic."
+  type        = number
+  default     = 604800
+}
+
+variable "account_theme" {
+  description = "Thème de la console de compte (mot de passe, passkey, second facteur), même image et même règle que login_theme."
+  type        = string
+  default     = "planning"
+}
+
 variable "email_theme" {
   description = "Thème des e-mails du realm, même image et même règle que login_theme."
   type        = string

@@ -890,12 +890,13 @@ describe('AdminShell', () => {
 
   describe('the account link', () => {
     // Keycloak owns the credentials: the toolbar leads to its account page,
-    // where the password, the passkeys and the second factor are set.
+    // where the password, the passkeys and the second factor are set — and
+    // back to the application's home, through the console's own link.
     it('leads to the Keycloak account page under Keycloak', () => {
       createShell();
 
       const lien = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>(
-        'a[href="/api/auth/oidc/compte"]',
+        'a[href="/api/auth/oidc/compte?retour=%2F"]',
       );
       expect(lien?.getAttribute('aria-label')).toBe(
         'Mon compte : mot de passe, passkey, double authentification',

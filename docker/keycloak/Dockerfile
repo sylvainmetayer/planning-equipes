@@ -47,15 +47,17 @@ FROM quay.io/keycloak/keycloak:26.5.7
 COPY --from=extension --chown=1000:0 /src/target/planning-keycloak-code-email.jar \
      /opt/keycloak/providers/planning-keycloak-code-email.jar
 
-# Le thème, puis le dossier brand/ rendu visible aux deux types de thème par un
-# lien symbolique. Keycloak sert `login/resources/brand/…` et
-# `email/resources/brand/…` ; un client ne monte qu'UN dossier,
-# /opt/keycloak/themes/planning/brand, et les deux le voient. Un seul point de
-# montage, c'est ce qui fait qu'un e-mail et une page de connexion ne peuvent
-# pas porter deux logos différents par oubli.
+# Le thème, puis le dossier brand/ rendu visible aux trois types de thème par
+# un lien symbolique. Keycloak sert `login/resources/brand/…`,
+# `account/resources/brand/…` et `email/resources/brand/…` ; un client ne
+# monte qu'UN dossier, /opt/keycloak/themes/planning/brand, et les trois le
+# voient. Un seul point de montage, c'est ce qui fait qu'un e-mail, une page de
+# connexion et la console de compte ne peuvent pas porter deux logos
+# différents par oubli.
 COPY --chown=1000:0 docker/keycloak/themes/planning /opt/keycloak/themes/planning
 USER root
 RUN ln -s ../../brand /opt/keycloak/themes/planning/login/resources/brand \
+ && ln -s ../../brand /opt/keycloak/themes/planning/account/resources/brand \
  && mkdir -p /opt/keycloak/themes/planning/email/resources \
  && ln -s ../../brand /opt/keycloak/themes/planning/email/resources/brand \
  && chown -R 1000:0 /opt/keycloak/themes/planning

@@ -36,7 +36,7 @@
          back in with the code by e-mail. Only once the espace opened, which
          means under Keycloak with a session. -->
     @if (modeOidc && espace.view()) {
-      <a mat-menu-item href="/api/auth/oidc/compte">
+      <a mat-menu-item [href]="accountHref()">
         <mat-icon>key</mat-icon>
         <span i18n="@@espace.menu.moyensConnexion">Mon compte : mot de passe, passkey…</span>
       </a>

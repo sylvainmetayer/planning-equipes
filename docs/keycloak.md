@@ -391,8 +391,10 @@ serait créé **sans son rôle**. Le rôle se cherche parmi les rôles *assignab
 
 Administrateur ou animateur, chacun règle ses propres moyens de connexion dans
 la console de compte Keycloak : mot de passe, passkey, second facteur. Deux
-entrées y mènent, toutes deux par `GET /api/auth/oidc/compte`, qui renvoie à la
-page « Connexion » de la console (`/account/account-security/signing-in`) :
+entrées y mènent, toutes deux par `GET /api/auth/oidc/compte?retour=…`, qui
+renvoie à la page « Connexion » de la console
+(`/account/account-security/signing-in`), au thème du produit et avec un lien
+« Retour à Planning Équipes » vers la page quittée (§ Le thème) :
 
 - côté administration, l'icône de compte de la barre du haut, à gauche de la
   déconnexion ;
@@ -407,6 +409,22 @@ espace. Le profil utilisateur du realm le déclare (`permissions.edit =
 service du provisioning les écrit, depuis la fiche. Nom et prénom n'y sont pas
 exigés, pour qu'un administrateur invité par sa seule adresse ne soit pas
 arrêté à la connexion par un formulaire qu'il ne peut pas remplir.
+
+### Les événements, gardés 7 jours
+
+Le realm enregistre les **événements utilisateur** (connexions, échecs, codes
+envoyés, actions requises) et les **événements d'administration**, avec la
+représentation de l'objet modifié : de quoi répondre depuis la console
+(*Événements*) à « je n'arrive pas à me connecter » ou « qui a retiré ce
+rôle ? », sans fouiller les journaux du serveur.
+
+Ils sont gardés **7 jours**, pas plus : ce sont des adresses, des IP et des
+horodatages, des données personnelles (`docs/rgpd.md`). Côté développement,
+`eventsExpiration` et l'attribut `adminEventsExpiration` du realm JSON ; côté
+production, `keycloak_realm_events.planning` et l'attribut du realm, tous deux
+sur `events_expiration_seconds` (604800 par défaut).
+`RealmPlanningStructuralTest` et `TerraformKeycloakStructuralTest` tiennent les
+deux ensemble.
 
 ## Le serveur MCP en OAuth2
 
@@ -653,8 +671,8 @@ ses animateurs par un code envoyé par l'application. Dans l'ordre :
 
 ## Le thème, et les visuels d'un événement
 
-La page de connexion et les e-mails de Keycloak sont ce qu'un animateur voit en
-premier. Ils portent donc la marque du déploiement, comme l'application — et de
+La page de connexion, la console de compte et les e-mails de Keycloak sont ce
+qu'un animateur voit en premier. Ils portent donc la marque du déploiement, comme l'application — et de
 la même façon : **un thème standard dans l'image, une couleur par variable, des
 images par dossier monté**. Rien à reconstruire pour un client, rien à cliquer
 dans la console.
@@ -664,6 +682,8 @@ dans la console.
 | `login/theme.properties` | `parent=keycloak.v2` : chaque page (mot de passe, OTP, passkey, erreurs) vient du thème natif et en suit les mises à jour. Rien n'est recopié |
 | `login/resources/css/planning.css` | La couche commune : typographie, carte, et **une seule variable**, `--planning-accent`, vers laquelle les couleurs globales de PatternFly sont redirigées |
 | `login/footer.ftl` | Le seul gabarit surchargé. Il pose la couleur d'accent lue dans l'environnement, et n'accepte qu'une couleur hexadécimale |
+| `account/theme.properties` | `parent=keycloak.v3` : la console de compte (mot de passe, passkey, second facteur) reste l'application React native. Le thème n'y pose que le logo de `brand/` (`logo=/brand/logo.svg`) et ses feuilles de style |
+| `account/resources/css/planning-account.css` | La même variable `--planning-accent`, un bandeau clair souligné de la couleur du produit (le logo d'un client est dessiné pour un fond clair), le lien de retour en évidence |
 | `email/html/template.ftl` | Le cadre de tous les e-mails (invitation, réinitialisation, vérification) : styles en ligne et tableaux, ce que lisent les clients de messagerie |
 | `brand/` | **Ce qui appartient au client** : `logo.svg`, `background.svg`, `brand.css`, `logo-email.png`. Le dépôt y met les visuels neutres du produit |
 
@@ -684,14 +704,24 @@ KEYCLOAK_BRAND_DIR=/srv/planning/brand-2027
 
 Sans `KEYCLOAK_BRAND_DIR`, c'est un volume nommé qui est monté, que Docker
 remplit depuis l'image à sa création : le thème a toujours un logo sous les
-pieds. Le dossier est **un seul point de montage** pour les deux types de
-thème : l'image le rend visible à `login/` et à `email/` par deux liens
-symboliques, si bien qu'un client ne peut pas donner aux e-mails un logo que la
-page n'a pas.
+pieds. Le dossier est **un seul point de montage** pour les trois types de
+thème : l'image le rend visible à `login/`, `account/` et `email/` par trois
+liens symboliques, si bien qu'un client ne peut pas donner aux e-mails ou à la
+console de compte un logo que la page de connexion n'a pas.
 
-Ce que le thème ne fait pas : **la console de compte** (où l'on enrôle un
-passkey) est une application React qui ne prend ni la couleur ni le logo ; les
-**textes** restent ceux de Keycloak, dans sa traduction française ; et les
+**Le retour vers l'application** n'est pas un réglage du thème : la console
+affiche d'elle-même « Retour à Planning Équipes » quand on l'ouvre avec
+`referrer` (le client `planning-app`) et `referrer_uri`, ce que fait
+`GET /api/auth/oidc/compte?retour=…`. Keycloak vérifie `referrer_uri` contre
+les URI de redirection du client : seule une page de l'application peut servir
+de retour. Le libellé est le nom du client, d'où « Planning Équipes » tout
+court dans le realm JSON comme en Terraform.
+
+Ce que le thème ne fait pas : dans la console de compte,
+`KEYCLOAK_BRAND_ACCENT` n'a aucun effet — elle n'offre aucun crochet où poser
+une valeur lue dans l'environnement ; un client y change la couleur par
+`brand/brand.css` (`:root { --planning-accent: … }`), qu'elle lit en dernier.
+Les **textes** restent ceux de Keycloak, dans sa traduction française ; et les
 visuels **ne se téléversent pas**, ils se montent.
 
 ## Tests

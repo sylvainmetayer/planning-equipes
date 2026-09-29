@@ -42,7 +42,7 @@
        are the organisation's, shown read-only. Only under Keycloak — the
        break-glass account has nothing to manage there. -->
   @if (modeOidc) {
-    <a matIconButton href="/api/auth/oidc/compte"
+    <a matIconButton [href]="accountHref"
        i18n-aria-label="@@shell.compte" aria-label="Mon compte : mot de passe, passkey, double authentification">
       <mat-icon>account_circle</mat-icon>
     </a>

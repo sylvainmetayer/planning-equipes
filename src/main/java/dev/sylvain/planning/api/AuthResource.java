@@ -15,6 +15,8 @@ import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 import java.util.TreeSet;
@@ -58,14 +60,19 @@ public class AuthResource {
     /** The realm's public URL — the one the browser already goes to sign in. */
     private final String realm;
 
+    /** This application's client in the realm, named to the account console as the way back. */
+    private final String clientId;
+
     @Inject
     public AuthResource(
             SecurityIdentity identity,
             ConfigOidc oidc,
-            @ConfigProperty(name = "quarkus.oidc.auth-server-url") String realm) {
+            @ConfigProperty(name = "quarkus.oidc.auth-server-url") String realm,
+            @ConfigProperty(name = "quarkus.oidc.client-id") String clientId) {
         this.identity = identity;
         this.oidc = oidc;
         this.realm = realm;
+        this.clientId = clientId;
     }
 
     /**
@@ -123,18 +130,35 @@ public class AuthResource {
      * owns the credentials, so the application only points at the page — it
      * holds no passkey and no password of its own.
      *
+     * <p>The console shows « Retour à Planning Équipes » when it is opened
+     * with {@code referrer} (this application's client) and
+     * {@code referrer_uri}: Keycloak checks the latter against the client's
+     * redirect URIs, so only a page of this application can be the way back.
+     * The page is the one the person left — their espace, or the admin — and
+     * anything else proposed falls back to the root, as after a login.</p>
+     *
      * <p>{@code 404} without Keycloak: the break-glass account has nothing to
      * manage there.</p>
+     *
+     * @param retour where the way back leads, a path of this application
      */
     @GET
     @Path("/oidc/compte")
     @Authenticated
-    public Response manageSignInMethods() {
+    public Response manageSignInMethods(@QueryParam("retour") String retour, @Context UriInfo uriInfo) {
         if (!oidc.enabled()) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-        return Response.seeOther(URI.create(realm.replaceAll("/+$", "") + PAGE_MOYENS_DE_CONNEXION))
+        return Response.seeOther(accountPage(target(uriInfo.getBaseUri(), retour)))
                 .build();
+    }
+
+    /** The console's sign-in page, naming this application as the way back to {@code retour}. */
+    URI accountPage(URI retour) {
+        return URI.create(realm.replaceAll("/+$", "")
+                + PAGE_MOYENS_DE_CONNEXION
+                + "?referrer=" + URLEncoder.encode(clientId, StandardCharsets.UTF_8)
+                + "&referrer_uri=" + URLEncoder.encode(retour.toString(), StandardCharsets.UTF_8));
     }
 
     /**

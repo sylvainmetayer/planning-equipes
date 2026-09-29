@@ -12,6 +12,16 @@
   "rememberMe": true,
   "loginTheme": "planning",
   "emailTheme": "planning",
+  "accountTheme": "planning",
+  "eventsEnabled": true,
+  "eventsExpiration": 604800,
+  "eventsListeners": ["jboss-logging"],
+  "enabledEventTypes": [],
+  "adminEventsEnabled": true,
+  "adminEventsDetailsEnabled": true,
+  "attributes": {
+    "adminEventsExpiration": "604800"
+  },
   "accessTokenLifespan": 900,
   "ssoSessionIdleTimeout": 1800,
   "ssoSessionMaxLifespan": 28800,
@@ -57,7 +67,7 @@
   "clients": [
     {
       "clientId": "planning-app",
-      "name": "Planning Équipes — application web",
+      "name": "Planning Équipes",
       "description": "Client confidentiel du code flow, PKCE S256 exigé : c'est lui que Quarkus utilise pour connecter administrateurs et animateurs.",
       "enabled": true,
       "protocol": "openid-connect",
