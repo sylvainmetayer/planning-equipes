@@ -2791,6 +2791,11 @@ export interface Habilitation {
   expireLe: string | null;
   /** The scope of a `RESPONSABLE_STAND`, empty for any other role. */
   standIds: string[];
+  /**
+   * For a `RESPONSABLE_STAND`: names (`true`) or head counts (`false`) on its
+   * stands whatever the edition says; `null` follows the edition's setting.
+   */
+  nominatif: boolean | null;
   /** Who granted it — the granting session's name. */
   creePar: string;
   creeLe: string;
@@ -2821,9 +2826,79 @@ export interface NouveauCompte {
 export interface NouvelleHabilitation {
   role: RoleHabilitation;
   editionId: string | null;
-  /** ISO instant, in the future; `null`: no expiry. */
+  /** ISO instant, in the future; `null`: no expiry — refused for a `RESPONSABLE_STAND`. */
   expireLe: string | null;
   standIds: string[];
+  /** `RESPONSABLE_STAND` only: `null` follows the edition's setting. */
+  nominatif: boolean | null;
+}
+
+/**
+ * `GET/PUT /api/parametres-responsables`: whether this edition's responsables
+ * de stand read names or head counts. Off by default — while the plan still
+ * moves, « deux animateurs » is a promise, « Bob et Alice » is not.
+ */
+export interface ParametresResponsables {
+  nominatif: boolean;
+}
+
+/** `GET /api/responsable/editions`: an edition where the caller is responsable de stand today. */
+export interface EditionResponsable {
+  editionId: string;
+  editionNom: string;
+  defaut: boolean;
+  expireLe: string | null;
+}
+
+/** `GET /api/responsable/editions/{id}`: the published plan of the caller's stands. */
+export interface ResponsableView {
+  editionId: string;
+  editionNom: string;
+  /** `null` while the edition has published nothing. */
+  publieLe?: string | null;
+  stands: StandResponsable[];
+  /** The people on the stands shown by name; empty when none is. */
+  equipe: MembreEquipe[];
+}
+
+export interface StandResponsable {
+  standId: string;
+  standNom: string;
+  emplacementNom?: string | null;
+  /** Whether the shifts name who holds them. */
+  nominatif: boolean;
+  vacations: VacationResponsable[];
+}
+
+export interface VacationResponsable {
+  /** Local date-time, `yyyy-MM-ddTHH:mm:ss`. */
+  debut: string;
+  fin: string;
+  pourvus: number;
+  vides: number;
+  /** Always empty on a stand shown by head count. */
+  personnes: PersonneVacation[];
+}
+
+/** A first and last name — never a contact. */
+export interface PersonneVacation {
+  prenom: string;
+  nom: string;
+}
+
+export interface MembreEquipe {
+  /** A key for this answer only, never the animateur's id. */
+  cle: string;
+  prenom: string;
+  nom: string;
+  plages: PlageMembre[];
+}
+
+/** `standNom` null: « occupé » — elsewhere, the stand not named. */
+export interface PlageMembre {
+  debut: string;
+  fin: string;
+  standNom?: string | null;
 }
 
 /** Answer of `POST /api/auth/logout`: where to go next to finish signing out. */

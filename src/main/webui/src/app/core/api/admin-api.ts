@@ -12,6 +12,7 @@ import {
   ImportSummary,
   MentionsLegales,
   ParametresNotifications,
+  ParametresResponsables,
   StatutSession,
 } from '../models';
 
@@ -98,6 +99,15 @@ export class AdminApi {
   /** The contact as the server kept it: trimmed, a blank half stored as `null`. */
   saveOrganisationContact(contact: ContactOrganisation): Promise<ContactOrganisation> {
     return this.api.put<ContactOrganisation>('/api/parametres-contact', contact);
+  }
+
+  /** Whether this edition's responsables de stand read names or head counts. */
+  responsablesSettings(): Promise<ParametresResponsables> {
+    return this.api.get<ParametresResponsables>('/api/parametres-responsables');
+  }
+
+  saveResponsablesSettings(parametres: ParametresResponsables): Promise<ParametresResponsables> {
+    return this.api.put<ParametresResponsables>('/api/parametres-responsables', parametres);
   }
 
   /* -------------------------------- session ------------------------------- */

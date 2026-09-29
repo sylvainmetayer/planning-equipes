@@ -84,7 +84,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   — « Imprimer cette journée » of the Planning page: the same print layout of
   `pages/mural`, route data `apercu`, read under the admin session from
   `GET /api/affichage-mural/apercu`, never through a token; a 401 sends to
-  `/login` like any admin call). **Sign-in is Keycloak's**, and the frontend holds no OIDC
+  `/login` like any admin call). So do `/responsable` (the responsable de
+  stand's screen, issue #295: the published plan of their stands, opened by a
+  Keycloak session alone, over the pure `pages/responsable/responsable.ts`) and
+  `/responsable/affichette` (one stand's day on an A4 sheet). **Sign-in is Keycloak's**, and the frontend holds no OIDC
   library and no token: `/login` and the espace's access screen navigate the
   whole page to `/api/auth/oidc/login?redirect=…` (`AdminApi.oidcLoginUrl`),
   the backend runs the code flow, and `/api/auth/me` says who came back and

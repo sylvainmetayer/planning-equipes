@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Compte, Edition, Habilitation } from '../../core/models';
 import {
+  defaultResponsableExpiry,
   editionsWithStands,
   emailError,
   expiryInstant,
@@ -30,6 +31,7 @@ function right(patch: Partial<Habilitation> = {}): Habilitation {
     editionId: null,
     expireLe: null,
     standIds: [],
+    nominatif: null,
     creePar: 'admin@example.org',
     creeLe: '2026-01-01T00:00:00Z',
     retireeLe: null,
@@ -205,11 +207,28 @@ describe('grantErrors', () => {
   it('refuses a stand manager without an edition or without a stand', () => {
     const message =
       "Un responsable de stand l'est dans une édition, pour au moins un de ses stands.";
-    const base = { ...initialGrantDraft(), role: 'RESPONSABLE_STAND' as const };
+    const base = {
+      ...initialGrantDraft(),
+      role: 'RESPONSABLE_STAND' as const,
+      expiryDate: '2099-12-31',
+    };
 
     expect(grantErrors({ ...base, editionId: null, standIds: ['s1'] }, NOW)).toEqual([message]);
     expect(grantErrors({ ...base, editionId: '2026', standIds: [] }, NOW)).toEqual([message]);
     expect(grantErrors({ ...base, editionId: '2026', standIds: ['s1'] }, NOW)).toEqual([]);
+  });
+
+  it('refuses a stand manager without an end date', () => {
+    const draft = {
+      ...initialGrantDraft(),
+      role: 'RESPONSABLE_STAND' as const,
+      editionId: '2026',
+      standIds: ['s1'],
+    };
+
+    expect(grantErrors(draft, NOW)).toEqual([
+      "Un droit de responsable de stand expire : donnez-lui une date de fin, après l'édition.",
+    ]);
   });
 
   it('refuses stands on any other role', () => {
@@ -241,19 +260,46 @@ describe('expiryInstant and toGrantRequest', () => {
         editionId: '2026',
         expiryDate: '2026-08-31',
         standIds: ['s1'],
+        nominatif: 'noms',
       }),
     ).toEqual({
       role: 'RESPONSABLE_STAND',
       editionId: '2026',
       expireLe: new Date(2026, 8, 1).toISOString(),
       standIds: ['s1'],
+      nominatif: true,
     });
     expect(toGrantRequest(initialGrantDraft())).toEqual({
       role: 'RH',
       editionId: null,
       expireLe: null,
       standIds: [],
+      nominatif: null,
     });
+  });
+
+  it('sends the override of a stand manager only, and none when it follows the edition', () => {
+    const manager = {
+      role: 'RESPONSABLE_STAND' as const,
+      editionId: '2026',
+      expiryDate: '2026-08-31',
+      standIds: ['s1'],
+    };
+
+    expect(toGrantRequest({ ...manager, nominatif: 'effectifs' }).nominatif).toBe(false);
+    expect(toGrantRequest({ ...manager, nominatif: 'edition' }).nominatif).toBeNull();
+    expect(toGrantRequest({ ...initialGrantDraft(), nominatif: 'noms' }).nominatif).toBeNull();
+  });
+});
+
+describe('defaultResponsableExpiry', () => {
+  it("offers the edition's last day plus thirty days", () => {
+    expect(defaultResponsableExpiry('2026-07-14', new Date(2026, 0, 10))).toBe('2026-08-13');
+  });
+
+  it('starts from today when the edition is over or has no timeslot', () => {
+    expect(defaultResponsableExpiry('2025-07-14', new Date(2026, 0, 10))).toBe('2026-02-09');
+    expect(defaultResponsableExpiry(null, new Date(2026, 0, 10))).toBe('2026-02-09');
   });
 });
 

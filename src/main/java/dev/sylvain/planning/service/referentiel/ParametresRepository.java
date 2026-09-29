@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.ContactOrganisation;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresQualite;
+import dev.sylvain.planning.domain.ParametresResponsables;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -308,6 +309,37 @@ public class ParametresRepository {
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save the organisation's contact", e);
+        }
+    }
+
+    /* -------------------------- Stand managers' view -------------------------- */
+
+    public ParametresResponsables getParametresResponsables() {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = scope.prepareScoped(connection, """
+                        SELECT nominatif
+                        FROM parametres_responsables
+                        WHERE edition_id = ?""");
+                ResultSet rs = ps.executeQuery()) {
+            return rs.next()
+                    ? new ParametresResponsables(rs.getBoolean("nominatif"))
+                    : ParametresResponsables.defaults();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to load the responsables de stand settings", e);
+        }
+    }
+
+    public void saveParametresResponsables(ParametresResponsables parametres) {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = scope.prepareScoped(connection, """
+                        INSERT INTO parametres_responsables (edition_id, nominatif)
+                        VALUES (?, ?)
+                        ON CONFLICT (edition_id)
+                        DO UPDATE SET nominatif = EXCLUDED.nominatif""")) {
+            ps.setBoolean(2, parametres.nominatif());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to save the responsables de stand settings", e);
         }
     }
 

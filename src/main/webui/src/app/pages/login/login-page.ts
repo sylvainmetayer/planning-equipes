@@ -13,11 +13,11 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AdminApi } from '../../core/api/admin-api';
 import { APP_CONFIG } from '../../core/app-config';
 import { BRANDING } from '../../core/branding';
-import { signOut, signedInWithoutAdminRole } from '../../core/session';
+import { opensResponsable, signOut, signedInWithoutAdminRole } from '../../core/session';
 import { BrandLogo } from '../../shared/brand-logo';
 
 /**
@@ -50,6 +50,7 @@ import { BrandLogo } from '../../shared/brand-logo';
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    RouterLink,
   ],
   templateUrl: './login-page.html',
   styleUrl: './login-page.css',
@@ -79,6 +80,8 @@ export class LoginPage {
 
   /** Signed in, without the `admin` role: the card explains instead of offering a login. */
   protected readonly signedInWithoutAccess = signal(false);
+  /** …but responsable de stand: the card points to the page that is theirs. */
+  protected readonly responsable = signal(false);
 
   constructor() {
     void this.checkSession();
@@ -87,7 +90,9 @@ export class LoginPage {
   /** Who is already signed in, if anyone — the login page itself is public. */
   private async checkSession(): Promise<void> {
     try {
-      this.signedInWithoutAccess.set(signedInWithoutAdminRole(await this.adminApi.session()));
+      const statut = await this.adminApi.session();
+      this.signedInWithoutAccess.set(signedInWithoutAdminRole(statut));
+      this.responsable.set(opensResponsable(statut));
     } catch {
       // Anonymous, or the probe is unreachable: the ordinary card is right.
       this.signedInWithoutAccess.set(false);

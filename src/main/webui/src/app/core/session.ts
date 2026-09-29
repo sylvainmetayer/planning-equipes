@@ -12,6 +12,17 @@ export function opensAdministration(statut: StatutSession): boolean {
   return statut.authentifie && statut.roles.includes(ROLE_ADMIN);
 }
 
+/**
+ * The role a right of responsable de stand in force grants (issue #295): it
+ * opens `/responsable`, whose server decides which stands it reads.
+ */
+export const ROLE_RESPONSABLE = 'responsable-stand';
+
+/** True when the session holds a right of responsable de stand today. */
+export function opensResponsable(statut: StatutSession): boolean {
+  return statut.authentifie && statut.roles.includes(ROLE_RESPONSABLE);
+}
+
 /** True when someone is signed in but the administration is closed to them. */
 export function signedInWithoutAdminRole(statut: StatutSession): boolean {
   return statut.authentifie && !statut.roles.includes(ROLE_ADMIN);

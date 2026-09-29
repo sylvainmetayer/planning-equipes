@@ -109,8 +109,25 @@ le **désactive**, jamais ne le supprime, quand plus aucune fiche d'aucune
 
 Cette PR pose le **socle** : les tables, l'identité réelle dans
 `SecurityIdentity`, l'API d'administration des comptes, le refus par défaut.
-Les rôles délégués n'ouvrent encore **aucune route** ; chacun arrivera avec ses
-projections et son test structurel.
+Les rôles délégués arrivent chacun avec ses projections et son test
+structurel. Le **responsable de stand** (#295) est ouvert dans la même PR :
+
+- il entre par un **écran dédié** (`/responsable`), avec sa seule session
+  Keycloak — le droit est celui du compte, pas d'une fiche, et un responsable
+  n'a pas toujours de fiche dans l'édition ;
+- une habilitation `RESPONSABLE_STAND` en vigueur, sur n'importe quelle
+  édition, donne le rôle `responsable-stand` : la **porte** HTTP de
+  `/api/responsable/*` (politique `role-responsable`). Quelle édition et quels
+  stands sont lus se décide à chaque requête, contre les droits de ce compte ;
+- il lit le **plan publié**, pas le plan de travail : ce que son équipe a
+  reçu, qui ne bouge pas pendant que l'organisateur résout. Instantané lu en
+  entier, le filtre de stand ne peut pas être un `WHERE` : c'est
+  `StandScope`, porte unique tenue par un test structurel ;
+- **effectifs par défaut**, prénoms et noms quand l'édition l'allume
+  (`parametres_responsables`) ou que l'habilitation le surcharge
+  (`habilitation.nominatif`) : tant que le planning bouge, « deux animateurs »
+  est une promesse tenable, « Bob et Alice » non. Jamais de coordonnées ;
+- l'habilitation **expire** obligatoirement.
 
 ### 5. Le realm se décrit en Terraform, les personnes se gèrent en Ansible
 

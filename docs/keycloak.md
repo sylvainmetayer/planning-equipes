@@ -110,10 +110,13 @@ quand**. Ces autorisations-là vivent dans la base de l'application :
 | Table | Rôle |
 | --- | --- |
 | `compte` | Une ligne par personne, créée à sa **première connexion**. Désactiver un compte **dans l'application** ferme toutes ses portes, quel que soit l'état de son compte Keycloak |
-| `habilitation` | Un rôle métier (`RH`, `RESPONSABLE_STAND`) sur une édition ou sur toutes, avec une date d'expiration |
+| `habilitation` | Un rôle métier (`RH`, `RESPONSABLE_STAND`) sur une édition ou sur toutes, avec une date d'expiration (obligatoire pour un responsable de stand) et, pour lui, une surcharge `nominatif` |
 | `habilitation_stand` | Les stands d'un responsable de stand |
 
-Elles se gèrent par `/api/comptes` (écran d'administration). Les poser dans le
+Elles se gèrent par `/api/comptes` (écran d'administration). Un responsable de
+stand se connecte comme tout le monde, puis ouvre `/responsable` : une
+habilitation en vigueur donne à sa session le rôle `responsable-stand`, qui
+n'ouvre que `/api/responsable/*`. Les poser dans le
 realm aurait demandé un rôle Keycloak par édition et par stand, et une
 expiration que Keycloak ne sait pas porter sur un rôle.
 

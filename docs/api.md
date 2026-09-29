@@ -82,9 +82,26 @@ provisioning),
 `DELETE /api/comptes/{id}/habilitations/{habilitationId}`. Un compte est créé à
 la première connexion Keycloak, ou à l'avance ici ; il se **désactive**, une
 habilitation se **retire** — rien ne se supprime. Un compte désactivé perd tous
-ses rôles, ceux du realm compris. Les rôles délégués (`RH`,
-`RESPONSABLE_STAND`) n'ouvrent encore aucune route : refus par défaut, jusqu'au
-lot qui construira leurs vues.
+ses rôles, ceux du realm compris. Une habilitation `RESPONSABLE_STAND` exige
+une édition, au moins un stand et une date d'expiration ; elle porte un
+`nominatif` facultatif (`null` suit l'édition, `true`/`false` l'emporte sur
+elle). Le rôle `RH` n'ouvre encore aucune route : refus par défaut, jusqu'au
+lot qui construira ses vues.
+
+**Responsable de stand** (#295). `GET /api/responsable/editions` (les éditions
+où la session est responsable aujourd'hui, celle par défaut d'abord) et
+`GET /api/responsable/editions/{editionId}` (`?stand=` pour un seul stand) : le **plan
+publié** des stands de son périmètre, en lecture seule. Politique HTTP
+`role-responsable` (rôle `responsable-stand`, que porte un compte actif
+titulaire d'une habilitation en vigueur) ; administrateurs compris, personne
+d'autre n'entre. Une édition ou un stand hors périmètre répondent `404` avec
+le même message qu'une cible inexistante. Selon `GET/PUT
+/api/parametres-responsables` (`{ nominatif }`, faux par défaut) et la
+surcharge de l'habilitation, chaque stand montre ses créneaux en **effectifs**
+(places pourvues et vides) ou avec les **prénoms et noms** — jamais d'adresse,
+de téléphone, de date de naissance ni de jeton. La vue « équipe » ne liste que
+les personnes d'un stand montré par nom, et leurs autres vacations du même
+jour comme « occupé », sans le stand.
 
 **Espace animateur.** Chaque route porte le jeton d'accès de la fiche **et**
 exige une session Keycloak qui porte le rôle `animateur` et dont l'adresse,

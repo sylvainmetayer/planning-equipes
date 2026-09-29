@@ -118,12 +118,37 @@ class CompteResourceTest {
                 given().when().get("/api/editions/courant").then().extract().path("id");
         given().contentType(ContentType.JSON)
                 .body("{\"role\":\"RESPONSABLE_STAND\",\"editionId\":\"" + edition
-                        + "\",\"standIds\":[\"stand-qui-n-existe-pas\"]}")
+                        + "\",\"expireLe\":\"2099-01-01T00:00:00Z\",\"standIds\":[\"stand-qui-n-existe-pas\"]}")
                 .when()
                 .post("/api/comptes/" + id + "/habilitations")
                 .then()
                 .statusCode(400)
                 .body("message", containsString("stand-qui-n-existe-pas"));
+    }
+
+    /**
+     * A responsable de stand reads names of minors when the edition says so:
+     * the right must end (#295 §5). And only that role takes a
+     * {@code nominatif} override.
+     */
+    @Test
+    void unResponsableDeStandExpireEtSeulIlPorteUneSurchargeNominative() {
+        String id = create("compte-responsable-sans-fin");
+        String edition =
+                given().when().get("/api/editions/courant").then().extract().path("id");
+        given().contentType(ContentType.JSON)
+                .body("{\"role\":\"RESPONSABLE_STAND\",\"editionId\":\"" + edition + "\",\"standIds\":[\"S1\"]}")
+                .when()
+                .post("/api/comptes/" + id + "/habilitations")
+                .then()
+                .statusCode(400)
+                .body("message", containsString("date de fin"));
+        given().contentType(ContentType.JSON)
+                .body("{\"role\":\"RH\",\"nominatif\":true}")
+                .when()
+                .post("/api/comptes/" + id + "/habilitations")
+                .then()
+                .statusCode(400);
     }
 
     @Test

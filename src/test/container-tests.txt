@@ -97,6 +97,7 @@ dev/sylvain/planning/api/ReferenceUsageResourceTest.java
 dev/sylvain/planning/api/RefusInconnuResourceTest.java
 dev/sylvain/planning/api/RelanceResourceTest.java
 dev/sylvain/planning/api/RequestSizeCapTest.java
+dev/sylvain/planning/api/ResponsableResourceTest.java
 dev/sylvain/planning/api/RolesKeycloakTest.java
 dev/sylvain/planning/api/SecurityHeadersTest.java
 dev/sylvain/planning/api/SignalementAbsenceFlowTest.java
