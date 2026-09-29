@@ -1120,6 +1120,17 @@ points qui ne s'y voient pas :
   portent les mêmes numéros, et `docker-compose.prod.yml` les tire sous la même
   `APP_VERSION`. Son cache GHA a son propre `scope`, pour ne pas évincer celui
   de l'application.
+- **L'image d'une pull request, à la demande** : le label `publier-image`
+  posé sur une PR de ce dépôt fait publier par les deux workflows l'image de
+  sa tête sous `pr-<numéro>` (`planning-equipes:pr-72` et
+  `planning-equipes-keycloak:pr-72`), puis la republie à chaque push tant que
+  le label reste. Même chaîne que pour `main` — `sha-…`, smoke test, SBOM,
+  signature —, jamais `:latest` ni un numéro de version. Pour la déployer :
+  `APP_VERSION=pr-72` dans `.env.prod`. Jamais depuis un fork : le jeton d'une
+  PR externe n'écrit pas dans le registre, et le dépôt ne signe pas son code.
+  Le smoke test démarre l'image sans Keycloak, porte de secours ouverte, comme
+  `restauration.yml` : la production refuse une instance qui n'a ni l'un ni
+  l'autre (ADR 0069).
 - **`release.yml` écrit le corps d'une release publiée** (git-cliff sur les
   messages de commit du tag) et ne touche à rien d'autre : ni tag, ni branche,
   ni fichier du dépôt — il n'y a pas de `CHANGELOG.md` à tenir. Il part sur
