@@ -21,6 +21,11 @@ export class CreneauxApi {
     return this.api.get<DiagnosticGrille>('/api/creneaux/diagnostic');
   }
 
+  /** {@link diagnostic} of another edition — the grant dialog dates a right after its last day. */
+  diagnosticInEdition(editionId: string): Promise<DiagnosticGrille> {
+    return this.api.getDansEdition<DiagnosticGrille>('/api/creneaux/diagnostic', editionId);
+  }
+
   /** The verdict on the grid: anomalies, stand openings, feasibility. */
   control(): Promise<RapportGrille> {
     return this.api.get<RapportGrille>('/api/creneaux/controle');

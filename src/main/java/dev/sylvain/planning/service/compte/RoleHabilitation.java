@@ -13,10 +13,11 @@ import java.util.Locale;
  * combinations nobody tests, and each role here earns its own structural
  * test when its routes open.</p>
  *
- * <p>Neither role opens a route yet: the HTTP policies name {@code admin} and
- * {@code mcp} only, so an identity carrying {@code rh} or
- * {@code responsable-stand} is refused everywhere — deny by default, until the
- * lot that builds each role's projections opens them.</p>
+ * <p>{@code responsable-stand} opens {@code /api/responsable/*} and nothing
+ * else (#295, {@code ResponsableService} scopes each read to the account's
+ * rights). {@code rh} opens no route yet: an identity carrying it is refused
+ * everywhere — deny by default, until the lot that builds its projections
+ * opens them.</p>
  */
 public enum RoleHabilitation {
     /** Read-only access for HR: reporting, legality, compliance (#294). */

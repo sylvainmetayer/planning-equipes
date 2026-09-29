@@ -14,6 +14,12 @@
           <mat-icon inline>block</mat-icon>
           <span i18n="@@login.sansDroits">Vous êtes connecté, mais ce compte n'a pas accès à l'administration.</span>
         </p>
+        @if (responsable()) {
+          <a matButton="filled" routerLink="/responsable">
+            <mat-icon>storefront</mat-icon>
+            <span i18n="@@login.responsable">Voir mes stands</span>
+          </a>
+        }
         <button matButton="filled" type="button" (click)="deconnecter()">
           <mat-icon>logout</mat-icon>
           <span i18n="@@login.deconnexion">Se déconnecter</span>

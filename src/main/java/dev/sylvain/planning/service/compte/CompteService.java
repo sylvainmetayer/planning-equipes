@@ -118,18 +118,24 @@ public class CompteService {
     }
 
     /**
-     * The security roles an account's rights grant on <b>every</b> edition,
-     * as of now. A right scoped to one edition grants no role on its own: the
-     * identity is built before any edition is bound to the request, so the
-     * lot that opens a role checks {@link #rightsInForce} against the edition
-     * the request resolved to.
+     * The security roles an account's rights grant, as of now.
+     *
+     * <p>A right on <b>every</b> edition grants its role outright. A right
+     * scoped to one edition grants no role — the identity is built before any
+     * edition is bound to the request — with one exception: a
+     * {@link RoleHabilitation#RESPONSABLE_STAND} in force, on whichever
+     * edition, grants {@code responsable-stand}. That role is only the HTTP
+     * gate of {@code /api/responsable/*} (deny by default for everyone else);
+     * which edition and which stands it reads is decided per request by
+     * {@link #rightsInForce}, never by the role.</p>
      */
     public static Set<String> globalRoles(Compte compte, Instant maintenant) {
         if (!compte.actif()) {
             return Set.of();
         }
         return compte.habilitations().stream()
-                .filter(h -> h.inForce(maintenant) && h.editionId() == null)
+                .filter(h -> h.inForce(maintenant)
+                        && (h.editionId() == null || h.role() == RoleHabilitation.RESPONSABLE_STAND))
                 .map(h -> h.role().securityRole())
                 .collect(Collectors.toUnmodifiableSet());
     }
@@ -204,10 +210,27 @@ public class CompteService {
         return required(id);
     }
 
+    /** {@link #grant(String, RoleHabilitation, String, Instant, List, Boolean, String)}, following the edition. */
+    public Compte grant(
+            String compteId,
+            RoleHabilitation role,
+            String editionId,
+            Instant expireLe,
+            List<String> standIds,
+            String creePar) {
+        return grant(compteId, role, editionId, expireLe, standIds, null, creePar);
+    }
+
     /**
      * Grants a right. A {@link RoleHabilitation#RESPONSABLE_STAND} needs an
-     * edition and at least one stand of it; no other role takes stands, and an
-     * expiry already past would be a right that never opened anything.
+     * edition, at least one stand of it and an expiry: without one, forty
+     * volunteers would keep reading the names of minors years after the
+     * festival (#295 §5). No other role takes stands nor a {@code nominatif}
+     * override, and an expiry already past would be a right that never
+     * opened anything.
+     *
+     * @param nominatif for a responsable de stand, {@code null} to follow the
+     *                  edition's setting, else the override for this right
      */
     public Compte grant(
             String compteId,
@@ -215,6 +238,7 @@ public class CompteService {
             String editionId,
             Instant expireLe,
             List<String> standIds,
+            Boolean nominatif,
             String creePar) {
         required(compteId);
         if (role == null) {
@@ -234,6 +258,10 @@ public class CompteService {
             throw new BusinessError.Invalid(
                     "Un responsable de stand l'est dans une édition, pour au moins un de ses stands.");
         }
+        if (role == RoleHabilitation.RESPONSABLE_STAND && expireLe == null) {
+            throw new BusinessError.Invalid(
+                    "Un droit de responsable de stand expire : donnez-lui une date de fin, après l'édition.");
+        }
         List<String> inconnus = edition == null
                 ? List.of()
                 : editionContext.executeIn(
@@ -251,6 +279,9 @@ public class CompteService {
         if (role != RoleHabilitation.RESPONSABLE_STAND && !perimetre.isEmpty()) {
             throw new BusinessError.Invalid("Seul un responsable de stand a un périmètre de stands.");
         }
+        if (role != RoleHabilitation.RESPONSABLE_STAND && nominatif != null) {
+            throw new BusinessError.Invalid("Seul un responsable de stand lit des noms ou des effectifs.");
+        }
         if (expireLe != null && !expireLe.isAfter(Instant.now())) {
             throw new BusinessError.Invalid("La date d'expiration est déjà passée.");
         }
@@ -262,6 +293,7 @@ public class CompteService {
                         edition,
                         expireLe,
                         perimetre,
+                        nominatif,
                         Optional.ofNullable(creePar).orElse("?"),
                         null,
                         null));

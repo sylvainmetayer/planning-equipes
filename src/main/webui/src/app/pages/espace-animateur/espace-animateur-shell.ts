@@ -31,7 +31,7 @@ import { APP_CONFIG } from '../../core/app-config';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
 import { PageFocusService } from '../../core/page-focus.service';
 import { AppLocale, getStoredLocale, setStoredLocaleAndReload } from '../../core/locale';
-import { signOut } from '../../core/session';
+import { opensResponsable, signOut } from '../../core/session';
 import { BrandLogo } from '../../shared/brand-logo';
 import { VersionFooter } from '../../shared/version-footer';
 import { EspaceContact } from './espace-contact';
@@ -93,6 +93,9 @@ export class EspaceAnimateurShell {
    */
   protected readonly signedInWithoutAccess = signal(false);
 
+  /** The session is also responsable de stand (issue #295): the menu offers that page. */
+  protected readonly responsable = signal(false);
+
   private readonly adminApi = inject(AdminApi);
   private readonly route = inject(ActivatedRoute);
   protected readonly jeton = toSignal(
@@ -116,6 +119,7 @@ export class EspaceAnimateurShell {
     const jeton = this.route.snapshot.paramMap.get('jeton');
     if (jeton) {
       void this.espace.charger(jeton).then(() => this.diagnoseRefusal());
+      void this.detectResponsable();
     }
     // Same contract as the admin shell: moving to another tab of the espace
     // hands the focus to <main> and speaks the new page's title, instead of
@@ -146,6 +150,18 @@ export class EspaceAnimateurShell {
   /** Skip link: `href="#contenu"` alone would move the caret but not the focus. */
   protected focusContenu(event: Event): void {
     this.pageFocus.skipTo(event, this.contenu()?.nativeElement);
+  }
+
+  /** Whether the session holds a right of responsable de stand; silent when the probe fails. */
+  private async detectResponsable(): Promise<void> {
+    if (!this.modeOidc) {
+      return;
+    }
+    try {
+      this.responsable.set(opensResponsable(await this.adminApi.session()));
+    } catch {
+      this.responsable.set(false);
+    }
   }
 
   /** Who is signed in, if anyone — asked only once the espace has refused. */

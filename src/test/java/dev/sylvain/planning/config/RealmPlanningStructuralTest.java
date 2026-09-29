@@ -69,10 +69,20 @@ class RealmPlanningStructuralTest {
                         ORDINARY_ROLE);
     }
 
-    /** Every role an HTTP policy names has to exist, or the policy guards a door nobody can open. */
+    /**
+     * Every role an HTTP policy names has to exist, or the policy guards a door
+     * nobody can open: in the realm, or among the delegated roles the
+     * application grants itself from its rights ({@code RoleHabilitation},
+     * ADR 0069) — never in the realm, since a realm role is neither per
+     * edition nor dated.
+     */
     @Test
     void everyRoleTheApplicationRequiresIsDeclared() {
-        List<String> declared = KeycloakConfigFiles.realmRoles(realm);
+        List<String> declared = new java.util.ArrayList<>(KeycloakConfigFiles.realmRoles(realm));
+        for (dev.sylvain.planning.service.compte.RoleHabilitation role :
+                dev.sylvain.planning.service.compte.RoleHabilitation.values()) {
+            declared.add(role.securityRole());
+        }
         assertThat(KeycloakConfigFiles.listProperty("quarkus.http.auth.policy.role-admin.roles-allowed"))
                 .as("/api/* is admin only")
                 .containsExactly("admin");

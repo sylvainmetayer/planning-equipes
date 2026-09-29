@@ -8,6 +8,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -154,14 +155,15 @@ public class CompteRepository {
     public void insertHabilitation(String compteId, Habilitation habilitation) {
         scope.write("Failed to grant a right", connection -> {
             try (PreparedStatement ps = connection.prepareStatement("""
-                    INSERT INTO habilitation (id, compte_id, role, edition_id, expire_le, cree_par)
-                    VALUES (?, ?, ?, ?, ?, ?)""")) {
+                    INSERT INTO habilitation (id, compte_id, role, edition_id, expire_le, cree_par, nominatif)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)""")) {
                 ps.setString(1, habilitation.id());
                 ps.setString(2, compteId);
                 ps.setString(3, habilitation.role().name());
                 ps.setString(4, habilitation.editionId());
                 ps.setTimestamp(5, habilitation.expireLe() == null ? null : Timestamp.from(habilitation.expireLe()));
                 ps.setString(6, habilitation.creePar());
+                ps.setObject(7, habilitation.nominatif(), Types.BOOLEAN);
                 ps.executeUpdate();
             }
             try (PreparedStatement ps = connection.prepareStatement(
@@ -210,7 +212,7 @@ public class CompteRepository {
         }
         Map<String, List<Habilitation>> parCompte = new LinkedHashMap<>();
         try (PreparedStatement ps = connection.prepareStatement("""
-                SELECT id, compte_id, role, edition_id, expire_le, cree_par, cree_le, retiree_le
+                SELECT id, compte_id, role, edition_id, expire_le, nominatif, cree_par, cree_le, retiree_le
                 FROM habilitation WHERE (CAST(? AS VARCHAR) IS NULL OR compte_id = ?) ORDER BY cree_le, id""")) {
             ps.setString(1, compteId);
             ps.setString(2, compteId);
@@ -225,6 +227,7 @@ public class CompteRepository {
                                     rs.getString("edition_id"),
                                     instant(rs, "expire_le"),
                                     List.copyOf(stands.getOrDefault(id, List.of())),
+                                    rs.getObject("nominatif", Boolean.class),
                                     rs.getString("cree_par"),
                                     instant(rs, "cree_le"),
                                     instant(rs, "retiree_le")));

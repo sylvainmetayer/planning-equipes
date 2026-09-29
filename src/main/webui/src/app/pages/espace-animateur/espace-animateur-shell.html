@@ -41,6 +41,12 @@
         <span i18n="@@espace.menu.moyensConnexion">Mon compte : mot de passe, passkey…</span>
       </a>
     }
+    @if (responsable()) {
+      <a mat-menu-item routerLink="/responsable">
+        <mat-icon>storefront</mat-icon>
+        <span i18n="@@espace.menu.responsable">Mes stands (responsable)</span>
+      </a>
+    }
     <a mat-menu-item routerLink="/mentions-legales" rel="noopener noreferrer">
       <mat-icon>gavel</mat-icon>
       <span i18n="@@nav.link.mentionsLegales">Mentions légales</span>

@@ -146,6 +146,7 @@ public final class CatalogueActions {
     private static final String PARAMETRES_NOTIFICATIONS_MODIFIES = "PARAMETRES_NOTIFICATIONS_MODIFIES";
     private static final String PARAMETRES_METEO_MODIFIES = "PARAMETRES_METEO_MODIFIES";
     private static final String CONTACT_ORGANISATION_MODIFIE = "CONTACT_ORGANISATION_MODIFIE";
+    private static final String PARAMETRES_RESPONSABLES_MODIFIES = "PARAMETRES_RESPONSABLES_MODIFIES";
     private static final String CONTRAINTE_ACTIVEE = "CONTRAINTE_ACTIVEE";
     private static final String CONTRAINTE_DESACTIVEE = "CONTRAINTE_DESACTIVEE";
     private static final String CONTRAINTE_PONDEREE = "CONTRAINTE_PONDEREE";
@@ -393,6 +394,12 @@ public final class CatalogueActions {
         action(PARAMETRES_NOTIFICATIONS_MODIFIES, "Paramètres de notifications modifiés", Entite.PARAMETRES);
         action(PARAMETRES_METEO_MODIFIES, "Réglages de l'alerte météo modifiés", Entite.PARAMETRES);
         action(CONTACT_ORGANISATION_MODIFIE, "Contact de l'organisation modifié", Entite.PARAMETRES);
+        // Switching names on hands the first and last names of every animateur
+        // on a stand, minors included, to the volunteers who run it (#295).
+        action(
+                PARAMETRES_RESPONSABLES_MODIFIES,
+                "Affichage des noms aux responsables de stand modifié",
+                Entite.PARAMETRES);
         changesData(CONTRAINTE_ACTIVEE, "Contrainte activée", Entite.PARAMETRES);
         changesData(CONTRAINTE_DESACTIVEE, "Contrainte désactivée", Entite.PARAMETRES);
         changesData(CONTRAINTE_PONDEREE, "Poids d'une contrainte modifié", Entite.PARAMETRES);
@@ -607,6 +614,7 @@ public final class CatalogueActions {
         route("ParametresResource#updateParametresNotifications", PARAMETRES_NOTIFICATIONS_MODIFIES);
         route("WeatherResource#update", PARAMETRES_METEO_MODIFIES);
         route("ParametresResource#updateContactOrganisation", CONTACT_ORGANISATION_MODIFIE);
+        route("ParametresResource#updateParametresResponsables", PARAMETRES_RESPONSABLES_MODIFIES);
         route("ConstraintResource#setActif", CONTRAINTE_ACTIVEE);
         route("ConstraintResource#setPoids", CONTRAINTE_PONDEREE);
         route("BackupResource#setActive", SAUVEGARDE_BASCULEE);

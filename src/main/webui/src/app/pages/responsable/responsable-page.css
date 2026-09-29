@@ -1,0 +1,83 @@
+.responsable-toolbar {
+  gap: 0.5rem;
+}
+
+.responsable-title {
+  font: var(--mat-sys-title-medium);
+}
+
+.responsable-spacer {
+  flex: 1 1 auto;
+}
+
+.responsable-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 0 auto;
+  max-width: 60rem;
+  padding: 1rem;
+}
+
+.responsable-acces {
+  margin: 2rem auto;
+  max-width: 32rem;
+}
+
+.responsable-entete h1 {
+  font: var(--mat-sys-headline-small);
+  margin: 0 0 0.5rem;
+}
+
+.responsable-publication,
+.responsable-vide {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-medium);
+  margin: 0.25rem 0;
+}
+
+.responsable-jours,
+.responsable-onglets {
+  flex-wrap: wrap;
+}
+
+.responsable-vacations,
+.responsable-equipe,
+.responsable-equipe ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+}
+
+.responsable-vacations li,
+.responsable-equipe ul li {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+}
+
+.responsable-heure {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  min-width: 8rem;
+}
+
+.responsable-trou .responsable-alerte {
+  color: var(--mat-sys-error);
+}
+
+.responsable-noms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.75rem;
+  width: 100%;
+}
+
+.responsable-ailleurs {
+  color: var(--mat-sys-on-surface-variant);
+  font-style: italic;
+}

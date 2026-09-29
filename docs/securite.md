@@ -145,7 +145,23 @@ et exploitation : [`keycloak.md`](keycloak.md). Ce qui compte ici :
   `habilitation`, par édition, avec expiration, jamais supprimées. Désactiver
   un compte dans l'application lui retire tous ses rôles, ceux du realm
   compris — l'interrupteur que l'organisateur tire sans la console Keycloak.
-  Les rôles délégués (RH, responsable de stand) n'ouvrent encore aucune route.
+  Le rôle RH n'ouvre encore aucune route.
+- **Le responsable de stand** (#295) lit, sous `/api/responsable/*` et nulle
+  part ailleurs, le **plan publié** des stands de son périmètre. La politique
+  `role-responsable` ne laisse entrer que le rôle `responsable-stand`, porté par
+  un compte actif titulaire d'une habilitation en vigueur ; l'édition et les
+  stands lus se vérifient ensuite à chaque requête contre **ses** droits.
+  L'habilitation **expire** obligatoirement (proposée : fin de l'édition +
+  30 jours). Ce qu'il voit : les créneaux de ses stands, en effectifs par
+  défaut, ou avec prénoms et noms quand l'édition (Paramètres › Édition) ou son
+  habilitation l'allument. Ce qu'il ne voit jamais : une adresse, un téléphone,
+  une date de naissance, un jeton, un autre stand, un animateur absent de ses
+  stands, et **aucun agrégat par personne** (heures, repos, équité) — ils
+  diraient combien, donc qu'une personne travaille ailleurs. Une vacation hors
+  périmètre d'un membre de son équipe s'affiche « occupé », le même jour
+  seulement et sans le stand. `ResponsableProjectionStructurelleTest` tient la
+  projection (aucun type du domaine ne sort, aucune écriture) et la porte
+  unique (`StandScope`, seul à lire les sièges et les stands).
 - **Le masquage côté écran n'est pas une protection.** Cacher une entrée de
   menu ou garder une route Angular est du confort ; la protection est la
   politique HTTP et la projection servie par l'API.

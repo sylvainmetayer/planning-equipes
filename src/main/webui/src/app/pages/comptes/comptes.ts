@@ -70,7 +70,9 @@ export function rightsSummary(compte: Compte, editions: readonly Edition[], now:
         return $localize`:@@comptes.summary.right:${role}:role: — ${edition}:edition:`;
       }
       const count = habilitation.standIds.length;
-      return $localize`:@@comptes.summary.rightWithStands:${role}:role: — ${edition}:edition:, ${count}:count: stand(s)`;
+      const summary = $localize`:@@comptes.summary.rightWithStands:${role}:role: — ${edition}:edition:, ${count}:count: stand(s)`;
+      const override = nominatifLabel(habilitation.nominatif ?? null);
+      return override ? `${summary} (${override})` : summary;
     })
     .join(' ; ');
 }
@@ -126,6 +128,9 @@ export function emailError(email: string): string | null {
   return null;
 }
 
+/** What a responsable de stand reads: the edition's setting, or an override of it. */
+export type NominatifChoice = 'edition' | 'noms' | 'effectifs';
+
 /** What the grant dialog holds while it is being filled. */
 export interface GrantDraft {
   role: RoleHabilitation;
@@ -134,10 +139,45 @@ export interface GrantDraft {
   /** `yyyy-mm-dd` from the date field, `''` for no expiry. */
   expiryDate: string;
   standIds: string[];
+  /** Read for a `RESPONSABLE_STAND` only. */
+  nominatif: NominatifChoice;
 }
 
 export function initialGrantDraft(): GrantDraft {
-  return { role: 'RH', editionId: null, expiryDate: '', standIds: [] };
+  return { role: 'RH', editionId: null, expiryDate: '', standIds: [], nominatif: 'edition' };
+}
+
+/** How long after the edition's last day a responsable de stand keeps reading it. */
+export const RESPONSABLE_GRACE_DAYS = 30;
+
+/**
+ * The expiry the dialog offers a responsable de stand: the edition's last day
+ * plus {@link RESPONSABLE_GRACE_DAYS} — room for the thank-you and the lost
+ * property, and no more (#295 §5). From today when that is already past, or
+ * when the edition has no timeslot yet to date it by.
+ */
+export function defaultResponsableExpiry(derniereDate: string | null, today: Date): string {
+  const base = derniereDate ? new Date(`${derniereDate}T00:00:00`) : null;
+  const start =
+    base && !Number.isNaN(base.getTime()) && base.getTime() > today.getTime() ? base : today;
+  const expiry = new Date(
+    start.getFullYear(),
+    start.getMonth(),
+    start.getDate() + RESPONSABLE_GRACE_DAYS,
+  );
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${expiry.getFullYear()}-${pad(expiry.getMonth() + 1)}-${pad(expiry.getDate())}`;
+}
+
+/** The override a right carries, in the words of the rights panel; `''` when it follows the edition. */
+export function nominatifLabel(nominatif: boolean | null): string {
+  if (nominatif === true) {
+    return $localize`:@@comptes.nominatif.noms:noms affichés`;
+  }
+  if (nominatif === false) {
+    return $localize`:@@comptes.nominatif.effectifs:effectifs seuls`;
+  }
+  return '';
 }
 
 /**
@@ -196,6 +236,11 @@ export function grantErrors(draft: GrantDraft, now: Date): string[] {
       $localize`:@@comptes.error.standsHorsResponsable:Seul un responsable de stand a un périmètre de stands.`,
     );
   }
+  if (draft.role === 'RESPONSABLE_STAND' && !draft.expiryDate) {
+    errors.push(
+      $localize`:@@comptes.error.responsableSansFin:Un droit de responsable de stand expire : donnez-lui une date de fin, après l'édition.`,
+    );
+  }
   if (draft.expiryDate) {
     const expiry = expiryInstant(draft.expiryDate);
     if (expiry === null || new Date(expiry).getTime() <= now.getTime()) {
@@ -212,6 +257,10 @@ export function toGrantRequest(draft: GrantDraft): NouvelleHabilitation {
     editionId: draft.editionId,
     expireLe: draft.expiryDate ? expiryInstant(draft.expiryDate) : null,
     standIds: draft.role === 'RESPONSABLE_STAND' ? [...draft.standIds] : [],
+    nominatif:
+      draft.role !== 'RESPONSABLE_STAND' || draft.nominatif === 'edition'
+        ? null
+        : draft.nominatif === 'noms',
   };
 }
 

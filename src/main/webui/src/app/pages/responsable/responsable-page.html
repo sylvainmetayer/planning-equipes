@@ -1,0 +1,214 @@
+<mat-toolbar class="responsable-toolbar">
+  <app-brand-logo />
+  <span class="responsable-title" i18n="@@responsable.title">Responsable de stand</span>
+  <span class="responsable-spacer"></span>
+  @if (etat() === 'pret') {
+    <a matButton [href]="accountHref">
+      <mat-icon>key</mat-icon>
+      <span i18n="@@responsable.monCompte">Mon compte</span>
+    </a>
+  }
+  @if (etat() !== 'connexion' && etat() !== 'chargement') {
+    <button matButton type="button" (click)="signOut()">
+      <mat-icon>logout</mat-icon>
+      <span i18n="@@responsable.deconnexion">Se déconnecter</span>
+    </button>
+  }
+</mat-toolbar>
+
+<main id="contenu" class="responsable-page" tabindex="-1">
+  @switch (etat()) {
+    @case ('chargement') {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @case ('connexion') {
+      <mat-card appearance="outlined" class="responsable-acces">
+        <mat-card-header>
+          <h2 mat-card-title i18n="@@responsable.connexion.titre">Connectez-vous</h2>
+        </mat-card-header>
+        <mat-card-content>
+          <p i18n="@@responsable.connexion.texte">
+            Cette page montre le planning publié des stands dont vous êtes responsable, une fois
+            connecté avec votre compte.
+          </p>
+        </mat-card-content>
+        <mat-card-actions>
+          <button matButton="filled" type="button" (click)="signIn()">
+            <mat-icon>login</mat-icon>
+            <span i18n="@@responsable.connexion.bouton">Se connecter</span>
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    }
+    @case ('sans-droit') {
+      <mat-card appearance="outlined" class="responsable-acces">
+        <mat-card-header>
+          <h2 mat-card-title i18n="@@responsable.sansDroit.titre">Aucun stand à suivre</h2>
+        </mat-card-header>
+        <mat-card-content>
+          <p i18n="@@responsable.sansDroit.texte">
+            Votre compte n'est (ou n'est plus) responsable d'aucun stand. Si c'est une erreur,
+            demandez à l'organisation de vous accorder ce droit.
+          </p>
+        </mat-card-content>
+      </mat-card>
+    }
+    @case ('erreur') {
+      <app-status-message [text]="erreur()" tone="error" />
+    }
+    @case ('pret') {
+      @if (vue(); as v) {
+        <header class="responsable-entete">
+          <h1>{{ v.editionNom }}</h1>
+          @if (editions().length > 1) {
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label i18n="@@responsable.edition">Édition</mat-label>
+              <mat-select [value]="editionId()" (selectionChange)="open($event.value)">
+                @for (edition of editions(); track edition.editionId) {
+                  <mat-option [value]="edition.editionId">{{ edition.editionNom }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          }
+          @if (v.publieLe) {
+            <p class="responsable-publication" i18n="@@responsable.publieLe">
+              Planning publié le {{ v.publieLe | date: 'd MMMM y, HH:mm' }}.
+            </p>
+          } @else {
+            <app-status-message
+              i18n-text="@@responsable.jamaisPublie"
+              text="Le planning n'est pas encore publié : les créneaux apparaîtront ici à la première publication."
+              tone="info"
+            />
+          }
+          @if (!nomme()) {
+            <p class="responsable-publication" i18n="@@responsable.effectifsSeuls">
+              Tant que le planning peut encore bouger, l'organisation vous montre les effectifs
+              prévus, pas encore les noms.
+            </p>
+          }
+        </header>
+
+        @if (jours().length > 0) {
+          <mat-button-toggle-group
+            class="responsable-jours"
+            name="jour"
+            i18n-aria-label="@@responsable.jours"
+            aria-label="Jour"
+            [value]="jour()"
+            (change)="pickDay($event.value)"
+          >
+            @for (j of jours(); track j) {
+              <mat-button-toggle [value]="j">{{ j | date: 'EEE d MMM' }}</mat-button-toggle>
+            }
+          </mat-button-toggle-group>
+
+          @if (nomme()) {
+            <mat-button-toggle-group
+              class="responsable-onglets"
+              name="onglet"
+              i18n-aria-label="@@responsable.vue"
+              aria-label="Vue"
+              [value]="onglet()"
+              (change)="pickOnglet($event.value)"
+            >
+              <mat-button-toggle value="planning" i18n="@@responsable.onglet.planning"
+                >Mon stand</mat-button-toggle
+              >
+              <mat-button-toggle value="equipe" i18n="@@responsable.onglet.equipe"
+                >Mon équipe</mat-button-toggle
+              >
+            </mat-button-toggle-group>
+          }
+        }
+
+        @if (onglet() === 'planning' || !nomme()) {
+          @for (stand of v.stands; track stand.standId) {
+            <mat-card appearance="outlined" class="responsable-stand">
+              <mat-card-header>
+                <h2 mat-card-title>{{ stand.standNom }}</h2>
+                @if (stand.emplacementNom) {
+                  <mat-card-subtitle>{{ stand.emplacementNom }}</mat-card-subtitle>
+                }
+              </mat-card-header>
+              <mat-card-content>
+                @if (jour(); as j) {
+                  @let vacations = shiftsOn(stand, j);
+                  @if (vacations.length === 0) {
+                    <p class="responsable-vide" i18n="@@responsable.aucunCreneau">
+                      Aucun créneau ce jour-là.
+                    </p>
+                  } @else {
+                    <ul class="responsable-vacations">
+                      @for (vacation of vacations; track vacation.debut + vacation.fin) {
+                        <li [class.responsable-trou]="vacation.vides > 0">
+                          <span class="responsable-heure">{{ windowLabel(vacation.debut, vacation.fin) }}</span>
+                          <span>{{ staffingLabel(vacation) }}</span>
+                          @if (vacation.vides > 0) {
+                            <span class="responsable-alerte" i18n="@@responsable.placesVides"
+                              >{{ vacation.vides }} place(s) à pourvoir</span
+                            >
+                          }
+                          @if (stand.nominatif && vacation.personnes.length > 0) {
+                            <span class="responsable-noms">
+                              @for (personne of vacation.personnes; track $index) {
+                                <span>{{ personne.prenom }} {{ personne.nom }}</span>
+                              }
+                            </span>
+                          }
+                        </li>
+                      }
+                    </ul>
+                  }
+                  <a
+                    matButton
+                    routerLink="/responsable/affichette"
+                    [queryParams]="{ edition: v.editionId, stand: stand.standId, jour: j }"
+                  >
+                    <mat-icon>print</mat-icon>
+                    <span i18n="@@responsable.affichette">Affichette du jour</span>
+                  </a>
+                }
+              </mat-card-content>
+            </mat-card>
+          }
+        } @else {
+          <mat-card appearance="outlined" class="responsable-stand">
+            <mat-card-header>
+              <h2 mat-card-title i18n="@@responsable.equipe.titre">Mon équipe ce jour-là</h2>
+            </mat-card-header>
+            <mat-card-content>
+              @if (jour(); as j) {
+                @if (equipeDuJour().length === 0) {
+                  <p class="responsable-vide" i18n="@@responsable.equipe.vide">
+                    Personne de votre équipe ce jour-là.
+                  </p>
+                } @else {
+                  <ul class="responsable-equipe">
+                    @for (membre of equipeDuJour(); track membre.cle) {
+                      <li>
+                        <strong>{{ membre.prenom }} {{ membre.nom }}</strong>
+                        <ul>
+                          @for (plage of windowsOn(membre, j); track $index) {
+                            <li [class.responsable-ailleurs]="!plage.standNom">
+                              <span class="responsable-heure">{{ windowLabel(plage.debut, plage.fin) }}</span>
+                              @if (plage.standNom) {
+                                <span>{{ plage.standNom }}</span>
+                              } @else {
+                                <span i18n="@@responsable.occupe">Occupé ailleurs</span>
+                              }
+                            </li>
+                          }
+                        </ul>
+                      </li>
+                    }
+                  </ul>
+                }
+              }
+            </mat-card-content>
+          </mat-card>
+        }
+      }
+    }
+  }
+</main>
