@@ -11,6 +11,7 @@ import dev.sylvain.planning.domain.JourneeType;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresQualite;
+import dev.sylvain.planning.domain.ParametresResponsables;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
@@ -828,6 +829,14 @@ public class ReferenceDataService implements ReferenceData {
 
     public ContactOrganisation updateContactOrganisation(ContactOrganisation contact) {
         return parametres.updateContactOrganisation(contact);
+    }
+
+    public ParametresResponsables getParametresResponsables() {
+        return parametres.getParametresResponsables();
+    }
+
+    public ParametresResponsables updateParametresResponsables(ParametresResponsables valeurs) {
+        return parametres.updateParametresResponsables(valeurs);
     }
 
     public ParametresNotifications getParametresNotifications() {

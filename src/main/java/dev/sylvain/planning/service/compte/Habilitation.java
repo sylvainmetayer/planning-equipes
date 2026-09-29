@@ -10,6 +10,10 @@ import java.util.List;
  * @param editionId {@code null} for every edition
  * @param expireLe  {@code null} for no expiry; past it, the right opens nothing
  * @param standIds  the scope of a {@link RoleHabilitation#RESPONSABLE_STAND}
+ * @param nominatif whether a {@link RoleHabilitation#RESPONSABLE_STAND} reads
+ *                  names on its stands: {@code null} follows the edition's
+ *                  setting, {@code true} or {@code false} overrides it for this
+ *                  right alone. Always {@code null} for any other role
  */
 public record Habilitation(
         String id,
@@ -17,6 +21,7 @@ public record Habilitation(
         String editionId,
         Instant expireLe,
         List<String> standIds,
+        Boolean nominatif,
         String creePar,
         Instant creeLe,
         Instant retireeLe) {

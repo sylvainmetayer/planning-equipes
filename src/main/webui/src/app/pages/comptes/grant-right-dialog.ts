@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   resource,
   signal,
@@ -14,6 +15,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { ComptesApi } from '../../core/api/comptes-api';
+import { CreneauxApi } from '../../core/api/creneaux-api';
 import { StandsApi } from '../../core/api/stands-api';
 import { errorMessage, errorPrefix } from '../../core/error-message';
 import { Compte, Edition, RoleHabilitation } from '../../core/models';
@@ -21,7 +23,9 @@ import { toDateKey } from '../../core/date-utils';
 import { StatusMessage } from '../../shared/status-message';
 import {
   GrantDraft,
+  NominatifChoice,
   ROLES,
+  defaultResponsableExpiry,
   grantErrors,
   initialGrantDraft,
   roleLabel,
@@ -102,13 +106,27 @@ export interface GrantRightData {
             }
           </mat-form-field>
           <app-status-message [text]="standsError()" tone="error" />
+
+          <mat-form-field appearance="outline">
+            <mat-label i18n="@@comptes.field.nominatif">Ce que ce responsable lit</mat-label>
+            <mat-select name="nominatif" [ngModel]="draft().nominatif" (ngModelChange)="setNominatif($event)">
+              <mat-option value="edition" i18n="@@comptes.nominatif.optionEdition">Selon le réglage de l'édition</mat-option>
+              <mat-option value="effectifs" i18n="@@comptes.nominatif.optionEffectifs">Effectifs seuls, sans nom</mat-option>
+              <mat-option value="noms" i18n="@@comptes.nominatif.optionNoms">Prénoms et noms</mat-option>
+            </mat-select>
+            <mat-hint i18n="@@comptes.grant.nominatifHint">Jamais d'adresse ni de téléphone. Le réglage de l'édition est dans Paramètres › Édition.</mat-hint>
+          </mat-form-field>
         }
 
         <mat-form-field appearance="outline">
           <mat-label i18n="@@comptes.field.expiry">Valable jusqu'au (inclus)</mat-label>
           <input matInput type="date" name="expiry" [min]="today"
                  [ngModel]="draft().expiryDate" (ngModelChange)="setExpiry($event)" />
-          <mat-hint i18n="@@comptes.grant.expiryHint">Vide : sans date de fin.</mat-hint>
+          @if (draft().role === 'RESPONSABLE_STAND') {
+            <mat-hint i18n="@@comptes.grant.expiryHintResponsable">Obligatoire. Proposé : dernier jour de l'édition + 30 jours.</mat-hint>
+          } @else {
+            <mat-hint i18n="@@comptes.grant.expiryHint">Vide : sans date de fin.</mat-hint>
+          }
         </mat-form-field>
 
         @if (submitted()) {
@@ -134,6 +152,7 @@ export class GrantRightDialog {
   protected readonly data = inject<GrantRightData>(MAT_DIALOG_DATA);
   private readonly comptesApi = inject(ComptesApi);
   private readonly standsApi = inject(StandsApi);
+  private readonly creneauxApi = inject(CreneauxApi);
 
   protected readonly roleOptions = ROLES.map((role) => ({ role, label: roleLabel(role) }));
   /** The date field refuses a past day on its own; `grantErrors` still says it. */
@@ -161,6 +180,39 @@ export class GrantRightDialog {
     return error ? errorPrefix(error) : '';
   });
 
+  /** Whether the date was typed: then the edition's own end no longer moves it. */
+  private readonly expiryTouched = signal(false);
+
+  /** The picked edition's grid, for its last day — read for a stand manager only. */
+  private readonly grid = resource({
+    params: () =>
+      this.draft().role === 'RESPONSABLE_STAND' ? (this.draft().editionId ?? undefined) : undefined,
+    loader: ({ params }) => this.creneauxApi.diagnosticInEdition(params),
+  });
+
+  constructor() {
+    // A stand manager's right must end: offer the edition's last day + 30,
+    // and follow the edition picked until the date is typed by hand.
+    effect(() => {
+      if (
+        this.draft().role !== 'RESPONSABLE_STAND' ||
+        this.expiryTouched() ||
+        this.grid.isLoading()
+      ) {
+        return;
+      }
+      const derniere = this.grid.hasValue() ? this.grid.value().derniereDate : null;
+      const expiryDate = defaultResponsableExpiry(derniere, new Date());
+      if (this.draft().expiryDate !== expiryDate) {
+        this.draft.update((draft) => ({ ...draft, expiryDate }));
+      }
+    });
+  }
+
+  protected setNominatif(nominatif: NominatifChoice): void {
+    this.draft.update((draft) => ({ ...draft, nominatif }));
+  }
+
   protected setRole(role: RoleHabilitation): void {
     this.draft.update((draft) => withRole(draft, role, this.data.currentEditionId));
   }
@@ -174,6 +226,7 @@ export class GrantRightDialog {
   }
 
   protected setExpiry(expiryDate: string | null): void {
+    this.expiryTouched.set(true);
     this.draft.update((draft) => ({ ...draft, expiryDate: expiryDate ?? '' }));
   }
 

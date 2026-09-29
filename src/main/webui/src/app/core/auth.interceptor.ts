@@ -16,8 +16,8 @@ import { catchError } from 'rxjs/operators';
  * every panel fail one after another with nothing saying why; the login page
  * reads `/api/auth/me` and explains instead.</p>
  *
- * <p>The espace animateur, the wall display and the auth endpoints are left
- * alone: a 401 there is an answer the screen itself renders, not a login
+ * <p>The espace animateur, the wall display, the responsable de stand's page
+ * and the auth endpoints are left alone: a 401 there is an answer the screen itself renders, not a login
  * redirect. So is the MCP key reveal, whose 401 means "wrong password" or "sign-in too old" while the
  * session itself is fine — redirecting there threw an administrator out for a
  * typo.</p>
@@ -37,6 +37,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
         request.url.startsWith('/api/') &&
         !request.url.startsWith('/api/espace-animateur/') &&
         !request.url.startsWith('/api/mural/') &&
+        !request.url.startsWith('/api/responsable/') &&
         !request.url.startsWith('/api/auth/') &&
         request.url !== '/api/mcp/cle'
       ) {
