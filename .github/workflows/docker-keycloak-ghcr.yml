@@ -21,6 +21,13 @@ on:
       - '.github/workflows/docker-keycloak-ghcr.yml'
     tags:
       - 'v*'
+  # The image of a pull request, on demand: the `publier-image` label (then
+  # every push to the PR while it stays) publishes `pr-<number>`, the same tag as
+  # the application image (docker-ghcr.yml), so APP_VERSION=pr-<number> names
+  # both. Never from a fork: its token cannot write the registry, and its code
+  # must not be signed by this repository's identity.
+  pull_request:
+    types: [labeled, synchronize, reopened]
   workflow_dispatch:
 
 # `contents: write` only for the SBOM uploaded as a release asset, as in
@@ -43,6 +50,13 @@ env:
 
 jobs:
   docker:
+    # Pull requests publish only when labelled `publier-image`, and only from
+    # this repository. A `labeled` event for another label rebuilds nothing.
+    if: >-
+      github.event_name != 'pull_request'
+      || (github.event.pull_request.head.repo.full_name == github.repository
+          && contains(github.event.pull_request.labels.*.name, 'publier-image')
+          && (github.event.action != 'labeled' || github.event.label.name == 'publier-image'))
     runs-on: ubuntu-latest
     # The extension is a Maven module of a few files and the theme is static:
     # a few minutes. The ceiling is a guard against a hang, not a forecast.
@@ -51,6 +65,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # A pull request's own head, as in docker-ghcr.yml.
+          ref: ${{ github.event.pull_request.head.sha }}
 
       # Same guard as for the application: a tag that is not a strict vX.Y.Z
       # would publish an image tagged only `sha-xxxxxxx`, with nothing matching
@@ -82,6 +99,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=ref,event=branch
+            type=ref,event=pr
             type=sha
           # `:latest` is set by the dedicated step at the end, and only when
           # the pushed tag is the newest stable one — see docker-ghcr.yml.
