@@ -488,6 +488,22 @@ class RealmPlanningStructuralTest {
         });
     }
 
+    /**
+     * Who signed in, who failed, who changed what in the realm: kept, with the
+     * representation of what an administrator changed, for seven days — the
+     * time of a diagnosis, not longer, since they are addresses and IPs.
+     */
+    @Test
+    void userAndAdminEventsAreKeptSevenDays() {
+        int septJours = 7 * 24 * 3600;
+        assertThat(realm.path("eventsEnabled").asBoolean()).isTrue();
+        assertThat(realm.path("eventsExpiration").asInt()).isEqualTo(septJours);
+        assertThat(realm.path("adminEventsEnabled").asBoolean()).isTrue();
+        assertThat(realm.path("adminEventsDetailsEnabled").asBoolean()).isTrue();
+        assertThat(realm.path("attributes").path("adminEventsExpiration").asInt())
+                .isEqualTo(septJours);
+    }
+
     /** Without a default locale Keycloak writes in English — the invitation and the sign-in code alike. */
     @Test
     void mailsAndPagesAreInFrenchByDefault() {
