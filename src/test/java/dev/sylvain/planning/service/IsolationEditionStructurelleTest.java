@@ -114,6 +114,7 @@ class IsolationEditionStructurelleTest {
             "confirmation_planning",
             "parametres_notifications",
             "contact_organisation",
+            "parametres_responsables",
             "notification_planifiee",
             "journal_action",
             "verification_besoin",

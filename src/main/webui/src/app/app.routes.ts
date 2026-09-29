@@ -755,6 +755,24 @@ export const routes: Routes = [
     ],
   },
   {
+    // The responsable de stand (issue #295): outside both shells, opened by a
+    // Keycloak session alone — the right is the account's, not a fiche's, so
+    // no link token. `/api/responsable/*` is what decides what it reads.
+    path: 'responsable',
+    title: () => $localize`:@@route.responsable:Responsable de stand`,
+    loadComponent: () =>
+      import('./pages/responsable/responsable-page').then((m) => m.ResponsablePage),
+  },
+  {
+    // One stand's day on an A4 sheet, to tape on the stand.
+    path: 'responsable/affichette',
+    title: () => $localize`:@@route.responsableAffichette:Affichette du stand`,
+    loadComponent: () =>
+      import('./pages/responsable/responsable-affichette-page').then(
+        (m) => m.ResponsableAffichettePage,
+      ),
+  },
+  {
     // The control room's television (ADR 0053): outside both shells, no
     // session — the token in the URL opens this one read and nothing else.
     path: 'mural/:jeton',

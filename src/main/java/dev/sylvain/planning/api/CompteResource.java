@@ -80,7 +80,7 @@ public class CompteResource {
     @Path("/{id}/habilitations")
     public Compte grant(@PathParam("id") String id, NouvelleHabilitation habilitation) {
         if (habilitation == null) {
-            return comptes.grant(id, null, null, null, null, auteur());
+            return comptes.grant(id, null, null, null, null, null, auteur());
         }
         return comptes.grant(
                 id,
@@ -88,6 +88,7 @@ public class CompteResource {
                 habilitation.editionId(),
                 habilitation.expireLe(),
                 habilitation.standIds(),
+                habilitation.nominatif(),
                 auteur());
     }
 
@@ -110,7 +111,9 @@ public class CompteResource {
      * @param editionId {@code null} for every edition
      * @param expireLe  {@code null} for no expiry
      * @param standIds  the scope of a {@code RESPONSABLE_STAND}, empty otherwise
+     * @param nominatif for a {@code RESPONSABLE_STAND}: {@code null} follows the
+     *                  edition's setting, {@code true}/{@code false} overrides it
      */
     public record NouvelleHabilitation(
-            RoleHabilitation role, String editionId, Instant expireLe, List<String> standIds) {}
+            RoleHabilitation role, String editionId, Instant expireLe, List<String> standIds, Boolean nominatif) {}
 }

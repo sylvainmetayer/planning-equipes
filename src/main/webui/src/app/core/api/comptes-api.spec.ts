@@ -58,8 +58,9 @@ describe('ComptesApi', () => {
     const habilitation: NouvelleHabilitation = {
       role: 'RESPONSABLE_STAND',
       editionId: '2026',
-      expireLe: null,
+      expireLe: '2026-08-31T22:00:00.000Z',
       standIds: ['s1'],
+      nominatif: null,
     };
     api.delete.mockResolvedValue({ id: 'c1' });
 

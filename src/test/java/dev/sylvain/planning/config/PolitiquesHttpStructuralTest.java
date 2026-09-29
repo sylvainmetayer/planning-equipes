@@ -64,6 +64,27 @@ class PolitiquesHttpStructuralTest {
     }
 
     /**
+     * The responsable de stand's reads (#295) sit behind a role of their own,
+     * named — not {@code permit}, not {@code authenticated} — and that role
+     * opens nothing else.
+     */
+    @Test
+    void leResponsableDeStandALaSeuleRouteDeSonRole() throws IOException {
+        Properties proprietes = read();
+        assertThat(proprietes.getProperty("quarkus.http.auth.permission.responsable.paths"))
+                .isEqualTo("/api/responsable/*");
+        assertThat(proprietes.getProperty("quarkus.http.auth.permission.responsable.policy"))
+                .isEqualTo("role-responsable");
+        assertThat(proprietes.getProperty("quarkus.http.auth.policy.role-responsable.roles-allowed"))
+                .isEqualTo("responsable-stand");
+        for (String cle : proprietes.stringPropertyNames()) {
+            if (cle.endsWith(".policy") && "role-responsable".equals(proprietes.getProperty(cle))) {
+                assertThat(cle).isEqualTo("quarkus.http.auth.permission.responsable.policy");
+            }
+        }
+    }
+
+    /**
      * {@code user} is the role Keycloak hands every account. A policy or the
      * espace built on it would open to every future account without anyone
      * granting it — the next role added to the realm would arrive with that

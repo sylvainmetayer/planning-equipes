@@ -256,9 +256,15 @@ complètes. Cinq points sont connus et se consignent :
   porte sur deux systèmes. Un compte n'est jamais supprimé par l'application,
   seulement désactivé : l'effacement effectif est un geste d'administration (du
   realm, et de la ligne `compte`), à documenter dans la procédure d'exercice des
-  droits. Les rôles délégués à venir (RH, responsables de stand, #294 / #295)
-  ajouteront une **catégorie de destinataires** à consigner avant leur
-  ouverture, avec un engagement de confidentialité pour les bénévoles ;
+  droits. Le **responsable de stand** (#295) est une **catégorie de
+  destinataires** à consigner au registre (#220) : un bénévole qui lit, pour
+  les seuls stands de son périmètre, le planning publié — des effectifs par
+  défaut, les prénoms et noms des animateurs (mineurs compris) quand
+  l'organisation l'allume, jamais leurs coordonnées ni leur date de naissance.
+  Son droit **expire** obligatoirement (proposé : fin de l'édition + 30 jours).
+  N'étant lié par aucun contrat de travail, il signe un **engagement de
+  confidentialité** avant l'ouverture de son accès — un livrable documentaire,
+  pas du code. Le rôle RH (#294) ajoutera la sienne à son ouverture ;
 - **les jetons d'accès voyagent dans le chemin de l'URL** : ils atterrissent
   tels quels dans les journaux d'accès du reverse proxy, qui doivent donc être
   purgés ou écrits sans ces chemins (`securite.md`, dernière section) ;
