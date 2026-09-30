@@ -35,18 +35,39 @@ on:
 permissions:
   contents: read
 
-# Le groupe que partage angular-renovate.yml, sans annulation : les deux
-# réécrivent l'inventaire sur la même branche et ne doivent pas se marcher
-# dessus. Une exécution en attente est remplacée par la plus récente.
 concurrency:
-  group: renovate-branche-${{ github.head_ref }}
-  cancel-in-progress: false
+  group: licences-${{ github.head_ref }}
+  cancel-in-progress: true
 
 jobs:
+  # S'efface devant angular-renovate.yml : sur une PR qui monte Angular, celui-ci
+  # régénère l'inventaire dans son correctif, et deux workflows qui poussent sur
+  # la même branche se refusent l'un l'autre sans que rien ne rejoue le perdant.
+  cede:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == 'renovate[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      angular: ${{ steps.angular.outputs.angular }}
+    steps:
+      - name: Checkout the branch of the pull request
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - name: Detect a bump angular-renovate.yml takes over
+        id: angular
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: echo "angular=$(.github/scripts/angular-bump.sh "$BASE_REF")" >> "$GITHUB_OUTPUT"
+
   regenerer:
+    needs: cede
     # Renovate seulement, et depuis ce dépôt : un humain qui bump une
     # dépendance régénère le fichier lui-même, comme la doc le dit.
-    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == 'renovate[bot]'
+    if: needs.cede.outputs.angular != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     # Le build tourne sans jeton d'écriture : voir l'en-tête.

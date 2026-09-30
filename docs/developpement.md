@@ -932,9 +932,11 @@ points qui ne s'y voient pas :
   promet pas un rejeu qu'un commit poussé avec `GITHUB_TOKEN` ne déclencherait
   pas — et relance les
   workflows de la PR, d'après les labels d'aujourd'hui. L'inventaire est
-  régénéré dans le même correctif, et les deux workflows partagent un groupe de
-  concurrence (sans annulation) : le second extrait la branche avec le commit
-  du premier au lieu d'être refusé ;
+  régénéré dans le même correctif, et `licences-renovate.yml` s'efface sur les
+  PR que ce workflow prend en charge (`.github/scripts/angular-bump.sh`, lu par
+  les deux) : deux workflows qui poussent sur la même branche se refusent l'un
+  l'autre, et un groupe de concurrence partagé ne l'empêcherait pas — GitHub ne
+  garde qu'une exécution en attente par groupe, tous workflows confondus ;
 - **sur `main`, une fusion annule les runs de la précédente**
   (`cancel-in-progress`) : seule la dernière fusion d'une rafale est vérifiée
   là, la PR l'ayant déjà été. Les minutes annulées sont perdues, un run

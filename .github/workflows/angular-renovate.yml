@@ -26,6 +26,10 @@
 # L'installation d'ici le recalcule à partir du verrou existant, sans jamais le
 # reconstruire de zéro (ce serait contourner le délai de sept jours de Renovate).
 #
+# licences-renovate.yml réagit au même événement et réécrit le même inventaire :
+# sur une PR que ce workflow prend en charge (`.github/scripts/angular-bump.sh`),
+# il s'efface, et celui-ci régénère l'inventaire dans son correctif.
+#
 # Les pièges de licences-renovate.yml valent ici aussi : une poussée faite avec
 # GITHUB_TOKEN ne déclenche aucun workflow, donc le job relance lui-même ceux
 # de la PR ; la poussée n'est jamais forcée ; `gitIgnoredAuthors` de
@@ -40,12 +44,13 @@ on:
 permissions:
   contents: read
 
-# Le même groupe que licences-renovate.yml, sans annulation : les deux
-# workflows réagissent au même événement et réécrivent le même inventaire, donc
-# l'un attend l'autre et extrait la branche avec le commit de celui qui l'a
-# précédé. Séparés, le second à pousser était refusé sans que rien le rejoue.
+# Une exécution en attente par branche, sans annulation de celle qui tourne :
+# elle peut être au milieu de sa poussée. Pas de groupe partagé avec
+# licences-renovate.yml : GitHub ne garde qu'une exécution en attente par
+# groupe, tous workflows confondus, et l'une des deux aurait pu être annulée
+# sans jamais tourner. C'est licences-renovate.yml qui s'efface devant celui-ci.
 concurrency:
-  group: renovate-branche-${{ github.head_ref }}
+  group: angular-${{ github.head_ref }}
   cancel-in-progress: false
 
 jobs:
@@ -79,28 +84,13 @@ jobs:
         id: head
         run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-      # Le garde de « liée à Angular » : le diff du package.json depuis le
-      # point de départ de la PR (`...`, pas la pointe de la base : une base
-      # qui a avancé ferait passer un bump déjà fusionné pour celui de la PR),
-      # pas le nom de la branche. Et le garde d'idempotence : si la branche
-      # porte déjà le commit de migration, la rejouer réappliquerait des
-      # schematics sur du code déjà migré. Renovate recrée la branche, sans ce
-      # commit, quand il met les dépendances à jour.
+      # Le garde de « liée à Angular » et d'idempotence, dans un script que
+      # licences-renovate.yml lit aussi pour s'effacer : voir son en-tête.
       - name: Detect an Angular bump not migrated yet
         id: angular
         env:
           BASE_REF: ${{ github.base_ref }}
-        run: |
-          git fetch --no-tags origin "$BASE_REF"
-          if git log "origin/$BASE_REF..HEAD" --format=%s | grep -qF 'chore(deps): migrer Angular avec ng update'; then
-            echo "La branche porte déjà la migration : rien à rejouer."
-            echo 'angular=false' >> "$GITHUB_OUTPUT"
-          elif git diff "origin/$BASE_REF...HEAD" -- src/main/webui/package.json | grep -E '^[-+][[:space:]]+"@angular/' >/dev/null; then
-            echo 'angular=true' >> "$GITHUB_OUTPUT"
-          else
-            echo "Aucun paquet @angular/ ne bouge dans package.json : rien à migrer."
-            echo 'angular=false' >> "$GITHUB_OUTPUT"
-          fi
+        run: echo "angular=$(.github/scripts/angular-bump.sh "$BASE_REF")" >> "$GITHUB_OUTPUT"
 
       # Les versions d'avant, lues dans le verrou du point de départ de la PR :
       # le verrou de la branche peut être celui d'avant aussi, si Renovate n'a
@@ -155,8 +145,8 @@ jobs:
           done
 
       # L'inventaire des licences lit le verrou : si celui-ci a bougé, le
-      # contrôle du job `test` échouerait. licences-renovate.yml ne s'en
-      # chargera pas, sa poussée et la nôtre ne se déclenchent pas l'une l'autre.
+      # contrôle du job `test` échouerait. licences-renovate.yml s'efface sur
+      # les PR que ce workflow prend en charge, c'est donc à lui de le faire.
       - name: Set up Java
         if: steps.angular.outputs.angular == 'true'
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
