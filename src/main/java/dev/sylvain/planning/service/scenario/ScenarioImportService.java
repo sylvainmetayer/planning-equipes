@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.scenario;
 
+import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PrereglageConsigne;
 import dev.sylvain.planning.scenario.dto.EditionCibleDto;
@@ -143,7 +144,10 @@ public class ScenarioImportService {
             applyConsignes(sections);
             // Inside the target edition, once its fiches are written: their
             // accounts, and no mail — the invitations wait for the organiser.
-            comptes.provisionMissing(referenceDataService.listAnimateurs());
+            // Every fiche is new to the edition an import writes.
+            List<Animateur> importes = referenceDataService.listAnimateurs();
+            comptes.provisionMissing(
+                    importes, KeycloakUserProvisioning.byAddress(importes).keySet());
         });
     }
 

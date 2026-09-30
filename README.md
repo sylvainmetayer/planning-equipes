@@ -124,6 +124,7 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `OIDC_AUTH_SERVER_URL` | `http://keycloak:8081/realms/planning` | URL du realm, identique vue du navigateur et du conteneur |
 | `OIDC_CLIENT_ID` / `OIDC_CLIENT_SECRET` | `planning-app` / — | Client confidentiel du realm ; en production, un secret d'au moins 32 caractères, sinon le démarrage échoue |
 | `OIDC_MCP_AUDIENCE` | `planning-mcp` | Audience exigée des jetons OAuth2 présentés à `/mcp` |
+| `OIDC_SESSION_AGE_EXTENSION` | `30M` | Durée pendant laquelle une session reste renouvelable après l'expiration de son jeton d'identité (à aligner sur l'inactivité SSO du realm) |
 | `OIDC_FORCE_HTTPS` | `false` | Fabriquer les URL de redirection et de métadonnées en `https` derrière un proxy qui termine le TLS |
 | `OIDC_PROVISIONING_ENABLED` | `false` | Créer le compte Keycloak d'un animateur à l'enregistrement de sa fiche (et le désactiver quand plus aucune fiche ne porte son adresse) — variables `OIDC_PROVISIONING_*` dans [`keycloak.md`](docs/keycloak.md) |
 | `ADMIN_SECOURS_ENABLED` | `false` (`true` sous `quarkus:dev`) | Ouvre la porte de secours : le formulaire du compte `admin`, pour le jour où Keycloak ne répond plus. À refermer après l'incident |
