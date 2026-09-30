@@ -120,13 +120,17 @@ jobs:
     # Renovate n'y passe que sous le label `timefold` ou `quarkus` — la règle
     # de scenario-tests.yml, pour la même raison : un bump de sentry ne change
     # rien à ce que cette spec traverse, et coûterait une heure pour le dire.
+    # S'y ajoute `playwright` : un nouveau navigateur change, lui, ce que ces
+    # specs traversent (l'horloge, les téléchargements de PDF), et c'est avant
+    # la fusion qu'il faut l'apprendre, pas au cron du lendemain.
     if: >-
       (github.event_name != 'pull_request'
         || github.event.pull_request.head.repo.full_name == github.repository)
       && (github.event_name != 'pull_request'
         || github.event.pull_request.user.login != 'renovate[bot]'
         || contains(github.event.pull_request.labels.*.name, 'timefold')
-        || contains(github.event.pull_request.labels.*.name, 'quarkus'))
+        || contains(github.event.pull_request.labels.*.name, 'quarkus')
+        || contains(github.event.pull_request.labels.*.name, 'playwright'))
     uses: ./.github/workflows/e2e-suite.yml
     with:
       playwright-args: --grep @lourd

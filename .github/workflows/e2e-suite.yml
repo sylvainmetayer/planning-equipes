@@ -42,11 +42,13 @@ jobs:
     # déjà. Sans elles, le binaire se télécharge très bien puis refuse de
     # démarrer (`libglib-2.0.so.0: cannot open shared object file`).
     #
-    # La balise doit suivre la version de `@playwright/test` dans
-    # `src/main/webui/package.json` : une dérive redonne un navigateur que
-    # l'image n'outille pas.
+    # La balise doit suivre, au correctif près, la version de
+    # `@playwright/test` verrouillée dans `src/main/webui/package-lock.json` :
+    # une dérive redonne un navigateur que l'image n'outille pas.
+    # `ToolchainPinsStructuralTest` le vérifie, et Renovate lit cette balise
+    # comme le paquet npm lui-même, pour les monter dans la même PR.
     container:
-      image: mcr.microsoft.com/playwright:v1.62.1-noble
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
       # Chromium plante sur le /dev/shm par défaut d'un conteneur (64 Mo).
       options: --ipc=host
 
