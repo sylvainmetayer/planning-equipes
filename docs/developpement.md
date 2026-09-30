@@ -907,6 +907,24 @@ points qui ne s'y voient pas :
   de déclencher repose le commit. `gitIgnoredAuthors` dans `renovate.json`
   évite que Renovate tienne la branche pour « modifiée » et cesse de la
   rebaser ; une rebase la recrée sans ce commit, que le job repose aussitôt ;
+- **sur une PR Renovate qui touche un `@angular/…` du `package.json`,
+  `angular-renovate.yml` joue les migrations `ng update`** et les commite sur
+  la branche. Renovate ne lance pas les schematics d'Angular, et son
+  `postUpgradeTasks` n'existe qu'auto-hébergé. La PR est reconnue au diff du
+  `package.json`, pas au nom de la branche : pour les mineures et les
+  correctifs, le groupe « frontend dependencies » supplante le groupe
+  « angular ». Le job installe la version proposée, puis lance
+  `ng update <paquet> --migrate-only --from <verrou de la base> --to <version
+  installée>` pour `core`, `cli`, `cdk` et `material` — `--migrate-only`, car
+  la cible est déjà installée et `ng update` répondrait « déjà à jour ». Si
+  Renovate n'a pas pu écrire le verrou (« Artifact file update failure »), ou
+  si `npm install` bute dessus, le verrou est reconstruit de zéro : le diff est
+  large mais relisible dans la PR. Même découpage en deux jobs que pour les
+  licences : le premier, sans droit d'écriture, exécute le code de la PR et
+  rend un correctif ; le second vérifie qu'il ne touche que `src/main/webui/`
+  et l'inventaire des licences, l'applique, pousse sans forcer et relance les
+  workflows de la PR. L'inventaire est régénéré dans le même correctif, car
+  deux poussées faites avec `GITHUB_TOKEN` ne se déclenchent pas l'une l'autre ;
 - **sur `main`, une fusion annule les runs de la précédente**
   (`cancel-in-progress`) : seule la dernière fusion d'une rafale est vérifiée
   là, la PR l'ayant déjà été. Les minutes annulées sont perdues, un run
