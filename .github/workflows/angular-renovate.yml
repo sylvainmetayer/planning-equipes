@@ -23,9 +23,8 @@
 # Ce que le premier job règle au passage : quand Renovate n'a pas pu écrire le
 # verrou (« Artifact file update failure », `npm error Cannot read properties
 # of null (reading 'edgesOut')`), `package.json` est bumpé et le verrou non.
-# L'installation d'ici le recalcule ; si npm bute sur le même défaut, le verrou
-# est reconstruit de zéro — un diff large, mais relisible dans la PR, plutôt
-# qu'une PR qu'il faut réparer à la main.
+# L'installation d'ici le recalcule à partir du verrou existant, sans jamais le
+# reconstruire de zéro (ce serait contourner le délai de sept jours de Renovate).
 #
 # Les pièges de licences-renovate.yml valent ici aussi : une poussée faite avec
 # GITHUB_TOKEN ne déclenche aucun workflow, donc le job relance lui-même ceux
@@ -41,9 +40,13 @@ on:
 permissions:
   contents: read
 
+# Le même groupe que licences-renovate.yml, sans annulation : les deux
+# workflows réagissent au même événement et réécrivent le même inventaire, donc
+# l'un attend l'autre et extrait la branche avec le commit de celui qui l'a
+# précédé. Séparés, le second à pousser était refusé sans que rien le rejoue.
 concurrency:
-  group: angular-${{ github.head_ref }}
-  cancel-in-progress: true
+  group: renovate-branche-${{ github.head_ref }}
+  cancel-in-progress: false
 
 jobs:
   migrer:
@@ -57,38 +60,57 @@ jobs:
       contents: read
     outputs:
       change: ${{ steps.diff.outputs.change }}
+      head: ${{ steps.head.outputs.sha }}
 
     steps:
       - name: Checkout the branch of the pull request
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # La branche elle-même, pas le commit de fusion que `pull_request`
-          # extrait par défaut : c'est là que le commit doit aller.
+          # extrait par défaut : c'est là que le commit doit aller. Tout
+          # l'historique : le point de départ de la PR se calcule avec
+          # `merge-base`, pas avec la pointe de la base.
           ref: ${{ github.head_ref }}
+          fetch-depth: 0
 
-      # Le garde de « liée à Angular » : le diff du package.json contre la
-      # base, pas le nom de la branche.
-      - name: Detect an Angular bump
+      # La tête sur laquelle le correctif est construit : le second job
+      # l'extrait telle quelle, et la poussée échoue si la branche a bougé.
+      - name: Record the head the patch is built on
+        id: head
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      # Le garde de « liée à Angular » : le diff du package.json depuis le
+      # point de départ de la PR (`...`, pas la pointe de la base : une base
+      # qui a avancé ferait passer un bump déjà fusionné pour celui de la PR),
+      # pas le nom de la branche. Et le garde d'idempotence : si la branche
+      # porte déjà le commit de migration, la rejouer réappliquerait des
+      # schematics sur du code déjà migré. Renovate recrée la branche, sans ce
+      # commit, quand il met les dépendances à jour.
+      - name: Detect an Angular bump not migrated yet
         id: angular
         env:
           BASE_REF: ${{ github.base_ref }}
         run: |
-          git fetch --no-tags --depth=1 origin "$BASE_REF"
-          if git diff "origin/$BASE_REF" -- src/main/webui/package.json | grep -E '^[-+][[:space:]]+"@angular/' >/dev/null; then
+          git fetch --no-tags origin "$BASE_REF"
+          if git log "origin/$BASE_REF..HEAD" --format=%s | grep -qF 'chore(deps): migrer Angular avec ng update'; then
+            echo "La branche porte déjà la migration : rien à rejouer."
+            echo 'angular=false' >> "$GITHUB_OUTPUT"
+          elif git diff "origin/$BASE_REF...HEAD" -- src/main/webui/package.json | grep -E '^[-+][[:space:]]+"@angular/' >/dev/null; then
             echo 'angular=true' >> "$GITHUB_OUTPUT"
           else
             echo "Aucun paquet @angular/ ne bouge dans package.json : rien à migrer."
             echo 'angular=false' >> "$GITHUB_OUTPUT"
           fi
 
-      # Les versions d'avant, lues dans le verrou de la base : le verrou de la
-      # branche peut être celui d'avant aussi, si Renovate n'a pas pu l'écrire.
-      - name: Read the versions the base has locked
+      # Les versions d'avant, lues dans le verrou du point de départ de la PR :
+      # le verrou de la branche peut être celui d'avant aussi, si Renovate n'a
+      # pas pu l'écrire.
+      - name: Read the versions the pull request started from
         if: steps.angular.outputs.angular == 'true'
         env:
           BASE_REF: ${{ github.base_ref }}
         run: |
-          git show "origin/$BASE_REF:src/main/webui/package-lock.json" > "$RUNNER_TEMP/base-lock.json"
+          git show "$(git merge-base "origin/$BASE_REF" HEAD):src/main/webui/package-lock.json" > "$RUNNER_TEMP/base-lock.json"
 
       - name: Set up Node
         if: steps.angular.outputs.angular == 'true'
@@ -98,13 +120,18 @@ jobs:
 
       # `--ignore-scripts` : les scripts d'installation des paquets de la PR ne
       # sont pas ce dont `ng update` a besoin, et personne ne les a relus.
+      # Le verrou n'est jamais reconstruit de zéro : cela ferait remonter chaque
+      # dépendance à la dernière version de sa plage, celles que Renovate retient
+      # sept jours (`minimumReleaseAge`) comprises. Au pire, une seconde tentative
+      # sur un `node_modules` propre, qui suffit souvent au défaut d'npm
+      # `Cannot read properties of null (reading 'edgesOut')`.
       - name: Install the dependencies the pull request proposes
         if: steps.angular.outputs.angular == 'true'
         working-directory: src/main/webui
         run: |
           if ! npm install --ignore-scripts --no-audit --no-fund; then
-            echo "::warning::npm install a échoué sur le verrou de la branche : le verrou est reconstruit de zéro."
-            rm -rf node_modules package-lock.json
+            echo "::warning::npm install a échoué : seconde tentative sur un node_modules propre."
+            rm -rf node_modules
             npm install --ignore-scripts --no-audit --no-fund
           fi
 
@@ -153,7 +180,7 @@ jobs:
             echo "Les dépendances et le code sont déjà ceux d'Angular à jour."
             echo 'change=false' >> "$GITHUB_OUTPUT"
           else
-            git diff --cached --binary > "$RUNNER_TEMP/migration.patch"
+            git diff --cached --binary --no-renames > "$RUNNER_TEMP/migration.patch"
             git diff --cached --stat
             echo 'change=true' >> "$GITHUB_OUTPUT"
           fi
@@ -177,10 +204,13 @@ jobs:
       actions: write
 
     steps:
-      - name: Checkout the branch of the pull request
+      # La tête exacte sur laquelle le correctif a été construit, pas la pointe
+      # actuelle de la branche : si elle a bougé, la poussée est refusée plutôt
+      # que d'appliquer un correctif à un arbre qui n'est pas le sien.
+      - name: Checkout the head the patch was built on
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.head_ref }}
+          ref: ${{ needs.migrer.outputs.head }}
 
       - name: Retrieve the patch
         env:
@@ -193,7 +223,9 @@ jobs:
       # chemin hors de cette liste — `.github/`, un script, le pom — l'arrête.
       - name: Refuse a patch that leaves the frontend
         run: |
-          git apply --numstat "$RUNNER_TEMP/migration/migration.patch" | cut -f3 > "$RUNNER_TEMP/paths.txt"
+          # `-z` : sans lui, git cite les chemins non ASCII entre guillemets et
+          # le filtre ci-dessous refuserait un correctif légitime.
+          git apply --numstat -z "$RUNNER_TEMP/migration/migration.patch" | tr '\0' '\n' | cut -f3- | grep -v '^$' > "$RUNNER_TEMP/paths.txt"
           if grep -vE '^(src/main/webui/|docs/licences-tierces\.md$)' "$RUNNER_TEMP/paths.txt" | grep -q .; then
             echo "::error::Le correctif touche des fichiers hors de src/main/webui/ et de l'inventaire :"
             grep -vE '^(src/main/webui/|docs/licences-tierces\.md$)' "$RUNNER_TEMP/paths.txt"
@@ -208,22 +240,30 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           BRANCH: ${{ github.head_ref }}
-          SUPERSEDED_SHA: ${{ github.event.pull_request.head.sha }}
-          SOLVER_BUMP: ${{ contains(github.event.pull_request.labels.*.name, 'timefold') || contains(github.event.pull_request.labels.*.name, 'quarkus') }}
-          PLAYWRIGHT_BUMP: ${{ contains(github.event.pull_request.labels.*.name, 'playwright') }}
+          PR: ${{ github.event.pull_request.number }}
         run: |
+          # La tête que ce correctif remplace, et les labels d'aujourd'hui : la
+          # charge utile de l'événement peut précéder l'ajout des labels par
+          # Renovate, et le cycle annuler / relancer doit voir la même chose.
+          SUPERSEDED_SHA="$(git rev-parse HEAD)"
+          labels="$(gh pr view "$PR" --json labels --jq '.labels[].name')"
+          SOLVER_BUMP=false; PLAYWRIGHT_BUMP=false
+          if grep -qxE 'timefold|quarkus' <<<"$labels"; then SOLVER_BUMP=true; fi
+          if grep -qx 'playwright' <<<"$labels"; then PLAYWRIGHT_BUMP=true; fi
+
           git apply --index "$RUNNER_TEMP/migration/migration.patch"
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m "chore(deps): migrer Angular avec ng update"
 
-          # Une poussée simple, jamais forcée : si Renovate a rebasé la branche
-          # pendant la migration, le refus est la bonne issue. Ce run s'arrête
-          # alors proprement, et celui que la rebase vient de déclencher
-          # rejouera la migration sur la nouvelle tête.
+          # Une poussée simple, jamais forcée : si la branche a bougé depuis la
+          # tête du correctif, le refus est la bonne issue, mais pas un succès.
+          # Une rebase de Renovate relance ce workflow d'elle-même ; un commit
+          # poussé avec GITHUB_TOKEN, non — d'où l'échec franc plutôt qu'un
+          # avertissement qui promettrait un rejeu.
           if ! git push origin "HEAD:$BRANCH"; then
-            echo "::warning::Poussée refusée : $BRANCH a bougé pendant la migration (rebase Renovate, ou licences-renovate.yml). Relancer ce workflow si la migration manque encore."
-            exit 0
+            echo "::error::Poussée refusée : $BRANCH a bougé pendant la migration. Relancer ce workflow si une rebase de Renovate ne l'a pas fait."
+            exit 1
           fi
 
           # Ce qui tournait encore sur le commit remplacé ne prouve plus rien.

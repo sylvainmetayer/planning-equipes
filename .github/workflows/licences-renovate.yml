@@ -35,9 +35,12 @@ on:
 permissions:
   contents: read
 
+# Le groupe que partage angular-renovate.yml, sans annulation : les deux
+# réécrivent l'inventaire sur la même branche et ne doivent pas se marcher
+# dessus. Une exécution en attente est remplacée par la plus récente.
 concurrency:
-  group: licences-${{ github.head_ref }}
-  cancel-in-progress: true
+  group: renovate-branche-${{ github.head_ref }}
+  cancel-in-progress: false
 
 jobs:
   regenerer:

@@ -916,15 +916,25 @@ points qui ne s'y voient pas :
   « angular ». Le job installe la version proposée, puis lance
   `ng update <paquet> --migrate-only --from <verrou de la base> --to <version
   installée>` pour `core`, `cli`, `cdk` et `material` — `--migrate-only`, car
-  la cible est déjà installée et `ng update` répondrait « déjà à jour ». Si
-  Renovate n'a pas pu écrire le verrou (« Artifact file update failure »), ou
-  si `npm install` bute dessus, le verrou est reconstruit de zéro : le diff est
-  large mais relisible dans la PR. Même découpage en deux jobs que pour les
+  la cible est déjà installée et `ng update` répondrait « déjà à jour ». Les
+  versions de départ sont lues dans le verrou du point de départ de la PR
+  (`merge-base`), pas de la pointe de la base. Si Renovate n'a pas pu écrire le
+  verrou (« Artifact file update failure »), il est recalculé à partir de
+  l'existant, avec une seconde tentative sur un `node_modules` propre ; il n'est
+  jamais reconstruit de zéro, ce qui contournerait le délai de sept jours de
+  Renovate. Le workflow ne rejoue pas une migration déjà commitée sur la
+  branche (Renovate recrée la branche, sans ce commit, quand il met les
+  dépendances à jour). Même découpage en deux jobs que pour les
   licences : le premier, sans droit d'écriture, exécute le code de la PR et
-  rend un correctif ; le second vérifie qu'il ne touche que `src/main/webui/`
-  et l'inventaire des licences, l'applique, pousse sans forcer et relance les
-  workflows de la PR. L'inventaire est régénéré dans le même correctif, car
-  deux poussées faites avec `GITHUB_TOKEN` ne se déclenchent pas l'une l'autre ;
+  rend un correctif ; le second l'extrait à la tête exacte où il a été construit,
+  vérifie qu'il ne touche que `src/main/webui/` et l'inventaire des licences,
+  l'applique, pousse sans forcer — un refus fait échouer le job, il ne
+  promet pas un rejeu qu'un commit poussé avec `GITHUB_TOKEN` ne déclencherait
+  pas — et relance les
+  workflows de la PR, d'après les labels d'aujourd'hui. L'inventaire est
+  régénéré dans le même correctif, et les deux workflows partagent un groupe de
+  concurrence (sans annulation) : le second extrait la branche avec le commit
+  du premier au lieu d'être refusé ;
 - **sur `main`, une fusion annule les runs de la précédente**
   (`cancel-in-progress`) : seule la dernière fusion d'une rafale est vérifiée
   là, la PR l'ayant déjà été. Les minutes annulées sont perdues, un run
