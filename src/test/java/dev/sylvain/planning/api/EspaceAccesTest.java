@@ -65,6 +65,16 @@ class EspaceAccesTest {
         persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno), List.of(poste)));
         donnerEmail("ACCES-A", EMAIL_ALICE);
         donnerEmail("ACCES-B", null);
+        // The account outlives clearDatabase(), bound to the subject of
+        // whichever run signed it in first. Detached the way an administrator
+        // would (deactivate, reactivate), so every test starts from a sign-in
+        // that may bind it.
+        comptes.list().stream()
+                .filter(compte -> compte.email().equals(EMAIL_ALICE))
+                .forEach(compte -> {
+                    comptes.deactivate(compte.id());
+                    comptes.reactivate(compte.id());
+                });
     }
 
     /** The whole espace — downloads included — answers 401 without a session. */
@@ -163,7 +173,7 @@ class EspaceAccesTest {
      */
     @Test
     void leRoleOrdinaireUserNOuvrePasLEspace() {
-        String jeton = OidcJetons.jeton("alice", List.of("user"), "planning-app", EMAIL_ALICE, true);
+        String jeton = OidcJetons.jeton(EMAIL_ALICE, List.of("user"), "planning-app", EMAIL_ALICE, true);
         given().header(EspaceSessions.EN_TETE, "Bearer " + jeton)
                 .when()
                 .get("/api/espace-animateur/" + tokenOf("ACCES-A"))

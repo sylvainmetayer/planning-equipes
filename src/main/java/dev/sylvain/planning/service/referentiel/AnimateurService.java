@@ -14,10 +14,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+import org.jboss.logging.Logger;
 
 /** CRUD of the animateur referential, plus the espace access token they are reached by. */
 @ApplicationScoped
 public class AnimateurService {
+
+    private static final Logger LOG = Logger.getLogger(AnimateurService.class);
 
     private final AnimateurRepository repository;
 
@@ -130,7 +133,17 @@ public class AnimateurService {
         // After the save, so a stale read (#362) refused above provisions
         // nothing. The address the fiche left is retired like a deleted
         // fiche's: kept only while another fiche still carries it.
-        comptes.synchroniser(animateur, adresseChangee);
+        //
+        // A realm that refuses does not fail the save, which is committed:
+        // answering 409 « réessayez » would send the organiser back with the
+        // version they read, which the stale-write check then refuses. The
+        // account left missing counts as « à inviter », and the invitation
+        // button of the Animateurs screen creates it.
+        try {
+            comptes.synchroniser(animateur, adresseChangee);
+        } catch (BusinessError.Conflict e) {
+            LOG.warnf("Fiche %s saved without its Keycloak account: %s", id, e.getMessage());
+        }
         if (adresseChangee) {
             comptes.retirer(ancienneAdresse);
         }

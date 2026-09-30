@@ -15,6 +15,7 @@ import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * CRUD over the editions themselves — create "Année 2026", duplicate "Année
@@ -120,7 +121,8 @@ public class EditionService {
         if (avecAnimateurs) {
             // Last year's people mostly have their account already; the ones
             // who do not get it now, without a mail (docs/keycloak.md).
-            editionContext.executeIn(cree.getId(), () -> comptes.provisionMissing(animateurs.listAnimateurs()));
+            editionContext.executeIn(
+                    cree.getId(), () -> comptes.provisionMissing(animateurs.listAnimateurs(), Set.of()));
         }
         return cree;
     }

@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.service.keycloak.KeycloakUserProvisioning.Situation;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.keycloak.representations.idm.UserRepresentation;
 
@@ -40,11 +41,22 @@ class KeycloakUserProvisioningTest {
         assertThat(KeycloakUserProvisioning.awaitsInvitation(Situation.PRET)).isFalse();
     }
 
-    /** An account an administrator closed is never reopened, nor mailed, by a bulk pass. */
+    /**
+     * A disabled account is never mailed by a bulk pass, and reopened only for
+     * an address the write just brought into the edition — the person whose
+     * last fiche had gone, coming back. One the edition already had keeps its
+     * account as an administrator left it.
+     */
     @Test
-    void aDisabledAccountIsLeftAlone() {
+    void aDisabledAccountIsReopenedOnlyForAnAddressNewToTheEdition() {
         assertThat(KeycloakUserProvisioning.situation(compte(false, false))).isEqualTo(Situation.DESACTIVE);
         assertThat(KeycloakUserProvisioning.awaitsInvitation(Situation.DESACTIVE))
+                .isFalse();
+        assertThat(KeycloakUserProvisioning.reopens(Situation.DESACTIVE, "lea@example.org", Set.of("lea@example.org")))
+                .isTrue();
+        assertThat(KeycloakUserProvisioning.reopens(Situation.DESACTIVE, "lea@example.org", Set.of()))
+                .isFalse();
+        assertThat(KeycloakUserProvisioning.reopens(Situation.PRET, "lea@example.org", Set.of("lea@example.org")))
                 .isFalse();
     }
 

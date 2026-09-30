@@ -82,9 +82,18 @@ Un administrateur en fait un autre depuis l'écran **Comptes et droits**
 compte de service pose le rôle de realm `admin` — dans le realm et non dans la
 base, puisque c'est sur ce rôle que le flow exige le TOTP —, crée et invite le
 compte s'il manque, et la prochaine connexion impose de configurer le second
-facteur. Sans provisioning, la route répond `409` : le rôle se donne alors à la
+facteur. Un compte existant voit ses sessions Keycloak fermées au même moment :
+sans cela, une personne déjà connectée (par code, comme animateur) repasserait
+par le cookie SSO, qui saute les formulaires — et le TOTP avec eux. Sans provisioning, la route répond `409` : le rôle se donne alors à la
 console, ou par le playbook. Le retirer : désactiver le compte dans
 l'application (effet immédiat), ou retirer le rôle à la console.
+
+Un compte de l'application est lié au `sub` Keycloak de sa première connexion.
+Si le realm donne ensuite son adresse à **une autre** identité (compte supprimé
+puis recréé, adresse réattribuée), la nouvelle venue n'hérite de rien : elle se
+connecte sans aucun rôle, et l'application le journalise. Désactiver puis
+réactiver le compte dans **Comptes et droits** le détache ; la prochaine
+connexion vérifiée avec cette adresse le rattache.
 
 ### `user` n'ouvre rien, et c'est le point
 
@@ -332,15 +341,18 @@ d'autre.
 
 | Événement sur la fiche | Effet dans le realm |
 | --- | --- |
-| Création | Compte créé s'il n'existe pas (clé : l'adresse), adresse vérifiée, rôle `animateur`, invitation envoyée par Keycloak (en français, lien valable 48 h) — aucun mot de passe, passkey facultative |
-| Import CSV, import de scénario, duplication d'une édition | Comptes manquants créés, **sans aucun mail** : non vérifiés, donc « à inviter ». Un échec de Keycloak n'annule pas l'import, il est journalisé |
+| Création | Compte créé s'il n'existe pas (clé : l'adresse), adresse vérifiée, rôle `animateur`, **puis** invitation envoyée par Keycloak (en français, lien valable 48 h) — aucun mot de passe, passkey facultative. Un rôle refusé reprend le compte tout juste créé : ni fiche, ni compte, ni invitation. Un compte désactivé parce que la dernière fiche de la personne avait été supprimée est **rouvert** |
+| Import CSV, import de scénario, duplication d'une édition | Comptes manquants créés, **sans aucun mail** : non vérifiés, donc « à inviter ». Un compte désactivé est rouvert pour une adresse que l'édition n'avait pas encore (la personne revient) ; un import CSV qui remplace les animateurs désactive les comptes des fiches retirées, comme une suppression. Un échec de Keycloak n'annule pas l'import, il est journalisé |
 | « Envoyer les invitations » (écran Animateurs) | Chaque personne de l'édition jamais invitée reçoit son invitation, son compte créé s'il manquait, puis compte comme invitée : un second clic n'écrit à personne deux fois |
 | Modification | Compte créé s'il manque (une fiche qui gagne une adresse, une fiche d'avant le provisioning), prénom et nom alignés. Un compte désactivé à la console le reste |
 | Adresse changée | Le compte de la **nouvelle** adresse est retrouvé ou créé ; l'ancien n'est pas renommé — il appartient peut-être à quelqu'un d'autre |
 | Suppression | Compte **désactivé**, et seulement si plus aucune fiche, dans aucune édition, ne porte l'adresse. Jamais supprimé |
 
-Créer ou modifier une fiche **échoue** si le compte ne peut pas être écrit : dans
-ce mode, le compte *est* l'accès. Supprimer une fiche **n'échoue jamais**
+Créer une fiche **échoue** si le compte ne peut pas être écrit : dans ce mode, le
+compte *est* l'accès. La **modifier** n'échoue pas : la fiche est déjà
+enregistrée, et un « réessayez » buterait sur le contrôle d'écriture
+concurrente ; le compte manquant compte alors comme « à inviter », et le bouton
+d'invitation le crée. Supprimer une fiche **n'échoue jamais**
 là-dessus : la fiche est partie de toute façon, et un compte resté actif n'ouvre
 rien par lui-même. `OIDC_PROVISIONING_SEND_INVITATION=false` crée une saison
 entière de comptes sans envoyer 150 invitations d'un coup ; le bouton « Envoyer
@@ -602,6 +614,7 @@ playbook.
 | `OIDC_ENABLED` | `true` par défaut. `false` seulement pour une instance dépannée par le compte de secours |
 | `OIDC_AUTH_SERVER_URL` | `https://sso.exemple.org/realms/planning` — l'URL **publique** |
 | `OIDC_CLIENT_ID` / `OIDC_CLIENT_SECRET` | Le client confidentiel `planning-app` ; secret ≥ 32 caractères |
+| `OIDC_SESSION_AGE_EXTENSION` | `30M` par défaut : la session de l'application se renouvelle par le jeton de rafraîchissement tant que la session SSO du realm vit ; à aligner sur son inactivité (`ssoSessionIdleTimeout`) |
 | `OIDC_FORCE_HTTPS` | `true` derrière un proxy qui termine TLS : sans elle, les URL de redirection et les métadonnées MCP sont annoncées en `http` |
 | `OIDC_POST_LOGOUT_PATH` | Où Keycloak renvoie après déconnexion (défaut `/login`) |
 | `OIDC_ANIMATEUR_ROLE` | Rôle qui ouvre l'espace (défaut `animateur`). Jamais `user` |

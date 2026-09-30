@@ -131,6 +131,33 @@ class RolesKeycloakTest {
         given().when().get("/api/auth/me").then().body("authentifie", equalTo(false));
     }
 
+    /**
+     * The realm handed an address to another identity (the first holder
+     * renamed or deleted, a new user created with it): the newcomer does not
+     * inherit the account and its rights. Deactivating then reactivating it
+     * detaches it, and the next verified sign-in binds it again.
+     */
+    @Test
+    void uneAdresseRepriseParUnAutreSujetNHeritePasDuCompte() {
+        String email = "roles-reprise-" + UUID.randomUUID() + "@example.org";
+        String premier = "sub-" + UUID.randomUUID();
+        Compte compte = comptes.signIn(email, "Premier", premier);
+        comptes.grant(compte.id(), RoleHabilitation.RH, null, null, List.of(), "test");
+
+        Compte etranger = comptes.signIn(email, "Second", "sub-" + UUID.randomUUID());
+        org.assertj.core.api.Assertions.assertThat(etranger.actif()).isFalse();
+        org.assertj.core.api.Assertions.assertThat(etranger.habilitations()).isEmpty();
+        org.assertj.core.api.Assertions.assertThat(
+                        comptes.signIn(email, "Premier", premier).habilitations())
+                .hasSize(1);
+
+        comptes.deactivate(compte.id());
+        comptes.reactivate(compte.id());
+        Compte rattache = comptes.signIn(email, "Second", "sub-nouveau-" + UUID.randomUUID());
+        org.assertj.core.api.Assertions.assertThat(rattache.id()).isEqualTo(compte.id());
+        org.assertj.core.api.Assertions.assertThat(rattache.actif()).isTrue();
+    }
+
     /** The kill switch: a deactivated account keeps its name and loses every role, realm roles included. */
     @Test
     void unCompteDesactiveNOuvrePlusLApiMalgreLeRealm() {

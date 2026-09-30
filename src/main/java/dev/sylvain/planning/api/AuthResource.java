@@ -153,6 +153,13 @@ public class AuthResource {
                 .build();
     }
 
+    /** The realm's end-session endpoint, back to {@code retour} — a URI the client registers. */
+    URI endSession(URI retour) {
+        return URI.create(realm.replaceAll("/+$", "")
+                + "/protocol/openid-connect/logout?client_id=" + URLEncoder.encode(clientId, StandardCharsets.UTF_8)
+                + "&post_logout_redirect_uri=" + URLEncoder.encode(retour.toString(), StandardCharsets.UTF_8));
+    }
+
     /** The console's sign-in page, naming this application as the way back to {@code retour}. */
     URI accountPage(URI retour) {
         return URI.create(realm.replaceAll("/+$", "")
@@ -207,6 +214,15 @@ public class AuthResource {
      * Keycloak session too ({@code quarkus.oidc.logout.path}), which the
      * frontend navigates to — dropping a local cookie alone would leave the
      * identity provider ready to sign the visitor straight back in.</p>
+     *
+     * <p>When this application's own session has already lapsed — the
+     * Keycloak one outlives it —, the request arrives anonymous and that
+     * route would first ask to sign in. The answer then names the realm's
+     * end-session endpoint itself: on a shared computer, the next person's
+     * « Se connecter » must not find the previous one still signed in at
+     * Keycloak. Keycloak asks for a confirmation without an ID token hint,
+     * which is the price of ending a session nobody here holds a token for
+     * any more.</p>
      */
     @POST
     @Path("/logout")
@@ -218,7 +234,7 @@ public class AuthResource {
             // and `npm run api-types-check` would have no contract to hold the
             // frontend's model against.
             content = @Content(schema = @Schema(implementation = Deconnexion.class)))
-    public Response logout() {
+    public Response logout(@Context UriInfo uriInfo) {
         NewCookie expiration = new NewCookie.Builder(COOKIE_SESSION)
                 .value("")
                 .path("/")
@@ -226,9 +242,16 @@ public class AuthResource {
                 .httpOnly(true)
                 .build();
         boolean sessionKeycloak = !identity.isAnonymous() && identity.getPrincipal() instanceof JsonWebToken;
-        return Response.ok(new Deconnexion(sessionKeycloak ? "/api/auth/oidc/logout" : null))
-                .cookie(expiration)
-                .build();
+        String destination;
+        if (sessionKeycloak) {
+            destination = "/api/auth/oidc/logout";
+        } else if (identity.isAnonymous() && oidc.enabled()) {
+            destination = endSession(target(uriInfo.getBaseUri(), "/login")).toString();
+        } else {
+            // The break-glass form session: the cookie expired above is all of it.
+            destination = null;
+        }
+        return Response.ok(new Deconnexion(destination)).cookie(expiration).build();
     }
 
     /**
