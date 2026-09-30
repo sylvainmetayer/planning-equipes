@@ -20,6 +20,10 @@ Keep the config in that one file; document behaviour changes in
   the branch and re-dispatches the checks itself — a push made with
   `GITHUB_TOKEN` triggers nothing. `gitIgnoredAuthors` in `renovate.json` is
   what lets Renovate keep rebasing a branch that commit sits on.
+- `angular-renovate.yml` plays the `ng update` migrations on a Renovate PR
+  whose `package.json` touches an `@angular/…` package (detected from the diff,
+  not from the branch name), recomputes the lockfile if Renovate could not write
+  it (never from scratch: that would bypass `minimumReleaseAge`), and commits the result the same two-job way as the licences.
 - The scenario workflow runs on a Renovate PR only when it carries the
   `timefold` or `quarkus` label, which `renovate.json` puts on those two groups.
   The `@lourd` e2e specs also run under `playwright`, the label of the group

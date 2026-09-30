@@ -907,6 +907,36 @@ points qui ne s'y voient pas :
   de déclencher repose le commit. `gitIgnoredAuthors` dans `renovate.json`
   évite que Renovate tienne la branche pour « modifiée » et cesse de la
   rebaser ; une rebase la recrée sans ce commit, que le job repose aussitôt ;
+- **sur une PR Renovate qui touche un `@angular/…` du `package.json`,
+  `angular-renovate.yml` joue les migrations `ng update`** et les commite sur
+  la branche. Renovate ne lance pas les schematics d'Angular, et son
+  `postUpgradeTasks` n'existe qu'auto-hébergé. La PR est reconnue au diff du
+  `package.json`, pas au nom de la branche : pour les mineures et les
+  correctifs, le groupe « frontend dependencies » supplante le groupe
+  « angular ». Le job installe la version proposée, puis lance
+  `ng update <paquet> --migrate-only --from <verrou de la base> --to <version
+  installée>` pour `core`, `cli`, `cdk` et `material` — `--migrate-only`, car
+  la cible est déjà installée et `ng update` répondrait « déjà à jour ». Les
+  versions de départ sont lues dans le verrou du point de départ de la PR
+  (`merge-base`), pas de la pointe de la base. Si Renovate n'a pas pu écrire le
+  verrou (« Artifact file update failure »), il est recalculé à partir de
+  l'existant, avec une seconde tentative sur un `node_modules` propre ; il n'est
+  jamais reconstruit de zéro, ce qui contournerait le délai de sept jours de
+  Renovate. Le workflow ne rejoue pas une migration déjà commitée sur la
+  branche (Renovate recrée la branche, sans ce commit, quand il met les
+  dépendances à jour). Même découpage en deux jobs que pour les
+  licences : le premier, sans droit d'écriture, exécute le code de la PR et
+  rend un correctif ; le second l'extrait à la tête exacte où il a été construit,
+  vérifie qu'il ne touche que `src/main/webui/` et l'inventaire des licences,
+  l'applique, pousse sans forcer — un refus fait échouer le job, il ne
+  promet pas un rejeu qu'un commit poussé avec `GITHUB_TOKEN` ne déclencherait
+  pas — et relance les
+  workflows de la PR, d'après les labels d'aujourd'hui. L'inventaire est
+  régénéré dans le même correctif, et `licences-renovate.yml` s'efface sur les
+  PR que ce workflow prend en charge (`.github/scripts/angular-bump.sh`, lu par
+  les deux) : deux workflows qui poussent sur la même branche se refusent l'un
+  l'autre, et un groupe de concurrence partagé ne l'empêcherait pas — GitHub ne
+  garde qu'une exécution en attente par groupe, tous workflows confondus ;
 - **sur `main`, une fusion annule les runs de la précédente**
   (`cancel-in-progress`) : seule la dernière fusion d'une rafale est vérifiée
   là, la PR l'ayant déjà été. Les minutes annulées sont perdues, un run
