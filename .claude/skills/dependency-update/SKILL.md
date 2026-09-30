@@ -22,6 +22,8 @@ Keep the config in that one file; document behaviour changes in
   what lets Renovate keep rebasing a branch that commit sits on.
 - The scenario workflow runs on a Renovate PR only when it carries the
   `timefold` or `quarkus` label, which `renovate.json` puts on those two groups.
+  The `@lourd` e2e specs also run under `playwright`, the label of the group
+  that bumps `@playwright/test` and the e2e image together.
 
 ## Validating a Quarkus or Timefold bump
 

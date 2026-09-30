@@ -53,6 +53,15 @@
     },
     {
       "customType": "regex",
+      "description": "The Playwright image of the e2e job, read as the @playwright/test version its tag carries: one package, one release date, one PR with package.json. Read as a Docker image, it had no release date on mcr.microsoft.com, so the seven-day wait either held it back for good or, once exempted, let it move a week ahead of the package",
+      "managerFilePatterns": [".github/workflows/*.yml"],
+      "matchStrings": ["mcr\\.microsoft\\.com/playwright:v(?<currentValue>\\d+\\.\\d+\\.\\d+)-"],
+      "datasourceTemplate": "npm",
+      "depNameTemplate": "@playwright/test",
+      "versioningTemplate": "npm"
+    },
+    {
+      "customType": "regex",
       "description": "Maven in mise.toml: the mise manager extracts it but finds no version to propose, so the wrapper moved alone and ToolchainPinsStructuralTest failed the PR. Read here as the Maven Central artifact the wrapper uses, it joins the « maven » group",
       "managerFilePatterns": ["mise.toml"],
       "matchStrings": ["\\bmaven\\s*=\\s*\"(?<currentValue>[^\"]+)\""],
@@ -114,15 +123,16 @@
       "addLabels": ["frontend"]
     },
     {
-      "description": "The CI container image must follow @playwright/test: a drift hands the suite a browser the image does not tool",
-      "matchPackageNames": ["@playwright/test", "mcr.microsoft.com/playwright"],
+      "description": "The CI container image must follow @playwright/test: a drift hands the suite a browser the image does not tool. The custom manager above reads the image tag under the package's own name, so both pins match here and wait the same seven days. The « playwright » label lets e2e-lourd.yml run the @lourd specs on the new browser",
+      "matchPackageNames": ["@playwright/test"],
       "groupName": "playwright",
-      "addLabels": ["frontend"]
+      "addLabels": ["frontend", "playwright"]
     },
     {
-      "description": "Renovate reads no release timestamp for the Playwright image on mcr.microsoft.com, so the seven-day wait above held it back for good and the group shipped the npm package alone — a browser the CI image does not tool. The package it follows has already waited",
+      "description": "The github-actions manager also reads the image from `container:`, as a Docker image with no release date and outside the playwright group: the custom manager above is its only reader",
+      "matchManagers": ["github-actions"],
       "matchPackageNames": ["mcr.microsoft.com/playwright"],
-      "minimumReleaseAge": null
+      "enabled": false
     },
     {
       "description": "GitHub Actions: one grouped PR for minor and patch",

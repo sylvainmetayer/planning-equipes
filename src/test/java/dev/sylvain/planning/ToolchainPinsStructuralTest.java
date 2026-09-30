@@ -33,6 +33,14 @@ import org.junit.jupiter.api.Test;
  * dependency bot's business — through the {@code customManager} of
  * {@code renovate.json} on that line, since no manager reads a
  * {@code .properties} on its own.</p>
+ *
+ * <p>Playwright is the one pin that must agree to the patch: the e2e job runs
+ * in the {@code mcr.microsoft.com/playwright} image, which carries the browsers
+ * of exactly one release, and a {@code @playwright/test} of another release
+ * looks for a build the image does not have. Renovate grouping kept the two
+ * together until a rule order or a release-age gap let one move alone; this
+ * test is what makes that drift fail in the {@code test} job rather than as a
+ * missing browser in the e2e one.</p>
  */
 class ToolchainPinsStructuralTest {
 
@@ -42,6 +50,8 @@ class ToolchainPinsStructuralTest {
     private static final Path DOCKERFILE = Path.of("Dockerfile");
     private static final Path WRAPPER = Path.of(".mvn/wrapper/maven-wrapper.properties");
     private static final Path WORKFLOWS = Path.of(".github/workflows");
+    private static final Path PACKAGE_JSON = Path.of("src/main/webui/package.json");
+    private static final Path PACKAGE_LOCK = Path.of("src/main/webui/package-lock.json");
     private static final List<Path> COMPOSES =
             List.of(Path.of("docker-compose.yml"), Path.of("docker-compose.prod.yml"));
 
@@ -120,6 +130,35 @@ class ToolchainPinsStructuralTest {
         assertThat(ecarts).as("""
                         toolchain pins that disagree with mise.toml (java %s, node %s, maven %s). \
                         Bump them together — Renovate does not read every one of these files.""", java, node, maven).isEmpty();
+    }
+
+    @Test
+    void playwrightImageFollowsTheLockedPackage() throws IOException {
+        String declared = first(read(PACKAGE_JSON), "\"@playwright/test\": *\"([^\"]+)\"", "package.json");
+        String locked = first(
+                read(PACKAGE_LOCK),
+                "\"node_modules/@playwright/test\": *\\{\\s*\"version\": *\"([^\"]+)\"",
+                "package-lock.json");
+
+        List<String> ecarts = new ArrayList<>();
+        if (!declared.equals(locked)) {
+            ecarts.add("package.json declares @playwright/test " + declared
+                    + " (a range lets the lockfile move past the image), package-lock.json locks " + locked);
+        }
+        List<String> images = new ArrayList<>();
+        forEachWorkflowPin("mcr\\.microsoft\\.com/playwright:v([\\d.]+)-", (file, value) -> {
+            images.add(file);
+            if (!value.equals(locked)) {
+                ecarts.add(file + " runs the Playwright image " + value + ", package-lock.json locks " + locked);
+            }
+        });
+
+        assertThat(images)
+                .as("no workflow runs the Playwright image — the pin moved, update this test")
+                .isNotEmpty();
+        assertThat(ecarts)
+                .as("Playwright pins that disagree: bump @playwright/test and the e2e image together")
+                .isEmpty();
     }
 
     private interface Pin {

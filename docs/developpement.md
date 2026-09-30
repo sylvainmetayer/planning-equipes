@@ -568,8 +568,9 @@ de côté (`--grep-invert @lourd`) et `e2e-lourd.yml` la joue (`--grep @lourd`)
 sur les changements du solveur, des consignes, de la publication, du `pom.xml`
 et de ses propres fichiers — sa liste `paths`, à tenir à jour comme celle des
 scénarios — et chaque nuit sur `main`. Comme les tests de scénario, et pour la
-même raison, une PR Renovate ne l'exerce que sous le label `timefold` ou
-`quarkus`.
+même raison, une PR Renovate ne l'exerce que sous le label `timefold`,
+`quarkus` ou `playwright` — ce dernier parce qu'un nouveau navigateur change
+ce que ces specs traversent.
 Les deux appellent la même pile, `e2e-suite.yml`. Marquer une spec `@lourd`,
 c'est dire qu'elle résout une fixture réelle, ou qu'il lui faut la pile de
 `e2e-lourd.yml` (l'horloge simulée, ci-dessous) ; ce n'est pas l'endroit où
@@ -884,7 +885,8 @@ points qui ne s'y voient pas :
   réinclus nommément) ; les specs Playwright `@lourd` ont leur workflow, comme
   les scénarios ; et une PR Renovate ne joue ni les scénarios ni la spec
   `@lourd` — les deux seuls workflows qui ont `pom.xml` dans leurs chemins —
-  hors du label `timefold` ou `quarkus`. Sur une PR, GitHub évalue un filtre
+  hors du label `timefold` ou `quarkus` (ou `playwright` pour la spec
+  `@lourd`). Sur une PR, GitHub évalue un filtre
   `paths` sur **l'ensemble des fichiers de la PR**, pas sur la dernière
   poussée : une PR mixte code + documentation rejoue tout à chaque poussée, et
   c'est voulu — un check « skipped » sur la dernière poussée masquerait le
@@ -972,14 +974,21 @@ Couvre Maven, le wrapper Maven, Docker, les actions GitHub, npm et
   `@angular/*` dans une seule PR : une montée partielle casse le build ;
 - ce qui est **épinglé deux fois est groupé** : Maven (`mise.toml` et le
   wrapper), Playwright (le paquet `@playwright/test` et l'image du conteneur
-  e2e) — deux PR séparées laisseraient les deux dériver. Deux réglages tiennent
-  ces groupes : le Maven de `mise.toml` est lu par un gestionnaire
-  `custom.regex` (celui de `mise` n'y trouvait aucune version à proposer, et le
-  wrapper montait seul), et l'image Playwright échappe au délai de sept jours
-  (Renovate ne lit pas sa date de publication sur `mcr.microsoft.com`, le délai
-  la retenait indéfiniment et le groupe partait sans elle). De même, la règle
-  Quarkus vient après celle des plugins de build : `quarkus-maven-plugin` et le
-  BOM partagent `quarkus.platform.version`, que deux PR montaient sinon chacune ;
+  e2e) — deux PR séparées laisseraient les deux dériver. Dans les deux cas, un
+  gestionnaire `custom.regex` lit la seconde épingle sous le nom de la
+  première. Le Maven de `mise.toml` est lu comme l'artefact
+  `org.apache.maven:apache-maven` (celui de `mise` n'y trouvait aucune version
+  à proposer, et le wrapper montait seul). La balise de l'image Playwright est
+  lue comme le paquet npm `@playwright/test`, et le gestionnaire
+  `github-actions` ne la lit plus : lue comme une image, elle n'avait pas de
+  date de publication sur `mcr.microsoft.com`, si bien que le délai de sept
+  jours la retenait indéfiniment et que l'en exempter la faisait partir une
+  semaine avant le paquet. Une seule dépendance, une seule date, une seule PR.
+  `ToolchainPinsStructuralTest` refuse en outre toute balise d'image qui ne
+  serait pas la version verrouillée du paquet, et `package.json` épingle
+  celle-ci exactement. De même, la règle Quarkus vient après celle des plugins
+  de build : `quarkus-maven-plugin` et le BOM partagent
+  `quarkus.platform.version`, que deux PR montaient sinon chacune ;
 - les **majeures** de Java, PostgreSQL, victools et TypeScript passent par le
   tableau de bord (`dependencyDashboardApproval`) — ce qui suppose que l'issue
   de tableau de bord existe. TypeScript attend qu'Angular accepte la majeure :
