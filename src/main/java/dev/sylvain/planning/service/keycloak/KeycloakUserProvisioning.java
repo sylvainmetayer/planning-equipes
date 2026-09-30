@@ -16,6 +16,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
@@ -184,8 +185,16 @@ public class KeycloakUserProvisioning {
      * work over something a later pass repairs. A failure is logged and
      * counted; {@link #invitationStatus} still reports the address as waiting,
      * and {@link #inviteAwaiting} creates what is missing.</p>
+     *
+     * @param nouvellesAdresses the addresses this write just brought into the
+     *                          edition: a disabled account among them is
+     *                          reopened — {@link #retirer} closed it when its
+     *                          last fiche went, and the person is expected
+     *                          again. A disabled account of an address the
+     *                          edition already had stays closed: that is an
+     *                          administrator's decision, not the import's.
      */
-    public BilanComptes provisionMissing(Collection<Animateur> fiches) {
+    public BilanComptes provisionMissing(Collection<Animateur> fiches, Set<String> nouvellesAdresses) {
         if (!actif()) {
             return BilanComptes.RIEN;
         }
@@ -199,11 +208,18 @@ public class KeycloakUserProvisioning {
             int crees = 0;
             int echecs = 0;
             for (Map.Entry<String, Animateur> entree : parAdresse.entrySet()) {
-                if (situation(comptes.get(entree.getKey())) != Situation.SANS_COMPTE) {
+                UserRepresentation compte = comptes.get(entree.getKey());
+                Situation situation = situation(compte);
+                boolean rouvrir = reopens(situation, entree.getKey(), nouvellesAdresses);
+                if (situation != Situation.SANS_COMPTE && !rouvrir) {
                     continue;
                 }
                 try {
-                    create(realm, entree.getValue(), entree.getKey(), false);
+                    if (rouvrir) {
+                        update(realm, compte, entree.getValue(), true);
+                    } else {
+                        create(realm, entree.getValue(), entree.getKey(), false);
+                    }
                     crees++;
                 } catch (RuntimeException e) {
                     Log.errorf(e, "Keycloak account could not be created for %s", entree.getKey());
@@ -290,7 +306,7 @@ public class KeycloakUserProvisioning {
     }
 
     /** The first fiche for each address, addresses normalised; fiches without one are skipped. */
-    static Map<String, Animateur> byAddress(Collection<Animateur> fiches) {
+    public static Map<String, Animateur> byAddress(Collection<Animateur> fiches) {
         Map<String, Animateur> parAdresse = new LinkedHashMap<>();
         for (Animateur fiche : fiches) {
             emailOf(fiche).ifPresent(adresse -> parAdresse.putIfAbsent(adresse, fiche));
@@ -306,6 +322,16 @@ public class KeycloakUserProvisioning {
             return Situation.DESACTIVE;
         }
         return Boolean.TRUE.equals(compte.isEmailVerified()) ? Situation.PRET : Situation.NON_VERIFIE;
+    }
+
+    /**
+     * Whether a bulk pass reopens this account: disabled, and its address new
+     * to the edition — {@link #retirer} closed it when the person's last fiche
+     * went, and a fiche brings them back. An address the edition already had
+     * keeps its account as an administrator left it.
+     */
+    static boolean reopens(Situation situation, String adresse, Set<String> nouvellesAdresses) {
+        return situation == Situation.DESACTIVE && nouvellesAdresses.contains(adresse);
     }
 
     static boolean awaitsInvitation(Situation situation) {
@@ -375,10 +401,27 @@ public class KeycloakUserProvisioning {
                         + " administrateur.");
             }
             String id = existant.isPresent() ? existant.get().getId() : createAccount(realm, adresse, nom, null, true);
-            if (!assignRole(realm, id, ADMIN)) {
-                // Logged, not thrown, for an animateur; an administrator
-                // who is not one after all is a failure to report.
-                throw new IllegalStateException("le rôle " + ADMIN + " n'existe pas dans le realm");
+            try {
+                if (!assignRole(realm, id, ADMIN)) {
+                    // Logged, not thrown, for an animateur; an administrator
+                    // who is not one after all is a failure to report.
+                    throw new IllegalStateException("le rôle " + ADMIN + " n'existe pas dans le realm");
+                }
+            } catch (RuntimeException e) {
+                if (existant.isEmpty()) {
+                    deleteQuietly(realm, id, adresse);
+                }
+                throw e;
+            }
+            if (existant.isEmpty()) {
+                invite(realm, id, adresse);
+            } else {
+                // Signed in already (by e-mail code, as an animateur), the
+                // person would carry `admin` into their next token through the
+                // SSO cookie, which skips the forms — and the TOTP condition
+                // hangs from the forms. Ending their sessions makes the next
+                // sign-in go through them, second factor included.
+                realm.users().get(id).logout();
             }
             Log.infof("Keycloak realm role %s granted to %s", ADMIN, adresse);
             return existant.isEmpty();
@@ -418,17 +461,46 @@ public class KeycloakUserProvisioning {
         }
     }
 
-    /** @return the id Keycloak gave the account */
+    /**
+     * The account, its role, then — only once both hold — the invitation. In
+     * that order: a role Keycloak refuses (a 403, a timeout) deletes the
+     * account just made, so the fiche the caller then takes back out leaves
+     * no live account behind, and nobody receives an invitation to an account
+     * that is gone.
+     *
+     * @return the id Keycloak gave the account
+     */
     private String create(RealmResource realm, Animateur animateur, String email, boolean inviter) {
         String id = createAccount(realm, email, animateur.getPrenom(), animateur.getNom(), inviter);
-        assignRole(realm, id, config.animateurRole());
+        try {
+            assignRole(realm, id, config.animateurRole());
+        } catch (RuntimeException e) {
+            deleteQuietly(realm, id, email);
+            throw e;
+        }
+        if (inviter) {
+            invite(realm, id, email);
+        }
         return id;
     }
 
+    /** Takes back an account this call just created; logged, never thrown over the error being reported. */
+    private void deleteQuietly(RealmResource realm, String id, String email) {
+        try {
+            realm.users().delete(id).close();
+            Log.infof("Keycloak account %s taken back after a failed provisioning of %s", id, email);
+        } catch (RuntimeException suppression) {
+            Log.errorf(suppression, "Keycloak account %s of %s could not be taken back", id, email);
+        }
+    }
+
     /**
-     * The account alone, no role: an animateur's gets {@code animateur}, an
-     * administrator's {@code admin} — and neither the other's.
+     * The account alone, no role and no mail: an animateur's gets
+     * {@code animateur}, an administrator's {@code admin} — and neither the
+     * other's —, and the caller invites once the role holds.
      *
+     * @param inviter whether the caller will invite: the account is then
+     *                created verified (see below)
      * @return the id Keycloak gave the account
      */
     private String createAccount(RealmResource realm, String email, String prenom, String nom, boolean inviter) {
@@ -457,9 +529,6 @@ public class KeycloakUserProvisioning {
         }
         UserRepresentation cree = findByEmail(realm, email)
                 .orElseThrow(() -> new IllegalStateException("Compte créé puis introuvable pour " + email));
-        if (inviter) {
-            invite(realm, cree.getId(), email);
-        }
         Log.infof("Keycloak account created for %s", email);
         return cree.getId();
     }
@@ -468,9 +537,13 @@ public class KeycloakUserProvisioning {
      * Only the name is pushed on an update. The address is the key, so
      * changing it means the fiche now designates <em>another</em> person's
      * account (or a new one) — handled by the lookup above, not by renaming an
-     * existing account out from under whoever else holds it. And the enabled
-     * flag is left alone: an account an administrator disabled in the console
-     * must not be silently reopened by an unrelated edit of a fiche.
+     * existing account out from under whoever else holds it. The enabled flag
+     * moves only with {@code nouvelleAdresse}: an account an administrator
+     * disabled in the console must not be silently reopened by an unrelated
+     * edit of a fiche, but a fiche just created (or given this address) says
+     * the person is expected — an account {@link #retirer} closed when their
+     * last fiche went would otherwise stay closed for good, and they would
+     * never be invited again (a disabled account is not « awaiting »).
      */
     private void update(
             RealmResource realm, UserRepresentation utilisateur, Animateur animateur, boolean nouvelleAdresse) {
@@ -482,6 +555,11 @@ public class KeycloakUserProvisioning {
         if (!Objects.equals(utilisateur.getLastName(), animateur.getNom())) {
             utilisateur.setLastName(animateur.getNom());
             change = true;
+        }
+        if (nouvelleAdresse && !Boolean.TRUE.equals(utilisateur.isEnabled())) {
+            utilisateur.setEnabled(true);
+            change = true;
+            Log.infof("Keycloak account reopened for %s: a fiche carries the address again", utilisateur.getEmail());
         }
         if (change) {
             realm.users().get(utilisateur.getId()).update(utilisateur);

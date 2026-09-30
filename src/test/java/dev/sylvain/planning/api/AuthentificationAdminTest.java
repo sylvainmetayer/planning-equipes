@@ -318,11 +318,21 @@ class AuthentificationAdminTest {
 
     @Test
     void laDeconnexionEffaceLeCookie() {
-        // No Keycloak session to end: the frontend has nowhere else to go.
+        // No session of this application left — lapsed, say — while the
+        // Keycloak one may still be alive: the answer names the realm's own
+        // end-session endpoint, back to /login, so a shared computer does not
+        // sign the next person in as the previous one.
         given().header("X-Edition-Id", "E1").when()
                 .post("/api/auth/logout")
                 .then()
                 .statusCode(200)
-                .body("urlDeconnexion", org.hamcrest.Matchers.nullValue());
+                .body(
+                        "urlDeconnexion",
+                        org.hamcrest.Matchers.containsString("/protocol/openid-connect/logout?client_id="))
+                .body(
+                        "urlDeconnexion",
+                        org.hamcrest.Matchers.endsWith("&post_logout_redirect_uri="
+                                + java.net.URLEncoder.encode(
+                                        "http://localhost:8081/login", java.nio.charset.StandardCharsets.UTF_8)));
     }
 }
