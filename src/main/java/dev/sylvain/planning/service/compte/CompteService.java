@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import org.jboss.logging.Logger;
 
 /**
  * Named accounts and what they may do (issues #294, #295, ADR 0070).
@@ -41,6 +42,8 @@ public class CompteService {
 
     static final Duration FRAICHEUR = Duration.ofSeconds(30);
 
+    private static final Logger LOG = Logger.getLogger(CompteService.class);
+
     @Inject
     CompteRepository repository;
 
@@ -58,7 +61,14 @@ public class CompteService {
 
     private final Map<String, Lu> cache = new ConcurrentHashMap<>();
 
-    private record Lu(Compte compte, Instant le) {}
+    /**
+     * @param adresse the address the token presented — compared on the next
+     *                read, rather than the account's own: when the realm moved
+     *                a person to an address another account already holds, the
+     *                account keeps its old one, and comparing against it would
+     *                miss the cache on every request of that person
+     */
+    private record Lu(Compte compte, String adresse, Instant le) {}
 
     /**
      * The account of a person who just presented a verified address, created
@@ -79,15 +89,15 @@ public class CompteService {
         String cleCache = sujet == null ? "email:" + cle : "sub:" + sujet;
         Instant maintenant = Instant.now();
         Lu lu = cache.get(cleCache);
-        // A cached account whose address is not the one presented is stale:
-        // the realm just changed it, and following it is the point.
+        // A cached account read for another address is stale: the realm just
+        // changed it, and following it is the point.
         if (lu != null
                 && lu.le().plus(FRAICHEUR).isAfter(maintenant)
-                && lu.compte().email().equals(cle)) {
+                && lu.adresse().equals(cle)) {
             return lu.compte();
         }
         Compte compte = resolve(cle, nom, sujet, maintenant);
-        cache.put(cleCache, new Lu(compte, maintenant));
+        cache.put(cleCache, new Lu(compte, cle, maintenant));
         return compte;
     }
 
@@ -105,6 +115,18 @@ public class CompteService {
             return repository.findById(existant.id()).orElseThrow();
         }
         Optional<Compte> parAdresse = repository.findByEmail(email);
+        if (parAdresse.isPresent() && parAdresse.get().sujet() != null && sujet != null) {
+            // The address is held by an account bound to ANOTHER realm
+            // identity: the realm gave it to someone else (the first holder
+            // renamed or deleted, a new user created with it). Attaching the
+            // newcomer would hand them every right of the first holder.
+            // Nothing opens instead; an administrator detaches the account
+            // (deactivate, then reactivate) once they know who is who.
+            LOG.warnf(
+                    "Sign-in refused on account %s: address %s is bound to another Keycloak subject",
+                    parAdresse.get().id(), email);
+            return new Compte(null, email, nom, sujet, null, null, maintenant, List.of());
+        }
         if (parAdresse.isPresent()) {
             repository.recordSignIn(parAdresse.get().id(), nom, sujet, maintenant);
             return repository.findById(parAdresse.get().id()).orElseThrow();

@@ -61,7 +61,7 @@ répond **401, jamais une redirection HTML** ; un appel authentifié sans le rô
 | `GET /api/auth/me` | `{authentifie, nom, roles}` — `nom` est l'adresse du compte Keycloak, ou `admin` pour le compte de secours |
 | `GET /api/auth/oidc/login?redirect=/chemin` | Entrée du code flow : 302 vers Keycloak, retour sur le chemin demandé (un chemin de l'application, sinon `/`) |
 | `GET /api/auth/oidc/compte?retour=…` | 303 vers la page « Connexion » de la console de compte Keycloak (mot de passe, passkey, second facteur), avec `referrer`/`referrer_uri` : la console affiche « Retour à Planning Équipes » vers `retour`, un chemin de l'application (la racine sinon). Ouverte à toute session, animateur compris ; `404` sans Keycloak |
-| `POST /api/auth/logout` | `{urlDeconnexion}` : pour une session Keycloak, `/api/auth/oidc/logout`, que le navigateur doit suivre pour fermer aussi la session du realm |
+| `POST /api/auth/logout` | `{urlDeconnexion}` : pour une session Keycloak, `/api/auth/oidc/logout`, que le navigateur doit suivre pour fermer aussi la session du realm ; sans session de l'application (expirée), l'adresse de fin de session du realm lui-même, retour sur `/login` ; `null` pour le compte de secours |
 | `GET /api/config` | `authOidc`, `authSecours` : quelles portes ce déploiement ouvre |
 
 ![Connexion du coordinateur : Keycloak, ou le compte de secours](diagrammes/authentification.svg)

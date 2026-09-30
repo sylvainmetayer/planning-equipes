@@ -140,6 +140,25 @@ class ResponsableResourceTest {
                 .body("roles", org.hamcrest.Matchers.hasItem("responsable-stand"));
     }
 
+    /**
+     * A right without an expiry — granted before it was mandatory, or written
+     * by hand — is one that never ends, not a 500.
+     */
+    @Test
+    void unDroitSansExpirationSeLitSansErreur() {
+        Compte avec = grant(null);
+        sql("UPDATE habilitation SET expire_le = NULL WHERE compte_id = '" + avec.id() + "'");
+        Compte autre = comptes.create("responsable-cache-" + UUID.randomUUID() + "@example.org", null);
+        comptes.deactivate(autre.id());
+
+        given().header("Authorization", porteur(email, "user"))
+                .when()
+                .get("/api/responsable/editions")
+                .then()
+                .statusCode(200)
+                .body("[0].expireLe", nullValue());
+    }
+
     @Test
     void avantLaPublicationLeStandNAAucuneVacation() {
         grant(null);

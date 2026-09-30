@@ -80,7 +80,15 @@ public class ResponsableService {
         Instant maintenant = Instant.now();
         Map<String, Instant> expirations = new LinkedHashMap<>();
         for (Habilitation droit : rights(compte, null, maintenant)) {
-            expirations.merge(droit.editionId(), droit.expireLe(), ResponsableService::later);
+            // Not Map.merge: it refuses a null value, and a right without an
+            // expiry (granted before it was mandatory, or written by hand) is
+            // one that never ends — null, the latest of all.
+            String edition = droit.editionId();
+            expirations.put(
+                    edition,
+                    expirations.containsKey(edition)
+                            ? later(expirations.get(edition), droit.expireLe())
+                            : droit.expireLe());
         }
         String defaut = editions.defaultEditionId();
         return editions.listEditions().stream()

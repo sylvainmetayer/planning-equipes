@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -277,11 +278,25 @@ public class AnimateurCsvImportService {
         if (gel.isFrozen(ReferentialFamily.COMPETENCES) && movesCompetences(analysis.toWrite())) {
             gel.refuseIfFrozen(ReferentialFamily.COMPETENCES);
         }
+        List<Animateur> avant = animateurs.listAnimateurs();
+        Set<String> supprimes = Set.copyOf(analysis.toDelete());
         animateurs.importAnimateurs(analysis.toWrite(), analysis.toDelete());
         changeTracker.markModified();
         // The accounts, without a single mail: the organiser reviews the list,
-        // then sends the invitations in one gesture (docs/keycloak.md).
-        comptes.provisionMissing(animateurs.listAnimateurs());
+        // then sends the invitations in one gesture (docs/keycloak.md). An
+        // address the edition did not have reopens an account closed when the
+        // person's last fiche went.
+        List<Animateur> apres = animateurs.listAnimateurs();
+        Set<String> nouvelles =
+                new HashSet<>(KeycloakUserProvisioning.byAddress(apres).keySet());
+        nouvelles.removeAll(KeycloakUserProvisioning.byAddress(avant).keySet());
+        comptes.provisionMissing(apres, nouvelles);
+        // A replacement deletes fiches, and closes the accounts no fiche of
+        // any edition carries any more — what deleting them one by one does.
+        avant.stream()
+                .filter(fiche -> supprimes.contains(fiche.getId()))
+                .map(Animateur::getEmail)
+                .forEach(comptes::retirer);
         // A created fiche has its id only now, drawn by the write: the report
         // names it, so the operator can find who was just added.
         List<AnimateurCsvImportReport.ImportedRow> rows = analysis.outcomes().stream()

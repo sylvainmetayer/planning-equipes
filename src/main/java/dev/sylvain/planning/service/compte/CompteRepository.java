@@ -141,12 +141,21 @@ public class CompteRepository {
     }
 
     /** Sets or clears {@code desactive_le}; answers whether the account exists. */
+    /**
+     * Deactivates ({@code desactiveLe} set) or reactivates ({@code null}) an
+     * account. Reactivating also forgets the realm subject it was bound to:
+     * the next verified sign-in with its address binds it again. That is the
+     * administrator's way out when the realm handed the address to another
+     * identity, which {@code CompteService.signIn} refuses to attach on its
+     * own.
+     */
     public boolean setDeactivated(String id, Instant desactiveLe) {
         return scope.writeAndReturn("Failed to change an account's state", connection -> {
-            try (PreparedStatement ps =
-                    connection.prepareStatement("UPDATE compte SET desactive_le = ? WHERE id = ?")) {
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "UPDATE compte SET desactive_le = ?, sujet = CASE WHEN ? THEN NULL ELSE sujet END WHERE id = ?")) {
                 ps.setTimestamp(1, desactiveLe == null ? null : Timestamp.from(desactiveLe));
-                ps.setString(2, id);
+                ps.setBoolean(2, desactiveLe == null);
+                ps.setString(3, id);
                 return ps.executeUpdate() == 1;
             }
         });
