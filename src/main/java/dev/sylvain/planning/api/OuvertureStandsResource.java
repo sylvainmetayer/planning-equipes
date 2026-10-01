@@ -86,6 +86,6 @@ public class OuvertureStandsResource {
     @GET
     @Path("/couches")
     public OpeningLayers layers(@QueryParam("du") String du, @QueryParam("au") String au) {
-        return layerCalendar.build(JoursFeriesResource.date("du", du), JoursFeriesResource.date("au", au));
+        return layerCalendar.build(DateQueryParam.parse("du", du), DateQueryParam.parse("au", au));
     }
 }

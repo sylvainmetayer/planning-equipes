@@ -375,6 +375,14 @@ export function buildNavGroups(): NavGroup[] {
           icon: 'swap_horiz',
           shortcut: 'e',
           keywords: $localize`:@@nav.keywords.echanges:foire`,
+          tabs: [
+            tab(
+              'onglet',
+              'stats',
+              $localize`:@@echanges.onglet.stats:Statistiques`,
+              $localize`:@@nav.keywords.echanges.stats:taux acceptation délais volumes foire`,
+            ),
+          ],
         },
       ],
     },

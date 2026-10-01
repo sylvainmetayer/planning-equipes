@@ -1,0 +1,190 @@
+<div class="echanges-stats-periode">
+  <mat-button-toggle-group [value]="period().kind" (change)="choosePeriod($event.value)"
+                           aria-label="Période des statistiques" i18n-aria-label="@@echanges.stats.periode.label">
+    <mat-button-toggle value="foire" i18n="@@echanges.stats.periode.foire">Fenêtre de la foire</mat-button-toggle>
+    <mat-button-toggle value="edition" i18n="@@echanges.stats.periode.toute">Toute l'édition</mat-button-toggle>
+    <mat-button-toggle value="dates" i18n="@@echanges.stats.periode.dates">Choisir les dates</mat-button-toggle>
+  </mat-button-toggle-group>
+  @if (dates(); as range) {
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label i18n="@@echanges.stats.du">Du</mat-label>
+      <input matInput type="date" [value]="range.du ?? ''" (change)="setBound('du', $event)" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label i18n="@@echanges.stats.au">Au</mat-label>
+      <input matInput type="date" [value]="range.au ?? ''" (change)="setBound('au', $event)" />
+    </mat-form-field>
+  }
+</div>
+
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+<app-status-message [text]="error()" tone="error" />
+
+@if (stats(); as s) {
+  <p class="echanges-stats-portee">
+    {{ periodText() }}
+    @if (period().kind === 'foire' && !s.fenetreFoire) {
+      <ng-container i18n="@@echanges.stats.periode.nonDatee">(la foire n'est pas datée)</ng-container>
+    }
+  </p>
+
+  @if (s.creees === 0) {
+    <p class="espace-vide" i18n="@@echanges.stats.vide">Pas encore de demande sur cette période.</p>
+  } @else {
+    <h2 i18n="@@echanges.stats.volumes">Volumes</h2>
+    <ul class="echanges-stats-tuiles">
+      <li class="echanges-stats-tuile">
+        <a class="echanges-stats-valeur" routerLink="/echanges" [queryParams]="link(s)">{{ s.creees }}</a>
+        <span class="echanges-stats-libelle" i18n="@@echanges.stats.creees">demande(s) créée(s)</span>
+        <a class="echanges-stats-detail" routerLink="/echanges" [queryParams]="link(s, directedOnly)"
+           i18n="@@echanges.stats.dirigees">dont {{ s.dirigees }} dirigée(s)</a>
+      </li>
+      <li class="echanges-stats-tuile">
+        <a class="echanges-stats-valeur" routerLink="/echanges" [queryParams]="link(s, waitingForColleague)">{{ s.enAttenteCible }}</a>
+        <span class="echanges-stats-libelle" i18n="@@echanges.stats.attenteCollegue">en attente du collègue</span>
+      </li>
+      <li class="echanges-stats-tuile">
+        <a class="echanges-stats-valeur" routerLink="/echanges" [queryParams]="link(s, waitingForOrganisation)">{{ s.enAttenteOrganisation }}</a>
+        <span class="echanges-stats-libelle" i18n="@@echanges.stats.attenteOrganisation">en attente de l'organisation</span>
+      </li>
+    </ul>
+
+    <h2 i18n="@@echanges.stats.taux">Taux</h2>
+    <ul class="echanges-stats-tuiles">
+      @for (tile of rates(); track tile.label) {
+        <li class="echanges-stats-tuile">
+          <span class="echanges-stats-libelle">{{ tile.label }}</span>
+          @if (tile.denominator === 0) {
+            <span class="echanges-stats-valeur echanges-stats-vide">—</span>
+            <span class="echanges-stats-detail" i18n="@@echanges.stats.taux.aucune">aucune demande concernée</span>
+          } @else {
+            @if (tile.percent !== null) {
+              <span class="echanges-stats-valeur" i18n="@@echanges.stats.taux.pourcent">{{ tile.percent }} %</span>
+            }
+            <span [class]="tile.percent === null ? 'echanges-stats-valeur' : 'echanges-stats-detail'">
+              <a routerLink="/echanges" [queryParams]="tile.numeratorLink">{{ tile.numerator }}</a>
+              <ng-container i18n="@@echanges.stats.taux.sur"> sur </ng-container>
+              <a routerLink="/echanges" [queryParams]="tile.denominatorLink">{{ tile.denominator }}</a>
+            </span>
+          }
+        </li>
+      }
+    </ul>
+
+    <h2 i18n="@@echanges.stats.delais">Délais</h2>
+    <ul class="echanges-stats-tuiles">
+      @for (tile of delays(); track tile.label) {
+        <li class="echanges-stats-tuile">
+          <span class="echanges-stats-libelle">{{ tile.label }}</span>
+          @if (tile.median) {
+            <span class="echanges-stats-valeur" tabindex="0" [matTooltip]="tile.mean ?? ''"
+                  i18n="@@echanges.stats.delai.mediane">{{ tile.median }} en médiane</span>
+            <span class="echanges-stats-detail" i18n="@@echanges.stats.delai.centile">9 sur 10 en moins de {{ tile.tail }}</span>
+            <a class="echanges-stats-detail" routerLink="/echanges" [queryParams]="tile.link"
+               i18n="@@echanges.stats.delai.mesurees">sur {{ tile.delay.mesurees }} demande(s)</a>
+          } @else {
+            <span class="echanges-stats-valeur echanges-stats-vide">—</span>
+            <span class="echanges-stats-detail" i18n="@@echanges.stats.delai.aucun">aucune mesure</span>
+          }
+          @if (tile.delay.sansHorodatage > 0) {
+            <span class="echanges-stats-detail" i18n="@@echanges.stats.delai.sansHorodatage">{{ tile.delay.sansHorodatage }} demande(s) sans horodatage</span>
+          }
+        </li>
+      }
+    </ul>
+
+    <h2 i18n="@@echanges.stats.repartitions">Répartitions</h2>
+
+    <h3 i18n="@@echanges.stats.parJourCreation">Par jour de création</h3>
+    <div class="echanges-stats-histogramme">
+      <svg [attr.viewBox]="'0 0 ' + width() + ' ' + histogramHeight" [attr.width]="width()" [attr.height]="histogramHeight"
+           role="group" aria-label="Demandes par jour de création" i18n-aria-label="@@echanges.stats.histogramme.label">
+        <line class="echanges-stats-axe" x1="0" [attr.y1]="histogramHeight" [attr.x2]="width()" [attr.y2]="histogramHeight" />
+        @for (bar of bars(); track bar.day) {
+          @if (bar.count > 0) {
+            <a routerLink="/echanges" [queryParams]="dayLink(s, bar.day)" [attr.aria-label]="barLabel(bar)">
+              <rect class="echanges-stats-barre" [attr.x]="bar.x" [attr.y]="bar.y" [attr.width]="bar.width" [attr.height]="bar.height">
+                <title>{{ barLabel(bar) }}</title>
+              </rect>
+            </a>
+          }
+        }
+      </svg>
+      <p class="echanges-stats-echelle" [style.width.px]="scaleWidth()">
+        <span>{{ bars()[0].day | date: 'd MMM' }}</span>
+        <span i18n="@@echanges.stats.histogramme.pic">au plus {{ peak() }} par jour</span>
+        <span>{{ bars()[bars().length - 1].day | date: 'd MMM' }}</span>
+      </p>
+    </div>
+
+    <h3 i18n="@@echanges.stats.parJourEvenement">Par jour de l'événement</h3>
+    <table class="echanges-stats-table">
+      <thead>
+        <tr>
+          <th scope="col" i18n="@@echanges.stats.colonne.jour">Jour du créneau cédé</th>
+          <th scope="col" i18n="@@echanges.stats.colonne.demandes">Demandes</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (day of s.parJourEvenement; track day.jour) {
+          <tr>
+            <td>{{ day.jour | date: 'EEEE d MMMM' }}</td>
+            <td><a routerLink="/echanges" [queryParams]="eventDayLink(s, day.jour)">{{ day.nombre }}</a></td>
+          </tr>
+        }
+        @if (s.creneauRetire > 0) {
+          <tr>
+            <td i18n="@@echanges.stats.creneauRetire">Créneau retiré</td>
+            <td><a routerLink="/echanges" [queryParams]="removedTimeslotLink(s)">{{ s.creneauRetire }}</a></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <h3 i18n="@@echanges.stats.parStand">Par stand cédé</h3>
+    <table class="echanges-stats-table">
+      <thead>
+        <tr>
+          <th scope="col" i18n="@@echanges.stats.colonne.stand">Stand</th>
+          <th scope="col" i18n="@@echanges.stats.colonne.demandes">Demandes</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (stand of stands(); track stand.standId) {
+          <tr>
+            <td>{{ stand.standNom ?? stand.standId }}</td>
+            <td><a routerLink="/echanges" [queryParams]="standLink(s, stand.standId)">{{ stand.nombre }}</a></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    @if (hiddenStands() > 0) {
+      <button matButton type="button" (click)="showAllStands.set(true)"
+              i18n="@@echanges.stats.tousLesStands">Voir les {{ hiddenStands() }} autres stands</button>
+    }
+
+    <h3 i18n="@@echanges.stats.contraintes">Contraintes cassées par les demandes non prévalidées</h3>
+    @if (s.contraintesViolees.length === 0) {
+      <p class="espace-vide" i18n="@@echanges.stats.contraintes.aucune">Aucune demande non prévalidée sur cette période.</p>
+    } @else {
+      <table class="echanges-stats-table">
+        <thead>
+          <tr>
+            <th scope="col" i18n="@@echanges.stats.colonne.contrainte">Règle</th>
+            <th scope="col" i18n="@@echanges.stats.colonne.demandes">Demandes</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of s.contraintesViolees; track row.contrainte) {
+            <tr>
+              <td>{{ row.contrainte }}</td>
+              <td><a routerLink="/echanges" [queryParams]="constraintLink(s, row.contrainte)">{{ row.nombre }}</a></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  }
+}

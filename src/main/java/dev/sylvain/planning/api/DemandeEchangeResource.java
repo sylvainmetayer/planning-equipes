@@ -1,7 +1,11 @@
 package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.DemandeEchange;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.espace.DemandeEchangeService;
+import dev.sylvain.planning.service.espace.EchangeStatistics;
+import dev.sylvain.planning.service.espace.EchangeStatisticsService;
+import dev.sylvain.planning.service.espace.EchangeStatisticsService.Measure;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.DemandeEchangeView;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.EchangeSimulation;
@@ -13,6 +17,7 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.time.LocalDate;
@@ -35,17 +40,60 @@ public class DemandeEchangeResource {
 
     private final EspaceAnimateurService espaceAnimateurService;
 
+    private final EchangeStatisticsService statisticsService;
+
     @Inject
     public DemandeEchangeResource(
-            DemandeEchangeService demandeEchangeService, EspaceAnimateurService espaceAnimateurService) {
+            DemandeEchangeService demandeEchangeService,
+            EspaceAnimateurService espaceAnimateurService,
+            EchangeStatisticsService statisticsService) {
         this.demandeEchangeService = demandeEchangeService;
         this.espaceAnimateurService = espaceAnimateurService;
+        this.statisticsService = statisticsService;
     }
 
-    /** Every demande of the current edition, most recent first, all statuts. */
+    /**
+     * Every demande of the current edition, most recent first, all statuts —
+     * or those created between {@code du} and {@code au} (both included, either
+     * optional), cut into days exactly as the statistics are, and narrowed by
+     * {@code mesure} to what one figure counts beyond a statut (the colleague's
+     * answer, the requests a delay was measured over) — so a figure of
+     * {@link #statistics} opens the list of exactly the requests it counted.
+     */
     @GET
-    public List<DemandeEchangeView> list() {
-        return espaceAnimateurService.toViews(demandeEchangeService.list());
+    public List<DemandeEchangeView> list(
+            @QueryParam("du") String du, @QueryParam("au") String au, @QueryParam("mesure") String mesure) {
+        LocalDate from = DateQueryParam.parse("du", du);
+        LocalDate to = DateQueryParam.parse("au", au);
+        checkRange(from, to);
+        Measure measure = Measure.fromParam(mesure);
+        List<DemandeEchange> demandes = from == null && to == null && measure == null
+                ? demandeEchangeService.list()
+                : statisticsService.createdBetween(from, to, measure);
+        return espaceAnimateurService.toViews(demandes);
+    }
+
+    /**
+     * Whether the foire works: volumes, the three rates, the four delays and
+     * the distributions, over the requests created in the period. Aggregates
+     * only — no name, no animateur id. Without a bound, the period is the foire
+     * window when it is bounded and the whole edition otherwise;
+     * {@code periode=edition} asks for the whole edition whatever the window.
+     */
+    @GET
+    @Path("/statistiques")
+    public EchangeStatistics statistics(
+            @QueryParam("du") String du, @QueryParam("au") String au, @QueryParam("periode") String periode) {
+        LocalDate from = DateQueryParam.parse("du", du);
+        LocalDate to = DateQueryParam.parse("au", au);
+        checkRange(from, to);
+        return statisticsService.statistics(from, to, "edition".equals(periode));
+    }
+
+    private static void checkRange(LocalDate from, LocalDate to) {
+        if (from != null && to != null && to.isBefore(from)) {
+            throw new BusinessError.Invalid("La fin de la période précède son début");
+        }
     }
 
     /** The foire window: the switch, its optional bounds, and whether it is open today. */

@@ -1,0 +1,103 @@
+/* The Statistiques tab of the swap requests screen: the period, the tiles, the histogram and the distributions. */
+
+.echanges-stats-periode {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0 0.5rem;
+}
+
+.echanges-stats-portee {
+  color: var(--mat-sys-on-surface-variant);
+  margin: 0.5rem 0 1rem;
+}
+
+.echanges-stats-tuiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.75rem;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.echanges-stats-tuile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.75rem;
+  background: var(--mat-sys-surface-container-low);
+}
+
+.echanges-stats-valeur {
+  font: var(--mat-sys-headline-small);
+  color: var(--mat-sys-on-surface);
+}
+
+.echanges-stats-vide {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.echanges-stats-libelle {
+  font: var(--mat-sys-title-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.echanges-stats-detail {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.echanges-stats-histogramme {
+  max-width: 100%;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+
+.echanges-stats-histogramme svg {
+  display: block;
+}
+
+.echanges-stats-barre {
+  fill: var(--mat-sys-primary);
+}
+
+.echanges-stats-histogramme a:focus-visible .echanges-stats-barre,
+.echanges-stats-histogramme a:hover .echanges-stats-barre {
+  fill: var(--mat-sys-tertiary);
+}
+
+.echanges-stats-axe {
+  stroke: var(--mat-sys-outline);
+  stroke-width: 1;
+}
+
+.echanges-stats-echelle {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0.25rem 0 0;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.echanges-stats-table {
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+  min-width: 18rem;
+}
+
+.echanges-stats-table th,
+.echanges-stats-table td {
+  padding: 0.35rem 0.75rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  text-align: start;
+}
+
+.echanges-stats-table td:last-child,
+.echanges-stats-table th:last-child {
+  text-align: end;
+}

@@ -606,6 +606,16 @@ applique l'échange puis le fige par des verrouillages `ANIMATEUR_CRENEAU`.
 D'où `analyser_impact_echange` à côté : la prévalidation stockée avec la demande
 décrit le planning du jour où elle a été envoyée, pas celui d'aujourd'hui.
 
+`consulter_foire_echanges` rend, à côté de la fenêtre de la foire, ses
+statistiques sur une période de création (`du`, `au` ; par défaut la fenêtre
+quand elle est datée, sinon toute l'édition ; `touteEdition` demande toute
+l'édition même quand la fenêtre est datée, comme `periode=edition` côté REST, et
+se refuse avec `du` ou `au`) : les mêmes agrégats que l'onglet
+Statistiques de l'écran Échanges — volumes, trois taux en numérateur et
+dénominateur, délais en secondes (médiane, 90ᵉ centile, moyenne, demandes sans
+horodatage), répartitions par jour et par stand, contraintes cassées passées
+par l'anonymisation. Aucun animateur n'y figure, pas même par son id.
+
 ## Retoucher un poste sans relancer le solveur
 
 `suggerer_reparations` cherche qui pourrait tenir un poste et chiffre chaque

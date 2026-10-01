@@ -1,20 +1,29 @@
 package dev.sylvain.planning.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import dev.sylvain.planning.domain.DemandeEchange;
+import dev.sylvain.planning.domain.StatutDemandeEchange;
 import dev.sylvain.planning.mcp.DisponibiliteMcpTools.CollecteView;
 import dev.sylvain.planning.mcp.DisponibiliteMcpTools.DeclarationMcpView;
 import dev.sylvain.planning.mcp.EchangeMcpTools.DemandeView;
 import dev.sylvain.planning.mcp.EchangeMcpTools.ViolationHardView;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteRepository.FenetreCollecte;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService.InvitationReport;
+import dev.sylvain.planning.service.espace.EchangeStatistics;
+import dev.sylvain.planning.service.espace.EchangeStatistics.EchangeConstraintCount;
+import dev.sylvain.planning.service.espace.EchangeStatisticsService;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.DeclarationAdminView;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.DemandeEchangeView;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.HardViolation;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -141,5 +150,59 @@ class EspaceAdminMcpToolsTest {
         assertThat(vue.contrainte()).isEqualTo("reposQuotidienMinimal");
         assertThat(vue.description()).isEqualTo("animateur a1 enchaîne deux vacations");
         assertThat(vue.matchesSupplementaires()).isEqualTo(2);
+    }
+
+    /**
+     * The statistics leave as aggregates: no component names a person, and the
+     * constraint lines are anonymised like any violation line.
+     */
+    @Test
+    void theFoireStatisticsLeaveAsAnonymousAggregates() {
+        EchangeStatistics statistiques = EchangeStatisticsService.compute(
+                List.of(nonPrevalidated()),
+                null,
+                null,
+                false,
+                ZoneId.of("Europe/Paris"),
+                Map.of(42L, LocalDate.of(2026, 7, 11)),
+                Map.of("stand-a", "Stand A"));
+
+        EchangeStatistics vue = EchangeMcpTools.anonymised(statistiques, SANS_REFERENTIEL);
+
+        assertThat(vue.creees()).isEqualTo(1);
+        assertThat(vue.contraintesViolees())
+                .containsExactly(new EchangeConstraintCount("animateur a1 dépasse 8 h le 11/07", 1));
+        assertThat(EchangeStatistics.class.getRecordComponents())
+                .extracting(composant -> composant.getName().toLowerCase())
+                .noneMatch(nom -> nom.contains("animateur") || nom.contains("demandeur") || nom.contains("cibleid"));
+    }
+
+    /** The whole edition is reachable over MCP too, even when the foire window is dated. */
+    @Test
+    void theFoireStatisticsCanAskForTheWholeEdition() {
+        assertThat(EchangeMcpTools.statisticsPeriod(null, null, true))
+                .isEqualTo(new EchangeMcpTools.StatisticsPeriod(null, null, true));
+        assertThat(EchangeMcpTools.statisticsPeriod(null, null, null))
+                .isEqualTo(new EchangeMcpTools.StatisticsPeriod(null, null, false));
+        assertThat(EchangeMcpTools.statisticsPeriod("2026-06-01", null, false))
+                .isEqualTo(new EchangeMcpTools.StatisticsPeriod(LocalDate.of(2026, 6, 1), null, false));
+        assertThatThrownBy(() -> EchangeMcpTools.statisticsPeriod("2026-06-01", null, true))
+                .isInstanceOf(BusinessError.Invalid.class);
+        assertThatThrownBy(() -> EchangeMcpTools.statisticsPeriod("2026-06-02", "2026-06-01", null))
+                .isInstanceOf(BusinessError.Invalid.class);
+    }
+
+    private static DemandeEchange nonPrevalidated() {
+        DemandeEchange demande = new DemandeEchange();
+        demande.setId("e1");
+        demande.setDemandeurId("a1");
+        demande.setCibleId("a2");
+        demande.setCreneauId(42L);
+        demande.setStandId("stand-a");
+        demande.setStatut(StatutDemandeEchange.EN_ATTENTE_CIBLE);
+        demande.setCreeLe(CREE_LE);
+        demande.setPrevalidationOk(false);
+        demande.setContraintesViolees(List.of("Camille Martin (a1) dépasse 8 h le 11/07"));
+        return demande;
     }
 }

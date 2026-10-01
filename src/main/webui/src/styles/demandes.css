@@ -173,3 +173,13 @@
   margin: 0.5rem 0 0;
   color: var(--app-positive);
 }
+
+/* Échanges: the two tabs, the requests and the statistics of the foire. */
+.echanges-onglets {
+  flex-wrap: wrap;
+  margin: 1rem 0;
+}
+
+.echanges-onglets .mat-icon {
+  margin-right: 0.35rem;
+}

@@ -7,6 +7,7 @@ import {
 import { ONGLETS_DEBUG, readOngletDebug } from '../pages/debug/debug';
 import { ONGLETS_DIAGNOSTIC, readOnglet } from '../pages/diagnostic/diagnostic';
 import { readDisponibilitesTab } from '../pages/disponibilites/declarations-filter';
+import { readEchangesTab } from '../pages/echanges/echanges-filter';
 import { ONGLETS_FICHIERS, readOngletFichiers } from '../pages/fichiers/fichiers';
 import { IMPORT_CARDS, readImportCard } from '../pages/imports/imports';
 import { JOURNEE_VIEWS, PLANNING_AXES, readAxe, readView } from '../pages/journee/journee';
@@ -54,6 +55,8 @@ const TAB_READERS: Record<string, TabReader | readonly TabReader[]> = {
     opens: (v) => readDisponibilitesTab(v) === v,
     values: ['covoiturage'],
   },
+  // The requests are the default tab: only the statistics are named.
+  '/echanges': { param: 'onglet', opens: (v) => readEchangesTab(v) === v, values: ['stats'] },
   '/fichiers': [
     // The Importer tab is reached through its cards, the page's default tab.
     { param: 'cible', opens: (v) => readImportCard(v) === v, values: IMPORT_CARDS },
