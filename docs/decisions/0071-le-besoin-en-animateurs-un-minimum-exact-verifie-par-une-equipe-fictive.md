@@ -70,8 +70,12 @@ Pour la vérification, deux formes ont été écartées :
    être enfreinte et ne doit pas faire recruter. La borne n'est créditée que
    lorsqu'elle dépasse strictement les autres.
 2. **Par typologie**, le même flot, plus ⌈sièges ÷ plafond⌉ quand la typologie
-   porte un plafond (borne `PLAFOND_TYPOLOGIE`). La ligne s'affiche **avant toute
-   saisie d'animateur** : c'est la fiche de recrutement. La somme des lignes
+   porte un plafond (borne `PLAFOND_TYPOLOGIE`). Les sièges comptés sont tous
+   ceux d'un stand qui propose la typologie, comme les compte
+   `plafondCreneauxParTypologie`, et ce plancher vaut **pour toute l'équipe** :
+   le minimum de l'écran n'est jamais sous celui d'une ligne. Quand la règle est
+   éteinte, le plafond ne lie personne et ne relève aucun plancher. La ligne
+   s'affiche **avant toute saisie d'animateur** : c'est la fiche de recrutement. La somme des lignes
    donne l'effectif nécessaire si personne ne cumulait deux typologies.
 3. **Majeurs et mineurs.** `majeursMin` est le plus grand nombre de majeurs
    qu'une journée exige : toute la journée un jour férié, sinon le pic des sièges
@@ -103,15 +107,18 @@ Pour la vérification, deux formes ont été écartées :
    l'équipe pourvoit chaque siège. Un échec ne prouve donc pas qu'il manque du
    monde, seulement qu'aucun plan complet n'a été trouvé dans le temps imparti.
    Une seule vérification tourne à la fois dans toute l'application, et aucune
-   ne démarre pendant une résolution. Ni le plan, ni les animateurs, ni la file
-   du solveur ne sont écrits.
+   ne démarre pendant une résolution. Une résolution qui démarre pendant une
+   vérification **l'interrompt** : la vérification se termine en échec en
+   disant pourquoi, plutôt que de partager les cœurs d'un calcul dont le
+   résultat dépend du temps. Ni le plan, ni les animateurs, ni la file du
+   solveur ne sont écrits.
 6. **Chaque vérification est conservée et journalisée.** Elle est écrite dans
    `verification_besoin` au lancement, puis complétée à la fin du solve.
    L'historique trace le lancement (par l'administrateur) et la fin (par
    l'application). Ses lignes ne portent que l'identifiant de la vérification :
    l'équipe, la durée et le résultat sont joints à la lecture, comme le nom d'un
-   animateur. Une ligne restée « en cours » sans solve qui tourne a été
-   interrompue par un redémarrage, et se lit ainsi. La table n'est ni recopiée
+   animateur. Au démarrage, une vérification restée « en cours » est close en
+   échec : l'arrêt du serveur l'a interrompue. La table n'est ni recopiée
    par la duplication d'une édition, ni emportée par le dump, comme
    `journal_action`.
 

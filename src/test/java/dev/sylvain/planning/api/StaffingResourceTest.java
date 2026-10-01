@@ -3,6 +3,7 @@ package dev.sylvain.planning.api;
 import static io.restassured.RestAssured.given;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 
@@ -146,6 +147,55 @@ class StaffingResourceTest {
                 .body("majeurs", equalTo(1))
                 .body("mineurs", equalTo(1))
                 .body("plafondSecondes", equalTo(10));
+
+        seedScenario();
+    }
+
+    /** A solve that starts while a check runs takes the cores: the check gives way, and says why. */
+    @Test
+    void aSolveStartingStopsTheRunningCheck() {
+        seedSeats();
+        // One person for two seats at the same time: no plan exists, so the
+        // check would run its whole minute if nothing stopped it.
+        given().contentType("application/json")
+                .body("{\"majeurs\":1,\"dureeSecondes\":60}")
+                .when()
+                .post("/api/staffing/verification")
+                .then()
+                .statusCode(202);
+
+        String jobId = given().when()
+                .post("/api/solve/async/reference-data?seconds=1")
+                .then()
+                .statusCode(202)
+                .extract()
+                .path("id");
+        try {
+            await().atMost(Duration.ofSeconds(30))
+                    .pollInterval(Duration.ofMillis(250))
+                    .until(() -> !"EN_COURS"
+                            .equals(given().when()
+                                    .get("/api/staffing/verification")
+                                    .then()
+                                    .extract()
+                                    .path("etat")));
+            given().when()
+                    .get("/api/staffing/verification")
+                    .then()
+                    .statusCode(200)
+                    .body("etat", equalTo("ECHEC"))
+                    .body("erreur", containsString("une résolution a démarré"));
+        } finally {
+            given().when().post("/api/jobs/" + jobId + "/cancel");
+            await().atMost(Duration.ofSeconds(60))
+                    .pollInterval(Duration.ofMillis(250))
+                    .until(() -> given().when()
+                                    .get("/api/jobs/active")
+                                    .then()
+                                    .extract()
+                                    .statusCode()
+                            == 204);
+        }
 
         seedScenario();
     }

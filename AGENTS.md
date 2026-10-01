@@ -159,7 +159,11 @@ Single Quarkus service, no separate solver microservice. Package root:
     persisted plan alone — **nothing analyses by solving a plan it then throws
     away**; in memory, so the first read after a restart re-derives it from that
     plan instead of answering "never analysed"), `PlanningPersistenceService`,
-    `PlanSnapshotService`, `SnapshotComparisonService`, `DeplacementService`.
+    `PlanSnapshotService`, `SnapshotComparisonService`, `DeplacementService`,
+    `StaffingVerificationService` (the staffing check: a made-up team solved
+    until feasible on its own thread, outside the queue — it gives way to any
+    solve that starts, on `SolveStarting`, and keeps every check in
+    `verification_besoin`).
   - `service/analyse/` — what is read from a plan without solving it —
     Réalisé vs planifié included (`RealisedVsPlannedService`, see the
     third `@Scheduled` below).

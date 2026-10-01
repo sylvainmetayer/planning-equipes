@@ -212,6 +212,10 @@ class IsolationEditionStructurelleTest {
      *       is a property of the table, not of an edition. Writing every other
      *       statement of that repository through {@code prepareScoped} is what
      *       keeps the exception to this one line.</li>
+     *   <li>{@code StaffingVerificationRepository.closeInterrupted} closes the
+     *       staffing checks a stop cut short, across every edition, once at
+     *       startup — which has no edition of its own, and a check is
+     *       interrupted by the stop whatever edition started it.</li>
      * </ul>
      */
     private static final List<String> EXCEPTIONS_ASSUMEES = List.of(
@@ -227,7 +231,8 @@ class IsolationEditionStructurelleTest {
             "SELECT s.id, s.libelle, s.automatique, s.score, s.nombre_affectations, s.cree_le, s.edition_id,"
                     + " s.publie_le, e.nom AS edition_nom, e.reference_modifie_le, s.consignes , s.contenu, s.kpi"
                     + " FROM plan_snapshot s LEFT JOIN edition e ON e.id = s.edition_id WHERE s.id = ?",
-            "DELETE FROM journal_action WHERE survenu_le < ?");
+            "DELETE FROM journal_action WHERE survenu_le < ?",
+            "UPDATE verification_besoin SET etat = 'ECHEC', terminee_le = now(), erreur = ? WHERE etat = 'EN_COURS'");
 
     /**
      * The call sites whose SQL the scan cannot resolve, keyed by

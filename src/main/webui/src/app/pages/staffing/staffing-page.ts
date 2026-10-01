@@ -471,6 +471,15 @@ export class StaffingPage implements OnInit {
     }
   }
 
+  /**
+   * What an empty « Majeurs » field means, as the server reads it: the floor
+   * less the minors typed in, so the team checked is the floor and not more.
+   */
+  protected readonly adultsPlaceholder = computed(() => {
+    const floor = this.summary()?.minimumTotal ?? 0;
+    return `${Math.max(floor - (this.minorsToCheck() ?? 0), 0)}`;
+  });
+
   /** Who the running check staffs the seats with. */
   protected readonly verificationTeam = computed(() => {
     const verification = this.verification();

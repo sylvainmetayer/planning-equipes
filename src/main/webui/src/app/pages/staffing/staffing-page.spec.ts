@@ -660,7 +660,7 @@ describe('StaffingPage', () => {
       );
       expect(hrefs).toContain('/ouvertures?du=2026-09-01&au=2026-09-01');
       expect(hrefs).toContain('/regles?onglet=legal&regle=coupureRepasObligatoire');
-      expect(hrefs).toContain('/regles?onglet=qualite&regle=maxJoursConsecutifsTravaillesDur');
+      expect(hrefs).toContain('/regles?onglet=legal&regle=maxJoursConsecutifsTravaillesDur');
       expect(root.querySelector('.staffing-marge')?.textContent).toBe('-2');
       expect(root.querySelector('.staffing-marge-tranche')?.textContent).toBe('18:00-22:00');
       expect(root.textContent).toContain('Horaires des stands du 01/09');
@@ -896,6 +896,18 @@ describe('StaffingPage', () => {
       } finally {
         vi.useRealTimers();
       }
+    });
+
+    it('shows, in an empty « Majeurs » field, the adults the server will check: the floor less the minors', async () => {
+      analysesApi.staffing.mockResolvedValue(summary({ minimumTotal: 150 }));
+      const page = createPage();
+      await vi.waitFor(() => expect(page['summary']()).not.toBeNull());
+
+      expect(page['adultsPlaceholder']()).toBe('150');
+      page['setMinors']('10');
+      expect(page['adultsPlaceholder']()).toBe('140');
+      page['setMinors']('400');
+      expect(page['adultsPlaceholder']()).toBe('0');
     });
 
     it('checks the floor when nothing is typed in, and never calls a failure a proof', async () => {

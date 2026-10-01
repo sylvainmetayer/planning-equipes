@@ -86,9 +86,20 @@
           <strong i18n="@@staffing.sequenceBound.label">Enchaînement des jours : {{ resume.enchainementTotal }}</strong>
           <ng-container i18n="@@staffing.sequenceBound.description"> — les calendriers de repos réels, jour après jour :
           {{ joursTravaillesMax() }} jours par semaine, {{ consecutiveCapLabel() }}.</ng-container>
-          <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'qualite', regle: 'maxJoursConsecutifsTravaillesDur' }"
+          <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'legal', regle: 'maxJoursConsecutifsTravaillesDur' }"
              i18n="@@staffing.lien.joursAffilee">Jours d'affilée</a>
         </p>
+        @if (estBorneRetenue('PLAFOND_TYPOLOGIE')) {
+          <p class="staffing-binding">
+            <mat-icon inline aria-hidden="true">block</mat-icon>
+            <strong i18n="@@staffing.capBound.label">Plafond de créneaux d'une typologie : {{ resume.minimumTotal }}</strong>
+            <ng-container i18n="@@staffing.capBound.description"> — une typologie limite le nombre de créneaux qu'une
+            même personne peut tenir sur l'édition : ses sièges exigent au moins autant de personnes distinctes. La
+            fiche par typologie ci-dessous dit laquelle.</ng-container>
+            <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'legal', regle: 'plafondCreneauxParTypologie' }"
+               i18n="@@staffing.lien.plafondTypologie">Plafond par typologie</a>
+          </p>
+        }
       </div>
 
       @if (projectionLabel(); as projection) {
@@ -108,7 +119,7 @@
         <div class="staffing-verification-actions">
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label i18n="@@staffing.verification.majeurs">Majeurs</mat-label>
-            <input matInput type="number" min="0" name="adultsToCheck" [placeholder]="'' + resume.minimumTotal"
+            <input matInput type="number" min="0" name="adultsToCheck" [placeholder]="adultsPlaceholder()"
                    [ngModel]="adultsToCheck()" (ngModelChange)="setAdults($event)" [disabled]="verificationRunning()" />
           </mat-form-field>
           <mat-form-field appearance="outline" subscriptSizing="dynamic">

@@ -2,14 +2,14 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.analyse.StaffingVerificationService;
-import dev.sylvain.planning.service.analyse.StaffingVerificationService.StaffingVerification;
 import dev.sylvain.planning.service.journal.ActionJournalisee;
 import dev.sylvain.planning.service.journal.CatalogueActions;
 import dev.sylvain.planning.service.journal.EntreeJournal;
 import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.journal.ReferenceDataChanges;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.solve.StaffingVerificationService;
+import dev.sylvain.planning.service.solve.StaffingVerificationService.StaffingVerification;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;

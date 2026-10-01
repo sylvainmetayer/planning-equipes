@@ -1,5 +1,6 @@
-package dev.sylvain.planning.service.analyse;
+package dev.sylvain.planning.service.solve;
 
+import ai.timefold.solver.core.api.solver.Solver;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.NiveauCompetence;
@@ -8,16 +9,17 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintDiagnostic;
+import dev.sylvain.planning.service.analyse.StaffingService;
 import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
-import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.solve.ProblemBuilder.Seats;
-import dev.sylvain.planning.service.solve.SolverBudgetBounds;
-import dev.sylvain.planning.service.solve.SolverJobService;
 import dev.sylvain.planning.solver.ConstraintCatalog;
+import io.quarkus.runtime.StartupEvent;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
@@ -26,6 +28,7 @@ import java.time.LocalTime;
 import java.time.Month;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +37,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.jboss.logging.Logger;
 
@@ -83,6 +86,9 @@ public class StaffingVerificationService {
 
     /** Above this, the question is no longer « does the floor hold » but a load test. */
     static final int EFFECTIF_MAX = 5000;
+
+    /** How long a solve that starts waits, at most, for a check's solver to be stoppable. */
+    private static final Duration YIELD_WAIT = Duration.ofSeconds(5);
 
     /** The shortest: below this, the solver has barely built its first plan. */
     static final long DUREE_MIN_SECONDES = 10;
@@ -236,8 +242,10 @@ public class StaffingVerificationService {
     private final JournalActionService journal;
 
     private final AtomicBoolean enCours = new AtomicBoolean();
-    /** The row the running check writes to, {@code 0} when none runs on this instance. */
-    private final AtomicLong runningId = new AtomicLong();
+    /** Set when a solve started while the running check held the cores: the check gives way. */
+    private final AtomicBoolean yielded = new AtomicBoolean();
+    /** The running check's solver, {@code null} until it is built and once it is done. */
+    private final AtomicReference<Solver<PlanningEvenement>> currentSolver = new AtomicReference<>();
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor(runnable -> {
         Thread thread = new Thread(runnable, "staffing-verification");
@@ -312,18 +320,22 @@ public class StaffingVerificationService {
             throw new BusinessError.Invalid("La durée de la vérification doit être comprise entre " + DUREE_MIN_SECONDES
                     + " et " + bounds.maxSecondsLimit() + " secondes : " + plafond + ".");
         }
-        // The solver is shared by every edition, one job at a time: a check
-        // would take the cores a running solve was budgeted on.
-        if (solverJobService.findActive().isPresent()) {
-            throw new BusinessError.Conflict(
-                    "Une résolution est en cours : lancez la vérification du besoin une fois qu'elle est terminée.");
-        }
         if (!enCours.compareAndSet(false, true)) {
             throw new BusinessError.Conflict(
                     "Une vérification du besoin est déjà en cours : attendez qu'elle se termine avant d'en lancer une autre.");
         }
+        // Cleared before the solver is looked at, never after: a solve that
+        // starts from here on is seen by yieldToSolve, one already started is
+        // seen by findActive — there is no moment both miss.
+        yielded.set(false);
         StaffingVerification started = null;
         try {
+            // The solver is shared by every edition, one job at a time: a check
+            // would take the cores a running solve was budgeted on.
+            if (solverJobService.findActive().isPresent()) {
+                throw new BusinessError.Conflict(
+                        "Une résolution est en cours : lancez la vérification du besoin une fois qu'elle est terminée.");
+            }
             PlanningEvenement problem = problem(
                     seats, team(nombreMajeurs, nombreMineurs, referenceDataService.listTypologies(), firstDay(seats)));
             // Every read of the edition happens here, on the request: the
@@ -331,7 +343,6 @@ public class StaffingVerificationService {
             planningService.prepareHypothetical(problem);
             started = repository.insert(StaffingVerification.started(
                     nombreMajeurs, nombreMineurs, seats.postes().size(), plafond));
-            runningId.set(started.id());
             StaffingVerification launched = started;
             executor.submit(() -> run(edition, problem, launched));
             return started;
@@ -341,7 +352,6 @@ public class StaffingVerificationService {
             if (started != null) {
                 repository.complete(started.failed("La vérification n'a pas pu démarrer.", Instant.now()));
             }
-            runningId.set(0);
             enCours.set(false);
             throw e;
         }
@@ -349,46 +359,95 @@ public class StaffingVerificationService {
 
     /** The last check of the current edition, running or finished. */
     public Optional<StaffingVerification> current() {
-        return repository.latest().map(this::interpreted);
+        return repository.latest();
     }
 
-    /**
-     * The checks of the current edition among {@code ids}, read as
-     * {@link #current} reads them — what the history joins to its lines.
-     */
+    /** The checks of the current edition among {@code ids}, by id — what the history joins to its lines. */
     public Map<Long, StaffingVerification> findAll(Collection<Long> ids) {
-        Map<Long, StaffingVerification> found = new LinkedHashMap<>();
-        repository.findAll(ids).forEach((id, verification) -> found.put(id, interpreted(verification)));
-        return found;
+        return repository.findAll(ids);
     }
 
     /**
-     * A row still {@code EN_COURS} that this instance is not running was cut
-     * short — by a restart, since a check never outlives its process — and
-     * will never be completed: say so rather than « en cours » forever.
+     * A check never outlives its process: whatever is still {@code EN_COURS}
+     * when the application starts was cut short by the stop, and will never
+     * be completed. Said once here, so that every {@code EN_COURS} row read
+     * afterwards is one actually running.
      */
-    private StaffingVerification interpreted(StaffingVerification verification) {
-        if (verification.etat() == VerificationState.EN_COURS && runningId.get() != verification.id()) {
-            return verification.failed("La vérification a été interrompue par un redémarrage du serveur.", null);
+    void closeInterrupted(@Observes StartupEvent startup) {
+        int closed = repository.closeInterrupted("La vérification a été interrompue par un arrêt du serveur.");
+        if (closed > 0) {
+            LOG.infof("%d staffing check(s) interrupted by the last stop recorded as such", closed);
         }
-        return verification;
+    }
+
+    /**
+     * A solve has just taken the solver: the running check gives way rather
+     * than share the cores the solve was budgeted on. Called on the solve's
+     * thread, before it builds anything; the check ends in {@code ECHEC},
+     * saying why.
+     */
+    void yieldToSolve(@Observes SolveStarting starting) {
+        yielded.set(true);
+        Solver<PlanningEvenement> solver = currentSolver.get();
+        if (solver == null) {
+            // Not built yet, or done: the check sees the flag on its own.
+            return;
+        }
+        // Timefold clears an early stop when solve() begins: one asked for in
+        // the instant between the hand-over and the start would be lost. The
+        // gap is a few milliseconds; the wait is bounded all the same.
+        long deadline = System.nanoTime() + YIELD_WAIT.toNanos();
+        while (!solver.isSolving() && currentSolver.get() == solver && System.nanoTime() < deadline) {
+            Thread.onSpinWait();
+        }
+        solver.terminateEarly();
+    }
+
+    /** Thrown on the check's thread when a solve started before its own did. */
+    private static final class YieldedBeforeStart extends RuntimeException {
+        YieldedBeforeStart() {
+            super(null, null, false, false);
+        }
     }
 
     private void run(String edition, PlanningEvenement problem, StaffingVerification started) {
         StaffingVerification outcome;
         try {
-            PlanningEvenement solved = planningService.solvePreparedUntilFeasible(problem, started.plafondSecondes());
-            int empty = (int) solved.getPostes().stream()
-                    .filter(poste -> poste.getAnimateur() == null)
-                    .count();
-            long hard = solved.getScore() == null ? 0 : solved.getScore().hardScore();
-            List<String> rules = hard < 0 ? brokenHardRules(solved) : List.of();
-            outcome = started.finished(hard == 0 && empty == 0, empty, hard, rules);
+            PlanningEvenement solved = yielded.get()
+                    ? null
+                    : planningService.solvePreparedUntilFeasible(problem, started.plafondSecondes(), solver -> {
+                        // Published before the flag is read, as yieldToSolve
+                        // sets the flag before reading this: one of the two
+                        // always sees the other.
+                        currentSolver.set(solver);
+                        // A solve that started while this one was being built:
+                        // stopping it early would be cleared by solve() itself.
+                        if (yielded.get()) {
+                            throw new YieldedBeforeStart();
+                        }
+                    });
+            if (solved == null || yielded.get()) {
+                outcome = started.failed(
+                        "La vérification a été interrompue : une résolution a démarré, elle passe avant.",
+                        Instant.now());
+            } else {
+                int empty = (int) solved.getPostes().stream()
+                        .filter(poste -> poste.getAnimateur() == null)
+                        .count();
+                long hard = solved.getScore() == null ? 0 : solved.getScore().hardScore();
+                List<String> rules = hard < 0 ? brokenHardRules(solved) : List.of();
+                outcome = started.finished(hard == 0 && empty == 0, empty, hard, rules);
+            }
+        } catch (YieldedBeforeStart e) {
+            outcome = started.failed(
+                    "La vérification a été interrompue : une résolution a démarré, elle passe avant.", Instant.now());
         } catch (RuntimeException e) {
             LOG.warnf(e, "Staffing check of edition %s failed", edition);
             String cause =
                     e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
             outcome = started.failed("La vérification n'a pas pu aboutir : " + cause, Instant.now());
+        } finally {
+            currentSolver.set(null);
         }
         StaffingVerification done = outcome;
         try {
@@ -401,7 +460,6 @@ public class StaffingVerificationService {
         } catch (RuntimeException e) {
             LOG.errorf(e, "The outcome of staffing check %d of edition %s could not be recorded", done.id(), edition);
         } finally {
-            runningId.set(0);
             enCours.set(false);
         }
     }
@@ -412,14 +470,12 @@ public class StaffingVerificationService {
      * edition on this thread.
      */
     private List<String> brokenHardRules(PlanningEvenement solved) {
-        Map<String, Integer> counts = new LinkedHashMap<>();
-        planningService.diagnose(solved).contraintes().stream()
+        return planningService.diagnose(solved).contraintes().stream()
                 .filter(diagnostic -> diagnostic.matchCount() > 0)
                 .filter(diagnostic -> ConstraintCatalog.NOMS_DURS.contains(diagnostic.name()))
-                .forEach(diagnostic -> counts.merge(diagnostic.name(), diagnostic.matchCount(), Integer::sum));
-        return counts.entrySet().stream()
-                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-                .map(Map.Entry::getKey)
+                .sorted(Comparator.comparingInt(ConstraintDiagnostic::matchCount)
+                        .reversed())
+                .map(ConstraintDiagnostic::name)
                 .toList();
     }
 
