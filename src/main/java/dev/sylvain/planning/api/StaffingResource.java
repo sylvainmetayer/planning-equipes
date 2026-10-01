@@ -3,11 +3,16 @@ package dev.sylvain.planning.api;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
 import dev.sylvain.planning.service.analyse.StaffingService;
+import dev.sylvain.planning.service.analyse.StaffingVerificationService;
+import dev.sylvain.planning.service.analyse.StaffingVerificationService.StaffingVerification;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 /**
  * Minimum staffing need computed on the current reference data, with no solve
@@ -33,10 +38,20 @@ public class StaffingResource {
 
     private final StaffingService staffingService;
 
+    private final StaffingVerificationService verificationService;
+
     @Inject
-    public StaffingResource(StaffingService staffingService) {
+    public StaffingResource(StaffingService staffingService, StaffingVerificationService verificationService) {
         this.staffingService = staffingService;
+        this.verificationService = verificationService;
     }
+
+    /**
+     * The size of the made-up team a check staffs the seats with.
+     *
+     * @param effectif {@code null} or absent for the floor the screen shows
+     */
+    public record VerificationRequest(Integer effectif) {}
 
     /**
      * Never an error on an empty edition: this only feeds a read-only screen,
@@ -46,5 +61,28 @@ public class StaffingResource {
     @GET
     public StaffingSummary analyze() {
         return staffingService.analyzeEdition();
+    }
+
+    /**
+     * Starts a solve of the edition's seats by a made-up team, to tell whether
+     * the floor suffices — {@code 202}, the solve running in the background.
+     * {@code 409} while another check runs, in any edition.
+     */
+    @POST
+    @Path("/verification")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response verify(VerificationRequest request) {
+        StaffingVerification started = verificationService.start(request == null ? null : request.effectif());
+        return Response.accepted(started).build();
+    }
+
+    /** The last check of the edition, running or finished; {@code 204} when none was run since the start. */
+    @GET
+    @Path("/verification")
+    public Response verification() {
+        return verificationService
+                .current()
+                .map(verification -> Response.ok(verification).build())
+                .orElseGet(() -> Response.noContent().build());
     }
 }

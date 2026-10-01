@@ -3,7 +3,10 @@ package dev.sylvain.planning.service.analyse;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreRepas;
+import dev.sylvain.planning.domain.JoursFeries;
+import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlafondsLegauxMajeurs;
+import dev.sylvain.planning.domain.PlafondsLegauxMineurs;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
@@ -62,9 +65,9 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * through. See {@code docs/contraintes.md}, « Ce qui déduit la pause, et ce
  * qui compte l'amplitude ».</p>
  *
- * <h2>The five bounds</h2>
+ * <h2>The six bounds</h2>
  *
- * <p>Five bounds are computed and the largest wins. Each one is a
+ * <p>Six bounds are computed and the largest wins. Each one is a
  * <em>proof</em> that no smaller number of people can cover the seats, derived
  * from a rule {@code LegalConstraints} really enforces — so the floor and the
  * solver can never contradict each other:</p>
@@ -99,6 +102,12 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * no room to eat cannot be staffed by the people its peak alone suggests:
  * whoever works either side of the window has to step out of it, and somebody
  * else holds the seat meanwhile.</li>
+ * <li><b>Enchaînement des jours</b> — the exact cover of the day sequence by
+ * {@link DaySequenceFloor}: the weekly six days and, when the edition holds
+ * {@code maxJoursConsecutifsTravaillesDur}, the cap on days in a row, solved
+ * together as a maximum flow over everybody's rest days. It can only confirm
+ * or raise the rotation bound, which divides each week on its own and cannot
+ * see a run of worked days straddling two of them.</li>
  * </ol>
  *
  * <h3>Why the last two are computed week by week</h3>
@@ -133,10 +142,30 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * ceiling: a day holding 600 person-hours needs at least sixty people whatever
  * its peak looks like.</p>
  *
- * <p>All five stay optimistic: none of them accounts for competences, for the
+ * <p>All six stay optimistic: none of them accounts for competences, for the
  * daily-rest constraint, or for the fact that a real plan spreads work far
  * below the legal ceilings. They are a recruitment floor to exceed, never a
- * target — the exact answer only comes from a real solve.</p>
+ * target — the exact answer only comes from a real solve, which
+ * {@code StaffingVerificationService} runs on a made-up team of that size.</p>
+ *
+ * <h2>Adults and minors</h2>
+ *
+ * <p>{@link StaffingSummary#majeursMin()} is the most adults one day needs:
+ * all of its people on a public holiday, otherwise the peak of the seats no
+ * minor may hold. {@link StaffingSummary#mineursMax()} is a <em>ceiling</em>
+ * on minors for the {@link StaffingSummary#effectifReference() reference
+ * team}, from three necessary conditions — see {@link #mineursMax}. It replaced
+ * a share « half the seats of each stand », which read a medium rule as if it
+ * were the law and ignored the holidays and the minors' weekly rest.</p>
+ *
+ * <h2>Unavailability the team can absorb</h2>
+ *
+ * <p>Each day says how many of the reference team may be away
+ * ({@link JourStaffing#absentsMax()}), each week how many person-days of
+ * unavailability fit beyond the rest day a full week owes everybody anyway
+ * ({@link SemaineStaffing#budgetIndisponibilites()}). A day off taken on that
+ * rest day costs nothing, which is why the budget is not simply the slack of
+ * every day added up.</p>
  *
  * <h2>Effectif projeté sur les indisponibilités déclarées</h2>
  *
@@ -232,7 +261,19 @@ public class StaffingAnalyzer {
         PIC_AVEC_PAUSE,
         CHARGE_HORAIRE,
         ROTATION_JOURS,
-        COUPURE_REPAS
+        COUPURE_REPAS,
+        /**
+         * The exact cover of the day sequence ({@link DaySequenceFloor}): the
+         * weekly six days and, when the edition holds it hard, the cap on days
+         * in a row, together. Credited only when strictly above every other.
+         */
+        ENCHAINEMENT_JOURS,
+        /**
+         * A game category's cap on the timeslots one animateur may hold over
+         * the edition ({@code maxCreneauxParAnimateur}): its seats need at least
+         * that many distinct people. Only ever retained on a category row.
+         */
+        PLAFOND_TYPOLOGIE
     }
 
     /**
@@ -253,6 +294,14 @@ public class StaffingAnalyzer {
      * {@code minimumJour} the distinct animateurs the day provably needs: the
      * pause-adjusted peak, or its hours over the daily legal ceiling when a
      * flat, long day demands more people than its peak shows.
+     *
+     * <p>{@code absentsMax} is how many of the {@link StaffingSummary#effectifReference()}
+     * people may be away that day while the day is still held — the reference
+     * team minus the day's minimum. {@code majeursRequis} is how many of the
+     * day's people must be adults: all of them on a public holiday (art.
+     * L3164-6), otherwise the peak of the seats a minor may not hold — those of a
+     * stand reserved to adults, and those reaching into the night of a 16-17
+     * year old (art. L3163-1).</p>
      */
     @Schema(
             requiredProperties = {
@@ -264,7 +313,9 @@ public class StaffingAnalyzer {
                 "picRepas",
                 "picSimultane",
                 "sieges",
-                "standsOuverts"
+                "standsOuverts",
+                "absentsMax",
+                "majeursRequis"
             })
     public record JourStaffing(
             LocalDate date,
@@ -276,7 +327,9 @@ public class StaffingAnalyzer {
             int picAvecPause,
             int picRepas,
             int minimumJour,
-            int disponibles) {}
+            int disponibles,
+            int absentsMax,
+            int majeursRequis) {}
 
     /**
      * One ISO week, the window both remaining bounds are proved inside — see
@@ -299,6 +352,17 @@ public class StaffingAnalyzer {
      * @param joursPersonne sum of the days' {@code minimumJour}: the
      *                      (animateur, jour travaillé) pairs the week requires
      * @param rotationTotal {@code joursPersonne / joursTravaillables}
+     * @param budgetIndisponibilites person-days of unavailability the
+     *                      reference team can absorb that week beyond the rest
+     *                      day a full week already owes everybody:
+     *                      {@code joursTravaillables × effectifReference −
+     *                      joursPersonne}. A day off that falls on the weekly
+     *                      rest costs nothing; each one beyond comes out of
+     *                      this budget. A necessary condition: the cap on days
+     *                      in a row and the competences eat into it too
+     * @param indisponibilitesAuDela the days the known animateurs declared
+     *                      unavailable that week beyond that free rest day, to
+     *                      compare with the budget — {@code 0} with nobody known
      */
     @Schema(
             requiredProperties = {
@@ -308,7 +372,9 @@ public class StaffingAnalyzer {
                 "jours",
                 "joursPersonne",
                 "joursTravaillables",
-                "rotationTotal"
+                "rotationTotal",
+                "budgetIndisponibilites",
+                "indisponibilitesAuDela"
             })
     public record SemaineStaffing(
             String semaine,
@@ -319,7 +385,26 @@ public class StaffingAnalyzer {
             double capaciteHeuresParAnimateur,
             int chargeTotal,
             int joursPersonne,
-            int rotationTotal) {}
+            int rotationTotal,
+            int budgetIndisponibilites,
+            int indisponibilitesAuDela) {
+
+        /** The same week once the reference team is known — see the two last parameters. */
+        SemaineStaffing withIndisponibilites(int budget, int auDela) {
+            return new SemaineStaffing(
+                    semaine,
+                    debut,
+                    jours,
+                    joursTravaillables,
+                    heures,
+                    capaciteHeuresParAnimateur,
+                    chargeTotal,
+                    joursPersonne,
+                    rotationTotal,
+                    budget,
+                    auDela);
+        }
+    }
 
     @Schema(
             requiredProperties = {
@@ -330,8 +415,10 @@ public class StaffingAnalyzer {
                 "indisponibilitesDeclarees",
                 "joursTravaillesMaxParSemaine",
                 "minimumAvecIndisponibilites",
-                "minimumMajeurs",
-                "minimumMineurs",
+                "enchainementTotal",
+                "effectifReference",
+                "majeursMin",
+                "mineursMax",
                 "minimumTotal",
                 "nombreSemaines",
                 "picAvecPause",
@@ -358,8 +445,11 @@ public class StaffingAnalyzer {
             BorneRetenue borneRetenue,
             int minimumAvecIndisponibilites,
             boolean indisponibilitesDeclarees,
-            int minimumMajeurs,
-            int minimumMineurs,
+            int enchainementTotal,
+            Integer joursConsecutifsMax,
+            int effectifReference,
+            int majeursMin,
+            int mineursMax,
             int dureeHebdomadaireMaxMinutes,
             int dureeQuotidienneMaxMinutes,
             int joursTravaillesMaxParSemaine,
@@ -372,6 +462,10 @@ public class StaffingAnalyzer {
      * — the animateurs declaring it. {@code manque} is what that pool is short
      * of: zero when the bound is met, and zero as long as no animateur is
      * known at all, since there is then nothing to compare the bound to.
+     *
+     * <p>{@code plafondCreneaux} is the category's {@code maxCreneauxParAnimateur},
+     * {@code null} when it carries none, and {@code minimumPlafond} what it
+     * forces on its own: {@code ⌈sieges ÷ plafondCreneaux⌉} distinct people.</p>
      */
     @Schema(
             requiredProperties = {
@@ -386,7 +480,9 @@ public class StaffingAnalyzer {
                 "picSimultane",
                 "rotationTotal",
                 "sieges",
-                "specialistes"
+                "specialistes",
+                "enchainementTotal",
+                "minimumPlafond"
             })
     public record TypologieStaffing(
             String typologie,
@@ -400,6 +496,9 @@ public class StaffingAnalyzer {
             int picRepas,
             int chargeTotal,
             int rotationTotal,
+            int enchainementTotal,
+            Integer plafondCreneaux,
+            int minimumPlafond,
             int minimumTotal,
             BorneRetenue borneRetenue,
             int specialistes,
@@ -431,6 +530,11 @@ public class StaffingAnalyzer {
      *                          at all. Without it nobody is polyvalent, and a
      *                          reserve of zero must be read as "no such notion
      *                          here" rather than as a shortage of backup
+     * @param planchersCumules  the sum of every row's minimum: the team the
+     *                          seats would need if nobody held two categories.
+     *                          Against {@code minimumTotal}, it says how many
+     *                          categories each recruit must carry on average for
+     *                          the global floor to be reachable at all
      */
     @Schema(
             requiredProperties = {
@@ -440,7 +544,8 @@ public class StaffingAnalyzer {
                 "polyvalents",
                 "siegesNonAttribues",
                 "siegesReservesAuxPolyvalents",
-                "typologieNinjaDefinie"
+                "typologieNinjaDefinie",
+                "planchersCumules"
             })
     public record CompetenceStaffing(
             List<TypologieStaffing> parTypologie,
@@ -450,7 +555,8 @@ public class StaffingAnalyzer {
             int manqueTotal,
             int manquePolyvalents,
             int animateursTotal,
-            boolean typologieNinjaDefinie) {}
+            boolean typologieNinjaDefinie,
+            int planchersCumules) {}
 
     /** Half-open interval of one seat, in minutes from the start of its day. */
     private record Siege(LocalDate date, int debut, int fin, Stand stand) {}
@@ -458,6 +564,44 @@ public class StaffingAnalyzer {
     /** What one event day demands, before any weekly reasoning. */
     private record BesoinJour(
             LocalDate date, double heures, int picSimultane, int picAvecPause, int picRepas, int minimum) {}
+
+    /**
+     * The edition's rules the bounds are proved under, read in one place by
+     * {@link StaffingService} so REST and MCP cannot use two sets.
+     *
+     * @param dureeHebdomadaireMaxMinutes       adults' weekly ceiling of travail effectif
+     * @param dureePauseMinutes                 the break an adult's day owes
+     * @param dureeHebdomadaireMaxMineurMinutes minors' weekly ceiling, for the
+     *                                          ceiling on minors only
+     * @param fenetresRepas                     the meal windows the plan must
+     *                                          honour, empty when the rule is off
+     * @param joursConsecutifsMax               the cap on days in a row when the
+     *                                          edition holds it <b>hard</b>,
+     *                                          {@code null} otherwise — a medium
+     *                                          rule may be broken, so it raises
+     *                                          no floor
+     */
+    public record StaffingRules(
+            int dureeHebdomadaireMaxMinutes,
+            int dureePauseMinutes,
+            int dureeHebdomadaireMaxMineurMinutes,
+            List<FenetreRepas> fenetresRepas,
+            Integer joursConsecutifsMax) {
+
+        public StaffingRules {
+            fenetresRepas = fenetresRepas == null ? List.of() : List.copyOf(fenetresRepas);
+        }
+
+        /** The rules of the older entry points: no cap on days in a row, the legal 35 h for minors. */
+        static StaffingRules of(int dureeHebdomadaireMaxMinutes, int dureePauseMinutes, List<FenetreRepas> fenetres) {
+            return new StaffingRules(
+                    dureeHebdomadaireMaxMinutes,
+                    dureePauseMinutes,
+                    ParametresLegaux.DUREE_HEBDOMADAIRE_MAX_MINEUR_MINUTES_PAR_DEFAUT,
+                    fenetres,
+                    null);
+        }
+    }
 
     /**
      * Which referentials the edition is still missing, from the three lists
@@ -514,10 +658,8 @@ public class StaffingAnalyzer {
                 postes,
                 animateurs,
                 typologies,
-                dureeHebdomadaireMaxMinutes,
-                dureePauseMinutes,
-                referentielsManquants,
-                List.of());
+                StaffingRules.of(dureeHebdomadaireMaxMinutes, dureePauseMinutes, List.of()),
+                referentielsManquants);
     }
 
     /**
@@ -549,10 +691,34 @@ public class StaffingAnalyzer {
             int dureePauseMinutes,
             List<ReferentielManquant> referentielsManquants,
             List<FenetreRepas> fenetresRepas) {
-        List<FenetreRepas> fenetres = fenetresRepas == null ? List.of() : fenetresRepas;
+        return analyze(
+                postes,
+                animateurs,
+                typologies,
+                StaffingRules.of(dureeHebdomadaireMaxMinutes, dureePauseMinutes, fenetresRepas),
+                referentielsManquants);
+    }
+
+    /**
+     * The whole analysis, under the edition's own rules — what
+     * {@link StaffingService} calls.
+     */
+    public StaffingSummary analyze(
+            List<PosteAffectation> postes,
+            List<Animateur> animateurs,
+            List<TypologieItem> typologies,
+            StaffingRules rules,
+            List<ReferentielManquant> referentielsManquants) {
+        List<FenetreRepas> fenetres = rules.fenetresRepas();
+        int dureeHebdomadaireMaxMinutes = rules.dureeHebdomadaireMaxMinutes();
+        int dureePauseMinutes = rules.dureePauseMinutes();
         List<Siege> sieges = sieges(postes);
         Map<LocalDate, BesoinJour> besoins = besoinsByDate(sieges, dureePauseMinutes, fenetres);
-        Bornes bornes = bornes(besoins, dureeHebdomadaireMaxMinutes, dureePauseMinutes);
+        Bornes bornes = bornes(besoins, rules);
+        List<Animateur> connus = animateurs == null ? List.of() : animateurs;
+        // The team every « how many may » figure is read against: the floor,
+        // or the animateurs already entered when there are more of them.
+        int effectif = Math.max(bornes.minimumTotal(), connus.size());
 
         Map<LocalDate, Integer> dayByDate = dayByDate(postes);
         Map<LocalDate, Set<String>> standsByDate = new TreeMap<>();
@@ -566,7 +732,7 @@ public class StaffingAnalyzer {
             }
         }
 
-        List<Animateur> connus = animateurs == null ? List.of() : animateurs;
+        Map<LocalDate, Integer> majeursParJour = adultsRequired(sieges, besoins);
         List<JourStaffing> parJour = new ArrayList<>();
         for (BesoinJour besoin : besoins.values()) {
             parJour.add(new JourStaffing(
@@ -579,7 +745,9 @@ public class StaffingAnalyzer {
                     besoin.picAvecPause(),
                     besoin.picRepas(),
                     besoin.minimum(),
-                    disponibles(connus, besoin.date())));
+                    disponibles(connus, besoin.date()),
+                    effectif - besoin.minimum(),
+                    majeursParJour.getOrDefault(besoin.date(), 0)));
         }
 
         // The critical day is the one that needs the most people, which is the
@@ -589,11 +757,26 @@ public class StaffingAnalyzer {
                 .max(Comparator.comparingInt(JourStaffing::minimumJour).thenComparingInt(JourStaffing::picAvecPause))
                 .orElse(null);
 
-        int minimumMajeurs = (int) Math.ceil(bornes.minimumTotal() * partMajeurs(sieges));
+        List<SemaineStaffing> parSemaine = bornes.parSemaine().stream()
+                .map(semaine -> semaine.withIndisponibilites(
+                        semaine.joursTravaillables() * effectif - semaine.joursPersonne(),
+                        unavailableBeyondRest(connus, semaine, besoins.keySet())))
+                .toList();
+        SemaineStaffing semaineCritique = bornes.semaineCritique() == null
+                ? null
+                : parSemaine.stream()
+                        .filter(semaine -> semaine.semaine()
+                                .equals(bornes.semaineCritique().semaine()))
+                        .findFirst()
+                        .orElse(null);
+        int majeursMin = majeursParJour.values().stream()
+                .mapToInt(Integer::intValue)
+                .max()
+                .orElse(0);
         return new StaffingSummary(
                 List.copyOf(parJour),
-                bornes.parSemaine(),
-                bornes.semaineCritique(),
+                List.copyOf(parSemaine),
+                semaineCritique,
                 bornes.picSimultane(),
                 bornes.picAvecPause(),
                 bornes.picRepas(),
@@ -608,13 +791,15 @@ public class StaffingAnalyzer {
                 projectOnIndisponibilites(parJour, connus, bornes.minimumTotal()),
                 connus.stream()
                         .anyMatch(animateur -> !indisponibilites(animateur).isEmpty()),
-                minimumMajeurs,
-                bornes.minimumTotal() - minimumMajeurs,
+                bornes.enchainementTotal(),
+                rules.joursConsecutifsMax(),
+                effectif,
+                majeursMin,
+                mineursMax(effectif, majeursMin, parSemaine, besoins.keySet(), rules),
                 dureeHebdomadaireMaxMinutes,
                 PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES,
                 PlafondsLegauxMajeurs.JOURS_TRAVAILLES_MAX_PAR_SEMAINE,
-                bottleneckPerCategory(
-                        sieges, connus, typologies, dureeHebdomadaireMaxMinutes, dureePauseMinutes, fenetres),
+                bottleneckPerCategory(sieges, connus, typologies, rules),
                 referentielsManquants == null ? List.of() : List.copyOf(referentielsManquants));
     }
 
@@ -665,12 +850,7 @@ public class StaffingAnalyzer {
      * the two attribution rules this rests on.
      */
     private static CompetenceStaffing bottleneckPerCategory(
-            List<Siege> sieges,
-            List<Animateur> animateurs,
-            List<TypologieItem> typologies,
-            int dureeHebdomadaireMaxMinutes,
-            int dureePauseMinutes,
-            List<FenetreRepas> fenetres) {
+            List<Siege> sieges, List<Animateur> animateurs, List<TypologieItem> typologies, StaffingRules rules) {
         List<Animateur> connus = animateurs == null ? List.of() : animateurs;
         List<TypologieItem> referentiel = typologies == null ? List.of() : typologies;
 
@@ -680,7 +860,13 @@ public class StaffingAnalyzer {
                 .findFirst()
                 .orElse(null);
         Map<String, String> labels = new LinkedHashMap<>();
-        referentiel.forEach(typologie -> labels.put(typologie.id(), typologie.label()));
+        Map<String, Integer> plafonds = new LinkedHashMap<>();
+        referentiel.forEach(typologie -> {
+            labels.put(typologie.id(), typologie.label());
+            if (typologie.maxCreneauxParAnimateur() != null && typologie.maxCreneauxParAnimateur() > 0) {
+                plafonds.put(typologie.id(), typologie.maxCreneauxParAnimateur());
+            }
+        });
 
         SeatAttribution attribution = SeatAttribution.of(sieges, ninja);
         Map<String, List<Siege>> parTypologie = attribution.parTypologie;
@@ -691,12 +877,19 @@ public class StaffingAnalyzer {
         List<TypologieStaffing> lignes = new ArrayList<>();
         for (Map.Entry<String, List<Siege>> entree : parTypologie.entrySet()) {
             String id = entree.getKey();
-            Bornes bornes = bornes(
-                    besoinsByDate(entree.getValue(), dureePauseMinutes, fenetres),
-                    dureeHebdomadaireMaxMinutes,
-                    dureePauseMinutes);
+            Bornes bornes =
+                    bornes(besoinsByDate(entree.getValue(), rules.dureePauseMinutes(), rules.fenetresRepas()), rules);
+            // Each seat is one timeslot held: a cap of k timeslots per
+            // animateur over the edition spreads them over ⌈seats ÷ k⌉ people
+            // at least, whatever the days look like.
+            Integer plafond = plafonds.get(id);
+            int minimumPlafond =
+                    plafond == null ? 0 : Math.ceilDiv(entree.getValue().size(), plafond);
+            int minimum = Math.max(bornes.minimumTotal(), minimumPlafond);
+            BorneRetenue retenue =
+                    minimumPlafond > bornes.minimumTotal() ? BorneRetenue.PLAFOND_TYPOLOGIE : bornes.borneRetenue();
             int disponibles = specialistes.getOrDefault(id, 0);
-            int manque = connus.isEmpty() ? 0 : Math.max(0, bornes.minimumTotal() - disponibles);
+            int manque = connus.isEmpty() ? 0 : Math.max(0, minimum - disponibles);
             lignes.add(new TypologieStaffing(
                     id,
                     labels.getOrDefault(id, id),
@@ -709,8 +902,11 @@ public class StaffingAnalyzer {
                     bornes.picRepas(),
                     bornes.chargeTotal(),
                     bornes.rotationTotal(),
-                    bornes.minimumTotal(),
-                    bornes.borneRetenue(),
+                    bornes.enchainementTotal(),
+                    plafond,
+                    minimumPlafond,
+                    minimum,
+                    retenue,
                     disponibles,
                     manque));
         }
@@ -734,7 +930,8 @@ public class StaffingAnalyzer {
                         .mapToInt(TypologieStaffing::manque)
                         .sum(),
                 connus.size(),
-                ninja != null);
+                ninja != null,
+                lignes.stream().mapToInt(TypologieStaffing::minimumTotal).sum());
     }
 
     /** Each seat given to the one category that can claim it, when one can. */
@@ -814,6 +1011,7 @@ public class StaffingAnalyzer {
             int picRepas,
             int chargeTotal,
             int rotationTotal,
+            int enchainementTotal,
             int minimumTotal,
             BorneRetenue borneRetenue,
             List<SemaineStaffing> parSemaine,
@@ -862,8 +1060,9 @@ public class StaffingAnalyzer {
         return besoins;
     }
 
-    private static Bornes bornes(
-            Map<LocalDate, BesoinJour> besoins, int dureeHebdomadaireMaxMinutes, int dureePauseMinutes) {
+    private static Bornes bornes(Map<LocalDate, BesoinJour> besoins, StaffingRules rules) {
+        int dureeHebdomadaireMaxMinutes = rules.dureeHebdomadaireMaxMinutes();
+        int dureePauseMinutes = rules.dureePauseMinutes();
         int picSimultane = besoins.values().stream()
                 .mapToInt(BesoinJour::picSimultane)
                 .max()
@@ -906,7 +1105,9 @@ public class StaffingAnalyzer {
                     capacite,
                     capacite > 0 ? (int) Math.ceil(heuresSemaine / capacite) : 0,
                     joursPersonne,
-                    joursTravaillables > 0 ? (int) Math.ceil((double) joursPersonne / joursTravaillables) : 0));
+                    joursTravaillables > 0 ? (int) Math.ceil((double) joursPersonne / joursTravaillables) : 0,
+                    0,
+                    0));
         }
         parSemaine.sort(Comparator.comparing(SemaineStaffing::debut));
 
@@ -916,8 +1117,14 @@ public class StaffingAnalyzer {
                 .mapToInt(SemaineStaffing::rotationTotal)
                 .max()
                 .orElse(0);
-        int minimumTotal = Math.max(
+        int autres = Math.max(
                 Math.max(Math.max(picSimultane, picAvecPause), picRepas), Math.max(chargeTotal, rotationTotal));
+        // The exact cover of the days, searched from the floor already proved:
+        // it can only confirm it or raise it.
+        Map<LocalDate, Integer> parJour = new TreeMap<>();
+        besoins.forEach((date, besoin) -> parJour.put(date, besoin.minimum()));
+        int enchainementTotal = DaySequenceFloor.floor(parJour, rules.joursConsecutifsMax(), autres);
+        int minimumTotal = Math.max(autres, enchainementTotal);
         SemaineStaffing semaineCritique = parSemaine.stream()
                 .max(Comparator.comparingInt(semaine -> Math.max(semaine.chargeTotal(), semaine.rotationTotal())))
                 .orElse(null);
@@ -929,8 +1136,11 @@ public class StaffingAnalyzer {
                 picRepas,
                 chargeTotal,
                 rotationTotal,
+                enchainementTotal,
                 minimumTotal,
-                borneRetenue(picSimultane, picAvecPause, chargeTotal, rotationTotal, picRepas),
+                enchainementTotal > autres
+                        ? BorneRetenue.ENCHAINEMENT_JOURS
+                        : borneRetenue(picSimultane, picAvecPause, chargeTotal, rotationTotal, picRepas),
                 List.copyOf(parSemaine),
                 semaineCritique);
     }
@@ -971,33 +1181,118 @@ public class StaffingAnalyzer {
     }
 
     /**
-     * Share of the seats that an adult has to hold: all of them on a
-     * {@code reserveMajeurs} stand, half of them (rounded up, per stand and
-     * per créneau) everywhere else — the same rule the seats themselves are
-     * generated under. Defaults to 0.5 when there is nothing to count.
+     * How many of each day's people must be adults: the whole day's minimum on
+     * a public holiday, when no minor may work (art. L3164-6); otherwise the
+     * peak of the seats no minor may hold — those of a stand reserved to
+     * adults, and those reaching into the night of a 16-17 year old (art.
+     * L3163-1, 22 h-6 h). The night of an under-16 starts at 20 h, so this is
+     * the most lenient reading: a ceiling on minors computed from it holds for
+     * every minor.
      */
-    private static double partMajeurs(List<Siege> sieges) {
-        if (sieges.isEmpty()) {
-            return 0.5;
-        }
-        // Group by stand and window, so "half the seats, rounded up" is
-        // applied to a real group of simultaneous seats and not to the
-        // event's grand total.
-        Map<String, int[]> byGroup = new LinkedHashMap<>();
+    private static Map<LocalDate, Integer> adultsRequired(List<Siege> sieges, Map<LocalDate, BesoinJour> besoins) {
+        int finNuit = Creneau.FIN_NUIT.toSecondOfDay() / 60;
+        int debutNuit = Creneau.DEBUT_NUIT_16_A_18_ANS.toSecondOfDay() / 60;
+        Map<LocalDate, List<Siege>> reserves = new TreeMap<>();
         for (Siege siege : sieges) {
-            String key = (siege.stand() == null ? "?" : siege.stand().getId()) + "@" + siege.date() + "#"
-                    + siege.debut() + "-" + siege.fin();
-            int[] compteur = byGroup.computeIfAbsent(key, ignored -> new int[] {0, 0});
-            compteur[0]++;
-            compteur[1] = siege.stand() != null && siege.stand().isReserveMajeurs() ? 1 : 0;
+            boolean reserve = siege.stand() != null && siege.stand().isReserveMajeurs();
+            // Minutes from the day's midnight, an evening seat running past it
+            // keeping an end beyond 24 h: the night is 22 h to 30 h on that axis.
+            boolean nuit = siege.debut() < finNuit || siege.fin() > debutNuit;
+            if (reserve || nuit) {
+                reserves.computeIfAbsent(siege.date(), date -> new ArrayList<>())
+                        .add(siege);
+            }
         }
-        int total = 0;
-        int majeurs = 0;
-        for (int[] compteur : byGroup.values()) {
-            total += compteur[0];
-            majeurs += compteur[1] == 1 ? compteur[0] : (compteur[0] + 1) / 2;
+        Map<LocalDate, Integer> majeurs = new TreeMap<>();
+        for (BesoinJour besoin : besoins.values()) {
+            int requis = JoursFeries.isFerieInFrance(besoin.date())
+                    ? besoin.minimum()
+                    : pic(reserves.getOrDefault(besoin.date(), List.of()), 0);
+            majeurs.put(besoin.date(), requis);
         }
-        return total == 0 ? 0.5 : (double) majeurs / total;
+        return majeurs;
+    }
+
+    /**
+     * The most minors a team of {@code effectif} can hold — a <b>ceiling</b>,
+     * never a target: it keeps three necessary conditions and nothing else.
+     *
+     * <ol>
+     * <li>The adults left must cover the day needing the most of them:
+     * {@code effectif − majeursMin}.</li>
+     * <li>A week's person-days: an adult works {@code min(jours, 6)} days of
+     * it, a minor {@code min(jours − fériés, 5)} — two rest days in a row
+     * (art. L3164-2), never a public holiday — so each minor costs the
+     * difference.</li>
+     * <li>A week's hours: an adult covers the week's
+     * {@code capaciteHeuresParAnimateur}, a minor at most the minors' weekly
+     * ceiling plus a thirty-minute break a day.</li>
+     * </ol>
+     *
+     * <p>Neither the cap on days in a row nor the four-and-a-half hours of
+     * continuous work a minor may not exceed are counted, so a solve may well
+     * hold fewer: the ceiling is where recruiting minors must stop, never how
+     * many to recruit.</p>
+     */
+    private static int mineursMax(
+            int effectif,
+            int majeursMin,
+            List<SemaineStaffing> semaines,
+            Set<LocalDate> joursEvenement,
+            StaffingRules rules) {
+        long plafond = (long) effectif - majeursMin;
+        for (SemaineStaffing semaine : semaines) {
+            int feries = (int) joursEvenement.stream()
+                    .filter(date -> !date.isBefore(semaine.debut())
+                            && date.isBefore(semaine.debut().plusDays(7)))
+                    .filter(JoursFeries::isFerieInFrance)
+                    .count();
+            int joursMajeur = semaine.joursTravaillables();
+            int joursMineur = Math.clamp(
+                    semaine.jours() - (long) feries, 0, 7 - PlafondsLegauxMineurs.JOURS_REPOS_CONSECUTIFS_PAR_SEMAINE);
+            if (joursMajeur > joursMineur) {
+                plafond = Math.min(
+                        plafond,
+                        Math.floorDiv(
+                                (long) joursMajeur * effectif - semaine.joursPersonne(), joursMajeur - joursMineur));
+            }
+            double capaciteMineur = Math.min(
+                            rules.dureeHebdomadaireMaxMineurMinutes()
+                                    + joursMineur * (long) PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES,
+                            joursMineur
+                                    * (long) (PlafondsLegauxMineurs.DUREE_QUOTIDIENNE_MAX_MINUTES
+                                            + PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES))
+                    / 60.0;
+            double capaciteMajeur = semaine.capaciteHeuresParAnimateur();
+            if (capaciteMajeur > capaciteMineur) {
+                plafond = Math.min(plafond, (long)
+                        Math.floor((effectif * capaciteMajeur - semaine.heures()) / (capaciteMajeur - capaciteMineur)));
+            }
+        }
+        return Math.clamp(plafond, 0, effectif);
+    }
+
+    /**
+     * The days the known animateurs declared unavailable in one week beyond
+     * the one each may take for free: in a week of seven event days everybody
+     * owes a rest day, and a day off falling there costs nothing. In a shorter
+     * week the days off the event are the rest, and every unavailable event
+     * day counts.
+     */
+    private static int unavailableBeyondRest(
+            List<Animateur> animateurs, SemaineStaffing semaine, Set<LocalDate> joursEvenement) {
+        List<LocalDate> jours = joursEvenement.stream()
+                .filter(date -> !date.isBefore(semaine.debut())
+                        && date.isBefore(semaine.debut().plusDays(7)))
+                .toList();
+        int libres = jours.size() - semaine.joursTravaillables();
+        int auDela = 0;
+        for (Animateur animateur : animateurs) {
+            int absences =
+                    (int) jours.stream().filter(animateur::isIndisponibleOn).count();
+            auDela += Math.max(0, absences - libres);
+        }
+        return auDela;
     }
 
     /**

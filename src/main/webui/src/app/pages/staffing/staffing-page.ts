@@ -1,4 +1,4 @@
-import { DecimalPipe } from '@angular/common';
+import { DecimalPipe, formatNumber } from '@angular/common';
 import {
   afterNextRender,
   computed,
@@ -6,12 +6,20 @@ import {
   inject,
   input,
   resource,
+  signal,
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   Injector,
+  LOCALE_ID,
+  OnInit,
   ViewEncapsulation,
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
@@ -23,9 +31,12 @@ import {
   CelluleMarge,
   CompetenceStaffing,
   JourStaffing,
+  SemaineStaffing,
   StaffingSummary,
+  StaffingVerification,
   TypologieStaffing,
 } from '../../core/models';
+import { errorMessage } from '../../core/error-message';
 import { errorText, retainedValue } from '../../core/resource-state';
 import { consumeQueryParam } from '../../core/view-query-params';
 import { StatusMessage } from '../../shared/status-message';
@@ -88,7 +99,11 @@ export function margeJour(cellule: CelluleMarge | null | undefined): MargeJour |
   imports: [
     StatusMessage,
     RouterLink,
+    FormsModule,
+    MatButtonModule,
     MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
     MatIconModule,
     MatProgressBarModule,
     MatTableModule,
@@ -104,7 +119,7 @@ export function margeJour(cellule: CelluleMarge | null | undefined): MargeJour |
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class StaffingPage {
+export class StaffingPage implements OnInit {
   /**
    * False when the Diagnostic page hosts this screen as one of its tabs: the
    * page then carries the title, and a second heading would only repeat it.
@@ -119,16 +134,18 @@ export class StaffingPage {
     'picSimultane',
     'picAvecPause',
     'minimumJour',
+    'majeursRequis',
+    'absentsMax',
     'marge',
     'horaires',
   ];
-  protected readonly competenceColumns = [
-    'typologie',
-    'sieges',
-    'minimumTotal',
-    'specialistes',
-    'manque',
-  ];
+  protected readonly semaineColumns = ['semaine', 'joursPersonne', 'budget', 'declarees'];
+  /** The specialists and the shortfall only once somebody is entered: before, the minimum is the recruitment brief. */
+  protected readonly competenceColumns = computed(() =>
+    (this.competence()?.animateursTotal ?? 0) > 0
+      ? ['typologie', 'sieges', 'minimumTotal', 'specialistes', 'manque']
+      : ['typologie', 'sieges', 'minimumTotal'],
+  );
   private readonly analysesApi = inject(AnalysesApi);
   private readonly realiseApi = inject(RealiseApi);
 
@@ -147,7 +164,7 @@ export class StaffingPage {
   });
   /** The game category table's columns, the previous edition's last when there is one. */
   protected readonly colonnesTypologie = computed(() =>
-    this.precedente() ? [...this.competenceColumns, 'precedente'] : this.competenceColumns,
+    this.precedente() ? [...this.competenceColumns(), 'precedente'] : this.competenceColumns(),
   );
 
   /** Read when the screen opens: nothing here changes without a new solve or a referential edit. */
@@ -171,14 +188,34 @@ export class StaffingPage {
   protected readonly jourCourt = jourCourt;
 
   private readonly injector = inject(Injector);
+  private readonly locale = inject(LOCALE_ID);
+
+  /** The last check of the floor by a solve, running or finished; `null` before any. */
+  protected readonly verification = signal<StaffingVerification | null>(null);
+  /** The team size typed in; `null` checks the floor the summary shows. */
+  protected readonly teamSizeToCheck = signal<number | null>(null);
+  protected readonly verificationErreur = signal('');
+  protected readonly verificationRunning = computed(() => this.verification()?.etat === 'EN_COURS');
+  private pollTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Set when the screen is left: a read still in flight then schedules nothing more. */
+  private destroyed = false;
 
   constructor() {
+    inject(DestroyRef).onDestroy(() => {
+      this.destroyed = true;
+      clearTimeout(this.pollTimer);
+    });
     // `?onglet=former` lands here with `section=former`: « À former » is at the
     // foot. A landing, not a view: obeyed once, then dropped from the address,
     // so coming back to the tab does not scroll again.
     consumeQueryParam('section', (section) =>
       section === 'former' ? this.scrollToTrainingOnceLoaded() : undefined,
     );
+  }
+
+  /** Reads the edition's last check once the screen is up, and follows it if it still runs. */
+  ngOnInit(): void {
+    void this.readVerification();
   }
 
   /**
@@ -365,5 +402,90 @@ export class StaffingPage {
   /** A typologie whose bound exceeds the animateurs declaring it: the bottleneck. */
   protected estGoulot(ligne: TypologieStaffing): boolean {
     return ligne.manque > 0;
+  }
+
+  /** The cap on days in a row the floor was proved under, named; empty when the hard rule is off. */
+  protected readonly consecutiveCapLabel = computed(() => {
+    const cap = this.summary()?.joursConsecutifsMax;
+    return cap
+      ? $localize`:@@staffing.sequenceBound.cap:et au plus ${cap}:plafond: jours d'affilée`
+      : $localize`:@@staffing.sequenceBound.noCap:sans plafond de jours d'affilée en dur`;
+  });
+
+  /**
+   * How many typologies each recruit carries on average for the floor to be
+   * reachable at all — said only when the rows add up to more than the floor.
+   */
+  protected readonly cumulLabel = computed(() => {
+    const summary = this.summary();
+    const cumul = summary?.parCompetence.planchersCumules ?? 0;
+    const minimum = summary?.minimumTotal ?? 0;
+    if (minimum <= 0 || cumul <= minimum) {
+      return '';
+    }
+    const moyenne = formatNumber(cumul / minimum, this.locale, '1.0-1');
+    return $localize`:@@staffing.competence.cumul:Sans personne qui cumule deux typologies, il faudrait ${cumul}:cumul: personnes. Pour s'en tenir à ${minimum}:minimum:, chaque recrue doit en porter ${moyenne}:moyenne: en moyenne.`;
+  });
+
+  /** A week whose declared days off exceed what it can absorb. */
+  protected isWeekOverBudget(semaine: SemaineStaffing): boolean {
+    return semaine.indisponibilitesAuDela > semaine.budgetIndisponibilites;
+  }
+
+  /** A day where more people declared themselves off than the day can spare. */
+  protected isDayOverTolerance(jour: JourStaffing): boolean {
+    const total = this.summary()?.parCompetence.animateursTotal ?? 0;
+    return total > 0 && total - jour.disponibles > jour.absentsMax;
+  }
+
+  protected changerEffectif(valeur: number | string | null): void {
+    const size = valeur === null || valeur === '' ? null : Number(valeur);
+    this.teamSizeToCheck.set(size !== null && Number.isFinite(size) ? size : null);
+  }
+
+  protected async lancerVerification(): Promise<void> {
+    this.verificationErreur.set('');
+    try {
+      this.verification.set(await this.analysesApi.verifyStaffing(this.teamSizeToCheck()));
+      this.schedulePoll();
+    } catch (error) {
+      this.verificationErreur.set(errorMessage(error));
+    }
+  }
+
+  /** The hard rules the best plan still breaks, as the result names them. */
+  protected readonly verificationLabel = computed(() => {
+    const verification = this.verification();
+    if (!verification || verification.etat === 'EN_COURS') {
+      return '';
+    }
+    const effectif = verification.effectif;
+    const duree = verification.dureeSecondes ?? 0;
+    if (verification.etat === 'ECHEC') {
+      return verification.erreur ?? '';
+    }
+    if (verification.realisable) {
+      return $localize`:@@staffing.verification.ok:Avec ${effectif}:effectif: personnes, tous les sièges sont pourvus sans enfreindre aucune règle dure (calcul de ${duree}:duree: s).`;
+    }
+    const vides = verification.siegesNonPourvus ?? 0;
+    return $localize`:@@staffing.verification.ko:Avec ${effectif}:effectif: personnes, aucun plan complet trouvé en ${duree}:duree: s (${vides}:vides: sièges vides ou une règle dure enfreinte). Ce n'est pas une preuve : essayez avec davantage de monde pour comparer.`;
+  });
+
+  /** Reads the edition's last check once, then follows it while it runs. */
+  private async readVerification(): Promise<void> {
+    try {
+      this.verification.set(await this.analysesApi.staffingVerification());
+      this.schedulePoll();
+    } catch (error) {
+      this.verificationErreur.set(errorMessage(error));
+    }
+  }
+
+  /** A check takes minutes: re-read every few seconds while it runs, and stop with the screen. */
+  private schedulePoll(): void {
+    clearTimeout(this.pollTimer);
+    if (!this.destroyed && this.verification()?.etat === 'EN_COURS') {
+      this.pollTimer = setTimeout(() => void this.readVerification(), 3000);
+    }
   }
 }

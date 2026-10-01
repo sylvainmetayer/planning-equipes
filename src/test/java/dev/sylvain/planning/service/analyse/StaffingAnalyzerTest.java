@@ -11,6 +11,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.BorneRetenue;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.CompetenceStaffing;
+import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingRules;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.TypologieStaffing;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
@@ -280,7 +281,7 @@ class StaffingAnalyzerTest {
     }
 
     @Test
-    void reserveMajeursStandsPushTheAdultShareUp() {
+    void aStandReservedToAdultsSetsHowManyAdultsTheTeamNeeds() {
         Creneau matin = creneau(1, LocalTime.of(10, 0), LocalTime.of(12, 0));
         Stand majeurs = stand("A", 2);
         majeurs.setReserveMajeurs(true);
@@ -289,10 +290,142 @@ class StaffingAnalyzerTest {
 
         StaffingSummary summary = analyzer.analyze(postes, List.of(), TYPOLOGIES, 48 * 60, 0);
 
-        // 2 adult-only seats + 1 of the 2 remaining ones = 3 of 4.
+        // The two seats of the reserved stand need adults; the two others may
+        // be held by minors, and nothing else in a two-hour day forbids it.
         assertThat(summary.minimumTotal()).isEqualTo(4);
-        assertThat(summary.minimumMajeurs()).isEqualTo(3);
-        assertThat(summary.minimumMineurs()).isEqualTo(1);
+        assertThat(summary.parJour().get(0).majeursRequis()).isEqualTo(2);
+        assertThat(summary.majeursMin()).isEqualTo(2);
+        assertThat(summary.mineursMax()).isEqualTo(2);
+    }
+
+    @Test
+    void aPublicHolidayLeavesNoRoomForMinors() {
+        // 14 July: no minor may work (art. L3164-6), so every person the day
+        // needs is an adult, whatever the stands.
+        LocalDate quatorzeJuillet = LocalDate.of(2026, 7, 14);
+        Creneau creneau = new Creneau(1L, 1, quatorzeJuillet, LocalTime.of(14, 0), LocalTime.of(18, 0));
+
+        StaffingSummary summary =
+                analyzer.analyze(postes(stand("A", 3), creneau, 3), List.of(), TYPOLOGIES, 48 * 60, 30);
+
+        assertThat(summary.parJour().get(0).majeursRequis()).isEqualTo(3);
+        assertThat(summary.majeursMin()).isEqualTo(3);
+        assertThat(summary.mineursMax()).isZero();
+    }
+
+    @Test
+    void aSeatReachingIntoTheNightNeedsAnAdult() {
+        Stand stand = stand("A", 1);
+        List<PosteAffectation> postes = new ArrayList<>();
+        postes.addAll(postes(stand, creneau(1, LocalTime.of(14, 0), LocalTime.of(18, 0)), 1));
+        postes.addAll(postes(stand("B", 2), creneau(2, LocalTime.of(21, 0), LocalTime.of(0, 0)), 2));
+
+        StaffingSummary summary = analyzer.analyze(postes, List.of(), TYPOLOGIES, 48 * 60, 30);
+
+        // 22 h-6 h is the night of a 16-17 year old (art. L3163-1): both
+        // evening seats run into it, the afternoon one does not.
+        assertThat(summary.parJour().get(0).majeursRequis()).isEqualTo(2);
+    }
+
+    @Test
+    void theCapOnDaysInARowRaisesTheFloorAboveTheWeeklyRotation() {
+        // A full week needing six people a day, then Monday and Tuesday needing
+        // seven. Week by week, seven people suffice: 42 person-days at six days
+        // each, and seven on the last two days. With six days in a row at most,
+        // whoever rests on the first Monday or Tuesday would work seven days
+        // running to finish the event, so somebody has to be added.
+        LocalDate lundi = LocalDate.of(2026, 7, 13);
+        List<PosteAffectation> postes = new ArrayList<>();
+        for (int jour = 0; jour < 9; jour++) {
+            Creneau creneau =
+                    new Creneau((long) jour, jour + 1, lundi.plusDays(jour), LocalTime.of(10, 0), LocalTime.of(12, 0));
+            int sieges = jour < 7 ? 6 : 7;
+            postes.addAll(postes(stand("A", sieges), creneau, sieges));
+        }
+
+        StaffingSummary sansPlafond = analyzer.analyze(
+                postes, List.of(), TYPOLOGIES, new StaffingRules(48 * 60, 30, 35 * 60, List.of(), null), List.of());
+        StaffingSummary avecPlafond = analyzer.analyze(
+                postes, List.of(), TYPOLOGIES, new StaffingRules(48 * 60, 30, 35 * 60, List.of(), 6), List.of());
+
+        assertThat(sansPlafond.rotationTotal()).isEqualTo(7);
+        assertThat(sansPlafond.minimumTotal()).isEqualTo(7);
+        assertThat(sansPlafond.joursConsecutifsMax()).isNull();
+        assertThat(avecPlafond.rotationTotal()).isEqualTo(7);
+        assertThat(avecPlafond.enchainementTotal()).isEqualTo(8);
+        assertThat(avecPlafond.minimumTotal()).isEqualTo(8);
+        assertThat(avecPlafond.borneRetenue()).isEqualTo(BorneRetenue.ENCHAINEMENT_JOURS);
+        assertThat(avecPlafond.joursConsecutifsMax()).isEqualTo(6);
+    }
+
+    @Test
+    void aGameCategoryCapSpreadsItsSeatsOverMorePeopleThanItsPeak() {
+        // Nine timeslots on one stand, one seat each: a single person at a
+        // time, but nobody may hold more than four of them over the edition.
+        List<TypologieItem> typologies = List.of(
+                new TypologieItem("FOU", null, "Homme jeu", false, 4, null, null),
+                new TypologieItem("NINJA", "Ninja", true));
+        Stand stand = stand("A", 1, "FOU");
+        List<PosteAffectation> postes = new ArrayList<>();
+        for (int jour = 0; jour < 9; jour++) {
+            Creneau creneau = new Creneau(
+                    (long) jour,
+                    jour + 1,
+                    LocalDate.of(2026, 7, 1).plusDays(jour),
+                    LocalTime.of(14, 0),
+                    LocalTime.of(18, 0));
+            postes.addAll(postes(stand, creneau, 1));
+        }
+
+        TypologieStaffing ligne = analyzer.analyze(postes, List.of(), typologies, 48 * 60, 30)
+                .parCompetence()
+                .parTypologie()
+                .getFirst();
+
+        assertThat(ligne.plafondCreneaux()).isEqualTo(4);
+        assertThat(ligne.minimumPlafond()).isEqualTo(3);
+        assertThat(ligne.minimumTotal()).isEqualTo(3);
+        assertThat(ligne.borneRetenue()).isEqualTo(BorneRetenue.PLAFOND_TYPOLOGIE);
+    }
+
+    @Test
+    void theRowsSumToTheTeamNobodyHoldingTwoCategoriesWouldNeed() {
+        Creneau matin = creneau(1, LocalTime.of(10, 0), LocalTime.of(12, 0));
+        List<PosteAffectation> postes = new ArrayList<>(postes(stand("A", 3, "JEUX"), matin, 3));
+        postes.addAll(postes(stand("B", 2, "ESCAPE"), matin, 2));
+
+        CompetenceStaffing goulot =
+                analyzer.analyze(postes, List.of(), TYPOLOGIES, 48 * 60, 0).parCompetence();
+
+        assertThat(goulot.planchersCumules()).isEqualTo(5);
+    }
+
+    @Test
+    void aWeekAbsorbsOneDayOffPerPersonAndABudgetBeyondIt() {
+        // Seven days needing three people: 21 person-days. Four people offer
+        // 24 working days once each has taken the rest a full week owes, so a
+        // day off on the rest day is free and three more fit in the budget.
+        List<PosteAffectation> postes = new ArrayList<>();
+        LocalDate lundi = LocalDate.of(2026, 7, 6);
+        for (int jour = 0; jour < 7; jour++) {
+            Creneau creneau =
+                    new Creneau((long) jour, jour + 1, lundi.plusDays(jour), LocalTime.of(10, 0), LocalTime.of(12, 0));
+            postes.addAll(postes(stand("A", 3), creneau, 3));
+        }
+        List<Animateur> pool = new ArrayList<>();
+        for (int index = 1; index <= 4; index++) {
+            pool.add(animateur("A" + index, "JEUX"));
+        }
+        pool.get(0).setJoursIndisponibles(Set.of(lundi, lundi.plusDays(1)));
+        pool.get(1).setJoursIndisponibles(Set.of(lundi.plusDays(2)));
+
+        StaffingSummary summary = analyzer.analyze(postes, pool, TYPOLOGIES, 48 * 60, 0);
+
+        assertThat(summary.effectifReference()).isEqualTo(4);
+        assertThat(summary.parJour().get(0).absentsMax()).isEqualTo(1);
+        assertThat(summary.parSemaine().getFirst().budgetIndisponibilites()).isEqualTo(3);
+        // A1's second day is the only one beyond a free rest day.
+        assertThat(summary.parSemaine().getFirst().indisponibilitesAuDela()).isEqualTo(1);
     }
 
     @Test

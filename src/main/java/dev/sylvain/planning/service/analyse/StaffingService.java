@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.analyse;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingRules;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningService;
@@ -46,17 +47,36 @@ public class StaffingService {
 
     /** Never fails on an empty edition: this feeds read-only views a new user opens before entering anything. */
     public StaffingSummary analyzeEdition() {
-        ParametresLegaux parametres = referenceDataService.getParametresLegaux();
-        Seats seats = planningService.buildSeatsFromReferenceData();
+        return analyze(planningService.buildSeatsFromReferenceData());
+    }
+
+    /** The same analysis on seats a caller has already built, so they are not built twice. */
+    public StaffingSummary analyze(Seats seats) {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
         return staffingAnalyzer.analyze(
                 seats.postes(),
                 animateurs,
                 referenceDataService.listTypologies(),
+                rules(),
+                StaffingAnalyzer.referentielsManquants(seats.stands(), seats.creneaux(), animateurs));
+    }
+
+    /**
+     * The edition's rules the bounds are proved under. The cap on days in a
+     * row counts only when it is held <b>hard</b>: a medium rule may be broken
+     * by the solver, so it must not raise the number this screen tells the
+     * organiser to recruit — the same reasoning as the meal windows below.
+     */
+    StaffingRules rules() {
+        ParametresLegaux parametres = referenceDataService.getParametresLegaux();
+        FeasibilityAnalyzer.ConsecutiveDaysRule jours = FeasibilityAnalyzer.ConsecutiveDaysRule.of(
+                referenceDataService.getContraintesDesactivees(), referenceDataService.getParametresQualite());
+        return new StaffingRules(
                 parametres.getDureeHebdomadaireMaxMinutes(),
                 parametres.dureePauseMinutes(false),
-                StaffingAnalyzer.referentielsManquants(seats.stands(), seats.creneaux(), animateurs),
-                fenetresRepas());
+                parametres.getDureeHebdomadaireMaxMineurMinutes(),
+                fenetresRepas(),
+                jours != null && jours.hard() ? jours.cap() : null);
     }
 
     /**

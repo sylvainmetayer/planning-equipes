@@ -739,6 +739,11 @@ public final class CatalogueActions {
         untracked(
                 "AbonnementIcsResource#planningIcs",
                 "relu par l'agenda de l'animateur toutes les quelques heures, sans geste de sa part");
+        // A solve, but of a made-up team held in memory and dropped once read:
+        // the edition's plan, animateurs and solver queue are left untouched.
+        untracked(
+                "StaffingResource#verify",
+                "résout les sièges avec une équipe fictive en mémoire, n'écrit rien dans l'édition");
         untracked("CreneauResource#previewRecurrence", PREVISUALISATION);
         untracked("CreneauResource#previewDerivation", PREVISUALISATION);
         untracked("JourneeTypeResource#previewApplication", PREVISUALISATION);

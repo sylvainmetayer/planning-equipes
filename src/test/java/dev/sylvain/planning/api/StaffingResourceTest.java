@@ -1,11 +1,13 @@
 package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 
 import io.quarkus.test.junit.QuarkusTest;
+import java.time.Duration;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -78,6 +80,84 @@ class StaffingResourceTest {
                 .body("minimumTotal", equalTo(0))
                 .body("parJour.size()", equalTo(0))
                 .body("referentielsManquants", contains("STANDS", "CRENEAUX", "ANIMATEURS"));
+
+        seedScenario();
+    }
+
+    @Test
+    void aCheckStaffsTheSeatsWithAMadeUpTeamAndSaysWhetherItHolds() {
+        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().contentType("application/json")
+                .body("""
+                        {
+                          "id":"STAND-VERIF",
+                          "nom":"Stand vérifié",
+                          "typologiesProposees":["STRATEGIE"],
+                          "effectifMin":2,
+                          "effectifMax":2,
+                          "reserveMajeurs":false
+                        }
+                        """)
+                .when()
+                .post("/api/stands")
+                .then()
+                .statusCode(200);
+        given().contentType("application/json")
+                .body("""
+                        {"jour":1,"date":"2026-08-01","heureDebut":"10:00:00","heureFin":"12:00:00"}
+                        """)
+                .when()
+                .post("/api/creneaux")
+                .then()
+                .statusCode(200);
+
+        // No animateur at all: the team is made up, of the floor's size.
+        given().contentType("application/json")
+                .body("{}")
+                .when()
+                .post("/api/staffing/verification")
+                .then()
+                .statusCode(202)
+                .body("effectif", equalTo(2))
+                .body("sieges", equalTo(2));
+
+        await().atMost(Duration.ofSeconds(60))
+                .pollInterval(Duration.ofMillis(250))
+                .until(() -> !"EN_COURS"
+                        .equals(given().when()
+                                .get("/api/staffing/verification")
+                                .then()
+                                .statusCode(200)
+                                .extract()
+                                .path("etat")));
+        given().when()
+                .get("/api/staffing/verification")
+                .then()
+                .statusCode(200)
+                .body("etat", equalTo("TERMINEE"))
+                .body("realisable", equalTo(true))
+                .body("siegesNonPourvus", equalTo(0));
+
+        given().contentType("application/json")
+                .body("{\"effectif\":0}")
+                .when()
+                .post("/api/staffing/verification")
+                .then()
+                .statusCode(400);
+
+        seedScenario();
+    }
+
+    @Test
+    void anEditionWithoutSeatsHasNothingToCheck() {
+        given().when().post("/api/planning/reset").then().statusCode(200);
+
+        given().contentType("application/json")
+                .body("{}")
+                .when()
+                .post("/api/staffing/verification")
+                .then()
+                .statusCode(400);
 
         seedScenario();
     }

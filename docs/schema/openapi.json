@@ -1039,7 +1039,7 @@
       },
       "BorneRetenue" : {
         "type" : "string",
-        "enum" : [ "PIC_SIMULTANE", "PIC_AVEC_PAUSE", "CHARGE_HORAIRE", "ROTATION_JOURS", "COUPURE_REPAS" ]
+        "enum" : [ "PIC_SIMULTANE", "PIC_AVEC_PAUSE", "CHARGE_HORAIRE", "ROTATION_JOURS", "COUPURE_REPAS", "ENCHAINEMENT_JOURS", "PLAFOND_TYPOLOGIE" ]
       },
       "BrandingView" : {
         "type" : "object",
@@ -1741,7 +1741,7 @@
         }
       },
       "CompetenceStaffing" : {
-        "required" : [ "animateursTotal", "manquePolyvalents", "manqueTotal", "polyvalents", "siegesNonAttribues", "siegesReservesAuxPolyvalents", "typologieNinjaDefinie" ],
+        "required" : [ "animateursTotal", "manquePolyvalents", "manqueTotal", "polyvalents", "siegesNonAttribues", "siegesReservesAuxPolyvalents", "typologieNinjaDefinie", "planchersCumules" ],
         "type" : "object",
         "properties" : {
           "parTypologie" : {
@@ -1776,6 +1776,10 @@
           },
           "typologieNinjaDefinie" : {
             "type" : "boolean"
+          },
+          "planchersCumules" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -5296,7 +5300,7 @@
         }
       },
       "JourStaffing" : {
-        "required" : [ "disponibles", "heures", "jour", "minimumJour", "picAvecPause", "picRepas", "picSimultane", "sieges", "standsOuverts" ],
+        "required" : [ "disponibles", "heures", "jour", "minimumJour", "picAvecPause", "picRepas", "picSimultane", "sieges", "standsOuverts", "absentsMax", "majeursRequis" ],
         "type" : "object",
         "properties" : {
           "date" : {
@@ -5335,6 +5339,14 @@
             "format" : "int32"
           },
           "disponibles" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "absentsMax" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "majeursRequis" : {
             "type" : "integer",
             "format" : "int32"
           }
@@ -8613,7 +8625,7 @@
         }
       },
       "SemaineStaffing" : {
-        "required" : [ "capaciteHeuresParAnimateur", "chargeTotal", "heures", "jours", "joursPersonne", "joursTravaillables", "rotationTotal" ],
+        "required" : [ "capaciteHeuresParAnimateur", "chargeTotal", "heures", "jours", "joursPersonne", "joursTravaillables", "rotationTotal", "budgetIndisponibilites", "indisponibilitesAuDela" ],
         "type" : "object",
         "properties" : {
           "semaine" : {
@@ -8647,6 +8659,14 @@
             "format" : "int32"
           },
           "rotationTotal" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "budgetIndisponibilites" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "indisponibilitesAuDela" : {
             "type" : "integer",
             "format" : "int32"
           }
@@ -8920,7 +8940,7 @@
         "enum" : [ "DEFAUT", "REGLE", "EXCEPTION" ]
       },
       "StaffingSummary" : {
-        "required" : [ "capaciteHeuresParAnimateur", "chargeTotal", "dureeHebdomadaireMaxMinutes", "dureeQuotidienneMaxMinutes", "indisponibilitesDeclarees", "joursTravaillesMaxParSemaine", "minimumAvecIndisponibilites", "minimumMajeurs", "minimumMineurs", "minimumTotal", "nombreSemaines", "picAvecPause", "picRepas", "picSimultane", "referentielsManquants", "rotationTotal", "totalDemandeHeures" ],
+        "required" : [ "capaciteHeuresParAnimateur", "chargeTotal", "dureeHebdomadaireMaxMinutes", "dureeQuotidienneMaxMinutes", "indisponibilitesDeclarees", "joursTravaillesMaxParSemaine", "minimumAvecIndisponibilites", "enchainementTotal", "effectifReference", "majeursMin", "mineursMax", "minimumTotal", "nombreSemaines", "picAvecPause", "picRepas", "picSimultane", "referentielsManquants", "rotationTotal", "totalDemandeHeures" ],
         "type" : "object",
         "properties" : {
           "parJour" : {
@@ -8987,11 +9007,23 @@
           "indisponibilitesDeclarees" : {
             "type" : "boolean"
           },
-          "minimumMajeurs" : {
+          "enchainementTotal" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "minimumMineurs" : {
+          "joursConsecutifsMax" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "effectifReference" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "majeursMin" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "mineursMax" : {
             "type" : "integer",
             "format" : "int32"
           },
@@ -9015,6 +9047,57 @@
             "items" : {
               "$ref" : "#/components/schemas/ReferentielManquant"
             }
+          }
+        }
+      },
+      "StaffingVerification" : {
+        "required" : [ "effectif", "etat", "lanceeLe", "plafondSecondes", "reglesEnDefaut", "sieges" ],
+        "type" : "object",
+        "properties" : {
+          "etat" : {
+            "$ref" : "#/components/schemas/VerificationState"
+          },
+          "effectif" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "sieges" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "lanceeLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "termineeLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "dureeSecondes" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "plafondSecondes" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "realisable" : {
+            "type" : "boolean"
+          },
+          "siegesNonPourvus" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "scoreDur" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "reglesEnDefaut" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "erreur" : {
+            "type" : "string"
           }
         }
       },
@@ -9530,7 +9613,7 @@
       },
       "TypologieStaffing" : {
         "type" : "object",
-        "required" : [ "chargeTotal", "heures", "manque", "minimumTotal", "ninja", "nombreSemaines", "picAvecPause", "picRepas", "picSimultane", "rotationTotal", "sieges", "specialistes" ],
+        "required" : [ "chargeTotal", "heures", "manque", "minimumTotal", "ninja", "nombreSemaines", "picAvecPause", "picRepas", "picSimultane", "rotationTotal", "sieges", "specialistes", "enchainementTotal", "minimumPlafond" ],
         "properties" : {
           "typologie" : {
             "type" : "string"
@@ -9570,6 +9653,18 @@
             "format" : "int32"
           },
           "rotationTotal" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "enchainementTotal" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "plafondCreneaux" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "minimumPlafond" : {
             "type" : "integer",
             "format" : "int32"
           },
@@ -9653,6 +9748,19 @@
             "type" : "string"
           }
         }
+      },
+      "VerificationRequest" : {
+        "type" : "object",
+        "properties" : {
+          "effectif" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "VerificationState" : {
+        "type" : "string",
+        "enum" : [ "EN_COURS", "TERMINEE", "ECHEC" ]
       },
       "VerrouillagePlanning" : {
         "type" : "object",
@@ -16425,6 +16533,49 @@
           }
         },
         "summary" : "Analyze",
+        "tags" : [ "Staffing Resource" ]
+      }
+    },
+    "/api/staffing/verification" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/VerificationRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Verify",
+        "tags" : [ "Staffing Resource" ]
+      },
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          }
+        },
+        "summary" : "Verification",
         "tags" : [ "Staffing Resource" ]
       }
     },

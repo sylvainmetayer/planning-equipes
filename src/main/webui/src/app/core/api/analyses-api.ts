@@ -22,6 +22,7 @@ import {
   RapportPauses,
   RapportTension,
   StaffingSummary,
+  StaffingVerification,
   TypologieItem,
 } from '../models';
 
@@ -62,6 +63,17 @@ export class AnalysesApi {
 
   staffing(): Promise<StaffingSummary> {
     return this.api.get<StaffingSummary>('/api/staffing');
+  }
+
+  /** Starts a solve of the seats by a made-up team of `effectif` people — the floor when omitted. */
+  verifyStaffing(effectif: number | null): Promise<StaffingVerification> {
+    return this.api.post<StaffingVerification>('/api/staffing/verification', { effectif });
+  }
+
+  /** The edition's last check, running or finished; `null` when none was run (204). */
+  async staffingVerification(): Promise<StaffingVerification | null> {
+    const response = await this.api.getResponse<StaffingVerification>('/api/staffing/verification');
+    return response.status === 204 ? null : response.body;
   }
 
   fragility(): Promise<RapportFragilite> {
