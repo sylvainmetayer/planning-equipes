@@ -8,6 +8,26 @@ variable "keycloak_url" {
   type        = string
 }
 
+variable "admin_username" {
+  description = <<-EOT
+    Compte d'administration avec lequel Terraform se connecte au realm master.
+    Null : le fournisseur lit KEYCLOAK_USER.
+  EOT
+  type        = string
+  default     = null
+}
+
+variable "admin_password" {
+  description = <<-EOT
+    Mot de passe de ce compte. Null : le fournisseur lit KEYCLOAK_PASSWORD.
+    Jamais dans terraform.tfvars : par l'environnement, ou passé par la
+    configuration qui appelle ce dossier comme module, depuis son coffre.
+  EOT
+  type        = string
+  default     = null
+  sensitive   = true
+}
+
 variable "realm" {
   description = "Nom du realm, qui sert aussi d'identifiant interne. Doit correspondre à OIDC_PROVISIONING_REALM."
   type        = string
