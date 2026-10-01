@@ -174,7 +174,7 @@ public class CreneauMcpTools {
             name = "valider_creneaux",
             description = "Contrôle la cohérence de la grille de créneaux actuelle et signale ce qui cloche : "
                     + "doublons, trous dans une journée, vacations plus longues que le maximum légal, dates isolées, "
-                    + "relais repas hors fenêtre, stands que personne ne pourra armer, sous-effectif, et, pour "
+                    + "relais repas hors fenêtre, stands que personne ne pourra tenir, sous-effectif, et, pour "
                     + "information, VACATION_JOUR_FERIE : des vacations un jour férié alors que l'édition compte un "
                     + "mineur ce jour-là (seuls les majeurs y siègent). Deux créneaux "
                     + "qui se chevauchent le même jour sont normaux : ce sont deux vacations décalées.",

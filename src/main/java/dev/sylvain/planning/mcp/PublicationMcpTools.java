@@ -107,8 +107,8 @@ public class PublicationMcpTools {
     @Tool(
             name = "publier_planning",
             description = "Publie le planning persisté : il est capturé comme instantané publié, puis chaque "
-                    + "animateur concerné reçoit son planning par courriel. ENVOIE DES COURRIELS. Refusé si une "
-                    + "résolution est en cours, s'il n'y a rien de résolu à publier, ou si personne n'est concerné — "
+                    + "animateur concerné reçoit son planning par courriel. ENVOIE DES COURRIELS. Refusé hors de "
+                    + "l'édition active (voir lister_editions), si une résolution est en cours, s'il n'y a rien de résolu à publier, ou si personne n'est concerné — "
                     + "consulter etat_publication d'abord. Les personnes sans adresse et les échecs d'envoi sont "
                     + "comptés ici et détaillés par id par lister_destinataires_publication. L'argument exclusions "
                     + "diffère le message des ids qu'il nomme : ces personnes ne reçoivent rien et restent à "
@@ -161,7 +161,8 @@ public class PublicationMcpTools {
     @Tool(
             name = "envoyer_planning_animateur",
             description = "Renvoie à un animateur son planning tel qu'il a été publié — pas le planning de "
-                    + "travail en cours. ENVOIE UN COURRIEL. Échoue si rien n'a jamais été publié, si l'id est inconnu "
+                    + "travail en cours : après une réaffectation, seul publier_planning envoie le nouveau. ENVOIE UN "
+                    + "COURRIEL. Refusé hors de l'édition active. Échoue si rien n'a jamais été publié, si l'id est inconnu "
                     + "ou si la fiche ne porte pas d'adresse.",
             annotations =
                     @Tool.Annotations(
@@ -188,7 +189,8 @@ public class PublicationMcpTools {
     @Tool(
             name = "relancer_animateurs",
             description = "Relance maintenant les animateurs désignés qui n'ont pas accusé réception de leur "
-                    + "planning publié, sans attendre la relance automatique de nuit. ENVOIE UN COURRIEL à chacun "
+                    + "planning publié, sans attendre la relance automatique de nuit, qui ne part que de l'édition "
+                    + "active — tout comme celle-ci, refusée sur une autre édition. ENVOIE UN COURRIEL à chacun "
                     + "d'eux. Même message que la nuit, même règle : personne ne reçoit deux fois la relance d'une "
                     + "même publication, par la nuit ou à la main — les personnes déjà relancées, déjà confirmées, "
                     + "sans adresse ou sans poste sont rendues par id dans le compte rendu au lieu d'être écrites. "

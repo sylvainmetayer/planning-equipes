@@ -50,7 +50,7 @@ class McpResourceTest {
      */
     @Test
     @Order(1)
-    void lesPromptsDuServeurSontServisAuComplet() {
+    void theServerPromptsAreServedInFull() {
         given().header("X-Edition-Id", "E1")
                 .when()
                 .get("/api/mcp/prompts")
@@ -66,9 +66,9 @@ class McpResourceTest {
                 .body(
                         "texte",
                         org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.not(org.hamcrest.Matchers.emptyString())))
-                // First of the catalogue, so first of the event: the stands' hours,
-                // which the créneau grid can then be derived from.
-                .body("[0].nom", equalTo("saisir_les_horaires_des_stands"));
+                // First of the catalogue, so first of the event: starting the
+                // edition, before its stands' hours and its grid.
+                .body("[0].nom", equalTo("demarrer_une_nouvelle_edition"));
     }
 
     @Test
