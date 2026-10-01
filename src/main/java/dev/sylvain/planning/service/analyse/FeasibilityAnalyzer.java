@@ -4,7 +4,9 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PastHorizon;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
@@ -24,6 +26,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -46,7 +49,10 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * hand-entered exceptions that cannot both hold (issue #84) — and the three
  * {@code AFFECTATION_FORCEE_*}, one forced assignment nobody can honour
  * (issue #30): its animateurs declared the days off, no seat of its scope may
- * hold them, or their schedule is locked over the whole scope.
+ * hold them, or their schedule is locked over the whole scope. A sixth,
+ * {@link TypeCauseInfaisabilite#PLAFOND_JOURS_CONSECUTIFS}, reads the cap on
+ * days worked in a row against the whole grid — see
+ * {@link ConsecutiveDaysCapacity}.
  *
  * <p>The last four are reported although the write already said so: an
  * exception recorded before the check existed, or imported together with
@@ -119,7 +125,13 @@ public class FeasibilityAnalyzer {
      * enum's own order — that one is on the wire and is only ever appended to.
      */
     private static int rank(CauseInfaisabilite cause) {
-        return cause.type() == TypeCauseInfaisabilite.CRENEAU_SOUS_EFFECTIF ? 1 : 0;
+        return switch (cause.type()) {
+            case CRENEAU_SOUS_EFFECTIF -> 1;
+            // Read on a window of days rather than on one timeslot: the
+            // timeslot causes say where to look first.
+            case PLAFOND_JOURS_CONSECUTIFS -> 2;
+            default -> 0;
+        };
     }
 
     /**
@@ -189,6 +201,24 @@ public class FeasibilityAnalyzer {
             List<ContrainteAdHoc> contraintesAdHoc,
             boolean encadrementMineursActif,
             PlanContext contexte) {
+        return analyze(animateurs, stands, creneaux, contraintesAdHoc, encadrementMineursActif, null, contexte);
+    }
+
+    /**
+     * @param plafond the cap on days worked in a row this edition holds, or
+     *        {@code null} when neither of its two rules is on — see
+     *        {@link ConsecutiveDaysRule}. A caller that does not know it
+     *        passes {@code null}, and that check is skipped rather than run
+     *        on a cap the edition may not hold.
+     */
+    public FeasibilityReport analyze(
+            List<Animateur> animateurs,
+            List<Stand> stands,
+            List<Creneau> creneaux,
+            List<ContrainteAdHoc> contraintesAdHoc,
+            boolean encadrementMineursActif,
+            ConsecutiveDaysRule plafond,
+            PlanContext contexte) {
         List<Animateur> animateursSurs = animateurs == null ? List.of() : animateurs;
         List<Stand> standsSurs = stands == null ? List.of() : stands;
         List<Creneau> creneauxSurs = creneaux == null ? List.of() : creneaux;
@@ -202,6 +232,7 @@ public class FeasibilityAnalyzer {
         causes.addAll(affectationsForceesHorsEligibilite(
                 contraintesAdHoc, animateursSurs, standsSurs, creneauxSurs, horizon));
         causes.addAll(affectationsForceesVerrouillees(contraintesAdHoc, standsSurs, creneauxSurs, contexte));
+        causes.addAll(consecutiveDaysCap(animateursSurs, standsSurs, creneauxSurs, plafond, contexte));
         causes.sort(ORDRE_CAUSES);
 
         int manqueAnimateurs = causes.stream()
@@ -226,7 +257,13 @@ public class FeasibilityAnalyzer {
         // Seats are counted once per timeslot, like the demand of a cause.
         boolean sansPoste = !sansCreneau
                 && creneauxSurs.stream().allMatch(creneau -> standsSurs.stream().noneMatch(creneau::isStandOpen));
-        boolean feasible = totalCauses == 0 && !sansAnimateur && !sansCreneau && !sansPoste;
+        // A tight cap on days in a row is a warning, never a verdict: the grid
+        // holds on paper, and calling it « non réalisable » would be read as
+        // a refusal to solve.
+        boolean feasible = causes.stream().allMatch(FeasibilityAnalyzer::isWarningOnly)
+                && !sansAnimateur
+                && !sansCreneau
+                && !sansPoste;
         List<CauseInfaisabilite> topCauses = List.copyOf(causes.subList(0, Math.min(MAX_CAUSES, totalCauses)));
 
         return new FeasibilityReport(
@@ -435,6 +472,111 @@ public class FeasibilityAnalyzer {
         return causes;
     }
 
+    /** A cause that warns without making the plan infeasible: a tight or soft cap on days in a row. */
+    private static boolean isWarningOnly(CauseInfaisabilite cause) {
+        return cause.type() == TypeCauseInfaisabilite.PLAFOND_JOURS_CONSECUTIFS
+                && cause.severite() == SeveriteInfaisabilite.ELEVE;
+    }
+
+    /**
+     * At most one cause on the cap of days in a row, on the worst window: the
+     * grid's, when the cap cannot hold or barely does; else the plan in
+     * place's, when its days employ more people than its rest days allow.
+     *
+     * <p>CRITIQUE only on a proof under the hard rule. A proof under the
+     * medium rule alone is ELEVE — the plan will run past the cap for somebody,
+     * and nothing blocks — and so is a thin margin, and a plan in place that
+     * cannot hold: the solver can still change how many people each day
+     * employs.</p>
+     */
+    private List<CauseInfaisabilite> consecutiveDaysCap(
+            List<Animateur> animateurs,
+            List<Stand> stands,
+            List<Creneau> creneaux,
+            ConsecutiveDaysRule plafond,
+            PlanContext contexte) {
+        if (plafond == null || plafond.cap() <= 0) {
+            return List.of();
+        }
+        PastHorizon horizon = contexte == null ? null : contexte.horizon();
+        ConsecutiveDaysCapacity.Window grille =
+                ConsecutiveDaysCapacity.grid(plafond.cap(), animateurs, stands, creneaux, horizon);
+        if (grille != null && grille.margin() < 0) {
+            SeveriteInfaisabilite severite =
+                    plafond.hard() ? SeveriteInfaisabilite.CRITIQUE : SeveriteInfaisabilite.ELEVE;
+            return List.of(consecutiveDaysCause(severite, gridShortfallMessage(plafond, grille), grille));
+        }
+        if (grille != null) {
+            return List.of(consecutiveDaysCause(SeveriteInfaisabilite.ELEVE, tightMessage(plafond, grille), grille));
+        }
+        if (contexte == null) {
+            return List.of();
+        }
+        ConsecutiveDaysCapacity.Window plan = ConsecutiveDaysCapacity.employed(
+                plafond.cap(), animateurs, stands, creneaux, contexte.employes().get(), horizon);
+        return plan == null
+                ? List.of()
+                : List.of(consecutiveDaysCause(SeveriteInfaisabilite.ELEVE, planMessage(plafond, plan), plan));
+    }
+
+    private static CauseInfaisabilite consecutiveDaysCause(
+            SeveriteInfaisabilite severite, String message, ConsecutiveDaysCapacity.Window fenetre) {
+        return new CauseInfaisabilite(
+                TypeCauseInfaisabilite.PLAFOND_JOURS_CONSECUTIFS,
+                severite,
+                message,
+                null,
+                fenetre.debut(),
+                null,
+                null,
+                List.of(),
+                List.of(),
+                fenetre.demand(),
+                fenetre.supply(),
+                Math.max(0, -fenetre.margin()),
+                BlockerPlaybook.forCause(
+                        TypeCauseInfaisabilite.PLAFOND_JOURS_CONSECUTIFS.name(),
+                        new BlockerPlaybook.Context(
+                                null, fenetre.debut(), List.of(), List.of(), List.of(), List.of(), false)));
+    }
+
+    /** The proof: names the window in dates, the deficit, and the animateurs it takes — never a person. */
+    private static String gridShortfallMessage(ConsecutiveDaysRule plafond, ConsecutiveDaysCapacity.Window fenetre) {
+        int deficit = -fenetre.margin();
+        int manquants = (deficit + plafond.cap() - 1) / plafond.cap();
+        String verdict = plafond.hard() ? " ne peut pas tenir " : " sera forcément dépassé pour certains ";
+        return "Le plafond de " + plafond.cap() + " jours travaillés d'affilée" + verdict + "du " + fenetre.debut()
+                + " au " + fenetre.fin() + " : chacun doit s'y reposer au moins un jour, et les animateurs"
+                + " disponibles n'y offrent que " + fenetre.supply() + " jours de travail pour " + fenetre.demand()
+                + " nécessaires au minimum. Il manque " + deficit + " jours-personne, soit au moins " + manquants
+                + " " + motAnimateur(manquants) + " de plus" + otherWindows(plafond, fenetre) + ".";
+    }
+
+    private static String tightMessage(ConsecutiveDaysRule plafond, ConsecutiveDaysCapacity.Window fenetre) {
+        return "Le plafond de " + plafond.cap() + " jours travaillés d'affilée est à la limite du " + fenetre.debut()
+                + " au " + fenetre.fin() + " : " + fenetre.demand() + " jours de travail nécessaires au minimum pour "
+                + fenetre.supply() + " possibles, soit une marge de " + fenetre.margin() + ". Il ne tiendra que si"
+                + " chaque journée emploie presque le minimum de personnes" + otherWindows(plafond, fenetre) + ".";
+    }
+
+    private static String planMessage(ConsecutiveDaysRule plafond, ConsecutiveDaysCapacity.Window fenetre) {
+        return "Sur le plan en place, du " + fenetre.debut() + " au " + fenetre.fin() + ", les journées emploient "
+                + fenetre.demand() + " jours de travail quand le plafond de " + plafond.cap()
+                + " jours d'affilée n'en permet que " + fenetre.supply() + " : aucun déplacement des seuls jours de"
+                + " repos ne peut le tenir sans employer moins de monde ces jours-là. Il manque "
+                + (-fenetre.margin()) + " jours de repos" + otherWindows(plafond, fenetre) + ".";
+    }
+
+    private static String otherWindows(ConsecutiveDaysRule plafond, ConsecutiveDaysCapacity.Window fenetre) {
+        int autres = fenetre.tightWindows();
+        if (autres <= 0) {
+            return "";
+        }
+        return autres > 1
+                ? " ; " + autres + " autres fenêtres de " + (plafond.cap() + 1) + " jours sont aussi tendues"
+                : " ; 1 autre fenêtre de " + (plafond.cap() + 1) + " jours est aussi tendue";
+    }
+
     /**
      * The shape the three « this forced assignment cannot be honoured » causes
      * share: the exception named, a date only when the scope is one day, and no
@@ -578,7 +720,11 @@ public class FeasibilityAnalyzer {
 
     private String buildMessage(boolean feasible, int manque, int totalCauses, List<CauseInfaisabilite> topCauses) {
         if (feasible) {
-            return "Le planning est réalisable : il y a assez d'animateurs disponibles pour couvrir chaque créneau.";
+            String message =
+                    "Le planning est réalisable : il y a assez d'animateurs disponibles pour couvrir chaque créneau.";
+            return totalCauses == 0
+                    ? message
+                    : message + " Point de vigilance : " + topCauses.getFirst().message();
         }
         String causesPhrase = causesPhrase(totalCauses);
         if (manque <= 0) {
@@ -644,17 +790,79 @@ public class FeasibilityAnalyzer {
      *        scope entirely behind it: those seats are re-seeded and pinned, and
      *        the constraints count them without reproaching them — reporting one
      *        as blocking would ask the operator to undo a day already worked.
+     * @param employes the animateurs each day of the plan employs, by date —
+     *        read only when a cap on days in a row is on and the grid itself
+     *        leaves room, for the same reason as the seats: it is a full scan
+     *        of the assignments
      */
     public record PlanContext(
             List<VerrouillagePlanning> verrouillages,
             Supplier<Set<ForcedAssignmentOnLockedSchedule.PlaceTenue>> placesTenues,
-            PastHorizon horizon) {
+            PastHorizon horizon,
+            Supplier<Map<LocalDate, Set<String>>> employes) {
 
         public static final PlanContext NONE = new PlanContext(List.of(), Set::of, null);
 
         public PlanContext {
             verrouillages = verrouillages == null ? List.of() : List.copyOf(verrouillages);
             Objects.requireNonNull(placesTenues, "placesTenues");
+            Objects.requireNonNull(employes, "employes");
+        }
+
+        /** Without the people each day of the plan employs: the plan-in-place reading of the cap is then skipped. */
+        public PlanContext(
+                List<VerrouillagePlanning> verrouillages,
+                Supplier<Set<ForcedAssignmentOnLockedSchedule.PlaceTenue>> placesTenues,
+                PastHorizon horizon) {
+            this(verrouillages, placesTenues, horizon, Map::of);
+        }
+    }
+
+    /**
+     * The cap on days worked in a row an edition holds, as the analysis reads
+     * it: {@code joursConsecutifsMax}, and whether it is held hard. {@code null}
+     * stands for neither rule being on — there is then no cap to judge.
+     *
+     * @param cap  the most days in a row anybody may work
+     * @param hard whether {@code maxJoursConsecutifsTravaillesDur} is on: a
+     *             proven shortfall then blocks; with only
+     *             {@code maxJoursConsecutifsTravailles} on, it warns
+     */
+    public record ConsecutiveDaysRule(int cap, boolean hard) {
+
+        static final String HARD_RULE = "maxJoursConsecutifsTravaillesDur";
+        static final String MEDIUM_RULE = "maxJoursConsecutifsTravailles";
+
+        /**
+         * From an edition's settings: its disabled rules — the catalogue's
+         * defaults included, as {@code ParametresService.disabledContraintes}
+         * hands them — and its quality parameters.
+         */
+        public static ConsecutiveDaysRule of(Set<String> contraintesDesactivees, ParametresQualite qualite) {
+            boolean hard = active(contraintesDesactivees, HARD_RULE);
+            boolean medium = active(contraintesDesactivees, MEDIUM_RULE);
+            return hard || medium ? new ConsecutiveDaysRule(cap(qualite), hard) : null;
+        }
+
+        /** From a plan's own toggles and parameters: a diagnostic describes the problem that was solved. */
+        public static ConsecutiveDaysRule of(PlanningEvenement plan) {
+            boolean hard = ConstraintCatalog.isActive(plan.getConstraintsDesactivees(), HARD_RULE);
+            boolean medium = ConstraintCatalog.isActive(plan.getConstraintsDesactivees(), MEDIUM_RULE);
+            List<ParametresQualite> qualite = plan.getParametresQualite();
+            return hard || medium
+                    ? new ConsecutiveDaysRule(
+                            cap(qualite == null || qualite.isEmpty() ? null : qualite.getFirst()), hard)
+                    : null;
+        }
+
+        private static boolean active(Set<String> contraintesDesactivees, String nom) {
+            return contraintesDesactivees == null
+                    ? ConstraintCatalog.activeByDefault(nom)
+                    : !contraintesDesactivees.contains(nom);
+        }
+
+        private static int cap(ParametresQualite qualite) {
+            return qualite == null ? ParametresQualite.JOURS_CONSECUTIFS_MAX_PAR_DEFAUT : qualite.joursConsecutifsMax();
         }
     }
 
@@ -676,7 +884,14 @@ public class FeasibilityAnalyzer {
          * over its whole scope, without already sitting in it — see
          * {@link ForcedAssignmentOnLockedSchedule}.
          */
-        AFFECTATION_FORCEE_SIEGE_VERROUILLE
+        AFFECTATION_FORCEE_SIEGE_VERROUILLE,
+        /**
+         * The cap on days worked in a row against the grid or the plan in
+         * place, on the worst window of (cap + 1) days — see
+         * {@link ConsecutiveDaysCapacity}. {@code date} is the window's first
+         * day; {@code demande} and {@code capacite} are person-days.
+         */
+        PLAFOND_JOURS_CONSECUTIFS
     }
 
     /**
@@ -759,7 +974,7 @@ public class FeasibilityAnalyzer {
      * its latest segment has started; with no open stand, once the timeslot
      * itself has. Without a horizon nothing has.
      */
-    static boolean hasStarted(Creneau creneau, List<Stand> stands, PastHorizon horizon) {
+    public static boolean hasStarted(Creneau creneau, List<Stand> stands, PastHorizon horizon) {
         if (horizon == null || creneau == null || creneau.getHeureDebut() == null) {
             return false;
         }

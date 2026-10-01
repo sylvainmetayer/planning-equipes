@@ -455,6 +455,8 @@ export function typeCauseLabel(type: TypeCauseInfaisabilite): string {
       return $localize`:@@problemes.cause.affectationForceeMotifLegal:Affectation forcée contre une règle dure`;
     case 'AFFECTATION_FORCEE_SIEGE_VERROUILLE':
       return $localize`:@@problemes.cause.affectationForceeSiegeVerrouille:Affectation forcée sur un emploi du temps verrouillé`;
+    case 'PLAFOND_JOURS_CONSECUTIFS':
+      return $localize`:@@problemes.cause.plafondJoursConsecutifs:Plafond de jours d'affilée`;
     default:
       return $localize`:@@problemes.cause.creneauSousEffectif:Créneau en sous-effectif`;
   }
@@ -571,6 +573,17 @@ export function causeDetails(
     details.push(
       $localize`:@@problemes.detail.contraintesAdHoc:Ajustements manuels : ${contraintes}:contraintes:`,
     );
+  }
+  // Person-days over a window, not seats on a timeslot: « il manque N
+  // animateur(s) » would read the window's deficit as a headcount.
+  if (cause.type === 'PLAFOND_JOURS_CONSECUTIFS') {
+    const debut = cause.date ?? '';
+    const demande = cause.demande;
+    const capacite = cause.capacite;
+    details.push(
+      $localize`:@@problemes.detail.joursPersonnes:Fenêtre à partir du ${debut}:date: : ${demande}:demande: jours-personnes nécessaires pour ${capacite}:capacite: possibles.`,
+    );
+    return details;
   }
   if (cause.manque > 0) {
     const manque = cause.manque;

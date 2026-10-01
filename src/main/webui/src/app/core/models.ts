@@ -1135,13 +1135,19 @@ export interface ConstraintDiagnostic {
  *   (a minor on a night slot, an adults-only stand…), or their schedule is
  *   locked over the whole scope. Warned at entry time, reported here for as
  *   long as it stands — `contrainteIds` names the exception to move or delete.
+ * - `PLAFOND_JOURS_CONSECUTIFS`: the cap on days worked in a row against the
+ *   grid, or the plan in place, on its worst window of (cap + 1) days. `date`
+ *   is the window's first day, `demande` and `capacite` are person-days, not
+ *   seats. `CRITIQUE` only on a proof under the hard rule; an `ELEVE` one is a
+ *   warning and leaves `feasible` true.
  */
 export type TypeCauseInfaisabilite =
   | 'CRENEAU_SOUS_EFFECTIF'
   | 'CONTRAINTES_AD_HOC_CONTRADICTOIRES'
   | 'AFFECTATION_FORCEE_JOUR_INDISPONIBLE'
   | 'AFFECTATION_FORCEE_MOTIF_LEGAL'
-  | 'AFFECTATION_FORCEE_SIEGE_VERROUILLE';
+  | 'AFFECTATION_FORCEE_SIEGE_VERROUILLE'
+  | 'PLAFOND_JOURS_CONSECUTIFS';
 
 /** `CRITIQUE` = no coverage possible at all; `ELEVE` = partial coverage only. */
 export type SeveriteInfaisabilite = 'CRITIQUE' | 'ELEVE';

@@ -194,7 +194,12 @@ public final class BlockerPlaybook {
                     context -> editAdjustmentAction(
                             context,
                             "Si le verrou doit rester, c'est l'affectation forcée qui cède : modifiez-la ou"
-                                    + " supprimez-la.")));
+                                    + " supprimez-la.")),
+            "PLAFOND_JOURS_CONSECUTIFS",
+            List.of(
+                    context -> consecutiveDaysCapAction(),
+                    BlockerPlaybook::lowerStaffingAction,
+                    BlockerPlaybook::reviewDaysOffAction));
 
     /** The cause types the playbook knows, for the exhaustiveness test. */
     public static Set<String> causeTypes() {
@@ -500,6 +505,20 @@ public final class BlockerPlaybook {
                 context.animateurIds().size() == 1
                         ? Map.of("edit", context.animateurIds().getFirst())
                         : Map.of());
+    }
+
+    /**
+     * The cap of days in a row, on its rule's line — the hard form's: both
+     * forms read the one threshold, set on either line.
+     */
+    private static ActionType consecutiveDaysCapAction() {
+        return new ActionType(
+                CODE_CAP,
+                "Régler le plafond",
+                "Un jour de plus au plafond rend à chacun un jour de travail sur chaque fenêtre : c'est le levier"
+                        + " le plus direct quand la grille ne tient pas.",
+                ROUTE_RULES,
+                ruleParams(ConstraintCatalog.PAR_NOM.get("maxJoursConsecutifsTravaillesDur")));
     }
 
     private static ActionType liftLockAction(Context context) {
