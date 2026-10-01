@@ -68,6 +68,23 @@ class TerraformKeycloakStructuralTest {
      * single factor — or cannot sign in at all.</p>
      */
     /**
+     * The realm locks an account after a run of wrong credentials, and
+     * temporarily: the e-mail code reports its failures to that counter, so
+     * restarting the login does not reset it, and a permanent lockout would let
+     * anyone who knows an address close that account.
+     */
+    @Test
+    void theRealmLocksAnAccountTemporarilyAfterWrongCredentials() {
+        assertThat(realm.path("bruteForceProtected").asBoolean()).isTrue();
+        assertThat(realm.path("permanentLockout").asBoolean(true)).isFalse();
+        assertThat(realm.path("failureFactor").asInt()).isEqualTo(10);
+        String terraform = resources.get("keycloak_realm.planning");
+        assertThat(terraform).contains("brute_force_detection");
+        assertThat(terraform).containsPattern("permanent_lockout\\s*=\\s*false");
+        assertThat(terraform).containsPattern("max_login_failures\\s*=\\s*10");
+    }
+
+    /**
      * Production offers passkeys on the address screen like the development
      * realm — an attribute the provider only knows from 5.8 on, hence the pin.
      */

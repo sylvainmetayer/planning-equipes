@@ -293,10 +293,10 @@ public class AnimateurCsvImportService {
         comptes.provisionMissing(apres, nouvelles);
         // A replacement deletes fiches, and closes the accounts no fiche of
         // any edition carries any more — what deleting them one by one does.
-        avant.stream()
+        comptes.retirerTous(avant.stream()
                 .filter(fiche -> supprimes.contains(fiche.getId()))
                 .map(Animateur::getEmail)
-                .forEach(comptes::retirer);
+                .toList());
         // A created fiche has its id only now, drawn by the write: the report
         // names it, so the operator can find who was just added.
         List<AnimateurCsvImportReport.ImportedRow> rows = analysis.outcomes().stream()

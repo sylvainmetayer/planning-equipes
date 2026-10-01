@@ -107,11 +107,9 @@ public class EditionRepository {
             new TableToCopy("parametres_solveur", "duree_resolution_secondes, plateau_secondes, mail_fin_resolution"),
             // Who the animateurs call: the organisation rarely changes number from one year to the next.
             new TableToCopy("contact_organisation", "telephone, email"),
-            // Names or head counts for the responsables de stand: a choice about
-            // how settled the plan is, which the next edition starts over — it
-            // travels anyway, like every setting, and is switched off there if
-            // need be.
-            new TableToCopy("parametres_responsables", "nominatif"),
+            // parametres_responsables stays behind: names or head counts for the
+            // responsables de stand say how settled one edition's plan is, and
+            // the next edition starts over, off, until the organiser decides.
             // Consigne presets (V90, issue #4) describe the event's shape —
             // « Plan canicule » is the same plan next year — so they travel;
             // the dated consignes made from them belong to one edition's days

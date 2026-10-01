@@ -214,7 +214,15 @@ export class GrantRightDialog {
   }
 
   protected setRole(role: RoleHabilitation): void {
-    this.draft.update((draft) => withRole(draft, role, this.data.currentEditionId));
+    this.draft.update((draft) => {
+      const next = withRole(draft, role, this.data.currentEditionId);
+      // The date filled in for a stand manager is that role's default, not a
+      // choice: leaving the role takes it back, or an RH right would end
+      // unannounced. A date typed by hand stays.
+      return role !== 'RESPONSABLE_STAND' && !this.expiryTouched()
+        ? { ...next, expiryDate: '' }
+        : next;
+    });
   }
 
   protected setEdition(editionId: string | null): void {
