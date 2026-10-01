@@ -133,7 +133,8 @@ public class PlanningMcpTools {
                     + "résolution lancée) sur les données de référence courantes, listant les causes structurellement "
                     + "bloquantes : créneau en sous-effectif, contraintes ad hoc contradictoires, affectation forcée "
                     + "intenable (jour déclaré indisponible, règle dure sur toutes les places de sa portée, "
-                    + "emploi du temps verrouillé).",
+                    + "emploi du temps verrouillé), plafond de jours travaillés d'affilée intenable ou tendu sur "
+                    + "la grille ou le plan en place.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -148,10 +149,13 @@ public class PlanningMcpTools {
                 referenceDataService.listCreneaux(),
                 referenceDataService.listContraintesAdHoc(),
                 FeasibilityAnalyzer.encadrementMineursActif(referenceDataService.getContraintesDesactivees()),
+                FeasibilityAnalyzer.ConsecutiveDaysRule.of(
+                        referenceDataService.getContraintesDesactivees(), referenceDataService.getParametresQualite()),
                 new FeasibilityAnalyzer.PlanContext(
                         referenceDataService.listVerrouillages(),
                         persistenceService::loadPlacesTenues,
-                        planningService.pastHorizon()));
+                        planningService.pastHorizon(),
+                        persistenceService::loadEmployedByDay));
     }
 
     @Tool(

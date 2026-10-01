@@ -230,13 +230,50 @@ tolère douze, quand un plan réel en demande dix. L'écart se comble par la
 grille ou par l'effectif, pas par le solveur.
 
 **Vérifier qu'un seuil tient, puis le faire trouver.** Ce sont deux questions.
-La première est arithmétique : chaque journée demande au moins son pic de
-sièges simultanés (un peu plus quand coupure repas, six heures continues ou
-dix heures par jour interdisent d'enchaîner deux sièges), et chaque fenêtre de
-(seuil + 1) jours n'offre au plus que seuil × effectif jours-personnes. Ce qui
-la tranche n'est pas cette borne mais un **plan** : construit à part et
-importé, l'écran Problèmes le juge, et zéro écart dur prouve que le besoin est
-tenable avec les règles telles qu'elles sont codées. La seconde est celle du
+La première est arithmétique, et l'analyse de faisabilité la pose avant tout
+calcul dès que l'une des deux formes de la règle est allumée. Chaque journée
+demande au moins son **plancher**, son pic de sièges simultanés : personne ne
+tient deux sièges à la fois. Ce pic est lu dans les mêmes segments que ceux
+d'où naissent les sièges, si bien que ce que le solveur doit pourvoir et ce que
+l'analyse annonce restent un seul nombre. Chaque animateur n'offre, sur une
+fenêtre de (seuil + 1) jours, que le plus petit de deux nombres : le seuil, ou
+ses jours disponibles dans la fenêtre — ses indisponibilités déclarées
+comptent, pas un effectif global. Sur la fenêtre la plus tendue, l'écran
+Problèmes dit ce qu'il en est, les dates nommées et jamais une personne :
+
+| Marge (offre − demande) | Ce que l'analyse en dit |
+|---|---|
+| négative, forme dure allumée | **bloquant** : c'est une preuve, aucun plan ne tient la règle ; il manque N jours-personnes, soit au moins ⌈N / seuil⌉ animateurs |
+| négative, forme moyenne seule | avertissement : le plan dépassera forcément le plafond pour certains |
+| positive mais sous 10 % de la demande | avertissement : la règle ne tiendra que si chaque journée emploie presque le minimum de personnes |
+| plus large | rien |
+
+Sur `festival-hivernal` à six jours, la fenêtre du quatrième au dixième jour
+demande 908 jours-personnes au plancher pour 918 offerts : la grille tient sur
+le papier, avec dix jours-personnes de marge, et l'analyse le dit en
+avertissement.
+
+**Ce que la condition ne prouve pas.** Elle est *nécessaire*, pas suffisante.
+Une marge positive ne garantit rien : les compétences, les heures, les règles
+légales et une journée tenue par plus que son plancher la consomment. Le
+solveur, lui, n'a aucune raison d'employer le minimum de personnes chaque jour,
+puisque rien ne le récompense de le faire. Gonfler le plancher pour « attraper »
+ces cas ferait crier à l'impossible sur des grilles que le solveur remplit sans
+peine. C'est ce que l'analyse s'interdit déjà pour le sous-effectif. Elle ne
+couple pas non plus par compétence : sur la même fixture, la même condition par
+vivier laisse partout une marge large, et le blocage est global.
+
+Quand la grille laisse de la place, l'analyse relit le **plan en place** avec
+la même arithmétique, en comptant cette fois les personnes réellement employées
+chaque jour. Si même là le compte ne passe pas, elle le dit en avertissement :
+aucun réarrangement des seuls jours de repos ne peut tenir la règle sans
+employer moins de monde ces jours-là, et il manque N jours de repos sur la
+fenêtre. Une fenêtre entièrement passée n'est jamais jugée : la règle ne
+reproche pas une série terminée.
+
+Ce qui tranche reste un **plan** : construit à part et importé, l'écran
+Problèmes le juge, et zéro écart dur prouve que le besoin est tenable avec les
+règles telles qu'elles sont codées. La seconde question est celle du
 solveur. Sous la forme dure allumée, sa phase de faisabilité cherche par
 **jours entiers** : la chaîne qui remplit un trou libère un jour de la *série*
 et non seulement de la semaine ISO, un jour rendu ne va qu'à des collègues

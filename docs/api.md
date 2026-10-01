@@ -1808,6 +1808,18 @@ troisième ne se lit que pour un appelant qui apporte les verrous, ce que font
 `analyser_faisabilite` ; les places du plan enregistré ne sont relues que s'il
 existe au moins un verrou.
 
+`PLAFOND_JOURS_CONSECUTIFS` lit le plafond de jours travaillés d'affilée contre
+toute la grille, dès que l'une des deux formes de la règle est allumée. C'est
+**une seule cause, sur la fenêtre la plus tendue**, et `date` en est le premier
+jour. Ses `demande` et `capacite` comptent des **jours-personnes**, pas des
+sièges ; `manque` vaut le déficit, 0 sur une simple marge mince. Elle est
+`CRITIQUE` seulement quand c'est une preuve sous la forme dure, `ELEVE`
+autrement. Une cause `ELEVE` de ce type **ne rend pas le rapport non
+réalisable** (`feasible` reste vrai), car la grille tient sur le papier. Quand
+la grille passe, la même cause peut venir du plan enregistré, dont les
+personnes employées par jour ne sont relues que si la règle est allumée.
+L'arithmétique et ses limites sont dans `docs/contraintes.md`.
+
 **Ce que l'IHM en fait avant de lancer.** Les trois causes ci-dessus et la
 contradiction entre exceptions déclenchent une confirmation sur les trois
 boutons de l'écran Solveur : elles garantissent un score dur négatif quel que

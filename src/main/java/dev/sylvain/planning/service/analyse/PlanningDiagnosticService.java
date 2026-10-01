@@ -22,6 +22,7 @@ import dev.sylvain.planning.solver.ConstraintFloorRules.Denominator;
 import dev.sylvain.planning.solver.ConstraintFloorRules.FloorRule;
 import dev.sylvain.planning.solver.ConstraintFloorRules.MissingData;
 import dev.sylvain.planning.solver.constraints.ExclusionEligibilite;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -205,14 +206,17 @@ public final class PlanningDiagnosticService {
                 // describes the problem that was solved, and a solve launched
                 // with the rule on stays described with it on.
                 encadrementMineursActif(solved),
-                // Same doctrine for the locks, the seats and the horizon: all
-                // three are read off the plan handed here, never re-read from
-                // the database or the clock, so a diagnostic describes the plan
-                // it was given — including the moment its past was frozen at.
+                FeasibilityAnalyzer.ConsecutiveDaysRule.of(solved),
+                // Same doctrine for the locks, the seats, the horizon and the
+                // people each day employs: all four are read off the plan handed
+                // here, never re-read from the database or the clock, so a
+                // diagnostic describes the plan it was given — including the
+                // moment its past was frozen at.
                 new FeasibilityAnalyzer.PlanContext(
                         solved.getVerrouillages() == null ? List.of() : solved.getVerrouillages(),
                         () -> placesTenues(solved),
-                        solved.getPastHorizon()));
+                        solved.getPastHorizon(),
+                        () -> employedByDay(solved)));
         int hardScore = solved.getScore() == null
                 ? 0
                 : Math.toIntExact(solved.getScore().hardScore());
@@ -552,6 +556,17 @@ public final class PlanningDiagnosticService {
                         poste.getStand().getId(),
                         poste.getCreneau().getId()))
                 .collect(Collectors.toSet());
+    }
+
+    /** Who the plan employs on each day, by the timeslot's date — as the rule on days in a row counts it. */
+    private static Map<LocalDate, Set<String>> employedByDay(PlanningEvenement solved) {
+        return solved.getPostes().stream()
+                .filter(poste -> poste.getAnimateur() != null
+                        && poste.getCreneau() != null
+                        && poste.getCreneau().getDate() != null)
+                .collect(Collectors.groupingBy(
+                        poste -> poste.getCreneau().getDate(),
+                        Collectors.mapping(poste -> poste.getAnimateur().getId(), Collectors.toSet())));
     }
 
     /**

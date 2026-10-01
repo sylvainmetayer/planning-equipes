@@ -470,10 +470,14 @@ public class EtatEditionService {
                         creneaux,
                         contraintes,
                         FeasibilityAnalyzer.encadrementMineursActif(referenceDataService.getContraintesDesactivees()),
+                        FeasibilityAnalyzer.ConsecutiveDaysRule.of(
+                                referenceDataService.getContraintesDesactivees(),
+                                referenceDataService.getParametresQualite()),
                         new FeasibilityAnalyzer.PlanContext(
                                 referenceDataService.listVerrouillages(),
                                 persistenceService::loadPlacesTenues,
-                                planningService.pastHorizon())),
+                                planningService.pastHorizon(),
+                                persistenceService::loadEmployedByDay)),
                 publicationService.apercu(),
                 confirmationService.synthese(),
                 demandeEchangeService.isFoireOpen(),

@@ -244,7 +244,14 @@ public class CreneauGridService {
                         stands,
                         creneaux,
                         List.of(),
-                        FeasibilityAnalyzer.encadrementMineursActif(parametres.disabledContraintes()));
+                        FeasibilityAnalyzer.encadrementMineursActif(parametres.disabledContraintes()),
+                        // The grid is what decides whether the cap holds: a
+                        // variant previewed here is judged on it like the
+                        // edition's own grid. No plan in place — it is a
+                        // hypothesis.
+                        FeasibilityAnalyzer.ConsecutiveDaysRule.of(
+                                parametres.disabledContraintes(), parametres.qualite()),
+                        FeasibilityAnalyzer.PlanContext.NONE);
 
         return new RapportGrille(creneaux.size(), anomalies, ouvertures, faisabilite);
     }

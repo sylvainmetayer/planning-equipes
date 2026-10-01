@@ -886,6 +886,61 @@ public class PlanningPersistenceService {
     }
 
     /**
+     * The date of every cell {@link #loadAnimateursByStandCreneau()} holds, by
+     * the same key: what a cell the next solve no longer generates — an opening
+     * withdrawn, a stand closed by a consigne — is still dated by, once the
+     * solved plan has nothing left to read it from.
+     */
+    public Map<String, LocalDate> loadHeldCellDates() {
+        Map<String, LocalDate> dates = new LinkedHashMap<>();
+        String sql = """
+ SELECT DISTINCT pa.stand_id, pa.creneau_id, c.date_creneau
+ FROM poste_affectation pa
+ JOIN creneau c ON c.edition_id = pa.edition_id AND c.id = pa.creneau_id
+ WHERE pa.edition_id = ? AND pa.animateur_id IS NOT NULL""";
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = scope.prepareScoped(connection, sql);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                LocalDate date = rs.getObject("date_creneau", LocalDate.class);
+                if (date != null) {
+                    dates.put(standCreneauKey(rs.getString("stand_id"), rs.getLong("creneau_id")), date);
+                }
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to load the dates of the persisted assignments", e);
+        }
+        return dates;
+    }
+
+    /**
+     * The animateurs the persisted plan employs on each day, by the date of the
+     * timeslot — the day the rule on days in a row counts a seat on. What
+     * {@code FeasibilityAnalyzer} weighs a plan in place's rest days with.
+     */
+    public Map<LocalDate, Set<String>> loadEmployedByDay() {
+        Map<LocalDate, Set<String>> parJour = new LinkedHashMap<>();
+        String sql = """
+ SELECT DISTINCT c.date_creneau, pa.animateur_id
+ FROM poste_affectation pa
+ JOIN creneau c ON c.edition_id = pa.edition_id AND c.id = pa.creneau_id
+ WHERE pa.edition_id = ? AND pa.animateur_id IS NOT NULL""";
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = scope.prepareScoped(connection, sql);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                LocalDate date = rs.getObject("date_creneau", LocalDate.class);
+                if (date != null) {
+                    parJour.computeIfAbsent(date, d -> new LinkedHashSet<>()).add(rs.getString("animateur_id"));
+                }
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to load the animateurs employed per day", e);
+        }
+        return parJour;
+    }
+
+    /**
      * The same seats as {@link #loadAnimateursByStandCreneau()}, as the triples
      * {@link ForcedAssignmentOnLockedSchedule} reads: who holds what, on which
      * stand and which timeslot. That check lives in the referential package and

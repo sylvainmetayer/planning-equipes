@@ -273,6 +273,34 @@ describe('construireProblemes', () => {
     ]);
   });
 
+  // A window's deficit is in person-days: read as « il manque N animateur(s) »
+  // it would announce a headcount the cause never computed.
+  it('details a cap on days in a row in person-days, never as missing animateurs', () => {
+    const [probleme] = construireProblemes(
+      report([
+        cause({
+          type: 'PLAFOND_JOURS_CONSECUTIFS',
+          severite: 'CRITIQUE',
+          message: 'Le plafond de 6 jours travaillés d’affilée ne peut pas tenir…',
+          creneauId: null,
+          date: '2026-02-04',
+          heureDebut: null,
+          heureFin: null,
+          standIds: [],
+          demande: 925,
+          capacite: 918,
+          manque: 7,
+        }),
+      ]),
+      [],
+    );
+    expect(probleme.titre).toBe("Plafond de jours d'affilée");
+    expect(probleme.niveau).toBe('BLOQUANT');
+    expect(probleme.details).toEqual([
+      'Fenêtre à partir du 2026-02-04 : 925 jours-personnes nécessaires pour 918 possibles.',
+    ]);
+  });
+
   // Every other cause keeps the adjustments link alone.
   it('does not offer the locks on a day-off cause', () => {
     const liens = causeLinks(
