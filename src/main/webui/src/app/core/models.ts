@@ -3797,6 +3797,19 @@ export interface EtatSauvegarde {
   alertRecipientMissing: boolean;
 }
 
+/**
+ * One line of `GET /api/debug/versions`: an application version that opened
+ * this database, when it first did, and the latest migration applied then. A
+ * new line each time the version changes, so a rollback shows as a line of its
+ * own — what the schema guard cites when it refuses to boot.
+ */
+export interface ApplicationVersion {
+  version: string;
+  firstStartedAt: string;
+  /** `null` only on a line written before Flyway's history held anything. */
+  latestMigration: string | null;
+}
+
 /* --------------------------- Mode « jour J » ------------------------------ */
 
 /**

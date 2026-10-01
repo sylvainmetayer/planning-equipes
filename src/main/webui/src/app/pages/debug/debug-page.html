@@ -134,6 +134,43 @@
 
     <mat-card appearance="outlined" class="page-card">
       <mat-card-header>
+        <h2 mat-card-title i18n="@@debug.versions.title">Versions qui ont ouvert cette base</h2>
+        <mat-card-subtitle i18n="@@debug.versions.subtitle">
+          Une ligne à chaque changement de version, la plus récente en tête, avec la dernière migration appliquée à ce
+          moment : après un retour arrière, c'est ici qu'on lit quelle version a migré la base.
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <app-status-message [text]="versionsError()" tone="error" />
+        @if (versions(); as lignes) {
+          @if (lignes.length === 0) {
+            <p class="empty-hint" i18n="@@debug.versions.empty">Aucune version n'est encore enregistrée sur cette base.</p>
+          } @else {
+            <table class="debug-versions">
+              <thead>
+                <tr>
+                  <th scope="col" i18n="@@debug.versions.colonne.version">Version</th>
+                  <th scope="col" i18n="@@debug.versions.colonne.premierDemarrage">Premier démarrage</th>
+                  <th scope="col" i18n="@@debug.versions.colonne.derniereMigration">Dernière migration</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (ligne of lignes; track $index) {
+                  <tr>
+                    <th scope="row">{{ ligne.version }}</th>
+                    <td>{{ ligne.firstStartedAt | date: 'd MMM y, HH:mm' }}</td>
+                    <td>{{ ligne.latestMigration === null ? '—' : 'V' + ligne.latestMigration }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
         <h2 mat-card-title i18n="@@debug.diagnostic.title">Diagnostic de contraintes (brut)</h2>
         <mat-card-subtitle i18n="@@debug.diagnostic.subtitle">
           Le diagnostic complet du planning enregistré, sérialisé — ce que la page Solveur déversait dans son panneau

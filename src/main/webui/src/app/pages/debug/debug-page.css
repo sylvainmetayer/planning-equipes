@@ -7,3 +7,27 @@
 .debug-onglets .mat-icon {
   margin-right: 0.35rem;
 }
+
+/* The versions that opened the database: a plain listing, scrollable rather
+   than wrapping, like the backups of Paramètres — a version or a date broken
+   over two lines is harder to match against a log. */
+.debug-versions {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  display: block;
+  overflow-x: auto;
+}
+
+.debug-versions th,
+.debug-versions td {
+  padding: 0.35rem 1rem 0.35rem 0;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.debug-versions tbody th {
+  font-weight: normal;
+  font-family: var(--app-font-mono, monospace);
+}

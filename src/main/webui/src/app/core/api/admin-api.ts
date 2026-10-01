@@ -1,10 +1,11 @@
-// The administrator's plumbing: backups, the SQL dump, the mail checks of the
-// Débogage page, the legal notice, the scheduled notifications, the
+// The administrator's plumbing: backups, the SQL dump, the mail checks and the
+// version history of the Débogage page, the legal notice, the scheduled notifications, the
 // organisation's contact, the session.
 
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
 import {
+  ApplicationVersion,
   ContactOrganisation,
   EtatSauvegarde,
   ImportSummary,
@@ -54,6 +55,11 @@ export class AdminApi {
   /** Always fails server-side, on purpose: exercises the error reporting. */
   triggerTestException(): Promise<unknown> {
     return this.api.post('/api/debug/test-exception', {});
+  }
+
+  /** The application versions that opened this database, the latest first. */
+  applicationVersions(): Promise<ApplicationVersion[]> {
+    return this.api.get<ApplicationVersion[]>('/api/debug/versions');
   }
 
   /* ---------------------------- legal notice ------------------------------ */

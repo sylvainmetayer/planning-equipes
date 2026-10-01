@@ -3,10 +3,12 @@ import {
   Component,
   inject,
   OnInit,
+  resource,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { DatePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
@@ -24,6 +26,7 @@ import { StatusMessage } from '../../shared/status-message';
 import { keepViewInQueryParams } from '../../core/view-query-params';
 import { OngletDebug, readOngletDebug } from './debug';
 import { errorMessage, errorPrefix } from '../../core/error-message';
+import { errorText, retainedValue } from '../../core/resource-state';
 
 /**
  * Raw dump of the last constraint analysis (`GET /api/constraints`):
@@ -47,6 +50,7 @@ import { errorMessage, errorPrefix } from '../../core/error-message';
 @Component({
   selector: 'app-debug-page',
   imports: [
+    DatePipe,
     NewWindowLink,
     MatCardModule,
     MatButtonModule,
@@ -86,6 +90,18 @@ export class DebugPage implements OnInit {
   protected readonly onglet = signal<OngletDebug>('resolution');
 
   private readonly route = inject(ActivatedRoute, { optional: true });
+
+  /**
+   * The application versions that opened this database, the latest first —
+   * what an incident report reads after a rollback (« migrated by 1.3.0, then
+   * opened by 1.2.4 »), and what the server's refusal to boot on a schema
+   * ahead of it cites. Read once, with the page: it only moves on a restart.
+   */
+  private readonly versionsResource = resource({
+    loader: () => this.adminApi.applicationVersions(),
+  });
+  protected readonly versions = retainedValue(this.versionsResource);
+  protected readonly versionsError = errorText(this.versionsResource);
 
   constructor() {
     // Followed rather than read once, like Diagnostic: the router reuses this

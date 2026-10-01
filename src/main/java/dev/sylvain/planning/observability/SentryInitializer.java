@@ -5,8 +5,10 @@ import io.quarkus.runtime.StartupEvent;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.protocol.SentryException;
+import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
+import jakarta.interceptor.Interceptor;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -31,7 +33,13 @@ import java.util.regex.Pattern;
 @ApplicationScoped
 public class SentryInitializer {
 
-    void onStart(@Observes StartupEvent event, ConfigObservabilite observabilite) {
+    /**
+     * First of all the startup observers, so that the ones after it — the
+     * schema check's warning above all — have somewhere to report to.
+     */
+    void onStart(
+            @Observes @Priority(Interceptor.Priority.PLATFORM_BEFORE) StartupEvent event,
+            ConfigObservabilite observabilite) {
         Optional<String> dsn = observabilite.sentry().dsn();
         String environment = observabilite.sentry().environment();
         if (dsn.isEmpty()) {

@@ -126,8 +126,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   the volumetry folded),
   `/debug` (« Débogage » — the raw and the technical only, served everywhere
   and reached by its address or Ctrl+K: two tabs chosen by
-  `?onglet=resolution|verifications`, the raw analysis with the version and
-  the API docs, and the checks — test notification, test exception, test
+  `?onglet=resolution|verifications`, the raw analysis with the version, the
+  application versions that opened the database (`GET /api/debug/versions`)
+  and the API docs, and the checks — test notification, test exception, test
   mail, Mailpit, pgAdmin; a guard on the route sends its former
   `?onglet=donnees` and `?onglet=yaml` to Fichiers' examples and validator),
   `/mcp-client`,

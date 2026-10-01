@@ -5,11 +5,13 @@ import jakarta.inject.Inject;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.function.LongSupplier;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.Readiness;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationInfo;
+import org.flywaydb.core.api.MigrationState;
 import org.jboss.logging.Logger;
 
 /**
@@ -24,6 +26,12 @@ import org.jboss.logging.Logger;
  * is what clears it). What this check adds is a running instance whose history
  * changed under it — another instance, or an operator, migrating the same
  * database with a newer binary.</p>
+ *
+ * <p>A failed migration <em>of a newer binary</em> counts like any other,
+ * except under {@code ALLOW_SCHEMA_AHEAD=true}: the boot that escape hatch
+ * forced was refused precisely because of the future rows, the failed ones
+ * named as such, and the operator accepted them. Counting them here would turn
+ * the forced boot into an instance that never becomes ready.</p>
  *
  * <p>The response carries two counts and nothing else: no version, no script
  * name, no JDBC URL. The probe is public, so every anonymous caller may hit it:
@@ -43,9 +51,14 @@ public class FlywayMigrationsReadinessCheck implements HealthCheck {
 
     private final Flyway flyway;
 
+    private final boolean allowAhead;
+
     @Inject
-    public FlywayMigrationsReadinessCheck(Flyway flyway) {
+    public FlywayMigrationsReadinessCheck(
+            Flyway flyway,
+            @ConfigProperty(name = "planning.schema.allow-ahead", defaultValue = "false") boolean allowAhead) {
         this.flyway = flyway;
+        this.allowAhead = allowAhead;
     }
 
     /** Monotonic, replaceable by a test. */
@@ -75,7 +88,7 @@ public class FlywayMigrationsReadinessCheck implements HealthCheck {
     HealthCheckResponse readHistory() {
         try {
             var info = flyway.info();
-            return evaluate(info.pending(), info.all());
+            return evaluate(info.pending(), info.all(), allowAhead);
         } catch (RuntimeException e) {
             // The history table could not even be read: not ready, and the
             // reason stays in the log, not in a public response.
@@ -85,8 +98,11 @@ public class FlywayMigrationsReadinessCheck implements HealthCheck {
     }
 
     /** Pure verdict, so the rule is tested without a database. */
-    static HealthCheckResponse evaluate(MigrationInfo[] pending, MigrationInfo[] all) {
-        long failed = Arrays.stream(all).filter(m -> m.getState().isFailed()).count();
+    static HealthCheckResponse evaluate(MigrationInfo[] pending, MigrationInfo[] all, boolean allowAhead) {
+        long failed = Arrays.stream(all)
+                .filter(m -> m.getState().isFailed())
+                .filter(m -> !(allowAhead && m.getState() == MigrationState.FUTURE_FAILED))
+                .count();
         return HealthCheckResponse.named(NAME)
                 .status(pending.length == 0 && failed == 0)
                 .withData("pending", pending.length)

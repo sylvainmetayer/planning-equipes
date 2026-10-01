@@ -62,6 +62,35 @@ ou un client manipule.
   ([`exploitation.md` § Sauvegarde](exploitation.md)). Une version qui rend le
   retour arrière impossible doit se voir de loin.
 
+**Une image plus ancienne refuse de démarrer sur une base plus récente.** Au
+démarrage, l'application compare l'historique Flyway de la base aux migrations
+qu'elle embarque : si la base porte une migration que le binaire ne connaît pas
+(une image redescendue après une montée qui a migré), elle **s'arrête** avec un
+message qui nomme sa version, la dernière migration qu'elle connaît, la
+dernière appliquée et la version de l'application qui l'a appliquée. Deux
+issues, et aucune n'est de retoucher le schéma à la main :
+
+| Issue | Quand |
+| --- | --- |
+| Redéployer la version qui a migré la base (`APP_VERSION`) | le cas ordinaire : le retour arrière était une erreur, ou le correctif attendu existe dans une version au moins aussi récente |
+| Restaurer une sauvegarde antérieure à la montée, avec `scripts/restaurer.sh` ([`exploitation.md` § 5](exploitation.md)) | il faut vraiment l'ancienne version, au prix des écritures faites depuis la montée |
+
+`ALLOW_SCHEMA_AHEAD=true` force le démarrage malgré tout — avertissement
+`WARN` au journal et à Sentry —, pour l'exploitant qui sait que la migration en
+avance est additive et que l'ancien code la supporte. Même logique que
+`FLYWAY_REPAIR_AT_START` : le temps d'un démarrage, puis `false`. Le contrôle
+se fonde sur les migrations, jamais sur le numéro de version : un build local
+`999-SNAPSHOT` sur une copie de la base de production suit la même règle, et
+un correctif de branche de maintenance (§ 5) qui ajouterait une migration que
+`main` n'a pas se verrait au premier démarrage de la version suivante.
+
+Chaque démarrage réussi d'une **autre** version que la précédente est noté en
+base (table `version_applicative` : version, premier démarrage, dernière
+migration à ce moment — sur un démarrage forcé par `ALLOW_SCHEMA_AHEAD`, la
+dernière que cette version connaît, pour qu'elle ne passe pas ensuite pour celle
+qui a migré la base), et la page *Débogage* l'affiche : de quoi écrire dans
+un rapport d'incident « base migrée par la 1.3.0, puis ouverte par la 1.2.4 ».
+
 **MINOR** : fonctionnalité ajoutée, nouvelle variable d'environnement avec un
 défaut qui préserve le comportement, migration additive (nouvelle table,
 colonne nullable), nouvelle contrainte solveur *désactivable*.

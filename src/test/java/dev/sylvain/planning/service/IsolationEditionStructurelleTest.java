@@ -158,10 +158,19 @@ class IsolationEditionStructurelleTest {
      *       them {@code edition_id}. It cannot hold the predicate, so asking
      *       one of it would only push the statement into the exception
      *       list.</li>
+     *   <li>{@code version_applicative} — the application versions that
+     *       opened the database, written and read at boot, where no edition
+     *       exists. It describes the database every edition lives in.</li>
      * </ul>
      */
-    private static final List<String> TABLES_HORS_EDITION =
-            List.of("edition", "backup_settings", "horloge_jour_j", "kpi_historique", "solver_job", "creneau_remap");
+    private static final List<String> TABLES_HORS_EDITION = List.of(
+            "edition",
+            "backup_settings",
+            "horloge_jour_j",
+            "kpi_historique",
+            "solver_job",
+            "creneau_remap",
+            "version_applicative");
 
     /**
      * The deliberately cross-edition statements, and why.
