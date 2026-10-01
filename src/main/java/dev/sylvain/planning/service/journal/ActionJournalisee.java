@@ -38,6 +38,8 @@ public record ActionJournalisee(String code, String libelle, Entite entite, bool
         ECHANGE,
         DISPONIBILITE,
         INSTANTANE,
-        SAUVEGARDE
+        SAUVEGARDE,
+        /** A check of the staffing floor by a made-up team; its id is a row of {@code verification_besoin}. */
+        VERIFICATION_BESOIN
     }
 }

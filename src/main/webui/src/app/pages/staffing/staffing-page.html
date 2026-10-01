@@ -102,25 +102,40 @@
       <section class="staffing-verification" aria-labelledby="staffing-verification-titre">
         <h2 id="staffing-verification-titre" class="staffing-verification-titre" i18n="@@staffing.verification.title">Vérifier par un solve</h2>
         <p class="empty-hint" i18n="@@staffing.verification.description">
-          Une équipe fictive de majeurs, disponibles tous les jours et compétents partout, tient-elle tous les sièges ?
-          Le plan de l'édition n'est pas touché.
+          Une équipe fictive, disponible tous les jours et compétente partout, tient-elle tous les sièges ? Ses mineurs
+          ont seize ans. Le planning n'est pas touché ; chaque essai va dans l'historique.
         </p>
         <div class="staffing-verification-actions">
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-label i18n="@@staffing.verification.effectif">Effectif à vérifier</mat-label>
-            <input matInput type="number" min="1" name="teamSizeToCheck" [placeholder]="'' + resume.minimumTotal"
-                   [ngModel]="teamSizeToCheck()" (ngModelChange)="changerEffectif($event)" [disabled]="verificationRunning()" />
+            <mat-label i18n="@@staffing.verification.majeurs">Majeurs</mat-label>
+            <input matInput type="number" min="0" name="adultsToCheck" [placeholder]="'' + resume.minimumTotal"
+                   [ngModel]="adultsToCheck()" (ngModelChange)="setAdults($event)" [disabled]="verificationRunning()" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label i18n="@@staffing.verification.mineurs">Mineurs</mat-label>
+            <input matInput type="number" min="0" name="minorsToCheck" placeholder="0"
+                   [ngModel]="minorsToCheck()" (ngModelChange)="setMinors($event)" [disabled]="verificationRunning()" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label i18n="@@staffing.verification.duree">Durée max (s)</mat-label>
+            <input matInput type="number" min="10" max="3600" name="secondsToCheck"
+                   i18n-placeholder="@@staffing.verification.dureeDefaut" placeholder="par défaut"
+                   [ngModel]="secondsToCheck()" (ngModelChange)="setSeconds($event)" [disabled]="verificationRunning()" />
           </mat-form-field>
           <button mat-flat-button type="button" [disabled]="verificationRunning()" (click)="lancerVerification()">
             <mat-icon aria-hidden="true">play_arrow</mat-icon>
             <ng-container i18n="@@staffing.verification.lancer">Vérifier</ng-container>
           </button>
+          <a mat-button routerLink="/historique" [queryParams]="{ entite: 'VERIFICATION_BESOIN' }">
+            <mat-icon aria-hidden="true">history</mat-icon>
+            <ng-container i18n="@@staffing.verification.historique">Vérifications précédentes</ng-container>
+          </a>
         </div>
         <app-status-message [text]="verificationErreur()" tone="error" />
         @if (verification(); as verif) {
           @if (verif.etat === 'EN_COURS') {
             <mat-progress-bar mode="indeterminate" />
-            <p class="empty-hint" i18n="@@staffing.verification.enCours">Calcul en cours avec {{ verif.effectif }} personnes, {{ verif.plafondSecondes }} s au plus…</p>
+            <p class="empty-hint" i18n="@@staffing.verification.enCours">Calcul en cours avec {{ verificationTeam() }}, {{ verif.plafondSecondes }} s au plus…</p>
           } @else {
             <p class="staffing-caveat" [class.staffing-critical]="!verif.realisable">
               <mat-icon inline aria-hidden="true">{{ verif.realisable ? 'check_circle' : 'error' }}</mat-icon>

@@ -116,6 +116,9 @@
               }
             </span>
             <span class="historique-cible">{{ surQuoi(entree) }}</span>
+            @if (resultOf(entree); as resultat) {
+              <span class="historique-resultat">{{ resultat }}</span>
+            }
             @if (entree.champs.length > 0) {
               @if (isExport(entree)) {
                 <span

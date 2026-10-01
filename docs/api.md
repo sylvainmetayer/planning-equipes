@@ -228,15 +228,21 @@ l'écran se trompe facilement de sens :
   règle moyenne peut être enfreinte : elle ne doit pas faire recruter.
 
 `POST /api/staffing/verification` lance un solve des sièges de l'édition par
-une **équipe fictive** et répond `202` sans attendre. L'équipe compte `effectif`
-personnes, le minimum quand le corps n'en dit rien. Elles sont majeures,
-disponibles tous les jours et compétentes sur toutes les typologies.
+une **équipe fictive** et répond `202` sans attendre. L'équipe compte `majeurs`
+majeurs et `mineurs` mineurs, ces derniers âgés de seize ans au premier jour ;
+le solve dure au plus `dureeSecondes`, entre 10 et 3 600. Sans `majeurs`,
+l'équipe compte le minimum moins les mineurs ; sans `mineurs`, aucun ; sans
+`dureeSecondes`, la durée configurée. Tous sont disponibles tous les jours et
+compétents sur toutes les typologies.
 `GET /api/staffing/verification` rend la dernière vérification de l'édition,
-en cours ou terminée, ou `204` s'il n'y en a eu aucune depuis le démarrage.
-Quatre choses à savoir avant de s'en servir :
+en cours ou terminée, ou `204` s'il n'y en a jamais eu.
+Ce qu'il faut savoir avant de s'en servir :
 
-- **Rien de l'édition n'est écrit** : ni le plan, ni les animateurs, ni la file
-  du solveur. Le geste n'est donc pas journalisé.
+- **Ni le plan, ni les animateurs, ni la file du solveur ne sont écrits.** La
+  vérification elle-même est conservée (`verification_besoin`) et l'historique
+  trace son lancement et sa fin. Ses lignes portent l'`entite`
+  `VERIFICATION_BESOIN` et, dans `verification`, l'équipe, la durée et le
+  résultat, joints à la lecture : c'est ce qui permet de comparer les essais.
 - **Une seule vérification à la fois, toutes éditions confondues, et aucune
   pendant une résolution.** Le solveur est partagé par toutes les éditions :
   une seconde demande reçoit `409` au lieu d'attendre son tour.
@@ -244,7 +250,8 @@ Quatre choses à savoir avant de s'en servir :
   aucune règle dure. Un `realisable: false` dit seulement qu'aucun plan complet
   n'a été trouvé dans le temps imparti. `posteDoitEtrePourvu` est toujours
   tenue pendant la vérification, même si l'édition l'a éteinte.
-- **Le résultat vit en mémoire** et se perd au redémarrage.
+- **Un redémarrage interrompt la vérification en cours** : elle se lit alors
+  en `ECHEC`, avec la raison.
 - **Les exceptions ad hoc et le plan publié sont laissés de côté** : ils
   nomment des personnes que l'équipe fictive ne contient pas.
 

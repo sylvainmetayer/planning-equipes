@@ -92,6 +92,7 @@ public final class CatalogueActions {
     private static final String GEL_POSE = "GEL_POSE";
     private static final String GEL_LEVE = "GEL_LEVE";
     private static final String SOLVE_LANCE = "SOLVE_LANCE";
+    private static final String VERIFICATION_BESOIN_LANCEE = "VERIFICATION_BESOIN_LANCEE";
     private static final String SOLVE_INCREMENTAL_LANCE = "SOLVE_INCREMENTAL_LANCE";
     private static final String SOLVE_ARRETE = "SOLVE_ARRETE";
     private static final String JOB_SUPPRIME = "JOB_SUPPRIME";
@@ -297,6 +298,12 @@ public final class CatalogueActions {
         action(SOLVE_INCREMENTAL_LANCE, "Replanification incrémentale lancée", Entite.PLANNING);
         action(SOLVE_ARRETE, "Résolution arrêtée", Entite.PLANNING);
         action(JOB_SUPPRIME, "Tâche de résolution retirée", Entite.PLANNING);
+        // A solve of a made-up team (ADR 0071): it touches neither the plan
+        // nor the problem, but an organiser sizing a team comes back to read
+        // the trail of sizes tried — the launch is theirs, the end the
+        // application's, and both name the check, whose figures the history
+        // joins at read time.
+        action(VERIFICATION_BESOIN_LANCEE, "Vérification du besoin lancée", Entite.VERIFICATION_BESOIN);
         changesData(PLANNING_REINITIALISE, "Données de référence effacées", Entite.PLANNING);
         action(AFFECTATION_DEPLACEE, "Affectation déplacée à la main", Entite.PLANNING);
         action(AFFECTATION_POSEE, "Poste attribué à la main", Entite.PLANNING);
@@ -413,6 +420,9 @@ public final class CatalogueActions {
         // (ADR 0070): it belongs to one edition, and it happens once — the
         // nights after rewrite the same figures and record nothing.
         action("REALISE_FIGE", "Réalisé de fin d'événement figé", Entite.PLANNING);
+        // The end of a staffing check, on its own thread: it belongs to the
+        // edition it was started from, which the service enters to write it.
+        action("VERIFICATION_BESOIN_TERMINEE", "Vérification du besoin terminée", Entite.VERIFICATION_BESOIN);
     }
 
     /**
@@ -500,6 +510,7 @@ public final class CatalogueActions {
         route("PlanningResource#reset", PLANNING_REINITIALISE);
         route("SolverJobResource#solveAsync", SOLVE_LANCE);
         route("SolverJobResource#solveFromReferenceData", SOLVE_LANCE);
+        route("StaffingResource#verify", VERIFICATION_BESOIN_LANCEE);
         route("SolverJobResource#solveIncremental", SOLVE_INCREMENTAL_LANCE);
         route("SolverJobResource#cancelJob", SOLVE_ARRETE);
         route("SolverJobResource#deleteJob", JOB_SUPPRIME);
@@ -739,11 +750,6 @@ public final class CatalogueActions {
         untracked(
                 "AbonnementIcsResource#planningIcs",
                 "relu par l'agenda de l'animateur toutes les quelques heures, sans geste de sa part");
-        // A solve, but of a made-up team held in memory and dropped once read:
-        // the edition's plan, animateurs and solver queue are left untouched.
-        untracked(
-                "StaffingResource#verify",
-                "résout les sièges avec une équipe fictive en mémoire, n'écrit rien dans l'édition");
         untracked("CreneauResource#previewRecurrence", PREVISUALISATION);
         untracked("CreneauResource#previewDerivation", PREVISUALISATION);
         untracked("JourneeTypeResource#previewApplication", PREVISUALISATION);

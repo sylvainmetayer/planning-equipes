@@ -2,6 +2,8 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.analyse.StaffingVerificationService;
+import dev.sylvain.planning.service.analyse.StaffingVerificationService.StaffingVerification;
 import dev.sylvain.planning.service.journal.ActionJournalisee;
 import dev.sylvain.planning.service.journal.CatalogueActions;
 import dev.sylvain.planning.service.journal.EntreeJournal;
@@ -18,6 +20,7 @@ import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -49,10 +52,16 @@ public class HistoriqueResource {
 
     private final ReferenceDataService referenceData;
 
+    private final StaffingVerificationService verifications;
+
     @Inject
-    public HistoriqueResource(JournalActionService journal, ReferenceDataService referenceData) {
+    public HistoriqueResource(
+            JournalActionService journal,
+            ReferenceDataService referenceData,
+            StaffingVerificationService verifications) {
         this.journal = journal;
         this.referenceData = referenceData;
+        this.verifications = verifications;
     }
 
     /**
@@ -80,7 +89,27 @@ public class HistoriqueResource {
         }
         Map<String, String> noms = referenceData.listAnimateurs().stream()
                 .collect(Collectors.toMap(Animateur::getId, Animateur::nomAffiche, (a, b) -> a));
-        return entrees.stream().map(entree -> view(entree, noms::get)).toList();
+        Map<Long, StaffingVerification> checks = verifications.findAll(entrees.stream()
+                .map(HistoriqueResource::verificationId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet()));
+        return entrees.stream().map(entree -> view(entree, noms::get, checks)).toList();
+    }
+
+    /**
+     * The staffing check a line names, {@code null} for any other line — the
+     * figures of a check are joined here like a name, never stored in the
+     * journal, so « 140 : 12 sièges non pourvus » reads beside the line.
+     */
+    private static Long verificationId(EntreeJournal entree) {
+        if (!ActionJournalisee.Entite.VERIFICATION_BESOIN.name().equals(entree.entite()) || entree.entiteId() == null) {
+            return null;
+        }
+        try {
+            return Long.valueOf(entree.entiteId());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     /**
@@ -107,7 +136,7 @@ public class HistoriqueResource {
                         .map(compte -> new CompteEntiteView(compte.entite().name(), compte.nombre()))
                         .toList(),
                 changements.dernieres().stream()
-                        .map(entree -> view(entree, noms::get))
+                        .map(entree -> view(entree, noms::get, Map.of()))
                         .toList());
     }
 
@@ -150,7 +179,9 @@ public class HistoriqueResource {
                 .toList();
     }
 
-    private static EntreeHistoriqueView view(EntreeJournal entree, UnaryOperator<String> nomDe) {
+    private static EntreeHistoriqueView view(
+            EntreeJournal entree, UnaryOperator<String> nomDe, Map<Long, StaffingVerification> checks) {
+        Long verificationId = verificationId(entree);
         ActionJournalisee action = CatalogueActions.actions().get(entree.action());
         return new EntreeHistoriqueView(
                 entree.id(),
@@ -165,7 +196,8 @@ public class HistoriqueResource {
                 "ANIMATEUR".equals(entree.entite()) ? nomDe.apply(entree.entiteId()) : null,
                 entree.champs(),
                 entree.resultat().name(),
-                entree.statut());
+                entree.statut(),
+                verificationId == null ? null : checks.get(verificationId));
     }
 
     /**
@@ -178,6 +210,10 @@ public class HistoriqueResource {
      * @param entiteNom  same as {@code acteurNom}, for what the action bore upon
      * @param champs     the field names an edit changed, or the names of what
      *                   an export took out — never their values
+     * @param verification the staffing check the line names, as it stands
+     *                   now — its team, its time and its outcome; {@code null}
+     *                   on every other line, and on a check since deleted with
+     *                   its edition
      */
     @Schema(requiredProperties = {"id"})
     public record EntreeHistoriqueView(
@@ -193,7 +229,8 @@ public class HistoriqueResource {
             String entiteNom,
             List<String> champs,
             String resultat,
-            Integer statut) {}
+            Integer statut,
+            StaffingVerification verification) {}
 
     /**
      * One entry of the action inventory, for the screen's filter.

@@ -3631,6 +3631,9 @@
           "statut" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "verification" : {
+            "$ref" : "#/components/schemas/StaffingVerification"
           }
         }
       },
@@ -9051,13 +9054,25 @@
         }
       },
       "StaffingVerification" : {
-        "required" : [ "effectif", "etat", "lanceeLe", "plafondSecondes", "reglesEnDefaut", "sieges" ],
         "type" : "object",
+        "required" : [ "id", "effectif", "majeurs", "mineurs", "etat", "lanceeLe", "plafondSecondes", "reglesEnDefaut", "sieges" ],
         "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
           "etat" : {
             "$ref" : "#/components/schemas/VerificationState"
           },
           "effectif" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "majeurs" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "mineurs" : {
             "type" : "integer",
             "format" : "int32"
           },
@@ -9752,9 +9767,17 @@
       "VerificationRequest" : {
         "type" : "object",
         "properties" : {
-          "effectif" : {
+          "majeurs" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "mineurs" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "dureeSecondes" : {
+            "type" : "integer",
+            "format" : "int64"
           }
         }
       },

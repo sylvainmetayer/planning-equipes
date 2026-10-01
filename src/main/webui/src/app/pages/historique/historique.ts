@@ -4,6 +4,7 @@
 import { ActionHistorique, EntreeHistorique } from '../../core/models';
 import { correspondAuFiltre } from '../../core/text-filter';
 import { compareCodeUnits } from '../../core/string-order';
+import { historyLabel } from '../staffing/verification';
 
 /** Which actors the list keeps. `TOUS` is the default: the history is read whole. */
 export type FiltreActeur = 'TOUS' | 'ADMIN' | 'ANIMATEUR' | 'ANONYME' | 'ASSISTANT' | 'SYSTEME';
@@ -84,6 +85,7 @@ export function filter(
       entree.entiteNom ?? '',
       entree.entiteId ?? '',
       entree.champs.join(' '),
+      resultOf(entree),
     ]);
   });
 }
@@ -126,6 +128,16 @@ export function surQuoi(entree: EntreeHistorique): string {
     return '';
   }
   return entree.entiteNom ? `${entree.entiteNom} (${entree.entiteId})` : entree.entiteId;
+}
+
+/**
+ * What the line's staffing check gave — its team, its time, its outcome — or
+ * `''` on any other line. Joined by the server from the check itself, so an
+ * organiser trying sizes one after the other reads « 140 : 12 sièges vides,
+ * 160 : tous pourvus » down the list.
+ */
+export function resultOf(entree: EntreeHistorique): string {
+  return entree.verification ? historyLabel(entree.verification) : '';
 }
 
 /**

@@ -117,6 +117,7 @@ class IsolationEditionStructurelleTest {
             "contact_organisation",
             "notification_planifiee",
             "journal_action",
+            "verification_besoin",
             "consigne_edition",
             "consigne_edition_fenetre",
             "consigne_edition_ouverture",

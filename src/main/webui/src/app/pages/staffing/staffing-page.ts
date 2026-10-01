@@ -44,6 +44,7 @@ import { FormationPage } from '../formation/formation-page';
 import { libelleJour as jourCourt } from '../formation/formation';
 import { libelleTranche, NiveauMarge, niveauMarge, signe } from '../marge/marge';
 import { MarginBeforeGrid } from '../marge/margin-before-grid';
+import { teamLabel } from './verification';
 import { mesurePrecedente, resumePrecedent } from '../realise/mesure';
 
 /** The tightest timeslot of one day before a solve, as the per-day table prints it. */
@@ -192,8 +193,12 @@ export class StaffingPage implements OnInit {
 
   /** The last check of the floor by a solve, running or finished; `null` before any. */
   protected readonly verification = signal<StaffingVerification | null>(null);
-  /** The team size typed in; `null` checks the floor the summary shows. */
-  protected readonly teamSizeToCheck = signal<number | null>(null);
+  /** The adults typed in; `null` checks the floor the summary shows, less the minors. */
+  protected readonly adultsToCheck = signal<number | null>(null);
+  /** The minors typed in, aged sixteen on the first day; `null` for none. */
+  protected readonly minorsToCheck = signal<number | null>(null);
+  /** The time the solve is given at most, in seconds; `null` for the server's default. */
+  protected readonly secondsToCheck = signal<number | null>(null);
   protected readonly verificationErreur = signal('');
   protected readonly verificationRunning = computed(() => this.verification()?.etat === 'EN_COURS');
   private pollTimer: ReturnType<typeof setTimeout> | undefined;
@@ -438,20 +443,39 @@ export class StaffingPage implements OnInit {
     return total > 0 && total - jour.disponibles > jour.absentsMax;
   }
 
-  protected changerEffectif(valeur: number | string | null): void {
-    const size = valeur === null || valeur === '' ? null : Number(valeur);
-    this.teamSizeToCheck.set(size !== null && Number.isFinite(size) ? size : null);
+  protected setAdults(valeur: number | string | null): void {
+    this.adultsToCheck.set(readFigure(valeur));
+  }
+
+  protected setMinors(valeur: number | string | null): void {
+    this.minorsToCheck.set(readFigure(valeur));
+  }
+
+  protected setSeconds(valeur: number | string | null): void {
+    this.secondsToCheck.set(readFigure(valeur));
   }
 
   protected async lancerVerification(): Promise<void> {
     this.verificationErreur.set('');
     try {
-      this.verification.set(await this.analysesApi.verifyStaffing(this.teamSizeToCheck()));
+      this.verification.set(
+        await this.analysesApi.verifyStaffing({
+          majeurs: this.adultsToCheck(),
+          mineurs: this.minorsToCheck(),
+          dureeSecondes: this.secondsToCheck(),
+        }),
+      );
       this.schedulePoll();
     } catch (error) {
       this.verificationErreur.set(errorMessage(error));
     }
   }
+
+  /** Who the running check staffs the seats with. */
+  protected readonly verificationTeam = computed(() => {
+    const verification = this.verification();
+    return verification ? teamLabel(verification) : '';
+  });
 
   /** The hard rules the best plan still breaks, as the result names them. */
   protected readonly verificationLabel = computed(() => {
@@ -459,16 +483,16 @@ export class StaffingPage implements OnInit {
     if (!verification || verification.etat === 'EN_COURS') {
       return '';
     }
-    const effectif = verification.effectif;
-    const duree = verification.dureeSecondes ?? 0;
     if (verification.etat === 'ECHEC') {
       return verification.erreur ?? '';
     }
+    const equipe = teamLabel(verification);
+    const duree = verification.dureeSecondes ?? 0;
     if (verification.realisable) {
-      return $localize`:@@staffing.verification.ok:Avec ${effectif}:effectif: personnes, tous les sièges sont pourvus sans enfreindre aucune règle dure (calcul de ${duree}:duree: s).`;
+      return $localize`:@@staffing.verification.ok:Avec ${equipe}:equipe:, tous les sièges sont pourvus sans enfreindre aucune règle dure (calcul de ${duree}:duree: s).`;
     }
     const vides = verification.siegesNonPourvus ?? 0;
-    return $localize`:@@staffing.verification.ko:Avec ${effectif}:effectif: personnes, aucun plan complet trouvé en ${duree}:duree: s (${vides}:vides: sièges vides ou une règle dure enfreinte). Ce n'est pas une preuve : essayez avec davantage de monde pour comparer.`;
+    return $localize`:@@staffing.verification.ko:Avec ${equipe}:equipe:, aucun plan complet trouvé en ${duree}:duree: s (${vides}:vides: sièges vides ou une règle dure enfreinte). Ce n'est pas une preuve : essayez avec davantage de monde ou plus de temps pour comparer.`;
   });
 
   /** Reads the edition's last check once, then follows it while it runs. */
@@ -488,4 +512,10 @@ export class StaffingPage implements OnInit {
       this.pollTimer = setTimeout(() => void this.readVerification(), 3000);
     }
   }
+}
+
+/** A figure typed in a number field, `null` when the field is empty or unreadable. */
+function readFigure(valeur: number | string | null): number | null {
+  const figure = valeur === null || valeur === '' ? null : Number(valeur);
+  return figure !== null && Number.isFinite(figure) ? figure : null;
 }

@@ -86,6 +86,108 @@ class StaffingResourceTest {
 
     @Test
     void aCheckStaffsTheSeatsWithAMadeUpTeamAndSaysWhetherItHolds() {
+        seedSeats();
+
+        // No animateur at all: the team is made up, of the floor's size.
+        given().contentType("application/json")
+                .body("{}")
+                .when()
+                .post("/api/staffing/verification")
+                .then()
+                .statusCode(202)
+                .body("effectif", equalTo(2))
+                .body("sieges", equalTo(2));
+
+        awaitTheEnd();
+        given().when()
+                .get("/api/staffing/verification")
+                .then()
+                .statusCode(200)
+                .body("etat", equalTo("TERMINEE"))
+                .body("majeurs", equalTo(2))
+                .body("mineurs", equalTo(0))
+                .body("realisable", equalTo(true))
+                .body("siegesNonPourvus", equalTo(0));
+
+        // The trail: launched by the admin, ended by the application, both
+        // naming the check, whose figures the history joins.
+        given().when()
+                .get("/api/historique")
+                .then()
+                .statusCode(200)
+                .body("find { it.action == 'VERIFICATION_BESOIN_TERMINEE' }.acteur", equalTo("SYSTEME"))
+                .body("find { it.action == 'VERIFICATION_BESOIN_TERMINEE' }.verification.realisable", equalTo(true))
+                .body("find { it.action == 'VERIFICATION_BESOIN_LANCEE' }.entite", equalTo("VERIFICATION_BESOIN"))
+                .body("find { it.action == 'VERIFICATION_BESOIN_LANCEE' }.verification.effectif", equalTo(2));
+
+        seedScenario();
+    }
+
+    @Test
+    void aCheckTakesAdultsMinorsAndATimeOfItsOwn() {
+        seedSeats();
+
+        given().contentType("application/json")
+                .body("{\"majeurs\":1,\"mineurs\":1,\"dureeSecondes\":10}")
+                .when()
+                .post("/api/staffing/verification")
+                .then()
+                .statusCode(202)
+                .body("effectif", equalTo(2))
+                .body("majeurs", equalTo(1))
+                .body("mineurs", equalTo(1))
+                .body("plafondSecondes", equalTo(10));
+        awaitTheEnd();
+        given().when()
+                .get("/api/staffing/verification")
+                .then()
+                .statusCode(200)
+                .body("etat", equalTo("TERMINEE"))
+                .body("majeurs", equalTo(1))
+                .body("mineurs", equalTo(1))
+                .body("plafondSecondes", equalTo(10));
+
+        seedScenario();
+    }
+
+    @Test
+    void aCheckOutOfRangeIsRefused() {
+        seedSeats();
+
+        for (String body : new String[] {
+            "{\"majeurs\":0}",
+            "{\"majeurs\":0,\"mineurs\":0}",
+            "{\"majeurs\":-1,\"mineurs\":3}",
+            "{\"majeurs\":2,\"dureeSecondes\":5}",
+            "{\"majeurs\":2,\"dureeSecondes\":7200}"
+        }) {
+            given().contentType("application/json")
+                    .body(body)
+                    .when()
+                    .post("/api/staffing/verification")
+                    .then()
+                    .statusCode(400);
+        }
+
+        seedScenario();
+    }
+
+    @Test
+    void anEditionWithoutSeatsHasNothingToCheck() {
+        given().when().post("/api/planning/reset").then().statusCode(200);
+
+        given().contentType("application/json")
+                .body("{}")
+                .when()
+                .post("/api/staffing/verification")
+                .then()
+                .statusCode(400);
+
+        seedScenario();
+    }
+
+    /** One stand of two seats on one timeslot, and no animateur at all. */
+    private static void seedSeats() {
         given().when().post("/api/planning/reset").then().statusCode(200);
         given().contentType("application/json")
                 .body("""
@@ -110,17 +212,9 @@ class StaffingResourceTest {
                 .post("/api/creneaux")
                 .then()
                 .statusCode(200);
+    }
 
-        // No animateur at all: the team is made up, of the floor's size.
-        given().contentType("application/json")
-                .body("{}")
-                .when()
-                .post("/api/staffing/verification")
-                .then()
-                .statusCode(202)
-                .body("effectif", equalTo(2))
-                .body("sieges", equalTo(2));
-
+    private static void awaitTheEnd() {
         await().atMost(Duration.ofSeconds(60))
                 .pollInterval(Duration.ofMillis(250))
                 .until(() -> !"EN_COURS"
@@ -130,36 +224,6 @@ class StaffingResourceTest {
                                 .statusCode(200)
                                 .extract()
                                 .path("etat")));
-        given().when()
-                .get("/api/staffing/verification")
-                .then()
-                .statusCode(200)
-                .body("etat", equalTo("TERMINEE"))
-                .body("realisable", equalTo(true))
-                .body("siegesNonPourvus", equalTo(0));
-
-        given().contentType("application/json")
-                .body("{\"effectif\":0}")
-                .when()
-                .post("/api/staffing/verification")
-                .then()
-                .statusCode(400);
-
-        seedScenario();
-    }
-
-    @Test
-    void anEditionWithoutSeatsHasNothingToCheck() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
-
-        given().contentType("application/json")
-                .body("{}")
-                .when()
-                .post("/api/staffing/verification")
-                .then()
-                .statusCode(400);
-
-        seedScenario();
     }
 
     private static void seedScenario() {
