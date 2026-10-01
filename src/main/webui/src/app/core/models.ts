@@ -3991,6 +3991,23 @@ export interface ImportCsvLigne {
   warnings: string[];
   /** The off days the fiche would carry *after* the import, merged or replaced. */
   joursIndisponibles: string[];
+  /** Who this row probably duplicates — empty when nothing is flagged, and on a rejected row. */
+  doublonDe: ImportCsvDoublon[];
+}
+
+/**
+ * Why a row was flagged: another row of the file (`ROW`), a fiche the import
+ * keeps (`FICHE`), one a full replacement deletes (`REPLACED`), a fiche
+ * reached by its name alone and born another day (`NAMESAKE`), or one reached
+ * by its name alone whose address the row replaces (`NEW_ADDRESS`).
+ */
+export type ImportCsvDoublonKind = 'ROW' | 'FICHE' | 'REPLACED' | 'NAMESAKE' | 'NEW_ADDRESS';
+
+/** One probable duplicate of a row: exactly one of `line` and `animateurId` is set. */
+export interface ImportCsvDoublon {
+  kind: ImportCsvDoublonKind;
+  line: number | null;
+  animateurId: string | null;
 }
 
 /** The same shape answers the preview and the write; `applied` tells them apart. */
@@ -4005,6 +4022,11 @@ export interface ImportCsvRapport {
   created: number;
   updated: number;
   deleted: number;
+  /**
+   * Accepted rows flagged as a probable duplicate or namesake (a fiche whose
+   * address the name alone replaces included) — warned, never refused.
+   */
+  doublonsProbables: number;
   rows: ImportCsvLigne[];
   warnings: string[];
 }

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Edition;
@@ -62,6 +63,9 @@ class AnimateurCsvImportServiceTest {
 
     @Inject
     EditionContext editionContext;
+
+    @Inject
+    ObjectMapper objectMapper;
 
     /**
      * The ids the edition drew for the two typologies. The files below cite
@@ -714,6 +718,356 @@ class AnimateurCsvImportServiceTest {
         assertThat(motif(rapport, 2)).contains("Date de naissance illisible").doesNotContain("Doublon");
         assertThat(rapport.rows().get(1).action()).isEqualTo(AnimateurCsvImportReport.ImportAction.CREATED);
         assertThat(motif(rapport, 4)).contains("Doublon dans le fichier").contains("ligne 3");
+    }
+
+    /* -------------------------- Probable duplicates -------------------------- */
+
+    private String store(String prenom, String nom, LocalDate naissance, String email) {
+        Animateur animateur = new Animateur(null, prenom, nom, naissance, false);
+        animateur.setEmail(email);
+        return inEdition(() -> referenceData.createAnimateur(animateur)).getId();
+    }
+
+    private static AnimateurCsvImportReport.ProbableDuplicate onRow(int line) {
+        return new AnimateurCsvImportReport.ProbableDuplicate(AnimateurCsvImportReport.DuplicateKind.ROW, line, null);
+    }
+
+    private static AnimateurCsvImportReport.ProbableDuplicate onFiche(
+            AnimateurCsvImportReport.DuplicateKind kind, String id) {
+        return new AnimateurCsvImportReport.ProbableDuplicate(kind, null, id);
+    }
+
+    /**
+     * Two rows of one file, two addresses, one person: resolution keeps them
+     * apart, so the birth date is what tells. Both rows are flagged and stay
+     * accepted, each naming the other — and the write says exactly what the
+     * preview said.
+     */
+    @Test
+    void twoRowsWithTheSameIdentityAreBothFlaggedWithTheOtherLine() {
+        String csv = """
+                prenom;nom;date de naissance;email
+                Amélie;Durand;12/03/1990;amelie@example.org
+                Bruno;Lefèvre;04/06/1988;
+                Amélie;Durand;12/03/1990;
+                """;
+
+        AnimateurCsvImportReport apercu = inEdition(() -> csvImport.preview(demande(csv)));
+
+        assertThat(apercu.accepted()).isEqualTo(3);
+        assertThat(apercu.doublonsProbables()).isEqualTo(2);
+        assertThat(ligne(apercu, 2).doublonDe()).containsExactly(onRow(4));
+        assertThat(ligne(apercu, 2).warnings())
+                .singleElement()
+                .asString()
+                .startsWith("Probable doublon de la ligne 4 : mêmes nom, prénom et date de naissance");
+        assertThat(ligne(apercu, 4).doublonDe()).containsExactly(onRow(2));
+        assertThat(ligne(apercu, 3).doublonDe()).isEmpty();
+        assertThat(inEdition(() -> referenceData.listAnimateurs())).isEmpty();
+
+        AnimateurCsvImportReport ecrit = inEdition(() -> csvImport.apply(demande(csv)));
+
+        assertThat(ecrit.doublonsProbables()).isEqualTo(2);
+        assertThat(ecrit.rows())
+                .extracting(AnimateurCsvImportReport.ImportedRow::warnings)
+                .isEqualTo(apercu.rows().stream()
+                        .map(AnimateurCsvImportReport.ImportedRow::warnings)
+                        .toList());
+        assertThat(ecrit.created()).isEqualTo(3);
+    }
+
+    /** « Marie-Hélène » is « marie helene »: case, accents and punctuation never tell two people apart. */
+    @Test
+    void caseAccentsAndPunctuationAreIgnored() {
+        String csv = """
+                prenom;nom;date de naissance;email
+                Marie-Hélène;Dupont;12/03/1990;mh@example.org
+                marie helene;DUPONT;1990-03-12;
+                """;
+
+        AnimateurCsvImportReport rapport = inEdition(() -> csvImport.preview(demande(csv)));
+
+        assertThat(rapport.doublonsProbables()).isEqualTo(2);
+        assertThat(ligne(rapport, 3).doublonDe()).containsExactly(onRow(2));
+    }
+
+    /** Twins share a surname and a birth date, not a first name: nothing to flag. */
+    @Test
+    void twinsWithDifferentFirstNamesAreNotFlagged() {
+        String csv = """
+                prenom;nom;date de naissance
+                Léa;Martin;01/01/2010
+                Zoé;Martin;01/01/2010
+                """;
+
+        AnimateurCsvImportReport rapport = inEdition(() -> csvImport.preview(demande(csv)));
+
+        assertThat(rapport.accepted()).isEqualTo(2);
+        assertThat(rapport.doublonsProbables()).isZero();
+        assertThat(rapport.rows()).allSatisfy(row -> assertThat(row.warnings()).isEmpty());
+    }
+
+    /**
+     * A row without an address lands on a fiche by its name alone. When that
+     * fiche was born on another day, the import is about to rewrite a
+     * namesake's birth date — and with it their minor / adult regime.
+     */
+    @Test
+    void aRowMatchedByNameToAFicheBornAnotherDayIsANamesake() {
+        String jean = store("Jean", "Martin", LocalDate.of(1990, 1, 1), null);
+        String csv = """
+                prenom;nom;date de naissance
+                Jean;Martin;12/09/2008
+                """;
+
+        AnimateurCsvImportReport rapport = inEdition(() -> csvImport.preview(demande(csv)));
+
+        AnimateurCsvImportReport.ImportedRow row = ligne(rapport, 2);
+        assertThat(row.action()).isEqualTo(AnimateurCsvImportReport.ImportAction.UPDATED);
+        assertThat(row.doublonDe()).containsExactly(onFiche(AnimateurCsvImportReport.DuplicateKind.NAMESAKE, jean));
+        assertThat(row.warnings())
+                .singleElement()
+                .asString()
+                .startsWith("Homonyme ?")
+                .contains(jean)
+                .contains("01/01/1990")
+                .contains("12/09/2008");
+        assertThat(rapport.doublonsProbables()).isEqualTo(1);
+    }
+
+    /**
+     * The date cell left empty takes the fiche's — the date the write keeps —
+     * so a row matched by its name is no namesake, and a key compared against
+     * another fiche uses that date too.
+     */
+    @Test
+    void anAbsentDateCellComparesOnTheFichesDate() {
+        String jeanne = store("Jeanne", "Martin", LocalDate.of(1990, 1, 1), "jm@example.org");
+        String jean = store("Jean", "Martin", LocalDate.of(1990, 1, 1), null);
+        store("Paul", "Durand", LocalDate.of(1985, 5, 5), null);
+        // Row 2 lands on Jeanne by her address and renames her Jean, born —
+        // by her fiche — the same day as the Jean already stored.
+        String csv = """
+                prenom;nom;date de naissance;email
+                Jean;Martin;;jm@example.org
+                Paul;Durand;;
+                """;
+
+        AnimateurCsvImportReport rapport = inEdition(() -> csvImport.preview(demande(csv)));
+
+        assertThat(ligne(rapport, 2).animateurId()).isEqualTo(jeanne);
+        assertThat(ligne(rapport, 2).doublonDe())
+                .containsExactly(onFiche(AnimateurCsvImportReport.DuplicateKind.FICHE, jean));
+        assertThat(ligne(rapport, 2).warnings())
+                .singleElement()
+                .asString()
+                .startsWith("Probable doublon de la fiche " + jean)
+                .contains(jeanne);
+        assertThat(ligne(rapport, 3).doublonDe()).isEmpty();
+        assertThat(rapport.doublonsProbables()).isEqualTo(1);
+    }
+
+    /**
+     * Against the fiches the import keeps: a row whose write makes its fiche
+     * the twin of another is flagged with that fiche's id, while two fiches
+     * that already shared their key and that the file merely updates are the
+     * edition's business, not this file's.
+     */
+    @Test
+    void aRowAgainstAKeptFicheIsFlaggedOnlyWhenTheWriteMakesThePair() {
+        String premier = store("Amélie", "Durand", LocalDate.of(1990, 3, 12), "a1@example.org");
+        String second = store("Amélie", "Durand", LocalDate.of(1990, 3, 12), "a2@example.org");
+        String autre = store("Amélie", "Durand", LocalDate.of(1991, 3, 12), "a3@example.org");
+        String csv = """
+                prenom;nom;date de naissance;email
+                Amélie;Durand;12/03/1990;a1@example.org
+                Amélie;Durand;12/03/1990;a3@example.org
+                """;
+
+        AnimateurCsvImportReport rapport = inEdition(() -> csvImport.preview(demande(csv)));
+
+        assertThat(rapport.accepted()).isEqualTo(2);
+        // Row 2 changes nothing of who its fiche is: the pair it forms with the
+        // second fiche predates the file. Row 3 moves the third fiche onto both.
+        assertThat(ligne(rapport, 2).doublonDe()).containsExactly(onRow(3));
+        assertThat(ligne(rapport, 3).animateurId()).isEqualTo(autre);
+        assertThat(ligne(rapport, 3).doublonDe())
+                .containsExactly(onRow(2), onFiche(AnimateurCsvImportReport.DuplicateKind.FICHE, second));
+        assertThat(rapport.rows())
+                .flatExtracting(AnimateurCsvImportReport.ImportedRow::doublonDe)
+                .doesNotContain(onFiche(AnimateurCsvImportReport.DuplicateKind.FICHE, premier));
+    }
+
+    /**
+     * In a full replacement, the fiche the file does not name is deleted, so it
+     * is no duplicate after the write — but a row taking its very identity
+     * announces a deletion followed by a new description of the same person.
+     */
+    @Test
+    void aFullReplacementFlagsTheDeletedFicheOfTheSameIdentity() {
+        String jeanne = store("Jeanne", "Martin", LocalDate.of(1990, 1, 1), "jm@example.org");
+        String jean = store("Jean", "Martin", LocalDate.of(1990, 1, 1), null);
+        String csv = "prenom;nom;date de naissance;email\nJean;Martin;01/01/1990;jm@example.org\n";
+
+        AnimateurCsvImportReport remplacement =
+                inEdition(() -> csvImport.preview(new AnimateurCsvImportRequest("a.csv", csv, null, true, false)));
+        AnimateurCsvImportReport ajout = inEdition(() -> csvImport.preview(demande(csv)));
+
+        assertThat(remplacement.deleted()).isEqualTo(1);
+        assertThat(ligne(remplacement, 2).animateurId()).isEqualTo(jeanne);
+        assertThat(ligne(remplacement, 2).doublonDe())
+                .containsExactly(onFiche(AnimateurCsvImportReport.DuplicateKind.REPLACED, jean));
+        assertThat(ligne(remplacement, 2).warnings())
+                .singleElement()
+                .asString()
+                .contains("que le remplacement complet supprime");
+        assertThat(ligne(ajout, 2).doublonDe())
+                .containsExactly(onFiche(AnimateurCsvImportReport.DuplicateKind.FICHE, jean));
+    }
+
+    /**
+     * Three thousand rows of one person, each under its own address: every row
+     * is flagged, but names only the first rows of its group and counts the
+     * rest. Listing all the others made each row k − 1 references long — a
+     * report of hundreds of megabytes for a file of three thousand lines.
+     */
+    @Test
+    void aLargeGroupNamesTheFirstRowsAndCountsTheRest() throws Exception {
+        int size = 3_000;
+        StringBuilder csv = new StringBuilder("prenom;nom;date de naissance;email\n");
+        for (int i = 0; i < size; i++) {
+            csv.append("Amélie;Durand;12/03/1990;amelie").append(i).append("@example.org\n");
+        }
+
+        AnimateurCsvImportReport rapport = inEdition(() -> csvImport.preview(demande(csv.toString())));
+
+        assertThat(rapport.accepted()).isEqualTo(size);
+        assertThat(rapport.doublonsProbables()).isEqualTo(size);
+        assertThat(ligne(rapport, 2).doublonDe()).containsExactly(onRow(3), onRow(4), onRow(5));
+        assertThat(ligne(rapport, 2).warnings())
+                .singleElement()
+                .asString()
+                .startsWith("Probable doublon des lignes 3, 4, 5 et de 2 996 autres : ");
+        assertThat(ligne(rapport, size + 1).doublonDe()).containsExactly(onRow(2), onRow(3), onRow(4));
+        Set<Integer> flagged = rapport.rows().stream()
+                .filter(row -> !row.doublonDe().isEmpty())
+                .map(AnimateurCsvImportReport.ImportedRow::line)
+                .collect(java.util.stream.Collectors.toSet());
+        for (AnimateurCsvImportReport.ImportedRow row : rapport.rows()) {
+            assertThat(row.doublonDe()).hasSizeLessThanOrEqualTo(AnimateurCsvImportService.LISTED_DUPLICATES);
+            // Every link leads to a row the screen shows as flagged.
+            assertThat(row.doublonDe())
+                    .allSatisfy(doublon -> assertThat(flagged).contains(doublon.line()));
+        }
+        // Bounded per row, whatever the size of its group: under a kilobyte on the wire.
+        assertThat(objectMapper.writeValueAsString(rapport).length()).isLessThan(size * 1_000);
+    }
+
+    /** The kept fiches a row is flagged against are capped the same way, the rest counted in one sentence. */
+    @Test
+    void aRowAgainstManyKeptFichesNamesTheFirstOnesAndCountsTheRest() {
+        for (int i = 0; i < 5; i++) {
+            store("Amélie", "Durand", LocalDate.of(1990, 3, 12), "a" + i + "@example.org");
+        }
+        String bruno = store("Bruno", "Durand", LocalDate.of(1990, 3, 12), "b@example.org");
+        // Row 2 lands on Bruno by his address and renames him Amélie, born the same day as the five.
+        String csv = "prenom;nom;date de naissance;email\nAmélie;Durand;12/03/1990;b@example.org\n";
+
+        AnimateurCsvImportReport rapport = inEdition(() -> csvImport.preview(demande(csv)));
+
+        AnimateurCsvImportReport.ImportedRow row = ligne(rapport, 2);
+        assertThat(row.animateurId()).isEqualTo(bruno);
+        assertThat(row.doublonDe())
+                .hasSize(AnimateurCsvImportService.LISTED_DUPLICATES)
+                .allSatisfy(
+                        doublon -> assertThat(doublon.kind()).isEqualTo(AnimateurCsvImportReport.DuplicateKind.FICHE));
+        assertThat(row.warnings())
+                .hasSize(AnimateurCsvImportService.LISTED_DUPLICATES + 1)
+                .last()
+                .asString()
+                .isEqualTo("2 autres fiches, que l'import conserve, portent aussi les mêmes nom, prénom et date de "
+                        + "naissance.");
+    }
+
+    /**
+     * A known person under a new address: the address names nobody, so the
+     * name decides, and the write would replace the fiche's address — where
+     * its access codes and mails go — without a word. Flagged by the fiche's
+     * id, neither address quoted; the row stays an update.
+     */
+    @Test
+    void aRowMatchedByNameUnderANewAddressFlagsTheAddressItReplaces() {
+        String jean = store("Jean", "Martin", LocalDate.of(1990, 1, 1), "old@example.org");
+        String csv = """
+                prenom;nom;date de naissance;email
+                Jean;Martin;01/01/1990;new@example.org
+                """;
+
+        AnimateurCsvImportReport rapport = inEdition(() -> csvImport.preview(demande(csv)));
+
+        AnimateurCsvImportReport.ImportedRow row = ligne(rapport, 2);
+        assertThat(row.action()).isEqualTo(AnimateurCsvImportReport.ImportAction.UPDATED);
+        assertThat(row.animateurId()).isEqualTo(jean);
+        assertThat(row.doublonDe()).containsExactly(onFiche(AnimateurCsvImportReport.DuplicateKind.NEW_ADDRESS, jean));
+        assertThat(row.warnings())
+                .singleElement()
+                .asString()
+                .startsWith("L'adresse e-mail de la fiche " + jean + " sera remplacée")
+                .doesNotContain("old@example.org");
+        assertThat(rapport.doublonsProbables()).isEqualTo(1);
+
+        AnimateurCsvImportReport ecrit = inEdition(() -> csvImport.apply(demande(csv)));
+
+        assertThat(ligne(ecrit, 2).doublonDe()).isEqualTo(row.doublonDe());
+        assertThat(ecrit.doublonsProbables()).isEqualTo(1);
+    }
+
+    /**
+     * No address cell, or the fiche had none: nothing is replaced. And a
+     * namesake under a new address keeps one reference to the fiche — the
+     * screen draws one link per reference — with both sentences.
+     */
+    @Test
+    void anAddressIsFlaggedOnlyWhenOneIsReplacedAndOnceWithANamesake() {
+        String jean = store("Jean", "Martin", LocalDate.of(1990, 1, 1), "old@example.org");
+        String paul = store("Paul", "Durand", LocalDate.of(1985, 5, 5), null);
+        String marc = store("Marc", "Petit", LocalDate.of(1980, 2, 2), "marc@example.org");
+        String csv = """
+                prenom;nom;date de naissance;email
+                Jean;Martin;01/01/1990;
+                Paul;Durand;05/05/1985;paul@example.org
+                Marc;Petit;12/09/2008;marc.petit@example.org
+                """;
+
+        AnimateurCsvImportReport rapport = inEdition(() -> csvImport.preview(demande(csv)));
+
+        assertThat(ligne(rapport, 2).animateurId()).isEqualTo(jean);
+        assertThat(ligne(rapport, 2).doublonDe()).isEmpty();
+        assertThat(ligne(rapport, 3).animateurId()).isEqualTo(paul);
+        assertThat(ligne(rapport, 3).doublonDe()).isEmpty();
+        assertThat(ligne(rapport, 4).doublonDe())
+                .containsExactly(onFiche(AnimateurCsvImportReport.DuplicateKind.NAMESAKE, marc));
+        assertThat(ligne(rapport, 4).warnings())
+                .hasSize(2)
+                .anySatisfy(avis -> assertThat(avis).startsWith("Homonyme ?"))
+                .anySatisfy(avis -> assertThat(avis).startsWith("L'adresse e-mail de la fiche " + marc));
+        assertThat(rapport.doublonsProbables()).isEqualTo(1);
+    }
+
+    /** A rejected row is no identity: it carries its reasons, never a duplicate warning. */
+    @Test
+    void aRejectedRowIsNeverFlagged() {
+        String csv = """
+                prenom;nom;date de naissance;email;jours indisponibles
+                Amélie;Durand;12/03/1990;a1@example.org;
+                Amélie;Durand;12/03/1990;a2@example.org;01/01/2031
+                """;
+
+        AnimateurCsvImportReport rapport = inEdition(() -> csvImport.preview(demande(csv)));
+
+        assertThat(rapport.rejected()).isEqualTo(1);
+        assertThat(rapport.doublonsProbables()).isZero();
+        assertThat(ligne(rapport, 2).doublonDe()).isEmpty();
     }
 
     /**

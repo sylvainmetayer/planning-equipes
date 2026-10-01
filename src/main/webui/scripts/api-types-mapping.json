@@ -51,6 +51,7 @@
     "ImportGrilleDemande": "StandGrilleImportRequest",
     "ImportCsvDemande": "AnimateurCsvImportRequest",
     "ImportCsvLigne": "ImportedRow",
+    "ImportCsvDoublon": "ProbableDuplicate",
     "ImportGrilleLigne": "ImportedGrilleRow",
     "SaisieAnimateurCompetences": "SaisieCompetences",
     "LigneSaisieCompetences": "LigneCompetences",

@@ -672,6 +672,79 @@ retenue**. Une ligne rejetée pour une autre raison n'occupe pas l'identité :
 sinon la bonne ligne serait refusée au profit d'une mauvaise, et l'opérateur
 renvoyé vers une ligne qui n'a rien importé.
 
+### Doublons probables : signalés, jamais refusés
+
+La reconnaissance ci-dessus ne lit jamais la date de naissance. Deux lignes
+portant deux adresses différentes pour la même personne — un tableur fusionné
+depuis deux formulaires d'inscription — créent donc deux fiches ; et une ligne
+sans adresse se rattache par son seul nom à la fiche d'un homonyme, dont elle
+réécrit la date de naissance, donc le régime mineur / majeur. Une ligne dont
+l'adresse ne désigne personne retombe elle aussi sur le nom : la fiche ainsi
+trouvée reçoit la nouvelle adresse, celle où partent ses codes d'accès et ses
+envois, sur la foi d'un nom. Un doublon n'est pas anodin : le solveur voit deux
+personnes, compte leurs plafonds légaux séparément, et peut affecter la même
+personne deux fois au même moment.
+
+L'aperçu compare donc chaque ligne acceptée sur la clé **(prénom, nom, date de
+naissance)**, prénom et nom normalisés comme pour la reconnaissance (casse,
+accents et ponctuation ignorés : « Marie-Hélène » = « marie helene »). La date
+est celle que la fiche aura après l'import : une cellule vide prend celle de la
+fiche reconnue. La comparaison porte sur l'effectif que l'écriture laisserait —
+les fiches écrites par le fichier, plus, hors remplacement complet, celles qu'il
+ne touche pas. Lignes et fiches sont regroupées par hachage de leur clé, en une
+passe ; une ligne cite ensuite **au plus trois** autres lignes — les premières
+du groupe, dans l'ordre du fichier — et au plus trois fiches, et **compte** les
+autres (« Probable doublon des lignes 3, 4, 5 et de 2 996 autres »). Sans ce
+plafond, trois mille lignes identiques citeraient chacune les 2 999 autres, et
+le rapport pèserait des centaines de mégaoctets. Toute ligne citée est
+elle-même signalée, et toutes, sauf la première du groupe, mènent à celle-ci.
+
+| Cas | Signal sur la ligne | Référence structurée (`doublonDe`) |
+| --- | --- | --- |
+| Deux lignes acceptées, même clé | « Probable doublon de la ligne 12 », sur **les deux** lignes | `ROW`, le numéro de l'autre ligne |
+| La ligne donne à sa fiche — créée ou mise à jour — la clé d'une fiche que l'import conserve | « Probable doublon de la fiche A12 » | `FICHE`, l'identifiant de cette fiche |
+| Même chose en remplacement complet, contre une fiche que le remplacement supprime | la suppression annoncée d'une personne aussitôt redécrite | `REPLACED`, l'identifiant de la fiche supprimée |
+| La ligne se rattache **par le seul nom** à une fiche née un autre jour | « Homonyme ? », les deux dates | `NAMESAKE`, l'identifiant de la fiche |
+| La ligne se rattache **par le seul nom** — son adresse ne désigne personne — à une fiche dont elle remplace l'adresse | « L'adresse e-mail de la fiche A12 sera remplacée » | `NEW_ADDRESS`, l'identifiant de la fiche (absent si `NAMESAKE` la désigne déjà) |
+
+Ce sont des **avertissements** : la ligne reste acceptée. Des jumeaux partagent
+nom et date de naissance mais pas le prénom, et deux homonymes nés le même jour
+existent ; l'opérateur tranche, informé. Deux paires ne sont pas signalées : deux
+fiches qui portaient **déjà** la même clé et que le fichier se contente de mettre
+à jour (l'édition les avait avant ce fichier, le redire à chaque réimport
+apprendrait à ne plus lire l'avertissement), et une ligne rejetée, qui n'écrit
+personne.
+
+Le rapport compte les lignes signalées (`doublonsProbables`, « Doublons ou
+homonymes probables » à l'écran) ; l'écran les marque d'une pastille —
+« Doublon probable », « Homonyme ? » ou « Nouvelle adresse ? » —, propose de
+n'afficher qu'elles, mène à l'autre ligne ou à la fiche, et la confirmation
+d'« Importer » redit leur nombre. La nouvelle adresse y est comptée : une ligne
+rattachée à une fiche par son seul nom contre ce que dit son adresse est soit
+la même personne (un doublon de la fiche, que l'import fond en elle), soit un
+homonyme qui recevrait les codes d'accès d'un autre — l'opérateur doit le
+trancher avant d'écrire, comme les deux autres cas. Le rapport
+d'écriture, recalculé depuis le fichier, porte les mêmes avertissements.
+
+Les messages désignent une fiche par son **identifiant**, jamais par son nom,
+et ne citent aucune adresse — ni l'ancienne, que le lien vers la fiche montre,
+ni la nouvelle, qui est dans la ligne. Seul « Homonyme ? » cite des dates de
+naissance — celle de la fiche et celle de
+la ligne, sans lesquelles l'opérateur ne peut pas trancher : ce rapport n'est
+affiché que par l'écran d'import, n'est ni notifié, ni journalisé, ni exposé en
+MCP, et la référence structurée, elle, ne porte qu'un numéro de ligne ou un
+identifiant.
+
+Le cas « une ligne qui **créerait** une fiche alors qu'une fiche conservée
+porte la même clé » est vérifié, mais la reconnaissance actuelle ne le laisse
+pas se produire : une adresse inconnue retombe sur le nom, qui désigne alors
+cette fiche (ou plusieurs, et la ligne est rejetée). La personne déjà en base
+qui revient sous une nouvelle adresse n'est donc pas dédoublée : sa fiche est
+mise à jour et son adresse remplacée, et c'est ce que signale « Nouvelle
+adresse ? ». Ce qui atteint le cas `FICHE` aujourd'hui, c'est une ligne reconnue
+par son adresse qui renomme sa fiche, ou change sa date, vers l'identité d'une
+autre.
+
 ### Ce qu'une ligne doit porter
 
 Un **prénom**, un **nom** et une **date de naissance** — les trois que le

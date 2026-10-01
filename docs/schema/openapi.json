@@ -436,7 +436,7 @@
         }
       },
       "AnimateurCsvImportReport" : {
-        "required" : [ "accepted", "applied", "created", "deleted", "rejected", "total", "updated" ],
+        "required" : [ "accepted", "applied", "created", "deleted", "doublonsProbables", "rejected", "total", "updated" ],
         "type" : "object",
         "properties" : {
           "applied" : {
@@ -475,6 +475,10 @@
             "format" : "int32"
           },
           "deleted" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "doublonsProbables" : {
             "type" : "integer",
             "format" : "int32"
           },
@@ -3285,6 +3289,10 @@
           }
         }
       },
+      "DuplicateKind" : {
+        "type" : "string",
+        "enum" : [ "ROW", "FICHE", "REPLACED", "NAMESAKE", "NEW_ADDRESS" ]
+      },
       "Edition" : {
         "type" : "object",
         "properties" : {
@@ -4797,6 +4805,12 @@
               "type" : "string",
               "format" : "date",
               "examples" : [ "2022-03-10" ]
+            }
+          },
+          "doublonDe" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ProbableDuplicate"
             }
           }
         }
@@ -6910,6 +6924,22 @@
             "items" : {
               "$ref" : "#/components/schemas/LigneStandConsigne"
             }
+          }
+        }
+      },
+      "ProbableDuplicate" : {
+        "type" : "object",
+        "required" : [ "kind" ],
+        "properties" : {
+          "kind" : {
+            "$ref" : "#/components/schemas/DuplicateKind"
+          },
+          "line" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "animateurId" : {
+            "type" : "string"
           }
         }
       },

@@ -25,6 +25,7 @@ import { AnimateurCsvMapping, ImportCsvDemande, ImportCsvRapport } from '../../c
 import { NotificationService } from '../../core/notification.service';
 import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 import { GelNotice } from '../../shared/gel-notice';
+import { NewWindowLink } from '../../shared/new-window-link';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { CollageTableur } from '../imports/collage-tableur';
@@ -34,9 +35,13 @@ import {
   CHAMPS_IMPORT,
   ChampImport,
   classeAction,
+  duplicateBadge,
+  ficheLinkable,
   iconeAction,
+  isFlagged,
   libelleColonne,
   mappingNommeQuelquun,
+  visibleRows,
   withColonne,
 } from './import-animateurs';
 
@@ -69,6 +74,7 @@ import {
     RouterLink,
     GelNotice,
     CollageTableur,
+    NewWindowLink,
   ],
   templateUrl: './import-animateurs-page.html',
   styleUrl: '../../../styles/import-animateurs.css',
@@ -93,6 +99,7 @@ export class ImportAnimateursPage {
   private readonly gel = injectGelReferentiel();
 
   private readonly fileInput = viewChild.required<ElementRef<HTMLInputElement>>('csvInput');
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   /** The file's text, held only for the lifetime of the screen. */
   private readonly contenu = signal('');
@@ -134,6 +141,23 @@ export class ImportAnimateursPage {
   protected readonly importEnCours = signal(false);
   protected readonly telechargementEnCours = signal(false);
 
+  /**
+   * « N'afficher que les doublons ». Not view state in the URL, unlike the
+   * repository's other filters: this screen is also drawn inside a dialog of
+   * the Animateurs list, and the report it filters lives only in memory — a
+   * refreshed or shared link would restore a filter over a file nobody holds.
+   */
+  protected readonly flaggedOnly = signal(false);
+
+  /** The report's rows as the table draws them, narrowed while the filter is on and something is flagged. */
+  protected readonly shownRows = computed(() => {
+    const rapport = this.rapport();
+    return visibleRows(
+      rapport?.rows ?? [],
+      this.flaggedOnly() && (rapport?.doublonsProbables ?? 0) > 0,
+    );
+  });
+
   protected readonly remplacerAnimateurs = signal(false);
   protected readonly remplacerJours = signal(false);
 
@@ -170,6 +194,23 @@ export class ImportAnimateursPage {
 
   protected readonly classeAction = classeAction;
   protected readonly iconeAction = iconeAction;
+  protected readonly isFlagged = isFlagged;
+  protected readonly duplicateBadge = duplicateBadge;
+  protected readonly ficheLinkable = ficheLinkable;
+
+  /**
+   * « Voir la ligne N »: the other row of a probable duplicate, scrolled to
+   * and focused in the table — a row of the same report, so nothing is
+   * reloaded and the file stays in memory.
+   */
+  protected goToLine(line: number): void {
+    const row = this.host.nativeElement.querySelector<HTMLElement>(`tr[data-ligne="${line}"]`);
+    if (!row) {
+      return;
+    }
+    row.scrollIntoView?.({ block: 'center' });
+    row.focus();
+  }
 
   protected libelleColonne(index: number): string {
     return libelleColonne(this.colonnes(), index);
@@ -252,6 +293,7 @@ export class ImportAnimateursPage {
     this.derniereAnalyse++;
     this.rapport.set(null);
     this.mapping.set(null);
+    this.flaggedOnly.set(false);
     this.nomFichier.set(name);
     this.contenu.set(content);
     await this.analyser();
@@ -329,9 +371,21 @@ export class ImportAnimateursPage {
     const question = this.remplacerAnimateurs()
       ? $localize`:@@importCsv.confirmer.remplacement:Importer ${accepted}:acceptees: ligne(s) et supprimer ${removed}:supprimes: animateur(s) absent(s) du fichier ?`
       : $localize`:@@importCsv.confirmer.ajout:Importer ${accepted}:acceptees: ligne(s) ? Les animateurs absents du fichier sont conservés.`;
+    // The same second paragraph a deletion's confirmation counts its impact
+    // in: the number the report's header showed, said again at the moment
+    // it matters.
+    const flagged = rapport.doublonsProbables;
     const confirme = await this.confirm.ask({
       title: $localize`:@@importCsv.confirmer.titre:Confirmer l'import`,
       message: question,
+      ...(flagged > 0
+        ? {
+            detail: Promise.resolve(
+              $localize`:@@importCsv.confirmer.doublons:Dont ${flagged}:doublons: ligne(s) signalée(s) comme doublon ou homonyme probable : elles seront importées telles quelles.`,
+            ),
+            confirmLabel: $localize`:@@importCsv.confirmer.quandMeme:Importer quand même`,
+          }
+        : {}),
     });
     if (!confirme) {
       return;
@@ -363,6 +417,7 @@ export class ImportAnimateursPage {
     this.nomFichier.set('');
     this.mapping.set(null);
     this.rapport.set(null);
+    this.flaggedOnly.set(false);
     this.erreur.set('');
   }
 

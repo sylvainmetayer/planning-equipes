@@ -2,15 +2,15 @@
 // posts the file again rather than the report it was shown.
 
 import { provideZonelessChangeDetection } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { AnimateursApi } from '../../core/api/animateurs-api';
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
+import { fakeOf, provideFake } from '../../core/testing/fake';
 import { ConfirmService } from '../../shared/confirm-dialog';
-import type { AnimateurCsvMapping, ImportCsvRapport } from '../../core/models';
-import { Fake, fakeOf, provideFake } from '../../core/testing/fake';
+import type { AnimateurCsvMapping, ImportCsvLigne, ImportCsvRapport } from '../../core/models';
 import { ImportAnimateursPage } from './import-animateurs-page';
 
 const MAPPING: AnimateurCsvMapping = {
@@ -37,6 +37,7 @@ function rapport(applied: boolean): ImportCsvRapport {
     created: 1,
     updated: 0,
     deleted: 0,
+    doublonsProbables: 0,
     rows: [
       {
         line: 2,
@@ -46,6 +47,7 @@ function rapport(applied: boolean): ImportCsvRapport {
         reasons: [],
         warnings: [],
         joursIndisponibles: ['2030-07-18'],
+        doublonDe: [],
       },
       {
         line: 3,
@@ -55,29 +57,74 @@ function rapport(applied: boolean): ImportCsvRapport {
         reasons: ['Date de naissance illisible'],
         warnings: [],
         joursIndisponibles: [],
+        doublonDe: [],
       },
     ],
     warnings: ["Jours d'indisponibilité : ajout."],
   };
 }
 
+/**
+ * Rows 2 and 4 describe one person under two addresses, row 5 lands by its
+ * name on a namesake born another day, row 6 by its name on a fiche whose
+ * address it replaces; row 3 is nobody's duplicate.
+ */
+function reportWithDuplicates(): ImportCsvRapport {
+  const ligne = (line: number, label: string, doublonDe: ImportCsvLigne['doublonDe']) => ({
+    line,
+    label,
+    animateurId: null,
+    action: 'CREATED' as const,
+    reasons: [],
+    warnings: doublonDe.length > 0 ? ['Probable doublon'] : [],
+    joursIndisponibles: [],
+    doublonDe,
+  });
+  return {
+    ...rapport(false),
+    total: 5,
+    accepted: 5,
+    rejected: 0,
+    created: 3,
+    updated: 2,
+    doublonsProbables: 4,
+    rows: [
+      ligne(2, 'Amélie Durand', [{ kind: 'ROW', line: 4, animateurId: null }]),
+      ligne(3, 'Bruno Lefèvre', []),
+      ligne(4, 'Amélie Durand', [{ kind: 'ROW', line: 2, animateurId: null }]),
+      {
+        ...ligne(5, 'Jean Martin', [{ kind: 'NAMESAKE', line: null, animateurId: 'A7' }]),
+        action: 'UPDATED',
+        animateurId: 'A7',
+      },
+      {
+        ...ligne(6, 'Paul Petit', [{ kind: 'NEW_ADDRESS', line: null, animateurId: 'A8' }]),
+        action: 'UPDATED',
+        animateurId: 'A8',
+      },
+    ],
+  };
+}
+
 describe('ImportAnimateursPage', () => {
-  let animateursApi: Fake<AnimateursApi>;
-  let confirm: Fake<ConfirmService>;
-  let store: Fake<ReferenceDataStore>;
-  let notifications: Fake<NotificationService>;
+  const animateursApi = fakeOf<AnimateursApi>({
+    analyseCsvImport: async () => rapport(false),
+    applyCsvImport: async () => rapport(true),
+    downloadCsvExample: async () => 'Téléchargement démarré.',
+  });
+  const confirm = fakeOf<ConfirmService>({ ask: async () => true });
+  const store = fakeOf<ReferenceDataStore>({ reload: async () => undefined });
+  const notifications = fakeOf<NotificationService>({ notify: () => undefined });
   let page: ImportAnimateursPage;
+  let fixture: ComponentFixture<ImportAnimateursPage>;
 
   beforeEach(() => {
-    // Every answer of the two import endpoints is given by the test that expects it.
-    animateursApi = fakeOf<AnimateursApi>({
-      analyseCsvImport: vi.fn(),
-      applyCsvImport: vi.fn(),
-      downloadCsvExample: async () => 'Téléchargement démarré.',
-    });
-    confirm = fakeOf<ConfirmService>({ ask: async () => true });
-    store = fakeOf<ReferenceDataStore>({ reload: async () => undefined });
-    notifications = fakeOf<NotificationService>({ notify: () => undefined });
+    animateursApi.analyseCsvImport.mockReset();
+    animateursApi.applyCsvImport.mockReset();
+    animateursApi.downloadCsvExample.mockClear();
+    confirm.ask.mockClear();
+    store.reload.mockClear();
+    notifications.notify.mockClear();
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
@@ -88,19 +135,20 @@ describe('ImportAnimateursPage', () => {
         provideFake(NotificationService, notifications),
       ],
     });
-    page = TestBed.createComponent(ImportAnimateursPage).componentInstance;
+    fixture = TestBed.createComponent(ImportAnimateursPage);
+    page = fixture.componentInstance;
   });
 
   /** Loading a file goes through the analysis endpoint only — the one that writes nothing. */
-  async function chargerFichier(): Promise<void> {
-    animateursApi.analyseCsvImport.mockResolvedValueOnce(rapport(false));
+  async function loadFile(apercu: ImportCsvRapport = rapport(false)): Promise<void> {
+    animateursApi.analyseCsvImport.mockResolvedValueOnce(apercu);
     page['contenu'].set('prenom;nom;date de naissance\nAmélie;Durand;12/03/1990\n');
     page['nomFichier'].set('roster.csv');
     await page['analyser']();
   }
 
   it('previews through the analysis endpoint and never through the write one', async () => {
-    await chargerFichier();
+    await loadFile();
 
     expect(animateursApi.analyseCsvImport).toHaveBeenCalledTimes(1);
     expect(animateursApi.applyCsvImport).not.toHaveBeenCalled();
@@ -108,18 +156,18 @@ describe('ImportAnimateursPage', () => {
   });
 
   it('sends the file again on import, not the report it was shown', async () => {
-    await chargerFichier();
+    await loadFile();
     animateursApi.applyCsvImport.mockResolvedValueOnce(rapport(true));
 
     await page['importer']();
 
     const [body] = animateursApi.applyCsvImport.mock.calls[0];
     expect(body.content).toContain('Amélie;Durand');
-    expect(body).not.toHaveProperty('rows');
+    expect(Object.keys(body)).not.toContain('rows');
   });
 
   it('asks before writing, and writes nothing when the answer is no', async () => {
-    await chargerFichier();
+    await loadFile();
     confirm.ask.mockResolvedValueOnce(false);
 
     await page['importer']();
@@ -129,7 +177,7 @@ describe('ImportAnimateursPage', () => {
   });
 
   it('reloads the referential and reports once the write came back applied', async () => {
-    await chargerFichier();
+    await loadFile();
     animateursApi.applyCsvImport.mockResolvedValueOnce(rapport(true));
 
     await page['importer']();
@@ -141,21 +189,21 @@ describe('ImportAnimateursPage', () => {
 
   /** « Voir les N lignes importées » opens the list on the fiches written, never on the refused. */
   it('links to the fiches the write created or updated, and to them alone', async () => {
-    await chargerFichier();
-    const link = page['lienLignes'];
-    expect(link()).toBeNull();
+    await loadFile();
+    const lien = page['lienLignes'];
+    expect(lien()).toBeNull();
     animateursApi.applyCsvImport.mockResolvedValueOnce(rapport(true));
 
     await page['importer']();
 
-    expect(link()).toEqual({
+    expect(lien()).toEqual({
       queryParams: { ids: 'amelie-durand' },
       libelle: 'Voir les 1 lignes importées',
     });
   });
 
   it('re-previews when an option changes, so the report always matches the options', async () => {
-    await chargerFichier();
+    await loadFile();
     animateursApi.analyseCsvImport.mockResolvedValueOnce(rapport(false));
 
     await page['changerRemplacerJours'](true);
@@ -171,7 +219,7 @@ describe('ImportAnimateursPage', () => {
    * with it.
    */
   it('keeps the last preview asked for, not an earlier one that lands late', async () => {
-    await chargerFichier();
+    await loadFile();
     const mappingA: AnimateurCsvMapping = { ...MAPPING, nom: 1 };
     const mappingB: AnimateurCsvMapping = { ...MAPPING, nom: 2 };
     let repondreA: (rapport: ImportCsvRapport) => void = () => undefined;
@@ -192,7 +240,7 @@ describe('ImportAnimateursPage', () => {
 
   /** `apply()` refuses this combination outright: the button must say so first. */
   it('refuses the import when a full replacement is asked over a rejected row', async () => {
-    await chargerFichier();
+    await loadFile();
     expect(page['peutImporter']()).toBe(true);
     animateursApi.analyseCsvImport.mockResolvedValueOnce(rapport(false));
 
@@ -244,5 +292,102 @@ describe('ImportAnimateursPage', () => {
 
     expect(page['erreur']()).toContain('seul le CSV est lu');
     expect(page['rapport']()).toBeNull();
+  });
+
+  /* ------------------------- Probable duplicates ------------------------- */
+
+  function host(): HTMLElement {
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  function shownLines(): string[] {
+    return Array.from(host().querySelectorAll('table.import-rapport tbody tr')).map(
+      (tr) => tr.getAttribute('data-ligne') ?? '',
+    );
+  }
+
+  it('counts the probable duplicates above the table and badges each flagged row', async () => {
+    await loadFile(reportWithDuplicates());
+    await fixture.whenStable();
+
+    expect(host().querySelector('.import-compteur-doublons')?.textContent).toMatch(
+      /Doublons ou homonymes probables\s*:\s*4/,
+    );
+    const badges = Array.from(host().querySelectorAll('.import-badge-doublon')).map((badge) =>
+      badge.textContent?.trim(),
+    );
+    expect(badges).toHaveLength(4);
+    expect(badges[0]).toContain('Doublon probable');
+    expect(badges[1]).toContain('Doublon probable');
+    expect(badges[2]).toContain('Homonyme ?');
+    expect(badges[3]).toContain('Nouvelle adresse ?');
+    const fiche = host().querySelector('a[href="/animateurs/A7"]');
+    expect(fiche?.getAttribute('target')).toBe('_blank');
+    expect(fiche?.textContent).toContain('(nouvelle fenêtre)');
+  });
+
+  it('narrows the table to the flagged rows, and forgets the filter with the file', async () => {
+    await loadFile(reportWithDuplicates());
+    await fixture.whenStable();
+    expect(shownLines()).toEqual(['2', '3', '4', '5', '6']);
+
+    host().querySelector<HTMLInputElement>('.import-filtre-doublons input')?.click();
+    await fixture.whenStable();
+
+    expect(shownLines()).toEqual(['2', '4', '5', '6']);
+    expect(host().querySelector('.import-compteur-doublons')?.textContent).toContain('4');
+
+    // A re-preview of the same file (a column changed) keeps the filter on…
+    animateursApi.analyseCsvImport.mockResolvedValueOnce(reportWithDuplicates());
+    await page['analyser']();
+    await fixture.whenStable();
+    expect(shownLines()).toEqual(['2', '4', '5', '6']);
+
+    // …another file starts from the whole table.
+    animateursApi.analyseCsvImport.mockResolvedValueOnce(reportWithDuplicates());
+    await page['onColle']('prenom;nom\nAmélie;Durand\n');
+    await fixture.whenStable();
+
+    expect(shownLines()).toEqual(['2', '3', '4', '5', '6']);
+  });
+
+  it('offers no filter while nothing is flagged', async () => {
+    await loadFile();
+    await fixture.whenStable();
+
+    expect(host().querySelector('.import-filtre-doublons')).toBeNull();
+    expect(host().querySelector('.import-badge-doublon')).toBeNull();
+  });
+
+  it('takes the operator to the other row of a duplicate', async () => {
+    await loadFile(reportWithDuplicates());
+    await fixture.whenStable();
+    const voir = Array.from(
+      host().querySelectorAll<HTMLButtonElement>('.import-doublon-liens button'),
+    ).find((bouton) => bouton.textContent?.includes('Voir la ligne 4'));
+
+    voir?.click();
+
+    expect(document.activeElement?.getAttribute('data-ligne')).toBe('4');
+  });
+
+  it('repeats the number of flagged rows in the import confirmation', async () => {
+    await loadFile(reportWithDuplicates());
+
+    await page['importer']();
+
+    const [data] = confirm.ask.mock.calls[0];
+    expect(data.confirmLabel).toBe('Importer quand même');
+    expect(await data.detail).toContain('Dont 4 ligne(s) signalée(s)');
+  });
+
+  it('confirms an import with no flagged row as before', async () => {
+    await loadFile();
+
+    await page['importer']();
+
+    const [data] = confirm.ask.mock.calls[0];
+    expect(data.detail).toBeUndefined();
+    expect(data.confirmLabel).toBeUndefined();
   });
 });

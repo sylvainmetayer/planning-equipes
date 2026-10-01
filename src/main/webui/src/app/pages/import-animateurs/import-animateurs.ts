@@ -3,7 +3,12 @@
 // when the file gave it no header, and how a mapping is edited one field at a
 // time.
 
-import { AnimateurCsvMapping, ImportCsvAction } from '../../core/models';
+import {
+  AnimateurCsvMapping,
+  ImportCsvAction,
+  ImportCsvDoublon,
+  ImportCsvLigne,
+} from '../../core/models';
 
 /** The `Animateur` fields a column may feed, in the order the screen lists them. */
 export type ChampImport = keyof AnimateurCsvMapping;
@@ -111,4 +116,50 @@ export function iconeAction(action: ImportCsvAction): string {
     default:
       return 'block';
   }
+}
+
+/** True when the server flagged the row as a probable duplicate or namesake. */
+export function isFlagged(ligne: ImportCsvLigne): boolean {
+  return ligne.doublonDe.length > 0;
+}
+
+/**
+ * The rows the report table shows: every one, or only the flagged ones. The
+ * counter and the confirmation keep reading the whole report — the filter is
+ * a way to read it, not a way to import less.
+ */
+export function visibleRows(
+  rows: readonly ImportCsvLigne[],
+  flaggedOnly: boolean,
+): readonly ImportCsvLigne[] {
+  return flaggedOnly ? rows.filter(isFlagged) : rows;
+}
+
+/** What the badge of a flagged row says. */
+export type DuplicateBadge = 'doublon' | 'homonyme' | 'adresse';
+
+/**
+ * The badge of a flagged row, `null` when nothing is flagged. A duplicate
+ * (another row, another fiche) wins; a namesake is the opposite suspicion —
+ * probably *not* the same person, about to be rewritten as if it were — and a
+ * new address the mildest one: a fiche reached by its name whose address the
+ * row replaces.
+ */
+export function duplicateBadge(ligne: ImportCsvLigne): DuplicateBadge | null {
+  const kinds = new Set(ligne.doublonDe.map((doublon) => doublon.kind));
+  if (kinds.size === 0) {
+    return null;
+  }
+  if (kinds.has('ROW') || kinds.has('FICHE') || kinds.has('REPLACED')) {
+    return 'doublon';
+  }
+  return kinds.has('NAMESAKE') ? 'homonyme' : 'adresse';
+}
+
+/**
+ * Whether a reference to a fiche can still be followed: once a full
+ * replacement is applied, the fiche it named is gone.
+ */
+export function ficheLinkable(doublon: ImportCsvDoublon, applied: boolean): boolean {
+  return doublon.animateurId !== null && !(applied && doublon.kind === 'REPLACED');
 }
