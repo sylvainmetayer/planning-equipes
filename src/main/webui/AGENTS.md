@@ -696,8 +696,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   and freeing one never refused — on a fixture built there, since no shipped
   scenario carries a minor, a night and an adults-only stand) and
   **seeded invariant fuzzing** (random referentials solved for real, replayed
-  with `E2E_FUZZ_SEED`). CI runs them on every pull request (`e2e.yml`, on a
-  stack `e2e-suite.yml` starts and throws away) — **except the specs tagged
+  with `E2E_FUZZ_SEED`). CI runs them on every pull request (job `e2e` of
+  `tests.yml`, on a stack `e2e-suite.yml` starts and throws away, serving the
+  application the `test` job packaged) — **except the specs tagged
   `@lourd`**: the organiser's heatwave week on `festival-hivernal` solves three
   times for real and weighed 13 of the suite's 20 minutes, so `e2e-lourd.yml`
   plays those on the changes that can break them (its `paths` list, kept in
@@ -706,9 +707,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   needs what that stack alone offers — the simulated clock
   `passe-fige.spec.ts` sets (`e2e-suite.yml`'s `horloge-simulee` input,
   refused on the ordinary stack, where `jour-j.spec.ts` checks the refusal) —
-  never to hide a slow test. `tests.yml` and `e2e.yml` also skip a push that touches
+  never to hide a slow test. `tests.yml` also skips a push that touches
   only `docs/` and Markdown — minus the files a backend test reads or the
-  `test` job compares to its build, which are re-included by name. Locally
+  `test` job compares to its build, which are re-included by name; its `e2e`
+  job skips those too. Locally
   they **erase the database
   they target**: run them only against a disposable stack (see
   `docs/developpement.md` § Tests de bout en bout).

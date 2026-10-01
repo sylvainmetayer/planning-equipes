@@ -1,9 +1,11 @@
 # La pile E2E — application packagée, PostgreSQL, Mailpit, Chromium — montée
-# pour une exécution et jetée. Appelée par deux workflows qui ne diffèrent que
-# par la sélection Playwright et le plafond : `e2e.yml` (chaque poussée, tout
-# sauf les specs @lourd) et `e2e-lourd.yml` (les specs @lourd, sur les seuls
-# changements qui peuvent les casser, et chaque nuit). Une seule description
-# de la pile, ou les deux dérivent.
+# pour une exécution et jetée. Appelée par trois workflows qui ne diffèrent que
+# par la sélection Playwright, le plafond et l'origine de l'application :
+# `tests.yml` (chaque poussée, tout sauf les specs @lourd, sur l'application
+# que son job `test` vient de packager), `e2e.yml` (la même sélection, à la
+# demande) et `e2e-lourd.yml` (les specs @lourd, sur les seuls changements qui
+# peuvent les casser, et chaque nuit). Une seule description de la pile, ou
+# elles dérivent.
 name: Pile E2E
 
 on:
@@ -23,6 +25,13 @@ on:
           Débogage peut figer la date du serveur, comme sur une recette.
         type: boolean
         default: false
+      app-artifact:
+        description: >-
+          Nom d'un artefact de CE run qui porte `target/quarkus-app`, déjà
+          packagé par un job précédent (celui de `tests.yml`). Vide : la pile
+          package l'application elle-même.
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -82,12 +91,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      # Java sert dans les deux cas — c'est lui qui lance le jar. Le cache
+      # Maven, seulement quand ce job package : sinon il ne lirait rien.
       - name: Set up Java
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
           java-version: '25'
-          cache: maven
+          cache: ${{ inputs.app-artifact == '' && 'maven' || '' }}
 
       - name: Set up Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -99,7 +110,19 @@ jobs:
       # Quinoa construit le frontend pendant le package : l'application servie
       # est donc exactement celle qu'un déploiement sert, pas un `ng serve`.
       - name: Build the application
+        if: inputs.app-artifact == ''
         run: ./mvnw -B --no-transfer-progress package -DskipTests
+
+      # Ou la reprendre au job qui vient de la construire : le `./mvnw verify`
+      # de `tests.yml` passe par la même phase `package`, Quinoa compris, et
+      # la reconstruire ici refaisait le bundle Angular une troisième fois par
+      # poussée — plusieurs minutes de runner pour un jar identique.
+      - name: Download the application packaged by the Tests job
+        if: inputs.app-artifact != ''
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ inputs.app-artifact }}
+          path: target/quarkus-app
 
       - name: Install frontend dependencies
         working-directory: src/main/webui

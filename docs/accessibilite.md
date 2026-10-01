@@ -63,7 +63,7 @@ argumentées une par une.
 | `status-messages-check` | job `frontend` | une erreur ou un verdict dans un élément sans `role` |
 | `table-headers-check` | job `frontend` | un `<th>` sans `scope` |
 | `new-window-check` | job `frontend` | un lien `target="_blank"` qui ne l'annonce pas |
-| `e2e/accessibilite.spec.ts` | workflow `e2e.yml` | toute violation *serious* ou *critical* d'axe-core hors ligne de base, sur les écrans représentatifs — les quatre de l'espace animateur rejoués sur téléphone |
+| `e2e/accessibilite.spec.ts` | job `e2e` du workflow `tests.yml` | toute violation *serious* ou *critical* d'axe-core hors ligne de base, sur les écrans représentatifs — les quatre de l'espace animateur rejoués sur téléphone |
 
 La spec axe mesure ce qu'aucun linter ne voit : le contraste une fois les thèmes
 appliqués, les régions, les noms accessibles calculés à l'exécution. Elle part

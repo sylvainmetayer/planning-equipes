@@ -2,9 +2,10 @@ import { defineConfig, devices, type VideoMode } from '@playwright/test';
 
 /**
  * End-to-end perimeter tests (issue #165), run on every push and every pull
- * request by .github/workflows/e2e.yml, which stands up the full stack the
- * suite needs (app + PostgreSQL + Mailpit) as disposable service containers —
- * see docs/developpement.md § "Tests de bout en bout (Playwright)".
+ * request by the `e2e` job of .github/workflows/tests.yml, through
+ * .github/workflows/e2e-suite.yml, which stands up the full stack the suite
+ * needs (app + PostgreSQL + Mailpit) as disposable service containers — see
+ * docs/developpement.md § "Tests de bout en bout (Playwright)".
  *
  * They cost minutes where the unit suites answer in seconds, and that is the
  * point: three interface defects of the #331..#338 stack were found by a human

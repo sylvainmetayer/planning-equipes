@@ -10,10 +10,10 @@
 # et chaque nuit sur main pour que rien ne dorme longtemps.
 #
 # Le passé figé vu de l'écran (ADR 0044, passe-fige.spec.ts) l'a rejointe :
-# il fige la date du serveur, ce que la pile d'e2e.yml refuse comme la
+# il fige la date du serveur, ce que la pile ordinaire refuse comme la
 # production — celle-ci est donc montée avec HORLOGE_SIMULEE_AUTORISEE=true.
 #
-# Le reste de la suite reste sur chaque poussée, dans e2e.yml.
+# Le reste de la suite reste sur chaque poussée, dans le job `e2e` de tests.yml.
 name: Tests E2E lourds
 
 on:
@@ -138,5 +138,5 @@ jobs:
       # vingt minutes à elle seule, et un runner lent en prend plus.
       timeout-minutes: 60
       # passe-fige.spec.ts fige la date du serveur depuis la page Débogage :
-      # la pile de ce workflow l'autorise, celle d'e2e.yml non.
+      # la pile de ce workflow l'autorise, celle de tests.yml non.
       horloge-simulee: true

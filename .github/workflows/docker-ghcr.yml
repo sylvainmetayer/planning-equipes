@@ -98,6 +98,33 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
+      # Le dépôt Maven de la construction de l'image. Le Dockerfile le monte en
+      # cache BuildKit (`RUN --mount=type=cache,target=/root/.m2`), et ce cache-là
+      # vit dans le builder, jetable : `cache-to: type=gha` n'exporte que les
+      # couches, jamais les montages de cache. Chaque build retéléchargeait donc
+      # tout `.m2`. Le cache GitHub le garde entre deux runs, et la « danse »
+      # le verse dans le builder avant la construction puis l'en retire à la
+      # fin du job (étape post, avant la sauvegarde du cache — l'ordre inverse
+      # des étapes). Clé sur `pom.xml` : un bump repart du cache précédent et
+      # n'ajoute que ce qui a changé ; une clé déjà en cache n'est ni extraite
+      # ni réécrite.
+      - name: Restore the Maven repository of the image build
+        id: m2-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: m2-cache
+          key: docker-m2-${{ runner.os }}-${{ hashFiles('pom.xml') }}
+          restore-keys: docker-m2-${{ runner.os }}-
+
+      - name: Hand the Maven repository to the BuildKit cache mount
+        uses: reproducible-containers/buildkit-cache-dance@5422eac04292c961a382e0f584ea0f03ad9da723 # v3.4.0
+        with:
+          cache-map: |
+            {
+              "m2-cache": "/root/.m2"
+            }
+          skip-extraction: ${{ steps.m2-cache.outputs.cache-hit }}
+
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
