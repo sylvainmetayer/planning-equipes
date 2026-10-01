@@ -63,10 +63,12 @@ resource "keycloak_realm" "planning" {
   # Un passkey, pas une simple clé de second facteur : la clé porte l'identité
   # (résidente) et son déverrouillage prouve qu'une personne est là
   # (vérification exigée). Même politique que le realm de développement.
+  # discoverable_credential remplace require_resident_key, déprécié : il
+  # demande Keycloak 26.7 et le fournisseur 5.9.
   web_authn_passwordless_policy {
     relying_party_entity_name         = var.realm_display_name
     signature_algorithms              = ["ES256", "RS256"]
-    require_resident_key              = "Yes"
+    discoverable_credential           = "required"
     user_verification_requirement     = "required"
     attestation_conveyance_preference = "none"
     # Le téléphone propose sa passkey dès l'écran de l'adresse, qu'il n'y a

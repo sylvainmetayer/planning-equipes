@@ -443,8 +443,7 @@ class RealmPlanningStructuralTest {
      */
     @Test
     void theWebAuthnPolicyDescribesAPasskeyRatherThanASecondFactorKey() {
-        assertThat(realm.path("webAuthnPolicyPasswordlessRequireResidentKey").asText())
-                .isEqualTo("Yes");
+        assertThat(realm.path("webAuthnPolicyPasswordlessResidentKey").asText()).isEqualTo("required");
         assertThat(realm.path("webAuthnPolicyPasswordlessUserVerificationRequirement")
                         .asText())
                 .isEqualTo("required");

@@ -39,7 +39,12 @@ RUN mvn -B --no-transfer-progress dependency:go-offline
 COPY keycloak/code-email/src ./src
 RUN mvn -B --no-transfer-progress package
 
-FROM quay.io/keycloak/keycloak:26.5.7
+# 26.7 au moins : terraform/keycloak règle le passkey par
+# discoverable_credential, que Keycloak ne connaît que depuis cette version.
+# Pas encore 26.8 : `terraform apply` y échoue en 403 sur la lecture du client
+# realm-management (data "keycloak_openid_client" de main.tf), avec le
+# fournisseur 5.9.0. Vérifier ce point avant d'accepter la montée.
+FROM quay.io/keycloak/keycloak:26.7.5
 
 # /opt/keycloak/providers : c'est là que le serveur cherche ses greffons au
 # démarrage. Aucun enregistrement ailleurs n'est nécessaire — le fichier
