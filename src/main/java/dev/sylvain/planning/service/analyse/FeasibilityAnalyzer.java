@@ -25,6 +25,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -127,9 +128,11 @@ public class FeasibilityAnalyzer {
     private static int rank(CauseInfaisabilite cause) {
         return switch (cause.type()) {
             case CRENEAU_SOUS_EFFECTIF -> 1;
-            // Read on a window of days rather than on one timeslot: the
-            // timeslot causes say where to look first.
-            case PLAFOND_JOURS_CONSECUTIFS -> 2;
+            // A proven cap guarantees a negative hard score like a
+            // contradiction, so it ranks with them — ahead of the shortfalls,
+            // whose number would otherwise push it past the cap of ten and
+            // out of the Solveur's confirmation. A warning goes last.
+            case PLAFOND_JOURS_CONSECUTIFS -> isWarningOnly(cause) ? 2 : 0;
             default -> 0;
         };
     }
@@ -274,7 +277,16 @@ public class FeasibilityAnalyzer {
                 causesCritiques,
                 causesElevees,
                 reportMessage(
-                        sansAnimateur, sansCreneau, sansPoste, feasible, manqueAnimateurs, totalCauses, topCauses));
+                        sansAnimateur,
+                        sansCreneau,
+                        sansPoste,
+                        feasible,
+                        manqueAnimateurs,
+                        totalCauses,
+                        (int) causes.stream()
+                                .filter(cause -> !isWarningOnly(cause))
+                                .count(),
+                        topCauses));
     }
 
     /** The headline: an empty referential says so before any count of causes. */
@@ -285,6 +297,7 @@ public class FeasibilityAnalyzer {
             boolean feasible,
             int manqueAnimateurs,
             int totalCauses,
+            int bloquantes,
             List<CauseInfaisabilite> topCauses) {
         if (sansAnimateur) {
             return buildMessageWithoutAnimateur(totalCauses);
@@ -295,7 +308,7 @@ public class FeasibilityAnalyzer {
         if (sansPoste) {
             return MESSAGE_SANS_POSTE;
         }
-        return buildMessage(feasible, manqueAnimateurs, totalCauses, topCauses);
+        return buildMessage(feasible, manqueAnimateurs, totalCauses, bloquantes, topCauses);
     }
 
     private List<CauseInfaisabilite> creneauxSousEffectif(
@@ -499,8 +512,14 @@ public class FeasibilityAnalyzer {
             return List.of();
         }
         PastHorizon horizon = contexte == null ? null : contexte.horizon();
-        ConsecutiveDaysCapacity.Window grille =
-                ConsecutiveDaysCapacity.grid(plafond.cap(), animateurs, stands, creneaux, horizon);
+        ConsecutiveDaysCapacity capacity =
+                ConsecutiveDaysCapacity.of(plafond.cap(), animateurs, stands, creneaux, horizon);
+        // The plan is read for the grid only once the event is under way: a
+        // past day counts whoever worked it, not its floor.
+        Map<LocalDate, Set<String>> employes = contexte != null && capacity.hasFrozenDays()
+                ? contexte.employes().get()
+                : null;
+        ConsecutiveDaysCapacity.Window grille = capacity.grid(employes);
         if (grille != null && grille.margin() < 0) {
             SeveriteInfaisabilite severite =
                     plafond.hard() ? SeveriteInfaisabilite.CRITIQUE : SeveriteInfaisabilite.ELEVE;
@@ -509,11 +528,15 @@ public class FeasibilityAnalyzer {
         if (grille != null) {
             return List.of(consecutiveDaysCause(SeveriteInfaisabilite.ELEVE, tightMessage(plafond, grille), grille));
         }
-        if (contexte == null) {
+        // The plan in place is read under the hard rule only: the medium one
+        // is on by default, and its overruns are already charged by the score
+        // — reading the whole plan on every load to say it again would cost
+        // every edition a scan for a sentence the diagnostic already holds.
+        if (contexte == null || !plafond.hard()) {
             return List.of();
         }
-        ConsecutiveDaysCapacity.Window plan = ConsecutiveDaysCapacity.employed(
-                plafond.cap(), animateurs, stands, creneaux, contexte.employes().get(), horizon);
+        ConsecutiveDaysCapacity.Window plan = capacity.employed(
+                employes != null ? employes : contexte.employes().get());
         return plan == null
                 ? List.of()
                 : List.of(consecutiveDaysCause(SeveriteInfaisabilite.ELEVE, planMessage(plafond, plan), plan));
@@ -718,7 +741,8 @@ public class FeasibilityAnalyzer {
                 : "1 cause bloquante a été détectée";
     }
 
-    private String buildMessage(boolean feasible, int manque, int totalCauses, List<CauseInfaisabilite> topCauses) {
+    private String buildMessage(
+            boolean feasible, int manque, int totalCauses, int bloquantes, List<CauseInfaisabilite> topCauses) {
         if (feasible) {
             String message =
                     "Le planning est réalisable : il y a assez d'animateurs disponibles pour couvrir chaque créneau.";
@@ -726,7 +750,9 @@ public class FeasibilityAnalyzer {
                     ? message
                     : message + " Point de vigilance : " + topCauses.getFirst().message();
         }
-        String causesPhrase = causesPhrase(totalCauses);
+        // The warnings do not make it infeasible: counting them among « les
+        // causes bloquantes » would overstate the verdict.
+        String causesPhrase = causesPhrase(bloquantes);
         if (manque <= 0) {
             return "Ce planning n'est pas réalisable avec les données actuelles : " + causesPhrase + ". Par exemple : "
                     + topCauses.getFirst().message();
@@ -791,9 +817,10 @@ public class FeasibilityAnalyzer {
      *        the constraints count them without reproaching them — reporting one
      *        as blocking would ask the operator to undo a day already worked.
      * @param employes the animateurs each day of the plan employs, by date —
-     *        read only when a cap on days in a row is on and the grid itself
-     *        leaves room, for the same reason as the seats: it is a full scan
-     *        of the assignments
+     *        read only when a cap on days in a row is on and either a day is
+     *        already past or, under the hard cap, the grid itself leaves room;
+     *        for the same reason as the seats, it is a full scan of the
+     *        assignments
      */
     public record PlanContext(
             List<VerrouillagePlanning> verrouillages,
@@ -985,6 +1012,35 @@ public class FeasibilityAnalyzer {
             }
         }
         return horizon.hasStarted(creneau.getDate(), creneau.getHeureDebut().plusMinutes(latestStartMinutes));
+    }
+
+    /**
+     * The days whose every seat had started at {@code horizon}: each timeslot
+     * of the day that opens at least one stand has started at its latest
+     * segment, as {@link #hasStarted} reads it. A timeslot no stand opens
+     * generates no seat and freezes nothing — it neither holds a day back nor
+     * makes one past — and a day without seat is never past, which is how a
+     * solve reads it off its seats ({@code SolvePipeline.frozenDays}). Empty
+     * without a horizon.
+     */
+    public static Set<LocalDate> frozenDays(List<Creneau> creneaux, List<Stand> stands, PastHorizon horizon) {
+        if (horizon == null || creneaux == null || stands == null) {
+            return Set.of();
+        }
+        Map<LocalDate, Boolean> parJour = new HashMap<>();
+        for (Creneau creneau : creneaux) {
+            if (creneau.getDate() == null) {
+                continue;
+            }
+            List<Stand> ouverts = stands.stream().filter(creneau::isStandOpen).toList();
+            if (!ouverts.isEmpty()) {
+                parJour.merge(creneau.getDate(), hasStarted(creneau, ouverts, horizon), Boolean::logicalAnd);
+            }
+        }
+        return parJour.entrySet().stream()
+                .filter(Map.Entry::getValue)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     /**

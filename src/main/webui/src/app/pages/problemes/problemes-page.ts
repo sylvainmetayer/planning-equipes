@@ -107,9 +107,15 @@ export class ProblemesPage {
     if (!report) {
       return $localize`:@@problemes.feasibility.unavailable:Le diagnostic de faisabilité n'a pas pu être chargé.`;
     }
-    return report.feasible
-      ? $localize`:@@problemes.feasibility.ok:Aucun problème de capacité détecté sur les données actuelles.`
-      : report.message;
+    if (!report.feasible) {
+      return report.message;
+    }
+    // Feasible yet carrying causes: warnings only (a tight cap on days in a
+    // row). « Aucun problème » would contradict the cards listed below it.
+    const vigilances = report.totalCauses;
+    return vigilances > 0
+      ? $localize`:@@problemes.feasibility.vigilance:Le planning est réalisable, avec ${vigilances}:count: point(s) de vigilance listé(s) ci-dessous.`
+      : $localize`:@@problemes.feasibility.ok:Aucun problème de capacité détecté sur les données actuelles.`;
   });
 
   /**

@@ -5,12 +5,10 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.Stand;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -50,15 +48,51 @@ import java.util.TreeMap;
  *
  * <p>Days are counted the way the rule counts them: calendar days, a timeslot
  * belonging to the day it starts on, a day without timeslot being a rest day
- * for everybody. A window entirely in the frozen past is skipped: the rule
- * never charges a run that is over (ADR 0044).</p>
+ * for everybody. A day of the frozen past (ADR 0044) is history: the grid
+ * reading counts the people the plan actually had there rather than its
+ * floor — an empty past seat is never charged, so the floor would overstate
+ * a demand the solver no longer meets, and nobody can be taken off a day
+ * already worked — and a window ending in the past is not judged at all, the
+ * rule never charging a run that is over.</p>
  */
 final class ConsecutiveDaysCapacity {
 
     /** A margin under this share of the demand is reported as tight. */
     static final double TIGHT_MARGIN_RATIO = 0.10;
 
-    private ConsecutiveDaysCapacity() {}
+    private final int cap;
+    private final List<Animateur> animateurs;
+    private final List<Creneau> creneaux;
+    private final Map<LocalDate, Integer> floors;
+    private final Set<LocalDate> frozen;
+
+    private ConsecutiveDaysCapacity(
+            int cap,
+            List<Animateur> animateurs,
+            List<Creneau> creneaux,
+            Map<LocalDate, Integer> floors,
+            Set<LocalDate> frozen) {
+        this.cap = cap;
+        this.animateurs = animateurs;
+        this.creneaux = creneaux;
+        this.floors = floors;
+        this.frozen = frozen;
+    }
+
+    /**
+     * The grid read once — its floors and its frozen days — for both readings,
+     * {@link #grid} and {@link #employed}: each costs an opening profile per
+     * stand and timeslot, and the analysis runs on every load of three screens.
+     */
+    static ConsecutiveDaysCapacity of(
+            int cap, List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux, PastHorizon horizon) {
+        return new ConsecutiveDaysCapacity(
+                cap,
+                animateurs,
+                creneaux,
+                floors(stands, creneaux),
+                FeasibilityAnalyzer.frozenDays(creneaux, stands, horizon));
+    }
 
     /**
      * The window a check is about: its days, what it needs and what it can
@@ -75,40 +109,44 @@ final class ConsecutiveDaysCapacity {
         }
     }
 
+    /** Whether some day of the grid is in the frozen past — the one case {@link #grid} needs the plan for. */
+    boolean hasFrozenDays() {
+        return !frozen.isEmpty();
+    }
+
     /**
-     * The worst window of the grid against a cap of {@code cap} days, or
-     * {@code null} when every window keeps a comfortable margin — or when there
-     * is nothing to judge (no cap, no timeslot, an event shorter than a window).
+     * The worst window of the grid, or {@code null} when every window keeps a
+     * comfortable margin — or when there is nothing to judge (no cap, no
+     * timeslot, an event shorter than a window).
+     *
+     * @param employedByDay the people the plan in place employs each day,
+     *        read for the frozen days only; {@code null} or a day missing
+     *        counts nobody there, which keeps the condition necessary — it can
+     *        miss a proof, never invent one
      */
-    static Window grid(
-            int cap, List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux, PastHorizon horizon) {
-        if (cap <= 0 || creneaux.isEmpty()) {
-            return null;
+    Window grid(Map<LocalDate, ? extends Collection<String>> employedByDay) {
+        Map<LocalDate, Integer> demand = new HashMap<>(floors);
+        for (LocalDate jour : frozen) {
+            Collection<String> people = employedByDay == null ? null : employedByDay.get(jour);
+            demand.put(jour, people == null ? 0 : people.size());
         }
-        Map<LocalDate, Integer> floors = floors(stands, creneaux);
-        return worst(cap, floors, animateurs, creneaux, stands, horizon, floors);
+        return worst(demand);
     }
 
     /**
      * The worst window of a plan in place whose days employ more people than
-     * its rest days allow, or {@code null} when none does.
+     * its rest days allow, or {@code null} when none does. A past day counts
+     * whoever the plan actually had there.
      *
      * @param employedByDay the people each day of the plan employs, by date
      */
-    static Window employed(
-            int cap,
-            List<Animateur> animateurs,
-            List<Stand> stands,
-            List<Creneau> creneaux,
-            Map<LocalDate, ? extends Collection<String>> employedByDay,
-            PastHorizon horizon) {
-        if (cap <= 0 || creneaux.isEmpty() || employedByDay == null || employedByDay.isEmpty()) {
+    Window employed(Map<LocalDate, ? extends Collection<String>> employedByDay) {
+        if (employedByDay == null || employedByDay.isEmpty()) {
             return null;
         }
-        Map<LocalDate, Integer> needed = floors(stands, creneaux);
         Map<LocalDate, Integer> employed = new HashMap<>();
         employedByDay.forEach((date, people) -> employed.put(date, people == null ? 0 : people.size()));
-        Window window = worst(cap, employed, animateurs, creneaux, stands, horizon, needed);
+        Window window = worst(employed);
         return window == null || window.margin() >= 0 ? null : window;
     }
 
@@ -118,18 +156,11 @@ final class ConsecutiveDaysCapacity {
      * {@code null} when the worst margin is comfortable.
      *
      * @param demandByDay what each day uses — its floor, or what a plan employs
-     * @param neededByDay the days somebody is needed on, which bound what an
-     *                    animateur can offer: a day nobody is needed is a rest
-     *                    day for all
      */
-    private static Window worst(
-            int cap,
-            Map<LocalDate, Integer> demandByDay,
-            List<Animateur> animateurs,
-            List<Creneau> creneaux,
-            List<Stand> stands,
-            PastHorizon horizon,
-            Map<LocalDate, Integer> neededByDay) {
+    private Window worst(Map<LocalDate, Integer> demandByDay) {
+        if (cap <= 0) {
+            return null;
+        }
         LocalDate first = null;
         LocalDate last = null;
         for (Creneau creneau : creneaux) {
@@ -153,7 +184,9 @@ final class ConsecutiveDaysCapacity {
         for (int i = 0; i < days; i++) {
             LocalDate date = first.plusDays(i);
             demand[i] = demandByDay.getOrDefault(date, 0);
-            needed[i] = neededByDay.getOrDefault(date, 0) > 0;
+            // The days somebody is needed on bound what an animateur can
+            // offer: a day nobody is needed is a rest day for all.
+            needed[i] = floors.getOrDefault(date, 0) > 0;
         }
         List<boolean[]> availability = new ArrayList<>();
         for (Animateur animateur : animateurs) {
@@ -163,13 +196,12 @@ final class ConsecutiveDaysCapacity {
             }
             availability.add(available);
         }
-        Set<LocalDate> frozen = frozenDays(creneaux, stands, horizon);
 
         Window worst = null;
         int tight = 0;
         for (int start = 0; start + cap < days; start++) {
             int end = start + cap;
-            if (frozen.contains(first.plusDays(end))) {
+            if (isPast(first.plusDays(end))) {
                 continue;
             }
             int windowDemand = 0;
@@ -198,6 +230,16 @@ final class ConsecutiveDaysCapacity {
             return null;
         }
         return new Window(worst.debut(), worst.fin(), worst.demand(), worst.supply(), tight - 1);
+    }
+
+    /**
+     * Whether a window ending on {@code date} is over: the day is frozen, or
+     * it holds no seat and every frozen day comes after it — a rest day
+     * between two worked days already behind us.
+     */
+    private boolean isPast(LocalDate date) {
+        return frozen.contains(date)
+                || (!floors.containsKey(date) && frozen.stream().anyMatch(day -> day.isAfter(date)));
     }
 
     /** Short, or within {@link #TIGHT_MARGIN_RATIO} of the demand. */
@@ -230,7 +272,7 @@ final class ConsecutiveDaysCapacity {
                 }
             }
         }
-        Map<LocalDate, Integer> floors = new HashMap<>();
+        Map<LocalDate, Integer> result = new HashMap<>();
         deltas.forEach((date, day) -> {
             int current = 0;
             int peak = 0;
@@ -241,42 +283,8 @@ final class ConsecutiveDaysCapacity {
                 current += delta;
                 peak = Math.max(peak, current);
             }
-            floors.put(date, peak);
+            result.put(date, peak);
         });
-        return floors;
-    }
-
-    /** The days every timeslot of which had started at {@code horizon}; none without one. */
-    private static Set<LocalDate> frozenDays(List<Creneau> creneaux, List<Stand> stands, PastHorizon horizon) {
-        if (horizon == null) {
-            return Set.of();
-        }
-        Map<LocalDate, Boolean> byDay = new HashMap<>();
-        for (Creneau creneau : creneaux) {
-            if (creneau.getDate() != null) {
-                byDay.merge(
-                        creneau.getDate(),
-                        FeasibilityAnalyzer.hasStarted(creneau, stands, horizon),
-                        Boolean::logicalAnd);
-            }
-        }
-        Set<LocalDate> frozen = new HashSet<>();
-        byDay.forEach((date, started) -> {
-            if (started) {
-                frozen.add(date);
-            }
-        });
-        // A day without timeslot inside the event is frozen once its date is
-        // behind today: nothing to start, and nothing after it to wait for.
-        if (!byDay.isEmpty()) {
-            LocalDate debut = byDay.keySet().stream().min(LocalDate::compareTo).orElseThrow();
-            LocalDate fin = byDay.keySet().stream().max(LocalDate::compareTo).orElseThrow();
-            for (LocalDate date = debut; !date.isAfter(fin); date = date.plusDays(1)) {
-                if (!byDay.containsKey(date) && horizon.hasStarted(date, LocalTime.MAX)) {
-                    frozen.add(date);
-                }
-            }
-        }
-        return frozen;
+        return result;
     }
 }

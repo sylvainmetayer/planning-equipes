@@ -263,13 +263,16 @@ peine. C'est ce que l'analyse s'interdit déjà pour le sous-effectif. Elle ne
 couple pas non plus par compétence : sur la même fixture, la même condition par
 vivier laisse partout une marge large, et le blocage est global.
 
-Quand la grille laisse de la place, l'analyse relit le **plan en place** avec
-la même arithmétique, en comptant cette fois les personnes réellement employées
-chaque jour. Si même là le compte ne passe pas, elle le dit en avertissement :
-aucun réarrangement des seuls jours de repos ne peut tenir la règle sans
-employer moins de monde ces jours-là, et il manque N jours de repos sur la
-fenêtre. Une fenêtre entièrement passée n'est jamais jugée : la règle ne
-reproche pas une série terminée.
+Sous la forme dure, quand la grille laisse de la place, l'analyse relit le
+**plan en place** avec la même arithmétique. Elle compte alors les personnes
+réellement employées chaque jour. Si même là le compte ne passe pas, elle le dit
+en avertissement : aucun réarrangement des seuls jours de repos ne peut tenir la
+règle sans employer moins de monde ces jours-là, et il manque N jours de repos
+sur la fenêtre. Sous la forme moyenne, le score dit déjà les dépassements du
+plan. Une fenêtre entièrement passée n'est jamais jugée, car la règle ne
+reproche pas une série terminée. Dans une fenêtre à cheval sur le passé, un jour
+déjà travaillé compte qui l'a réellement tenu, pas son plancher : un siège passé
+resté vide n'est jamais reproché, et ce plancher gonflerait la demande.
 
 Ce qui tranche reste un **plan** : construit à part et importé, l'écran
 Problèmes le juge, et zéro écart dur prouve que le besoin est tenable avec les

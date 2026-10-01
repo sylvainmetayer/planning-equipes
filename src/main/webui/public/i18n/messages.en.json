@@ -612,6 +612,7 @@
   "problemes.causesTronquees": "{$INTERPOLATION} additional infeasibility cause(s) are not listed: the server only returns the most severe ones.",
   "problemes.feasibility.unavailable": "The feasibility diagnostic could not be loaded.",
   "problemes.feasibility.ok": "No capacity problem detected on the current data.",
+  "problemes.feasibility.vigilance": "The schedule is feasible, with {$count} point(s) of attention listed below.",
   "problemes.analysis.none": "No solve analysis yet: run a solve from the Solver page to see the rules in default.",
   "problemes.niveau.bloquant": "Blocking",
   "problemes.niveau.avertissement": "Warning",

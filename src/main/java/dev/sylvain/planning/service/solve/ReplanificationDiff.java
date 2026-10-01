@@ -103,7 +103,7 @@ public final class ReplanificationDiff {
      * a consigne — moved as much as one handed to somebody else, since nothing
      * of what was read there is still worked. Such a cell has no seat left to
      * date it by, hence {@code datesAvant}, the date of each cell of the
-     * before-image ({@link PlanningPersistenceService#loadHeldCellDates()}); a
+     * before-image ({@link PlanningPersistenceService#loadHeldCells()}); a
      * cell it cannot date is left out rather than guessed.
      */
     public static Set<LocalDate> joursModifies(

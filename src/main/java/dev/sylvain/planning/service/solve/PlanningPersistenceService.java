@@ -886,32 +886,41 @@ public class PlanningPersistenceService {
     }
 
     /**
-     * The date of every cell {@link #loadAnimateursByStandCreneau()} holds, by
-     * the same key: what a cell the next solve no longer generates — an opening
-     * withdrawn, a stand closed by a consigne — is still dated by, once the
-     * solved plan has nothing left to read it from.
+     * The plan in place as a solve's before-image: who holds each cell, as
+     * {@link #loadAnimateursByStandCreneau()} reads it, and the date of each
+     * — what dates a cell the next solve no longer generates (an opening
+     * withdrawn, a stand closed by a consigne) once the solved plan has
+     * nothing left to read it from. One statement, so the two halves describe
+     * the same plan.
      */
-    public Map<String, LocalDate> loadHeldCellDates() {
+    public HeldCells loadHeldCells() {
+        Map<String, List<String>> holders = new LinkedHashMap<>();
         Map<String, LocalDate> dates = new LinkedHashMap<>();
         String sql = """
- SELECT DISTINCT pa.stand_id, pa.creneau_id, c.date_creneau
+ SELECT pa.stand_id, pa.creneau_id, pa.animateur_id, c.date_creneau
  FROM poste_affectation pa
  JOIN creneau c ON c.edition_id = pa.edition_id AND c.id = pa.creneau_id
- WHERE pa.edition_id = ? AND pa.animateur_id IS NOT NULL""";
+ WHERE pa.edition_id = ? AND pa.animateur_id IS NOT NULL
+ ORDER BY pa.id""";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, sql);
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
+                String key = standCreneauKey(rs.getString("stand_id"), rs.getLong("creneau_id"));
+                holders.computeIfAbsent(key, k -> new ArrayList<>()).add(rs.getString("animateur_id"));
                 LocalDate date = rs.getObject("date_creneau", LocalDate.class);
                 if (date != null) {
-                    dates.put(standCreneauKey(rs.getString("stand_id"), rs.getLong("creneau_id")), date);
+                    dates.put(key, date);
                 }
             }
         } catch (SQLException e) {
-            throw new IllegalStateException("Failed to load the dates of the persisted assignments", e);
+            throw new IllegalStateException("Failed to load the persisted assignments with their dates", e);
         }
-        return dates;
+        return new HeldCells(holders, dates);
     }
+
+    /** Who holds each cell of the plan in place, and the date of each, by {@link #standCreneauKey}. */
+    public record HeldCells(Map<String, List<String>> holders, Map<String, LocalDate> dates) {}
 
     /**
      * The animateurs the persisted plan employs on each day, by the date of the
