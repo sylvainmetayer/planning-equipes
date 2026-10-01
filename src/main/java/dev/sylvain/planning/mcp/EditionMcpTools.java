@@ -5,6 +5,8 @@ import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.edition.EditionActivationService;
+import dev.sylvain.planning.service.edition.EditionDelta;
+import dev.sylvain.planning.service.edition.EditionDeltaService;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.edition.EtatEditionService;
 import dev.sylvain.planning.service.edition.EtatEditionView;
@@ -78,6 +80,8 @@ public class EditionMcpTools {
 
     private final EditionActivationService activationService;
 
+    private final EditionDeltaService deltaService;
+
     @Inject
     EditionMcpTools(
             EditionActivationService activationService,
@@ -86,7 +90,8 @@ public class EditionMcpTools {
             ReferenceDataService referenceDataService,
             McpEditions editions,
             EtatEditionService etatEditionService,
-            GelReferentielService gelService) {
+            GelReferentielService gelService,
+            EditionDeltaService deltaService) {
         this.activationService = activationService;
         this.editionService = editionService;
         this.editionContext = editionContext;
@@ -94,6 +99,7 @@ public class EditionMcpTools {
         this.editions = editions;
         this.etatEditionService = etatEditionService;
         this.gelService = gelService;
+        this.deltaService = deltaService;
     }
 
     @Tool(
@@ -254,6 +260,42 @@ public class EditionMcpTools {
         String sourceId = requireEdition(source, "source");
         return view(editionService.duplicate(
                 sourceId, new Edition(null, nom, false, null), avecAnimateurs == null || avecAnimateurs));
+    }
+
+    /**
+     * Two editions named as plain arguments, like {@code dupliquer_edition}'s
+     * source: the comparison spans both, so neither is « the edition the call
+     * works in ». Animateurs leave by id only: {@link EditionDeltaService#compare}
+     * is the anonymous delta, the labels the screen shows are another method.
+     */
+    @Tool(
+            name = "comparer_editions",
+            description = "Compare le référentiel de deux éditions (l'an dernier et cette année, ou une édition et "
+                    + "sa variante) : typologies, emplacements, stands, animateurs, journées types, créneaux, "
+                    + "paramètres légaux, poids et activation des contraintes, ajustements comptés par type, et la "
+                    + "volumétrie de chacune côte à côte (sièges, heures à pourvoir, heures disponibles, taux de "
+                    + "remplissage). Ne lit aucun planning. Seules les différences sont listées : une édition "
+                    + "comparée à elle-même rend des listes vides. Les lignes ne sont jamais rapprochées par id — "
+                    + "deux éditions numérotent leurs fiches du même compteur, A151 peut désigner deux personnes — "
+                    + "mais par code puis par nom (stands, emplacements, typologies ; rapprochement NOM signalé), "
+                    + "par e-mail puis par identité (animateurs : EMAIL ou IDENTITE), par rang du jour d'ouverture "
+                    + "puis heure de début (créneaux : POSITION). Chaque ligne porte les ids des deux côtés et les "
+                    + "noms des champs qui diffèrent, jamais leurs valeurs ; aucun nom ni date de naissance "
+                    + "d'animateur. noAnimateurMatched vrai : la référence a des animateurs et la cible aucun, ce "
+                    + "que laisse une duplication sans les personnes.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    EditionDelta compareEditions(
+            @ToolArg(description = "Édition de référence (A) : son id ou son nom (voir lister_editions)")
+                    String reference,
+            @ToolArg(description = "Édition comparée (B) : son id ou son nom") String cible) {
+        // compare, never compareNamingAnimateurs: the anonymous delta is the
+        // default, and EditionMcpToolsTest reads the answer for the names.
+        return deltaService.compare(requireEdition(reference, "reference"), requireEdition(cible, "cible"));
     }
 
     @Tool(

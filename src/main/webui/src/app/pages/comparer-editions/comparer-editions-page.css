@@ -1,0 +1,123 @@
+/* « Comparer deux éditions »: the two editions chosen, the summary sentence,
+   the Volumétrie side by side, then one foldable panel per family. A change
+   reads by its chip — added, removed, modified — and a match resting on a
+   name alone is set apart, since it is the one the organiser should check. */
+
+.delta-sous-titre {
+  margin: 0 0 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.delta-choix {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.delta-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+  margin: 0.25rem 0 0.5rem;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.delta-titre {
+  font: var(--mat-sys-title-medium);
+  margin: 1.25rem 0 0.5rem;
+}
+
+.delta-resume-phrase {
+  font: var(--mat-sys-title-small);
+  margin: 0 0 0.5rem;
+}
+
+.delta-bandeau {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--mat-sys-corner-small);
+  color: var(--mat-sys-on-tertiary-container);
+  background: var(--mat-sys-tertiary-container);
+}
+
+.delta-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.delta-table th,
+.delta-table td {
+  padding: 0.375rem 0.5rem;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.delta-table thead th {
+  font: var(--mat-sys-label-large);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.delta-famille {
+  margin: 0.75rem 0;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  padding: 0.5rem 0.75rem;
+}
+
+.delta-famille > summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font: var(--mat-sys-title-small);
+}
+
+.delta-famille-titre {
+  flex: 1;
+}
+
+.delta-compte {
+  min-width: 1.5rem;
+  padding: 0 0.5rem;
+  border-radius: var(--mat-sys-corner-full);
+  text-align: center;
+  background: var(--mat-sys-surface-container-high);
+}
+
+.delta-chip {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--mat-sys-corner-full);
+  font: var(--mat-sys-label-medium);
+}
+
+.delta-ADDED {
+  color: var(--mat-sys-on-primary-container);
+  background: var(--mat-sys-primary-container);
+}
+
+.delta-REMOVED {
+  color: var(--mat-sys-on-error-container);
+  background: var(--mat-sys-error-container);
+}
+
+.delta-MODIFIED {
+  color: var(--mat-sys-on-secondary-container);
+  background: var(--mat-sys-secondary-container);
+}
+
+.delta-par-nom {
+  font-style: italic;
+  color: var(--mat-sys-tertiary);
+}
+
+.delta-ouvrir {
+  white-space: nowrap;
+}

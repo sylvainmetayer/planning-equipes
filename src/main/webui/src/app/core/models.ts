@@ -5487,3 +5487,116 @@ export interface AffichageMuralView {
    */
   unpublishedChanges: number;
 }
+
+/* ---------------------- Delta between two editions ---------------------- */
+
+/** What became of a row from one edition to the other. */
+export type DeltaChange = 'ADDED' | 'REMOVED' | 'MODIFIED';
+
+/**
+ * Which key matched two rows across editions — never the id, which two
+ * editions share by coincidence (ADR 0050). `NOM` is the fallback the screen
+ * flags: the rows carried no code to match on.
+ */
+export type DeltaMatch = 'CODE' | 'NOM' | 'EMAIL' | 'IDENTITE' | 'POSITION';
+
+export type DeltaFamily =
+  | 'TYPOLOGIE'
+  | 'EMPLACEMENT'
+  | 'STAND'
+  | 'ANIMATEUR'
+  | 'JOURNEE_TYPE'
+  | 'CRENEAU'
+  | 'PARAMETRE'
+  | 'AJUSTEMENT';
+
+export type DeltaValueGroup = 'LEGAL' | 'CONSTRAINT_ACTIVE' | 'CONSTRAINT_WEIGHT' | 'AJUSTEMENT';
+
+export interface DeltaSide {
+  id: string;
+  nom: string;
+}
+
+export interface DeltaFamilyCount {
+  family: DeltaFamily;
+  added: number;
+  removed: number;
+  modified: number;
+  /** Rows paired by their name for want of a code, changed or not. */
+  matchedByName: number;
+}
+
+export interface DeltaSummary {
+  families: DeltaFamilyCount[];
+  /** Opening days: the dates carrying a timeslot. */
+  referenceDays: number;
+  targetDays: number;
+  /** Target minus reference. */
+  seatDifference: number;
+  hoursToFillDifference: number;
+}
+
+/** One row of a referential that differs; `fields` are names, never values. */
+export interface DeltaLine {
+  change: DeltaChange;
+  matching: DeltaMatch | null;
+  referenceId: string | null;
+  /** What « ouvrir dans l'édition B » opens. */
+  targetId: string | null;
+  code: string | null;
+  /** For an animateur, the name: this admin screen only, never the CSV or MCP. */
+  label: string | null;
+  fields: string[];
+}
+
+/** One shift aligned on the rank of its opening day, or a whole day (`start` null). */
+export interface DeltaTimeslotLine {
+  change: DeltaChange;
+  matching: DeltaMatch | null;
+  day: number;
+  start: string | null;
+  referenceDate: string | null;
+  targetDate: string | null;
+  referenceId: string | null;
+  targetId: string | null;
+  fields: string[];
+}
+
+/** A setting or a count whose value differs; `label` is the constraint's, from the catalogue. */
+export interface DeltaValueLine {
+  group: DeltaValueGroup;
+  key: string;
+  label: string | null;
+  /** `null` for a weight left at its default. */
+  referenceValue: string | null;
+  targetValue: string | null;
+}
+
+/** The Volumétrie of one edition, its fill ratio computed by the server. */
+export interface DeltaVolumes {
+  animateurCount: number;
+  posteCount: number;
+  hoursToFill: number;
+  hoursAvailable: number;
+  /** `null` when nobody is available. */
+  fillRatio: number | null;
+}
+
+/** `GET /api/editions/{a}/delta/{b}`: differences only, the volumes side by side. */
+export interface EditionDelta {
+  reference: DeltaSide;
+  target: DeltaSide;
+  summary: DeltaSummary;
+  /** The reference has animateurs and none was found in the target: a duplication without the people. */
+  noAnimateurMatched: boolean;
+  typologies: DeltaLine[];
+  emplacements: DeltaLine[];
+  stands: DeltaLine[];
+  animateurs: DeltaLine[];
+  journeesTypes: DeltaLine[];
+  creneaux: DeltaTimeslotLine[];
+  parametres: DeltaValueLine[];
+  ajustements: DeltaValueLine[];
+  referenceVolumes: DeltaVolumes;
+  targetVolumes: DeltaVolumes;
+}

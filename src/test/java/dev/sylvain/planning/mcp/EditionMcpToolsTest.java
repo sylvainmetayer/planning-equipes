@@ -3,11 +3,16 @@ package dev.sylvain.planning.mcp;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.mcp.CreneauMcpTools.CreneauView;
 import dev.sylvain.planning.mcp.EditionMcpTools.EditionView;
+import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.edition.EditionDelta;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.edition.EtatEditionView;
 import dev.sylvain.planning.service.edition.EtatEditionView.Statut;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import io.quarkiverse.mcp.server.ToolCallException;
 import io.quarkiverse.mcp.server.ToolManager;
 import io.quarkiverse.mcp.server.ToolManager.ToolArgument;
@@ -49,6 +54,15 @@ class EditionMcpToolsTest {
 
     @Inject
     ToolManager toolManager;
+
+    @Inject
+    EditionContext editionContext;
+
+    @Inject
+    ReferenceDataService referenceData;
+
+    @Inject
+    ObjectMapper objectMapper;
 
     @AfterEach
     void nettoyer() {
@@ -213,5 +227,37 @@ class EditionMcpToolsTest {
         String courante = editionTools.currentEdition().id();
 
         assertThatThrownBy(() -> editionTools.deleteEdition(courante)).isInstanceOf(ToolCallException.class);
+    }
+
+    /**
+     * Two editions named by argument, by id or by name, and the animateurs by
+     * id only: the label the screen shows never leaves over MCP. Read on the
+     * serialised answer, not on one field — whatever shape the delta takes,
+     * a name in it fails here.
+     */
+    @Test
+    void comparingTwoEditionsNamesNoAnimateur() throws Exception {
+        String source = createTestEdition();
+        editionContext.executeIn(
+                source,
+                () -> referenceData.createAnimateur(
+                        new Animateur(null, "Zoé", "Comparaison", LocalDate.of(1995, 3, 3), false)));
+        String copie = editionTools.duplicateEdition(source, NOM_COPIE, false).id();
+
+        EditionDelta delta = editionTools.compareEditions(NOM_TEST, copie);
+
+        assertThat(delta.noAnimateurMatched()).isTrue();
+        assertThat(delta.animateurs()).singleElement().satisfies(line -> {
+            assertThat(line.referenceId()).isNotNull();
+            assertThat(line.label()).isNull();
+        });
+        assertThat(objectMapper.writeValueAsString(delta))
+                .doesNotContain("Zoé")
+                .doesNotContain("Comparaison")
+                .doesNotContain("1995-03-03");
+        assertThat(editionTools.compareEditions(source, source).noDifference()).isTrue();
+        assertThatThrownBy(() -> editionTools.compareEditions(source, "edition-qui-nexiste-pas"))
+                .isInstanceOf(ToolCallException.class)
+                .hasMessageContaining("Édition inconnue");
     }
 }

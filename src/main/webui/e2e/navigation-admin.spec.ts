@@ -51,6 +51,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/aide', marker: "Aide à l'utilisation", sheet: 'aide-search' },
   { path: '/nouveautes', marker: 'Nouveautés', sheet: 'news-release' },
   { path: '/editions', marker: 'Nouvelle édition', sheet: 'edition-nom-input' },
+  { path: '/editions/comparer', marker: 'Comparer deux éditions', sheet: 'delta-choix' },
   { path: '/stands', marker: 'Stands (' },
   { path: '/stands?onglet=lieux', marker: 'Lieux (', sheet: 'lieux-map-host' },
   { path: '/stands/E2E-S1', marker: 'Horaires et effectifs', sheet: 'stand-grille' },

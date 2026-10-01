@@ -2,6 +2,8 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.service.edition.EditionActivationService;
+import dev.sylvain.planning.service.edition.EditionDelta;
+import dev.sylvain.planning.service.edition.EditionDeltaService;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.edition.EtatEditionService;
 import dev.sylvain.planning.service.edition.EtatEditionView;
@@ -45,18 +47,22 @@ public class EditionResource {
 
     private final EditionActivationService activationService;
 
+    private final EditionDeltaService deltaService;
+
     @Inject
     public EditionResource(
             EditionService editionService,
             EtatEditionService etatEditionService,
             CoherenceReferentielService coherenceService,
             GelReferentielService gelService,
-            EditionActivationService activationService) {
+            EditionActivationService activationService,
+            EditionDeltaService deltaService) {
         this.activationService = activationService;
         this.editionService = editionService;
         this.etatEditionService = etatEditionService;
         this.coherenceService = coherenceService;
         this.gelService = gelService;
+        this.deltaService = deltaService;
     }
 
     @GET
@@ -174,6 +180,27 @@ public class EditionResource {
             @QueryParam("avecAnimateurs") @DefaultValue("true") boolean avecAnimateurs,
             Edition target) {
         return Response.ok(editionService.duplicate(id, target, avecAnimateurs)).build();
+    }
+
+    /**
+     * What changed in the referential from edition {@code id} to edition
+     * {@code cible}: stands, animateurs, timeslots, settings and volumes, rows
+     * matched by code, name or e-mail — never by id, which two editions share
+     * by coincidence. Read-only; animateurs are named, for this
+     * administrator's screen only.
+     */
+    @GET
+    @Path("/{id}/delta/{cible}")
+    public EditionDelta delta(@PathParam("id") String id, @PathParam("cible") String cible) {
+        return deltaService.compareNamingAnimateurs(id, cible);
+    }
+
+    /** The same delta as a CSV: no animateur is named, an animateur line carries its ids only. */
+    @GET
+    @Path("/{id}/delta/{cible}/export.csv")
+    @Produces("text/csv")
+    public Response exportDeltaCsv(@PathParam("id") String id, @PathParam("cible") String cible) {
+        return CsvDownload.attachment(deltaService.csv(id, cible), "delta-" + id + "-" + cible + ".csv");
     }
 
     /**

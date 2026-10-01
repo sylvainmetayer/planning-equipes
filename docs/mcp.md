@@ -366,6 +366,21 @@ Deux précisions sur l'écriture : les lancements de solveur capturent l'éditio
 ensuite ; et une section `edition:` dans un YAML importé **prime** sur
 l'argument, puisque le fichier désigne explicitement sa cible.
 
+**Comparer deux éditions.** `comparer_editions` prend ses deux éditions en
+arguments ordinaires, `reference` et `cible` (id ou nom, obligatoires), comme
+la source de `dupliquer_edition` : la comparaison porte sur les deux, aucune
+n'est « l'édition de l'appel ». Il rend le delta de l'écran Comparer deux
+éditions — typologies, emplacements, stands, animateurs, journées types,
+créneaux, paramètres, ajustements comptés par type, volumétrie des deux côte à
+côte avec le taux de remplissage — **sans aucun nom** : une ligne d'animateur
+porte ses ids dans chaque édition et le nom des champs qui diffèrent, jamais
+leurs valeurs. Rien n'est rapproché par id (`A151` d'une édition n'est pas
+`A151` de l'autre) : `matching` dit sur quoi deux lignes l'ont été —
+`CODE`, `NOM`, `EMAIL`, `IDENTITE`, `POSITION` (la colonne `rapprochement` de
+l'export CSV). Le delta rendu est celui de `EditionDeltaService.compare`,
+anonyme par construction : l'écran d'administration est seul à demander les
+noms, par une autre méthode.
+
 ## Historique de pondération
 
 `consulter_historique_ponderation` (lecture seule, cloisonné par édition) rend

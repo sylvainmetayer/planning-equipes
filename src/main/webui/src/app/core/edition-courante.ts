@@ -48,6 +48,17 @@ export function setStoredEditionIdAndReload(editionId: string): void {
   location.reload();
 }
 
+/**
+ * Switches edition and opens `url` in it — « ouvrir dans l'édition B » of
+ * the comparison of two editions. A full load rather than a router
+ * navigation, for the reason {@link setStoredEditionIdAndReload} gives: no
+ * screen may keep rendering the previous edition's rows.
+ */
+export function setStoredEditionIdAndOpen(editionId: string, url: string): void {
+  localStorage.setItem(STORAGE_KEY, editionId);
+  location.assign(url);
+}
+
 /** Forgets the stored choice, e.g. after the server reported that edition as unknown. */
 export function clearStoredEditionId(): void {
   inMemoryEditionId = null;

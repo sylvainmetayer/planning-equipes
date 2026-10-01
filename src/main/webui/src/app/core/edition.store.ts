@@ -10,7 +10,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { EditionsApi } from './api/editions-api';
 import { Edition, EditionSituation } from './models';
-import { setStoredEditionIdAndReload } from './edition-courante';
+import { setStoredEditionIdAndOpen, setStoredEditionIdAndReload } from './edition-courante';
 
 @Injectable({ providedIn: 'root' })
 export class EditionStore {
@@ -56,5 +56,14 @@ export class EditionStore {
   /** Switches edition; every screen is swapped at once by the page reload this triggers. */
   basculer(edition: Edition): void {
     setStoredEditionIdAndReload(edition.id);
+  }
+
+  /**
+   * Switches this browser to `editionId` and opens `url` there: what a link
+   * to a fiche of another edition does. Every tab of this browser follows on
+   * its next load, as with {@link basculer}.
+   */
+  openIn(editionId: string, url: string): void {
+    setStoredEditionIdAndOpen(editionId, url);
   }
 }

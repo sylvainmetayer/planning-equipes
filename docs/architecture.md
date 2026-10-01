@@ -46,6 +46,19 @@ dépôt unique : le prédicat reste auditable d'un `grep` sur le paquet. Une seu
 écriture traverse toutes les familles — remplacer le référentiel par celui d'un
 scénario — et elle emprunte une connexion qu'elle passe à chaque dépôt.
 
+Lire deux éditions dans une même requête — comparer deux instantanés, ou le
+référentiel de deux éditions (`EditionDeltaService`) — ne demande aucune requête
+inter-éditions : chaque côté est lu **dans** son édition, par
+`EditionContext.executeIn` et les services ordinaires, puis la comparaison se
+fait en mémoire. Elle ne rapproche jamais deux lignes par leur identifiant :
+deux éditions numérotent leurs fiches à partir du même compteur, si bien que
+`A151` peut désigner deux personnes
+([ADR 0050](decisions/0050-identifiants-generes-par-edition.md)). Pour la même
+raison, aucune date n'est comparée telle quelle : la grille, et les fenêtres
+datées ou règles à dates d'un stand, s'alignent sur le rang du jour
+d'ouverture. Les réglages des contraintes sont comparés par leur valeur
+effective — un poids saisi égal au défaut n'est pas une différence.
+
 `ReferenceData` est l'interface étroite que la **construction d'un problème**
 lit du référentiel, et rien d'autre : c'est elle qui permet aux tests hors CDI
 d'exister.
