@@ -319,6 +319,7 @@ jobs:
       # pile compris ; un runner lent a de la marge, un blocage n'en a pas.
       timeout-minutes: 25
       app-artifact: quarkus-app
+      authentification: keycloak-secours
 
   # Un regard de l'extérieur sur l'application démarrée : OWASP ZAP en mode
   # *baseline* parcourt ce qu'un visiteur sans compte atteint et lit chaque

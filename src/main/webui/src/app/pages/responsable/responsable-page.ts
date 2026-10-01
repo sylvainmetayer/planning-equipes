@@ -1,6 +1,13 @@
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
@@ -67,7 +74,7 @@ type Etat = 'chargement' | 'connexion' | 'sans-droit' | 'erreur' | 'pret';
   styleUrl: './responsable-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ResponsablePage {
+export class ResponsablePage implements OnInit {
   private readonly api = inject(ResponsableApi);
   private readonly adminApi = inject(AdminApi);
   private readonly route = inject(ActivatedRoute);
@@ -94,7 +101,7 @@ export class ResponsablePage {
   protected readonly windowLabel = windowLabel;
   protected readonly staffingLabel = staffingLabel;
 
-  constructor() {
+  ngOnInit(): void {
     void this.load();
   }
 

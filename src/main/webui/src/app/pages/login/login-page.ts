@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   inject,
+  OnInit,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -58,7 +59,7 @@ import { BrandLogo } from '../../shared/brand-logo';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LoginPage {
+export class LoginPage implements OnInit {
   /** The card names the deployment, not the software: "<produit> — administration". */
   protected readonly productName = inject(BRANDING).productName;
 
@@ -83,7 +84,7 @@ export class LoginPage {
   /** …but responsable de stand: the card points to the page that is theirs. */
   protected readonly responsable = signal(false);
 
-  constructor() {
+  ngOnInit(): void {
     void this.checkSession();
   }
 

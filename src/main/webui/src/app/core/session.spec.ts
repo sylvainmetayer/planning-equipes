@@ -27,7 +27,7 @@ describe('session', () => {
 
     function espionnerNavigation(): ReturnType<typeof vi.fn> {
       const assign = vi.fn();
-      vi.spyOn(window, 'location', 'get').mockReturnValue({ assign } as unknown as Location);
+      vi.spyOn(window, 'location', 'get').mockReturnValue({ ...window.location, assign });
       return assign;
     }
 

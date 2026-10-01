@@ -17,11 +17,6 @@ import { NotificationService } from '../../core/notification.service';
 import { ConfirmData, ConfirmService } from '../../shared/confirm-dialog';
 import { ComptesPage } from './comptes-page';
 
-type PageInternals = {
-  deactivate: (compte: Compte) => Promise<void>;
-  rows: () => { compte: Compte; own: boolean }[];
-};
-
 function account(id: string, email: string, patch: Partial<Compte> = {}): Compte {
   return {
     id,
@@ -71,17 +66,17 @@ describe('ComptesPage', () => {
     });
   });
 
-  async function createPage(): Promise<PageInternals> {
-    const page = TestBed.createComponent(ComptesPage).componentInstance as unknown as PageInternals;
+  async function createPage(): Promise<ComptesPage> {
+    const page = TestBed.createComponent(ComptesPage).componentInstance;
     // The list and the session are both read on construction.
-    await vi.waitFor(() => expect(page.rows().some((row) => row.own)).toBe(true));
+    await vi.waitFor(() => expect(page['rows']().some((row) => row.own)).toBe(true));
     return page;
   }
 
   it('warns before deactivating the account signed in', async () => {
     const page = await createPage();
 
-    await page.deactivate(own);
+    await page['deactivate'](own);
 
     const data = confirm.ask.mock.calls[0][0];
     expect(data.danger).toBe(true);
@@ -92,7 +87,7 @@ describe('ComptesPage', () => {
   it('says nothing of the kind for somebody else, and never offers to delete', async () => {
     const page = await createPage();
 
-    await page.deactivate(other);
+    await page['deactivate'](other);
 
     const data = confirm.ask.mock.calls[0][0];
     expect(data.detail).toBeUndefined();
@@ -102,19 +97,19 @@ describe('ComptesPage', () => {
   it('puts the account the server answers in place of the one on screen', async () => {
     const page = await createPage();
 
-    await page.deactivate(other);
+    await page['deactivate'](other);
 
     expect(comptesApi.deactivate).toHaveBeenCalledWith('c2');
-    const row = page.rows().find((candidate) => candidate.compte.id === 'c2');
+    const row = page['rows']().find((candidate) => candidate.compte.id === 'c2');
     expect(row?.compte.desactiveLe).toBe('2026-06-15T10:00:00Z');
-    expect(page.rows()).toHaveLength(2);
+    expect(page['rows']()).toHaveLength(2);
   });
 
   it('writes nothing when the confirmation is declined', async () => {
     confirm.ask.mockResolvedValueOnce(false);
     const page = await createPage();
 
-    await page.deactivate(other);
+    await page['deactivate'](other);
 
     expect(comptesApi.deactivate).not.toHaveBeenCalled();
   });
