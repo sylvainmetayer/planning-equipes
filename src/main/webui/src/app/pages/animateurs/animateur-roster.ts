@@ -22,6 +22,7 @@ import {
 import {
   ModeAccuses,
   SILENCE_JOURS_DEFAUT,
+  failedSend,
   keptByAcknowledgement,
   readModeAccuses,
   readNeverReminded,
@@ -59,7 +60,11 @@ export const WHOLE_ROSTER: RosterView = {
 
 /** Reads the list's view from its query params; anything unreadable is the default. */
 export function readRosterView(params: ParamMap): RosterView {
-  const accuses = readModeAccuses(params.get('confirmation'), params.get('silence'));
+  const accuses = readModeAccuses(
+    params.get('confirmation'),
+    params.get('silence'),
+    params.get('envoi'),
+  );
   return {
     sort: readSort(params),
     filtre: params.get('q') ?? '',
@@ -80,6 +85,7 @@ export function rosterViewParams(view: RosterView): Params {
     q: optionalParam(view.filtre),
     confirmation: view.accuses === 'jamais' ? 'jamais' : null,
     silence: view.accuses === 'silence' ? String(view.silenceJours) : null,
+    envoi: view.accuses === 'echec' ? 'echec' : null,
     relance: view.accuses !== 'tous' && view.neverReminded ? 'jamais' : null,
     typologie: optionalParam(view.typologie),
     souhait: optionalParam(view.souhait),
@@ -228,8 +234,16 @@ export function neighbours(
   };
 }
 
-/** Wording of the acknowledgement column; empty for somebody nothing was asked of. */
+/**
+ * Wording of the acknowledgement column; empty for somebody nothing was asked
+ * of. A failed last mail reads « échec d'envoi » rather than « silencieux »:
+ * the person was not silent, they were not reached — and an invitation that
+ * bounced says so even before anything was published.
+ */
 export function confirmationLabel(confirmation: ConfirmationView | undefined): string {
+  if (failedSend(confirmation)) {
+    return $localize`:@@animateurs.confirmation.echecEnvoi:Échec d'envoi`;
+  }
   if (!confirmation?.affecte) {
     return '';
   }
@@ -274,9 +288,9 @@ function unknownLast(
  *     bookmarked `?sort=`, are booleans: "Oui" first;
  *   - `competences`, `indisponibilites` and `postes` show a list or a count,
  *     so the count is what is compared;
- *   - `confirmation` is a status with no natural order: silencieux, then
- *     relancé, then confirmé, and last the people who were asked nothing —
- *     ascending is then "who is left to chase".
+ *   - `confirmation` is a status with no natural order: échec d'envoi, then
+ *     silencieux, then relancé, then confirmé, and last the people who were
+ *     asked nothing — ascending is then "who is left to chase".
  *
  * An unknown column answers 0, which leaves the rows in source order: a link
  * carrying a `?sort=` of a column since removed degrades to an unsorted table
@@ -343,6 +357,11 @@ function rankConfirmation(
   confirmations: ReadonlyMap<string, ConfirmationView>,
 ): number {
   const confirmation = confirmations.get(animateur.id);
+  if (failedSend(confirmation)) {
+    // Not reached: first, since a gesture — correcting the address, a phone
+    // call — is what it waits for.
+    return -1;
+  }
   if (!confirmation?.affecte) {
     // Nothing was asked of them: last, because there is nothing to chase.
     return 3;

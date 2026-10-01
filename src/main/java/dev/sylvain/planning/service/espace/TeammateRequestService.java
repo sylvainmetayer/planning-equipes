@@ -408,6 +408,7 @@ public class TeammateRequestService {
                 .forEach(autre ->
                         repository.decide(autre.id(), StatutDemandeCoequipier.VALIDEE, contrainteId, decideLe, null));
         membres.forEach(membre -> notifications.fire(new Notification.CarpoolValidated(
+                membre.getId(),
                 membre.getEmail(),
                 membre.getPrenom(),
                 membres.stream()
@@ -436,6 +437,7 @@ public class TeammateRequestService {
                 .filter(animateur -> animateur.getId().equals(demande.animateurId()))
                 .findFirst()
                 .ifPresent(animateur -> notifications.fire(new Notification.CarpoolSetAside(
+                        animateur.getId(),
                         animateur.getEmail(),
                         animateur.getPrenom(),
                         motif,
@@ -487,6 +489,7 @@ public class TeammateRequestService {
         List<Animateur> membres =
                 membreIds.stream().map(animateurs::get).filter(Objects::nonNull).toList();
         membres.forEach(membre -> notifications.fire(new Notification.CarpoolCancelled(
+                membre.getId(),
                 membre.getEmail(),
                 membre.getPrenom(),
                 membres.stream()

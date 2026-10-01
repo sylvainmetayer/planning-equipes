@@ -120,8 +120,8 @@ class NotificationWriterTest {
     // --- Solicited and declined (targeted colleague) -----------------------
 
     @Test
-    void leCollegueCibleEstRenvoyeVersSonEspace() {
-        MailDraft courrier = rediger(new Notification.TargetSolicited("bob@example.org", "Alice Dupont", 2));
+    void theTargetedColleagueIsSentToTheirEspace() {
+        MailDraft courrier = rediger(new Notification.TargetSolicited("A1", "bob@example.org", "Alice Dupont", 2));
 
         assertThat(courrier.destinataire()).isEqualTo("bob@example.org");
         assertThat(courrier.sujet()).contains("Alice Dupont").contains("des échanges de créneaux");
@@ -129,9 +129,9 @@ class NotificationWriterTest {
     }
 
     @Test
-    void unDeclinDitAuDemandeurQuIlPeutProposerAilleurs() {
+    void aDeclineTellsTheRequesterTheyMayProposeElsewhere() {
         MailDraft courrier =
-                rediger(new Notification.DemandeDeclinee("alice@example.org", "Bob Martin", "samedi 10h-12h"));
+                rediger(new Notification.DemandeDeclinee("A1", "alice@example.org", "Bob Martin", "samedi 10h-12h"));
 
         assertThat(courrier.corps())
                 .contains("Bob Martin a décliné")
@@ -235,13 +235,14 @@ class NotificationWriterTest {
     @Test
     void aFiledReportTellsTheAnimateurTheirPlanningWasLeftAsItWas() {
         MailDraft siege = rediger(new Notification.AbsenceReportFiled(
+                "A1",
                 "alice@example.org",
                 "Alice",
                 java.time.LocalDate.of(2026, 7, 11),
                 "Cirque 09:00-12:00",
                 "https://planning.example.org/animateur/t0k"));
         MailDraft journee = rediger(new Notification.AbsenceReportFiled(
-                "alice@example.org", " ", java.time.LocalDate.of(2026, 7, 12), null, null));
+                "A1", "alice@example.org", " ", java.time.LocalDate.of(2026, 7, 12), null, null));
 
         assertThat(siege.destinataire()).isEqualTo("alice@example.org");
         assertThat(siege.sujet()).contains("votre signalement a été classé");
@@ -260,13 +261,14 @@ class NotificationWriterTest {
     @Test
     void anAcceptedReportTellsTheAnimateurTheyAreNoLongerExpected() {
         MailDraft siege = rediger(new Notification.AbsenceReportAccepted(
+                "A1",
                 "alice@example.org",
                 "Alice",
                 java.time.LocalDate.of(2026, 7, 11),
                 "Cirque 09:00-12:00",
                 "https://planning.example.org/animateur/t0k"));
         MailDraft journee = rediger(new Notification.AbsenceReportAccepted(
-                "alice@example.org", "Alice", java.time.LocalDate.of(2026, 7, 12), null, null));
+                "A1", "alice@example.org", "Alice", java.time.LocalDate.of(2026, 7, 12), null, null));
 
         assertThat(siege.destinataire()).isEqualTo("alice@example.org");
         assertThat(siege.sujet()).contains("votre absence est prise en compte");
@@ -347,6 +349,7 @@ class NotificationWriterTest {
     @Test
     void aValidatedCarpoolNamesTheTeammatesAndLinksToTheCovoiturageTab() {
         MailDraft courrier = rediger(new Notification.CarpoolValidated(
+                "A1",
                 "bob@example.org",
                 "Bob",
                 List.of("Alice Martin", "Chloé Petit"),
@@ -365,9 +368,9 @@ class NotificationWriterTest {
 
     @Test
     void aCarpoolSetAsideCarriesTheReasonWhenOneWasGiven() {
-        MailDraft avecMotif = rediger(
-                new Notification.CarpoolSetAside("alice@example.org", "Alice", "Bob ne vient que le samedi.", null));
-        MailDraft sansMotif = rediger(new Notification.CarpoolSetAside("alice@example.org", "Alice", " ", null));
+        MailDraft avecMotif = rediger(new Notification.CarpoolSetAside(
+                "A1", "alice@example.org", "Alice", "Bob ne vient que le samedi.", null));
+        MailDraft sansMotif = rediger(new Notification.CarpoolSetAside("A1", "alice@example.org", "Alice", " ", null));
 
         assertThat(avecMotif.sujet()).contains("n'a pas été retenue");
         assertThat(avecMotif.corps())
@@ -380,6 +383,7 @@ class NotificationWriterTest {
     @Test
     void aCancelledCarpoolNamesTheOthersGivesTheReasonAndInvitesANewRequestWhileTheWindowIsOpen() {
         MailDraft courrier = rediger(new Notification.CarpoolCancelled(
+                "A1",
                 "bob@example.org",
                 "Bob",
                 List.of("Alice Martin", "Chloé Petit"),
@@ -404,8 +408,8 @@ class NotificationWriterTest {
 
     @Test
     void aCancelledCarpoolOutsideTheWindowSendsToTheOrganisationAndSaysNoReasonWhenNoneWasGiven() {
-        MailDraft courrier = rediger(
-                new Notification.CarpoolCancelled("bob@example.org", "Bob", List.of("Alice Martin"), " ", false, null));
+        MailDraft courrier = rediger(new Notification.CarpoolCancelled(
+                "A1", "bob@example.org", "Bob", List.of("Alice Martin"), " ", false, null));
 
         assertThat(courrier.corps())
                 .contains("avec Alice Martin")
@@ -418,18 +422,18 @@ class NotificationWriterTest {
 
     @Test
     void aDecisionToldToAnAnimateurWithoutAnAddressIsWrittenToNobody() {
-        assertThat(redacteur.rediger(new Notification.CarpoolValidated(null, "Bob", List.of("Alice"), null)))
+        assertThat(redacteur.rediger(new Notification.CarpoolValidated("A1", null, "Bob", List.of("Alice"), null)))
                 .isEmpty();
-        assertThat(redacteur.rediger(new Notification.CarpoolSetAside(" ", "Alice", null, null)))
+        assertThat(redacteur.rediger(new Notification.CarpoolSetAside("A1", " ", "Alice", null, null)))
                 .isEmpty();
         assertThat(redacteur.rediger(
-                        new Notification.CarpoolCancelled(null, "Alice", List.of("Bob"), null, true, null)))
+                        new Notification.CarpoolCancelled("A1", null, "Alice", List.of("Bob"), null, true, null)))
                 .isEmpty();
         assertThat(redacteur.rediger(new Notification.AbsenceReportFiled(
-                        null, "Alice", java.time.LocalDate.of(2026, 7, 11), null, null)))
+                        "A1", null, "Alice", java.time.LocalDate.of(2026, 7, 11), null, null)))
                 .isEmpty();
         assertThat(redacteur.rediger(new Notification.AbsenceReportAccepted(
-                        " ", "Alice", java.time.LocalDate.of(2026, 7, 11), null, null)))
+                        "A1", " ", "Alice", java.time.LocalDate.of(2026, 7, 11), null, null)))
                 .isEmpty();
     }
 }

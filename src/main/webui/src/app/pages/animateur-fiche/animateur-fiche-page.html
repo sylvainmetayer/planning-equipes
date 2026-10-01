@@ -136,6 +136,17 @@
             } @else {
               <span class="detail-muted" i18n="@@fiche.email.absent">Aucun : ni planning ni code d'accès par e-mail</span>
             }
+            @if (fiche.confirmation?.dernierEnvoi; as envoi) {
+              @if (envoi.enEchec) {
+                <!-- The signal of a failed send: lifted by any edit of this fiche,
+                     the address corrected or the person reached otherwise. -->
+                <span class="fiche-envoi-echec" role="status">
+                  <mat-icon inline aria-hidden="true">warning</mat-icon>
+                  {{ lastDeliveryLabel(envoi) }}.
+                  <ng-container i18n="@@fiche.envoi.echecAide">Corrigez l'adresse ou prévenez cette personne autrement : la prochaine modification de la fiche lève ce signal.</ng-container>
+                </span>
+              }
+            }
           </dd>
           <dt i18n="@@animateurs.field.telephone">Téléphone</dt>
           <dd>
@@ -541,6 +552,14 @@
               }
             } @else {
               <span class="detail-muted" i18n="@@fiche.suivi.sansObjet">Sans objet : aucun poste sur le planning publié</span>
+            }
+          </dd>
+          <dt i18n="@@fiche.suivi.dernierEnvoi">Dernier courriel</dt>
+          <dd>
+            @if (fiche.confirmation?.dernierEnvoi; as envoi) {
+              <span [class.fiche-envoi-echec]="envoi.enEchec">{{ lastDeliveryLabel(envoi) }}</span>
+            } @else {
+              <span class="detail-muted" i18n="@@fiche.suivi.aucunEnvoi">Aucun courriel enregistré</span>
             }
           </dd>
         </dl>

@@ -146,6 +146,10 @@ public class DatabaseDumpService {
             // Which of those mails reached their recipient: without it, a
             // restore says « envoyé » of nothing and hides every failure.
             "envoi_planning",
+            // The same question for every mail to an animateur — what tells a
+            // failed send from a silence on the Animateurs page, and what
+            // keeps the reminders off an address the relay refused.
+            "envoi_mail",
             // Its edition_id carries no foreign key, so the dump's DELETE FROM
             // edition never reached it either: an operator restoring a dump
             // kept whatever history the target already had and lost the one
@@ -235,6 +239,8 @@ public class DatabaseDumpService {
             "publication_destinataire",
             // BIGSERIAL since V110.
             "envoi_planning",
+            // BIGSERIAL since V119.
+            "envoi_mail",
             // BIGSERIAL since V111.
             "signalement_absence",
             // BIGSERIAL since V103.

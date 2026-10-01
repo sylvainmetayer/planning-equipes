@@ -249,11 +249,16 @@ public record EtatEditionView(
      *                             the reminder of the silent is one of them
      * @param delaiRelanceHeures   how long a silence lasts before it becomes a
      *                             reminder: the line is only « à vérifier » past it
+     * @param echecsEnvoi          people not reached rather than silent: their
+     *                             last mail failed and their fiche was not
+     *                             edited since — « à vérifier » at once, since
+     *                             waiting changes nothing
      */
     @Schema(
             requiredProperties = {
                 "confirmes",
                 "delaiRelanceHeures",
+                "echecsEnvoi",
                 "relances",
                 "relancesAutomatiques",
                 "silencieux",
@@ -263,6 +268,7 @@ public record EtatEditionView(
             int confirmes,
             int relances,
             int silencieux,
+            int echecsEnvoi,
             Statut statut,
             boolean relancesAutomatiques,
             int delaiRelanceHeures) {}

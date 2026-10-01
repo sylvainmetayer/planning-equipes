@@ -293,6 +293,12 @@ Single Quarkus service, no separate solver microservice. Package root:
   `NotificationDispatcher` observes it and owns the single `catch`. Do not add
   a `notifierXxx` to `MailService`: that would put two opposite policies behind
   identically-shaped methods again, which is what this split removed.
+  Neither policy hides the outcome: `MailMetrics`, the one place a mail
+  leaves, records every send to an animateur in `envoi_mail` (id, template,
+  state, `MailFailureCategory` — never the address), and the two nightly jobs
+  read the outcome through `NotificationDispatcher.deliver`, which returns it
+  instead of throwing — a failed night reminder leaves an alert, not a
+  `RELANCE`.
 - **A mail's wording lives in a Qute template, never in Java.** One pair per
   mail under `src/main/resources/templates/mail/` — `<name>.txt` and
   `<name>.html`, the latter built on the shared `layout.html` (deployment logo,

@@ -40,3 +40,10 @@
   color: var(--mat-sys-on-tertiary-container);
   font: var(--mat-sys-label-small);
 }
+
+/* Under « Échec d'envoi »: when, and why — read in the cell, not only in a tooltip. */
+.envoi-echec-detail {
+  display: block;
+  color: var(--mat-sys-error);
+  font: var(--mat-sys-body-small);
+}

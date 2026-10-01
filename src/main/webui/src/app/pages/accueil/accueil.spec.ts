@@ -80,6 +80,7 @@ function etatVide(partial: Partial<EtatEdition> = {}): EtatEdition {
       confirmes: 0,
       relances: 0,
       silencieux: 0,
+      echecsEnvoi: 0,
       statut: 'A_FAIRE',
       relancesAutomatiques: true,
       delaiRelanceHeures: 72,
@@ -167,6 +168,7 @@ function etatComplet(partial: Partial<EtatEdition> = {}): EtatEdition {
       confirmes: 40,
       relances: 0,
       silencieux: 0,
+      echecsEnvoi: 0,
       statut: 'FAIT',
       relancesAutomatiques: true,
       delaiRelanceHeures: 72,
@@ -317,6 +319,7 @@ describe('buildLignes', () => {
         confirmes: 30,
         relances: 4,
         silencieux: 6,
+        echecsEnvoi: 0,
         statut: 'ATTENTION',
         relancesAutomatiques: true,
         delaiRelanceHeures: 72,
@@ -331,6 +334,30 @@ describe('buildLignes', () => {
     expect(confirmations.detail).toBe(
       '30 confirmé(s) · 4 relancé(s) · 6 silencieux · relance automatique après 72 h',
     );
+  });
+
+  /** A failed send is counted apart, and the line opens the people it concerns on the Animateurs page. */
+  it('counts the failed sends apart and opens them first', () => {
+    const etat = etatComplet({
+      confirmations: {
+        confirmes: 30,
+        relances: 4,
+        silencieux: 6,
+        echecsEnvoi: 2,
+        statut: 'ATTENTION',
+        relancesAutomatiques: true,
+        delaiRelanceHeures: 72,
+      },
+    });
+    const confirmations = buildLignes(etat).find((ligne) => ligne.id === 'confirmations')!;
+    expect(confirmations.detail).toBe(
+      "30 confirmé(s) · 4 relancé(s) · 6 silencieux · 2 échec(s) d'envoi · relance automatique après 72 h",
+    );
+    expect(confirmations.lien).toEqual({
+      route: '/animateurs',
+      queryParams: { envoi: 'echec' },
+      libelle: "Voir les échecs d'envoi",
+    });
   });
 
   /** A publication whose mails bounced is not « à jour »: the line says so and opens the failures. */
@@ -362,6 +389,7 @@ describe('buildLignes', () => {
         confirmes: 10,
         relances: 0,
         silencieux: 143,
+        echecsEnvoi: 0,
         statut: 'INFO',
         relancesAutomatiques: false,
         delaiRelanceHeures: 72,
@@ -387,6 +415,7 @@ describe('buildLignes', () => {
         confirmes: 153,
         relances: 0,
         silencieux: 0,
+        echecsEnvoi: 0,
         statut: 'FAIT',
         relancesAutomatiques: false,
         delaiRelanceHeures: 72,

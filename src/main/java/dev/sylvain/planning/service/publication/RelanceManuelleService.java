@@ -5,6 +5,8 @@ import dev.sylvain.planning.domain.StatutConfirmation;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.edition.RequiresActiveEdition;
 import dev.sylvain.planning.service.espace.ApplicationLinks;
+import dev.sylvain.planning.service.mail.MailDelivery;
+import dev.sylvain.planning.service.mail.MailDeliveryRepository;
 import dev.sylvain.planning.service.notification.JournalNotificationsRepository;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import io.quarkus.logging.Log;
@@ -52,6 +54,17 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * already recorded, and the summary counted them as reminded while nothing had
  * reached them. A failure now leaves an alert on the recent messages of the home screen,
  * which outlives the nine seconds of a bubble.</p>
+ *
+ * <p>An address the relay refused for good, read off the last send to each
+ * person ({@link MailDeliveryRepository}), is not written to again while the
+ * fiche has not been edited since — the same mail would meet the same refusal;
+ * the report lists those people apart, so the organiser knows to correct the
+ * fiche or pick up the phone. A reminder the night attempted and could not
+ * send is open to the hand by the same rule as a failed click: the night gives
+ * the shared key back and keeps only a key of its own, which stops it from
+ * insisting every hour. The person was never reminded, and the organiser
+ * clicking is the retry — arbitrated, like any first reminder, by the shared
+ * key alone, so two hands clicking together still write once.</p>
  */
 @ApplicationScoped
 public class RelanceManuelleService {
@@ -68,6 +81,8 @@ public class RelanceManuelleService {
 
     private final MailService mailService;
 
+    private final MailDeliveryRepository deliveries;
+
     @Inject
     public RelanceManuelleService(
             PlanPublieService planPublieService,
@@ -75,13 +90,15 @@ public class RelanceManuelleService {
             ReferenceDataService referenceDataService,
             JournalNotificationsRepository journal,
             ApplicationLinks liens,
-            MailService mailService) {
+            MailService mailService,
+            MailDeliveryRepository deliveries) {
         this.planPublieService = planPublieService;
         this.confirmationService = confirmationService;
         this.referenceDataService = referenceDataService;
         this.journal = journal;
         this.liens = liens;
         this.mailService = mailService;
+        this.deliveries = deliveries;
     }
 
     /**
@@ -100,6 +117,10 @@ public class RelanceManuelleService {
      *                                         left, so a retry is possible
      * @param sansPoste                        no seat in the published plan:
      *                                         nothing was ever asked of them
+     * @param adresseRefusee                   the relay refused their address
+     *                                         at the last send, and the fiche
+     *                                         has not been edited since:
+     *                                         nothing was attempted
      */
     @Schema(
             requiredProperties = {
@@ -108,7 +129,8 @@ public class RelanceManuelleService {
                 "sansEmail",
                 "dejaRelancesPourCettePublication",
                 "echecs",
-                "sansPoste"
+                "sansPoste",
+                "adresseRefusee"
             })
     public record RapportRelance(
             List<String> envoyes,
@@ -116,7 +138,8 @@ public class RelanceManuelleService {
             List<String> sansEmail,
             List<String> dejaRelancesPourCettePublication,
             List<String> echecs,
-            List<String> sansPoste) {}
+            List<String> sansPoste,
+            List<String> adresseRefusee) {}
 
     /**
      * Reminds the given animateurs now.
@@ -152,31 +175,36 @@ public class RelanceManuelleService {
             }
         }
 
+        Map<String, MailDelivery> derniersEnvois = deliveries.latestByAnimateur();
         Tri tri = new Tri();
         Instant maintenant = Instant.now();
         for (String animateurId : retenus) {
             remindOne(
-                    animateurId,
-                    fiches.get(animateurId),
-                    reponses.get(animateurId),
-                    animateurId + "|" + publieLe,
+                    new Recipient(
+                            animateurId,
+                            fiches.get(animateurId),
+                            reponses.get(animateurId),
+                            derniersEnvois.get(animateurId)),
+                    publieLe,
                     maintenant,
                     tri);
         }
         return tri.rapport();
     }
 
-    /** The six lists the report is made of, filled one animateur at a time. */
+    /** The seven lists the report is made of, filled one animateur at a time. */
     private record Tri(
             List<String> envoyes,
             List<String> dejaConfirmes,
             List<String> sansEmail,
             List<String> dejaRelances,
             List<String> echecs,
-            List<String> sansPoste) {
+            List<String> sansPoste,
+            List<String> adresseRefusee) {
 
         Tri() {
             this(
+                    new ArrayList<>(),
                     new ArrayList<>(),
                     new ArrayList<>(),
                     new ArrayList<>(),
@@ -192,23 +220,33 @@ public class RelanceManuelleService {
                     List.copyOf(sansEmail),
                     List.copyOf(dejaRelances),
                     List.copyOf(echecs),
-                    List.copyOf(sansPoste));
+                    List.copyOf(sansPoste),
+                    List.copyOf(adresseRefusee));
         }
     }
 
     /**
-     * Reminds one animateur, or says in {@code tri} why not.
+     * One person to remind, with everything read about them up front.
      *
-     * @param cle the key both the manual and the nightly reminder claim for
-     *            this person and this publication
+     * @param dernierEnvoi the last mail sent to them, {@code null} when none
      */
-    private void remindOne(
+    private record Recipient(
             String animateurId,
             Animateur fiche,
             ConfirmationPlanningService.ConfirmationView reponse,
-            String cle,
-            Instant maintenant,
-            Tri tri) {
+            MailDelivery dernierEnvoi) {}
+
+    /**
+     * Reminds one animateur, or says in {@code tri} why not.
+     *
+     * @param publieLe the last publication: with the id, the key both the
+     *                 manual and the nightly reminder claim for this person
+     */
+    private void remindOne(Recipient recipient, Instant publieLe, Instant maintenant, Tri tri) {
+        String animateurId = recipient.animateurId();
+        Animateur fiche = recipient.fiche();
+        ConfirmationPlanningService.ConfirmationView reponse = recipient.reponse();
+        String cle = animateurId + "|" + publieLe;
         if (!reponse.affecte()) {
             tri.sansPoste().add(animateurId);
             return;
@@ -232,16 +270,29 @@ public class RelanceManuelleService {
         }
         // Already reminded for this planning, whichever hand did it: the
         // status is what the night reads too, and a republication that
-        // moves somebody is what puts them back to NON_VU.
+        // moves somebody is what puts them back to NON_VU. Read before the
+        // last send's outcome: a later mail refused — a day-before reminder —
+        // does not undo a reminder that left.
+        if (StatutConfirmation.RELANCE.name().equals(reponse.statut())) {
+            tri.dejaRelances().add(animateurId);
+            return;
+        }
+        if (recipient.dernierEnvoi() != null && recipient.dernierEnvoi().refusedAddressStands(fiche.getModifieLe())) {
+            // Nothing claimed and nothing sent: the report says why, and the
+            // first edit of the fiche reopens the reminder to both hands.
+            tri.adresseRefusee().add(animateurId);
+            return;
+        }
         // The same key the nightly job claims: whoever wins the insert is
-        // the one who writes, and the other hand is refused.
-        if (StatutConfirmation.RELANCE.name().equals(reponse.statut())
-                || !journal.claim(JournalNotificationsRepository.Type.RELANCE_CONFIRMATION, cle, animateurId)) {
+        // the one who writes, and the other hand is refused. A failed send
+        // gives it back, the night's as well as this one's.
+        if (!journal.claim(JournalNotificationsRepository.Type.RELANCE_CONFIRMATION, cle, animateurId)) {
             tri.dejaRelances().add(animateurId);
             return;
         }
         try {
             mailService.sendRelanceConfirmation(
+                    animateurId,
                     fiche.getEmail(),
                     fiche.getPrenom(),
                     liens.espaceAnimateur(fiche.getAccessToken()).orElse(null));
@@ -255,12 +306,14 @@ public class RelanceManuelleService {
             Log.errorf(e, "Failed to mail the confirmation reminder to animateur %s", animateurId);
             // The reservation goes back, so a retry is possible at all —
             // holding it would refuse the hand and the night alike — and the
-            // failure is left on the recent messages of the home screen rather than in a
-            // bubble that disappears.
+            // failure is left on the recent messages of the home screen rather
+            // than in a bubble that disappears, under the key the night's
+            // failure alert uses: one per person and per publication, which an
+            // earlier address-less warning cannot swallow.
             journal.release(JournalNotificationsRepository.Type.RELANCE_CONFIRMATION, cle);
             journal.claim(
                     JournalNotificationsRepository.Type.RELANCE_INJOIGNABLE,
-                    cle,
+                    cle + JournalNotificationsRepository.FAILURE_SUFFIX,
                     animateurId,
                     "Relance non partie : l'envoi du courriel a échoué.",
                     JournalNotificationsRepository.Severite.ALERTE);

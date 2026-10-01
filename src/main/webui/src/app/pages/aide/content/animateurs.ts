@@ -156,14 +156,18 @@ export function buildAnimateurSideSections(): HelpSection[] {
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.rappels.intro:Une fois le planning publié, chaque animateur voit dans son espace un bouton « J'ai lu et je serai là ». La colonne « Accusé de réception » de la page Animateurs vous rend la réponse, et le filtre de la table accepte « confirmé », « relancé » ou « silencieux ».`,
+          text: $localize`:@@aide.rappels.intro:Une fois le planning publié, chaque animateur voit dans son espace un bouton « J'ai lu et je serai là ». La colonne « Accusé de réception » de la page Animateurs vous rend la réponse, et le filtre de la table accepte « confirmé », « relancé », « silencieux » ou « échec d'envoi ».`,
         },
         {
           kind: 'definitions',
           items: [
             {
-              term: $localize`:@@aide.rappels.term.statuts:Les trois statuts`,
-              text: $localize`:@@aide.rappels.def.statuts:« Silencieux » : rien n'est revenu. « Confirmé » : le bouton a été cliqué, la date s'affiche au survol. « Relancé » : la relance est partie et reste sans réponse. Un animateur sans aucun poste au planning publié affiche « — » : on ne lui a rien demandé, il ne compte pas parmi les gens à relancer.`,
+              term: $localize`:@@aide.rappels.term.statuts:Les quatre statuts`,
+              text: $localize`:@@aide.rappels.def.statuts:« Silencieux » : rien n'est revenu. « Confirmé » : le bouton a été cliqué, la date s'affiche au survol. « Relancé » : la relance est partie et reste sans réponse. « Échec d'envoi » : le dernier courriel n'est pas parti, avec sa date et sa raison à côté. Un animateur sans aucun poste au planning publié affiche « — » : on ne lui a rien demandé, il ne compte pas parmi les gens à relancer.`,
+            },
+            {
+              term: $localize`:@@aide.rappels.term.echecEnvoi:Un échec d'envoi n'est pas un silence`,
+              text: $localize`:@@aide.rappels.def.echecEnvoi:Chaque courriel adressé à un animateur est noté, parti ou en échec, avec la raison de l'échec : serveur de messagerie injoignable, identifiants refusés, adresse refusée, refus temporaire ou autre erreur. « Parti » veut dire remis au serveur de messagerie, pas reçu ni lu ; un serveur qui n'envoie rien pour de vrai le dit « simulé ». La synthèse en tête de la page Animateurs compte les échecs à part, son filtre « Échec d'envoi » les rassemble, la fiche animateur les signale et la ligne « Accusés de réception » de l'accueil y mène. Une adresse refusée n'est plus relancée, ni la nuit ni à la main, tant que la fiche n'a pas été modifiée : corrigez l'adresse, ou joignez la personne autrement. N'importe quelle modification de la fiche lève le signal, et la relance suivante dira si l'adresse est bonne.`,
             },
             {
               term: $localize`:@@aide.rappels.term.republication:Republier ne remet pas tout le monde à zéro`,
@@ -183,11 +187,11 @@ export function buildAnimateurSideSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.rappels.term.relance:Une relance, pas une série`,
-              text: $localize`:@@aide.rappels.def.relance:Passé le délai, les silencieux reçoivent un rappel de confirmation et passent à « Relancé ». Ils n'en recevront pas d'autre : relancer quelqu'un tous les soirs ne le fait pas répondre plus vite. À vous de reprendre la main sur les derniers.`,
+              text: $localize`:@@aide.rappels.def.relance:Passé le délai, les silencieux reçoivent un rappel de confirmation et passent à « Relancé ». Une relance de nuit qui échoue ne compte pas : la personne reste « échec d'envoi », une alerte reste sur l'accueil, et la nuit ne réessaie pas, sauf pour une adresse refusée, relancée au passage qui suit la correction de la fiche. Ceux qui l'ont reçue n'en recevront pas d'autre : relancer quelqu'un tous les soirs ne le fait pas répondre plus vite. À vous de reprendre la main sur les derniers.`,
             },
             {
               term: $localize`:@@aide.rappels.term.relanceManuelle:Relancer à la main`,
-              text: $localize`:@@aide.rappels.def.relanceManuelle:À la veille de l'événement, vous ne pouvez plus attendre une nuit de plus. Sur la page Diffuser, le filtre « Silencieux » isole les personnes jamais confirmées ; « Relancer » sur une ligne, ou « Relancer les N silencieux » au-dessus de la table, leur envoie le même rappel que celui de la nuit. La page Animateurs le permet aussi, sur une sélection. La règle ne change pas : une seule relance par personne et par publication, et le compte rendu dit combien de relances sont parties.`,
+              text: $localize`:@@aide.rappels.def.relanceManuelle:À la veille de l'événement, vous ne pouvez plus attendre une nuit de plus. Sur la page Diffuser, le filtre « Silencieux » isole les personnes jamais confirmées ; « Relancer » sur une ligne, ou « Relancer les N silencieux » au-dessus de la table, leur envoie le même rappel que celui de la nuit. La page Animateurs le permet aussi, sur une sélection. La règle ne change pas : une seule relance par personne et par publication, et le compte rendu dit combien de relances sont parties. Une relance de nuit en échec ne compte pas : « Relancer maintenant » reste possible une fois la messagerie rétablie. Une adresse refusée est sautée tant que sa fiche n'a pas été modifiée, et le compte rendu la nomme.`,
             },
             {
               term: $localize`:@@aide.rappels.term.echanges:Les demandes d'échange qui dorment`,
@@ -197,7 +201,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.rappels.silence:« Je n'ai rien reçu » a presque toujours la même cause : l'édition n'est pas l'édition active. Ensuite viennent le planning jamais publié, puis les fiches sans adresse e-mail. Ces alertes se referment en traitant ce qu'elles signalent, pas en les effaçant.`,
+          text: $localize`:@@aide.rappels.silence:« Je n'ai rien reçu » a presque toujours la même cause : l'édition n'est pas l'édition active. Ensuite viennent le planning jamais publié, puis les fiches sans adresse e-mail, puis les envois en échec, que la page Animateurs dit « échec d'envoi ». Ces alertes se referment en traitant ce qu'elles signalent, pas en les effaçant.`,
         },
       ],
       links: [
@@ -207,6 +211,11 @@ export function buildAnimateurSideSections(): HelpSection[] {
           label: $localize`:@@aide.lien.diffuserSilencieux:Diffuser — les silencieux`,
         },
         { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
+        {
+          route: '/animateurs',
+          queryParams: { envoi: 'echec' },
+          label: $localize`:@@aide.lien.animateursEchecEnvoi:Animateurs — échecs d'envoi`,
+        },
         {
           route: '/parametres',
           queryParams: { onglet: 'edition' },

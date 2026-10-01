@@ -95,8 +95,8 @@ crochet.
 | Rubrique | Contenu |
 | --- | --- |
 | Catégories de personnes | Animateurs, **dont des mineurs** ; encadrants et managers |
-| Catégories de données | Nom, prénom, **date de naissance**, adresse électronique (facultative), **numéro de téléphone (facultatif, pour appeler un remplaçant le jour J)**, compétences, souhaits d'affectation, jours d'indisponibilité, **deux jetons d'accès** — celui de l'espace animateur et celui de l'abonnement au calendrier —, **les liens d'affichage mural de l'organisation (jeton haché, libellé, date du dernier accès)**, affectations et échanges, **déclarations de disponibilités en libre-service — dont un commentaire en champ libre**, **demandes de covoiturage (coéquipiers nommés, et le motif libre que l'organisation peut joindre en les écartant)**, instantanés de planning, sessions et journaux d'accès, **historique des actions (identifiants et noms de champs, sans valeurs)**, **le téléphone et l'adresse de contact que l'organisation publie à ses animateurs, par édition — souvent le numéro personnel d'un coordinateur, donc une donnée personnelle de l'encadrement, montrée à tous les animateurs de l'édition** |
-| Traitements réalisés | Hébergement, planification et résolution, **affichage du planning de travail du jour sur un écran de la salle de contrôle (prénom et initiale par défaut)**, **import d'un fichier tabulaire d'animateurs fourni par l'organisation (traité en mémoire, jamais conservé)**, envoi d'e-mails (codes d'accès, plannings individuels, notifications d'échange, **rappels et relances automatiques de nuit**), sauvegarde, **journalisation des actions d'administration**, purge |
+| Catégories de données | Nom, prénom, **date de naissance**, adresse électronique (facultative), **numéro de téléphone (facultatif, pour appeler un remplaçant le jour J)**, compétences, souhaits d'affectation, jours d'indisponibilité, **deux jetons d'accès** — celui de l'espace animateur et celui de l'abonnement au calendrier —, **les liens d'affichage mural de l'organisation (jeton haché, libellé, date du dernier accès)**, affectations et échanges, **déclarations de disponibilités en libre-service — dont un commentaire en champ libre**, **demandes de covoiturage (coéquipiers nommés, et le motif libre que l'organisation peut joindre en les écartant)**, instantanés de planning, sessions et journaux d'accès, **historique des actions (identifiants et noms de champs, sans valeurs)**, **résultat de chaque courriel adressé à un animateur (parti ou en échec, et pourquoi — ni adresse ni contenu)**, **le téléphone et l'adresse de contact que l'organisation publie à ses animateurs, par édition — souvent le numéro personnel d'un coordinateur, donc une donnée personnelle de l'encadrement, montrée à tous les animateurs de l'édition** |
+| Traitements réalisés | Hébergement, planification et résolution, **affichage du planning de travail du jour sur un écran de la salle de contrôle (prénom et initiale par défaut)**, **import d'un fichier tabulaire d'animateurs fourni par l'organisation (traité en mémoire, jamais conservé)**, envoi d'e-mails (codes d'accès, plannings individuels, notifications d'échange, **rappels et relances automatiques de nuit**) **et enregistrement de leur résultat**, sauvegarde, **journalisation des actions d'administration**, purge |
 | Destinataires | L'organisateur via l'interface d'administration ; l'animateur via son espace **et via l'application d'agenda à laquelle il communique son adresse d'abonnement** ; les autres animateurs pour la part visible du planning (voir `securite.md`) ; **toute personne présente devant un écran d'affichage mural** ; le relais SMTP |
 | Mesures de sécurité | TLS et HSTS ; en-têtes CSP et `Referrer-Policy` — **les jetons voyagent dans l'URL** ; chiffrement des sessions ; limitation de débit sur les codes d'espace et verrouillage du formulaire de connexion ; origine injoignable autrement que par le reverse proxy ; sauvegarde nocturne automatique par `pg_dump`, en rotation dans un volume dédié, dont l'**externalisation chiffrée hors machine reste à la charge de l'exploitant** (`exploitation.md` §5) |
 
@@ -399,6 +399,23 @@ complètes. Quatre points sont connus et se consignent :
   injoignable, autre). Comme la trace des publications, la ligne survit à la
   fiche qu'elle concerne — c'est une preuve d'envoi — et cascade avec son
   instantané et son édition, donc disparaît au plus tard à la purge annuelle ;
+- **le résultat de chaque courriel adressé à un animateur est conservé**
+  (`envoi_mail`) — pas seulement le planning : code d'accès, invitation à
+  déclarer, relances, rappel de la veille, échanges, covoiturage, absences.
+  C'est ce qui distingue, sur la page Animateurs, un échec d'envoi d'un
+  silence, et ce qui empêche les relances de réécrire à une adresse que le
+  relais a refusée. La ligne porte **un identifiant d'animateur, le nom du
+  modèle de courriel, « parti » ou « en échec », une catégorie d'échec courte et
+  une date** — ni adresse, ni contenu, ni réponse du serveur de messagerie. Ce
+  n'est **pas un suivi de lecture** : aucun pixel, aucun lien traqué, « parti »
+  veut dire remis au relais ; la confirmation reste le geste de l'animateur. Ce
+  qui lève l'interdiction de relancer une adresse refusée est une modification
+  de la fiche, n'importe laquelle : aucune empreinte de l'adresse n'est stockée
+  pour savoir si c'est elle qui a changé. Les mineurs n'y gagnent aucune donnée
+  de plus qu'un majeur. La ligne a **la purge de l'historique des actions**
+  (`JOURNAL_RETENTION`, appliquée chaque nuit) et cascade avec son édition ;
+  elle survit à la fiche jusque-là, comme `notification_planifiee`, et ne
+  nomme alors plus personne ;
 - **l'historique des actions (`journal_action`) trace qui a fait quoi**, et
   c'est un traitement à consigner comme tel. Il suit la même règle que le
   journal ci-dessus, et deux de plus. Il ne stocke **ni nom, ni adresse, ni

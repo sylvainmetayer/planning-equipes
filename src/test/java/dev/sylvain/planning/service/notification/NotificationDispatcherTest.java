@@ -7,6 +7,8 @@ import dev.sylvain.planning.domain.DemandeEchange;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.ProductName;
 import dev.sylvain.planning.service.espace.ApplicationLinks;
+import dev.sylvain.planning.service.mail.MailDeliveryOutcome;
+import dev.sylvain.planning.service.mail.MailFailureCategory;
 import dev.sylvain.planning.service.mail.MailMetrics;
 import dev.sylvain.planning.service.mail.MailTemplates;
 import dev.sylvain.planning.service.publication.AdminAddress;
@@ -163,11 +165,11 @@ class NotificationDispatcherTest {
 
         assertThatCode(() -> {
                     expediteur.surNotification(
-                            new Notification.CarpoolValidated("bob@example.org", "Bob", List.of("Alice"), null));
+                            new Notification.CarpoolValidated("A1", "bob@example.org", "Bob", List.of("Alice"), null));
                     expediteur.surNotification(
-                            new Notification.CarpoolSetAside("alice@example.org", "Alice", "complet", null));
+                            new Notification.CarpoolSetAside("A1", "alice@example.org", "Alice", "complet", null));
                     expediteur.surNotification(new Notification.CarpoolCancelled(
-                            "alice@example.org", "Alice", List.of("Bob"), "panne", true, null));
+                            "A1", "alice@example.org", "Alice", List.of("Bob"), "panne", true, null));
                 })
                 .doesNotThrowAnyException();
         assertThat(registry.get("planning.mail.failures")
@@ -201,6 +203,79 @@ class NotificationDispatcherTest {
 
         expediteur.surNotification(new Notification.BackupFailed(
                 java.time.ZonedDateTime.parse("2026-07-12T04:00:00+02:00[Europe/Paris]"), "disque plein", null, 1));
+        assertThat(envoyes).hasSize(1);
+    }
+
+    /* ---------------- The outcome, returned to the nightly jobs --------------- */
+
+    /** One recorded send, as the capturing log below saw it. */
+    private record Recorded(String animateurId, String template, MailDeliveryOutcome outcome) {}
+
+    private NotificationDispatcher recordingDispatcher(io.quarkus.mailer.Mailer mailer, List<Recorded> log) {
+        return new NotificationDispatcher(
+                mailer,
+                redacteur,
+                MailTemplates.standalone(ProductName.neutral()),
+                new MailMetrics(
+                        registry,
+                        (animateurId, template, outcome) -> log.add(new Recorded(animateurId, template, outcome))),
+                ACTIVE_EDITION);
+    }
+
+    /**
+     * The nightly jobs learn what became of their mail without the policy
+     * changing: a failure still throws nothing, it comes back as an outcome.
+     */
+    @Test
+    void deliverReturnsTheOutcomeAndThrowsNothing() {
+        List<Recorded> log = new ArrayList<>();
+        NotificationDispatcher reussi = recordingDispatcher(mails -> envoyes.addAll(List.of(mails)), log);
+        NotificationDispatcher enPanne = recordingDispatcher(
+                mails -> {
+                    throw new IllegalStateException("550 5.1.1 recipient refused");
+                },
+                log);
+        Notification relance = new Notification.RelanceConfirmation("A7", "alice@example.org", "Alice", null);
+
+        assertThat(reussi.deliver(relance)).contains(MailDeliveryOutcome.SENT);
+        assertThat(enPanne.deliver(relance))
+                .contains(
+                        new MailDeliveryOutcome(MailDeliveryOutcome.Status.ECHEC, MailFailureCategory.ADRESSE_REFUSEE));
+        assertThat(reussi.deliver(new Notification.RelanceConfirmation("A8", " ", "Bruno", null)))
+                .as("nobody to write to is not a failure")
+                .isEmpty();
+    }
+
+    /**
+     * A notification to an animateur is recorded against their id — and only
+     * their id: the log is not even handed the address. One to the admin
+     * records nothing.
+     */
+    @Test
+    void aSendToAnAnimateurIsRecordedByIdAndOneToTheAdminIsNot() {
+        List<Recorded> log = new ArrayList<>();
+        NotificationDispatcher dispatcher = recordingDispatcher(mails -> envoyes.addAll(List.of(mails)), log);
+
+        dispatcher.surNotification(new Notification.CarpoolSetAside("A9", "alice@example.org", "Alice", null, null));
+        dispatcher.surNotification(oneSubmission());
+
+        assertThat(log).containsExactly(new Recorded("A9", "mail/covoiturage-ecarte", MailDeliveryOutcome.SENT));
+    }
+
+    /** A database refusing the trace changes nothing to the send it describes. */
+    @Test
+    void aTraceThatCannotBeWrittenLeavesTheOutcomeAlone() {
+        NotificationDispatcher dispatcher = new NotificationDispatcher(
+                mails -> envoyes.addAll(List.of(mails)),
+                redacteur,
+                MailTemplates.standalone(ProductName.neutral()),
+                new MailMetrics(registry, (animateurId, template, outcome) -> {
+                    throw new IllegalStateException("database down");
+                }),
+                ACTIVE_EDITION);
+
+        assertThat(dispatcher.deliver(new Notification.RelanceConfirmation("A7", "alice@example.org", "Alice", null)))
+                .contains(MailDeliveryOutcome.SENT);
         assertThat(envoyes).hasSize(1);
     }
 }

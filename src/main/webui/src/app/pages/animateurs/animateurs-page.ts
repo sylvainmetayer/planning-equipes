@@ -69,7 +69,9 @@ import { TableFilter } from '../../shared/table-filter';
 import { AnimateurBulkEditData, AnimateurBulkEditDialog } from './animateur-bulk-edit-dialog';
 import { AnimateurFormData, AnimateurFormDialog } from './animateur-form-dialog';
 import { errorMessage } from '../../core/error-message';
-import { ModeAccuses, SILENCE_JOURS_DEFAUT } from './confirmation-filter';
+import { ModeAccuses, SILENCE_JOURS_DEFAUT, failedSend } from './confirmation-filter';
+import { failureDetail, lastDeliveryLabel } from './mail-delivery';
+import { injectAppConfig } from '../../core/app-config';
 import {
   RosterView,
   ageOn,
@@ -245,6 +247,11 @@ export class AnimateursPage implements OnInit {
         key: 'accuses',
         label: $localize`:@@animateurs.accuses.jamais:Jamais confirmés`,
       });
+    } else if (this.accuses() === 'echec') {
+      chips.push({
+        key: 'accuses',
+        label: $localize`:@@animateurs.accuses.echec:Échec d'envoi`,
+      });
     } else if (this.accuses() === 'silence') {
       const jours = this.silenceJours();
       chips.push({
@@ -304,10 +311,14 @@ export class AnimateursPage implements OnInit {
    */
   protected readonly confirmations = signal<Map<string, ConfirmationView>>(new Map());
 
-  /** The same answers in three numbers, for the head of the page; `null` until read, or when unreadable. */
+  /** The same answers in four numbers, for the head of the page; `null` until read, or when unreadable. */
   protected readonly synthese = signal<SyntheseConfirmations | null>(null);
 
-  /** « Confirmés 12 · Relancés 3 · Silencieux 5 — Dernière publication le … », or nothing to say yet. */
+  /**
+   * « Confirmés 12 · Relancés 3 · Silencieux 5 · Échec d'envoi 1 — Dernière
+   * publication le … », or nothing to say yet. A failed send is counted apart:
+   * it is neither a reminder nor a silence.
+   */
   protected readonly syntheseLabel = computed(() => {
     const synthese = this.synthese();
     if (!synthese) {
@@ -317,7 +328,7 @@ export class AnimateursPage implements OnInit {
     if (synthese.jamaisPublie) {
       return publication;
     }
-    return $localize`:@@animateurs.synthese:Confirmés ${synthese.confirmes}:confirmes: · Relancés ${synthese.relances}:relances: · Silencieux ${synthese.silencieux}:silencieux: — ${publication}:publication:`;
+    return $localize`:@@animateurs.synthese:Confirmés ${synthese.confirmes}:confirmes: · Relancés ${synthese.relances}:relances: · Silencieux ${synthese.silencieux}:silencieux: · Échec d'envoi ${synthese.echecsEnvoi}:echecs: — ${publication}:publication:`;
   });
 
   /**
@@ -375,6 +386,8 @@ export class AnimateursPage implements OnInit {
   private readonly api = inject(ApiService);
   private readonly pastePreview = inject(PastePreviewService);
   private readonly planningApi = inject(PlanningApi);
+  /** The mailer is mocked on this server: a « sent » mail never left it. */
+  private readonly mailMock = injectAppConfig().mailMock;
 
   /** Copies the animateur's personal espace link (issue #165) — what the PDF prints. */
   protected async copierLienEspace(animateur: Animateur): Promise<void> {
@@ -610,21 +623,34 @@ export class AnimateursPage implements OnInit {
   }
 
   /**
-   * The timestamp behind the label, as a tooltip: when they confirmed, or —
-   * failing that — when the automatic reminder went out. Empty when there is
-   * nothing to date, which is exactly the « silencieux » case.
+   * The timestamps behind the label, as a tooltip: when they confirmed, or —
+   * failing that — when the automatic reminder went out; then what became of
+   * the last mail sent to them — « parti », « simulé » on a server whose
+   * mailer is mocked, or the failure and why. Empty when there is nothing to
+   * date.
    */
   protected confirmationDate(animateur: Animateur): string | null {
     const confirmation = this.confirmations().get(animateur.id);
+    const lignes: string[] = [];
     if (confirmation?.confirmeLe) {
       const date = new Date(confirmation.confirmeLe).toLocaleString(intlLocale());
-      return $localize`:@@animateurs.confirmation.confirmeLe:Confirmé le ${date}:date:`;
-    }
-    if (confirmation?.relanceLe) {
+      lignes.push($localize`:@@animateurs.confirmation.confirmeLe:Confirmé le ${date}:date:`);
+    } else if (confirmation?.relanceLe) {
       const date = new Date(confirmation.relanceLe).toLocaleString(intlLocale());
-      return $localize`:@@animateurs.confirmation.relanceLe:Relancé le ${date}:date:`;
+      lignes.push($localize`:@@animateurs.confirmation.relanceLe:Relancé le ${date}:date:`);
     }
-    return null;
+    if (confirmation?.dernierEnvoi) {
+      lignes.push(lastDeliveryLabel(confirmation.dernierEnvoi, this.mailMock, intlLocale()));
+    }
+    return lignes.length > 0 ? lignes.join(' — ') : null;
+  }
+
+  /** « 12/07/2026 · adresse refusée » under « Échec d'envoi », shown in the cell rather than hidden in a tooltip. */
+  protected failureDetail(animateur: Animateur): string | null {
+    const confirmation = this.confirmations().get(animateur.id);
+    return failedSend(confirmation) && confirmation?.dernierEnvoi
+      ? failureDetail(confirmation.dernierEnvoi, intlLocale())
+      : null;
   }
 
   /** A chip's cross: that filter goes, the rest of the view stays. */

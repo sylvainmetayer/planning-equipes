@@ -197,3 +197,9 @@ button.fiche-jour:hover {
 .fiche-gestes {
   white-space: nowrap;
 }
+
+/* The last mail to this person failed, and nothing was done since. */
+.fiche-envoi-echec {
+  display: block;
+  color: var(--mat-sys-error);
+}

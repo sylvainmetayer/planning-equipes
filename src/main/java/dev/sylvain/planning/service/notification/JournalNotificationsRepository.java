@@ -39,21 +39,46 @@ public class JournalNotificationsRepository {
         /** J-1 reminder (issue #298). Key: {@code animateurId|date}. */
         RAPPEL_VEILLE,
 
-        /** A J-1 reminder that could not leave: no address on the fiche. Key: {@code animateurId|date}. */
+        /**
+         * A J-1 reminder that could not leave: no address on the fiche (key
+         * {@code animateurId|date}), or a send that failed (the same key
+         * followed by {@link JournalNotificationsRepository#FAILURE_SUFFIX}).
+         */
         RAPPEL_VEILLE_INJOIGNABLE,
 
-        /** Reminder of a silent animateur (issue #299). Key: {@code animateurId|publicationInstant}. */
+        /**
+         * Reminder of a silent animateur (issue #299). Key:
+         * {@code animateurId|publicationInstant}, claimed by whichever hand
+         * sends — the night's or the organiser's. The night also claims that
+         * key followed by {@link JournalNotificationsRepository#NIGHT_ATTEMPT_SUFFIX}:
+         * its one attempt per person and per publication, kept when its send
+         * fails so that it does not write every hour to a relay that is down.
+         */
         RELANCE_CONFIRMATION,
 
         /**
-         * A reminder that could not leave: no address on the fiche, or a send
-         * that failed. Same key.
+         * A reminder that could not leave: no address on the fiche (same key
+         * as {@link #RELANCE_CONFIRMATION}), a send that failed (that key
+         * followed by {@link JournalNotificationsRepository#FAILURE_SUFFIX}), or a reminder the night did
+         * not even try, the relay having refused the address at the last send
+         * (that key followed by {@code |adresse-refusee}).
          */
         RELANCE_INJOIGNABLE,
 
         /** A swap request has been waiting too long (issue #300). Key: the demande id. */
         ALERTE_ECHANGE
     }
+
+    /**
+     * Appended to a key for the alert of a send that failed. Each alert of a
+     * person has a key of its own: the claim drops a second insert on the
+     * same key without a word, so a warning raised first — no address yet —
+     * would otherwise swallow the failure alert of the send that followed.
+     */
+    public static final String FAILURE_SUFFIX = "|echec";
+
+    /** Appended to a {@link Type#RELANCE_CONFIRMATION} key for the night's own attempt. */
+    public static final String NIGHT_ATTEMPT_SUFFIX = "|nuit";
 
     /** Severity of an alert, matching what the recent messages of the home screen already displays. */
     public enum Severite {
@@ -117,7 +142,10 @@ public class JournalNotificationsRepository {
      * the people it has no row for).
      *
      * <p>Not a general-purpose delete: a claim is released by the very call
-     * that took it, in the failure path it opened.</p>
+     * that took it, in the failure path it opened — with one exception, the
+     * night's own attempt at a reminder, which a later run gives back when it
+     * finds the address refused, so that the edit of the fiche finds the
+     * night ready to write again.</p>
      */
     public void release(Type type, String cle) {
         scope.write("Failed to release a scheduled notification", connection -> {

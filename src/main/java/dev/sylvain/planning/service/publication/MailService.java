@@ -35,6 +35,11 @@ import java.util.List;
  * two opposite failure policies behind identically-shaped methods, with no way
  * to tell from the signature which one you were calling.</p>
  *
+ * <p>Every send to an animateur names them by id, which {@link MailMetrics}
+ * records with the outcome — sent, or failed and why — so the Animateurs page
+ * can tell a failed mail from a silence. Recording does not change the policy
+ * above: the failure is recorded <i>and</i> propagated.</p>
+ *
  * <p>The wording lives in {@code resources/templates/mail/}, one text and one
  * HTML template per mail (see {@link MailTemplates}); this class names the
  * template, hands it its values, and attaches what goes with it.</p>
@@ -87,7 +92,7 @@ public class MailService {
      */
     @RequiresActiveEdition
     public void sendIndividualPlanning(
-            String emailAnimateur, String prenom, String lienEspace, byte[] pdf, String fileName) {
+            String animateurId, String emailAnimateur, String prenom, String lienEspace, byte[] pdf, String fileName) {
         MailContent content = templates.render(
                 INDIVIDUAL_PLANNING,
                 productName.subject("votre planning individuel"),
@@ -95,7 +100,8 @@ public class MailService {
         metrics.send(
                 mailer,
                 INDIVIDUAL_PLANNING,
-                templates.toMail(emailAnimateur, content).addAttachment(fileName, pdf, "application/pdf"));
+                templates.toMail(emailAnimateur, content).addAttachment(fileName, pdf, "application/pdf"),
+                animateurId);
     }
 
     /**
@@ -136,7 +142,8 @@ public class MailService {
      * @param message what the mail says around the attached planning
      */
     @RequiresActiveEdition
-    public void sendPlanningPublie(String emailAnimateur, byte[] pdf, String fileName, PlanningPublie message) {
+    public void sendPlanningPublie(
+            String animateurId, String emailAnimateur, byte[] pdf, String fileName, PlanningPublie message) {
         MailContent content = templates.render(
                 PUBLISHED_PLANNING,
                 productName.subject(
@@ -157,17 +164,18 @@ public class MailService {
         metrics.send(
                 mailer,
                 PUBLISHED_PLANNING,
-                templates.toMail(emailAnimateur, content).addAttachment(fileName, pdf, "application/pdf"));
+                templates.toMail(emailAnimateur, content).addAttachment(fileName, pdf, "application/pdf"),
+                animateurId);
     }
 
     /** Sends the espace access code — the second factor of the espace animateur. */
     @RequiresActiveEdition
-    public void sendAccessCode(String emailAnimateur, String prenom, String code) {
+    public void sendAccessCode(String animateurId, String emailAnimateur, String prenom, String code) {
         MailContent content = templates.render(
                 ACCESS_CODE,
                 productName.subject("votre code d'accès"),
                 MailTemplates.values(KEY_PRENOM, blankToNull(prenom), "code", code));
-        metrics.send(mailer, ACCESS_CODE, templates.toMail(emailAnimateur, content));
+        metrics.send(mailer, ACCESS_CODE, templates.toMail(emailAnimateur, content), animateurId);
     }
 
     /**
@@ -187,7 +195,12 @@ public class MailService {
      */
     @RequiresActiveEdition
     public void sendInvitationDeclaration(
-            String emailAnimateur, String prenom, String lienDeclaration, LocalDate debut, LocalDate fin) {
+            String animateurId,
+            String emailAnimateur,
+            String prenom,
+            String lienDeclaration,
+            LocalDate debut,
+            LocalDate fin) {
         MailContent content = templates.render(
                 AVAILABILITY_INVITATION,
                 productName.subject("vos disponibilités sont attendues"),
@@ -198,7 +211,7 @@ public class MailService {
                         lienDeclaration,
                         "fenetre",
                         describeFenetre(debut, fin)));
-        metrics.send(mailer, AVAILABILITY_INVITATION, templates.toMail(emailAnimateur, content));
+        metrics.send(mailer, AVAILABILITY_INVITATION, templates.toMail(emailAnimateur, content), animateurId);
     }
 
     /** The window in one sentence, {@code null} when the admin bounded neither end. */
@@ -228,9 +241,9 @@ public class MailService {
      * {@code Notification}.</p>
      */
     @RequiresActiveEdition
-    public void sendRelanceConfirmation(String emailAnimateur, String prenom, String lienEspace) {
+    public void sendRelanceConfirmation(String animateurId, String emailAnimateur, String prenom, String lienEspace) {
         MailContent content = RelanceConfirmationMail.render(templates, productName, prenom, lienEspace);
-        metrics.send(mailer, RelanceConfirmationMail.TEMPLATE, templates.toMail(emailAnimateur, content));
+        metrics.send(mailer, RelanceConfirmationMail.TEMPLATE, templates.toMail(emailAnimateur, content), animateurId);
     }
 
     /**

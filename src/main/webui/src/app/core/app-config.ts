@@ -25,6 +25,7 @@ export const DEFAULT_APP_CONFIG: AppConfig = {
   devMode: false,
   dragDropEnabled: false,
   version: '',
+  mailMock: false,
 };
 
 /**

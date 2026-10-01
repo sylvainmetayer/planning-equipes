@@ -482,7 +482,7 @@ export function buildEspaceAideSections(
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@espace.aide.veille.absence:Pas de rappel ? Le plus souvent, votre fiche n'a pas d'adresse e-mail, ou vous n'êtes affecté nulle part ce jour-là. Dans tous les cas, cette page reste la référence.`,
+          text: $localize`:@@espace.aide.veille.absence:Pas de rappel ? Le plus souvent, votre fiche n'a pas d'adresse e-mail, ou une adresse que la messagerie refuse, ou vous n'êtes affecté nulle part ce jour-là. Dans tous les cas, cette page reste la référence.`,
         },
       ],
     },
