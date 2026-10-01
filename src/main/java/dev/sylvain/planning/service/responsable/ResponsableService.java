@@ -36,7 +36,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
- * The read-only views of a responsable de stand (issue #295, ADR 0069).
+ * The read-only views of a responsable de stand (issue #295, ADR 0070).
  *
  * <p><b>Who</b> is the account the request authenticated as; <b>where</b> is
  * the rights of that account in force on the edition asked for, never the
