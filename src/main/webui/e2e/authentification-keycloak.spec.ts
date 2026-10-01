@@ -104,9 +104,14 @@ test.describe('connexion administrateur', () => {
 
     await expect(page).toHaveURL(/\/realms\/[^/]+\/account\//);
     await expect(page.locator('img[src*="brand/logo.svg"]').first()).toBeVisible();
-    const retour = page.locator(`a[href="${new URL('/', baseURL).href}"]`).first();
+    // Le chemin du retour est vérifié par sa cible, puis suivi : la console y
+    // pose un lien que Chromium juge parfois recouvert pendant son rendu, et un
+    // clic qui attend 90 s n'apprend rien de plus que l'adresse.
+    const adresse = new URL('/', baseURL).href;
+    const retour = page.locator(`a[href="${adresse}"]`).first();
     await expect(retour).toBeVisible();
-    await retour.click();
+    await expect(retour).toHaveAttribute('href', adresse);
+    await page.goto(adresse);
     await expect(page.getByRole('navigation', { name: 'Navigation principale' })).toBeVisible();
   });
 

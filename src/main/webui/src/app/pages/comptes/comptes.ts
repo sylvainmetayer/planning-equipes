@@ -275,5 +275,5 @@ export function editionsWithStands(compte: Compte | null): string[] {
         .filter((habilitation) => habilitation.editionId !== null && habilitation.standIds.length)
         .map((habilitation) => habilitation.editionId as string),
     ),
-  ].sort();
+  ].sort((a, b) => a.localeCompare(b));
 }

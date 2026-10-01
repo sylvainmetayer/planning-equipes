@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 import org.jboss.logging.Logger;
 
 /**
- * Named accounts and what they may do (issues #294, #295, ADR 0070).
+ * Named accounts and what they may do (issues #294, #295, ADR 0071).
  *
  * <p>Keycloak says who is calling; this service remembers the person
  * ({@code compte}, created on their first sign-in or in advance by an
@@ -123,8 +123,8 @@ public class CompteService {
             // Nothing opens instead; an administrator detaches the account
             // (deactivate, then reactivate) once they know who is who.
             LOG.warnf(
-                    "Sign-in refused on account %s: address %s is bound to another Keycloak subject",
-                    parAdresse.get().id(), email);
+                    "Sign-in refused on account %s: its address is bound to another Keycloak subject",
+                    parAdresse.get().id());
             return new Compte(null, email, nom, sujet, null, null, maintenant, List.of());
         }
         if (parAdresse.isPresent()) {

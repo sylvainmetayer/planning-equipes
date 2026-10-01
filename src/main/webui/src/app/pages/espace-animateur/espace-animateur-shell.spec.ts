@@ -282,7 +282,7 @@ describe("EspaceAnimateurShell — écran d'accès", () => {
 
   it('propose de se connecter avec son compte, et revient sur ce même espace', async () => {
     const assign = vi.fn();
-    vi.spyOn(window, 'location', 'get').mockReturnValue({ assign } as unknown as Location);
+    vi.spyOn(window, 'location', 'get').mockReturnValue({ ...window.location, assign });
     await rendre({ authOidc: true });
 
     expect(textOf()).not.toContain('code');

@@ -28,7 +28,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
 /**
- * Session endpoints (issue #165, ADR 0070). The login itself is Keycloak's
+ * Session endpoints (issue #165, ADR 0071). The login itself is Keycloak's
  * authorization code flow, entered through {@link #oidcLogin} — or, while the
  * break-glass door is open, Quarkus' form authentication (the Angular /login
  * page posts {@code j_username}/{@code j_password} to

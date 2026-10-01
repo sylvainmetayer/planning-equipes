@@ -31,6 +31,7 @@ import java.util.Optional;
 public class CompteRepository {
 
     private static final String COLONNES_COMPTE = "id, email, nom, sujet, cree_le, derniere_connexion_le, desactive_le";
+    private static final String SELECT_COMPTE = "SELECT " + COLONNES_COMPTE;
 
     @Inject
     JdbcEditionScope scope;
@@ -38,8 +39,8 @@ public class CompteRepository {
     public List<Compte> list() {
         return scope.read("Failed to list the accounts", connection -> {
             List<Compte> comptes = new ArrayList<>();
-            try (PreparedStatement ps = connection.prepareStatement(
-                            "SELECT " + COLONNES_COMPTE + " FROM compte ORDER BY lower(email)");
+            try (PreparedStatement ps =
+                            connection.prepareStatement(SELECT_COMPTE + " FROM compte ORDER BY lower(email)");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     comptes.add(compte(rs, List.of()));
@@ -53,15 +54,15 @@ public class CompteRepository {
     }
 
     public Optional<Compte> findById(String id) {
-        return find("SELECT " + COLONNES_COMPTE + " FROM compte WHERE id = ?", id);
+        return find(SELECT_COMPTE + " FROM compte WHERE id = ?", id);
     }
 
     public Optional<Compte> findBySubject(String sujet) {
-        return find("SELECT " + COLONNES_COMPTE + " FROM compte WHERE sujet = ?", sujet);
+        return find(SELECT_COMPTE + " FROM compte WHERE sujet = ?", sujet);
     }
 
     public Optional<Compte> findByEmail(String email) {
-        return find("SELECT " + COLONNES_COMPTE + " FROM compte WHERE lower(email) = lower(?)", email);
+        return find(SELECT_COMPTE + " FROM compte WHERE lower(email) = lower(?)", email);
     }
 
     private Optional<Compte> find(String sql, String valeur) {

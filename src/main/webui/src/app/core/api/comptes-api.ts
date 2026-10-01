@@ -1,5 +1,5 @@
 // The `/api/comptes/*` endpoints: named accounts and the rights delegated to
-// them (ADR 0070). Keycloak owns the credentials — nothing here sets a password
+// them (ADR 0071). Keycloak owns the credentials — nothing here sets a password
 // or a second factor. An account is deactivated, never deleted; a right is
 // withdrawn, never deleted.
 
