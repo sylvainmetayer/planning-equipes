@@ -293,7 +293,7 @@ public class AnimateurCsvImportService {
         comptes.provisionMissing(apres, nouvelles);
         // A replacement deletes fiches, and closes the accounts no fiche of
         // any edition carries any more — what deleting them one by one does.
-        comptes.retirerTous(avant.stream()
+        comptes.disableAccounts(avant.stream()
                 .filter(fiche -> supprimes.contains(fiche.getId()))
                 .map(Animateur::getEmail)
                 .toList());
