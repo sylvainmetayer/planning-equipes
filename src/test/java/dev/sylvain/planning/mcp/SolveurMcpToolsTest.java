@@ -25,7 +25,7 @@ class SolveurMcpToolsTest {
     private static ReferenceDataService emptyReferential() {
         return new ReferenceDataService(
                 null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-                null, null, null) {
+                null, null) {
             @Override
             public List<Animateur> listAnimateurs() {
                 return List.of();

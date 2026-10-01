@@ -24,8 +24,8 @@ import dev.sylvain.planning.service.TokenOwner;
 import dev.sylvain.planning.service.consigne.ConsigneRepository;
 import dev.sylvain.planning.service.journal.ChampsModifies;
 import dev.sylvain.planning.service.journal.CurrentAction;
+import dev.sylvain.planning.service.solve.RefusedWhileSolving;
 import dev.sylvain.planning.service.solve.SolverBudgetBounds;
-import dev.sylvain.planning.service.solve.SolverJobService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.sql.Connection;
@@ -81,8 +81,6 @@ public class ReferenceDataService implements ReferenceData {
 
     private final ReferenceDataChangeTracker changeTracker;
 
-    private final SolverJobService solverJobs;
-
     private final CoherenceService coherence;
 
     /**
@@ -117,7 +115,6 @@ public class ReferenceDataService implements ReferenceData {
             ParametresService parametres,
             ReferenceUsageService usages,
             ReferenceDataChangeTracker changeTracker,
-            SolverJobService solverJobs,
             CoherenceService coherence,
             CurrentAction currentAction,
             CreneauGridService grille,
@@ -137,7 +134,6 @@ public class ReferenceDataService implements ReferenceData {
         this.parametres = parametres;
         this.usages = usages;
         this.changeTracker = changeTracker;
-        this.solverJobs = solverJobs;
         this.coherence = coherence;
         this.currentAction = currentAction;
         this.grille = grille;
@@ -760,14 +756,15 @@ public class ReferenceDataService implements ReferenceData {
      * endpoints. Every referential at once, in a single transaction — which is
      * why it belongs to the facade rather than to any one of them — and why
      * it is refused while any family is frozen (ADR 0052).
+     *
+     * <p>Refused while a solve holds this edition's solver: the landing persist
+     * would re-insert the referential this import just replaced, old timeslots
+     * reappearing by id beside the new ones, while locations, opening hours
+     * and ad hoc constraints stay wiped.</p>
      */
     @RefusedWhileFrozen
+    @RefusedWhileSolving
     public void importFromPlanning(PlanningEvenement planning) {
-        // Refused while a solve holds this edition's solver: the landing persist
-        // would re-insert the referential this import just replaced, old créneaux
-        // reappearing by id beside the new ones, while emplacements, horaires and
-        // ad hoc constraints stay wiped (issue #328).
-        solverJobs.refuseIfSolving();
         checkImportedStands(planning);
         if (planning != null) {
             // Refused before anything is written: a file may not install a

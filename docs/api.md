@@ -2844,6 +2844,22 @@ comparaison sur l'édition **du job**, pas sur celle qui l'a soumis — une
 résolution lancée sur A reste donc bloquante pour A même si l'onglet est passé
 sur B.
 
+Le refus se pose sur la **méthode de service**, par l'annotation
+`@RefusedWhileSolving` (un intercepteur CDI), et non dans la ressource : la
+route REST et l'outil MCP, qui appelle le service sans passer par JAX-RS,
+rencontrent le même garde et la même réponse. `RefusedWhileSolvingStructuralTest`
+fait échouer le build sur une méthode d'écriture des services du référentiel,
+des consignes ou du plan qui n'est ni annotée ni classée ouverte avec son
+motif, et sur une méthode annotée appelée par `this`, qui contournerait
+l'intercepteur. Les rares refus conditionnels — un compactage n'est refusé que
+s'il écrit, pas en aperçu — gardent un appel explicite, argumenté dans ce test.
+
+Ce refus passe **avant tout le reste** de la méthode : tant qu'une résolution
+tient l'édition, un id inconnu (`404`), une saisie invalide (`400`) ou une
+famille figée (`409 REFERENTIEL_FIGE`) s'effacent derrière le `409` de la
+résolution, et ne sont signalés qu'à la tentative suivante, une fois son
+résultat posé.
+
 **Les autres écritures passent pendant une résolution, et l'assistant en est
 averti.** Typologies, emplacements, contraintes ad hoc, paramètres légaux et
 durée du solveur, verrouillages, activation et poids des contraintes, création

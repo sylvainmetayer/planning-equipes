@@ -21,7 +21,7 @@ import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.solve.ProblemBuilder;
-import dev.sylvain.planning.service.solve.SolverJobService;
+import dev.sylvain.planning.service.solve.RefusedWhileSolving;
 import dev.sylvain.planning.service.validation.ValidationJourneeService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -89,8 +89,6 @@ public class ConsigneService {
 
     private final ReferenceDataChangeTracker changeTracker;
 
-    private final SolverJobService solverJobs;
-
     private final JourJClock clock;
 
     @Inject
@@ -101,7 +99,6 @@ public class ConsigneService {
             PlanningPersistenceService persistence,
             ValidationJourneeService validations,
             ReferenceDataChangeTracker changeTracker,
-            SolverJobService solverJobs,
             JourJClock clock) {
         this.repository = repository;
         this.scope = scope;
@@ -109,7 +106,6 @@ public class ConsigneService {
         this.persistence = persistence;
         this.validations = validations;
         this.changeTracker = changeTracker;
-        this.solverJobs = solverJobs;
         this.clock = clock;
     }
 
@@ -768,8 +764,8 @@ public class ConsigneService {
      * the screen would otherwise show two dates under consigne and three
      * without, from one gesture that reported a failure.</p>
      */
+    @RefusedWhileSolving
     public List<ApercuJour> poser(Demande demande) {
-        solverJobs.refuseIfSolving();
         List<ConsigneEdition> consignes = demande.versConsignes();
         validate(consignes);
         LocalDate aujourdhui = clock.today();
@@ -861,8 +857,8 @@ public class ConsigneService {
      * back, the créneaux the consignes added leave the grid with their seats.
      * Refuses a date already begun, and a date that carries no consigne.
      */
+    @RefusedWhileSolving
     public void lever(List<LocalDate> dates) {
-        solverJobs.refuseIfSolving();
         checkDates(dates);
         LocalDate aujourdhui = clock.today();
         Map<LocalDate, ConsigneEdition> existantes = byDate();

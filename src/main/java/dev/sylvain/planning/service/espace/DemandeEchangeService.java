@@ -15,6 +15,7 @@ import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.EchangeSimulation;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.HardViolation;
+import dev.sylvain.planning.service.solve.RefusedWhileSolving;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
@@ -60,8 +61,6 @@ public class DemandeEchangeService {
 
     private final PlanningPersistenceService persistenceService;
 
-    private final SolverJobService solverJobs;
-
     private final ReferenceDataService referenceDataService;
 
     /**
@@ -78,7 +77,6 @@ public class DemandeEchangeService {
             EditionContext editionContext,
             PlanningService planningService,
             PlanningPersistenceService persistenceService,
-            SolverJobService solverJobs,
             ReferenceDataService referenceDataService,
             Event<Notification> notifications) {
         this.dataSource = dataSource;
@@ -86,7 +84,6 @@ public class DemandeEchangeService {
         this.editionContext = editionContext;
         this.planningService = planningService;
         this.persistenceService = persistenceService;
-        this.solverJobs = solverJobs;
         this.referenceDataService = referenceDataService;
         this.notifications = notifications;
     }
@@ -455,8 +452,8 @@ public class DemandeEchangeService {
      * demande ACCEPTEE with its locks pinning a seat nobody holds. See
      * {@link SolverJobService#refuseIfSolving}.</p>
      */
+    @RefusedWhileSolving
     public DemandeEchange accept(String demandeId, String commentaire) {
-        solverJobs.refuseIfSolving();
         DemandeEchange demande = requiredDemande(demandeId);
         requirePending(demande);
         PlanningEvenement planning = persistenceService.loadPersistedPlanning();

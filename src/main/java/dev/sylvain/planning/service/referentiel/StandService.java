@@ -10,6 +10,7 @@ import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.consigne.ConsigneRepository;
 import dev.sylvain.planning.service.consigne.ConsigneResolver;
+import dev.sylvain.planning.service.solve.RefusedWhileSolving;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -177,8 +178,8 @@ public class StandService {
      * rename or a new location stays open (ADR 0052). Checked here rather than
      * by {@link RefusedWhileFrozen}, which can only refuse the whole call.</p>
      */
+    @RefusedWhileSolving
     public Stand update(String id, Stand stand) {
-        solverJobs.refuseIfSolving();
         if (!repository.standExists(id)) {
             throw new BusinessError.NotFound("Stand inconnu : " + id);
         }
@@ -209,8 +210,8 @@ public class StandService {
      * {@link SolverJobService#refuseIfSolving}.</p>
      */
     @RefusedWhileFrozen(ReferentialFamily.STANDS)
+    @RefusedWhileSolving
     public void delete(String id) {
-        solverJobs.refuseIfSolving();
         repository.deleteStand(id);
         changeTracker.markModified();
     }
@@ -228,8 +229,8 @@ public class StandService {
      * and windows just written.</p>
      */
     @RefusedWhileFrozen(ReferentialFamily.STANDS)
+    @RefusedWhileSolving
     public List<GrilleHorairesStands.LigneGrille> saisirGrille(List<GrilleHorairesStands.SaisieStand> saisies) {
-        solverJobs.refuseIfSolving();
         List<Creneau> edition = creneaux.list();
         // Resolved, not raw: a partial cell saved unchanged keeps the segments
         // the stand actually has there, which only the effective windows say.

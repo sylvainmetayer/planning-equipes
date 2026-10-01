@@ -12,7 +12,7 @@ import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.FrozenPast;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.solve.PlanningService;
-import dev.sylvain.planning.service.solve.SolverJobService;
+import dev.sylvain.planning.service.solve.RefusedWhileSolving;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.LocalDate;
@@ -45,8 +45,9 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  *       is somebody saying « this one does not move », and only whoever lifts
  *       it decides otherwise — until then the plan seats a person on a day
  *       they are off, which the fiche says next to the way to the locks;</li>
- *   <li>refused while a solve holds the edition: its landing rewrites the off
- *       days and the seats it was given.</li>
+ *   <li>refused while a solve holds the edition, before the animateur is even
+ *       looked up: its landing rewrites the off days and the seats it was
+ *       given.</li>
  * </ul>
  *
  * <p>Undoing it makes the day available again and hands no seat back: who
@@ -62,29 +63,28 @@ public class DayOffService {
 
     private final PlanningService planningService;
 
-    private final SolverJobService solverJobs;
-
     @Inject
     public DayOffService(
             ReferenceDataService referenceDataService,
             PlanningPersistenceService persistenceService,
-            PlanningService planningService,
-            SolverJobService solverJobs) {
+            PlanningService planningService) {
         this.referenceDataService = referenceDataService;
         this.persistenceService = persistenceService;
         this.planningService = planningService;
-        this.solverJobs = solverJobs;
     }
 
     /**
      * Writes {@code date} among the animateur's off days and frees the seats
      * they hold on it that have neither started yet nor sit under a lock.
      *
+     * @throws dev.sylvain.planning.service.solve.SolverJobService.SolverBusyException
+     *         while a solve holds the edition — first, so an unknown animateur
+     *         is told only once it has landed
      * @throws BusinessError.NotFound for an animateur the edition does not hold
      */
+    @RefusedWhileSolving
     public DayOff markDayOff(String animateurId, LocalDate date) {
         Animateur animateur = find(animateurId);
-        solverJobs.refuseIfSolving();
 
         PlanningEvenement plan = persistenceService.loadPersistedPlanning();
         List<PosteAffectation> duJour = seatsOn(plan, animateurId, date);
@@ -120,11 +120,14 @@ public class DayOffService {
      * Makes {@code date} available again. Nothing else moves: the seats freed
      * when the day was marked stay with whoever holds them now.
      *
+     * @throws dev.sylvain.planning.service.solve.SolverJobService.SolverBusyException
+     *         while a solve holds the edition — first, so an unknown animateur
+     *         is told only once it has landed
      * @throws BusinessError.NotFound for an animateur the edition does not hold
      */
+    @RefusedWhileSolving
     public DayOff cancelDayOff(String animateurId, LocalDate date) {
         Animateur animateur = find(animateurId);
-        solverJobs.refuseIfSolving();
         Set<LocalDate> jours = new HashSet<>(animateur.getJoursIndisponibles());
         if (jours.remove(date)) {
             animateur.setJoursIndisponibles(jours);

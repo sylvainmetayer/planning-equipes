@@ -18,6 +18,7 @@ import dev.sylvain.planning.service.referentiel.DivergentDays;
 import dev.sylvain.planning.service.referentiel.JoursEvenement;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.WrittenContrainteAdHoc;
+import dev.sylvain.planning.service.solve.RefusedWhileSolving;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
@@ -81,9 +82,6 @@ public class TeammateRequestService {
     /** Fired as facts; {@code NotificationDispatcher} owns the delivery and its failures. */
     private final Event<Notification> notifications;
 
-    /** A cancellation is refused while a solve holds the edition, like the other writes it would race. */
-    private final SolverJobService solverJobs;
-
     /** The single wording of a request sent while the window is closed. */
     public static final String COLLECTION_CLOSED =
             "La collecte des disponibilités est fermée : votre demande de covoiturage ne peut plus être envoyée";
@@ -105,8 +103,7 @@ public class TeammateRequestService {
             DeclarationRateLimiter rateLimiter,
             ApplicationLinks links,
             ReferenceDataChangeTracker changeTracker,
-            Event<Notification> notifications,
-            SolverJobService solverJobs) {
+            Event<Notification> notifications) {
         this.repository = repository;
         this.declarations = declarations;
         this.referenceDataService = referenceDataService;
@@ -115,7 +112,6 @@ public class TeammateRequestService {
         this.links = links;
         this.changeTracker = changeTracker;
         this.notifications = notifications;
-        this.solverJobs = solverJobs;
     }
 
     /* ------------------------------- Animateur ------------------------------- */
@@ -467,8 +463,8 @@ public class TeammateRequestService {
      *                                exception is already gone
      * @throws SolverJobService.SolverBusyException while a solve holds the edition
      */
+    @RefusedWhileSolving
     public TeammateRequestView cancel(String id, String reason) {
-        solverJobs.refuseIfSolving();
         String motif = checkedReason(reason);
         DemandeCoequipier demande =
                 repository.byId(id).orElseThrow(() -> new BusinessError.NotFound("Demande inconnue : " + id));

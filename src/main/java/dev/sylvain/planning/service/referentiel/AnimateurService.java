@@ -6,6 +6,7 @@ import dev.sylvain.planning.service.ConcurrentModificationGuard;
 import dev.sylvain.planning.service.IdGenerator;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.TokenOwner;
+import dev.sylvain.planning.service.solve.RefusedWhileSolving;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -26,8 +27,6 @@ public class AnimateurService {
 
     private final ConcurrentModificationGuard staleWrites;
 
-    private final SolverJobService solverJobs;
-
     private final IdGenerator ids;
 
     private final GelReferentielService gel;
@@ -38,14 +37,12 @@ public class AnimateurService {
             TypologieService typologies,
             ReferenceDataChangeTracker changeTracker,
             ConcurrentModificationGuard staleWrites,
-            SolverJobService solverJobs,
             IdGenerator ids,
             GelReferentielService gel) {
         this.repository = repository;
         this.typologies = typologies;
         this.changeTracker = changeTracker;
         this.staleWrites = staleWrites;
-        this.solverJobs = solverJobs;
         this.ids = ids;
         this.gel = gel;
     }
@@ -87,8 +84,8 @@ public class AnimateurService {
      * person's own data (availability, wishes, e-mail) stays open, and so
      * does a declaration applied through this same method (ADR 0052).</p>
      */
+    @RefusedWhileSolving
     public Animateur update(String id, Animateur animateur) {
-        solverJobs.refuseIfSolving();
         return update(id, animateur, () -> stored(id));
     }
 
@@ -98,8 +95,8 @@ public class AnimateurService {
      * for its rows — so a freeze compares against it instead of reading the
      * roster once more per row of a bulk edit.
      */
+    @RefusedWhileSolving
     public Animateur update(String id, Animateur animateur, Animateur avant) {
-        solverJobs.refuseIfSolving();
         return update(id, animateur, () -> avant);
     }
 
@@ -128,8 +125,8 @@ public class AnimateurService {
      * would re-insert the animateur — personal data coming back on its own,
      * minutes later. See {@link SolverJobService#refuseIfSolving}.</p>
      */
+    @RefusedWhileSolving
     public void delete(String id) {
-        solverJobs.refuseIfSolving();
         repository.deleteAnimateur(id);
         changeTracker.markModified();
     }
