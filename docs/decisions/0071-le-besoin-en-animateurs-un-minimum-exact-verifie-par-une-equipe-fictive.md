@@ -101,7 +101,15 @@ Pour la vérification, deux formes ont été écartées :
    écartée : elle déclarait en échec une équipe dont la vraie résolution, avec
    autant de monde, réussissait — le plan existait, le temps manquait. L'équipe
    fictive, compétente partout, ouvre au solveur bien plus de combinaisons
-   qu'une vraie équipe : elle ne cherche pas plus vite. L'équipe est résolue
+   qu'une vraie équipe : elle ne cherche pas plus vite. Pour la même raison, la
+   vérification **part du plan en place** quand l'édition en a un, comme une
+   résolution part par défaut du sien : chaque animateur réel cède tout son
+   planning à un membre fictif (majeur à majeur, mineur à mineur, les plus
+   chargés d'abord). Un membre fictif tient tout ce qu'un vrai tenait — toutes
+   les compétences, aucune indisponibilité —, si bien qu'un plan tenu par R
+   personnes est un départ réalisable pour toute équipe d'au moins R. Partir de
+   zéro aurait déclaré en échec, faute de temps, une équipe dont la vraie
+   résolution venait de réussir. L'équipe est résolue
    sous les règles de l'édition, sans exceptions ad hoc ni plan publié, et le solve s'arrête dès qu'un plan est réalisable.
    `posteDoitEtrePourvu` y est toujours tenue : la question est de savoir si
    l'équipe pourvoit chaque siège. Un échec ne prouve donc pas qu'il manque du

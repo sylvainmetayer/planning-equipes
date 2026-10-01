@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.solve;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ParametresQualite;
@@ -17,7 +18,9 @@ import dev.sylvain.planning.service.solve.ProblemBuilder.Seats;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
@@ -60,6 +63,61 @@ class StaffingVerificationSolveTest {
 
         PlanningEvenement enDessous = solve(week(), summary.minimumTotal() - 1, 3);
         assertThat(enDessous.getScore().hardScore()).isNegative();
+    }
+
+    @Test
+    void theTeamStartsFromThePlanInPlaceAndKeepsItWhenItIsAsLarge() {
+        // A real plan of the week: four people, solved once.
+        PlanningEvenement reel = solve(week(), 4, 60);
+        assertThat(reel.getScore().hardScore()).isZero();
+        Map<String, List<String>> plan = new HashMap<>();
+        List<Animateur> reels = new ArrayList<>();
+        for (PosteAffectation poste : reel.getPostes()) {
+            String id = "R-" + poste.getAnimateur().getId();
+            plan.computeIfAbsent(
+                            PlanningPersistenceService.standCreneauKey(
+                                    poste.getStand().getId(), poste.getCreneau().getId()),
+                            cle -> new ArrayList<>())
+                    .add(id);
+            if (reels.stream().noneMatch(animateur -> animateur.getId().equals(id))) {
+                reels.add(new Animateur(id, "R", id, LocalDate.of(1990, 1, 1), false));
+            }
+        }
+
+        PlanningEvenement autant =
+                StaffingVerificationService.problem(week(), StaffingVerificationService.team(4, 0, TYPOLOGIES, LUNDI));
+        int seeded = StaffingVerificationService.seedFromPlan(
+                autant.getPostes(), autant.getAnimateurs(), 4, plan, reels, LUNDI);
+
+        assertThat(seeded).isEqualTo(21);
+        assertThat(autant.getPostes()).allMatch(poste -> poste.getAnimateur() != null);
+        planningService.prepareHypothetical(autant);
+        assertThat(planningService
+                        .solvePreparedUntilFeasible(autant, 5)
+                        .getScore()
+                        .hardScore())
+                .isZero();
+
+        // One person short: the busiest three keep their schedule, the fourth's
+        // seats start empty for the solve to fill.
+        PlanningEvenement moins =
+                StaffingVerificationService.problem(week(), StaffingVerificationService.team(3, 0, TYPOLOGIES, LUNDI));
+        int seededMoins = StaffingVerificationService.seedFromPlan(
+                moins.getPostes(), moins.getAnimateurs(), 3, plan, reels, LUNDI);
+
+        assertThat(seededMoins).isBetween(1, 20);
+        assertThat(moins.getPostes()).anyMatch(poste -> poste.getAnimateur() == null);
+    }
+
+    @Test
+    void nothingIsSeededWithoutAPlan() {
+        PlanningEvenement problem =
+                StaffingVerificationService.problem(week(), StaffingVerificationService.team(4, 0, TYPOLOGIES, LUNDI));
+
+        assertThat(StaffingVerificationService.seedFromPlan(
+                        problem.getPostes(), problem.getAnimateurs(), 4, Map.of(), List.of(), LUNDI))
+                .isZero();
+        assertThat(problem.getPostes()).allMatch(poste -> poste.getAnimateur() == null);
     }
 
     @Test
