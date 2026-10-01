@@ -16,7 +16,7 @@ class FlywayMigrationsReadinessCheckTest {
     @Test
     void upToDateHistoryIsReady() {
         var response = FlywayMigrationsReadinessCheck.evaluate(
-                new MigrationInfo[0], new MigrationInfo[] {migration(MigrationState.SUCCESS)});
+                new MigrationInfo[0], new MigrationInfo[] {migration(MigrationState.SUCCESS)}, false);
         assertThat(response.getStatus()).isEqualTo(HealthCheckResponse.Status.UP);
     }
 
@@ -24,7 +24,7 @@ class FlywayMigrationsReadinessCheckTest {
     void aPendingMigrationIsNotReady() {
         var pending = migration(MigrationState.PENDING);
         var response = FlywayMigrationsReadinessCheck.evaluate(
-                new MigrationInfo[] {pending}, new MigrationInfo[] {migration(MigrationState.SUCCESS), pending});
+                new MigrationInfo[] {pending}, new MigrationInfo[] {migration(MigrationState.SUCCESS), pending}, false);
         assertThat(response.getStatus()).isEqualTo(HealthCheckResponse.Status.DOWN);
         assertThat(response.getData())
                 .hasValueSatisfying(data -> assertThat(data).containsEntry("pending", 1L));
@@ -34,7 +34,8 @@ class FlywayMigrationsReadinessCheckTest {
     void aFailedMigrationIsNotReady() {
         var response = FlywayMigrationsReadinessCheck.evaluate(
                 new MigrationInfo[0],
-                new MigrationInfo[] {migration(MigrationState.SUCCESS), migration(MigrationState.FAILED)});
+                new MigrationInfo[] {migration(MigrationState.SUCCESS), migration(MigrationState.FAILED)},
+                false);
         assertThat(response.getStatus()).isEqualTo(HealthCheckResponse.Status.DOWN);
         assertThat(response.getData())
                 .hasValueSatisfying(data -> assertThat(data).containsEntry("failed", 1L));
@@ -43,8 +44,31 @@ class FlywayMigrationsReadinessCheckTest {
     @Test
     void aFailedMigrationFromANewerBinaryIsNotReadyEither() {
         var response = FlywayMigrationsReadinessCheck.evaluate(
-                new MigrationInfo[0], new MigrationInfo[] {migration(MigrationState.FUTURE_FAILED)});
+                new MigrationInfo[0], new MigrationInfo[] {migration(MigrationState.FUTURE_FAILED)}, false);
         assertThat(response.getStatus()).isEqualTo(HealthCheckResponse.Status.DOWN);
+    }
+
+    /**
+     * {@code ALLOW_SCHEMA_AHEAD=true} forced the boot past the newer binary's
+     * failed migration: readiness must not take back what the operator
+     * accepted, but a failed migration of this binary still counts.
+     */
+    @Test
+    void aFailedMigrationFromANewerBinaryIsAcceptedUnderTheEscapeHatch() {
+        var forced = FlywayMigrationsReadinessCheck.evaluate(
+                new MigrationInfo[0],
+                new MigrationInfo[] {migration(MigrationState.SUCCESS), migration(MigrationState.FUTURE_FAILED)},
+                true);
+        assertThat(forced.getStatus()).isEqualTo(HealthCheckResponse.Status.UP);
+        assertThat(forced.getData()).hasValueSatisfying(data -> assertThat(data).containsEntry("failed", 0L));
+
+        var ownFailure = FlywayMigrationsReadinessCheck.evaluate(
+                new MigrationInfo[0],
+                new MigrationInfo[] {migration(MigrationState.FAILED), migration(MigrationState.FUTURE_FAILED)},
+                true);
+        assertThat(ownFailure.getStatus()).isEqualTo(HealthCheckResponse.Status.DOWN);
+        assertThat(ownFailure.getData())
+                .hasValueSatisfying(data -> assertThat(data).containsEntry("failed", 1L));
     }
 
     /**
@@ -56,7 +80,7 @@ class FlywayMigrationsReadinessCheckTest {
     void theVerdictIsCachedForAShortWindowThenReadAgain() {
         var reads = new AtomicInteger();
         var clock = new AtomicLong(1_000L);
-        var check = new FlywayMigrationsReadinessCheck(null) {
+        var check = new FlywayMigrationsReadinessCheck(null, false) {
             @Override
             HealthCheckResponse readHistory() {
                 reads.incrementAndGet();

@@ -41,7 +41,7 @@ import javax.sql.DataSource;
  * <p>
  * <b>It is still not a backup of the database.</b> What it restores is exactly
  * {@link #TABLES}: the referential, the plan and its publications, what the
- * animateurs declared, and the settings that shape a solve. Six tables stay
+ * animateurs declared, and the settings that shape a solve. Nine tables stay
  * out, and {@link #DELIBERATELY_NOT_DUMPED} says why each one does — they
  * describe the machine, its current sessions, or what it has been asked to do
  * next, none of which is the dataset. {@code DatabaseDumpCoverageTest} keeps
@@ -156,7 +156,7 @@ public class DatabaseDumpService {
             "kpi_historique");
 
     /**
-     * The eight tables deliberately left out, and why each one stays out.
+     * The nine tables deliberately left out, and why each one stays out.
      *
      * <p>They share a shape: none of them describes <em>the dataset</em>. They
      * describe the machine it runs on, or who is currently allowed to touch it,
@@ -184,6 +184,10 @@ public class DatabaseDumpService {
      *       import <em>erases</em> the local journal, since the dump deletes
      *       what it carries. An audit trail that an import can wipe is not
      *       one.</li>
+     *   <li>{@code version_applicative} — the application versions that
+     *       opened <em>this</em> database, beside {@code flyway_schema_history},
+     *       which no dump carries either. Replaying another instance's would
+     *       make the receiving one claim versions it never ran.</li>
      * </ul>
      */
     static final List<String> DELIBERATELY_NOT_DUMPED = List.of(
@@ -194,7 +198,8 @@ public class DatabaseDumpService {
             "lien_affichage_mural",
             "lien_affichage_mural_emplacement",
             "solver_job",
-            "journal_action");
+            "journal_action",
+            "version_applicative");
 
     private static final Set<String> ALLOWED_TABLES = Set.copyOf(TABLES);
 

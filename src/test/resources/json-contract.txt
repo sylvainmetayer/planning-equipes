@@ -315,6 +315,7 @@ service.referentiel.WrittenContrainteAdHoc = avertissements, contrainte
 service.referentiel.WrittenCreneau = avertissements, creneau
 service.referentiel.WrittenStand = avertissements, stand
 service.referentiel.WrittenVerrouillage = avertissements, verrouillage
+service.schema.ApplicationVersion = firstStartedAt, latestMigration, version
 service.solve.PlanSnapshotService$AffectationSnapshot = animateurId, creneauId, date, heureDebut, heureDebutEffective, heureFin, heureFinEffective, posteId, standId, suiteDe
 service.solve.PlanSnapshotService$ConsigneSnapshot = date, fermetureDebut, fermetureFin, motif
 service.solve.PlanSnapshotService$SnapshotDetail = affectations, meta

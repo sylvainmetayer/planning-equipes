@@ -194,6 +194,20 @@ Single Quarkus service, no separate solver microservice. Package root:
     persisted plan and `JourJClock`, through the pure
     `AffichageMuralViewBuilder` — the day under way, the shifts of each open
     stand, the alerts.
+  - `service/schema/` — the boot check against a database **ahead** of the
+    binary (an image rolled back onto a schema a later version migrated):
+    `SchemaCompatibilityGuard` reads `Flyway.info()` once migrate-at-start is
+    done and refuses to boot on a migration the binary does not ship, unless
+    `ALLOW_SCHEMA_AHEAD=true` — which is why `application.properties` sets
+    `ignore-migration-patterns=*:future`: Flyway leaves those rows to it
+    instead of failing validation and pointing at a repair that would delete
+    them. That pattern spares only the *successful* rows from repair, which
+    deletes every failed one and runs before the guard under
+    `FLYWAY_REPAIR_AT_START`: `SchemaCompatibilityRepairGuard`, a Flyway
+    callback registered as a `FlywayConfigurationCustomizer`, takes the same
+    decision right before any repair. It also records each change of application version in the global
+    `version_applicative` table, which the Débogage page lists. The decision
+    itself is the pure `SchemaCompatibility`.
   - `service/profile/` — the fiche 360° of one animateur
     (`AnimateurProfileService`): an assembler over `EquiteService`,
     `FragiliteAnalyzer`, `ConfirmationPlanningService` and the referential,

@@ -912,6 +912,20 @@
           }
         }
       },
+      "ApplicationVersion" : {
+        "type" : "object",
+        "properties" : {
+          "version" : {
+            "type" : "string"
+          },
+          "firstStartedAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "latestMigration" : {
+            "type" : "string"
+          }
+        }
+      },
       "ArchiveAvailability" : {
         "required" : [ "planResolu", "publie", "resolutionEnCours" ],
         "type" : "object",
@@ -11250,6 +11264,27 @@
           }
         },
         "summary" : "Send Test Mail",
+        "tags" : [ "Debug Resource" ]
+      }
+    },
+    "/api/debug/versions" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ApplicationVersion"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Application Versions",
         "tags" : [ "Debug Resource" ]
       }
     },

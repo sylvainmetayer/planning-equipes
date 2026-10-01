@@ -268,9 +268,9 @@ if [[ "$ESSAI" == true ]]; then
 fi
 
 # A dump newer than the image (an image rolled back, a dump brought from
-# another instance): Flyway ignores the migrations it does not know, and the
-# application would start on a schema it was never written for. Said, and
-# confirmed, before anything stops.
+# another instance): the application refuses to start on a schema it was never
+# written for (SchemaCompatibilityGuard), unless ALLOW_SCHEMA_AHEAD=true. Said,
+# and confirmed, before anything stops.
 version_dump="$("${lecteur[@]}" pg_restore --data-only --table=flyway_schema_history -f - < "$DUMP" 2>/dev/null \
   | derniere_migration)" || version_dump=""
 # The image's own migrations, read from the application jar in a throwaway
@@ -283,8 +283,8 @@ if [[ -z "$version_dump" || -z "$version_image" ]]; then
 elif [[ "$version_dump" != "$version_image" \
         && "$(printf '%s\n' "$version_dump" "$version_image" | sort -V | tail -n1)" == "$version_dump" ]]; then
   echo "  ⚠ le schéma du dump (V$version_dump) est PLUS RÉCENT que celui de l'image déployée (V$version_image)." >&2
-  echo "    Flyway ignore les migrations qu'il ne connaît pas : l'application démarrerait sur un" >&2
-  echo "    schéma qu'elle ne connaît pas. Mieux vaut déployer d'abord l'image de ce dump (APP_VERSION)." >&2
+  echo "    L'application refusera de démarrer sur un schéma qu'elle ne connaît pas (sauf" >&2
+  echo "    ALLOW_SCHEMA_AHEAD=true). Mieux vaut déployer d'abord l'image de ce dump (APP_VERSION)." >&2
   if [[ "$OUI" == false ]]; then
     read -r -p "  Tapez PLUS-RECENT pour restaurer quand même : " mot \
       || ko "pas de terminal pour confirmer : passez --oui"

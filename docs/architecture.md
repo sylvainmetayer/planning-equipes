@@ -454,6 +454,20 @@ démarrage. Elle vaut `false` et n'a de sens qu'en exploitation, le temps de
 débloquer une migration interrompue — voir
 [`exploitation.md`](exploitation.md).
 
+Une base **en avance** sur le binaire (une migration appliquée que l'image ne
+livre pas) n'est pas laissée à Flyway : `ignore-migration-patterns=*:future`
+la laisse passer la validation — et la réparation, qui sans cela supprimerait
+ces lignes de l'historique —, puis `service/schema/SchemaCompatibilityGuard`
+refuse le démarrage avec un message qui nomme les versions et la marche à
+suivre, sauf `ALLOW_SCHEMA_AHEAD=true`. Le motif n'épargne à la réparation que
+les migrations futures **réussies** : elle efface toute ligne en échec, celle
+d'un binaire plus récent comprise, et `FLYWAY_REPAIR_AT_START` la joue avant
+l'observateur. La même décision est donc prise juste avant toute réparation,
+par un rappel Flyway (`SchemaCompatibilityRepairGuard`). Un second observateur
+de la garde, joué après tous les autres contrôles de démarrage (un démarrage
+qu'ils refusent n'a pas ouvert la base), note dans `version_applicative` chaque
+changement de version de l'application, que la page *Débogage* affiche — voir [`versioning.md`](versioning.md) § 2.
+
 ## Les deux tâches planifiées, et le seul endroit qui écrit sur le disque
 
 `service/backup/` sauvegarde la base chaque nuit par un vrai `pg_dump`, dans le

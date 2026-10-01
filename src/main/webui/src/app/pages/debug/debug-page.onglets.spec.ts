@@ -9,12 +9,21 @@ import { ActivatedRoute, convertToParamMap, ParamMap } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
+import { ApplicationVersion } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { DebugPage } from './debug-page';
 
 describe('DebugPage — onglets', () => {
   let fixture: ComponentFixture<DebugPage>;
   let params: BehaviorSubject<ParamMap>;
+
+  /** The versions `GET /api/debug/versions` answers, the latest first. */
+  let versions: ApplicationVersion[] = [];
+
+  /** Every `GET` the page makes, answered by its path. */
+  async function answer(path: string): Promise<unknown> {
+    return path === '/api/debug/versions' ? versions : { adminEmail: null };
+  }
 
   async function rendre(options: { onglet?: string } = {}): Promise<void> {
     params = new BehaviorSubject<ParamMap>(
@@ -27,7 +36,7 @@ describe('DebugPage — onglets', () => {
         {
           provide: ApiService,
           useValue: {
-            get: vi.fn(async () => ({ adminEmail: null })),
+            get: vi.fn(answer),
             post: vi.fn(),
           },
         },
@@ -71,6 +80,7 @@ describe('DebugPage — onglets', () => {
   }
 
   beforeEach(async () => {
+    versions = [];
     await rendre();
   });
 
@@ -124,5 +134,26 @@ describe('DebugPage — onglets', () => {
 
     await cliquerOnglet('Vérifications');
     expect(racine().querySelector('app-output-panel')).not.toBeNull();
+  });
+
+  /** What an incident report reads after a rollback: who migrated the database, who opened it next. */
+  it('lists the versions that opened the database on the raw analysis tab', async () => {
+    versions = [
+      { version: '1.2.4', firstStartedAt: '2026-09-02T08:00:00Z', latestMigration: '116' },
+      { version: '1.3.0', firstStartedAt: '2026-09-01T08:00:00Z', latestMigration: '116' },
+    ];
+    await rendre();
+
+    const rows = Array.from(racine().querySelectorAll('.debug-versions tbody tr')).map((row) =>
+      row.textContent!.replace(/\s+/g, ' ').trim(),
+    );
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toContain('1.2.4');
+    expect(rows[0]).toContain('V116');
+    expect(rows[1]).toContain('1.3.0');
+  });
+
+  it('says so when no version has been recorded yet', () => {
+    expect(textOf()).toContain("Aucune version n'est encore enregistrée sur cette base.");
   });
 });
