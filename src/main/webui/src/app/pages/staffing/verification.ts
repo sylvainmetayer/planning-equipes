@@ -7,13 +7,13 @@ type Team = Pick<StaffingVerification, 'effectif' | 'majeurs' | 'mineurs'>;
 
 /** « 150 personnes », or « 150 personnes (140 majeurs, 10 mineurs) » once minors are in it. */
 export function teamLabel(verification: Team): string {
-  const effectif = verification.effectif;
+  const size = verification.effectif;
   if (verification.mineurs <= 0) {
-    return $localize`:@@staffing.verification.equipe:${effectif}:effectif: personnes`;
+    return $localize`:@@staffing.verification.equipe:${size}:effectif: personnes`;
   }
-  const majeurs = verification.majeurs;
-  const mineurs = verification.mineurs;
-  return $localize`:@@staffing.verification.equipeMixte:${effectif}:effectif: personnes (${majeurs}:majeurs: majeurs, ${mineurs}:mineurs: mineurs)`;
+  const adults = verification.majeurs;
+  const minors = verification.mineurs;
+  return $localize`:@@staffing.verification.equipeMixte:${size}:effectif: personnes (${adults}:majeurs: majeurs, ${minors}:mineurs: mineurs)`;
 }
 
 /**
@@ -21,20 +21,20 @@ export function teamLabel(verification: Team): string {
  * — « 160 personnes, 600 s au plus : tous les sièges pourvus en 312 s ».
  */
 export function historyLabel(verification: StaffingVerification): string {
-  const equipe = teamLabel(verification);
-  const plafond = verification.plafondSecondes;
-  const essai = $localize`:@@historique.verification.essai:${equipe}:equipe:, ${plafond}:plafond: s au plus`;
+  const team = teamLabel(verification);
+  const limit = verification.plafondSecondes;
+  const trial = $localize`:@@historique.verification.essai:${team}:equipe:, ${limit}:plafond: s au plus`;
   if (verification.etat === 'EN_COURS') {
-    return $localize`:@@historique.verification.enCours:${essai}:essai: : en cours`;
+    return $localize`:@@historique.verification.enCours:${trial}:essai: : en cours`;
   }
   if (verification.etat === 'ECHEC') {
-    const erreur = verification.erreur ?? '';
-    return $localize`:@@historique.verification.echec:${essai}:essai: : ${erreur}:erreur:`;
+    const error = verification.erreur ?? '';
+    return $localize`:@@historique.verification.echec:${trial}:essai: : ${error}:erreur:`;
   }
-  const duree = verification.dureeSecondes ?? 0;
+  const seconds = verification.dureeSecondes ?? 0;
   if (verification.realisable) {
-    return $localize`:@@historique.verification.ok:${essai}:essai: : tous les sièges pourvus en ${duree}:duree: s`;
+    return $localize`:@@historique.verification.ok:${trial}:essai: : tous les sièges pourvus en ${seconds}:duree: s`;
   }
-  const vides = verification.siegesNonPourvus ?? 0;
-  return $localize`:@@historique.verification.ko:${essai}:essai: : aucun plan complet, ${vides}:vides: sièges vides`;
+  const empty = verification.siegesNonPourvus ?? 0;
+  return $localize`:@@historique.verification.ko:${trial}:essai: : aucun plan complet, ${empty}:vides: sièges vides`;
 }
