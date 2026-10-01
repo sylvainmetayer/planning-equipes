@@ -302,9 +302,12 @@ public class StaffingVerificationService {
         // a check given less fails where that solve succeeds.
         SolverBudgetBounds bounds = referenceDataService.getSolverBudgetBounds();
         Integer dureeEdition = referenceDataService.getParametresSolveur().dureeResolutionSecondes();
-        long plafond = dureeSecondes != null
-                ? dureeSecondes
-                : dureeEdition != null ? dureeEdition : bounds.defaultSecondsLimit();
+        long plafond = bounds.defaultSecondsLimit();
+        if (dureeSecondes != null) {
+            plafond = dureeSecondes;
+        } else if (dureeEdition != null) {
+            plafond = dureeEdition;
+        }
         if (dureeSecondes != null && (plafond < DUREE_MIN_SECONDES || plafond > bounds.maxSecondsLimit())) {
             throw new BusinessError.Invalid("La durée de la vérification doit être comprise entre " + DUREE_MIN_SECONDES
                     + " et " + bounds.maxSecondsLimit() + " secondes : " + plafond + ".");
