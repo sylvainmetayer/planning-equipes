@@ -51,7 +51,7 @@ public class VerrouillageMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     List<VerrouillageView> listVerrouillages(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return referenceDataService.listVerrouillages().stream()
                 .map(VerrouillageMcpTools::toView)
                 .toList();
@@ -88,7 +88,7 @@ public class VerrouillageMcpTools {
                     Long creneauId,
             @ToolArg(description = "Jour à figer (AAAA-MM-JJ, type JOUR)", required = false) String jour,
             @ToolArg(description = "Raison du verrouillage, libre", required = false) String raison,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         VerrouillagePlanning verrouillage = new VerrouillagePlanning();
         verrouillage.setType(McpArgs.enumeration(TypeVerrouillage.class, type, "type"));
         verrouillage.setAnimateurId(animateurId);
@@ -129,7 +129,7 @@ public class VerrouillageMcpTools {
     @WarnsWhileSolving
     SuppressionResult unlock(
             @ToolArg(description = "Id du verrouillage") String id,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         boolean connu = referenceDataService.listVerrouillages().stream()
                 .anyMatch(verrouillage ->
                         verrouillage.getId() != null && verrouillage.getId().equals(id));

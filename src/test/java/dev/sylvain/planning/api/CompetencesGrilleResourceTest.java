@@ -34,8 +34,13 @@ class CompetencesGrilleResourceTest {
     private String hommeJeu;
 
     private void seedScenario() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
@@ -53,7 +58,8 @@ class CompetencesGrilleResourceTest {
     }
 
     private static String typologieIdOfCode(String code) {
-        String id = given().when()
+        String id = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/typologies")
                 .then()
                 .statusCode(200)
@@ -68,7 +74,8 @@ class CompetencesGrilleResourceTest {
     }
 
     private static JsonPath animateurs() {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/animateurs")
                 .then()
                 .statusCode(200)
@@ -102,7 +109,8 @@ class CompetencesGrilleResourceTest {
         String stamp = stampOf(a1);
         assertThat(stamp).as("the grid reads the stamp it will send back").isNotNull();
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of("animateurs", List.of(row(a1, stamp, Map.of(hommeJeu, "REFERENT")))))
                 .when()
                 .put("/api/animateurs/competences/grille")
@@ -134,14 +142,16 @@ class CompetencesGrilleResourceTest {
         Map<String, Object> fiche = animateurs().getMap("find { it.id == '" + a2 + "' }");
         fiche.put("nom", "Renommé ailleurs");
         fiche.put("modifieLe", null);
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(fiche)
                 .when()
                 .put("/api/animateurs/" + a2)
                 .then()
                 .statusCode(200);
 
-        JsonPath rapport = given().contentType("application/json")
+        JsonPath rapport = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of(
                         "animateurs",
                         List.of(
@@ -164,7 +174,8 @@ class CompetencesGrilleResourceTest {
                 .containsEntry(hommeJeu, "DEBUTANT");
         assertThat(rapport.getString("animateurs[1].modifieLe")).isEqualTo(stampOf(a2));
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of("animateurs", List.of(row(a2, null, Map.of(strategie, "REFERENT")))))
                 .when()
                 .put("/api/animateurs/competences/grille")
@@ -179,7 +190,8 @@ class CompetencesGrilleResourceTest {
     void anUnknownTypologieOrAnimateurIsRefusedOnItsRowOnly() {
         seedScenario();
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of(
                         "animateurs",
                         List.of(
@@ -203,7 +215,8 @@ class CompetencesGrilleResourceTest {
     @Test
     void anEmptyBodyWritesNothingAndAnswersAnEmptyReport() {
         seedScenario();
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{}")
                 .when()
                 .put("/api/animateurs/competences/grille")
@@ -227,7 +240,8 @@ class CompetencesGrilleResourceTest {
             ligne.put("competences", Map.of());
             lignes.add(ligne);
         }
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of("animateurs", lignes))
                 .when()
                 .put("/api/animateurs/competences/grille")

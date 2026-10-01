@@ -9,8 +9,8 @@
         <span class="diffuser-relances" i18n="@@diffuser.relances.actives">Relances automatiques activées</span>
       } @else {
         <span class="diffuser-relances diffuser-relances-inactives">
-          <ng-container i18n="@@diffuser.relances.inactives">Relances automatiques désactivées</ng-container>
-          · <a routerLink="/parametres" [queryParams]="{ onglet: 'emails' }" i18n="@@diffuser.relances.activer">Activer</a>
+          <ng-container i18n="@@diffuser.relances.editionInactive">Relances automatiques coupées : cette édition n'est pas l'édition active</ng-container>
+          · <a routerLink="/editions" i18n="@@diffuser.relances.voirEditions">Voir les éditions</a>
         </span>
       }
     }

@@ -37,7 +37,7 @@ class SolverMetricsTest {
     @AfterEach
     void idleSolver() {
         for (String id : queuedIds()) {
-            given().when().delete("/api/jobs/" + id);
+            given().header("X-Edition-Id", "E1").when().delete("/api/jobs/" + id);
         }
         awaitIdleSolver();
     }
@@ -46,7 +46,8 @@ class SolverMetricsTest {
     void twoQueuedJobsShowOnTheQueueGaugeAndAFinishedRunIsTimed() {
         importScenario();
         long completedBefore = completedFullRuns();
-        String running = given().when()
+        String running = given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/solve/async/reference-data?seconds=4")
                 .then()
                 .statusCode(202)
@@ -54,13 +55,15 @@ class SolverMetricsTest {
                 .path("id");
         awaitActive(running);
 
-        String queuedFull = given().when()
+        String queuedFull = given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/solve/async/reference-data?enFile=true&seconds=1")
                 .then()
                 .statusCode(202)
                 .extract()
                 .path("id");
-        String queuedIncremental = given().contentType(ContentType.JSON)
+        String queuedIncremental = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/solve/incremental/async?enFile=true&seconds=1")
                 .then()
@@ -71,8 +74,16 @@ class SolverMetricsTest {
         assertThat(gauge(SolverMetrics.QUEUE_SIZE)).isEqualTo(2.0);
         assertThat(gauge(SolverMetrics.ACTIVE)).isEqualTo(1.0);
 
-        given().when().delete("/api/jobs/" + queuedFull).then().statusCode(204);
-        given().when().delete("/api/jobs/" + queuedIncremental).then().statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/jobs/" + queuedFull)
+                .then()
+                .statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/jobs/" + queuedIncremental)
+                .then()
+                .statusCode(204);
         assertThat(gauge(SolverMetrics.QUEUE_SIZE)).isZero();
 
         assertThat(pollUntilFinished(running).getString("status")).isEqualTo("COMPLETED");
@@ -88,14 +99,16 @@ class SolverMetricsTest {
                 .tag("type", "full")
                 .counter()
                 .count();
-        String planning = given().when()
+        String planning = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/sample")
                 .then()
                 .statusCode(200)
                 .extract()
                 .asString();
 
-        String jobId = given().contentType(ContentType.JSON)
+        String jobId = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(planning)
                 .when()
                 .post("/api/solve/async?seconds=1")
@@ -146,15 +159,21 @@ class SolverMetricsTest {
     }
 
     private void importScenario() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
     }
 
     private List<String> queuedIds() {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/jobs/file")
                 .then()
                 .statusCode(200)
@@ -168,7 +187,11 @@ class SolverMetricsTest {
                 .atMost(POLL_TIMEOUT)
                 .pollInterval(POLL_INTERVAL)
                 .until(() -> {
-                    var response = given().when().get("/api/jobs/active").then().extract();
+                    var response = given().header("X-Edition-Id", "E1")
+                            .when()
+                            .get("/api/jobs/active")
+                            .then()
+                            .extract();
                     return response.statusCode() == 200
                             && jobId.equals(response.jsonPath().getString("id"));
                 });
@@ -178,8 +201,13 @@ class SolverMetricsTest {
         await().alias("Solver still busy")
                 .atMost(POLL_TIMEOUT)
                 .pollInterval(POLL_INTERVAL)
-                .until(() ->
-                        given().when().get("/api/jobs/active").then().extract().statusCode() == 204);
+                .until(() -> given().header("X-Edition-Id", "E1")
+                                .when()
+                                .get("/api/jobs/active")
+                                .then()
+                                .extract()
+                                .statusCode()
+                        == 204);
     }
 
     private JsonPath pollUntilFinished(String jobId) {
@@ -187,7 +215,8 @@ class SolverMetricsTest {
                 .atMost(POLL_TIMEOUT)
                 .pollInterval(POLL_INTERVAL)
                 .until(
-                        () -> given().when()
+                        () -> given().header("X-Edition-Id", "E1")
+                                .when()
                                 .get("/api/jobs/" + jobId)
                                 .then()
                                 .statusCode(200)

@@ -80,7 +80,7 @@ class RealiseMcpToolsTest {
         backdateLastPublication(Instant.parse("2026-08-01T10:00:00Z"));
         persistence.reaffecterPoste("RVM-P1", "RVM-B");
 
-        RealisedVsPlanned report = tools.realisedVsPlanned(null);
+        RealisedVsPlanned report = tools.realisedVsPlanned("E1");
         String json = objectMapper.writeValueAsString(report);
 
         assertThat(report.referenceAvailable()).isTrue();
@@ -120,7 +120,7 @@ class RealiseMcpToolsTest {
         persistence.reaffecterPoste("RVM-P1", "RVM-B");
         publication.publier();
 
-        assertThatThrownBy(() -> instantanes.deleteSnapshot(reference, null))
+        assertThatThrownBy(() -> instantanes.deleteSnapshot(reference, "E1"))
                 .isInstanceOf(ToolCallException.class)
                 .hasMessageContaining("14/08/2026")
                 .hasMessageContaining("Réalisé vs planifié");

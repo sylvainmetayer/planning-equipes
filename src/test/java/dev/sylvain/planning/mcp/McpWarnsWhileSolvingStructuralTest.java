@@ -122,7 +122,14 @@ class McpWarnsWhileSolvingStructuralTest {
             Map.entry("creer_edition", "agit sur les éditions entières, pas dans celle qu'un calcul tient"),
             Map.entry("dupliquer_edition", "agit sur les éditions entières, pas dans celle qu'un calcul tient"),
             Map.entry("renommer_edition", "un nom d'édition n'est pas lu par le calcul"),
-            Map.entry("definir_edition_par_defaut", "désigne une édition, n'en modifie aucune"),
+            Map.entry(
+                    "activer_edition",
+                    "désigne l'édition active, n'en modifie aucune — et refuse elle-même pendant un calcul sur l'une"
+                            + " des deux éditions"),
+            Map.entry(
+                    "desactiver_edition",
+                    "retire l'activation, ne modifie aucune édition — et refuse elle-même pendant un calcul sur"
+                            + " cette édition"),
             Map.entry("supprimer_edition", "agit sur les éditions entières, pas dans celle qu'un calcul tient"),
             Map.entry("publier_planning", "publie le plan enregistré, n'écrit rien que le calcul lise"),
             Map.entry("envoyer_planning_animateur", "envoie le plan enregistré, n'écrit rien que le calcul lise"),

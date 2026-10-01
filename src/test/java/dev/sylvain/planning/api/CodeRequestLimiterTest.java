@@ -108,7 +108,8 @@ class CodeRequestLimiterTest {
         requestCode(token).then().statusCode(200);
         requestCode(token).then().statusCode(200);
 
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"code\":\"" + dernierCode(EMAIL_CREDIT) + "\"}")
                 .when()
                 .post("/api/espace-animateur/" + token + "/session")
@@ -119,7 +120,10 @@ class CodeRequestLimiterTest {
     }
 
     private static Response requestCode(String token) {
-        return given().contentType(ContentType.JSON).when().post("/api/espace-animateur/" + token + "/code");
+        return given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/api/espace-animateur/" + token + "/code");
     }
 
     private String dernierCode(String email) {

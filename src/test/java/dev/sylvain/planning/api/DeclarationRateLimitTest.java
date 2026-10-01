@@ -93,14 +93,16 @@ class DeclarationRateLimitTest {
     }
 
     private io.restassured.response.Response declare(String commentaire) {
-        return given().contentType(ContentType.JSON)
+        return given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"joursIndisponibles\":[],\"souhaits\":[],\"commentaire\":\"" + commentaire + "\"}")
                 .when()
                 .post("/api/espace-animateur/" + token() + "/disponibilites");
     }
 
     private static void window(boolean ouverte) {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"collecteOuverte\":" + ouverte + "}")
                 .when()
                 .put("/api/disponibilites/configuration")
@@ -110,7 +112,8 @@ class DeclarationRateLimitTest {
 
     /** Only this fixture's rows: the suite shares one database with every other class. */
     private static long pendingCount() {
-        List<String> statuts = given().when()
+        List<String> statuts = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/disponibilites")
                 .then()
                 .statusCode(200)

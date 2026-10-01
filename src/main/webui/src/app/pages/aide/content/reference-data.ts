@@ -12,26 +12,33 @@ export function buildReferenceDataSections(): HelpSection[] {
     {
       id: 'editions',
       icon: 'layers',
-      title: $localize`:@@aide.editions.title:Éditions et plans alternatifs`,
-      summary: $localize`:@@aide.editions.summary:Un plan canicule est une édition dupliquée, avec sa propre grille.`,
+      title: $localize`:@@aide.editions.title:Éditions et édition active`,
+      summary: $localize`:@@aide.editions.summary:Une seule édition parle aux animateurs ; on prépare la suivante à côté, puis on bascule d'un geste.`,
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.editions.intro:Une édition est un événement, ou une variante de plan, avec ses propres stands, animateurs, créneaux, paramètres et planning. Rien ne circule d'une édition à l'autre : « 2025 » reste consultable pendant qu'on prépare « 2026 ». Chaque onglet du navigateur consulte sa propre édition, que rappelle le bandeau du haut.`,
+          text: $localize`:@@aide.editions.intro:Une édition est un événement, avec ses propres stands, animateurs, créneaux, paramètres et planning. Rien ne circule d'une édition à l'autre : « 2025 » reste consultable pendant qu'on prépare « 2026 ». Chaque onglet du navigateur consulte sa propre édition, que rappelle le bandeau du haut ; un navigateur qui n'en a encore choisi aucune s'ouvre sur l'édition active.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.editions.variante:Dupliquer une édition copie les stands, horaires, animateurs et indisponibilités du moment. Les affectations et les liens d'espace ne sont pas copiés : un lien désigne toujours exactement une édition.`,
+          text: $localize`:@@aide.editions.active:Une seule édition est active, marquée « Active » sur la page Éditions. Elle seule publie, envoie des courriels (planning, code d'accès, invitation à déclarer, relances, rappel de la veille, notifications d'échange) et ouvre l'espace animateur, les abonnements de calendrier et l'affichage mural. Une édition inactive reste entièrement utilisable ici : référentiel, résolution, verrous, simulations, instantanés ; elle n'écrit simplement à personne, ce que le bandeau du haut rappelle, et ses liens répondent comme un lien inconnu. Entre deux événements, aucune édition n'est active et rien ne part. Toute édition naît inactive, qu'elle soit créée, dupliquée ou importée ; seule la première d'une installation neuve naît active.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.editions.variante:Dupliquer une édition copie sa structure (stands, typologies, horaires, créneaux, paramètres) et, si vous le cochez, ses animateurs avec leurs compétences, indisponibilités, souhaits et ajustements. Les affectations et les liens d'espace ne sont pas copiés : un lien désigne toujours exactement une édition. La copie naît inactive : c'est le modèle de l'année suivante, ou une variante à résoudre à côté sans rien envoyer. Un plan de repli du jour (canicule, orage) ne passe pas par une copie : c'est une consigne, posée dans l'édition active.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.editions.rappel:Un bandeau « Action requise », sous la barre du haut, signale ce qui demande une décision : l'édition active a passé son dernier jour, une édition inactive commence dans les jours qui viennent (sept par défaut, réglage de l'exploitant), ou, plus urgent, une édition inactive a déjà commencé, son espace animateur fermé. Les dates sont lues dans les créneaux : une édition sans créneau ne déclenche rien. Le bandeau n'envoie aucun courriel.`,
         },
         {
           kind: 'steps',
           items: [
-            $localize`:@@aide.editions.rituel1:La veille : dupliquer l'édition courante (« 2026 » → « 2026-canicule »).`,
-            $localize`:@@aide.editions.rituel2:Appliquer les restrictions dans la copie : horaires, effectifs.`,
-            $localize`:@@aide.editions.rituel3:Lancer la résolution dans la copie.`,
-            $localize`:@@aide.editions.rituel4:Le matin : basculer d'édition dans le bandeau.`,
-            $localize`:@@aide.editions.rituel5:Publier : les animateurs concernés reçoivent le plan et les liens de cette édition.`,
-            $localize`:@@aide.editions.rituel6:Au retour à la normale : revenir à l'édition nominale, intacte, et publier à nouveau.`,
+            $localize`:@@aide.editions.bascule1:Créer l'édition suivante, ou dupliquer la précédente sans les animateurs pour en garder le modèle : elle naît inactive.`,
+            $localize`:@@aide.editions.bascule2:La préparer comme n'importe quelle édition, référentiels, grille, premières résolutions : rien n'en part.`,
+            $localize`:@@aide.editions.bascule3:Avant d'écrire aux animateurs (invitation à déclarer, publication), cliquer « Activer » sur sa ligne de la page Éditions. L'aperçu dit ce que la bascule ferme dans l'édition sortante : liens d'espace et de calendrier, affichages muraux, demandes d'échange restées ouvertes, résolutions en file.`,
+            $localize`:@@aide.editions.bascule4:Confirmer : l'ancienne cesse d'être active et la nouvelle le devient d'un seul geste. C'est refusé tant qu'une résolution tourne sur l'une des deux.`,
+            $localize`:@@aide.editions.bascule5:L'événement passé, « Désactiver » quand plus rien ne doit partir : l'édition reste consultable, mais ses liens imprimés cessent de répondre.`,
           ],
         },
         {
@@ -43,6 +50,11 @@ export function buildReferenceDataSections(): HelpSection[] {
         { route: '/editions', label: $localize`:@@nav.link.editions:Éditions` },
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
         { route: '/versions', label: $localize`:@@nav.link.versions:Versions du plan` },
+        {
+          route: '/consignes-solveur',
+          queryParams: { onglet: 'consignes' },
+          label: $localize`:@@consignesSolveur.onglet.consignes:Consignes`,
+        },
       ],
     },
     {

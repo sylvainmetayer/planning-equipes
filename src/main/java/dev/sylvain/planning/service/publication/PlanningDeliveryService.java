@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.publication;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.edition.RequiresActiveEdition;
 import dev.sylvain.planning.service.export.PlanningExportService;
 import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.publication.PublicationTraceRepository.StatutEnvoi;
@@ -77,6 +78,7 @@ public class PlanningDeliveryService {
      * @throws BusinessError.Invalid    when their fiche carries no address, or
      *         when nothing has been published yet
      */
+    @RequiresActiveEdition
     public DeliveryReport sendToOneAnimateur(String animateurId) {
         if (planPublieService.jamaisPublie()) {
             throw new BusinessError.Invalid("Le planning n'a pas encore été publié : il n'y a rien à renvoyer.");

@@ -280,7 +280,8 @@ class AnimateurCsvExempleTest {
      */
     @Test
     void downloadEndpointServesTheSameResource() {
-        String servi = given().when()
+        String servi = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/animateurs/import-csv/exemple")
                 .then()
                 .statusCode(200)
@@ -295,7 +296,8 @@ class AnimateurCsvExempleTest {
     /** Downloaded and sent straight back, untouched: still not one rejected row. */
     @Test
     void servedFileReimportsWithItsMark() {
-        String servi = given().when()
+        String servi = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/animateurs/import-csv/exemple")
                 .then()
                 .statusCode(200)

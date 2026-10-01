@@ -88,7 +88,7 @@ public class ScenarioMcpTools {
                             openWorldHint = false))
     ImportResult importScenario(
             @ToolArg(description = "Nom du scénario (voir lister_scenarios)") String nom,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return toImportResult(scenarioImportService.importBundled(nom));
     }
 
@@ -104,7 +104,7 @@ public class ScenarioMcpTools {
                             openWorldHint = false))
     ImportResult importScenarioYaml(
             @ToolArg(description = "Contenu YAML du scénario") String yaml,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return toImportResult(scenarioImportService.importYaml(yaml));
     }
 
@@ -141,7 +141,7 @@ public class ScenarioMcpTools {
                             destructiveHint = true,
                             idempotentHint = true,
                             openWorldHint = false))
-    ResetResult resetData(@ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+    ResetResult resetData(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         persistenceService.clearDatabase();
         Edition videe = editionService.editionCourante();
         return new ResetResult(

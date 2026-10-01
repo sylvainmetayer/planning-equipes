@@ -454,7 +454,8 @@ class BackupServiceTest {
     void theEndpointReportsWhatTheDeploymentConfiguredAndWhatIsOnDisk() {
         backupService.run();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/backups")
                 .then()
                 .statusCode(200)
@@ -470,7 +471,8 @@ class BackupServiceTest {
 
     @Test
     void theEndpointSuspendsAndResumesTheBackup() {
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of("active", false))
                 .when()
                 .put("/api/backups/active")
@@ -480,7 +482,8 @@ class BackupServiceTest {
 
         assertThat(repository.isActive()).isFalse();
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of("active", true))
                 .when()
                 .put("/api/backups/active")

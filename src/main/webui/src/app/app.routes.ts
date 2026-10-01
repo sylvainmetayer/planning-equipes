@@ -1,4 +1,5 @@
 import { inject } from '@angular/core';
+import { editionChosenGuard } from './core/edition.guard';
 import { CanActivateFn, Params, RedirectFunction, Router, Routes } from '@angular/router';
 import { TODAY_ANCHOR } from './core/date-mock.service';
 import type { CompetencesPage } from './pages/competences/competences-page';
@@ -755,6 +756,10 @@ export const routes: Routes = [
   },
   {
     path: '',
+    // The server never picks an edition for a request that names none (ADR
+    // 0072): a browser that never chose one does so here, before any screen
+    // of the shell fires a request.
+    canActivate: [editionChosenGuard],
     loadComponent: () => import('./shell/admin-shell').then((m) => m.AdminShell),
     children: adminRoutes,
   },

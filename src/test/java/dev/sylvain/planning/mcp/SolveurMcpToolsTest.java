@@ -72,7 +72,7 @@ class SolveurMcpToolsTest {
                 0,
                 List.of()));
 
-        List<ViolationHardView> violations = tools.explainHardContraintesFailure(null);
+        List<ViolationHardView> violations = tools.explainHardContraintesFailure("E1");
 
         assertThat(violations).hasSize(1);
         assertThat(violations.get(0).contrainte()).isEqualTo("posteDoitEtrePourvu");
@@ -84,7 +84,7 @@ class SolveurMcpToolsTest {
     void returnsAnEmptyListWithoutAPriorAnalysis() {
         SolveurMcpTools tools = new SolveurMcpTools(null, null, new ConstraintAnalysisStore(null, null, null), null);
 
-        assertThat(tools.explainHardContraintesFailure(null)).isEmpty();
+        assertThat(tools.explainHardContraintesFailure("E1")).isEmpty();
     }
 
     /** A reward — two animateurs of an affinity sharing a stand — is no problem: no action however often it matched. */

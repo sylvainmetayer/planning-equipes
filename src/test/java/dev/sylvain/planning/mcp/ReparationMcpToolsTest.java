@@ -58,14 +58,14 @@ class ReparationMcpToolsTest {
     @AfterEach
     void clearEdition() {
         awaitSolverIdle();
-        scenarioTools.resetData(null);
+        scenarioTools.resetData("E1");
     }
 
     @Test
     void suggestsCandidatesThenAppliesOne() {
         AffectationView poste = premierPostePourvu();
 
-        SuggestionsView suggestions = planningTools.suggestRepairs(poste.posteId(), 5, null, null);
+        SuggestionsView suggestions = planningTools.suggestRepairs(poste.posteId(), 5, null, "E1");
 
         assertThat(suggestions.posteId()).isEqualTo(poste.posteId());
         assertThat(suggestions.animateurActuelId()).isEqualTo(poste.animateurId());
@@ -78,12 +78,12 @@ class ReparationMcpToolsTest {
     void assigningAPosteHandsItOverWithoutASolve() {
         AffectationView poste = premierPostePourvu();
 
-        var reaffectation = planningTools.assignPoste(poste.posteId(), null, null);
+        var reaffectation = planningTools.assignPoste(poste.posteId(), null, "E1");
 
         assertThat(reaffectation.animateurPrecedentId()).isEqualTo(poste.animateurId());
         assertThat(reaffectation.animateurId()).isNull();
         assertThat(planningTools
-                        .listAffectations(null, null, null, null, null, null)
+                        .listAffectations(null, null, null, null, null, "E1")
                         .affectations())
                 .filteredOn(vue -> vue.posteId().equals(poste.posteId()))
                 .singleElement()
@@ -95,23 +95,23 @@ class ReparationMcpToolsTest {
     void assigningALockedPosteIsRefused() {
         AffectationView poste = premierPostePourvu();
         VerrouillageView verrou = verrouillageTools
-                .lock("ANIMATEUR", poste.animateurId(), null, null, null, null, null)
+                .lock("ANIMATEUR", poste.animateurId(), null, null, null, null, "E1")
                 .verrouillage();
 
         String posteId = poste.posteId();
-        assertThatThrownBy(() -> planningTools.assignPoste(posteId, null, null))
+        assertThatThrownBy(() -> planningTools.assignPoste(posteId, null, "E1"))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("verrouillé");
 
-        verrouillageTools.unlock(verrou.id(), null);
+        verrouillageTools.unlock(verrou.id(), "E1");
     }
 
     @Test
     void suggestingOnAnUnknownPosteIsRefused() {
         premierPostePourvu();
 
-        assertThatThrownBy(() -> planningTools.suggestRepairs("POSTE-INCONNU", null, null, null))
+        assertThatThrownBy(() -> planningTools.suggestRepairs("POSTE-INCONNU", null, null, "E1"))
                 .isInstanceOf(RuntimeException.class);
     }
 
@@ -122,9 +122,9 @@ class ReparationMcpToolsTest {
      */
     @Test
     void suggestingWithoutAPersistedPlanningSaysSo() {
-        scenarioTools.resetData(null);
+        scenarioTools.resetData("E1");
 
-        assertThatThrownBy(() -> planningTools.suggestRepairs("P1", null, null, null))
+        assertThatThrownBy(() -> planningTools.suggestRepairs("P1", null, null, "E1"))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Conflict.class)
                 .hasMessageContaining("résolution");
@@ -132,11 +132,11 @@ class ReparationMcpToolsTest {
 
     private AffectationView premierPostePourvu() {
         awaitSolverIdle();
-        scenarioTools.resetData(null);
-        scenarioTools.importScenario("scenario.yml", null);
-        JobMcpView job = solveurTools.startSolver(1L, null, null, null);
+        scenarioTools.resetData("E1");
+        scenarioTools.importScenario("scenario.yml", "E1");
+        JobMcpView job = solveurTools.startSolver(1L, null, null, "E1");
         assertThat(awaitFinished(job.id()).status()).isEqualTo(JobStatus.COMPLETED.name());
-        return planningTools.listAffectations(null, null, null, null, null, null).affectations().stream()
+        return planningTools.listAffectations(null, null, null, null, null, "E1").affectations().stream()
                 .filter(vue -> vue.animateurId() != null)
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("le solve n'a pourvu aucun poste"));

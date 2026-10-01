@@ -1,5 +1,6 @@
 package dev.sylvain.planning.api;
 
+import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.EditionRequestScope;
 import dev.sylvain.planning.service.TokenOwner;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
@@ -24,12 +25,21 @@ import jakarta.ws.rs.ext.Provider;
 @Priority(Priorities.AUTHENTICATION)
 public class EspaceTokenFilter implements ContainerRequestFilter {
 
+    /** The one answer to an unknown token and to one of an edition that is not active. */
+    static final String UNKNOWN_LINK = "Lien inconnu, expiré, ou édition terminée";
+
     private final ReferenceDataService referenceDataService;
 
     private final EditionRequestScope editionRequestScope;
 
+    private final EditionContext editionContext;
+
     @Inject
-    public EspaceTokenFilter(ReferenceDataService referenceDataService, EditionRequestScope editionRequestScope) {
+    public EspaceTokenFilter(
+            ReferenceDataService referenceDataService,
+            EditionRequestScope editionRequestScope,
+            EditionContext editionContext) {
+        this.editionContext = editionContext;
         this.referenceDataService = referenceDataService;
         this.editionRequestScope = editionRequestScope;
     }
@@ -39,14 +49,21 @@ public class EspaceTokenFilter implements ContainerRequestFilter {
         resoudreOuAborter(contexte);
     }
 
-    /** Shared with {@link SessionEspaceFilter}: {@code null} means the request was aborted with a 404. */
+    /**
+     * Shared with {@link SessionEspaceFilter}: {@code null} means the request was aborted with a 404.
+     *
+     * <p>A token of an edition that is not the active one is answered exactly
+     * like an unknown token — same status, same body (ADR 0072): the espace of
+     * an edition that is over, or not open yet, is closed, and the answer must
+     * not tell a valid token from an invented one.</p>
+     */
     TokenOwner resoudreOuAborter(ContainerRequestContext contexte) {
         String token = contexte.getUriInfo().getPathParameters().getFirst("jeton");
         TokenOwner owner = token == null ? null : referenceDataService.resolveAnimateurToken(token);
-        if (owner == null) {
+        if (owner == null || !editionContext.isActive(owner.editionId())) {
             contexte.abortWith(Response.status(Response.Status.NOT_FOUND)
                     .type(MediaType.APPLICATION_JSON)
-                    .entity(new ValidationError("Lien inconnu ou expiré"))
+                    .entity(new ValidationError(UNKNOWN_LINK))
                     .build());
             return null;
         }

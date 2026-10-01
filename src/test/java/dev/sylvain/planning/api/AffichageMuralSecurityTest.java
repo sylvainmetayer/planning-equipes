@@ -66,23 +66,44 @@ class AffichageMuralSecurityTest {
     void theScreenOpensWithoutASession() {
         String token = newToken();
 
-        given().when().get("/api/mural/" + token).then().statusCode(200);
-        given().when().get("/api/mural/jeton-inconnu").then().statusCode(404);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/mural/" + token)
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/mural/jeton-inconnu")
+                .then()
+                .statusCode(404);
     }
 
     @Test
     @Order(2)
     void managingTheLinksNeedsTheAdminSession() {
-        given().when().get("/api/affichage-mural").then().statusCode(401);
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/affichage-mural")
+                .then()
+                .statusCode(401);
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"libelle\":\"TV\"}")
                 .when()
                 .post("/api/affichage-mural")
                 .then()
                 .statusCode(401);
-        given().when().delete("/api/affichage-mural/1").then().statusCode(401);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/affichage-mural/1")
+                .then()
+                .statusCode(401);
         // The admin's print of a day is a read of the same view, and the session guards it.
-        given().when().get("/api/affichage-mural/apercu").then().statusCode(401);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/affichage-mural/apercu")
+                .then()
+                .statusCode(401);
     }
 
     /**
@@ -96,12 +117,25 @@ class AffichageMuralSecurityTest {
     void theTokenOpensNoOtherEndpoint() {
         String token = newToken();
 
-        given().when().get("/api/espace-animateur/" + token).then().statusCode(404);
-        given().when().get("/api/abonnements/" + token + "/planning.ics").then().statusCode(404);
-        given().when().get("/api/mural/" + token + "/planning").then().statusCode(404);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/espace-animateur/" + token)
+                .then()
+                .statusCode(404);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/abonnements/" + token + "/planning.ics")
+                .then()
+                .statusCode(404);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/mural/" + token + "/planning")
+                .then()
+                .statusCode(404);
         for (String admin : List.of(
                 "/api/animateurs", "/api/planning/persiste", "/api/affichage-mural", "/api/affichage-mural/apercu")) {
-            given().header("Authorization", "Bearer " + token)
+            given().header("X-Edition-Id", "E1")
+                    .header("Authorization", "Bearer " + token)
                     .queryParam("token", token)
                     .when()
                     .get(admin)
@@ -114,8 +148,12 @@ class AffichageMuralSecurityTest {
     @Test
     @Order(4)
     void theExceptionStopsAtItsPrefix() {
-        given().when().get("/api/muraux").then().statusCode(401);
-        given().when().get("/api/affichage-mural/qr-code").then().statusCode(401);
+        given().header("X-Edition-Id", "E1").when().get("/api/muraux").then().statusCode(401);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/affichage-mural/qr-code")
+                .then()
+                .statusCode(401);
     }
 
     @Test
@@ -128,7 +166,11 @@ class AffichageMuralSecurityTest {
                 EditionRepository.EDITION_DEFAUT_ID,
                 () -> service.revoke(created.link().id()));
 
-        given().when().get("/api/mural/" + created.token()).then().statusCode(404);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/mural/" + created.token())
+                .then()
+                .statusCode(404);
     }
 
     /**
@@ -141,22 +183,35 @@ class AffichageMuralSecurityTest {
     @Order(99)
     void aJunkFloodLocksUnknownTokensOutButNeverAValidOne() {
         String screen = newToken();
-        given().when().get("/api/mural/" + screen).then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/mural/" + screen)
+                .then()
+                .statusCode(200);
 
         int status = 0;
         for (int i = 0; i < MAX_REFUSED + 1 && status != 429; i++) {
-            status =
-                    given().when().get("/api/mural/essai-" + i).then().extract().statusCode();
+            status = given().header("X-Edition-Id", "E1")
+                    .when()
+                    .get("/api/mural/essai-" + i)
+                    .then()
+                    .extract()
+                    .statusCode();
         }
 
         assertThat(status).isEqualTo(429);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/mural/essai-encore")
                 .then()
                 .statusCode(429)
                 .header("Retry-After", org.hamcrest.Matchers.notNullValue());
         for (int i = 0; i < 3; i++) {
-            given().when().get("/api/mural/" + screen).then().statusCode(200);
+            given().header("X-Edition-Id", "E1")
+                    .when()
+                    .get("/api/mural/" + screen)
+                    .then()
+                    .statusCode(200);
         }
     }
 
@@ -168,7 +223,12 @@ class AffichageMuralSecurityTest {
 
         int status = 0;
         for (int i = 0; i < MAX_READS_PER_LINK + 2 && status != 429; i++) {
-            status = given().when().get("/api/mural/" + token).then().extract().statusCode();
+            status = given().header("X-Edition-Id", "E1")
+                    .when()
+                    .get("/api/mural/" + token)
+                    .then()
+                    .extract()
+                    .statusCode();
         }
 
         assertThat(status).isEqualTo(429);

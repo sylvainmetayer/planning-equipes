@@ -73,25 +73,33 @@ class EspaceAccesTest {
     @Test
     void sansSessionToutLEspaceRepond401() {
         String token = tokenOf("ACCES-A");
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + token)
                 .then()
                 .statusCode(401)
                 .body("message", containsString("code d'accès"));
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + token + "/demandes")
                 .then()
                 .statusCode(401);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + token + "/planning.pdf")
                 .then()
                 .statusCode(401);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + token + "/planning.ics")
                 .then()
                 .statusCode(401);
         // An unknown token stays a plain 404: nothing must help guessing one.
-        given().when().get("/api/espace-animateur/jeton-invente").then().statusCode(404);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/espace-animateur/jeton-invente")
+                .then()
+                .statusCode(404);
     }
 
     @Test
@@ -99,13 +107,15 @@ class EspaceAccesTest {
         String token = tokenOf("ACCES-A");
         String session = EspaceSessions.open(mailbox, token, EMAIL_ALICE);
 
-        given().cookie("planning-espace", session)
+        given().header("X-Edition-Id", "E1")
+                .cookie("planning-espace", session)
                 .when()
                 .get("/api/espace-animateur/" + token)
                 .then()
                 .statusCode(200)
                 .body("animateurId", equalTo("ACCES-A"));
-        given().cookie("planning-espace", session)
+        given().header("X-Edition-Id", "E1")
+                .cookie("planning-espace", session)
                 .when()
                 .get("/api/espace-animateur/" + token + "/planning.pdf")
                 .then()
@@ -116,7 +126,8 @@ class EspaceAccesTest {
     @Test
     void laSessionDUnAnimateurNOuvrePasLEspaceDUnAutre() {
         String session = EspaceSessions.open(mailbox, tokenOf("ACCES-A"), EMAIL_ALICE);
-        given().cookie("planning-espace", session)
+        given().header("X-Edition-Id", "E1")
+                .cookie("planning-espace", session)
                 .when()
                 .get("/api/espace-animateur/" + tokenOf("ACCES-B"))
                 .then()
@@ -133,7 +144,8 @@ class EspaceAccesTest {
     @Test
     void leCookieDeSessionPorteSecureQuandLaVisiteEstEnHttps() {
         String token = tokenOf("ACCES-A");
-        String setCookie = given().contentType(ContentType.JSON)
+        String setCookie = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .header("X-Forwarded-Proto", "https")
                 .body("{\"code\":\"" + codeEnvoye(token) + "\"}")
                 .when()
@@ -149,7 +161,8 @@ class EspaceAccesTest {
     @Test
     void leCookieDeSessionResteUtilisableSurUneVisiteEnClair() {
         String token = tokenOf("ACCES-A");
-        String setCookie = given().contentType(ContentType.JSON)
+        String setCookie = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"code\":\"" + codeEnvoye(token) + "\"}")
                 .when()
                 .post("/api/espace-animateur/" + token + "/session")
@@ -162,7 +175,8 @@ class EspaceAccesTest {
 
     @Test
     void sansAdresseEmailAucunCodeNEstPossible() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + tokenOf("ACCES-B") + "/code")
                 .then()
@@ -173,7 +187,8 @@ class EspaceAccesTest {
     @Test
     void unMauvaisCodeEpuiseSesTentativesPuisExigeUnNouveauCode() {
         String token = tokenOf("ACCES-A");
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + token + "/code")
                 .then()
@@ -181,7 +196,8 @@ class EspaceAccesTest {
                 .body("emailMasque", equalTo("a•••@example.org"));
 
         for (int tentative = 0; tentative < 5; tentative++) {
-            given().contentType(ContentType.JSON)
+            given().header("X-Edition-Id", "E1")
+                    .contentType(ContentType.JSON)
                     .body("{\"code\":\"000000\"}")
                     .when()
                     .post("/api/espace-animateur/" + token + "/session")
@@ -189,7 +205,8 @@ class EspaceAccesTest {
                     .statusCode(400)
                     .body("message", containsString("Code incorrect"));
         }
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"code\":\"000000\"}")
                 .when()
                 .post("/api/espace-animateur/" + token + "/session")
@@ -208,7 +225,8 @@ class EspaceAccesTest {
         String token = tokenOf("ACCES-A");
         clearJournal("TELECHARGEMENT_ESPACE_PDF");
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + token + "/planning.pdf")
                 .then()
                 .statusCode(401);
@@ -223,7 +241,8 @@ class EspaceAccesTest {
         String session = EspaceSessions.open(mailbox, token, EMAIL_ALICE);
         clearJournal("TELECHARGEMENT_ESPACE_PDF");
 
-        given().cookie("planning-espace", session)
+        given().header("X-Edition-Id", "E1")
+                .cookie("planning-espace", session)
                 .when()
                 .get("/api/espace-animateur/" + token + "/planning.pdf")
                 .then()
@@ -242,14 +261,16 @@ class EspaceAccesTest {
     @Test
     void aWrongCodeIsNotPinnedOnTheAnimateur() throws Exception {
         String token = tokenOf("ACCES-A");
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + token + "/code")
                 .then()
                 .statusCode(200);
         clearJournal("SESSION_ESPACE_OUVERTE");
 
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"code\":\"000000\"}")
                 .when()
                 .post("/api/espace-animateur/" + token + "/session")
@@ -282,12 +303,14 @@ class EspaceAccesTest {
         clearJournal("CODE_ESPACE_DEMANDE");
         clearJournal("PLANNING_CONFIRME");
 
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + token + "/code")
                 .then()
                 .statusCode(200);
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + token + "/confirmation")
                 .then()
@@ -334,7 +357,8 @@ class EspaceAccesTest {
     @Test
     void unCodeExpireEstRefuse() throws Exception {
         String token = tokenOf("ACCES-A");
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + token + "/code")
                 .then()
@@ -346,7 +370,8 @@ class EspaceAccesTest {
             ps.executeUpdate();
         }
         // Whatever the code was, an expired one must be refused unread.
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"code\":\"123456\"}")
                 .when()
                 .post("/api/espace-animateur/" + token + "/session")
@@ -357,7 +382,8 @@ class EspaceAccesTest {
 
     /** Asks for a code and reads it back from the mock mailbox, as the animateur would. */
     private String codeEnvoye(String token) {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + token + "/code")
                 .then()

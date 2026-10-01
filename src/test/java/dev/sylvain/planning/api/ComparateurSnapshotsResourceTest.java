@@ -37,7 +37,7 @@ class ComparateurSnapshotsResourceTest {
     @BeforeEach
     void resolveDefaultEdition() {
         defaut = listEditions().stream()
-                .filter(edition -> Boolean.TRUE.equals(edition.get("defaut")))
+                .filter(edition -> Boolean.TRUE.equals(edition.get("active")))
                 .map(edition -> (String) edition.get("id"))
                 .findFirst()
                 .orElseThrow();
@@ -49,13 +49,14 @@ class ComparateurSnapshotsResourceTest {
         for (Map<String, Object> edition : listEditions()) {
             String id = (String) edition.get("id");
             if (!defaut.equals(id)) {
-                given().when().delete("/api/editions/" + id);
+                given().header("X-Edition-Id", "E1").when().delete("/api/editions/" + id);
             }
         }
     }
 
     private static List<Map<String, Object>> listEditions() {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/editions")
                 .then()
                 .statusCode(200)
@@ -84,7 +85,11 @@ class ComparateurSnapshotsResourceTest {
         assertThat(comparaison.getBoolean("volumetriesDifferentes")).isFalse();
         assertThat(comparaison.getList("diffViolations")).isNotEmpty();
         // The whole promise of the feature: reading metrics, not solving.
-        given().when().get("/api/jobs/active").then().statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/jobs/active")
+                .then()
+                .statusCode(204);
         // And nothing nominative travels, like the KPI it reads.
         assertThat(comparaison.prettify()).doesNotContain("prenom");
     }
@@ -163,7 +168,8 @@ class ComparateurSnapshotsResourceTest {
 
     /** Creates an edition and answers the id the application drew for it. */
     private String createEdition(String nom) {
-        return given().contentType(ContentType.JSON)
+        return given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"nom\":\"" + nom + "\"}")
                 .when()
                 .post("/api/editions")
@@ -217,8 +223,13 @@ class ComparateurSnapshotsResourceTest {
         await().alias("Solver still busy")
                 .atMost(POLL_TIMEOUT)
                 .pollInterval(POLL_INTERVAL)
-                .until(() ->
-                        given().when().get("/api/jobs/active").then().extract().statusCode() == 204);
+                .until(() -> given().header("X-Edition-Id", "E1")
+                                .when()
+                                .get("/api/jobs/active")
+                                .then()
+                                .extract()
+                                .statusCode()
+                        == 204);
     }
 
     private JsonPath pollUntilFinished(String jobId) {
@@ -226,7 +237,8 @@ class ComparateurSnapshotsResourceTest {
                 .atMost(POLL_TIMEOUT)
                 .pollInterval(POLL_INTERVAL)
                 .until(
-                        () -> given().when()
+                        () -> given().header("X-Edition-Id", "E1")
+                                .when()
                                 .get("/api/jobs/" + jobId)
                                 .then()
                                 .statusCode(200)

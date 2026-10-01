@@ -35,19 +35,30 @@ class SpaCacheControlTest {
 
     @Test
     void theShellIsRevalidatedOnEveryVisit() {
-        given().when().get("/index.html").then().statusCode(200).header("Cache-Control", equalTo("no-cache"));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/index.html")
+                .then()
+                .statusCode(200)
+                .header("Cache-Control", equalTo("no-cache"));
     }
 
     /** Any HTML response, whatever its path: the trigger is the content type. */
     @Test
     void anyHtmlResponseIsCovered() {
-        given().when().get("/q/swagger-ui").then().statusCode(200).header("Cache-Control", equalTo("no-cache"));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/q/swagger-ui")
+                .then()
+                .statusCode(200)
+                .header("Cache-Control", equalTo("no-cache"));
     }
 
     /** The i18n catalogs share the stable-name problem: same revalidation. */
     @Test
     void translationCatalogsToo() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/i18n/messages.en.json")
                 .then()
                 .statusCode(200)
@@ -57,7 +68,12 @@ class SpaCacheControlTest {
     /** API responses are not the frontend: the filter must not touch them. */
     @Test
     void apiResponsesAreLeftAlone() {
-        given().when().get("/api/auth/me").then().statusCode(200).header("Cache-Control", blankOrNullString());
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/auth/me")
+                .then()
+                .statusCode(200)
+                .header("Cache-Control", blankOrNullString());
     }
 
     /**

@@ -53,7 +53,7 @@ public class ChangementsJourneeMcpTools {
     ChangementsJourneeView journeeChanges(
             @ToolArg(description = "Journée (AAAA-MM-JJ)") String jour,
             @ToolArg(description = "publication ou resolution", required = false) String reference,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         ChangementsJournee changements =
                 changementsService.changements(McpArgs.date(jour, "jour"), ReferenceChangements.fromParam(reference));
         return new ChangementsJourneeView(

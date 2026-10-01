@@ -34,7 +34,11 @@ class AffectationExplanationResourceTest {
      */
     @AfterEach
     void resetDatabase() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
     }
 
     /**
@@ -53,14 +57,16 @@ class AffectationExplanationResourceTest {
      * as here.</p>
      */
     private String solveScenario() {
-        String sample = given().when()
+        String sample = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/sample?name=scenario.yml")
                 .then()
                 .statusCode(200)
                 .extract()
                 .asString();
 
-        String solved = given().contentType("application/json")
+        String solved = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(sample)
                 .when()
                 .post("/api/solve?seconds=3")
@@ -88,7 +94,8 @@ class AffectationExplanationResourceTest {
         String posteId = solved.getString("postes.find { it.animateur != null }.id");
         assertThat(posteId).isNotNull();
 
-        JsonPath explication = given().contentType("application/json")
+        JsonPath explication = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(solvedJson)
                 .when()
                 .post("/api/postes/" + posteId + "/explication")
@@ -103,7 +110,8 @@ class AffectationExplanationResourceTest {
         // Every catalogued constraint must show up on exactly one side.
         int total = explication.getList("contraintesViolees").size()
                 + explication.getList("contraintesRespectees").size();
-        int catalogueSize = given().when()
+        int catalogueSize = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/constraints")
                 .then()
                 .statusCode(200)
@@ -118,7 +126,8 @@ class AffectationExplanationResourceTest {
     void explicationRefuseUnPosteInconnu() {
         String solvedJson = solveScenario();
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(solvedJson)
                 .when()
                 .post("/api/postes/POSTE-INEXISTANT/explication")
@@ -149,7 +158,8 @@ class AffectationExplanationResourceTest {
         assertThat(regle).as("the solved scenario reproaches at least one seat").isNotNull();
 
         try {
-            given().contentType("application/json")
+            given().header("X-Edition-Id", "E1")
+                    .contentType("application/json")
                     .body("{\"actif\":false}")
                     .when()
                     .put("/api/constraints/" + regle)
@@ -158,7 +168,8 @@ class AffectationExplanationResourceTest {
 
             assertThat(persistedViolations(posteId)).doesNotContain(regle);
         } finally {
-            given().contentType("application/json")
+            given().header("X-Edition-Id", "E1")
+                    .contentType("application/json")
                     .body("{\"actif\":true}")
                     .when()
                     .put("/api/constraints/" + regle)
@@ -171,11 +182,16 @@ class AffectationExplanationResourceTest {
     void theExplanationOfThePersistedPlanRefusesAnUnknownSeat() {
         solveScenario();
 
-        given().when().get("/api/postes/POSTE-INEXISTANT/explication").then().statusCode(404);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/postes/POSTE-INEXISTANT/explication")
+                .then()
+                .statusCode(404);
     }
 
     private static List<String> persistedViolations(String posteId) {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/postes/" + posteId + "/explication")
                 .then()
                 .statusCode(200)
@@ -194,7 +210,8 @@ class AffectationExplanationResourceTest {
         String autreAnimateurId = solved.getString("animateurs.find { it.id != '" + animateurActuelId + "' }.id");
         assertThat(autreAnimateurId).isNotNull();
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(solvedJson)
                 .when()
                 .post("/api/postes/" + posteId + "/simulation-swap?animateurId=" + autreAnimateurId)
@@ -217,7 +234,8 @@ class AffectationExplanationResourceTest {
         String posteId = solved.getString("postes.find { it.animateur != null }.id");
         String animateurActuelId = solved.getString("postes.find { it.id == '" + posteId + "' }.animateur.id");
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(solvedJson)
                 .when()
                 .post("/api/postes/" + posteId + "/simulation-swap?animateurId=" + animateurActuelId)
@@ -234,7 +252,8 @@ class AffectationExplanationResourceTest {
         JsonPath solved = JsonPath.from(solvedJson);
         String posteId = solved.getString("postes.find { it.animateur != null }.id");
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(solvedJson)
                 .when()
                 .post("/api/postes/" + posteId + "/simulation-swap?animateurId=ANIMATEUR-INEXISTANT")
@@ -257,7 +276,8 @@ class AffectationExplanationResourceTest {
         String posteId = solved.getString("postes.find { it.animateur != null }.id");
         String occupantId = solved.getString("postes.find { it.id == '" + posteId + "' }.animateur.id");
 
-        JsonPath suggestions = given().contentType("application/json")
+        JsonPath suggestions = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(solvedJson)
                 .when()
                 .post("/api/postes/" + posteId + "/suggestions-reparation")
@@ -306,7 +326,8 @@ class AffectationExplanationResourceTest {
         String posteId = solved.getString("postes.find { it.animateur != null }.id");
         String occupantId = solved.getString("postes.find { it.id == '" + posteId + "' }.animateur.id");
 
-        JsonPath suggestions = given().contentType("application/json")
+        JsonPath suggestions = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(solvedJson)
                 .when()
                 .post("/api/postes/" + posteId + "/suggestions-reparation?plafond=100")
@@ -326,7 +347,8 @@ class AffectationExplanationResourceTest {
         // simulation endpoint says of each candidate, one by one.
         List<String> autres = solved.getList("animateurs.findAll { it.id != '" + occupantId + "' }.id", String.class);
         for (String candidatId : autres) {
-            int deltaDur = given().contentType("application/json")
+            int deltaDur = given().header("X-Edition-Id", "E1")
+                    .contentType("application/json")
                     .body(solvedJson)
                     .when()
                     .post("/api/postes/" + posteId + "/simulation-swap?animateurId=" + candidatId)
@@ -349,7 +371,8 @@ class AffectationExplanationResourceTest {
         JsonPath solved = JsonPath.from(solvedJson);
         String posteId = solved.getString("postes.find { it.animateur != null }.id");
 
-        JsonPath suggestions = given().contentType("application/json")
+        JsonPath suggestions = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(solvedJson)
                 .when()
                 .post("/api/postes/" + posteId + "/suggestions-reparation?plafond=1")
@@ -369,7 +392,8 @@ class AffectationExplanationResourceTest {
         JsonPath solved = JsonPath.from(solvedJson);
         String posteId = solved.getString("postes.find { it.animateur != null }.id");
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(solvedJson)
                 .when()
                 .post("/api/postes/" + posteId + "/suggestions-reparation?plafond=0")
@@ -377,7 +401,8 @@ class AffectationExplanationResourceTest {
                 .statusCode(200)
                 .body("plafond", equalTo(20));
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(solvedJson)
                 .when()
                 .post("/api/postes/" + posteId + "/suggestions-reparation?plafond=100000")
@@ -390,7 +415,8 @@ class AffectationExplanationResourceTest {
     void suggestionsRefusentUnPosteInconnu() {
         String solvedJson = solveScenario();
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(solvedJson)
                 .when()
                 .post("/api/postes/POSTE-INEXISTANT/suggestions-reparation")
@@ -412,7 +438,8 @@ class AffectationExplanationResourceTest {
         String videJson = withoutAnimateur(solvedJson, posteId);
         int animateurs = solved.getList("animateurs").size();
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(videJson)
                 .when()
                 .post("/api/postes/" + posteId + "/suggestions-reparation")
@@ -431,7 +458,8 @@ class AffectationExplanationResourceTest {
         String remplacantId = solved.getString("animateurs.find { it.id != '" + occupantId + "' }.id");
         Map<String, String> avant = occupantsPersistes();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/postes/" + posteId + "/affectation?animateurId=" + remplacantId)
                 .then()
                 .statusCode(204);
@@ -451,7 +479,11 @@ class AffectationExplanationResourceTest {
         JsonPath solved = JsonPath.from(solvedJson);
         String posteId = solved.getString("postes.find { it.animateur != null }.id");
 
-        given().when().post("/api/postes/" + posteId + "/affectation").then().statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/postes/" + posteId + "/affectation")
+                .then()
+                .statusCode(204);
 
         assertThat(occupantsPersistes()).doesNotContainKey(posteId);
     }
@@ -460,7 +492,8 @@ class AffectationExplanationResourceTest {
     void appliquerRefuseUnPosteInconnu() {
         solveScenario();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/postes/POSTE-INEXISTANT/affectation?animateurId=A1")
                 .then()
                 .statusCode(404)
@@ -473,7 +506,8 @@ class AffectationExplanationResourceTest {
         String posteId = JsonPath.from(solvedJson).getString("postes.find { it.animateur != null }.id");
         Map<String, String> avant = occupantsPersistes();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/postes/" + posteId + "/affectation?animateurId=ANIMATEUR-INEXISTANT")
                 .then()
                 .statusCode(404)
@@ -492,14 +526,16 @@ class AffectationExplanationResourceTest {
         String occupantId = solved.getString("postes.find { it.id == '" + posteId + "' }.animateur.id");
         String remplacantId = solved.getString("animateurs.find { it.id != '" + occupantId + "' }.id");
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"type\":\"STAND\",\"standId\":\"" + standId + "\"}")
                 .when()
                 .post("/api/verrouillages")
                 .then()
                 .statusCode(200);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/postes/" + posteId + "/affectation?animateurId=" + remplacantId)
                 .then()
                 .statusCode(400)
@@ -510,7 +546,8 @@ class AffectationExplanationResourceTest {
 
     /** Poste id → occupant of the persisted plan; unstaffed seats are simply absent. */
     private static Map<String, String> occupantsPersistes() {
-        JsonPath persiste = given().when()
+        JsonPath persiste = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/persisted")
                 .then()
                 .statusCode(200)

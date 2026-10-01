@@ -52,14 +52,14 @@ class DiagnosticPlanMcpToolsTest {
     @AfterEach
     void clearEdition() {
         awaitSolverIdle();
-        scenarioTools.resetData(null);
+        scenarioTools.resetData("E1");
     }
 
     @Test
     void diagnosticScoresThePersistedPlanWithoutStartingASolver() {
         solvedPlanning();
 
-        DiagnosticPlanView vue = solveurTools.diagnosePlan(null);
+        DiagnosticPlanView vue = solveurTools.diagnosePlan("E1");
 
         assertThat(vue.score()).isNotBlank();
         assertThat(vue.postesNonPourvus()).isGreaterThanOrEqualTo(0);
@@ -95,24 +95,24 @@ class DiagnosticPlanMcpToolsTest {
                         .noneMatch(phrase -> phrase.contains(animateur.getNom())));
 
         // Same plan, same score: the diagnostic reads, it does not search.
-        assertThat(solveurTools.diagnosePlan(null).score()).isEqualTo(vue.score());
+        assertThat(solveurTools.diagnosePlan("E1").score()).isEqualTo(vue.score());
     }
 
     @Test
     void diagnosticWithoutAPersistedPlanSaysSo() {
         awaitSolverIdle();
-        scenarioTools.resetData(null);
+        scenarioTools.resetData("E1");
 
-        assertThatThrownBy(() -> solveurTools.diagnosePlan(null))
+        assertThatThrownBy(() -> solveurTools.diagnosePlan("E1"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("résolution");
     }
 
     private void solvedPlanning() {
         awaitSolverIdle();
-        scenarioTools.resetData(null);
-        scenarioTools.importScenario("scenario.yml", null);
-        JobMcpView job = solveurTools.startSolver(1L, null, null, null);
+        scenarioTools.resetData("E1");
+        scenarioTools.importScenario("scenario.yml", "E1");
+        JobMcpView job = solveurTools.startSolver(1L, null, null, "E1");
         assertThat(awaitFinished(job.id()).status()).isEqualTo(JobStatus.COMPLETED.name());
     }
 

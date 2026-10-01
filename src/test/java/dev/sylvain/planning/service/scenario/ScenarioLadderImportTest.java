@@ -58,12 +58,14 @@ class ScenarioLadderImportTest {
 
     @AfterEach
     void deleteTheLandingEditions() {
-        landingEditions.forEach(id -> given().when().delete("/api/editions/" + id));
+        landingEditions.forEach(
+                id -> given().header("X-Edition-Id", "E1").when().delete("/api/editions/" + id));
         landingEditions.clear();
     }
 
     private String createLandingEdition() {
-        String id = given().contentType("application/json")
+        String id = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"nom\":\"" + EDITION_NOM + "\"}")
                 .when()
                 .post("/api/editions")
@@ -77,7 +79,8 @@ class ScenarioLadderImportTest {
 
     /** Ids of the editions carrying {@code nom} — what an interrupted earlier run may have left behind. */
     private static List<String> editionsNamed(String nom) {
-        List<Map<String, Object>> editions = given().when()
+        List<Map<String, Object>> editions = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/editions")
                 .then()
                 .statusCode(200)
@@ -195,10 +198,12 @@ class ScenarioLadderImportTest {
         String name = "gamme-10-4j-8stands-20animateurs-journees-types-multiples";
         // The section designates its edition by name once its id is unknown:
         // one left over by an interrupted run would be landed in, not created.
-        editionsNamed(GAMME_10_NOM).forEach(id -> given().when().delete("/api/editions/" + id));
+        editionsNamed(GAMME_10_NOM)
+                .forEach(id -> given().header("X-Edition-Id", "E1").when().delete("/api/editions/" + id));
         // UTF-8 said out loud: the edition is now found by its name, and a
         // text/plain body defaults to ISO-8859-1, which mangles « — » and « é ».
-        String edition = given().contentType("text/plain; charset=UTF-8")
+        String edition = given().header("X-Edition-Id", "E1")
+                .contentType("text/plain; charset=UTF-8")
                 .body(ScenarioLadder.yaml(name).getBytes(StandardCharsets.UTF_8))
                 .when()
                 .post("/api/reference-data/import-scenario-fichier")

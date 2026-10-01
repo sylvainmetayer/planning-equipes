@@ -68,8 +68,7 @@ public class InstantaneMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    List<InstantaneView> listSnapshots(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+    List<InstantaneView> listSnapshots(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return snapshotService.list().stream().map(InstantaneMcpTools::toView).toList();
     }
 
@@ -90,7 +89,7 @@ public class InstantaneMcpTools {
             @ToolArg(description = "Id d'animateur pour filtrer", required = false) String animateurId,
             @ToolArg(description = "Nombre maximum d'affectations renvoyées (défaut 200)", required = false)
                     Integer limite,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         SnapshotDetail detail = snapshotService.load(id);
         if (detail == null) {
             throw new BusinessError.NotFound("Instantané introuvable dans cette édition : " + id);
@@ -119,7 +118,7 @@ public class InstantaneMcpTools {
                             openWorldHint = false))
     InstantaneView captureSnapshot(
             @ToolArg(description = "Libellé de l'instantané", required = false) String libelle,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         String nom = libelle == null || libelle.isBlank() ? "Instantané" : libelle.trim();
         SnapshotMeta meta = snapshotService.capture(nom, false);
         if (meta == null) {
@@ -155,7 +154,7 @@ public class InstantaneMcpTools {
                                     + "capture). Ne lève aucun autre refus.",
                             required = false)
                     Boolean forcer,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         RestaurationResult result;
         try {
             result = snapshotService.restaurer(id, Boolean.TRUE.equals(forcer));
@@ -198,7 +197,7 @@ public class InstantaneMcpTools {
                             openWorldHint = false))
     SuppressionResult deleteSnapshot(
             @ToolArg(description = "Id de l'instantané") long id,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         if (!snapshotService.delete(id)) {
             throw new BusinessError.NotFound("Instantané introuvable dans cette édition : " + id);
         }
@@ -225,7 +224,7 @@ public class InstantaneMcpTools {
     ComparaisonSnapshots compareSnapshots(
             @ToolArg(description = "Côté de référence : id d'instantané ou « courant »") String base,
             @ToolArg(description = "Côté comparé : id d'instantané ou « courant »") String variante,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         ComparaisonSnapshots comparaison = comparaisonService.comparer(base, variante);
         if (comparaison == null) {
             throw new BusinessError.NotFound("Instantané introuvable : « " + base + " » ou « " + variante + " »");

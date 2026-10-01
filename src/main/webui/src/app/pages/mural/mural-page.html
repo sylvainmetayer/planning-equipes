@@ -1,7 +1,7 @@
 <main class="mural-ecran" [class.mural-impression]="impression()">
   @if (lienMort()) {
     <div class="mural-message">
-      <p class="mural-message-titre" i18n="@@mural.lienMort.titre">Lien inconnu ou révoqué</p>
+      <p class="mural-message-titre" i18n="@@mural.lienMort.titre">Lien inconnu, révoqué, ou édition terminée</p>
       <p i18n="@@mural.lienMort.texte">Demandez un nouveau lien d'affichage mural à l'administration.</p>
     </div>
   } @else if (view(); as view) {

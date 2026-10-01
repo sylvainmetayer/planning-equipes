@@ -31,7 +31,7 @@ class RefusMetierMcpToolsTest {
 
     @Test
     void aDateInTheWrongFormatStatesTheExpectedFormat() {
-        assertThatThrownBy(() -> creneauTools.createCreneau("18/07/2026", "09:00", "12:00", null, null))
+        assertThatThrownBy(() -> creneauTools.createCreneau("18/07/2026", "09:00", "12:00", null, "E1"))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("18/07/2026")
@@ -40,7 +40,7 @@ class RefusMetierMcpToolsTest {
 
     @Test
     void aRecurrenceWithoutAWindowGivesAnExample() {
-        assertThatThrownBy(() -> creneauTools.createRecurringCreneaux("", null, null, null, null, null, null, null))
+        assertThatThrownBy(() -> creneauTools.createRecurringCreneaux("", null, null, null, null, null, null, "E1"))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("fenetres")
@@ -49,7 +49,7 @@ class RefusMetierMcpToolsTest {
 
     @Test
     void anUnreadableVacationIsQuoted() {
-        assertThatThrownBy(() -> journeeTypeTools.defineJourneeType("Jour normal", "neuf heures", null))
+        assertThatThrownBy(() -> journeeTypeTools.defineJourneeType("Jour normal", "neuf heures", "E1"))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("neuf heures");

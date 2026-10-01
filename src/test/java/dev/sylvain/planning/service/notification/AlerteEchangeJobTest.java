@@ -127,7 +127,7 @@ class AlerteEchangeJobTest {
     /* -------------------------------- Helpers ------------------------------ */
 
     private static ParametresNotifications threeDayThreshold() {
-        return new ParametresNotifications(true, LocalTime.of(18, 0), 72, 3);
+        return new ParametresNotifications(LocalTime.of(18, 0), 72, 3);
     }
 
     private DemandeEchange submitDemande() {

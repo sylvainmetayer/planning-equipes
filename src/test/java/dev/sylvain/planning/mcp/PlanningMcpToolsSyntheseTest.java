@@ -65,7 +65,7 @@ class PlanningMcpToolsSyntheseTest {
                 poste("P3", tir, SAMEDI, "A2"),
                 poste("P4", tir, DIMANCHE, "A1")));
 
-        var synthese = tools.summarizeAffectations(null);
+        var synthese = tools.summarizeAffectations("E1");
 
         assertThat(synthese.postesTotal()).isEqualTo(4);
         assertThat(synthese.postesPourvus()).isEqualTo(3);
@@ -84,7 +84,7 @@ class PlanningMcpToolsSyntheseTest {
     void theSummaryCountsASplitSeatOnce() {
         SplitSeatFixture fixture = new SplitSeatFixture();
 
-        var synthese = tools(fixture.plan().getPostes()).summarizeAffectations(null);
+        var synthese = tools(fixture.plan().getPostes()).summarizeAffectations("E1");
 
         assertThat(synthese.postesTotal()).isEqualTo(3);
         assertThat(synthese.postesPourvus()).isEqualTo(2);
@@ -99,7 +99,7 @@ class PlanningMcpToolsSyntheseTest {
     void theSummaryNamesTheStandsButNeverTheAnimateurs() {
         PlanningMcpTools tools = tools(List.of(poste("P1", stand("S1", "Échecs"), SAMEDI, "A1")));
 
-        var synthese = tools.summarizeAffectations(null);
+        var synthese = tools.summarizeAffectations("E1");
 
         assertThat(synthese.parStand())
                 .singleElement()
@@ -109,7 +109,7 @@ class PlanningMcpToolsSyntheseTest {
 
     @Test
     void anEmptyPlanningGivesAZeroSummary() {
-        var synthese = tools(List.of()).summarizeAffectations(null);
+        var synthese = tools(List.of()).summarizeAffectations("E1");
 
         assertThat(synthese.postesTotal()).isZero();
         assertThat(synthese.parStand()).isEmpty();
@@ -123,7 +123,7 @@ class PlanningMcpToolsSyntheseTest {
                 .mapToObj(index -> poste("P" + index, echecs, SAMEDI, "A" + index))
                 .toList());
 
-        AffectationsView vue = tools(postes).listAffectations(null, null, null, null, null, null);
+        AffectationsView vue = tools(postes).listAffectations(null, null, null, null, null, "E1");
 
         assertThat(vue.affectations()).hasSize(PlanningMcpTools.LIMITE_AFFECTATIONS_DEFAUT);
         assertThat(vue.total()).isEqualTo(500);
@@ -135,9 +135,9 @@ class PlanningMcpToolsSyntheseTest {
                 poste("P1", stand("S1", "Échecs"), SAMEDI, "A1"),
                 poste("P2", stand("S2", "Tir à l'arc"), SAMEDI, null)));
 
-        assertThat(tools.listAffectations("S1", null, null, null, null, null).total())
+        assertThat(tools.listAffectations("S1", null, null, null, null, "E1").total())
                 .isEqualTo(1);
-        assertThat(tools.listAffectations(null, null, null, true, null, null).total())
+        assertThat(tools.listAffectations(null, null, null, true, null, "E1").total())
                 .isEqualTo(1);
     }
 
@@ -145,7 +145,7 @@ class PlanningMcpToolsSyntheseTest {
     void aNonPositiveLimitIsRefused() {
         PlanningMcpTools tools = tools(List.of(poste("P1", stand("S1", "Échecs"), SAMEDI, "A1")));
 
-        assertThatThrownBy(() -> tools.listAffectations(null, null, null, null, -1, null))
+        assertThatThrownBy(() -> tools.listAffectations(null, null, null, null, -1, "E1"))
                 .isInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("limite");
     }

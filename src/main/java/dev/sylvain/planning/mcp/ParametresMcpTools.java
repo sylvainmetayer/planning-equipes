@@ -55,7 +55,7 @@ public class ParametresMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     ParametresLegauxView getParametresLegaux(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return toView(referenceDataService.getParametresLegaux());
     }
 
@@ -106,7 +106,7 @@ public class ParametresMcpTools {
                                     + "dans le tableau d'équité (HH:MM)",
                             required = false)
                     String heureDebutSoiree,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         ParametresLegaux parametres = referenceDataService.getParametresLegaux();
         if (dureeHebdomadaireMaxMinutes != null) {
             parametres.setDureeHebdomadaireMaxMinutes(dureeHebdomadaireMaxMinutes);
@@ -160,7 +160,7 @@ public class ParametresMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     ParametresQualiteView getParametresQualite(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return ParametresQualiteView.of(referenceDataService.getParametresQualite());
     }
 
@@ -198,7 +198,7 @@ public class ParametresMcpTools {
                                     + "d'arrivée ou de départ toléré entre les membres d'un covoiturage",
                             required = false)
                     Integer toleranceArriveeGroupeeMinutes,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         ParametresQualite actuels = referenceDataService.getParametresQualite();
         ParametresQualite nouveaux = new ParametresQualite(
                 maxEmplacementsDistinctsParJour == null
@@ -285,7 +285,7 @@ public class ParametresMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     ParametresSolveurView getParametresSolveur(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return toView(referenceDataService.getParametresSolveur(), referenceDataService.getSolverBudgetBounds());
     }
 
@@ -314,7 +314,7 @@ public class ParametresMcpTools {
                     Integer plateauSecondes,
             @ToolArg(description = "true : durée et plateau reviennent au défaut de l'instance", required = false)
                     Boolean revenirAuDefaut,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         // The mail switch is not tunable here; it is kept as is.
         ParametresSolveur actuels = referenceDataService.getParametresSolveur();
         boolean defaut = Boolean.TRUE.equals(revenirAuDefaut);
@@ -332,10 +332,10 @@ public class ParametresMcpTools {
 
     @Tool(
             name = "consulter_parametres_notifications",
-            description = "Consulte ce que les notifications planifiées ont le droit de faire sur l'édition : "
-                    + "l'interrupteur, l'heure du rappel de la veille, le délai avant relance des animateurs qui n'ont "
-                    + "pas confirmé, et l'ancienneté à partir de laquelle une demande d'échange sans réponse est "
-                    + "signalée. Une édition que personne n'a armée répond les valeurs par défaut, actives à faux.",
+            description = "Consulte les délais des notifications planifiées de l'édition : l'heure du rappel de la "
+                    + "veille, le délai avant relance des animateurs qui n'ont pas confirmé, et l'ancienneté à partir "
+                    + "de laquelle une demande d'échange sans réponse est signalée. Rien ne part d'une édition qui "
+                    + "n'est pas l'édition active (voir lister_editions).",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -343,17 +343,17 @@ public class ParametresMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     ParametresNotifications getParametresNotifications(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return referenceDataService.getParametresNotifications();
     }
 
     @Tool(
             name = "modifier_parametres_notifications",
-            description = "Modifie les paramètres des notifications planifiées. Seuls les champs fournis sont "
-                    + "modifiés. actives=true ARME DES ENVOIS DE COURRIELS automatiques nocturnes (rappel de la veille, "
-                    + "relance des non-confirmés, alerte sur les échanges sans réponse) : cet outil n'envoie rien "
-                    + "lui-même, il autorise le planificateur à le faire. L'heure du rappel ne peut pas dépasser "
-                    + "23:00 — plus tard, la tâche horaire passerait par-dessus et le rappel ne partirait jamais.",
+            description = "Modifie les délais des notifications planifiées. Seuls les champs fournis sont "
+                    + "modifiés. Cet outil n'envoie rien : les envois de nuit (rappel de la veille, relance des "
+                    + "non-confirmés, alerte sur les échanges sans réponse) ne partent que de l'édition active "
+                    + "(activer_edition). L'heure du rappel ne peut pas dépasser 23:00 — plus tard, la tâche horaire "
+                    + "passerait par-dessus et le rappel ne partirait jamais.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -361,7 +361,6 @@ public class ParametresMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     ParametresNotifications updateParametresNotifications(
-            @ToolArg(description = "Notifications planifiées actives ou non", required = false) Boolean actives,
             @ToolArg(description = "Heure du rappel de la veille (HH:MM), au plus tard 23:00", required = false)
                     String heureRappelVeille,
             @ToolArg(description = "Délai avant relance des non-confirmés, en heures", required = false)
@@ -370,10 +369,9 @@ public class ParametresMcpTools {
                             description = "Ancienneté d'une demande d'échange sans réponse avant alerte, en jours",
                             required = false)
                     Integer ancienneteEchangeJours,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         ParametresNotifications actuels = referenceDataService.getParametresNotifications();
         return referenceDataService.updateParametresNotifications(new ParametresNotifications(
-                actives == null ? actuels.actives() : actives,
                 heureRappelVeille == null
                         ? actuels.heureRappelVeille()
                         : McpArgs.heure(heureRappelVeille, "heureRappelVeille"),
@@ -397,7 +395,7 @@ public class ParametresMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     List<ContrainteAdHocView> listContraintesAdHoc(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return referenceDataService.listContraintesAdHoc().stream()
                 .map(ParametresMcpTools::toView)
                 .toList();
@@ -431,7 +429,7 @@ public class ParametresMcpTools {
             @ToolArg(description = "Id du créneau concerné", required = false) Long creneauId,
             @ToolArg(description = "Id du stand concerné", required = false) String standId,
             @ToolArg(description = "Raison, purement informative", required = false) String raison,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         ContrainteAdHoc contrainte =
                 new ContrainteAdHoc(null, McpArgs.enumeration(TypeContrainteAdHoc.class, type, "type"));
         contrainte.setAnimateursConcernes(animateurs(animateurIds));
@@ -478,7 +476,7 @@ public class ParametresMcpTools {
     @WarnsWhileSolving
     SuppressionResult deleteContrainteAdHoc(
             @ToolArg(description = "Id de la contrainte") String id,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         referenceDataService.deleteContrainteAdHoc(id);
         return new SuppressionResult(id, true);
     }

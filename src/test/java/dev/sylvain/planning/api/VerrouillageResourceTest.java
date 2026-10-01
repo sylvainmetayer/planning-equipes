@@ -19,7 +19,8 @@ import org.junit.jupiter.api.Test;
 class VerrouillageResourceTest {
 
     private static String createDay(String jour) {
-        return given().contentType(ContentType.JSON)
+        return given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"type\":\"JOUR\",\"jour\":\"" + jour + "\",\"raison\":\"Journée validée\"}")
                 .when()
                 .post("/api/verrouillages")
@@ -37,15 +38,21 @@ class VerrouillageResourceTest {
     void unVerrouillageJourEstCreeListePuisSupprime() {
         String id = createDay("2026-07-12");
         try {
-            given().when()
+            given().header("X-Edition-Id", "E1")
+                    .when()
                     .get("/api/verrouillages")
                     .then()
                     .statusCode(200)
                     .body("find { it.id == '" + id + "' }.raison", equalTo("Journée validée"));
         } finally {
-            given().when().delete("/api/verrouillages/" + id).then().statusCode(204);
+            given().header("X-Edition-Id", "E1")
+                    .when()
+                    .delete("/api/verrouillages/" + id)
+                    .then()
+                    .statusCode(204);
         }
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/verrouillages")
                 .then()
                 .statusCode(200)
@@ -58,14 +65,23 @@ class VerrouillageResourceTest {
         String premier = createDay("2026-07-13");
         String second = createDay("2026-07-13");
         try {
-            given().when()
+            given().header("X-Edition-Id", "E1")
+                    .when()
                     .get("/api/verrouillages")
                     .then()
                     .statusCode(200)
                     .body("findAll { it.type == 'JOUR' && it.jour == '2026-07-13' }.size()", equalTo(1));
         } finally {
-            given().when().delete("/api/verrouillages/" + premier).then().statusCode(204);
-            given().when().delete("/api/verrouillages/" + second).then().statusCode(204);
+            given().header("X-Edition-Id", "E1")
+                    .when()
+                    .delete("/api/verrouillages/" + premier)
+                    .then()
+                    .statusCode(204);
+            given().header("X-Edition-Id", "E1")
+                    .when()
+                    .delete("/api/verrouillages/" + second)
+                    .then()
+                    .statusCode(204);
         }
     }
 
@@ -79,7 +95,8 @@ class VerrouillageResourceTest {
      */
     @Test
     void unPayloadPortantDeuxCiblesNeGardeQueCelleDeSonType() {
-        String id = given().contentType(ContentType.JSON)
+        String id = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"type\":\"JOUR\",\"jour\":\"2026-07-14\","
                         + "\"animateurId\":\"INTRUS\",\"standId\":\"INTRUS\",\"creneauId\":42,"
                         + "\"raison\":\"Journée validée\"}")
@@ -96,7 +113,8 @@ class VerrouillageResourceTest {
                 .path("verrouillage.id");
 
         try {
-            given().when()
+            given().header("X-Edition-Id", "E1")
+                    .when()
                     .get("/api/verrouillages")
                     .then()
                     .statusCode(200)
@@ -104,13 +122,18 @@ class VerrouillageResourceTest {
                     .body("find { it.id == '" + id + "' }.standId", nullValue())
                     .body("find { it.id == '" + id + "' }.creneauId", nullValue());
         } finally {
-            given().when().delete("/api/verrouillages/" + id).then().statusCode(204);
+            given().header("X-Edition-Id", "E1")
+                    .when()
+                    .delete("/api/verrouillages/" + id)
+                    .then()
+                    .statusCode(204);
         }
     }
 
     @Test
     void unTypeSansCibleCorrespondanteEstRefuse() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"type\":\"STAND\"}")
                 .when()
                 .post("/api/verrouillages")
@@ -121,7 +144,8 @@ class VerrouillageResourceTest {
 
     @Test
     void uneCibleInconnueEstRefusee() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"type\":\"ANIMATEUR\",\"animateurId\":\"ANIMATEUR-INEXISTANT\"}")
                 .when()
                 .post("/api/verrouillages")

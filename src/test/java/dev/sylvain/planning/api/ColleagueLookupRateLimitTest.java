@@ -69,7 +69,8 @@ class ColleagueLookupRateLimitTest {
             Animateur collegue = new Animateur(null, "Camille", label, LocalDate.of(1990, 1, 1), false);
             ids.put(label, referenceData.createAnimateur(collegue).getId());
         }
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"foireOuverte\":true}")
                 .when()
                 .put("/api/echanges/configuration")
@@ -108,7 +109,9 @@ class ColleagueLookupRateLimitTest {
     /** A label of this fixture, or any other string taken as an id nobody bears. */
     private Response seatsOf(String collegue) {
         String collegueId = ids.getOrDefault(collegue, collegue);
-        return given().when().get("/api/espace-animateur/" + token() + "/collegues/" + collegueId + "/postes");
+        return given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/espace-animateur/" + token() + "/collegues/" + collegueId + "/postes");
     }
 
     private String token() {

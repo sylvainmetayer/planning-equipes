@@ -114,7 +114,7 @@ public class DiagnosticMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     GroupedArrivalAnalyzer.GroupedArrivalReport analyzeGroupedArrivals(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return groupedArrivalAnalyzer.analyze(
                 persistenceService.loadPersistedPlanning(),
                 referenceDataService.listContraintesAdHoc(),
@@ -144,7 +144,7 @@ public class DiagnosticMcpTools {
                             openWorldHint = false))
     WalkSequenceAnalyzer.WalkSequenceReport analyzeWalks(
             @ToolArg(description = "Date (AAAA-MM-JJ) : ne garder que ce jour", required = false) String date,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         WalkSequenceAnalyzer.WalkSequenceReport rapport = walkSequenceAnalyzer.analyze(
                 persistenceService.loadPersistedPlanning(),
                 referenceDataService.getParametresQualite(),
@@ -189,8 +189,7 @@ public class DiagnosticMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    StaffingSummary analyzeEffectifs(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+    StaffingSummary analyzeEffectifs(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return staffingService.analyzeEdition();
     }
 
@@ -218,8 +217,7 @@ public class DiagnosticMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    PlanFormationView suggestTrainingPlan(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+    PlanFormationView suggestTrainingPlan(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return PlanFormationView.of(formationService.plan());
     }
 
@@ -263,7 +261,7 @@ public class DiagnosticMcpTools {
                                     + "marge « apres » croisée avec la fragilité, en quatre niveaux de gravité",
                             required = false)
                     String mode,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         if ("tension".equalsIgnoreCase(mode)) {
             return margeService.tension();
         }
@@ -289,7 +287,7 @@ public class DiagnosticMcpTools {
                             openWorldHint = false))
     RapportOuvertures analyzeStandOpenings(
             @ToolArg(description = "Id de stand pour ne détailler que celui-là", required = false) String standId,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         RapportOuvertures rapport = OuvertureStandsAnalyzer.analyze(
                 referenceDataService.listSolvedStands(), referenceDataService.listCreneaux());
         if (standId == null) {
@@ -339,7 +337,7 @@ public class DiagnosticMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     CoherenceListView listReferenceDataAnomalies(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         CoherenceReport rapport = coherenceService.report();
         return new CoherenceListView(
                 rapport.bloquants(),
@@ -413,7 +411,7 @@ public class DiagnosticMcpTools {
             @ToolArg(description = "Ids d'animateurs", required = false) List<String> animateurIds,
             @ToolArg(description = "Ids de stands", required = false) List<String> standIds,
             @ToolArg(description = "Ids de créneaux", required = false) List<String> creneauIds,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return new UsagesView(
                 referenceDataService.countAnimateurUsages(animateurIds == null ? List.of() : animateurIds),
                 referenceDataService.countStandUsages(standIds == null ? List.of() : standIds),
@@ -431,8 +429,7 @@ public class DiagnosticMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    ImportImpact previewImport(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+    ImportImpact previewImport(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return referenceDataService.countImportImpact();
     }
 
@@ -471,7 +468,7 @@ public class DiagnosticMcpTools {
                             description = "true : ne garder que les pauses sans relais possible sur le stand",
                             required = false)
                     Boolean sansRelaisSeulement,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         PauseAnalyzer.RapportPauses rapport = pauseAnalyzer.analyze(
                 persistenceService.loadPersistedPlanning(),
                 referenceDataService.getParametresLegaux(),

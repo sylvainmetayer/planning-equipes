@@ -119,7 +119,8 @@ class RelanceResourceTest {
         assertThat(mails.get(0).getSubject()).contains("confirmez-vous votre planning ?");
         assertThat(mails.get(0).getText()).contains("Bonjour Alice").contains("/animateur/" + tokenOf("REL-A"));
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/animateurs/confirmations")
                 .then()
                 .statusCode(200)
@@ -182,7 +183,8 @@ class RelanceResourceTest {
 
     @Test
     void theSynthesisCountsThePeopleOfThePublishedPlanAndFollowsTheReminder() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/animateurs/confirmations/synthese")
                 .then()
                 .statusCode(200)
@@ -196,7 +198,8 @@ class RelanceResourceTest {
         relancer("REL-A").statusCode(200);
         confirmationService.confirmer("REL-B");
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/animateurs/confirmations/synthese")
                 .then()
                 .statusCode(200)
@@ -209,7 +212,8 @@ class RelanceResourceTest {
     void beforeAnyPublicationTheSynthesisSaysSo() {
         forgetPublications();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/animateurs/confirmations/synthese")
                 .then()
                 .statusCode(200)
@@ -221,7 +225,8 @@ class RelanceResourceTest {
     /* -------------------------------- Helpers ------------------------------ */
 
     private static ValidatableResponse relancer(String... animateurIds) {
-        return given().contentType(ContentType.JSON)
+        return given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(Map.of("animateurIds", List.of(animateurIds)))
                 .when()
                 .post("/api/animateurs/relances")

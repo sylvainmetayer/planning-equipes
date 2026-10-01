@@ -229,7 +229,7 @@ public class EtatEditionService {
      * @param declarations         when each pending availability declaration was submitted
      * @param echanges             since when each swap request has waited on the organisation
      * @param joursEvenement       the days carrying a timeslot
-     * @param relancesAutomatiques the nightly sends are armed on this edition
+     * @param relancesAutomatiques the nightly sends run on this edition — it is the active one
      * @param delaiRelanceHeures   how long a silence lasts before the nightly reminder
      * @param alertesNuit          the alerts the nightly jobs left in the journal
      * @param derniereSauvegarde   the last nightly backup attempt, {@code null} when none is configured
@@ -282,7 +282,7 @@ public class EtatEditionService {
                     aujourdhui);
         }
 
-        /** Nothing armed, nothing left by the night, no day read — what the rules' tests start from. */
+        /** Not active, nothing left by the night, no day read — what the rules' tests start from. */
         public TodayFacts(
                 LocalDate aujourdhui,
                 Instant maintenant,
@@ -498,7 +498,8 @@ public class EtatEditionService {
                                 .toList(),
                         notifications.ancienneteEchangeJours(),
                         joursEvenement,
-                        notifications.actives(),
+                        // Only the active edition sends anything (ADR 0072).
+                        edition.isActive(),
                         notifications.delaiRelanceHeures(),
                         stillStanding(
                                 journalNotifications.alertes(NIGHT_ALERTS_READ),

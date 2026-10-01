@@ -61,15 +61,15 @@ class InstantaneMcpToolsTest {
         InstantaneMcpTools tools = tools(detail(
                 List.of(affectation("P1", "S1", "A1"), affectation("P2", "S2", "A1"), affectation("P3", "S1", "A2"))));
 
-        InstantaneDetailView parStand = tools.getSnapshot(7, "S1", null, null, null);
+        InstantaneDetailView parStand = tools.getSnapshot(7, "S1", null, null, "E1");
         assertThat(parStand.affectations()).extracting(view -> view.posteId()).containsExactly("P1", "P3");
 
-        InstantaneDetailView parAnimateur = tools.getSnapshot(7, null, "A1", null, null);
+        InstantaneDetailView parAnimateur = tools.getSnapshot(7, null, "A1", null, "E1");
         assertThat(parAnimateur.affectations())
                 .extracting(view -> view.posteId())
                 .containsExactly("P1", "P2");
 
-        InstantaneDetailView croise = tools.getSnapshot(7, "S1", "A2", null, null);
+        InstantaneDetailView croise = tools.getSnapshot(7, "S1", "A2", null, "E1");
         assertThat(croise.affectations()).extracting(view -> view.posteId()).containsExactly("P3");
     }
 
@@ -79,7 +79,7 @@ class InstantaneMcpToolsTest {
                 .mapToObj(index -> affectation("P" + index, "S1", "A" + index))
                 .toList()));
 
-        InstantaneDetailView vue = tools.getSnapshot(7, null, null, null, null);
+        InstantaneDetailView vue = tools.getSnapshot(7, null, null, null, "E1");
 
         assertThat(vue.affectations()).hasSize(InstantaneMcpTools.LIMITE_AFFECTATIONS_DEFAUT);
         assertThat(vue.affectationsTotal()).isEqualTo(500);
@@ -90,14 +90,14 @@ class InstantaneMcpToolsTest {
         InstantaneMcpTools tools = tools(detail(
                 List.of(affectation("P1", "S1", "A1"), affectation("P2", "S1", "A2"), affectation("P3", "S1", "A3"))));
 
-        assertThat(tools.getSnapshot(7, null, null, 2, null).affectations()).hasSize(2);
+        assertThat(tools.getSnapshot(7, null, null, 2, "E1").affectations()).hasSize(2);
     }
 
     @Test
     void aNonPositiveLimitIsRefused() {
         InstantaneMcpTools tools = tools(detail(List.of(affectation("P1", "S1", "A1"))));
 
-        assertThatThrownBy(() -> tools.getSnapshot(7, null, null, 0, null))
+        assertThatThrownBy(() -> tools.getSnapshot(7, null, null, 0, "E1"))
                 .isInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("limite");
     }
@@ -106,7 +106,7 @@ class InstantaneMcpToolsTest {
     void anUnknownSnapshotIsAnErrorNotAnEmptyView() {
         InstantaneMcpTools tools = tools(detail(List.of()));
 
-        assertThatThrownBy(() -> tools.getSnapshot(999, null, null, null, null))
+        assertThatThrownBy(() -> tools.getSnapshot(999, null, null, null, "E1"))
                 .isInstanceOf(BusinessError.NotFound.class)
                 .hasMessageContaining("999");
     }
@@ -115,7 +115,7 @@ class InstantaneMcpToolsTest {
     void anUnfilledPosteKeepsANullAnimateur() {
         InstantaneMcpTools tools = tools(detail(List.of(affectation("P1", "S1", null))));
 
-        InstantaneDetailView vue = tools.getSnapshot(7, null, null, null, null);
+        InstantaneDetailView vue = tools.getSnapshot(7, null, null, null, "E1");
 
         assertThat(vue.affectations())
                 .singleElement()

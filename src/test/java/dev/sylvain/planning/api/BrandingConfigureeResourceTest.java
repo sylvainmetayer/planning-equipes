@@ -42,7 +42,8 @@ class BrandingConfigureeResourceTest {
 
     @Test
     void lEndpointPubliqueRendLidentiteConfigureeEtPasLeRepliNeutre() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/branding")
                 .then()
                 .statusCode(200)
@@ -57,12 +58,18 @@ class BrandingConfigureeResourceTest {
         // The login page and the espace animateur read it before anyone is
         // authenticated: a brand reserved for logged-in users would greet every
         // visitor with an empty toolbar.
-        given().when().get("/api/branding").then().statusCode(200).body("productName", equalTo(NOM));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/branding")
+                .then()
+                .statusCode(200)
+                .body("productName", equalTo(NOM));
     }
 
     @Test
     void theSqlDumpIsHeadedWithTheDeploymentName() {
-        String dump = given().when()
+        String dump = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/database/export")
                 .then()
                 .statusCode(200)

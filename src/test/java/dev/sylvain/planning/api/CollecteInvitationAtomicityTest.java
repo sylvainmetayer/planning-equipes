@@ -37,7 +37,8 @@ class CollecteInvitationAtomicityTest {
 
     @AfterEach
     void cleanUp() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"collecteOuverte\":false}")
                 .when()
                 .put("/api/disponibilites/configuration")
@@ -47,7 +48,8 @@ class CollecteInvitationAtomicityTest {
 
     @Test
     void uneInvitationImpossibleNOuvrePasLaCollecte() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"collecteOuverte\":true,\"prevenirAnimateurs\":true}")
                 .when()
                 .put("/api/disponibilites/configuration")
@@ -56,7 +58,8 @@ class CollecteInvitationAtomicityTest {
 
         // The refusal has to mean nothing happened: an admin reading « Erreur »
         // must not be leaving a public write route open behind them.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/disponibilites/configuration")
                 .then()
                 .statusCode(200)
@@ -67,7 +70,8 @@ class CollecteInvitationAtomicityTest {
     void sansInvitationLOuvertureMarcheQuandMeme() {
         // The missing URL only bites what actually needs a link. A deployment
         // without one still collects declarations; it just cannot mail the way in.
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"collecteOuverte\":true,\"prevenirAnimateurs\":false}")
                 .when()
                 .put("/api/disponibilites/configuration")

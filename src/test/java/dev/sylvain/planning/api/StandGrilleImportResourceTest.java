@@ -20,8 +20,13 @@ import org.junit.jupiter.api.Test;
 class StandGrilleImportResourceTest {
 
     private static void seedScenario() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
@@ -35,7 +40,8 @@ class StandGrilleImportResourceTest {
     @Test
     void lExempleDeLEditionSeReimporteTelQuel() {
         seedScenario();
-        String exemple = given().when()
+        String exemple = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/stands/import-grille/exemple")
                 .then()
                 .statusCode(200)
@@ -50,7 +56,8 @@ class StandGrilleImportResourceTest {
         String bandes = exemple.lines().skip(1).findFirst().orElseThrow();
         assertThat(bandes).doesNotContain(":").contains("h");
 
-        JsonPath rapport = given().contentType("application/json")
+        JsonPath rapport = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(request(exemple))
                 .when()
                 .post("/api/stands/import-grille/analyse")
@@ -74,14 +81,16 @@ class StandGrilleImportResourceTest {
     @Test
     void aFormulaStandNameIsQuotedInTheExampleAndReadBackAsIs() {
         seedScenario();
-        String typologie = given().when()
+        String typologie = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/typologies")
                 .then()
                 .statusCode(200)
                 .extract()
                 .jsonPath()
                 .getString("[0].id");
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of(
                         "id",
                         "STAND-FORMULE",
@@ -100,7 +109,8 @@ class StandGrilleImportResourceTest {
                 .then()
                 .statusCode(200);
 
-        String exemple = given().when()
+        String exemple = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/stands/import-grille/exemple")
                 .then()
                 .statusCode(200)
@@ -108,7 +118,8 @@ class StandGrilleImportResourceTest {
                 .asString();
         assertThat(exemple.lines()).anyMatch(ligne -> ligne.startsWith("'=1+1;"));
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(request(exemple))
                 .when()
                 .post("/api/stands/import-grille/analyse")
@@ -120,7 +131,8 @@ class StandGrilleImportResourceTest {
     @Test
     void anEditedCellIsWrittenAndReadBackInTheGrid() {
         seedScenario();
-        JsonPath avant = given().when()
+        JsonPath avant = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/ouvertures-stands")
                 .then()
                 .statusCode(200)
@@ -132,7 +144,8 @@ class StandGrilleImportResourceTest {
         String fin = avant.getString("jours[0].creneaux[0].heureFin").substring(0, 5);
         String csv = "stand;" + date + "\n;" + debut + "-" + fin + "\n" + stand + ";7\n";
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(request(csv))
                 .when()
                 .post("/api/stands/import-grille")
@@ -144,7 +157,8 @@ class StandGrilleImportResourceTest {
                 .body("rows[0].effectifMax", equalTo(7))
                 .body("warnings", notNullValue());
 
-        JsonPath apres = given().when()
+        JsonPath apres = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/ouvertures-stands")
                 .then()
                 .statusCode(200)
@@ -157,7 +171,8 @@ class StandGrilleImportResourceTest {
     @Test
     void aColumnNarrowerThanItsTimeslotWritesItsSliceAndLeavesTheRest() {
         seedScenario();
-        JsonPath avant = given().when()
+        JsonPath avant = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/ouvertures-stands")
                 .then()
                 .statusCode(200)
@@ -171,7 +186,8 @@ class StandGrilleImportResourceTest {
         String finTranche = java.time.LocalTime.parse(debut).plusHours(1).toString();
         String csv = "stand;" + date + "\n;" + debut + "-" + finTranche + "\n" + stand + ";7\n";
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(request(csv))
                 .when()
                 .post("/api/stands/import-grille")
@@ -182,7 +198,8 @@ class StandGrilleImportResourceTest {
                 .body("columns[0].creneauId", notNullValue())
                 .body("columns[0].reason", org.hamcrest.Matchers.nullValue());
 
-        JsonPath apres = given().when()
+        JsonPath apres = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/ouvertures-stands")
                 .then()
                 .statusCode(200)
@@ -199,7 +216,8 @@ class StandGrilleImportResourceTest {
     @Test
     void anUnknownStandAnUnreadableCellAndAColumnWithoutTimeslotAreReported() {
         seedScenario();
-        JsonPath avant = given().when()
+        JsonPath avant = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/ouvertures-stands")
                 .then()
                 .statusCode(200)
@@ -212,7 +230,8 @@ class StandGrilleImportResourceTest {
         String csv = "stand;" + date + ";" + date + "\n;" + debut + "-" + fin + ";03:00-04:00\n" + stand
                 + ";abc;1\nINCONNU;2;\n";
 
-        JsonPath rapport = given().contentType("application/json")
+        JsonPath rapport = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(request(csv))
                 .when()
                 .post("/api/stands/import-grille/analyse")
@@ -232,7 +251,8 @@ class StandGrilleImportResourceTest {
     @Test
     void unClasseurEstRefuseAvecLaMarcheASuivre() {
         seedScenario();
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of("fileName", "grille.xlsx", "content", "PK..."))
                 .when()
                 .post("/api/stands/import-grille/analyse")
@@ -243,8 +263,13 @@ class StandGrilleImportResourceTest {
 
     @Test
     void sansCreneauLImportEstRefuseEnBloc() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(request("stand;2026-07-08\n;10:00-12:00\nS;1\n"))
                 .when()
                 .post("/api/stands/import-grille/analyse")

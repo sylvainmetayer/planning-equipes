@@ -20,6 +20,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.sql.DataSource;
 
 /**
@@ -50,6 +51,28 @@ public class CreneauRepository {
 
     public List<Creneau> listCreneaux() {
         return listCreneaux(SELECT_CRENEAU_SQL + " ORDER BY c.id");
+    }
+
+    /** The first and last day of an edition's grid. */
+    public record DateBounds(LocalDate first, LocalDate last) {}
+
+    /**
+     * The first and last day carrying a timeslot, empty for an edition with
+     * none — the event's bounds without reading the grid (ADR 0072's banner
+     * reads them for every edition on every shell load).
+     */
+    public Optional<DateBounds> dateBounds() {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = scope.prepareScoped(
+                        connection, "SELECT min(date_creneau), max(date_creneau) FROM creneau WHERE edition_id = ?");
+                ResultSet rs = ps.executeQuery()) {
+            if (!rs.next() || rs.getObject(1) == null) {
+                return Optional.empty();
+            }
+            return Optional.of(new DateBounds(rs.getObject(1, LocalDate.class), rs.getObject(2, LocalDate.class)));
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to read the edition's bounds", e);
+        }
     }
 
     /**

@@ -54,7 +54,8 @@ class ConstraintDiagnosticResourceTest {
 
     @BeforeEach
     void createTargetEdition() {
-        edition = given().contentType("application/json")
+        edition = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"nom\":\"" + EDITION_NOM + "\"}")
                 .when()
                 .post("/api/editions")
@@ -66,7 +67,7 @@ class ConstraintDiagnosticResourceTest {
 
     @AfterEach
     void dropTargetEdition() {
-        given().when().delete("/api/editions/" + edition);
+        given().header("X-Edition-Id", "E1").when().delete("/api/editions/" + edition);
     }
 
     @Test
@@ -254,7 +255,8 @@ class ConstraintDiagnosticResourceTest {
                 .atMost(POLL_TIMEOUT)
                 .pollInterval(POLL_INTERVAL)
                 .until(
-                        () -> given().when()
+                        () -> given().header("X-Edition-Id", "E1")
+                                .when()
                                 .get("/api/jobs/" + jobId)
                                 .then()
                                 .statusCode(200)
@@ -273,7 +275,12 @@ class ConstraintDiagnosticResourceTest {
         await().alias("Solveur toujours occupé")
                 .atMost(POLL_TIMEOUT)
                 .pollInterval(POLL_INTERVAL)
-                .until(() ->
-                        given().when().get("/api/jobs/active").then().extract().statusCode() == 204);
+                .until(() -> given().header("X-Edition-Id", "E1")
+                                .when()
+                                .get("/api/jobs/active")
+                                .then()
+                                .extract()
+                                .statusCode()
+                        == 204);
     }
 }

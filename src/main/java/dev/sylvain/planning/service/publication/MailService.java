@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.publication;
 
 import dev.sylvain.planning.service.ProductName;
+import dev.sylvain.planning.service.edition.RequiresActiveEdition;
 import dev.sylvain.planning.service.mail.MailMetrics;
 import dev.sylvain.planning.service.mail.MailTemplates;
 import dev.sylvain.planning.service.mail.MailTemplates.MailContent;
@@ -84,6 +85,7 @@ public class MailService {
      * Sends one animateur their individual planning: the PDF attached, the
      * espace link in the body.
      */
+    @RequiresActiveEdition
     public void sendIndividualPlanning(
             String emailAnimateur, String prenom, String lienEspace, byte[] pdf, String fileName) {
         MailContent content = templates.render(
@@ -133,6 +135,7 @@ public class MailService {
      *
      * @param message what the mail says around the attached planning
      */
+    @RequiresActiveEdition
     public void sendPlanningPublie(String emailAnimateur, byte[] pdf, String fileName, PlanningPublie message) {
         MailContent content = templates.render(
                 PUBLISHED_PLANNING,
@@ -158,6 +161,7 @@ public class MailService {
     }
 
     /** Sends the espace access code — the second factor of the espace animateur. */
+    @RequiresActiveEdition
     public void sendAccessCode(String emailAnimateur, String prenom, String code) {
         MailContent content = templates.render(
                 ACCESS_CODE,
@@ -181,6 +185,7 @@ public class MailService {
      *                        admin set no bound
      * @param fin             last day of the window, {@code null} likewise
      */
+    @RequiresActiveEdition
     public void sendInvitationDeclaration(
             String emailAnimateur, String prenom, String lienDeclaration, LocalDate debut, LocalDate fin) {
         MailContent content = templates.render(
@@ -222,6 +227,7 @@ public class MailService {
      * That difference in policy is exactly why it lives here and not as a
      * {@code Notification}.</p>
      */
+    @RequiresActiveEdition
     public void sendRelanceConfirmation(String emailAnimateur, String prenom, String lienEspace) {
         MailContent content = RelanceConfirmationMail.render(templates, productName, prenom, lienEspace);
         metrics.send(mailer, RelanceConfirmationMail.TEMPLATE, templates.toMail(emailAnimateur, content));

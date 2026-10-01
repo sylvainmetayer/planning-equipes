@@ -75,13 +75,15 @@ class MailFinResolutionTest {
     /* ------------------------------- Helpers ------------------------------- */
 
     private void reglerNotification(boolean actif) {
-        io.restassured.path.json.JsonPath actuels = given().when()
+        io.restassured.path.json.JsonPath actuels = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/parametres-solveur")
                 .then()
                 .statusCode(200)
                 .extract()
                 .jsonPath();
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"dureeResolutionSecondes\":" + actuels.get("dureeResolutionSecondes")
                         + ",\"plateauSecondes\":" + actuels.get("plateauSecondes") + ",\"mailFinResolution\":" + actif
                         + "}")
@@ -92,8 +94,13 @@ class MailFinResolutionTest {
     }
 
     private void planImporte() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
@@ -101,7 +108,8 @@ class MailFinResolutionTest {
 
     private JsonPath solve() {
         attendreSolveurLibre();
-        String jobId = given().when()
+        String jobId = given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/solve/async/reference-data?seconds=1")
                 .then()
                 .statusCode(202)
@@ -116,8 +124,13 @@ class MailFinResolutionTest {
         await().alias("Solver still busy")
                 .atMost(POLL_TIMEOUT)
                 .pollInterval(POLL_INTERVAL)
-                .until(() ->
-                        given().when().get("/api/jobs/active").then().extract().statusCode() == 204);
+                .until(() -> given().header("X-Edition-Id", "E1")
+                                .when()
+                                .get("/api/jobs/active")
+                                .then()
+                                .extract()
+                                .statusCode()
+                        == 204);
     }
 
     private JsonPath pollUntilFinished(String jobId) {
@@ -125,7 +138,8 @@ class MailFinResolutionTest {
                 .atMost(POLL_TIMEOUT)
                 .pollInterval(POLL_INTERVAL)
                 .until(
-                        () -> given().when()
+                        () -> given().header("X-Edition-Id", "E1")
+                                .when()
                                 .get("/api/jobs/" + jobId)
                                 .then()
                                 .statusCode(200)

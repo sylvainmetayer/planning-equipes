@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.journal;
 
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.journal.EntreeJournal.Resultat;
 import io.quarkus.runtime.StartupEvent;
 import io.quarkus.security.identity.SecurityIdentity;
@@ -158,6 +159,10 @@ public class JournalActionService {
     private void append(EntreeJournal entree) {
         try {
             repository.append(entree);
+        } catch (BusinessError.EditionRefused _) {
+            // A request refused for naming no edition, or a deleted one (ADR
+            // 0072), has no edition to be recorded in: nothing was done either.
+            LOG.debugf("The action %s names no edition; not recorded", entree.action());
         } catch (RuntimeException e) {
             LOG.errorf(
                     e, "The action %s could not be recorded in the history; it happened all the same", entree.action());

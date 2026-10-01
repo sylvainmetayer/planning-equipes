@@ -51,8 +51,7 @@ public class JourneeTypeMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    EtatView listJourneeTypes(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+    EtatView listJourneeTypes(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return toView(referenceDataService.etatJourneesTypes());
     }
 
@@ -72,7 +71,7 @@ public class JourneeTypeMcpTools {
             @ToolArg(description = "Nom de la journée type, ex. « Jour normal »") String nom,
             @ToolArg(description = "Vacations, ex. « 09:00-12:00, 12:00-13:00 R, 13:00-14:00 R, 14:00-20:00 »")
                     String vacations,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         JourneeType journeeType = new JourneeType(null, nom, VacationsLigne.parse(vacations));
         JourneeType existante = byName(nom);
         if (existante == null) {
@@ -94,7 +93,7 @@ public class JourneeTypeMcpTools {
                             openWorldHint = false))
     EtatView deleteJourneeType(
             @ToolArg(description = "Nom de la journée type") String nom,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         referenceDataService.deleteJourneeType(exigee(nom).getId());
         return toView(referenceDataService.etatJourneesTypes());
     }
@@ -115,7 +114,7 @@ public class JourneeTypeMcpTools {
             @ToolArg(description = "Première date de la plage (AAAA-MM-JJ)", required = false) String dateDebut,
             @ToolArg(description = "Dernière date de la plage (AAAA-MM-JJ), incluse", required = false) String dateFin,
             @ToolArg(description = "Dates précises (AAAA-MM-JJ)", required = false) List<String> dates,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         JourneeType journeeType = exigee(nom);
         Set<LocalDate> ciblees = McpArgs.dates(dates, "dates");
         LocalDate debut = McpArgs.date(dateDebut, "dateDebut");
@@ -155,7 +154,7 @@ public class JourneeTypeMcpTools {
                             openWorldHint = false))
     EtatView removeJourneeTypeDates(
             @ToolArg(description = "Dates à retirer (AAAA-MM-JJ)") List<String> dates,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         Set<LocalDate> retirees = McpArgs.dates(dates, "dates");
         List<Affectation> reecrit = new ArrayList<>();
         for (Affectation affectation : referenceDataService.etatJourneesTypes().calendrier()) {
@@ -178,7 +177,7 @@ public class JourneeTypeMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     RapportApplicationView previewJourneeTypesApplication(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return toView(referenceDataService.previewJourneesTypes());
     }
 
@@ -195,7 +194,7 @@ public class JourneeTypeMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     RapportApplicationView materializeJourneeTypes(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return toView(referenceDataService.applyJourneesTypes());
     }
 
@@ -210,7 +209,7 @@ public class JourneeTypeMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     ReconnaissanceView previewJourneeTypesRecognition(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return toView(referenceDataService.previewReconnaissanceJourneesTypes());
     }
 
@@ -226,7 +225,7 @@ public class JourneeTypeMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     ReconnaissanceView recognizeJourneeTypes(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return toView(referenceDataService.reconnaitreJourneesTypes());
     }
 

@@ -1,5 +1,6 @@
 package dev.sylvain.planning.api;
 
+import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.EditionRequestScope;
 import dev.sylvain.planning.service.TokenOwner;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
@@ -32,8 +33,14 @@ public class AbonnementTokenFilter implements ContainerRequestFilter {
 
     private final EditionRequestScope editionRequestScope;
 
+    private final EditionContext editionContext;
+
     @Inject
-    public AbonnementTokenFilter(ReferenceDataService referenceDataService, EditionRequestScope editionRequestScope) {
+    public AbonnementTokenFilter(
+            ReferenceDataService referenceDataService,
+            EditionRequestScope editionRequestScope,
+            EditionContext editionContext) {
+        this.editionContext = editionContext;
         this.referenceDataService = referenceDataService;
         this.editionRequestScope = editionRequestScope;
     }
@@ -42,10 +49,12 @@ public class AbonnementTokenFilter implements ContainerRequestFilter {
     public void filter(ContainerRequestContext contexte) {
         String token = contexte.getUriInfo().getPathParameters().getFirst("token");
         TokenOwner owner = token == null ? null : referenceDataService.resolveAbonnementToken(token);
-        if (owner == null) {
+        // An edition that is not the active one serves no calendar, and says
+        // so exactly as for an unknown token (ADR 0072).
+        if (owner == null || !editionContext.isActive(owner.editionId())) {
             contexte.abortWith(Response.status(Response.Status.NOT_FOUND)
                     .type(MediaType.TEXT_PLAIN)
-                    .entity("Abonnement inconnu ou révoqué")
+                    .entity("Abonnement inconnu, révoqué, ou édition terminée")
                     .build());
             return;
         }

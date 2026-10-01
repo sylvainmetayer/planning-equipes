@@ -28,7 +28,8 @@ class FormationResourceTest {
 
     @Test
     void anEmptyEditionAnswersWithAnEmptyPlanThatSaysWhy() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/formation")
                 .then()
                 .statusCode(200)
@@ -40,7 +41,8 @@ class FormationResourceTest {
 
     @Test
     void theExportIsACsvWithItsHeaderEvenWhenNothingIsListed() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/formation/export")
                 .then()
                 .statusCode(200)

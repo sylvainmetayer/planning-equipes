@@ -128,7 +128,8 @@ class PublicationExclusionTest {
         swapTheTwoSeats();
         publier("EXC-B");
 
-        JsonPath trace = given().when()
+        JsonPath trace = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/publication/destinataires")
                 .then()
                 .statusCode(200)
@@ -138,7 +139,8 @@ class PublicationExclusionTest {
         assertThat(trace.getList("statut", String.class).get(ids.indexOf("EXC-B")))
                 .isEqualTo("EXCLU");
 
-        JsonPath historique = given().when()
+        JsonPath historique = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/historique?limite=50")
                 .then()
                 .statusCode(200)
@@ -154,7 +156,8 @@ class PublicationExclusionTest {
 
     @Test
     void excludingEverybodyIsRefusedRatherThanPublishingToNobody() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(Map.of("exclusions", List.of("EXC-A", "EXC-B")))
                 .when()
                 .post("/api/planning/publication")
@@ -177,7 +180,8 @@ class PublicationExclusionTest {
 
     @Test
     void theReviewTableIsDownloadableAsOneLinePerPerson() {
-        String csv = given().when()
+        String csv = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/publication/export")
                 .then()
                 .statusCode(200)
@@ -196,7 +200,8 @@ class PublicationExclusionTest {
     /* -------------------------------- Helpers ------------------------------ */
 
     private JsonPath apercu() {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/publication")
                 .then()
                 .statusCode(200)
@@ -205,7 +210,8 @@ class PublicationExclusionTest {
     }
 
     private JsonPath publier(String... exclusions) {
-        return given().contentType(ContentType.JSON)
+        return given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(Map.of("exclusions", List.of(exclusions)))
                 .when()
                 .post("/api/planning/publication")

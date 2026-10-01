@@ -93,8 +93,7 @@ public class PublicationMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    EtatPublicationView publicationState(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+    EtatPublicationView publicationState(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         ApercuPublication apercu = publicationService.apercu();
         return new EtatPublicationView(
                 apercu.jamaisPublie(),
@@ -126,7 +125,7 @@ public class PublicationMcpTools {
                                     + "monde",
                             required = false)
                     List<String> exclusions,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         RapportPublication rapport = publicationService.publier(exclusions == null ? List.of() : exclusions);
         return new RapportPublicationView(
                 rapport.snapshotId(),
@@ -151,7 +150,7 @@ public class PublicationMcpTools {
     List<DestinataireView> listPublicationRecipients(
             @ToolArg(description = "Id de l'instantané publié ; omis, la dernière publication", required = false)
                     Long snapshotId,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         if (snapshotId != null) {
             return toViews(traceRepository.bySnapshot(snapshotId));
         }
@@ -172,7 +171,7 @@ public class PublicationMcpTools {
                             openWorldHint = true))
     EnvoiView sendAnimateurPlanning(
             @ToolArg(description = "Id de l'animateur") String animateurId,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         // No try/catch around the refusals any more: the service words them by
         // id, and @RefusMetier carries them to the caller for every tool of
         // the package (issue #529). This one used to rewrite « Prénom Nom n'a
@@ -203,7 +202,7 @@ public class PublicationMcpTools {
                             openWorldHint = true))
     RapportRelanceView remindAnimateurs(
             @ToolArg(description = "Ids des animateurs à relancer") List<String> animateurIds,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         RapportRelance rapport = relanceService.relancer(animateurIds);
         return new RapportRelanceView(
                 rapport.envoyes(),
@@ -227,7 +226,7 @@ public class PublicationMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     SyntheseConfirmationsView summarizeConfirmations(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         SyntheseConfirmations synthese = confirmationService.synthese();
         return new SyntheseConfirmationsView(
                 synthese.confirmes(),

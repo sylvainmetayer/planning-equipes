@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.notification;
 
+import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.mail.MailMetrics;
 import dev.sylvain.planning.service.mail.MailTemplates;
 import io.quarkus.logging.Log;
@@ -28,6 +29,13 @@ import jakarta.inject.Inject;
  * not lost by being synchronous, it is simply written here instead of being
  * delegated to the container.</p>
  *
+ * <p><b>Only the active edition speaks</b> (ADR 0072). A notification born in
+ * an edition that is not the active one — a swap decided while preparing next
+ * year, a solve finished on a draft — is dropped here, before anything is
+ * written: the people it would reach are those of the edition under way.
+ * The instance's own messages (the nightly backup) belong to no edition and
+ * always go; {@link #editionScoped} says which is which, exhaustively.</p>
+ *
  * <p>Explicit admin sends do <b>not</b> go through here: sending an animateur
  * their planning, or an espace access code, must fail loudly so the caller can
  * report who could not be reached. Those stay direct calls on
@@ -44,9 +52,16 @@ public class NotificationDispatcher {
 
     private final MailMetrics metrics;
 
+    private final EditionContext editionContext;
+
     @Inject
     public NotificationDispatcher(
-            Mailer mailer, NotificationWriter redacteur, MailTemplates templates, MailMetrics metrics) {
+            Mailer mailer,
+            NotificationWriter redacteur,
+            MailTemplates templates,
+            MailMetrics metrics,
+            EditionContext editionContext) {
+        this.editionContext = editionContext;
         this.mailer = mailer;
         this.redacteur = redacteur;
         this.templates = templates;
@@ -61,6 +76,12 @@ public class NotificationDispatcher {
      */
     void surNotification(@Observes Notification notification) {
         try {
+            if (editionScoped(notification) && !fromActiveEdition()) {
+                Log.infof(
+                        "Notification %s dropped: its edition is not the active one",
+                        notification.getClass().getSimpleName());
+                return;
+            }
             redacteur
                     .rediger(notification)
                     .ifPresent(courrier -> metrics.send(
@@ -74,5 +95,34 @@ public class NotificationDispatcher {
                     "Notification %s could not be delivered; the operation it describes stands",
                     notification.getClass().getSimpleName());
         }
+    }
+
+    /**
+     * Whether the notification belongs to the edition it was fired in — every
+     * one but the instance's own messages. A switch without {@code default},
+     * so a new case does not compile until somebody decides.
+     */
+    static boolean editionScoped(Notification notification) {
+        return switch (notification) {
+            case Notification.BackupFailed _, Notification.BackupRecovered _ -> false;
+            case Notification.TargetSolicited _,
+                    Notification.DemandeDeclinee _,
+                    Notification.DemandesSoumises _,
+                    Notification.DeclarationSoumise _,
+                    Notification.EmpechementSignale _,
+                    Notification.AbsenceReportFiled _,
+                    Notification.AbsenceReportAccepted _,
+                    Notification.CarpoolValidated _,
+                    Notification.CarpoolSetAside _,
+                    Notification.CarpoolCancelled _,
+                    Notification.ResolutionTerminee _,
+                    Notification.RappelVeille _,
+                    Notification.RelanceConfirmation _,
+                    Notification.PendingEchanges _ -> true;
+        };
+    }
+
+    private boolean fromActiveEdition() {
+        return editionContext.isActive(editionContext.editionIdCourant());
     }
 }

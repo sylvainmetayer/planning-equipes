@@ -25,7 +25,8 @@ class StaleWriteResourceTest {
                 {"nom":"Stand","typologiesProposees":["STRATEGIE"],"effectifMin":1,"effectifMax":1,
                  "reserveMajeurs":false,"premium":false,"niveauEffort":"NORMAL"}""";
         // The id is generated on creation (ADR 0050): the response names the row.
-        JsonPath cree = given().contentType(ContentType.JSON)
+        JsonPath cree = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(stand)
                 .when()
                 .post("/api/stands")
@@ -37,7 +38,8 @@ class StaleWriteResourceTest {
         String id = cree.getString("stand.id");
         String modifieLe = cree.getString("stand.modifieLe");
         try {
-            given().contentType(ContentType.JSON)
+            given().header("X-Edition-Id", "E1")
+                    .contentType(ContentType.JSON)
                     .body(stand.replace(
                             "\"nom\":\"Stand\"", "\"nom\":\"Périmé\",\"modifieLe\":\"2020-01-01T00:00:00Z\""))
                     .when()
@@ -49,14 +51,16 @@ class StaleWriteResourceTest {
                     .body("modifieLe", notNullValue());
 
             // The stamp the client loaded, or none: both go through.
-            given().contentType(ContentType.JSON)
+            given().header("X-Edition-Id", "E1")
+                    .contentType(ContentType.JSON)
                     .body(stand.replace("\"nom\":\"Stand\"", "\"nom\":\"À jour\",\"modifieLe\":\"" + modifieLe + "\""))
                     .when()
                     .put("/api/stands/" + id)
                     .then()
                     .statusCode(200)
                     .body("stand.nom", equalTo("À jour"));
-            given().contentType(ContentType.JSON)
+            given().header("X-Edition-Id", "E1")
+                    .contentType(ContentType.JSON)
                     .body(stand.replace("\"nom\":\"Stand\"", "\"nom\":\"Sans précondition\""))
                     .when()
                     .put("/api/stands/" + id)
@@ -64,7 +68,7 @@ class StaleWriteResourceTest {
                     .statusCode(200)
                     .body("stand.nom", equalTo("Sans précondition"));
         } finally {
-            given().when().delete("/api/stands/" + id);
+            given().header("X-Edition-Id", "E1").when().delete("/api/stands/" + id);
         }
     }
 }

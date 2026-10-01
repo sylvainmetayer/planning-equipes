@@ -270,6 +270,18 @@ Single Quarkus service, no separate solver microservice. Package root:
   (and of any bean holding the guard) that is neither annotated, nor argued
   open or imperative, on an unargued explicit call anywhere, and on an annotated
   method called on `this`.
+- **Only the active edition reaches outside** (ADR 0072). At most one edition
+  is `active` (`edition.active`, unique partial index); none is a valid state.
+  It alone publishes, mails animateurs and opens the espace, the ICS feed and
+  the wall display; every edition is born inactive (creation, duplication,
+  import) and stays fully usable inside. A service method that mails or
+  publishes carries `@RequiresActiveEdition` (`service/edition/`, `409
+  EDITION_INACTIVE`); `NotificationDispatcher` drops every edition-scoped
+  `Notification` of an inactive edition (`editionScoped` is an exhaustive
+  `switch`: a new case does not compile until somebody decides); the token
+  filters answer an inactive edition's token exactly like an unknown one.
+  `ActiveEditionEmissionStructuralTest` fails on a `MailService` send or an
+  outward MCP tool that is neither guarded nor argued.
 - **Mails follow two opposite failure policies, and the split is structural.**
   `MailService` holds only what an admin explicitly asks for (an animateur's
   planning, an espace access code, the Débogage test mail): the mail *is* the
@@ -400,8 +412,9 @@ Single Quarkus service, no separate solver microservice. Package root:
      (`McpConfidentialiteStructurelleTest`);
   2. a tool that works inside an edition takes an `edition` argument marked
      `@EditionArg`, on a class annotated `@EditionCiblee` (issue #181) — an MCP
-     call carries no `X-Edition-Id`, so without it the tool silently reads and
-     writes the default edition (`McpEditionStructurelleTest`). Beware CDI
+     call carries no `X-Edition-Id`, so the argument is the edition, and a
+     call without it is refused (`EDITION_REQUISE`, ADR 0072) rather than run
+     in an edition nobody named (`McpEditionStructurelleTest`). Beware CDI
      self-invocation: a tool calling another tool on `this` bypasses the
      interceptor.
   3. every tool declares the four MCP hints, and only the tools that **send
@@ -452,12 +465,12 @@ Single Quarkus service, no separate solver microservice. Package root:
   nightly sends — day-before reminder, reminder of the unconfirmed, alert on
   stale swap requests. It follows the `backup` conventions (configurable cron
   and zone, `SKIP` on overlap, failure logged rather than propagated) and adds
-  two rules of its own. It **loops over editions**, entering each through
-  `EditionContext.executeIn` — there is no `X-Edition-Id` on a scheduler
-  thread — and nothing leaves an edition that has not been armed explicitly in
-  `parametres_notifications`: an `Edition` carries neither dates nor an
-  "ongoing" flag, so that boolean is the only thing between the job and last
-  year's volunteers. And **idempotence is claimed, not checked**:
+  two rules of its own. It **serves the active edition only** (ADR 0072),
+  entered through `EditionContext.executeIn` — there is no `X-Edition-Id` on a
+  scheduler thread: an `Edition` carries neither dates nor an "ongoing" flag,
+  so activating one is the only thing between the job and last year's
+  volunteers, and no edition active means nothing leaves. And **idempotence
+  is claimed, not checked**:
   `JournalNotificationsRepository` takes a `(edition_id, type, cle)` key with
   `INSERT … ON CONFLICT DO NOTHING` and the message goes out only for the call
   that won the insert, so an hourly cron writes to nobody twice. Reading then
@@ -468,8 +481,9 @@ Single Quarkus service, no separate solver microservice. Package root:
   `kpi_realise`, where the next edition reads it. Same conventions as the
   other two (cron and zone from `REALISE_CRON` / `REALISE_TIMEZONE`, `SKIP` on
   overlap, failure logged, editions entered through `executeIn`, one
-  `try/catch` each), and it **does not read the notifications arming flag**:
-  it sends nothing, and that flag guards mails, not measures. **It writes
+  `try/catch` each), and it **walks every edition, active or not**: it sends
+  nothing, and the event it measures is usually over — its edition already
+  deactivated — when it runs. **It writes
   once**: an edition that has its rows is skipped (`ON CONFLICT DO NOTHING`
   behind the check), so `fige_le` is the first night after the event; an
   edition whose report says the past is not frozen is skipped and logged;
@@ -504,12 +518,15 @@ Single Quarkus service, no separate solver microservice. Package root:
   `EditionContext` throws rather than guess**: work that outlives its request —
   a solver job, the notification scheduler — must name its edition through
   `executeIn`, because answering "the default one" to a write on a thread that
-  designated nothing is how one edition's data ends up in another. Inside a
-  request the default fallback stays: an absent or stale `X-Edition-Id` is the
-  ordinary case. An MCP call is *not* one of those: it is served inside a
-  request context activated by the extension, and a tool called without an
-  `edition` argument resolves to the default edition on purpose — see
-  `docs/mcp.md`. A new reference
+  designated nothing is how one edition's data ends up in another. **Inside a
+  request there is no fallback either** (ADR 0072): a client request whose
+  `X-Edition-Id` is absent or names a deleted edition is refused
+  (`EDITION_REQUISE` / `EDITION_INCONNUE`, `400`), and the frontend chooses
+  before any screen loads (`editionChosenGuard`). Only a request context no
+  client opened — the MCP transport's around a tool that is not
+  edition-targeted, the test harness's — resolves to the **active** edition;
+  every `given()` of a REST test therefore carries `X-Edition-Id`
+  explicitly. A new reference
   table must follow the same convention, and its SQL must go through
   `JdbcEditionScope` — the single helper that binds the edition to the
   statement's first placeholder and owns the transaction dance.

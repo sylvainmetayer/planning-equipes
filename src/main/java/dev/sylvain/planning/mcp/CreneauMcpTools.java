@@ -59,8 +59,7 @@ public class CreneauMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    List<CreneauView> listCreneaux(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+    List<CreneauView> listCreneaux(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return creneauxCourants();
     }
 
@@ -84,7 +83,7 @@ public class CreneauMcpTools {
                                     + "sièges, arrondie au supérieur (omis : faux)",
                             required = false)
                     Boolean couverturePause,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         Creneau creneau = new Creneau(
                 null,
                 0,
@@ -116,7 +115,7 @@ public class CreneauMcpTools {
                                     "WriteStamp modifieLe lu avant la modification (précondition : refusé si la fiche a changé depuis ; omis, pas de contrôle)",
                             required = false)
                     String modifieLe,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         Creneau creneau = findCreneau(id);
         if (couverturePause != null) {
             creneau.setCouverturePause(couverturePause);
@@ -147,7 +146,7 @@ public class CreneauMcpTools {
                             openWorldHint = false))
     SuppressionResult deleteCreneau(
             @ToolArg(description = "Id du créneau") long id,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         referenceDataService.deleteCreneau(id);
         return new SuppressionResult(String.valueOf(id), true);
     }
@@ -167,8 +166,7 @@ public class CreneauMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    DiagnosticGrille diagnoseCreneauGrid(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+    DiagnosticGrille diagnoseCreneauGrid(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return referenceDataService.diagnoseGrille();
     }
 
@@ -186,8 +184,7 @@ public class CreneauMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    RapportGrille validateCreneaux(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+    RapportGrille validateCreneaux(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return referenceDataService.controlerGrille();
     }
 
@@ -221,7 +218,7 @@ public class CreneauMcpTools {
             @ToolArg(description = "Dates (AAAA-MM-JJ) si portée DATES", required = false) List<String> dates,
             @ToolArg(description = "Dates (AAAA-MM-JJ) à exclure quel que soit le sélecteur", required = false)
                     List<String> exclusions,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         ReferenceDataService.RecurrenceGrille apercu = referenceDataService.previewRecurrence(
                 regle(jours, dateDebut, dateFin, joursSemaine, dates, exclusions, fenetres));
         return new PrevisualisationRecurrence(
@@ -253,7 +250,7 @@ public class CreneauMcpTools {
             @ToolArg(description = "Dates (AAAA-MM-JJ) si portée DATES", required = false) List<String> dates,
             @ToolArg(description = "Dates (AAAA-MM-JJ) à exclure quel que soit le sélecteur", required = false)
                     List<String> exclusions,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         ReferenceDataService.RecurrenceGrille ecrit = referenceDataService.createRecurrence(
                 regle(jours, dateDebut, dateFin, joursSemaine, dates, exclusions, fenetres));
         return new PrevisualisationRecurrence(
@@ -293,7 +290,7 @@ public class CreneauMcpTools {
                                     "true pour juger la grille dérivée seule, comme si elle remplaçait l'actuelle",
                             required = false)
                     Boolean remplacer,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return toView(referenceDataService.previewDerivation(
                 parametresDerivation(dateDebut, dateFin, heureFermeture, dureeMinimaleMinutes),
                 Boolean.TRUE.equals(remplacer)));
@@ -323,7 +320,7 @@ public class CreneauMcpTools {
                     Integer dureeMinimaleMinutes,
             @ToolArg(description = "true pour remplacer toute la grille (efface le planning résolu)", required = false)
                     Boolean remplacer,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return toView(referenceDataService.applyDerivation(
                 parametresDerivation(dateDebut, dateFin, heureFermeture, dureeMinimaleMinutes),
                 Boolean.TRUE.equals(remplacer)));
@@ -370,7 +367,7 @@ public class CreneauMcpTools {
                                     "Supprimer TOUS les créneaux de l'édition ; à ne passer que sur demande explicite",
                             required = false)
                     Boolean all,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         LocalDate debut = McpArgs.date(dateDebut, ARG_DATE_DEBUT);
         LocalDate fin = McpArgs.date(dateFin, ARG_DATE_FIN);
         LocalTime heure = McpArgs.heure(heureDebut, ARG_HEURE_DEBUT);

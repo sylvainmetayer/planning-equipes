@@ -6,8 +6,10 @@ import io.quarkus.arc.Arc;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 /**
@@ -24,14 +26,22 @@ import java.util.stream.Collectors;
  * <ol>
  * <li>an explicit override bound to the current thread, for work that outlives
  * its request — see {@link #executeIn};</li>
- * <li>the {@code X-Edition-Id} of the request being served, <b>if that edition
- * exists</b>;</li>
- * <li>the edition flagged {@code defaut}.</li>
+ * <li>the edition of the espace token the request carries;</li>
+ * <li>the {@code X-Edition-Id} of the request being served — refused when it
+ * names no edition ({@code EDITION_INCONNUE});</li>
+ * <li>nothing else for a client request: one that names no edition is refused
+ * ({@code EDITION_REQUISE}, ADR 0072). There is no default edition to fall
+ * back on any more — answering "the default one" is how a tab left on a
+ * deleted edition, or an assistant that forgot its argument, wrote into an
+ * edition nobody chose.</li>
  * </ol>
  *
- * <p>An unknown or deleted id never fails the request: a tab left open on an
- * edition someone else has since deleted must fall back to the default rather
- * than break every screen with a 400.</p>
+ * <p>A request context no client opened — the scope the MCP transport
+ * activates around a tool that is not edition-targeted, the one the test
+ * harness activates around a test method — names no edition and cannot: it
+ * resolves to the <b>active</b> edition, and is refused when there is none.
+ * An edition-targeted MCP tool never gets there: its interceptor refuses a
+ * call without its {@code edition} argument first.</p>
  */
 @ApplicationScoped
 public class EditionContext {
@@ -65,24 +75,33 @@ public class EditionContext {
      */
     private volatile Set<String> idsConnus;
 
-    private volatile String defaultId;
+    /**
+     * The active edition, cached like the ids. A holder rather than a bare
+     * {@code Optional}: {@code null} means "not read yet", and an empty
+     * holder "read, and none is active".
+     */
+    private volatile ActiveCache activeId;
+
+    /**
+     * Bumped by every {@link #invaliderCache()}: a load started before an
+     * invalidation does not store what it read, or a value read just before
+     * an activation committed would outlive it until the next invalidation.
+     */
+    private final AtomicLong generation = new AtomicLong();
+
+    private record ActiveCache(Optional<String> id) {}
 
     /**
      * Edition the current call reads and writes. Never {@code null}, and never a
-     * guess: outside a request and outside {@link #executeIn}, it <b>throws</b>
-     * rather than fall back on the default edition.
+     * guess: outside a request and outside {@link #executeIn}, it <b>throws</b>.
      *
-     * <p>That fallback used to apply everywhere, which made every unwrapped
-     * thread hop — a {@code Multi.emitOn}, a {@code CompletableFuture}, a
-     * parallel stream — write into the default edition without a sound. It is
-     * the exact bug the javadoc of {@link JdbcEditionScope} tells the story of,
-     * and the one thing a silent default cannot be trusted with: writing.</p>
-     *
-     * <p>The <em>other</em> fallback stays, and is deliberate: inside a request,
-     * an absent or unknown {@code X-Edition-Id} still resolves to the default.
-     * A tab left open on an edition someone else deleted must fall back rather
-     * than break every screen, and a client that names no edition at all is the
-     * ordinary case.</p>
+     * <p>A fallback on the default edition used to apply everywhere, which made
+     * every unwrapped thread hop — a {@code Multi.emitOn}, a
+     * {@code CompletableFuture}, a parallel stream — write into the default
+     * edition without a sound. It is the exact bug the javadoc of
+     * {@link JdbcEditionScope} tells the story of. The fallback inside a request
+     * went too (ADR 0072): a client request that names no edition, or one that
+     * no longer exists, is refused rather than answered from another edition.</p>
      */
     public String editionIdCourant() {
         String override = OVERRIDE.get();
@@ -93,14 +112,52 @@ public class EditionContext {
             throw new IllegalStateException(
                     "Aucune édition dans le contexte : ce code tourne hors requête et hors executeIn. "
                             + "Enveloppez-le dans editionContext.executeIn(editionId, …) — sans cela il "
-                            + "écrirait dans l'édition par défaut, quelle que soit celle visée.");
+                            + "ne saurait pas dans quelle édition écrire.");
         }
         String imposee = editionForcedByToken();
         if (imposee != null) {
             return imposee;
         }
         String demande = editionIdDemande();
-        return demande != null && idsConnus().contains(demande) ? demande : defaultId();
+        if (demande != null) {
+            if (!idsConnus().contains(demande)) {
+                throw new BusinessError.EditionRefused(
+                        BusinessError.EditionRefused.Reason.INCONNUE,
+                        "L'édition « " + demande + " » n'existe pas (ou plus) : choisissez-en une autre.");
+            }
+            return demande;
+        }
+        if (requestScope.isClientRequest()) {
+            throw new BusinessError.EditionRefused(
+                    BusinessError.EditionRefused.Reason.REQUISE,
+                    "Aucune édition désignée : la requête doit porter l'en-tête " + HEADER + ".");
+        }
+        return activeEditionId()
+                .orElseThrow(() -> new BusinessError.EditionRefused(
+                        BusinessError.EditionRefused.Reason.REQUISE,
+                        "Aucune édition désignée, et aucune édition n'est active."));
+    }
+
+    /**
+     * The edition allowed to reach outside — publish, send mail, open the
+     * espace, the ICS feed and the wall display (ADR 0072). Empty between two
+     * events.
+     */
+    public Optional<String> activeEditionId() {
+        ActiveCache cache = activeId;
+        if (cache == null) {
+            long seen = generation.get();
+            cache = new ActiveCache(editionRepository.activeEditionId());
+            if (generation.get() == seen) {
+                activeId = cache;
+            }
+        }
+        return cache.id();
+    }
+
+    /** Whether {@code editionId} is the active edition. */
+    public boolean isActive(String editionId) {
+        return editionId != null && activeEditionId().filter(editionId::equals).isPresent();
     }
 
     /**
@@ -147,10 +204,11 @@ public class EditionContext {
         });
     }
 
-    /** Must be called whenever an edition is created, deleted, or made the default. */
+    /** Must be called whenever an edition is created, deleted, activated or deactivated. */
     public void invaliderCache() {
+        generation.incrementAndGet();
         idsConnus = null;
-        defaultId = null;
+        activeId = null;
     }
 
     /** The {@code X-Edition-Id} of the request being served, or {@code null}. */
@@ -173,19 +231,13 @@ public class EditionContext {
     private Set<String> idsConnus() {
         Set<String> cache = idsConnus;
         if (cache == null) {
+            long seen = generation.get();
             cache = editionRepository.listEditions().stream()
                     .map(Edition::getId)
                     .collect(Collectors.toUnmodifiableSet());
-            idsConnus = cache;
-        }
-        return cache;
-    }
-
-    private String defaultId() {
-        String cache = defaultId;
-        if (cache == null) {
-            cache = editionRepository.defaultEditionId();
-            defaultId = cache;
+            if (generation.get() == seen) {
+                idsConnus = cache;
+            }
         }
         return cache;
     }

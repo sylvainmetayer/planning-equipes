@@ -290,7 +290,7 @@ class NotificationsPlanifieesTest {
 
     /** An armed edition, with the delays this test reasons about. */
     private static ParametresNotifications actives() {
-        return new ParametresNotifications(true, LocalTime.of(18, 0), 72, 3);
+        return new ParametresNotifications(LocalTime.of(18, 0), 72, 3);
     }
 
     private void persistPlan() {

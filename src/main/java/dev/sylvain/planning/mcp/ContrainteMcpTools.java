@@ -69,7 +69,7 @@ public class ContrainteMcpTools {
     WeightHistoryService.ConstraintHistory weightHistory(
             @ToolArg(description = "Nom d'une contrainte ; absent = toutes les règles", required = false)
                     String contrainte,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return contrainte == null || contrainte.isBlank()
                 ? weightHistory.all()
                 : weightHistory.forConstraint(contrainte);
@@ -87,8 +87,7 @@ public class ContrainteMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    List<ContrainteView> listContraintes(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+    List<ContrainteView> listContraintes(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         StoredAnalysis analysis = analysisStore.latest();
         Map<String, ConstraintDiagnostic> byName = analysis == null
                 ? Map.of()
@@ -115,7 +114,7 @@ public class ContrainteMcpTools {
     @WarnsWhileSolving
     ToggleResult enableContrainte(
             @ToolArg(description = "Nom technique de la contrainte (voir lister_contraintes)") String nom,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return setActive(nom, true);
     }
 
@@ -132,7 +131,7 @@ public class ContrainteMcpTools {
     @WarnsWhileSolving
     ToggleResult disableContrainte(
             @ToolArg(description = "Nom technique de la contrainte (voir lister_contraintes)") String nom,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return setActive(nom, false);
     }
 
@@ -165,7 +164,7 @@ public class ContrainteMcpTools {
             @ToolArg(description = "Nom technique de la contrainte (voir lister_contraintes)") String nom,
             @ToolArg(description = "Poids strictement positif ; omis, rétablit le poids par défaut", required = false)
                     Integer poids,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         requireConnue(nom);
         if (poids != null && poids <= 0) {
             throw new BusinessError.Invalid("poids : attendu un entier strictement positif, reçu " + poids);

@@ -205,7 +205,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.mural.securiteTableau:Le lien n'ouvre que cet écran, pour cette édition, en lecture seule. La liste des liens donne la date du dernier accès ; révoquer un lien coupe l'écran à sa lecture suivante, et supprimer l'édition emporte ses liens. Pour une affiche de la journée entière, ajoutez ?impression=1 à l'adresse et imprimez la page, qui devient un tableau des stands et des vacations. Sans lien, passez par « Imprimer cette journée » sur la page Planning, derrière votre session.`,
+          text: $localize`:@@aide.mural.securiteTableau:Le lien n'ouvre que cet écran, pour cette édition, en lecture seule. La liste des liens donne la date du dernier accès ; révoquer un lien coupe l'écran à sa lecture suivante, et supprimer l'édition emporte ses liens. Il ne répond que pour l'édition active : désactivée, l'écran affiche « Lien inconnu, révoqué, ou édition terminée ». Pour une affiche de la journée entière, ajoutez ?impression=1 à l'adresse et imprimez la page, qui devient un tableau des stands et des vacations. Sans lien, passez par « Imprimer cette journée » sur la page Planning, derrière votre session.`,
         },
       ],
       links: [

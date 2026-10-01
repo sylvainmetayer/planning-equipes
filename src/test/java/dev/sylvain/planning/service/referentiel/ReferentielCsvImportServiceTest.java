@@ -29,7 +29,8 @@ class ReferentielCsvImportServiceTest {
 
     @BeforeEach
     void creerLEdition() {
-        EDITION = given().contentType("application/json")
+        EDITION = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"nom\":\"Import CSV référentiels\"}")
                 .when()
                 .post("/api/editions")
@@ -41,7 +42,7 @@ class ReferentielCsvImportServiceTest {
 
     @AfterEach
     void supprimerLEdition() {
-        given().when().delete("/api/editions/" + EDITION);
+        given().header("X-Edition-Id", "E1").when().delete("/api/editions/" + EDITION);
     }
 
     private static String corps(String contenu) {

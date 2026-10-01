@@ -61,7 +61,8 @@ class MetricsEndpointTest {
     /** What the reverse proxy forwards never reaches the metrics. */
     @Test
     void theApplicationPortServesNoMetrics() {
-        String body = given().when()
+        String body = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/q/metrics")
                 .then()
                 .statusCode(404)
@@ -98,11 +99,11 @@ class MetricsEndpointTest {
                 "spatoken0f1e2d3c4b5a",
                 "unroutedtoken5a4b3c2d1e");
 
-        given().when().get("/api/espace-animateur/" + tokens.get(0));
-        given().when().get("/api/espace-animateur/" + tokens.get(1) + "/demandes");
-        given().when().get("/api/abonnements/" + tokens.get(2) + "/planning.ics");
-        given().when().get("/animateur/" + tokens.get(3));
-        given().when().get("/api/nothing-here/" + tokens.get(4));
+        given().header("X-Edition-Id", "E1").when().get("/api/espace-animateur/" + tokens.get(0));
+        given().header("X-Edition-Id", "E1").when().get("/api/espace-animateur/" + tokens.get(1) + "/demandes");
+        given().header("X-Edition-Id", "E1").when().get("/api/abonnements/" + tokens.get(2) + "/planning.ics");
+        given().header("X-Edition-Id", "E1").when().get("/animateur/" + tokens.get(3));
+        given().header("X-Edition-Id", "E1").when().get("/api/nothing-here/" + tokens.get(4));
 
         String body = awaitScrapeContaining("uri=\"/abonnements/{token}/planning.ics\"");
 
@@ -125,7 +126,8 @@ class MetricsEndpointTest {
     }
 
     private String scrape() {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get(managementMetrics)
                 .then()
                 .statusCode(200)

@@ -367,8 +367,10 @@ complètes. Quatre points sont connus et se consignent :
 - **les envois automatiques de nuit écrivent sans qu'un humain relise** : le
   rappel de la veille et la relance de confirmation partent d'une tâche
   planifiée, vers des adresses d'animateurs, mineurs compris. Trois bornes sont
-  posées et se consignent telles quelles : rien ne part d'une édition qui n'a
-  pas été **armée explicitement** (l'absence de réglage vaut « muet ») ; le
+  posées et se consignent telles quelles : rien ne part que de l'**édition
+  active**, qu'un administrateur désigne explicitement (toute édition naît
+  inactive, et l'espace, le flux ICS et l'affichage mural d'une édition
+  inactive sont fermés) ; le
   rappel ne dit que ce qui a **déjà été publié**, donc il n'annonce jamais rien
   de neuf ; et le journal `notification_planifiee` ne stocke **ni nom ni
   adresse**, seulement un identifiant d'animateur — l'identité est jointe à la

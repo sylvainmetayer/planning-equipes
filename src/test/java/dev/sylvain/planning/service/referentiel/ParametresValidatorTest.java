@@ -203,14 +203,14 @@ class ParametresValidatorTest {
     void aSendingTimeTheSchedulerCannotHonourIsRefused() {
         assertThatIllegalArgumentException()
                 .isThrownBy(() -> ParametresValidator.checkParametresNotifications(
-                        new ParametresNotifications(true, LocalTime.of(23, 30), 72, 3)))
+                        new ParametresNotifications(LocalTime.of(23, 30), 72, 3)))
                 .withMessageContaining("une fois par heure");
     }
 
     @Test
     void theLatestHonourableSendingTimeIsAccepted() {
         assertThatCode(() -> ParametresValidator.checkParametresNotifications(
-                        new ParametresNotifications(true, ParametresNotifications.HEURE_RAPPEL_VEILLE_MAX, 72, 3)))
+                        new ParametresNotifications(ParametresNotifications.HEURE_RAPPEL_VEILLE_MAX, 72, 3)))
                 .doesNotThrowAnyException();
         assertThatCode(() -> ParametresValidator.checkParametresNotifications(new ParametresNotifications()))
                 .doesNotThrowAnyException();
@@ -220,10 +220,10 @@ class ParametresValidatorTest {
     void aReminderDelayOfZeroIsRefused() {
         assertThatIllegalArgumentException()
                 .isThrownBy(() -> ParametresValidator.checkParametresNotifications(
-                        new ParametresNotifications(true, LocalTime.of(18, 0), 0, 3)));
+                        new ParametresNotifications(LocalTime.of(18, 0), 0, 3)));
         assertThatIllegalArgumentException()
                 .isThrownBy(() -> ParametresValidator.checkParametresNotifications(
-                        new ParametresNotifications(true, LocalTime.of(18, 0), 72, 0)));
+                        new ParametresNotifications(LocalTime.of(18, 0), 72, 0)));
     }
 
     /**

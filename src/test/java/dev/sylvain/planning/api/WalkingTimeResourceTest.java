@@ -43,7 +43,8 @@ class WalkingTimeResourceTest {
         reglee.put("toleranceTrajetMinutes", 8);
         save(reglee).statusCode(200);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/parametres-qualite")
                 .then()
                 .statusCode(200)
@@ -65,7 +66,8 @@ class WalkingTimeResourceTest {
 
     @Test
     void theTightWalksReadOutAnswersWithItsSettings() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/enchainements")
                 .then()
                 .statusCode(200)
@@ -75,7 +77,8 @@ class WalkingTimeResourceTest {
     }
 
     private static io.restassured.response.ValidatableResponse save(Map<String, Object> parametres) {
-        return given().contentType(ContentType.JSON)
+        return given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(parametres)
                 .when()
                 .put("/api/parametres-qualite")

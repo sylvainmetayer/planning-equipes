@@ -105,7 +105,7 @@ public class SolveurMcpTools {
                                     + "PLAN_COURANT (échoue s'il n'y a pas de plan), AUCUN (calcul de zéro)",
                             required = false)
                     String reamorcage,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         Reamorcage depart = Reamorcage.parse(reamorcage);
         return submit(
                 () -> solverJobService.submitSolveFromReferenceData(secondes, Boolean.TRUE.equals(enFile), depart));
@@ -138,7 +138,7 @@ public class SolveurMcpTools {
                     Long secondes,
             @ToolArg(description = "Attendre son tour si le solveur est occupé, au lieu d'échouer", required = false)
                     Boolean enFile,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         ReplanificationScope scope = new ReplanificationScope(
                 animateurIds == null ? Set.of() : new LinkedHashSet<>(animateurIds),
                 McpArgs.dates(jours, "jours"),
@@ -186,8 +186,7 @@ public class SolveurMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    DiagnosticPlanView diagnosePlan(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+    DiagnosticPlanView diagnosePlan(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         StoredAnalysis analyse = analysisStore.refreshFromPersistedPlan();
         if (analyse == null) {
             throw new IllegalStateException("Aucun planning persisté : lancez d'abord une résolution.");
@@ -273,7 +272,7 @@ public class SolveurMcpTools {
                             openWorldHint = false))
     List<AffectationView> animateurResults(
             @ToolArg(description = "Id de l'animateur") String animateurId,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         PlanningEvenement planning = persistenceService.loadPersistedPlanning();
         if (planning == null || planning.getPostes() == null) {
             return List.of();
@@ -314,7 +313,7 @@ public class SolveurMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     List<ViolationHardView> explainHardContraintesFailure(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         StoredAnalysis analysis = analysisStore.latest();
         if (analysis == null) {
             return List.of();

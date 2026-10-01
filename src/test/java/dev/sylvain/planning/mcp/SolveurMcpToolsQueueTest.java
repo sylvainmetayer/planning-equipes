@@ -56,15 +56,15 @@ class SolveurMcpToolsQueueTest {
     @AfterEach
     void clearEdition() {
         awaitSolverIdle();
-        scenarioTools.resetData(null);
+        scenarioTools.resetData("E1");
     }
 
     @Test
     void aSolveCanWaitForItsTurnInsteadOfFailing() {
         loadScenario();
-        JobMcpView premier = solveurTools.startSolver(4L, null, null, null);
+        JobMcpView premier = solveurTools.startSolver(4L, null, null, "E1");
 
-        JobMcpView enFile = solveurTools.startSolver(1L, true, null, null);
+        JobMcpView enFile = solveurTools.startSolver(1L, true, null, "E1");
 
         assertThat(enFile.status()).isEqualTo(JobStatus.QUEUED.name());
         assertThat(enFile.id()).isNotEqualTo(premier.id());
@@ -74,9 +74,9 @@ class SolveurMcpToolsQueueTest {
     @Test
     void withoutQueueingAConcurrentSolveIsRefused() {
         loadScenario();
-        JobMcpView premier = solveurTools.startSolver(4L, null, null, null);
+        JobMcpView premier = solveurTools.startSolver(4L, null, null, "E1");
 
-        assertThatThrownBy(() -> solveurTools.startSolver(1L, false, null, null))
+        assertThatThrownBy(() -> solveurTools.startSolver(1L, false, null, "E1"))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Conflict.class)
                 .hasMessageContaining(premier.id())
@@ -88,31 +88,31 @@ class SolveurMcpToolsQueueTest {
     @Test
     void theIncrementalSolveStartsFromThePersistedPlanning() {
         loadScenario();
-        assertThat(awaitFinished(solveurTools.startSolver(1L, null, null, null).id())
+        assertThat(awaitFinished(solveurTools.startSolver(1L, null, null, "E1").id())
                         .status())
                 .isEqualTo(JobStatus.COMPLETED.name());
-        int affectations = planningTools.planningState(null).affectationsPersistees();
-        String animateurId = planningTools.listAffectations(null, null, null, false, null, null).affectations().stream()
+        int affectations = planningTools.planningState("E1").affectationsPersistees();
+        String animateurId = planningTools.listAffectations(null, null, null, false, null, "E1").affectations().stream()
                 .map(AffectationView::animateurId)
                 .filter(id -> id != null)
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("le solve n'a pourvu aucun poste"));
 
-        JobMcpView incremental = solveurTools.solveIncremental(List.of(animateurId), null, null, 1L, null, null);
+        JobMcpView incremental = solveurTools.solveIncremental(List.of(animateurId), null, null, 1L, null, "E1");
 
         assertThat(incremental.type()).isEqualTo("SOLVE_INCREMENTAL");
         assertThat(awaitFinished(incremental.id()).status()).isEqualTo(JobStatus.COMPLETED.name());
-        assertThat(planningTools.planningState(null).affectationsPersistees()).isEqualTo(affectations);
+        assertThat(planningTools.planningState("E1").affectationsPersistees()).isEqualTo(affectations);
     }
 
     @Test
     void aScopeWithoutTargetSolvesWhatTheChangesInvalidated() {
         loadScenario();
-        assertThat(awaitFinished(solveurTools.startSolver(1L, null, null, null).id())
+        assertThat(awaitFinished(solveurTools.startSolver(1L, null, null, "E1").id())
                         .status())
                 .isEqualTo(JobStatus.COMPLETED.name());
 
-        JobMcpView incremental = solveurTools.solveIncremental(null, null, null, 1L, null, null);
+        JobMcpView incremental = solveurTools.solveIncremental(null, null, null, 1L, null, "E1");
 
         assertThat(awaitFinished(incremental.id()).status()).isEqualTo(JobStatus.COMPLETED.name());
     }
@@ -120,7 +120,7 @@ class SolveurMcpToolsQueueTest {
     @Test
     void aMalformedDayInTheScopeIsRefusedBeforeAnyStart() {
         List<String> dates = List.of("15/08/2026");
-        assertThatThrownBy(() -> solveurTools.solveIncremental(null, dates, null, 1L, null, null))
+        assertThatThrownBy(() -> solveurTools.solveIncremental(null, dates, null, 1L, null, "E1"))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("AAAA-MM-JJ");
@@ -129,8 +129,8 @@ class SolveurMcpToolsQueueTest {
 
     private void loadScenario() {
         awaitSolverIdle();
-        scenarioTools.resetData(null);
-        scenarioTools.importScenario("scenario.yml", null);
+        scenarioTools.resetData("E1");
+        scenarioTools.importScenario("scenario.yml", "E1");
     }
 
     private JobMcpView awaitFinished(String jobId) {

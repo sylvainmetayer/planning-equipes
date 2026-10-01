@@ -2,7 +2,15 @@
 
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
-import { CoherenceReport, Edition, EtatEdition, EtatGel, FreezeFamily } from '../models';
+import {
+  ActivationPreview,
+  CoherenceReport,
+  Edition,
+  EditionSituation,
+  EtatEdition,
+  EtatGel,
+  FreezeFamily,
+} from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class EditionsApi {
@@ -13,7 +21,7 @@ export class EditionsApi {
     return this.api.get<Edition[]>('/api/editions');
   }
 
-  /** The edition this browser works on, as the server resolved it. */
+  /** The edition this browser works on — refused when the stored choice names none, or a deleted one. */
   current(): Promise<Edition> {
     return this.api.get<Edition>('/api/editions/courant');
   }
@@ -44,8 +52,8 @@ export class EditionsApi {
   }
 
   /**
-   * A new edition, empty or duplicated from `source` — the variant of an
-   * edition is another edition.
+   * A new edition, empty or duplicated from `source`. It is born inactive:
+   * it reaches nobody until it is activated.
    *
    * `avecAnimateurs` is only read on a duplication: `false` leaves the people
    * behind (issue #90), which is what the year-template case wants — preparing
@@ -66,9 +74,26 @@ export class EditionsApi {
     return this.api.put(`/api/editions/${encodeURIComponent(editionId)}`, { nom });
   }
 
-  /** The edition every request without an explicit one lands in. */
-  setDefault(editionId: string): Promise<unknown> {
-    return this.api.put(`/api/editions/${encodeURIComponent(editionId)}/defaut`, {});
+  /** What activating `editionId` would close in the edition active today. */
+  activationPreview(editionId: string): Promise<ActivationPreview> {
+    return this.api.get<ActivationPreview>(
+      `/api/editions/${encodeURIComponent(editionId)}/activation`,
+    );
+  }
+
+  /** Makes `editionId` the active edition, and the former one inactive, in one gesture. */
+  activate(editionId: string): Promise<Edition> {
+    return this.api.put<Edition>(`/api/editions/${encodeURIComponent(editionId)}/active`, {});
+  }
+
+  /** Leaves no edition active: nothing reaches outside any more. */
+  deactivate(editionId: string): Promise<void> {
+    return this.api.delete(`/api/editions/${encodeURIComponent(editionId)}/active`);
+  }
+
+  /** What the editions' state asks of the organiser today, for the shell's banner. */
+  situations(): Promise<EditionSituation[]> {
+    return this.api.get<EditionSituation[]>('/api/editions/situations');
   }
 
   delete(editionId: string): Promise<void> {

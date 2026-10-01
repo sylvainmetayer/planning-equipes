@@ -24,7 +24,8 @@ class MargeTensionResourceTest {
     void anEditionWithoutAnimateurAnswersWithASentenceRatherThanACalmGrid() {
         persistence.clearDatabase();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/marge/tension")
                 .then()
                 .statusCode(200)

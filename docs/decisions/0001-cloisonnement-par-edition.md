@@ -1,6 +1,6 @@
 # 0001 — Cloisonner le référentiel et les résultats de solveur par édition
 
-- **Statut** : accepté, puis **révisé par [0009](0009-edition-unique-porteur-de-variantes.md)**
+- **Statut** : accepté, puis **révisé par [0009](0009-edition-unique-porteur-de-variantes.md)** et par [0072](0072-une-seule-edition-active.md) (§4.1 et §5 : l'édition par défaut devient l'édition active, et le repli disparaît)
 - **Date** : août 2026
 - **Portée** : persistance, domaine, API, frontend
 

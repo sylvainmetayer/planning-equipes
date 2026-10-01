@@ -21,7 +21,8 @@ class PlanningResourceTest {
 
     @Test
     void sampleEndpointRetourneUnPlanning() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/sample")
                 .then()
                 .statusCode(200)
@@ -33,7 +34,8 @@ class PlanningResourceTest {
     @Test
     void standCrudWorks() {
         // The id sent is ignored: the stand gets a generated one (ADR 0046).
-        String id = given().contentType("application/json")
+        String id = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {
                           "id":"STAND-TEST",
@@ -52,25 +54,32 @@ class PlanningResourceTest {
                 .extract()
                 .path("stand.id");
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/stands")
                 .then()
                 .statusCode(200)
                 .body("find { it.id == '" + id + "' }.nom", equalTo("Test Stand"));
 
-        given().when().delete("/api/stands/" + id).then().statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/stands/" + id)
+                .then()
+                .statusCode(204);
     }
 
     @Test
     void referenceDataMutationUpdatesTheStaleDataMarker() {
-        String before = given().when()
+        String before = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/persisted/resolution")
                 .then()
                 .statusCode(200)
                 .extract()
                 .path("derniereModificationDonnees");
 
-        String standId = given().contentType("application/json")
+        String standId = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {
                           "id":"STAND-STALE-MARKER",
@@ -89,7 +98,8 @@ class PlanningResourceTest {
                 .path("stand.id");
 
         try {
-            String after = given().when()
+            String after = given().header("X-Edition-Id", "E1")
+                    .when()
                     .get("/api/planning/persisted/resolution")
                     .then()
                     .statusCode(200)
@@ -101,7 +111,11 @@ class PlanningResourceTest {
                 assertThat(java.time.Instant.parse(after)).isAfterOrEqualTo(java.time.Instant.parse(before));
             }
         } finally {
-            given().when().delete("/api/stands/" + standId).then().statusCode(204);
+            given().header("X-Edition-Id", "E1")
+                    .when()
+                    .delete("/api/stands/" + standId)
+                    .then()
+                    .statusCode(204);
         }
     }
 
@@ -109,7 +123,8 @@ class PlanningResourceTest {
     void creneauCrudWorks() {
         String futureTestDate = "2030-01-02";
 
-        Object createdId = given().contentType("application/json")
+        Object createdId = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {
                           "date":"%s",
@@ -125,29 +140,41 @@ class PlanningResourceTest {
                 .extract()
                 .path("creneau.id");
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/creneaux")
                 .then()
                 .statusCode(200)
                 .body("find { it.id == " + createdId + " }.date", equalTo(futureTestDate));
 
-        given().when().delete("/api/creneaux/" + createdId).then().statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/creneaux/" + createdId)
+                .then()
+                .statusCode(204);
     }
 
     @Test
     void persistedPlanningEndpointIsReadOnly() {
-        int before = given().when()
+        int before = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/persisted/count")
                 .then()
                 .statusCode(200)
                 .extract()
                 .path("assignments");
 
-        given().when().get("/api/planning/persisted").then().statusCode(200).body("postes.size()", equalTo(before));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/planning/persisted")
+                .then()
+                .statusCode(200)
+                .body("postes.size()", equalTo(before));
 
         // Reading the planning must never trigger a solve, so the stored
         // assignments are left untouched.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/persisted/count")
                 .then()
                 .statusCode(200)
@@ -156,7 +183,8 @@ class PlanningResourceTest {
 
     @Test
     void constraintsCatalogueExposesEveryRuleWithADescription() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/constraints")
                 .then()
                 .statusCode(200)
@@ -167,12 +195,14 @@ class PlanningResourceTest {
 
     @Test
     void volumetrieMatchesThePlanningActuallyBuiltForASolve() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
 
-        JsonPath sample = JsonPath.from(given().when()
+        JsonPath sample = JsonPath.from(given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/sample?name=scenario.yml")
                 .then()
                 .statusCode(200)
@@ -181,7 +211,8 @@ class PlanningResourceTest {
 
         // Not stands.size() x créneaux.size(): entity count is one poste per
         // required seat, so it must match what a real solve builds.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/volumetrie")
                 .then()
                 .statusCode(200)
@@ -196,9 +227,14 @@ class PlanningResourceTest {
 
     @Test
     void volumetrieIsAllZeroWithoutReferenceData() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/volumetrie")
                 .then()
                 .statusCode(200)
@@ -214,8 +250,13 @@ class PlanningResourceTest {
         // Seats depend on the stands and the créneaux only (issue #416): the
         // card must not read « nothing loaded » on an edition whose roster is
         // simply not typed in yet.
-        given().when().post("/api/planning/reset").then().statusCode(200);
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {
                           "id":"STAND-VOLUMETRIE",
@@ -230,7 +271,8 @@ class PlanningResourceTest {
                 .post("/api/stands")
                 .then()
                 .statusCode(200);
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {
                           "jour":1,
@@ -244,7 +286,8 @@ class PlanningResourceTest {
                 .then()
                 .statusCode(200);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/volumetrie")
                 .then()
                 .statusCode(200)
@@ -253,20 +296,26 @@ class PlanningResourceTest {
                 .body("hoursToFill", equalTo(4f))
                 .body("hoursAvailable", equalTo(0f));
 
-        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
     }
 
     @Test
     void resetEmptiesTheDatabase() {
         // Seed some data first so the reset has something to wipe. Uses the tiny
         // scenario so the solve (which persists the assignments) stays fast.
-        String sample = given().when()
+        String sample = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/sample?name=scenario.yml")
                 .then()
                 .statusCode(200)
                 .extract()
                 .asString();
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(sample)
                 .when()
                 .post("/api/solve?seconds=1")
@@ -275,7 +324,8 @@ class PlanningResourceTest {
 
         // Reset now empties the database instead of reloading a scenario: the
         // summary is all zeros and nothing remains persisted.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/planning/reset")
                 .then()
                 .statusCode(200)
@@ -284,17 +334,24 @@ class PlanningResourceTest {
                 .body("creneaux", equalTo(0))
                 .body("postes", equalTo(0));
 
-        given().when().get("/api/planning/persisted").then().statusCode(200).body("postes.size()", equalTo(0));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/planning/persisted")
+                .then()
+                .statusCode(200)
+                .body("postes.size()", equalTo(0));
     }
 
     @Test
     void exportScenarioReturnsTheCurrentReferenceDataAsYaml() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
 
-        String yaml = given().when()
+        String yaml = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/export-scenario")
                 .then()
                 .statusCode(200)
@@ -312,7 +369,8 @@ class PlanningResourceTest {
 
     @Test
     void pdfExportBundlesOneFilePerAnimateur() throws IOException {
-        String planningJson = given().when()
+        String planningJson = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/sample")
                 .then()
                 .statusCode(200)
@@ -320,7 +378,8 @@ class PlanningResourceTest {
                 .asString();
         int animateurs = JsonPath.from(planningJson).getList("animateurs").size();
 
-        byte[] zip = given().contentType("application/json")
+        byte[] zip = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(planningJson)
                 .when()
                 .post("/api/planning/export/pdf/all")
@@ -342,14 +401,16 @@ class PlanningResourceTest {
 
     @Test
     void exportEndpointsReturnFiles() {
-        String planningJson = given().when()
+        String planningJson = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/sample")
                 .then()
                 .statusCode(200)
                 .extract()
                 .asString();
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(planningJson)
                 .when()
                 .post("/api/planning/export/pdf/all")
@@ -357,7 +418,8 @@ class PlanningResourceTest {
                 .statusCode(200)
                 .contentType("application/zip");
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(planningJson)
                 .when()
                 .post("/api/planning/export/ics/animateur/A1")

@@ -39,7 +39,8 @@ class GelReferentielResourceTest {
 
     @BeforeEach
     void anEditionOfItsOwnHoldingTheScenario() {
-        edition = given().contentType("application/json")
+        edition = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of("nom", "Gel du référentiel"))
                 .when()
                 .post("/api/editions")
@@ -59,7 +60,7 @@ class GelReferentielResourceTest {
         for (String famille : List.of("STANDS", "CRENEAUX", "TYPOLOGIES_EMPLACEMENTS", "COMPETENCES")) {
             edition().when().delete("/api/editions/courant/gel/" + famille);
         }
-        given().when().delete("/api/editions/" + edition);
+        given().header("X-Edition-Id", "E1").when().delete("/api/editions/" + edition);
     }
 
     private static RequestSpecification edition() {
@@ -526,13 +527,15 @@ class GelReferentielResourceTest {
     void aFreezeStaysInItsEditionAndADuplicateStartsOpen() {
         freeze("STANDS");
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/editions/courant/gel/STANDS")
                 .then()
                 .statusCode(200)
                 .body("fige", equalTo(false));
 
-        String copie = given().contentType("application/json")
+        String copie = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of("nom", "Copie"))
                 .when()
                 .post("/api/editions/" + edition + "/dupliquer")
@@ -548,7 +551,7 @@ class GelReferentielResourceTest {
                     .statusCode(200)
                     .body("fige", equalTo(List.of(false, false, false, false)));
         } finally {
-            given().when().delete("/api/editions/" + copie);
+            given().header("X-Edition-Id", "E1").when().delete("/api/editions/" + copie);
         }
     }
 }

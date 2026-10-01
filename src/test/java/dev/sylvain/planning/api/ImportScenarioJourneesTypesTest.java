@@ -81,7 +81,8 @@ class ImportScenarioJourneesTypesTest {
 
     @BeforeEach
     void creerLEditionDAtterrissage() {
-        EDITION = given().contentType("application/json")
+        EDITION = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"nom\":\"Import mode grille\"}")
                 .when()
                 .post("/api/editions")
@@ -93,7 +94,7 @@ class ImportScenarioJourneesTypesTest {
 
     @AfterEach
     void supprimerLEditionDAtterrissage() {
-        given().when().delete("/api/editions/" + EDITION);
+        given().header("X-Edition-Id", "E1").when().delete("/api/editions/" + EDITION);
     }
 
     private void importer(String yaml) {

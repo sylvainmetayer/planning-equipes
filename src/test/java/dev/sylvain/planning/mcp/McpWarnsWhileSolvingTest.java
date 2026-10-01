@@ -71,41 +71,41 @@ class McpWarnsWhileSolvingTest {
     @Test
     void typologieWritesWarnDuringASolve() {
         solveHoldsTheEdition();
-        var creee = standTools.createTypologie("Pendant un calcul", null, null);
+        var creee = standTools.createTypologie("Pendant un calcul", null, "E1");
         String id = creee.id();
         try {
             assertThat(creee.avertissements()).contains(CODE);
             assertWarned(() -> standTools
-                    .updateTypologie(id, "Renommée pendant un calcul", null, null)
+                    .updateTypologie(id, "Renommée pendant un calcul", null, "E1")
                     .avertissements());
         } finally {
-            assertWarned(() -> standTools.deleteTypologie(id, null).avertissements());
+            assertWarned(() -> standTools.deleteTypologie(id, "E1").avertissements());
         }
     }
 
     @Test
     void emplacementWritesWarnDuringASolve() {
         solveHoldsTheEdition();
-        var cree = standTools.createEmplacement("Préau", null, 45.0, 4.0, null);
+        var cree = standTools.createEmplacement("Préau", null, 45.0, 4.0, "E1");
         String id = cree.id();
         try {
             assertThat(cree.avertissements()).contains(CODE);
             assertWarned(() -> standTools
-                    .updateEmplacement(id, "Préau nord", 45.0, 4.0, null, null)
+                    .updateEmplacement(id, "Préau nord", 45.0, 4.0, null, "E1")
                     .avertissements());
         } finally {
-            assertWarned(() -> standTools.deleteEmplacement(id, null).avertissements());
+            assertWarned(() -> standTools.deleteEmplacement(id, "E1").avertissements());
         }
     }
 
     /** A creation is not refused during a solve (its landing does not touch it): it warns instead. */
     @Test
     void aStandCreationWarnsDuringASolve() {
-        String typologie = standTools.createTypologie("Stratégie", null, null).id();
+        String typologie = standTools.createTypologie("Stratégie", null, "E1").id();
         solveHoldsTheEdition();
         String stand = null;
         try {
-            var cree = standTools.createStand("Stand", null, List.of(typologie), 1, 1, false, false, null, null, null);
+            var cree = standTools.createStand("Stand", null, List.of(typologie), 1, 1, false, false, null, null, "E1");
             stand = cree.stand().id();
             assertThat(cree.avertissements()).contains(CODE);
         } finally {
@@ -127,17 +127,17 @@ class McpWarnsWhileSolvingTest {
         solveHoldsTheEdition();
         try {
             assertWarned(() -> parametresTools
-                    .updateParametresSolveur(duree, null, null, null)
+                    .updateParametresSolveur(duree, null, null, "E1")
                     .avertissements());
             assertWarned(() ->
-                    contrainteTools.updateContrainteWeight(contrainte, 3, null).avertissements());
+                    contrainteTools.updateContrainteWeight(contrainte, 3, "E1").avertissements());
             assertWarned(
-                    () -> contrainteTools.disableContrainte(contrainte, null).avertissements());
+                    () -> contrainteTools.disableContrainte(contrainte, "E1").avertissements());
         } finally {
             assertWarned(
-                    () -> contrainteTools.enableContrainte(contrainte, null).avertissements());
+                    () -> contrainteTools.enableContrainte(contrainte, "E1").avertissements());
             assertWarned(() -> contrainteTools
-                    .updateContrainteWeight(contrainte, null, null)
+                    .updateContrainteWeight(contrainte, null, "E1")
                     .avertissements());
         }
     }
@@ -146,10 +146,10 @@ class McpWarnsWhileSolvingTest {
     void locksWarnDuringASolve() {
         solveHoldsTheEdition();
         String id = verrouillageTools
-                .lock("JOUR", null, null, null, "2031-07-14", null, null)
+                .lock("JOUR", null, null, null, "2031-07-14", null, "E1")
                 .verrouillage()
                 .id();
-        assertWarned(() -> verrouillageTools.unlock(id, null).avertissements());
+        assertWarned(() -> verrouillageTools.unlock(id, "E1").avertissements());
     }
 
     /**
@@ -225,15 +225,15 @@ class McpWarnsWhileSolvingTest {
     /** The other half: with no solve holding the edition, the same writes carry nothing about one. */
     @Test
     void withoutASolveNothingIsSaid() {
-        var typologie = standTools.createTypologie("Au calme", null, null);
+        var typologie = standTools.createTypologie("Au calme", null, "E1");
         try {
             assertThat(typologie.avertissements()).doesNotContain(CODE);
-            var emplacement = standTools.createEmplacement("Cour", null, null, null, null);
+            var emplacement = standTools.createEmplacement("Cour", null, null, null, "E1");
             assertThat(emplacement.avertissements()).doesNotContain(CODE);
-            assertThat(standTools.deleteEmplacement(emplacement.id(), null).avertissements())
+            assertThat(standTools.deleteEmplacement(emplacement.id(), "E1").avertissements())
                     .doesNotContain(CODE);
         } finally {
-            assertThat(standTools.deleteTypologie(typologie.id(), null).avertissements())
+            assertThat(standTools.deleteTypologie(typologie.id(), "E1").avertissements())
                     .doesNotContain(CODE);
         }
     }

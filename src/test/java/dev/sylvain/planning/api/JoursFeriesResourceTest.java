@@ -13,7 +13,8 @@ class JoursFeriesResourceTest {
 
     @Test
     void listsTheHolidaysOfARangeWithTheirNames() {
-        given().queryParam("debut", "2026-07-01")
+        given().header("X-Edition-Id", "E1")
+                .queryParam("debut", "2026-07-01")
                 .queryParam("fin", "2026-08-31")
                 .when()
                 .get("/api/jours-feries")
@@ -26,7 +27,8 @@ class JoursFeriesResourceTest {
 
     @Test
     void refusesAnInvertedRange() {
-        given().queryParam("debut", "2026-08-31")
+        given().header("X-Edition-Id", "E1")
+                .queryParam("debut", "2026-08-31")
                 .queryParam("fin", "2026-07-01")
                 .when()
                 .get("/api/jours-feries")
@@ -36,13 +38,15 @@ class JoursFeriesResourceTest {
 
     @Test
     void refusesARangeLongerThanTwoYears() {
-        given().queryParam("debut", "2026-01-01")
+        given().header("X-Edition-Id", "E1")
+                .queryParam("debut", "2026-01-01")
                 .queryParam("fin", "2028-01-02")
                 .when()
                 .get("/api/jours-feries")
                 .then()
                 .statusCode(400);
-        given().queryParam("debut", "2026-01-01")
+        given().header("X-Edition-Id", "E1")
+                .queryParam("debut", "2026-01-01")
                 .queryParam("fin", "2028-01-01")
                 .when()
                 .get("/api/jours-feries")
@@ -52,12 +56,14 @@ class JoursFeriesResourceTest {
 
     @Test
     void refusesAMissingOrUnreadableBound() {
-        given().queryParam("debut", "2026-01-01")
+        given().header("X-Edition-Id", "E1")
+                .queryParam("debut", "2026-01-01")
                 .when()
                 .get("/api/jours-feries")
                 .then()
                 .statusCode(400);
-        given().queryParam("debut", "2026-13-01")
+        given().header("X-Edition-Id", "E1")
+                .queryParam("debut", "2026-13-01")
                 .queryParam("fin", "2026-12-31")
                 .when()
                 .get("/api/jours-feries")

@@ -26,18 +26,24 @@ class AnimateurDayOffResourceTest {
 
     @AfterEach
     void resetDatabase() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
     }
 
     /** Solves the sample scenario and answers somebody holding a seat, with the date of that seat. */
     private static Held solvedSeat() {
-        String sample = given().when()
+        String sample = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/sample?name=scenario.yml")
                 .then()
                 .statusCode(200)
                 .extract()
                 .asString();
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(sample)
                 .when()
                 .post("/api/solve?seconds=3")
@@ -52,7 +58,8 @@ class AnimateurDayOffResourceTest {
     private record Held(String animateurId, String date) {}
 
     private static JsonPath persisted() {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/persisted")
                 .then()
                 .statusCode(200)
@@ -74,7 +81,8 @@ class AnimateurDayOffResourceTest {
     }
 
     private static List<String> offDays(String animateurId) {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/animateurs/" + animateurId + "/fiche")
                 .then()
                 .statusCode(200)
@@ -89,7 +97,8 @@ class AnimateurDayOffResourceTest {
         List<String> avant = seatsOf(held.animateurId(), held.date());
         assertThat(avant).isNotEmpty();
 
-        JsonPath reponse = given().when()
+        JsonPath reponse = given().header("X-Edition-Id", "E1")
+                .when()
                 .put("/api/animateurs/" + held.animateurId() + "/jours-indisponibles/" + held.date())
                 .then()
                 .statusCode(200)
@@ -108,12 +117,14 @@ class AnimateurDayOffResourceTest {
     @Test
     void cancellingMakesTheDayAvailableWithoutHandingTheSeatsBack() {
         Held held = solvedSeat();
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .put("/api/animateurs/" + held.animateurId() + "/jours-indisponibles/" + held.date())
                 .then()
                 .statusCode(200);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .delete("/api/animateurs/" + held.animateurId() + "/jours-indisponibles/" + held.date())
                 .then()
                 .statusCode(200)
@@ -133,14 +144,16 @@ class AnimateurDayOffResourceTest {
     void aLockedSeatIsKeptAndTheDayWrittenAllTheSame() {
         Held held = solvedSeat();
         List<String> avant = seatsOf(held.animateurId(), held.date());
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"id\":\"OFF-VERROU\",\"type\":\"ANIMATEUR\",\"animateurId\":\"" + held.animateurId() + "\"}")
                 .when()
                 .post("/api/verrouillages")
                 .then()
                 .statusCode(200);
         try {
-            JsonPath reponse = given().when()
+            JsonPath reponse = given().header("X-Edition-Id", "E1")
+                    .when()
                     .put("/api/animateurs/" + held.animateurId() + "/jours-indisponibles/" + held.date())
                     .then()
                     .statusCode(200)
@@ -155,7 +168,7 @@ class AnimateurDayOffResourceTest {
             assertThat(offDays(held.animateurId())).contains(held.date());
             assertThat(seatsOf(held.animateurId(), held.date())).isEqualTo(avant);
         } finally {
-            given().when().delete("/api/verrouillages/OFF-VERROU");
+            given().header("X-Edition-Id", "E1").when().delete("/api/verrouillages/OFF-VERROU");
         }
     }
 
@@ -163,24 +176,27 @@ class AnimateurDayOffResourceTest {
     @Test
     void aSolveRunningRefusesTheGesture() {
         Held held = solvedSeat();
-        String jobId = given().when()
+        String jobId = given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/solve/async/reference-data?seconds=30")
                 .then()
                 .statusCode(202)
                 .extract()
                 .path("id");
         try {
-            given().when()
+            given().header("X-Edition-Id", "E1")
+                    .when()
                     .put("/api/animateurs/" + held.animateurId() + "/jours-indisponibles/" + held.date())
                     .then()
                     .statusCode(409)
                     .body("message", containsString("résolution est en cours"));
             assertThat(offDays(held.animateurId())).doesNotContain(held.date());
         } finally {
-            given().when().post("/api/jobs/" + jobId + "/cancel");
+            given().header("X-Edition-Id", "E1").when().post("/api/jobs/" + jobId + "/cancel");
             await().atMost(Duration.ofSeconds(60))
                     .pollInterval(Duration.ofMillis(250))
-                    .until(() -> given().when()
+                    .until(() -> given().header("X-Edition-Id", "E1")
+                                    .when()
                                     .get("/api/jobs/active")
                                     .then()
                                     .extract()
@@ -191,12 +207,14 @@ class AnimateurDayOffResourceTest {
 
     @Test
     void anUnknownAnimateurIs404AndAnUnreadableDateIs400() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .put("/api/animateurs/PERSONNE/jours-indisponibles/2026-07-10")
                 .then()
                 .statusCode(404);
         Held held = solvedSeat();
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .put("/api/animateurs/" + held.animateurId() + "/jours-indisponibles/10-07-2026")
                 .then()
                 .statusCode(400);

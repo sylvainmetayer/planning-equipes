@@ -28,7 +28,8 @@ class HistoriqueResourceTest {
 
     @Test
     void aWriteLeavesALineNamingWhatItTouched() {
-        String id = given().contentType(ContentType.JSON)
+        String id = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("""
                         {"prenom":"Alice","nom":"Martin","dateNaissance":"1990-01-01"}""")
                 .when()
@@ -38,7 +39,8 @@ class HistoriqueResourceTest {
                 .extract()
                 .path("animateur.id");
 
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("""
                         {"prenom":"Alice","nom":"Durand","dateNaissance":"1990-01-01",
                          "email":"alice@example.org"}""")
@@ -47,7 +49,8 @@ class HistoriqueResourceTest {
                 .then()
                 .statusCode(200);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/historique")
                 .then()
                 .statusCode(200)
@@ -61,7 +64,11 @@ class HistoriqueResourceTest {
                 .body("find { it.action == 'ANIMATEUR_MODIFIE' }.champs", not(hasItem("prenom")))
                 .body("find { it.action == 'ANIMATEUR_CREE' }.entiteId", equalTo(id));
 
-        given().when().delete("/api/animateurs/" + id).then().statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/animateurs/" + id)
+                .then()
+                .statusCode(204);
     }
 
     /**
@@ -71,7 +78,8 @@ class HistoriqueResourceTest {
      */
     @Test
     void nothingNominativeIsStoredAndTheNameIsJoinedOnRead() {
-        String id = given().contentType(ContentType.JSON)
+        String id = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("""
                         {"prenom":"Bérénice","nom":"Dupont","dateNaissance":"1990-01-01"}""")
                 .when()
@@ -81,16 +89,22 @@ class HistoriqueResourceTest {
                 .extract()
                 .path("animateur.id");
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/historique")
                 .then()
                 .statusCode(200)
                 .body("find { it.entiteId == '" + id + "' }.entiteNom", equalTo("Bérénice Dupont"));
 
-        given().when().delete("/api/animateurs/" + id).then().statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/animateurs/" + id)
+                .then()
+                .statusCode(204);
 
         // The line survives; the name does not.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/historique")
                 .then()
                 .statusCode(200)
@@ -102,7 +116,8 @@ class HistoriqueResourceTest {
     /** A refused action is a fact worth keeping — often the one being looked for. */
     @Test
     void aRefusedActionIsRecordedAsRefused() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("""
                         {"id":"HIST-INCONNU","prenom":"X","nom":"Y","dateNaissance":"1990-01-01"}""")
                 .when()
@@ -113,7 +128,8 @@ class HistoriqueResourceTest {
                 // the screen shows. A 404 used to come back empty (#447).
                 .body("message", equalTo("Animateur inconnu : HIST-INCONNU"));
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/historique")
                 .then()
                 .statusCode(200)
@@ -124,10 +140,19 @@ class HistoriqueResourceTest {
     /** A read changes nothing and leaves nothing: the history is not an access log. */
     @Test
     void plainReadsLeaveNoTrace() {
-        given().when().get("/api/historique").then().statusCode(200);
-        given().when().get("/api/animateurs").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/historique")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/animateurs")
+                .then()
+                .statusCode(200);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/historique")
                 .then()
                 .statusCode(200)
@@ -141,28 +166,32 @@ class HistoriqueResourceTest {
      */
     @Test
     void aToggleRecordsTheDirectionItWentIn() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"actif\":false}")
                 .when()
                 .put("/api/constraints/equilibrerCharge")
                 .then()
                 .statusCode(200);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/historique")
                 .then()
                 .statusCode(200)
                 .body("find { it.entiteId == 'equilibrerCharge' }.action", equalTo("CONTRAINTE_DESACTIVEE"))
                 .body("find { it.entiteId == 'equilibrerCharge' }.libelle", equalTo("Contrainte désactivée"));
 
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"actif\":true}")
                 .when()
                 .put("/api/constraints/equilibrerCharge")
                 .then()
                 .statusCode(200);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/historique")
                 .then()
                 .statusCode(200)
@@ -179,7 +208,8 @@ class HistoriqueResourceTest {
     void theChangesSinceAMomentAreCountedPerFamilyAndDated() {
         String avant = Instant.now().toString();
 
-        String id = given().contentType(ContentType.JSON)
+        String id = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("""
                         {"prenom":"Chloé","nom":"Bernard","dateNaissance":"1990-01-01"}""")
                 .when()
@@ -190,9 +220,14 @@ class HistoriqueResourceTest {
                 .path("animateur.id");
         // Reading changes nothing, and an export leaves with a copy of the plan
         // without moving it: neither belongs in this summary.
-        given().when().get("/api/animateurs").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/animateurs")
+                .then()
+                .statusCode(200);
 
-        given().queryParam("depuis", avant)
+        given().header("X-Edition-Id", "E1")
+                .queryParam("depuis", avant)
                 .when()
                 .get("/api/historique/changements")
                 .then()
@@ -204,7 +239,8 @@ class HistoriqueResourceTest {
                 .body("dernieres.action", everyItem(not(equalTo("ANIMATEURS_LUS"))));
 
         // Asked from now on, the same creation is behind us.
-        given().queryParam("depuis", Instant.now().toString())
+        given().header("X-Edition-Id", "E1")
+                .queryParam("depuis", Instant.now().toString())
                 .when()
                 .get("/api/historique/changements")
                 .then()
@@ -213,7 +249,11 @@ class HistoriqueResourceTest {
                 .body("parEntite", empty())
                 .body("dernieres", empty());
 
-        given().when().delete("/api/animateurs/" + id).then().statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/animateurs/" + id)
+                .then()
+                .statusCode(204);
     }
 
     /**
@@ -227,7 +267,8 @@ class HistoriqueResourceTest {
         // The scenario export refuses an empty edition, and a class run
         // before this one may have cleared it: bring the referential along
         // rather than depend on the order the suite runs in.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
@@ -243,13 +284,20 @@ class HistoriqueResourceTest {
         telechargements.put("/api/database/export", "EXPORT_BASE");
 
         Map<String, Integer> statuts = new LinkedHashMap<>();
-        telechargements.forEach((chemin, action) ->
-                statuts.put(action, given().when().get(chemin).then().extract().statusCode()));
+        telechargements.forEach((chemin, action) -> statuts.put(
+                action,
+                given().header("X-Edition-Id", "E1")
+                        .when()
+                        .get(chemin)
+                        .then()
+                        .extract()
+                        .statusCode()));
         assertThat(statuts)
                 .as("les téléchargements eux-mêmes")
                 .allSatisfy((action, statut) -> assertThat(statut).as(action).isEqualTo(200));
 
-        JsonPath historique = given().queryParam("limite", 500)
+        JsonPath historique = given().header("X-Edition-Id", "E1")
+                .queryParam("limite", 500)
                 .when()
                 .get("/api/historique")
                 .then()
@@ -273,7 +321,8 @@ class HistoriqueResourceTest {
                     .isEqualTo(action.equals("EXPORT_REFERENTIELS") ? List.of("typologies", "animateurs") : List.of());
         });
 
-        given().queryParam("depuis", avant)
+        given().header("X-Edition-Id", "E1")
+                .queryParam("depuis", avant)
                 .when()
                 .get("/api/historique/changements")
                 .then()
@@ -290,13 +339,15 @@ class HistoriqueResourceTest {
     @Test
     void theBrowserBuiltAnimateurListLeavesAnExportLine() {
         String avant = Instant.now().toString();
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/animateurs/export-liste")
                 .then()
                 .statusCode(204);
 
-        given().queryParam("nature", "exports")
+        given().header("X-Edition-Id", "E1")
+                .queryParam("nature", "exports")
                 .when()
                 .get("/api/historique")
                 .then()
@@ -305,7 +356,8 @@ class HistoriqueResourceTest {
                 .body("find { it.action == 'EXPORT_LISTE_ANIMATEURS' }.resultat", equalTo("SUCCES"))
                 .body("find { it.action == 'EXPORT_LISTE_ANIMATEURS' }.statut", equalTo(204))
                 .body("find { it.action == 'EXPORT_LISTE_ANIMATEURS' }.champs", empty());
-        given().queryParam("depuis", avant)
+        given().header("X-Edition-Id", "E1")
+                .queryParam("depuis", avant)
                 .when()
                 .get("/api/historique/changements")
                 .then()
@@ -316,9 +368,14 @@ class HistoriqueResourceTest {
     /** A refused export is written too, as refused: asking for nothing is a 400. */
     @Test
     void aRefusedExportIsRecordedAsRefused() {
-        given().when().get("/api/reference-data/export-csv").then().statusCode(400);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/reference-data/export-csv")
+                .then()
+                .statusCode(400);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/historique")
                 .then()
                 .statusCode(200)
@@ -333,12 +390,21 @@ class HistoriqueResourceTest {
      */
     @Test
     void theExportsFilterSearchesTheDatabaseNotTheLastPage() {
-        given().when().get("/api/reference-data/export-csv?stands=true").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/reference-data/export-csv?stands=true")
+                .then()
+                .statusCode(200);
         // More recent lines than the page asked for below, none of them an export.
         List<String> crees = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
-            given().when().get("/api/reference-data/export-csv").then().statusCode(400);
-            crees.add(given().contentType(ContentType.JSON)
+            given().header("X-Edition-Id", "E1")
+                    .when()
+                    .get("/api/reference-data/export-csv")
+                    .then()
+                    .statusCode(400);
+            crees.add(given().header("X-Edition-Id", "E1")
+                    .contentType(ContentType.JSON)
                     .body("{\"prenom\":\"X" + i + "\",\"nom\":\"Y\",\"dateNaissance\":\"1990-01-01\"}")
                     .when()
                     .post("/api/animateurs")
@@ -348,14 +414,16 @@ class HistoriqueResourceTest {
                     .path("animateur.id"));
         }
 
-        List<String> exportCodes = given().when()
+        List<String> exportCodes = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/historique/actions")
                 .then()
                 .statusCode(200)
                 .extract()
                 .jsonPath()
                 .getList("findAll { it.export }.code", String.class);
-        List<Map<String, Object>> page = given().queryParam("nature", "exports")
+        List<Map<String, Object>> page = given().header("X-Edition-Id", "E1")
+                .queryParam("nature", "exports")
                 .queryParam("limite", 4)
                 .when()
                 .get("/api/historique")
@@ -371,13 +439,18 @@ class HistoriqueResourceTest {
                 .anySatisfy(ligne -> assertThat(ligne).containsEntry("champs", List.of("stands")));
 
         for (String id : crees) {
-            given().when().delete("/api/animateurs/" + id).then().statusCode(204);
+            given().header("X-Edition-Id", "E1")
+                    .when()
+                    .delete("/api/animateurs/" + id)
+                    .then()
+                    .statusCode(204);
         }
     }
 
     @Test
     void anUnknownNatureIsRefused() {
-        given().queryParam("nature", "toutes")
+        given().header("X-Edition-Id", "E1")
+                .queryParam("nature", "toutes")
                 .when()
                 .get("/api/historique")
                 .then()
@@ -386,8 +459,13 @@ class HistoriqueResourceTest {
 
     @Test
     void theChangesRefuseAMomentTheyCannotRead() {
-        given().when().get("/api/historique/changements").then().statusCode(400);
-        given().queryParam("depuis", "hier")
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/historique/changements")
+                .then()
+                .statusCode(400);
+        given().header("X-Edition-Id", "E1")
+                .queryParam("depuis", "hier")
                 .when()
                 .get("/api/historique/changements")
                 .then()
@@ -396,7 +474,8 @@ class HistoriqueResourceTest {
 
     @Test
     void theActionInventoryIsServedForTheScreensFilter() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/historique/actions")
                 .then()
                 .statusCode(200)

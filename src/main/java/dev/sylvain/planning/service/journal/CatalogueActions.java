@@ -87,7 +87,8 @@ public final class CatalogueActions {
     private static final String EDITION_CREEE = "EDITION_CREEE";
     private static final String EDITION_RENOMMEE = "EDITION_RENOMMEE";
     private static final String EDITION_DUPLIQUEE = "EDITION_DUPLIQUEE";
-    private static final String EDITION_PAR_DEFAUT = "EDITION_PAR_DEFAUT";
+    private static final String EDITION_ACTIVEE = "EDITION_ACTIVEE";
+    private static final String EDITION_DESACTIVEE = "EDITION_DESACTIVEE";
     private static final String EDITION_SUPPRIMEE = "EDITION_SUPPRIMEE";
     private static final String GEL_POSE = "GEL_POSE";
     private static final String GEL_LEVE = "GEL_LEVE";
@@ -286,7 +287,8 @@ public final class CatalogueActions {
         action(EDITION_CREEE, "Édition créée", Entite.EDITION);
         action(EDITION_RENOMMEE, "Édition renommée", Entite.EDITION);
         action(EDITION_DUPLIQUEE, "Édition dupliquée", Entite.EDITION);
-        action(EDITION_PAR_DEFAUT, "Édition par défaut changée", Entite.EDITION);
+        action(EDITION_ACTIVEE, "Édition activée", Entite.EDITION);
+        action(EDITION_DESACTIVEE, "Édition désactivée", Entite.EDITION);
         action(EDITION_SUPPRIMEE, "Édition supprimée", Entite.EDITION);
         // The freeze of the referential (ADR 0052) moves no data a solve
         // reads: it only refuses the writes to come, hence action().
@@ -501,7 +503,8 @@ public final class CatalogueActions {
         route("EditionResource#create", EDITION_CREEE);
         route("EditionResource#rename", EDITION_RENOMMEE);
         route("EditionResource#duplicate", EDITION_DUPLIQUEE);
-        route("EditionResource#setAsDefault", EDITION_PAR_DEFAUT);
+        route("EditionResource#activate", EDITION_ACTIVEE);
+        route("EditionResource#deactivate", EDITION_DESACTIVEE);
         route("EditionResource#delete", EDITION_SUPPRIMEE);
         route("EditionResource#freeze", GEL_POSE);
         route("EditionResource#lift", GEL_LEVE);
@@ -669,7 +672,8 @@ public final class CatalogueActions {
         outil("creer_edition", EDITION_CREEE);
         outil("renommer_edition", EDITION_RENOMMEE);
         outil("dupliquer_edition", EDITION_DUPLIQUEE);
-        outil("definir_edition_par_defaut", EDITION_PAR_DEFAUT);
+        outil("activer_edition", EDITION_ACTIVEE);
+        outil("desactiver_edition", EDITION_DESACTIVEE);
         outil("supprimer_edition", EDITION_SUPPRIMEE);
         outil("figer_referentiel", GEL_POSE);
         outil("lever_gel", GEL_LEVE);

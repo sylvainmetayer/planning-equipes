@@ -27,13 +27,14 @@ class AnimateurResourceTest {
     @AfterEach
     void removeFixture() {
         if (createdId != null) {
-            given().when().delete("/api/animateurs/" + createdId);
+            given().header("X-Edition-Id", "E1").when().delete("/api/animateurs/" + createdId);
         }
     }
 
     @Test
     void aCreationWithoutBirthDateIsRefusedNamingTheDate() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("""
                         {"prenom":"Alice","nom":"AR-Incomplet"}""")
                 .when()
@@ -45,12 +46,18 @@ class AnimateurResourceTest {
                 .body("message", not(containsString("le nom")));
 
         // Nothing was written: no fiche carries that name.
-        given().when().get("/api/animateurs").then().statusCode(200).body("nom", not(hasItem("AR-Incomplet")));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/animateurs")
+                .then()
+                .statusCode(200)
+                .body("nom", not(hasItem("AR-Incomplet")));
     }
 
     @Test
     void aCreationWithABlankFirstNameIsRefused() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("""
                         {"prenom":"   ","nom":"Martin","dateNaissance":"1990-01-01"}""")
                 .when()
@@ -63,7 +70,8 @@ class AnimateurResourceTest {
 
     @Test
     void aCreationMissingEverythingIsRefusedOnceNamingAllThreeFields() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("""
                         {"prenom":"","nom":""}""")
                 .when()
@@ -82,7 +90,8 @@ class AnimateurResourceTest {
 
     @Test
     void anEditCannotBlankTheNameNorDropTheBirthDate() {
-        createdId = given().contentType(ContentType.JSON)
+        createdId = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("""
                         {"prenom":"Alice","nom":"Martin","dateNaissance":"1990-01-01"}""")
                 .when()
@@ -92,7 +101,8 @@ class AnimateurResourceTest {
                 .extract()
                 .path("animateur.id");
 
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("""
                         {"prenom":"Alice","nom":"","dateNaissance":null}""")
                 .when()
@@ -104,7 +114,8 @@ class AnimateurResourceTest {
                 .body("message", not(containsString("prénom")));
 
         // The stored fiche is untouched by the refused edit.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/animateurs")
                 .then()
                 .statusCode(200)
@@ -120,7 +131,8 @@ class AnimateurResourceTest {
      */
     @Test
     void thePhoneNumberIsReadBackAndATooLongOneRefused() {
-        createdId = given().contentType(ContentType.JSON)
+        createdId = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("""
                         {"prenom":"Alice","nom":"AR-Telephone","dateNaissance":"1990-01-01",\
                         "telephone":" 06 12 34 56 78 "}""")
@@ -132,7 +144,8 @@ class AnimateurResourceTest {
                 .path("animateur.id");
         String tropLong = "+33 6 12 34 56 78 poste 1234567890";
 
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"prenom\":\"Alice\",\"nom\":\"AR-Telephone\",\"dateNaissance\":\"1990-01-01\","
                         + "\"telephone\":\"" + tropLong + "\"}")
                 .when()
@@ -142,7 +155,8 @@ class AnimateurResourceTest {
                 .body("message", containsString("32 caractères"))
                 .body("message", not(containsString(tropLong)));
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/animateurs")
                 .then()
                 .statusCode(200)

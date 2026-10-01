@@ -32,7 +32,8 @@ class McpResourceTest {
     @Test
     @Order(1)
     void leStatutDitQuUneCleEstConfigureeSansJamaisLaDonner() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/mcp/statut")
                 .then()
                 .statusCode(200)
@@ -50,7 +51,8 @@ class McpResourceTest {
     @Test
     @Order(1)
     void lesPromptsDuServeurSontServisAuComplet() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/mcp/prompts")
                 .then()
                 .statusCode(200)
@@ -72,7 +74,8 @@ class McpResourceTest {
     @Test
     @Order(2)
     void leBonMotDePasseRevelaLaCle() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"motDePasse\":\"admin\"}")
                 .when()
                 .post("/api/mcp/cle")
@@ -86,7 +89,8 @@ class McpResourceTest {
     @Test
     @Order(3)
     void unMauvaisMotDePasseNeRevelaRien() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"motDePasse\":\"pas-le-bon\"}")
                 .when()
                 .post("/api/mcp/cle")
@@ -97,7 +101,8 @@ class McpResourceTest {
     @Test
     @Order(4)
     void unMotDePasseAbsentEstTraiteCommeUnMauvaisMotDePasse() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{}")
                 .when()
                 .post("/api/mcp/cle")
@@ -114,7 +119,8 @@ class McpResourceTest {
         // the 429 to be a 401.
         int statut = 401;
         for (int essai = 0; essai < McpResource.MAX_ESSAIS + 1 && statut == 401; essai++) {
-            statut = given().contentType(ContentType.JSON)
+            statut = given().header("X-Edition-Id", "E1")
+                    .contentType(ContentType.JSON)
                     .body("{\"motDePasse\":\"toujours-faux\"}")
                     .when()
                     .post("/api/mcp/cle")
@@ -126,7 +132,8 @@ class McpResourceTest {
 
         // The right password does not lift the lockout: otherwise guessing it
         // once would be enough to cancel the whole limit.
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"motDePasse\":\"admin\"}")
                 .when()
                 .post("/api/mcp/cle")

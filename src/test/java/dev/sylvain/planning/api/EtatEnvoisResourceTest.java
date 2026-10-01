@@ -126,7 +126,8 @@ class EtatEnvoisResourceTest {
         Map<String, Object> alice = ligne(etat(), "ETAT-A");
         assertThat(path(alice, "envoi", "statut")).isEqualTo("ECHEC");
         assertThat(path(alice, "envoi", "cause")).isEqualTo("ADRESSE_REFUSEE");
-        JsonPath accueil = given().when()
+        JsonPath accueil = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/editions/courant/etat")
                 .then()
                 .statusCode(200)
@@ -135,7 +136,8 @@ class EtatEnvoisResourceTest {
         assertThat(accueil.getInt("publication.envoisEnEchec")).isEqualTo(1);
         assertThat(accueil.getString("publication.statut")).isNotEqualTo("FAIT");
 
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/planning/envoi/animateur/ETAT-A")
                 .then()
@@ -144,7 +146,8 @@ class EtatEnvoisResourceTest {
         Map<String, Object> apres = ligne(etat(), "ETAT-A");
         assertThat(path(apres, "envoi", "statut")).isEqualTo("ENVOYE");
         assertThat(path(apres, "envoi", "nature")).isEqualTo("RENVOI");
-        assertThat(given().when()
+        assertThat(given().header("X-Edition-Id", "E1")
+                        .when()
                         .get("/api/planning/publication")
                         .then()
                         .statusCode(200)
@@ -168,7 +171,8 @@ class EtatEnvoisResourceTest {
 
         assertThat(rapport.getInt("envoyes")).isZero();
         assertThat(rapport.getList("echecs")).hasSize(2);
-        JsonPath accueil = given().when()
+        JsonPath accueil = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/editions/courant/etat")
                 .then()
                 .statusCode(200)
@@ -186,7 +190,8 @@ class EtatEnvoisResourceTest {
 
         // A resend from Diffuser that bounces too is journalled the same way:
         // the home screen counts it, the history must say it.
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/planning/envoi/animateur/ETAT-A")
                 .then()
@@ -199,7 +204,8 @@ class EtatEnvoisResourceTest {
 
     /** The history's PUBLICATION_ECHEC lines, newest first. */
     private static List<Map<String, Object>> publicationFailuresJournalled() {
-        List<Map<String, Object>> historique = given().when()
+        List<Map<String, Object>> historique = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/historique?limite=200")
                 .then()
                 .statusCode(200)
@@ -251,7 +257,8 @@ class EtatEnvoisResourceTest {
         // Aujourd'hui's « Prévenir les N personnes » counts the same people
         // Diffuser does: Bruno, deferred, although the plan now equals the
         // published one.
-        assertThat(given().when()
+        assertThat(given().header("X-Edition-Id", "E1")
+                        .when()
                         .get("/api/jour-j?date=" + JOUR + "&maintenant=" + JOUR + "T13:00")
                         .then()
                         .statusCode(200)
@@ -279,7 +286,8 @@ class EtatEnvoisResourceTest {
         Map<String, Object> bruno = ligne(etat(), "ETAT-B");
         assertThat(path(bruno, "envoi", "statut")).isEqualTo("ECHEC");
         assertThat(path(bruno, "envoi", "cause")).isEqualTo("BOITE_PLEINE");
-        assertThat(given().when()
+        assertThat(given().header("X-Edition-Id", "E1")
+                        .when()
                         .get("/api/editions/courant/etat")
                         .then()
                         .statusCode(200)
@@ -295,7 +303,8 @@ class EtatEnvoisResourceTest {
     /* -------------------------------- Helpers ------------------------------ */
 
     private JsonPath etat() {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/publication/etat")
                 .then()
                 .statusCode(200)
@@ -304,7 +313,8 @@ class EtatEnvoisResourceTest {
     }
 
     private JsonPath publier(Map<String, Object> corps) {
-        return given().contentType(ContentType.JSON)
+        return given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(corps)
                 .when()
                 .post("/api/planning/publication")

@@ -201,7 +201,8 @@ class SolverJobReamorcageTest {
 
     @Test
     void anUnknownReamorcageValueIsA400() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/solve/async/reference-data?reamorcage=BIDON")
                 .then()
                 .statusCode(400);

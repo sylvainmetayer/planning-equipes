@@ -34,7 +34,8 @@ class HorlogeSimuleeRecetteTest {
 
     @AfterEach
     void handTheClockBack() {
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"dateDuJour\":null}")
                 .when()
                 .put("/api/horloge")
@@ -44,12 +45,18 @@ class HorlogeSimuleeRecetteTest {
 
     @Test
     void aStagingServerAdvertisesThatTheCardMayBeUsed() {
-        given().when().get("/api/horloge").then().statusCode(200).body("modifiable", equalTo(true));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/horloge")
+                .then()
+                .statusCode(200)
+                .body("modifiable", equalTo(true));
     }
 
     @Test
     void aStagingServerFreezesTheDateAndTimeOutsideDevMode() {
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"dateDuJour\":\"" + JOUR + "\",\"heureDuJour\":\"14:30\"}")
                 .when()
                 .put("/api/horloge")
@@ -59,7 +66,8 @@ class HorlogeSimuleeRecetteTest {
                 .body("heureDuJour", equalTo("14:30"));
 
         // Read back too: the guard sits on the read as well as on the write.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/horloge")
                 .then()
                 .statusCode(200)

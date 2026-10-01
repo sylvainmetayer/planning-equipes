@@ -116,7 +116,8 @@ class EspacePlanPublieTest {
 
     @Test
     void tantQueRienNEstPublieLEspaceNeMontreAucunPlanning() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -128,7 +129,8 @@ class EspacePlanPublieTest {
     void aPresPublicationLEspaceMontreLePlanningEtSaDate() {
         publication.publier();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -152,7 +154,8 @@ class EspacePlanPublieTest {
         referenceData.updateAnimateur("PUBESP-A", alice);
         publication.publier();
 
-        String espace = given().when()
+        String espace = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -170,7 +173,8 @@ class EspacePlanPublieTest {
         // incremental solve: the espace must not follow on its own.
         persistPlan("PUBESP-B");
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -179,7 +183,8 @@ class EspacePlanPublieTest {
 
         publication.publier();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -207,14 +212,16 @@ class EspacePlanPublieTest {
         demandes.accept(demandeId, null);
 
         // Decided, and the espace still serves the plan published before it.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A") + "/demandes")
                 .then()
                 .statusCode(200)
                 .body("[0].statut", equalTo("ACCEPTEE"))
                 .body("[0].decideLe", notNullValue())
                 .body("[0].communiqueeLe", nullValue());
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -224,12 +231,14 @@ class EspacePlanPublieTest {
 
         // The publication carries the decision: the seat is gone, and the
         // demande no longer claims anything the planning contradicts.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A") + "/demandes")
                 .then()
                 .statusCode(200)
                 .body("[0].communiqueeLe", notNullValue());
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -245,7 +254,8 @@ class EspacePlanPublieTest {
     void lEspaceRepeteLesPhrasesDeLaDernierePublicationQuiLeConcerne() {
         // A first delivery announces a planning, not a list of corrections.
         publication.publier();
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -256,7 +266,8 @@ class EspacePlanPublieTest {
         persistPlan("PUBESP-B");
         publication.publier();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -277,7 +288,8 @@ class EspacePlanPublieTest {
         persistPlan("PUBESP-B");
         publication.publier();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -290,7 +302,8 @@ class EspacePlanPublieTest {
         RestAssured.requestSpecification =
                 new RequestSpecBuilder().addCookie("planning-espace", session).build();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-B"))
                 .then()
                 .statusCode(200)
@@ -311,7 +324,8 @@ class EspacePlanPublieTest {
         publication.publier();
         renommerStand("PUBESP-S1", "Stand rebaptisé");
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -342,7 +356,8 @@ class EspacePlanPublieTest {
         demandes.refuse(demandeId, "Bruno doit rester sur ce stand");
         publication.publier();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -351,7 +366,8 @@ class EspacePlanPublieTest {
 
         // Not lost, though: the trace carries it where it belongs, which is
         // what the organisation reads to know who was told what.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/publication/destinataires")
                 .then()
                 .statusCode(200)
@@ -384,14 +400,16 @@ class EspacePlanPublieTest {
         // decision alone — nothing moved in her days.
         demandes.refuse(demandeId, "Déjà réglé par le nouveau planning");
         publication.publier();
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/publication/destinataires")
                 .then()
                 .statusCode(200)
                 .body("find { it.animateurId == 'PUBESP-A' }.changements.size()", equalTo(0))
                 .body("find { it.animateurId == 'PUBESP-A' }.demandes[0]", containsString("refus"));
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -404,7 +422,8 @@ class EspacePlanPublieTest {
     /** Never written to: nothing to replay, and no date to show it under. */
     @Test
     void sansPublicationLEspaceNAnnonceAucunChangement() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -424,7 +443,8 @@ class EspacePlanPublieTest {
         persistPlan("PUBESP-B");
         publication.publier();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -440,7 +460,8 @@ class EspacePlanPublieTest {
      */
     @Test
     void theEspaceSaysWhetherTheMailActuallyLeft() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -448,7 +469,8 @@ class EspacePlanPublieTest {
                 .body("collecteOuverte", equalTo(false));
 
         publication.publier();
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -457,7 +479,8 @@ class EspacePlanPublieTest {
         donnerEmail("PUBESP-A", null);
         persistPlan("PUBESP-B");
         publication.publier();
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -478,7 +501,8 @@ class EspacePlanPublieTest {
         rattacherEmplacement("PUBESP-S1", hallId);
         publication.publier();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -495,7 +519,8 @@ class EspacePlanPublieTest {
 
         // The published plan is resolved against today's referential: what is
         // read is the label of now, not a copy frozen at publication time.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -516,7 +541,8 @@ class EspacePlanPublieTest {
         rattacherEmplacement("PUBESP-S1", chapiteauId);
         publication.publier();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -530,7 +556,8 @@ class EspacePlanPublieTest {
     void unStandSansEmplacementNAjouteRien() {
         publication.publier();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -557,7 +584,8 @@ class EspacePlanPublieTest {
         rattacherEmplacement("PUBESP-S1", hallId);
         publication.publier();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -568,7 +596,8 @@ class EspacePlanPublieTest {
 
     @Test
     void leRenvoiIndividuelRefuseTantQueRienNAEtePublie() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/planning/envoi/animateur/PUBESP-A")
                 .then()
@@ -596,7 +625,8 @@ class EspacePlanPublieTest {
 
         referenceData.deleteCreneau(CRENEAU_ID_LENDEMAIN);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/publication")
                 .then()
                 .statusCode(200)
@@ -620,7 +650,8 @@ class EspacePlanPublieTest {
 
         referenceData.deleteCreneau(CRENEAU_ID_LENDEMAIN);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -628,7 +659,8 @@ class EspacePlanPublieTest {
 
         publication.publier();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -651,7 +683,8 @@ class EspacePlanPublieTest {
         stripVacationSnapshots();
 
         // Nothing moved in the référentiel: the plan reads exactly as it did.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -659,7 +692,8 @@ class EspacePlanPublieTest {
 
         referenceData.deleteCreneau(CRENEAU_ID_LENDEMAIN);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -678,7 +712,8 @@ class EspacePlanPublieTest {
         QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
         clock.setMocked(JOUR, null);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -687,7 +722,8 @@ class EspacePlanPublieTest {
 
         clock.setMocked(JOUR, LocalTime.of(14, 30));
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -701,7 +737,8 @@ class EspacePlanPublieTest {
         clock.setMocked(JOUR, LocalTime.of(14, 30));
         QuarkusMock.installMockForType(new DevMode(), DevMode.class);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
@@ -731,7 +768,8 @@ class EspacePlanPublieTest {
         persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno), List.of(posteAlice, posteBruno)));
         publication.publier();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)

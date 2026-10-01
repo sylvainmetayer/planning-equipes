@@ -133,7 +133,8 @@ class ImportScenarioContraintesAdHocTest {
     @BeforeEach
     void createTheLandingEdition() {
         dropEditionsNamed(NOM_EDITION, NOM_EDITION_CIBLE);
-        edition = given().contentType("application/json")
+        edition = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"nom\":\"" + NOM_EDITION + "\"}")
                 .when()
                 .post("/api/editions")
@@ -150,15 +151,16 @@ class ImportScenarioContraintesAdHocTest {
 
     /** By name: the target edition's id is only known from an import that may have failed half-way. */
     private static void dropEditionsNamed(String... noms) {
-        List<Map<String, Object>> editions = given().when()
+        List<Map<String, Object>> editions = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/editions")
                 .then()
                 .statusCode(200)
                 .extract()
                 .path("");
         for (Map<String, Object> existante : editions) {
-            if (List.of(noms).contains(existante.get("nom")) && !Boolean.TRUE.equals(existante.get("defaut"))) {
-                given().when().delete("/api/editions/" + existante.get("id"));
+            if (List.of(noms).contains(existante.get("nom")) && !Boolean.TRUE.equals(existante.get("active"))) {
+                given().header("X-Edition-Id", "E1").when().delete("/api/editions/" + existante.get("id"));
             }
         }
     }

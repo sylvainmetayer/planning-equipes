@@ -47,8 +47,7 @@ public class RealiseMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    RealisedVsPlanned realisedVsPlanned(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+    RealisedVsPlanned realisedVsPlanned(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return realisedService.report();
     }
 }

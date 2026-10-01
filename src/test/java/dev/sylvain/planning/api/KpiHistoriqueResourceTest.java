@@ -29,7 +29,8 @@ class KpiHistoriqueResourceTest {
 
     @Test
     void everySolveWritesAKpiHistoryLine() {
-        int avant = given().when()
+        int avant = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/kpi/historique")
                 .then()
                 .statusCode(200)
@@ -40,7 +41,8 @@ class KpiHistoriqueResourceTest {
 
         persistedPlan();
 
-        JsonPath historique = given().when()
+        JsonPath historique = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/kpi/historique")
                 .then()
                 .statusCode(200)
@@ -57,7 +59,8 @@ class KpiHistoriqueResourceTest {
     @Test
     void uneLigneSupprimeeDisparaitEtUnIdInconnuRepond404() {
         persistedPlan();
-        long id = given().when()
+        long id = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/kpi/historique")
                 .then()
                 .statusCode(200)
@@ -65,18 +68,32 @@ class KpiHistoriqueResourceTest {
                 .jsonPath()
                 .getLong("[0].id");
 
-        given().when().delete("/api/kpi/historique/" + id).then().statusCode(204);
-        given().when().delete("/api/kpi/historique/" + id).then().statusCode(404);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/kpi/historique/" + id)
+                .then()
+                .statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/kpi/historique/" + id)
+                .then()
+                .statusCode(404);
     }
 
     private void persistedPlan() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
         attendreSolveurLibre();
-        String jobId = given().when()
+        String jobId = given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/solve/async/reference-data?seconds=1")
                 .then()
                 .statusCode(202)
@@ -89,8 +106,13 @@ class KpiHistoriqueResourceTest {
         await().alias("Solver still busy")
                 .atMost(POLL_TIMEOUT)
                 .pollInterval(POLL_INTERVAL)
-                .until(() ->
-                        given().when().get("/api/jobs/active").then().extract().statusCode() == 204);
+                .until(() -> given().header("X-Edition-Id", "E1")
+                                .when()
+                                .get("/api/jobs/active")
+                                .then()
+                                .extract()
+                                .statusCode()
+                        == 204);
     }
 
     private JsonPath pollUntilFinished(String jobId) {
@@ -98,7 +120,8 @@ class KpiHistoriqueResourceTest {
                 .atMost(POLL_TIMEOUT)
                 .pollInterval(POLL_INTERVAL)
                 .until(
-                        () -> given().when()
+                        () -> given().header("X-Edition-Id", "E1")
+                                .when()
                                 .get("/api/jobs/" + jobId)
                                 .then()
                                 .statusCode(200)

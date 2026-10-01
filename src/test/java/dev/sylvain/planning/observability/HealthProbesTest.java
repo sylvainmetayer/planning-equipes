@@ -26,12 +26,18 @@ class HealthProbesTest {
 
     @Test
     void livenessIsUp() {
-        given().when().get("/q/health/live").then().statusCode(200).body("status", equalTo("UP"));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/q/health/live")
+                .then()
+                .statusCode(200)
+                .body("status", equalTo("UP"));
     }
 
     @Test
     void readinessIsUpAndNamesTheMigrationsCheck() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/q/health/ready")
                 .then()
                 .statusCode(200)
@@ -46,7 +52,8 @@ class HealthProbesTest {
      */
     @Test
     void theBuiltInDatasourceCheckStaysOff() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/q/health/ready")
                 .then()
                 .body("checks.name", not(hasItem("Database connections health check")));
@@ -54,7 +61,12 @@ class HealthProbesTest {
 
     @Test
     void readinessRevealsNoConnectionDetail() {
-        String body = given().when().get("/q/health/ready").then().extract().asString();
+        String body = given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/q/health/ready")
+                .then()
+                .extract()
+                .asString();
         assertThat(body)
                 .doesNotContainIgnoringCase("jdbc:")
                 .doesNotContain("5432")
@@ -78,7 +90,8 @@ class HealthProbesTest {
                 false);
         QuarkusMock.installMockForType(unreachable, FlywayMigrationsReadinessCheck.class, Readiness.Literal.INSTANCE);
 
-        String body = given().when()
+        String body = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/q/health/ready")
                 .then()
                 .statusCode(503)
@@ -97,6 +110,11 @@ class HealthProbesTest {
                 .doesNotContain("nowhere")
                 .doesNotContain("nobody");
 
-        given().when().get("/q/health/live").then().statusCode(200).body("status", equalTo("UP"));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/q/health/live")
+                .then()
+                .statusCode(200)
+                .body("status", equalTo("UP"));
     }
 }

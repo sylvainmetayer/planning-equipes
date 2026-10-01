@@ -73,7 +73,7 @@ public class DisponibiliteMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     List<CarpoolRequestMcpView> listCarpoolRequests(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return teammateRequestService.list().stream()
                 .map(demande -> new CarpoolRequestMcpView(
                         demande.id(),
@@ -117,7 +117,7 @@ public class DisponibiliteMcpTools {
     List<DeclarationMcpView> listAvailabilityDeclarations(
             @ToolArg(description = "Statut pour filtrer : EN_ATTENTE, APPLIQUEE ou REFUSEE", required = false)
                     String statut,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         StatutDeclaration filtre =
                 statut == null ? null : McpArgs.enumeration(StatutDeclaration.class, statut, "statut");
         return espaceAnimateurService.toDeclarationViews(declarationService.list()).stream()
@@ -137,8 +137,7 @@ public class DisponibiliteMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    CollecteView getAvailabilityCollection(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+    CollecteView getAvailabilityCollection(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return toView(declarationService.fenetre(), null);
     }
 
@@ -160,7 +159,7 @@ public class DisponibiliteMcpTools {
             @ToolArg(description = "Fin de la collecte (AAAA-MM-JJ)", required = false) String fin,
             @ToolArg(description = "Envoyer maintenant l'invitation à déclarer (courriels)", required = false)
                     Boolean prevenirAnimateurs,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         ConfigurationAppliquee appliquee = declarationService.configure(
                 new FenetreCollecte(ouverte, McpArgs.date(debut, "debut"), McpArgs.date(fin, "fin")),
                 Boolean.TRUE.equals(prevenirAnimateurs));
@@ -181,7 +180,7 @@ public class DisponibiliteMcpTools {
                             openWorldHint = false))
     DeclarationAppliqueeMcpView applyAvailabilityDeclaration(
             @ToolArg(description = "Id de la déclaration") String id,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         DeclarationAppliquee appliquee = declarationService.apply(id);
         return new DeclarationAppliqueeMcpView(
                 view(appliquee.declaration()), WarningCodes.of(appliquee.avertissements()));
@@ -201,7 +200,7 @@ public class DisponibiliteMcpTools {
     DeclarationMcpView refuseAvailabilityDeclaration(
             @ToolArg(description = "Id de la déclaration") String id,
             @ToolArg(description = "Commentaire pour l'animateur", required = false) String commentaire,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return view(declarationService.refuse(id, commentaire));
     }
 

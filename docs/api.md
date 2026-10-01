@@ -29,10 +29,16 @@ nuit ([ADR 0015](decisions/0015-sauvegarde-par-pg-dump-restauration-hors-applica
 
 Deux propriétés qui expliquent la plupart des surprises :
 
-- un en-tête absent ou nommant une édition inconnue **retombe silencieusement**
-  sur l'édition `defaut`, jamais une erreur — un onglet resté ouvert sur une
-  édition supprimée continue de fonctionner. `GET /api/editions/courant` est la
-  façon de découvrir que son en-tête a été ignoré ;
+- un en-tête absent ou nommant une édition inconnue est **refusé**
+  (`400`, code `EDITION_REQUISE` ou `EDITION_INCONNUE`, ADR 0072) : aucun repli
+  sur une autre édition. Le frontend y répond en choisissant à nouveau son
+  édition. Seules les routes qui ne travaillent dans aucune édition
+  (`/api/editions`, `/api/config`, `/api/auth/*`, le dump) s'en passent ;
+- une seule édition est **active** (`active` dans `GET /api/editions`) : elle
+  seule publie, envoie des courriels et ouvre l'espace animateur, le flux ICS
+  et l'affichage mural. Ailleurs, ces gestes répondent `409 EDITION_INACTIVE`.
+  `PUT` / `DELETE /api/editions/{id}/active` l'activent ou la désactivent,
+  `GET /api/editions/{id}/activation` dit d'abord ce que la bascule ferme ;
 - ce n'est pas un état global : deux onglets travaillent sur deux éditions
   différentes en même temps.
 
@@ -1100,20 +1106,20 @@ quelques heures — une ligne par relecture serait du bruit.
 
 ## Notifications planifiées
 
-`GET` / `PUT /api/parametres-notifications` — ce que les envois de nuit ont le
-droit de faire **sur cette édition**.
+`GET` / `PUT /api/parametres-notifications` — les délais des envois de nuit
+**de cette édition**. Qu'ils partent ou non ne se règle pas ici : seule
+l'édition active envoie (ADR 0072).
 
 | Champ | Rôle |
 | --- | --- |
-| `actives` | Le garde-fou. `false` par défaut : rien ne part d'une édition que personne n'a armée |
 | `heureRappelVeille` | Heure locale à partir de laquelle le rappel J-1 peut partir. **23h00 au plus tard** : la tâche s'exécute une fois par heure et la fenêtre se ferme à minuit (après, « demain » serait faux), donc une heure plus tardive tomberait entre deux exécutions et ne partirait jamais. Refusée (`400`) plutôt qu'acceptée et silencieuse |
 | `delaiRelanceHeures` | Silence toléré après la publication avant une relance (1 à 720) |
 | `ancienneteEchangeJours` | Attente d'une demande d'échange avant alerte (1 à 60) |
 
-`actives` est un booléen explicite parce qu'une `Edition` ne porte **ni dates ni
+L'activation est explicite parce qu'une `Edition` ne porte **ni dates ni
 drapeau « en cours »** : aucun job ne peut deviner que les animateurs de
-l'édition 2025 ne sont pas ceux qu'il faut prévenir pour demain. La duplication
-d'une édition ne recopie pas ce réglage — une édition neuve naît muette.
+l'édition 2025 ne sont pas ceux qu'il faut prévenir pour demain. Une édition
+neuve, dupliquée ou importée naît inactive.
 
 Le rythme de la machine, lui, n'est pas dans l'API : `NOTIFICATIONS_CRON` et
 `NOTIFICATIONS_TIMEZONE` (voir [`exploitation.md`](exploitation.md)).
@@ -2168,7 +2174,9 @@ hors de l'outil. Ce point n'expose que le chiffre que seul le planning connaît.
 
 Seules routes accessibles sans session admin. Le jeton — le lien imprimé sur le
 PDF individuel — résout à lui seul l'animateur **et** son édition :
-`X-Edition-Id` n'y est pas lu. Un jeton inconnu répond `404`, jamais `401`.
+`X-Edition-Id` n'y est pas lu. Un jeton inconnu répond `404`, jamais `401` —
+et un jeton d'une édition qui n'est pas l'édition active répond **exactement**
+la même chose, pour ne rien dire de sa validité (ADR 0072).
 
 ![Entrée dans l'espace animateur et accusé de réception](diagrammes/espace-animateur.svg)
 

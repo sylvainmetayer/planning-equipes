@@ -113,4 +113,38 @@ public abstract sealed class BusinessError extends IllegalArgumentException {
             return familles;
         }
     }
+
+    /**
+     * The request is refused because of the edition it works in (ADR 0072): it
+     * names none ({@code EDITION_REQUISE}, {@code 400}), it names one that does
+     * not exist ({@code EDITION_INCONNUE}, {@code 400}), or it asks an
+     * edition that is not the active one to reach outside — publish, send a
+     * mail — ({@code EDITION_INACTIVE}, {@code 409}). The code is what the
+     * client switches on: the first two send it back to choosing an edition,
+     * the third to the Éditions page.
+     */
+    public static final class EditionRefused extends BusinessError {
+
+        /** Why the edition refused the request; its name is the wire code. */
+        public enum Reason {
+            REQUISE,
+            INCONNUE,
+            INACTIVE;
+
+            public String code() {
+                return "EDITION_" + name();
+            }
+        }
+
+        private final Reason reason;
+
+        public EditionRefused(Reason reason, String message) {
+            super(message);
+            this.reason = reason;
+        }
+
+        public Reason getReason() {
+            return reason;
+        }
+    }
 }

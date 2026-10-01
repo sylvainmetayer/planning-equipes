@@ -1,5 +1,5 @@
 @startuml
-' L'envoi horaire : trois tâches, pour les seules éditions armées, lues sur le
+' L'envoi horaire : trois tâches, pour la seule édition active, lues sur le
 ' plan publié. Chaque envoi est d'abord réservé en base sur une clé : un
 ' passage de plus ne renvoie rien. Tout part en meilleur effort, par le
 ' dispatcher. Voir docs/exploitation.md, « Les envois automatiques de nuit ».
@@ -22,10 +22,12 @@ boundary "SMTP" as smtp
 cron -> service : scheduledRun()
 service -> service : run()
 service -> service : purgeHistory()
-loop chaque édition
-  service -> contexte : executeIn(édition, forOneEdition)
+service -> contexte : activeEditionId()
+alt aucune édition active
+  contexte --> service : vide : rien ne part (ADR 0072)
+else l'édition active
+  service -> contexte : executeIn(active, forOneEdition)
   service -> service : forOneEdition(maintenant)
-  note right : 0 envoi si l'édition n'est pas armée
   service -> veille : run(paramètres, maintenant)
   note right of veille : passé l'heure du rappel :\npostes de demain sur le plan publié
   service -> relance : run(paramètres, maintenant)

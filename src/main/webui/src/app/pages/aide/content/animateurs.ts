@@ -41,7 +41,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.foire.term.planPublie:Plan publié et plan de travail`,
-              text: $localize`:@@aide.foire.def.planPublie:L'espace d'un animateur montre le plan qu'on lui a envoyé, pas celui sur lequel vous travaillez : un échange validé, un remplacement ou une nouvelle résolution ne déplacent son espace qu'une fois publiés. Tant que rien n'a été publié, les espaces restent vides et le disent. Publier est refusé pendant une résolution.`,
+              text: $localize`:@@aide.foire.def.planPublie:L'espace d'un animateur montre le plan qu'on lui a envoyé, pas celui sur lequel vous travaillez : un échange validé, un remplacement ou une nouvelle résolution ne déplacent son espace qu'une fois publiés. Tant que rien n'a été publié, les espaces restent vides et le disent. Publier est refusé pendant une résolution, et sur une édition qui n'est pas l'édition active.`,
             },
             {
               term: $localize`:@@aide.foire.term.abonnement:Abonnement au calendrier`,
@@ -61,7 +61,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.diffuser.term.table:Qui a reçu quelle version`,
-              text: $localize`:@@aide.diffuser.def.table:Sous le bouton, une table permanente liste toute l'édition, qu'il reste ou non quelqu'un à prévenir : la version reçue (« v3 · 01/09 »), l'état de l'envoi (envoyé, échec avec sa cause, sans e-mail, différé), le rappel de la veille, la relance et l'accusé de réception. Un envoi en échec apparaît dans la table, et pas seulement dans le journal du serveur ; l'accueil n'affiche pas « à jour » tant qu'il en reste. Sur chaque ligne, « Renvoyer son planning » renvoie le planning publié, « Relancer » envoie le rappel de confirmation et « Différer » retire la personne de la prochaine publication. Les filtres isolent les personnes à prévenir, les envois en échec, les fiches sans e-mail, les silencieux et les différés ; « Ce qui change le » ne garde que les personnes dont les changements tombent ce jour-là, selon la règle de l'onglet « Changements » de la Journée. Un bandeau dit si les relances automatiques sont activées, avec le lien pour le faire.`,
+              text: $localize`:@@aide.diffuser.def.table:Sous le bouton, une table permanente liste toute l'édition, qu'il reste ou non quelqu'un à prévenir : la version reçue (« v3 · 01/09 »), l'état de l'envoi (envoyé, échec avec sa cause, sans e-mail, différé), le rappel de la veille, la relance et l'accusé de réception. Un envoi en échec apparaît dans la table, et pas seulement dans le journal du serveur ; l'accueil n'affiche pas « à jour » tant qu'il en reste. Sur chaque ligne, « Renvoyer son planning » renvoie le planning publié, « Relancer » envoie le rappel de confirmation et « Différer » retire la personne de la prochaine publication. Les filtres isolent les personnes à prévenir, les envois en échec, les fiches sans e-mail, les silencieux et les différés ; « Ce qui change le » ne garde que les personnes dont les changements tombent ce jour-là, selon la règle de l'onglet « Changements » de la Journée. Un bandeau dit si les relances automatiques partent : elles sont coupées tant que l'édition n'est pas l'édition active, et le lien mène à la page Éditions.`,
             },
             {
               term: $localize`:@@aide.diffuser.term.documents:Les documents`,
@@ -108,7 +108,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.dispo.term.prevenir:Prévenir les animateurs`,
-              text: $localize`:@@aide.dispo.def.prevenir:Une case à cocher au moment d'ouvrir, jamais un réglage permanent : elle envoie à chacun le lien de son espace, directement sur l'onglet de déclaration. Cochez-la au premier tour ; laissez-la de côté quand vous rouvrez après une correction, sinon tout le monde reçoit une relance pour rien.`,
+              text: $localize`:@@aide.dispo.def.prevenir:Une case à cocher au moment d'ouvrir, jamais un réglage permanent : elle envoie à chacun le lien de son espace, directement sur l'onglet de déclaration. Cochez-la au premier tour ; laissez-la de côté quand vous rouvrez après une correction, sinon tout le monde reçoit une relance pour rien. Elle est refusée hors de l'édition active : ouvrir la collecte d'une édition en préparation est permis, écrire à ses animateurs non, et leur espace reste fermé jusqu'à l'activation.`,
             },
             {
               term: $localize`:@@aide.dispo.term.decision:Appliquer ou refuser, en bloc`,
@@ -171,7 +171,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.rappels.term.activation:Activer l'édition`,
-              text: $localize`:@@aide.rappels.def.activation:Les envois de nuit sont désactivés tant que vous ne les activez pas, édition par édition, sur la page Paramètres, onglet Édition. C'est le seul garde-fou : une édition passée porte les mêmes fiches, et rien ne distingue les animateurs de cette année de ceux de l'an dernier. Dupliquer une édition ne recopie pas ce réglage.`,
+              text: $localize`:@@aide.rappels.def.activation:Les envois de nuit ne partent que de l'édition active, choisie sur la page Éditions ; il n'y a pas d'autre interrupteur. C'est le seul garde-fou : une édition passée porte les mêmes fiches, et rien ne distingue les animateurs de cette année de ceux de l'an dernier. Toute édition naît inactive, même dupliquée : quelqu'un doit décider de l'activer.`,
             },
             {
               term: $localize`:@@aide.rappels.term.delais:Les trois délais`,
@@ -197,7 +197,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.rappels.silence:« Je n'ai rien reçu » a presque toujours la même cause : l'édition n'a pas été activée. Ensuite viennent le planning jamais publié, puis les fiches sans adresse e-mail. Ces alertes se referment en traitant ce qu'elles signalent, pas en les effaçant.`,
+          text: $localize`:@@aide.rappels.silence:« Je n'ai rien reçu » a presque toujours la même cause : l'édition n'est pas l'édition active. Ensuite viennent le planning jamais publié, puis les fiches sans adresse e-mail. Ces alertes se referment en traitant ce qu'elles signalent, pas en les effaçant.`,
         },
       ],
       links: [
@@ -217,6 +217,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
           fragment: 'a-traiter',
           label: $localize`:@@aide.lien.aTraiter:Accueil — À traiter aujourd'hui`,
         },
+        { route: '/editions', label: $localize`:@@nav.link.editions:Éditions` },
       ],
     },
   ];

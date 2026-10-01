@@ -28,7 +28,8 @@ class ContactOrganisationResourceTest {
 
     @Test
     void anEditionThatNeverSetAContactAnswersTwoNulls() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/parametres-contact")
                 .then()
                 .statusCode(200)
@@ -42,7 +43,8 @@ class ContactOrganisationResourceTest {
                 .statusCode(200)
                 .body("telephone", equalTo("06 12 34 56 78"));
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/parametres-contact")
                 .then()
                 .statusCode(200)
@@ -69,7 +71,8 @@ class ContactOrganisationResourceTest {
     }
 
     private static ValidatableResponse save(Map<String, Object> body) {
-        return given().contentType(ContentType.JSON)
+        return given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(body)
                 .when()
                 .put("/api/parametres-contact")

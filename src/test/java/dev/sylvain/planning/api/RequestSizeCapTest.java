@@ -32,7 +32,8 @@ class RequestSizeCapTest {
 
     /** Same encoding as {@code DatabaseResourceTest}: the browser sends {@code application/sql}. */
     private static RequestSpecification sqlStatement(String script) {
-        return given().config(RestAssured.config()
+        return given().header("X-Edition-Id", "E1")
+                .config(RestAssured.config()
                         .encoderConfig(
                                 EncoderConfig.encoderConfig().encodeContentTypeAs("application/sql", ContentType.TEXT)))
                 .contentType("application/sql")

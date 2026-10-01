@@ -219,14 +219,19 @@ class RealisedVsPlannedServiceTest {
         markAbsentAndReplace();
         publishAt(JOUR2.atTime(12, 0).atZone(ZoneId.systemDefault()).toInstant());
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .delete("/api/planning/snapshots/" + premiere)
                 .then()
                 .statusCode(409)
                 .body("message", containsString("10/07/2026"))
                 .body("message", containsString("Réalisé vs planifié"));
         // A publication no elapsed day was measured against goes like any snapshot.
-        given().when().delete("/api/planning/snapshots/" + anterieure).then().statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/planning/snapshots/" + anterieure)
+                .then()
+                .statusCode(204);
 
         GapCounts jour1 = cell(service.report(APRES), JOUR1);
         assertThat(jour1.absences()).isEqualTo(1);
@@ -238,7 +243,8 @@ class RealisedVsPlannedServiceTest {
         publishAt(AVANT_EVENEMENT);
         markAbsentAndReplace();
 
-        String csv = given().when()
+        String csv = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/realise/export")
                 .then()
                 .statusCode(200)

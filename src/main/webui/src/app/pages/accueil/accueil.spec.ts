@@ -352,9 +352,9 @@ describe('buildLignes', () => {
   });
 
   /**
-   * Off by default: the detail says so; the line still leads to who has not
-   * answered, and offers to arm the reminders beside it while somebody was
-   * never reminded.
+   * Off on an inactive edition: the detail says so; the line still leads to
+   * who has not answered, and offers to activate the edition beside it while
+   * somebody was never reminded.
    */
   it('says the automatic reminders are off, and offers them beside who has not answered', () => {
     const etat = etatComplet({
@@ -368,22 +368,20 @@ describe('buildLignes', () => {
       },
     });
     const confirmations = buildLignes(etat).find((ligne) => ligne.id === 'confirmations')!;
-    expect(confirmations.detail).toContain('relances automatiques désactivées');
+    expect(confirmations.detail).toContain('pas de relance automatique : édition inactive');
     expect(confirmations.lien).toEqual({
       route: '/publication',
       queryParams: { filtre: 'silencieux' },
       libelle: "Voir qui n'a pas répondu",
     });
     expect(confirmations.lienSecondaire).toEqual({
-      route: '/parametres',
-      queryParams: { onglet: 'edition' },
-      fragment: 'emails',
-      libelle: 'Activer',
+      route: '/editions',
+      libelle: "Activer l'édition",
     });
   });
 
   /** Everybody answered: there is nobody left for a reminder to reach. */
-  it('offers no reminders to arm once everybody has answered', () => {
+  it('offers no activation once everybody has answered', () => {
     const etat = etatComplet({
       confirmations: {
         confirmes: 153,
@@ -395,7 +393,7 @@ describe('buildLignes', () => {
       },
     });
     const confirmations = buildLignes(etat).find((ligne) => ligne.id === 'confirmations')!;
-    expect(confirmations.detail).toContain('relances automatiques désactivées');
+    expect(confirmations.detail).toContain('pas de relance automatique : édition inactive');
     expect(confirmations.lien).toEqual({ route: '/animateurs', libelle: 'Voir les animateurs' });
     expect(confirmations.lienSecondaire).toBeUndefined();
   });

@@ -114,7 +114,8 @@ class CarpoolFlowTest {
         assertThat(demandes.getInt(of("COV-A") + ".divergentDayCount")).isEqualTo(1);
 
         // Applying the declaration writes the days, and nothing of the car.
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/disponibilites/" + pendingDeclarationOf("COV-A") + "/application")
                 .then()
@@ -123,7 +124,8 @@ class CarpoolFlowTest {
         assertThat(carpools().getString(of("COV-A") + ".status")).isEqualTo("EN_ATTENTE");
 
         mailbox.clear();
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/disponibilites/coequipiers/" + demandeA + "/validation")
                 .then()
@@ -177,7 +179,8 @@ class CarpoolFlowTest {
         requestCarpool("COV-A", idsOf("COV-B")).statusCode(200);
         String demande = carpools().getString(of("COV-A") + ".id");
 
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/disponibilites/coequipiers/" + demande + "/validation")
                 .then()
@@ -192,7 +195,8 @@ class CarpoolFlowTest {
         String demande = carpools().getString(of("COV-A") + ".id");
         mailbox.clear();
 
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"reason\":\"Bob ne vient que le samedi.\"}")
                 .when()
                 .post("/api/disponibilites/coequipiers/" + demande + "/ecart")
@@ -216,7 +220,8 @@ class CarpoolFlowTest {
         requestCarpool("COV-A", idsOf("COV-B")).statusCode(200);
         String demande = carpools().getString(of("COV-A") + ".id");
 
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"reason\":\"" + "x".repeat(501) + "\"}")
                 .when()
                 .post("/api/disponibilites/coequipiers/" + demande + "/ecart")
@@ -263,7 +268,8 @@ class CarpoolFlowTest {
         requestCarpool("COV-A", idsOf("COV-B")).statusCode(200);
 
         // A declaration still carrying the old field: the field is ignored.
-        given().cookie("planning-espace", sessions.get("COV-A"))
+        given().header("X-Edition-Id", "E1")
+                .cookie("planning-espace", sessions.get("COV-A"))
                 .contentType(ContentType.JSON)
                 .body("{\"joursIndisponibles\":[],\"souhaits\":[],\"covoiturage\":[]}")
                 .when()
@@ -274,7 +280,8 @@ class CarpoolFlowTest {
 
         // Refusing the declaration leaves the car pending, and withdrawing the
         // car leaves the declaration pending.
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"commentaire\":\"non\"}")
                 .when()
                 .post("/api/disponibilites/" + pendingDeclarationOf("COV-A") + "/refus")
@@ -360,7 +367,8 @@ class CarpoolFlowTest {
         requestCarpool("COV-A", idsOf("COV-C")).statusCode(200);
         String nouvelle = carpools()
                 .getString("find { it.animateurId == '" + ids.get("COV-A") + "' && it.status == 'EN_ATTENTE' }.id");
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{}")
                 .when()
                 .post("/api/disponibilites/coequipiers/" + nouvelle + "/ecart")
@@ -455,7 +463,8 @@ class CarpoolFlowTest {
         validate(carpools().getString(of("COV-A") + ".id"));
         ContrainteAdHoc issue = groupedArrivals().getFirst();
 
-        JsonPath liste = given().when()
+        JsonPath liste = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/contraintes-ad-hoc")
                 .then()
                 .statusCode(200)
@@ -464,12 +473,14 @@ class CarpoolFlowTest {
         assertThat(liste.getBoolean("find { it.id == '" + issue.getId() + "' }.issueDeCovoiturage"))
                 .isTrue();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .delete("/api/contraintes-ad-hoc/" + issue.getId())
                 .then()
                 .statusCode(409)
                 .body("message", equalTo(ContrainteAdHocService.CARPOOL_BACKED));
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(Map.of(
                         "id",
                         issue.getId(),
@@ -488,11 +499,16 @@ class CarpoolFlowTest {
         parLaMain.setAnimateursConcernes(new ArrayList<>(List.of(animateur("COV-C"), animateur("COV-D"))));
         String main = referenceData.writeContrainteAdHoc(parLaMain).contrainte().getId();
         assertThat(liste(main)).isFalse();
-        given().when().delete("/api/contraintes-ad-hoc/" + main).then().statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/contraintes-ad-hoc/" + main)
+                .then()
+                .statusCode(204);
     }
 
     private Boolean liste(String contrainteId) {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/contraintes-ad-hoc")
                 .then()
                 .statusCode(200)
@@ -502,7 +518,8 @@ class CarpoolFlowTest {
     }
 
     private io.restassured.response.ValidatableResponse cancel(String demande, String body) {
-        return given().contentType(ContentType.JSON)
+        return given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(body)
                 .when()
                 .post("/api/disponibilites/coequipiers/" + demande + "/annulation")
@@ -510,7 +527,8 @@ class CarpoolFlowTest {
     }
 
     private io.restassured.response.ValidatableResponse validate(String demande) {
-        return given().contentType(ContentType.JSON)
+        return given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/disponibilites/coequipiers/" + demande + "/validation")
                 .then()
@@ -518,7 +536,8 @@ class CarpoolFlowTest {
     }
 
     private io.restassured.response.ValidatableResponse carpoolView(String label) {
-        return given().cookie("planning-espace", sessions.get(label))
+        return given().header("X-Edition-Id", "E1")
+                .cookie("planning-espace", sessions.get(label))
                 .when()
                 .get("/api/espace-animateur/" + tokenOf(label) + "/covoiturage")
                 .then()
@@ -526,7 +545,8 @@ class CarpoolFlowTest {
     }
 
     private io.restassured.response.ValidatableResponse declareDays(String label, String jours) {
-        return given().cookie("planning-espace", sessions.get(label))
+        return given().header("X-Edition-Id", "E1")
+                .cookie("planning-espace", sessions.get(label))
                 .contentType(ContentType.JSON)
                 .body("{\"joursIndisponibles\":" + jours + ",\"souhaits\":[]}")
                 .when()
@@ -535,7 +555,8 @@ class CarpoolFlowTest {
     }
 
     private io.restassured.response.ValidatableResponse requestCarpool(String label, String teammateIds) {
-        return given().cookie("planning-espace", sessions.get(label))
+        return given().header("X-Edition-Id", "E1")
+                .cookie("planning-espace", sessions.get(label))
                 .contentType(ContentType.JSON)
                 .body("{\"teammateIds\":" + teammateIds + "}")
                 .when()
@@ -544,7 +565,8 @@ class CarpoolFlowTest {
     }
 
     private String pendingDeclarationOf(String label) {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/disponibilites")
                 .then()
                 .statusCode(200)
@@ -555,7 +577,8 @@ class CarpoolFlowTest {
 
     /** Only this class's rows: the suite shares one database. */
     private static JsonPath carpools() {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/disponibilites/coequipiers")
                 .then()
                 .statusCode(200)
@@ -587,7 +610,8 @@ class CarpoolFlowTest {
     }
 
     private static void setWindow(boolean ouverte) {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"collecteOuverte\":" + ouverte + ",\"prevenirAnimateurs\":false}")
                 .when()
                 .put("/api/disponibilites/configuration")

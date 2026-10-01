@@ -88,7 +88,8 @@ class ConfirmationPlanningTest {
 
     @Test
     void confirmingBeforeAnyPublicationIsRefused() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + tokenOf("CONF-A") + "/confirmation")
                 .then()
@@ -99,14 +100,16 @@ class ConfirmationPlanningTest {
     void confirmingMovesTheStatusAndStampsIt() {
         publication.publier();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("CONF-A"))
                 .then()
                 .statusCode(200)
                 .body("statutConfirmation", equalTo("NON_VU"))
                 .body("confirmeLe", nullValue());
 
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + tokenOf("CONF-A") + "/confirmation")
                 .then()
@@ -114,7 +117,8 @@ class ConfirmationPlanningTest {
                 .body("statut", equalTo("CONFIRME"))
                 .body("confirmeLe", notNullValue());
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("CONF-A"))
                 .then()
                 .statusCode(200)
@@ -124,7 +128,8 @@ class ConfirmationPlanningTest {
     @Test
     void clickingTwiceKeepsTheFirstDate() {
         publication.publier();
-        String premiere = given().contentType(ContentType.JSON)
+        String premiere = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + tokenOf("CONF-A") + "/confirmation")
                 .then()
@@ -132,7 +137,8 @@ class ConfirmationPlanningTest {
                 .extract()
                 .path("confirmeLe");
 
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + tokenOf("CONF-A") + "/confirmation")
                 .then()
@@ -143,13 +149,15 @@ class ConfirmationPlanningTest {
     @Test
     void theAdminColumnReadsBackTheAnswerAndWhoHadNothingToConfirm() {
         publication.publier();
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + tokenOf("CONF-A") + "/confirmation")
                 .then()
                 .statusCode(200);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/animateurs/confirmations")
                 .then()
                 .statusCode(200)
@@ -181,7 +189,8 @@ class ConfirmationPlanningTest {
                 .isInstanceOf(BusinessError.Conflict.class)
                 .hasMessageContaining("aucun poste");
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/animateurs/confirmations")
                 .then()
                 .statusCode(200)
@@ -203,7 +212,8 @@ class ConfirmationPlanningTest {
         persistPlan("CONF-S1", "CONF-S3");
         publication.publier();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/animateurs/confirmations")
                 .then()
                 .statusCode(200)

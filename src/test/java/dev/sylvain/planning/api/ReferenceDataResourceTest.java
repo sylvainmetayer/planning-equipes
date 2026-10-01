@@ -18,7 +18,8 @@ class ReferenceDataResourceTest {
 
     /** The browser uploads scenario YAML as {@code application/x-yaml}: encode it as plain text. */
     private static RequestSpecification yamlRequest(String yamlContent) {
-        return given().config(RestAssured.config()
+        return given().header("X-Edition-Id", "E1")
+                .config(RestAssured.config()
                         .encoderConfig(EncoderConfig.encoderConfig()
                                 .encodeContentTypeAs("application/x-yaml", ContentType.TEXT)))
                 .contentType("application/x-yaml")

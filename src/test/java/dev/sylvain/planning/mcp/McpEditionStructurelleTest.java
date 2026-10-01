@@ -58,7 +58,7 @@ class McpEditionStructurelleTest {
     }
 
     @Test
-    void theEditionArgumentIsOptionalAndDescribedTheSameEverywhere() throws Exception {
+    void theEditionArgumentIsRequiredAndDescribedTheSameEverywhere() throws Exception {
         for (Method outil : OutilsMcp.all()) {
             Parameter edition = argumentEdition(outil);
             if (edition == null) {
@@ -70,10 +70,10 @@ class McpEditionStructurelleTest {
                     .isNotNull();
             assertThat(description.required())
                     .as(
-                            "l'argument edition de %s doit rester facultatif : sans lui, l'édition courante"
-                                    + " (comportement d'avant #181)",
+                            "l'argument edition de %s est obligatoire : un appel sans lui est refusé (ADR 0072),"
+                                    + " et le schéma publié doit le dire",
                             FeatureNames.of(outil))
-                    .isFalse();
+                    .isTrue();
             assertThat(description.description())
                     .as("description de l'argument edition de %s", FeatureNames.of(outil))
                     .isEqualTo(EditionArg.DESCRIPTION);

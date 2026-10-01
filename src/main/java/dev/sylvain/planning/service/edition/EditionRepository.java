@@ -12,6 +12,7 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import javax.sql.DataSource;
 
@@ -28,9 +29,9 @@ import javax.sql.DataSource;
 public class EditionRepository {
 
     /**
-     * The fallback for any caller designating no edition, when the table is
-     * empty: the id the first edition of a fresh database carries — V30 seeded
-     * it as {@code DEFAUT}, V100 renumbered it.
+     * The id the first edition of a fresh database carries — V30 seeded it as
+     * {@code DEFAUT}, V100 renumbered it, V118 made it the active one. Nothing
+     * falls back on it any more: it only names the seed.
      */
     public static final String EDITION_DEFAUT_ID = "E1";
 
@@ -141,14 +142,14 @@ public class EditionRepository {
         List<Edition> editions = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(
-                        "SELECT id, nom, defaut, cree_le FROM edition ORDER BY cree_le, id");
+                        "SELECT id, nom, active, cree_le FROM edition ORDER BY cree_le, id");
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 Timestamp creeLe = rs.getTimestamp("cree_le");
                 editions.add(new Edition(
                         rs.getString("id"),
                         rs.getString("nom"),
-                        rs.getBoolean("defaut"),
+                        rs.getBoolean("active"),
                         creeLe != null ? creeLe.toInstant() : null));
             }
         } catch (SQLException e) {
@@ -170,29 +171,28 @@ public class EditionRepository {
     }
 
     /**
-     * Id of the edition flagged {@code defaut} — the oldest existing one if no
-     * row carries the flag, and only then {@value #EDITION_DEFAUT_ID}, for an
-     * empty table. A database normally always has a flagged default (V30 seeds
-     * it, and the service refuses to delete it), but a restored dump brings its
-     * own editions: naming one that does not exist would 500 every screen
-     * instead of just landing the caller elsewhere.
+     * Id of the edition flagged {@code active}, if any. None is a valid state
+     * (between two events, ADR 0072), and nothing falls back on another one:
+     * an edition that is not active never reaches outside.
      */
-    public String defaultEditionId() {
+    public Optional<String> activeEditionId() {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = connection.prepareStatement(
-                        "SELECT id FROM edition ORDER BY defaut DESC, cree_le, id LIMIT 1");
+                PreparedStatement ps = connection.prepareStatement("SELECT id FROM edition WHERE active");
                 ResultSet rs = ps.executeQuery()) {
-            return rs.next() ? rs.getString("id") : EDITION_DEFAUT_ID;
+            return rs.next() ? Optional.of(rs.getString("id")) : Optional.empty();
         } catch (SQLException e) {
-            throw new IllegalStateException("Failed to load the default edition", e);
+            throw new IllegalStateException("Failed to load the active edition", e);
         }
     }
 
-    /** Creates the edition, or renames it if it already exists — {@code defaut} is never touched here. */
+    /**
+     * Creates the edition, or renames it if it already exists — {@code active}
+     * is never touched here: every edition is born inactive (ADR 0072).
+     */
     public void save(Edition edition) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement("""
-                        INSERT INTO edition (id, nom, defaut)
+                        INSERT INTO edition (id, nom, active)
                         VALUES (?, ?, FALSE)
                         ON CONFLICT (id)
                         DO UPDATE SET nom = EXCLUDED.nom""")) {
@@ -205,21 +205,39 @@ public class EditionRepository {
     }
 
     /**
-     * Flags this edition as the default and clears every other one, in a single
-     * transaction (clear-then-set order, so the partial unique index on
-     * {@code defaut} is never violated in between — same pattern as
-     * the former {@code groupe_creneau.actif}).
+     * Makes {@code id} the active edition and every other one inactive, in a
+     * single transaction (clear-then-set order, so the partial unique index on
+     * {@code active} is never violated in between). The switch is atomic: no
+     * instant sees two active editions, nor — unless the caller asked for it —
+     * none.
      */
-    public void setAsDefault(String id) {
-        scope.write("Failed to set edition " + id + " as default", connection -> {
-            try (PreparedStatement ps = connection.prepareStatement("UPDATE edition SET defaut = FALSE")) {
+    public void activate(String id) {
+        scope.write("Failed to activate edition " + id, connection -> {
+            // Serialises two switches: under READ COMMITTED both would clear the
+            // same former row, and the second would then break the unique index.
+            try (PreparedStatement ps =
+                    connection.prepareStatement("SELECT pg_advisory_xact_lock(hashtext('edition.active'))")) {
+                ps.execute();
+            }
+            try (PreparedStatement ps = connection.prepareStatement("UPDATE edition SET active = FALSE WHERE active")) {
                 ps.executeUpdate();
             }
-            try (PreparedStatement ps = connection.prepareStatement("UPDATE edition SET defaut = TRUE WHERE id = ?")) {
+            try (PreparedStatement ps = connection.prepareStatement("UPDATE edition SET active = TRUE WHERE id = ?")) {
                 ps.setString(1, id);
                 ps.executeUpdate();
             }
         });
+    }
+
+    /** Leaves no edition active — the state between two events. */
+    public void deactivate(String id) {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement("UPDATE edition SET active = FALSE WHERE id = ?")) {
+            ps.setString(1, id);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to deactivate edition " + id, e);
+        }
     }
 
     /** Drops the edition and, by {@code ON DELETE CASCADE}, its whole reference model. */

@@ -29,7 +29,8 @@ class McpRequiredHeadersTest {
 
     @Test
     void refuseLaBonneCleSansLesEnTetesDuProxy() {
-        given().header("X-MCP-Api-Key", "test-mcp-key")
+        given().header("X-Edition-Id", "E1")
+                .header("X-MCP-Api-Key", "test-mcp-key")
                 .when()
                 .post("/mcp")
                 .then()
@@ -38,7 +39,8 @@ class McpRequiredHeadersTest {
 
     @Test
     void refuseUnEnTeteDuProxyIncorrect() {
-        given().header("X-MCP-Api-Key", "test-mcp-key")
+        given().header("X-Edition-Id", "E1")
+                .header("X-MCP-Api-Key", "test-mcp-key")
                 .header("P-Access-Token-Id", "id-42")
                 .header("P-Access-Token", "mauvais-jeton")
                 .when()
@@ -49,7 +51,8 @@ class McpRequiredHeadersTest {
 
     @Test
     void refuseLesEnTetesDuProxySansLaCleApi() {
-        given().header("P-Access-Token-Id", "id-42")
+        given().header("X-Edition-Id", "E1")
+                .header("P-Access-Token-Id", "id-42")
                 .header("P-Access-Token", "jeton-secret")
                 .when()
                 .post("/mcp")
@@ -59,7 +62,8 @@ class McpRequiredHeadersTest {
 
     @Test
     void laisseTraverserAvecLaCleEtTousLesEnTetes() {
-        given().header("X-MCP-Api-Key", "test-mcp-key")
+        given().header("X-Edition-Id", "E1")
+                .header("X-MCP-Api-Key", "test-mcp-key")
                 .header("P-Access-Token-Id", "id-42")
                 .header("P-Access-Token", "jeton-secret")
                 .when()

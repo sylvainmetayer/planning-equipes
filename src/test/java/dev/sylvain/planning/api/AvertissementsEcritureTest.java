@@ -41,8 +41,13 @@ class AvertissementsEcritureTest {
 
     @BeforeEach
     void resetReferentiel() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
-        standId = given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+        standId = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {
                           "nom":"Stand de l'après-midi",
@@ -65,7 +70,8 @@ class AvertissementsEcritureTest {
 
     /** POSTs an animateur and hands back the id it was given. */
     private static String postAnimateur(String corps) {
-        return given().contentType("application/json")
+        return given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(corps)
                 .when()
                 .post("/api/animateurs")
@@ -83,15 +89,21 @@ class AvertissementsEcritureTest {
      */
     @AfterEach
     void restoreScenario() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
     }
 
     private static Object postCreneau(String heureDebut, String heureFin, String... attentes) {
-        var reponse = given().contentType("application/json")
+        var reponse = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {
                           "date":"%s",
@@ -122,7 +134,8 @@ class AvertissementsEcritureTest {
         Object id = postCreneau("10:00:00", "18:00:00", "CRENEAU_DEBORDE_OUVERTURE_STANDS");
 
         // Written despite the warning, and readable as typed.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/creneaux")
                 .then()
                 .statusCode(200)
@@ -143,7 +156,8 @@ class AvertissementsEcritureTest {
     void aStandWhoseWindowOverlapsNoTimeslotIsWrittenAndWarned() {
         postCreneau("14:00:00", "18:00:00");
 
-        String matin = given().contentType("application/json")
+        String matin = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {
                           "id":"AVERT-MATIN",
@@ -169,7 +183,8 @@ class AvertissementsEcritureTest {
 
         // Written despite the warnings, rules included — under the id the
         // application drew, the one the body carried being ignored (ADR 0050).
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/stands")
                 .then()
                 .statusCode(200)
@@ -185,7 +200,8 @@ class AvertissementsEcritureTest {
     @Test
     void renamingAStandWhoseWindowWasAlreadyUselessSaysNothingAgain() {
         postCreneau("14:00:00", "18:00:00");
-        String matin = given().contentType("application/json")
+        String matin = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {
                           "nom":"Stand du matin","typologiesProposees":["STRATEGIE"],
@@ -203,7 +219,8 @@ class AvertissementsEcritureTest {
                 .extract()
                 .path("stand.id");
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {
                           "nom":"Renommé","typologiesProposees":["STRATEGIE"],
@@ -225,7 +242,8 @@ class AvertissementsEcritureTest {
     void aConsistentStandRaisesNoWarningAndRenamingSaysNothingAgain() {
         postCreneau("14:00:00", "18:00:00");
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {
                           "nom":"Renommé",
@@ -254,7 +272,8 @@ class AvertissementsEcritureTest {
     void aMinorOffOutsideTheBoundsIsWrittenAndWarned() {
         postCreneau("14:00:00", "18:00:00");
 
-        String animateur = given().contentType("application/json")
+        String animateur = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {
                           "id":"AVERT-A1",
@@ -277,7 +296,8 @@ class AvertissementsEcritureTest {
                 .extract()
                 .path("animateur.id");
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/animateurs")
                 .then()
                 .statusCode(200)
@@ -288,7 +308,8 @@ class AvertissementsEcritureTest {
     @Test
     void editingAConsistentAnimateurRaisesNoWarning() {
         postCreneau("14:00:00", "18:00:00");
-        String animateur = given().contentType("application/json")
+        String animateur = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"prenom\":\"Alix\",\"nom\":\"Martin\",\"dateNaissance\":\"1990-01-01\"}")
                 .when()
                 .post("/api/animateurs")
@@ -298,7 +319,8 @@ class AvertissementsEcritureTest {
                 .extract()
                 .path("animateur.id");
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"prenom\":\"Alix\",\"nom\":\"Martin\","
                         + "\"dateNaissance\":\"1990-01-01\",\"joursIndisponibles\":[\"" + JOUR + "\"]}")
                 .when()
@@ -314,7 +336,8 @@ class AvertissementsEcritureTest {
         postCreneau("14:00:00", "18:00:00");
         String animateur = postAnimateur("{\"prenom\":\"Sacha\",\"nom\":\"Roux\",\"dateNaissance\":\"1990-01-01\"}");
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"prenom\":\"Sacha\",\"nom\":\"Roux\",\"dateNaissance\":\"2012-01-01\"}")
                 .when()
                 .put("/api/animateurs/" + animateur)
@@ -322,7 +345,8 @@ class AvertissementsEcritureTest {
                 .statusCode(200)
                 .body("avertissements.type", contains("MINEUR_PENDANT_EVENEMENT"));
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/animateurs")
                 .then()
                 .statusCode(200)
@@ -338,7 +362,8 @@ class AvertissementsEcritureTest {
     @Test
     void editingAMinorWithoutTouchingTheBirthDateSaysNothing() {
         postCreneau("14:00:00", "18:00:00");
-        String animateur = given().contentType("application/json")
+        String animateur = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"prenom\":\"Noa\",\"nom\":\"Blanc\",\"dateNaissance\":\"2012-01-01\"}")
                 .when()
                 .post("/api/animateurs")
@@ -350,7 +375,8 @@ class AvertissementsEcritureTest {
 
         // The very shape ReferenceDataStore.saveMany sends: the whole fiche,
         // one field of it changed.
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"id\":\"" + animateur + "\",\"prenom\":\"Noa\",\"nom\":\"Blanc\","
                         + "\"dateNaissance\":\"2012-01-01\",\"email\":\"noa@example.org\"}")
                 .when()
@@ -369,7 +395,8 @@ class AvertissementsEcritureTest {
     void theMinorityMessageNamesNeitherTheIdentityNorTheBirthDate() {
         postCreneau("14:00:00", "18:00:00");
 
-        var reponse = given().contentType("application/json")
+        var reponse = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {
                           "prenom":"Camille",
@@ -397,7 +424,8 @@ class AvertissementsEcritureTest {
     @Test
     void uneIndisponibiliteSurUnJourSansCreneauEstSignaleeAPart() {
         postCreneau("14:00:00", "18:00:00");
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {
                           "date":"2027-06-14",
@@ -410,7 +438,8 @@ class AvertissementsEcritureTest {
                 .then()
                 .statusCode(200);
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {
                           "id":"AVERT-A7",
@@ -433,7 +462,8 @@ class AvertissementsEcritureTest {
      */
     @Test
     void sansAucunCreneauAucuneBorneNExisteEtRienNEstSignale() {
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {
                           "id":"AVERT-A4",
