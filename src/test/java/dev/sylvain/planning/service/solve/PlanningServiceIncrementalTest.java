@@ -266,6 +266,46 @@ class PlanningServiceIncrementalTest {
         assertThat(ReplanificationDiff.joursModifies(Map.of(), solved)).containsExactly(J1);
     }
 
+    /**
+     * A cell held before and gone from the solved plan — its opening withdrawn
+     * — moved its day: nothing of what was read there is worked any more.
+     */
+    @Test
+    void aCellTheSolvedPlanNoLongerHasMovesItsDay() {
+        PlanningEvenement solved = planningWith(affecte(poste("p0", standA, matinJ1), alice));
+
+        assertThat(ReplanificationDiff.joursModifies(
+                        Map.of(key("STAND-A", 1L), List.of("A1"), key("STAND-B", 2L), List.of("A2")),
+                        Map.of(key("STAND-A", 1L), J1, key("STAND-B", 2L), J2),
+                        solved))
+                .containsExactly(J2);
+    }
+
+    /** Without its date, a vanished cell cannot name a day: it is left out rather than guessed. */
+    @Test
+    void aVanishedCellWithoutADateMovesNoDay() {
+        PlanningEvenement solved = planningWith(affecte(poste("p0", standA, matinJ1), alice));
+
+        assertThat(ReplanificationDiff.joursModifies(
+                        Map.of(key("STAND-A", 1L), List.of("A1"), key("STAND-B", 2L), List.of("A2")), solved))
+                .isEmpty();
+    }
+
+    /** A day is frozen only once every one of its seats has started: one seat ahead and it is recomputed. */
+    @Test
+    void aDayIsFrozenOnlyWhenEveryOneOfItsSeatsIsPast() {
+        PosteAffectation matinPasse = poste("p0", standA, matinJ1);
+        matinPasse.setPasse(true);
+        PosteAffectation autrePasse = poste("p1", standB, matinJ1);
+        autrePasse.setPasse(true);
+        PosteAffectation j2Passe = poste("p2", standA, matinJ2);
+        j2Passe.setPasse(true);
+        PosteAffectation j2AVenir = poste("p3", standB, matinJ2);
+
+        assertThat(SolvePipeline.frozenDays(planningWith(matinPasse, autrePasse, j2Passe, j2AVenir)))
+                .containsExactly(J1);
+    }
+
     private static PosteAffectation affecte(PosteAffectation poste, Animateur animateur) {
         poste.setAnimateur(animateur);
         return poste;

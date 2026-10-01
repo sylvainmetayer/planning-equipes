@@ -5126,6 +5126,22 @@
           }
         }
       },
+      "KeepReason" : {
+        "type" : "string",
+        "enum" : [ "PASSE", "VERROU", "INCHANGEE" ]
+      },
+      "KeptReading" : {
+        "required" : [ "jour", "motif" ],
+        "type" : "object",
+        "properties" : {
+          "jour" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "motif" : {
+            "$ref" : "#/components/schemas/KeepReason"
+          }
+        }
+      },
       "KpiHistoriqueEntry" : {
         "required" : [ "id" ],
         "type" : "object",
@@ -16331,6 +16347,27 @@
           }
         },
         "summary" : "Accept",
+        "tags" : [ "Validation Journee Resource" ]
+      }
+    },
+    "/api/validations/a-froid" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/KeptReading"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Kept By Cold Start",
         "tags" : [ "Validation Journee Resource" ]
       }
     },

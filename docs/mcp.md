@@ -432,8 +432,9 @@ lu le référentiel et le plan à son démarrage et ne verra pas cette écriture
 relancer un calcul une fois celui-ci terminé (`statut_solveur` nomme le job).
 C'est un code, comme les autres avertissements de ce serveur : pas de phrase.
 Sur `ajouter_validation_journee`, il dit en plus que la validation peut ne pas
-survivre : l'atterrissage retire la relecture des journées où le calcul a
-déplacé un poste, sauf celles qui portent un verrouillage de type `JOUR`.
+survivre : l'atterrissage retire la relecture des journées que le calcul a
+recalculées — déplacé un poste, ou toutes sur un calcul reparti de zéro —, sauf
+celles entièrement passées ou qui portent un verrouillage de type `JOUR`.
 Il ne vient ni d'une résolution d'une **autre** édition — c'est l'édition
 désignée par l'argument `edition` qui compte —, ni d'une résolution seulement
 **en file**, qui lira l'écriture à son tour. Les écrans n'en ont pas besoin :

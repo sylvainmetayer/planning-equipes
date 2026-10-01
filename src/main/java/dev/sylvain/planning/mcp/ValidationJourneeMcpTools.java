@@ -166,9 +166,9 @@ public class ValidationJourneeMcpTools {
     /**
      * A reading, whether the lock it was asked for was actually laid down, and
      * the warning codes — {@code RESOLUTION_EN_COURS} alone, when a solve holds
-     * the edition: its landing withdraws the readings of the days it moved a
-     * seat on ({@code ValidationJourneeService.withdrawMovedDays}), this one
-     * included. Left out when empty.
+     * the edition: its landing withdraws the readings of the days it
+     * recomputed ({@code ValidationJourneeService.withdrawAfterSolve}), this
+     * one included. Left out when empty.
      */
     public record ResultatValidationView(
             ValidationView validation,

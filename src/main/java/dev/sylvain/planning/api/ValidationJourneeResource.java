@@ -2,8 +2,10 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.ValidationJournee;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.validation.ValidationJourneeService;
 import dev.sylvain.planning.service.validation.ValidationJourneeService.DemandeValidation;
+import dev.sylvain.planning.service.validation.ValidationJourneeService.KeptReading;
 import dev.sylvain.planning.service.validation.ValidationPrerequisService;
 import dev.sylvain.planning.service.validation.ValidationPrerequisService.PrerequisJournee;
 import dev.sylvain.planning.service.validation.ValidationPrerequisService.ProgressionValidations;
@@ -39,11 +41,16 @@ public class ValidationJourneeResource {
 
     private final ValidationPrerequisService prerequisService;
 
+    private final PlanningService planningService;
+
     @Inject
     public ValidationJourneeResource(
-            ValidationJourneeService validationService, ValidationPrerequisService prerequisService) {
+            ValidationJourneeService validationService,
+            ValidationPrerequisService prerequisService,
+            PlanningService planningService) {
         this.validationService = validationService;
         this.prerequisService = prerequisService;
+        this.planningService = planningService;
     }
 
     /**
@@ -72,6 +79,19 @@ public class ValidationJourneeResource {
     @Path("/progression")
     public ProgressionValidations progression() {
         return prerequisService.progression();
+    }
+
+    /**
+     * The readings « Recommencer de zéro » would keep, and why — the days in
+     * the frozen past and the days under a {@code JOUR} lock, which a cold
+     * start does not recompute. Every other reading goes with the plan it
+     * described; the confirmation lists these so nobody believes a kept
+     * reading gone.
+     */
+    @GET
+    @Path("/a-froid")
+    public List<KeptReading> keptByColdStart() {
+        return validationService.keptByColdStart(planningService.pastHorizon());
     }
 
     /**

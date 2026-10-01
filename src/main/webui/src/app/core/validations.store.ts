@@ -9,6 +9,7 @@ import { ValidationsApi } from './api/validations-api';
 import { errorMessage } from './error-message';
 import {
   DemandeValidationJournee,
+  KeptReading,
   ProgressionValidations,
   ResultatValidationJournee,
   ValidationJournee,
@@ -68,6 +69,15 @@ export class ValidationsStore {
     } finally {
       this._loading.set(false);
     }
+  }
+
+  /**
+   * The readings « Recommencer de zéro » would keep, and why (ADR 0069) —
+   * read when the confirmation opens, never cached: the clock and the locks
+   * decide it, and both move.
+   */
+  keptByColdStart(): Promise<KeptReading[]> {
+    return this.api.keptByColdStart();
   }
 
   /** Accepts one day, then re-reads: the banner and the panel must not drift. */

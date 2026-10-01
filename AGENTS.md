@@ -176,8 +176,10 @@ Single Quarkus service, no separate solver microservice. Package root:
   - `service/validation/` — « relu et accepté » on a day: the review state that
     the lock mechanism never carried (ADR 0039). `ValidationJourneeService`
     owns the two rules that keep the two apart — validating never lays a lock
-    down unasked, and a solve that moves a seat of a validated day withdraws
-    the reading unless that day also carries a `JOUR` lock;
+    down unasked, and a reading survives a solve only when its day was not
+    recomputed: in the frozen past, under a `JOUR` lock, or given back
+    unchanged by a solve started from the plan in place — « Recommencer de
+    zéro » withdraws every other one (ADR 0069);
     `ValidationPrerequisService` narrows the Problèmes, Pauses and Fragilité
     reports to one date rather than recomputing them, so the panel and those
     three screens cannot tell two stories about the same day.

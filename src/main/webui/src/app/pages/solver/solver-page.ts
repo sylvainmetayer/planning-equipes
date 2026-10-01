@@ -25,6 +25,7 @@ import {
   FeasibilityReport,
   ImpactPublication,
   ImpactValidations,
+  KeptReading,
   PerimetreReplanification,
   ScoreSentence,
   PlanningDiagnostic,
@@ -551,15 +552,59 @@ export class SolverPage implements OnInit {
       ? ' ' +
         $localize`:@@solver.aFroid.confirm.publie:Un planning a été publié le ${new Date(publishedAt).toLocaleString(intlLocale())}:date: : repartir de zéro peut bousculer beaucoup de personnes déjà prévenues.`
       : '';
+    const relectures = await this.relecturesAFroid();
     const confirme = await this.confirm.ask({
       title: $localize`:@@solver.aFroid.confirm.title:Recommencer de zéro ?`,
-      message: message + avertissement,
+      message: message + avertissement + relectures,
       confirmLabel: $localize`:@@solver.aFroid.confirm.action:Recommencer de zéro`,
       danger: true,
     });
     if (confirme) {
       await this.lancerSolve('AUCUN');
     }
+  }
+
+  /**
+   * What starting over does to the « relu et accepté » (ADR 0069), said where
+   * the question arises: every reviewed day it recomputes loses its reading,
+   * and the ones it keeps are named with why — a reading believed gone and
+   * still there passes off as read a plan nobody reopened. Empty on an edition
+   * nobody reviews, and when the kept readings cannot be read: the
+   * confirmation then says what it said before rather than a guess.
+   */
+  private async relecturesAFroid(): Promise<string> {
+    const relues = this.validations.progression()?.joursValides ?? [];
+    if (relues.length === 0) {
+      return '';
+    }
+    let gardees: KeptReading[];
+    try {
+      gardees = (await this.validations.keptByColdStart()).filter((lecture) =>
+        relues.includes(lecture.jour),
+      );
+    } catch {
+      return '';
+    }
+    const retirees = relues.length - gardees.length;
+    let phrase = '';
+    if (retirees > 0) {
+      phrase +=
+        ' ' +
+        $localize`:@@solver.aFroid.confirm.relectures:${retirees}:count: journée(s) relue(s) perdront leur relecture.`;
+    }
+    if (gardees.length > 0) {
+      const jours = gardees
+        .map((lecture) =>
+          lecture.motif === 'PASSE'
+            ? $localize`:@@solver.aFroid.confirm.gardee.passee:${jourCourt(lecture.jour)}:jour: (déjà travaillée)`
+            : $localize`:@@solver.aFroid.confirm.gardee.verrouillee:${jourCourt(lecture.jour)}:jour: (verrouillée)`,
+        )
+        .join(', ');
+      phrase +=
+        ' ' +
+        $localize`:@@solver.aFroid.confirm.gardees:Gardent leur relecture, le calcul n'y touchant pas : ${jours}:jours:.`;
+    }
+    return phrase;
   }
 
   protected async onTimefoldSolve(reamorcage: Reamorcage = 'AUTO'): Promise<void> {
@@ -738,4 +783,13 @@ export class SolverPage implements OnInit {
     // notification (it must run whether or not this page is mounted); this
     // only updates the on-page state.
   }
+}
+
+/** « 08/07 » for `2026-07-08`, read as a local date: `new Date('2026-07-08')` is midnight UTC, a day early west of it. */
+function jourCourt(jour: string): string {
+  const [annee, mois, quantieme] = jour.split('-').map(Number);
+  return new Date(annee, mois - 1, quantieme).toLocaleDateString(intlLocale(), {
+    day: '2-digit',
+    month: '2-digit',
+  });
 }

@@ -338,6 +338,7 @@ service.solve.SolveInputsService$ConsigneInput = date, motif
 service.solve.SolveInputsService$SolveInputs = adjustments, changesSinceSolve, consignes, disabledRules, locks, pendingDeclarations, solvedAt
 service.solve.SolverBudgetBounds = defaultPlateauSeconds, defaultSecondsLimit, maxPlateauSeconds, maxSecondsLimit
 service.solve.SolverScoreTrace$Point = hard, medium, soft, tempsMs
+service.validation.ValidationJourneeService$KeptReading = jour, motif
 service.validation.ValidationPrerequisService$Prerequis = code, connu, nombre, satisfait
 service.validation.ValidationPrerequisService$PrerequisJournee = commentaire, jour, prerequis, tousSatisfaits, validationId, validePar, validee, valideeLe
 service.validation.ValidationPrerequisService$ProgressionValidations = journees, journeesValidees, joursValides

@@ -1,6 +1,6 @@
 # 0039 — Une validation de relecture, distincte du verrou
 
-- **Statut** : accepté, implémenté
+- **Statut** : accepté, implémenté ; le retrait après résolution est **précisé par [0069](0069-une-relecture-survit-a-ce-que-le-calcul-n-a-pas-recalcule.md)**
 - **Date** : septembre 2026
 - **Portée** : relecture du plan, résolution, publication, MCP, IHM
 

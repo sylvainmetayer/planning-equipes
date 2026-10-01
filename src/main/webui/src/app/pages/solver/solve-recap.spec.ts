@@ -21,6 +21,8 @@ type RecapInternals = {
   impactLabel: Signal<string>;
   comparison: Signal<{ avant: string; apres: string } | null>;
   horsPlancherLabel: Signal<string>;
+  validationsLabel: Signal<string>;
+  validationsGardeesLabel: Signal<string>;
   restoring: Signal<boolean>;
   restore: () => Promise<void>;
 };
@@ -221,6 +223,29 @@ describe('SolveRecap', () => {
 
     fixture.componentRef.setInput('impact', null);
     expect(recap.impactLabel()).toBe('');
+  });
+
+  // ADR 0069: a kept reading is said as plainly as a withdrawn one.
+  it('says which reviews a solve withdrew and which it kept, by reason', () => {
+    const recap = createRecap({
+      impactValidations: {
+        journees: 2,
+        gardeesPassees: 2,
+        gardeesVerrouillees: 1,
+        gardeesInchangees: 0,
+      },
+    });
+    expect(recap.validationsLabel()).toContain('2 journée(s) relue(s) recalculée(s)');
+    expect(recap.validationsGardeesLabel()).toBe(
+      '3 journée(s) gardent leur relecture : 2 déjà travaillée(s), 1 verrouillée(s) sur la journée.',
+    );
+
+    fixture.componentRef.setInput('impactValidations', { journees: 1 });
+    expect(recap.validationsGardeesLabel()).toBe('');
+
+    fixture.componentRef.setInput('impactValidations', null);
+    expect(recap.validationsLabel()).toBe('');
+    expect(recap.validationsGardeesLabel()).toBe('');
   });
 
   it('shows the run only once one has finished', () => {

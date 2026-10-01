@@ -62,7 +62,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0036](0036-construction-echantillonnee-des-tres-gros-problemes.md) | Au-delà de 15 millions de couples sièges × animateurs, la construction n'évalue que 50 candidats éligibles tirés au hasard par siège | Accepté |
 | [0037](0037-une-grille-est-toujours-des-vacations.md) | Une grille de créneaux est toujours faite de vacations : le découpage des amplitudes est retiré | Accepté |
 | [0038](0038-fraicheur-du-referentiel-persistee.md) | La date de dernière mutation du référentiel est persistée sur `edition` ; restaurer un instantané périmé est refusé sauf `forcer` | Accepté |
-| [0039](0039-validation-de-relecture-distincte-du-verrou.md) | Une journée se marque « relue et acceptée » sans être figée ; une résolution qui la déplace retire la relecture | Accepté |
+| [0039](0039-validation-de-relecture-distincte-du-verrou.md) | Une journée se marque « relue et acceptée » sans être figée ; une résolution qui la déplace retire la relecture | Accepté · précisé par 0069 |
 | [0040](0040-mentions-legales-exigees-au-demarrage.md) | Les mentions légales d'une instance en service sont exigées au démarrage, pas listées dans une case à cocher | Accepté |
 | [0041](0041-encadrement-des-mineurs-eteint-par-defaut.md) | L'encadrement des mineurs est une règle éteinte par défaut | Accepté · révise 0035 |
 | [0042](0042-quota-par-typologie-sur-la-typologie.md) | Le quota par typologie se pose sur la typologie, pas sur une contrainte ad hoc | Accepté |
@@ -86,6 +86,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0066](0066-le-passe-est-fige-a-la-minute.md) | Le passé est figé à la minute, pas au créneau : le siège d'un créneau en cours est scindé à « maintenant » en deux sièges réels — l'origine écourtée garde qui l'a tenue, la suite se répare — et les reconstructions rejouent la scission | Accepté · assouplit 0044 |
 | [0067](0067-la-faisabilite-avant-la-stabilite-apres-publication.md) | Dès qu'un plan est publié, une résolution cherche d'abord la faisabilité sans la stabilité du plan publié, au plus deux tiers du budget, puis polit avec elle dans le même job | Accepté · complète 0025, prolonge 0049 |
 | [0068](0068-sous-la-regle-dure-la-construction-suit-le-calendrier.md) | Sous la règle dure des jours d'affilée, l'heuristique de construction place les sièges par date croissante, puis par rareté dans un même jour ; toute autre édition garde l'ordre par rareté | Accepté · prolonge 0049 |
+| [0069](0069-une-relecture-survit-a-ce-que-le-calcul-n-a-pas-recalcule.md) | Une relecture survit à une résolution quand sa journée n'a pas été recalculée — passé figé, verrou `JOUR`, ou rendue à l'identique par un calcul parti du plan en place ; « Recommencer de zéro » retire le reste, et le récapitulatif dit ce qui est gardé et pourquoi | Accepté · précise 0039 |
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,
