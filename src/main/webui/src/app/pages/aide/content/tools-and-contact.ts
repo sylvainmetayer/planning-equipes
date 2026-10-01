@@ -133,7 +133,7 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
             },
             {
               term: $localize`:@@aide.mcp.term.prompts:Prompts prêts à l'emploi`,
-              text: $localize`:@@aide.mcp.def.prompts:Le serveur annonce lui-même une dizaine de demandes toutes faites : vérifier qu'une édition est prête, diagnostiquer les contraintes dures encore violées, relancer une résolution sans perdre le plan en place, traiter les déclarations, publier. Un client qui gère les prompts MCP les propose directement ; sinon, « Copier le prompt ».`,
+              text: $localize`:@@aide.mcp.def.prompts:Le serveur annonce lui-même une vingtaine de demandes toutes faites, une par moment de l'édition : démarrer une nouvelle édition, vérifier qu'elle est prête, diagnostiquer les contraintes dures encore violées, relancer une résolution sans perdre le plan en place, préparer un plan de repli par une consigne, publier, suivre les confirmations, tirer le bilan de l'événement. Chacune fait travailler l'assistant dans l'édition que vous nommez, ou à défaut dans l'édition active, et demande votre accord avant tout envoi de courriel. Un client qui gère les prompts MCP les propose directement ; sinon, « Copier le prompt ».`,
             },
           ],
         },

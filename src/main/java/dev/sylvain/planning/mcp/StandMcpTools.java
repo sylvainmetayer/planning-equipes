@@ -441,7 +441,7 @@ public class StandMcpTools {
     @Tool(
             name = "ajouter_fermeture_stand",
             description =
-                    "Ajoute une fermeture (indisponibilité) datée sur un stand : le stand ne peut pas être armé "
+                    "Ajoute une fermeture (indisponibilité) datée sur un stand : le stand ne peut pas être tenu "
                             + "entre ces heures ce jour-là. Une fenêtre ne peut pas chevaucher minuit — dans ce cas, en saisir deux. "
                             + "Omettre heureFin ferme jusqu'à la fermeture du jour. Une plage datée prime sur les horaires "
                             + "récurrents du stand pour ce jour-là ; pour un motif qui se répète, préférer ajouter_horaire_stand.",
@@ -473,7 +473,7 @@ public class StandMcpTools {
     @Tool(
             name = "ajouter_ouverture_stand",
             description =
-                    "Ajoute une ouverture datée sur un stand : ce jour-là, le stand n'est armé QUE sur cette "
+                    "Ajoute une ouverture datée sur un stand : ce jour-là, le stand n'est ouvert QUE sur cette "
                             + "plage. Un même jour ne peut pas porter à la fois une fermeture et une ouverture. Omettre heureFin "
                             + "ouvre jusqu'à la fermeture du jour. Pour un motif qui se répète, préférer ajouter_horaire_stand.",
             annotations =

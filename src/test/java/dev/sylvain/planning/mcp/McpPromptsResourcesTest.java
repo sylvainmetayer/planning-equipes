@@ -95,14 +95,16 @@ class McpPromptsResourcesTest {
     /**
      * The edition is optional, and a prompt built without it must still read as
      * a sentence — a hole where the name should be is what an assistant would
-     * try to fill by guessing.
+     * try to fill by guessing. Without it, the sentence names the active
+     * edition and says where to read it: there is no default edition any more.
      */
     @Test
     void withoutAnEditionThePromptStaysACompleteSentence() {
         String texte = prompts.checkBeforeSolving(null).content().asText().text();
 
         assertThat(texte)
-                .contains("l'édition par défaut")
+                .contains("Vérifie que l'édition active est prête")
+                .contains("lister_editions")
                 .doesNotContain("«  »")
                 .doesNotContain("null");
         assertThat(prompts.diagnoseHardContraintes("  ").content().asText().text())

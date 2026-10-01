@@ -660,27 +660,54 @@ propose personne : le passé ne se modifie plus
 Deux autres familles MCP sont servies, parce qu'elles portent ce qu'un outil ne
 peut pas dire.
 
-**Quatorze prompts**, un par moment du cycle, dans l'ordre d'un vrai
-événement : saisir les horaires des stands, construire la grille de créneaux,
-traiter les déclarations de disponibilité, savoir où recruter ou former,
-vérifier une édition avant de résoudre, résoudre sans perdre le planning en
-place, diagnostiquer les contraintes dures, verrouiller ce qui tient, préparer
-une variante de repli, auditer avant diffusion, publier le planning, trancher
-les demandes d'échange, reprendre après un changement tardif, tenir le jour J.
-Chacun prend un argument `edition` facultatif et enchaîne les outils dans le
-bon ordre.
+**Vingt-deux prompts**, un par moment du cycle, dans l'ordre d'un vrai
+événement : démarrer une nouvelle édition, saisir les horaires des stands,
+construire la grille de créneaux, ouvrir la collecte et la foire, traiter les
+déclarations de disponibilité, figer le référentiel, savoir où recruter ou
+former, régler les règles, vérifier une édition avant de résoudre, résoudre
+sans perdre le planning en place, diagnostiquer les contraintes dures, vérifier
+les arrivées groupées, relire et valider les journées, verrouiller ce qui
+tient, préparer un plan de repli, auditer avant diffusion, publier le planning,
+suivre les confirmations, trancher les demandes d'échange, reprendre après un
+changement tardif, tenir le jour J, tirer le bilan de l'événement. Chacun
+enchaîne les outils dans le bon ordre.
 
-Deux d'entre eux disent ce que les outils ne peuvent pas faire, et c'est
+Chacun prend un argument `edition` **facultatif**. Fourni, le texte le nomme ;
+omis, il demande d'abord à l'assistant d'appeler `lister_editions` et de
+retenir l'édition active — ou de poser la question s'il n'y en a aucune. Dans
+les deux cas, il lui demande de passer l'édition **à chaque appel d'outil** :
+un outil appelé sans son argument `edition` est refusé
+([ADR 0072](decisions/0072-une-seule-edition-active.md)), et il n'y a plus
+d'édition par défaut sur laquelle retomber. Deux prompts lisent l'argument
+autrement : pour `demarrer_une_nouvelle_edition`, c'est l'édition **source** de
+la duplication, et la nouvelle édition prend le relais dès qu'elle existe ;
+pour `tirer_le_bilan_de_l_evenement`, omis, il fait proposer l'édition dont
+l'événement vient de finir — rarement encore l'active — et attendre la
+réponse. La page MCP affiche les textes construits sans édition.
+
+Un plan de repli n'est plus une édition dupliquée : `preparer_un_plan_de_repli`
+le prépare comme une consigne datée dans l'édition vivante
+(`simuler_consigne`, `appliquer_consigne`, `resoudre_incremental`), et dit
+comment revenir en arrière (`lever_consigne`), sans duplication ni bascule
+d'édition.
+
+Plusieurs d'entre eux disent ce que les outils ne peuvent pas faire, et c'est
 délibéré : l'import de la matrice des stands et la grille de saisie vivent dans
-l'interface, et marquer une absence le jour J aussi. Un prompt qui tairait ces
-limites enverrait l'assistant chercher un outil qui n'existe pas — la lecture
-« Fragilité du planning » est dans le même cas.
+l'interface, marquer une absence le jour J aussi (écran « Aujourd'hui »), et
+la validation d'une demande de covoiturage se fait depuis l'écran
+Disponibilités. Un prompt qui tairait ces limites enverrait l'assistant
+chercher un outil qui n'existe pas.
 
-Ceux qui arrivent après la résolution nomment parfois un outil qui envoie du
-courriel : ils exigent alors un accord explicite avant l'appel.
-`McpPromptsWordingTest` le vérifie sans énumérer quoi que ce soit — il relit les
-outils dont `openWorldHint` est vrai, si bien qu'un futur outil sortant cité par
-un prompt muet fait échouer le build.
+Certains nomment un outil qui envoie du courriel : ils exigent alors un accord
+explicite avant l'appel, et font d'abord vérifier que l'édition est l'active —
+seule l'active publie et envoie des courriels, et l'assistant doit s'arrêter plutôt que
+d'activer une édition de son propre chef. `McpPromptsWordingTest` le vérifie
+sans énumérer quoi que ce soit — il relit les outils dont `openWorldHint` est
+vrai, si bien qu'un futur outil sortant cité par un prompt muet fait échouer le
+build. Le jour J, `tenir_le_jour_j` déplace les postes avec
+`simuler_deplacement` puis `deplacer_affectation`, et prévient par
+`publier_planning` : `envoyer_planning_animateur` renverrait le planning **déjà
+publié**, donc l'ancien.
 
 La page MCP de l'interface **ne les recopie pas** : elle les lit sur
 `GET /api/mcp/prompts`. Elle portait auparavant ses propres textes, et l'un
@@ -691,8 +718,11 @@ chemin par lequel un client l'atteint.
 
 Conséquence assumée : ces textes ne sont **pas traduits**. Le catalogue i18n
 porte les libellés autour d'eux, pas les prompts eux-mêmes, qui restent en
-français comme le vocabulaire métier. `McpToolNamesTest` les lit et échoue si
-l'un d'eux nomme un outil inexistant.
+français comme le vocabulaire métier. `McpToolNamesTest` lit leur source, et
+`McpPromptsWordingTest` leur texte rendu, avec et sans édition : tout mot en
+snake_case d'un prompt doit nommer un outil ou un prompt annoncé par le
+serveur — sinon il figure, argumenté, dans la liste des exceptions du test.
+Un outil renommé ne peut donc pas laisser un prompt derrière lui.
 
 **Deux ressources**, à attacher une fois pour informer tous les appels suivants :
 

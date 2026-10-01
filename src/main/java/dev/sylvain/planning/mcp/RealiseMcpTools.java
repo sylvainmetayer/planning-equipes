@@ -38,7 +38,7 @@ public class RealiseMcpTools {
                     + "publié marqué absent), remplacements, vides, retirés (consigne ou créneau supprimé — jamais "
                     + "une absence), ajoutés, minutes publiées, réalisées et perdues ; totaux par stand, par jour, "
                     + "par typologie (un stand à plusieurs typologies compte dans chacune) et pour l'événement. "
-                    + "Le réalisé est déclaré (le plan enregistré, tel que le mode jour J l'a laissé), "
+                    + "Le réalisé est déclaré (le plan enregistré, tel que l'écran « Aujourd'hui » l'a laissé), "
                     + "referenceAvailable faux veut dire « rien n'a jamais été publié », frozenPast faux que le "
                     + "passé figé est désactivé et que le réalisé n'est plus garanti. Comptes seulement, aucun nom.",
             annotations =

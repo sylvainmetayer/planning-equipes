@@ -37,7 +37,7 @@ import java.util.stream.Stream;
  *
  * <p>The volumetry {@code lister_editions} returns costs one query per edition
  * per counted référentiel. That is deliberate: an edition list without it
- * ("2025", "2026", "2026 canicule") gives an assistant nothing to recognise
+ * ("2025", "2026", "2026 bis") gives an assistant nothing to recognise
  * the right one by, and editions are counted in units, not in thousands.</p>
  *
  * <p>Three tools here work <em>inside</em> an edition rather than on the
@@ -190,8 +190,8 @@ public class EditionMcpTools {
             name = "lever_gel",
             description = "Lève le gel d'une famille du référentiel (voir figer_referentiel) : ses fiches "
                     + "redeviennent modifiables. À ne faire que sur demande explicite : après une publication, "
-                    + "toute modification fera bouger des plannings déjà envoyés — pour fermer un stand tard, "
-                    + "préférer une consigne (appliquer_consigne), ouverte même sous gel.",
+                    + "toute modification fera bouger des plannings déjà envoyés. Une bande horaire fermée à "
+                    + "tous les stands passe par une consigne (appliquer_consigne), ouverte même sous gel.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
