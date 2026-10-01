@@ -6,6 +6,7 @@ import {
   ActivationPreview,
   CoherenceReport,
   Edition,
+  EditionDelta,
   EditionSituation,
   EtatEdition,
   EtatGel,
@@ -98,5 +99,25 @@ export class EditionsApi {
 
   delete(editionId: string): Promise<void> {
     return this.api.delete(`/api/editions/${encodeURIComponent(editionId)}`);
+  }
+
+  /**
+   * What changed in the referential from edition `reference` to edition
+   * `cible` — differences only, rows matched by code, name or e-mail, never
+   * by id. Animateurs are named: this admin screen only.
+   */
+  delta(reference: string, cible: string): Promise<EditionDelta> {
+    return this.api.get<EditionDelta>(
+      `/api/editions/${encodeURIComponent(reference)}/delta/${encodeURIComponent(cible)}`,
+    );
+  }
+
+  /** The same delta as a CSV, named by the server: ids and field names, nobody's name. */
+  exportDeltaCsv(reference: string, cible: string): Promise<string> {
+    return this.api.downloadGetNamedByServer(
+      `/api/editions/${encodeURIComponent(reference)}/delta/${encodeURIComponent(cible)}/export.csv`,
+      'delta-editions.csv',
+      'text/csv',
+    );
   }
 }

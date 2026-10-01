@@ -76,6 +76,14 @@
   <mat-card-header>
     <h2 mat-card-title i18n="@@editions.list.title">Éditions ({{ store.editions().length }})</h2>
   </mat-card-header>
+  @if (store.editions().length > 1) {
+    <mat-card-actions>
+      <a matButton routerLink="/editions/comparer">
+        <mat-icon>difference</mat-icon>
+        <ng-container i18n="@@editions.action.comparerDeux">Comparer deux éditions</ng-container>
+      </a>
+    </mat-card-actions>
+  }
   <mat-card-content class="table-wrapper">
     <table mat-table [dataSource]="store.editions()">
       <caption class="visually-hidden" i18n="@@editions.table.caption">Éditions de l'événement : nom, identifiant, état et actions</caption>
@@ -110,6 +118,12 @@
                   [disabled]="enCours() || edition.id === courantId()" (click)="basculer(edition)">
             <mat-icon>login</mat-icon>
           </button>
+          <a matIconButton i18n-matTooltip="@@editions.action.comparer" matTooltip="Comparer à l'édition consultée"
+             i18n-aria-label="@@editions.action.comparer" aria-label="Comparer à l'édition consultée"
+             [disabled]="edition.id === courantId()"
+             routerLink="/editions/comparer" [queryParams]="{ a: edition.id, b: courantId() }">
+            <mat-icon>difference</mat-icon>
+          </a>
           @if (edition.active) {
             <button matIconButton i18n-matTooltip="@@editions.action.desactiver" matTooltip="Désactiver : plus rien ne part vers l'extérieur"
                     i18n-aria-label="@@editions.action.desactiver" aria-label="Désactiver : plus rien ne part vers l'extérieur"

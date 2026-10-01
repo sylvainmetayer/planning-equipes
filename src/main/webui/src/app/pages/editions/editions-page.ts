@@ -17,6 +17,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { RouterLink } from '@angular/router';
 import { EditionsApi } from '../../core/api/editions-api';
 import { EditionStore } from '../../core/edition.store';
 import { NotificationService } from '../../core/notification.service';
@@ -55,6 +56,7 @@ const NOM_FORME_ID = /^[Ee][1-9][0-9]*$/;
     MatInputModule,
     MatTableModule,
     MatTooltipModule,
+    RouterLink,
     EmptyEditionCard,
   ],
   templateUrl: './editions-page.html',

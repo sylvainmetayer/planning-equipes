@@ -2911,6 +2911,201 @@
         "type" : "string",
         "enum" : [ "PENDING", "DELIVERED", "FAILED", "ABANDONED" ]
       },
+      "DeltaChange" : {
+        "type" : "string",
+        "enum" : [ "ADDED", "REMOVED", "MODIFIED" ]
+      },
+      "DeltaFamily" : {
+        "type" : "string",
+        "enum" : [ "TYPOLOGIE", "EMPLACEMENT", "STAND", "ANIMATEUR", "JOURNEE_TYPE", "CRENEAU", "PARAMETRE", "AJUSTEMENT" ]
+      },
+      "DeltaFamilyCount" : {
+        "type" : "object",
+        "required" : [ "family", "added", "removed", "modified", "matchedByName" ],
+        "properties" : {
+          "family" : {
+            "$ref" : "#/components/schemas/DeltaFamily"
+          },
+          "added" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "removed" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "modified" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "matchedByName" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "DeltaLine" : {
+        "type" : "object",
+        "required" : [ "change", "fields" ],
+        "properties" : {
+          "change" : {
+            "$ref" : "#/components/schemas/DeltaChange"
+          },
+          "matching" : {
+            "$ref" : "#/components/schemas/DeltaMatch"
+          },
+          "referenceId" : {
+            "type" : "string"
+          },
+          "targetId" : {
+            "type" : "string"
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "label" : {
+            "type" : "string"
+          },
+          "fields" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
+      "DeltaMatch" : {
+        "type" : "string",
+        "enum" : [ "CODE", "NOM", "EMAIL", "IDENTITE", "POSITION" ]
+      },
+      "DeltaSide" : {
+        "type" : "object",
+        "required" : [ "id", "nom" ],
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "nom" : {
+            "type" : "string"
+          }
+        }
+      },
+      "DeltaSummary" : {
+        "type" : "object",
+        "required" : [ "families", "referenceDays", "targetDays", "seatDifference", "hoursToFillDifference" ],
+        "properties" : {
+          "families" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/DeltaFamilyCount"
+            }
+          },
+          "referenceDays" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "targetDays" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "seatDifference" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "hoursToFillDifference" : {
+            "type" : "number",
+            "format" : "double"
+          }
+        }
+      },
+      "DeltaTimeslotLine" : {
+        "type" : "object",
+        "required" : [ "change", "day", "fields" ],
+        "properties" : {
+          "change" : {
+            "$ref" : "#/components/schemas/DeltaChange"
+          },
+          "matching" : {
+            "$ref" : "#/components/schemas/DeltaMatch"
+          },
+          "day" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "start" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "referenceDate" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "targetDate" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "referenceId" : {
+            "type" : "string"
+          },
+          "targetId" : {
+            "type" : "string"
+          },
+          "fields" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
+      "DeltaValueGroup" : {
+        "type" : "string",
+        "enum" : [ "LEGAL", "CONSTRAINT_ACTIVE", "CONSTRAINT_WEIGHT", "AJUSTEMENT" ]
+      },
+      "DeltaValueLine" : {
+        "type" : "object",
+        "required" : [ "group", "key" ],
+        "properties" : {
+          "group" : {
+            "$ref" : "#/components/schemas/DeltaValueGroup"
+          },
+          "key" : {
+            "type" : "string"
+          },
+          "label" : {
+            "type" : "string"
+          },
+          "referenceValue" : {
+            "type" : "string"
+          },
+          "targetValue" : {
+            "type" : "string"
+          }
+        }
+      },
+      "DeltaVolumes" : {
+        "type" : "object",
+        "required" : [ "animateurCount", "posteCount", "hoursToFill", "hoursAvailable" ],
+        "properties" : {
+          "animateurCount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "posteCount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "hoursToFill" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "hoursAvailable" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "fillRatio" : {
+            "type" : "number",
+            "format" : "double"
+          }
+        }
+      },
       "Demande" : {
         "required" : [ "dates", "fermetureDebut", "motif" ],
         "type" : "object",
@@ -3566,6 +3761,78 @@
           },
           "creeLe" : {
             "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
+      "EditionDelta" : {
+        "required" : [ "reference", "target", "summary", "noAnimateurMatched", "typologies", "emplacements", "stands", "animateurs", "journeesTypes", "creneaux", "parametres", "ajustements", "referenceVolumes", "targetVolumes" ],
+        "type" : "object",
+        "properties" : {
+          "reference" : {
+            "$ref" : "#/components/schemas/DeltaSide"
+          },
+          "target" : {
+            "$ref" : "#/components/schemas/DeltaSide"
+          },
+          "summary" : {
+            "$ref" : "#/components/schemas/DeltaSummary"
+          },
+          "noAnimateurMatched" : {
+            "type" : "boolean"
+          },
+          "typologies" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/DeltaLine"
+            }
+          },
+          "emplacements" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/DeltaLine"
+            }
+          },
+          "stands" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/DeltaLine"
+            }
+          },
+          "animateurs" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/DeltaLine"
+            }
+          },
+          "journeesTypes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/DeltaLine"
+            }
+          },
+          "creneaux" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/DeltaTimeslotLine"
+            }
+          },
+          "parametres" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/DeltaValueLine"
+            }
+          },
+          "ajustements" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/DeltaValueLine"
+            }
+          },
+          "referenceVolumes" : {
+            "$ref" : "#/components/schemas/DeltaVolumes"
+          },
+          "targetVolumes" : {
+            "$ref" : "#/components/schemas/DeltaVolumes"
           }
         }
       },
@@ -13153,6 +13420,68 @@
           }
         },
         "summary" : "Activate",
+        "tags" : [ "Edition Resource" ]
+      }
+    },
+    "/api/editions/{id}/delta/{cible}" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "cible",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EditionDelta"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Delta",
+        "tags" : [ "Edition Resource" ]
+      }
+    },
+    "/api/editions/{id}/delta/{cible}/export.csv" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "cible",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "text/csv" : { }
+            }
+          }
+        },
+        "summary" : "Export Delta Csv",
         "tags" : [ "Edition Resource" ]
       }
     },

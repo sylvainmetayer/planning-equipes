@@ -488,6 +488,16 @@ const adminRoutes: Routes = [
     title: () => $localize`:@@route.editions:Éditions`,
     loadComponent: () => import('./pages/editions/editions-page').then((m) => m.EditionsPage),
   },
+  {
+    // What changed in the referential from one edition to another, `?a=&b=`.
+    // Served without a menu entry: the Éditions page opens it.
+    path: 'editions/comparer',
+    title: () => $localize`:@@route.comparerEditions:Comparer deux éditions`,
+    loadComponent: () =>
+      import('./pages/comparer-editions/comparer-editions-page').then(
+        (m) => m.ComparerEditionsPage,
+      ),
+  },
   // The solver was the home page until #485, under `/exports` and `/solver`.
   // `/exports` became the export screen, now a tab of Fichiers; only
   // `/solver` still lands on the solver.

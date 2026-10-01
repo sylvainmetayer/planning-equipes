@@ -1,0 +1,240 @@
+<h1 class="page-title" i18n="@@nav.link.comparerEditions">Comparer deux éditions</h1>
+<p class="delta-sous-titre" i18n="@@comparerEditions.subtitle">
+  Ce qui a changé dans le référentiel d'une édition à l'autre : stands, animateurs, créneaux, effectifs et réglages. Aucun planning n'est lu, rien n'est modifié.
+</p>
+
+<div class="delta-choix">
+  <mat-form-field appearance="outline">
+    <mat-label i18n="@@comparerEditions.field.reference">Édition de référence (A)</mat-label>
+    <select matNativeControl [value]="referenceId() ?? ''" (change)="chooseReference($any($event.target).value)">
+      @for (edition of store.editions(); track edition.id) {
+        <option [value]="edition.id" [selected]="edition.id === referenceId()">{{ edition.nom }}</option>
+      }
+    </select>
+  </mat-form-field>
+  <button matIconButton type="button" (click)="swap()"
+          i18n-aria-label="@@comparerEditions.inverser"
+          aria-label="Inverser A et B">
+    <mat-icon>swap_horiz</mat-icon>
+  </button>
+  <mat-form-field appearance="outline">
+    <mat-label i18n="@@comparerEditions.field.cible">Édition comparée (B)</mat-label>
+    <select matNativeControl [value]="targetId() ?? ''" (change)="chooseTarget($any($event.target).value)">
+      @for (edition of store.editions(); track edition.id) {
+        <option [value]="edition.id" [selected]="edition.id === targetId()">{{ edition.nom }}</option>
+      }
+    </select>
+  </mat-form-field>
+  <button matButton type="button" [disabled]="chargement() || exportBusy() || !delta()" (click)="exporter()">
+    <mat-icon>download</mat-icon>
+    <ng-container i18n="@@comparerEditions.export">Exporter en CSV</ng-container>
+  </button>
+</div>
+<p class="delta-note" i18n="@@comparerEditions.export.note">L'export ne nomme aucun animateur : il porte leurs identifiants dans chaque édition et le nom des champs qui diffèrent.</p>
+<app-output-panel [text]="output()" />
+
+@if (chargement() && !delta()) {
+  <mat-progress-bar mode="indeterminate" />
+} @else if (erreur()) {
+  <app-status-message [text]="erreur()" tone="error" />
+} @else if (store.editions().length === 1) {
+  <p class="empty-hint" i18n="@@comparerEditions.uneSeule">Il faut au moins deux éditions pour comparer : créez-en une ou dupliquez celle-ci depuis la page Éditions.</p>
+} @else if (delta(); as delta) {
+  <section class="delta-resume" aria-labelledby="delta-resume-titre">
+    <h2 id="delta-resume-titre" class="delta-titre" i18n="@@comparerEditions.resume.titre">De {{ delta.reference.nom }} à {{ delta.target.nom }}</h2>
+    @if (resume().length > 0) {
+      <p class="delta-resume-phrase">{{ resume().join(', ') }}</p>
+    } @else {
+      <p class="delta-resume-phrase" i18n="@@comparerEditions.resume.aucun">Aucune différence de référentiel entre ces deux éditions.</p>
+    }
+    @if (nameMatches().length > 0) {
+      <p class="delta-note">
+        <mat-icon aria-hidden="true">info</mat-icon>
+        <span i18n="@@comparerEditions.parNom.intro">Rapprochés par leur nom, faute de code commun — à vérifier :</span>
+        {{ nameMatches().join(' ; ') }}
+      </p>
+    }
+    @if (delta.noAnimateurMatched) {
+      <p class="delta-bandeau" role="note">
+        <mat-icon aria-hidden="true">group_off</mat-icon>
+        <span i18n="@@comparerEditions.sansPersonnes">{{ delta.target.nom }} n'a aucun animateur : l'édition a sans doute été dupliquée sans les personnes. Tous ceux de {{ delta.reference.nom }} apparaissent comme partis, la liste reste repliée.</span>
+      </p>
+    }
+  </section>
+
+  <h2 class="delta-titre" i18n="@@comparerEditions.volumes.titre">Volumétrie</h2>
+  <div class="table-wrapper">
+    <table class="delta-table">
+      <caption class="visually-hidden" i18n="@@comparerEditions.volumes.caption">Volumétrie des deux éditions et écart</caption>
+      <thead>
+        <tr>
+          <th scope="col" i18n="@@comparerEditions.col.mesure">Mesure</th>
+          <th scope="col">{{ delta.reference.nom }}</th>
+          <th scope="col">{{ delta.target.nom }}</th>
+          <th scope="col" i18n="@@comparerEditions.col.ecart">Écart</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (ligne of volumes(); track ligne.label) {
+          <tr>
+            <th scope="row">{{ ligne.label }}</th>
+            <td>{{ ligne.reference }}</td>
+            <td>{{ ligne.target }}</td>
+            <td>{{ ligne.gap }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @for (family of families; track family) {
+    @let lignes = entityLines(delta, family);
+    <details class="delta-famille" [open]="lignes.length > 0 && !(family === 'ANIMATEUR' && delta.noAnimateurMatched)">
+      <summary>
+        <span class="delta-famille-titre">{{ familyTitle(family) }}</span>
+        <span class="delta-compte">{{ lignes.length }}</span>
+      </summary>
+      @if (lignes.length === 0) {
+        <p class="empty-hint" i18n="@@comparerEditions.famille.vide">Aucune différence.</p>
+      } @else {
+        <div class="table-wrapper">
+          <table class="delta-table">
+            <caption class="visually-hidden">{{ familyTitle(family) }}</caption>
+            <thead>
+              <tr>
+                <th scope="col" i18n="@@comparerEditions.col.changement">Changement</th>
+                <th scope="col" i18n="@@comparerEditions.col.fiche">Fiche</th>
+                <th scope="col" i18n="@@comparerEditions.col.champs">Champs modifiés</th>
+                <th scope="col" i18n="@@comparerEditions.col.rapprochement">Rapprochement</th>
+                <th scope="col"><span class="visually-hidden" i18n="@@common.actions">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ligne of lignes; track $index) {
+                <tr>
+                  <td><span [class]="'delta-chip delta-' + ligne.change">{{ change(family, ligne.change) }}</span></td>
+                  <td>{{ lineLabel(ligne) }}</td>
+                  <td>{{ fieldsLabel(ligne.fields) }}</td>
+                  <td [class.delta-par-nom]="flaggedByName(family, ligne)">{{ matchLabel(ligne.matching, family) }}</td>
+                  <td>
+                    @let url = entityUrl(family, ligne);
+                    @if (url) {
+                      @let edition = sideOf(ligne, delta);
+                      @if (switchesEdition(edition)) {
+                        <button matButton type="button" class="delta-ouvrir" (click)="open(edition, url)"
+                                i18n-title="@@comparerEditions.ouvrir.title" title="Bascule ce navigateur sur l'édition {{ edition.nom }}">
+                          <ng-container i18n="@@comparerEditions.ouvrir">Ouvrir dans {{ edition.nom }} (change d'édition)</ng-container>
+                        </button>
+                      } @else {
+                        <button matButton type="button" class="delta-ouvrir" (click)="open(edition, url)">
+                          <ng-container i18n="@@comparerEditions.ouvrirIci">Ouvrir dans {{ edition.nom }}</ng-container>
+                        </button>
+                      }
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </details>
+  }
+
+  <details class="delta-famille" [open]="delta.creneaux.length > 0">
+    <summary>
+      <span class="delta-famille-titre" i18n="@@comparerEditions.famille.creneaux">Créneaux</span>
+      <span class="delta-compte">{{ delta.creneaux.length }}</span>
+    </summary>
+    <p class="delta-note" i18n="@@comparerEditions.creneaux.regle">Journées alignées sur leur rang d'ouverture, pas sur leur date, puis vacations sur leur heure de début. {{ delta.summary.referenceDays }} jours d'ouverture dans A, {{ delta.summary.targetDays }} dans B.</p>
+    @if (delta.creneaux.length === 0) {
+      <p class="empty-hint" i18n="@@comparerEditions.famille.vide">Aucune différence.</p>
+    } @else {
+      <div class="table-wrapper">
+        <table class="delta-table">
+          <caption class="visually-hidden" i18n="@@comparerEditions.famille.creneaux">Créneaux</caption>
+          <thead>
+            <tr>
+              <th scope="col" i18n="@@comparerEditions.col.changement">Changement</th>
+              <th scope="col" i18n="@@comparerEditions.col.jour">Jour</th>
+              <th scope="col" i18n="@@comparerEditions.col.vacation">Vacation</th>
+              <th scope="col" i18n="@@comparerEditions.col.dates">Dates (A → B)</th>
+              <th scope="col" i18n="@@comparerEditions.col.champs">Champs modifiés</th>
+              <th scope="col"><span class="visually-hidden" i18n="@@common.actions">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (ligne of delta.creneaux; track $index) {
+              <tr>
+                <td><span [class]="'delta-chip delta-' + ligne.change">{{ change('STAND', ligne.change) }}</span></td>
+                <td i18n="@@comparerEditions.jourN">Jour {{ ligne.day }}</td>
+                <td>
+                  @if (ligne.start) {
+                    {{ ligne.start.slice(0, 5) }}
+                  } @else {
+                    <ng-container i18n="@@comparerEditions.journeeEntiere">journée entière</ng-container>
+                  }
+                </td>
+                <td>{{ ligne.referenceDate ?? '—' }} → {{ ligne.targetDate ?? '—' }}</td>
+                <td>{{ fieldsLabel(ligne.fields) }}</td>
+                <td>
+                  @let edition = sideOf(ligne, delta);
+                  @if (switchesEdition(edition)) {
+                    <button matButton type="button" class="delta-ouvrir" (click)="open(edition, timeslotUrl)"
+                            i18n-title="@@comparerEditions.ouvrir.title" title="Bascule ce navigateur sur l'édition {{ edition.nom }}">
+                      <ng-container i18n="@@comparerEditions.ouvrir">Ouvrir dans {{ edition.nom }} (change d'édition)</ng-container>
+                    </button>
+                  } @else {
+                    <button matButton type="button" class="delta-ouvrir" (click)="open(edition, timeslotUrl)">
+                      <ng-container i18n="@@comparerEditions.ouvrirIci">Ouvrir dans {{ edition.nom }}</ng-container>
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </details>
+
+  <details class="delta-famille" [open]="delta.parametres.length + delta.ajustements.length > 0">
+    <summary>
+      <span class="delta-famille-titre" i18n="@@comparerEditions.famille.reglages">Paramètres et ajustements</span>
+      <span class="delta-compte">{{ delta.parametres.length + delta.ajustements.length }}</span>
+    </summary>
+    <p class="delta-note" i18n="@@comparerEditions.ajustements.regle">Les ajustements sont comptés par type ; les verrous appartiennent à un planning et ne sont pas comparés.</p>
+    @if (delta.parametres.length + delta.ajustements.length === 0) {
+      <p class="empty-hint" i18n="@@comparerEditions.famille.vide">Aucune différence.</p>
+    } @else {
+      <div class="table-wrapper">
+        <table class="delta-table">
+          <caption class="visually-hidden" i18n="@@comparerEditions.famille.reglages">Paramètres et ajustements</caption>
+          <thead>
+            <tr>
+              <th scope="col" i18n="@@comparerEditions.col.reglage">Réglage</th>
+              <th scope="col">{{ delta.reference.nom }}</th>
+              <th scope="col">{{ delta.target.nom }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (ligne of delta.parametres; track ligne.group + ligne.key) {
+              <tr>
+                <th scope="row">{{ valueLabel(ligne) }}</th>
+                <td>{{ valueText(ligne, ligne.referenceValue) }}</td>
+                <td>{{ valueText(ligne, ligne.targetValue) }}</td>
+              </tr>
+            }
+            @for (ligne of delta.ajustements; track ligne.key) {
+              <tr>
+                <th scope="row">{{ valueLabel(ligne) }}</th>
+                <td>{{ valueText(ligne, ligne.referenceValue) }}</td>
+                <td>{{ valueText(ligne, ligne.targetValue) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </details>
+}

@@ -131,6 +131,7 @@ public final class CatalogueActions {
     private static final String EXPORT_FORMATION = "EXPORT_FORMATION";
     private static final String EXPORT_LISTE_ANIMATEURS = "EXPORT_LISTE_ANIMATEURS";
     private static final String EXPORT_REALISE = "EXPORT_REALISE";
+    private static final String EXPORT_DELTA_EDITIONS = "EXPORT_DELTA_EDITIONS";
     private static final String SCENARIO_IMPORTE = "SCENARIO_IMPORTE";
     private static final String BASE_IMPORTEE = "BASE_IMPORTEE";
     private static final String PARAMETRES_LEGAUX_MODIFIES = "PARAMETRES_LEGAUX_MODIFIES";
@@ -366,6 +367,9 @@ public final class CatalogueActions {
         // Counts only, no person: journalled all the same, like every file
         // that leaves the application.
         export(EXPORT_REALISE, "Réalisé vs planifié exporté en CSV", Entite.PLANNING);
+        // Ids and field names, no person named: journalled like every file
+        // that leaves, against the edition compared from.
+        export(EXPORT_DELTA_EDITIONS, "Différences entre deux éditions exportées en CSV", Entite.EDITION);
 
         /* ------------------ Imports and scenarios ------------------- */
         changesData(SCENARIO_IMPORTE, "Scénario importé", Entite.PLANNING);
@@ -574,6 +578,7 @@ public final class CatalogueActions {
         route("FormationResource#exportCsv", EXPORT_FORMATION);
         route("AnimateurResource#recordListExport", EXPORT_LISTE_ANIMATEURS);
         route("RealiseResource#exportCsv", EXPORT_REALISE);
+        route("EditionResource#exportDeltaCsv", EXPORT_DELTA_EDITIONS);
         route("DatabaseResource#importDump", BASE_IMPORTEE);
         route("ReferenceDataResource#importScenario", SCENARIO_IMPORTE);
         route("ReferenceDataResource#importScenarioFile", SCENARIO_IMPORTE);

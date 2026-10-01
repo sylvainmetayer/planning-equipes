@@ -479,6 +479,14 @@ export function buildOffMenuLinks(devMode: boolean): NavLink[] {
         ),
       ],
     },
+    // Opened from the Éditions page with the pair to compare; reached here
+    // too, on the edition this tab works in and the first other one.
+    {
+      path: '/editions/comparer',
+      label: $localize`:@@nav.link.comparerEditions:Comparer deux éditions`,
+      icon: 'difference',
+      keywords: $localize`:@@nav.keywords.comparerEditions:delta différences année précédente référentiel`,
+    },
     {
       path: '/nouveautes',
       label: $localize`:@@nav.link.nouveautes:Nouveautés`,

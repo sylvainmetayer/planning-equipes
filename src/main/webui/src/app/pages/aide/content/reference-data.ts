@@ -43,11 +43,19 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
+          text: $localize`:@@aide.editions.comparer:« Comparer deux éditions », sur la page Éditions, dit ce qui a changé dans le référentiel de l'une à l'autre — l'an dernier et l'édition qu'on prépare, ou une édition et sa variante : stands, animateurs, typologies, emplacements, journées types, créneaux, paramètres et ajustements (comptés par type ; les verrous ne sont pas comparés), et la volumétrie des deux côte à côte. Aucun planning n'est lu, rien n'est modifié. « Comparer à l'édition consultée », sur une ligne de la table, ouvre la paire toute prête. Rien n'est rapproché par identifiant, deux éditions numérotant leurs fiches à partir du même compteur : un stand, une typologie ou un emplacement par son code, puis par son nom (signalé, à vérifier) ; un animateur par son e-mail, puis par prénom, nom et date de naissance ; une journée type par son nom ; les créneaux par rang du jour d'ouverture, puis par heure de début. Une édition sans aucun animateur, dupliquée sans les personnes, est signalée : tous ceux de l'autre y paraissent partis, et la liste reste repliée. « Ouvrir dans » mène à la fiche dans l'édition qui la porte et bascule le navigateur sur cette édition. L'export CSV ne nomme aucun animateur.`,
+        },
+        {
+          kind: 'paragraph',
           text: $localize`:@@aide.editions.vider:« Vider cette édition », en bas de la page Éditions, supprime les stands, créneaux, animateurs, affectations, ajustements manuels, verrouillages, validations de journées, demandes d'échange, consignes et préréglages de consigne de l'édition consultée, après avoir fait recopier son nom. Restent ses typologies, emplacements, journées types, instantanés et paramètres, les autres éditions et les réglages de l'instance. Refusé pendant une résolution et tant qu'une famille est figée.`,
         },
       ],
       links: [
         { route: '/editions', label: $localize`:@@nav.link.editions:Éditions` },
+        {
+          route: '/editions/comparer',
+          label: $localize`:@@nav.link.comparerEditions:Comparer deux éditions`,
+        },
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
         { route: '/versions', label: $localize`:@@nav.link.versions:Versions du plan` },
         {

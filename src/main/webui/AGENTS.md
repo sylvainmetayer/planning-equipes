@@ -68,7 +68,8 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   entries), its letter and the tabs or views the palette indexes;
   `buildOffMenuLinks()` the **routes served but listed in no group** —
   `/debug` (raw technical information, reached by Ctrl+K or its address),
-  `/nouveautes` (the foot of the menu) and the Quarkus Dev UI in development; `buildLegalLinks()` the legal pages.
+  `/nouveautes` (the foot of the menu), `/editions/comparer` (opened from the
+  Éditions page) and the Quarkus Dev UI in development; `buildLegalLinks()` the legal pages.
   `nav-groups.spec.ts` fails on a route of `app.routes.ts` that none of the
   three knows. The standalone routes `/login`, `/animateur/:jeton` (espace animateur, issue
   #165) and `/mural/:jeton` (« Affichage mural » — the control room's
@@ -438,7 +439,14 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   a plan is computed or to the grid narrowed to the day, and to the grid with
   its layers),
   `/disponibilites` (what the animateurs
-  declared), `/editions`, `/historique` (« Historique des actions »),
+  declared), `/editions`, `/editions/comparer` (« Comparer deux éditions » — the
+  referential delta of `GET /api/editions/{a}/delta/{b}`, the pair in `?a=&b=`,
+  served without a menu entry and opened from the Éditions page: a summary
+  sentence, the banner of a duplication without the people, the two Volumétries
+  side by side, one foldable panel per family, each line saying what matched it
+  and opening its fiche in the edition holding it through `EditionStore.openIn`,
+  which switches the browser's edition),
+  `/historique` (« Historique des actions »),
   `/nouveautes` (« Nouveautés » — what the running version brought, read from
   the repository's commit subjects collected at build time by
   `scripts/generate-news.js` into a gitignored `news-data.ts`, and sorted
