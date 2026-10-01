@@ -37,6 +37,8 @@ import org.keycloak.sessions.AuthenticationSessionModel;
  */
 public class EmailCodeAuthenticator implements Authenticator {
 
+    private static final String FORM = "code-email.ftl";
+
     /** Where the expected code is kept, for the lifetime of this login attempt. */
     static final String NOTE_CODE = "planning.code.email";
 
@@ -89,7 +91,7 @@ public class EmailCodeAuthenticator implements Authenticator {
             return;
         }
 
-        context.challenge(context.form().createForm("code-email.ftl"));
+        context.challenge(context.form().createForm(FORM));
     }
 
     @Override
@@ -103,7 +105,7 @@ public class EmailCodeAuthenticator implements Authenticator {
         if (attendu == null || expire(session)) {
             context.failureChallenge(
                     AuthenticationFlowError.EXPIRED_CODE,
-                    context.form().setError("expiredCode").createForm("code-email.ftl"));
+                    context.form().setError("expiredCode").createForm(FORM));
             return;
         }
 
@@ -125,7 +127,7 @@ public class EmailCodeAuthenticator implements Authenticator {
             }
             context.failureChallenge(
                     AuthenticationFlowError.INVALID_CREDENTIALS,
-                    context.form().setError("invalidCode").createForm("code-email.ftl"));
+                    context.form().setError("invalidCode").createForm(FORM));
             return;
         }
 

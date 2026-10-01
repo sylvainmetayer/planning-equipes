@@ -236,7 +236,7 @@ jobs:
           session_key="$(openssl rand -hex 16)"
           # No Keycloak on the runner: the image starts with it off and the
           # break-glass door open, as restauration.yml does — production refuses
-          # an instance with neither (ADR 0070). Nothing contacts the realm.
+          # an instance with neither (ADR 0071). Nothing contacts the realm.
           oidc_secret="$(openssl rand -hex 32)"
           docker run -d --name smoke --network host \
             -e DB_URL=jdbc:postgresql://localhost:5432/festival \

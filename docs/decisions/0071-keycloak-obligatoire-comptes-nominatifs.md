@@ -1,10 +1,10 @@
-# 0070 — Keycloak obligatoire, un compte par personne, les droits fins dans l'application
+# 0071 — Keycloak obligatoire, un compte par personne, les droits fins dans l'application
 
 - **Statut** : accepté, implémenté (socle)
 - **Date** : septembre 2026
 - **Portée** : authentification (administration, espace animateur, MCP), autorisation, schéma (`compte`, `habilitation`, `habilitation_stand`), exploitation (Keycloak, Terraform, Ansible)
 - **Issues** : #294 (comptes nominatifs), #295 (responsable de stand) ; reprend le chantier des PR #565 et #587 du dépôt privé
-- **Numérotation** : cette décision a d'abord porté le numéro 0069, que `main` a pris entre-temps pour la relecture. Les commentaires de `V115` et `V116` la citent encore sous « ADR 0069 » : une migration appliquée ne s'édite pas, son empreinte est figée.
+- **Numérotation** : cette décision a d'abord porté le numéro 0069, puis 0070, que `main` a pris entre-temps (la relecture, puis le réalisé figé). Ses migrations, `V117` et `V118`, ont suivi la même course : elles n'avaient jamais été publiées, leur numéro et leur commentaire ont donc changé avec elles.
 
 ## Contexte
 

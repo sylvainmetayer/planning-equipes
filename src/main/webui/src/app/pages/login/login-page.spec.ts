@@ -80,7 +80,7 @@ describe('LoginPage', () => {
 
   it('avec Keycloak seul : un bouton, aucun champ mot de passe', async () => {
     const assign = vi.fn();
-    vi.spyOn(window, 'location', 'get').mockReturnValue({ assign } as unknown as Location);
+    vi.spyOn(window, 'location', 'get').mockReturnValue({ ...window.location, assign });
     await rendre({ authOidc: true, authSecours: false });
 
     expect(element().querySelector('input[type=password]')).toBeNull();
@@ -146,7 +146,7 @@ describe('LoginPage', () => {
    */
   it('connecté sans le rôle admin : le dit, et ne propose que la déconnexion', async () => {
     const assign = vi.fn();
-    vi.spyOn(window, 'location', 'get').mockReturnValue({ assign } as unknown as Location);
+    vi.spyOn(window, 'location', 'get').mockReturnValue({ ...window.location, assign });
     adminApi.logout.mockResolvedValue({ urlDeconnexion: '/api/auth/oidc/logout' });
     await rendre(
       { authOidc: true, authSecours: true },

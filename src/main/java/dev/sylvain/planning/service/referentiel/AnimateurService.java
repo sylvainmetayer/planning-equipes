@@ -142,7 +142,7 @@ public class AnimateurService {
         try {
             comptes.synchroniser(animateur, adresseChangee);
         } catch (BusinessError.Conflict e) {
-            LOG.warnf("Fiche %s saved without its Keycloak account: %s", id, e.getMessage());
+            LOG.warnf("Fiche %s saved without its Keycloak account", id);
         }
         if (adresseChangee) {
             comptes.retirer(ancienneAdresse);

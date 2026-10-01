@@ -1130,7 +1130,7 @@ points qui ne s'y voient pas :
   PR externe n'écrit pas dans le registre, et le dépôt ne signe pas son code.
   Le smoke test démarre l'image sans Keycloak, porte de secours ouverte, comme
   `restauration.yml` : la production refuse une instance qui n'a ni l'un ni
-  l'autre (ADR 0070).
+  l'autre (ADR 0071).
 - **`release.yml` écrit le corps d'une release publiée** (git-cliff sur les
   messages de commit du tag) et ne touche à rien d'autre : ni tag, ni branche,
   ni fichier du dépôt — il n'y a pas de `CHANGELOG.md` à tenir. Il part sur
