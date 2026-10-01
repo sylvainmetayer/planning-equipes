@@ -13,6 +13,19 @@
 # défaut : un `?` fait échouer le démarrage plutôt que de laisser passer un
 # mot de passe de développement en production.
 
+# Rotation des journaux, posée ici plutôt que dans /etc/docker/daemon.json :
+# la pile doit être sûre sans réglage global d'un hôte qui peut héberger autre
+# chose, et ce bloc l'emporte sur ce fichier pour ces deux services. Sans lui,
+# le pilote par défaut (json-file) grossit sans limite, et un disque plein par
+# les journaux fait aussi échouer la sauvegarde de nuit. Plafond par défaut :
+# 5 fichiers de 20 Mo, ≈ 100 Mo par service. Pilote `local` : compressé, lu
+# par `docker compose logs` comme json-file. Voir docs/exploitation.md § 7.
+x-logging: &logging
+  driver: local
+  options:
+    max-size: ${LOG_MAX_SIZE:-20m}
+    max-file: ${LOG_MAX_FILE:-5}
+
 services:
   app:
     # Une version NOMMÉE (APP_VERSION=1.2.0), jamais `main` ni `latest` : un
@@ -20,6 +33,7 @@ services:
     # comme les mots de passe. Voir docs/versioning.md § Déployer.
     image: ghcr.io/sylvainmetayer/planning-equipes:${APP_VERSION:?APP_VERSION est obligatoire — une version nommée, ex. 1.2.0, voir docs/versioning.md}
     restart: unless-stopped
+    logging: *logging
     # L'image donne à la JVM les trois quarts de cette limite pour son tas
     # (JDK_JAVA_OPTIONS, voir le Dockerfile) : 1,5 Go ici, ce que le solveur
     # demande pour ne pas passer son temps à collecter. Sous 1 Go, il ne
@@ -98,6 +112,7 @@ services:
   postgres:
     image: postgres:18
     restart: unless-stopped
+    logging: *logging
     mem_limit: 512m
     mem_reservation: 128m
     # Aucun `ports:` : la base n'est jamais publiée sur l'hôte, seul le réseau
