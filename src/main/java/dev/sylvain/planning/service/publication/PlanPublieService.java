@@ -13,10 +13,12 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * The plan the animateurs were sent (issue #245), as opposed to the plan being
@@ -107,6 +109,59 @@ public class PlanPublieService {
         }
         return Optional.of(persistenceService.assemblerPlanning(
                 detail.affectations().stream().map(PlanSnapshotService::seat).toList()));
+    }
+
+    /**
+     * A reader of several snapshots' plans for one computation: each snapshot
+     * is read and assembled once however often it is asked for, and all of
+     * them against <b>one</b> read of the referential — where {@link
+     * #plan(long)} re-reads it for each. The referential is read on the
+     * first plan asked for, not before: a computation that needs none pays
+     * nothing.
+     *
+     * <p>Not {@link #vacationsBySnapshot}: those vacations are by person, and
+     * leave out the seats nobody held — the chairs a reader counting seats
+     * needs.</p>
+     */
+    public SnapshotPlans snapshotPlans() {
+        return new SnapshotPlans();
+    }
+
+    /** See {@link #snapshotPlans()}. Not thread-safe: one per computation. */
+    public final class SnapshotPlans {
+
+        private final Map<Long, PlanningEvenement> plans = new HashMap<>();
+
+        /** The snapshots asked for that no longer exist: read once, like the others. */
+        private final Set<Long> missing = new HashSet<>();
+
+        private PlanningPersistenceService.PlanAssembler assembler;
+
+        private SnapshotPlans() {}
+
+        /** The plan {@code snapshotId} holds, empty when it no longer exists — as {@link #plan(long)}. */
+        public Optional<PlanningEvenement> plan(long snapshotId) {
+            if (missing.contains(snapshotId)) {
+                return Optional.empty();
+            }
+            PlanningEvenement read = plans.get(snapshotId);
+            if (read != null) {
+                return Optional.of(read);
+            }
+            PlanSnapshotService.SnapshotDetail detail = snapshotService.load(snapshotId);
+            if (detail == null) {
+                missing.add(snapshotId);
+                return Optional.empty();
+            }
+            if (assembler == null) {
+                assembler = persistenceService.getAssembler();
+            }
+            read = assembler.assemble(detail.affectations().stream()
+                    .map(PlanSnapshotService::seat)
+                    .toList());
+            plans.put(snapshotId, read);
+            return Optional.of(read);
+        }
     }
 
     /**

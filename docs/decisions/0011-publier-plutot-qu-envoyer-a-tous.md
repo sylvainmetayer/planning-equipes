@@ -1,6 +1,6 @@
 # 0011 — Publier, plutôt qu'envoyer à tous
 
-- **Statut** : accepté, implémenté
+- **Statut** : accepté, implémenté ; le refus de suppression est étendu par [0070](0070-un-troisieme-job-planifie-fige-le-realise.md)
 - **Date** : août 2026
 - **Portée** : persistance, service, API, espace animateur, frontend
 - **Voisines** : [0007](0007-instantanes-contenu-denormalise.md) (le support existait déjà)
@@ -158,7 +158,9 @@ sur des plans que plus personne ne lisait (issue #34).
 
 La référence que lit l'espace est **la dernière** publication, une seule
 (`loadLastPublication`). Celles qu'elle a remplacées sont de l'histoire, et se
-suppriment comme n'importe quel instantané. Le refus vaut donc pour une ligne,
+suppriment comme n'importe quel instantané — sauf, depuis
+[0070](0070-un-troisieme-job-planifie-fige-le-realise.md), celle qui était en
+vigueur au début d'une journée écoulée : Réalisé vs planifié la relit encore. Le refus vaut donc pour une ligne,
 pas pour un état, et il est écrit dans l'ordre même de `lastPublication` — la
 suppression ne passe que s'il existe une publication plus récente, ce qui
 interdit aussi à deux suppressions concurrentes de se croire toutes deux

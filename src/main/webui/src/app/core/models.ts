@@ -4692,6 +4692,111 @@ export interface ChangementsJournee {
   parAnimateur: ChangementAnimateur[];
 }
 
+/* -------------------------- Realised vs planned -------------------------- */
+
+/** How the realised was obtained: declared in the application today, observed by a check-in later. */
+export type RealisedNature = 'DECLARED' | 'OBSERVED';
+
+/** What became of a published seat, or where an unannounced one came from. */
+export type RealisedOutcome =
+  'REPLACED' | 'EMPTIED' | 'REMOVED' | 'HOURS_CHANGED' | 'REFILLED' | 'ADDED';
+
+/** The counters of a cell or of a total; minutes, never hours, on the wire. */
+export interface GapCounts {
+  publishedSeats: number;
+  keptSeats: number;
+  absences: number;
+  replacements: number;
+  emptySeats: number;
+  removedSeats: number;
+  addedSeats: number;
+  publishedMinutes: number;
+  realisedMinutes: number;
+  lostMinutes: number;
+  /** `absences / publishedSeats`, null without a published seat. */
+  absenceRate: number | null;
+  /** `replacements / publishedSeats`, null without a published seat. */
+  replacementRate: number | null;
+}
+
+/** One elapsed day — its last timeslot over — and the publication it is measured against. */
+export interface RealisedDay {
+  date: string;
+  /** True when a publication was in force when the day started: the only days the totals sum. */
+  counted: boolean;
+  referencePublishedAt: string | null;
+  /**
+   * Nothing had been published before the day started: the first publication after stands in,
+   * and the day is drawn but never counted — that publication already holds its changes.
+   */
+  lateReference: boolean;
+}
+
+/** The gap of one stand on one day. */
+export interface RealisedCell {
+  standId: string;
+  standNom: string;
+  date: string;
+  counts: GapCounts;
+}
+
+/** A total over several cells: a stand id, a date or a game category id. */
+export interface GapTotal {
+  key: string;
+  label: string;
+  counts: GapCounts;
+}
+
+/** Réalisé vs planifié: the gap between the published plan and the plan held, per stand and per elapsed day. */
+export interface RealisedVsPlanned {
+  /** False while nothing was ever published: no reference to measure against. */
+  referenceAvailable: boolean;
+  nature: RealisedNature;
+  /** False when the past rule is off (`PASSE_FIGE=false`): the realised is no longer guaranteed. */
+  frozenPast: boolean;
+  today: string;
+  days: RealisedDay[];
+  cells: RealisedCell[];
+  byStand: GapTotal[];
+  byDay: GapTotal[];
+  /** A stand offering several game categories counts under each. */
+  byTypologie: GapTotal[];
+  event: GapCounts;
+}
+
+/** One shift of a cell whose holder or hours moved, and what the measure made of it. */
+export interface RealisedLine {
+  seat: ChangementSiege;
+  outcome: RealisedOutcome;
+  /** Its published holder was recorded missing on it. */
+  absence: boolean;
+}
+
+/** One cell opened: its counters and the shifts behind them, holders named (admin screen only). */
+export interface CellDetail {
+  date: string;
+  standId: string;
+  standNom: string;
+  referenceAvailable: boolean;
+  referencePublishedAt: string | null;
+  lateReference: boolean;
+  counts: GapCounts;
+  lines: RealisedLine[];
+}
+
+/** The measure the previous edition left, frozen at the end of its event. */
+export interface PreviousEdition {
+  available: boolean;
+  editionId: string | null;
+  editionNom: string | null;
+  firstDay: string | null;
+  lastDay: string | null;
+  countedDays: number | null;
+  frozenAt: string | null;
+  event: GapCounts | null;
+  byTypologie: GapTotal[];
+}
+
 /* --------------------------- Edition consignes (issue #4) --------------------------- */
 
 /**

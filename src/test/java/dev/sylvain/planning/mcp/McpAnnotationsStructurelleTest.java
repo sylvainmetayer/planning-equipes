@@ -62,7 +62,8 @@ class McpAnnotationsStructurelleTest {
             "volumes",
             "edition_courante",
             "changements_journee",
-            "plan_formation");
+            "plan_formation",
+            "realise_vs_planifie");
 
     /**
      * Tools that overwrite or drop something the user cannot get back by

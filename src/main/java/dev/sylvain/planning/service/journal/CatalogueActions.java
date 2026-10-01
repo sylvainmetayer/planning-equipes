@@ -128,6 +128,7 @@ public final class CatalogueActions {
     private static final String EXPORT_ARCHIVE_EVENEMENT = "EXPORT_ARCHIVE_EVENEMENT";
     private static final String EXPORT_FORMATION = "EXPORT_FORMATION";
     private static final String EXPORT_LISTE_ANIMATEURS = "EXPORT_LISTE_ANIMATEURS";
+    private static final String EXPORT_REALISE = "EXPORT_REALISE";
     private static final String SCENARIO_IMPORTE = "SCENARIO_IMPORTE";
     private static final String BASE_IMPORTEE = "BASE_IMPORTEE";
     private static final String PARAMETRES_LEGAUX_MODIFIES = "PARAMETRES_LEGAUX_MODIFIES";
@@ -346,6 +347,9 @@ public final class CatalogueActions {
         // Built in the browser from the rows the screen shows: the file never
         // reaches the server, the screen announces it before saving it.
         export(EXPORT_LISTE_ANIMATEURS, "Liste des animateurs exportée en CSV", Entite.PLANNING);
+        // Counts only, no person: journalled all the same, like every file
+        // that leaves the application.
+        export(EXPORT_REALISE, "Réalisé vs planifié exporté en CSV", Entite.PLANNING);
 
         /* ------------------ Imports and scenarios ------------------- */
         changesData(SCENARIO_IMPORTE, "Scénario importé", Entite.PLANNING);
@@ -405,6 +409,10 @@ public final class CatalogueActions {
         // purge in the log. `chaqueActionEstAtteignable` keeps this honest by
         // failing on any entry no entry point can reach.
         action("NOTIFICATIONS_ENVOYEES", "Envois automatiques de nuit", Entite.PLANNING);
+        // The first freeze of an edition's realised measure, by the nightly job
+        // (ADR 0070): it belongs to one edition, and it happens once — the
+        // nights after rewrite the same figures and record nothing.
+        action("REALISE_FIGE", "Réalisé de fin d'événement figé", Entite.PLANNING);
     }
 
     /**
@@ -532,6 +540,7 @@ public final class CatalogueActions {
         route("ArchiveEvenementResource#export", EXPORT_ARCHIVE_EVENEMENT);
         route("FormationResource#exportCsv", EXPORT_FORMATION);
         route("AnimateurResource#recordListExport", EXPORT_LISTE_ANIMATEURS);
+        route("RealiseResource#exportCsv", EXPORT_REALISE);
         route("DatabaseResource#importDump", BASE_IMPORTEE);
         route("ReferenceDataResource#importScenario", SCENARIO_IMPORTE);
         route("ReferenceDataResource#importScenarioFile", SCENARIO_IMPORTE);

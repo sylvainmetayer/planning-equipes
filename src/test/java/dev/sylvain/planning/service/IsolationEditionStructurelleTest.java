@@ -149,6 +149,12 @@ class IsolationEditionStructurelleTest {
      *       and a row orphaned by the deletion of its edition could not be
      *       cleaned up at all by an edition-scoped {@code DELETE}. The id is a
      *       server-wide {@code BIGSERIAL}, so it names one row on its own.</li>
+     *   <li>{@code kpi_realise} — the frozen measure of a finished edition
+     *       (ADR 0070), read by the <em>next</em> edition: the read is
+     *       another edition's row by definition, possibly one whose edition
+     *       was deleted since, and the row keeps the names it shows for that
+     *       reason. Its writes go through the edition's own scope all the
+     *       same: the nightly job enters each edition before freezing it.</li>
      *   <li>{@code solver_job} — the solve queue is global by design (one
      *       solve at a time for the whole JVM, see the ADR §5); the job stores
      *       the edition it targets, it is not partitioned by it.</li>
@@ -168,6 +174,7 @@ class IsolationEditionStructurelleTest {
             "backup_settings",
             "horloge_jour_j",
             "kpi_historique",
+            "kpi_realise",
             "solver_job",
             "creneau_remap",
             "version_applicative");

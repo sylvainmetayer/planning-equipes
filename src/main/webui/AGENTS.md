@@ -370,8 +370,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   (`pages/problemes/ecarts-pivot*`) sits under the cards, open, narrowed by
   `?regle=` and read along `?axe=`. Besoin: every bound and every day links to
   the screen that changes it, the « avant » margin is a column and a grid
-  (`pages/marge/margin-before-grid.ts`), « À former » (`pages/formation`) its
-  last section. Tension (`pages/marge/tension-tab.ts`): the « après » margin
+  (`pages/marge/margin-before-grid.ts`), the game category table a column
+  « Édition précédente » — the previous edition's absence rate and lost hours,
+  for information, matched by id then by name in `pages/realise/mesure.ts` —
+  while one exists, « À former » (`pages/formation`) its last section. Tension (`pages/marge/tension-tab.ts`): the « après » margin
   crossed with the fragility, one column per start hour of the grid, the fill
   the margin's sign and the grade a frame, each cell opening the Siège panel
   of its timeslot. Fragilité: « Verrouiller », « Qui peut remplacer »,
@@ -398,13 +400,22 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   « now » server-side (ADR 0066) —, « Chercher plus loin » when the first
   twenty candidates hold nobody viable, the new holes told from the published ones, « Prévenir les N
   personnes » through the targeted publication, « Fermer des stands demain »,
-  the TV link), `/versions` (« Versions du
+  the TV link), `/realise` (« Réalisé vs planifié » — the gap between the
+  published plan and the plan held over the elapsed days, read from
+  `GET /api/planning/realise`: the declared-realised notice, the event's
+  figures, the shared `pages/planning-grille` with one line per stand and one
+  column per counted day, each cell coloured by its worst gap and opening its
+  shifts under the grid — holders named, on this admin screen only — kept as
+  `?jour=&stand=`, the totals per game category, and the CSV without any
+  person), `/versions` (« Versions du
   plan » — the finished solves and the snapshots of the edition in one
   chronology over the pure `versions.ts`, `?editions=toutes` for every
   edition's; two ticked rows, or one and « Plan en place », open the A/B
   comparator as a panel beside the table, `?comparer=a,b` keeping the pair;
   `/kpi`, `/instantanes` and `/comparateur` redirect there — `/kpi?edition=*`
-  to `?editions=toutes` —, the replay of the former Autopsie is gone; the Solveur shows its five latest rows),
+  to `?editions=toutes` —, the replay of the former Autopsie is gone; the Solveur shows its five latest rows;
+  under the table, `pages/versions/edition-precedente.ts` says the Réalisé vs
+  planifié measure the previous edition froze, and nothing when there is none),
   `/ouvertures` (« Horaires des stands » — three
   views chosen by `?vue=`: the grid, the default, read and typed in one place —
   one field per stand and timeslot, an empty cell is closed, and behind each

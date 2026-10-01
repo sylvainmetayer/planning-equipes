@@ -1223,6 +1223,39 @@
           }
         }
       },
+      "CellDetail" : {
+        "required" : [ "counts", "date", "lateReference", "lines", "referenceAvailable", "standId", "standNom" ],
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "standId" : {
+            "type" : "string"
+          },
+          "standNom" : {
+            "type" : "string"
+          },
+          "referenceAvailable" : {
+            "type" : "boolean"
+          },
+          "referencePublishedAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "lateReference" : {
+            "type" : "boolean"
+          },
+          "counts" : {
+            "$ref" : "#/components/schemas/GapCounts"
+          },
+          "lines" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RealisedLine"
+            }
+          }
+        }
+      },
       "Cellule" : {
         "required" : [ "ecarts" ],
         "type" : "object",
@@ -4528,6 +4561,75 @@
           }
         }
       },
+      "GapCounts" : {
+        "type" : "object",
+        "required" : [ "absences", "addedSeats", "emptySeats", "keptSeats", "lostMinutes", "publishedMinutes", "publishedSeats", "realisedMinutes", "removedSeats", "replacements" ],
+        "properties" : {
+          "publishedSeats" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "keptSeats" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "absences" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "replacements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "emptySeats" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "removedSeats" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "addedSeats" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "publishedMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "realisedMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "lostMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "absenceRate" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "replacementRate" : {
+            "type" : "number",
+            "format" : "double"
+          }
+        }
+      },
+      "GapTotal" : {
+        "type" : "object",
+        "required" : [ "counts", "key", "label" ],
+        "properties" : {
+          "key" : {
+            "type" : "string"
+          },
+          "label" : {
+            "type" : "string"
+          },
+          "counts" : {
+            "$ref" : "#/components/schemas/GapCounts"
+          }
+        }
+      },
       "GraviteTension" : {
         "type" : "string",
         "enum" : [ "CRITIQUE", "ELEVEE", "SURVEILLEE", "CALME" ]
@@ -7108,6 +7210,43 @@
           }
         }
       },
+      "PreviousEdition" : {
+        "required" : [ "available", "byTypologie" ],
+        "type" : "object",
+        "properties" : {
+          "available" : {
+            "type" : "boolean"
+          },
+          "editionId" : {
+            "type" : "string"
+          },
+          "editionNom" : {
+            "type" : "string"
+          },
+          "firstDay" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "lastDay" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "countedDays" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "frozenAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "event" : {
+            "$ref" : "#/components/schemas/GapCounts"
+          },
+          "byTypologie" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/GapTotal"
+            }
+          }
+        }
+      },
       "ProbableDuplicate" : {
         "type" : "object",
         "required" : [ "kind" ],
@@ -7871,6 +8010,116 @@
       "ReadingTone" : {
         "type" : "string",
         "enum" : [ "OK", "INFO", "ATTENTION", "BLOQUANT" ]
+      },
+      "RealisedCell" : {
+        "type" : "object",
+        "required" : [ "counts", "date", "standId", "standNom" ],
+        "properties" : {
+          "standId" : {
+            "type" : "string"
+          },
+          "standNom" : {
+            "type" : "string"
+          },
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "counts" : {
+            "$ref" : "#/components/schemas/GapCounts"
+          }
+        }
+      },
+      "RealisedDay" : {
+        "type" : "object",
+        "required" : [ "counted", "date", "lateReference" ],
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "counted" : {
+            "type" : "boolean"
+          },
+          "referencePublishedAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "lateReference" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "RealisedLine" : {
+        "type" : "object",
+        "required" : [ "absence", "outcome", "seat" ],
+        "properties" : {
+          "seat" : {
+            "$ref" : "#/components/schemas/SeatLine"
+          },
+          "outcome" : {
+            "$ref" : "#/components/schemas/RealisedOutcome"
+          },
+          "absence" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "RealisedNature" : {
+        "type" : "string",
+        "enum" : [ "DECLARED", "OBSERVED" ]
+      },
+      "RealisedOutcome" : {
+        "type" : "string",
+        "enum" : [ "REPLACED", "EMPTIED", "REMOVED", "HOURS_CHANGED", "REFILLED", "ADDED" ]
+      },
+      "RealisedVsPlanned" : {
+        "required" : [ "byDay", "byStand", "byTypologie", "cells", "days", "event", "frozenPast", "nature", "referenceAvailable", "today" ],
+        "type" : "object",
+        "properties" : {
+          "referenceAvailable" : {
+            "type" : "boolean"
+          },
+          "nature" : {
+            "$ref" : "#/components/schemas/RealisedNature"
+          },
+          "frozenPast" : {
+            "type" : "boolean"
+          },
+          "today" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "days" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RealisedDay"
+            }
+          },
+          "cells" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RealisedCell"
+            }
+          },
+          "byStand" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/GapTotal"
+            }
+          },
+          "byDay" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/GapTotal"
+            }
+          },
+          "byTypologie" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/GapTotal"
+            }
+          },
+          "event" : {
+            "$ref" : "#/components/schemas/GapCounts"
+          }
+        }
       },
       "Reamorcage" : {
         "type" : "string",
@@ -15102,6 +15351,87 @@
         },
         "summary" : "Export Csv",
         "tags" : [ "Publication Resource" ]
+      }
+    },
+    "/api/planning/realise" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RealisedVsPlanned"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Report",
+        "tags" : [ "Realise Resource" ]
+      }
+    },
+    "/api/planning/realise/detail" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "jour",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "stand",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CellDetail"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Detail",
+        "tags" : [ "Realise Resource" ]
+      }
+    },
+    "/api/planning/realise/export" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "text/csv" : { }
+            }
+          }
+        },
+        "summary" : "Export Csv",
+        "tags" : [ "Realise Resource" ]
+      }
+    },
+    "/api/planning/realise/precedente" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PreviousEdition"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Previous Edition",
+        "tags" : [ "Realise Resource" ]
       }
     },
     "/api/planning/reset" : {

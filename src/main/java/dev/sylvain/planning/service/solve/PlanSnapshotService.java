@@ -7,6 +7,7 @@ import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.analyse.PlanningKpiService;
+import dev.sylvain.planning.service.analyse.RealisedVsPlannedService;
 import dev.sylvain.planning.service.consigne.ConsigneRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -69,6 +70,9 @@ public class PlanSnapshotService {
 
     private final ConsigneRepository consigneRepository;
 
+    /** Which publications are the reference of an elapsed day — the ones {@link #delete} keeps. */
+    private final RealisedVsPlannedService realisedService;
+
     /**
      * The CDI-managed mapper, not a bare {@code new ObjectMapper()}: it carries
      * the modules Quarkus registers (JSR-310 in particular), so a field of a
@@ -87,6 +91,7 @@ public class PlanSnapshotService {
             ConstraintAnalysisStore analysisStore,
             PlanningKpiService kpiService,
             ConsigneRepository consigneRepository,
+            RealisedVsPlannedService realisedService,
             ObjectMapper objectMapper) {
         this.automatiquesConservees = automatiquesConservees;
         this.dataSource = dataSource;
@@ -95,6 +100,7 @@ public class PlanSnapshotService {
         this.analysisStore = analysisStore;
         this.kpiService = kpiService;
         this.consigneRepository = consigneRepository;
+        this.realisedService = realisedService;
         this.objectMapper = objectMapper;
     }
 
@@ -485,7 +491,8 @@ public class PlanSnapshotService {
     }
 
     /**
-     * Deletes anything but the edition's <b>last</b> publication (issue #34).
+     * Deletes anything but the edition's <b>last</b> publication (issue #34)
+     * and the publications still measuring an elapsed day.
      *
      * <p>The guard used to read {@code publie_le IS NULL}, which spared every
      * publication the edition had ever made: an event publishing each evening
@@ -505,16 +512,25 @@ public class PlanSnapshotService {
                       AND p.publie_le IS NOT NULL
                       AND (p.publie_le, p.id) > (s.publie_le, s.id)))""";
 
+    private static final DateTimeFormatter JOUR_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
     /**
      * @return true when a row was actually deleted.
      * @throws BusinessError.Conflict on the edition's last publication: it is
      *         the plan the animateurs were sent and the one their espace reads
      *         (issue #245), so deleting it would take back what was said
-     *         without telling anyone. The publications it replaced go like any
-     *         other snapshot (issue #34) — nothing reads them any more, and
-     *         keeping them out of reach only made the screen unusable
+     *         without telling anyone. And on a publication it replaced that is
+     *         still the reference of an elapsed day — the plan in force when
+     *         that day started, which Réalisé vs planifié measures the day
+     *         against (ADR 0070): deleting it would hand the day to another
+     *         publication and rewrite its gap, which a republication is not
+     *         allowed to do either. The other publications it replaced go
+     *         like any other snapshot (issue #34): nothing reads them any
+     *         more, and keeping them out of reach only made the screen
+     *         unusable
      */
     public boolean delete(long id) {
+        refuseIfReferenceOfAnElapsedDay(id);
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, SUPPRIMER_SAUF_PUBLICATION_COURANTE)) {
             ps.setLong(2, id);
@@ -530,6 +546,32 @@ public class PlanSnapshotService {
                     + "Il le restera jusqu'à la prochaine publication, qui prendra sa place.");
         }
         return false;
+    }
+
+    /**
+     * Read before the {@code DELETE}, unlike the last-publication guard: the
+     * answer depends on the clock and on the timeslots, which a statement
+     * cannot read. A race costs nothing here — a publication made meanwhile is
+     * dated now, after every elapsed day's start, and cannot become one's
+     * reference.
+     */
+    private void refuseIfReferenceOfAnElapsedDay(long id) {
+        SnapshotMeta cible = meta(id);
+        if (cible == null || cible.publieLe() == null) {
+            return;
+        }
+        SnapshotMeta derniere = lastPublication();
+        if (derniere != null && derniere.id() == id) {
+            // The statement refuses it, with the sentence that fits it.
+            return;
+        }
+        LocalDate jour = realisedService.referencesInForce().get(id);
+        if (jour != null) {
+            throw new BusinessError.Conflict("Cette publication est le plan en vigueur au début de la journée du "
+                    + JOUR_FORMAT.format(jour)
+                    + " : « Réalisé vs planifié » mesure cette journée écoulée par rapport à elle. "
+                    + "La supprimer changerait cet écart après coup ; elle est donc conservée.");
+        }
     }
 
     /**

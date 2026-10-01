@@ -87,6 +87,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0067](0067-la-faisabilite-avant-la-stabilite-apres-publication.md) | Dès qu'un plan est publié, une résolution cherche d'abord la faisabilité sans la stabilité du plan publié, au plus deux tiers du budget, puis polit avec elle dans le même job | Accepté · complète 0025, prolonge 0049 |
 | [0068](0068-sous-la-regle-dure-la-construction-suit-le-calendrier.md) | Sous la règle dure des jours d'affilée, l'heuristique de construction place les sièges par date croissante, puis par rareté dans un même jour ; toute autre édition garde l'ordre par rareté | Accepté · prolonge 0049 |
 | [0069](0069-une-relecture-survit-a-ce-que-le-calcul-n-a-pas-recalcule.md) | Une relecture survit à une résolution quand sa journée n'a pas été recalculée — passé figé, verrou `JOUR`, ou rendue à l'identique par un calcul parti du plan en place ; « Recommencer de zéro » retire le reste, et le récapitulatif dit ce qui est gardé et pourquoi | Accepté · précise 0039 |
+| [0070](0070-un-troisieme-job-planifie-fige-le-realise.md) | Un troisième job planifié fige chaque nuit le réalisé de toute édition terminée et publiée, dans une table qui survit à l'édition ; il ne lit pas l'interrupteur des notifications, et « l'édition précédente » est celle dont l'événement s'est fini le plus tard avant le premier jour de la lectrice | Accepté · prolonge 0015, 0044 |
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,

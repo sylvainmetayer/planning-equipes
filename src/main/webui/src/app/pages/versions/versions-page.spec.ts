@@ -10,8 +10,9 @@ import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { PlanningApi } from '../../core/api/planning-api';
+import { RealiseApi } from '../../core/api/realise-api';
 import { EditionStore } from '../../core/edition.store';
-import { KpiHistoriqueEntry, PlanningKpi, PlanSnapshot } from '../../core/models';
+import { KpiHistoriqueEntry, PlanningKpi, PlanSnapshot, PreviousEdition } from '../../core/models';
 import { PlanSnapshotStore } from '../../core/plan-snapshot.store';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -73,6 +74,19 @@ function snapshot(id: number, creeLe: string, overrides: Partial<PlanSnapshot> =
   };
 }
 
+/** No earlier edition left a measure: the block under the table draws nothing. */
+const NO_PREVIOUS_EDITION: PreviousEdition = {
+  available: false,
+  editionId: null,
+  editionNom: null,
+  firstDay: null,
+  lastDay: null,
+  countedDays: null,
+  frozenAt: null,
+  event: null,
+  byTypologie: [],
+};
+
 const ENTRIES: KpiHistoriqueEntry[] = [
   { id: 1, editionId: 'E1', editionNom: null, kpi: kpi(), creeLe: '2026-08-03T10:00:00Z' },
 ];
@@ -109,6 +123,10 @@ describe('VersionsPage', () => {
         { provide: PlanningResolutionStore, useValue: { reload: vi.fn() } },
         { provide: ConfirmService, useValue: { ask: vi.fn(async () => true) } },
         { provide: MatDialog, useValue: {} },
+        {
+          provide: RealiseApi,
+          useValue: { previousEdition: vi.fn(() => Promise.resolve(NO_PREVIOUS_EDITION)) },
+        },
       ],
     });
     TestBed.overrideComponent(VersionsPage, {
@@ -206,6 +224,31 @@ describe('VersionsPage', () => {
     const deleteButton = lignes()[2].querySelector('button.danger-action') as HTMLButtonElement;
     expect(deleteButton.disabled).toBe(true);
     expect(lignes()[2].textContent).toContain('plan publié');
+  });
+
+  it('says why the server keeps a replaced publication that still measures an elapsed day', async () => {
+    store.supprimer.mockRejectedValueOnce(
+      new Error(
+        'Cette publication est le plan en vigueur au début de la journée du 10/07/2026 : ' +
+          '« Réalisé vs planifié » mesure cette journée écoulée par rapport à elle.',
+      ),
+    );
+    await rendre([
+      snapshot(8, '2026-08-02T10:00:00Z', { publieLe: '2026-08-02T11:00:00Z' }),
+      snapshot(7, '2026-08-01T10:00:00Z', { publieLe: '2026-08-01T11:00:00Z' }),
+    ]);
+
+    const remplacee = lignes().find((ligne) => ligne.textContent?.includes('Instantané 7'));
+    const deleteButton = remplacee?.querySelector('button.danger-action') as HTMLButtonElement;
+    expect(deleteButton.disabled).toBe(false);
+    deleteButton.click();
+
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(racine().textContent).toContain('journée du 10/07/2026');
+    });
+    expect(store.supprimer).toHaveBeenCalledWith(7);
+    expect(lignes().some((ligne) => ligne.textContent?.includes('Instantané 7'))).toBe(true);
   });
 
   it('lists every edition on demand, and restores only from the edition in use', async () => {

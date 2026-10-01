@@ -126,6 +126,7 @@ dev/sylvain/planning/mcp/McpRunningSolveEditionTest.java
 dev/sylvain/planning/mcp/McpWarnsWhileSolvingTest.java
 dev/sylvain/planning/mcp/ParametresSolveurMcpToolsTest.java
 dev/sylvain/planning/mcp/PlanificationMcpToolsTest.java
+dev/sylvain/planning/mcp/RealiseMcpToolsTest.java
 dev/sylvain/planning/mcp/ReferentielMcpToolsTest.java
 dev/sylvain/planning/mcp/RefusMetierMcpToolsTest.java
 dev/sylvain/planning/mcp/RefusedWhileSolvingDoorsTest.java
@@ -137,6 +138,8 @@ dev/sylvain/planning/observability/MetricsEndpointTest.java
 dev/sylvain/planning/service/ConcurrentModificationGuardTest.java
 dev/sylvain/planning/service/EditionContextFailClosedTest.java
 dev/sylvain/planning/service/IdColumnsInventoryStructuralTest.java
+dev/sylvain/planning/service/analyse/RealisedFreezeJobTest.java
+dev/sylvain/planning/service/analyse/RealisedVsPlannedServiceTest.java
 dev/sylvain/planning/service/backup/BackupServiceTest.java
 dev/sylvain/planning/service/backup/BackupWithoutAlertRecipientTest.java
 dev/sylvain/planning/service/edition/EditionDuplicationStructurelleTest.java

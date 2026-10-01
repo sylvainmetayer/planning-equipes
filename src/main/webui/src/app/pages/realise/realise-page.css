@@ -1,0 +1,164 @@
+/* « Réalisé vs planifié »: the gap between the published plan and the plan
+   held. The grid is the Planning page's shared grid; a cell is coloured by its
+   worst gap — a seat left empty, then an absence or a change of holder, then a
+   seat taken out or added — and a day held as announced stays quiet. */
+
+.realise-sous-titre {
+  margin: 0 0 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.realise-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.realise-nature,
+.realise-alerte-ligne {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.realise-alerte-ligne {
+  color: var(--mat-sys-on-error-container);
+  background: var(--mat-sys-error-container);
+  border-radius: var(--mat-sys-corner-small);
+  padding: 0.5rem 0.75rem;
+}
+
+.realise-titre {
+  font: var(--mat-sys-title-medium);
+  margin: 1.25rem 0 0.5rem;
+}
+
+.realise-chiffres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+}
+
+.realise-legende {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  list-style: none;
+  margin: 0.25rem 0;
+  padding: 0;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.realise-legende li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.realise-pastille {
+  display: inline-block;
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: var(--mat-sys-corner-extra-small);
+  border: 1px solid var(--mat-sys-outline-variant);
+}
+
+.realise-tenu {
+  background: color-mix(in srgb, var(--app-positive) 16%, var(--mat-sys-surface));
+}
+
+.realise-remplace {
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+}
+
+.realise-vide {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font-weight: 600;
+}
+
+.realise-retire,
+.realise-ajoute {
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.realise-sans {
+  background: var(--mat-sys-surface-container-low);
+}
+
+/* A day measured against a late publication: drawn, hatched, summed nowhere. */
+.realise-tardif {
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0 0.375rem,
+    color-mix(in srgb, var(--mat-sys-outline) 28%, transparent) 0.375rem 0.5rem
+  );
+  font-style: italic;
+}
+
+.realise-alerte {
+  color: var(--mat-sys-error);
+  font-weight: 600;
+}
+
+.realise-case-compte,
+.realise-case-vides {
+  display: block;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.realise-detail {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-surface-container-lowest);
+}
+
+.realise-detail-entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.realise-detail-entete .realise-titre {
+  margin: 0;
+  flex: 1 1 auto;
+}
+
+.realise-detail-table,
+.realise-typologies {
+  border-collapse: collapse;
+  font: var(--mat-sys-body-medium);
+}
+
+.realise-detail-table th,
+.realise-detail-table td,
+.realise-typologies th,
+.realise-typologies td {
+  padding: 0.25rem 0.75rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  text-align: left;
+}
+
+.realise-typologies td {
+  text-align: right;
+}
+
+.realise-badge-absence {
+  margin-inline-start: 0.375rem;
+  padding: 0 0.375rem;
+  border-radius: var(--mat-sys-corner-extra-small);
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font: var(--mat-sys-label-small);
+}

@@ -145,6 +145,18 @@ public class ChangementsJourneeService {
                 parAnimateur);
     }
 
+    /**
+     * The seat half of {@link #compare} alone — the lines {@code parVacation}
+     * holds, without the person-by-person reading. For a reader that
+     * interprets the seat lines and has no use for the publication's diff,
+     * which is the costly half: Réalisé vs planifié reads every elapsed day.
+     */
+    public static List<SeatLine> compareSeats(LocalDate jour, PlanningEvenement avant, PlanningEvenement courant) {
+        Map<String, Animateur> animateurs = animateursById(courant);
+        animateursById(avant).forEach(animateurs::putIfAbsent);
+        return seatLines(jour, avant, courant, animateurs);
+    }
+
     /* ---------------------------- Seat by seat ---------------------------- */
 
     /** The seats of the day, grouped by the cell they fill: one stand, one window. */

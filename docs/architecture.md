@@ -468,7 +468,7 @@ de la garde, joué après tous les autres contrôles de démarrage (un démarrag
 qu'ils refusent n'a pas ouvert la base), note dans `version_applicative` chaque
 changement de version de l'application, que la page *Débogage* affiche — voir [`versioning.md`](versioning.md) § 2.
 
-## Les deux tâches planifiées, et le seul endroit qui écrit sur le disque
+## Les trois tâches planifiées, et le seul endroit qui écrit sur le disque
 
 `service/backup/` sauvegarde la base chaque nuit par un vrai `pg_dump`, dans le
 répertoire que désigne `BACKUP_DIR`, en ne gardant que les `BACKUP_RETENTION`
@@ -489,11 +489,11 @@ fonctionnalité qui **supprime**.
 
 ### La tâche des notifications planifiées
 
-`service/notification/NotificationsPlanifieesService` est l'autre `@Scheduled`,
+`service/notification/NotificationsPlanifieesService` est le deuxième `@Scheduled`,
 et le seul point d'entrée des trois envois de nuit — rappel de la veille
 (`RappelVeilleJob`), relance des non-confirmés (`RelanceConfirmationJob`),
 alerte sur les demandes d'échange qui dorment (`AlerteEchangeJob`). Le profil
-`%test` désactive le planificateur pour les deux tâches ; les tests appellent
+`%test` désactive le planificateur pour les trois tâches ; les tests appellent
 les services directement.
 
 Il suit les conventions du paquet `backup` — cron et fuseau configurables,
@@ -517,6 +517,30 @@ lire « non » et envoyer toutes les deux ; là, c'est la base qui tranche, une
 fois. Une panne entre la réservation et l'envoi coûte un message manquant
 plutôt qu'un message en double — le bon sens, pour un rappel qui se lit aussi
 dans l'espace animateur.
+
+### Le réalisé figé de fin d'événement
+
+`service/analyse/RealisedFreezeJob` est le troisième et dernier `@Scheduled`
+([ADR 0070](decisions/0070-un-troisieme-job-planifie-fige-le-realise.md)).
+Chaque nuit (`REALISE_CRON`, 3 h 30 par défaut, avant la sauvegarde), il entre
+dans chaque édition par `EditionContext.executeIn` et, si son dernier créneau
+est terminé, qu'elle a publié quelque chose et qu'elle n'a pas encore de
+mesure, écrit dans `kpi_realise` la mesure « Réalisé vs planifié » par
+typologie et pour l'événement : des comptes, aucune personne. Il **ne lit
+pas** l'interrupteur des notifications, qui protège des personnes contre un
+message ; ce job n'envoie rien. Il **n'écrit qu'une fois** (une édition qui a
+ses lignes est sautée, l'insertion porte `ON CONFLICT DO NOTHING`), saute une
+édition tant que le passé figé est désactivé, et la table, sans clé étrangère,
+garde le nom de l'édition et de chaque typologie : la mesure survit à la
+suppression de l'édition, comme `kpi_historique`.
+
+La mesure elle-même vient de `RealisedVsPlannedService` (même paquet), qui
+compare chaque journée écoulée — son dernier créneau terminé — à la
+publication en vigueur au début de son premier créneau par
+`ChangementsJourneeService.compareSeats` — jamais par une comparaison à lui — et lit
+le réalisé derrière l'interface `RealisedSource` : la source déclarée
+(`DeclaredRealisedSource`, le plan enregistré et les indisponibilités forcées
+du jour J) aujourd'hui, un pointage de présence demain, sans toucher au calcul.
 
 ## Conteneurisation
 
