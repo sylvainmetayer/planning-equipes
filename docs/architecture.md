@@ -554,8 +554,10 @@ dans l'espace animateur.
 
 ### Le réalisé figé de fin d'événement
 
-`service/analyse/RealisedFreezeJob` est le troisième et dernier `@Scheduled`
-([ADR 0070](decisions/0070-un-troisieme-job-planifie-fige-le-realise.md)).
+`service/analyse/RealisedFreezeJob` est le troisième `@Scheduled`
+([ADR 0070](decisions/0070-un-troisieme-job-planifie-fige-le-realise.md), révisée
+par [0074](decisions/0074-deux-jobs-planifies-de-plus-webhooks-et-meteo.md) : ce
+n'est plus le dernier).
 Chaque nuit (`REALISE_CRON`, 3 h 30 par défaut, avant la sauvegarde), il entre
 dans chaque édition par `EditionContext.executeIn` et, si son dernier créneau
 est terminé, qu'elle a publié quelque chose et qu'elle n'a pas encore de
@@ -575,6 +577,42 @@ publication en vigueur au début de son premier créneau par
 le réalisé derrière l'interface `RealisedSource` : la source déclarée
 (`DeclaredRealisedSource`, le plan enregistré et les indisponibilités forcées
 du jour J) aujourd'hui, un pointage de présence demain, sans toucher au calcul.
+
+### Les webhooks sortants
+
+`service/webhook/WebhookDeliverer` est le quatrième `@Scheduled`
+([ADR 0074](decisions/0074-deux-jobs-planifies-de-plus-webhooks-et-meteo.md)) :
+chaque minute (`WEBHOOKS_CRON`), il reprend les livraisons dont le réessai est
+échu — 1 min, 5 min, 30 min, 2 h, 12 h —, y compris après un redémarrage. Le
+premier essai part aussitôt, sur un petit groupe de fils à lui et jamais sur
+celui de l'opération qui a causé l'événement ; un bail en base, pris ligne par
+ligne juste avant l'essai et exigé pour en noter l'issue, empêche les deux
+d'envoyer la même ligne.
+
+Le chemin d'un événement :
+
+- `WebhookEmitter` observe les `Notification` existantes par un `switch`
+  exhaustif (chaque cas décidé : un événement, ou explicitement aucun) et
+  l'événement `PlanningPublished` que tire la publication. Un `@Observes`
+  simple, pas `AFTER_SUCCESS` : sans transaction JTA, l'annotation ne
+  différerait rien. Il **insère** une livraison par webhook actif abonné, dans
+  un `try/catch` qui ne propage jamais ;
+- un événement sur une édition ne sort que si
+  `service/notification/OutboundEditionPolicy` le permet — le seul endroit qui
+  le décide : seule l'édition active émet
+  ([ADR 0072](decisions/0072-une-seule-edition-active.md)) ; l'échec de la sauvegarde nocturne, événement d'instance, part
+  toujours. La question se repose à chaque essai : un réessai ou un
+  « Renvoyer » sur une édition qui n'est plus active est abandonné ;
+- `WebhookDeliverer` rend le corps au format du webhook (`WebhookFormats`, une
+  méthode pure par format, signature HMAC pour le générique), passe l'adresse à
+  `OutboundGuard`, qui la résout et la vérifie, et envoie par le client Vert.x
+  **vers l'adresse vérifiée** ; le corps de la réponse est jeté.
+
+Configuration d'instance : `webhook` et `webhook_livraison` n'ont pas
+d'`edition_id`, ne passent pas par `JdbcEditionScope` et restent hors de
+l'export SQL. Les secrets y sont chiffrés (`SecretCipher`, AES-GCM,
+`WEBHOOKS_SECRET_KEY`). La garde et ses raisons :
+[`securite.md`](securite.md) § Appels sortants.
 
 ## Conteneurisation
 

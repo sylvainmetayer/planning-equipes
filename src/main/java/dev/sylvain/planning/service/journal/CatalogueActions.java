@@ -146,6 +146,12 @@ public final class CatalogueActions {
     private static final String CLE_MCP_REVELEE = "CLE_MCP_REVELEE";
     private static final String AFFICHAGE_MURAL_CREE = "AFFICHAGE_MURAL_CREE";
     private static final String AFFICHAGE_MURAL_REVOQUE = "AFFICHAGE_MURAL_REVOQUE";
+    private static final String WEBHOOK_CREE = "WEBHOOK_CREE";
+    private static final String WEBHOOK_MODIFIE = "WEBHOOK_MODIFIE";
+    private static final String WEBHOOK_SUPPRIME = "WEBHOOK_SUPPRIME";
+    private static final String WEBHOOK_SECRET_REGENERE = "WEBHOOK_SECRET_REGENERE";
+    private static final String WEBHOOK_TESTE = "WEBHOOK_TESTE";
+    private static final String WEBHOOK_LIVRAISON_RENVOYEE = "WEBHOOK_LIVRAISON_RENVOYEE";
     private static final String COLLECTE_CONFIGUREE = "COLLECTE_CONFIGUREE";
     private static final String DECLARATION_APPLIQUEE = "DECLARATION_APPLIQUEE";
     private static final String DECLARATION_REFUSEE = "DECLARATION_REFUSEE";
@@ -381,6 +387,14 @@ public final class CatalogueActions {
         // own reads, once a minute, do not — see MuralResource.
         action(AFFICHAGE_MURAL_CREE, "Lien d'affichage mural créé", Entite.PARAMETRES);
         action(AFFICHAGE_MURAL_REVOQUE, "Lien d'affichage mural révoqué", Entite.PARAMETRES);
+        // The webhooks of the instance (ADR 0074): an edit records the names of
+        // the fields it changed — never the address, never a secret.
+        action(WEBHOOK_CREE, "Webhook créé", Entite.PARAMETRES);
+        action(WEBHOOK_MODIFIE, "Webhook modifié", Entite.PARAMETRES);
+        action(WEBHOOK_SUPPRIME, "Webhook supprimé", Entite.PARAMETRES);
+        action(WEBHOOK_SECRET_REGENERE, "Secret de signature d'un webhook régénéré", Entite.PARAMETRES);
+        action(WEBHOOK_TESTE, "Webhook testé", Entite.PARAMETRES);
+        action(WEBHOOK_LIVRAISON_RENVOYEE, "Livraison d'un webhook renvoyée", Entite.PARAMETRES);
 
         /* ---------- Availability, swaps, espace animateur ----------- */
         action(COLLECTE_CONFIGUREE, "Fenêtre de collecte des disponibilités configurée", Entite.DISPONIBILITE);
@@ -571,6 +585,12 @@ public final class CatalogueActions {
         route("McpResource#reveal", CLE_MCP_REVELEE);
         route("AffichageMuralResource#create", AFFICHAGE_MURAL_CREE);
         route("AffichageMuralResource#revoke", AFFICHAGE_MURAL_REVOQUE);
+        route("WebhookResource#create", WEBHOOK_CREE);
+        route("WebhookResource#update", WEBHOOK_MODIFIE);
+        route("WebhookResource#delete", WEBHOOK_SUPPRIME);
+        route("WebhookResource#regenerateSecret", WEBHOOK_SECRET_REGENERE);
+        route("WebhookResource#test", WEBHOOK_TESTE);
+        route("WebhookResource#resend", WEBHOOK_LIVRAISON_RENVOYEE);
         route("AuthResource#logout", DECONNEXION);
 
         route("DeclarationDisponibiliteResource#configure", COLLECTE_CONFIGUREE);

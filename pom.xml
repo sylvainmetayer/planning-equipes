@@ -127,6 +127,16 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-scheduler</artifactId>
         </dependency>
+        <!-- Outgoing webhooks (dev.sylvain.planning.service.webhook): the
+             Vert.x web client lets a request be sent to an address the
+             application resolved and checked itself, while TLS still verifies
+             the host name — what closes DNS rebinding on a URL an admin typed
+             (ADR 0074). Version managed by the Quarkus BOM; it was already in
+             the runtime closure as a transitive dependency. -->
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-web-client</artifactId>
+        </dependency>
         <!-- Backs the MCP API-key check (dev.sylvain.planning.mcp):
              quarkus.http.auth.permission.* policies are what expresses "this
              path needs the mcp role" once, for every extension that mounted a

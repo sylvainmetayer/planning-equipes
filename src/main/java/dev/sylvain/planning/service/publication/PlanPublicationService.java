@@ -23,6 +23,7 @@ import dev.sylvain.planning.service.solve.SolverJobService;
 import dev.sylvain.planning.service.validation.ValidationPrerequisService;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -102,6 +103,9 @@ public class PlanPublicationService {
 
     private final EnvoiPlanningRepository envois;
 
+    /** What a publication tells the outside world: counts, through the webhooks. */
+    private final Event<PlanningPublished> published;
+
     @Inject
     public PlanPublicationService(
             PlanningPersistenceService persistenceService,
@@ -120,7 +124,8 @@ public class PlanPublicationService {
             ConfirmationPlanningService confirmationService,
             NotifiedPlanRepository notifiedPlans,
             dev.sylvain.planning.service.journal.JournalActionService journal,
-            EnvoiPlanningRepository envois) {
+            EnvoiPlanningRepository envois,
+            Event<PlanningPublished> published) {
         this.persistenceService = persistenceService;
         this.planPublieService = planPublieService;
         this.snapshotService = snapshotService;
@@ -138,6 +143,7 @@ public class PlanPublicationService {
         this.notifiedPlans = notifiedPlans;
         this.journal = journal;
         this.envois = envois;
+        this.published = published;
     }
 
     /**
@@ -626,6 +632,14 @@ public class PlanPublicationService {
                 .filter(destinataire -> !destinataire.changements().isEmpty())
                 .map(DestinatairePublication::animateurId)
                 .toList());
+        // Told to whoever observes it — the webhooks — once everything above is
+        // written. Counts only: the observer's policy is not to fail us.
+        published.fire(new PlanningPublished(
+                meta.id(), retenus.size(), envoyes, sansEmail.size(), echecs.size(), differes.size(), (int)
+                        retenus.stream()
+                                .filter(destinataire ->
+                                        !destinataire.changements().isEmpty())
+                                .count()));
 
         return new RapportPublication(
                 meta.id(),

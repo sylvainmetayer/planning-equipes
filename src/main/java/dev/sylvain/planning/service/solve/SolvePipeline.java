@@ -575,11 +575,13 @@ public class SolvePipeline {
      * applies to every notification.
      */
     private void announce(String editionNom, PlanningDiagnosticService.PlanningDiagnostic diagnostic) {
-        if (!referenceDataService.getParametresSolveur().mailFinResolution()) {
-            return;
-        }
+        // Fired whatever the setting: the mail reads it, an outgoing webhook
+        // subscribed to the end of a solve does not depend on it.
         // Feasible in the Timefold sense: no hard constraint violated any more.
-        notifications.fire(
-                new Notification.ResolutionTerminee(editionNom, diagnostic.score(), diagnostic.hardScore() >= 0));
+        notifications.fire(new Notification.ResolutionTerminee(
+                editionNom,
+                diagnostic.score(),
+                diagnostic.hardScore() >= 0,
+                referenceDataService.getParametresSolveur().mailFinResolution()));
     }
 }

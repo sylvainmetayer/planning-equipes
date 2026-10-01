@@ -4014,6 +4014,79 @@ export interface ApplicationVersion {
   latestMigration: string | null;
 }
 
+/* ---------------------------- Webhooks sortants ---------------------------- */
+
+/** How a delivery is shaped: signed JSON, or one of the four chat presets. */
+export type WebhookFormat = 'GENERIC' | 'SLACK' | 'DISCORD' | 'MATRIX' | 'TELEGRAM';
+
+/** Where one delivery stands. */
+export type WebhookDeliveryStatus = 'PENDING' | 'DELIVERED' | 'FAILED' | 'ABANDONED';
+
+/** One line of the journal of a webhook. `error` is a fixed sentence, never the receiver's body. */
+export interface WebhookDeliveryView {
+  id: string;
+  /** The published code: `planning.publie`, `test`… */
+  event: string;
+  createdAt: string | null;
+  attempts: number;
+  maxAttempts: number;
+  status: WebhookDeliveryStatus;
+  httpStatus: number | null;
+  durationMs: number | null;
+  error: string | null;
+  nextAttemptAt: string | null;
+  lastAttemptAt: string | null;
+}
+
+/**
+ * A webhook of the instance. `destination` is masked when the address is the
+ * secret (Slack, Discord, Matrix) and never carries the Telegram token.
+ */
+export interface WebhookView {
+  id: string;
+  name: string;
+  format: WebhookFormat;
+  destination: string;
+  chatId: string | null;
+  events: string[];
+  active: boolean;
+  createdAt: string | null;
+  modifiedAt: string | null;
+  lastDelivery: WebhookDeliveryView | null;
+}
+
+/**
+ * What the form sends. `url` carries the address of every format but Telegram,
+ * whose bot token travels in `token`; blank on an edit means « unchanged ».
+ */
+export interface WebhookRequest {
+  name: string;
+  format: WebhookFormat;
+  url: string | null;
+  token: string | null;
+  chatId: string | null;
+  events: string[];
+  active: boolean;
+}
+
+/** A webhook just written, and its HMAC secret when this very call generated one. */
+export interface WebhookSaved {
+  webhook: WebhookView;
+  secret: string | null;
+}
+
+export interface WebhookSecret {
+  secret: string;
+}
+
+/** The outcome of « Envoyer un test ». */
+export interface WebhookTestResult {
+  status: WebhookDeliveryStatus;
+  httpStatus: number | null;
+  durationMs: number;
+  error: string | null;
+}
+
 /* --------------------------- Mode « jour J » ------------------------------ */
 
 /**

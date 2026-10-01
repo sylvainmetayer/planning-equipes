@@ -200,6 +200,11 @@ Single Quarkus service, no separate solver microservice. Package root:
     persisted plan and `JourJClock`, through the pure
     `AffichageMuralViewBuilder` — the day under way, the shifts of each open
     stand, the alerts.
+  - `service/webhook/` — the outgoing webhooks of the instance (ADR 0074):
+    `WebhookService` (CRUD, test, journal, resend), `WebhookEmitter` (facts
+    to queued deliveries), `WebhookDeliverer` (HTTP over the Vert.x client,
+    retries), `WebhookFormats` (one pure method per format, and the HMAC
+    signature), `OutboundGuard` (SSRF) and `SecretCipher` (secrets at rest).
   - `service/schema/` — the boot check against a database **ahead** of the
     binary (an image rolled back onto a schema a later version migrated):
     `SchemaCompatibilityGuard` reads `Flyway.info()` once migrate-at-start is
@@ -481,8 +486,8 @@ Single Quarkus service, no separate solver microservice. Package root:
   `INSERT … ON CONFLICT DO NOTHING` and the message goes out only for the call
   that won the insert, so an hourly cron writes to nobody twice. Reading then
   acting would let two runs both read "not yet".
-- **`service/analyse/RealisedFreezeJob` is the third (and last) `@Scheduled`**
-  (ADR 0070): once a night it freezes the Réalisé vs planifié measure of every
+- **`service/analyse/RealisedFreezeJob` is the third `@Scheduled`**
+  (ADR 0070, revised by 0074 — it is no longer the last): once a night it freezes the Réalisé vs planifié measure of every
   edition whose last timeslot has ended and that published something, into
   `kpi_realise`, where the next edition reads it. Same conventions as the
   other two (cron and zone from `REALISE_CRON` / `REALISE_TIMEZONE`, `SKIP` on
@@ -504,6 +509,26 @@ Single Quarkus service, no separate solver microservice. Package root:
   reference of an elapsed day refuses deletion (`PlanSnapshotService.delete`).
   The realised is read from a `RealisedSource` (the declared one today; a
   presence check-in would replace that bean, not the measure).
+- **`service/webhook/WebhookDeliverer` is the fourth `@Scheduled`** (ADR
+  0074): every minute (`WEBHOOKS_CRON`) it re-delivers the outgoing webhook
+  deliveries whose retry is due (1 min, 5 min, 30 min, 2 h, 12 h), and resumes
+  after a restart what was pending; the first attempt leaves at once on a
+  small pool of its own, never on the caller's thread, and a lease column keeps
+  the two from sending one row twice. Webhooks are configured **for the
+  instance** (`webhook`, `webhook_livraison`: no `edition_id`, both in
+  `TABLES_HORS_EDITION` and `DELIBERATELY_NOT_DUMPED`); the payload names the
+  edition, and **whether an edition may emit outward is asked of
+  `service/notification/OutboundEditionPolicy` and nowhere else** — the
+  active edition (ADR 0072), as everywhere else; the failed nightly backup is
+  an instance event and always leaves. `WebhookEmitter` observes the sealed `Notification`
+  through an exhaustive `switch` (each case mapped to an event or explicitly to
+  none) and `publication/PlanningPublished`, with a plain `@Observes` that
+  only inserts rows inside a `try/catch` — no `AFTER_SUCCESS`, there is no JTA.
+  Payloads carry counts and ids, never a person (`WebhookFormatsTest`). Every
+  call goes through `OutboundGuard` (https, ports 443/8443, no internal
+  address unless `WEBHOOKS_RESEAUX_AUTORISES`) and connects to the address it
+  checked; secrets are AES-GCM-encrypted with `WEBHOOKS_SECRET_KEY`, without
+  which the boot is refused once a webhook exists. No MCP tool configures them.
 - Persistence: PostgreSQL + Flyway migrations in
   `src/main/resources/db/migration/`. Schema change = **new versioned file**;
   never edit an applied migration. `FlywayMigrationsFrozenTest` holds both

@@ -69,6 +69,9 @@ class IdColumnsInventoryStructuralTest {
                     "a game category id of that edition, empty for the whole event's row; its name is kept beside"),
             Map.entry("planning_resolution.dosage", "rule names and weights, no id"),
             Map.entry(
+                    "webhook.chat_id",
+                    "the Telegram chat or public channel a webhook posts to — Telegram's id, not one of ours"),
+            Map.entry(
                     "notification_planifiee.animateur_id",
                     "the animateur a scheduled send was for; the ledger outlives the fiche"),
             Map.entry(

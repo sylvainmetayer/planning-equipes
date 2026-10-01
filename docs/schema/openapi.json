@@ -2904,6 +2904,10 @@
           }
         }
       },
+      "DeliveryStatus" : {
+        "type" : "string",
+        "enum" : [ "PENDING", "DELIVERED", "FAILED", "ABANDONED" ]
+      },
       "Demande" : {
         "required" : [ "dates", "fermetureDebut", "motif" ],
         "type" : "object",
@@ -10064,6 +10068,162 @@
           },
           "walkOnBreak" : {
             "type" : "boolean"
+          }
+        }
+      },
+      "WebhookDeliveryView" : {
+        "required" : [ "id", "event", "attempts", "maxAttempts", "status" ],
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "event" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "attempts" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "maxAttempts" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "status" : {
+            "$ref" : "#/components/schemas/DeliveryStatus"
+          },
+          "httpStatus" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "durationMs" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "error" : {
+            "type" : "string"
+          },
+          "nextAttemptAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "lastAttemptAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
+      "WebhookFormat" : {
+        "type" : "string",
+        "enum" : [ "GENERIC", "SLACK", "DISCORD", "MATRIX", "TELEGRAM" ]
+      },
+      "WebhookRequest" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          },
+          "format" : {
+            "$ref" : "#/components/schemas/WebhookFormat"
+          },
+          "url" : {
+            "type" : "string"
+          },
+          "token" : {
+            "type" : "string"
+          },
+          "chatId" : {
+            "type" : "string"
+          },
+          "events" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "active" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "WebhookSaved" : {
+        "required" : [ "webhook" ],
+        "type" : "object",
+        "properties" : {
+          "webhook" : {
+            "$ref" : "#/components/schemas/WebhookView"
+          },
+          "secret" : {
+            "type" : "string"
+          }
+        }
+      },
+      "WebhookSecret" : {
+        "required" : [ "secret" ],
+        "type" : "object",
+        "properties" : {
+          "secret" : {
+            "type" : "string"
+          }
+        }
+      },
+      "WebhookTestResult" : {
+        "required" : [ "status", "durationMs" ],
+        "type" : "object",
+        "properties" : {
+          "status" : {
+            "$ref" : "#/components/schemas/DeliveryStatus"
+          },
+          "httpStatus" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "durationMs" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "error" : {
+            "type" : "string"
+          }
+        }
+      },
+      "WebhookView" : {
+        "type" : "object",
+        "required" : [ "id", "name", "format", "destination", "events", "active" ],
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "format" : {
+            "$ref" : "#/components/schemas/WebhookFormat"
+          },
+          "destination" : {
+            "type" : "string"
+          },
+          "chatId" : {
+            "type" : "string"
+          },
+          "events" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "active" : {
+            "type" : "boolean"
+          },
+          "createdAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "modifiedAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "lastDelivery" : {
+            "$ref" : "#/components/schemas/WebhookDeliveryView"
           }
         }
       },
@@ -17502,6 +17662,224 @@
         },
         "summary" : "Delete",
         "tags" : [ "Verrouillage Resource" ]
+      }
+    },
+    "/api/webhooks" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/WebhookView"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary" : "List",
+        "tags" : [ "Webhook Resource" ]
+      },
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/WebhookRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WebhookSaved"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Create",
+        "tags" : [ "Webhook Resource" ]
+      }
+    },
+    "/api/webhooks/livraisons/{id}/renvoi" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WebhookDeliveryView"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Resend",
+        "tags" : [ "Webhook Resource" ]
+      }
+    },
+    "/api/webhooks/{id}" : {
+      "put" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/WebhookRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WebhookSaved"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Update",
+        "tags" : [ "Webhook Resource" ]
+      },
+      "delete" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          }
+        },
+        "summary" : "Delete",
+        "tags" : [ "Webhook Resource" ]
+      }
+    },
+    "/api/webhooks/{id}/livraisons" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/WebhookDeliveryView"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Deliveries",
+        "tags" : [ "Webhook Resource" ]
+      }
+    },
+    "/api/webhooks/{id}/secret" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WebhookSecret"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Regenerate Secret",
+        "tags" : [ "Webhook Resource" ]
+      }
+    },
+    "/api/webhooks/{id}/test" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WebhookTestResult"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Test",
+        "tags" : [ "Webhook Resource" ]
       }
     }
   },

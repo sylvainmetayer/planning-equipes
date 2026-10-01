@@ -45,6 +45,7 @@ import { OngletParametres, readOngletParametres } from './parametres';
 import { SingleKeyShortcutsToggle } from '../../shared/single-key-shortcuts-toggle';
 import { GelReferentielCard } from '../../shared/gel-referentiel-card';
 import { HorlogeSimuleeCard } from './horloge-simulee-card';
+import { WebhooksCard } from './webhooks-card';
 import { TODAY_ANCHOR } from '../../core/date-mock.service';
 
 /**
@@ -101,6 +102,7 @@ export const REPLACE_KEYWORD = 'REMPLACER';
     ParametresNotificationsPanel,
     GelReferentielCard,
     HorlogeSimuleeCard,
+    WebhooksCard,
   ],
   templateUrl: './parametres-page.html',
   styleUrl: './parametres.css',

@@ -1,0 +1,74 @@
+<h2 mat-dialog-title>
+  @if (editing) {
+    <ng-container i18n="@@parametres.webhooks.form.titreModifier">Modifier le webhook</ng-container>
+  } @else {
+    <ng-container i18n="@@parametres.webhooks.form.titreAjouter">Ajouter un webhook</ng-container>
+  }
+</h2>
+<form (ngSubmit)="submit()">
+  <mat-dialog-content class="form-grid">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label i18n="@@parametres.webhooks.form.nom">Nom</mat-label>
+      <input matInput name="name" maxlength="120" required [ngModel]="draft().name" (ngModelChange)="patch({ name: $event })" />
+      <mat-hint i18n="@@parametres.webhooks.form.nomAide">Par exemple « Salon #orga ».</mat-hint>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label i18n="@@parametres.webhooks.form.format">Format</mat-label>
+      <mat-select name="format" [ngModel]="draft().format" (ngModelChange)="patch({ format: $event })">
+        @for (format of formats; track format) {
+          <mat-option [value]="format">{{ formatLabel(format) }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    @if (draft().format === 'TELEGRAM') {
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label i18n="@@parametres.webhooks.form.jeton">Jeton du bot</mat-label>
+        <input matInput name="token" type="password" autocomplete="off" [required]="!keepsSecret()"
+               [ngModel]="draft().token" (ngModelChange)="patch({ token: $event })" />
+        @if (keepsSecret()) {
+          <mat-hint i18n="@@parametres.webhooks.form.conserver">Laisser vide pour conserver l'actuel.</mat-hint>
+        } @else {
+          <mat-hint i18n="@@parametres.webhooks.form.jetonAide">Donné par BotFather ; il ne sera plus affiché.</mat-hint>
+        }
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label i18n="@@parametres.webhooks.form.conversation">Conversation</mat-label>
+        <input matInput name="chatId" required [ngModel]="draft().chatId" (ngModelChange)="patch({ chatId: $event })" />
+        <mat-hint i18n="@@parametres.webhooks.form.conversationAide">Un nombre (négatif pour un groupe) ou le nom d'un canal public.</mat-hint>
+      </mat-form-field>
+    } @else {
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label i18n="@@parametres.webhooks.form.adresse">Adresse</mat-label>
+        <input matInput name="url" type="url" autocomplete="off" placeholder="https://…" [required]="!keepsSecret()"
+               [ngModel]="draft().url" (ngModelChange)="patch({ url: $event })" />
+        @if (addressIsSecret(draft().format)) {
+          @if (keepsSecret()) {
+            <mat-hint i18n="@@parametres.webhooks.form.conserverAdresse">Laisser vide pour conserver l'adresse actuelle.</mat-hint>
+          } @else {
+            <mat-hint i18n="@@parametres.webhooks.form.adresseSecrete">Cette adresse est un secret : elle ne sera plus affichée.</mat-hint>
+          }
+        } @else if (!editing) {
+          <mat-hint i18n="@@parametres.webhooks.form.secretGenere">Un secret de signature sera généré et affiché une fois.</mat-hint>
+        }
+      </mat-form-field>
+    }
+
+    <fieldset class="webhook-evenements">
+      <legend i18n="@@parametres.webhooks.form.evenements">Événements</legend>
+      @for (code of events; track code) {
+        <mat-checkbox [checked]="draft().events.includes(code)" (change)="toggleEvent(code, $event.checked)">
+          {{ eventLabel(code) }}
+        </mat-checkbox>
+      }
+    </fieldset>
+
+    <mat-slide-toggle name="active" [ngModel]="draft().active" (ngModelChange)="patch({ active: $event })"
+                      i18n="@@parametres.webhooks.form.actif">Actif</mat-slide-toggle>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button matButton type="button" (click)="dialogRef.close(null)" i18n="@@common.cancel">Annuler</button>
+    <button matButton="filled" type="submit" [disabled]="!complete()" i18n="@@common.save">Enregistrer</button>
+  </mat-dialog-actions>
+</form>

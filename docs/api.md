@@ -1159,6 +1159,115 @@ personne.
 job à la main n'écrit donc à personne deux fois — et une demande d'échange
 n'est signalée **qu'une seule fois**, quel que soit son âge ensuite.
 
+## Webhooks sortants
+
+`/api/webhooks` (admin) configure ce que l'application annonce à un outil
+extérieur. La configuration est **d'instance**, pas d'édition : le payload dit
+de quelle édition il parle, et seule l'édition active
+([ADR 0072](decisions/0072-une-seule-edition-active.md)) émet. Les formats et la garde anti-SSRF :
+[`securite.md`](securite.md) § Appels sortants ; le pourquoi :
+[ADR 0074](decisions/0074-deux-jobs-planifies-de-plus-webhooks-et-meteo.md).
+
+| Code d'événement | Quand | `donnees` |
+| --- | --- | --- |
+| `planning.publie` | une publication est partie | `instantaneId`, `destinataires`, `envoyes`, `sansEmail`, `echecs`, `differes`, `planningsChanges` |
+| `echange.soumis` | une demande d'échange arrive sur le bureau de l'organisation | `nombre` |
+| `echanges.en_attente` | la tâche de nuit signale des demandes qui dorment | `nombre`, `ancienneteMaxJours` |
+| `disponibilites.declaree` | une déclaration attend d'être appliquée | `joursIndisponibles`, `souhaits` |
+| `resolution.terminee` | une résolution est finie (écran, MCP ou file) | `score`, `faisable` |
+| `sauvegarde.echec` | la sauvegarde nocturne a échoué — événement d'instance, `edition` vaut `null` | `tentativeLe`, `raison`, `echecsConsecutifs` |
+| `test` | « Envoyer un test » | — |
+
+Ces codes sont un contrat : un flux n8n filtre dessus. Ils ne se renomment pas.
+**Aucun ne porte de personne** — ni nom, ni adresse, ni jeton : des comptes et
+des identifiants. La `raison` d'une sauvegarde en échec est une **catégorie**
+(« pg_dump a échoué », « pg_dump n'a pas terminé dans le délai imparti »…),
+jamais le message de `pg_dump`, qui nomme l'hôte, l'utilisateur et des chemins
+du serveur : le détail reste à l'écran Paramètres.
+
+### Le format générique et sa signature
+
+```http
+POST /webhook/planning HTTP/1.1
+Content-Type: application/json
+X-Planning-Evenement: planning.publie
+X-Planning-Livraison: 7d1e…-…
+X-Planning-Horodatage: 1752343380
+X-Planning-Signature: sha256=2c6d5dd0…
+
+{"id":"7d1e…","evenement":"planning.publie","survenuLe":"2026-07-12T18:03:00Z",
+ "edition":{"id":"2026","nom":"Année 2026"},"donnees":{…},"lien":"https://…/publication"}
+```
+
+- `X-Planning-Signature` vaut `sha256=` suivi du HMAC-SHA256 hexadécimal de
+  `horodatage + "." + corps`, avec le secret affiché **une fois** à la création
+  du webhook (ou à sa régénération). Le corps signé est l'octet près celui reçu :
+  vérifier sur le corps brut, jamais sur un JSON re-sérialisé.
+- `X-Planning-Horodatage` est en secondes Unix et fait partie de ce qui est
+  signé : **refusez au-delà de cinq minutes d'écart**, et un corps rejoué plus
+  tard ne passe plus.
+- `X-Planning-Livraison` (et `id` dans le corps) identifie la livraison, **pas
+  la tentative** : un réessai et un « Renvoyer » gardent le même. C'est la clé
+  d'idempotence du récepteur.
+- `survenuLe` est l'heure **réelle** de l'événement, même quand l'instance
+  simule une autre date (mode jour J de démonstration).
+
+Vérification en Python :
+
+```python
+import hashlib, hmac, time
+
+def verifier(secret: str, horodatage: str, signature: str, corps: bytes) -> bool:
+    if abs(time.time() - int(horodatage)) > 300:
+        return False
+    attendu = hmac.new(secret.encode(), horodatage.encode() + b"." + corps,
+                       hashlib.sha256).hexdigest()
+    return hmac.compare_digest("sha256=" + attendu, signature)
+```
+
+Dans n8n, le nœud *Webhook* doit garder le corps brut (option *Raw Body*),
+puis un nœud *Code* — le module `crypto` y demande
+`NODE_FUNCTION_ALLOW_BUILTIN=crypto` dans l'environnement de n8n :
+
+```javascript
+const crypto = require('crypto');
+const horodatage = $input.first().json.headers['x-planning-horodatage'];
+const signature = $input.first().json.headers['x-planning-signature'];
+const corps = Buffer.from($input.first().binary.data.data, 'base64');
+const attendu = 'sha256=' + crypto.createHmac('sha256', $env.PLANNING_SECRET)
+  .update(horodatage + '.').update(corps).digest('hex');
+const frais = Math.abs(Date.now() / 1000 - Number(horodatage)) <= 300;
+if (!frais || !crypto.timingSafeEqual(Buffer.from(attendu), Buffer.from(signature))) {
+  throw new Error('Signature invalide');
+}
+return [{ json: JSON.parse(corps.toString('utf8')) }];
+```
+
+### Livraison et journal
+
+Chaque événement crée une livraison par webhook actif abonné. Un premier essai
+part aussitôt, hors du fil de l'opération ; ensuite, une erreur réseau, un
+`408`, un `429` (dont le `Retry-After` est respecté, plafonné à 12 h) ou un
+`5xx` sont réessayés après 1 min, 5 min, 30 min, 2 h et 12 h — six tentatives
+au plus, puis `FAILED`. Un nom qui ne se résout pas (DNS) est réessayé de
+même. Toute autre réponse, une redirection comprise, est définitive :
+`ABANDONED` — comme une adresse que la garde refuse, un secret que la clé
+n'ouvre plus, ou une livraison sur une édition qui n'est plus active : chaque
+essai, réessai et « Renvoyer » compris, repose la question. `GET /api/webhooks/{id}/livraisons` rend le journal
+(100 dernières, gardées 30 jours) : statut, tentative, code, durée et une
+phrase fixe en cas d'erreur — jamais le corps de la réponse.
+`POST /api/webhooks/livraisons/{id}/renvoi` remet une livraison au début de son
+calendrier, sous le même identifiant. `POST /api/webhooks/{id}/test` envoie
+l'événement `test` et attend la réponse (sans réessai) : c'est le seul appel
+synchrone. Renvoyer un test, c'est un seul essai de plus (`maxAttempts` vaut
+`1`).
+
+Les secrets ne se relisent jamais : le secret HMAC est dans la réponse de
+l'appel qui l'a généré (`POST /api/webhooks`, `POST /api/webhooks/{id}/secret`,
+ou un `PUT` qui fait passer un webhook au format générique), et l'adresse d'un
+webhook Slack, Discord ou Matrix revient réduite à son hôte. Sur un `PUT`, une
+adresse ou un jeton laissé vide **conserve** le précédent.
+
 ## Contraintes
 
 Chaque entrée du catalogue porte `poids` (la valeur du déploiement, écrasée par

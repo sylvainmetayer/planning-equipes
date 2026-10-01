@@ -84,31 +84,42 @@ public final class TrustedProxies {
      * @throws IllegalArgumentException on a malformed entry, naming it
      */
     public static TrustedProxies of(List<String> declared) {
+        return of(declared, "Proxy fiable invalide");
+    }
+
+    /**
+     * Same parsing, for another list of addresses and blocks — the networks an
+     * outgoing webhook may reach ({@code WEBHOOKS_RESEAUX_AUTORISES}) is read
+     * exactly like the proxies, so one grammar and one failure mode serve both.
+     *
+     * @param refusal how the error message opens, naming the setting at fault
+     */
+    public static TrustedProxies of(List<String> declared, String refusal) {
         Objects.requireNonNull(declared, "declared");
         return new TrustedProxies(declared.stream()
                 .map(String::trim)
                 .filter(entry -> !entry.isEmpty())
-                .map(TrustedProxies::parse)
+                .map(entry -> parse(entry, refusal))
                 .toList());
     }
 
-    private static Entry parse(String declared) {
+    private static Entry parse(String declared, String refusal) {
         int barre = declared.indexOf('/');
         if (barre < 0) {
-            byte[] adresse = literal(declared, declared);
+            byte[] adresse = literal(declared, declared, refusal);
             return new Entry(adresse, adresse.length * 8);
         }
-        byte[] adresse = literal(declared.substring(0, barre), declared);
+        byte[] adresse = literal(declared.substring(0, barre), declared, refusal);
         int maximum = adresse.length * 8;
         int prefixe;
         try {
             prefixe = Integer.parseInt(declared.substring(barre + 1).trim());
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException(
-                    "Proxy fiable invalide : « " + declared + " » — la longueur de préfixe n'est pas un entier.", e);
+                    refusal + " : « " + declared + " » — la longueur de préfixe n'est pas un entier.", e);
         }
         if (prefixe < 0 || prefixe > maximum) {
-            throw new IllegalArgumentException("Proxy fiable invalide : « " + declared
+            throw new IllegalArgumentException(refusal + " : « " + declared
                     + " » — la longueur de préfixe doit être comprise entre 0 et " + maximum + ".");
         }
         return new Entry(adresse, prefixe);
@@ -121,12 +132,12 @@ public final class TrustedProxies {
      * resolves a name it does not recognise as a literal, which would put a DNS
      * lookup — and whatever it answers today — inside a trust decision.</p>
      */
-    private static byte[] literal(String texte, String declared) {
+    private static byte[] literal(String texte, String declared, String refusal) {
         try {
             return InetAddress.ofLiteral(texte.trim()).getAddress();
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException(
-                    "Proxy fiable invalide : « " + declared
+                    refusal + " : « " + declared
                             + " » — attendu une adresse IP littérale, éventuellement suivie de /préfixe.",
                     e);
         }
@@ -155,6 +166,15 @@ public final class TrustedProxies {
         } catch (IllegalArgumentException _) {
             return false;
         }
+        return entries.stream().anyMatch(entry -> entry.matches(adresse));
+    }
+
+    /** Whether an already-resolved address falls in one of the declared entries. */
+    public boolean containsAddress(InetAddress candidate) {
+        if (candidate == null || entries.isEmpty()) {
+            return false;
+        }
+        byte[] adresse = candidate.getAddress();
         return entries.stream().anyMatch(entry -> entry.matches(adresse));
     }
 }

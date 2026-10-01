@@ -5,6 +5,7 @@ import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.mail.MailDeliveryRepository;
 import dev.sylvain.planning.service.referentiel.ParametresService;
+import dev.sylvain.planning.service.webhook.WebhookService;
 import io.quarkus.scheduler.Scheduled;
 import io.quarkus.scheduler.Scheduler;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -63,6 +64,9 @@ public class NotificationsPlanifieesService {
     /** The outcome of each mail to an animateur, kept as long as the history. */
     private final MailDeliveryRepository deliveries;
 
+    /** Applies the webhook journal's retention, on the same night. */
+    private final WebhookService webhooks;
+
     private final String zone;
 
     private final String cron;
@@ -77,6 +81,7 @@ public class NotificationsPlanifieesService {
             Scheduler scheduler,
             JournalActionService journal,
             MailDeliveryRepository deliveries,
+            WebhookService webhooks,
             @ConfigProperty(name = "planning.notifications.zone") String zone,
             @ConfigProperty(name = "planning.notifications.cron") String cron) {
         this.editionContext = editionContext;
@@ -87,6 +92,7 @@ public class NotificationsPlanifieesService {
         this.scheduler = scheduler;
         this.journal = journal;
         this.deliveries = deliveries;
+        this.webhooks = webhooks;
         this.zone = zone;
         this.cron = cron;
     }
@@ -136,13 +142,14 @@ public class NotificationsPlanifieesService {
      * Drops the history lines that have aged out (issue #406), and the
      * recorded outcomes of the mails sent to animateurs with them — the same
      * {@code JOURNAL_RETENTION}: a send result is a trace of the same kind,
-     * and only the latest one per person is ever read.
+     * and only the latest one per person is ever read — and the webhook
+     * deliveries past their own retention.
      *
      * <p>Rides along with the nightly sweep rather than carrying a
      * {@code @Scheduled} of its own: every scheduler is one more thing to
      * configure, to time-zone and to explain, and a delete statement is not
-     * worth one — the third, {@code RealisedFreezeJob}, is argued in ADR 0070
-     * for what it writes. Best-effort like
+     * worth one — the schedulers added since are argued, each for what it
+     * does, in ADRs 0070 and 0074. Best-effort like
      * everything else here — an unpurged journal is a table that grows, not a
      * night that fails.</p>
      */
@@ -162,6 +169,16 @@ public class NotificationsPlanifieesService {
             }
         } catch (RuntimeException e) {
             LOG.error("The mail deliveries could not be purged; the nightly sends carry on", e);
+        }
+        // The webhook deliveries past their thirty days, for the same reason
+        // and on the same night: a table that grows, not a night that fails.
+        try {
+            int purgees = webhooks.purgeDeliveries();
+            if (purgees > 0) {
+                LOG.infof("Webhooks: %d deliveries older than thirty days dropped", purgees);
+            }
+        } catch (RuntimeException e) {
+            LOG.error("The webhook deliveries could not be purged; the nightly sends carry on", e);
         }
     }
 

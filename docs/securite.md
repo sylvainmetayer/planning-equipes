@@ -605,6 +605,80 @@ comme celui de l'espace (`observabilite.md`).
 
 Côté application : `quarkus.http.auth.permission.affichage-mural`.
 
+## Appels sortants
+
+L'application ne parlait au monde extérieur que par SMTP et Sentry. Les
+**webhooks** lui font émettre des requêtes HTTP vers une adresse **tapée par
+un administrateur** : c'est le cas d'école du SSRF — se servir du serveur pour
+joindre ce que lui seul peut joindre (le port de PostgreSQL, le service de
+métadonnées d'un cloud en `169.254.169.254`, une interface d'administration
+liée à la boucle locale). La décision et ses raisons :
+[ADR 0074](decisions/0074-deux-jobs-planifies-de-plus-webhooks-et-meteo.md).
+
+### Ce que la garde refuse
+
+`OutboundGuard` décide, à l'**enregistrement** du webhook puis **à chaque
+envoi** (un nom qui se résolvait vers l'extérieur hier peut viser l'intérieur
+aujourd'hui) :
+
+| Règle | Détail |
+| --- | --- |
+| `https://` seulement | `http://` n'est accepté que vers un réseau autorisé |
+| Ports 443 et 8443 | tout port vers un réseau autorisé |
+| Aucune adresse interne | bouclage (`127.0.0.0/8`, `::1`), privé RFC 1918, lien local (`169.254.0.0/16` — métadonnées cloud —, `fe80::/10`), ULA `fc00::/7`, CGNAT `100.64.0.0/10`, multicast, non spécifiée (`0.0.0.0`, `::`), réservée ; une adresse IPv6 qui embarque une IPv4 — `::ffff:a.b.c.d`, `::a.b.c.d`, NAT64 `64:ff9b::/96`, 6to4 `2002::/16`, Teredo `2001::/32` — est jugée sur l'IPv4 qu'elle porte, et le NAT64 local `64:ff9b:1::/48` est refusé |
+| Pas d'identifiants dans l'URL | `utilisateur:motdepasse@` refusé |
+
+Le nom est **résolu par la garde**, toutes ses adresses vérifiées, et la
+connexion part vers **l'adresse vérifiée** : le client HTTP (Vert.x) ne
+résout pas le nom une seconde fois. Un nom qui répondrait une adresse publique
+à la vérification et une adresse interne à la connexion (*DNS rebinding*) n'a
+donc plus de fenêtre. TLS vérifie toujours le certificat contre le **nom**
+d'hôte, pas contre l'adresse.
+
+**Réseaux autorisés.** Un n8n sur le même réseau Docker est légitime :
+`WEBHOOKS_RESEAUX_AUTORISES` liste les adresses et blocs CIDR qui échappent à
+la garde (mêmes règles d'écriture que `CONNEXION_PROXYS_FIABLES` ; une entrée
+mal formée empêche le démarrage). Ouvrir un bloc, c'est ouvrir **toutes** ses
+machines à un administrateur de l'application : déclarez le sous-réseau du
+seul conteneur visé, pas `10.0.0.0/8`.
+
+### Ce que le récepteur ne peut pas faire
+
+- **Rediriger** : une redirection n'est jamais suivie (l'adresse qu'elle nomme
+  n'a pas été vérifiée) ; la livraison est abandonnée.
+- **Être lu** : le corps de la réponse est vidé et jeté, jamais stocké, jamais
+  montré. Le journal des livraisons ne garde qu'un code, une durée et une
+  phrase fixe — jamais le message d'une exception, qui peut recopier la ligne
+  de requête et donc une adresse Slack secrète. Un webhook ne sert pas à
+  *lire* un service interne.
+- **Faire attendre** : résolution du nom 5 s, connexion 5 s, puis 10 s pour
+  tout l'échange, de l'envoi à la fin de la réponse — passé ce délai la
+  connexion est coupée, même si le récepteur envoie encore quelques octets.
+  L'envoi part d'un fil à lui — jamais du fil de la publication ou de la
+  résolution qui l'a causé.
+
+### Les secrets au repos
+
+Le secret HMAC d'un webhook générique, l'adresse d'un webhook Slack, Discord
+ou Matrix (qui **est** le secret : la détenir suffit à écrire dans le salon) et
+le jeton d'un bot Telegram sont **chiffrés** en base (AES-256-GCM, clé
+`WEBHOOKS_SECRET_KEY`). L'export SQL ne les contient pas du tout ; la
+sauvegarde nocturne, qui prend tout le cluster, n'en contient que le chiffré.
+L'écran ne les réaffiche jamais : le secret HMAC est montré une fois, à sa
+génération ; une adresse de salon apparaît réduite à son hôte. Le journal des
+actions note les **noms** des champs modifiés, jamais leur valeur. Gestion de
+la clé : [`exploitation.md`](exploitation.md) § 2.
+
+### Couper
+
+`WEBHOOKS_ENABLED=false` coupe toute sortie : rien n'est mis en file, rien
+n'est envoyé, le test est refusé ; les livraisons déjà en attente reprennent
+quand la variable revient à `true` (dans la limite de leurs 30 jours).
+
+Aucun outil MCP ne configure un webhook : une adresse de salon est un secret,
+et ouvrir une sortie réseau depuis une conversation est une voie
+d'exfiltration — voir [`mcp.md`](mcp.md).
+
 ## Analyse statique : les suppressions et leur justification
 
 Le job `code` de `securite.yml` (Semgrep OSS) fait échouer la CI sur toute

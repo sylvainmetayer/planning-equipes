@@ -164,7 +164,7 @@ public class DatabaseDumpService {
             "kpi_realise");
 
     /**
-     * The ten tables deliberately left out, and why each one stays out.
+     * The twelve tables deliberately left out, and why each one stays out.
      *
      * <p>They share a shape: none of them describes <em>the dataset</em>. They
      * describe the machine it runs on, or who is currently allowed to touch it,
@@ -199,6 +199,11 @@ public class DatabaseDumpService {
      *       opened <em>this</em> database, beside {@code flyway_schema_history},
      *       which no dump carries either. Replaying another instance's would
      *       make the receiving one claim versions it never ran.</li>
+     *   <li>{@code webhook}, {@code webhook_livraison} — the outgoing webhooks
+     *       of this instance and the journal of their deliveries. Secrets
+     *       (encrypted with a key the receiving instance does not hold) and the
+     *       state of a machine, not the dataset: a restore elsewhere would make
+     *       that instance post into somebody else's channels.</li>
      * </ul>
      */
     static final List<String> DELIBERATELY_NOT_DUMPED = List.of(
@@ -211,7 +216,9 @@ public class DatabaseDumpService {
             "solver_job",
             "journal_action",
             "verification_besoin",
-            "version_applicative");
+            "version_applicative",
+            "webhook",
+            "webhook_livraison");
 
     private static final Set<String> ALLOWED_TABLES = Set.copyOf(TABLES);
 
