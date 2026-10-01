@@ -44,7 +44,11 @@ describe('ConsigneFormDialog — the stands list', () => {
   let dialog: ConsigneFormDialog;
   let requests: Array<{ date: string; resolve: (value: PreselectionConsigne) => void }>;
 
-  function mount(datesInitiales: string[], stands: Stand[] = []): void {
+  function mount(
+    datesInitiales: string[],
+    stands: Stand[] = [],
+    extra: Partial<ConsigneFormData> = {},
+  ): void {
     requests = [];
     const api = {
       preselection: vi.fn(
@@ -63,6 +67,7 @@ describe('ConsigneFormDialog — the stands list', () => {
       stands,
       typologies: [],
       emplacements: [],
+      ...extra,
     };
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -136,5 +141,30 @@ describe('ConsigneFormDialog — the stands list', () => {
     expect(dialog['dates']()).toEqual([]);
     expect(dialog['erreurs']()).toContain('DATES');
     expect(requests).toEqual([]);
+  });
+
+  /** A weather alert names its preset: the form opens filled with it, nothing posed. */
+  it('opens filled with the preset a link names, when posing', () => {
+    mount(['2026-07-11'], [], {
+      prereglageInitial: 'P1',
+      prereglages: [
+        {
+          id: 'P1',
+          nom: 'Plan canicule',
+          fermetureDebut: '12:00:00',
+          fermetureFin: '18:00:00',
+          motif: 'Canicule',
+          fenetres: [],
+          repas: null,
+          creeLe: null,
+          modifieLe: null,
+        },
+      ],
+    });
+
+    expect(dialog['prereglage']()).toBe('Plan canicule');
+    expect(dialog['motif']()).toBe('Canicule');
+    expect(dialog['fermetureDebut']()).toBe('12:00');
+    expect(dialog['dates']()).toEqual(['2026-07-11']);
   });
 });

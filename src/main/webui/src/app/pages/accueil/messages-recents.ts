@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { Router } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { DateMockService } from '../../core/date-mock.service';
 import { intlLocale } from '../../core/locale';
@@ -52,6 +53,7 @@ export class MessagesRecents {
   protected readonly notifications = inject(NotificationService);
   private readonly analysesApi = inject(AnalysesApi);
   private readonly dates = inject(DateMockService);
+  private readonly router = inject(Router);
 
   /**
    * Folded by default. The reader's click decides until the page asks again:
@@ -96,6 +98,19 @@ export class MessagesRecents {
       return 'alert';
     }
     return alerte.severite === 'WARNING' ? 'warning' : 'info';
+  }
+
+  /**
+   * « Préparer la consigne » of a weather alert: the consignes tab on its
+   * date, the form open on the suggested preset — nothing is applied before
+   * the admin saves it. A modified click keeps the browser's own behaviour.
+   */
+  protected open(event: MouseEvent, lien: string): void {
+    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+      return;
+    }
+    event.preventDefault();
+    void this.router.navigateByUrl(lien);
   }
 
   /** The person an alert is about, when it is about one. */

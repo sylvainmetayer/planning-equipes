@@ -269,8 +269,36 @@ public final class WebhookFormats {
                                 + " ("
                                 + count(data, "echecsConsecutifs", "échec consécutif", "échecs consécutifs")
                                 + ").");
+            case WEATHER_ALERT -> new Summary("Alerte météo", weatherSentence(data));
             case TEST -> new Summary("Test", "Ce webhook est bien relié à l'application.");
         };
+    }
+
+    /** « 36 °C le 2026-07-15 (seuil 33) ; orage le 2026-07-16. » — read from the counts alone. */
+    private static String weatherSentence(Map<String, Object> data) {
+        if (!(data.get("alertes") instanceof java.util.List<?> alertes) || alertes.isEmpty()) {
+            return "";
+        }
+        java.util.List<String> parts = new java.util.ArrayList<>();
+        for (Object each : alertes) {
+            if (!(each instanceof Map<?, ?> alerte)) {
+                continue;
+            }
+            Object date = alerte.get("date");
+            Object valeur = alerte.get("valeur");
+            Object seuil = alerte.get("seuil");
+            parts.add(
+                    switch (String.valueOf(alerte.get("phenomene"))) {
+                        case "chaleur" -> valeur + " °C le " + date + " (seuil " + seuil + " °C)";
+                        case "rafales" -> "rafales de " + valeur + " km/h le " + date + " (seuil " + seuil + " km/h)";
+                        case "orage" -> "orage le " + date;
+                        default -> alerte.get("phenomene") + " le " + date;
+                    });
+        }
+        String joined = String.join(" ; ", parts);
+        // The attribution CC BY 4.0 asks for travels with the data, wherever it is read.
+        return Character.toUpperCase(joined.charAt(0)) + joined.substring(1)
+                + ". Rien n'est appliqué sans vous. Données météo : Open-Meteo.com (CC BY 4.0).";
     }
 
     private static String number(Map<String, Object> data, String key) {

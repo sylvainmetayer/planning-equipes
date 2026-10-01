@@ -224,4 +224,45 @@ public sealed interface Notification {
      * @param failuresBefore how many attempts had failed in a row
      */
     record BackupRecovered(ZonedDateTime attemptedAt, String file, int failuresBefore) implements Notification {}
+
+    /**
+     * The morning weather query found something to prepare for (ADR 0074):
+     * one notification per run, carrying every alert it raised. Told to the
+     * admin, who decides — nothing is applied.
+     *
+     * @param editionNom the edition the forecast was read for
+     * @param lines      one per new alert, worded and with its link
+     */
+    record WeatherAlert(String editionNom, List<Line> lines) implements Notification {
+
+        /**
+         * One alert.
+         *
+         * @param phenomenon the published code: {@code chaleur}, {@code rafales}, {@code orage}
+         * @param label      the sentence of the home screen, places named — never a person
+         * @param places     how many places cross the threshold
+         * @param presetId   the consigne preset suggested, {@code null} when none is, or when
+         *                   a consigne is already in place on that date
+         * @param link       the consignes screen on that date, {@code null} without a public URL
+         */
+        public record Line(
+                LocalDate date,
+                String phenomenon,
+                String label,
+                int value,
+                int threshold,
+                int level,
+                int places,
+                String presetId,
+                String link) {}
+    }
+
+    /**
+     * The weather service has not answered for two days in a row: the alert
+     * is blind, and somebody should know. Told once per streak.
+     *
+     * @param since the first day it stopped answering
+     * @param error the sentence of the last failure
+     */
+    record WeatherUnreachable(String editionNom, LocalDate since, String error) implements Notification {}
 }

@@ -7,6 +7,7 @@ import dev.sylvain.planning.service.ProductName;
 import dev.sylvain.planning.service.espace.ApplicationLinks;
 import dev.sylvain.planning.service.mail.MailTemplates;
 import dev.sylvain.planning.service.publication.AdminAddress;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -174,6 +175,65 @@ class NotificationWriterTest {
                             new Notification.ResolutionTerminee("Année 2026", "0hard/0medium/0soft", true)))
                     .isEmpty();
         }
+    }
+
+    /** The fact is fired for the webhooks whatever the setting; the mail follows the setting. */
+    @Test
+    void aSolveWhoseMailWasNotAskedForWritesNothing() {
+        assertThat(redacteur.rediger(
+                        new Notification.ResolutionTerminee("Année 2026", "0hard/0medium/0soft", true, false)))
+                .isEmpty();
+    }
+
+    // --- Weather (admin) ----------------------------------------------------
+
+    @Test
+    void aWeatherAlertListsItsLinesWithTheirLinkAndTheAttribution() {
+        MailDraft courrier = rediger(new Notification.WeatherAlert(
+                "Année 2026",
+                List.of(
+                        new Notification.WeatherAlert.Line(
+                                LocalDate.of(2026, 7, 15),
+                                "chaleur",
+                                "Mer. 15/07 : 36 °C prévus à Kiosque (seuil 33 °C). Suggestion : Plan canicule.",
+                                36,
+                                33,
+                                1,
+                                1,
+                                "P1",
+                                "https://planning.example.org/consignes-solveur?onglet=consignes&date=2026-07-15"),
+                        new Notification.WeatherAlert.Line(
+                                LocalDate.of(2026, 7, 16),
+                                "orage",
+                                "Jeu. 16/07 : orage prévu à Kiosque.",
+                                95,
+                                95,
+                                0,
+                                1,
+                                null,
+                                null))));
+
+        assertThat(courrier.destinataire()).isEqualTo("admin@example.org");
+        assertThat(courrier.sujet()).contains("2 alertes météo").contains("Année 2026");
+        assertThat(courrier.corps())
+                .contains("36 °C prévus à Kiosque")
+                .contains("orage prévu à Kiosque")
+                .contains("Préparer la consigne : https://planning.example.org/consignes-solveur")
+                .contains("Rien n'a été appliqué")
+                .contains("Open-Meteo.com (CC BY 4.0)");
+        assertThat(courrier.html()).contains("Open-Meteo.com").contains("CC BY 4.0");
+    }
+
+    @Test
+    void aSilentWeatherServiceIsSaidWithItsFirstDay() {
+        MailDraft courrier = rediger(new Notification.WeatherUnreachable(
+                "Année 2026", LocalDate.of(2026, 7, 11), "Le service météo a répondu 500."));
+
+        assertThat(courrier.sujet()).contains("le service météo ne répond plus");
+        assertThat(courrier.corps())
+                .contains("samedi 11 juillet")
+                .contains("Le service météo a répondu 500.")
+                .contains("https://planning.example.org/parametres?onglet=edition#meteo");
     }
 
     @Test

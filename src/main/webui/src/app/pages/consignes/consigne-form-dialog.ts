@@ -78,6 +78,11 @@ export interface ConsigneFormData {
   consigne: ConsigneEdition | null;
   /** The dates ticked when the form opens (a deep link, or the row's own date). */
   datesInitiales: string[];
+  /**
+   * The preset the form opens filled with, when posing — the one a weather
+   * alert suggested. An unknown id leaves the form empty.
+   */
+  prereglageInitial?: string | null;
   /** The grid's dates strictly after today: the only ones offered. */
   datesCandidates: string[];
   prereglages: PrereglageConsigne[];
@@ -305,6 +310,15 @@ export class ConsigneFormDialog {
         return $localize`:@@consignes.form.title.poser:Poser une consigne`;
     }
   });
+
+  constructor() {
+    // A weather alert's « Préparer la consigne » names its preset: the form
+    // opens filled with it, as if picked by hand, and the admin still reads
+    // the stands and saves — nothing is posed by arriving here.
+    if (this.mode === 'poser' && this.data.prereglageInitial) {
+      this.choisirPrereglage(this.data.prereglageInitial);
+    }
+  }
 
   /* ------------------------------ the band ------------------------------ */
 

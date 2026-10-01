@@ -1,0 +1,12 @@
+{#include mail/layout}
+{#body}
+<p style="margin:0 0 12px;">{#if nombre == 1}La météo annonce de quoi revoir le planning de « {edition} » :{#else}La météo annonce {nombre} raisons de revoir le planning de « {edition} » :{/if}</p>
+<ul style="margin:0 0 12px;padding-left:20px;">
+{#for alerte in alertes}
+<li style="margin:0 0 6px;">{alerte.libelle}{#if alerte.lien}<br><a href="{alerte.lien}" style="color:{accent};">Préparer la consigne</a>{/if}</li>
+{/for}
+</ul>
+<p style="margin:0 0 12px;color:{muted};">Rien n'a été appliqué : une consigne ne se pose qu'après votre relecture, depuis l'écran Consignes au solveur. Chaque alerte ne revient que si la prévision s'aggrave.</p>
+<p style="margin:0;color:{muted};font-size:12px;">Données météo : <a href="https://open-meteo.com/" style="color:{muted};">Open-Meteo.com</a> (<a href="https://creativecommons.org/licenses/by/4.0/" style="color:{muted};">CC BY 4.0</a>).</p>
+{/body}
+{/include}

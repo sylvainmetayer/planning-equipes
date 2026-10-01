@@ -998,6 +998,17 @@ consignes, les préréglages et la date que le serveur tient pour aujourd'hui ;
 journalisés et changent ce qu'une résolution reçoit ; les simulations et la
 pré-sélection n'écrivent rien.
 
+## Une alerte météo se lit, elle ne s'applique pas
+
+`consulter_alertes_meteo` rend les alertes météo que l'interrogation du matin a
+levées sur l'édition — date, phénomène, palier, la phrase de l'accueil — avec
+l'identifiant du préréglage de consigne suggéré pour ce phénomène (aucun pour
+une date qui n'est plus à venir : une consigne ne s'y pose plus), et l'état de
+la dernière interrogation. Il ne pose rien : appliquer la suggestion reste un
+`appliquer_consigne` explicite, après lecture de l'aperçu, comme à l'écran. Les
+réglages de l'alerte ne se modifient pas par MCP : ils arment un appel sortant
+quotidien.
+
 ## Hors périmètre, volontairement
 
 | Ce qui n'a pas d'outil | Pourquoi |

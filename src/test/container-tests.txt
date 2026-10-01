@@ -167,3 +167,4 @@ dev/sylvain/planning/service/solve/SolverJobReamorcageTest.java
 dev/sylvain/planning/service/solve/SolverJobRepriseTest.java
 dev/sylvain/planning/service/solve/SolverMetricsTest.java
 dev/sylvain/planning/service/validation/ValidationJourneeServiceTest.java
+dev/sylvain/planning/service/weather/WeatherAlertJobTest.java

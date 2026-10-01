@@ -1,0 +1,11 @@
+{#include mail/layout}
+{#body}
+<p style="margin:0 0 12px;">Le service météo ne répond plus depuis le <strong>{depuis}</strong> : les prévisions de « {edition} » ne sont plus vérifiées, et aucune alerte météo ne peut être levée.</p>
+<p style="margin:0 0 12px;">Dernière erreur : {erreur}</p>
+<p style="margin:0 0 12px;color:{muted};">Ce message ne revient pas pour cette panne ; l'alerte reprend d'elle-même dès que le service répond.</p>
+{#if lien}
+<p style="margin:0 0 12px;">Les réglages de l'alerte météo : <a href="{lien}" style="color:{accent};">{lien}</a></p>
+{/if}
+<p style="margin:0;color:{muted};font-size:12px;">Données météo : <a href="https://open-meteo.com/" style="color:{muted};">Open-Meteo.com</a> (<a href="https://creativecommons.org/licenses/by/4.0/" style="color:{muted};">CC BY 4.0</a>).</p>
+{/body}
+{/include}

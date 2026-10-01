@@ -205,6 +205,10 @@ Single Quarkus service, no separate solver microservice. Package root:
     to queued deliveries), `WebhookDeliverer` (HTTP over the Vert.x client,
     retries), `WebhookFormats` (one pure method per format, and the HMAC
     signature), `OutboundGuard` (SSRF) and `SecretCipher` (secrets at rest).
+  - `service/weather/` — the weather alert (ADR 0074): `WeatherAlertService`
+    (window, places, thresholds, claims; the pure rules are static),
+    `OpenMeteoClient` (one JDK `HttpClient` request for every place),
+    `WeatherAlertJob`, `WeatherRepository`.
   - `service/schema/` — the boot check against a database **ahead** of the
     binary (an image rolled back onto a schema a later version migrated):
     `SchemaCompatibilityGuard` reads `Flyway.info()` once migrate-at-start is
@@ -529,6 +533,22 @@ Single Quarkus service, no separate solver microservice. Package root:
   address unless `WEBHOOKS_RESEAUX_AUTORISES`) and connects to the address it
   checked; secrets are AES-GCM-encrypted with `WEBHOOKS_SECRET_KEY`, without
   which the boot is refused once a webhook exists. No MCP tool configures them.
+- **`service/weather/WeatherAlertJob` is the fifth `@Scheduled`** (ADR 0074):
+  once a morning (`METEO_CRON`, an instance hour in `NOTIFICATIONS_TIMEZONE`)
+  it queries Open-Meteo for the active edition — the one
+  `OutboundEditionPolicy` lets emit, none between two events — when its
+  `parametres_meteo.actif` is on, and **suggests a consigne preset —
+  it never writes a consigne**. Its dates are the event's within
+  `[JourJClock today ; + horizon] ∩ [real today ; + 15]` (an empty window
+  queries nothing: « hors prévision »), its places the located places of the
+  stands open those days, read through `listSolvedStands()`. An alert is a
+  `notification_planifiee` row (`METEO_ALERTE`, key `date|PHENOMENON|level`,
+  lower levels claimed as locks so only a worsening speaks again), an admin
+  mail (`Notification.WeatherAlert`) and a `meteo.alerte` webhook event; an
+  unreachable service is recorded in `meteo_etat` (not dumped) and said once on
+  the second day. `parametres_meteo` is dumped and copied by a duplication with
+  `actif` excused, so a copy is switched off. `METEO_URL` is the operator's:
+  the webhook SSRF guard does not apply to it.
 - Persistence: PostgreSQL + Flyway migrations in
   `src/main/resources/db/migration/`. Schema change = **new versioned file**;
   never edit an applied migration. `FlywayMigrationsFrozenTest` holds both

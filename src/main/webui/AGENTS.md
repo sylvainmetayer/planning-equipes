@@ -116,8 +116,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `/aujourdhui`, and the checklist folded; after it, the archive first; on an
   empty edition, a « Démarrer » block. « À traiter aujourd'hui »
   (`#a-traiter`, where the toolbar's bell lands) is always drawn, and folds
-  under it `pages/accueil/messages-recents` — the night's alerts and the
-  local history of the application's messages, what `/notifications`, now a
+  under it `pages/accueil/messages-recents` — the night's alerts (a weather
+  alert carrying its « Préparer la consigne » link, `lien` of the server) and
+  the local history of the application's messages, what `/notifications`, now a
   redirect to `/#a-traiter`, used to show), `/solveur` (the solver page,
   the former home: feasibility first, then « Ce calcul tiendra compte de »
   read from `GET /api/solve/entrees`, each counter a link and a zero muted,
@@ -139,7 +140,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   planning, the covoiturage that follows the collection — each opened and
   closed here with its dates, Échanges and Disponibilités keeping one line of
   their state, `shared/guichet-etat.ts`), the e-mails it sends of itself
-  (`#emails`) and the organisation's contact shown in the espace —, the wall
+  (`#emails`), the weather alert (`#meteo`, `pages/parametres/parametres-meteo`
+  — thresholds, a preset suggested per phenomenon, the last query's state,
+  « Tester maintenant » and the Open-Meteo attribution) and the
+  organisation's contact shown in the espace —, the wall
   display links — created, shown once with their QR code, revoked —, and
   « Instance », what the operator configured and what holds for the whole
   database — nightly backup, the outgoing webhooks
@@ -277,7 +281,8 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   (`?animateur=`) and the consignes (a band an arrêté closes for every stand on
   a date, the compensation chosen, the presets; issue #4 / ADR 0043;
   `?date=…&nouvelle=1` opens the form on that date, `date=demain` on the day
-  after the server's today). Each tab emits `changed` after a write, and the
+  after the server's today, and `&prereglage=` fills it with that preset — the
+  link of a weather alert; nothing is posed before « Enregistrer »). Each tab emits `changed` after a write, and the
   page then offers « Relancer le calcul » in place — incremental after a
   consigne only, the full solve once an adjustment or a lock was written: an
   incremental re-solve pins every seat still valid; `/ad-hoc-constraints`,

@@ -1,0 +1,12 @@
+{#if nombre == 1}La météo annonce de quoi revoir le planning de « {edition} » :{#else}La météo annonce {nombre} raisons de revoir le planning de « {edition} » :{/if}
+
+{#for alerte in alertes}
+- {alerte.libelle}
+{#if alerte.lien}
+  Préparer la consigne : {alerte.lien}
+{/if}
+{/for}
+
+Rien n'a été appliqué : une consigne ne se pose qu'après votre relecture, depuis l'écran Consignes au solveur. Chaque alerte ne revient que si la prévision s'aggrave.
+
+Données météo : Open-Meteo.com (CC BY 4.0).

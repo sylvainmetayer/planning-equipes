@@ -608,9 +608,9 @@ Côté application : `quarkus.http.auth.permission.affichage-mural`.
 ## Appels sortants
 
 L'application ne parlait au monde extérieur que par SMTP et Sentry. Les
-**webhooks** lui font émettre des requêtes HTTP vers une adresse **tapée par
-un administrateur** : c'est le cas d'école du SSRF — se servir du serveur pour
-joindre ce que lui seul peut joindre (le port de PostgreSQL, le service de
+**webhooks** et l'**alerte météo** lui font émettre des requêtes HTTP. Les
+premiers visent une adresse **tapée par un administrateur** : c'est le cas
+d'école du SSRF — se servir du serveur pour joindre ce que lui seul peut joindre (le port de PostgreSQL, le service de
 métadonnées d'un cloud en `169.254.169.254`, une interface d'administration
 liée à la boucle locale). La décision et ses raisons :
 [ADR 0074](decisions/0074-deux-jobs-planifies-de-plus-webhooks-et-meteo.md).
@@ -669,7 +669,7 @@ génération ; une adresse de salon apparaît réduite à son hôte. Le journal 
 actions note les **noms** des champs modifiés, jamais leur valeur. Gestion de
 la clé : [`exploitation.md`](exploitation.md) § 2.
 
-### Couper
+### Couper les webhooks
 
 `WEBHOOKS_ENABLED=false` coupe toute sortie : rien n'est mis en file, rien
 n'est envoyé, le test est refusé ; les livraisons déjà en attente reprennent
@@ -678,6 +678,23 @@ quand la variable revient à `true` (dans la limite de leurs 30 jours).
 Aucun outil MCP ne configure un webhook : une adresse de salon est un secret,
 et ouvrir une sortie réseau depuis une conversation est une voie
 d'exfiltration — voir [`mcp.md`](mcp.md).
+
+### L'alerte météo
+
+Chaque matin, l'édition active interroge Open-Meteo (`METEO_URL`) sur les
+lieux de ses stands ouverts. Ce qui part : des **coordonnées de lieux**,
+arrondies à 0,01° (environ un kilomètre), des dates et l'adresse IP du
+serveur — aucune donnée personnelle. Le navigateur n'appelle jamais le
+service : la CSP (`connect-src`) n'a rien à ouvrir, et l'adresse de
+l'organisateur ne part chez aucun tiers.
+
+`METEO_URL` est réglée par l'exploitant, pas tapée par un utilisateur : la
+garde des webhooks **ne s'y applique pas**, faute de quoi une instance
+Open-Meteo auto-hébergée sur le réseau Docker serait refusée. Les redirections
+ne sont pas suivies, l'échange est borné à 10 s et la réponse à 2 Mo. Une
+réponse illisible ou un service muet n'est jamais propagé : il est noté
+(« injoignable depuis… ») et dit une fois à l'administrateur au deuxième jour.
+`METEO_ENABLED=false` coupe la fonctionnalité pour l'instance.
 
 ## Analyse statique : les suppressions et leur justification
 

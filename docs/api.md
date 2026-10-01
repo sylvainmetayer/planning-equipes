@@ -1159,6 +1159,37 @@ personne.
 job à la main n'écrit donc à personne deux fois — et une demande d'échange
 n'est signalée **qu'une seule fois**, quel que soit son âge ensuite.
 
+## Alerte météo
+
+`GET` / `PUT /api/parametres/meteo` — les réglages de l'édition (`actif`,
+`horizonJours` de 1 à 14, les seuils de température et de rafales, l'orage,
+un préréglage de consigne suggéré par phénomène) avec l'état de la dernière
+interrogation (`state.outcome` : `READ`, `OUT_OF_FORECAST`, `NO_PLACE`,
+`UNREACHABLE`), `serviceEnabled` (`METEO_ENABLED`) et `editionMayEmit`. Le
+`PUT` porte `modifieLe` comme précondition, comme une ligne de référentiel :
+`409` si quelqu'un a enregistré entre-temps. Un préréglage suggéré qui est
+supprimé laisse la suggestion vide.
+
+`POST /api/parametres/meteo/test` interroge **maintenant**, avec les seuils de
+l'édition, que l'alerte soit active ou non, et résume la prévision par date
+(maxima, seuils franchis) — sans lever d'alerte ni rien écrire. C'est la seule
+façon d'essayer l'alerte sur une date simulée : la tâche du matin prend
+« aujourd'hui » à l'horloge du jour J, mais ne garde que les dates qu'Open-Meteo
+prévoit réellement — les seize jours à venir —, si bien qu'une recette figée
+loin de la date réelle répond `outOfForecast`.
+
+**Rien n'est jamais appliqué.** Une alerte est une ligne de `GET /api/alertes`
+(`type` `METEO_ALERTE`, clé `date|PHÉNOMÈNE|palier`) dont `lien` mène à
+`/consignes-solveur?onglet=consignes&date=…&nouvelle=1&prereglage=…` : le
+formulaire s'ouvre rempli, l'admin relit les stands et enregistre lui-même. Une
+consigne déjà posée sur la date est nommée par l'alerte au lieu d'une
+suggestion. Une alerte sur **aujourd'hui** (selon l'horloge du jour J) ne
+suggère rien et n'a pas de `lien` : une consigne ne se pose que sur un jour à
+venir. Une prévision stable ne relève pas d'alerte ; une prévision qui
+s'aggrave d'un palier — deux degrés, dix km/h, la grêle avec l'orage — en lève
+une nouvelle. L'outil MCP `consulter_alertes_meteo` lit les mêmes, en lecture
+seule.
+
 ## Webhooks sortants
 
 `/api/webhooks` (admin) configure ce que l'application annonce à un outil
@@ -1176,6 +1207,7 @@ de quelle édition il parle, et seule l'édition active
 | `disponibilites.declaree` | une déclaration attend d'être appliquée | `joursIndisponibles`, `souhaits` |
 | `resolution.terminee` | une résolution est finie (écran, MCP ou file) | `score`, `faisable` |
 | `sauvegarde.echec` | la sauvegarde nocturne a échoué — événement d'instance, `edition` vaut `null` | `tentativeLe`, `raison`, `echecsConsecutifs` |
+| `meteo.alerte` | l'interrogation du matin a levé des alertes météo | `nombre`, `alertes` : pour chacune `date`, `phenomene` (`chaleur`, `rafales`, `orage`), `valeur`, `seuil`, `palier`, `lieux` (un nombre), `prereglageSuggere` |
 | `test` | « Envoyer un test » | — |
 
 Ces codes sont un contrat : un flux n8n filtre dessus. Ils ne se renomment pas.

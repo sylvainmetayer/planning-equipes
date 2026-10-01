@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.espace;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.LocalDate;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -30,6 +31,23 @@ class ApplicationLinksTest {
     }
 
     /** The regression this component exists to prevent. */
+    /** A weather alert's link: the consignes of its date, the form open on the preset — or the existing one. */
+    @Test
+    void theConsigneOfADateIsReachedInTheAppAndFromAMail() {
+        LocalDate jour = LocalDate.of(2026, 7, 15);
+
+        assertThat(ApplicationLinks.consigneRoute(jour, "P 1", true))
+                .isEqualTo("/consignes-solveur?onglet=consignes&date=2026-07-15&nouvelle=1&prereglage=P+1");
+        assertThat(ApplicationLinks.consigneRoute(jour, "P1", false))
+                .isEqualTo("/consignes-solveur?onglet=consignes&date=2026-07-15");
+        assertThat(linksTo("https://planning.example.org/").consigneScreen(jour, null, true))
+                .contains("https://planning.example.org/consignes-solveur?onglet=consignes&date=2026-07-15&nouvelle=1");
+        assertThat(linksTo("https://planning.example.org").parametresMeteoScreen())
+                .contains("https://planning.example.org/parametres?onglet=edition#meteo");
+        assertThat(linksTo("https://planning.example.org").publicationScreen())
+                .contains("https://planning.example.org/publication");
+    }
+
     @Test
     void unSlashFinalDansLUrlPubliqueNeDonneJamaisUnDoubleSlash() {
         ApplicationLinks liens = linksTo("https://planning.example.org/");

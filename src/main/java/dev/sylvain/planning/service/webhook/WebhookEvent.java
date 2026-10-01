@@ -24,6 +24,8 @@ public enum WebhookEvent {
      * event of the instance, delivered whatever edition may emit.
      */
     BACKUP_FAILED("sauvegarde.echec", true),
+    /** The morning weather query raised alerts: dates, phenomena, levels — a suggestion, never applied. */
+    WEATHER_ALERT("meteo.alerte", false),
     /** « Envoyer un test »: sent to one webhook on demand, never subscribed to. */
     TEST("test", true);
 

@@ -37,6 +37,9 @@ public class NotificationWriter {
     /** Template value: how many items the mail is about. */
     private static final String KEY_NOMBRE = "nombre";
 
+    /** Template value: the name of the edition the mail is about. */
+    private static final String KEY_EDITION = "edition";
+
     /**
      * « samedi 11 juillet » — the same way a planning is read aloud.
      *
@@ -83,6 +86,8 @@ public class NotificationWriter {
             case Notification.PendingEchanges n -> pendingEchanges(n);
             case Notification.BackupFailed n -> backupFailed(n);
             case Notification.BackupRecovered n -> backupRecovered(n);
+            case Notification.WeatherAlert n -> weatherAlert(n);
+            case Notification.WeatherUnreachable n -> weatherUnreachable(n);
         };
     }
 
@@ -341,10 +346,14 @@ public class NotificationWriter {
                 "mail/resolution-terminee",
                 sujet,
                 MailTemplates.values(
-                        "edition", n.editionNom(),
-                        "score", n.score(),
-                        "faisable", n.faisable(),
-                        "lien", liens.problemesScreen().orElse(null))));
+                        KEY_EDITION,
+                        n.editionNom(),
+                        "score",
+                        n.score(),
+                        "faisable",
+                        n.faisable(),
+                        "lien",
+                        liens.problemesScreen().orElse(null))));
     }
 
     /** « 8 mars 2026 à 04:00 », in the zone the backup runs in. */
@@ -392,6 +401,51 @@ public class NotificationWriter {
                         "fichier", n.file(),
                         "echecs", n.failuresBefore(),
                         "lien", liens.parametresGlobauxScreen().orElse(null))));
+    }
+
+    /**
+     * The morning's weather alerts, one line each with the consignes screen of
+     * its date — a suggestion: the mail says that nothing was applied. The
+     * Open-Meteo attribution travels with the data, as its licence asks.
+     */
+    private Optional<MailDraft> weatherAlert(Notification.WeatherAlert n) {
+        Optional<String> admin = adminAddress.resolue();
+        if (admin.isEmpty() || n.lines().isEmpty()) {
+            return Optional.empty();
+        }
+        List<Map<String, Object>> alertes = n.lines().stream()
+                .map(line -> MailTemplates.values("libelle", line.label(), "lien", line.link()))
+                .toList();
+        String sujet = productName.subject(
+                n.lines().size() == 1
+                        ? "alerte météo sur « " + n.editionNom() + " »"
+                        : n.lines().size() + " alertes météo sur « " + n.editionNom() + " »");
+        return Optional.of(draft(
+                admin.get(),
+                "mail/alerte-meteo",
+                sujet,
+                MailTemplates.values(
+                        KEY_EDITION, n.editionNom(), KEY_NOMBRE, n.lines().size(), "alertes", alertes)));
+    }
+
+    private Optional<MailDraft> weatherUnreachable(Notification.WeatherUnreachable n) {
+        Optional<String> admin = adminAddress.resolue();
+        if (admin.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(draft(
+                admin.get(),
+                "mail/meteo-injoignable",
+                productName.subject("le service météo ne répond plus"),
+                MailTemplates.values(
+                        KEY_EDITION,
+                        n.editionNom(),
+                        "depuis",
+                        JOUR.format(n.since()),
+                        "erreur",
+                        n.error() == null || n.error().isBlank() ? "raison inconnue" : n.error(),
+                        "lien",
+                        liens.parametresMeteoScreen().orElse(null))));
     }
 
     private MailDraft draft(String destinataire, String template, String sujet, Map<String, Object> values) {

@@ -13,6 +13,7 @@ export const SUBSCRIBABLE_EVENTS = [
   'disponibilites.declaree',
   'resolution.terminee',
   'sauvegarde.echec',
+  'meteo.alerte',
 ] as const;
 
 export const WEBHOOK_FORMATS: WebhookFormat[] = [
@@ -38,6 +39,8 @@ export function eventLabel(code: string): string {
       return $localize`:@@parametres.webhooks.evenement.resolutionTerminee:Résolution terminée`;
     case 'sauvegarde.echec':
       return $localize`:@@parametres.webhooks.evenement.sauvegardeEchec:Échec de la sauvegarde nocturne`;
+    case 'meteo.alerte':
+      return $localize`:@@parametres.webhooks.evenement.meteoAlerte:Alerte météo`;
     case 'test':
       return $localize`:@@parametres.webhooks.evenement.test:Test`;
     default:

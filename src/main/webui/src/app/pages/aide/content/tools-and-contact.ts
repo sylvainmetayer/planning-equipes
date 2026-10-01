@@ -117,7 +117,7 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
             },
             {
               term: $localize`:@@aide.webhooks.term.evenements:Les événements`,
-              text: $localize`:@@aide.webhooks.def.evenements:Planning publié, demande d'échange à trancher, échanges en attente depuis trop longtemps, disponibilités déclarées, résolution terminée, échec de la sauvegarde nocturne : chaque webhook coche les siens. Les messages ne portent que des comptes et des identifiants, jamais le nom d'un animateur, puisqu'ils partent vers des services hébergés ailleurs. Ce qui s'adresse à une seule personne, un rappel ou une décision de covoiturage, reste un courriel.`,
+              text: $localize`:@@aide.webhooks.def.evenements:Planning publié, demande d'échange à trancher, échanges en attente depuis trop longtemps, disponibilités déclarées, résolution terminée, échec de la sauvegarde nocturne, alerte météo : chaque webhook coche les siens. Les messages ne portent que des comptes et des identifiants, jamais le nom d'un animateur, puisqu'ils partent vers des services hébergés ailleurs. Ce qui s'adresse à une seule personne, un rappel ou une décision de covoiturage, reste un courriel.`,
             },
             {
               term: $localize`:@@aide.webhooks.term.gestes:Tester, modifier, mettre en pause`,
