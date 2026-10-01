@@ -187,7 +187,17 @@
           <span i18n="@@importCsv.rapport.suppressions">Fiches supprimées</span> :
           <strong>{{ vue.deleted }}</strong>
         </li>
+        <li [class.import-compteur-doublons]="vue.doublonsProbables > 0">
+          <span i18n="@@importCsv.rapport.doublons">Doublons ou homonymes probables</span> :
+          <strong>{{ vue.doublonsProbables }}</strong>
+        </li>
       </ul>
+
+      @if (vue.doublonsProbables > 0) {
+        <mat-checkbox class="import-filtre-doublons" [checked]="flaggedOnly()" (change)="flaggedOnly.set($event.checked)">
+          <span i18n="@@importCsv.rapport.filtreDoublons">N'afficher que les lignes signalées</span>
+        </mat-checkbox>
+      }
 
       @for (avertissement of vue.warnings; track avertissement) {
         <p class="empty-hint">{{ avertissement }}</p>
@@ -213,11 +223,27 @@
               </tr>
             </thead>
             <tbody>
-              @for (ligne of vue.rows; track ligne.line) {
-                <tr [class]="classeAction(ligne.action)" [attr.data-ligne]="ligne.line">
+              @for (ligne of shownRows(); track ligne.line) {
+                <tr [class]="classeAction(ligne.action)" [attr.data-ligne]="ligne.line" tabindex="-1">
                   <td>{{ ligne.line }}</td>
                   <td>
                     {{ ligne.label }}
+                    @if (duplicateBadge(ligne); as badge) {
+                      <span class="import-badge-doublon">
+                        <mat-icon aria-hidden="true">group</mat-icon>
+                        @switch (badge) {
+                          @case ('homonyme') {
+                            <ng-container i18n="@@importCsv.doublon.badgeHomonyme">Homonyme ?</ng-container>
+                          }
+                          @case ('adresse') {
+                            <ng-container i18n="@@importCsv.doublon.badgeAdresse">Nouvelle adresse ?</ng-container>
+                          }
+                          @default {
+                            <ng-container i18n="@@importCsv.doublon.badge">Doublon probable</ng-container>
+                          }
+                        }
+                      </span>
+                    }
                   </td>
                   <td>
                     <mat-icon aria-hidden="true">{{ iconeAction(ligne.action) }}</mat-icon>
@@ -239,6 +265,22 @@
                     }
                     @for (avis of ligne.warnings; track avis) {
                       <p class="import-avertissement">{{ avis }}</p>
+                    }
+                    @if (isFlagged(ligne)) {
+                      <p class="import-doublon-liens">
+                        @for (doublon of ligne.doublonDe; track $index) {
+                          @if (doublon.line !== null) {
+                            <button matButton type="button" (click)="goToLine(doublon.line)">
+                              <span i18n="@@importCsv.doublon.voirLigne">Voir la ligne {{ doublon.line }}</span>
+                            </button>
+                          } @else if (ficheLinkable(doublon, vue.applied)) {
+                            <a matButton [routerLink]="['/animateurs', doublon.animateurId]" target="_blank">
+                              <span i18n="@@importCsv.doublon.ouvrirFiche">Ouvrir la fiche {{ doublon.animateurId }}</span>
+                              <mat-icon iconPositionEnd>open_in_new</mat-icon>
+                            </a>
+                          }
+                        }
+                      </p>
                     }
                     @if (ligne.joursIndisponibles.length > 0) {
                       <p class="import-jours">

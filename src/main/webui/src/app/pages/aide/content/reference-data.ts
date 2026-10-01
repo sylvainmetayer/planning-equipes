@@ -372,6 +372,10 @@ export function buildReferenceDataSections(): HelpSection[] {
           kind: 'paragraph',
           text: $localize`:@@aide.importCsv.remplacement:Si vous cochez le remplacement complet, lisez l'avertissement de l'aperçu : supprimer une fiche emporte aussi la déclaration de disponibilités de la personne, son accusé de réception et son code d'accès à l'espace.`,
         },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.importCsv.doublons:L'aperçu compare aussi le prénom, le nom et la date de naissance, sans tenir compte de la casse, des accents ni de la ponctuation : entre les lignes du fichier, et avec les fiches que l'import conserve. Deux lignes qui décrivent la même personne sous deux adresses, ou une ligne qui donnerait à une fiche l'identité d'une autre, sont marquées « Doublon probable », avec un lien vers l'autre ligne ou vers la fiche. Une ligne rattachée par son seul nom à une fiche née un autre jour est marquée « Homonyme ? » : l'importer changerait la date de naissance de cette personne, donc son régime mineur / majeur. Une ligne dont l'adresse ne correspond à aucune fiche se rattache elle aussi par son nom : si la fiche trouvée porte une autre adresse, la ligne est marquée « Nouvelle adresse ? », car l'importer remplacerait l'adresse où partent les codes d'accès et les envois de cette personne. Des jumeaux, qui partagent nom et date de naissance mais pas le prénom, ne sont pas signalés. Ce sont des avertissements, pas des refus : le compteur « Doublons ou homonymes probables » au-dessus du tableau en donne le nombre, « N'afficher que les lignes signalées » réduit le tableau à ces lignes, et « Importer » redit ce nombre avant d'écrire. Pour mettre une fiche à jour plutôt que d'en créer une seconde, donnez à la ligne l'adresse e-mail de cette fiche.`,
+        },
       ],
       links: [
         {

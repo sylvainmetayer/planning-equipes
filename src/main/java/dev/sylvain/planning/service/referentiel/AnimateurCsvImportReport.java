@@ -26,10 +26,24 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * @param updated    accepted rows naming an existing animateur
  * @param deleted    animateurs the edition holds and the file does not, in
  *                   replacement mode only
+ * @param doublonsProbables accepted rows flagged as a probable duplicate or
+ *                   namesake, a row whose name alone replaces a fiche's
+ *                   address included — a warning, never a refusal: see
+ *                   {@link ImportedRow#doublonDe}
  * @param rows       one entry per data row, in file order
  * @param warnings   what concerns the import as a whole rather than one row
  */
-@Schema(requiredProperties = {"accepted", "applied", "created", "deleted", "rejected", "total", "updated"})
+@Schema(
+        requiredProperties = {
+            "accepted",
+            "applied",
+            "created",
+            "deleted",
+            "doublonsProbables",
+            "rejected",
+            "total",
+            "updated"
+        })
 public record AnimateurCsvImportReport(
         boolean applied,
         List<String> columns,
@@ -41,6 +55,7 @@ public record AnimateurCsvImportReport(
         int created,
         int updated,
         int deleted,
+        int doublonsProbables,
         List<ImportedRow> rows,
         List<String> warnings) {
 
@@ -67,6 +82,10 @@ public record AnimateurCsvImportReport(
      * @param joursIndisponibles the off days the fiche would carry after the
      *                           import — merged or replaced, so the operator
      *                           reads the outcome and not the input
+     * @param doublonDe          who this row probably duplicates, structured so the
+     *                           screen links to the other row or to the fiche rather
+     *                           than parsing the sentence of {@code warnings}; empty
+     *                           when nothing is flagged, always empty on a rejected row
      */
     public record ImportedRow(
             int line,
@@ -75,5 +94,45 @@ public record AnimateurCsvImportReport(
             ImportAction action,
             List<String> reasons,
             List<String> warnings,
-            List<LocalDate> joursIndisponibles) {}
+            List<LocalDate> joursIndisponibles,
+            List<ProbableDuplicate> doublonDe) {}
+
+    /** Why a row was flagged against somebody else — each case has its own sentence in the row's warnings. */
+    public enum DuplicateKind {
+        /** Another accepted row of the file carries the same first name, last name and birth date. */
+        ROW,
+        /** A fiche the import keeps carries the same three, and this row would make a second one of them. */
+        FICHE,
+        /**
+         * Same as {@link #FICHE}, but the fiche is one the full replacement deletes: not a duplicate
+         * after the write, the announcement of a person deleted and then described again.
+         */
+        REPLACED,
+        /** The row lands on a fiche by its name alone, and that fiche was born on another day. */
+        NAMESAKE,
+        /**
+         * The row lands on a fiche by its name alone — its address names nobody — and replaces that
+         * fiche's address: the same person moved, or a namesake about to receive somebody else's
+         * access codes and mails. Only when nothing else points to that fiche already.
+         */
+        NEW_ADDRESS
+    }
+
+    /**
+     * One probable duplicate of a row: exactly one of {@code line} and
+     * {@code animateurId} is set — the other row of the file, or the fiche.
+     * Never a name nor a birth date: the reference is what the screen needs to
+     * draw a link, and the sentence beside it says the rest.
+     */
+    @Schema(requiredProperties = {"kind"})
+    public record ProbableDuplicate(DuplicateKind kind, Integer line, String animateurId) {
+
+        static ProbableDuplicate row(int line) {
+            return new ProbableDuplicate(DuplicateKind.ROW, line, null);
+        }
+
+        static ProbableDuplicate fiche(DuplicateKind kind, String animateurId) {
+            return new ProbableDuplicate(kind, null, animateurId);
+        }
+    }
 }

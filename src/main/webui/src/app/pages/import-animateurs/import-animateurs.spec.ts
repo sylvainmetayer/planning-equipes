@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
+import type { ImportCsvDoublon, ImportCsvLigne } from '../../core/models';
 import {
   CHAMPS_IMPORT,
   classeAction,
+  duplicateBadge,
+  ficheLinkable,
   iconeAction,
+  isFlagged,
+  visibleRows,
   libelleColonne,
   mappingNommeQuelquun,
   mappingVide,
@@ -91,5 +96,50 @@ describe('row presentation', () => {
       new Set((['CREATED', 'UPDATED', 'REJECTED'] as const).map((action) => iconeAction(action)))
         .size,
     ).toBe(3);
+  });
+});
+
+function row(line: number, doublonDe: ImportCsvDoublon[] = []): ImportCsvLigne {
+  return {
+    line,
+    label: `Ligne ${line}`,
+    animateurId: null,
+    action: 'CREATED',
+    reasons: [],
+    warnings: [],
+    joursIndisponibles: [],
+    doublonDe,
+  };
+}
+
+const ON_ROW_3: ImportCsvDoublon = { kind: 'ROW', line: 3, animateurId: null };
+const NAMESAKE: ImportCsvDoublon = { kind: 'NAMESAKE', line: null, animateurId: 'A1' };
+
+describe('probable duplicates', () => {
+  it('narrows the rows to the flagged ones only when asked', () => {
+    const rows = [row(2, [ON_ROW_3]), row(3, [{ ...ON_ROW_3, line: 2 }]), row(4)];
+
+    expect(visibleRows(rows, false).map((ligne) => ligne.line)).toEqual([2, 3, 4]);
+    expect(visibleRows(rows, true).map((ligne) => ligne.line)).toEqual([2, 3]);
+    expect(isFlagged(rows[2])).toBe(false);
+  });
+
+  it('badges a duplicate first, then a namesake, then a new address', () => {
+    const newAddress: ImportCsvDoublon = { kind: 'NEW_ADDRESS', line: null, animateurId: 'A1' };
+
+    expect(duplicateBadge(row(2, [NAMESAKE]))).toBe('homonyme');
+    expect(duplicateBadge(row(2, [NAMESAKE, ON_ROW_3]))).toBe('doublon');
+    expect(duplicateBadge(row(2, [newAddress]))).toBe('adresse');
+    expect(duplicateBadge(row(2, [newAddress, ON_ROW_3]))).toBe('doublon');
+    expect(duplicateBadge(row(2))).toBeNull();
+  });
+
+  it('stops linking to a fiche a full replacement has deleted', () => {
+    const replaced: ImportCsvDoublon = { kind: 'REPLACED', line: null, animateurId: 'A9' };
+
+    expect(ficheLinkable(replaced, false)).toBe(true);
+    expect(ficheLinkable(replaced, true)).toBe(false);
+    expect(ficheLinkable(NAMESAKE, true)).toBe(true);
+    expect(ficheLinkable(ON_ROW_3, false)).toBe(false);
   });
 });

@@ -58,6 +58,14 @@ import java.util.stream.Collectors;
  * operator adds an id or an address column. Two rows resolving to the same
  * person is likewise a refusal for the second one.</p>
  *
+ * <p>Resolution never reads the birth date, so it cannot see two rows — or a
+ * row and a fiche the import keeps — describing one person under two
+ * addresses, nor a row landing by its name on a namesake born another day.
+ * And a row whose address names nobody falls back on the name, so a fiche
+ * reached that way has its address replaced on the strength of a name alone.
+ * Those are <b>flagged</b> on the row, never refused: see
+ * {@link #flagDuplicates}.</p>
+ *
  * <h2>What a row must carry</h2>
  *
  * <p>A <b>first name</b>, a <b>last name</b> and a <b>birth date</b> — the
@@ -283,13 +291,21 @@ public class AnimateurCsvImportService {
                 report.created(),
                 report.updated(),
                 report.deleted(),
+                report.doublonsProbables(),
                 rows,
                 report.warnings());
     }
 
     private static AnimateurCsvImportReport.ImportedRow withId(AnimateurCsvImportReport.ImportedRow row, String id) {
         return new AnimateurCsvImportReport.ImportedRow(
-                row.line(), row.label(), id, row.action(), row.reasons(), row.warnings(), row.joursIndisponibles());
+                row.line(),
+                row.label(),
+                id,
+                row.action(),
+                row.reasons(),
+                row.warnings(),
+                row.joursIndisponibles(),
+                row.doublonDe());
     }
 
     /**
@@ -470,6 +486,10 @@ public class AnimateurCsvImportService {
                         .filter(id -> !idsTouches.contains(id))
                         .toList()
                 : List.of();
+        outcomes = flagDuplicates(outcomes, existants, idsTouches, request.replaceAnimateurs());
+        rows = outcomes.stream().map(RowOutcome::reported).toList();
+        int doublonsProbables =
+                (int) rows.stream().filter(row -> !row.doublonDe().isEmpty()).count();
         List<String> warnings = warnings(request, existants, toDelete);
         if (!nameableMapping(mapping)) {
             warnings.add(
@@ -488,9 +508,282 @@ public class AnimateurCsvImportService {
                 created,
                 updated,
                 toDelete.size(),
+                doublonsProbables,
                 rows,
                 warnings);
         return new Analysis(report, toWrite, toDelete, outcomes);
+    }
+
+    /* -------------------------- Probable duplicates -------------------------- */
+
+    /** How the birth dates of a namesake warning are written — the form the operator typed them in. */
+    private static final DateTimeFormatter FRENCH_DATE = DateTimeFormatter.ofPattern("dd/MM/uuuu");
+
+    /**
+     * How many other rows, or other fiches, one row names at most. A group of
+     * k rows sharing a key would otherwise give each of them k − 1 references:
+     * three thousand identical rows made a report of hundreds of megabytes.
+     * Each row names the first ones of its group in file order — so every row
+     * but the first leads to the first — and counts the rest.
+     */
+    static final int LISTED_DUPLICATES = 3;
+
+    /**
+     * First name, last name and birth date — the names compared as
+     * {@link #nameKey} compares them, each on its own so that « Jean » +
+     * « Pierre Martin » is not « Jean Pierre » + « Martin ».
+     */
+    record IdentityKey(String prenom, String nom, LocalDate dateNaissance) {
+
+        static IdentityKey of(Animateur animateur) {
+            return new IdentityKey(
+                    nameKey(animateur.getPrenom(), null),
+                    nameKey(animateur.getNom(), null),
+                    animateur.getDateNaissance());
+        }
+    }
+
+    /**
+     * The accepted rows sharing one key, as much of them as any row needs:
+     * the first ones in file order, the first ones whose write changes their
+     * fiche's key, and how many there are of each.
+     */
+    private static final class KeyGroup {
+        private final List<Integer> first = new ArrayList<>(LISTED_DUPLICATES + 1);
+        private final List<Integer> firstChanged = new ArrayList<>(LISTED_DUPLICATES);
+        private int size;
+        private int changed;
+
+        void add(int index, boolean unchanged) {
+            if (first.size() <= LISTED_DUPLICATES) {
+                first.add(index);
+            }
+            size++;
+            if (!unchanged) {
+                if (firstChanged.size() < LISTED_DUPLICATES) {
+                    firstChanged.add(index);
+                }
+                changed++;
+            }
+        }
+
+        /**
+         * The rows {@code index} is flagged against, at most
+         * {@link #LISTED_DUPLICATES} of them, and how many there are in all.
+         * Two rows that both leave their fiche's key as it was form no pair: it
+         * predates the file. The relation is symmetric, so a row named here is
+         * flagged too, and the link the screen draws to it leads to a flagged row.
+         */
+        Others othersOf(int index, boolean unchanged) {
+            if (unchanged) {
+                return new Others(firstChanged, changed);
+            }
+            List<Integer> listed = first.stream()
+                    .filter(other -> other != index)
+                    .limit(LISTED_DUPLICATES)
+                    .toList();
+            return new Others(listed, size - 1);
+        }
+    }
+
+    /** The rows a row is flagged against: the ones it names, and the count of all of them. */
+    private record Others(List<Integer> listed, int total) {}
+
+    /**
+     * Flags, on the accepted rows, what resolution cannot see because the birth
+     * date never takes part in it: two fiches for one person, one person's
+     * fiche rewritten from a namesake's row, and a fiche reached by its name
+     * whose address the row replaces. A warning, never a refusal — twins share
+     * a birth date, two people of the same name born the same day exist, and
+     * people change address; the operator decides, informed.
+     *
+     * <p>The roster compared is the one the write would leave: the fiches the
+     * accepted rows write, plus — outside a full replacement — the fiches the
+     * file does not touch. A pair is flagged only when the import makes it:
+     * two fiches that already shared their key and that rows merely update
+     * are the edition's business, not this file's, and saying so on every
+     * re-import would teach the operator to skip the warning.</p>
+     *
+     * <p>Linear in the file, report included: the rows and the kept fiches are
+     * grouped by hashing their key once, and a row then names at most
+     * {@link #LISTED_DUPLICATES} other rows and as many fiches, counting the
+     * rest — never a comparison of every pair, nor a sentence that grows with
+     * its group.</p>
+     *
+     * <p>The fiche case is narrower than it looks. A row that would
+     * <em>create</em> a fiche whose key a kept fiche carries cannot happen
+     * today: {@link #resolve} falls back to the name whenever the address
+     * names nobody, so that row lands on that fiche — or is refused when the
+     * name is ambiguous. That fall-back is what {@link
+     * AnimateurCsvImportReport.DuplicateKind#NEW_ADDRESS} flags: the person is
+     * not duplicated, but the address their access codes and mails go to is
+     * rewritten. The fiche case is checked anyway, on the creation as on the
+     * update, so a change of resolution cannot reopen it; what reaches it now
+     * is a row matched by its address that rewrites its fiche's name or birth
+     * date onto somebody else's.</p>
+     */
+    private static List<RowOutcome> flagDuplicates(
+            List<RowOutcome> outcomes, List<Animateur> existants, Set<String> idsTouches, boolean replacement) {
+        IdentityKey[] keys = new IdentityKey[outcomes.size()];
+        boolean[] unchanged = new boolean[outcomes.size()];
+        Map<IdentityKey, KeyGroup> groups = new HashMap<>();
+        for (int i = 0; i < outcomes.size(); i++) {
+            Animateur animateur = outcomes.get(i).animateur();
+            if (animateur != null && animateur.getDateNaissance() != null) {
+                keys[i] = IdentityKey.of(animateur);
+                unchanged[i] = unchangedKey(outcomes.get(i), keys[i]);
+                groups.computeIfAbsent(keys[i], k -> new KeyGroup()).add(i, unchanged[i]);
+            }
+        }
+        Map<IdentityKey, List<Animateur>> untouchedByKey = new HashMap<>();
+        for (Animateur existant : existants) {
+            if (!idsTouches.contains(existant.getId()) && existant.getDateNaissance() != null) {
+                untouchedByKey
+                        .computeIfAbsent(IdentityKey.of(existant), k -> new ArrayList<>())
+                        .add(existant);
+            }
+        }
+
+        List<RowOutcome> flagged = new ArrayList<>(outcomes.size());
+        for (int i = 0; i < outcomes.size(); i++) {
+            RowOutcome outcome = outcomes.get(i);
+            IdentityKey key = keys[i];
+            if (key == null) {
+                flagged.add(outcome);
+                continue;
+            }
+            List<String> warnings = new ArrayList<>(outcome.reported().warnings());
+            List<AnimateurCsvImportReport.ProbableDuplicate> doublons = new ArrayList<>();
+
+            if (outcome.byName()) {
+                flagByName(outcome, key, warnings, doublons);
+            }
+
+            Others others = groups.get(key).othersOf(i, unchanged[i]);
+            if (others.total() > 0) {
+                List<Integer> lines = others.listed().stream()
+                        .map(j -> outcomes.get(j).reported().line())
+                        .toList();
+                warnings.add(rowWarning(lines, others.total()));
+                lines.forEach(line -> doublons.add(AnimateurCsvImportReport.ProbableDuplicate.row(line)));
+            }
+
+            List<Animateur> fiches = unchanged[i] ? List.of() : untouchedByKey.getOrDefault(key, List.of());
+            for (Animateur autre : fiches.subList(0, Math.min(fiches.size(), LISTED_DUPLICATES))) {
+                warnings.add(ficheWarning(outcome, autre.getId(), replacement));
+                doublons.add(AnimateurCsvImportReport.ProbableDuplicate.fiche(
+                        replacement
+                                ? AnimateurCsvImportReport.DuplicateKind.REPLACED
+                                : AnimateurCsvImportReport.DuplicateKind.FICHE,
+                        autre.getId()));
+            }
+            if (fiches.size() > LISTED_DUPLICATES) {
+                int rest = fiches.size() - LISTED_DUPLICATES;
+                warnings.add(grouped(rest) + (rest == 1 ? " autre fiche" : " autres fiches")
+                        + (replacement ? ", que le remplacement complet supprime," : ", que l'import conserve,")
+                        + " porte" + (rest == 1 ? "" : "nt") + " aussi les mêmes nom, prénom et date de naissance.");
+            }
+
+            if (doublons.isEmpty()) {
+                flagged.add(outcome);
+                continue;
+            }
+            AnimateurCsvImportReport.ImportedRow row = outcome.reported();
+            flagged.add(outcome.withReported(new AnimateurCsvImportReport.ImportedRow(
+                    row.line(),
+                    row.label(),
+                    row.animateurId(),
+                    row.action(),
+                    row.reasons(),
+                    List.copyOf(warnings),
+                    row.joursIndisponibles(),
+                    List.copyOf(doublons))));
+        }
+        return flagged;
+    }
+
+    /**
+     * A row the name alone attached to its fiche: nothing in the file said it
+     * was that person. Two things the write then changes on the strength of a
+     * name are flagged — the birth date, and with it the minor / adult regime
+     * ({@code NAMESAKE}), and the address the access codes and mails go to
+     * ({@code NEW_ADDRESS}). One reference to the fiche at most: the screen
+     * draws one link per reference, and both sentences point to the same
+     * fiche.
+     */
+    private static void flagByName(
+            RowOutcome outcome,
+            IdentityKey key,
+            List<String> warnings,
+            List<AnimateurCsvImportReport.ProbableDuplicate> doublons) {
+        Animateur existant = outcome.existant();
+        String id = existant.getId();
+        if (existant.getDateNaissance() != null && !existant.getDateNaissance().equals(key.dateNaissance())) {
+            // The birth dates stay on the admin screen: this report is drawn by
+            // the import page only, never notified, journalled nor sent over MCP.
+            warnings.add("Homonyme ? Cette ligne est rattachée par le nom seul à la fiche " + id
+                    + ", dont la date de naissance est le "
+                    + existant.getDateNaissance().format(FRENCH_DATE) + " ; la ligne dit le "
+                    + key.dateNaissance().format(FRENCH_DATE) + ". L'importer changerait cette date, donc "
+                    + "le régime mineur / majeur de la fiche : si ce n'est pas la même personne, retirez "
+                    + "la ligne du fichier.");
+            doublons.add(AnimateurCsvImportReport.ProbableDuplicate.fiche(
+                    AnimateurCsvImportReport.DuplicateKind.NAMESAKE, id));
+        }
+        String avant = existant.getEmail();
+        String apres = outcome.animateur().getEmail();
+        if (avant != null && !avant.isBlank() && apres != null && !apres.isBlank() && !avant.equalsIgnoreCase(apres)) {
+            // Neither address is quoted: the new one is in the row, the old one
+            // is on the fiche the link opens.
+            warnings.add("L'adresse e-mail de la fiche " + id + " sera remplacée : cette ligne y est rattachée "
+                    + "par le nom seul, son adresse ne correspondant à aucune fiche. C'est à cette adresse que "
+                    + "partent les codes d'accès à l'espace et les envois du planning : si ce n'est pas la "
+                    + "même personne, retirez la ligne du fichier.");
+            if (doublons.isEmpty()) {
+                doublons.add(AnimateurCsvImportReport.ProbableDuplicate.fiche(
+                        AnimateurCsvImportReport.DuplicateKind.NEW_ADDRESS, id));
+            }
+        }
+    }
+
+    /** The sentence of a row sharing its key with other rows: the first ones by number, the rest counted. */
+    private static String rowWarning(List<Integer> lines, int total) {
+        String listed = lines.stream().map(String::valueOf).collect(Collectors.joining(", "));
+        int rest = total - lines.size();
+        String others;
+        if (total == 1) {
+            others = "de la ligne " + listed;
+        } else if (rest == 0) {
+            others = "des lignes " + listed;
+        } else {
+            others = "des lignes " + listed + (rest == 1 ? " et d'une autre" : " et de " + grouped(rest) + " autres");
+        }
+        return "Probable doublon " + others + " : mêmes nom, prénom et date de naissance. Si c'est la même "
+                + "personne, ne gardez qu'une ligne pour elle.";
+    }
+
+    /** True when the row updates a fiche whose key it leaves as it was — the pair, if any, predates this file. */
+    private static boolean unchangedKey(RowOutcome outcome, IdentityKey key) {
+        return outcome.existant() != null
+                && outcome.existant().getDateNaissance() != null
+                && IdentityKey.of(outcome.existant()).equals(key);
+    }
+
+    /** The sentence of a row matching a fiche the file does not touch, by id and never by name. */
+    private static String ficheWarning(RowOutcome outcome, String autre, boolean replacement) {
+        if (replacement) {
+            return "La fiche " + autre + ", que le remplacement complet supprime, porte les mêmes nom, prénom "
+                    + "et date de naissance : si c'est la même personne, sa déclaration, son accusé de réception "
+                    + "et son accès à l'espace partent avec elle. Donnez à cette ligne l'adresse e-mail de la "
+                    + "fiche " + autre + " pour la conserver.";
+        }
+        return outcome.existant() == null
+                ? "Probable doublon de la fiche " + autre + " : mêmes nom, prénom et date de naissance, et cette "
+                        + "ligne en créerait une seconde. Donnez-lui l'adresse e-mail de la fiche " + autre
+                        + " pour la mettre à jour au lieu d'en créer une."
+                : "Probable doublon de la fiche " + autre + " : après l'import, elle et la fiche "
+                        + outcome.existant().getId() + " que met à jour cette ligne porteraient les mêmes nom, "
+                        + "prénom et date de naissance.";
     }
 
     private Set<String> pendingDeclarations() {
@@ -577,8 +870,18 @@ public class AnimateurCsvImportService {
         }
     }
 
-    /** One analysed row: what the report shows, and the fiche to write (null when refused). */
-    private record RowOutcome(AnimateurCsvImportReport.ImportedRow reported, Animateur animateur) {}
+    /**
+     * One analysed row: what the report shows, the fiche to write (null when
+     * refused), the fiche it lands on as it stands before the import (null for
+     * a creation), and whether the name alone designated that fiche.
+     */
+    private record RowOutcome(
+            AnimateurCsvImportReport.ImportedRow reported, Animateur animateur, Animateur existant, boolean byName) {
+
+        RowOutcome withReported(AnimateurCsvImportReport.ImportedRow row) {
+            return new RowOutcome(row, animateur, existant, byName);
+        }
+    }
 
     /**
      * The two calendars a row's dates are read against: today for a birth
@@ -682,8 +985,11 @@ public class AnimateurCsvImportService {
                                 : AnimateurCsvImportReport.ImportAction.CREATED,
                         List.of(),
                         List.copyOf(warnings),
-                        List.copyOf(jours)),
-                animateur);
+                        List.copyOf(jours),
+                        List.of()),
+                animateur,
+                existant,
+                resolution.byName());
     }
 
     private static RowOutcome rejected(CsvParser.Row row, String label, Animateur existant, List<String> reasons) {
@@ -695,8 +1001,11 @@ public class AnimateurCsvImportService {
                         AnimateurCsvImportReport.ImportAction.REJECTED,
                         List.copyOf(reasons),
                         List.of(),
+                        List.of(),
                         List.of()),
-                null);
+                null,
+                existant,
+                false);
     }
 
     private static void checkNames(String prenom, String nom, String email, Animateur existant, List<String> reasons) {
@@ -785,8 +1094,17 @@ public class AnimateurCsvImportService {
         return !complet.isEmpty() ? complet : email;
     }
 
-    /** Which fiche the row lands on, and the key that makes it a duplicate of another row. */
-    private record Resolution(Animateur existant, String identity) {}
+    /**
+     * Which fiche the row lands on, the key that makes it a duplicate of another
+     * row, and whether the name was what decided — the case where a different
+     * birth date says « namesake » rather than « same person ».
+     */
+    private record Resolution(Animateur existant, String identity, boolean byName) {
+
+        Resolution(Animateur existant, String identity) {
+            this(existant, identity, false);
+        }
+    }
 
     /**
      * The fiche a row lands on: by e-mail, then by name — never by id, which is
@@ -817,7 +1135,7 @@ public class AnimateurCsvImportService {
             return new Resolution(null, "nom:" + key);
         }
         if (candidats.size() == 1) {
-            return new Resolution(candidats.get(0), candidats.get(0).getId());
+            return new Resolution(candidats.get(0), candidats.get(0).getId(), true);
         }
         return new Resolution(null, email.isEmpty() ? "nom:" + key : "email:" + email.toLowerCase(Locale.ROOT));
     }

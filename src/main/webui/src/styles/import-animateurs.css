@@ -56,6 +56,44 @@ table.import-rapport td mat-icon {
   color: var(--mat-sys-on-surface-variant);
 }
 
+/* A probable duplicate or namesake: a badge beside the name, the counter
+   above the table set apart, and the links to the other row or fiche. */
+.import-badge-doublon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-left: 0.4rem;
+  padding: 0 0.5rem;
+  border-radius: 1rem;
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+  font: var(--mat-sys-label-medium);
+  white-space: nowrap;
+}
+
+table.import-rapport td .import-badge-doublon mat-icon {
+  width: 1rem;
+  height: 1rem;
+  font-size: 1rem;
+  margin-right: 0;
+}
+
+.import-compteur-doublons strong {
+  color: var(--mat-sys-tertiary);
+}
+
+.import-filtre-doublons {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.import-doublon-liens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0 0 0.25rem;
+}
+
 /* Stand grid import: the columns the file could not place, listed by name. */
 .import-colonnes-ignorees {
   margin: 0.5rem 0 0.75rem;
