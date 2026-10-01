@@ -24,6 +24,23 @@ resource "keycloak_realm" "planning" {
   verify_email = true
   ssl_required = "external"
 
+  # Dix mauvais mots de passe ou codes e-mail verrouillent le compte quinze
+  # minutes, temporairement : un verrou permanent permettrait à n'importe qui
+  # de fermer le compte d'un administrateur en connaissant son adresse. Le code
+  # e-mail (extension code-email) signale ses échecs au même compteur ; sans
+  # cela, relancer la connexion remettait ses cinq essais à zéro.
+  security_defenses {
+    brute_force_detection {
+      permanent_lockout                = false
+      max_login_failures               = 10
+      wait_increment_seconds           = 900
+      quick_login_check_milli_seconds  = 1000
+      minimum_quick_login_wait_seconds = 60
+      max_failure_wait_seconds         = 900
+      failure_reset_time_seconds       = 43200
+    }
+  }
+
   access_token_lifespan    = var.access_token_lifespan
   sso_session_idle_timeout = var.sso_session_idle_timeout
   sso_session_max_lifespan = var.sso_session_max_lifespan

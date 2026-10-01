@@ -199,6 +199,29 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
      * this mechanism learns a third form.</p>
      */
     public static String presentedKey(RoutingContext context, String headerName) {
+        return presented(context, headerName);
+    }
+
+    /**
+     * The key a request presents <em>as a guess</em>: {@link #presentedKey}
+     * minus an {@code Authorization: Bearer} that is shaped like a JWT (three
+     * dot-separated segments). Since the OAuth tenant, an MCP client sends its
+     * access token there, and counting that against the key lockout would lock
+     * an address out for an expired token or a few parallel requests. The
+     * shared key is a random secret, never a JWT: a Bearer of that shape is
+     * the OAuth tenant's to judge, bounded by the request ceiling.
+     */
+    public static String presentedKeyAttempt(RoutingContext context, String headerName) {
+        String presented = presented(context, headerName);
+        if (presented != null
+                && context.request().getHeader(headerName) == null
+                && presented.chars().filter(c -> c == '.').count() == 2) {
+            return null;
+        }
+        return presented;
+    }
+
+    private static String presented(RoutingContext context, String headerName) {
         String header = context.request().getHeader(headerName);
         if (header != null) {
             return header;

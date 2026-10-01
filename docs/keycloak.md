@@ -209,10 +209,16 @@ chargé par un autre programme, compilé pour son JDK (21) et contre ses SPI.
 Sa `keycloak.version` et l'image de base du `Dockerfile` bougent **ensemble** ;
 `KeycloakThemeStructuralTest` refuse qu'elles divergent.
 
-> ⚠️ **Limites connues de l'extension.** Le code vit dans la session
-> d'authentification, pas dans un stockage partagé, et le compteur d'essais est
-> par session : c'est juste pour un serveur, pas pour plusieurs répliques
-> derrière un répartiteur.
+**Bornes du code.** Un rechargement de la page ne tire pas de nouveau code et
+ne remet pas le compteur d'essais à zéro ; deux envois à un même compte sont
+espacés d'au moins une minute (magasin à usage unique de Keycloak, partagé
+entre les nœuds) ; chaque mauvais code compte aussi dans la détection de force
+brute du realm (dix échecs, verrou temporaire de quinze minutes, jamais
+permanent), si bien que relancer la connexion ne remet rien à zéro.
+
+> ⚠️ **Limite connue de l'extension.** Le code vit dans la session
+> d'authentification, pas dans un stockage partagé : c'est juste pour un
+> serveur, pas pour plusieurs répliques derrière un répartiteur.
 
 ## Compte de secours
 
