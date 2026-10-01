@@ -232,6 +232,9 @@ class RefusedWhileSolvingStructuralTest {
                     "ReferenceDataService#updateContactOrganisation(ContactOrganisation)",
                     "ParametresService#updateContactOrganisation(ContactOrganisation)"),
             Map.entry(
+                    "ReferenceDataService#updateParametresResponsables(ParametresResponsables)",
+                    "ParametresService#updateParametresResponsables(ParametresResponsables)"),
+            Map.entry(
                     "ReferenceDataService#setContrainteActive(String,boolean,WeightChangeOrigin)",
                     "ParametresService#setContrainteActive(String,boolean,WeightChangeOrigin)"),
             Map.entry(
@@ -255,6 +258,9 @@ class RefusedWhileSolvingStructuralTest {
                     "AnimateurService#regenerateToken(String)",
                     "a credential: the landing writes an animateur's identity, never a token"),
             Map.entry("AnimateurService#regenerateAbonnementToken(String)", "same"),
+            Map.entry(
+                    "AnimateurService#sendInvitations()",
+                    "creates and mails Keycloak accounts: the landing writes no account, and no solve reads one"),
             Map.entry("StandService#create(Stand)", NEW_ROW),
             Map.entry("StandService#create(Connection,Stand)", NEW_ROW),
             Map.entry("CreneauService#create(Creneau)", NEW_ROW + "; no seat stands on it yet"),
@@ -283,6 +289,7 @@ class RefusedWhileSolvingStructuralTest {
             Map.entry("ParametresService#updateNotifications(ParametresNotifications)", NOT_LANDED),
             Map.entry("ParametresService#updateQualite(ParametresQualite)", NOT_LANDED),
             Map.entry("ParametresService#updateContactOrganisation(ContactOrganisation)", NOT_LANDED),
+            Map.entry("ParametresService#updateParametresResponsables(ParametresResponsables)", NOT_LANDED),
             Map.entry("ParametresService#setContrainteActive(String,boolean,WeightChangeOrigin)", NOT_LANDED),
             Map.entry("ParametresService#setConstraintWeight(String,Integer,WeightChangeOrigin)", NOT_LANDED),
             Map.entry("ParametresService#recordInheritedDosage(String)", NOT_LANDED),
