@@ -70,20 +70,20 @@ class DiagnosticMcpToolsTest {
 
     @AfterEach
     void clearEdition() {
-        contrainteTools.updateContrainteWeight(CONTRAINTE, null, null);
-        scenarioTools.resetData(null);
+        contrainteTools.updateContrainteWeight(CONTRAINTE, null, "E1");
+        scenarioTools.resetData("E1");
     }
 
     private void loadScenario() {
-        scenarioTools.resetData(null);
-        scenarioTools.importScenario("scenario.yml", null);
+        scenarioTools.resetData("E1");
+        scenarioTools.importScenario("scenario.yml", "E1");
     }
 
     @Test
     void theStaffingAnalysisCountsTheSeatsTheSolverWouldFill() {
         loadScenario();
 
-        StaffingSummary effectifs = diagnosticTools.analyzeEffectifs(null);
+        StaffingSummary effectifs = diagnosticTools.analyzeEffectifs("E1");
 
         assertThat(effectifs.minimumTotal()).isPositive();
         assertThat(effectifs.parJour()).isNotEmpty();
@@ -98,7 +98,7 @@ class DiagnosticMcpToolsTest {
         // here is a hard-coded list of typologies.
         loadScenario();
 
-        CompetenceStaffing competence = diagnosticTools.analyzeEffectifs(null).parCompetence();
+        CompetenceStaffing competence = diagnosticTools.analyzeEffectifs("E1").parCompetence();
 
         // The lines carry typologie ids, which are generated (ADR 0050): the
         // scenario's references are the codes of the rows they landed on.
@@ -127,12 +127,12 @@ class DiagnosticMcpToolsTest {
         // (issue #416) — and it is animateursTotal, not an empty category
         // list, that says the comparison is missing.
         loadScenario();
-        StaffingSummary avecAnimateurs = diagnosticTools.analyzeEffectifs(null);
+        StaffingSummary avecAnimateurs = diagnosticTools.analyzeEffectifs("E1");
         referenceDataService.listAnimateurs().stream()
                 .map(Animateur::getId)
                 .forEach(referenceDataService::deleteAnimateur);
 
-        StaffingSummary effectifs = diagnosticTools.analyzeEffectifs(null);
+        StaffingSummary effectifs = diagnosticTools.analyzeEffectifs("E1");
 
         assertThat(effectifs.parJour()).isNotEmpty();
         assertThat(effectifs.minimumTotal()).isPositive().isEqualTo(avecAnimateurs.minimumTotal());
@@ -144,9 +144,9 @@ class DiagnosticMcpToolsTest {
 
     @Test
     void theStaffingAnalysisAnswersOnAnEmptyEditionAndNamesEverythingMissing() {
-        scenarioTools.resetData(null);
+        scenarioTools.resetData("E1");
 
-        StaffingSummary effectifs = diagnosticTools.analyzeEffectifs(null);
+        StaffingSummary effectifs = diagnosticTools.analyzeEffectifs("E1");
 
         assertThat(effectifs.parJour()).isEmpty();
         assertThat(effectifs.minimumTotal()).isZero();
@@ -158,11 +158,11 @@ class DiagnosticMcpToolsTest {
     @Test
     void openingsFilterOnAStandWithoutSkewingTheTotals() {
         loadScenario();
-        RapportOuvertures complet = diagnosticTools.analyzeStandOpenings(null, null);
+        RapportOuvertures complet = diagnosticTools.analyzeStandOpenings(null, "E1");
         assertThat(complet.stands()).hasSizeGreaterThan(1);
         String standId = complet.stands().get(0).standId();
 
-        RapportOuvertures filtre = diagnosticTools.analyzeStandOpenings(standId, null);
+        RapportOuvertures filtre = diagnosticTools.analyzeStandOpenings(standId, "E1");
 
         assertThat(filtre.stands())
                 .singleElement()
@@ -175,19 +175,19 @@ class DiagnosticMcpToolsTest {
     void anUnknownStandReturnsNoRowWithoutFailing() {
         loadScenario();
 
-        assertThat(diagnosticTools.analyzeStandOpenings("STAND-INCONNU", null).stands())
+        assertThat(diagnosticTools.analyzeStandOpenings("STAND-INCONNU", "E1").stands())
                 .isEmpty();
     }
 
     @Test
     void theImportPreviewCountsWhatWouldBeOverwritten() {
         loadScenario();
-        StandsView stands = standTools.listStands(null, null);
+        StandsView stands = standTools.listStands(null, "E1");
 
-        assertThat(diagnosticTools.previewImport(null).stands()).isEqualTo(stands.total());
+        assertThat(diagnosticTools.previewImport("E1").stands()).isEqualTo(stands.total());
 
-        scenarioTools.resetData(null);
-        assertThat(diagnosticTools.previewImport(null).stands()).isZero();
+        scenarioTools.resetData("E1");
+        assertThat(diagnosticTools.previewImport("E1").stands()).isZero();
     }
 
     @Test
@@ -199,14 +199,14 @@ class DiagnosticMcpToolsTest {
     void aContrainteWeightIsSetAndRestored() {
         loadScenario();
 
-        assertThat(contrainteTools.updateContrainteWeight(CONTRAINTE, 4, null).poids())
+        assertThat(contrainteTools.updateContrainteWeight(CONTRAINTE, 4, "E1").poids())
                 .isEqualTo(4);
-        assertThat(contrainteTools.listContraintes(null))
+        assertThat(contrainteTools.listContraintes("E1"))
                 .filteredOn(vue -> vue.nom().equals(CONTRAINTE))
                 .singleElement()
                 .satisfies(vue -> assertThat(vue.poids()).isEqualTo(4));
 
-        var retabli = contrainteTools.updateContrainteWeight(CONTRAINTE, null, null);
+        var retabli = contrainteTools.updateContrainteWeight(CONTRAINTE, null, "E1");
 
         assertThat(retabli.parDefaut()).isTrue();
         assertThat(retabli.poids()).isEqualTo(1);
@@ -214,7 +214,7 @@ class DiagnosticMcpToolsTest {
 
     @Test
     void aZeroOrNegativeWeightIsRefused() {
-        assertThatThrownBy(() -> contrainteTools.updateContrainteWeight(CONTRAINTE, 0, null))
+        assertThatThrownBy(() -> contrainteTools.updateContrainteWeight(CONTRAINTE, 0, "E1"))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("poids");
@@ -222,14 +222,14 @@ class DiagnosticMcpToolsTest {
 
     @Test
     void aWeightOnAnUnknownContrainteIsRefused() {
-        assertThatThrownBy(() -> contrainteTools.updateContrainteWeight("contrainteQuiNexistePas", 2, null))
+        assertThatThrownBy(() -> contrainteTools.updateContrainteWeight("contrainteQuiNexistePas", 2, "E1"))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.NotFound.class);
     }
 
     @Test
     void untunedContraintesReportAWeightOf1() {
-        assertThat(contrainteTools.listContraintes(null))
+        assertThat(contrainteTools.listContraintes("E1"))
                 .isNotEmpty()
                 .allSatisfy(vue -> assertThat(vue.poids()).isPositive());
     }
@@ -237,7 +237,7 @@ class DiagnosticMcpToolsTest {
     /** Sanity check on the view itself: no personal field can reach it. */
     @Test
     void theContrainteViewsNameNobody() {
-        for (ContrainteView vue : contrainteTools.listContraintes(null)) {
+        for (ContrainteView vue : contrainteTools.listContraintes("E1")) {
             assertThat(vue.nom()).isNotBlank();
             assertThat(vue.niveau()).isIn("HARD", "MEDIUM", "SOFT");
         }
@@ -245,7 +245,7 @@ class DiagnosticMcpToolsTest {
 
     @Test
     void thePauseAnalysisPlacesEachPauseNamesNobodyAndFilters() {
-        scenarioTools.resetData(null);
+        scenarioTools.resetData("E1");
         Animateur alice = new Animateur("PAUSE-MCP-A", "Alice", "Martin", LocalDate.of(1990, 1, 1), false);
         Animateur bruno = new Animateur("PAUSE-MCP-B", "Bruno", "Petit", LocalDate.of(1992, 2, 2), false);
         Animateur seul = new Animateur("PAUSE-MCP-C", "Carole", "Seule", LocalDate.of(1990, 1, 1), false);
@@ -260,7 +260,7 @@ class DiagnosticMcpToolsTest {
         PosteAffectation p3 = new PosteAffectation("PAUSE-MCP-P3", solo, longue);
         p3.setAnimateur(seul);
         persistence.persist(new PlanningEvenement(jour, List.of(alice, bruno, seul), List.of(p1, p2, p3)));
-        PausesView tout = diagnosticTools.analyzePauses(null, null, null, null);
+        PausesView tout = diagnosticTools.analyzePauses(null, null, null, "E1");
         assertThat(tout.journeesAnalysees()).isEqualTo(3);
         assertThat(tout.pausesDues()).isEqualTo(3);
         assertThat(tout.relaisManquants()).isEqualTo(1);
@@ -275,15 +275,15 @@ class DiagnosticMcpToolsTest {
         // No display name anywhere in the wire shape: ids only.
         assertThat(tout.toString()).doesNotContain("Martin").doesNotContain("Alice");
 
-        PausesView sansRelais = diagnosticTools.analyzePauses(null, null, true, null);
+        PausesView sansRelais = diagnosticTools.analyzePauses(null, null, true, "E1");
         assertThat(sansRelais.journees())
                 .extracting(DiagnosticMcpTools.JourneePausesView::animateurId)
                 .containsExactly("PAUSE-MCP-C");
         assertThat(sansRelais.pausesDues()).isEqualTo(1);
 
-        PausesView surLeDuo = diagnosticTools.analyzePauses("2026-07-11", "PAUSE-MCP-S1", null, null);
+        PausesView surLeDuo = diagnosticTools.analyzePauses("2026-07-11", "PAUSE-MCP-S1", null, "E1");
         assertThat(surLeDuo.journees()).hasSize(2);
-        assertThat(diagnosticTools.analyzePauses("2026-07-12", null, null, null).journees())
+        assertThat(diagnosticTools.analyzePauses("2026-07-12", null, null, "E1").journees())
                 .isEmpty();
     }
 
@@ -300,14 +300,14 @@ class DiagnosticMcpToolsTest {
         loadScenario();
 
         ParametresMcpTools.ParametresLegauxView ecrit = parametresTools.updateParametresLegaux(
-                null, null, null, null, 45, null, null, null, null, null, null, null);
+                null, null, null, null, 45, null, null, null, null, null, null, "E1");
 
         assertThat(ecrit.dureePauseMinutes()).isEqualTo(45);
-        assertThat(parametresTools.getParametresLegaux(null).dureePauseMinutes())
+        assertThat(parametresTools.getParametresLegaux("E1").dureePauseMinutes())
                 .isEqualTo(45);
 
         assertThatThrownBy(() -> parametresTools.updateParametresLegaux(
-                        null, null, null, null, 19, null, null, null, null, null, null, null))
+                        null, null, null, null, 19, null, null, null, null, null, null, "E1"))
                 .isInstanceOf(ToolCallException.class)
                 .hasMessageContaining("L3121-16");
     }
@@ -320,21 +320,21 @@ class DiagnosticMcpToolsTest {
     void theTensionModeCrossesTheMarginWithTheFragilityByIdOnly() throws Exception {
         loadScenario();
 
-        MarginReading lecture = diagnosticTools.analyzeMargin("tension", null);
+        MarginReading lecture = diagnosticTools.analyzeMargin("tension", "E1");
 
         assertThat(lecture).isInstanceOf(TensionAnalyzer.RapportTension.class);
         String json = objectMapper.writeValueAsString(lecture);
         for (Animateur animateur : referenceDataService.listAnimateurs()) {
             assertThat(json).doesNotContain(animateur.nomAffiche());
         }
-        assertThat(diagnosticTools.analyzeMargin("apres", null)).isInstanceOf(MargeAnalyzer.RapportMarge.class);
+        assertThat(diagnosticTools.analyzeMargin("apres", "E1")).isInstanceOf(MargeAnalyzer.RapportMarge.class);
     }
 
     @Test
     void theTrainingPlanNamesItsCandidatesByIdOnly() throws Exception {
         loadScenario();
 
-        DiagnosticMcpTools.PlanFormationView plan = diagnosticTools.suggestTrainingPlan(null);
+        DiagnosticMcpTools.PlanFormationView plan = diagnosticTools.suggestTrainingPlan("E1");
         String json = objectMapper.writeValueAsString(plan);
 
         assertThat(json).doesNotContain("\"nom\"");
@@ -357,7 +357,7 @@ class DiagnosticMcpToolsTest {
             referenceDataService.updateAnimateur(animateur.getId(), animateur);
         });
 
-        DiagnosticMcpTools.CoherenceListView vue = diagnosticTools.listReferenceDataAnomalies(null);
+        DiagnosticMcpTools.CoherenceListView vue = diagnosticTools.listReferenceDataAnomalies("E1");
 
         assertThat(vue.anomalies()).hasSize(vue.bloquants() + vue.aVerifier() + vue.informations());
         assertThat(vue.familles()).hasSize(5);

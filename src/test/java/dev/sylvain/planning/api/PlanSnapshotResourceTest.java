@@ -29,8 +29,13 @@ class PlanSnapshotResourceTest {
 
     /** Loads the sample scenario and solves it once, so a plan is persisted. */
     private void persistedPlan() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
@@ -40,7 +45,8 @@ class PlanSnapshotResourceTest {
 
     private void solve() {
         attendreSolveurLibre();
-        String jobId = given().when()
+        String jobId = given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/solve/async/reference-data?seconds=1")
                 .then()
                 .statusCode(202)
@@ -51,7 +57,8 @@ class PlanSnapshotResourceTest {
     }
 
     private int affectationCount() {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/persisted/count")
                 .then()
                 .statusCode(200)
@@ -61,7 +68,8 @@ class PlanSnapshotResourceTest {
     }
 
     private long capture(String libelle) {
-        return given().contentType(ContentType.JSON)
+        return given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"libelle\":\"" + libelle + "\"}")
                 .when()
                 .post("/api/planning/snapshots")
@@ -82,7 +90,8 @@ class PlanSnapshotResourceTest {
 
         solve();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/planning/snapshots/" + id + "/restore")
                 .then()
                 .statusCode(200)
@@ -94,7 +103,8 @@ class PlanSnapshotResourceTest {
     @Test
     void chaqueSolveCaptureAutomatiquementLePlanPrecedent() {
         persistedPlan();
-        int avant = given().when()
+        int avant = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/snapshots")
                 .then()
                 .statusCode(200)
@@ -105,7 +115,8 @@ class PlanSnapshotResourceTest {
 
         solve();
 
-        List<Boolean> automatiques = given().when()
+        List<Boolean> automatiques = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/snapshots")
                 .then()
                 .statusCode(200)
@@ -122,9 +133,14 @@ class PlanSnapshotResourceTest {
 
         // Wipes stands, créneaux and animateurs: every id the snapshot names is
         // gone, so restoring would produce a plan nobody ever computed.
-        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/planning/snapshots/" + id + "/restore")
                 .then()
                 .statusCode(409)
@@ -141,10 +157,15 @@ class PlanSnapshotResourceTest {
         // snapshot was computed on. A snapshot made of copied rows would be gone
         // with them; a denormalised one is still fully readable — including the
         // group name, kept as text for that very reason.
-        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
         assertThat(affectationCount()).isZero();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/snapshots/" + id)
                 .then()
                 .statusCode(200)
@@ -165,7 +186,8 @@ class PlanSnapshotResourceTest {
         persistedPlan();
         long id = capture("Plan à analyser");
         solve();
-        String avant = given().when()
+        String avant = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/constraints")
                 .then()
                 .statusCode(200)
@@ -174,9 +196,14 @@ class PlanSnapshotResourceTest {
                 .getString("analysedAt");
         assertThat(avant).isNotNull();
 
-        given().when().post("/api/planning/snapshots/" + id + "/restore").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/snapshots/" + id + "/restore")
+                .then()
+                .statusCode(200);
 
-        String apres = given().when()
+        String apres = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/constraints")
                 .then()
                 .statusCode(200)
@@ -199,14 +226,16 @@ class PlanSnapshotResourceTest {
         int avant = affectationCount();
 
         attendreSolveurLibre();
-        String jobId = given().when()
+        String jobId = given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/solve/async/reference-data?seconds=30")
                 .then()
                 .statusCode(202)
                 .extract()
                 .path("id");
         try {
-            given().when()
+            given().header("X-Edition-Id", "E1")
+                    .when()
                     .post("/api/planning/snapshots/" + id + "/restore")
                     .then()
                     .statusCode(409)
@@ -214,7 +243,7 @@ class PlanSnapshotResourceTest {
                     .body("message", containsString("résolution est en cours"));
             assertThat(affectationCount()).isEqualTo(avant);
         } finally {
-            given().when().post("/api/jobs/" + jobId + "/cancel");
+            given().header("X-Edition-Id", "E1").when().post("/api/jobs/" + jobId + "/cancel");
             pollUntilFinished(jobId);
         }
     }
@@ -238,7 +267,8 @@ class PlanSnapshotResourceTest {
         ContrainteBasculee contrainte = contrainteSouple();
         basculerContrainte(contrainte.nom(), false);
         try {
-            given().when()
+            given().header("X-Edition-Id", "E1")
+                    .when()
                     .post("/api/planning/snapshots/" + id + "/restore")
                     .then()
                     .statusCode(409)
@@ -247,7 +277,8 @@ class PlanSnapshotResourceTest {
                     .body("referenceModifieLe", notNullValue())
                     .body("message", containsString("modifié depuis cette capture"));
 
-            given().when()
+            given().header("X-Edition-Id", "E1")
+                    .when()
                     .post("/api/planning/snapshots/" + id + "/restore?forcer=true")
                     .then()
                     .statusCode(200)
@@ -289,11 +320,16 @@ class PlanSnapshotResourceTest {
 
     /** Drops a snapshot this class captured, so the next test sees the population it expects. */
     private void oublier(long id) {
-        given().when().delete("/api/planning/snapshots/" + id).then().statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/planning/snapshots/" + id)
+                .then()
+                .statusCode(204);
     }
 
     private boolean staleInListing(long id) {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/snapshots")
                 .then()
                 .statusCode(200)
@@ -310,7 +346,8 @@ class PlanSnapshotResourceTest {
      * other test of the run.
      */
     private ContrainteBasculee contrainteSouple() {
-        JsonPath contraintes = given().when()
+        JsonPath contraintes = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/constraints")
                 .then()
                 .statusCode(200)
@@ -328,7 +365,8 @@ class PlanSnapshotResourceTest {
     private record ContrainteBasculee(String nom, boolean actifAvant) {}
 
     private void basculerContrainte(String nom, boolean actif) {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"actif\":" + actif + "}")
                 .when()
                 .put("/api/constraints/" + nom)
@@ -340,8 +378,13 @@ class PlanSnapshotResourceTest {
         await().alias("Solver still busy")
                 .atMost(POLL_TIMEOUT)
                 .pollInterval(POLL_INTERVAL)
-                .until(() ->
-                        given().when().get("/api/jobs/active").then().extract().statusCode() == 204);
+                .until(() -> given().header("X-Edition-Id", "E1")
+                                .when()
+                                .get("/api/jobs/active")
+                                .then()
+                                .extract()
+                                .statusCode()
+                        == 204);
     }
 
     private JsonPath pollUntilFinished(String jobId) {
@@ -349,7 +392,8 @@ class PlanSnapshotResourceTest {
                 .atMost(POLL_TIMEOUT)
                 .pollInterval(POLL_INTERVAL)
                 .until(
-                        () -> given().when()
+                        () -> given().header("X-Edition-Id", "E1")
+                                .when()
                                 .get("/api/jobs/" + jobId)
                                 .then()
                                 .statusCode(200)

@@ -26,7 +26,8 @@ class DatabaseResourceTest {
      * to encode that content type as plain text.
      */
     private static RequestSpecification sqlRequest(String script) {
-        return given().config(RestAssured.config()
+        return given().header("X-Edition-Id", "E1")
+                .config(RestAssured.config()
                         .encoderConfig(
                                 EncoderConfig.encoderConfig().encodeContentTypeAs("application/sql", ContentType.TEXT)))
                 .contentType("application/sql")
@@ -38,14 +39,20 @@ class DatabaseResourceTest {
         // Reset first for a deterministic baseline (no leftovers from another
         // test), then seed: reset alone empties the database and leaves
         // nothing to export (see PlanningResourceTest.resetEmptiesTheDatabase).
-        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
 
-        int animateurs = given().when()
+        int animateurs = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/animateurs")
                 .then()
                 .statusCode(200)
@@ -55,7 +62,8 @@ class DatabaseResourceTest {
                 .size();
         assertThat(animateurs).isPositive();
 
-        String dump = given().when()
+        String dump = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/database/export")
                 .then()
                 .statusCode(200)
@@ -72,19 +80,30 @@ class DatabaseResourceTest {
                 .statusCode(200)
                 .body("statements", greaterThan(0));
 
-        given().when().get("/api/animateurs").then().statusCode(200).body("size()", equalTo(animateurs));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/animateurs")
+                .then()
+                .statusCode(200)
+                .body("size()", equalTo(animateurs));
     }
 
     @Test
     void exportedDumpIncludesCreneauxSoForeignKeysReplay() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
 
-        String dump = given().when()
+        String dump = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/database/export")
                 .then()
                 .statusCode(200)
@@ -102,14 +121,20 @@ class DatabaseResourceTest {
 
     @Test
     void exportedDumpIncludesParametresAndSurvivesReplay() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
 
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"dureeHebdomadaireMaxMinutes\":2760,\"dureeHebdomadaireMaxMineurMinutes\":2100,"
                         + "\"dureePauseMinutes\":45,\"reposQuotidienMinimalMinutes\":660}")
                 .when()
@@ -117,21 +142,24 @@ class DatabaseResourceTest {
                 .then()
                 .statusCode(200);
 
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"dureeResolutionSecondes\":42}")
                 .when()
                 .put("/api/parametres-solveur")
                 .then()
                 .statusCode(200);
 
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"actif\":false}")
                 .when()
                 .put("/api/constraints/dureeHebdomadaireMax")
                 .then()
                 .statusCode(200);
 
-        String dump = given().when()
+        String dump = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/database/export")
                 .then()
                 .statusCode(200)
@@ -152,13 +180,15 @@ class DatabaseResourceTest {
                 .statusCode(200)
                 .body("statements", greaterThan(0));
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/parametres-legaux")
                 .then()
                 .statusCode(200)
                 .body("dureeHebdomadaireMaxMinutes", equalTo(2760));
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/parametres-solveur")
                 .then()
                 .statusCode(200)
@@ -167,7 +197,8 @@ class DatabaseResourceTest {
         // Back to the deployment's budget: the default edition's duration is
         // now what a job launched without ?seconds= runs, and 42 s would slow
         // down every solve test that comes after this one.
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"dureeResolutionSecondes\":null}")
                 .when()
                 .put("/api/parametres-solveur")
@@ -177,14 +208,20 @@ class DatabaseResourceTest {
 
     @Test
     void exportedDumpRestoresIdentitySequencesSoNewRowsDoNotCollide() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
 
-        String dump = given().when()
+        String dump = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/database/export")
                 .then()
                 .statusCode(200)
@@ -201,7 +238,8 @@ class DatabaseResourceTest {
         // A new créneau created after the replay must get a fresh id, not one
         // that collides with a row the dump just re-inserted with an explicit
         // identity value (see resyncIdentitySequences).
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"date\":\"2099-01-01\",\"heureDebut\":\"09:00:00\",\"heureFin\":\"10:00:00\"}")
                 .when()
                 .post("/api/creneaux")
@@ -226,7 +264,11 @@ class DatabaseResourceTest {
                 .body("message", containsString("not allowed"));
 
         // A rejected script must not have touched the database.
-        given().when().get("/api/animateurs").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/animateurs")
+                .then()
+                .statusCode(200);
     }
 
     @Test
@@ -246,13 +288,13 @@ class DatabaseResourceTest {
      * request after the restore looks up an edition that no longer exists.
      */
     @Test
-    void importResolvesTheRestoredDefaultEditionInsteadOfTheWipedOne() {
+    void importResolvesTheRestoredActiveEditionInsteadOfTheWipedOne() {
         // The whole database as this class found it, replayed at the end: this
-        // test is the only one that drops the default edition, and recreating it
+        // test is the only one that drops the active edition, and recreating it
         // through the API would give it back its row without its typologies —
         // the referential the tests running next expect to find seeded.
         String etatInitial = exportDump();
-        // Every edition id is drawn by the application (ADR 0050): the default
+        // Every edition id is drawn by the application (ADR 0050): the active
         // one is read, never assumed.
         String defautInitial = defaultEdition();
 
@@ -261,34 +303,50 @@ class DatabaseResourceTest {
         // mid-flight leaves them all resolving to an edition that no longer
         // exists, and one failure here becomes forty elsewhere.
         try {
-            given().when().post("/api/planning/reset").then().statusCode(200);
+            given().header("X-Edition-Id", "E1")
+                    .when()
+                    .post("/api/planning/reset")
+                    .then()
+                    .statusCode(200);
 
-            // A dump whose only edition is the restored one — the initial default
-            // is nowhere in it.
+            // A dump whose only edition is the restored one — the initial active
+            // edition is nowhere in it.
             String restauree = createEdition("Édition restaurée");
-            makeDefaultEdition(restauree);
-            deleteEdition(defautInitial);
+            activate(restauree);
+            deleteEdition(defautInitial, restauree);
             String dump = exportDump();
 
             // Read on the edition table alone: kpi_historique also carries an
             // edition_id, and no foreign key ties the two, so measurements taken
             // before the deletion outlive it and the dump keeps naming the
-            // initial default further down.
+            // initial edition further down.
             List<String> editionRows = dump.lines()
                     .filter(line -> line.startsWith("INSERT INTO edition ("))
                     .toList();
             assertThat(editionRows).isNotEmpty().noneMatch(line -> line.contains("'" + defautInitial + "'"));
 
-            // Back to a database that only knows another default edition, and a
-            // request that caches it.
-            String autre = createEdition("Édition par défaut");
-            makeDefaultEdition(autre);
-            deleteEdition(restauree);
-            given().when().get("/api/editions/courant").then().statusCode(200).body("id", equalTo(autre));
+            // Back to a database that only knows another active edition, and a
+            // server that caches it, with the ids it knows.
+            String autre = createEdition("Édition active");
+            activate(autre);
+            deleteEdition(restauree, autre);
+            given().header("X-Edition-Id", autre)
+                    .when()
+                    .get("/api/editions/courant")
+                    .then()
+                    .statusCode(200)
+                    .body("id", equalTo(autre));
 
             sqlRequest(dump).when().post("/api/database/import").then().statusCode(200);
 
-            given().when().get("/api/editions/courant").then().statusCode(200).body("id", equalTo(restauree));
+            // The caches were dropped: the restored edition is known again, and active.
+            given().header("X-Edition-Id", restauree)
+                    .when()
+                    .get("/api/editions/courant")
+                    .then()
+                    .statusCode(200)
+                    .body("id", equalTo(restauree));
+            assertThat(activeEdition()).isEqualTo(restauree);
         } catch (Throwable inFlight) {
             // Not a finally: a restore that fails in turn would replace the
             // assertion that actually diagnoses the defect. It travels as a
@@ -302,7 +360,13 @@ class DatabaseResourceTest {
         }
         restoreDatabase(etatInitial);
 
-        given().when().get("/api/editions/courant").then().statusCode(200).body("id", equalTo(defautInitial));
+        given().header("X-Edition-Id", defautInitial)
+                .when()
+                .get("/api/editions/courant")
+                .then()
+                .statusCode(200)
+                .body("id", equalTo(defautInitial));
+        assertThat(activeEdition()).isEqualTo(defautInitial);
     }
 
     private static void restoreDatabase(String dump) {
@@ -310,7 +374,8 @@ class DatabaseResourceTest {
     }
 
     private static String exportDump() {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/database/export")
                 .then()
                 .statusCode(200)
@@ -320,7 +385,8 @@ class DatabaseResourceTest {
 
     /** Creates an edition and answers the id the application drew for it. */
     private static String createEdition(String nom) {
-        return given().contentType(ContentType.JSON)
+        return given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"nom\":\"" + nom + "\"}")
                 .when()
                 .post("/api/editions")
@@ -332,20 +398,40 @@ class DatabaseResourceTest {
 
     /** The default edition of the test database, read rather than assumed. */
     private static String defaultEdition() {
+        return given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/editions")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("find { it.active == true }.id");
+    }
+
+    private static void activate(String id) {
+        given().header("X-Edition-Id", id)
+                .when()
+                .put("/api/editions/" + id + "/active")
+                .then()
+                .statusCode(200);
+    }
+
+    /** The active edition as the database says it, read without any cache. */
+    private static String activeEdition() {
         return given().when()
                 .get("/api/editions")
                 .then()
                 .statusCode(200)
                 .extract()
-                .path("find { it.defaut == true }.id");
+                .path("find { it.active }.id");
     }
 
-    private static void makeDefaultEdition(String id) {
-        given().when().put("/api/editions/" + id + "/defaut").then().statusCode(204);
-    }
-
-    private static void deleteEdition(String id) {
-        given().when().delete("/api/editions/" + id).then().statusCode(204);
+    /** Deleted from another edition: the one a request works in cannot be deleted. */
+    private static void deleteEdition(String id, String from) {
+        given().header("X-Edition-Id", from)
+                .when()
+                .delete("/api/editions/" + id)
+                .then()
+                .statusCode(204);
     }
 
     /**
@@ -379,7 +465,8 @@ class DatabaseResourceTest {
                 .statusCode(200);
 
         try {
-            given().when()
+            given().header("X-Edition-Id", "E1")
+                    .when()
                     .get("/api/planning/snapshots")
                     .then()
                     .statusCode(200)
@@ -390,8 +477,13 @@ class DatabaseResourceTest {
 
             // The wipe the restore is supposed to undo: the delete cascades onto
             // the recipient, so both rows go.
-            given().when().delete("/api/planning/snapshots/777").then().statusCode(204);
-            given().when()
+            given().header("X-Edition-Id", "E1")
+                    .when()
+                    .delete("/api/planning/snapshots/777")
+                    .then()
+                    .statusCode(204);
+            given().header("X-Edition-Id", "E1")
+                    .when()
                     .get("/api/planning/snapshots")
                     .then()
                     .statusCode(200)
@@ -399,7 +491,8 @@ class DatabaseResourceTest {
 
             sqlRequest(dump).when().post("/api/database/import").then().statusCode(200);
 
-            given().when()
+            given().header("X-Edition-Id", "E1")
+                    .when()
                     .get("/api/planning/snapshots")
                     .then()
                     .statusCode(200)
@@ -409,7 +502,11 @@ class DatabaseResourceTest {
             // the honest way to say the row is back in the database.
             assertThat(exportDump()).contains("camille@example.test");
         } finally {
-            given().when().delete("/api/planning/snapshots/777").then().statusCode(anyOf(equalTo(204), equalTo(404)));
+            given().header("X-Edition-Id", "E1")
+                    .when()
+                    .delete("/api/planning/snapshots/777")
+                    .then()
+                    .statusCode(anyOf(equalTo(204), equalTo(404)));
         }
     }
 
@@ -465,7 +562,11 @@ class DatabaseResourceTest {
      */
     @Test
     void exportedDumpCarriesTheKpiHistoryBackAndForth() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
         String defaut = defaultEdition();
 
         try {
@@ -489,7 +590,11 @@ class DatabaseResourceTest {
             assertThat(dump).contains("INSERT INTO kpi_historique (");
 
             // The wipe the restore is supposed to undo.
-            given().when().post("/api/planning/reset").then().statusCode(200);
+            given().header("X-Edition-Id", "E1")
+                    .when()
+                    .post("/api/planning/reset")
+                    .then()
+                    .statusCode(200);
 
             sqlRequest(dump).when().post("/api/database/import").then().statusCode(200);
 
@@ -500,7 +605,11 @@ class DatabaseResourceTest {
             // carry it — so the row would follow every later class around. A
             // 404 is accepted so that a failure before the insert reports
             // itself rather than this cleanup.
-            given().when().delete("/api/kpi/historique/4242").then().statusCode(anyOf(equalTo(204), equalTo(404)));
+            given().header("X-Edition-Id", "E1")
+                    .when()
+                    .delete("/api/kpi/historique/4242")
+                    .then()
+                    .statusCode(anyOf(equalTo(204), equalTo(404)));
         }
     }
 
@@ -510,7 +619,8 @@ class DatabaseResourceTest {
      * and escaping included, not that some bytes came back.
      */
     private static void assertTheMeasurementReadsBack() {
-        JsonPath historique = given().when()
+        JsonPath historique = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/kpi/historique")
                 .then()
                 .statusCode(200)

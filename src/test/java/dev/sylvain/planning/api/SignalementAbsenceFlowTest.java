@@ -134,7 +134,8 @@ class SignalementAbsenceFlowTest {
         assertThat(mails.get(0).getSubject()).contains("empêchement signalé par Alice Martin");
         assertThat(mails.get(0).getText()).contains("toute la journée").contains("transport");
         // The espace reads it back.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + token)
                 .then()
                 .statusCode(200)
@@ -146,7 +147,8 @@ class SignalementAbsenceFlowTest {
                 .containsExactly("SIG-A", "SIG-A");
         // The day's screen lists it, named.
         RestAssured.requestSpecification = null;
-        JsonPath jour = given().when()
+        JsonPath jour = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/jour-j?date=" + JOUR)
                 .then()
                 .statusCode(200)
@@ -180,7 +182,8 @@ class SignalementAbsenceFlowTest {
                 .jsonPath()
                 .getLong("[0].id");
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .delete("/api/espace-animateur/" + token + "/signalements/" + id)
                 .then()
                 .statusCode(200)
@@ -192,11 +195,13 @@ class SignalementAbsenceFlowTest {
                 .jsonPath()
                 .getLong("find { it.statut == 'SIGNALE' }.id");
         RestAssured.requestSpecification = null;
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/jour-j/signalements/" + second + "/classement")
                 .then()
                 .statusCode(204);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/jour-j/signalements/" + second + "/classement")
                 .then()
                 .statusCode(409);
@@ -216,7 +221,8 @@ class SignalementAbsenceFlowTest {
                 .getLong("[0].id");
         RestAssured.requestSpecification = null;
 
-        JsonPath marquee = given().when()
+        JsonPath marquee = given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/jour-j/signalements/" + id + "/traitement")
                 .then()
                 .statusCode(200)
@@ -232,7 +238,12 @@ class SignalementAbsenceFlowTest {
                         .filter(poste -> poste.getAnimateur() != null)
                         .map(poste -> poste.getCreneau().getId()))
                 .containsExactly(9502L);
-        given().when().get("/api/jour-j?date=" + JOUR).then().statusCode(200).body("signalements.size()", equalTo(0));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/jour-j?date=" + JOUR)
+                .then()
+                .statusCode(200)
+                .body("signalements.size()", equalTo(0));
         // Alice hears she is no longer expected on that seat.
         List<Mail> aAlice = mailbox.getMailsSentTo(EMAIL_ALICE);
         assertThat(aAlice).hasSize(1);
@@ -264,23 +275,26 @@ class SignalementAbsenceFlowTest {
                 .jsonPath()
                 .getLong("[0].id");
         RestAssured.requestSpecification = null;
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"id\":\"SIG-VERROU\",\"type\":\"ANIMATEUR\",\"animateurId\":\"SIG-A\"}")
                 .when()
                 .post("/api/verrouillages")
                 .then()
                 .statusCode(200);
         try {
-            given().when()
+            given().header("X-Edition-Id", "E1")
+                    .when()
                     .post("/api/jour-j/signalements/" + id + "/traitement")
                     .then()
                     .statusCode(400);
             assertReportOpenAndPlanUntouched();
         } finally {
-            given().when().delete("/api/verrouillages/SIG-VERROU");
+            given().header("X-Edition-Id", "E1").when().delete("/api/verrouillages/SIG-VERROU");
         }
 
-        String affectationForcee = given().contentType(ContentType.JSON)
+        String affectationForcee = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("""
                         {"type":"AFFECTATION_FORCEE",
                          "animateursConcernes":[{"id":"SIG-A"}],"creneau":{"id":%d}}""".formatted(creneauId))
@@ -291,7 +305,8 @@ class SignalementAbsenceFlowTest {
                 .extract()
                 .path("contrainte.id");
         try {
-            given().when()
+            given().header("X-Edition-Id", "E1")
+                    .when()
                     .post("/api/jour-j/signalements/" + id + "/traitement")
                     .then()
                     .statusCode(400);
@@ -300,11 +315,13 @@ class SignalementAbsenceFlowTest {
             referenceData.deleteContrainteAdHoc(affectationForcee);
         }
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/jour-j/signalements/" + id + "/traitement")
                 .then()
                 .statusCode(200);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/jour-j/signalements/" + id + "/traitement")
                 .then()
                 .statusCode(409);
@@ -326,7 +343,8 @@ class SignalementAbsenceFlowTest {
                 .getLong("[0].id");
         RestAssured.requestSpecification = null;
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/jour-j/signalements/" + id + "/classement")
                 .then()
                 .statusCode(204);
@@ -359,13 +377,15 @@ class SignalementAbsenceFlowTest {
                 .getLong("[0].id");
         io.restassured.specification.RequestSpecification espace = RestAssured.requestSpecification;
         RestAssured.requestSpecification = null;
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/jour-j/signalements/configuration")
                 .then()
                 .statusCode(200)
                 .body("actifs", equalTo(true));
 
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(Map.of("actifs", false))
                 .when()
                 .put("/api/jour-j/signalements/configuration")
@@ -373,13 +393,20 @@ class SignalementAbsenceFlowTest {
                 .statusCode(200)
                 .body("actifs", equalTo(false));
 
-        given().when().get("/api/jour-j?date=" + JOUR).then().statusCode(200).body("signalements.size()", equalTo(0));
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/jour-j?date=" + JOUR)
+                .then()
+                .statusCode(200)
+                .body("signalements.size()", equalTo(0));
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/jour-j/signalements/" + id + "/classement")
                 .then()
                 .statusCode(400);
         RestAssured.requestSpecification = espace;
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + token)
                 .then()
                 .statusCode(200)
@@ -387,13 +414,15 @@ class SignalementAbsenceFlowTest {
                 .body("signalements.size()", equalTo(0));
         signaler(Map.of("portee", "POSTE", "date", JOUR.toString(), "creneauId", creneauId, "standId", "SIG-S1"))
                 .statusCode(400);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .delete("/api/espace-animateur/" + token + "/signalements/" + id)
                 .then()
                 .statusCode(400);
 
         RestAssured.requestSpecification = null;
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(Map.of("actifs", true))
                 .when()
                 .put("/api/jour-j/signalements/configuration")
@@ -428,7 +457,12 @@ class SignalementAbsenceFlowTest {
 
     /** The report still open on the day's screen, Alice on both her seats, and no exception written. */
     private void assertReportOpenAndPlanUntouched() {
-        given().when().get("/api/jour-j?date=" + JOUR).then().statusCode(200).body("signalements.size()", equalTo(1));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/jour-j?date=" + JOUR)
+                .then()
+                .statusCode(200)
+                .body("signalements.size()", equalTo(1));
         assertThat(persistence.loadPersistedPlanning().getPostes().stream()
                         .filter(poste -> poste.getAnimateur() != null)
                         .map(poste -> poste.getAnimateur().getId()))
@@ -439,7 +473,8 @@ class SignalementAbsenceFlowTest {
     }
 
     private io.restassured.response.ValidatableResponse signaler(Map<String, Object> corps) {
-        return given().contentType(ContentType.JSON)
+        return given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(corps)
                 .when()
                 .post("/api/espace-animateur/" + token + "/signalements")

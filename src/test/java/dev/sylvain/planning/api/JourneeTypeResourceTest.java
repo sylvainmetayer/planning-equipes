@@ -34,7 +34,8 @@ class JourneeTypeResourceTest {
             """;
 
     private static int countCreneaux() {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/creneaux")
                 .then()
                 .statusCode(200)
@@ -43,7 +44,8 @@ class JourneeTypeResourceTest {
     }
 
     private static List<Integer> creneauxOf(String prefixeDate) {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/creneaux")
                 .then()
                 .extract()
@@ -54,7 +56,8 @@ class JourneeTypeResourceTest {
     @Test
     void unCalendrierAppliqueMaterialiseLesCreneauxEtGardeLeursIds() {
         int avant = countCreneaux();
-        Integer id = given().contentType("application/json")
+        Integer id = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(JOUR_NORMAL)
                 .when()
                 .post("/api/journees-types")
@@ -65,7 +68,8 @@ class JourneeTypeResourceTest {
                 .extract()
                 .path("id");
         try {
-            given().contentType("application/json")
+            given().header("X-Edition-Id", "E1")
+                    .contentType("application/json")
                     .body("[{\"date\":\"2033-05-02\",\"journeeTypeId\":" + id + "},"
                             + "{\"date\":\"2033-05-03\",\"journeeTypeId\":" + id + "}]")
                     .when()
@@ -76,7 +80,8 @@ class JourneeTypeResourceTest {
                     .body("datesEnEcart", hasSize(2));
 
             // The preview says what would happen and writes nothing.
-            given().when()
+            given().header("X-Edition-Id", "E1")
+                    .when()
                     .post("/api/journees-types/application/apercu")
                     .then()
                     .statusCode(200)
@@ -85,33 +90,49 @@ class JourneeTypeResourceTest {
                     .body("aucunChangement", equalTo(false));
             assertThat(countCreneaux()).isEqualTo(avant);
 
-            given().when()
+            given().header("X-Edition-Id", "E1")
+                    .when()
                     .post("/api/journees-types/application")
                     .then()
                     .statusCode(200)
                     .body("crees", equalTo(8))
                     .body("controle.nombreCreneaux", equalTo(avant + 8));
             assertThat(countCreneaux()).isEqualTo(avant + 8);
-            given().when()
+            given().header("X-Edition-Id", "E1")
+                    .when()
                     .get("/api/creneaux")
                     .then()
                     .body("findAll { it.date == '2033-05-02' && it.couverturePause }.size()", equalTo(2));
 
             // Applied twice: nothing moves, and the ids are the same rows.
             List<Integer> ids = creneauxOf("2033-05");
-            given().when()
+            given().header("X-Edition-Id", "E1")
+                    .when()
                     .post("/api/journees-types/application")
                     .then()
                     .statusCode(200)
                     .body("aucunChangement", equalTo(true))
                     .body("conserves", equalTo(8));
             assertThat(creneauxOf("2033-05")).containsExactlyElementsOf(ids);
-            given().when().get("/api/journees-types").then().body("datesEnEcart", hasSize(0));
+            given().header("X-Edition-Id", "E1")
+                    .when()
+                    .get("/api/journees-types")
+                    .then()
+                    .body("datesEnEcart", hasSize(0));
 
             // The grid moves under the calendar: the date is in drift, and only what is missing is created.
-            given().when().delete("/api/creneaux/" + ids.get(0)).then().statusCode(204);
-            given().when().get("/api/journees-types").then().body("datesEnEcart", hasItem("2033-05-02"));
-            given().when()
+            given().header("X-Edition-Id", "E1")
+                    .when()
+                    .delete("/api/creneaux/" + ids.get(0))
+                    .then()
+                    .statusCode(204);
+            given().header("X-Edition-Id", "E1")
+                    .when()
+                    .get("/api/journees-types")
+                    .then()
+                    .body("datesEnEcart", hasItem("2033-05-02"));
+            given().header("X-Edition-Id", "E1")
+                    .when()
                     .post("/api/journees-types/application")
                     .then()
                     .statusCode(200)
@@ -119,7 +140,8 @@ class JourneeTypeResourceTest {
                     .body("conserves", equalTo(7));
 
             // Recognition reads the templates back: the two dates share one shape.
-            given().when()
+            given().header("X-Edition-Id", "E1")
+                    .when()
                     .post("/api/journees-types/reconnaissance/apercu")
                     .then()
                     .statusCode(200)
@@ -128,15 +150,24 @@ class JourneeTypeResourceTest {
                     .body("calendrier.date", hasItem("2033-05-03"));
         } finally {
             for (Integer creneauId : creneauxOf("2033-05")) {
-                given().when().delete("/api/creneaux/" + creneauId).then().statusCode(204);
+                given().header("X-Edition-Id", "E1")
+                        .when()
+                        .delete("/api/creneaux/" + creneauId)
+                        .then()
+                        .statusCode(204);
             }
-            given().when().delete("/api/journees-types/" + id).then().statusCode(204);
+            given().header("X-Edition-Id", "E1")
+                    .when()
+                    .delete("/api/journees-types/" + id)
+                    .then()
+                    .statusCode(204);
         }
     }
 
     @Test
     void unNomDejaPrisOuUneJourneeSansVacationEstRefuse() {
-        Integer id = given().contentType("application/json")
+        Integer id = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(JOUR_NORMAL)
                 .when()
                 .post("/api/journees-types")
@@ -145,14 +176,16 @@ class JourneeTypeResourceTest {
                 .extract()
                 .path("id");
         try {
-            given().contentType("application/json")
+            given().header("X-Edition-Id", "E1")
+                    .contentType("application/json")
                     .body(JOUR_NORMAL.replace("Jour normal (test)", "jour NORMAL (test)"))
                     .when()
                     .post("/api/journees-types")
                     .then()
                     .statusCode(400)
                     .body("message", containsString("s'appelle déjà"));
-            given().contentType("application/json")
+            given().header("X-Edition-Id", "E1")
+                    .contentType("application/json")
                     .body("{\"nom\":\"Vide (test)\",\"vacations\":[]}")
                     .when()
                     .post("/api/journees-types")
@@ -160,7 +193,11 @@ class JourneeTypeResourceTest {
                     .statusCode(400)
                     .body("message", containsString("au moins une vacation"));
         } finally {
-            given().when().delete("/api/journees-types/" + id).then().statusCode(204);
+            given().header("X-Edition-Id", "E1")
+                    .when()
+                    .delete("/api/journees-types/" + id)
+                    .then()
+                    .statusCode(204);
         }
     }
 
@@ -171,34 +208,39 @@ class JourneeTypeResourceTest {
      */
     @Test
     void unCalendrierSansDateNAPasDApplication() {
-        String calendrierAvant = given().when()
+        String calendrierAvant = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/journees-types")
                 .then()
                 .statusCode(200)
                 .extract()
                 .jsonPath()
                 .getString("calendrier");
-        List<Map<String, Object>> sauvegarde = given().when()
+        List<Map<String, Object>> sauvegarde = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/journees-types")
                 .then()
                 .extract()
                 .jsonPath()
                 .getList("calendrier");
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("[]")
                 .when()
                 .put("/api/journees-types/calendrier")
                 .then()
                 .statusCode(200);
         try {
-            given().when()
+            given().header("X-Edition-Id", "E1")
+                    .when()
                     .post("/api/journees-types/application/apercu")
                     .then()
                     .statusCode(400)
                     .body("message", containsString("Aucune date"));
         } finally {
             assertThat(calendrierAvant).isNotNull();
-            given().contentType("application/json")
+            given().header("X-Edition-Id", "E1")
+                    .contentType("application/json")
                     .body(sauvegarde)
                     .when()
                     .put("/api/journees-types/calendrier")

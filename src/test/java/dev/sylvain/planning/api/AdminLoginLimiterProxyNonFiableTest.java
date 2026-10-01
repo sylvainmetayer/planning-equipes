@@ -110,7 +110,8 @@ class AdminLoginLimiterProxyNonFiableTest {
     }
 
     private static Response login(String adresseAnnoncee, String password) {
-        return given().contentType("application/x-www-form-urlencoded")
+        return given().header("X-Edition-Id", "E1")
+                .contentType("application/x-www-form-urlencoded")
                 .header("X-Forwarded-For", adresseAnnoncee)
                 .formParam("j_username", "admin")
                 .formParam("j_password", password)

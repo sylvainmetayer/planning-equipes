@@ -44,9 +44,9 @@ public class EditionService {
     }
 
     /**
-     * The edition the caller is actually working in, as resolved from its
-     * {@code X-Edition-Id} header. Lets the UI display the edition it landed on
-     * even when the header named one that no longer exists.
+     * The edition the caller is working in, as resolved from its
+     * {@code X-Edition-Id} header — refused when it names none or one that no
+     * longer exists (ADR 0072), which is how the UI learns it must choose.
      */
     public Edition editionCourante() {
         String id = editionContext.editionIdCourant();
@@ -63,9 +63,12 @@ public class EditionService {
     public Edition renommer(String id, Edition edition) {
         requireExisting(id);
         String nom = requireName(edition.getNom());
-        Edition renomme = new Edition(id, nom, false, null);
-        repository.save(renomme);
-        return renomme;
+        repository.save(new Edition(id, nom, false, null));
+        // Read back rather than echoed: the answer must say whether it is active.
+        return listEditions().stream()
+                .filter(e -> e.getId().equals(id))
+                .findFirst()
+                .orElseThrow();
     }
 
     /**
@@ -75,13 +78,14 @@ public class EditionService {
      * for, and a fresh edition has nothing solved yet.
      *
      * <p>{@code avecAnimateurs} says whether the <b>people</b> come along
-     * (issue #90). They do by default, which is the gesture issue #172 was
-     * built for: a « canicule » edition duplicated mid-festival must keep its
-     * roster and its « Envoyer à all ». They must not when the copy is a
+     * (issue #90). They do by default. They must not when the copy is a
      * <i>year template</i> — preparing 2027 from 2026 otherwise copies the
      * names, birth dates and e-mail addresses of people who have not signed up
      * again, which is a minimisation and retention problem
      * ({@code docs/rgpd.md}), not a convenience.</p>
+     *
+     * <p>The copy is born <b>inactive</b> (ADR 0072): it reaches nobody until
+     * the organiser activates it.</p>
      */
     public Edition duplicate(String sourceId, Edition target, boolean avecAnimateurs) {
         requireExisting(sourceId);
@@ -110,10 +114,10 @@ public class EditionService {
     /**
      * Drops the edition and, by {@code ON DELETE CASCADE}, its whole reference
      * model. Three refusals, all of them recoverable states the UI must not be
-     * able to walk into: the default edition (nothing would be left to fall
-     * back on), the edition the caller is currently working in (every
-     * subsequent screen would silently switch under them), and the last
-     * remaining one.
+     * able to walk into: the active edition (every link, mail and wall display
+     * it serves would vanish with it — deactivate it first), the edition the
+     * caller is currently working in (every subsequent screen would lose its
+     * edition), and the last remaining one.
      */
     public void delete(String id) {
         requireExisting(id);
@@ -121,21 +125,14 @@ public class EditionService {
         if (editions.size() <= 1) {
             throw new BusinessError.Invalid("Impossible de supprimer la dernière édition");
         }
-        if (editions.stream().anyMatch(edition -> edition.getId().equals(id) && edition.isDefaut())) {
+        if (editions.stream().anyMatch(edition -> edition.getId().equals(id) && edition.isActive())) {
             throw new BusinessError.Invalid(
-                    "Impossible de supprimer l'édition par défaut — désignez-en une autre d'abord");
+                    "Impossible de supprimer l'édition active — désactivez-la ou activez-en une autre d'abord");
         }
-        if (Objects.equals(id, editionContext.editionIdCourant())) {
+        if (Objects.equals(id, currentEditionOrNone())) {
             throw new BusinessError.Invalid("Impossible de supprimer l'édition courante — basculez ailleurs d'abord");
         }
         repository.delete(id);
-        editionContext.invaliderCache();
-    }
-
-    /** Makes this edition the fallback for any caller that designates none (export CLI, direct API call). */
-    public void setAsDefault(String id) {
-        requireExisting(id);
-        repository.setAsDefault(id);
         editionContext.invaliderCache();
     }
 
@@ -211,6 +208,19 @@ public class EditionService {
 
     /** Result of {@link #resolveForImport}: the edition to import into, and whether it was just created. */
     public record ImportTarget(Edition edition, boolean creee) {}
+
+    /**
+     * The edition the caller works in, or {@code null} when it names none it
+     * can — an MCP call between two events, with no edition active: such a
+     * caller is in no edition, so none is "the current one" to protect.
+     */
+    private String currentEditionOrNone() {
+        try {
+            return editionContext.editionIdCourant();
+        } catch (BusinessError.EditionRefused _) {
+            return null;
+        }
+    }
 
     private void requireExisting(String id) {
         if (!repository.exists(id)) {

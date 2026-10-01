@@ -37,7 +37,8 @@ class PauseResourceTest {
 
     @Test
     void sansPlanPersisteLeRapportEstVideEtLeDitSansErreur() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/pauses")
                 .then()
                 .statusCode(200)
@@ -64,7 +65,8 @@ class PauseResourceTest {
         posteBruno.setAnimateur(bruno);
         persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno), List.of(posteAlice, posteBruno)));
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/pauses")
                 .then()
                 .statusCode(200)
@@ -90,7 +92,8 @@ class PauseResourceTest {
         poste.setAnimateur(alice);
         persistence.persist(new PlanningEvenement(JOUR, List.of(alice), List.of(poste)));
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/pauses")
                 .then()
                 .statusCode(200)

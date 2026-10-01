@@ -339,7 +339,7 @@ public class McpPrompts {
                 pourvus en moins, quelles règles passent en défaut, quel écart de score. C'est ce \
                 chiffre-là qu'on regarde le matin venu, pas une intuition.
                 5. Laisse la variante résolue et non publiée. Le jour où elle sert, \
-                definir_edition_par_defaut la met en avant, et c'est publier_planning qui prévient \
+                activer_edition la met en service, et c'est publier_planning qui prévient \
                 les animateurs — pas la bascule, et jamais sans mon accord.
 
                 Ne supprime aucune édition, et ne publie rien depuis ce prompt.""".formatted(designation(edition)));

@@ -20,7 +20,8 @@ class ConfigResourceTest {
     @Test
     void exposesTheBackendVersion() {
         String expected = ConfigProvider.getConfig().getValue("quarkus.application.version", String.class);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/config")
                 .then()
                 .statusCode(200)

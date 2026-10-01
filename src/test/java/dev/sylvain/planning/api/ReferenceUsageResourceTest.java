@@ -165,7 +165,8 @@ class ReferenceUsageResourceTest {
      */
     @Test
     void uneSelectionEstTotaliseeEnUnSeulAppel() {
-        given().queryParam("id", STAND, STAND_LIBRE)
+        given().header("X-Edition-Id", "E1")
+                .queryParam("id", STAND, STAND_LIBRE)
                 .when()
                 .get("/api/stands/usages")
                 .then()
@@ -191,7 +192,11 @@ class ReferenceUsageResourceTest {
     /** A request naming nothing asks nothing, and is refused as such. */
     @Test
     void uneRequeteSansIdentifiantEstRefusee() {
-        given().when().get("/api/stands/usages").then().statusCode(400);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/stands/usages")
+                .then()
+                .statusCode(400);
     }
 
     /**
@@ -203,7 +208,8 @@ class ReferenceUsageResourceTest {
      */
     @Test
     void unIdentifiantDeCreneauNonNumeriqueEstRefuseEnQuatreCents() {
-        given().queryParam("id", "abc")
+        given().header("X-Edition-Id", "E1")
+                .queryParam("id", "abc")
                 .when()
                 .get("/api/creneaux/usages")
                 .then()
@@ -211,7 +217,8 @@ class ReferenceUsageResourceTest {
     }
 
     private static ValidatableResponse usages(String resource, String id) {
-        return given().queryParam("id", id)
+        return given().header("X-Edition-Id", "E1")
+                .queryParam("id", id)
                 .when()
                 .get(resource + "/usages")
                 .then()

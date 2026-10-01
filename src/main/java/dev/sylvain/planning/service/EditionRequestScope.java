@@ -19,6 +19,7 @@ import jakarta.enterprise.context.RequestScoped;
 public class EditionRequestScope {
 
     private String editionIdDemande;
+    private boolean clientRequest;
     private TokenOwner tokenOwner;
     private boolean identityProven;
 
@@ -28,6 +29,17 @@ public class EditionRequestScope {
 
     public void setEditionIdDemande(String editionIdDemande) {
         this.editionIdDemande = editionIdDemande;
+        this.clientRequest = true;
+    }
+
+    /**
+     * Whether a client opened this request — an HTTP call that went through
+     * {@code EditionHeaderFilter}, header or not. Such a request must name its
+     * edition (ADR 0072); only a request context no client opened may resolve
+     * to the active edition.
+     */
+    public boolean isClientRequest() {
+        return clientRequest;
     }
 
     /** The (édition, animateur) of the request's espace token, {@code null} off the espace routes. */

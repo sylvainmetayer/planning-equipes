@@ -31,7 +31,8 @@ class McpResourcePangolinTokenTest {
 
     @Test
     void reveleLeJetonPangolinAvecLaCle() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"motDePasse\":\"admin\"}")
                 .when()
                 .post("/api/mcp/cle")

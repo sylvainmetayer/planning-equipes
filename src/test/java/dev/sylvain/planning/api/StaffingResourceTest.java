@@ -22,8 +22,13 @@ class StaffingResourceTest {
 
     @Test
     void withStandsAndTimeslotsButNoAnimateurTheBoundsAreProvenAndTheRosterIsNamedMissing() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {
                           "id":"STAND-STAFFING",
@@ -38,7 +43,8 @@ class StaffingResourceTest {
                 .post("/api/stands")
                 .then()
                 .statusCode(200);
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {
                           "jour":1,
@@ -52,7 +58,8 @@ class StaffingResourceTest {
                 .then()
                 .statusCode(200);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/staffing")
                 .then()
                 .statusCode(200)
@@ -72,9 +79,14 @@ class StaffingResourceTest {
 
     @Test
     void anEmptyEditionNamesEveryMissingReferential() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/staffing")
                 .then()
                 .statusCode(200)
@@ -90,7 +102,8 @@ class StaffingResourceTest {
         seedSeats();
 
         // No animateur at all: the team is made up, of the floor's size.
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{}")
                 .when()
                 .post("/api/staffing/verification")
@@ -100,7 +113,8 @@ class StaffingResourceTest {
                 .body("sieges", equalTo(2));
 
         awaitTheEnd();
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/staffing/verification")
                 .then()
                 .statusCode(200)
@@ -112,7 +126,8 @@ class StaffingResourceTest {
 
         // The trail: launched by the admin, ended by the application, both
         // naming the check, whose figures the history joins.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/historique")
                 .then()
                 .statusCode(200)
@@ -128,7 +143,8 @@ class StaffingResourceTest {
     void aCheckTakesAdultsMinorsAndATimeOfItsOwn() {
         seedSeats();
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"majeurs\":1,\"mineurs\":1,\"dureeSecondes\":10}")
                 .when()
                 .post("/api/staffing/verification")
@@ -139,7 +155,8 @@ class StaffingResourceTest {
                 .body("mineurs", equalTo(1))
                 .body("plafondSecondes", equalTo(10));
         awaitTheEnd();
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/staffing/verification")
                 .then()
                 .statusCode(200)
@@ -157,14 +174,16 @@ class StaffingResourceTest {
         seedSeats();
         // One person for two seats at the same time: no plan exists, so the
         // check would run its whole minute if nothing stopped it.
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"majeurs\":1,\"dureeSecondes\":60}")
                 .when()
                 .post("/api/staffing/verification")
                 .then()
                 .statusCode(202);
 
-        String jobId = given().when()
+        String jobId = given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/solve/async/reference-data?seconds=1")
                 .then()
                 .statusCode(202)
@@ -174,22 +193,25 @@ class StaffingResourceTest {
             await().atMost(Duration.ofSeconds(30))
                     .pollInterval(Duration.ofMillis(250))
                     .until(() -> !"EN_COURS"
-                            .equals(given().when()
+                            .equals(given().header("X-Edition-Id", "E1")
+                                    .when()
                                     .get("/api/staffing/verification")
                                     .then()
                                     .extract()
                                     .path("etat")));
-            given().when()
+            given().header("X-Edition-Id", "E1")
+                    .when()
                     .get("/api/staffing/verification")
                     .then()
                     .statusCode(200)
                     .body("etat", equalTo("ECHEC"))
                     .body("erreur", containsString("une résolution a démarré"));
         } finally {
-            given().when().post("/api/jobs/" + jobId + "/cancel");
+            given().header("X-Edition-Id", "E1").when().post("/api/jobs/" + jobId + "/cancel");
             await().atMost(Duration.ofSeconds(60))
                     .pollInterval(Duration.ofMillis(250))
-                    .until(() -> given().when()
+                    .until(() -> given().header("X-Edition-Id", "E1")
+                                    .when()
                                     .get("/api/jobs/active")
                                     .then()
                                     .extract()
@@ -211,7 +233,8 @@ class StaffingResourceTest {
             "{\"majeurs\":2,\"dureeSecondes\":5}",
             "{\"majeurs\":2,\"dureeSecondes\":7200}"
         }) {
-            given().contentType("application/json")
+            given().header("X-Edition-Id", "E1")
+                    .contentType("application/json")
                     .body(body)
                     .when()
                     .post("/api/staffing/verification")
@@ -224,9 +247,14 @@ class StaffingResourceTest {
 
     @Test
     void anEditionWithoutSeatsHasNothingToCheck() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{}")
                 .when()
                 .post("/api/staffing/verification")
@@ -238,8 +266,13 @@ class StaffingResourceTest {
 
     /** One stand of two seats on one timeslot, and no animateur at all. */
     private static void seedSeats() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {
                           "id":"STAND-VERIF",
@@ -254,7 +287,8 @@ class StaffingResourceTest {
                 .post("/api/stands")
                 .then()
                 .statusCode(200);
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {"jour":1,"date":"2026-08-01","heureDebut":"10:00:00","heureFin":"12:00:00"}
                         """)
@@ -268,7 +302,8 @@ class StaffingResourceTest {
         await().atMost(Duration.ofSeconds(60))
                 .pollInterval(Duration.ofMillis(250))
                 .until(() -> !"EN_COURS"
-                        .equals(given().when()
+                        .equals(given().header("X-Edition-Id", "E1")
+                                .when()
                                 .get("/api/staffing/verification")
                                 .then()
                                 .statusCode(200)
@@ -277,8 +312,13 @@ class StaffingResourceTest {
     }
 
     private static void seedScenario() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);

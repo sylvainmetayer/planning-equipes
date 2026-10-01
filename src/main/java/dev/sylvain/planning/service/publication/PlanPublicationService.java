@@ -6,6 +6,7 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.StatutDemandeEchange;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.edition.RequiresActiveEdition;
 import dev.sylvain.planning.service.espace.DemandeEchangeService;
 import dev.sylvain.planning.service.export.PlanningExportService;
 import dev.sylvain.planning.service.publication.PublicationDiffService.ChangementAnimateur;
@@ -468,6 +469,7 @@ public class PlanPublicationService {
      *         last one being the point of the feature, not an error to work
      *         around — or when every single recipient was excluded
      */
+    @RequiresActiveEdition
     public RapportPublication publier() {
         return publier(List.of());
     }
@@ -476,6 +478,7 @@ public class PlanPublicationService {
      * Same, with the people the admin took out of this send — see the
      * {@code exclusions} parameter below.
      */
+    @RequiresActiveEdition
     public RapportPublication publier(List<String> exclusions) {
         return publier(exclusions, null);
     }
@@ -492,6 +495,7 @@ public class PlanPublicationService {
      *               that are not recipients are ignored, and a publication
      *               left with nobody to write to is refused like any other
      */
+    @RequiresActiveEdition
     public RapportPublication publier(List<String> exclusions, List<String> cibles) {
         ApercuPublication apercu = apercu();
         if (apercu.solveEnCours()) {

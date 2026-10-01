@@ -8,7 +8,10 @@ import { Edition } from '../core/models';
 
 /**
  * Persistent strip under the toolbar naming the edition every screen is
- * currently reading from, with a one-click switcher. Every page's data
+ * currently reading from — and whether it is the active one, the only one
+ * that reaches outside (ADR 0072) — with a one-click switcher, and a banner
+ * when the editions' state asks for a decision (the active one is over, the
+ * next one starts within days). Every page's data
  * depends on that answer, so it is given once in the shell instead of on any
  * one page — see `docs/decisions/0001-cloisonnement-par-edition.md`.
  *
@@ -30,6 +33,9 @@ import { Edition } from '../core/models';
         <span class="edition-actuelle-bar-label">
           <span i18n="@@editionActuelle.label">Édition actuelle :</span>
           <strong>{{ edition.nom }}</strong>
+          @if (!edition.active) {
+            <span class="edition-actuelle-bar-inactive" i18n="@@editionActuelle.inactive">(inactive : rien n'en part vers l'extérieur)</span>
+          }
         </span>
         <span class="edition-actuelle-bar-actions">
           @if (autresEditions().length > 0) {
@@ -58,6 +64,15 @@ import { Edition } from '../core/models';
           </a>
         </span>
       </div>
+      @if (situations().length > 0) {
+        <div class="edition-actuelle-bar edition-actuelle-bar-rappel" role="status">
+          <mat-icon class="edition-actuelle-bar-icon">notification_important</mat-icon>
+          <span i18n="@@editionActuelle.rappel">Action requise : la mise en service des éditions demande votre attention.</span>
+          <span class="edition-actuelle-bar-actions">
+            <a matButton routerLink="/editions" i18n="@@editionActuelle.rappelLien">Voir les éditions</a>
+          </span>
+        </div>
+      }
     }
   `,
   styles: `
@@ -76,6 +91,15 @@ import { Edition } from '../core/models';
     }
     .edition-actuelle-bar-icon {
       flex-shrink: 0;
+    }
+    .edition-actuelle-bar-inactive {
+      font: var(--mat-sys-body-small);
+      white-space: nowrap;
+    }
+    .edition-actuelle-bar-rappel {
+      position: static;
+      background: var(--mat-sys-tertiary-container);
+      color: var(--mat-sys-on-tertiary-container);
     }
     .edition-actuelle-bar-label {
       display: flex;
@@ -115,6 +139,7 @@ export class EditionActuelleBar {
 
   protected readonly editionActuelle = computed(() => this.store.courant());
   protected readonly autresEditions = computed(() => this.store.autres());
+  protected readonly situations = computed(() => this.store.situations());
 
   protected basculer(edition: Edition): void {
     this.store.basculer(edition);

@@ -22,17 +22,23 @@ class EtatEditionResourceTest {
 
     @Test
     void anEmptyEditionAnswersWithEveryLineToDo() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
-        // A request without X-Edition-Id works in the default edition, whose id
-        // is drawn by the application (ADR 0050): read it, never assume it.
-        String defaut = given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+        // The test database's active edition, whose id is drawn by the
+        // application (ADR 0050): read it, never assume it.
+        String defaut = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/editions")
                 .then()
                 .statusCode(200)
                 .extract()
-                .path("find { it.defaut == true }.id");
+                .path("find { it.active == true }.id");
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/editions/courant/etat")
                 .then()
                 .statusCode(200)
@@ -64,7 +70,8 @@ class EtatEditionResourceTest {
     void aFilledEditionReadsItsReferentialsAndStillHasNothingSolved() {
         seedScenario();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/editions/courant/etat")
                 .then()
                 .statusCode(200)
@@ -96,27 +103,35 @@ class EtatEditionResourceTest {
      */
     @Test
     void theCoherenceChecklistMatchesItsBlockOnTheHomeScreen() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/editions/courant/coherence")
                 .then()
                 .statusCode(200)
                 .body("anomalies", hasSize(0))
                 .body("familles", hasSize(5));
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/editions/courant/etat")
                 .then()
                 .statusCode(200)
                 .body("coherence.statut", equalTo("FAIT"));
 
         seedScenario();
-        io.restassured.path.json.JsonPath detail = given().when()
+        io.restassured.path.json.JsonPath detail = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/editions/courant/coherence")
                 .then()
                 .statusCode(200)
                 .extract()
                 .jsonPath();
-        io.restassured.path.json.JsonPath etat = given().when()
+        io.restassured.path.json.JsonPath etat = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/editions/courant/etat")
                 .then()
                 .statusCode(200)
@@ -137,7 +152,8 @@ class EtatEditionResourceTest {
     void theViewCarriesNoPersonalData() {
         seedScenario();
 
-        String body = given().when()
+        String body = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/editions/courant/etat")
                 .then()
                 .statusCode(200)
@@ -167,7 +183,8 @@ class EtatEditionResourceTest {
     @Test
     void onADayOfTheEventTheDayUnderWayIsRead() {
         seedScenario();
-        String premierJour = given().when()
+        String premierJour = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/editions/courant/etat")
                 .then()
                 .statusCode(200)
@@ -176,14 +193,16 @@ class EtatEditionResourceTest {
                 .path("evenement.premierJour");
         QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
         try {
-            given().contentType("application/json")
+            given().header("X-Edition-Id", "E1")
+                    .contentType("application/json")
                     .body("{\"dateDuJour\":\"" + premierJour + "\",\"heureDuJour\":\"08:00\"}")
                     .when()
                     .put("/api/horloge")
                     .then()
                     .statusCode(200);
 
-            given().when()
+            given().header("X-Edition-Id", "E1")
+                    .when()
                     .get("/api/editions/courant/etat")
                     .then()
                     .statusCode(200)
@@ -195,7 +214,8 @@ class EtatEditionResourceTest {
                     .body("evenement.jour.placesVides", notNullValue())
                     .body("evenement.jour.absents", equalTo(0));
         } finally {
-            given().contentType("application/json")
+            given().header("X-Edition-Id", "E1")
+                    .contentType("application/json")
                     .body("{\"dateDuJour\":null}")
                     .when()
                     .put("/api/horloge")
@@ -205,8 +225,13 @@ class EtatEditionResourceTest {
     }
 
     private static void seedScenario() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);

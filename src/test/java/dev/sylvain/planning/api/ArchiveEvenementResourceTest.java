@@ -67,7 +67,8 @@ class ArchiveEvenementResourceTest {
 
     @BeforeEach
     void seed() throws SQLException {
-        defaultEdition = given().when()
+        defaultEdition = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/editions/courant")
                 .then()
                 .statusCode(200)
@@ -114,7 +115,9 @@ class ArchiveEvenementResourceTest {
 
     @Test
     void theArchiveHoldsExactlyTheChosenPartsAndTheManifest() throws IOException {
-        Response response = given().when().get(ARCHIVE + "?pdfGlobal=true&equite=true&individuels=true&format=feuille");
+        Response response = given().header("X-Edition-Id", "E1")
+                .when()
+                .get(ARCHIVE + "?pdfGlobal=true&equite=true&individuels=true&format=feuille");
         response.then().statusCode(200).contentType("application/zip");
         assertThat(response.header("Content-Disposition"))
                 .matches("attachment; filename=\"archive-[a-z0-9-]+-\\d{4}-\\d{2}-\\d{2}\\.zip\"");
@@ -137,7 +140,8 @@ class ArchiveEvenementResourceTest {
 
     @Test
     void theTextPartsAreTheBytesTheirOwnExportsDownload() throws IOException {
-        Map<String, byte[]> archive = unzip(given().when()
+        Map<String, byte[]> archive = unzip(given().header("X-Edition-Id", "E1")
+                .when()
                 .get(ALL_TEXT_PARTS)
                 .then()
                 .statusCode(200)
@@ -147,13 +151,15 @@ class ArchiveEvenementResourceTest {
         assertThat(archive.get("equite.csv")).isEqualTo(download("/api/planning/equite/export"));
 
         // The Heures screen posts the persisted plan it read: the same round trip.
-        String persisted = given().when()
+        String persisted = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/persisted")
                 .then()
                 .statusCode(200)
                 .extract()
                 .asString();
-        byte[] heures = given().contentType(ContentType.JSON)
+        byte[] heures = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(persisted)
                 .when()
                 .post("/api/planning/hours/export")
@@ -174,14 +180,16 @@ class ArchiveEvenementResourceTest {
 
     @Test
     void theScenarioOfTheArchiveImportsIntoAnEmptyEdition() throws IOException {
-        byte[] scenario = unzip(given().when()
+        byte[] scenario = unzip(given().header("X-Edition-Id", "E1")
+                        .when()
                         .get(ARCHIVE + "?scenario=true")
                         .then()
                         .statusCode(200)
                         .extract()
                         .asByteArray())
                 .get("scenario.yaml");
-        String landingEdition = given().contentType(ContentType.JSON)
+        String landingEdition = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"nom\":\"Réimport d'archive\"}")
                 .when()
                 .post("/api/editions")
@@ -218,7 +226,7 @@ class ArchiveEvenementResourceTest {
                     .get("LISEZMOI.txt"));
             assertThat(manifest).contains("Édition : Réimport d'archive (" + landingEdition + ")");
         } finally {
-            given().when().delete("/api/editions/" + landingEdition);
+            given().header("X-Edition-Id", "E1").when().delete("/api/editions/" + landingEdition);
         }
     }
 
@@ -227,13 +235,15 @@ class ArchiveEvenementResourceTest {
         // The control first: the individual documents of the Publication
         // screen do print the espace link, so a search for the token in these
         // bytes is one that can find it.
-        String plan = given().when()
+        String plan = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/persisted")
                 .then()
                 .statusCode(200)
                 .extract()
                 .asString();
-        byte[] bundle = given().contentType(ContentType.JSON)
+        byte[] bundle = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(plan)
                 .when()
                 .post("/api/planning/export/bundle/all")
@@ -245,8 +255,13 @@ class ArchiveEvenementResourceTest {
                 .as("témoin : le PDF individuel du bundle porte le lien de l'espace")
                 .isTrue();
 
-        Map<String, byte[]> archive = unzip(
-                given().when().get(EVERY_PART).then().statusCode(200).extract().asByteArray());
+        Map<String, byte[]> archive = unzip(given().header("X-Edition-Id", "E1")
+                .when()
+                .get(EVERY_PART)
+                .then()
+                .statusCode(200)
+                .extract()
+                .asByteArray());
 
         assertThat(archive).containsKeys("publication.csv", "planning-global.pdf", "scenario.yaml");
         archive.forEach((name, content) -> {
@@ -259,13 +274,15 @@ class ArchiveEvenementResourceTest {
 
     @Test
     void askingForNothingIsA400ThatTheHistoryRecordsAsRefused() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get(ARCHIVE)
                 .then()
                 .statusCode(400)
                 .body("message", equalTo("Cochez au moins une partie à mettre dans l'archive."));
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/historique")
                 .then()
                 .statusCode(200)
@@ -275,9 +292,14 @@ class ArchiveEvenementResourceTest {
 
     @Test
     void theHistoryNamesThePartsTheArchiveCarried() {
-        given().when().get(ARCHIVE + "?scenario=true&equite=true").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get(ARCHIVE + "?scenario=true&equite=true")
+                .then()
+                .statusCode(200);
 
-        JsonPath historique = given().when()
+        JsonPath historique = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/historique")
                 .then()
                 .statusCode(200)
@@ -305,7 +327,8 @@ class ArchiveEvenementResourceTest {
                 .contains("Durée de conservation : ")
                 .doesNotContain("planning-global.pdf");
 
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/planning/publication")
                 .then()
@@ -316,23 +339,36 @@ class ArchiveEvenementResourceTest {
 
     @Test
     void theAvailabilityGreysOutWhatWouldComeOutEmpty() throws IOException {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get(ARCHIVE + "/disponibilite")
                 .then()
                 .statusCode(200)
                 .body("planResolu", equalTo(true))
                 .body("resolutionEnCours", equalTo(false));
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/planning/publication")
                 .then()
                 .statusCode(200);
-        given().when().get(ARCHIVE + "/disponibilite").then().statusCode(200).body("publie", equalTo(true));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get(ARCHIVE + "/disponibilite")
+                .then()
+                .statusCode(200)
+                .body("publie", equalTo(true));
 
         persistence.clearDatabase();
 
-        given().when().get(ARCHIVE + "/disponibilite").then().statusCode(200).body("planResolu", equalTo(false));
-        assertThat(text(unzip(given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get(ARCHIVE + "/disponibilite")
+                .then()
+                .statusCode(200)
+                .body("planResolu", equalTo(false));
+        assertThat(text(unzip(given().header("X-Edition-Id", "E1")
+                                .when()
                                 .get(ARCHIVE + "?equite=true")
                                 .then()
                                 .statusCode(200)
@@ -345,7 +381,8 @@ class ArchiveEvenementResourceTest {
     /* ------------------------------------------------------------------------ */
 
     private String manifest() throws IOException {
-        return text(unzip(given().when()
+        return text(unzip(given().header("X-Edition-Id", "E1")
+                        .when()
                         .get(ARCHIVE + "?referentiels=true")
                         .then()
                         .statusCode(200)
@@ -355,7 +392,13 @@ class ArchiveEvenementResourceTest {
     }
 
     private static byte[] download(String path) {
-        return given().when().get(path).then().statusCode(200).extract().asByteArray();
+        return given().header("X-Edition-Id", "E1")
+                .when()
+                .get(path)
+                .then()
+                .statusCode(200)
+                .extract()
+                .asByteArray();
     }
 
     private static Map<String, byte[]> unzip(byte[] zip) throws IOException {

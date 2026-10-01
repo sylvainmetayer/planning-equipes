@@ -417,10 +417,10 @@ function publication(etat: EtatEdition): LigneEtat {
 
 /**
  * The acknowledgements, and whether anybody chases the silent: the nightly
- * reminders are off until somebody arms them, which the detail says. The line
+ * reminders only leave the active edition, which the detail says. The line
  * leads to the people who have not answered while there are any — and, with
- * the reminders off and somebody never reminded, also to the setting that
- * would chase them; once everybody has answered, to the list alone. An alert
+ * the edition inactive and somebody never reminded, also to the Éditions page
+ * where it is activated; once everybody has answered, to the list alone. An alert
  * only once the reminder delay set there has passed.
  */
 function confirmations(etat: EtatEdition): LigneEtat {
@@ -443,7 +443,7 @@ function confirmations(etat: EtatEdition): LigneEtat {
   const heures = delaiRelanceHeures;
   const relance = relancesAutomatiques
     ? $localize`:@@accueil.detail.confirmations.relancesActives:relance automatique après ${heures}:heures: h`
-    : $localize`:@@accueil.detail.confirmations.relancesInactives:relances automatiques désactivées`;
+    : $localize`:@@accueil.detail.confirmations.relancesEditionInactive:pas de relance automatique : édition inactive`;
   const ligne: LigneEtat = {
     id: 'confirmations',
     titre,
@@ -463,14 +463,12 @@ function confirmations(etat: EtatEdition): LigneEtat {
             libelle: $localize`:@@accueil.lien.confirmations.voir:Voir les animateurs`,
           },
   };
-  // Arming the reminders only helps somebody no reminder reached yet.
+  // The reminders only leave the active edition (ADR 0072): activating it
+  // only helps somebody no reminder reached yet.
   if (!relancesAutomatiques && silencieux > 0) {
     ligne.lienSecondaire = {
-      route: '/parametres',
-      // The automatic e-mails are a section of the Édition tab.
-      queryParams: { onglet: 'edition' },
-      fragment: 'emails',
-      libelle: $localize`:@@accueil.lien.confirmations.activer:Activer`,
+      route: '/editions',
+      libelle: $localize`:@@accueil.lien.confirmations.activerEdition:Activer l'édition`,
     };
   }
   return ligne;

@@ -79,7 +79,8 @@ class EnvoiPlanningResourceTest {
 
     @Test
     void lEnvoiIndividuelJointLePdfEtLeLienEspace() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/planning/envoi/animateur/MAIL-A")
                 .then()
@@ -98,7 +99,8 @@ class EnvoiPlanningResourceTest {
 
     @Test
     void unAnimateurSansEmailRepondUneErreurExplicite() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/planning/envoi/animateur/MAIL-B")
                 .then()
@@ -109,7 +111,8 @@ class EnvoiPlanningResourceTest {
 
     @Test
     void unAnimateurInconnuRepondIntrouvable() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/planning/envoi/animateur/MAIL-FANTOME")
                 .then()

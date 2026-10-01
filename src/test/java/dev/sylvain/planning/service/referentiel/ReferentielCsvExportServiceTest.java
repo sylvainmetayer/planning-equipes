@@ -89,7 +89,8 @@ class ReferentielCsvExportServiceTest {
     }
 
     private static String createEdition(String nom) {
-        return given().contentType("application/json")
+        return given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"nom\":\"" + nom + "\"}")
                 .when()
                 .post("/api/editions")
@@ -101,8 +102,8 @@ class ReferentielCsvExportServiceTest {
 
     @AfterEach
     void supprimerLesEditions() {
-        given().when().delete("/api/editions/" + SOURCE);
-        given().when().delete("/api/editions/" + CIBLE);
+        given().header("X-Edition-Id", "E1").when().delete("/api/editions/" + SOURCE);
+        given().header("X-Edition-Id", "E1").when().delete("/api/editions/" + CIBLE);
     }
 
     private static void importer(String edition, String chemin, String contenu) {

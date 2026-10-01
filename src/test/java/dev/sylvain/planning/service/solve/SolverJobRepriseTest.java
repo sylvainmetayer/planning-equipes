@@ -155,7 +155,8 @@ class SolverJobRepriseTest {
     @Test
     void unJobOublieDisparaitAussiDeLaBase() {
         planImporte();
-        String id = given().when()
+        String id = given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/solve/async/reference-data?seconds=1")
                 .then()
                 .statusCode(202)
@@ -169,7 +170,11 @@ class SolverJobRepriseTest {
         // therefore promises nothing about the row yet.
         assertThat(pollUntilStatut(id, JobStatus.COMPLETED)).isEqualTo(JobStatus.COMPLETED);
 
-        given().when().delete("/api/jobs/" + id).then().statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/jobs/" + id)
+                .then()
+                .statusCode(204);
 
         assertThat(jobRepository.list().stream().map(LigneJob::id)).doesNotContain(id);
     }
@@ -295,15 +300,21 @@ class SolverJobRepriseTest {
     }
 
     private void planImporte() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
     }
 
     private void clearQueue() {
-        List<String> ids = given().when()
+        List<String> ids = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/jobs/file")
                 .then()
                 .statusCode(200)
@@ -311,7 +322,7 @@ class SolverJobRepriseTest {
                 .jsonPath()
                 .getList("id");
         for (String id : ids) {
-            given().when().delete("/api/jobs/" + id);
+            given().header("X-Edition-Id", "E1").when().delete("/api/jobs/" + id);
         }
     }
 
@@ -319,8 +330,13 @@ class SolverJobRepriseTest {
         await().alias("Solver still busy")
                 .atMost(POLL_TIMEOUT)
                 .pollInterval(POLL_INTERVAL)
-                .until(() ->
-                        given().when().get("/api/jobs/active").then().extract().statusCode() == 204);
+                .until(() -> given().header("X-Edition-Id", "E1")
+                                .when()
+                                .get("/api/jobs/active")
+                                .then()
+                                .extract()
+                                .statusCode()
+                        == 204);
     }
 
     /** The persisted status, awaited on the same budget as {@link #pollUntilFinished}. */
@@ -340,7 +356,8 @@ class SolverJobRepriseTest {
                 .atMost(POLL_TIMEOUT)
                 .pollInterval(POLL_INTERVAL)
                 .until(
-                        () -> given().when()
+                        () -> given().header("X-Edition-Id", "E1")
+                                .when()
                                 .get("/api/jobs/" + jobId)
                                 .then()
                                 .statusCode(200)

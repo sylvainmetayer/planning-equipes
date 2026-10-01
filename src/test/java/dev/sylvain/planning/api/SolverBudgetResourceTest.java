@@ -38,7 +38,7 @@ class SolverBudgetResourceTest {
 
     @AfterEach
     void dropTheEditions() {
-        created.forEach(id -> given().when().delete("/api/editions/" + id));
+        created.forEach(id -> given().header("X-Edition-Id", "E1").when().delete("/api/editions/" + id));
         created.clear();
     }
 
@@ -209,7 +209,8 @@ class SolverBudgetResourceTest {
     }
 
     private String createEdition(String nom) {
-        String id = given().contentType("application/json")
+        String id = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"nom\":\"" + nom + "\"}")
                 .when()
                 .post("/api/editions")

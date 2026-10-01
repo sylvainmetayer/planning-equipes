@@ -119,10 +119,10 @@ public class ParametresResource {
     }
 
     /**
-     * What the scheduled notifications may do on this edition (issues #298,
+     * The delays of the scheduled notifications on this edition (issues #298,
      * #299, #300). An edition that has never been configured answers the
-     * defaults — {@code actives} false above all: nothing leaves an edition
-     * nobody armed.
+     * defaults. Whether anything leaves is not decided here: only the active
+     * edition sends (ADR 0072).
      */
     @GET
     @Path("/parametres-notifications")

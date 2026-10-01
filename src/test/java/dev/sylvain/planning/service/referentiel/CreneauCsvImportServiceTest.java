@@ -30,7 +30,8 @@ class CreneauCsvImportServiceTest {
 
     @BeforeEach
     void createTheEdition() {
-        EDITION = given().contentType("application/json")
+        EDITION = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"nom\":\"Import CSV créneaux\"}")
                 .when()
                 .post("/api/editions")
@@ -42,7 +43,7 @@ class CreneauCsvImportServiceTest {
 
     @AfterEach
     void dropTheEdition() {
-        given().when().delete("/api/editions/" + EDITION);
+        given().header("X-Edition-Id", "E1").when().delete("/api/editions/" + EDITION);
     }
 
     private static io.restassured.response.Response poster(String chemin, String contenu) {

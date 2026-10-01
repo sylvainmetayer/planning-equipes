@@ -74,7 +74,8 @@ class AdminLoginLimiterProxyCidrTest {
     }
 
     private static Response login(String address, String password) {
-        return given().contentType("application/x-www-form-urlencoded")
+        return given().header("X-Edition-Id", "E1")
+                .contentType("application/x-www-form-urlencoded")
                 .header("X-Forwarded-For", address)
                 .formParam("j_username", "admin")
                 .formParam("j_password", password)

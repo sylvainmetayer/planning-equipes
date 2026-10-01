@@ -9,12 +9,8 @@
 
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { EditionsApi } from './api/editions-api';
-import { Edition } from './models';
-import {
-  clearStoredEditionId,
-  getStoredEditionId,
-  setStoredEditionIdAndReload,
-} from './edition-courante';
+import { Edition, EditionSituation } from './models';
+import { setStoredEditionIdAndReload } from './edition-courante';
 
 @Injectable({ providedIn: 'root' })
 export class EditionStore {
@@ -22,10 +18,9 @@ export class EditionStore {
   readonly editions = this._editions.asReadonly();
 
   /**
-   * What the server says this browser's requests are actually resolved to.
-   * Authoritative on purpose: a stored id naming a since-deleted edition is
-   * silently answered from the default edition, and this is how the UI finds
-   * out which edition it is really looking at.
+   * What the server says this browser's requests are resolved to. A stored
+   * id naming a since-deleted edition is refused (`EDITION_INCONNUE`, ADR
+   * 0072), which `editionInterceptor` answers by choosing again.
    */
   private readonly _courant = signal<Edition | null>(null);
   readonly courant = this._courant.asReadonly();
@@ -33,6 +28,17 @@ export class EditionStore {
   readonly autres = computed(() =>
     this.editions().filter((edition) => edition.id !== this.courant()?.id),
   );
+
+  private readonly _situations = signal<EditionSituation[]>([]);
+  /**
+   * What the editions' state asks of the organiser today — the active edition
+   * is over, or an inactive one starts within a few days. The shell's strip
+   * shows a banner when it is not empty; the Éditions page gives the detail.
+   */
+  readonly situations = this._situations.asReadonly();
+
+  /** The one edition allowed to reach outside, `null` between two events. */
+  readonly active = computed(() => this.editions().find((edition) => edition.active) ?? null);
 
   private readonly editionsApi = inject(EditionsApi);
 
@@ -43,12 +49,8 @@ export class EditionStore {
     ]);
     this._editions.set(editions);
     this._courant.set(courant);
-    // The stored choice was answered from another edition: drop it, so the
-    // next reload doesn't keep sending a header the server ignores anyway.
-    const stored = getStoredEditionId();
-    if (stored && stored !== courant.id) {
-      clearStoredEditionId();
-    }
+    // A reminder, never a blocker: a failure leaves the banner off.
+    this._situations.set(await this.editionsApi.situations().catch(() => []));
   }
 
   /** Switches edition; every screen is swapped at once by the page reload this triggers. */

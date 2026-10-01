@@ -62,7 +62,11 @@ class ChangementsJourneeResourceTest {
 
     @AfterEach
     void resetDatabase() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
         forgetSnapshots();
     }
 
@@ -77,13 +81,15 @@ class ChangementsJourneeResourceTest {
 
     /** Solves the sample scenario, which persists a plan for the single day above. */
     private static void solve() {
-        String sample = given().when()
+        String sample = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/sample?name=scenario.yml")
                 .then()
                 .statusCode(200)
                 .extract()
                 .asString();
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(sample)
                 .when()
                 .post("/api/solve?seconds=3")
@@ -92,7 +98,8 @@ class ChangementsJourneeResourceTest {
     }
 
     private static JsonPath changements(String query) {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/journees/" + JOUR + "/changements" + query)
                 .then()
                 .statusCode(200)
@@ -111,7 +118,8 @@ class ChangementsJourneeResourceTest {
         assertThat(parDefaut.getBoolean("referenceDisponible")).isFalse();
         assertThat(parDefaut.getObject("referenceLe", Object.class)).isNull();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/journees/" + JOUR + "/changements?reference=publication")
                 .then()
                 .statusCode(200)
@@ -169,9 +177,9 @@ class ChangementsJourneeResourceTest {
         assertThat(avantEchec.getBoolean("referenceDisponible")).isTrue();
         assertThat(avantEchec.getList("parVacation.avant.animateurId")).contains(absent);
 
-        // The default edition's id is generated (ADR 0050): resolved, never assumed.
+        // The active edition's id is generated (ADR 0050): resolved, never assumed.
         String defaultEdition = editionService.listEditions().stream()
-                .filter(Edition::isDefaut)
+                .filter(Edition::isActive)
                 .map(Edition::getId)
                 .findFirst()
                 .orElseThrow();
@@ -196,12 +204,14 @@ class ChangementsJourneeResourceTest {
 
     @Test
     void anUnreadableDayOrReferenceIsRefused() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/journees/hier/changements")
                 .then()
                 .statusCode(400)
                 .body(containsString("illisible"));
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/journees/" + JOUR + "/changements?reference=instantane")
                 .then()
                 .statusCode(400)
@@ -213,7 +223,8 @@ class ChangementsJourneeResourceTest {
         solve();
         publish();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/journees/2026-12-25/changements?reference=publication")
                 .then()
                 .statusCode(200)
@@ -224,7 +235,8 @@ class ChangementsJourneeResourceTest {
     }
 
     private static void publish() {
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .when()
                 .post("/api/planning/publication")
                 .then()
@@ -233,7 +245,8 @@ class ChangementsJourneeResourceTest {
 
     /** An animateur the persisted plan seats somewhere on the day. */
     private static String aSeatedAnimateur() {
-        String id = given().when()
+        String id = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/persisted")
                 .then()
                 .statusCode(200)
@@ -246,7 +259,8 @@ class ChangementsJourneeResourceTest {
 
     /** A late change the next solve has to work around: this person is out that day. */
     private static void markUnavailable(String animateurId) {
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {"type":"INDISPONIBILITE_FORCEE",
                          "animateursConcernes":[{"id":"%s"}],"jour":"%s"}""".formatted(animateurId, JOUR))

@@ -478,11 +478,11 @@ export function buildEspaceAideSections(
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@espace.aide.veille.contenu:Si l'organisation a activé les rappels, vous recevez la veille au soir la liste de vos créneaux du lendemain : horaire et stand, rien de plus. Il reprend ce que cette page affiche déjà et ne vous annonce jamais un changement.`,
+          text: $localize`:@@espace.aide.veille.contenu:La veille au soir, vous recevez la liste de vos créneaux du lendemain : horaire et stand, rien de plus. Il reprend ce que cette page affiche déjà et ne vous annonce jamais un changement.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@espace.aide.veille.absence:Pas de rappel ? Trois raisons possibles : votre fiche n'a pas d'adresse e-mail, l'organisation n'a pas activé les rappels, ou vous n'êtes affecté nulle part ce jour-là. Dans tous les cas, cette page reste la référence.`,
+          text: $localize`:@@espace.aide.veille.absence:Pas de rappel ? Le plus souvent, votre fiche n'a pas d'adresse e-mail, ou vous n'êtes affecté nulle part ce jour-là. Dans tous les cas, cette page reste la référence.`,
         },
       ],
     },

@@ -23,6 +23,6 @@ import java.lang.annotation.Target;
 @interface EditionArg {
 
     /** The one wording every tool repeats, so an assistant reads the same sentence everywhere. */
-    String DESCRIPTION = "Édition ciblée : son id ou son nom (voir lister_editions). "
-            + "Par défaut, l'édition courante (voir edition_courante).";
+    String DESCRIPTION = "Édition ciblée : son id ou son nom (voir lister_editions). Obligatoire : un appel "
+            + "sans édition est refusé.";
 }

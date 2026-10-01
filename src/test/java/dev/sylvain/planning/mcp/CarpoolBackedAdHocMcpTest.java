@@ -85,7 +85,7 @@ class CarpoolBackedAdHocMcpTest {
 
     @Test
     void deletingACarBackedGroupedArrivalIsAToolErrorCarryingTheSentence() {
-        assertThatThrownBy(() -> tools.deleteContrainteAdHoc(contrainte, null))
+        assertThatThrownBy(() -> tools.deleteContrainteAdHoc(contrainte, "E1"))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Conflict.class)
                 .hasMessageContaining(ContrainteAdHocService.CARPOOL_BACKED);

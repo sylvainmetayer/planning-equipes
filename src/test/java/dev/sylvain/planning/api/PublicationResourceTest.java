@@ -169,7 +169,8 @@ class PublicationResourceTest {
     void laTraceDitQuiAEtePrevenuDeQuoiEtQuand() {
         publier();
 
-        JsonPath trace = given().when()
+        JsonPath trace = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/publication/destinataires")
                 .then()
                 .statusCode(200)
@@ -192,7 +193,8 @@ class PublicationResourceTest {
         mailbox.clear();
 
         assertThat(apercu().getInt("nombreConcernes")).isZero();
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/planning/publication")
                 .then()
@@ -218,7 +220,8 @@ class PublicationResourceTest {
         persistence.clearDatabase();
 
         assertThat(apercu().getBoolean("planVide")).isTrue();
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/planning/publication")
                 .then()
@@ -230,7 +233,8 @@ class PublicationResourceTest {
     void lInstantanePublieNePeutPasEtreSupprime() {
         long snapshotId = publier().getLong("snapshotId");
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .delete("/api/planning/snapshots/" + snapshotId)
                 .then()
                 .statusCode(409)
@@ -239,7 +243,8 @@ class PublicationResourceTest {
 
     @Test
     void laTraceEstVideTantQueRienNAEtePublie() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/publication/destinataires")
                 .then()
                 .statusCode(200)
@@ -260,7 +265,8 @@ class PublicationResourceTest {
     /* -------------------------------- Helpers ------------------------------ */
 
     private JsonPath apercu() {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/publication")
                 .then()
                 .statusCode(200)
@@ -269,7 +275,8 @@ class PublicationResourceTest {
     }
 
     private JsonPath publier() {
-        return given().contentType(ContentType.JSON)
+        return given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/planning/publication")
                 .then()
@@ -295,7 +302,8 @@ class PublicationResourceTest {
 
     /** The sentences the last publication recorded for one animateur. */
     private List<String> lignesTracees(String animateurId) {
-        JsonPath trace = given().when()
+        JsonPath trace = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/publication/destinataires")
                 .then()
                 .statusCode(200)

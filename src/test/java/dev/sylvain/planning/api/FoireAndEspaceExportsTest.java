@@ -99,8 +99,14 @@ class FoireAndEspaceExportsTest {
         String token = tokenOf("FOIRE-A");
 
         // Open by default, and a demande goes through.
-        given().when().get("/api/echanges/configuration").then().statusCode(200).body("foireOuverte", equalTo(true));
-        String demandeId = given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/echanges/configuration")
+                .then()
+                .statusCode(200)
+                .body("foireOuverte", equalTo(true));
+        String demandeId = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"FOIRE-S1\",\"cibleId\":\"FOIRE-B\"}]")
                 .when()
                 .post("/api/espace-animateur/" + token + "/demandes")
@@ -111,16 +117,23 @@ class FoireAndEspaceExportsTest {
 
         // Closing is immediate and enforced server-side.
         configure(false);
-        given().when().get("/api/echanges/configuration").then().statusCode(200).body("foireOuverte", equalTo(false));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/echanges/configuration")
+                .then()
+                .statusCode(200)
+                .body("foireOuverte", equalTo(false));
 
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"FOIRE-S1\",\"cibleId\":\"FOIRE-B\"}]")
                 .when()
                 .post("/api/espace-animateur/" + token + "/demandes")
                 .then()
                 .statusCode(400)
                 .body("message", containsString("fermée"));
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + token + "/demandes/" + demandeId + "/annulation")
                 .then()
@@ -131,7 +144,8 @@ class FoireAndEspaceExportsTest {
         // only to build a demande, and the interface hides it once the foire is
         // closed. Left open, it would keep serving every colleague's schedule
         // the rest of the year for no functional reason.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + token + "/collegues/FOIRE-B/postes")
                 .then()
                 .statusCode(400)
@@ -139,7 +153,8 @@ class FoireAndEspaceExportsTest {
 
         // Same for « qui peut me remplacer ? » — searching partners for an
         // échange nobody may propose any more would only mislead.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + token + "/suggestions-echange" + "?creneauId=" + CRENEAU_ID
                         + "&standId=FOIRE-S1")
                 .then()
@@ -147,7 +162,8 @@ class FoireAndEspaceExportsTest {
                 .body("message", containsString("fermée"));
 
         // The espace stays consultable and says the foire is closed.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + token)
                 .then()
                 .statusCode(200)
@@ -156,16 +172,19 @@ class FoireAndEspaceExportsTest {
 
         // Reopening restores the whole flow, cancellation and picker included.
         configure(true);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + token + "/collegues/FOIRE-B/postes")
                 .then()
                 .statusCode(200);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + token + "/suggestions-echange" + "?creneauId=" + CRENEAU_ID
                         + "&standId=FOIRE-S1")
                 .then()
                 .statusCode(200);
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + token + "/demandes/" + demandeId + "/annulation")
                 .then()
@@ -177,7 +196,8 @@ class FoireAndEspaceExportsTest {
         String token = tokenOf("FOIRE-A");
         configure(false);
 
-        byte[] pdf = given().when()
+        byte[] pdf = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + token + "/planning.pdf")
                 .then()
                 .statusCode(200)
@@ -188,7 +208,8 @@ class FoireAndEspaceExportsTest {
         assertThat(pdf).isNotEmpty();
         assertThat(new String(pdf, 0, 5)).isEqualTo("%PDF-");
 
-        String ics = given().when()
+        String ics = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + token + "/planning.ics")
                 .then()
                 .statusCode(200)
@@ -219,7 +240,8 @@ class FoireAndEspaceExportsTest {
     }
 
     private static byte[] telecharge(String token, String requete) {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + token + "/planning.pdf" + requete)
                 .then()
                 .statusCode(200)
@@ -249,11 +271,13 @@ class FoireAndEspaceExportsTest {
     @Test
     void anUnknownTokenDownloadsNothingAndWritesNothing() {
         int avant = espaceDownloadLines();
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/jeton-invente/planning.pdf")
                 .then()
                 .statusCode(404);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/jeton-invente/planning.ics")
                 .then()
                 .statusCode(404);
@@ -263,7 +287,8 @@ class FoireAndEspaceExportsTest {
 
     /** How many espace downloads the history holds, whatever their outcome. */
     private static int espaceDownloadLines() {
-        return given().queryParam("nature", "exports")
+        return given().header("X-Edition-Id", "E1")
+                .queryParam("nature", "exports")
                 .queryParam("limite", 500)
                 .when()
                 .get("/api/historique")
@@ -283,17 +308,20 @@ class FoireAndEspaceExportsTest {
     @Test
     void anEspaceDownloadIsRecordedUnderTheAnimateur() {
         String token = tokenOf("FOIRE-A");
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + token + "/planning.pdf")
                 .then()
                 .statusCode(200);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + token + "/planning.ics")
                 .then()
                 .statusCode(200);
 
         for (String action : List.of("TELECHARGEMENT_ESPACE_PDF", "TELECHARGEMENT_ESPACE_ICS")) {
-            given().when()
+            given().header("X-Edition-Id", "E1")
+                    .when()
                     .get("/api/historique")
                     .then()
                     .statusCode(200)
@@ -307,7 +335,8 @@ class FoireAndEspaceExportsTest {
     }
 
     private static void configure(boolean ouverte) {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"foireOuverte\":" + ouverte + "}")
                 .when()
                 .put("/api/echanges/configuration")
@@ -318,7 +347,8 @@ class FoireAndEspaceExportsTest {
 
     /** Opens the foire, bounded by the given dates — {@code null} leaves a side unbounded. */
     private static void configureFenetre(LocalDate debut, LocalDate fin) {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"foireOuverte\":true,\"debut\":" + json(debut) + ",\"fin\":" + json(fin) + "}")
                 .when()
                 .put("/api/echanges/configuration")
@@ -342,14 +372,16 @@ class FoireAndEspaceExportsTest {
         // The switch says open, the dates say « pas encore ».
         configureFenetre(demain, demain.plusDays(7));
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/echanges/configuration")
                 .then()
                 .statusCode(200)
                 .body("foireOuverte", equalTo(true))
                 .body("ouverteAujourdhui", equalTo(false));
 
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"FOIRE-S1\",\"cibleId\":\"FOIRE-B\"}]")
                 .when()
                 .post("/api/espace-animateur/" + token + "/demandes")
@@ -367,7 +399,8 @@ class FoireAndEspaceExportsTest {
         LocalDate debut = LocalDate.now().plusDays(3);
         configureFenetre(debut, null);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("FOIRE-A"))
                 .then()
                 .statusCode(200)
@@ -377,7 +410,8 @@ class FoireAndEspaceExportsTest {
         // Once the window is over there is nothing to come back for: the espace
         // must NOT be given a date, or it would announce a reopening.
         configureFenetre(LocalDate.now().minusDays(10), LocalDate.now().minusDays(3));
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + tokenOf("FOIRE-A"))
                 .then()
                 .statusCode(200)
@@ -388,7 +422,8 @@ class FoireAndEspaceExportsTest {
     /** Refused before anything is written: the previous window stands. */
     @Test
     void anEndBeforeTheStartIsRefused() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"foireOuverte\":true,\"debut\":\"2026-07-20\",\"fin\":\"2026-07-10\"}")
                 .when()
                 .put("/api/echanges/configuration")
@@ -396,7 +431,8 @@ class FoireAndEspaceExportsTest {
                 .statusCode(400)
                 .body("message", containsString("précède"));
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/echanges/configuration")
                 .then()
                 .statusCode(200)

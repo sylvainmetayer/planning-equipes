@@ -25,24 +25,31 @@ class DeplacementResourceTest {
 
     @AfterEach
     void resetDatabase() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
     }
 
     /** Solves the sample scenario, which persists its plan: three seats, three animateurs. */
     private JsonPath persistedPlan() {
-        String sample = given().when()
+        String sample = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/sample?name=scenario.yml")
                 .then()
                 .statusCode(200)
                 .extract()
                 .asString();
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(sample)
                 .when()
                 .post("/api/solve?seconds=3")
                 .then()
                 .statusCode(200);
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/persisted")
                 .then()
                 .statusCode(200)
@@ -83,7 +90,8 @@ class DeplacementResourceTest {
         String[] sieges = twoSeatsOnOneCreneau(plan);
 
         // Simulated with an empty body: the persisted plan is what the drop is about.
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .when()
                 .post("/api/postes/" + sieges[0] + "/deplacement/simulation?cible=" + sieges[1])
                 .then()
@@ -93,7 +101,8 @@ class DeplacementResourceTest {
                 .body("animateurSourceId", equalTo(avant.get(sieges[0])))
                 .body("animateurCibleId", equalTo(avant.get(sieges[1])))
                 .body("scoreAvant", notNullValue());
-        assertThat(occupants(given().when()
+        assertThat(occupants(given().header("X-Edition-Id", "E1")
+                        .when()
                         .get("/api/planning/persisted")
                         .then()
                         .extract()
@@ -101,14 +110,19 @@ class DeplacementResourceTest {
                 .as("a simulation writes nothing")
                 .isEqualTo(avant);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/postes/" + sieges[0] + "/deplacement?cible=" + sieges[1])
                 .then()
                 .statusCode(200)
                 .body("casseContrainteDure", equalTo(false));
 
-        Map<String, String> apres = occupants(
-                given().when().get("/api/planning/persisted").then().extract().jsonPath());
+        Map<String, String> apres = occupants(given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/planning/persisted")
+                .then()
+                .extract()
+                .jsonPath());
         assertThat(apres).containsEntry(sieges[0], avant.get(sieges[1])).containsEntry(sieges[1], avant.get(sieges[0]));
         // Nothing else moved: the rest of the plan is exactly what it was.
         avant.keySet().stream()
@@ -129,15 +143,20 @@ class DeplacementResourceTest {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("somebody should be free on that créneau"));
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/postes/" + siege + "/deplacement?animateur=" + libre)
                 .then()
                 .statusCode(200)
                 .body("posteCibleId", nullValue())
                 .body("animateurCibleId", equalTo(libre));
 
-        Map<String, String> apres = occupants(
-                given().when().get("/api/planning/persisted").then().extract().jsonPath());
+        Map<String, String> apres = occupants(given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/planning/persisted")
+                .then()
+                .extract()
+                .jsonPath());
         assertThat(apres).containsEntry(siege, libre);
     }
 
@@ -155,7 +174,8 @@ class DeplacementResourceTest {
                 .findFirst()
                 .orElseThrow();
         // The ad hoc constraint's id is generated (ADR 0050): the response names it.
-        String indispo = given().contentType("application/json")
+        String indispo = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {"type":"INDISPONIBILITE_FORCEE",
                          "animateursConcernes":[{"id":"%s"}],"creneau":{"id":%s}}""".formatted(libre, creneau))
@@ -166,7 +186,8 @@ class DeplacementResourceTest {
                 .extract()
                 .path("contrainte.id");
         try {
-            given().contentType("application/json")
+            given().header("X-Edition-Id", "E1")
+                    .contentType("application/json")
                     .when()
                     .post("/api/postes/" + siege + "/deplacement/simulation?animateur=" + libre)
                     .then()
@@ -174,20 +195,22 @@ class DeplacementResourceTest {
                     .body("casseContrainteDure", equalTo(true))
                     .body("nouvellesViolationsDures.size()", org.hamcrest.Matchers.greaterThan(0));
 
-            given().when()
+            given().header("X-Edition-Id", "E1")
+                    .when()
                     .post("/api/postes/" + siege + "/deplacement?animateur=" + libre)
                     .then()
                     .statusCode(400)
                     .body("message", containsString("Déplacement refusé"));
 
-            assertThat(occupants(given().when()
+            assertThat(occupants(given().header("X-Edition-Id", "E1")
+                            .when()
                             .get("/api/planning/persisted")
                             .then()
                             .extract()
                             .jsonPath()))
                     .isEqualTo(avant);
         } finally {
-            given().when().delete("/api/contraintes-ad-hoc/" + indispo);
+            given().header("X-Edition-Id", "E1").when().delete("/api/contraintes-ad-hoc/" + indispo);
         }
     }
 
@@ -215,12 +238,14 @@ class DeplacementResourceTest {
                 .orElseThrow();
 
         // The view still shows somebody else on that seat.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/postes/" + siege + "/deplacement?animateur=" + libre + "&occupant=" + autre)
                 .then()
                 .statusCode(409)
                 .body("message", containsString("n'est plus tenu par la personne affichée"));
-        assertThat(occupants(given().when()
+        assertThat(occupants(given().header("X-Edition-Id", "E1")
+                        .when()
                         .get("/api/planning/persisted")
                         .then()
                         .extract()
@@ -228,7 +253,8 @@ class DeplacementResourceTest {
                 .isEqualTo(avant);
 
         // Naming the real occupant goes through, and so does naming nobody.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/postes/" + siege + "/deplacement?animateur=" + libre + "&occupant=" + occupantReel)
                 .then()
                 .statusCode(200);
@@ -252,26 +278,29 @@ class DeplacementResourceTest {
                 .findFirst()
                 .orElseThrow();
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"id\":\"DEPL-VERROU\",\"type\":\"ANIMATEUR\",\"animateurId\":\"" + libre + "\"}")
                 .when()
                 .post("/api/verrouillages")
                 .then()
                 .statusCode(200);
         try {
-            given().when()
+            given().header("X-Edition-Id", "E1")
+                    .when()
                     .post("/api/postes/" + siege + "/deplacement?animateur=" + libre)
                     .then()
                     .statusCode(400)
                     .body("message", containsString("verrouillé"));
-            assertThat(occupants(given().when()
+            assertThat(occupants(given().header("X-Edition-Id", "E1")
+                            .when()
                             .get("/api/planning/persisted")
                             .then()
                             .extract()
                             .jsonPath()))
                     .isEqualTo(avant);
         } finally {
-            given().when().delete("/api/verrouillages/DEPL-VERROU");
+            given().header("X-Edition-Id", "E1").when().delete("/api/verrouillages/DEPL-VERROU");
         }
     }
 
@@ -293,7 +322,8 @@ class DeplacementResourceTest {
                 .findFirst()
                 .orElseThrow();
         // The ad hoc constraint's id is generated (ADR 0050): the response names it.
-        String indispo = given().contentType("application/json")
+        String indispo = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {"type":"INDISPONIBILITE_FORCEE",
                          "animateursConcernes":[{"id":"%s"}],"creneau":{"id":%s}}""".formatted(libre, creneau))
@@ -304,25 +334,29 @@ class DeplacementResourceTest {
                 .extract()
                 .path("contrainte.id");
         try {
-            given().when()
+            given().header("X-Edition-Id", "E1")
+                    .when()
                     .post("/api/postes/" + siege + "/deplacement?animateur=" + libre)
                     .then()
                     .statusCode(400);
 
             // Same gesture, with that rule switched off on the Contraintes screen.
-            given().contentType("application/json")
+            given().header("X-Edition-Id", "E1")
+                    .contentType("application/json")
                     .body("{\"actif\":false}")
                     .when()
                     .put("/api/constraints/indisponibiliteForcee")
                     .then()
                     .statusCode(200);
             try {
-                given().when()
+                given().header("X-Edition-Id", "E1")
+                        .when()
                         .post("/api/postes/" + siege + "/deplacement?animateur=" + libre)
                         .then()
                         .statusCode(200);
             } finally {
-                given().contentType("application/json")
+                given().header("X-Edition-Id", "E1")
+                        .contentType("application/json")
                         .body("{\"actif\":true}")
                         .when()
                         .put("/api/constraints/indisponibiliteForcee")
@@ -330,7 +364,7 @@ class DeplacementResourceTest {
                         .statusCode(200);
             }
         } finally {
-            given().when().delete("/api/contraintes-ad-hoc/" + indispo);
+            given().header("X-Edition-Id", "E1").when().delete("/api/contraintes-ad-hoc/" + indispo);
         }
     }
 
@@ -339,14 +373,20 @@ class DeplacementResourceTest {
         JsonPath plan = persistedPlan();
         String siege = occupants(plan).keySet().iterator().next();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/postes/POSTE-INEXISTANT/deplacement?cible=" + siege)
                 .then()
                 .statusCode(404);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/postes/" + siege + "/deplacement?cible=" + siege)
                 .then()
                 .statusCode(400);
-        given().when().post("/api/postes/" + siege + "/deplacement").then().statusCode(400);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/postes/" + siege + "/deplacement")
+                .then()
+                .statusCode(400);
     }
 }

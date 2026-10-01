@@ -39,6 +39,7 @@ class PlanningResourceIT extends PlanningResourceTest {
     void ouvrirSessionAdmin() {
         if (cookieSession == null) {
             cookieSession = RestAssured.given()
+                    .header("X-Edition-Id", "E1")
                     .contentType("application/x-www-form-urlencoded")
                     .formParam("j_username", "admin")
                     .formParam("j_password", MOT_DE_PASSE_ADMIN)

@@ -77,11 +77,12 @@ class ImportScenarioConsignesTest {
 
     @AfterEach
     void deleteTheLandingEdition() {
-        given().when().delete("/api/editions/" + edition);
+        given().header("X-Edition-Id", "E1").when().delete("/api/editions/" + edition);
     }
 
     private void createEdition() {
-        edition = given().contentType("application/json")
+        edition = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"nom\":\"" + NOM_EDITION + "\"}")
                 .when()
                 .post("/api/editions")
@@ -209,7 +210,11 @@ class ImportScenarioConsignesTest {
                 .contains("justification: Repas pris pendant la bande fermée");
 
         // A fresh edition, which never saw the consigne.
-        given().when().delete("/api/editions/" + edition).then().statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/editions/" + edition)
+                .then()
+                .statusCode(204);
         createEdition();
         assertThat(consignes().getList("consignes")).isEmpty();
 

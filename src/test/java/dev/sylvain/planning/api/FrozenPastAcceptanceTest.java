@@ -79,8 +79,13 @@ class FrozenPastAcceptanceTest {
 
     @BeforeEach
     void anEditionFrozenBeforeItsFirstDay() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=" + SCENARIO)
                 .then()
                 .statusCode(200);
@@ -90,13 +95,18 @@ class FrozenPastAcceptanceTest {
     @AfterEach
     void handTheClockBack() {
         attendreSolveurLibre();
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"dateDuJour\":null}")
                 .when()
                 .put("/api/horloge")
                 .then()
                 .statusCode(200);
-        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
     }
 
     @Test
@@ -132,7 +142,8 @@ class FrozenPastAcceptanceTest {
         // 5. A consigne on Thursday, solved: the past still identical, the
         //    future re-solved to zero hard on the new grid.
         List<String> jeudiNominal = seatShapes(J4);
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(consigne())
                 .when()
                 .post("/api/consignes")
@@ -143,7 +154,8 @@ class FrozenPastAcceptanceTest {
 
         // 6. « Demain on réouvre en nominal »: lifted, solved, the Thursday
         //    back to its nominal shape, the past byte-identical across all three.
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(Map.of("dates", List.of(J4)))
                 .when()
                 .post("/api/consignes/levee")
@@ -177,23 +189,27 @@ class FrozenPastAcceptanceTest {
         String siegeAVenir = firstSeatOn(J4);
         String remplacant = firstHolderOn(J4);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/postes/" + siegePasse + "/deplacement?animateur=" + remplacant)
                 .then()
                 .statusCode(400)
                 .body(org.hamcrest.Matchers.containsString("Ce créneau est déjà commencé"));
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/postes/" + siegePasse + "/affectation?animateurId=" + remplacant)
                 .then()
                 .statusCode(400)
                 .body(org.hamcrest.Matchers.containsString("le passé ne se modifie plus"));
         // Dropping a seat still ahead onto a past one rewrites the past too.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/postes/" + siegeAVenir + "/deplacement?cible=" + siegePasse)
                 .then()
                 .statusCode(400);
         // Thursday is still the operator's: scored, not refused.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/postes/" + siegeAVenir + "/deplacement/simulation?animateur=" + firstHolderOn(J1))
                 .then()
                 .statusCode(200);
@@ -223,7 +239,8 @@ class FrozenPastAcceptanceTest {
         }
         assertThat(absent).as("somebody on the Wednesday morning").isNotNull();
 
-        JsonPath marquee = given().contentType(ContentType.JSON)
+        JsonPath marquee = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(Map.of("animateurId", absent))
                 .when()
                 .post("/api/jour-j/absences")
@@ -244,7 +261,8 @@ class FrozenPastAcceptanceTest {
         assertThat(seatsByDay().get(J3))
                 .anySatisfy(siege -> assertThat(siege).endsWith("@10:00:00|10:20:00|" + absentId));
         // Aujourd'hui offers it as the rest of the timeslot, new since the publication.
-        JsonPath jourJ = given().when()
+        JsonPath jourJ = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/jour-j")
                 .then()
                 .statusCode(200)
@@ -262,7 +280,8 @@ class FrozenPastAcceptanceTest {
         assertThat(jourJ.getList("animateursDeService.animateurId", String.class))
                 .doesNotContain(absentId);
 
-        List<String> candidats = given().when()
+        List<String> candidats = given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/jour-j/postes/" + resteId + "/suggestions")
                 .then()
                 .statusCode(200)
@@ -270,7 +289,8 @@ class FrozenPastAcceptanceTest {
                 .jsonPath()
                 .getList("suggestions.animateurId");
         assertThat(candidats).isNotEmpty();
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/postes/" + resteId + "/affectation?animateurId=" + candidats.getFirst())
                 .then()
                 .statusCode(204);
@@ -305,10 +325,15 @@ class FrozenPastAcceptanceTest {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Nobody seated on the Wednesday morning"));
         // Emptied before the timeslot starts: nobody holds it from 10:00.
-        given().when().post("/api/postes/" + posteId + "/affectation").then().statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/postes/" + posteId + "/affectation")
+                .then()
+                .statusCode(204);
 
         freezeClock(J3, "10:20");
-        List<String> candidats = given().when()
+        List<String> candidats = given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/jour-j/postes/" + posteId + "/suggestions")
                 .then()
                 .statusCode(200)
@@ -317,7 +342,8 @@ class FrozenPastAcceptanceTest {
                 .getList("suggestions.animateurId");
         assertThat(candidats).isNotEmpty();
         String remplacant = candidats.getFirst();
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/postes/" + posteId + "/affectation?animateurId=" + remplacant)
                 .then()
                 .statusCode(204);
@@ -356,7 +382,7 @@ class FrozenPastAcceptanceTest {
                 .map(poste -> String.valueOf(poste.get("id")))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Nobody seated on the Wednesday morning"));
-        String edition = editionRepository.defaultEditionId();
+        String edition = editionRepository.activeEditionId().orElseThrow();
         PlanningEvenement premier = editionContext.executeIn(edition, persistence::loadPersistedPlanning);
         PlanningEvenement second = editionContext.executeIn(edition, persistence::loadPersistedPlanning);
 
@@ -446,7 +472,8 @@ class FrozenPastAcceptanceTest {
         List<String> started = seatsOf(holder, true);
         List<String> ahead = seatsOf(holder, false);
 
-        JsonPath reponse = given().when()
+        JsonPath reponse = given().header("X-Edition-Id", "E1")
+                .when()
                 .put("/api/animateurs/" + holder + "/jours-indisponibles/" + J3)
                 .then()
                 .statusCode(200)
@@ -479,7 +506,8 @@ class FrozenPastAcceptanceTest {
         String corps = heure == null
                 ? "{\"dateDuJour\":\"" + date + "\"}"
                 : "{\"dateDuJour\":\"" + date + "\",\"heureDuJour\":\"" + heure + "\"}";
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(corps)
                 .when()
                 .put("/api/horloge")
@@ -491,7 +519,8 @@ class FrozenPastAcceptanceTest {
     private static Map<String, Object> consigne() {
         // The scenario's STAND-CULTURE is a reference local to the file: the
         // imported stand carries it as its code, under a generated id (ADR 0050).
-        String standCulture = given().when()
+        String standCulture = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/stands")
                 .then()
                 .statusCode(200)
@@ -593,7 +622,8 @@ class FrozenPastAcceptanceTest {
     }
 
     private static List<Map<String, Object>> affectationsPersistees() {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/persisted")
                 .then()
                 .statusCode(200)
@@ -606,6 +636,7 @@ class FrozenPastAcceptanceTest {
     @SuppressWarnings("unchecked")
     private static void rendreIndisponible(String animateurId, String jour) {
         Map<String, Object> animateur = given()
+                .header("X-Edition-Id", "E1")
                 .when()
                 .get("/api/animateurs")
                 .then()
@@ -620,7 +651,8 @@ class FrozenPastAcceptanceTest {
         List<String> jours = new ArrayList<>((List<String>) animateur.getOrDefault("joursIndisponibles", List.of()));
         jours.add(jour);
         animateur.put("joursIndisponibles", jours);
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(animateur)
                 .when()
                 .put("/api/animateurs/" + animateurId)
@@ -630,7 +662,8 @@ class FrozenPastAcceptanceTest {
 
     /** Hard level of the analysis the Contraintes screen reads — the persisted plan, re-scored. */
     private static int persistedHardScore() {
-        Integer hardScore = given().when()
+        Integer hardScore = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/constraints")
                 .then()
                 .statusCode(200)
@@ -649,7 +682,8 @@ class FrozenPastAcceptanceTest {
 
     private JsonPath solveCompletWhateverTheOutcome() {
         attendreSolveurLibre();
-        String jobId = given().when()
+        String jobId = given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/solve/async/reference-data?seconds=5")
                 .then()
                 .statusCode(202)
@@ -666,7 +700,8 @@ class FrozenPastAcceptanceTest {
 
     private JsonPath solveIncrementalWhateverTheOutcome(String corps) {
         attendreSolveurLibre();
-        String jobId = given().contentType(ContentType.JSON)
+        String jobId = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(corps)
                 .when()
                 .post("/api/solve/incremental/async?seconds=5")
@@ -693,8 +728,13 @@ class FrozenPastAcceptanceTest {
         await().alias("Solver still busy")
                 .atMost(POLL_TIMEOUT)
                 .pollInterval(POLL_INTERVAL)
-                .until(() ->
-                        given().when().get("/api/jobs/active").then().extract().statusCode() == 204);
+                .until(() -> given().header("X-Edition-Id", "E1")
+                                .when()
+                                .get("/api/jobs/active")
+                                .then()
+                                .extract()
+                                .statusCode()
+                        == 204);
     }
 
     private static JsonPath pollUntilFinished(String jobId) {
@@ -702,7 +742,8 @@ class FrozenPastAcceptanceTest {
                 .atMost(POLL_TIMEOUT)
                 .pollInterval(POLL_INTERVAL)
                 .until(
-                        () -> given().when()
+                        () -> given().header("X-Edition-Id", "E1")
+                                .when()
                                 .get("/api/jobs/" + jobId)
                                 .then()
                                 .statusCode(200)

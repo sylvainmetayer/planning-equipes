@@ -186,7 +186,8 @@ class SchemaCompatibilityGuardTest {
     void debugPageListsTheVersionsLatestFirst() {
         versions.recordStart("1.3.0-test", "115", Instant.now());
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/debug/versions")
                 .then()
                 .statusCode(200)

@@ -42,6 +42,8 @@ class ImpactPublicationTest {
     @BeforeEach
     void createEdition() {
         edition = findOrCreateEdition();
+        // Publishing reaches outside, which only the active edition does (ADR 0072).
+        edition().when().put("/api/editions/" + edition + "/active").then().statusCode(200);
         edition().when().post("/api/planning/reset").then().statusCode(200);
         forgetPublications();
     }
@@ -52,7 +54,8 @@ class ImpactPublicationTest {
      * reusing it keeps the suite from piling up one edition per test.
      */
     private static String findOrCreateEdition() {
-        List<Map<String, Object>> editions = given().when()
+        List<Map<String, Object>> editions = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/editions")
                 .then()
                 .statusCode(200)
@@ -63,7 +66,8 @@ class ImpactPublicationTest {
                 .filter(candidate -> EDITION_NOM.equals(candidate.get("nom")))
                 .map(candidate -> (String) candidate.get("id"))
                 .findFirst()
-                .orElseGet(() -> given().contentType("application/json")
+                .orElseGet(() -> given().header("X-Edition-Id", "E1")
+                        .contentType("application/json")
                         .body(Map.of("nom", EDITION_NOM))
                         .when()
                         .post("/api/editions")
@@ -77,6 +81,12 @@ class ImpactPublicationTest {
     void resetDatabase() {
         edition().when().post("/api/planning/reset").then().statusCode(200);
         forgetPublications();
+        // Every other test class expects the test database's own edition active.
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .put("/api/editions/E1/active")
+                .then()
+                .statusCode(200);
     }
 
     /**
@@ -302,7 +312,12 @@ class ImpactPublicationTest {
         await().alias("Solver still busy")
                 .atMost(POLL_TIMEOUT)
                 .pollInterval(POLL_INTERVAL)
-                .until(() ->
-                        given().when().get("/api/jobs/active").then().extract().statusCode() == 204);
+                .until(() -> given().header("X-Edition-Id", "E1")
+                                .when()
+                                .get("/api/jobs/active")
+                                .then()
+                                .extract()
+                                .statusCode()
+                        == 204);
     }
 }

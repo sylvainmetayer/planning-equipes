@@ -18,7 +18,8 @@ class SecurityHeadersTest {
 
     @Test
     void toutesLesReponsesPortentLesEnTetesDeDurcissement() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/auth/me")
                 .then()
                 .statusCode(200)
@@ -39,7 +40,8 @@ class SecurityHeadersTest {
      */
     @Test
     void aucunePageNEstIndexable() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/robots.txt")
                 .then()
                 .statusCode(200)
@@ -49,7 +51,8 @@ class SecurityHeadersTest {
 
         // The espace animateur: the one URL a crawler can reach without an
         // account, and the one whose path is somebody's credential.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/jeton-invente")
                 .then()
                 .header("X-Robots-Tag", equalTo("noindex, nofollow"));
@@ -62,7 +65,8 @@ class SecurityHeadersTest {
      */
     @Test
     void lEspaceAnimateurAussiEstCouvert() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/jeton-invente")
                 .then()
                 .statusCode(404)
@@ -71,14 +75,16 @@ class SecurityHeadersTest {
 
     @Test
     void hstsNEstEnvoyeQueSurUneVisiteHttps() {
-        given().header("X-Forwarded-Proto", "https")
+        given().header("X-Edition-Id", "E1")
+                .header("X-Forwarded-Proto", "https")
                 .when()
                 .get("/api/auth/me")
                 .then()
                 .statusCode(200)
                 .header("Strict-Transport-Security", startsWith("max-age="));
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/auth/me")
                 .then()
                 .statusCode(200)
@@ -93,7 +99,8 @@ class SecurityHeadersTest {
      */
     @Test
     void laCspEpargneLesPagesQuarkus() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/q/swagger-ui")
                 .then()
                 .statusCode(200)

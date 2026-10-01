@@ -44,7 +44,11 @@ class AnimateurProfileResourceTest {
 
     @Test
     void anUnknownIdIsA404() {
-        given().when().get("/api/animateurs/FI-INCONNU/fiche").then().statusCode(404);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/animateurs/FI-INCONNU/fiche")
+                .then()
+                .statusCode(404);
     }
 
     @Test
@@ -52,7 +56,8 @@ class AnimateurProfileResourceTest {
         Animateur alice = new Animateur("FI-A", "Alice", "Martin", LocalDate.of(1990, 1, 1), false);
         persistence.persist(new PlanningEvenement(SAMEDI, List.of(alice), List.of()));
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/animateurs/FI-A/fiche")
                 .then()
                 .statusCode(200)
@@ -81,19 +86,22 @@ class AnimateurProfileResourceTest {
         PosteAffectation p4 = new PosteAffectation("FI-P4", stand, dimanche);
         persistence.persist(new PlanningEvenement(SAMEDI, List.of(alice, bruno, libre), List.of(p1, p2, p3, p4)));
 
-        JsonPath fiche = given().when()
+        JsonPath fiche = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/animateurs/FI-A/fiche")
                 .then()
                 .statusCode(200)
                 .extract()
                 .jsonPath();
-        JsonPath equite = given().when()
+        JsonPath equite = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/equite")
                 .then()
                 .statusCode(200)
                 .extract()
                 .jsonPath();
-        JsonPath fragilite = given().when()
+        JsonPath fragilite = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/fragilite")
                 .then()
                 .statusCode(200)
@@ -128,7 +136,8 @@ class AnimateurProfileResourceTest {
         p1.setAnimateur(alice);
         persistence.persist(new PlanningEvenement(SAMEDI, List.of(alice, libre), List.of(p1)));
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/animateurs/FI-C/fiche")
                 .then()
                 .statusCode(200)

@@ -48,13 +48,15 @@ class ValidationJourneeServiceTest {
 
     @BeforeEach
     void seedTheSampleEdition() {
-        String sample = given().when()
+        String sample = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/sample?name=scenario.yml")
                 .then()
                 .statusCode(200)
                 .extract()
                 .asString();
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(sample)
                 .when()
                 .post("/api/solve?seconds=3")
@@ -64,7 +66,11 @@ class ValidationJourneeServiceTest {
 
     @AfterEach
     void resetDatabase() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
     }
 
     @Test

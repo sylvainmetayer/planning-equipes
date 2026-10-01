@@ -31,15 +31,21 @@ class ReferenceDataResourceTypologiesTest {
 
     @Test
     void scenarioImportAppliesTheDeclaredTypologieLabels() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
         forgetJeuxVideo();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=scenario-typologies.yaml")
                 .then()
                 .statusCode(200);
 
-        List<Map<String, Object>> typologies = given().when()
+        List<Map<String, Object>> typologies = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/typologies")
                 .then()
                 .statusCode(200)
@@ -59,9 +65,14 @@ class ReferenceDataResourceTypologiesTest {
 
     @Test
     void importScenarioAppliqueLaTypologieNinjaDeclaree() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=scenario-typologies.yaml")
                 .then()
                 .statusCode(200);
@@ -71,8 +82,13 @@ class ReferenceDataResourceTypologiesTest {
 
     @Test
     void promotingANewNinjaTypologieDemotesThePreviousOne() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=scenario-typologies.yaml")
                 .then()
                 .statusCode(200);
@@ -81,7 +97,8 @@ class ReferenceDataResourceTypologiesTest {
         // Only one typologie may be ninja at a time: promoting another one must
         // demote the previous holder rather than fail on the unique index.
         String jeuxVideo = typologieIdByCode("JEUX_VIDEO");
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(Map.of("id", jeuxVideo, "code", "JEUX_VIDEO", "label", "Jeux vidéo", "ninja", true))
                 .when()
                 .put("/api/typologies/" + jeuxVideo)
@@ -93,7 +110,8 @@ class ReferenceDataResourceTypologiesTest {
 
     /** Codes of the typologies currently flagged ninja — expected to hold at most one. */
     private static List<String> typologiesNinja() {
-        List<Map<String, Object>> typologies = given().when()
+        List<Map<String, Object>> typologies = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/typologies")
                 .then()
                 .statusCode(200)
@@ -113,17 +131,19 @@ class ReferenceDataResourceTypologiesTest {
      * has to create, so each test that checks it starts without one.
      */
     private static void forgetJeuxVideo() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/typologies")
                 .then()
                 .extract()
                 .jsonPath()
                 .getList("findAll { it.code == 'JEUX_VIDEO' }.id", String.class)
-                .forEach(id -> given().when().delete("/api/typologies/" + id));
+                .forEach(id -> given().header("X-Edition-Id", "E1").when().delete("/api/typologies/" + id));
     }
 
     private static String typologieIdByCode(String code) {
-        List<Map<String, Object>> typologies = given().when()
+        List<Map<String, Object>> typologies = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/typologies")
                 .then()
                 .statusCode(200)
@@ -139,12 +159,17 @@ class ReferenceDataResourceTypologiesTest {
 
     @Test
     void scenarioFileImportAppliesTheDeclaredTypologieLabels() throws Exception {
-        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
         forgetJeuxVideo();
 
         String yamlContent = Files.readString(Path.of("src/main/resources/scenarios/scenario-typologies.yaml"));
 
-        given().config(RestAssured.config()
+        given().header("X-Edition-Id", "E1")
+                .config(RestAssured.config()
                         .encoderConfig(encoderConfig()
                                 .encodeContentTypeAs("application/x-yaml", ContentType.TEXT)
                                 .defaultContentCharset("UTF-8")))
@@ -155,7 +180,8 @@ class ReferenceDataResourceTypologiesTest {
                 .then()
                 .statusCode(200);
 
-        List<Map<String, Object>> typologies = given().when()
+        List<Map<String, Object>> typologies = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/typologies")
                 .then()
                 .statusCode(200)
@@ -187,7 +213,8 @@ class ReferenceDataResourceTypologiesTest {
     void theTimeslotCapSurvivesCreationAndUpdate() {
         // The id is generated on creation (ADR 0050): the one the response
         // carries designates the row from then on.
-        String id = given().contentType(ContentType.JSON)
+        String id = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"label\":\"Typologie plafonnée\",\"maxCreneauxParAnimateur\":4}")
                 .when()
                 .post("/api/typologies")
@@ -197,13 +224,15 @@ class ReferenceDataResourceTypologiesTest {
                 .extract()
                 .path("id");
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/typologies")
                 .then()
                 .statusCode(200)
                 .body("find { it.id == '" + id + "' }.maxCreneauxParAnimateur", org.hamcrest.Matchers.equalTo(4));
 
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"id\":\"" + id + "\",\"label\":\"Typologie plafonnée\",\"maxCreneauxParAnimateur\":2}")
                 .when()
                 .put("/api/typologies/" + id)
@@ -213,7 +242,8 @@ class ReferenceDataResourceTypologiesTest {
 
         // No cap at all is a legitimate value, and must erase the one before:
         // « vide » on the form means « plus de plafond », not « inchangé ».
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"id\":\"" + id + "\",\"label\":\"Typologie plafonnée\"}")
                 .when()
                 .put("/api/typologies/" + id)
@@ -221,7 +251,11 @@ class ReferenceDataResourceTypologiesTest {
                 .statusCode(200)
                 .body("maxCreneauxParAnimateur", org.hamcrest.Matchers.nullValue());
 
-        given().when().delete("/api/typologies/" + id).then().statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/typologies/" + id)
+                .then()
+                .statusCode(204);
     }
 
     /**
@@ -232,7 +266,8 @@ class ReferenceDataResourceTypologiesTest {
      */
     @Test
     void theDescriptionSurvivesCreationAndUpdate() {
-        String id = given().contentType(ContentType.JSON)
+        String id = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"label\":\"Typologie annotée\",\"description\":\"Nécessite d'apprendre 45 jeux\"}")
                 .when()
                 .post("/api/typologies")
@@ -242,7 +277,8 @@ class ReferenceDataResourceTypologiesTest {
                 .extract()
                 .path("id");
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/typologies")
                 .then()
                 .statusCode(200)
@@ -252,7 +288,8 @@ class ReferenceDataResourceTypologiesTest {
 
         // The plan read by typologie carries it too: it is the screen the note
         // was written for.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/typologies")
                 .then()
                 .statusCode(200)
@@ -260,7 +297,8 @@ class ReferenceDataResourceTypologiesTest {
                         "typologies.find { it.typologie == '" + id + "' }.description",
                         org.hamcrest.Matchers.equalTo("Nécessite d'apprendre 45 jeux"));
 
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"id\":\"" + id + "\",\"label\":\"Typologie annotée\",\"description\":\"   \"}")
                 .when()
                 .put("/api/typologies/" + id)
@@ -268,6 +306,10 @@ class ReferenceDataResourceTypologiesTest {
                 .statusCode(200)
                 .body("description", org.hamcrest.Matchers.nullValue());
 
-        given().when().delete("/api/typologies/" + id).then().statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/typologies/" + id)
+                .then()
+                .statusCode(204);
     }
 }

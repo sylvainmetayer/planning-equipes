@@ -25,7 +25,7 @@ class EditionResourceTest {
 
     /**
      * Every test creates its own edition(s); dropping them afterwards keeps the
-     * shared dev-services database as this class found it. The default edition
+     * shared dev-services database as this class found it. The active edition
      * is never touched, so an unrelated test never sees a leftover edition.
      */
     @AfterEach
@@ -34,13 +34,14 @@ class EditionResourceTest {
         for (Map<String, Object> edition : listEditions()) {
             String id = (String) edition.get("id");
             if (!defaut.equals(id)) {
-                given().when().delete("/api/editions/" + id);
+                given().header("X-Edition-Id", "E1").when().delete("/api/editions/" + id);
             }
         }
     }
 
     private List<Map<String, Object>> listEditions() {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/editions")
                 .then()
                 .statusCode(200)
@@ -49,9 +50,10 @@ class EditionResourceTest {
                 .getList("$");
     }
 
+    /** The active edition — the one the test database was seeded with. */
     private String defaultEdition() {
         return listEditions().stream()
-                .filter(edition -> Boolean.TRUE.equals(edition.get("defaut")))
+                .filter(edition -> Boolean.TRUE.equals(edition.get("active")))
                 .map(edition -> (String) edition.get("id"))
                 .findFirst()
                 .orElseThrow();
@@ -59,7 +61,8 @@ class EditionResourceTest {
 
     /** Creates an edition and answers the id the application gave it. */
     private String createEdition(String nom) {
-        return given().contentType("application/json")
+        return given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"nom\":\"" + nom + "\"}")
                 .when()
                 .post("/api/editions")
@@ -70,7 +73,8 @@ class EditionResourceTest {
     }
 
     private String duplicate(String sourceId, String nom, String query) {
-        return given().contentType("application/json")
+        return given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"nom\":\"" + nom + "\"}")
                 .when()
                 .post("/api/editions/" + sourceId + "/dupliquer" + query)
@@ -147,7 +151,7 @@ class EditionResourceTest {
     @Test
     void aFreshDatabaseHoldsASingleDefaultEditionNumberedLikeAnyOther() {
         assertThat(listEditions())
-                .filteredOn(edition -> Boolean.TRUE.equals(edition.get("defaut")))
+                .filteredOn(edition -> Boolean.TRUE.equals(edition.get("active")))
                 .singleElement()
                 .satisfies(edition -> assertThat((String) edition.get("id")).matches("E[1-9][0-9]*"));
     }
@@ -197,21 +201,100 @@ class EditionResourceTest {
                 .isEqualTo("S2");
     }
 
+    /**
+     * No fallback any more (ADR 0072): a request naming an edition that does
+     * not exist is refused, so a tab left on a deleted edition chooses again
+     * instead of silently working in another one.
+     */
     @Test
-    void anUnknownHeaderFallsBackOnTheDefaultEditionWithoutFailing() {
-        String defaut = defaultEdition();
-        String stand = createStand(defaut, "Stand repli");
-
-        // A tab left open on a since-deleted edition must keep working.
-        assertThat(listStandIds("EDITION-QUI-NEXISTE-PAS")).contains(stand);
-
+    void anUnknownHeaderIsRefusedRatherThanAnsweredFromAnotherEdition() {
         given().header(HEADER, "EDITION-QUI-NEXISTE-PAS")
                 .when()
                 .get("/api/editions/courant")
                 .then()
+                .statusCode(400)
+                .body("code", org.hamcrest.Matchers.equalTo("EDITION_INCONNUE"));
+    }
+
+    /** A client request that names no edition is refused too — nothing picks one for it. */
+    @Test
+    void aRequestNamingNoEditionIsRefused() {
+        given().when()
+                .get("/api/stands")
+                .then()
+                .statusCode(400)
+                .body("code", org.hamcrest.Matchers.equalTo("EDITION_REQUISE"));
+        given().when().get("/api/editions").then().statusCode(200);
+    }
+
+    /** Every edition is born inactive: creating or duplicating one reaches nobody. */
+    @Test
+    void aCreatedOrDuplicatedEditionIsBornInactive() {
+        String creee = createEdition("Année 2027");
+        String copie = given().header(HEADER, defaultEdition())
+                .contentType("application/json")
+                .body(Map.of("nom", "Copie 2027"))
+                .when()
+                .post("/api/editions/" + defaultEdition() + "/dupliquer")
+                .then()
                 .statusCode(200)
-                .body("id", org.hamcrest.Matchers.equalTo(defaut));
-        given().header(HEADER, defaut).when().delete("/api/stands/" + stand);
+                .body("active", org.hamcrest.Matchers.equalTo(false))
+                .extract()
+                .path("id");
+
+        assertThat(listEditions())
+                .filteredOn(edition -> List.of(creee, copie).contains(edition.get("id")))
+                .allSatisfy(edition -> assertThat(edition).containsEntry("active", false));
+    }
+
+    /**
+     * Activating is atomic: the new edition becomes the only active one, the
+     * former one is not active any more, and at no point are there two.
+     * Deactivating leaves none — a valid state between two events.
+     */
+    @Test
+    void activatingSwitchesTheOneActiveEditionAndDeactivatingLeavesNone() {
+        String ancienne = defaultEdition();
+        String nouvelle = createEdition("Année 2027");
+        try {
+            given().header(HEADER, ancienne)
+                    .when()
+                    .get("/api/editions/" + nouvelle + "/activation")
+                    .then()
+                    .statusCode(200)
+                    .body("sortante.id", org.hamcrest.Matchers.equalTo(ancienne))
+                    .body("resolutionEnCours", org.hamcrest.Matchers.equalTo(false));
+
+            given().header(HEADER, ancienne)
+                    .when()
+                    .put("/api/editions/" + nouvelle + "/active")
+                    .then()
+                    .statusCode(200)
+                    .body("active", org.hamcrest.Matchers.equalTo(true));
+            // Idempotent: activating the active edition again changes nothing.
+            given().header(HEADER, ancienne)
+                    .when()
+                    .put("/api/editions/" + nouvelle + "/active")
+                    .then()
+                    .statusCode(200)
+                    .body("active", org.hamcrest.Matchers.equalTo(true));
+            assertThat(listEditions())
+                    .filteredOn(edition -> Boolean.TRUE.equals(edition.get("active")))
+                    .extracting(edition -> edition.get("id"))
+                    .containsExactly(nouvelle);
+
+            given().header(HEADER, ancienne)
+                    .when()
+                    .delete("/api/editions/" + nouvelle + "/active")
+                    .then()
+                    .statusCode(204);
+            assertThat(listEditions())
+                    .filteredOn(edition -> Boolean.TRUE.equals(edition.get("active")))
+                    .isEmpty();
+        } finally {
+            given().header(HEADER, ancienne).when().put("/api/editions/" + ancienne + "/active");
+        }
+        assertThat(defaultEdition()).isEqualTo(ancienne);
     }
 
     @Test
@@ -471,7 +554,7 @@ class EditionResourceTest {
     }
 
     @Test
-    void deletingTheDefaultEditionIsRefused() {
+    void deletingTheActiveEditionIsRefused() {
         String edition = createEdition("Année 2026");
 
         given().header(HEADER, edition)
@@ -495,7 +578,8 @@ class EditionResourceTest {
     /** An id sent in the body is ignored: two creations are two editions, never a 409 on a chosen id. */
     @Test
     void anIdSentOnCreationIsIgnored() {
-        String premiere = given().contentType("application/json")
+        String premiere = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"id\":\"ANNEE-2026\",\"nom\":\"Année 2026\"}")
                 .when()
                 .post("/api/editions")
@@ -503,7 +587,8 @@ class EditionResourceTest {
                 .statusCode(200)
                 .extract()
                 .path("id");
-        String seconde = given().contentType("application/json")
+        String seconde = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"id\":\"ANNEE-2026\",\"nom\":\"Doublon\"}")
                 .when()
                 .post("/api/editions")
@@ -523,14 +608,16 @@ class EditionResourceTest {
      */
     @Test
     void aNameShapedLikeAnEditionIdIsRefused() {
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"nom\":\"e12\"}")
                 .when()
                 .post("/api/editions")
                 .then()
                 .statusCode(400);
         String annee = createEdition("2027");
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"nom\":\"E7\"}")
                 .when()
                 .put("/api/editions/" + annee)

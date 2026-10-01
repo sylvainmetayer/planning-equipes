@@ -4,7 +4,9 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.DeclarationDisponibilite;
 import dev.sylvain.planning.domain.StatutDeclaration;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.RateLimitVerdict;
+import dev.sylvain.planning.service.edition.RequiresActiveEditionInterceptor;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteRepository.FenetreCollecte;
 import dev.sylvain.planning.service.notification.Notification;
 import dev.sylvain.planning.service.publication.MailService;
@@ -88,6 +90,8 @@ public class DeclarationDisponibiliteService {
 
     private final ApplicationLinks liens;
 
+    private final EditionContext editionContext;
+
     /**
      * Fired as a fact, never sent from here: the best-effort delivery policy
      * lives in {@code NotificationDispatcher}, so a broken SMTP server cannot
@@ -103,7 +107,9 @@ public class DeclarationDisponibiliteService {
             TypologieService typologieService,
             MailService mailService,
             ApplicationLinks liens,
-            Event<Notification> notifications) {
+            Event<Notification> notifications,
+            EditionContext editionContext) {
+        this.editionContext = editionContext;
         this.repository = repository;
         this.rateLimiter = rateLimiter;
         this.referenceDataService = referenceDataService;
@@ -188,6 +194,12 @@ public class DeclarationDisponibiliteService {
         // Nobody is invited to a window being closed, so the precondition only
         // bites when an invitation is really about to leave.
         boolean invitera = prevenirAnimateurs && demandee.ouverte();
+        if (invitera) {
+            // Conditional, hence explicit rather than @RequiresActiveEdition:
+            // opening the window of an edition being prepared is fine, mailing
+            // its people is not (ADR 0072).
+            RequiresActiveEditionInterceptor.refuseIfInactive(editionContext);
+        }
         if (invitera && !liens.disponible()) {
             throw new BusinessError.Invalid(
                     "Aucune URL publique n'est configurée : l'invitation ne peut pas porter de lien "

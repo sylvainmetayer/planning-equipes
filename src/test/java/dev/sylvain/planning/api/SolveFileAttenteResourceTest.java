@@ -46,7 +46,8 @@ class SolveFileAttenteResourceTest {
 
         // Planned while the first one runs: same edition, different kind, so the
         // incremental re-solve is legitimately chained after the full one.
-        JsonPath planifie = given().contentType(ContentType.JSON)
+        JsonPath planifie = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/solve/incremental/async?enFile=true&seconds=3")
                 .then()
@@ -77,7 +78,8 @@ class SolveFileAttenteResourceTest {
         planImporte();
         lancerSolve(6);
 
-        String planifieId = given().contentType(ContentType.JSON)
+        String planifieId = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/solve/incremental/async?enFile=true&seconds=1")
                 .then()
@@ -86,7 +88,8 @@ class SolveFileAttenteResourceTest {
                 .path("id");
 
         // The double-click guard: the very same run is already planned.
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/solve/incremental/async?enFile=true&seconds=1")
                 .then()
@@ -105,7 +108,8 @@ class SolveFileAttenteResourceTest {
         // point of the queue. The run under way started before the last
         // corrections and cannot account for them — planning another is how one
         // says "redo it with what I just fixed".
-        String planifieId = given().when()
+        String planifieId = given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/solve/async/reference-data?enFile=true&seconds=1")
                 .then()
                 .statusCode(202)
@@ -122,7 +126,8 @@ class SolveFileAttenteResourceTest {
     void uneResolutionRetireeDeLaFileNeDemarreJamais() {
         planImporte();
         String inProgress = lancerSolve(4);
-        String planifieId = given().contentType(ContentType.JSON)
+        String planifieId = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/solve/incremental/async?enFile=true&seconds=1")
                 .then()
@@ -130,13 +135,21 @@ class SolveFileAttenteResourceTest {
                 .extract()
                 .path("id");
 
-        given().when().delete("/api/jobs/" + planifieId).then().statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/jobs/" + planifieId)
+                .then()
+                .statusCode(204);
         assertThat(queuedIds()).isEmpty();
 
         assertThat(pollUntilFinished(inProgress).getString("status")).isEqualTo("COMPLETED");
         attendreSolveurLibre();
         // Forgotten, not run: the server no longer knows this job at all.
-        given().when().get("/api/jobs/" + planifieId).then().statusCode(404);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/jobs/" + planifieId)
+                .then()
+                .statusCode(404);
     }
 
     @Test
@@ -145,7 +158,8 @@ class SolveFileAttenteResourceTest {
         String inProgress = lancerSolve(4);
 
         // Unchanged default: queueing is something the caller asks for.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/solve/async/reference-data?seconds=1")
                 .then()
                 .statusCode(409)
@@ -156,8 +170,13 @@ class SolveFileAttenteResourceTest {
     /* ------------------------------- Helpers ------------------------------- */
 
     private void planImporte() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
@@ -165,7 +184,8 @@ class SolveFileAttenteResourceTest {
 
     private String lancerSolve(int secondes) {
         attendreSolveurLibre();
-        String jobId = given().when()
+        String jobId = given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/solve/async/reference-data?seconds=" + secondes)
                 .then()
                 .statusCode(202)
@@ -185,12 +205,17 @@ class SolveFileAttenteResourceTest {
 
     /** {@code null} when the solver is idle (204). */
     private JsonPath jobActif() {
-        var response = given().when().get("/api/jobs/active").then().extract();
+        var response = given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/jobs/active")
+                .then()
+                .extract();
         return response.statusCode() == 204 ? null : response.jsonPath();
     }
 
     private List<String> queuedIds() {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/jobs/file")
                 .then()
                 .statusCode(200)
@@ -201,7 +226,7 @@ class SolveFileAttenteResourceTest {
 
     private void clearQueue() {
         for (String id : queuedIds()) {
-            given().when().delete("/api/jobs/" + id);
+            given().header("X-Edition-Id", "E1").when().delete("/api/jobs/" + id);
         }
     }
 
@@ -209,8 +234,13 @@ class SolveFileAttenteResourceTest {
         await().alias("Solver still busy")
                 .atMost(POLL_TIMEOUT)
                 .pollInterval(POLL_INTERVAL)
-                .until(() ->
-                        given().when().get("/api/jobs/active").then().extract().statusCode() == 204);
+                .until(() -> given().header("X-Edition-Id", "E1")
+                                .when()
+                                .get("/api/jobs/active")
+                                .then()
+                                .extract()
+                                .statusCode()
+                        == 204);
     }
 
     private JsonPath pollUntilFinished(String jobId) {
@@ -218,7 +248,8 @@ class SolveFileAttenteResourceTest {
                 .atMost(POLL_TIMEOUT)
                 .pollInterval(POLL_INTERVAL)
                 .until(
-                        () -> given().when()
+                        () -> given().header("X-Edition-Id", "E1")
+                                .when()
                                 .get("/api/jobs/" + jobId)
                                 .then()
                                 .statusCode(200)

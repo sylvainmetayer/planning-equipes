@@ -21,7 +21,8 @@ class MentionsLegalesResourceTest {
 
     @Test
     void repondSansAuthentificationEtRendDesChampsVidesQuandRienNEstConfigure() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/mentions-legales")
                 .then()
                 .statusCode(200)
@@ -37,7 +38,8 @@ class MentionsLegalesResourceTest {
 
     @Test
     void reportsWhichThirdPartyToolsRunSoThePageAnnouncesOnlyThose() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/mentions-legales")
                 .then()
                 .statusCode(200)
@@ -60,7 +62,12 @@ class MentionsLegalesResourceTest {
      */
     @Test
     void exposesWhetherTheInstanceDeclaredItselfADemo() {
-        given().when().get("/api/mentions-legales").then().statusCode(200).body("demoInstance", equalTo(false));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/mentions-legales")
+                .then()
+                .statusCode(200)
+                .body("demoInstance", equalTo(false));
     }
 
     /**
@@ -70,7 +77,8 @@ class MentionsLegalesResourceTest {
      */
     @Test
     void servesAnEmptyAccessibilityStatementWhenTheDeploymentStatesNone() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/mentions-legales")
                 .then()
                 .statusCode(200)

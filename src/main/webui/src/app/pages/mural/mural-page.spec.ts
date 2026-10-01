@@ -215,11 +215,11 @@ describe('MuralPage', () => {
     fixture.detectChanges();
     // One 404 may be a restart or a proxy hiccup: the last state stays.
     expect(text()).toContain('Jeux géants : 1 × place libre');
-    expect(text()).not.toContain('Lien inconnu ou révoqué');
+    expect(text()).not.toContain('Lien inconnu, révoqué, ou édition terminée');
 
     await vi.advanceTimersByTimeAsync(120_000);
     fixture.detectChanges();
-    expect(text()).toContain('Lien inconnu ou révoqué');
+    expect(text()).toContain('Lien inconnu, révoqué, ou édition terminée');
     expect(view).toHaveBeenCalledTimes(4);
 
     await vi.advanceTimersByTimeAsync(240_000);

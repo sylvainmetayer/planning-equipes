@@ -1,6 +1,7 @@
 package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.Edition;
+import dev.sylvain.planning.service.edition.EditionActivationService;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.edition.EtatEditionService;
 import dev.sylvain.planning.service.edition.EtatEditionView;
@@ -42,12 +43,16 @@ public class EditionResource {
 
     private final GelReferentielService gelService;
 
+    private final EditionActivationService activationService;
+
     @Inject
     public EditionResource(
             EditionService editionService,
             EtatEditionService etatEditionService,
             CoherenceReferentielService coherenceService,
-            GelReferentielService gelService) {
+            GelReferentielService gelService,
+            EditionActivationService activationService) {
+        this.activationService = activationService;
         this.editionService = editionService;
         this.etatEditionService = etatEditionService;
         this.coherenceService = coherenceService;
@@ -60,10 +65,10 @@ public class EditionResource {
     }
 
     /**
-     * The edition this very request was resolved to. Not redundant with the
-     * list: a client whose stored {@code X-Edition-Id} names an edition someone
-     * else has deleted silently falls back to the default one, and this is how
-     * it finds out which edition it is actually looking at.
+     * The edition this very request was resolved to — refused with
+     * {@code EDITION_REQUISE} or {@code EDITION_INCONNUE} when the request names
+     * none or one someone deleted, which is how the client learns it must
+     * choose again (ADR 0072).
      */
     @GET
     @Path("/courant")
@@ -153,8 +158,8 @@ public class EditionResource {
      * makes multi-edition usable at all; without it, preparing next year's
      * edition means re-importing everything by hand.
      *
-     * <p>{@code avecAnimateurs} (default {@code true}, so the gesture of issue
-     * #172 is untouched) decides whether the <b>people</b> come along. Set to
+     * <p>{@code avecAnimateurs} (default {@code true}) decides whether the
+     * <b>people</b> come along. Set to
      * {@code false} the copy is a <i>year template</i>: stands, emplacements,
      * typologies, opening hours, timeslots and every parameter, and nobody —
      * neither the roster nor their availability, competences, wishes or the ad
@@ -171,19 +176,53 @@ public class EditionResource {
         return Response.ok(editionService.duplicate(id, target, avecAnimateurs)).build();
     }
 
-    /** Designates the fallback edition for any caller sending no {@code X-Edition-Id}. */
+    /**
+     * What activating {@code id} would close in the edition active today —
+     * links that stop working, swap requests left open, solves queued — read
+     * before the switch is confirmed (ADR 0072).
+     */
+    @GET
+    @Path("/{id}/activation")
+    public EditionActivationService.ActivationPreview activationPreview(@PathParam("id") String id) {
+        return activationService.preview(id);
+    }
+
+    /**
+     * Makes {@code id} the active edition — the only one that publishes, sends
+     * mail and opens the espace, the ICS feed and the wall display — and every
+     * other one inactive, atomically. {@code 409} while a solve runs in the
+     * outgoing or the incoming edition.
+     */
     @PUT
-    @Path("/{id}/defaut")
-    public Response setAsDefault(@PathParam("id") String id) {
-        editionService.setAsDefault(id);
+    @Path("/{id}/active")
+    public Edition activate(@PathParam("id") String id) {
+        return activationService.activate(id);
+    }
+
+    /** Leaves no edition active: between two events, nothing reaches outside. */
+    @DELETE
+    @Path("/{id}/active")
+    public Response deactivate(@PathParam("id") String id) {
+        activationService.deactivate(id);
         return Response.noContent().build();
     }
 
     /**
+     * What the editions' state asks of the organiser today: the active edition
+     * is over, or an inactive one starts within a few days. The admin shell
+     * shows a banner when the list is not empty.
+     */
+    @GET
+    @Path("/situations")
+    public List<EditionActivationService.Situation> situations() {
+        return activationService.situations();
+    }
+
+    /**
      * Drops the edition and its whole reference model. Returns 400 with an
-     * explanation when it is the default edition, the current one, or the last
-     * remaining one, rather than letting the caller lose data or end up with
-     * nothing to fall back on.
+     * explanation when it is the active edition, the current one, or the last
+     * remaining one, rather than letting the caller lose data or the links it
+     * serves.
      */
     @DELETE
     @Path("/{id}")

@@ -23,7 +23,8 @@ class FeasibilityResourceTest {
     void diagnostiqueLesDonneesDeReferenceSansAucuneResolution() {
         seedScenario();
 
-        JsonPath report = given().when()
+        JsonPath report = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/feasibility")
                 .then()
                 .statusCode(200)
@@ -55,10 +56,15 @@ class FeasibilityResourceTest {
      */
     @Test
     void aTimeslotWithNobodyInTheRosterIsCriticalAndTheReportNamesTheEmptyRoster() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
 
         // The stand's id is drawn by the application (ADR 0050): read it back.
-        String standId = given().contentType("application/json")
+        String standId = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {
                           "nom":"Stand sans animateur",
@@ -75,7 +81,8 @@ class FeasibilityResourceTest {
                 .extract()
                 .path("stand.id");
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {
                           "jour":1,
@@ -89,7 +96,8 @@ class FeasibilityResourceTest {
                 .then()
                 .statusCode(200);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/feasibility")
                 .then()
                 .statusCode(200)
@@ -111,8 +119,13 @@ class FeasibilityResourceTest {
     }
 
     private static void seedScenario() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);

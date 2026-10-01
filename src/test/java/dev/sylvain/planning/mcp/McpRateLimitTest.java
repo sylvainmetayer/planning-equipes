@@ -46,7 +46,8 @@ class McpRateLimitTest {
     @Test
     void capsTheRequestsOfOneAddress() {
         for (int i = 0; i < CEILING; i++) {
-            given().header("X-MCP-Api-Key", "test-mcp-key")
+            given().header("X-Edition-Id", "E1")
+                    .header("X-MCP-Api-Key", "test-mcp-key")
                     .when()
                     .post("/mcp")
                     .then()
@@ -55,7 +56,8 @@ class McpRateLimitTest {
 
         // Past the ceiling the right key buys nothing: the filter refuses
         // before authentication is ever consulted.
-        given().header("X-MCP-Api-Key", "test-mcp-key")
+        given().header("X-Edition-Id", "E1")
+                .header("X-MCP-Api-Key", "test-mcp-key")
                 .when()
                 .post("/mcp")
                 .then()
@@ -64,7 +66,8 @@ class McpRateLimitTest {
 
         // And a wrong key meets that same 429 rather than a 401, which is
         // what bounds trying keys as much as using the right one.
-        given().header("X-MCP-Api-Key", "mauvaise-cle")
+        given().header("X-Edition-Id", "E1")
+                .header("X-MCP-Api-Key", "mauvaise-cle")
                 .when()
                 .post("/mcp")
                 .then()
@@ -72,6 +75,10 @@ class McpRateLimitTest {
 
         // The rest of the application is untouched: the MCP page of the
         // interface lives under /api/mcp and keeps the admin policy.
-        given().when().get("/api/mcp/statut").then().statusCode(not(429));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/mcp/statut")
+                .then()
+                .statusCode(not(429));
     }
 }

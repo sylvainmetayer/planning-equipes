@@ -242,13 +242,12 @@ public class ParametresRepository {
     public ParametresNotifications getParametresNotifications() {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, """
-                        SELECT actives, heure_rappel_veille, delai_relance_heures, anciennete_echange_jours
+                        SELECT heure_rappel_veille, delai_relance_heures, anciennete_echange_jours
                         FROM parametres_notifications
                         WHERE edition_id = ?""");
                 ResultSet rs = ps.executeQuery()) {
             if (rs.next()) {
                 return new ParametresNotifications(
-                        rs.getBoolean("actives"),
                         rs.getObject("heure_rappel_veille", LocalTime.class),
                         rs.getInt("delai_relance_heures"),
                         rs.getInt("anciennete_echange_jours"));
@@ -262,18 +261,16 @@ public class ParametresRepository {
     public void saveParametresNotifications(ParametresNotifications parametres) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, """
-                        INSERT INTO parametres_notifications (edition_id, actives, heure_rappel_veille,
+                        INSERT INTO parametres_notifications (edition_id, heure_rappel_veille,
                         delai_relance_heures, anciennete_echange_jours)
-                        VALUES (?, ?, ?, ?, ?)
+                        VALUES (?, ?, ?, ?)
                         ON CONFLICT (edition_id)
-                        DO UPDATE SET actives = EXCLUDED.actives,
-                        heure_rappel_veille = EXCLUDED.heure_rappel_veille,
+                        DO UPDATE SET heure_rappel_veille = EXCLUDED.heure_rappel_veille,
                         delai_relance_heures = EXCLUDED.delai_relance_heures,
                         anciennete_echange_jours = EXCLUDED.anciennete_echange_jours""")) {
-            ps.setBoolean(2, parametres.actives());
-            ps.setObject(3, parametres.heureRappelVeille());
-            ps.setInt(4, parametres.delaiRelanceHeures());
-            ps.setInt(5, parametres.ancienneteEchangeJours());
+            ps.setObject(2, parametres.heureRappelVeille());
+            ps.setInt(3, parametres.delaiRelanceHeures());
+            ps.setInt(4, parametres.ancienneteEchangeJours());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save notification parameters", e);

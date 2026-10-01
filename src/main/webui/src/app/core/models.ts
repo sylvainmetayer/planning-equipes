@@ -816,17 +816,37 @@ export interface Creneau {
 
 /**
  * A whole edition of the event — "Année 2025", "Année 2026" — and the scope
- * every piece of reference data belongs to (`/api/editions`). Not to be confused
- * with the former timeslot groups (removed by issue #172: the edition is
- * the only variant carrier). `defaut` is not "the current one": that is this browser's own
- * choice, sent as `X-Edition-Id`; `defaut` is the server's fallback when no
- * edition is designated. See docs/decisions/0001-cloisonnement-par-edition.md.
+ * every piece of reference data belongs to (`/api/editions`). `active` is not
+ * "the current one": that is this browser's own choice, sent as
+ * `X-Edition-Id`. `active` marks the one edition allowed to reach outside —
+ * publish, send mail, open the espace, the ICS feed and the wall display — at
+ * most one, sometimes none. See docs/decisions/0072-une-seule-edition-active.md.
  */
 export interface Edition {
   id: string;
   nom: string;
-  defaut: boolean;
+  active: boolean;
   creeLe: string | null;
+}
+
+/** What activating an edition would close in the one active today (`GET /api/editions/{id}/activation`). */
+export interface ActivationPreview {
+  /** The edition active today, `null` when none is. */
+  sortante: Edition | null;
+  jobsEnFile: number;
+  /** A solve runs in either edition: the switch would be refused. */
+  resolutionEnCours: boolean;
+  demandesOuvertes: number;
+  liensAnimateurs: number;
+  liensMuraux: number;
+}
+
+/** One thing the editions' state asks of the organiser (`GET /api/editions/situations`). */
+export interface EditionSituation {
+  type: 'ACTIVE_TERMINEE' | 'INACTIVE_IMMINENTE' | 'AUCUNE_ACTIVE' | 'INACTIVE_EN_COURS';
+  edition: Edition;
+  premierJour: string | null;
+  dernierJour: string | null;
 }
 
 /**
@@ -4343,9 +4363,11 @@ export interface ContactOrganisation {
   email: string | null;
 }
 
-/** Per-edition settings of the scheduled notifications (`/api/parametres-notifications`). */
+/**
+ * Per-edition delays of the scheduled notifications (`/api/parametres-notifications`).
+ * Whether anything leaves is not decided here: only the active edition sends.
+ */
 export interface ParametresNotifications {
-  actives: boolean;
   /** `HH:mm` local time, from which the day-before reminder may go out. */
   heureRappelVeille: string;
   delaiRelanceHeures: number;

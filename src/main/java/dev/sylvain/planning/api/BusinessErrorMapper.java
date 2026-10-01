@@ -32,16 +32,25 @@ public class BusinessErrorMapper implements ExceptionMapper<BusinessError> {
                     case BusinessError.Conflict _ -> Response.Status.CONFLICT;
                     case BusinessError.Stale _ -> Response.Status.CONFLICT;
                     case BusinessError.Frozen _ -> Response.Status.CONFLICT;
+                    case BusinessError.EditionRefused refus ->
+                        refus.getReason() == BusinessError.EditionRefused.Reason.INACTIVE
+                                ? Response.Status.CONFLICT
+                                : Response.Status.BAD_REQUEST;
                 };
         // A stale write is the one 409 the client answers with a dialog (reload
         // or overwrite), so its body says which 409 it is — the message alone
         // would be a sentence to read, not a case to switch on.
         // A frozen referential is the other one: the client shows the padlock
         // and the way to lift the freeze, so it too needs a case to switch on.
+        // An edition refusal is the third: the client goes back to choosing an
+        // edition, or to the Éditions page, depending on its code.
         Object corps =
                 switch (erreur) {
                     case BusinessError.Stale stale -> new StaleWriteError(stale.getMessage(), stale.getModifieLe());
                     case BusinessError.Frozen fige -> new FrozenReferentialError(fige.getMessage(), fige.getFamilles());
+                    case BusinessError.EditionRefused refus ->
+                        new EditionRefusalError(
+                                refus.getMessage(), refus.getReason().code());
                     default -> new ValidationError(erreur.getMessage());
                 };
         return Response.status(statut)

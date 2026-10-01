@@ -19,7 +19,8 @@ class RefusInconnuResourceTest {
 
     @Test
     void unStandInconnuRepondQuatreCentQuatreEtLeDit() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("""
                         {"id":"INCONNU-STAND","nom":"X","typologiesProposees":["STRATEGIE"],"effectifMin":1,"effectifMax":1}""")
                 .when()
@@ -31,7 +32,8 @@ class RefusInconnuResourceTest {
 
     @Test
     void unCreneauInconnuRepondQuatreCentQuatreEtLeDit() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("""
                         {"jour":1,"date":"2030-01-01","heureDebut":"09:00","heureFin":"12:00"}""")
                 .when()
@@ -43,7 +45,8 @@ class RefusInconnuResourceTest {
 
     @Test
     void unEmplacementInconnuRepondQuatreCentQuatreEtLeDit() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("""
                         {"id":"INCONNU-EMP","nom":"X"}""")
                 .when()
@@ -55,7 +58,8 @@ class RefusInconnuResourceTest {
 
     @Test
     void uneTypologieInconnueRepondQuatreCentQuatreEtLeDit() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("""
                         {"id":"INCONNU-TYPO","label":"X"}""")
                 .when()
@@ -67,7 +71,8 @@ class RefusInconnuResourceTest {
 
     @Test
     void uneEditionInconnueRepondQuatreCentQuatreEtLeDit() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("""
                         {"nom":"X"}""")
                 .when()

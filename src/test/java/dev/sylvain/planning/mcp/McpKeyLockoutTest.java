@@ -50,15 +50,17 @@ class McpKeyLockoutTest {
         // a client not yet configured probes before it is set up, and locking
         // it out for that would punish the one case that is not an attack.
         for (int i = 0; i < CEILING * 2; i++) {
-            given().when().post("/mcp").then().statusCode(401);
+            given().header("X-Edition-Id", "E1").when().post("/mcp").then().statusCode(401);
         }
 
-        given().header("X-MCP-Api-Key", "mauvaise-cle")
+        given().header("X-Edition-Id", "E1")
+                .header("X-MCP-Api-Key", "mauvaise-cle")
                 .when()
                 .post("/mcp")
                 .then()
                 .statusCode(401);
-        given().header("X-MCP-Api-Key", "mauvaise-cle")
+        given().header("X-Edition-Id", "E1")
+                .header("X-MCP-Api-Key", "mauvaise-cle")
                 .when()
                 .post("/mcp")
                 .then()
@@ -66,7 +68,8 @@ class McpKeyLockoutTest {
 
         // Authenticating clears the run: a header corrected on the next try
         // costs nothing.
-        given().header("X-MCP-Api-Key", "test-mcp-key")
+        given().header("X-Edition-Id", "E1")
+                .header("X-MCP-Api-Key", "test-mcp-key")
                 .when()
                 .post("/mcp")
                 .then()
@@ -85,7 +88,8 @@ class McpKeyLockoutTest {
 
         // And the right key is refused just the same, which is the whole point:
         // waiting for one's turn must not be enough.
-        given().header("X-MCP-Api-Key", "test-mcp-key")
+        given().header("X-Edition-Id", "E1")
+                .header("X-MCP-Api-Key", "test-mcp-key")
                 .when()
                 .post("/mcp")
                 .then()
@@ -93,6 +97,9 @@ class McpKeyLockoutTest {
     }
 
     private static Response wrongKey() {
-        return given().header("X-MCP-Api-Key", "mauvaise-cle").when().post("/mcp");
+        return given().header("X-Edition-Id", "E1")
+                .header("X-MCP-Api-Key", "mauvaise-cle")
+                .when()
+                .post("/mcp");
     }
 }

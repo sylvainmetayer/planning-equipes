@@ -3,7 +3,7 @@
 ' Le cloisonnement ne tient pas à la discipline des appelants : chaque requête
 ' lie l'édition au premier paramètre (prepareScoped), et
 ' IsolationEditionStructurelleTest refuse le SQL qui l'oublie.
-' Voir docs/architecture.md et docs/decisions/0001, 0023.
+' Voir docs/architecture.md et docs/decisions/0001, 0023, 0072.
 skinparam backgroundColor #FFFFFF
 skinparam responseMessageBelowArrow true
 hide footbox
@@ -43,7 +43,8 @@ note right of contexte
   1. édition forcée (executeIn, jobs du solveur)
   2. édition du jeton d'espace animateur
   3. en-tête, s'il désigne une édition connue
-  4. sinon l'édition par défaut (jamais d'erreur)
+     (une édition inconnue : 400 EDITION_INCONNUE)
+  4. pas d'en-tête : 400 EDITION_REQUISE (ADR 0072)
 end note
 contexte --> scope : "42"
 scope -> db : INSERT … ON CONFLICT (edition_id, id) DO UPDATE\nWHERE modifie_le = celui lu par le client\nRETURNING modifie_le

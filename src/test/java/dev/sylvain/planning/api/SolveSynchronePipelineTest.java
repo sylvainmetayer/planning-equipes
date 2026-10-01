@@ -38,14 +38,16 @@ class SolveSynchronePipelineTest {
         analysisStore.clear();
         int kpiBefore = kpiHistorique.list().size();
 
-        String probleme = given().when()
+        String probleme = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/sample?name=scenario.yml")
                 .then()
                 .statusCode(200)
                 .extract()
                 .asString();
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(probleme)
                 .when()
                 .post("/api/solve?seconds=1")

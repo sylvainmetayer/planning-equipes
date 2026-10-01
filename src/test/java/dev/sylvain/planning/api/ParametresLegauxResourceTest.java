@@ -32,7 +32,8 @@ class ParametresLegauxResourceTest {
     void theEveningIsStoredWithTheRecordAndReadBack() {
         declarer("\"21:30:00\"").statusCode(200).body("heureDebutSoiree", equalTo("21:30:00"));
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/parametres-legaux")
                 .then()
                 .statusCode(200)
@@ -51,7 +52,8 @@ class ParametresLegauxResourceTest {
 
     /** PUTs the record as it stands, with {@code heureDebutSoiree} replaced by the JSON given. */
     private static ValidatableResponse declarer(String heureJson) {
-        String courant = given().when()
+        String courant = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/parametres-legaux")
                 .then()
                 .statusCode(200)
@@ -59,7 +61,8 @@ class ParametresLegauxResourceTest {
                 .asString();
         String modifie =
                 courant.replaceAll("\"heureDebutSoiree\":(\"[^\"]*\"|null)", "\"heureDebutSoiree\":" + heureJson);
-        return given().contentType(ContentType.JSON)
+        return given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(modifie)
                 .when()
                 .put("/api/parametres-legaux")

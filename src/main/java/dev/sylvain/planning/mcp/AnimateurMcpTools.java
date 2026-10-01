@@ -64,7 +64,7 @@ public class AnimateurMcpTools {
     AnimateursView listAnimateurs(
             @ToolArg(description = "Nombre maximum d'animateurs renvoyés (défaut : tous)", required = false)
                     Integer limite,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         LocalDate reference = dateReference();
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
         return new AnimateursView(
@@ -86,7 +86,7 @@ public class AnimateurMcpTools {
                             openWorldHint = false))
     AnimateurView getAnimateur(
             @ToolArg(description = "Id de l'animateur") String id,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return toView(find(id), dateReference());
     }
 
@@ -118,7 +118,7 @@ public class AnimateurMcpTools {
             @ToolArg(description = "Ids de typologies souhaitées", required = false) List<String> souhaits,
             @ToolArg(description = "Jours indisponibles (AAAA-MM-JJ)", required = false)
                     List<String> joursIndisponibles,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         Animateur animateur = new Animateur();
         animateur.setPrenom(prenom);
         animateur.setNom(nom);
@@ -157,7 +157,7 @@ public class AnimateurMcpTools {
                                     "WriteStamp modifieLe lu avant la modification (précondition : refusé si la fiche a changé depuis ; omis, pas de contrôle)",
                             required = false)
                     String modifieLe,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         Animateur animateur = find(id);
         if (modifieLe != null) {
             animateur.setModifieLe(McpArgs.instant(modifieLe, "modifieLe"));
@@ -191,7 +191,7 @@ public class AnimateurMcpTools {
                             openWorldHint = false))
     SuppressionResult deleteAnimateur(
             @ToolArg(description = "Id de l'animateur") String id,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         referenceDataService.deleteAnimateur(id);
         return new SuppressionResult(id, true);
     }

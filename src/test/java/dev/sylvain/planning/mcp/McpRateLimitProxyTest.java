@@ -63,7 +63,8 @@ class McpRateLimitProxyTest {
     }
 
     private static io.restassured.response.Response appel(String forwardedFor) {
-        return given().header("X-MCP-Api-Key", "test-mcp-key")
+        return given().header("X-Edition-Id", "E1")
+                .header("X-MCP-Api-Key", "test-mcp-key")
                 .header("X-Forwarded-For", forwardedFor)
                 .when()
                 .post("/mcp");

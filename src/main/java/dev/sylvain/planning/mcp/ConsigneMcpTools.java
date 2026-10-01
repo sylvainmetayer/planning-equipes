@@ -58,8 +58,7 @@ public class ConsigneMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    ConsignesView listConsignes(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+    ConsignesView listConsignes(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         ConsigneService.EtatConsignes etat = consignes.etat();
         return new ConsignesView(
                 etat.aujourdhui(),
@@ -83,7 +82,7 @@ public class ConsigneMcpTools {
             @ToolArg(description = "Début de la bande fermée pour tous (HH:MM)") String fermetureDebut,
             @ToolArg(description = "Fin de la bande (HH:MM) ; omise = jusqu'à minuit", required = false)
                     String fermetureFin,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return consignes.preselection(
                 McpArgs.date(date, "date"),
                 McpArgs.heure(fermetureDebut, ARG_FERMETURE_DEBUT),
@@ -142,7 +141,7 @@ public class ConsigneMcpTools {
                             required = false)
                     String justificationRepas,
             @ToolArg(description = "Nom du préréglage d'origine, s'il y en a un", required = false) String prereglage,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return consignes.apercu(demande(
                 dates,
                 fermetureDebut,
@@ -207,7 +206,7 @@ public class ConsigneMcpTools {
                             required = false)
                     String justificationRepas,
             @ToolArg(description = "Nom du préréglage d'origine, s'il y en a un", required = false) String prereglage,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return consignes.poser(demande(
                 dates,
                 fermetureDebut,
@@ -231,7 +230,7 @@ public class ConsigneMcpTools {
                             openWorldHint = false))
     List<ApercuLevee> simulateConsigneLift(
             @ToolArg(description = "Dates à lever (AAAA-MM-JJ), séparées par des virgules") String dates,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return consignes.apercuLevee(dates(dates));
     }
 
@@ -250,7 +249,7 @@ public class ConsigneMcpTools {
                             openWorldHint = false))
     LeveeResult liftConsigne(
             @ToolArg(description = "Dates à lever (AAAA-MM-JJ), séparées par des virgules") String dates,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         List<LocalDate> levees = dates(dates);
         consignes.lever(levees);
         return new LeveeResult(levees, true);
@@ -303,7 +302,7 @@ public class ConsigneMcpTools {
                             required = false)
                     String justificationRepas,
             @ToolArg(description = "Id du préréglage à remplacer ; omis = création", required = false) String id,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return consignes.savePrereglage(new PrereglageConsigne(
                 id,
                 nom,
@@ -328,7 +327,7 @@ public class ConsigneMcpTools {
                             openWorldHint = false))
     SuppressionResult deleteConsignePreset(
             @ToolArg(description = "Id du préréglage") String id,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         consignes.deletePrereglage(id);
         return new SuppressionResult(id, true);
     }

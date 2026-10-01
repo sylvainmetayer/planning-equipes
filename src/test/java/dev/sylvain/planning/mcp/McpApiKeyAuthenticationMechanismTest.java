@@ -19,12 +19,13 @@ class McpApiKeyAuthenticationMechanismTest {
 
     @Test
     void refuseSansEnTeteApiKey() {
-        given().when().post("/mcp").then().statusCode(401);
+        given().header("X-Edition-Id", "E1").when().post("/mcp").then().statusCode(401);
     }
 
     @Test
     void refuseAvecUneCleIncorrecte() {
-        given().header("X-MCP-Api-Key", "mauvaise-cle")
+        given().header("X-Edition-Id", "E1")
+                .header("X-MCP-Api-Key", "mauvaise-cle")
                 .when()
                 .post("/mcp")
                 .then()
@@ -33,7 +34,8 @@ class McpApiKeyAuthenticationMechanismTest {
 
     @Test
     void laisseTraverserAvecLaBonneCle() {
-        given().header("X-MCP-Api-Key", "test-mcp-key")
+        given().header("X-Edition-Id", "E1")
+                .header("X-MCP-Api-Key", "test-mcp-key")
                 .when()
                 .post("/mcp")
                 .then()
@@ -45,7 +47,8 @@ class McpApiKeyAuthenticationMechanismTest {
 
     @Test
     void laisseTraverserAvecUnBearerToken() {
-        given().header("Authorization", "Bearer test-mcp-key")
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", "Bearer test-mcp-key")
                 .when()
                 .post("/mcp")
                 .then()

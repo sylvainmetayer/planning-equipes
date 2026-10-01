@@ -85,14 +85,20 @@ class SolveIncrementalResourceTest {
 
     @Test
     void sansPlanPersisteLaReplanificationEchoueAvecUnMessageExplicite() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
 
         attendreSolveurLibre();
-        String jobId = given().contentType(ContentType.JSON)
+        String jobId = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/solve/incremental/async?seconds=5")
                 .then()
@@ -110,7 +116,7 @@ class SolveIncrementalResourceTest {
     /** Runs an incremental solve to completion and returns its result. */
     private JsonPath solveIncremental(String corps) {
         attendreSolveurLibre();
-        var statement = given().contentType(ContentType.JSON);
+        var statement = given().header("X-Edition-Id", "E1").contentType(ContentType.JSON);
         if (corps != null) {
             statement = statement.body(corps);
         }
@@ -123,7 +129,8 @@ class SolveIncrementalResourceTest {
                 .path("id");
         JsonPath job = pollUntilFinished(jobId);
         assertThat(job.getString("status")).isEqualTo("COMPLETED");
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/jobs/" + jobId)
                 .then()
                 .statusCode(200)
@@ -132,7 +139,8 @@ class SolveIncrementalResourceTest {
     }
 
     private List<Map<String, Object>> affectationsPersistees() {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/persisted")
                 .then()
                 .statusCode(200)
@@ -188,6 +196,7 @@ class SolveIncrementalResourceTest {
     @SuppressWarnings("unchecked")
     private void rendreIndisponible(String animateurId, String jour) {
         Map<String, Object> animateur = given()
+                .header("X-Edition-Id", "E1")
                 .when()
                 .get("/api/animateurs")
                 .then()
@@ -202,7 +211,8 @@ class SolveIncrementalResourceTest {
         List<String> jours = new ArrayList<>((List<String>) animateur.getOrDefault("joursIndisponibles", List.of()));
         jours.add(jour);
         animateur.put("joursIndisponibles", jours);
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(animateur)
                 .when()
                 .put("/api/animateurs/" + animateurId)
@@ -212,7 +222,8 @@ class SolveIncrementalResourceTest {
 
     /** Hard level of the analysis stored by the last solve — 0 means feasible. */
     private int persistedHardScore() {
-        Integer hardScore = given().when()
+        Integer hardScore = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/constraints")
                 .then()
                 .statusCode(200)
@@ -224,13 +235,19 @@ class SolveIncrementalResourceTest {
     }
 
     private void persistedPlan() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
         attendreSolveurLibre();
-        String jobId = given().when()
+        String jobId = given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/solve/async/reference-data?seconds=5")
                 .then()
                 .statusCode(202)
@@ -243,8 +260,13 @@ class SolveIncrementalResourceTest {
         await().alias("Solver still busy")
                 .atMost(POLL_TIMEOUT)
                 .pollInterval(POLL_INTERVAL)
-                .until(() ->
-                        given().when().get("/api/jobs/active").then().extract().statusCode() == 204);
+                .until(() -> given().header("X-Edition-Id", "E1")
+                                .when()
+                                .get("/api/jobs/active")
+                                .then()
+                                .extract()
+                                .statusCode()
+                        == 204);
     }
 
     private JsonPath pollUntilFinished(String jobId) {
@@ -252,7 +274,8 @@ class SolveIncrementalResourceTest {
                 .atMost(POLL_TIMEOUT)
                 .pollInterval(POLL_INTERVAL)
                 .until(
-                        () -> given().when()
+                        () -> given().header("X-Edition-Id", "E1")
+                                .when()
                                 .get("/api/jobs/" + jobId)
                                 .then()
                                 .statusCode(200)

@@ -23,6 +23,7 @@ import { APIRequestContext, Page, expect, test } from '@playwright/test';
 import {
   AnimateurSeed,
   CreneauSeed,
+  EDITION_REFERENCE,
   StandSeed,
   contexteAdmin,
   shiftDate,
@@ -138,6 +139,7 @@ test.describe('écriture du référentiel pendant une résolution', () => {
       // 2. And the server refuses on its own — the button is not the guard.
       //    Same session, same edition: what a stale tab or a script would get.
       const refus = await page.request.put('/api/stands/SOLV-GS1', {
+        headers: { 'X-Edition-Id': EDITION_REFERENCE },
         data: { id: 'SOLV-GS1', nom: 'Renommé pendant le solve', effectifMin: 1, effectifMax: 1 },
       });
       expect(refus.status()).toBe(409);

@@ -44,7 +44,8 @@ class GelReferentielMcpToolsTest {
 
     @BeforeEach
     void anEditionOfItsOwnHoldingTheScenario() {
-        edition = given().contentType("application/json")
+        edition = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of("nom", "Gel MCP"))
                 .when()
                 .post("/api/editions")
@@ -64,7 +65,7 @@ class GelReferentielMcpToolsTest {
         for (ReferentialFamily famille : ReferentialFamily.values()) {
             editionTools.liftFreeze(famille.name(), edition);
         }
-        given().when().delete("/api/editions/" + edition);
+        given().header("X-Edition-Id", "E1").when().delete("/api/editions/" + edition);
     }
 
     /** The id the edition drew for the row the scenario named by {@code code} (ids are generated per edition). */
@@ -91,7 +92,7 @@ class GelReferentielMcpToolsTest {
                 .extracting(GelReferentielService.EtatGel::famille)
                 .containsExactly(ReferentialFamily.STANDS);
         // Another edition is not frozen by this one.
-        assertThat(editionTools.editionState(null).gel().familles()).noneMatch(GelReferentielService.EtatGel::fige);
+        assertThat(editionTools.editionState("E1").gel().familles()).noneMatch(GelReferentielService.EtatGel::fige);
 
         assertThat(editionTools.liftFreeze("STANDS", edition).fige()).isFalse();
     }

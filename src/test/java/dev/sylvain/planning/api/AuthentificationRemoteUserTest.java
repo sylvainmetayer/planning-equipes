@@ -49,7 +49,8 @@ class AuthentificationRemoteUserTest {
 
     @Test
     void lAdresseAdminAttesteeParLeProxyOuvreLApi() {
-        given().header("Remote-Auth-Secret", SECRET)
+        given().header("X-Edition-Id", "E1")
+                .header("Remote-Auth-Secret", SECRET)
                 .header("Remote-Email", EMAIL_ADMIN)
                 .when()
                 .get("/api/auth/me")
@@ -61,7 +62,8 @@ class AuthentificationRemoteUserTest {
 
     @Test
     void laCasseEtLesEspacesDeLAdresseNeChangentRien() {
-        given().header("Remote-Auth-Secret", SECRET)
+        given().header("X-Edition-Id", "E1")
+                .header("Remote-Auth-Secret", SECRET)
                 .header("Remote-Email", "  " + EMAIL_ADMIN.toUpperCase() + " ")
                 .when()
                 .get("/api/constraints")
@@ -71,7 +73,8 @@ class AuthentificationRemoteUserTest {
 
     @Test
     void sansLeSecretLEnTeteNEstQuUneAffirmation() {
-        given().header("Remote-Email", EMAIL_ADMIN)
+        given().header("X-Edition-Id", "E1")
+                .header("Remote-Email", EMAIL_ADMIN)
                 .when()
                 .get("/api/constraints")
                 .then()
@@ -80,7 +83,8 @@ class AuthentificationRemoteUserTest {
 
     @Test
     void unMauvaisSecretEstRefuse() {
-        given().header("Remote-Auth-Secret", "pas-le-bon")
+        given().header("X-Edition-Id", "E1")
+                .header("Remote-Auth-Secret", "pas-le-bon")
                 .header("Remote-Email", EMAIL_ADMIN)
                 .when()
                 .get("/api/constraints")
@@ -90,7 +94,8 @@ class AuthentificationRemoteUserTest {
 
     @Test
     void uneAdresseInconnueNObtientPasLeRoleAdmin() {
-        given().header("Remote-Auth-Secret", SECRET)
+        given().header("X-Edition-Id", "E1")
+                .header("Remote-Auth-Secret", SECRET)
                 .header("Remote-Email", "quelquun@exemple.fr")
                 .when()
                 .get("/api/constraints")
@@ -100,7 +105,8 @@ class AuthentificationRemoteUserTest {
 
     @Test
     void leFormLoginContinueDeFonctionnerEnParallele() {
-        String cookie = given().contentType("application/x-www-form-urlencoded")
+        String cookie = given().header("X-Edition-Id", "E1")
+                .contentType("application/x-www-form-urlencoded")
                 .formParam("j_username", "admin")
                 .formParam("j_password", "admin")
                 .redirects()
@@ -111,7 +117,8 @@ class AuthentificationRemoteUserTest {
                 .extract()
                 .cookie("planning-session");
 
-        given().cookie("planning-session", cookie)
+        given().header("X-Edition-Id", "E1")
+                .cookie("planning-session", cookie)
                 .when()
                 .get("/api/auth/me")
                 .then()
@@ -126,9 +133,14 @@ class AuthentificationRemoteUserTest {
         String token = createAnimateur("A-REMOTE-1", EMAIL_ANIMATEUR);
 
         // With no assertion, the token alone is not enough: the e-mail is the second factor.
-        given().when().get("/api/espace-animateur/" + token).then().statusCode(401);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/espace-animateur/" + token)
+                .then()
+                .statusCode(401);
 
-        given().header("Remote-Auth-Secret", SECRET)
+        given().header("X-Edition-Id", "E1")
+                .header("Remote-Auth-Secret", SECRET)
                 .header("Remote-Email", EMAIL_ANIMATEUR)
                 .when()
                 .get("/api/espace-animateur/" + token)
@@ -142,7 +154,8 @@ class AuthentificationRemoteUserTest {
 
         // A colleague's link, picked up from a PDF, plus one's own assertion:
         // the address does not match the record the token names.
-        given().header("Remote-Auth-Secret", SECRET)
+        given().header("X-Edition-Id", "E1")
+                .header("Remote-Auth-Secret", SECRET)
                 .header("Remote-Email", EMAIL_ANIMATEUR)
                 .when()
                 .get("/api/espace-animateur/" + colleagueToken)
@@ -154,7 +167,8 @@ class AuthentificationRemoteUserTest {
     void lAdresseAdminNOuvrePasLEspaceDUnAnimateur() {
         String token = createAnimateur("A-REMOTE-3", "encore@exemple.fr");
 
-        given().header("Remote-Auth-Secret", SECRET)
+        given().header("X-Edition-Id", "E1")
+                .header("Remote-Auth-Secret", SECRET)
                 .header("Remote-Email", EMAIL_ADMIN)
                 .when()
                 .get("/api/espace-animateur/" + token)

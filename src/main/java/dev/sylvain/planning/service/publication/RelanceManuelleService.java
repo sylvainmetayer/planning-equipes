@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.publication;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.StatutConfirmation;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.edition.RequiresActiveEdition;
 import dev.sylvain.planning.service.espace.ApplicationLinks;
 import dev.sylvain.planning.service.notification.JournalNotificationsRepository;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
@@ -124,6 +125,7 @@ public class RelanceManuelleService {
      *         no planning to confirm —, when the list is empty, or when an id
      *         names nobody
      */
+    @RequiresActiveEdition
     public RapportRelance relancer(List<String> animateurIds) {
         if (planPublieService.jamaisPublie()) {
             throw new BusinessError.Invalid("Le planning n'a pas encore été publié : il n'y a personne à relancer.");

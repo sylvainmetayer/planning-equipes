@@ -43,7 +43,11 @@ class JourJResourceTest {
      */
     @AfterEach
     void resetDatabase() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
     }
 
     /* --------------------------------- State ------------------------------- */
@@ -121,7 +125,8 @@ class JourJResourceTest {
 
         markAbsent(absent, "Malade", ENTRE_LES_DEUX, 200);
 
-        JsonPath contraintes = given().when()
+        JsonPath contraintes = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/contraintes-ad-hoc")
                 .then()
                 .statusCode(200)
@@ -169,7 +174,8 @@ class JourJResourceTest {
     void markingAbsentRefusesAnUnknownAnimateur() {
         solveScenario();
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"animateurId\":\"ANIMATEUR-INEXISTANT\"}")
                 .when()
                 .post("/api/jour-j/absences?date=" + JOUR + "&maintenant=" + JOUR + "T" + ENTRE_LES_DEUX)
@@ -191,7 +197,8 @@ class JourJResourceTest {
         solveScenario();
         String absent = firstAnimateurOnDuty();
         long afternoonCreneauId = afternoonCreneauId();
-        String forcedAssignment = given().contentType("application/json")
+        String forcedAssignment = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {"type":"AFFECTATION_FORCEE",
                          "animateursConcernes":[{"id":"%s"}],"creneau":{"id":%d}}""".formatted(absent, afternoonCreneauId))
@@ -203,7 +210,8 @@ class JourJResourceTest {
                 .path("contrainte.id");
         Map<String, String> avant = persistedOccupants();
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"animateurId\":\"" + absent + "\"}")
                 .when()
                 .post("/api/jour-j/absences?date=" + JOUR + "&maintenant=" + JOUR + "T" + ENTRE_LES_DEUX)
@@ -224,7 +232,8 @@ class JourJResourceTest {
         solveScenario();
         String absent = firstAnimateurOnDuty();
         String standVerrouille = standHeldInTheAfternoon(absent);
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"type\":\"STAND\",\"standId\":\"" + standVerrouille + "\"}")
                 .when()
                 .post("/api/verrouillages")
@@ -232,7 +241,8 @@ class JourJResourceTest {
                 .statusCode(200);
         Map<String, String> avant = persistedOccupants();
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"animateurId\":\"" + absent + "\"}")
                 .when()
                 .post("/api/jour-j/absences?date=" + JOUR + "&maintenant=" + JOUR + "T" + ENTRE_LES_DEUX)
@@ -253,7 +263,8 @@ class JourJResourceTest {
         markAbsent(absent, null, ENTRE_LES_DEUX, 200);
         assertThat(forcedUnavailabilities()).hasSize(1);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .delete("/api/jour-j/absences/" + absent + "?date=" + JOUR)
                 .then()
                 .statusCode(200)
@@ -272,7 +283,8 @@ class JourJResourceTest {
         markAbsent(absent, null, "00:00", 200);
         assertThat(forcedUnavailabilities()).hasSize(2);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .delete("/api/jour-j/absences/" + absent + "?date=" + JOUR + "&creneauId=" + afternoonCreneauId())
                 .then()
                 .statusCode(200)
@@ -292,7 +304,8 @@ class JourJResourceTest {
         solveScenario();
         String absent = firstAnimateurOnDuty();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .delete("/api/jour-j/absences/" + absent + "?date=" + JOUR)
                 .then()
                 .statusCode(404)
@@ -312,7 +325,8 @@ class JourJResourceTest {
         JsonPath marquee = markAbsent(absent, null, ENTRE_LES_DEUX, 200);
         String poste = marquee.getList("postesLiberes.posteId", String.class).getFirst();
 
-        JsonPath suggestions = given().when()
+        JsonPath suggestions = given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/jour-j/postes/" + poste + "/suggestions")
                 .then()
                 .statusCode(200)
@@ -331,7 +345,8 @@ class JourJResourceTest {
     void suggestionsRefuseAnUnknownSeat() {
         solveScenario();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/jour-j/postes/POSTE-INEXISTANT/suggestions")
                 .then()
                 .statusCode(404)
@@ -340,7 +355,8 @@ class JourJResourceTest {
 
     @Test
     void aMalformedReferenceTimeIsA400() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/jour-j?date=" + JOUR + "&maintenant=midi")
                 .then()
                 .statusCode(400)
@@ -360,7 +376,8 @@ class JourJResourceTest {
         solveScenario();
         long matin = morningCreneauId();
         String surPlace = firstAnimateurOnDuty();
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {"type":"INDISPONIBILITE_FORCEE",
                          "animateursConcernes":[{"id":"%s"}],"creneau":{"id":%d}}""".formatted(surPlace, matin))
@@ -388,7 +405,8 @@ class JourJResourceTest {
     void anUnavailabilityOnARemainingTimeslotCountsAsAbsent() {
         solveScenario();
         String surPlace = firstAnimateurOnDuty();
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {"type":"INDISPONIBILITE_FORCEE",
                          "animateursConcernes":[{"id":"%s"}],"creneau":{"id":%d}}""".formatted(surPlace, afternoonCreneauId()))
@@ -413,7 +431,8 @@ class JourJResourceTest {
         solveScenario();
         String absent = firstAnimateurOnDuty();
         long apresMidi = afternoonCreneauId();
-        String handWritten = given().contentType("application/json")
+        String handWritten = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {"type":"INDISPONIBILITE_FORCEE",
                          "animateursConcernes":[{"id":"%s"}],"creneau":{"id":%d}}""".formatted(absent, apresMidi))
@@ -426,7 +445,8 @@ class JourJResourceTest {
         markAbsent(absent, null, ENTRE_LES_DEUX, 200);
         assertThat(forcedUnavailabilities()).hasSize(2);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .delete("/api/jour-j/absences/" + absent + "?date=" + JOUR)
                 .then()
                 .statusCode(200)
@@ -451,7 +471,8 @@ class JourJResourceTest {
     void atOneInTheMorningTheJourneeIsStillTheOneThatOpenedYesterday() {
         solveScenarioWithNightShift();
 
-        JsonPath etat = given().when()
+        JsonPath etat = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/jour-j?maintenant=2026-07-09T01:00")
                 .then()
                 .statusCode(200)
@@ -475,7 +496,8 @@ class JourJResourceTest {
     void aShiftCrossingMidnightDoesNotSplitOverTwoJournees() {
         solveScenarioWithNightShift();
 
-        JsonPath etat = given().when()
+        JsonPath etat = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/jour-j?date=2026-07-09")
                 .then()
                 .statusCode(200)
@@ -491,7 +513,8 @@ class JourJResourceTest {
     void onceTheLastTimeslotHasEndedTheCalendarDateAnswers() {
         solveScenarioWithNightShift();
 
-        JsonPath etat = given().when()
+        JsonPath etat = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/jour-j?maintenant=2026-07-09T03:00")
                 .then()
                 .statusCode(200)
@@ -507,7 +530,8 @@ class JourJResourceTest {
     void beforeTheFirstTimeslotOpensTheCalendarDateAnswers() {
         solveScenarioWithNightShift();
 
-        JsonPath etat = given().when()
+        JsonPath etat = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/jour-j?maintenant=" + JOUR + "T06:00")
                 .then()
                 .statusCode(200)
@@ -524,7 +548,8 @@ class JourJResourceTest {
     void anAbsenceAtOneInTheMorningCoversTheRunningNightShift() {
         solveScenarioWithNightShift();
 
-        JsonPath marquee = given().contentType("application/json")
+        JsonPath marquee = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"animateurId\":\"A1\"}")
                 .when()
                 .post("/api/jour-j/absences?maintenant=2026-07-09T01:00")
@@ -541,7 +566,8 @@ class JourJResourceTest {
     void aShiftCrossingMidnightIsTheLastOneAheadOnItsOwnEvening() {
         solveScenarioWithNightShift();
 
-        JsonPath etat = given().when()
+        JsonPath etat = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/jour-j?maintenant=" + JOUR + "T23:00")
                 .then()
                 .statusCode(200)
@@ -562,7 +588,8 @@ class JourJResourceTest {
     void aDateWithNoTimeslotIsAnEmptyJournee() {
         solveScenario();
 
-        JsonPath etat = given().when()
+        JsonPath etat = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/jour-j?date=2026-12-25")
                 .then()
                 .statusCode(200)
@@ -575,7 +602,8 @@ class JourJResourceTest {
         assertThat(etat.getList("animateursDeService")).isEmpty();
         assertThat(etat.getList("postesAPourvoir")).isEmpty();
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"animateurId\":\"A1\"}")
                 .when()
                 .post("/api/jour-j/absences?date=2026-12-25")
@@ -623,13 +651,15 @@ class JourJResourceTest {
     /* ------------------------------- Fixtures ------------------------------ */
 
     private static void solveScenario() {
-        String sample = given().when()
+        String sample = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/sample?name=scenario.yml")
                 .then()
                 .statusCode(200)
                 .extract()
                 .asString();
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(sample)
                 .when()
                 .post("/api/solve?seconds=3")
@@ -639,7 +669,8 @@ class JourJResourceTest {
 
     /** Reads the journée of {@link #JOUR} at that wall-clock time on it. */
     private static JsonPath etat(String heure) {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/jour-j?date=" + JOUR + "&maintenant=" + JOUR + "T" + heure)
                 .then()
                 .statusCode(200)
@@ -651,7 +682,8 @@ class JourJResourceTest {
         String body = raison == null
                 ? "{\"animateurId\":\"" + animateurId + "\"}"
                 : "{\"animateurId\":\"" + animateurId + "\",\"raison\":\"" + raison + "\"}";
-        return given().contentType("application/json")
+        return given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(body)
                 .when()
                 .post("/api/jour-j/absences?date=" + JOUR + "&maintenant=" + JOUR + "T" + heure)
@@ -691,14 +723,16 @@ class JourJResourceTest {
      * new timeslot is how the scenario itself gets its referential in.</p>
      */
     private static void solveScenarioWithNightShift() {
-        String sample = given().when()
+        String sample = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/sample?name=scenario.yml")
                 .then()
                 .statusCode(200)
                 .extract()
                 .asString();
         String avecNuit = withNightShift(sample);
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(avecNuit)
                 .when()
                 .post("/api/solve?seconds=3")
@@ -754,7 +788,8 @@ class JourJResourceTest {
     }
 
     private static List<Map<String, Object>> forcedUnavailabilities() {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/contraintes-ad-hoc")
                 .then()
                 .statusCode(200)
@@ -764,7 +799,8 @@ class JourJResourceTest {
     }
 
     private static int jobCount() {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/jobs")
                 .then()
                 .statusCode(200)
@@ -775,7 +811,8 @@ class JourJResourceTest {
     }
 
     private static String lastSolvedAt() {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/persisted/resolution")
                 .then()
                 .statusCode(200)
@@ -785,7 +822,8 @@ class JourJResourceTest {
     }
 
     private static JsonPath persistedPlanning() {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/persisted")
                 .then()
                 .statusCode(200)

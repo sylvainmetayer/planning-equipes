@@ -77,7 +77,7 @@ public class EchangeMcpTools {
                             openWorldHint = false))
     List<DemandeView> listDemandesEchange(
             @ToolArg(description = "Statut pour filtrer, par exemple PROPOSEE", required = false) String statut,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         StatutDemandeEchange filtre =
                 statut == null ? null : McpArgs.enumeration(StatutDemandeEchange.class, statut, "statut");
         AnonymisationViolations anonymisation = AnonymisationViolations.of(referenceDataService);
@@ -112,7 +112,7 @@ public class EchangeMcpTools {
                                     + "(incompatible avec du et au)",
                             required = false)
                     Boolean touteEdition,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         StatisticsPeriod period = statisticsPeriod(du, au, touteEdition);
         FoireView foire = foireView();
         return new FoireConsultationView(
@@ -140,7 +140,7 @@ public class EchangeMcpTools {
             @ToolArg(description = "Foire ouverte ou fermée") boolean ouverte,
             @ToolArg(description = "Début de la foire (AAAA-MM-JJ)", required = false) String debut,
             @ToolArg(description = "Fin de la foire (AAAA-MM-JJ)", required = false) String fin,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         demandeEchangeService.openFoire(
                 new FenetreFoire(ouverte, McpArgs.date(debut, "debut"), McpArgs.date(fin, "fin")));
         return foireView();
@@ -160,7 +160,7 @@ public class EchangeMcpTools {
                             openWorldHint = false))
     ImpactEchangeView analyzeEchangeImpact(
             @ToolArg(description = "Id de la demande") String id,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         EchangeSimulation simulation = demandeEchangeService.impact(id);
         AnonymisationViolations anonymisation = AnonymisationViolations.of(referenceDataService);
         return new ImpactEchangeView(
@@ -192,7 +192,7 @@ public class EchangeMcpTools {
     DemandeView acceptDemandeEchange(
             @ToolArg(description = "Id de la demande") String id,
             @ToolArg(description = "Commentaire pour le demandeur", required = false) String commentaire,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return view(demandeEchangeService.accept(id, commentaire));
     }
 
@@ -209,7 +209,7 @@ public class EchangeMcpTools {
     DemandeView refuseDemandeEchange(
             @ToolArg(description = "Id de la demande") String id,
             @ToolArg(description = "Commentaire pour le demandeur", required = false) String commentaire,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return view(demandeEchangeService.refuse(id, commentaire));
     }
 

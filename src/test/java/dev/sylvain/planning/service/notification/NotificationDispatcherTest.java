@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
 import dev.sylvain.planning.domain.DemandeEchange;
+import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.ProductName;
 import dev.sylvain.planning.service.espace.ApplicationLinks;
 import dev.sylvain.planning.service.mail.MailMetrics;
@@ -25,6 +26,23 @@ import org.junit.jupiter.api.Test;
  */
 class NotificationDispatcherTest {
 
+    /** Every notification of these tests is born in the active edition, unless a test says otherwise. */
+    private static final EditionContext ACTIVE_EDITION = editionContext(true);
+
+    private static EditionContext editionContext(boolean active) {
+        return new EditionContext(null, null) {
+            @Override
+            public String editionIdCourant() {
+                return "E1";
+            }
+
+            @Override
+            public boolean isActive(String editionId) {
+                return active;
+            }
+        };
+    }
+
     private final List<Mail> envoyes = new ArrayList<>();
     private final NotificationWriter redacteur = new NotificationWriter(
             new AdminAddress(Optional.of("admin@example.org")),
@@ -40,7 +58,8 @@ class NotificationDispatcherTest {
                 mails -> envoyes.addAll(List.of(mails)),
                 redacteur,
                 MailTemplates.standalone(ProductName.neutral()),
-                new MailMetrics(registry));
+                new MailMetrics(registry),
+                ACTIVE_EDITION);
     }
 
     private static Notification oneSubmission() {
@@ -80,7 +99,8 @@ class NotificationDispatcherTest {
                 },
                 redacteur,
                 MailTemplates.standalone(ProductName.neutral()),
-                new MailMetrics(registry));
+                new MailMetrics(registry),
+                ACTIVE_EDITION);
 
         assertThatCode(() -> expediteur.surNotification(oneSubmission())).doesNotThrowAnyException();
     }
@@ -94,7 +114,8 @@ class NotificationDispatcherTest {
                 },
                 redacteur,
                 MailTemplates.standalone(ProductName.neutral()),
-                new MailMetrics(registry));
+                new MailMetrics(registry),
+                ACTIVE_EDITION);
 
         expediteur.surNotification(oneSubmission());
 
@@ -118,7 +139,8 @@ class NotificationDispatcherTest {
                 mails -> envoyes.addAll(List.of(mails)),
                 failing,
                 MailTemplates.standalone(ProductName.neutral()),
-                new MailMetrics(registry));
+                new MailMetrics(registry),
+                ACTIVE_EDITION);
 
         assertThatCode(() -> expediteur.surNotification(oneSubmission())).doesNotThrowAnyException();
         assertThat(envoyes).isEmpty();
@@ -136,7 +158,8 @@ class NotificationDispatcherTest {
                 },
                 redacteur,
                 MailTemplates.standalone(ProductName.neutral()),
-                new MailMetrics(registry));
+                new MailMetrics(registry),
+                ACTIVE_EDITION);
 
         assertThatCode(() -> {
                     expediteur.surNotification(
@@ -157,5 +180,27 @@ class NotificationDispatcherTest {
                         .counter()
                         .count())
                 .isEqualTo(1.0);
+    }
+
+    /**
+     * Only the active edition speaks (ADR 0072): a swap request decided in an
+     * edition being prepared reaches nobody, while the instance's own backup
+     * alert still goes.
+     */
+    @Test
+    void anInactiveEditionNotifiesNobodyButTheInstanceStillDoes() {
+        expediteur = new NotificationDispatcher(
+                mails -> envoyes.addAll(List.of(mails)),
+                redacteur,
+                MailTemplates.standalone(ProductName.neutral()),
+                new MailMetrics(registry),
+                editionContext(false));
+
+        expediteur.surNotification(oneSubmission());
+        assertThat(envoyes).isEmpty();
+
+        expediteur.surNotification(new Notification.BackupFailed(
+                java.time.ZonedDateTime.parse("2026-07-12T04:00:00+02:00[Europe/Paris]"), "disque plein", null, 1));
+        assertThat(envoyes).hasSize(1);
     }
 }

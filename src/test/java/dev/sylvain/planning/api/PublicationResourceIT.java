@@ -49,6 +49,7 @@ class PublicationResourceIT {
     void ouvrirSessionAdmin() {
         if (cookieSession == null) {
             cookieSession = RestAssured.given()
+                    .header("X-Edition-Id", "E1")
                     .contentType("application/x-www-form-urlencoded")
                     .formParam("j_username", "admin")
                     .formParam("j_password", MOT_DE_PASSE_ADMIN)
@@ -82,7 +83,8 @@ class PublicationResourceIT {
         assertThat(avant.getInt("nombreConcernes")).isEqualTo(2);
         assertThat(avant.getList("destinataires.nomAffiche")).contains("Alice Compte", "Bruno Compte");
 
-        JsonPath rapport = given().contentType(ContentType.JSON)
+        JsonPath rapport = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/planning/publication")
                 .then()
@@ -97,7 +99,8 @@ class PublicationResourceIT {
         assertThat(apres.getString("dernierePublicationLe")).isNotBlank();
 
         // Nothing new to announce: that is the point, not an error to work around.
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/planning/publication")
                 .then()
@@ -109,13 +112,15 @@ class PublicationResourceIT {
     void laTraceNommeToutLeMondeYComprisLesInjoignables() {
         semer("ITPB", 9502, "Trace");
 
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/planning/publication")
                 .then()
                 .statusCode(200);
 
-        JsonPath trace = given().when()
+        JsonPath trace = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/publication/destinataires")
                 .then()
                 .statusCode(200)
@@ -137,7 +142,8 @@ class PublicationResourceIT {
     private void semer(String prefixe, int creneauId, String nom) {
         // Raw rows land in the edition the requests below resolve to, whose id
         // is drawn by the application (ADR 0050) — read, never assumed.
-        String edition = given().when()
+        String edition = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/editions/courant")
                 .then()
                 .statusCode(200)
@@ -168,7 +174,8 @@ class PublicationResourceIT {
                 "insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id)"
                         + " values ('" + edition + "', '" + prefixe + "-P2', '" + prefixe + "-S2', " + creneauId
                         + ", '" + prefixe + "-B');");
-        given().contentType(ContentType.TEXT)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.TEXT)
                 .body(script)
                 .when()
                 .post("/api/database/import")
@@ -177,7 +184,8 @@ class PublicationResourceIT {
     }
 
     private JsonPath apercu() {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/publication")
                 .then()
                 .statusCode(200)

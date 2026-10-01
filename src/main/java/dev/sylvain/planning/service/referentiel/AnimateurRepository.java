@@ -229,6 +229,24 @@ public class AnimateurRepository {
     }
 
     /**
+     * How many animateurs of the edition hold a link that works outside — an
+     * espace token or a calendar subscription token: what deactivating the
+     * edition closes (ADR 0072).
+     */
+    public int countWithOutsideLinks() {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = scope.prepareScoped(connection, """
+                        SELECT count(*) FROM animateur
+                        WHERE edition_id = ? AND (access_token IS NOT NULL OR abonnement_token IS NOT NULL)""");
+                ResultSet rs = ps.executeQuery()) {
+            rs.next();
+            return rs.getInt(1);
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to count the animateurs' links", e);
+        }
+    }
+
+    /**
      * Rotates the espace-animateur access token — the one explicit way it ever
      * changes (a lost or leaked PDF link stops working once regenerated).
      *

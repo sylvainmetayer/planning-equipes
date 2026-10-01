@@ -1,9 +1,7 @@
 package dev.sylvain.planning.service.notification;
 
-import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.service.EditionContext;
-import dev.sylvain.planning.service.edition.EditionRepository;
 import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.referentiel.ParametresService;
 import io.quarkus.scheduler.Scheduled;
@@ -34,11 +32,9 @@ import org.jboss.logging.Logger;
  * every send is claimed in {@link JournalNotificationsRepository} first —
  * running twice, or twelve times, writes to nobody twice.</p>
  *
- * <p><b>The edition loop is the delicate part.</b> Everything is partitioned by
- * edition and there is no {@code X-Edition-Id} on a scheduler thread, so each
- * edition is entered explicitly through {@link EditionContext#executeIn} and
- * one edition's failure must not stop the next one — hence the
- * {@code try/catch} inside the loop rather than around it.</p>
+ * <p><b>Only the active edition is served</b> (ADR 0072). Everything is
+ * partitioned by edition and there is no {@code X-Edition-Id} on a scheduler
+ * thread, so it is entered explicitly through {@link EditionContext#executeIn}.</p>
  */
 @ApplicationScoped
 public class NotificationsPlanifieesService {
@@ -47,8 +43,6 @@ public class NotificationsPlanifieesService {
     static final String JOB_IDENTITY = "notifications-planifiees";
 
     private static final Logger LOG = Logger.getLogger(NotificationsPlanifieesService.class);
-
-    private final EditionRepository editionRepository;
 
     private final EditionContext editionContext;
 
@@ -71,7 +65,6 @@ public class NotificationsPlanifieesService {
 
     @Inject
     public NotificationsPlanifieesService(
-            EditionRepository editionRepository,
             EditionContext editionContext,
             ParametresService parametresService,
             RappelVeilleJob rappelVeille,
@@ -81,7 +74,6 @@ public class NotificationsPlanifieesService {
             JournalActionService journal,
             @ConfigProperty(name = "planning.notifications.zone") String zone,
             @ConfigProperty(name = "planning.notifications.cron") String cron) {
-        this.editionRepository = editionRepository;
         this.editionContext = editionContext;
         this.parametresService = parametresService;
         this.rappelVeille = rappelVeille;
@@ -103,29 +95,35 @@ public class NotificationsPlanifieesService {
     }
 
     /**
-     * Walks every edition and does, for each armed one, whatever its own
-     * settings and the current time allow. Exposed for the tests, which drive
-     * it directly rather than waiting for a cron.
+     * Purges the history, then does, for the <b>active</b> edition only,
+     * whatever its own settings and the current time allow. Exposed for the
+     * tests, which drive it directly rather than waiting for a cron.
      *
-     * @return how many messages actually left, across every edition
+     * <p>Only the active edition sends (ADR 0072), and that is checked here and
+     * nowhere else, so no job can be written that forgets it. It replaces the
+     * per-edition arming switch, which let two armed editions with timeslots
+     * on the same date each remind the same people the same night, with two
+     * different plannings — neither could see the other, since a send is
+     * claimed per edition. With no active edition (between two events),
+     * nothing leaves at all.</p>
+     *
+     * @return how many messages actually left
      */
     public int run() {
         ZonedDateTime maintenant = ZonedDateTime.now(zoneId());
         purgeHistory();
-        int envois = 0;
-        for (Edition edition : editionRepository.listEditions()) {
-            try {
-                envois += editionContext.executeIn(edition.getId(), () -> forOneEdition(maintenant));
-            } catch (RuntimeException e) {
-                // Named by id, never by display name: an edition is not
-                // personal data, but the exception below it might quote a row.
-                LOG.errorf(
-                        e,
-                        "Scheduled notifications failed on edition %s; the other editions carry on",
-                        edition.getId());
-            }
+        String active = editionContext.activeEditionId().orElse(null);
+        if (active == null) {
+            return 0;
         }
-        return envois;
+        try {
+            return editionContext.executeIn(active, () -> forOneEdition(maintenant));
+        } catch (RuntimeException e) {
+            // Named by id, never by display name: an edition is not
+            // personal data, but the exception below it might quote a row.
+            LOG.errorf(e, "Scheduled notifications failed on edition %s", active);
+            return 0;
+        }
     }
 
     /**
@@ -150,20 +148,9 @@ public class NotificationsPlanifieesService {
         }
     }
 
-    /**
-     * What one edition is allowed to send right now.
-     *
-     * <p>The {@code actives} guard is checked here and nowhere else, so no job
-     * can be written that forgets it: an edition nobody armed is left alone
-     * before any of them is even called. Without it, the first night after a
-     * deployment would remind last year's volunteers that they are on duty
-     * tomorrow.</p>
-     */
+    /** What the active edition is allowed to send right now. */
     private int forOneEdition(ZonedDateTime maintenant) {
         ParametresNotifications parametres = parametresService.getNotifications();
-        if (!parametres.actives()) {
-            return 0;
-        }
         int envois = rappelVeille.run(parametres, maintenant)
                 + relanceConfirmation.run(parametres, maintenant.toInstant())
                 + alerteEchange.run(parametres, maintenant.toInstant());

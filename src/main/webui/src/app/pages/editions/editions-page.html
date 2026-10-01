@@ -5,7 +5,25 @@
       Chaque édition de l'événement a ses propres référentiels, paramètres et planning ; celle affichée en haut de l'écran est celle que <em>cet onglet</em> consulte.
     </mat-card-subtitle>
   </mat-card-header>
+  <mat-card-content>
+    <p class="hint" i18n="@@editions.intro.active">Une seule édition est active : elle seule publie, envoie des courriels et ouvre l'espace animateur, les calendriers et l'affichage mural.</p>
+  </mat-card-content>
 </mat-card>
+
+@if (store.situations().length > 0) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-header>
+      <h2 mat-card-title i18n="@@editions.situations.title">Mise en service des éditions</h2>
+    </mat-card-header>
+    <mat-card-content>
+      <ul class="edition-situations">
+        @for (situation of store.situations(); track situation.edition.id) {
+          <li>{{ situationLabel(situation) }}</li>
+        }
+      </ul>
+    </mat-card-content>
+  </mat-card>
+}
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
@@ -43,7 +61,7 @@
           </mat-checkbox>
           <p class="hint">
             @if (keepAnimateurs()) {
-              <ng-container i18n="@@editions.hint.avecAnimateurs">Les personnes suivent, avec compétences, indisponibilités, souhaits et ajustements. C'est ce qu'il faut pour une variante en cours d'événement.</ng-container>
+              <ng-container i18n="@@editions.hint.avecAnimateurs">Les personnes suivent, avec compétences, indisponibilités, souhaits et ajustements. La copie naît inactive : elle n'écrit à personne avant d'être activée.</ng-container>
             } @else {
               <ng-container i18n="@@editions.hint.sansAnimateurs">Seule la structure est copiée : stands, typologies, horaires, créneaux, paramètres. C'est le modèle d'année, à préparer sans recopier un fichier de personnes.</ng-container>
             }
@@ -79,8 +97,8 @@
           @if (edition.id === courantId()) {
             <span class="edition-badge" i18n="@@editions.badge.courant">Consultée ici</span>
           }
-          @if (edition.defaut) {
-            <span class="edition-badge" i18n="@@editions.badge.defaut">Par défaut</span>
+          @if (edition.active) {
+            <span class="edition-badge edition-badge-active" i18n="@@editions.badge.active">Active</span>
           }
         </td>
       </ng-container>
@@ -92,14 +110,22 @@
                   [disabled]="enCours() || edition.id === courantId()" (click)="basculer(edition)">
             <mat-icon>login</mat-icon>
           </button>
-          <button matIconButton i18n-matTooltip="@@editions.action.defaut" matTooltip="Faire de cette édition l'édition par défaut"
-                  i18n-aria-label="@@editions.action.defaut" aria-label="Faire de cette édition l'édition par défaut"
-                  [disabled]="enCours() || edition.defaut" (click)="definirParDefaut(edition)">
-            <mat-icon>flag</mat-icon>
-          </button>
+          @if (edition.active) {
+            <button matIconButton i18n-matTooltip="@@editions.action.desactiver" matTooltip="Désactiver : plus rien ne part vers l'extérieur"
+                    i18n-aria-label="@@editions.action.desactiver" aria-label="Désactiver : plus rien ne part vers l'extérieur"
+                    [disabled]="enCours()" (click)="desactiver(edition)">
+              <mat-icon>flag_circle</mat-icon>
+            </button>
+          } @else {
+            <button matIconButton i18n-matTooltip="@@editions.action.activer" matTooltip="Activer : elle seule publiera et écrira aux animateurs"
+                    i18n-aria-label="@@editions.action.activer" aria-label="Activer : elle seule publiera et écrira aux animateurs"
+                    [disabled]="enCours()" (click)="activer(edition)">
+              <mat-icon>flag</mat-icon>
+            </button>
+          }
           <button matIconButton i18n-matTooltip="@@common.delete" matTooltip="Supprimer"
                   i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action"
-                  [disabled]="enCours() || edition.defaut || edition.id === courantId() || store.editions().length <= 1"
+                  [disabled]="enCours() || edition.active || edition.id === courantId() || store.editions().length <= 1"
                   (click)="supprimer(edition)">
             <mat-icon>delete</mat-icon>
           </button>

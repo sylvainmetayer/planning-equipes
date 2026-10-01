@@ -107,7 +107,8 @@ class SolverJobStreamResourceTest {
         assertThat(first.next("state").data()).contains("\"active\":null");
         assertThat(second.next("state").data()).contains("\"active\":null");
 
-        String jobId = given().when()
+        String jobId = given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/solve/async/reference-data?seconds=3")
                 .then()
                 .statusCode(202)
@@ -140,7 +141,8 @@ class SolverJobStreamResourceTest {
         StreamClient client = connect();
         assertThat(client.next("state").data()).contains("\"active\":null");
 
-        String jobId = given().when()
+        String jobId = given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/solve/async/reference-data?seconds=3")
                 .then()
                 .statusCode(202)
@@ -171,7 +173,8 @@ class SolverJobStreamResourceTest {
         StreamClient client = connect();
         assertThat(client.next("state").data()).contains("\"active\":null");
 
-        String jobId = given().when()
+        String jobId = given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/solve/async/reference-data?seconds=5")
                 .then()
                 .statusCode(202)
@@ -231,15 +234,21 @@ class SolverJobStreamResourceTest {
     }
 
     private void planImported() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
     }
 
     private void clearQueue() {
-        List<String> ids = given().when()
+        List<String> ids = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/jobs/file")
                 .then()
                 .statusCode(200)
@@ -247,7 +256,7 @@ class SolverJobStreamResourceTest {
                 .jsonPath()
                 .getList("id");
         for (String id : ids) {
-            given().when().delete("/api/jobs/" + id);
+            given().header("X-Edition-Id", "E1").when().delete("/api/jobs/" + id);
         }
     }
 
@@ -255,8 +264,13 @@ class SolverJobStreamResourceTest {
         await().alias("Solver still busy")
                 .atMost(POLL_TIMEOUT)
                 .pollInterval(POLL_INTERVAL)
-                .until(() ->
-                        given().when().get("/api/jobs/active").then().extract().statusCode() == 204);
+                .until(() -> given().header("X-Edition-Id", "E1")
+                                .when()
+                                .get("/api/jobs/active")
+                                .then()
+                                .extract()
+                                .statusCode()
+                        == 204);
     }
 
     /** One parsed server-sent event: its name, its data, and its comment lines. */
@@ -281,6 +295,7 @@ class SolverJobStreamResourceTest {
                 response = http.send(
                         HttpRequest.newBuilder(uri)
                                 .header("Accept", "text/event-stream")
+                                .header("X-Edition-Id", "E1")
                                 .GET()
                                 .build(),
                         HttpResponse.BodyHandlers.ofLines());

@@ -121,9 +121,9 @@ test("l'import d'un fichier à section edition annonce la cible, importe ailleur
   ).toBeVisible();
 
   // The ambient edition was never touched by the import.
-  const standsCourants = (await (await page.request.get('/api/stands')).json()) as {
-    code: string | null;
-  }[];
+  const standsCourants = (await (
+    await page.request.get('/api/stands', { headers: { 'X-Edition-Id': editionCourante.id } })
+  ).json()) as { code: string | null }[];
   expect(standsCourants.map((stand) => stand.code)).not.toContain('E2EIMP-S1');
   const editionCible = await editionImportee();
   expect(editionCible, 'the import must have created the edition').toBeTruthy();

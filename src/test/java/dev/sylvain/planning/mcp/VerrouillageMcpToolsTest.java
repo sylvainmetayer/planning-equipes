@@ -91,7 +91,7 @@ class VerrouillageMcpToolsTest {
         referentiel.verrouillages.add(verrouillage("V1", TypeVerrouillage.JOUR));
         VerrouillageMcpTools tools = new VerrouillageMcpTools(referentiel);
 
-        assertThatThrownBy(() -> tools.unlock("V-inexistant", null))
+        assertThatThrownBy(() -> tools.unlock("V-inexistant", "E1"))
                 .isInstanceOf(BusinessError.NotFound.class)
                 .hasMessageContaining("V-inexistant");
         assertThat(referentiel.supprimes).isEmpty();
@@ -103,7 +103,7 @@ class VerrouillageMcpToolsTest {
         referentiel.verrouillages.add(verrouillage("V1", TypeVerrouillage.JOUR));
         VerrouillageMcpTools tools = new VerrouillageMcpTools(referentiel);
 
-        SuppressionResult resultat = tools.unlock("V1", null);
+        SuppressionResult resultat = tools.unlock("V1", "E1");
 
         assertThat(resultat.supprime()).isTrue();
         assertThat(referentiel.supprimes).containsExactly("V1");

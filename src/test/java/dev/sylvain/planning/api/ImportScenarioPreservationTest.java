@@ -96,7 +96,8 @@ class ImportScenarioPreservationTest {
 
     @Test
     void lImpactChiffreLeReferentielEtLePlanningAvantImport() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/reference-data/impact-import")
                 .then()
                 .statusCode(200)
@@ -142,7 +143,8 @@ class ImportScenarioPreservationTest {
 
     private static void importScenario() {
         // Bytes, not String: RestAssured has no encoder for x-yaml text.
-        given().contentType("application/x-yaml")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/x-yaml")
                 .body(SCENARIO.getBytes(java.nio.charset.StandardCharsets.UTF_8))
                 .when()
                 .post("/api/reference-data/import-scenario-fichier")

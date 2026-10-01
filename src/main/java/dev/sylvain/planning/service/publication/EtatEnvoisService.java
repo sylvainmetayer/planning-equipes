@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.publication;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.notification.JournalNotificationsRepository;
 import dev.sylvain.planning.service.publication.EnvoiPlanningRepository.CauseEchec;
 import dev.sylvain.planning.service.publication.EnvoiPlanningRepository.Envoi;
@@ -51,6 +52,8 @@ public class EtatEnvoisService {
 
     private final ConfirmationPlanningService confirmationService;
 
+    private final EditionContext editionContext;
+
     @Inject
     public EtatEnvoisService(
             ReferenceDataService referenceDataService,
@@ -59,7 +62,9 @@ public class EtatEnvoisService {
             NotifiedPlanRepository notifiedPlans,
             EnvoiPlanningRepository envois,
             JournalNotificationsRepository notifications,
-            ConfirmationPlanningService confirmationService) {
+            ConfirmationPlanningService confirmationService,
+            EditionContext editionContext) {
+        this.editionContext = editionContext;
         this.referenceDataService = referenceDataService;
         this.publicationService = publicationService;
         this.snapshotService = snapshotService;
@@ -134,9 +139,9 @@ public class EtatEnvoisService {
      * The whole table.
      *
      * @param derniereVersion      the last publication, {@code null} before the first one
-     * @param relancesAutomatiques the night's sends are armed on this edition —
-     *                             off by default, which the screen says with the
-     *                             way to turn them on
+     * @param relancesAutomatiques the night's sends run on this edition — only
+     *                             when it is the active one (ADR 0072), which
+     *                             the screen says with the way to activate it
      * @param nombreConcernes      how many people the next publication would write to
      */
     @Schema(requiredProperties = {"relancesAutomatiques", "nombreConcernes", "personnes"})
@@ -199,7 +204,7 @@ public class EtatEnvoisService {
         lignes.sort(Comparator.comparing(LigneEnvoi::nomAffiche, String.CASE_INSENSITIVE_ORDER));
         return new EtatEnvois(
                 versions.isEmpty() ? null : versions.getLast(),
-                referenceDataService.getParametresNotifications().actives(),
+                editionContext.isActive(editionContext.editionIdCourant()),
                 apercu.nombreConcernes(),
                 List.copyOf(lignes));
     }

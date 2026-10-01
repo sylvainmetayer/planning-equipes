@@ -89,7 +89,7 @@ class WeightHistoryResourceTest {
         await().atMost(Duration.ofSeconds(60))
                 .until(() -> solverJobs.findActive().isEmpty());
         for (String edition : created.reversed()) {
-            given().when().delete("/api/editions/" + edition);
+            given().header("X-Edition-Id", "E1").when().delete("/api/editions/" + edition);
         }
         created.clear();
     }
@@ -196,7 +196,8 @@ class WeightHistoryResourceTest {
         String first = createEdition("Historique first");
         setWeight(first, "4");
         setWeight(first, "6");
-        String copy = given().contentType("application/json")
+        String copy = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"nom\":\"Copie du dosage\"}")
                 .when()
                 .post("/api/editions/" + first + "/dupliquer")
@@ -334,7 +335,8 @@ class WeightHistoryResourceTest {
     }
 
     private String createEdition(String nom) {
-        String id = given().contentType("application/json")
+        String id = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"nom\":\"" + nom + "\"}")
                 .when()
                 .post("/api/editions")

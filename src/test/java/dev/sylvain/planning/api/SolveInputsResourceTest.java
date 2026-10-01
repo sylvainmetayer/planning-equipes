@@ -19,7 +19,8 @@ class SolveInputsResourceTest {
     private static final String RULE = "equilibrerCharge";
 
     private static int count(String field) {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/solve/entrees")
                 .then()
                 .statusCode(200)
@@ -33,7 +34,8 @@ class SolveInputsResourceTest {
     @Test
     void aLockLaidDownIsCountedAndItsRemovalToo() {
         int before = count("locks");
-        String id = given().contentType(ContentType.JSON)
+        String id = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"type\":\"JOUR\",\"jour\":\"2026-07-14\",\"raison\":\"Récapitulatif\"}")
                 .when()
                 .post("/api/verrouillages")
@@ -44,7 +46,11 @@ class SolveInputsResourceTest {
         try {
             assertEquals(before + 1, count("locks"));
         } finally {
-            given().when().delete("/api/verrouillages/" + id).then().statusCode(204);
+            given().header("X-Edition-Id", "E1")
+                    .when()
+                    .delete("/api/verrouillages/" + id)
+                    .then()
+                    .statusCode(204);
         }
         assertEquals(before, count("locks"));
     }
@@ -52,7 +58,8 @@ class SolveInputsResourceTest {
     @Test
     void aRuleSwitchedOffIsCounted() {
         int before = count("disabledRules");
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"actif\":false}")
                 .when()
                 .put("/api/constraints/" + RULE)
@@ -61,7 +68,8 @@ class SolveInputsResourceTest {
         try {
             assertEquals(before + 1, count("disabledRules"));
         } finally {
-            given().contentType(ContentType.JSON)
+            given().header("X-Edition-Id", "E1")
+                    .contentType(ContentType.JSON)
                     .body("{\"actif\":true}")
                     .when()
                     .put("/api/constraints/" + RULE)

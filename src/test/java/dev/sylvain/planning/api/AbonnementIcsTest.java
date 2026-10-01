@@ -15,6 +15,7 @@ import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import dev.sylvain.planning.testing.ActiveEdition;
 import io.quarkus.mailer.MockMailbox;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
@@ -120,7 +121,8 @@ class AbonnementIcsTest {
         String url = "/api/abonnements/" + abonnementToken() + "/planning.ics";
 
         for (int appel = 0; appel < 3; appel++) {
-            String ics = given().when()
+            String ics = given().header("X-Edition-Id", "E1")
+                    .when()
                     .get(url)
                     .then()
                     .statusCode(200)
@@ -140,14 +142,17 @@ class AbonnementIcsTest {
      */
     @Test
     void anUnknownSubscriptionTokenIs404() {
-        String corps = given().when()
+        String corps = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/abonnements/jeton-invente/planning.ics")
                 .then()
                 .statusCode(404)
                 .contentType(containsString("text/plain"))
                 .extract()
                 .asString();
-        assertThat(corps).isEqualTo("Abonnement inconnu ou révoqué").doesNotContain("jeton-invente");
+        assertThat(corps)
+                .isEqualTo("Abonnement inconnu, révoqué, ou édition terminée")
+                .doesNotContain("jeton-invente");
     }
 
     /**
@@ -160,7 +165,8 @@ class AbonnementIcsTest {
         String espaceAvant = accessToken();
         String session = EspaceSessions.open(mailbox, espaceAvant, EMAIL);
 
-        String nouveau = given().cookie("planning-espace", session)
+        String nouveau = given().header("X-Edition-Id", "E1")
+                .cookie("planning-espace", session)
                 .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + espaceAvant + "/abonnement")
@@ -170,11 +176,13 @@ class AbonnementIcsTest {
                 .path("abonnementToken");
 
         assertThat(nouveau).isNotBlank().isNotEqualTo(ancien);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/abonnements/" + ancien + "/planning.ics")
                 .then()
                 .statusCode(404);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/abonnements/" + nouveau + "/planning.ics")
                 .then()
                 .statusCode(200);
@@ -191,30 +199,40 @@ class AbonnementIcsTest {
     void theSubscriptionTokenOpensNothingButTheCalendar() {
         String token = abonnementToken();
 
-        given().when().get("/api/espace-animateur/" + token).then().statusCode(404);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/espace-animateur/" + token)
+                .then()
+                .statusCode(404);
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + token + "/demandes")
                 .then()
                 .statusCode(404);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + token + "/demandes-recues")
                 .then()
                 .statusCode(404);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + token + "/disponibilites")
                 .then()
                 .statusCode(404);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + token + "/planning.pdf")
                 .then()
                 .statusCode(404);
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + token + "/code")
                 .then()
                 .statusCode(404);
         // And the calendar route itself is read-only: there is no write to find.
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/abonnements/" + token + "/planning.ics")
                 .then()
@@ -224,7 +242,8 @@ class AbonnementIcsTest {
     /** The espace token is not a subscription: the two columns never overlap. */
     @Test
     void theEspaceTokenDoesNotOpenTheCalendarFeed() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/abonnements/" + accessToken() + "/planning.ics")
                 .then()
                 .statusCode(404);
@@ -238,12 +257,22 @@ class AbonnementIcsTest {
     @Test
     void theFeedFollowsRepublicationWithoutResubscribing() {
         String url = "/api/abonnements/" + abonnementToken() + "/planning.ics";
-        given().when().get(url).then().statusCode(200).body(containsString("Stand abonnement un"));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get(url)
+                .then()
+                .statusCode(200)
+                .body(containsString("Stand abonnement un"));
 
         persistence.persist(planning("Stand abonnement deux"));
         PlansPublies.publier(publication);
 
-        given().when().get(url).then().statusCode(200).body(containsString("Stand abonnement deux"));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get(url)
+                .then()
+                .statusCode(200)
+                .body(containsString("Stand abonnement deux"));
     }
 
     /**
@@ -264,20 +293,38 @@ class AbonnementIcsTest {
             return referenceData.abonnementToken(animateur);
         });
 
-        String ics = given().when()
-                .get("/api/abonnements/" + token + "/planning.ics")
-                .then()
-                .statusCode(200)
-                .extract()
-                .asString();
-        assertThat(ics)
-                .startsWith("BEGIN:VCALENDAR")
-                .endsWith("END:VCALENDAR\r\n")
-                .doesNotContain("BEGIN:VEVENT");
+        // An edition that is not the active one serves no calendar, and says so
+        // exactly as for an invented token (ADR 0072).
+        assertThat(given().header("X-Edition-Id", "E1")
+                        .when()
+                        .get("/api/abonnements/" + token + "/planning.ics")
+                        .then()
+                        .statusCode(404)
+                        .extract()
+                        .asString())
+                .isEqualTo("Abonnement inconnu, révoqué, ou édition terminée");
+
+        ActiveEdition.during(vierge, () -> {
+            String ics = given().header("X-Edition-Id", "E1")
+                    .when()
+                    .get("/api/abonnements/" + token + "/planning.ics")
+                    .then()
+                    .statusCode(200)
+                    .extract()
+                    .asString();
+            assertThat(ics)
+                    .startsWith("BEGIN:VCALENDAR")
+                    .endsWith("END:VCALENDAR\r\n")
+                    .doesNotContain("BEGIN:VEVENT");
+        });
 
         dropEditionIfPresent();
         // A deleted edition takes its tokens with it: the URL simply stops existing.
-        given().when().get("/api/abonnements/" + token + "/planning.ics").then().statusCode(404);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/abonnements/" + token + "/planning.ics")
+                .then()
+                .statusCode(404);
     }
 
     /** Leftover of a previous run, or of a failure halfway through this one. */
@@ -291,10 +338,18 @@ class AbonnementIcsTest {
     @Test
     void deletingTheAnimateurKillsTheSubscription() {
         String token = abonnementToken();
-        given().when().get("/api/abonnements/" + token + "/planning.ics").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/abonnements/" + token + "/planning.ics")
+                .then()
+                .statusCode(200);
 
         referenceData.deleteAnimateur(ANIMATEUR);
 
-        given().when().get("/api/abonnements/" + token + "/planning.ics").then().statusCode(404);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/abonnements/" + token + "/planning.ics")
+                .then()
+                .statusCode(404);
     }
 }

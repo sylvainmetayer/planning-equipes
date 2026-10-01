@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.edition.EditionActivationService;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.edition.EtatEditionService;
 import dev.sylvain.planning.service.edition.EtatEditionView;
@@ -28,9 +29,11 @@ import java.util.stream.Stream;
  * I have, and how many créneaux in each?": every tool worked in the default
  * edition without naming it, so a reading looked like the whole truth and a
  * write could land in the wrong edition unnoticed. {@code lister_editions}
- * answers the question, {@code edition_courante} names the edition the other
- * tools use when a call designates none, and the {@code edition} argument they
- * all carry designates another one for the duration of a single call.</p>
+ * answers the question and says which edition is <b>active</b> — the only one
+ * that publishes, mails and opens the espace (ADR 0072) — and the
+ * {@code edition} argument every other tool carries designates the edition a
+ * single call works in. That argument is required: a call without it is
+ * refused rather than sent to a default edition.</p>
  *
  * <p>The volumetry {@code lister_editions} returns costs one query per edition
  * per counted référentiel. That is deliberate: an edition list without it
@@ -42,8 +45,8 @@ import java.util.stream.Stream;
  * and {@code lever_gel}, which freeze and lift a family of its referential —
  * hence the {@code @EditionCiblee} on the class: their {@code edition}
  * argument designates the edition to work in, the way every other tool's
- * does. Dropping the annotation would silently point all three at the
- * default edition. The other tools name their edition as a plain argument,
+ * does. Dropping the annotation would let all three run without an edition.
+ * The other tools name their edition as a plain argument,
  * resolved by hand — the interceptor only reads {@code @EditionArg}, so it
  * leaves them alone.</p>
  */
@@ -73,14 +76,18 @@ public class EditionMcpTools {
 
     private final GelReferentielService gelService;
 
+    private final EditionActivationService activationService;
+
     @Inject
     EditionMcpTools(
+            EditionActivationService activationService,
             EditionService editionService,
             EditionContext editionContext,
             ReferenceDataService referenceDataService,
             McpEditions editions,
             EtatEditionService etatEditionService,
             GelReferentielService gelService) {
+        this.activationService = activationService;
         this.editionService = editionService;
         this.editionContext = editionContext;
         this.referenceDataService = referenceDataService;
@@ -91,12 +98,12 @@ public class EditionMcpTools {
 
     @Tool(
             name = "lister_editions",
-            description = "Liste les éditions (« Année 2025 », « Année 2026 », un plan canicule…) : "
-                    + "l'édition est la partition dans laquelle vivent stands, animateurs, créneaux et paramètres, "
-                    + "et deux éditions ne voient jamais les données l'une de l'autre. Chaque ligne indique laquelle "
-                    + "est courante (celle utilisée par les autres outils quand aucune n'est précisée), laquelle est "
-                    + "l'édition par défaut, et de quoi la reconnaître : nombre de créneaux, période couverte, "
-                    + "nombre de stands et d'animateurs.",
+            description = "Liste les éditions (« Année 2025 », « Année 2026 »…) : l'édition est la partition "
+                    + "dans laquelle vivent stands, animateurs, créneaux et paramètres, et deux éditions ne voient "
+                    + "jamais les données l'une de l'autre. Chaque ligne indique si elle est l'édition ACTIVE — la "
+                    + "seule qui publie, envoie des courriels et ouvre l'espace animateur (au plus une, parfois "
+                    + "aucune) — et de quoi la reconnaître : nombre de créneaux, période couverte, nombre de stands "
+                    + "et d'animateurs. Les autres outils exigent l'argument « edition » : passer l'id lu ici.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -104,17 +111,15 @@ public class EditionMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     List<EditionView> listEditions() {
-        String courante = editionContext.editionIdCourant();
-        return editionService.listEditions().stream()
-                .map(edition -> view(edition, courante))
-                .toList();
+        return editionService.listEditions().stream().map(this::view).toList();
     }
 
     @Tool(
             name = "edition_courante",
-            description = "Nomme l'édition dans laquelle travaillent tous les autres outils quand leur argument "
-                    + "« edition » n'est pas précisé. À appeler avant toute écriture si l'utilisateur a plusieurs "
-                    + "éditions : rien d'autre n'indique laquelle est en train d'être modifiée.",
+            description = "Nomme l'édition active : la seule qui publie, envoie des courriels et ouvre l'espace "
+                    + "animateur, le flux ICS et l'affichage mural. Répond une erreur quand aucune édition n'est "
+                    + "active (entre deux événements). Les autres outils exigent leur argument « edition » : celui-ci "
+                    + "ne le remplace pas.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -122,8 +127,11 @@ public class EditionMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     EditionView currentEdition() {
-        String courante = editionContext.editionIdCourant();
-        return view(editionService.editionCourante(), courante);
+        String active = editionContext
+                .activeEditionId()
+                .orElseThrow(() -> new BusinessError.Conflict(
+                        "Aucune édition n'est active : activer_edition en désigne une (voir lister_editions)."));
+        return view(find(active));
     }
 
     @Tool(
@@ -149,8 +157,7 @@ public class EditionMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    EtatEditionView editionState(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+    EtatEditionView editionState(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return etatEditionService.etat();
     }
 
@@ -173,7 +180,7 @@ public class EditionMcpTools {
                             openWorldHint = false))
     GelReferentielService.EtatGel freezeReferential(
             @ToolArg(description = FAMILLE_DESCRIPTION) String famille,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         ReferentialFamily cible = requireFamily(famille);
         gelService.freeze(cible);
         return gelService.etat(cible);
@@ -193,7 +200,7 @@ public class EditionMcpTools {
                             openWorldHint = false))
     GelReferentielService.EtatGel liftFreeze(
             @ToolArg(description = FAMILLE_DESCRIPTION) String famille,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         ReferentialFamily cible = requireFamily(famille);
         gelService.lift(cible);
         return gelService.etat(cible);
@@ -215,15 +222,17 @@ public class EditionMcpTools {
                             description = "Nom affiché (ex. « Année 2027 ») ; un nom de la forme E12 est refusé, c'est "
                                     + "celle des identifiants")
                     String nom) {
-        return view(editionService.create(new Edition(null, nom, false, null)), editionContext.editionIdCourant());
+        return view(editionService.create(new Edition(null, nom, false, null)));
     }
 
     @Tool(
             name = "dupliquer_edition",
             description = "Duplique une édition dans une nouvelle : stands, typologies, emplacements, créneaux, "
-                    + "horaires et paramètres sont recopiés, jamais le planning résolu. C'est la façon de préparer "
-                    + "une variante (« plan canicule ») sans toucher à l'originale : depuis l'issue #172, une "
-                    + "variante EST une édition dupliquée. avec_animateurs=false laisse les personnes derrière — "
+                    + "horaires et paramètres sont recopiés, jamais le planning résolu. La copie naît INACTIVE : "
+                    + "elle ne publie rien et n'écrit à personne tant qu'activer_edition ne l'a pas désignée. Un "
+                    + "plan de repli (canicule, orage) ne se fait pas par duplication mais par une consigne datée "
+                    + "dans l'édition vivante (simuler_consigne, appliquer_consigne). avec_animateurs=false laisse "
+                    + "les personnes derrière — "
                     + "c'est le modèle d'année, à utiliser pour préparer l'édition suivante sans recopier un "
                     + "fichier de personnes qui ne se sont pas réinscrites. L'id de la nouvelle édition est attribué "
                     + "par l'application ; les stands, animateurs, typologies et emplacements gardent les leurs.",
@@ -243,10 +252,8 @@ public class EditionMcpTools {
                             name = "avec_animateurs")
                     Boolean avecAnimateurs) {
         String sourceId = requireEdition(source, "source");
-        return view(
-                editionService.duplicate(
-                        sourceId, new Edition(null, nom, false, null), avecAnimateurs == null || avecAnimateurs),
-                editionContext.editionIdCourant());
+        return view(editionService.duplicate(
+                sourceId, new Edition(null, nom, false, null), avecAnimateurs == null || avecAnimateurs));
     }
 
     @Tool(
@@ -263,31 +270,50 @@ public class EditionMcpTools {
             @ToolArg(description = "Édition à renommer : son id ou son nom") String edition,
             @ToolArg(description = "Nouveau nom affiché") String nom) {
         String id = requireEdition(edition, ARG_EDITION);
-        return view(editionService.renommer(id, new Edition(id, nom, false, null)), editionContext.editionIdCourant());
+        return view(editionService.renommer(id, new Edition(id, nom, false, null)));
     }
 
     @Tool(
-            name = "definir_edition_par_defaut",
-            description = "Désigne l'édition par défaut : celle dans laquelle travaille tout appelant qui n'en "
-                    + "précise aucune, y compris les outils MCP sans argument « edition ».",
+            name = "activer_edition",
+            description = "Fait de cette édition l'édition ACTIVE, et désactive l'ancienne dans le même geste. "
+                    + "Seule l'édition active publie, envoie des courriels (rappels, relances, invitations) et ouvre "
+                    + "l'espace animateur, le flux ICS et l'affichage mural : les liens de l'ancienne cessent de "
+                    + "fonctionner. N'envoie rien lui-même. Refusé pendant une résolution sur l'une des deux "
+                    + "éditions. À ne lancer qu'avec l'accord explicite de l'utilisateur.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    EditionView setDefaultEdition(
-            @ToolArg(description = "Édition à rendre par défaut : son id ou son nom") String edition) {
+    EditionView activateEdition(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         String id = requireEdition(edition, ARG_EDITION);
-        editionService.setAsDefault(id);
-        return view(find(id), editionContext.editionIdCourant());
+        return view(activationService.activate(id));
+    }
+
+    @Tool(
+            name = "desactiver_edition",
+            description = "Désactive l'édition active, sans en activer d'autre : plus rien ne part vers "
+                    + "l'extérieur (ni publication, ni courriel, ni espace animateur) — l'état normal entre deux "
+                    + "événements. Sans effet sur une édition déjà inactive. Refusé pendant une résolution sur "
+                    + "cette édition. À ne lancer qu'avec l'accord explicite de l'utilisateur.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    EditionView deactivateEdition(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        String id = requireEdition(edition, ARG_EDITION);
+        activationService.deactivate(id);
+        return view(find(id));
     }
 
     @Tool(
             name = "supprimer_edition",
             description = "Supprime une édition ET tout ce qu'elle contient : stands, animateurs, créneaux, "
                     + "contraintes, planning résolu. Destructif et irréversible, à ne lancer que sur demande explicite. "
-                    + "L'édition par défaut, l'édition courante et la dernière édition restante sont refusées.",
+                    + "L'édition active et la dernière édition restante sont refusées.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -328,14 +354,13 @@ public class EditionMcpTools {
     }
 
     /** Counted inside the edition, hence the {@code executeIn}: the tool itself runs in another one. */
-    private EditionView view(Edition edition, String editionCouranteId) {
+    private EditionView view(Edition edition) {
         return editionContext.executeIn(edition.getId(), () -> {
             List<Creneau> creneaux = referenceDataService.listCreneaux();
             return new EditionView(
                     edition.getId(),
                     edition.getNom(),
-                    edition.isDefaut(),
-                    edition.getId().equals(editionCouranteId),
+                    edition.isActive(),
                     creneaux.size(),
                     firstDate(creneaux),
                     lastDate(creneaux),
@@ -357,14 +382,12 @@ public class EditionMcpTools {
     }
 
     /**
-     * @param courante the edition the tools that name no {@code edition} work in
-     * @param defaut   the edition every caller that names none falls back to (no HTTP header)
+     * @param active the edition allowed to reach outside (ADR 0072) — at most one
      */
     public record EditionView(
             String id,
             String nom,
-            boolean defaut,
-            boolean courante,
+            boolean active,
             int nombreCreneaux,
             LocalDate premiereDate,
             LocalDate derniereDate,

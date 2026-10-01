@@ -11,6 +11,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
 import dev.sylvain.planning.config.DevMode;
+import dev.sylvain.planning.testing.ActiveEdition;
 import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
@@ -50,16 +51,25 @@ class AffichageMuralResourceTest {
     @AfterEach
     void handEverythingBack() {
         QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"dateDuJour\":null}")
                 .when()
                 .put("/api/horloge")
                 .then()
                 .statusCode(200);
-        for (Object id : given().when().get("/api/affichage-mural").jsonPath().getList("id")) {
-            given().when().delete("/api/affichage-mural/" + id);
+        for (Object id : given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/affichage-mural")
+                .jsonPath()
+                .getList("id")) {
+            given().header("X-Edition-Id", "E1").when().delete("/api/affichage-mural/" + id);
         }
-        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
     }
 
     @Test
@@ -70,7 +80,8 @@ class AffichageMuralResourceTest {
 
         assertThat(token).hasSizeGreaterThanOrEqualTo(40);
         assertThat(cree.getBoolean("link.fullNames")).isFalse();
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/affichage-mural")
                 .then()
                 .statusCode(200)
@@ -78,20 +89,42 @@ class AffichageMuralResourceTest {
                 // Only the hash is stored: the list has no token to give back.
                 .body("find { it.id == " + id + " }", not(hasKey("token")));
 
-        given().when().delete("/api/affichage-mural/" + id).then().statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/affichage-mural/" + id)
+                .then()
+                .statusCode(204);
 
-        given().when().get("/api/affichage-mural").then().statusCode(200).body("id", not(hasItem((int) id)));
-        given().when().delete("/api/affichage-mural/" + id).then().statusCode(404);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/affichage-mural")
+                .then()
+                .statusCode(200)
+                .body("id", not(hasItem((int) id)));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/affichage-mural/" + id)
+                .then()
+                .statusCode(404);
     }
 
     @Test
     void creationAndRevocationAreJournalledButReadsAreNot() {
         JsonPath cree = create("{\"libelle\":\"Accueil\"}");
         String id = String.valueOf(cree.getLong("link.id"));
-        given().when().get("/api/mural/" + cree.getString("token")).then().statusCode(200);
-        given().when().delete("/api/affichage-mural/" + id).then().statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/mural/" + cree.getString("token"))
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/affichage-mural/" + id)
+                .then()
+                .statusCode(204);
 
-        JsonPath historique = given().when()
+        JsonPath historique = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/historique")
                 .then()
                 .statusCode(200)
@@ -108,13 +141,15 @@ class AffichageMuralResourceTest {
 
     @Test
     void aLinkNeedsALabelAndKnownEmplacements() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"libelle\":\"  \"}")
                 .when()
                 .post("/api/affichage-mural")
                 .then()
                 .statusCode(400);
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"libelle\":\"Zone\",\"emplacements\":[\"nulle-part\"]}")
                 .when()
                 .post("/api/affichage-mural")
@@ -131,7 +166,8 @@ class AffichageMuralResourceTest {
     @Test
     void aRestrictedLinkOutlivesItsEmplacementWithoutShowingEverything() {
         solveScenario();
-        String emplacement = given().contentType(ContentType.JSON)
+        String emplacement = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"nom\":\"Zone mural\"}")
                 .when()
                 .post("/api/emplacements")
@@ -143,10 +179,15 @@ class AffichageMuralResourceTest {
         assertThat(cree.getBoolean("link.restricted")).isTrue();
         assertThat(cree.getList("link.emplacements", String.class)).containsExactly(emplacement);
 
-        given().when().delete("/api/emplacements/" + emplacement).then().statusCode(anyOf(equalTo(200), equalTo(204)));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/emplacements/" + emplacement)
+                .then()
+                .statusCode(anyOf(equalTo(200), equalTo(204)));
 
         long id = cree.getLong("link.id");
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/affichage-mural")
                 .then()
                 .body("find { it.id == " + id + " }.restricted", equalTo(true))
@@ -158,13 +199,14 @@ class AffichageMuralResourceTest {
     @Test
     void unknownAndRevokedTokensGetTheSameAnswer() {
         JsonPath cree = create("{\"libelle\":\"TV\"}");
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .delete("/api/affichage-mural/" + cree.getLong("link.id"))
                 .then()
                 .statusCode(204);
 
-        Response revoque = given().when().get("/api/mural/" + cree.getString("token"));
-        Response inconnu = given().when().get("/api/mural/jeton-invente-de-toutes-pieces");
+        Response revoque = given().header("X-Edition-Id", "E1").when().get("/api/mural/" + cree.getString("token"));
+        Response inconnu = given().header("X-Edition-Id", "E1").when().get("/api/mural/jeton-invente-de-toutes-pieces");
 
         assertThat(revoque.statusCode()).isEqualTo(404);
         assertThat(inconnu.statusCode()).isEqualTo(404);
@@ -175,7 +217,8 @@ class AffichageMuralResourceTest {
     void theViewIsNeverCachedNorIndexed() {
         String token = create("{\"libelle\":\"TV\"}").getString("token");
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/mural/" + token)
                 .then()
                 .statusCode(200)
@@ -204,7 +247,8 @@ class AffichageMuralResourceTest {
         // would read the same, the whole name only past that.
         List<String> noms = vue.getList("stands.vacations.flatten().noms.flatten()", String.class);
         assertThat(noms).isNotEmpty().anySatisfy(nom -> assertThat(nom).matches(".+ \\p{Lu}\\."));
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/affichage-mural")
                 .then()
                 .body("find { it.id == " + cree.getLong("link.id") + " }.lastAccessAt", notNullValue());
@@ -238,7 +282,8 @@ class AffichageMuralResourceTest {
         String complets = create("{\"libelle\":\"TV noms\",\"fullNames\":true}").getString("token");
 
         for (String token : List.of(initiales, complets)) {
-            assertThat(given().when()
+            assertThat(given().header("X-Edition-Id", "E1")
+                            .when()
                             .get("/api/mural/" + token)
                             .then()
                             .statusCode(200)
@@ -247,7 +292,8 @@ class AffichageMuralResourceTest {
                     .isNotBlank()
                     .doesNotContain("06 99 88 77 66");
         }
-        assertThat(given().queryParam("date", JOUR)
+        assertThat(given().header("X-Edition-Id", "E1")
+                        .queryParam("date", JOUR)
                         .when()
                         .get("/api/affichage-mural/apercu")
                         .then()
@@ -264,12 +310,14 @@ class AffichageMuralResourceTest {
         freezeClock(JOUR, "13:30");
         String token = create("{\"libelle\":\"TV\"}").getString("token");
         int libresAvant = emptySeats(view(token));
-        String absent = given().when()
+        String absent = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/jour-j?date=" + JOUR + "&maintenant=" + JOUR + "T13:30")
                 .jsonPath()
                 .getString("animateursDeService[0].animateurId");
 
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"animateurId\":\"" + absent + "\"}")
                 .when()
                 .post("/api/jour-j/absences?date=" + JOUR + "&maintenant=" + JOUR + "T13:30")
@@ -289,7 +337,8 @@ class AffichageMuralResourceTest {
         solveScenario();
         freezeClock(JOUR, "13:30");
 
-        JsonPath apercu = given().queryParam("date", JOUR)
+        JsonPath apercu = given().header("X-Edition-Id", "E1")
+                .queryParam("date", JOUR)
                 .when()
                 .get("/api/affichage-mural/apercu")
                 .then()
@@ -303,9 +352,14 @@ class AffichageMuralResourceTest {
         assertThat(apercu.getList("stands.vacations.flatten().noms.flatten()", String.class))
                 .isNotEmpty()
                 .noneSatisfy(nom -> assertThat(nom).matches(".+ \\p{Lu}\\."));
-        assertThat(given().when().get("/api/affichage-mural").jsonPath().getList("id"))
+        assertThat(given().header("X-Edition-Id", "E1")
+                        .when()
+                        .get("/api/affichage-mural")
+                        .jsonPath()
+                        .getList("id"))
                 .isEmpty();
-        given().queryParam("date", "demain")
+        given().header("X-Edition-Id", "E1")
+                .queryParam("date", "demain")
                 .when()
                 .get("/api/affichage-mural/apercu")
                 .then()
@@ -331,7 +385,8 @@ class AffichageMuralResourceTest {
     }
 
     private static JsonPath preview(String date) {
-        return given().queryParam("date", date)
+        return given().header("X-Edition-Id", "E1")
+                .queryParam("date", date)
                 .when()
                 .get("/api/affichage-mural/apercu")
                 .then()
@@ -342,7 +397,8 @@ class AffichageMuralResourceTest {
 
     @Test
     void deletingTheEditionTakesItsLinksAlong() {
-        String edition = given().contentType(ContentType.JSON)
+        String edition = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"nom\":\"Mural éphémère\"}")
                 .when()
                 .post("/api/editions")
@@ -360,11 +416,32 @@ class AffichageMuralResourceTest {
                 .extract()
                 .jsonPath()
                 .getString("token");
-        given().when().get("/api/mural/" + token).then().statusCode(200).body("edition", equalTo("Mural éphémère"));
+        // Not the active edition: its wall display is closed, like an unknown link (ADR 0072).
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/mural/" + token)
+                .then()
+                .statusCode(404);
+        ActiveEdition.during(
+                edition,
+                () -> given().header("X-Edition-Id", "E1")
+                        .when()
+                        .get("/api/mural/" + token)
+                        .then()
+                        .statusCode(200)
+                        .body("edition", equalTo("Mural éphémère")));
 
-        given().when().delete("/api/editions/" + edition).then().statusCode(anyOf(equalTo(200), equalTo(204)));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/editions/" + edition)
+                .then()
+                .statusCode(anyOf(equalTo(200), equalTo(204)));
 
-        given().when().get("/api/mural/" + token).then().statusCode(404);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/mural/" + token)
+                .then()
+                .statusCode(404);
     }
 
     /**
@@ -374,7 +451,8 @@ class AffichageMuralResourceTest {
      */
     @Test
     void theLastReadIsListedInTheLinksOwnEdition() {
-        String edition = given().contentType(ContentType.JSON)
+        String edition = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"nom\":\"Mural dernier accès\"}")
                 .when()
                 .post("/api/editions")
@@ -399,14 +477,24 @@ class AffichageMuralResourceTest {
                     .as("never read yet")
                     .isNull();
 
-            given().when().get("/api/mural/" + cree.getString("token")).then().statusCode(200);
+            ActiveEdition.during(
+                    edition,
+                    () -> given().header("X-Edition-Id", "E1")
+                            .when()
+                            .get("/api/mural/" + cree.getString("token"))
+                            .then()
+                            .statusCode(200));
 
             assertThat(listIn(edition).getString("find { it.id == " + id + " }.lastAccessAt"))
                     .isNotNull();
-            assertThat(given().when().get("/api/affichage-mural").jsonPath().getList("id"))
+            assertThat(given().header("X-Edition-Id", "E1")
+                            .when()
+                            .get("/api/affichage-mural")
+                            .jsonPath()
+                            .getList("id"))
                     .doesNotContain((int) id);
         } finally {
-            given().when().delete("/api/editions/" + edition);
+            given().header("X-Edition-Id", "E1").when().delete("/api/editions/" + edition);
         }
     }
 
@@ -422,7 +510,8 @@ class AffichageMuralResourceTest {
 
     @Test
     void theQrCodeIsAGridOfModules() {
-        JsonPath qr = given().contentType(ContentType.JSON)
+        JsonPath qr = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"link\":\"https://planning.example.org/mural/abc\"}")
                 .when()
                 .post("/api/affichage-mural/qr-code")
@@ -440,7 +529,8 @@ class AffichageMuralResourceTest {
     /* ------------------------------ Fixtures ----------------------------- */
 
     private static JsonPath create(String body) {
-        return given().contentType(ContentType.JSON)
+        return given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(body)
                 .when()
                 .post("/api/affichage-mural")
@@ -452,7 +542,8 @@ class AffichageMuralResourceTest {
     }
 
     private static JsonPath view(String token) {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/mural/" + token)
                 .then()
                 .statusCode(200)
@@ -468,7 +559,8 @@ class AffichageMuralResourceTest {
 
     private static void freezeClock(String date, String heure) {
         QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(Map.of("dateDuJour", date, "heureDuJour", heure))
                 .when()
                 .put("/api/horloge")
@@ -477,13 +569,15 @@ class AffichageMuralResourceTest {
     }
 
     private static void solveScenario() {
-        String sample = given().when()
+        String sample = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/sample?name=scenario.yml")
                 .then()
                 .statusCode(200)
                 .extract()
                 .asString();
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(sample)
                 .when()
                 .post("/api/solve?seconds=3")

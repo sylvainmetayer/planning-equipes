@@ -11,7 +11,8 @@ class PangolinHeaderFilterTest {
 
     @Test
     void mirroreLEnTetePangolinRecuSurLaReponse() {
-        given().header(PangolinHeaderFilter.EN_TETE, "true")
+        given().header("X-Edition-Id", "E1")
+                .header(PangolinHeaderFilter.EN_TETE, "true")
                 .when()
                 .get("/api/config")
                 .then()
@@ -21,6 +22,11 @@ class PangolinHeaderFilterTest {
 
     @Test
     void nAjouteRienSansEnTeteEntrant() {
-        given().when().get("/api/config").then().statusCode(200).header(PangolinHeaderFilter.EN_TETE, nullValue());
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/config")
+                .then()
+                .statusCode(200)
+                .header(PangolinHeaderFilter.EN_TETE, nullValue());
     }
 }

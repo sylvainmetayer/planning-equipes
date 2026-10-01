@@ -31,7 +31,7 @@ class ScenarioMcpToolsTest {
 
     @Test
     void anUnreadableYamlReportsABusinessError() {
-        assertThatThrownBy(() -> scenarioTools.importScenarioYaml("festival: [pas fermé", null))
+        assertThatThrownBy(() -> scenarioTools.importScenarioYaml("festival: [pas fermé", "E1"))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("YAML invalide");
@@ -39,7 +39,7 @@ class ScenarioMcpToolsTest {
 
     @Test
     void anEmptyFileReportsABusinessError() {
-        assertThatThrownBy(() -> scenarioTools.importScenarioYaml("", null))
+        assertThatThrownBy(() -> scenarioTools.importScenarioYaml("", "E1"))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Invalid.class);
     }

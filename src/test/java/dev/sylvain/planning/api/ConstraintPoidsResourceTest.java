@@ -47,7 +47,7 @@ class ConstraintPoidsResourceTest {
     @BeforeEach
     void resolveDefaultEdition() {
         defaut = listEditions().stream()
-                .filter(edition -> Boolean.TRUE.equals(edition.get("defaut")))
+                .filter(edition -> Boolean.TRUE.equals(edition.get("active")))
                 .map(edition -> (String) edition.get("id"))
                 .findFirst()
                 .orElseThrow();
@@ -66,13 +66,14 @@ class ConstraintPoidsResourceTest {
         for (Map<String, Object> edition : listEditions()) {
             String id = (String) edition.get("id");
             if (!defaut.equals(id)) {
-                given().when().delete("/api/editions/" + id);
+                given().header("X-Edition-Id", "E1").when().delete("/api/editions/" + id);
             }
         }
     }
 
     private List<Map<String, Object>> listEditions() {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/editions")
                 .then()
                 .statusCode(200)
@@ -83,7 +84,8 @@ class ConstraintPoidsResourceTest {
 
     /** Creates an edition and answers the id the application drew for it. */
     private String createEdition(String nom) {
-        return given().contentType("application/json")
+        return given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"nom\":\"" + nom + "\"}")
                 .when()
                 .post("/api/editions")
@@ -206,7 +208,11 @@ class ConstraintPoidsResourceTest {
         String premiere = createEdition("Année 2026");
         setPoids(premiere, DOSABLE, 4, 200);
 
-        given().when().delete("/api/editions/" + premiere).then().statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/editions/" + premiere)
+                .then()
+                .statusCode(204);
         String recreee = createEdition("Année 2026");
 
         // The foreign key cascade towards `edition`: an edition recreated under
@@ -220,7 +226,8 @@ class ConstraintPoidsResourceTest {
     void duplicatingAnEditionCopiesItsDosage() {
         setPoids(defaut, DOSABLE, 8, 200);
 
-        String copie = given().contentType("application/json")
+        String copie = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"nom\":\"Copie 2026\"}")
                 .when()
                 .post("/api/editions/" + defaut + "/dupliquer")

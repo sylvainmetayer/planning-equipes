@@ -29,6 +29,11 @@ class ConfigResourceDragDropTest {
 
     @Test
     void anInstanceThatSwitchesItOnServesDragDropEnabled() {
-        given().when().get("/api/config").then().statusCode(200).body("dragDropEnabled", equalTo(true));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/config")
+                .then()
+                .statusCode(200)
+                .body("dragDropEnabled", equalTo(true));
     }
 }

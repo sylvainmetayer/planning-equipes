@@ -5,7 +5,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { AdminApi } from '../../core/api/admin-api';
 import { ParametresNotifications } from '../../core/models';
 import { errorMessage } from '../../core/error-message';
@@ -42,7 +41,6 @@ const HEURE_RAPPEL_MAX = '23:00';
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
-    MatSlideToggleModule,
   ],
   templateUrl: './parametres-notifications.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -66,10 +64,6 @@ export class ParametresNotificationsPanel implements OnInit {
       // does not render until a reload succeeds.
       this.parametres.set(null);
     }
-  }
-
-  protected majActives(actives: boolean): void {
-    this.patch({ actives });
   }
 
   /**

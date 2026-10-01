@@ -1,8 +1,9 @@
 // Which edition ("Année 2025", "Année 2026") this browser is working
 // in. Stored client-side and sent on every request as `X-Edition-Id`, rather
 // than flagged server-side: two tabs can then sit on two different editions at
-// once, which a global "active edition" flag would make impossible. See
-// docs/decisions/0001-cloisonnement-par-edition.md §5.
+// once. See docs/decisions/0001-cloisonnement-par-edition.md §5. The server
+// never picks one for a request that names none (ADR 0072): the choice is
+// made here, once, by `editionChosenGuard`, before the admin shell loads.
 //
 // Deliberately a plain module, not an injectable: the HTTP interceptor reads it
 // on every request, and going through a service would make it depend on the
@@ -10,9 +11,30 @@
 
 const STORAGE_KEY = 'planning-equipes.editionId';
 
-/** `null` when nothing was ever picked — the server then falls back to its default edition. */
+/**
+ * The choice kept in memory too: a browser whose storage is blocked still
+ * names its edition on every request for as long as the page lives — the
+ * server refuses a request that names none (ADR 0072).
+ */
+let inMemoryEditionId: string | null = null;
+
+/** `null` when nothing was ever picked — `editionChosenGuard` then picks one before any request. */
 export function getStoredEditionId(): string | null {
-  return localStorage.getItem(STORAGE_KEY);
+  try {
+    return localStorage.getItem(STORAGE_KEY) ?? inMemoryEditionId;
+  } catch {
+    return inMemoryEditionId;
+  }
+}
+
+/** Records the choice without reloading: for a first pick, made before any screen has loaded. */
+export function setStoredEditionId(editionId: string): void {
+  inMemoryEditionId = editionId;
+  try {
+    localStorage.setItem(STORAGE_KEY, editionId);
+  } catch {
+    // Blocked storage: the in-memory choice carries this page.
+  }
 }
 
 /**
@@ -28,7 +50,12 @@ export function setStoredEditionIdAndReload(editionId: string): void {
 
 /** Forgets the stored choice, e.g. after the server reported that edition as unknown. */
 export function clearStoredEditionId(): void {
-  localStorage.removeItem(STORAGE_KEY);
+  inMemoryEditionId = null;
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // Blocked storage: nothing was stored there.
+  }
 }
 
 /** Per-edition key for anything else this browser persists (notifications log, ...). */

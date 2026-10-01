@@ -322,24 +322,32 @@ remplacer la phrase à la main, ce que ce traitement transverse rend inutile.
 ## L'édition se désigne argument par argument
 
 Une requête MCP n'est pas une requête JAX-RS : `EditionHeaderFilter` ne la voit
-jamais, et **`X-Edition-Id` n'a aucun effet sur `/mcp`**. Chaque outil porte un
-argument `edition` facultatif, qui accepte l'id ou le nom. Omis, l'outil
-travaille dans l'édition par défaut. L'id est essayé d'abord : un nom
+jamais, et **`X-Edition-Id` n'a aucun effet sur `/mcp`**. Chaque outil qui
+travaille dans une édition porte un argument `edition`, qui accepte l'id ou le
+nom. **Il est obligatoire** (ADR 0072) : omis, l'appel est refusé
+(`EDITION_REQUISE`) au lieu de travailler dans une édition que personne n'a
+nommée. L'id est essayé d'abord : un nom
 d'édition de la forme d'un id (`E` suivi d'un nombre) est donc refusé à la
 création comme au renommage, sans quoi il désignerait une autre édition.
 
-**Une édition inconnue échoue**, au lieu de retomber sur la courante — seule
-divergence volontaire avec l'en-tête HTTP. Les deux appelants ne sont pas dans
-la même situation : un onglet resté ouvert sur une édition supprimée doit
-continuer d'afficher ses écrans, alors qu'un assistant qui nomme une édition
-s'apprête à y écrire, et un repli silencieux enverrait l'écriture dans la
-mauvaise édition sans que rien ne le signale. Le message énumère les éditions
-existantes.
+**Une édition inconnue échoue**, comme l'en-tête HTTP qui en nomme une
+supprimée (`EDITION_INCONNUE`) : un repli silencieux enverrait l'écriture dans
+la mauvaise édition sans que rien ne le signale. Le message énumère les
+éditions existantes.
+
+Une seule édition est **active** : elle seule publie, envoie des courriels et
+ouvre l'espace animateur, le flux ICS et l'affichage mural. `lister_editions`
+la signale, `edition_courante` la nomme (et répond une erreur entre deux
+événements, quand aucune ne l'est), `activer_edition` et `desactiver_edition`
+la changent. Les quatre outils qui envoient du courriel (`publier_planning`,
+`envoyer_planning_animateur`, `relancer_animateurs`,
+`configurer_collecte_disponibilites` quand il prévient les animateurs) sont
+refusés sur une autre édition (`409 EDITION_INACTIVE`).
 
 Trois pièces : `@EditionArg` marque l'argument porteur — c'est l'annotation, pas
 le nom, qui fait le lien ; `@EditionCiblee` se pose sur la **classe** d'outils,
-si bien qu'un outil ajouté plus tard en hérite au lieu d'écrire silencieusement
-dans l'édition par défaut ; `EditionCibleeInterceptor` lie l'édition autour de
+si bien qu'un outil ajouté plus tard en hérite au lieu de travailler sans
+édition ; `EditionCibleeInterceptor` lie l'édition autour de
 l'appel.
 
 > **Piège d'auto-invocation.** Un outil qui en appelle un autre sur `this`

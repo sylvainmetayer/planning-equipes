@@ -127,6 +127,34 @@
           }
         }
       },
+      "ActivationPreview" : {
+        "required" : [ "jobsEnFile", "resolutionEnCours", "demandesOuvertes", "liensAnimateurs", "liensMuraux" ],
+        "type" : "object",
+        "properties" : {
+          "sortante" : {
+            "$ref" : "#/components/schemas/Edition"
+          },
+          "jobsEnFile" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "resolutionEnCours" : {
+            "type" : "boolean"
+          },
+          "demandesOuvertes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "liensAnimateurs" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "liensMuraux" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
       "ActiveRequest" : {
         "type" : "object",
         "properties" : {
@@ -3520,7 +3548,7 @@
           "nom" : {
             "type" : "string"
           },
-          "defaut" : {
+          "active" : {
             "type" : "boolean"
           },
           "creeLe" : {
@@ -6538,12 +6566,9 @@
         }
       },
       "ParametresNotifications" : {
-        "required" : [ "actives", "ancienneteEchangeJours", "delaiRelanceHeures" ],
+        "required" : [ "ancienneteEchangeJours", "delaiRelanceHeures" ],
         "type" : "object",
         "properties" : {
-          "actives" : {
-            "type" : "boolean"
-          },
           "heureRappelVeille" : {
             "$ref" : "#/components/schemas/LocalTime"
           },
@@ -8820,6 +8845,28 @@
             "$ref" : "#/components/schemas/Instant"
           }
         }
+      },
+      "Situation" : {
+        "required" : [ "type", "edition" ],
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "$ref" : "#/components/schemas/SituationKind"
+          },
+          "edition" : {
+            "$ref" : "#/components/schemas/Edition"
+          },
+          "premierJour" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "dernierJour" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          }
+        }
+      },
+      "SituationKind" : {
+        "type" : "string",
+        "enum" : [ "ACTIVE_TERMINEE", "INACTIVE_IMMINENTE", "AUCUNE_ACTIVE", "INACTIVE_EN_COURS" ]
       },
       "SnapshotDetail" : {
         "type" : "object",
@@ -12576,6 +12623,27 @@
         "tags" : [ "Edition Resource" ]
       }
     },
+    "/api/editions/situations" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Situation"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Situations",
+        "tags" : [ "Edition Resource" ]
+      }
+    },
     "/api/editions/{id}" : {
       "put" : {
         "parameters" : [ {
@@ -12635,8 +12703,34 @@
         "tags" : [ "Edition Resource" ]
       }
     },
-    "/api/editions/{id}/defaut" : {
-      "put" : {
+    "/api/editions/{id}/activation" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ActivationPreview"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Activation Preview",
+        "tags" : [ "Edition Resource" ]
+      }
+    },
+    "/api/editions/{id}/active" : {
+      "delete" : {
         "parameters" : [ {
           "name" : "id",
           "in" : "path",
@@ -12655,7 +12749,31 @@
             }
           }
         },
-        "summary" : "Set As Default",
+        "summary" : "Deactivate",
+        "tags" : [ "Edition Resource" ]
+      },
+      "put" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Edition"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Activate",
         "tags" : [ "Edition Resource" ]
       }
     },

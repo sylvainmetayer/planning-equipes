@@ -1,6 +1,6 @@
 # 0009 — L'édition est l'unique porteur de variantes
 
-- **Statut** : accepté, implémenté — révise [0001](0001-cloisonnement-par-edition.md), remplace [0008](0008-file-sequentielle-avant-parallelisme.md)
+- **Statut** : accepté, implémenté — révise [0001](0001-cloisonnement-par-edition.md), remplace [0008](0008-file-sequentielle-avant-parallelisme.md) ; **révisé par [0072](0072-une-seule-edition-active.md)** : un plan de repli n'est plus une édition vivante à côté de l'édition nominale, mais une consigne datée (0043), et une seule édition parle à l'extérieur
 - **Date** : août 2026
 - **Portée** : persistance, domaine, service, frontend
 

@@ -1,5 +1,6 @@
 package dev.sylvain.planning.mcp;
 
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;
@@ -13,17 +14,20 @@ import java.lang.reflect.Parameter;
  * (issue #181).
  *
  * <p>An MCP call is not a JAX-RS request: {@code EditionHeaderFilter} never
- * sees it, the request scope stays empty, and every tool would otherwise
- * resolve to the default edition — silently, which is the actual defect. The
- * edition therefore travels as a tool argument, and this interceptor is the
- * single place that gives it effect, through the same
+ * sees it, so the edition travels as a tool argument, and this interceptor is
+ * the single place that gives it effect, through the same
  * {@code EditionContext.executeIn} that solver jobs and scenario imports
  * already use.</p>
+ *
+ * <p><b>The argument is required</b> (ADR 0072): a tool that declares an
+ * {@link EditionArg} and is called without it is refused
+ * ({@code EDITION_REQUISE}), rather than run in a default edition the
+ * assistant never named — which used to be the silent defect.</p>
  *
  * <p>Binding the edition around the whole call also covers the work that
  * outlives it: {@code lancer_solveur} captures
  * {@code EditionContext.editionIdCourant()} when the job is submitted, so the
- * job stays attached to the edition the call named even if the default changes
+ * job stays attached to the edition the call named whatever happens
  * afterwards.</p>
  */
 @EditionCiblee
@@ -43,22 +47,28 @@ public class EditionCibleeInterceptor {
 
     @AroundInvoke
     Object dansEditionCiblee(InvocationContext context) throws Exception {
-        String editionId = editions.solve(argumentEdition(context));
-        if (editionId == null) {
+        int index = editionArgIndex(context);
+        if (index < 0) {
+            // A method that declares no EditionArg — most of this package's helpers.
             return context.proceed();
+        }
+        String editionId = editions.solve((String) context.getParameters()[index]);
+        if (editionId == null) {
+            throw new BusinessError.EditionRefused(
+                    BusinessError.EditionRefused.Reason.REQUISE,
+                    "L'argument « edition » est obligatoire : son id ou son nom (voir lister_editions).");
         }
         return editionContext.executeIn(editionId, context::proceed);
     }
 
-    /** {@code null} for a tool that declares no {@link EditionArg} — most of this package's helpers. */
-    private static String argumentEdition(InvocationContext context) {
+    /** Position of the {@link EditionArg} parameter, {@code -1} when the method declares none. */
+    private static int editionArgIndex(InvocationContext context) {
         Parameter[] parametres = context.getMethod().getParameters();
-        Object[] valeurs = context.getParameters();
         for (int i = 0; i < parametres.length; i++) {
             if (parametres[i].isAnnotationPresent(EditionArg.class)) {
-                return (String) valeurs[i];
+                return i;
             }
         }
-        return null;
+        return -1;
     }
 }

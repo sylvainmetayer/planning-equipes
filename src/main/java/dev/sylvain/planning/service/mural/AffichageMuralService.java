@@ -203,13 +203,14 @@ public class AffichageMuralService {
     /**
      * The wall view the token opens, in the token's own edition.
      *
-     * @throws BusinessError.NotFound for an unknown and a revoked token alike —
-     *                               the answer must not tell them apart
+     * @throws BusinessError.NotFound for an unknown token, a revoked one and one
+     *                               of an edition that is not active alike — the
+     *                               answer must not tell them apart (ADR 0072)
      */
     public AffichageMuralView view(String token) {
         ResolvedLink link = token == null || token.isBlank() ? null : repository.resolve(hash(token));
-        if (link == null) {
-            throw new BusinessError.NotFound("Lien inconnu ou révoqué");
+        if (link == null || !editionContext.isActive(link.editionId())) {
+            throw new BusinessError.NotFound("Lien inconnu, révoqué, ou édition terminée");
         }
         return editionContext.executeIn(link.editionId(), () -> {
             repository.touch(link.id());

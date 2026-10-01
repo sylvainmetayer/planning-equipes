@@ -69,13 +69,15 @@ class ConsigneResourceTest {
     @BeforeEach
     void aPersistedPlanOnAFrozenClock() {
         QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"dateDuJour\":\"" + VEILLE + "\"}")
                 .when()
                 .put("/api/horloge")
                 .then()
                 .statusCode(200);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
@@ -84,7 +86,8 @@ class ConsigneResourceTest {
     }
 
     private static String standIdOfCode(String code) {
-        String id = given().when()
+        String id = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/stands")
                 .then()
                 .statusCode(200)
@@ -95,34 +98,41 @@ class ConsigneResourceTest {
     }
 
     private static String defaultEditionId() {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/editions")
                 .then()
                 .statusCode(200)
                 .extract()
-                .path("find { it.defaut == true }.id");
+                .path("find { it.active == true }.id");
     }
 
     /** By name, since the duplicate's id is drawn: gone whether its test reached its own cleanup or not. */
     private static void dropTheDuplicate() {
-        List<String> ids = given().when()
+        List<String> ids = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/editions")
                 .then()
                 .statusCode(200)
                 .extract()
                 .path("findAll { it.nom == '" + NOM_COPIE + "' }.id");
-        ids.forEach(id -> given().when().delete("/api/editions/" + id));
+        ids.forEach(id -> given().header("X-Edition-Id", "E1").when().delete("/api/editions/" + id));
     }
 
     @AfterEach
     void handTheClockBack() {
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"dateDuJour\":null}")
                 .when()
                 .put("/api/horloge")
                 .then()
                 .statusCode(200);
-        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
         dropTheDuplicate();
     }
 
@@ -146,7 +156,8 @@ class ConsigneResourceTest {
     }
 
     private static JsonPath creneaux() {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/creneaux")
                 .then()
                 .statusCode(200)
@@ -156,7 +167,8 @@ class ConsigneResourceTest {
 
     @Test
     void thePreselectionSaysWhatTheBandTakesFromEachStand() {
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of("date", JOUR, "fermetureDebut", "12:00", "fermetureFin", "16:00"))
                 .when()
                 .post("/api/consignes/preselection")
@@ -178,7 +190,8 @@ class ConsigneResourceTest {
 
     @Test
     void thePreviewCountsSeatsBeforeAndAfterWithoutWriting() {
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(demande(List.of(ouverture(standStrat))))
                 .when()
                 .post("/api/consignes/apercu")
@@ -204,13 +217,19 @@ class ConsigneResourceTest {
                 // No plan persisted: nobody is seated in the band yet.
                 .body("[0].animateursDansLaBande", is(0));
 
-        given().when().get("/api/consignes").then().statusCode(200).body("consignes", hasSize(0));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/consignes")
+                .then()
+                .statusCode(200)
+                .body("consignes", hasSize(0));
         assertThat(creneaux().getList("id")).hasSize(2);
     }
 
     @Test
     void layingDownWritesTheConsigneAndAddsTheEveningCreneau() {
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(demande(List.of(ouverture(standStrat))))
                 .when()
                 .post("/api/consignes")
@@ -218,7 +237,8 @@ class ConsigneResourceTest {
                 .statusCode(200)
                 .body("[0].siegesApres", is(3));
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/consignes")
                 .then()
                 .statusCode(200)
@@ -238,7 +258,8 @@ class ConsigneResourceTest {
 
     @Test
     void changingADateKeepsTheCreneauItsWindowsStillNeedAndDropsTheOthers() {
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(demande(List.of(ouverture(standStrat))))
                 .when()
                 .post("/api/consignes")
@@ -248,7 +269,8 @@ class ConsigneResourceTest {
                 creneaux().getList("findAll { it.heureDebut == '18:00:00' }.id").get(0);
 
         // Same windows, one more stand: the evening créneau stays, id included.
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(demande(List.of(ouverture(standStrat), ouverture(hommeJeu))))
                 .when()
                 .post("/api/consignes/apercu")
@@ -258,7 +280,8 @@ class ConsigneResourceTest {
                 .body("[0].creneauxAAjouter", hasSize(0))
                 .body("[0].standsEntrants", equalTo(List.of(hommeJeu)))
                 .body("[0].standsSortants", hasSize(0));
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(demande(List.of(ouverture(standStrat), ouverture(hommeJeu))))
                 .when()
                 .post("/api/consignes")
@@ -268,7 +291,8 @@ class ConsigneResourceTest {
                 .containsExactly(soir);
 
         // No opening at all: the evening créneau has no reason to exist.
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(demande(List.of()))
                 .when()
                 .post("/api/consignes")
@@ -281,14 +305,16 @@ class ConsigneResourceTest {
 
     @Test
     void liftingRemovesTheConsigneAndTheCreneauItAdded() {
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(demande(List.of(ouverture(standStrat))))
                 .when()
                 .post("/api/consignes")
                 .then()
                 .statusCode(200);
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of("dates", List.of(JOUR)))
                 .when()
                 .post("/api/consignes/levee/apercu")
@@ -296,60 +322,77 @@ class ConsigneResourceTest {
                 .statusCode(200)
                 .body("[0].sousConsigne", is(true))
                 .body("[0].creneauxARetirer", hasSize(1));
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of("dates", List.of(JOUR)))
                 .when()
                 .post("/api/consignes/levee")
                 .then()
                 .statusCode(204);
 
-        given().when().get("/api/consignes").then().statusCode(200).body("consignes", hasSize(0));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/consignes")
+                .then()
+                .statusCode(200)
+                .body("consignes", hasSize(0));
         assertThat(creneaux().getList("heureDebut")).containsExactlyInAnyOrder("09:00:00", "14:00:00");
     }
 
     @Test
     void layingDownWithdrawsTheDaysReading() {
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of("jour", JOUR))
                 .when()
                 .post("/api/validations")
                 .then()
                 .statusCode(200);
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(demande(List.of()))
                 .when()
                 .post("/api/consignes/apercu")
                 .then()
                 .statusCode(200)
                 .body("[0].validationRetiree", is(true));
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(demande(List.of()))
                 .when()
                 .post("/api/consignes")
                 .then()
                 .statusCode(200);
 
-        given().when().get("/api/validations").then().statusCode(200).body("size()", is(0));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/validations")
+                .then()
+                .statusCode(200)
+                .body("size()", is(0));
     }
 
     @Test
     void aDayAlreadyBegunIsRefused() {
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"dateDuJour\":\"" + JOUR + "\"}")
                 .when()
                 .put("/api/horloge")
                 .then()
                 .statusCode(200);
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(demande(List.of()))
                 .when()
                 .post("/api/consignes")
                 .then()
                 .statusCode(400)
                 .body("message", containsString("en cours"));
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of("dates", List.of(JOUR)))
                 .when()
                 .post("/api/consignes/levee")
@@ -360,7 +403,8 @@ class ConsigneResourceTest {
     @Test
     void fourRefusalsWriteNothing() {
         Map<String, Object> inconnu = demande(List.of(ouverture("AUTRES-BOURSE")));
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(inconnu)
                 .when()
                 .post("/api/consignes/apercu")
@@ -370,7 +414,8 @@ class ConsigneResourceTest {
 
         Map<String, Object> sansMotif = demande(List.of());
         sansMotif.put("motif", " ");
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(sansMotif)
                 .when()
                 .post("/api/consignes")
@@ -380,7 +425,8 @@ class ConsigneResourceTest {
 
         Map<String, Object> aLEnvers = demande(List.of());
         aLEnvers.put("fermetureFin", "11:00");
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(aLEnvers)
                 .when()
                 .post("/api/consignes")
@@ -390,7 +436,8 @@ class ConsigneResourceTest {
 
         Map<String, Object> dansLaBande = demande(List.of());
         dansLaBande.put("fenetres", List.of(Map.of("debut", "13:00", "fin", "15:00")));
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(dansLaBande)
                 .when()
                 .post("/api/consignes")
@@ -400,7 +447,8 @@ class ConsigneResourceTest {
 
         Map<String, Object> sansGrille = demande(List.of());
         sansGrille.put("dates", List.of("2026-07-09"));
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(sansGrille)
                 .when()
                 .post("/api/consignes")
@@ -408,7 +456,12 @@ class ConsigneResourceTest {
                 .statusCode(400)
                 .body("message", containsString("Aucun créneau"));
 
-        given().when().get("/api/consignes").then().statusCode(200).body("consignes", hasSize(0));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/consignes")
+                .then()
+                .statusCode(200)
+                .body("consignes", hasSize(0));
     }
 
     /**
@@ -423,7 +476,8 @@ class ConsigneResourceTest {
         repas.put("soirDebut", "18:00");
         repas.put("soirFin", "20:00");
         corps.put("repas", repas);
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(corps)
                 .when()
                 .post("/api/consignes")
@@ -432,13 +486,15 @@ class ConsigneResourceTest {
                 .body("message", containsString("justification"));
 
         repas.put("justification", "Les équipes mangent pendant la fermeture de midi");
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(corps)
                 .when()
                 .post("/api/consignes")
                 .then()
                 .statusCode(200);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/consignes")
                 .then()
                 .statusCode(200)
@@ -448,20 +504,27 @@ class ConsigneResourceTest {
                 .body("consignes[0].repas.justification", containsString("mangent"));
 
         // The edition's own parameters have not moved.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/parametres-legaux")
                 .then()
                 .statusCode(200)
                 .body("coupureRepasSoirDebut", equalTo("19:00:00"));
 
         // Lifting takes the override away with the consigne: nothing to put back.
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of("dates", List.of(JOUR)))
                 .when()
                 .post("/api/consignes/levee")
                 .then()
                 .statusCode(204);
-        given().when().get("/api/consignes").then().statusCode(200).body("consignes", hasSize(0));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/consignes")
+                .then()
+                .statusCode(200)
+                .body("consignes", hasSize(0));
     }
 
     /**
@@ -475,19 +538,26 @@ class ConsigneResourceTest {
         Map<String, Object> corps = demande(List.of());
         corps.put("fermetureFin", "00:00");
         corps.put("fenetres", List.of(Map.of("debut", "08:00", "fin", "10:00")));
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(corps)
                 .when()
                 .post("/api/consignes")
                 .then()
                 .statusCode(200);
-        given().when().get("/api/consignes").then().statusCode(200).body("consignes[0].fermetureFin", equalTo(null));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/consignes")
+                .then()
+                .statusCode(200)
+                .body("consignes[0].fermetureFin", equalTo(null));
 
         Map<String, Object> ouverture = ouverture(standStrat);
         ouverture.put("fin", "00:00");
         corps = demande(List.of(ouverture));
         corps.put("fenetres", List.of(Map.of("debut", "18:00", "fin", "00:00")));
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(corps)
                 .when()
                 .post("/api/consignes")
@@ -495,7 +565,8 @@ class ConsigneResourceTest {
                 .statusCode(200)
                 .body("[0].creneauxAAjouter", hasSize(1))
                 .body("[0].creneauxAAjouter[0].fin", equalTo(null));
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/consignes")
                 .then()
                 .statusCode(200)
@@ -505,7 +576,8 @@ class ConsigneResourceTest {
         // The créneau the opening needed runs to midnight, as any créneau crossing it does.
         assertThat(creneaux().getList("heureDebut")).contains("18:00:00");
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of(
                         "nom", "Journée entière",
                         "fermetureDebut", "12:00",
@@ -517,7 +589,8 @@ class ConsigneResourceTest {
                 .then()
                 .statusCode(400)
                 .body("message", containsString("entièrement dans la bande"));
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of(
                         "nom", "Journée entière",
                         "fermetureDebut", "12:00",
@@ -541,14 +614,20 @@ class ConsigneResourceTest {
         repas.put("soirFin", "19:30");
         repas.put("justification", "Les équipes mangent pendant la fermeture");
         corps.put("repas", repas);
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(corps)
                 .when()
                 .post("/api/consignes")
                 .then()
                 .statusCode(400)
                 .body("message", containsString("plus courte que la coupure"));
-        given().when().get("/api/consignes").then().statusCode(200).body("consignes", hasSize(0));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/consignes")
+                .then()
+                .statusCode(200)
+                .body("consignes", hasSize(0));
     }
 
     /**
@@ -577,14 +656,20 @@ class ConsigneResourceTest {
                         jour.plusDays(2).toString(),
                         jour.plusDays(3).toString(),
                         jour.plusDays(4).toString()));
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(corps)
                 .when()
                 .post("/api/consignes")
                 .then()
                 .statusCode(500);
 
-        given().when().get("/api/consignes").then().statusCode(200).body("consignes", hasSize(0));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/consignes")
+                .then()
+                .statusCode(200)
+                .body("consignes", hasSize(0));
         assertThat(creneaux().getList("id")).hasSize(creneauxAvant);
         assertThat(creneaux().getList("heureDebut")).doesNotContain("18:00:00");
     }
@@ -650,7 +735,8 @@ class ConsigneResourceTest {
 
     @Test
     void presetsAreKeptOnTheEditionAndTravelWithADuplicate() {
-        String id = given().contentType("application/json")
+        String id = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of(
                         "nom", "Plan canicule",
                         "fermetureDebut", "12:00",
@@ -673,7 +759,8 @@ class ConsigneResourceTest {
                 .jsonPath()
                 .getString("id");
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of("nom", "plan CANICULE", "fermetureDebut", "12:00", "motif", "x"))
                 .when()
                 .post("/api/consignes/prereglages")
@@ -681,7 +768,8 @@ class ConsigneResourceTest {
                 .statusCode(400)
                 .body("message", containsString("existe déjà"));
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of(
                         "nom", "Plan canicule",
                         "fermetureDebut", "13:00",
@@ -703,20 +791,23 @@ class ConsigneResourceTest {
         // A consigne made from the preset remembers it by name.
         Map<String, Object> corps = demande(List.of());
         corps.put("prereglage", "Plan canicule");
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(corps)
                 .when()
                 .post("/api/consignes")
                 .then()
                 .statusCode(200);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/consignes")
                 .then()
                 .statusCode(200)
                 .body("consignes[0].prereglage", equalTo("Plan canicule"));
 
         // The duplicate carries the preset, not the consigne.
-        String copie = given().contentType("application/json")
+        String copie = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of("nom", NOM_COPIE))
                 .when()
                 .post("/api/editions/" + defaultEditionId() + "/dupliquer")
@@ -733,11 +824,25 @@ class ConsigneResourceTest {
                 .body("prereglages[0].nom", equalTo("Plan canicule"))
                 .body("prereglages[0].repas.soirFin", equalTo("22:00:00"))
                 .body("consignes", hasSize(0));
-        given().when().delete("/api/editions/" + copie).then().statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/editions/" + copie)
+                .then()
+                .statusCode(204);
 
-        given().when().delete("/api/consignes/prereglages/" + id).then().statusCode(204);
-        given().when().get("/api/consignes/prereglages").then().statusCode(200).body("size()", is(0));
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/consignes/prereglages/" + id)
+                .then()
+                .statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/consignes/prereglages")
+                .then()
+                .statusCode(200)
+                .body("size()", is(0));
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/consignes")
                 .then()
                 .statusCode(200)

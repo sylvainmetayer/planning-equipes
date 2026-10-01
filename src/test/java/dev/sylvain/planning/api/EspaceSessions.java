@@ -23,7 +23,8 @@ final class EspaceSessions {
 
     /** Returns the {@code planning-espace} cookie value of a fresh session. */
     static String open(MockMailbox mailbox, String token, String email) {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + token + "/code")
                 .then()
@@ -32,7 +33,8 @@ final class EspaceSessions {
         assertThat(mails).as("the access code mail must reach " + email).isNotEmpty();
         Matcher matcher = CODE.matcher(mails.get(mails.size() - 1).getText());
         assertThat(matcher.find()).as("the mail must carry a 6-digit code").isTrue();
-        String cookie = given().contentType(ContentType.JSON)
+        String cookie = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"code\":\"" + matcher.group(1) + "\"}")
                 .when()
                 .post("/api/espace-animateur/" + token + "/session")

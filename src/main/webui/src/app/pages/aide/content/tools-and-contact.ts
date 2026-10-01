@@ -120,6 +120,10 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
               text: $localize`:@@aide.mcp.def.pouvoir:Tout ce que fait l'administration, écriture comprise : créer et supprimer des données, lancer une résolution, publier, vider une édition. Elle n'est propre à personne et n'expire pas : traitez-la comme un mot de passe et faites-la remplacer au moindre doute. Un assistant branché dessus agit sans confirmation à l'écran. Avant de lui faire toucher une édition réelle, prenez un instantané.`,
             },
             {
+              term: $localize`:@@aide.mcp.term.edition:L'édition visée`,
+              text: $localize`:@@aide.mcp.def.edition:Un assistant nomme l'édition à chaque appel ; un appel qui ne la nomme pas est refusé, plutôt que de travailler dans une édition que personne n'a désignée. Ce qui envoie du courriel, publier compris, n'aboutit que dans l'édition active, et l'assistant active ou désactive une édition comme la page Éditions.`,
+            },
+            {
               term: $localize`:@@aide.mcp.term.donnees:Ce qui ne sort jamais par là`,
               text: $localize`:@@aide.mcp.def.donnees:Ni nom, ni prénom, ni date de naissance, ni adresse e-mail. Un assistant désigne une personne par son identifiant d'animateur, et ne connaît d'elle que ses attributs de planification et son régime (mineur, moins de seize ans, majeur), déduit de la date sans que la date circule. Une réponse par identifiants se relit sur la page Animateurs, dont le filtre les accepte.`,
             },

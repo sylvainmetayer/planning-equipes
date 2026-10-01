@@ -123,7 +123,7 @@ public class PlanningMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     ProblemScaleService.ProblemScale volumes(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return problemScaleService.compute();
     }
 
@@ -141,8 +141,7 @@ public class PlanningMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    FeasibilityReport analyzeFeasibility(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+    FeasibilityReport analyzeFeasibility(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return feasibilityAnalyzer.analyze(
                 referenceDataService.listAnimateurs(),
                 referenceDataService.listSolvedStands(),
@@ -169,8 +168,7 @@ public class PlanningMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    EtatPlanningView planningState(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+    EtatPlanningView planningState(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         PlanningPersistenceService.PlanningResolution resolution = persistenceService.loadResolution();
         int affectations = persistenceService.countPersistedAssignments();
         Instant derniereModificationDonnees = changeTracker.lastModifiedAt();
@@ -200,7 +198,7 @@ public class PlanningMcpTools {
                     Boolean seulementNonPourvus,
             @ToolArg(description = "Nombre maximum d'affectations renvoyées (défaut 200)", required = false)
                     Integer limite,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         List<PosteAffectation> retenus = postesFiltres(standId, creneauId, animateurId, seulementNonPourvus);
         return new AffectationsView(
                 retenus.size(),
@@ -227,8 +225,7 @@ public class PlanningMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    SyntheseView summarizeAffectations(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+    SyntheseView summarizeAffectations(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         List<PosteAffectation> postes = postesFiltres(null, null, null, null);
         Map<String, LigneSynthese> parStand = new LinkedHashMap<>();
         Map<LocalDate, LigneSynthese> parJour = new TreeMap<>();
@@ -306,8 +303,7 @@ public class PlanningMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    HeuresView workedHours(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+    HeuresView workedHours(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         PlanningEvenement planning = persistenceService.loadPersistedPlanning();
         if (planning == null || planning.getPostes() == null) {
             return new HeuresView(List.of(), List.of());
@@ -332,8 +328,7 @@ public class PlanningMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    EquiteView planningFairness(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+    EquiteView planningFairness(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return toView(equiteService.rapport());
     }
 
@@ -350,7 +345,7 @@ public class PlanningMcpTools {
                             openWorldHint = false))
     ExplicationView explainAffectation(
             @ToolArg(description = "Id du poste") String posteId,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         AffectationExplanation explication = planningService.persistedExplainAffectation(posteId);
         return new ExplicationView(
                 explication.posteId(),
@@ -373,7 +368,7 @@ public class PlanningMcpTools {
     SwapView simulateSwap(
             @ToolArg(description = "Id du poste") String posteId,
             @ToolArg(description = "Id de l'animateur candidat") String animateurId,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         SwapSimulation simulation = planningService.simulateSwap(persistedPlanning(), posteId, animateurId);
         return new SwapView(
                 simulation.posteId(),
@@ -411,7 +406,7 @@ public class PlanningMcpTools {
                                     + "recherche restée sans candidat viable",
                             required = false)
                     Integer depuis,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         SuggestionsReparation suggestions = planningService.persistedSuggererReparations(posteId, plafond, depuis);
         return new SuggestionsView(
                 suggestions.posteId(),
@@ -452,7 +447,7 @@ public class PlanningMcpTools {
     ReaffectationView assignPoste(
             @ToolArg(description = "Id du poste") String posteId,
             @ToolArg(description = "Id de l'animateur ; omis, le poste est vidé", required = false) String animateurId,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         String precedent = persistedPlanning().getPostes().stream()
                 .filter(poste -> poste.getId().equals(posteId))
                 .findFirst()
@@ -482,7 +477,7 @@ public class PlanningMcpTools {
             @ToolArg(description = "Id du poste qui la reçoit", required = false) String posteCibleId,
             @ToolArg(description = "Id de l'animateur qui la reçoit, si aucun poste n'est donné", required = false)
                     String animateurId,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return toView(deplacementService.simulate(posteId, posteCibleId, animateurId));
     }
 
@@ -515,7 +510,7 @@ public class PlanningMcpTools {
                                             + "refusé si quelqu'un d'autre l'occupe ; omis, pas de contrôle)",
                             required = false)
                     String occupantAttendu,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return toView(deplacementService.apply(posteId, posteCibleId, animateurId, occupantAttendu));
     }
 

@@ -55,7 +55,7 @@ public class ValidationJourneeMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     AvancementValidations listJourneeValidations(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         ProgressionValidations progression = prerequisService.progression();
         return new AvancementValidations(
                 progression.journees(),
@@ -78,7 +78,7 @@ public class ValidationJourneeMcpTools {
                             openWorldHint = false))
     PrerequisJourneeView getValidationPrerequisites(
             @ToolArg(description = "Journée à relire (AAAA-MM-JJ)") String jour,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         PrerequisJournee lu = prerequisService.prerequis(McpArgs.date(jour, "jour"));
         return new PrerequisJourneeView(
                 lu.jour(),
@@ -109,7 +109,7 @@ public class ValidationJourneeMcpTools {
             @ToolArg(description = "Journée relue (AAAA-MM-JJ)") String jour,
             @ToolArg(description = "Commentaire de relecture, libre", required = false) String commentaire,
             @ToolArg(description = "Poser aussi un verrouillage de journée", required = false) Boolean poserVerrou,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         ValidationJourneeService.ResultatValidation resultat = validationService.accept(
                 new DemandeValidation(McpArgs.date(jour, "jour"), commentaire, Boolean.TRUE.equals(poserVerrou)));
         return new ResultatValidationView(toView(resultat.validation()), resultat.verrouPose(), List.of());
@@ -127,7 +127,7 @@ public class ValidationJourneeMcpTools {
                             openWorldHint = false))
     SuppressionResult removeJourneeValidation(
             @ToolArg(description = "Id de la validation") String id,
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         validationService.withdraw(id);
         return new SuppressionResult(id, true);
     }

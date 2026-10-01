@@ -74,7 +74,7 @@ class EditionMcpToolsTest {
         assertThat(creneauTools.listCreneaux(editionTest))
                 .extracting(CreneauView::id)
                 .contains(cree.id());
-        assertThat(creneauTools.listCreneaux(null))
+        assertThat(creneauTools.listCreneaux("E1"))
                 .as("l'édition courante ne doit rien avoir reçu")
                 .extracting(CreneauView::date)
                 .doesNotContain(DATE_TEST);
@@ -111,12 +111,11 @@ class EditionMcpToolsTest {
         assertThat(test.nombreCreneaux()).isEqualTo(1);
         assertThat(test.premiereDate()).isEqualTo(DATE_TEST);
         assertThat(test.derniereDate()).isEqualTo(DATE_TEST);
-        assertThat(test.courante()).isFalse();
-        assertThat(test.defaut()).isFalse();
+        assertThat(test.active()).as("une édition naît inactive").isFalse();
 
         assertThat(editions)
-                .filteredOn(EditionView::courante)
-                .as("exactement une édition est celle où travaillent les outils sans argument edition")
+                .filteredOn(EditionView::active)
+                .as("au plus une édition est active, et c'est celle qu'edition_courante nomme")
                 .hasSize(1)
                 .first()
                 .isEqualTo(editionTools.currentEdition());
@@ -144,7 +143,7 @@ class EditionMcpToolsTest {
 
         assertThat(editionTools.editionState(editionTest).referentiels().creneaux())
                 .isEqualTo(1);
-        assertThat(editionTools.editionState(null).editionId())
+        assertThat(editionTools.editionState("E1").editionId())
                 .as("sans argument, l'édition courante")
                 .isNotEqualTo(editionTest);
         for (var composant : EtatEditionView.class.getRecordComponents()) {
@@ -178,7 +177,7 @@ class EditionMcpToolsTest {
      * {@code @ToolArg} is processed shows up here.
      */
     @Test
-    void largumentEditionEstPublieAuxClientsMcp() throws Exception {
+    void theEditionArgumentIsPublishedToMcpClientsAsRequired() throws Exception {
         int verifies = 0;
         for (ToolInfo outil : toolManager) {
             Method methode = outil.method().orElse(null);
@@ -195,8 +194,8 @@ class EditionMcpToolsTest {
                     .as("l'outil %s doit publier son argument edition", outil.name())
                     .isNotNull();
             assertThat(edition.required())
-                    .as("l'argument edition de %s doit être facultatif", outil.name())
-                    .isFalse();
+                    .as("l'argument edition de %s est obligatoire (ADR 0072)", outil.name())
+                    .isTrue();
             assertThat(edition.description()).isEqualTo(EditionArg.DESCRIPTION);
             verifies++;
         }

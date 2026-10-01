@@ -38,18 +38,24 @@ class PlacementResourceTest {
 
     @AfterEach
     void resetDatabase() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
     }
 
     /** Solves the sample scenario, then frees one seat: its former occupant is off duty on that timeslot. */
     private FreeSeat freeSeat() {
-        String sample = given().when()
+        String sample = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/sample?name=scenario.yml")
                 .then()
                 .statusCode(200)
                 .extract()
                 .asString();
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(sample)
                 .when()
                 .post("/api/solve?seconds=3")
@@ -57,7 +63,11 @@ class PlacementResourceTest {
                 .statusCode(200);
         Map<String, String> occupants = occupants(persisted());
         String siege = occupants.keySet().iterator().next();
-        given().when().post("/api/postes/" + siege + "/affectation").then().statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/postes/" + siege + "/affectation")
+                .then()
+                .statusCode(204);
         JsonPath plan = persisted();
         String creneau = plan.getString("postes.find { it.id == '" + siege + "' }.creneau.id");
         return new FreeSeat(siege, occupants.get(siege), creneau, occupants(plan));
@@ -66,7 +76,8 @@ class PlacementResourceTest {
     private record FreeSeat(String posteId, String libre, String creneauId, Map<String, String> occupants) {}
 
     private static JsonPath persisted() {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/persisted")
                 .then()
                 .statusCode(200)
@@ -86,7 +97,8 @@ class PlacementResourceTest {
     void placingSomebodyOffDutyFillsTheSeatAndAnswersTheScores() {
         FreeSeat siege = freeSeat();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/postes/" + siege.posteId() + "/placement?animateur=" + siege.libre())
                 .then()
                 .statusCode(200)
@@ -109,12 +121,14 @@ class PlacementResourceTest {
     @Test
     void aSeatNoLongerFreeIsRefusedWithAConflict() {
         FreeSeat siege = freeSeat();
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/postes/" + siege.posteId() + "/placement?animateur=" + siege.libre())
                 .then()
                 .statusCode(200);
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/postes/" + siege.posteId() + "/placement?animateur=" + siege.libre())
                 .then()
                 .statusCode(409)
@@ -125,7 +139,8 @@ class PlacementResourceTest {
     @Test
     void aPlacementThatBreaksAHardRuleIsRefusedAndWritesNothing() {
         FreeSeat siege = freeSeat();
-        String indispo = given().contentType("application/json")
+        String indispo = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {"type":"INDISPONIBILITE_FORCEE",
                          "animateursConcernes":[{"id":"%s"}],"creneau":{"id":%s}}""".formatted(siege.libre(), siege.creneauId()))
@@ -136,14 +151,15 @@ class PlacementResourceTest {
                 .extract()
                 .path("contrainte.id");
         try {
-            given().when()
+            given().header("X-Edition-Id", "E1")
+                    .when()
                     .post("/api/postes/" + siege.posteId() + "/placement?animateur=" + siege.libre())
                     .then()
                     .statusCode(400)
                     .body("message", containsString("Affectation refusée"));
             assertThat(occupants(persisted())).isEqualTo(siege.occupants());
         } finally {
-            given().when().delete("/api/contraintes-ad-hoc/" + indispo);
+            given().header("X-Edition-Id", "E1").when().delete("/api/contraintes-ad-hoc/" + indispo);
         }
     }
 
@@ -151,21 +167,23 @@ class PlacementResourceTest {
     @Test
     void placingALockedAnimateurIsRefused() {
         FreeSeat siege = freeSeat();
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"id\":\"PLAC-VERROU\",\"type\":\"ANIMATEUR\",\"animateurId\":\"" + siege.libre() + "\"}")
                 .when()
                 .post("/api/verrouillages")
                 .then()
                 .statusCode(200);
         try {
-            given().when()
+            given().header("X-Edition-Id", "E1")
+                    .when()
                     .post("/api/postes/" + siege.posteId() + "/placement?animateur=" + siege.libre())
                     .then()
                     .statusCode(400)
                     .body("message", containsString("verrouillé"));
             assertThat(occupants(persisted())).isEqualTo(siege.occupants());
         } finally {
-            given().when().delete("/api/verrouillages/PLAC-VERROU");
+            given().header("X-Edition-Id", "E1").when().delete("/api/verrouillages/PLAC-VERROU");
         }
     }
 
@@ -173,11 +191,13 @@ class PlacementResourceTest {
     void anUnknownSeatIs404AndNobodyToPlaceIs400() {
         FreeSeat siege = freeSeat();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/postes/POSTE-INEXISTANT/placement?animateur=" + siege.libre())
                 .then()
                 .statusCode(404);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/postes/" + siege.posteId() + "/placement")
                 .then()
                 .statusCode(400);
@@ -215,14 +235,16 @@ class PlacementResourceTest {
                 .findFirst()
                 .orElseThrow();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/postes/" + tenu.getKey() + "/affectation?occupant=" + autre)
                 .then()
                 .statusCode(409)
                 .body("message", containsString("n'est plus tenu par la personne affichée"));
         assertThat(occupants(persisted())).containsEntry(tenu.getKey(), tenu.getValue());
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/postes/" + tenu.getKey() + "/affectation?occupant=" + tenu.getValue())
                 .then()
                 .statusCode(204);
@@ -234,7 +256,8 @@ class PlacementResourceTest {
     void replacingWithAStaleOccupantIsRefusedAndWritesNothing() {
         FreeSeat siege = freeSeat();
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/postes/" + siege.posteId() + "/affectation?animateurId=" + siege.libre() + "&occupant="
                         + siege.libre())
                 .then()

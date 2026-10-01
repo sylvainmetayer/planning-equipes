@@ -71,7 +71,8 @@ class ImportScenarioTargetEditionTest {
     @AfterEach
     void dropTargetEditions() {
         // Leftovers of a previous test or run, found by name since their ids were drawn.
-        List<Map<String, Object>> editions = given().when()
+        List<Map<String, Object>> editions = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/editions")
                 .then()
                 .statusCode(200)
@@ -79,8 +80,8 @@ class ImportScenarioTargetEditionTest {
                 .path("");
         for (Map<String, Object> edition : editions) {
             if (Set.of(NOM_EDITION_CIBLE, NOM_RENOMME).contains(edition.get("nom"))
-                    && !Boolean.TRUE.equals(edition.get("defaut"))) {
-                given().when().delete("/api/editions/" + edition.get("id"));
+                    && !Boolean.TRUE.equals(edition.get("active"))) {
+                given().header("X-Edition-Id", "E1").when().delete("/api/editions/" + edition.get("id"));
             }
         }
     }
@@ -88,7 +89,8 @@ class ImportScenarioTargetEditionTest {
     /** Imports {@code scenario} and returns the id of the edition it landed in. */
     private static String importScenario(String scenario) {
         // Bytes, not String: RestAssured has no encoder for x-yaml text.
-        return given().contentType("application/x-yaml")
+        return given().header("X-Edition-Id", "E1")
+                .contentType("application/x-yaml")
                 .body(scenario.getBytes(StandardCharsets.UTF_8))
                 .when()
                 .post("/api/reference-data/import-scenario-fichier")
@@ -100,14 +102,16 @@ class ImportScenarioTargetEditionTest {
 
     @Test
     void importCreatesTargetEditionAndWritesThereWithoutTouchingCurrentEdition() {
-        List<String> standsCourantsAvant = given().when()
+        List<String> standsCourantsAvant = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/stands")
                 .then()
                 .statusCode(200)
                 .extract()
                 .path("id");
 
-        String editionId = given().contentType("application/x-yaml")
+        String editionId = given().header("X-Edition-Id", "E1")
+                .contentType("application/x-yaml")
                 .body(SCENARIO.getBytes(StandardCharsets.UTF_8))
                 .when()
                 .post("/api/reference-data/import-scenario-fichier")
@@ -119,7 +123,12 @@ class ImportScenarioTargetEditionTest {
                 .extract()
                 .path("editionId");
 
-        given().when().get("/api/editions").then().statusCode(200).body("id", hasItem(editionId));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/editions")
+                .then()
+                .statusCode(200)
+                .body("id", hasItem(editionId));
 
         // The data landed in the target edition — the file's stand id became its code…
         given().header("X-Edition-Id", editionId)
@@ -130,7 +139,8 @@ class ImportScenarioTargetEditionTest {
                 .body("code", hasItem("EDC-S1"));
 
         // …and nowhere near the caller's current edition, whose stands are the ones it had.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/stands")
                 .then()
                 .statusCode(200)
@@ -142,7 +152,8 @@ class ImportScenarioTargetEditionTest {
         String editionId = importScenario(SCENARIO);
 
         // Designated by the same name, the edition is found again rather than created twice.
-        given().contentType("application/x-yaml")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/x-yaml")
                 .body(SCENARIO.getBytes(StandardCharsets.UTF_8))
                 .when()
                 .post("/api/reference-data/import-scenario-fichier")
@@ -152,7 +163,8 @@ class ImportScenarioTargetEditionTest {
                 .body("editionCreee", equalTo(false));
 
         // Renamed by hand, then re-imported into by its id: the name the file carries does not win.
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{\"nom\": \"" + NOM_RENOMME + "\"}")
                 .when()
                 .put("/api/editions/" + editionId)
@@ -162,7 +174,8 @@ class ImportScenarioTargetEditionTest {
         String parId = SCENARIO.replaceFirst(
                 "edition:\\n  nom: [^\\n]*\\n",
                 "edition:\n  id: " + editionId + "\n  nom: " + NOM_EDITION_CIBLE + "\n");
-        given().contentType("application/x-yaml")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/x-yaml")
                 .body(parId.getBytes(StandardCharsets.UTF_8))
                 .when()
                 .post("/api/reference-data/import-scenario-fichier")
@@ -180,7 +193,8 @@ class ImportScenarioTargetEditionTest {
      */
     @Test
     void thePreviewAnnouncesTheTargetWithoutCreatingIt() {
-        given().contentType("application/x-yaml")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/x-yaml")
                 .body(SCENARIO.getBytes(StandardCharsets.UTF_8))
                 .when()
                 .post("/api/reference-data/cible-scenario-fichier")
@@ -189,12 +203,18 @@ class ImportScenarioTargetEditionTest {
                 .body("editionId", nullValue())
                 .body("editionNomFichier", equalTo(NOM_EDITION_CIBLE))
                 .body("existe", equalTo(false));
-        given().when().get("/api/editions").then().statusCode(200).body("nom", not(hasItem(NOM_EDITION_CIBLE)));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/editions")
+                .then()
+                .statusCode(200)
+                .body("nom", not(hasItem(NOM_EDITION_CIBLE)));
 
         String editionId = importScenario(SCENARIO);
 
         // Once it exists, the name alone finds it again, as the import would.
-        given().contentType("application/x-yaml")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/x-yaml")
                 .body(SCENARIO.getBytes(StandardCharsets.UTF_8))
                 .when()
                 .post("/api/reference-data/cible-scenario-fichier")
@@ -208,7 +228,8 @@ class ImportScenarioTargetEditionTest {
     @Test
     void sansSectionEditionLaReponseResteMuetteSurLEdition() {
         String withoutEdition = SCENARIO.replaceFirst("(?s)edition:.*?\\n\\n", "");
-        given().contentType("application/x-yaml")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/x-yaml")
                 .body(withoutEdition.getBytes(StandardCharsets.UTF_8))
                 .when()
                 .post("/api/reference-data/import-scenario-fichier")

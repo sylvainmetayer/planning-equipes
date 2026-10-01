@@ -22,6 +22,7 @@ import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.solve.PlanningService;
+import dev.sylvain.planning.testing.ActiveEdition;
 import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
@@ -196,10 +197,14 @@ class RealisedFreezeJobTest {
         publishAt(AVANT_EVENEMENT);
         Edition autre = editionService.create(new Edition(null, "Édition réalisé job", false, null));
         creees.add(autre.getId());
-        editionContext.executeIn(autre.getId(), () -> {
-            persistence.persist(RealisedVsPlannedServiceTest.planOn("RVK-", Set.of(), 970_350_000L, JOUR1));
-            publishAt(AVANT_EVENEMENT);
-        });
+        // Publishing reaches outside: only the active edition does it (ADR 0072).
+        // The job itself then walks every edition, active or not.
+        ActiveEdition.during(
+                autre.getId(),
+                () -> editionContext.executeIn(autre.getId(), () -> {
+                    persistence.persist(RealisedVsPlannedServiceTest.planOn("RVK-", Set.of(), 970_350_000L, JOUR1));
+                    publishAt(AVANT_EVENEMENT);
+                }));
         List<String> nos = List.of(editionContext.editionIdCourant(), autre.getId());
         String enEchec = editionRepository.listEditions().stream()
                 .map(Edition::getId)
@@ -238,7 +243,8 @@ class RealisedFreezeJobTest {
         publishAt(AVANT_EVENEMENT);
         clock.setMocked(JOUR1, LocalTime.of(11, 0));
 
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(Map.of("animateurId", "RVJ-CAM", "raison", "Malade"))
                 .when()
                 .post("/api/jour-j/absences?date=" + JOUR1 + "&maintenant=" + JOUR1 + "T11:00")

@@ -23,7 +23,8 @@ class OuvertureStandsResourceTest {
     void rendUneGrilleStandParJourAvecSesPostes() {
         seedScenario();
 
-        JsonPath rapport = given().when()
+        JsonPath rapport = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/ouvertures-stands")
                 .then()
                 .statusCode(200)
@@ -55,7 +56,8 @@ class OuvertureStandsResourceTest {
     void chaqueCelluleExposeUnEtatEtUneSourceConnus() {
         seedScenario();
 
-        JsonPath rapport = given().when()
+        JsonPath rapport = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/ouvertures-stands")
                 .then()
                 .statusCode(200)
@@ -78,7 +80,8 @@ class OuvertureStandsResourceTest {
     void leTotalDUneLigneEstLaSommeDeSesCellules() {
         seedScenario();
 
-        JsonPath rapport = given().when()
+        JsonPath rapport = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/ouvertures-stands")
                 .then()
                 .statusCode(200)
@@ -106,7 +109,8 @@ class OuvertureStandsResourceTest {
     @Test
     void laGrilleSaisieEstRelueTelleQuelle() {
         seedScenario();
-        JsonPath avant = given().when()
+        JsonPath avant = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/ouvertures-stands")
                 .then()
                 .statusCode(200)
@@ -127,7 +131,8 @@ class OuvertureStandsResourceTest {
             cellule.put("effectif", index == 0 ? null : 3);
             cellules.add(cellule);
         }
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of("stands", List.of(Map.of("standId", standId, "cellules", cellules))))
                 .when()
                 .put("/api/ouvertures-stands/grille")
@@ -137,7 +142,8 @@ class OuvertureStandsResourceTest {
                 .body("stands[0].effectifMin", org.hamcrest.Matchers.equalTo(3))
                 .body("stands[0].effectifMax", org.hamcrest.Matchers.equalTo(3));
 
-        JsonPath apres = given().when()
+        JsonPath apres = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/ouvertures-stands")
                 .then()
                 .statusCode(200)
@@ -164,7 +170,8 @@ class OuvertureStandsResourceTest {
         // Ids are drawn anew by every import: a stand is followed by its name.
         String standNom = avant.getString("stands[0].nom");
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of("stands", List.of(Map.of("standId", standId, "cellules", cellsClosedOnFirst(avant)))))
                 .when()
                 .put("/api/ouvertures-stands/grille")
@@ -184,7 +191,8 @@ class OuvertureStandsResourceTest {
                     "cellules",
                     saisi ? cellsClosedOnFirst(relu) : cellsAsRead(relu, index)));
         }
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of("stands", tous))
                 .when()
                 .put("/api/ouvertures-stands/grille")
@@ -205,7 +213,8 @@ class OuvertureStandsResourceTest {
     }
 
     private static JsonPath readOpenings() {
-        return given().when()
+        return given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/ouvertures-stands")
                 .then()
                 .statusCode(200)
@@ -283,7 +292,8 @@ class OuvertureStandsResourceTest {
     @Test
     void unStandModifieDepuisLaLectureDeLaGrilleEstRefuse() {
         seedScenario();
-        JsonPath grille = given().when()
+        JsonPath grille = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/ouvertures-stands")
                 .then()
                 .statusCode(200)
@@ -294,7 +304,8 @@ class OuvertureStandsResourceTest {
         assertThat(luParLaGrille)
                 .as("the grid reads the stamp it will send back")
                 .isNotNull();
-        int creneauId = given().when()
+        int creneauId = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/ouvertures-stands")
                 .then()
                 .extract()
@@ -303,7 +314,8 @@ class OuvertureStandsResourceTest {
                 .get(0);
 
         // Another session renames the stand: the grid's stamp is now out of date.
-        Map<String, Object> stand = given().when()
+        Map<String, Object> stand = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/stands")
                 .then()
                 .statusCode(200)
@@ -312,14 +324,16 @@ class OuvertureStandsResourceTest {
                 .getList("findAll { it.id == '" + standId + "' }", Map.class)
                 .get(0);
         stand.put("nom", "Renommé ailleurs");
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(stand)
                 .when()
                 .put("/api/stands/" + standId)
                 .then()
                 .statusCode(200);
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of(
                         "stands",
                         List.of(Map.of(
@@ -336,7 +350,8 @@ class OuvertureStandsResourceTest {
                 .body("code", org.hamcrest.Matchers.equalTo("MODIFICATION_CONCURRENTE"));
 
         // Without a precondition the same save goes through, as an import does.
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of(
                         "stands",
                         List.of(Map.of(
@@ -353,7 +368,8 @@ class OuvertureStandsResourceTest {
     @Test
     void uneCelluleSurUnCreneauInconnuEstRefusee() {
         seedScenario();
-        String standId = given().when()
+        String standId = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/ouvertures-stands")
                 .then()
                 .statusCode(200)
@@ -361,7 +377,8 @@ class OuvertureStandsResourceTest {
                 .jsonPath()
                 .getString("stands[0].standId");
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of(
                         "stands",
                         List.of(Map.of(
@@ -379,7 +396,8 @@ class OuvertureStandsResourceTest {
     @Test
     void theCombinedCalendarAnswersBeforeAnySolveWithOneCellPerStandAndDay() {
         seedScenario();
-        JsonPath rapport = given().when()
+        JsonPath rapport = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/ouvertures-stands")
                 .then()
                 .statusCode(200)
@@ -387,7 +405,8 @@ class OuvertureStandsResourceTest {
                 .jsonPath();
         String premier = rapport.getString("jours[0].date");
 
-        JsonPath couches = given().queryParam("du", premier)
+        JsonPath couches = given().header("X-Edition-Id", "E1")
+                .queryParam("du", premier)
                 .queryParam("au", premier)
                 .when()
                 .get("/api/ouvertures-stands/couches")
@@ -405,13 +424,15 @@ class OuvertureStandsResourceTest {
 
     @Test
     void theCombinedCalendarRefusesAnInvertedOrUnreadableRange() {
-        given().queryParam("du", "2026-07-10")
+        given().header("X-Edition-Id", "E1")
+                .queryParam("du", "2026-07-10")
                 .queryParam("au", "2026-07-01")
                 .when()
                 .get("/api/ouvertures-stands/couches")
                 .then()
                 .statusCode(400);
-        given().queryParam("du", "demain")
+        given().header("X-Edition-Id", "E1")
+                .queryParam("du", "demain")
                 .when()
                 .get("/api/ouvertures-stands/couches")
                 .then()
@@ -425,11 +446,16 @@ class OuvertureStandsResourceTest {
      */
     @Test
     void theCombinedCalendarServesEventDaysMonthsApart() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
         for (String creneau : List.of(
                 "{\"jour\":1,\"date\":\"2026-01-10\",\"heureDebut\":\"10:00:00\",\"heureFin\":\"12:00:00\"}",
                 "{\"jour\":2,\"date\":\"2026-06-20\",\"heureDebut\":\"10:00:00\",\"heureFin\":\"12:00:00\"}")) {
-            given().contentType("application/json")
+            given().header("X-Edition-Id", "E1")
+                    .contentType("application/json")
                     .body(creneau)
                     .when()
                     .post("/api/creneaux")
@@ -437,7 +463,8 @@ class OuvertureStandsResourceTest {
                     .statusCode(200);
         }
 
-        JsonPath couches = given().queryParam("du", "2026-01-10")
+        JsonPath couches = given().header("X-Edition-Id", "E1")
+                .queryParam("du", "2026-01-10")
                 .queryParam("au", "2026-06-20")
                 .when()
                 .get("/api/ouvertures-stands/couches")
@@ -453,8 +480,13 @@ class OuvertureStandsResourceTest {
     }
 
     private static void seedScenario() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);

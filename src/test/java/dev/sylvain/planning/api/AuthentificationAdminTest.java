@@ -42,7 +42,11 @@ class AuthentificationAdminTest {
 
     @Test
     void unAppelApiSansSessionEstRefuse() {
-        given().when().get("/api/constraints").then().statusCode(401);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/constraints")
+                .then()
+                .statusCode(401);
     }
 
     /**
@@ -52,20 +56,28 @@ class AuthentificationAdminTest {
      */
     @Test
     void healthProbesStayPublicWithoutSession() {
-        given().when().get("/q/health/live").then().statusCode(200);
-        given().when().get("/q/health/ready").then().statusCode(200);
+        given().header("X-Edition-Id", "E1").when().get("/q/health/live").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/q/health/ready")
+                .then()
+                .statusCode(200);
     }
 
     /** The version is public too: {@code verifier-deploiement.sh} reads it without credentials. */
     @Test
     void configWithVersionStaysPublicWithoutSession() {
-        given().when().get("/api/config").then().statusCode(200);
+        given().header("X-Edition-Id", "E1").when().get("/api/config").then().statusCode(200);
     }
 
     @Test
     void lEspaceAnimateurResteAccessibleSansSession() {
         // 404 (unknown token), never 401: the token itself is the credential.
-        given().when().get("/api/espace-animateur/jeton-inconnu").then().statusCode(404);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/espace-animateur/jeton-inconnu")
+                .then()
+                .statusCode(404);
     }
 
     /**
@@ -77,7 +89,11 @@ class AuthentificationAdminTest {
      */
     @Test
     void lAbonnementIcsResteAccessibleSansSession() {
-        given().when().get("/api/abonnements/jeton-inconnu/planning.ics").then().statusCode(404);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/abonnements/jeton-inconnu/planning.ics")
+                .then()
+                .statusCode(404);
     }
 
     /**
@@ -86,8 +102,16 @@ class AuthentificationAdminTest {
      */
     @Test
     void lExemptionNeDeborddePasDuPrefixeDAbonnement() {
-        given().when().get("/api/animateurs").then().statusCode(401);
-        given().when().get("/api/planning/publication").then().statusCode(401);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/animateurs")
+                .then()
+                .statusCode(401);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/planning/publication")
+                .then()
+                .statusCode(401);
     }
 
     /**
@@ -98,13 +122,15 @@ class AuthentificationAdminTest {
      */
     @Test
     void lImportTabulaireDesAnimateursExigeUneSession() {
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{}")
                 .when()
                 .post("/api/animateurs/import-csv/analyse")
                 .then()
                 .statusCode(401);
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("{}")
                 .when()
                 .post("/api/animateurs/import-csv")
@@ -113,7 +139,11 @@ class AuthentificationAdminTest {
         // The example roster carries no real person, but it lives under the
         // admin prefix and stays there: the exemptions are enumerated, never
         // widened by accident.
-        given().when().get("/api/animateurs/import-csv/exemple").then().statusCode(401);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/animateurs/import-csv/exemple")
+                .then()
+                .statusCode(401);
     }
 
     /**
@@ -123,8 +153,8 @@ class AuthentificationAdminTest {
      */
     @Test
     void laDocumentationDeLApiExigeUneSession() {
-        given().when().get("/q/openapi").then().statusCode(401);
-        given().when().get("/q/swagger-ui").then().statusCode(401);
+        given().header("X-Edition-Id", "E1").when().get("/q/openapi").then().statusCode(401);
+        given().header("X-Edition-Id", "E1").when().get("/q/swagger-ui").then().statusCode(401);
     }
 
     /**
@@ -134,7 +164,11 @@ class AuthentificationAdminTest {
      */
     @Test
     void lesMentionsLegalesSontLisiblesSansSession() {
-        given().when().get("/api/mentions-legales").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/mentions-legales")
+                .then()
+                .statusCode(200);
     }
 
     /**
@@ -144,12 +178,17 @@ class AuthentificationAdminTest {
      */
     @Test
     void theDeploymentBrandIsReadableWithoutASession() {
-        given().when().get("/api/branding").then().statusCode(200);
+        given().header("X-Edition-Id", "E1").when().get("/api/branding").then().statusCode(200);
     }
 
     @Test
     void leStatutDeSessionEstPublicEtAnonymeParDefaut() {
-        given().when().get("/api/auth/me").then().statusCode(200).body("authentifie", equalTo(false));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/auth/me")
+                .then()
+                .statusCode(200)
+                .body("authentifie", equalTo(false));
     }
 
     /**
@@ -160,7 +199,8 @@ class AuthentificationAdminTest {
      */
     @Test
     void unMauvaisMotDePasseEstRefuse() {
-        String cookie = given().contentType("application/x-www-form-urlencoded")
+        String cookie = given().header("X-Edition-Id", "E1")
+                .contentType("application/x-www-form-urlencoded")
                 .formParam("j_username", "admin")
                 .formParam("j_password", "mauvais")
                 .redirects()
@@ -178,7 +218,8 @@ class AuthentificationAdminTest {
     void laConnexionOuvreUneSessionUtilisable() {
         // A successful login answers a redirect to the session probe
         // (landing-page=/api/auth/me), carrying the encrypted session cookie.
-        String cookie = given().contentType("application/x-www-form-urlencoded")
+        String cookie = given().header("X-Edition-Id", "E1")
+                .contentType("application/x-www-form-urlencoded")
                 .formParam("j_username", "admin")
                 .formParam("j_password", MOT_DE_PASSE_DEV)
                 .redirects()
@@ -191,13 +232,15 @@ class AuthentificationAdminTest {
                 .cookie("planning-session");
         assertThat(cookie).isNotBlank();
 
-        given().cookie("planning-session", cookie)
+        given().header("X-Edition-Id", "E1")
+                .cookie("planning-session", cookie)
                 .when()
                 .get("/api/constraints")
                 .then()
                 .statusCode(200);
 
-        given().cookie("planning-session", cookie)
+        given().header("X-Edition-Id", "E1")
+                .cookie("planning-session", cookie)
                 .when()
                 .get("/api/auth/me")
                 .then()
@@ -214,7 +257,8 @@ class AuthentificationAdminTest {
      */
     @Test
     void adminSessionDoesNotOpenTheMcpEndpoint() {
-        String cookie = given().contentType("application/x-www-form-urlencoded")
+        String cookie = given().header("X-Edition-Id", "E1")
+                .contentType("application/x-www-form-urlencoded")
                 .formParam("j_username", "admin")
                 .formParam("j_password", MOT_DE_PASSE_DEV)
                 .redirects()
@@ -226,8 +270,14 @@ class AuthentificationAdminTest {
                 .extract()
                 .cookie("planning-session");
 
-        given().cookie("planning-session", cookie).when().post("/mcp").then().statusCode(403);
-        given().cookie("planning-session", cookie)
+        given().header("X-Edition-Id", "E1")
+                .cookie("planning-session", cookie)
+                .when()
+                .post("/mcp")
+                .then()
+                .statusCode(403);
+        given().header("X-Edition-Id", "E1")
+                .cookie("planning-session", cookie)
                 .header("X-MCP-Api-Key", "test-mcp-key")
                 .when()
                 .post("/mcp")
@@ -245,7 +295,8 @@ class AuthentificationAdminTest {
      */
     @Test
     void laRedirectionDeConnexionSuitLeSchemaAnnonceParLeProxy() {
-        String location = given().contentType("application/x-www-form-urlencoded")
+        String location = given().header("X-Edition-Id", "E1")
+                .contentType("application/x-www-form-urlencoded")
                 .header("X-Forwarded-Proto", "https")
                 .formParam("j_username", "admin")
                 .formParam("j_password", MOT_DE_PASSE_DEV)
@@ -262,6 +313,10 @@ class AuthentificationAdminTest {
 
     @Test
     void laDeconnexionEffaceLeCookie() {
-        given().when().post("/api/auth/logout").then().statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/auth/logout")
+                .then()
+                .statusCode(204);
     }
 }

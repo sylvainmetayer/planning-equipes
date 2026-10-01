@@ -8,8 +8,8 @@ import { EditionStore } from '../core/edition.store';
 import { Edition } from '../core/models';
 import { seedStore } from '../core/testing/seed-store';
 
-function edition(id: string, nom: string, defaut = false): Edition {
-  return { id, nom, defaut, creeLe: null };
+function edition(id: string, nom: string, active = false): Edition {
+  return { id, nom, active, creeLe: null };
 }
 
 describe('EditionActuelleBar', () => {
@@ -72,5 +72,34 @@ describe('EditionActuelleBar', () => {
     fixture.componentInstance['basculer'](edition('A', 'Année 2025'));
 
     expect(basculer).toHaveBeenCalledWith(edition('A', 'Année 2025'));
+  });
+
+  it('says when the edition read here is not the active one', async () => {
+    seedStore(store, 'editions', [edition('A', 'Année 2025', true), edition('B', 'Année 2026')]);
+    seedStore(store, 'courant', edition('B', 'Année 2026'));
+    await fixture.whenStable();
+    expect(text()).toContain('inactive');
+
+    seedStore(store, 'courant', edition('A', 'Année 2025', true));
+    await fixture.whenStable();
+    expect(text()).not.toContain('inactive');
+  });
+
+  it('shows the banner only when the editions state asks for a decision', async () => {
+    seedStore(store, 'editions', [edition('A', 'Année 2025', true)]);
+    seedStore(store, 'courant', edition('A', 'Année 2025', true));
+    await fixture.whenStable();
+    expect(text()).not.toContain('Action requise');
+
+    seedStore(store, 'situations', [
+      {
+        type: 'ACTIVE_TERMINEE',
+        edition: edition('A', 'Année 2025', true),
+        premierJour: '2025-07-10',
+        dernierJour: '2025-07-12',
+      },
+    ]);
+    await fixture.whenStable();
+    expect(text()).toContain('Action requise');
   });
 });

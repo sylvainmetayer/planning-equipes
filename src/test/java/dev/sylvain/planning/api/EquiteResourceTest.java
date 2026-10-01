@@ -45,7 +45,8 @@ class EquiteResourceTest {
 
     @Test
     void withoutAPersistedPlanTheTableIsEmptyAndSaysSoWithoutAnError() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/equite")
                 .then()
                 .statusCode(200)
@@ -70,7 +71,8 @@ class EquiteResourceTest {
         persistence.persist(
                 new PlanningEvenement(SAMEDI, List.of(alice, bruno, libre), List.of(posteAlice, posteBruno)));
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/equite")
                 .then()
                 .statusCode(200)
@@ -87,7 +89,8 @@ class EquiteResourceTest {
 
         // The evening moved: the same plan, read under today's declaration.
         declarerHeureDebutSoiree("22:00:00");
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/equite")
                 .then()
                 .statusCode(200)
@@ -104,7 +107,8 @@ class EquiteResourceTest {
         poste.setAnimateur(alice);
         persistence.persist(new PlanningEvenement(SAMEDI, List.of(alice), List.of(poste)));
 
-        byte[] corps = given().when()
+        byte[] corps = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/equite/export")
                 .then()
                 .statusCode(200)
@@ -121,7 +125,8 @@ class EquiteResourceTest {
     }
 
     private static void declarerHeureDebutSoiree(String heure) {
-        String courant = given().when()
+        String courant = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/parametres-legaux")
                 .then()
                 .statusCode(200)
@@ -129,7 +134,8 @@ class EquiteResourceTest {
                 .asString();
         String modifie =
                 courant.replaceAll("\"heureDebutSoiree\":\"[0-9:]+\"", "\"heureDebutSoiree\":\"" + heure + "\"");
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body(modifie)
                 .when()
                 .put("/api/parametres-legaux")

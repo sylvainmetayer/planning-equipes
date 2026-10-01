@@ -28,18 +28,24 @@ class ValidationJourneeResourceTest {
 
     @AfterEach
     void resetDatabase() {
-        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/reset")
+                .then()
+                .statusCode(200);
     }
 
     /** Solves the sample scenario, which persists a plan for the single day above. */
     private void aPersistedPlan() {
-        String sample = given().when()
+        String sample = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/sample?name=scenario.yml")
                 .then()
                 .statusCode(200)
                 .extract()
                 .asString();
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(sample)
                 .when()
                 .post("/api/solve?seconds=3")
@@ -48,7 +54,8 @@ class ValidationJourneeResourceTest {
     }
 
     private static String accept(Map<String, Object> corps) {
-        return given().contentType("application/json")
+        return given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(corps)
                 .when()
                 .post("/api/validations")
@@ -66,14 +73,16 @@ class ValidationJourneeResourceTest {
         String id = accept(Map.of("jour", JOUR, "commentaire", "Relu avec le responsable"));
 
         assertThat(id).isNotBlank();
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/validations")
                 .then()
                 .statusCode(200)
                 .body("size()", is(1))
                 .body("[0].jour", equalTo(JOUR))
                 .body("[0].commentaire", equalTo("Relu avec le responsable"));
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/validations/progression")
                 .then()
                 .statusCode(200)
@@ -86,7 +95,8 @@ class ValidationJourneeResourceTest {
     void acceptingADayLaysNoLockUnlessItIsAskedFor() {
         aPersistedPlan();
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of("jour", JOUR))
                 .when()
                 .post("/api/validations")
@@ -94,14 +104,20 @@ class ValidationJourneeResourceTest {
                 .statusCode(200)
                 .body("verrouPose", is(false));
 
-        given().when().get("/api/verrouillages").then().statusCode(200).body("size()", is(0));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/verrouillages")
+                .then()
+                .statusCode(200)
+                .body("size()", is(0));
     }
 
     @Test
     void theLockIsLaidDownWhenTheRequestAsksForIt() {
         aPersistedPlan();
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of("jour", JOUR, "poserVerrou", true))
                 .when()
                 .post("/api/validations")
@@ -109,7 +125,8 @@ class ValidationJourneeResourceTest {
                 .statusCode(200)
                 .body("verrouPose", is(true));
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/verrouillages")
                 .then()
                 .statusCode(200)
@@ -126,7 +143,8 @@ class ValidationJourneeResourceTest {
         accept(Map.of("jour", JOUR, "commentaire", "Première lecture"));
         accept(Map.of("jour", JOUR, "commentaire", "Deuxième lecture"));
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/validations")
                 .then()
                 .statusCode(200)
@@ -139,17 +157,31 @@ class ValidationJourneeResourceTest {
         aPersistedPlan();
         String id = accept(Map.of("jour", JOUR));
 
-        given().when().delete("/api/validations/" + id).then().statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/validations/" + id)
+                .then()
+                .statusCode(204);
 
-        given().when().get("/api/validations").then().statusCode(200).body("size()", is(0));
-        given().when().delete("/api/validations/" + id).then().statusCode(404);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/validations")
+                .then()
+                .statusCode(200)
+                .body("size()", is(0));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/validations/" + id)
+                .then()
+                .statusCode(404);
     }
 
     @Test
     void aDayTheGridDoesNotHoldIsRefused() {
         aPersistedPlan();
 
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body(Map.of("jour", "2026-12-25"))
                 .when()
                 .post("/api/validations")
@@ -160,19 +192,25 @@ class ValidationJourneeResourceTest {
 
     @Test
     void anUnreadableDayIsRefusedRatherThanIgnored() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/validations/prerequis?jour=hier")
                 .then()
                 .statusCode(400)
                 .body(containsString("illisible"));
-        given().when().get("/api/validations/prerequis").then().statusCode(400);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/validations/prerequis")
+                .then()
+                .statusCode(400);
     }
 
     @Test
     void prerequisitesReadTheDayOfThePersistedPlan() {
         aPersistedPlan();
 
-        JsonPath prerequis = given().when()
+        JsonPath prerequis = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/validations/prerequis?jour=" + JOUR)
                 .then()
                 .statusCode(200)
@@ -204,7 +242,12 @@ class ValidationJourneeResourceTest {
 
         aPersistedPlan();
 
-        given().when().get("/api/validations").then().statusCode(200).body("size()", is(0));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/validations")
+                .then()
+                .statusCode(200)
+                .body("size()", is(0));
     }
 
     /** A frozen day could not move, so its reading still describes what is there. */
@@ -216,12 +259,18 @@ class ValidationJourneeResourceTest {
 
         aPersistedPlan();
 
-        given().when().get("/api/validations").then().statusCode(200).body("size()", is(1));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/validations")
+                .then()
+                .statusCode(200)
+                .body("size()", is(1));
     }
 
     /** An animateur the persisted plan seats somewhere on the day. */
     private static String aSeatedAnimateur() {
-        String id = given().when()
+        String id = given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/planning/persisted")
                 .then()
                 .statusCode(200)
@@ -234,7 +283,8 @@ class ValidationJourneeResourceTest {
 
     /** A late change the next solve has to work around: this person is out that day. */
     private static void markUnavailable(String animateurId) {
-        given().contentType("application/json")
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
                 .body("""
                         {"type":"INDISPONIBILITE_FORCEE",
                          "animateursConcernes":[{"id":"%s"}],"jour":"%s"}""".formatted(animateurId, JOUR))
@@ -249,10 +299,20 @@ class ValidationJourneeResourceTest {
     void thePublicationPreviewCountsTheDaysNobodyHasRead() {
         aPersistedPlan();
 
-        given().when().get("/api/planning/publication").then().statusCode(200).body("journeesNonValidees", is(1));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/planning/publication")
+                .then()
+                .statusCode(200)
+                .body("journeesNonValidees", is(1));
 
         accept(Map.of("jour", JOUR));
 
-        given().when().get("/api/planning/publication").then().statusCode(200).body("journeesNonValidees", is(0));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/planning/publication")
+                .then()
+                .statusCode(200)
+                .body("journeesNonValidees", is(0));
     }
 }

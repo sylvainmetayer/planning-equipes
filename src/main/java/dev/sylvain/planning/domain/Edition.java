@@ -10,27 +10,29 @@ import java.util.Objects;
  * persisted solve. Two editions never see each other's rows, so a past edition
  * stays readable while the next one is being prepared.
  *
- * <p>Since issue #172 the edition is the <b>only</b> variant carrier: a
- * "plan canicule" is a duplicated edition, and the découpage replaces the
- * edition's créneaux in place. See {@code docs/decisions/0001-cloisonnement-par-edition.md}.</p>
+ * <p>A fallback plan is a dated consigne inside the live edition (ADR 0043),
+ * not a duplicated edition. See {@code docs/decisions/0001-cloisonnement-par-edition.md}
+ * and {@code docs/decisions/0072-une-seule-edition-active.md}.</p>
  *
- * <p>{@code defaut} is not "the current edition" — that one is designated by
+ * <p>{@code active} is not "the current edition" — that one is designated by
  * the client on every request through the {@code X-Edition-Id} header. It is
- * the fallback for any caller that designates none.</p>
+ * the one edition allowed to reach outside: publish, send mail, open the
+ * animateur espace, the ICS feed and the wall display. At most one edition is
+ * active; none is a valid state between two events.</p>
  */
 public class Edition {
 
     private String id;
     private String nom;
-    private boolean defaut;
+    private boolean active;
     private Instant creeLe;
 
     public Edition() {}
 
-    public Edition(String id, String nom, boolean defaut, Instant creeLe) {
+    public Edition(String id, String nom, boolean active, Instant creeLe) {
         this.id = id;
         this.nom = nom;
-        this.defaut = defaut;
+        this.active = active;
         this.creeLe = creeLe;
     }
 
@@ -50,12 +52,12 @@ public class Edition {
         this.nom = nom;
     }
 
-    public boolean isDefaut() {
-        return defaut;
+    public boolean isActive() {
+        return active;
     }
 
-    public void setDefaut(boolean defaut) {
-        this.defaut = defaut;
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     public Instant getCreeLe() {

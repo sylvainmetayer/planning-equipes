@@ -26,7 +26,7 @@ export function buildGettingStartedSections(): HelpSection[] {
         {
           kind: 'steps',
           items: [
-            $localize`:@@aide.start.step1:Choisir ou créer l'édition. Rien ne circule d'une édition à l'autre.`,
+            $localize`:@@aide.start.step1:Choisir ou créer l'édition. Rien ne circule d'une édition à l'autre. Seule l'édition active publie, écrit aux animateurs et ouvre leur espace : activez-la sur la page Éditions avant d'ouvrir la collecte.`,
             $localize`:@@aide.start.step2.fichiers:Saisir les référentiels dans l'ordre du groupe Préparer : typologies, créneaux (c'est là que l'édition prend ses dates), emplacements, stands, animateurs. Chacun s'importe aussi depuis un fichier CSV ou un collage de tableur, par le bouton « Importer » de son écran ou par la page Fichiers ; un scénario YAML remplace l'étape entière.`,
             $localize`:@@aide.start.step3:Ouvrir la collecte des disponibilités, case « prévenir » cochée : chacun reçoit le lien de son espace et y déclare ses absences et ses souhaits. Les fiches animateurs et les créneaux doivent donc déjà exister.`,
             $localize`:@@aide.start.step4:Appliquer ou refuser les déclarations reçues, puis fermer la collecte.`,
@@ -34,7 +34,7 @@ export function buildGettingStartedSections(): HelpSection[] {
             $localize`:@@aide.start.step6:Si vos journées ne sont décrites que par une amplitude d'ouverture, générer le découpage en vacations. Avec des journées types, la grille est déjà prête.`,
             $localize`:@@aide.start.step7:Lancer une résolution courte, lire la page Problèmes, corriger, puis relancer sur une durée longue. Ne changez qu'une chose à la fois entre deux essais.`,
             $localize`:@@aide.start.step8:Publier : seules les personnes dont l'emploi du temps a changé reçoivent un message. C'est aussi le seul moment où les agendas abonnés bougent.`,
-            $localize`:@@aide.start.step9:Suivre les accusés de réception sur la page Animateurs, et activer les envois de nuit sur la page Paramètres pour relancer les silencieux.`,
+            $localize`:@@aide.start.step9:Suivre les accusés de réception sur la page Animateurs : les envois de nuit de l'édition active relancent une fois les silencieux, et « Relancer » le fait à la main.`,
             $localize`:@@aide.start.step10:Vérifier que la foire au planning est ouverte (elle l'est par défaut), puis la fermer quand le planning est figé. Le jour même, le mode jour J prend le relais.`,
           ],
         },
