@@ -142,8 +142,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   (`#emails`) and the organisation's contact shown in the espace —, the wall
   display links — created, shown once with their QR code, revoked —, and
   « Instance », what the operator configured and what holds for the whole
-  database — nightly backup, SQL dump, the single-key shortcuts of this
-  browser, and « Date et heure simulées »
+  database — nightly backup, the outgoing webhooks
+  (`pages/parametres/webhooks-card`, its form and its delivery log in
+  dialogs; a secret shown once, never read back), SQL dump, the single-key
+  shortcuts of this browser, and « Date et heure simulées »
   (`pages/parametres/horloge-simulee-card`, over `PUT /api/horloge`), shown
   only where the server allows a simulated clock, which the toolbar's
   hourglass links to; `?onglet=globaux`, its former name, reads as

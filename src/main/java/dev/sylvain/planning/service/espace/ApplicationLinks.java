@@ -52,6 +52,9 @@ public class ApplicationLinks {
 
     private static final String ONGLET_GLOBAUX = "globaux";
 
+    /** Admin screen « Diffuser », where a publication is prepared and its sends are followed. */
+    private static final String ECRAN_PUBLICATION = "publication";
+
     /** Espace animateur, whose {@code :token} segment IS the credential. */
     private static final String ESPACE_ANIMATEUR = "animateur";
 
@@ -106,6 +109,12 @@ public class ApplicationLinks {
     public Optional<String> disponibilitesScreen() {
         return base.map(url ->
                 UriBuilder.fromUri(url).path(ECRAN_DISPONIBILITES).build().toString());
+    }
+
+    /** The Diffuser screen, which an outgoing webhook announcing a publication links to. */
+    public Optional<String> publicationScreen() {
+        return base.map(
+                url -> UriBuilder.fromUri(url).path(ECRAN_PUBLICATION).build().toString());
     }
 
     /** The day under way, where the absences reported from the espaces wait. */

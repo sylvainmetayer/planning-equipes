@@ -99,6 +99,52 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
       ],
     },
     {
+      id: 'webhooks',
+      icon: 'webhook',
+      title: $localize`:@@aide.webhooks.title:Webhooks : prévenir l'équipe là où elle travaille`,
+      summary: $localize`:@@aide.webhooks.summary:Annoncer une publication, un échange, une résolution ou une sauvegarde ratée dans Slack, Discord, Matrix, Telegram ou un outil d'automatisation : des comptes, jamais un nom.`,
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.webhooks.intro:Un webhook envoie un court message à un outil extérieur chaque fois qu'un événement choisi se produit : un salon Slack, Discord ou Matrix, une conversation Telegram, ou un outil d'automatisation comme n8n. Il se règle sur la page Paramètres, onglet Instance, carte « Webhooks » : la configuration vaut pour toute l'instance, mais seule l'édition active produit ses événements, et l'échec de la sauvegarde de nuit, qui concerne l'instance, part toujours. Chaque message dit de quelle édition il parle et mène à l'écran qui s'en occupe. Sans webhook, rien ne sort de l'application en dehors des courriels.`,
+        },
+        {
+          kind: 'definitions',
+          items: [
+            {
+              term: $localize`:@@aide.webhooks.term.formats:Les formats`,
+              text: $localize`:@@aide.webhooks.def.formats:« Générique (JSON signé) », pour un outil d'automatisation : un secret de signature est généré à la création et montré une seule fois ; copiez-le dans le récepteur, qui vérifie avec lui la signature et l'horodatage de chaque message. « Régénérer le secret » en donne un nouveau. Slack, Discord et Matrix (pont hookshot) prennent l'adresse de webhook du salon, qui est elle-même un secret : l'écran n'en montre ensuite que l'hôte. Telegram prend le jeton du bot donné par BotFather et la conversation : un nombre, négatif pour un groupe, ou le nom d'un canal public.`,
+            },
+            {
+              term: $localize`:@@aide.webhooks.term.evenements:Les événements`,
+              text: $localize`:@@aide.webhooks.def.evenements:Planning publié, demande d'échange à trancher, échanges en attente depuis trop longtemps, disponibilités déclarées, résolution terminée, échec de la sauvegarde nocturne : chaque webhook coche les siens. Les messages ne portent que des comptes et des identifiants, jamais le nom d'un animateur, puisqu'ils partent vers des services hébergés ailleurs. Ce qui s'adresse à une seule personne, un rappel ou une décision de covoiturage, reste un courriel.`,
+            },
+            {
+              term: $localize`:@@aide.webhooks.term.gestes:Tester, modifier, mettre en pause`,
+              text: $localize`:@@aide.webhooks.def.gestes:« Envoyer un test » envoie un message « Test » et dit aussitôt ce que le récepteur a répondu, sans réessayer. Le menu de la ligne ouvre le journal des livraisons, modifie le webhook (une adresse ou un jeton laissé vide garde l'actuel) ou le supprime. Décocher « Actif » dans le formulaire le met en pause sans le perdre : la table le marque « inactif ».`,
+            },
+            {
+              term: $localize`:@@aide.webhooks.term.journal:Le journal des livraisons`,
+              text: $localize`:@@aide.webhooks.def.journal:Chaque message est une livraison : son statut (en attente, livrée, échec, abandonnée), sa tentative, le code de réponse et la durée, gardés trente jours ; le contenu des réponses n'est jamais conservé. Un récepteur injoignable ou en panne passagère est réessayé après 1 min, 5 min, 30 min, 2 h et 12 h, six tentatives au plus, puis la livraison passe en échec ; toute autre réponse, une redirection comprise, l'abandonne tout de suite, comme une livraison d'une édition qui n'est plus active. « Renvoyer » la remet au début de son calendrier. Un récepteur lent ou en panne ne retarde jamais l'opération qu'il annonce.`,
+            },
+            {
+              term: $localize`:@@aide.webhooks.term.securite:Ce que l'application refuse`,
+              text: $localize`:@@aide.webhooks.def.securite:Une adresse doit être en https et viser l'extérieur : une adresse interne (la machine elle-même, un réseau privé, les métadonnées d'un hébergeur) est refusée, à l'enregistrement comme à chaque envoi, sauf dans les réseaux que l'exploitant a autorisés (WEBHOOKS_RESEAUX_AUTORISES), pour un n8n voisin par exemple. Les secrets sont chiffrés en base avec une clé que pose l'exploitant (WEBHOOKS_SECRET_KEY) : sans elle, aucun webhook ne se crée, et l'écran ne réaffiche jamais un secret. Aucun assistant MCP ne peut configurer un webhook.`,
+            },
+          ],
+        },
+      ],
+      links: [
+        {
+          route: '/parametres',
+          queryParams: { onglet: 'instance' },
+          fragment: 'webhooks',
+          label: $localize`:@@aide.lien.parametresWebhooks:Paramètres › Webhooks`,
+        },
+        { route: '/editions', label: $localize`:@@nav.link.editions:Éditions` },
+      ],
+    },
+    {
       id: 'assistant-mcp',
       icon: 'smart_toy',
       title: $localize`:@@aide.mcp.title:Piloter l'application par un assistant (MCP)`,

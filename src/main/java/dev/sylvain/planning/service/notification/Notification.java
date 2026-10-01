@@ -157,8 +157,18 @@ public sealed interface Notification {
      * @param faisable no hard constraint left broken; anything else means the
      *                 plan cannot be used as is, which is why it is said in the
      *                 subject line rather than in the body
+     * @param mailRequested the edition asked for the end-of-solve mail. The
+     *                 fact is fired either way — a webhook may be subscribed
+     *                 to it — and the mail is what this flag governs
      */
-    record ResolutionTerminee(String editionNom, String score, boolean faisable) implements Notification {}
+    record ResolutionTerminee(String editionNom, String score, boolean faisable, boolean mailRequested)
+            implements Notification {
+
+        /** A solve whose mail was asked for — the shape every mail test builds. */
+        public ResolutionTerminee(String editionNom, String score, boolean faisable) {
+            this(editionNom, score, faisable, true);
+        }
+    }
 
     /**
      * The day-before reminder (issue #298): what this person holds tomorrow,

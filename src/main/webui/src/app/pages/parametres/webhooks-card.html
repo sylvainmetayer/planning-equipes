@@ -1,0 +1,102 @@
+<mat-card appearance="outlined" class="page-card" id="webhooks">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@parametres.webhooks.title">Webhooks</h2>
+    <mat-card-subtitle i18n="@@parametres.webhooks.subtitle">
+      Annonce les événements de l'application à n8n, Slack, Discord, Matrix ou Telegram — des comptes, jamais un nom.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    @if (secret(); as shown) {
+      <section class="mural-lien-cree" aria-live="polite">
+        <h3 i18n="@@parametres.webhooks.secretTitre">Secret de signature de « {{ shown.name }} »</h3>
+        <p class="locked-hint" i18n="@@parametres.webhooks.secretUneFois">Ce secret ne sera plus affiché : copiez-le maintenant dans le récepteur.</p>
+        <div class="mural-lien-adresse">
+          <code>{{ shown.secret }}</code>
+          <button matButton type="button" (click)="copy(shown.secret)">
+            <mat-icon>content_copy</mat-icon>
+            <ng-container i18n="@@parametres.mural.copier">Copier</ng-container>
+          </button>
+        </div>
+      </section>
+    }
+
+    @if (webhooks().length === 0) {
+      <p class="empty-hint" i18n="@@parametres.webhooks.aucun">Aucun webhook : rien ne part en dehors des e-mails.</p>
+    } @else {
+      <div class="table-wrapper">
+        <table mat-table [dataSource]="webhooks()">
+          <ng-container matColumnDef="name">
+            <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@parametres.webhooks.colNom">Nom</th>
+            <td mat-cell *matCellDef="let webhook">
+              {{ webhook.name }}
+              @if (!webhook.active) {
+                <span class="calendar-meta" i18n="@@parametres.webhooks.inactif">(inactif)</span>
+              }
+              <div class="calendar-meta">{{ webhook.destination }}</div>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="format">
+            <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@parametres.webhooks.colFormat">Format</th>
+            <td mat-cell *matCellDef="let webhook">{{ formatLabel(webhook.format) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="events">
+            <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@parametres.webhooks.colEvenements">Événements</th>
+            <td mat-cell *matCellDef="let webhook">{{ eventsOf(webhook) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="lastDelivery">
+            <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@parametres.webhooks.colDerniere">Dernière livraison</th>
+            <td mat-cell *matCellDef="let webhook">
+              @if (webhook.lastDelivery; as derniere) {
+                {{ statusLabel(derniere.status) }}
+                <span class="calendar-meta">{{ derniere.createdAt | date: 'short' }}</span>
+              } @else {
+                <ng-container i18n="@@parametres.webhooks.jamais">Jamais</ng-container>
+              }
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@parametres.webhooks.colActions">Actions</th>
+            <td mat-cell *matCellDef="let webhook">
+              <button matButton type="button" [disabled]="busy()" (click)="test(webhook)">
+                <mat-icon>send</mat-icon>
+                <ng-container i18n="@@parametres.webhooks.tester">Envoyer un test</ng-container>
+              </button>
+              <button matIconButton type="button" [matMenuTriggerFor]="menu"
+                      aria-label="Autres actions" i18n-aria-label="@@parametres.webhooks.autresActions">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #menu="matMenu">
+                <button mat-menu-item type="button" (click)="journal(webhook)">
+                  <mat-icon>history</mat-icon>
+                  <span i18n="@@parametres.webhooks.voirJournal">Journal des livraisons</span>
+                </button>
+                <button mat-menu-item type="button" (click)="edit(webhook)">
+                  <mat-icon>edit</mat-icon>
+                  <span i18n="@@common.edit">Modifier</span>
+                </button>
+                @if (webhook.format === 'GENERIC') {
+                  <button mat-menu-item type="button" (click)="regenerate(webhook)">
+                    <mat-icon>key</mat-icon>
+                    <span i18n="@@parametres.webhooks.regenerer">Régénérer le secret</span>
+                  </button>
+                }
+                <button mat-menu-item type="button" (click)="remove(webhook)">
+                  <mat-icon>delete</mat-icon>
+                  <span i18n="@@common.delete">Supprimer</span>
+                </button>
+              </mat-menu>
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="colonnes"></tr>
+          <tr mat-row *matRowDef="let row; columns: colonnes"></tr>
+        </table>
+      </div>
+    }
+  </mat-card-content>
+  <mat-card-actions class="card-actions">
+    <button matButton="filled" type="button" [disabled]="busy()" (click)="add()">
+      <mat-icon>add</mat-icon>
+      <ng-container i18n="@@parametres.webhooks.ajouter">Ajouter un webhook</ng-container>
+    </button>
+  </mat-card-actions>
+</mat-card>

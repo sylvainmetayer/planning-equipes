@@ -331,7 +331,7 @@ public class NotificationWriter {
 
     private Optional<MailDraft> resolutionTerminee(Notification.ResolutionTerminee n) {
         Optional<String> admin = adminAddress.resolue();
-        if (admin.isEmpty()) {
+        if (admin.isEmpty() || !n.mailRequested()) {
             return Optional.empty();
         }
         String etat = n.faisable() ? "planning faisable" : "planning NON faisable";

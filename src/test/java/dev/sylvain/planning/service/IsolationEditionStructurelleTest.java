@@ -169,6 +169,12 @@ class IsolationEditionStructurelleTest {
      *   <li>{@code version_applicative} — the application versions that
      *       opened the database, written and read at boot, where no edition
      *       exists. It describes the database every edition lives in.</li>
+     *   <li>{@code webhook}, {@code webhook_livraison} — the outgoing webhooks
+     *       are configured for the instance (ADR 0074): the payload names the
+     *       edition it speaks of, and the edition policy decides which edition
+     *       may emit — partitioning the configuration would have to be
+     *       redone every time another edition takes over. The nightly backup
+     *       failure they announce is not even an edition's.</li>
      * </ul>
      */
     private static final List<String> TABLES_HORS_EDITION = List.of(
@@ -179,7 +185,9 @@ class IsolationEditionStructurelleTest {
             "kpi_realise",
             "solver_job",
             "creneau_remap",
-            "version_applicative");
+            "version_applicative",
+            "webhook",
+            "webhook_livraison");
 
     /**
      * The deliberately cross-edition statements, and why.

@@ -1,6 +1,6 @@
 # 0070 — Un troisième job planifié fige le réalisé de fin d'événement
 
-- **Statut** : accepté, implémenté
+- **Statut** : accepté, implémenté — **révisé par [0074](0074-deux-jobs-planifies-de-plus-webhooks-et-meteo.md)** : ce job n'est plus le dernier, la reprise des webhooks et l'alerte météo en ajoutent deux
 - **Date** : octobre 2026
 - **Portée** : planification (`@Scheduled`), historique inter-éditions
 - **Prolonge** : [0015](0015-sauvegarde-par-pg-dump-restauration-hors-application.md), [0044](0044-le-passe-est-fige.md)
