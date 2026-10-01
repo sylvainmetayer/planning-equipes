@@ -469,7 +469,7 @@ public class KeycloakUserProvisioning {
      * the import's request. Same rule — an address another fiche still carries
      * keeps its account — and same promise: never fails.
      */
-    public void retirerTous(Collection<String> emails) {
+    public void disableAccounts(Collection<String> emails) {
         if (!actif() || emails == null) {
             return;
         }
