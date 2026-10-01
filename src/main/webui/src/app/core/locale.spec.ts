@@ -48,15 +48,15 @@ describe('locale', () => {
   });
 
   describe('setStoredLocaleAndReload', () => {
-    it('persiste la locale puis recharge la page', () => {
+    it('stores the locale, then reloads the page', () => {
       const reload = vi.fn();
-      // location.reload n'est pas appelable en test : on le remplace, en
-      // vérifiant au passage que l'écriture précède bien le rechargement
-      // (sinon le reload emporterait la valeur avant qu'elle soit lue).
+      // location.reload cannot be called in a test, so it is replaced, the write
+      // having to come before the reload (or the reload would take the value
+      // away before it is read).
       vi.spyOn(window, 'location', 'get').mockReturnValue({
         ...window.location,
         reload,
-      } as unknown as Location);
+      });
 
       setStoredLocaleAndReload('en');
 

@@ -13,6 +13,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { Emplacement } from '../../core/models';
+import { Fake, fakeOf, provideFake } from '../../core/testing/fake';
 import { MapPicker } from '../../shared/map-picker';
 import { EmplacementBulkEditDialog } from './emplacement-bulk-edit-dialog';
 
@@ -25,7 +26,9 @@ function monter(
   emplacements: Emplacement[],
   options: { editingLocked?: boolean; saved?: number } = {},
 ) {
-  const saveMany = vi.fn(async () => options.saved ?? emplacements.length);
+  const crud = fakeOf<ReferenceCrudService>({
+    saveMany: async () => options.saved ?? emplacements.length,
+  });
   const close = vi.fn();
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
@@ -35,12 +38,27 @@ function monter(
         provide: SolverJobService,
         useValue: { editingLocked: signal(options.editingLocked ?? false) },
       },
-      { provide: ReferenceCrudService, useValue: { saveMany } },
+      provideFake(ReferenceCrudService, crud),
       { provide: MatDialogRef, useValue: { close } },
       { provide: MAT_DIALOG_DATA, useValue: { emplacements } },
     ],
   });
-  return { fixture: TestBed.createComponent(EmplacementBulkEditDialog), saveMany, close };
+  return {
+    fixture: TestBed.createComponent(EmplacementBulkEditDialog),
+    saveMany: crud.saveMany,
+    close,
+  };
+}
+
+/**
+ * The emplacements of the first batch. `saveMany` is generic over its rows, so
+ * its recorded call holds the constraint `{ id }`; this dialog only writes
+ * emplacements.
+ */
+function savedEmplacements(
+  saveMany: Fake<ReferenceCrudService>['saveMany'],
+): readonly Emplacement[] {
+  return saveMany.mock.calls[0][1] as readonly Emplacement[];
 }
 
 function racine(fixture: ComponentFixture<EmplacementBulkEditDialog>): HTMLElement {
@@ -139,7 +157,8 @@ describe('EmplacementBulkEditDialog', () => {
     submit(fixture);
     await fixture.whenStable();
 
-    const [resource, payloads] = saveMany.mock.calls[0] as unknown as [string, Emplacement[]];
+    const [resource] = saveMany.mock.calls[0];
+    const payloads = savedEmplacements(saveMany);
     expect(resource).toBe('emplacements');
     expect(payloads.map((each) => [each.id, each.latitude, each.longitude])).toEqual([
       ['hall', 47.2, -1.55],
@@ -162,7 +181,7 @@ describe('EmplacementBulkEditDialog', () => {
     submit(fixture);
     await fixture.whenStable();
 
-    const payloads = (saveMany.mock.calls[0] as unknown as [string, Emplacement[]])[1];
+    const payloads = savedEmplacements(saveMany);
     expect(payloads.every((each) => each.latitude === null && each.longitude === null)).toBe(true);
   });
 

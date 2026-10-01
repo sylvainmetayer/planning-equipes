@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { AnomalieGrille, RapportGrille, RapportOuvertures } from '../../core/models';
+import {
+  AnomalieGrille,
+  CelluleCreneauOuverture,
+  CelluleJourOuverture,
+  LigneStandOuverture,
+  RapportGrille,
+  RapportOuvertures,
+  SegmentCellule,
+} from '../../core/models';
 import {
   bilanGrille,
   datesFromText,
@@ -237,23 +245,47 @@ describe('openingsByCreneau', () => {
    * A's one segment, 4 people all afternoon, shows in both columns, clipped.
    */
   function rapport(relay = false): RapportOuvertures {
-    const segment = (heureDebut: string, heureFin: string, effectif: number) => ({
+    const segment = (heureDebut: string, heureFin: string, effectif: number): SegmentCellule => ({
       heureDebut,
       heureFin,
       effectif,
     });
-    const cell = (tranche: number, segments: ReturnType<typeof segment>[]) => ({
+    const cell = (tranche: number, segments: SegmentCellule[]): CelluleCreneauOuverture => ({
       creneauId: 7,
       tranche,
       effectif: segments.length === 0 ? null : Math.max(...segments.map((each) => each.effectif)),
       partiel: false,
       segments,
     });
-    const day = (creneaux: ReturnType<typeof cell>[]) => ({ date: '2026-07-08', creneaux });
+    const day = (creneaux: CelluleCreneauOuverture[]): CelluleJourOuverture => ({
+      date: '2026-07-08',
+      etat: creneaux.every((each) => each.segments.length > 0) ? 'OUVERT_TOTAL' : 'OUVERT_PARTIEL',
+      source: 'DEFAUT',
+      fenetres: [],
+      minutesOuvertes: 0,
+      minutesAmplitude: 0,
+      postes: 0,
+      creneaux,
+    });
+    const line = (standId: string, jours: CelluleJourOuverture[]): LigneStandOuverture => ({
+      standId,
+      nom: standId,
+      effectifMin: 1,
+      jours,
+      minutesOuvertes: 0,
+      postes: 0,
+      modifieLe: null,
+    });
     return {
       jours: [
         {
           date: '2026-07-08',
+          jour: 1,
+          heureDebut: '14:00',
+          heureFin: '20:00',
+          minutes: 360,
+          nombreCreneaux: 1,
+          ferie: null,
           creneaux: [
             { id: 7, tranche: 0, heureDebut: '14:00', heureFin: '17:00', couverturePause: relay },
             { id: 7, tranche: 1, heureDebut: '17:00', heureFin: '20:00', couverturePause: relay },
@@ -261,18 +293,15 @@ describe('openingsByCreneau', () => {
         },
       ],
       stands: [
-        {
-          standId: 'A',
-          jours: [
-            day([cell(0, [segment('14:00', '17:00', 4)]), cell(1, [segment('17:00', '20:00', 4)])]),
-          ],
-        },
-        {
-          standId: 'B',
-          jours: [day([cell(0, [segment('14:00', '17:00', 2)]), cell(1, [])])],
-        },
+        line('A', [
+          day([cell(0, [segment('14:00', '17:00', 4)]), cell(1, [segment('17:00', '20:00', 4)])]),
+        ]),
+        line('B', [day([cell(0, [segment('14:00', '17:00', 2)]), cell(1, [])])]),
       ],
-    } as unknown as RapportOuvertures;
+      standsJamaisOuverts: 0,
+      postesTotal: 0,
+      anomalies: [],
+    };
   }
 
   it('counts a segment spread over the columns of its timeslot once, not once per column', () => {

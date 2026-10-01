@@ -10,30 +10,44 @@ import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EchangesApi } from '../../core/api/echanges-api';
-import { DemandeEchangeView } from '../../core/models';
+import { DemandeEchangeView, StatutDemandeEchange } from '../../core/models';
 import { EchangesPage } from './echanges-page';
 import { oldestWaitingFirst, readToArbitrate, waitingSince } from './echanges-filter';
 
 function demande(
   id: string,
-  statut: string,
+  statut: StatutDemandeEchange,
   creeLe: string,
   cibleDecideLe: string | null = null,
 ): DemandeEchangeView {
   return {
     id,
+    creneauId: 1,
+    date: '2026-07-10',
+    heureDebut: '10:00',
+    heureFin: '12:00',
+    standId: 'stand',
+    standNom: 'Stand',
+    demandeurId: `demandeur-${id}`,
+    demandeurNom: `Demandeur ${id}`,
+    cibleId: `cible-${id}`,
+    cibleNom: `Cible ${id}`,
+    creneauCibleId: null,
+    dateCible: null,
+    heureDebutCible: null,
+    heureFinCible: null,
+    standCibleId: null,
+    standCibleNom: null,
+    motif: null,
     statut,
+    prevalidationOk: null,
+    contraintesViolees: [],
+    commentaireAdmin: null,
     creeLe,
     cibleDecideLe,
     decideLe: null,
     communiqueeLe: null,
-    demandeurNom: `Demandeur ${id}`,
-    cibleNom: `Cible ${id}`,
-    date: '2026-07-10',
-    heureDebut: '10:00',
-    heureFin: '12:00',
-    standNom: 'Stand',
-  } as unknown as DemandeEchangeView;
+  };
 }
 
 // Agreed by the colleague on the 3rd, although created before the other one.
@@ -121,9 +135,7 @@ describe('EchangesPage « à arbitrer »', () => {
     expect(cards(root)).toHaveLength(4);
     expect(replaceState).toHaveBeenLastCalledWith('/echanges');
 
-    (
-      fixture.componentInstance as unknown as { toArbitrateOnly: { set(v: boolean): void } }
-    ).toArbitrateOnly.set(true);
+    fixture.componentInstance['toArbitrateOnly'].set(true);
     await fixture.whenStable();
     expect(replaceState).toHaveBeenLastCalledWith('/echanges?statut=a-arbitrer');
     expect(cards(root)).toHaveLength(2);

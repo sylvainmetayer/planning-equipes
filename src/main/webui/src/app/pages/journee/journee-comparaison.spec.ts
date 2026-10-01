@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { Animateur, Creneau, PosteAffectation, RapportPauses, Stand } from '../../core/models';
+import {
+  Animateur,
+  Creneau,
+  JourneeAnimateurPauses,
+  PauseDueView,
+  PosteAffectation,
+  RapportPauses,
+  Stand,
+} from '../../core/models';
 import {
   alignerAnimateurs,
   alignerStands,
@@ -25,6 +33,52 @@ function stand(id: string, nom = id): Stand {
 
 function animateur(id: string, prenom: string, nom: string): Animateur {
   return { id, prenom, nom } as Animateur;
+}
+
+/** A break of 20 minutes held on `standId`, relieved or not. */
+function dueBreak(relaisDisponible: boolean, standId = 'S1'): PauseDueView {
+  return {
+    debut: '14:00',
+    fin: '14:20',
+    heureLimite: '14:00',
+    dureeMinutes: 20,
+    standId,
+    standNom: standId,
+    creneauId: null,
+    relais: [],
+    relaisDisponible,
+    simultanee: false,
+  };
+}
+
+/** One day of `animateurId`, in a single working stretch owing these breaks. */
+function breakDay(
+  jour: number,
+  animateurId: string,
+  pausesDues: PauseDueView[],
+): JourneeAnimateurPauses {
+  return {
+    animateurId,
+    nomComplet: animateurId,
+    mineur: false,
+    date: '2026-07-12',
+    jour,
+    sequences: [{ debut: '09:00', fin: '15:00', minutes: 360, pausesDues }],
+    pausesPlanifiees: [],
+    coupuresRepas: [],
+  };
+}
+
+function pausesReport(journees: JourneeAnimateurPauses[]): RapportPauses {
+  return {
+    journeesAnalysees: journees.length,
+    pausesDues: journees.flatMap((day) => day.sequences.flatMap((each) => each.pausesDues)).length,
+    relaisManquants: 0,
+    coupuresRepasDues: 0,
+    coupuresRepasManquantes: 0,
+    journees,
+    message: '',
+  };
 }
 
 let compteur = 0;
@@ -138,15 +192,10 @@ describe('syntheseJournee', () => {
   });
 
   it('counts the breaks of that day with nobody to relieve', () => {
-    const rapport = {
-      journees: [
-        {
-          jour: 1,
-          sequences: [{ pausesDues: [{ relaisDisponible: false }, { relaisDisponible: true }] }],
-        },
-        { jour: 8, sequences: [{ pausesDues: [{ relaisDisponible: false }] }] },
-      ],
-    } as unknown as RapportPauses;
+    const rapport = pausesReport([
+      breakDay(1, 'a1', [dueBreak(false), dueBreak(true)]),
+      breakDay(8, 'a1', [dueBreak(false)]),
+    ]);
 
     expect(syntheseJournee([], 1, rapport).unrelievedBreaks).toBe(1);
   });
@@ -157,20 +206,10 @@ describe('syntheseJournee', () => {
       poste(SAMEDI_12, jeux, null),
       poste(SAMEDI_12, buvette, bob),
     ];
-    const rapport = {
-      journees: [
-        {
-          jour: 1,
-          animateurId: 'a1',
-          sequences: [{ pausesDues: [{ relaisDisponible: false, standId: 'S1' }] }],
-        },
-        {
-          jour: 1,
-          animateurId: 'a2',
-          sequences: [{ pausesDues: [{ relaisDisponible: false, standId: 'S2' }] }],
-        },
-      ],
-    } as unknown as RapportPauses;
+    const rapport = pausesReport([
+      breakDay(1, 'a1', [dueBreak(false, 'S1')]),
+      breakDay(1, 'a2', [dueBreak(false, 'S2')]),
+    ]);
 
     expect(syntheseJournee(postes, 1, rapport, { standIds: new Set(['S1']) })).toEqual({
       sieges: 2,

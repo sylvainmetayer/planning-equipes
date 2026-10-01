@@ -1,5 +1,5 @@
 import { Location } from '@angular/common';
-import { provideLocationMocks } from '@angular/common/testing';
+import { SpyLocation, provideLocationMocks } from '@angular/common/testing';
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { NavigationStart, Params, Router, convertToParamMap, provideRouter } from '@angular/router';
@@ -85,6 +85,9 @@ function mount(viewState: () => Params) {
   });
   const router = TestBed.inject(Router);
   const location = TestBed.inject(Location);
+  if (!(location instanceof SpyLocation)) {
+    throw new Error('provideLocationMocks() no longer provides a SpyLocation');
+  }
   const navigations: string[] = [];
   router.events.subscribe((event) => {
     if (event instanceof NavigationStart) {
@@ -116,7 +119,7 @@ describe('keepViewInQueryParams', () => {
     expect(navigations).toEqual([]);
   });
 
-  it("remplace l'entrée d'historique au lieu d'en empiler une par frappe", () => {
+  it('replaces the history entry instead of stacking one per keystroke', () => {
     const filtre = signal('A');
     const { location } = mount(() => ({ q: filtre() }));
 
@@ -125,11 +128,10 @@ describe('keepViewInQueryParams', () => {
     filtre.set('Ali');
     TestBed.tick();
 
-    // Chaque écriture est un remplacement, jamais un empilement : le bouton
-    // Retour quitte donc l'écran d'un coup, quel que soit le nombre de frappes.
+    // Every write replaces, never stacks: the Back button therefore leaves the
+    // screen in one go, however many keystrokes there were.
     expect(location.path()).toContain('q=Ali');
-    const ecritures = (location as unknown as { urlChanges: string[] }).urlChanges;
-    expect(ecritures.every((url) => url.startsWith('replace: '))).toBe(true);
+    expect(location.urlChanges.every((url) => url.startsWith('replace: '))).toBe(true);
   });
 
   it('encode une valeur à espaces de façon à survivre au rechargement', () => {

@@ -155,9 +155,7 @@ const AMBIANCE = stand('Loup-Garou');
 const C1 = creneau({ id: 1 });
 
 function filterProblems(fixture: ComponentFixture<CalendarDayView>, active: boolean): void {
-  (
-    fixture.componentInstance as unknown as { seulementProblemes: { set(value: boolean): void } }
-  ).seulementProblemes.set(active);
+  fixture.componentInstance.seulementProblemes.set(active);
 }
 
 describe('CalendarDayView rendering', () => {

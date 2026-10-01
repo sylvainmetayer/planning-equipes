@@ -4,13 +4,12 @@
 // created but never rendered, as in the other page specs.
 
 import { Location } from '@angular/common';
-import { Signal, provideZonelessChangeDetection } from '@angular/core';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { ActionHistorique, EntreeHistorique } from '../../core/models';
-import { FiltreNature } from './historique';
 import { HistoriquePage } from './historique-page';
 
 function line(partial: Partial<EntreeHistorique> = {}): EntreeHistorique {
@@ -47,20 +46,10 @@ const INVENTORY: ActionHistorique[] = [
   },
 ];
 
-/** Reaches the protected members the template binds to. */
-type PageInternals = {
-  entrees: Signal<EntreeHistorique[]>;
-  chargement: Signal<boolean>;
-  nature: Signal<FiltreNature>;
-  changeNature: (nature: FiltreNature) => void;
-  reinitialiser: () => void;
-  isExport: (entree: EntreeHistorique) => boolean;
-};
-
-function createPage(): PageInternals {
+function createPage(): HistoriquePage {
   const fixture = TestBed.createComponent(HistoriquePage);
   fixture.detectChanges();
-  return fixture.componentInstance as unknown as PageInternals;
+  return fixture.componentInstance;
 }
 
 describe('HistoriquePage', () => {
@@ -91,7 +80,7 @@ describe('HistoriquePage', () => {
   it('reads every kind of action by default', async () => {
     setUp();
     const page = createPage();
-    await vi.waitFor(() => expect(page.chargement()).toBe(false));
+    await vi.waitFor(() => expect(page['chargement']()).toBe(false));
 
     expect(analysesApi.actionHistory).toHaveBeenCalledExactlyOnceWith(null);
   });
@@ -99,7 +88,7 @@ describe('HistoriquePage', () => {
   it('asks the server for the exports when the address says so', async () => {
     setUp({ nature: 'EXPORTS' });
     const page = createPage();
-    await vi.waitFor(() => expect(page.chargement()).toBe(false));
+    await vi.waitFor(() => expect(page['chargement']()).toBe(false));
 
     expect(analysesApi.actionHistory).toHaveBeenCalledExactlyOnceWith('exports');
   });
@@ -107,14 +96,14 @@ describe('HistoriquePage', () => {
   it('reloads from the server when « Exports » is chosen, and back', async () => {
     setUp();
     const page = createPage();
-    await vi.waitFor(() => expect(page.chargement()).toBe(false));
+    await vi.waitFor(() => expect(page['chargement']()).toBe(false));
 
-    page.changeNature('EXPORTS');
-    await vi.waitFor(() => expect(page.chargement()).toBe(false));
+    page['changeNature']('EXPORTS');
+    await vi.waitFor(() => expect(page['chargement']()).toBe(false));
     expect(analysesApi.actionHistory).toHaveBeenLastCalledWith('exports');
 
-    page.reinitialiser();
-    await vi.waitFor(() => expect(page.chargement()).toBe(false));
+    page['reinitialiser']();
+    await vi.waitFor(() => expect(page['chargement']()).toBe(false));
     expect(analysesApi.actionHistory).toHaveBeenLastCalledWith(null);
     expect(analysesApi.actionHistory).toHaveBeenCalledTimes(3);
   });
@@ -128,29 +117,29 @@ describe('HistoriquePage', () => {
     setUp();
     const page = createPage();
 
-    page.changeNature('EXPORTS');
-    await vi.waitFor(() => expect(page.entrees().map((e) => e.id)).toEqual([2]));
+    page['changeNature']('EXPORTS');
+    await vi.waitFor(() => expect(page['entrees']().map((e) => e.id)).toEqual([2]));
     answerFirst([line({ id: 1, action: 'ANIMATEUR_MODIFIE' })]);
     await Promise.resolve();
 
-    expect(page.entrees().map((e) => e.id)).toEqual([2]);
+    expect(page['entrees']().map((e) => e.id)).toEqual([2]);
   });
 
   it('classifies a line by the server’s catalogue', async () => {
     setUp();
     const page = createPage();
-    await vi.waitFor(() => expect(page.isExport(line())).toBe(true));
+    await vi.waitFor(() => expect(page['isExport'](line())).toBe(true));
 
-    expect(page.isExport(line({ action: 'ANIMATEUR_MODIFIE' }))).toBe(false);
+    expect(page['isExport'](line({ action: 'ANIMATEUR_MODIFIE' }))).toBe(false);
   });
 
   it('stays readable when the inventory cannot be read', async () => {
     analysesApi.actionInventory.mockRejectedValue(new Error('indisponible'));
     setUp();
     const page = createPage();
-    await vi.waitFor(() => expect(page.chargement()).toBe(false));
+    await vi.waitFor(() => expect(page['chargement']()).toBe(false));
 
-    expect(page.entrees()).toHaveLength(1);
-    expect(page.isExport(line())).toBe(false);
+    expect(page['entrees']()).toHaveLength(1);
+    expect(page['isExport'](line())).toBe(false);
   });
 });

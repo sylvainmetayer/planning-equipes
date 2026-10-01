@@ -28,6 +28,7 @@ import {
   typologiesVides,
   versStand,
 } from './stand-draft';
+import { readStandDraft } from './stand-brouillon';
 import type { Emplacement, HoraireStand, Stand } from '../../core/models';
 
 function draft(overrides: Partial<StandDraft> = {}): StandDraft {
@@ -38,6 +39,37 @@ function draft(overrides: Partial<StandDraft> = {}): StandDraft {
     typologiesProposees: ['STRATEGIE'],
     ...overrides,
   };
+}
+
+/** A complete stand, as the store holds one. */
+function fullStand(overrides: Partial<Stand> = {}): Stand {
+  return {
+    id: 'S1',
+    nom: 'Stand',
+    typologiesProposees: [],
+    effectifMin: 1,
+    effectifMax: 1,
+    reserveMajeurs: false,
+    premium: false,
+    niveauEffort: 'NORMAL',
+    emplacement: null,
+    indisponibilites: [],
+    ouvertures: [],
+    horaires: [],
+    ...overrides,
+  };
+}
+
+/**
+ * A draft as the storage hands it back. Storage is untyped, and
+ * `readStandDraft` checks the draft's shape, not every field: that is how an
+ * effectif emptied in an older form state reaches `versStand` as `''` where
+ * the draft declares a number.
+ */
+function restoredDraft(stored: StandDraft, fields: Record<string, unknown>): StandDraft {
+  const restored = readStandDraft({ ...stored, ...fields }, null);
+  expect(restored).not.toBeNull();
+  return restored!;
 }
 
 function plage(overrides: Partial<ReturnType<typeof plageVide>> = {}) {
@@ -196,7 +228,7 @@ describe('window effectif', () => {
     expect(normaliserEffectif(undefined)).toBeNull();
     expect(normaliserEffectif('')).toBeNull();
     expect(normaliserEffectif(3)).toBe(3);
-    expect(normaliserEffectif('2' as unknown as number)).toBe(2);
+    expect(normaliserEffectif('2')).toBe(2);
     // Zero is not "empty": it stays, and the validation is what refuses it.
     expect(normaliserEffectif(0)).toBe(0);
   });
@@ -284,13 +316,8 @@ describe('typologiesVides — un stand a toujours au moins une typologie (#343)'
 });
 
 describe('modifieLe — la précondition de #362 voyage de la fiche ouverte au payload', () => {
-  it('reprend le modifieLe de la fiche et le renvoie tel quel', () => {
-    const stand = {
-      ...toDraft(null),
-      id: 'S1',
-      nom: 'Stand',
-      modifieLe: '2026-09-06T10:00:00.123456Z',
-    } as unknown as Stand;
+  it("takes the fiche's modifieLe and sends it back as is", () => {
+    const stand = fullStand({ modifieLe: '2026-09-06T10:00:00.123456Z' });
 
     const draft = toDraft(stand);
 
@@ -315,16 +342,12 @@ describe('toDraft', () => {
   });
 
   it('never aliases the store objects: editing the draft must not write through', () => {
-    const stand = {
-      id: 'S1',
-      nom: 'Stand',
-      effectifMin: 1,
+    const stand = fullStand({
       effectifMax: 2,
       typologiesProposees: ['t1'],
       indisponibilites: [plage()],
-      ouvertures: [],
       horaires: [horaire({ joursSemaine: ['MONDAY'], dates: ['2026-07-10'] })],
-    } as unknown as Stand;
+    });
 
     const copie = toDraft(stand);
     copie.typologiesProposees.push('t2');
@@ -339,7 +362,22 @@ describe('toDraft', () => {
   });
 
   it('falls back on the defaults for the fields the server left null', () => {
-    const stand = { id: 'S1', effectifMin: 1, effectifMax: 1 } as unknown as Stand;
+    // What a server leaving them out sends: the stand minus those fields.
+    const stand = fullStand({ niveauEffort: 'EPUISANT', reserveMajeurs: true });
+    for (const field of [
+      'code',
+      'nom',
+      'typologiesProposees',
+      'reserveMajeurs',
+      'premium',
+      'niveauEffort',
+      'emplacement',
+      'indisponibilites',
+      'ouvertures',
+      'horaires',
+    ] satisfies (keyof Stand)[]) {
+      Reflect.deleteProperty(stand, field);
+    }
 
     const copie = toDraft(stand);
 
@@ -392,20 +430,21 @@ describe('versStand', () => {
 
   it('sends a window effectif as typed, and an emptied one as null — never as zero', () => {
     const stand = versStand(
-      draft({
+      restoredDraft(draft(), {
         ouvertures: [
           { ...plage(), effectif: 4 },
           { ...plage({ date: '2026-07-11' }), effectif: null },
-          { ...plage({ date: '2026-07-12' }), effectif: '' as unknown as number },
+          { ...plage({ date: '2026-07-12' }), effectif: '' },
         ],
         horaires: [
-          horaire({
+          {
+            ...horaire(),
             fenetres: [
               { heureDebut: '10:00', heureFin: '12:00', effectif: 3 },
-              { heureDebut: '14:00', heureFin: null, effectif: '' as unknown as number },
+              { heureDebut: '14:00', heureFin: null, effectif: '' },
               { heureDebut: '16:00', heureFin: null },
             ],
-          }),
+          },
         ],
       }),
       emplacements,
@@ -417,7 +456,7 @@ describe('versStand', () => {
 
   it('reads an empty effectif as zero rather than as NaN', () => {
     const stand = versStand(
-      draft({ effectifMin: '' as unknown as number, effectifMax: '' as unknown as number }),
+      restoredDraft(draft(), { effectifMin: '', effectifMax: '' }),
       emplacements,
     );
 

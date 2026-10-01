@@ -10,6 +10,7 @@ import {
   RapportCompactage,
   RapportOuvertures,
   RapportSaisieGrille,
+  SaisieStandGrille,
 } from '../models';
 
 @Injectable({ providedIn: 'root' })
@@ -53,7 +54,7 @@ export class StandsApi {
   }
 
   /** The grid as edited, stand by stand — only the stands that changed travel. */
-  saveOpeningsGrid(saisie: unknown): Promise<RapportSaisieGrille> {
+  saveOpeningsGrid(saisie: readonly SaisieStandGrille[]): Promise<RapportSaisieGrille> {
     return this.api.put<RapportSaisieGrille>('/api/ouvertures-stands/grille', { stands: saisie });
   }
 }

@@ -6,7 +6,7 @@
 // fifty — that the solver lock really greys the writing actions out, and that
 // an empty table says why it is empty.
 
-import { provideZonelessChangeDetection, signal, Signal } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
@@ -74,9 +74,6 @@ function report(causes: CauseInfaisabilite[]): FeasibilityReport {
   };
 }
 
-/** Reaches the protected computed the template binds to. */
-type PageInternals = { alerteParAnimateurId: Signal<Map<string, string>> };
-
 const SYNTHESE_VIDE = {
   confirmes: 0,
   relances: 0,
@@ -85,8 +82,8 @@ const SYNTHESE_VIDE = {
   jamaisPublie: true,
 };
 
-function createPage(): PageInternals {
-  return TestBed.createComponent(AnimateursPage).componentInstance as unknown as PageInternals;
+function createPage(): AnimateursPage {
+  return TestBed.createComponent(AnimateursPage).componentInstance;
 }
 
 describe('AnimateursPage alert badges', () => {
@@ -129,7 +126,7 @@ describe('AnimateursPage alert badges', () => {
 
   it('flags nobody while no diagnostic is loaded', () => {
     seedStore(referenceData, 'animateurs', [animateur('alice', ['2026-08-01'])]);
-    expect(createPage().alerteParAnimateurId().size).toBe(0);
+    expect(createPage()['alerteParAnimateurId']().size).toBe(0);
   });
 
   it('flags an animateur unavailable on a day carrying a CRITIQUE cause', async () => {
@@ -142,9 +139,9 @@ describe('AnimateursPage alert badges', () => {
     api.get.mockResolvedValue(report([cause('CRITIQUE', '2026-08-01')]));
     await problemes.reloadFeasibility();
 
-    expect([...page.alerteParAnimateurId().keys()]).toEqual(['alice']);
-    expect(page.alerteParAnimateurId().get('alice')).toContain('2026-08-01');
-    expect(page.alerteParAnimateurId().get('alice')).toContain("Manque d'animateurs");
+    expect([...page['alerteParAnimateurId']().keys()]).toEqual(['alice']);
+    expect(page['alerteParAnimateurId']().get('alice')).toContain('2026-08-01');
+    expect(page['alerteParAnimateurId']().get('alice')).toContain("Manque d'animateurs");
   });
 
   it('ignores a day that is only ELEVE', async () => {
@@ -154,7 +151,7 @@ describe('AnimateursPage alert badges', () => {
     api.get.mockResolvedValue(report([cause('ELEVE', '2026-08-01')]));
     await problemes.reloadFeasibility();
 
-    expect(page.alerteParAnimateurId().size).toBe(0);
+    expect(page['alerteParAnimateurId']().size).toBe(0);
   });
 
   it('ignores an animateur available on every critical day', async () => {
@@ -164,7 +161,7 @@ describe('AnimateursPage alert badges', () => {
     api.get.mockResolvedValue(report([cause('CRITIQUE', '2026-08-01')]));
     await problemes.reloadFeasibility();
 
-    expect(page.alerteParAnimateurId().size).toBe(0);
+    expect(page['alerteParAnimateurId']().size).toBe(0);
   });
 
   it('recomputes when the roster changes', async () => {
@@ -173,10 +170,10 @@ describe('AnimateursPage alert badges', () => {
 
     api.get.mockResolvedValue(report([cause('CRITIQUE', '2026-08-01')]));
     await problemes.reloadFeasibility();
-    expect(page.alerteParAnimateurId().size).toBe(0);
+    expect(page['alerteParAnimateurId']().size).toBe(0);
 
     seedStore(referenceData, 'animateurs', [animateur('carole', ['2026-08-01'])]);
-    expect(page.alerteParAnimateurId().has('carole')).toBe(true);
+    expect(page['alerteParAnimateurId']().has('carole')).toBe(true);
   });
 });
 

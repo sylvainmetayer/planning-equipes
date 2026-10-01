@@ -2,17 +2,28 @@ import { describe, expect, it } from 'vitest';
 import { PlanningDiagnostic } from './models';
 import { extraireDiagnostic, extrairePlanPrecedent } from './solver-job.service';
 
-// A SOLVE payload is either a bare diagnostic (full solve) or an incremental
-// wrapper carrying one under `diagnostic` (issue #86). Everything downstream —
-// the feasibility notification included — reads it through this one function.
-describe('extraireDiagnostic', () => {
-  const diagnostic = {
+/** The diagnostic of a feasible plan; the functions under test hand it back by identity. */
+function feasibleDiagnostic(): PlanningDiagnostic {
+  return {
     score: '0hard/0medium/-1soft',
     postesNonPourvus: 0,
     contraintes: [],
     faisabilite: null,
     hardScore: 0,
-  } as unknown as PlanningDiagnostic;
+    contraintesAdHocEnCause: [],
+    scoreHorsPlancher: '0hard/0medium/-1soft',
+    plancherMedium: 0,
+    plancherSoft: 0,
+    pivotEcarts: [],
+    lecture: [],
+  };
+}
+
+// A SOLVE payload is either a bare diagnostic (full solve) or an incremental
+// wrapper carrying one under `diagnostic` (issue #86). Everything downstream —
+// the feasibility notification included — reads it through this one function.
+describe('extraireDiagnostic', () => {
+  const diagnostic = feasibleDiagnostic();
 
   it('rend le diagnostic tel quel pour une résolution complète', () => {
     expect(extraireDiagnostic(diagnostic)).toBe(diagnostic);
@@ -50,13 +61,7 @@ describe('extraireDiagnostic', () => {
 // comparaison.
 describe('extrairePlanPrecedent', () => {
   const planPrecedent = { snapshotId: 12, score: '0hard/-6232medium/-920soft', degraded: true };
-  const diagnostic = {
-    score: '0hard/0medium/-1soft',
-    postesNonPourvus: 0,
-    contraintes: [],
-    faisabilite: null,
-    hardScore: 0,
-  } as unknown as PlanningDiagnostic;
+  const diagnostic = feasibleDiagnostic();
 
   it('rend le plan remplacé porté par le résultat', () => {
     expect(extrairePlanPrecedent({ diagnostic, previousPlan: planPrecedent })).toBe(planPrecedent);

@@ -405,14 +405,21 @@ describe('FormDraft', () => {
   });
 
   describe('orphan drafts', () => {
+    /** The real service, its `notify` spied on: what the function hands it is the subject. */
+    function spiedNotifications() {
+      const notifications = TestBed.inject(NotificationService);
+      const notify = vi.spyOn(notifications, 'notify').mockImplementation(() => undefined);
+      return { notifications, notify };
+    }
+
     it('erases the draft of a record deleted meanwhile and says so, by its id', () => {
       const storage = memoryStorage();
       writeDraft(storage, draftKey('animateur', 'a7'), {}, null);
       writeDraft(storage, draftKey('animateur', 'a1'), {}, null);
-      const notify = vi.fn();
+      const { notifications, notify } = spiedNotifications();
 
       reportOrphanDrafts(
-        { notify } as unknown as NotificationService,
+        notifications,
         storage,
         'animateur',
         (id) => id === 'a1',
@@ -428,10 +435,10 @@ describe('FormDraft', () => {
     it('says nothing while every record still exists', () => {
       const storage = memoryStorage();
       writeDraft(storage, draftKey('stand', 's1'), {}, null);
-      const notify = vi.fn();
+      const { notifications, notify } = spiedNotifications();
 
       reportOrphanDrafts(
-        { notify } as unknown as NotificationService,
+        notifications,
         storage,
         'stand',
         () => true,

@@ -1,15 +1,11 @@
 // The volumetry card reads the store and derives the one figure the template
 // would otherwise get wrong: a fill ratio that must not divide by zero.
 
-import { provideZonelessChangeDetection, Signal, signal } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverVolumetry } from './solver-volumetry';
-
-type CardInternals = {
-  fillRatio: Signal<number | null>;
-};
 
 describe('SolverVolumetry', () => {
   const scale = signal({
@@ -39,10 +35,10 @@ describe('SolverVolumetry', () => {
     });
   });
 
-  function createCard(): CardInternals {
+  function createCard(): SolverVolumetry {
     fixture = TestBed.createComponent(SolverVolumetry);
     fixture.detectChanges();
-    return fixture.componentInstance as unknown as CardInternals;
+    return fixture.componentInstance;
   }
 
   function text(): string {
@@ -59,7 +55,7 @@ describe('SolverVolumetry', () => {
     });
     const card = createCard();
 
-    expect(card.fillRatio()).toBeNull();
+    expect(card['fillRatio']()).toBeNull();
     expect(text()).not.toContain('taux de remplissage');
   });
 
@@ -73,7 +69,7 @@ describe('SolverVolumetry', () => {
     });
     const card = createCard();
 
-    expect(card.fillRatio()).toBeCloseTo(0.75);
+    expect(card['fillRatio']()).toBeCloseTo(0.75);
     expect(text()).toContain('Taux de remplissage : 0.75');
   });
 

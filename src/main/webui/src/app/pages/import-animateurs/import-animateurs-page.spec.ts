@@ -10,21 +10,8 @@ import { NotificationService } from '../../core/notification.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import type { AnimateurCsvMapping, ImportCsvRapport } from '../../core/models';
+import { Fake, fakeOf, provideFake } from '../../core/testing/fake';
 import { ImportAnimateursPage } from './import-animateurs-page';
-
-/** Reaches the protected members the template binds to. */
-type PageInternals = {
-  analyser: () => Promise<void>;
-  importer: () => Promise<void>;
-  changerRemplacerJours: (valeur: boolean) => Promise<void>;
-  changerRemplacerAnimateurs: (valeur: boolean) => Promise<void>;
-  rapport: () => ImportCsvRapport | null;
-  mapping: () => AnimateurCsvMapping | null;
-  peutImporter: () => boolean;
-  erreur: () => string;
-  nomFichier: { set: (valeur: string) => void };
-  telechargerExemple: () => Promise<void>;
-};
 
 const MAPPING: AnimateurCsvMapping = {
   prenom: 0,
@@ -75,44 +62,41 @@ function rapport(applied: boolean): ImportCsvRapport {
 }
 
 describe('ImportAnimateursPage', () => {
-  const animateursApi = {
-    analyseCsvImport: vi.fn(),
-    applyCsvImport: vi.fn(),
-    downloadCsvExample: vi.fn(async () => 'Téléchargement démarré.'),
-  };
-  const confirm = { ask: vi.fn(async () => true) };
-  const store = { reload: vi.fn(async () => undefined) };
-  const notifications = { notify: vi.fn() };
-  let page: PageInternals;
+  let animateursApi: Fake<AnimateursApi>;
+  let confirm: Fake<ConfirmService>;
+  let store: Fake<ReferenceDataStore>;
+  let notifications: Fake<NotificationService>;
+  let page: ImportAnimateursPage;
 
   beforeEach(() => {
-    animateursApi.analyseCsvImport.mockReset();
-    animateursApi.applyCsvImport.mockReset();
-    animateursApi.downloadCsvExample.mockClear();
-    confirm.ask.mockClear();
-    store.reload.mockClear();
-    notifications.notify.mockClear();
+    // Every answer of the two import endpoints is given by the test that expects it.
+    animateursApi = fakeOf<AnimateursApi>({
+      analyseCsvImport: vi.fn(),
+      applyCsvImport: vi.fn(),
+      downloadCsvExample: async () => 'Téléchargement démarré.',
+    });
+    confirm = fakeOf<ConfirmService>({ ask: async () => true });
+    store = fakeOf<ReferenceDataStore>({ reload: async () => undefined });
+    notifications = fakeOf<NotificationService>({ notify: () => undefined });
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        { provide: AnimateursApi, useValue: animateursApi },
-        { provide: ConfirmService, useValue: confirm },
-        { provide: ReferenceDataStore, useValue: store },
-        { provide: NotificationService, useValue: notifications },
+        provideFake(AnimateursApi, animateursApi),
+        provideFake(ConfirmService, confirm),
+        provideFake(ReferenceDataStore, store),
+        provideFake(NotificationService, notifications),
       ],
     });
-    page = TestBed.createComponent(ImportAnimateursPage)
-      .componentInstance as unknown as PageInternals;
+    page = TestBed.createComponent(ImportAnimateursPage).componentInstance;
   });
 
   /** Loading a file goes through the analysis endpoint only — the one that writes nothing. */
   async function chargerFichier(): Promise<void> {
     animateursApi.analyseCsvImport.mockResolvedValueOnce(rapport(false));
-    const instance = page as unknown as { contenu: { set: (v: string) => void } };
-    instance.contenu.set('prenom;nom;date de naissance\nAmélie;Durand;12/03/1990\n');
-    page.nomFichier.set('roster.csv');
-    await page.analyser();
+    page['contenu'].set('prenom;nom;date de naissance\nAmélie;Durand;12/03/1990\n');
+    page['nomFichier'].set('roster.csv');
+    await page['analyser']();
   }
 
   it('previews through the analysis endpoint and never through the write one', async () => {
@@ -120,37 +104,37 @@ describe('ImportAnimateursPage', () => {
 
     expect(animateursApi.analyseCsvImport).toHaveBeenCalledTimes(1);
     expect(animateursApi.applyCsvImport).not.toHaveBeenCalled();
-    expect(page.rapport()?.applied).toBe(false);
+    expect(page['rapport']()?.applied).toBe(false);
   });
 
   it('sends the file again on import, not the report it was shown', async () => {
     await chargerFichier();
     animateursApi.applyCsvImport.mockResolvedValueOnce(rapport(true));
 
-    await page.importer();
+    await page['importer']();
 
     const [body] = animateursApi.applyCsvImport.mock.calls[0];
-    expect((body as { content: string }).content).toContain('Amélie;Durand');
-    expect((body as { rows?: unknown }).rows).toBeUndefined();
+    expect(body.content).toContain('Amélie;Durand');
+    expect(body).not.toHaveProperty('rows');
   });
 
   it('asks before writing, and writes nothing when the answer is no', async () => {
     await chargerFichier();
     confirm.ask.mockResolvedValueOnce(false);
 
-    await page.importer();
+    await page['importer']();
 
     expect(animateursApi.applyCsvImport).not.toHaveBeenCalled();
-    expect(page.rapport()?.applied).toBe(false);
+    expect(page['rapport']()?.applied).toBe(false);
   });
 
   it('reloads the referential and reports once the write came back applied', async () => {
     await chargerFichier();
     animateursApi.applyCsvImport.mockResolvedValueOnce(rapport(true));
 
-    await page.importer();
+    await page['importer']();
 
-    expect(page.rapport()?.applied).toBe(true);
+    expect(page['rapport']()?.applied).toBe(true);
     expect(store.reload).toHaveBeenCalledOnce();
     expect(notifications.notify).toHaveBeenCalledOnce();
   });
@@ -158,13 +142,13 @@ describe('ImportAnimateursPage', () => {
   /** « Voir les N lignes importées » opens the list on the fiches written, never on the refused. */
   it('links to the fiches the write created or updated, and to them alone', async () => {
     await chargerFichier();
-    const lien = (page as unknown as { lienLignes: () => unknown }).lienLignes;
-    expect(lien()).toBeNull();
+    const link = page['lienLignes'];
+    expect(link()).toBeNull();
     animateursApi.applyCsvImport.mockResolvedValueOnce(rapport(true));
 
-    await page.importer();
+    await page['importer']();
 
-    expect(lien()).toEqual({
+    expect(link()).toEqual({
       queryParams: { ids: 'amelie-durand' },
       libelle: 'Voir les 1 lignes importées',
     });
@@ -174,10 +158,10 @@ describe('ImportAnimateursPage', () => {
     await chargerFichier();
     animateursApi.analyseCsvImport.mockResolvedValueOnce(rapport(false));
 
-    await page.changerRemplacerJours(true);
+    await page['changerRemplacerJours'](true);
 
     const [body] = animateursApi.analyseCsvImport.mock.calls[1];
-    expect((body as { replaceJoursIndisponibles: boolean }).replaceJoursIndisponibles).toBe(true);
+    expect(body.replaceJoursIndisponibles).toBe(true);
   });
 
   /**
@@ -196,41 +180,41 @@ describe('ImportAnimateursPage', () => {
         repondreA = resolve;
       }),
     );
-    const analyseA = page.analyser();
+    const analyseA = page['analyser']();
     animateursApi.analyseCsvImport.mockResolvedValueOnce({ ...rapport(false), mapping: mappingB });
-    await page.analyser();
+    await page['analyser']();
 
     repondreA({ ...rapport(false), mapping: mappingA });
     await analyseA;
 
-    expect(page.mapping()).toEqual(mappingB);
+    expect(page['mapping']()).toEqual(mappingB);
   });
 
   /** `apply()` refuses this combination outright: the button must say so first. */
   it('refuses the import when a full replacement is asked over a rejected row', async () => {
     await chargerFichier();
-    expect(page.peutImporter()).toBe(true);
+    expect(page['peutImporter']()).toBe(true);
     animateursApi.analyseCsvImport.mockResolvedValueOnce(rapport(false));
 
-    await page.changerRemplacerAnimateurs(true);
+    await page['changerRemplacerAnimateurs'](true);
 
-    expect(page.rapport()?.rejected).toBe(1);
-    expect(page.peutImporter()).toBe(false);
+    expect(page['rapport']()?.rejected).toBe(1);
+    expect(page['peutImporter']()).toBe(false);
   });
 
   /** A 0-byte CSV: the server has a message for it, so it has to be asked. */
   it('asks the server about an empty file instead of falling silent', async () => {
     animateursApi.analyseCsvImport.mockRejectedValueOnce(new Error('Le fichier est vide.'));
-    page.nomFichier.set('vide.csv');
+    page['nomFichier'].set('vide.csv');
 
-    await page.analyser();
+    await page['analyser']();
 
     expect(animateursApi.analyseCsvImport).toHaveBeenCalledTimes(1);
-    expect(page.erreur()).toContain('vide');
+    expect(page['erreur']()).toContain('vide');
   });
 
   it('asks nothing while no file has been chosen', async () => {
-    await page.analyser();
+    await page['analyser']();
 
     expect(animateursApi.analyseCsvImport).not.toHaveBeenCalled();
   });
@@ -242,24 +226,23 @@ describe('ImportAnimateursPage', () => {
    * second file to keep true.
    */
   it('downloads the example roster from the API rather than from a bundled copy', async () => {
-    await page.telechargerExemple();
+    await page['telechargerExemple']();
 
     expect(animateursApi.downloadCsvExample).toHaveBeenCalledOnce();
     expect(animateursApi.analyseCsvImport).not.toHaveBeenCalled();
-    expect(page.erreur()).toBe('');
+    expect(page['erreur']()).toBe('');
   });
 
   it('shows the refusal and drops the report when the server refuses the file', async () => {
     animateursApi.analyseCsvImport.mockRejectedValueOnce(
       new Error("Ce format n'est pas accepté : seul le CSV est lu."),
     );
-    const instance = page as unknown as { contenu: { set: (v: string) => void } };
-    instance.contenu.set('PK');
-    page.nomFichier.set('roster.xlsx');
+    page['contenu'].set('PK');
+    page['nomFichier'].set('roster.xlsx');
 
-    await page.analyser();
+    await page['analyser']();
 
-    expect(page.erreur()).toContain('seul le CSV est lu');
-    expect(page.rapport()).toBeNull();
+    expect(page['erreur']()).toContain('seul le CSV est lu');
+    expect(page['rapport']()).toBeNull();
   });
 });

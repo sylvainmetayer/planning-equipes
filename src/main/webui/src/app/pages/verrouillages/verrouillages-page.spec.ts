@@ -5,7 +5,7 @@
 // accessible name. Nothing else fails — the page still paints three boxes — so
 // only the DOM tells the truth.
 
-import { provideZonelessChangeDetection, signal, WritableSignal } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -14,40 +14,79 @@ import { PlanningStateService } from '../../core/planning-state.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { VerrouillageStore } from '../../core/verrouillage.store';
-import { PlanningEvenement, VerrouillagePlanning } from '../../core/models';
+import {
+  Animateur,
+  Creneau,
+  PlanningEvenement,
+  Stand,
+  VerrouillagePlanning,
+} from '../../core/models';
+import { Fake, fakeOf, provideFake } from '../../core/testing/fake';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { VerrouillagesPage } from './verrouillages-page';
 
-const CRENEAUX = [
-  { id: 1, date: '2026-07-10', heureDebut: '10:00', heureFin: '12:00' },
-  { id: 2, date: '2026-07-11', heureDebut: '10:00', heureFin: '12:00' },
+const CRENEAUX: Creneau[] = [
+  { id: 1, jour: 1, date: '2026-07-10', heureDebut: '10:00', heureFin: '12:00' },
+  { id: 2, jour: 2, date: '2026-07-11', heureDebut: '10:00', heureFin: '12:00' },
 ];
 
+function animateur(id: string, prenom: string, nom: string): Animateur {
+  return {
+    id,
+    prenom,
+    nom,
+    dateNaissance: '1990-01-01',
+    manager: false,
+    competences: {},
+    souhaits: [],
+    joursIndisponibles: [],
+  };
+}
+
+function stand(id: string, nom: string): Stand {
+  return {
+    id,
+    nom,
+    typologiesProposees: [],
+    effectifMin: 1,
+    effectifMax: 2,
+    reserveMajeurs: false,
+    premium: false,
+    niveauEffort: 'NORMAL',
+    emplacement: null,
+    indisponibilites: [],
+    ouvertures: [],
+    horaires: [],
+  };
+}
+
 function mount() {
+  const animateurs = signal<Animateur[]>([]);
+  const verrouillages = signal<VerrouillagePlanning[]>([]);
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
       provideRouter([]),
-      {
-        provide: ReferenceDataStore,
-        useValue: {
+      provideFake(
+        ReferenceDataStore,
+        fakeOf<ReferenceDataStore>({
           creneaux: signal(CRENEAUX),
-          animateurs: signal([]),
+          animateurs,
           stands: signal([]),
-          reload: vi.fn(async () => undefined),
-        },
-      },
-      {
-        provide: VerrouillageStore,
-        useValue: { verrouillages: signal([]), reload: vi.fn(async () => undefined) },
-      },
+          reload: async () => undefined,
+        }),
+      ),
+      provideFake(
+        VerrouillageStore,
+        fakeOf<VerrouillageStore>({ verrouillages, reload: async () => undefined }),
+      ),
       { provide: SolverJobService, useValue: { editingLocked: signal(false) } },
       { provide: NotificationService, useValue: { notify: vi.fn() } },
       { provide: ConfirmService, useValue: { ask: vi.fn(async () => true) } },
       { provide: PlanningStateService, useValue: { loadForDisplay: vi.fn(async () => null) } },
     ],
   });
-  return TestBed.createComponent(VerrouillagesPage);
+  return { fixture: TestBed.createComponent(VerrouillagesPage), animateurs, verrouillages };
 }
 
 /**
@@ -75,7 +114,7 @@ describe('VerrouillagesPage lock form', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
   it('labels every field of the form, so each control can be named and aimed at', async () => {
-    const fixture = mount();
+    const { fixture } = mount();
     await fixture.whenStable();
     const root = fixture.nativeElement as HTMLElement;
 
@@ -90,7 +129,7 @@ describe('VerrouillagesPage lock form', () => {
   });
 
   it('opens on the ANIMATEUR type and names its target field "Animateur"', async () => {
-    const fixture = mount();
+    const { fixture } = mount();
     await fixture.whenStable();
     const root = fixture.nativeElement as HTMLElement;
 
@@ -102,7 +141,7 @@ describe('VerrouillagesPage lock form', () => {
   });
 
   it('binds each control to a named form control, which is what makes the label render', async () => {
-    const fixture = mount();
+    const { fixture } = mount();
     await fixture.whenStable();
     const root = fixture.nativeElement as HTMLElement;
 
@@ -119,34 +158,28 @@ describe('VerrouillagesPage lock form', () => {
 
 describe('VerrouillagesPage impact and list', () => {
   let fixture: ComponentFixture<VerrouillagesPage>;
-  let verrous: {
-    verrouillages: WritableSignal<VerrouillagePlanning[]>;
-    reload: ReturnType<typeof vi.fn>;
-    create: ReturnType<typeof vi.fn>;
-    remove: ReturnType<typeof vi.fn>;
-  };
-  let confirm: { ask: ReturnType<typeof vi.fn> };
+  let verrous: Fake<VerrouillageStore>;
+  let confirm: Fake<ConfirmService>;
   let notify: ReturnType<typeof vi.fn>;
   const editingLocked = signal(false);
 
-  const ANIMATEURS = [
-    { id: 'a1', prenom: 'Amélie', nom: 'Nothomb' },
-    { id: 'a2', prenom: 'Marcel', nom: 'Proust' },
-  ];
-  const STANDS = [{ id: 's1', nom: 'Loup-Garou' }];
+  const ANIMATEURS = [animateur('a1', 'Amélie', 'Nothomb'), animateur('a2', 'Marcel', 'Proust')];
+  const STANDS = [stand('s1', 'Loup-Garou')];
 
   /** Three staffed seats: two on day 1 (one per animateur), one on day 2. */
   function planning(): PlanningEvenement {
     const jour1 = CRENEAUX[0];
     const jour2 = CRENEAUX[1];
     return {
+      animateurs: ANIMATEURS,
+      score: null,
       postes: [
         { id: 'p1', creneau: jour1, stand: STANDS[0], animateur: ANIMATEURS[0] },
         { id: 'p2', creneau: jour1, stand: STANDS[0], animateur: ANIMATEURS[1] },
         { id: 'p3', creneau: jour2, stand: STANDS[0], animateur: ANIMATEURS[0] },
         { id: 'p4', creneau: jour2, stand: STANDS[0], animateur: null },
       ],
-    } as unknown as PlanningEvenement;
+    };
   }
 
   async function rendre(
@@ -155,13 +188,13 @@ describe('VerrouillagesPage impact and list', () => {
   ): Promise<void> {
     editingLocked.set(false);
     notify = vi.fn();
-    confirm = { ask: vi.fn(async () => true) };
-    verrous = {
+    confirm = fakeOf<ConfirmService>({ ask: async () => true });
+    verrous = fakeOf<VerrouillageStore>({
       verrouillages: signal(verrouillages),
-      reload: vi.fn(async () => undefined),
-      create: vi.fn(async () => []),
-      remove: vi.fn(async () => undefined),
-    };
+      reload: async () => undefined,
+      create: async () => [],
+      remove: async () => undefined,
+    });
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
@@ -176,10 +209,10 @@ describe('VerrouillagesPage impact and list', () => {
             reload: vi.fn(async () => undefined),
           },
         },
-        { provide: VerrouillageStore, useValue: verrous },
+        provideFake(VerrouillageStore, verrous),
         { provide: SolverJobService, useValue: { editingLocked } },
         { provide: NotificationService, useValue: { notify } },
-        { provide: ConfirmService, useValue: confirm },
+        provideFake(ConfirmService, confirm),
         {
           provide: PlanningStateService,
           useValue: { loadForDisplay: vi.fn(async () => evenement) },
@@ -258,7 +291,7 @@ describe('VerrouillagesPage impact and list', () => {
     await choisir('standId', 'Loup-Garou');
     expect(message()).toContain('3 affectation(s)');
 
-    await rendre({ postes: [] } as unknown as PlanningEvenement);
+    await rendre({ animateurs: [], postes: [], score: null });
     await choisir('type', 'Journée');
     await choisir('jour', '2026-07-10');
     // No plan at all: silence rather than a misleading "0 affectation".
@@ -332,7 +365,7 @@ describe('VerrouillagesPage impact and list', () => {
   it('names the target of each lock by its label, never by a raw id', async () => {
     await rendre(planning(), [
       {
-        id: 1,
+        id: '1',
         type: 'ANIMATEUR',
         animateurId: 'a1',
         standId: null,
@@ -341,7 +374,7 @@ describe('VerrouillagesPage impact and list', () => {
         raison: null,
       },
       {
-        id: 2,
+        id: '2',
         type: 'STAND',
         animateurId: null,
         standId: 's1',
@@ -350,7 +383,7 @@ describe('VerrouillagesPage impact and list', () => {
         raison: 'Demande du client',
       },
       {
-        id: 3,
+        id: '3',
         type: 'JOUR',
         animateurId: null,
         standId: null,
@@ -359,7 +392,7 @@ describe('VerrouillagesPage impact and list', () => {
         raison: null,
       },
       {
-        id: 4,
+        id: '4',
         type: 'CRENEAU',
         animateurId: null,
         standId: null,
@@ -371,7 +404,7 @@ describe('VerrouillagesPage impact and list', () => {
         raison: null,
       },
       {
-        id: 5,
+        id: '5',
         type: 'ANIMATEUR_CRENEAU',
         animateurId: 'a2',
         standId: null,
@@ -382,7 +415,7 @@ describe('VerrouillagesPage impact and list', () => {
         jour: null,
         raison: null,
       },
-    ] as unknown as VerrouillagePlanning[]);
+    ]);
 
     const cibles = Array.from(racine().querySelectorAll('tbody tr')).map((row) =>
       row.querySelectorAll('td')[1].textContent!.trim(),
@@ -406,7 +439,7 @@ describe('VerrouillagesPage impact and list', () => {
     // échange made; it now waits, and the row says so.
     await rendre(planning(), [
       {
-        id: 9,
+        id: '9',
         type: 'CRENEAU',
         animateurId: null,
         standId: null,
@@ -418,7 +451,7 @@ describe('VerrouillagesPage impact and list', () => {
         raison: null,
         vacationMissing: true,
       },
-    ] as unknown as VerrouillagePlanning[]);
+    ]);
 
     const cellules = racine().querySelectorAll('tbody tr')[0].querySelectorAll('td');
     expect(cellules[1].textContent!.trim()).toBe('2026-07-11 14:00–18:00');
@@ -428,7 +461,7 @@ describe('VerrouillagesPage impact and list', () => {
   it('falls back to the stored id when the target no longer exists', async () => {
     await rendre(planning(), [
       {
-        id: 1,
+        id: '1',
         type: 'ANIMATEUR',
         animateurId: 'disparu',
         standId: null,
@@ -436,7 +469,7 @@ describe('VerrouillagesPage impact and list', () => {
         jour: null,
         raison: null,
       },
-    ] as unknown as VerrouillagePlanning[]);
+    ]);
 
     // A lock aimed at a deleted animateur must stay visible, and removable.
     expect(
@@ -447,7 +480,7 @@ describe('VerrouillagesPage impact and list', () => {
   it('never unlocks without an explicit confirmation', async () => {
     await rendre(planning(), [
       {
-        id: 7,
+        id: '7',
         type: 'JOUR',
         animateurId: null,
         standId: null,
@@ -455,7 +488,7 @@ describe('VerrouillagesPage impact and list', () => {
         jour: '2026-07-10',
         raison: null,
       },
-    ] as unknown as VerrouillagePlanning[]);
+    ]);
     confirm.ask.mockResolvedValue(false);
 
     (racine().querySelector('tbody .row-actions button') as HTMLButtonElement).click();
@@ -465,7 +498,7 @@ describe('VerrouillagesPage impact and list', () => {
     confirm.ask.mockResolvedValue(true);
     (racine().querySelector('tbody .row-actions button') as HTMLButtonElement).click();
     await fixture.whenStable();
-    expect(verrous.remove).toHaveBeenCalledWith(7);
+    expect(verrous.remove).toHaveBeenCalledWith('7');
   });
 
   it('says the planning is fully re-optimisable when no lock is posed', async () => {
@@ -479,7 +512,7 @@ describe('VerrouillagesPage impact and list', () => {
   it('disables locking and unlocking while a solve is running', async () => {
     await rendre(planning(), [
       {
-        id: 7,
+        id: '7',
         type: 'JOUR',
         animateurId: null,
         standId: null,
@@ -487,7 +520,7 @@ describe('VerrouillagesPage impact and list', () => {
         jour: '2026-07-10',
         raison: null,
       },
-    ] as unknown as VerrouillagePlanning[]);
+    ]);
     await choisir('type', 'Journée');
     await choisir('jour', '2026-07-10');
     editingLocked.set(true);
@@ -516,20 +549,13 @@ function lock(id: string, animateurId: string | null): VerrouillagePlanning {
 /** `?animateur=a,b`: the locks standing in the way of a forced assignment, until « Tout afficher ». */
 describe('VerrouillagesPage narrowed to some animateurs', () => {
   it('lists only the locks of the animateurs the URL names, and all of them once asked', async () => {
-    const fixture = mount();
-    const store = TestBed.inject(VerrouillageStore) as unknown as {
-      verrouillages: WritableSignal<VerrouillagePlanning[]>;
-    };
-    store.verrouillages.set([lock('V1', 'A1'), lock('V2', 'A2'), lock('V3', null)]);
-    const page = fixture.componentInstance as unknown as {
-      onlyAnimateurs: WritableSignal<string[]>;
-      rows: () => VerrouillagePlanning[];
-      showAll: () => void;
-    };
+    const { fixture, verrouillages } = mount();
+    verrouillages.set([lock('V1', 'A1'), lock('V2', 'A2'), lock('V3', null)]);
+    const page = fixture.componentInstance;
 
-    expect(page.rows()).toHaveLength(3);
-    page.onlyAnimateurs.set(['A2']);
-    expect(page.rows().map((row) => row.id)).toEqual(['V2']);
+    expect(page['rows']()).toHaveLength(3);
+    page['onlyAnimateurs'].set(['A2']);
+    expect(page['rows']().map((row) => row.id)).toEqual(['V2']);
     await fixture.whenStable();
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Tout afficher');
 
@@ -538,27 +564,21 @@ describe('VerrouillagesPage narrowed to some animateurs', () => {
     ).find((title) => title.textContent?.includes('Verrouillages ('));
     expect(listTitle?.textContent).toContain('1 sur 3');
 
-    page.onlyAnimateurs.set(['A9']);
+    page['onlyAnimateurs'].set(['A9']);
     await fixture.whenStable();
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
       'Aucun verrouillage pour ces animateurs',
     );
 
-    page.showAll();
-    expect(page.rows()).toHaveLength(3);
+    page['showAll']();
+    expect(page['rows']()).toHaveLength(3);
   });
 
   it('names the animateurs of the narrowing, and keeps the id of one the referential lost', async () => {
-    const fixture = mount();
-    const referentiel = TestBed.inject(ReferenceDataStore) as unknown as {
-      animateurs: WritableSignal<{ id: string; prenom: string; nom: string }[]>;
-    };
-    referentiel.animateurs.set([{ id: 'A1', prenom: 'Amélie', nom: 'Nothomb' }]);
-    const page = fixture.componentInstance as unknown as {
-      onlyAnimateurs: WritableSignal<string[]>;
-    };
+    const { fixture, animateurs } = mount();
+    animateurs.set([animateur('A1', 'Amélie', 'Nothomb')]);
 
-    page.onlyAnimateurs.set(['A1', 'A9']);
+    fixture.componentInstance['onlyAnimateurs'].set(['A1', 'A9']);
     await fixture.whenStable();
 
     const note = (fixture.nativeElement as HTMLElement).querySelector(

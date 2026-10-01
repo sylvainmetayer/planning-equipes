@@ -4,7 +4,8 @@
 
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MatDialog } from '@angular/material/dialog';
+import { ComponentType } from '@angular/cdk/portal';
+import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { EditionsApi } from '../../core/api/editions-api';
@@ -12,6 +13,7 @@ import { ConsignesStore } from '../../core/consignes.store';
 import { EtatGel, RapportOuvertures, Stand } from '../../core/models';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
+import { StandBulkEditData } from '../stands/stand-bulk-edit-dialog';
 import { OpeningsComparisonView } from './comparaison-vue';
 
 function rapport(): RapportOuvertures {
@@ -85,7 +87,12 @@ function stand(id: string, typologies: string[] = []): Stand {
 }
 
 async function mount(standIds: string[], referenceId: string | null = null, gel: EtatGel[] = []) {
-  const open = vi.fn(() => ({ afterClosed: () => of(true) }));
+  // The one `MatDialog` method the view calls, typed on what it hands the bulk edit.
+  const open = vi.fn(
+    (_component: ComponentType<unknown>, _config: MatDialogConfig<StandBulkEditData>) => ({
+      afterClosed: () => of(true),
+    }),
+  );
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
@@ -150,7 +157,7 @@ describe('OpeningsComparisonView', () => {
 
   it('hands the reference to the next stand when it is removed', async () => {
     const { fixture } = await mount(['1', '2', '3'], '2');
-    (fixture.componentInstance as unknown as { retirer(id: string): void }).retirer('2');
+    fixture.componentInstance['retirer']('2');
     await fixture.whenStable();
 
     expect(fixture.componentInstance.standIds()).toEqual(['1', '3']);
@@ -159,9 +166,7 @@ describe('OpeningsComparisonView', () => {
 
   it('adds every stand of a game category at once', async () => {
     const { fixture } = await mount([]);
-    (fixture.componentInstance as unknown as { addGameCategory(id: string): void }).addGameCategory(
-      'buvette',
-    );
+    fixture.componentInstance['addGameCategory']('buvette');
     await fixture.whenStable();
     expect(fixture.componentInstance.standIds()).toEqual(['1', '2', '3']);
   });
@@ -175,12 +180,9 @@ describe('OpeningsComparisonView', () => {
     await fixture.whenStable();
 
     expect(open).toHaveBeenCalledTimes(1);
-    const [, config] = open.mock.calls[0] as unknown as [
-      unknown,
-      { data: { stands: Stand[]; modele: Stand } },
-    ];
-    expect(config.data.modele.id).toBe('2');
-    expect(config.data.stands.map((each) => each.id)).toEqual(['1', '3']);
+    const [, config] = open.mock.calls[0];
+    expect(config.data?.modele?.id).toBe('2');
+    expect(config.data?.stands.map((each) => each.id)).toEqual(['1', '3']);
     // Saved in the dialog: the page is asked to re-read the report.
     expect(emis).toHaveBeenCalledTimes(1);
   });

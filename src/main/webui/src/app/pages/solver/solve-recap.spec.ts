@@ -3,7 +3,7 @@
 // #274) — and the way back when it made things worse. The facts come in as
 // inputs; what is tested is the words, and the one action.
 
-import { provideZonelessChangeDetection, Signal } from '@angular/core';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { InstantanePerimeError, PlanSnapshotStore } from '../../core/plan-snapshot.store';
@@ -13,19 +13,6 @@ import { ProblemesStore } from '../../core/problemes.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { SolveRecap } from './solve-recap';
-
-type RecapInternals = {
-  reamorcageLabel: Signal<string>;
-  passesVidesLabel: Signal<string>;
-  feasibilityFirstLabel: Signal<string>;
-  impactLabel: Signal<string>;
-  comparison: Signal<{ avant: string; apres: string } | null>;
-  horsPlancherLabel: Signal<string>;
-  validationsLabel: Signal<string>;
-  validationsGardeesLabel: Signal<string>;
-  restoring: Signal<boolean>;
-  restore: () => Promise<void>;
-};
 
 describe('SolveRecap', () => {
   const snapshots = { restaurer: vi.fn() };
@@ -66,7 +53,7 @@ describe('SolveRecap', () => {
     });
   });
 
-  function createRecap(inputs: Record<string, unknown> = {}): RecapInternals {
+  function createRecap(inputs: Record<string, unknown> = {}): SolveRecap {
     fixture = TestBed.createComponent(SolveRecap);
     for (const [name, value] of Object.entries(inputs)) {
       fixture.componentRef.setInput(name, value);
@@ -76,7 +63,7 @@ describe('SolveRecap', () => {
     fixture.componentInstance.restored.subscribe((message) => restored.push(message));
     fixture.componentInstance.failed.subscribe((message) => failed.push(message));
     fixture.detectChanges();
-    return fixture.componentInstance as unknown as RecapInternals;
+    return fixture.componentInstance;
   }
 
   function text(): string {
@@ -94,8 +81,8 @@ describe('SolveRecap', () => {
         stoppedAfterFeasibility: false,
       },
     });
-    expect(recap.feasibilityFirstLabel()).toContain('Deux étapes');
-    expect(recap.feasibilityFirstLabel()).toContain('rendu 35 place(s)');
+    expect(recap['feasibilityFirstLabel']()).toContain('Deux étapes');
+    expect(recap['feasibilityFirstLabel']()).toContain('rendu 35 place(s)');
 
     fixture.componentRef.setInput('feasibilityFirst', {
       feasibilityReached: false,
@@ -105,7 +92,7 @@ describe('SolveRecap', () => {
       publishedSeatsChanged: 700,
       stoppedAfterFeasibility: false,
     });
-    expect(recap.feasibilityFirstLabel()).toContain("n'a pas été atteinte");
+    expect(recap['feasibilityFirstLabel']()).toContain("n'a pas été atteinte");
 
     fixture.componentRef.setInput('feasibilityFirst', {
       feasibilityReached: true,
@@ -115,18 +102,20 @@ describe('SolveRecap', () => {
       publishedSeatsChanged: 55,
       stoppedAfterFeasibility: true,
     });
-    expect(recap.feasibilityFirstLabel()).toContain('avant le polissage');
-    expect(recap.feasibilityFirstLabel()).not.toContain('rendu');
+    expect(recap['feasibilityFirstLabel']()).toContain('avant le polissage');
+    expect(recap['feasibilityFirstLabel']()).not.toContain('rendu');
 
     fixture.componentRef.setInput('feasibilityFirst', null);
-    expect(recap.feasibilityFirstLabel()).toBe('');
+    expect(recap['feasibilityFirstLabel']()).toBe('');
   });
 
   it('recaps a re-seeded solve, with the seats it had to leave free', () => {
     const recap = createRecap({
       reamorcage: { mode: 'PLAN_COURANT', postes: 12, postesLiberes: 0, postesPasses: 0 },
     });
-    expect(recap.reamorcageLabel()).toBe('Point de départ : le plan enregistré, 12 postes repris.');
+    expect(recap['reamorcageLabel']()).toBe(
+      'Point de départ : le plan enregistré, 12 postes repris.',
+    );
 
     fixture.componentRef.setInput('reamorcage', {
       mode: 'PLAN_COURANT',
@@ -134,7 +123,7 @@ describe('SolveRecap', () => {
       postesLiberes: 2,
       postesPasses: 0,
     });
-    expect(recap.reamorcageLabel()).toContain('10 postes repris et 2 laissés libres');
+    expect(recap['reamorcageLabel']()).toContain('10 postes repris et 2 laissés libres');
   });
 
   it('reads the score out first, and says there is nothing to read before any solve', () => {
@@ -158,14 +147,14 @@ describe('SolveRecap', () => {
     const recap = createRecap({
       reamorcage: { mode: 'PLAN_COURANT', postes: 12, postesLiberes: 0, postesPasses: 0 },
     });
-    expect(recap.reamorcageLabel()).not.toContain('déjà commencés');
+    expect(recap['reamorcageLabel']()).not.toContain('déjà commencés');
     fixture.componentRef.setInput('reamorcage', {
       mode: 'PLAN_COURANT',
       postes: 10,
       postesLiberes: 0,
       postesPasses: 7,
     });
-    expect(recap.reamorcageLabel()).toContain(
+    expect(recap['reamorcageLabel']()).toContain(
       '7 postes déjà commencés, figés tels que travaillés.',
     );
   });
@@ -181,7 +170,7 @@ describe('SolveRecap', () => {
         postesPassesVides: 0,
       },
     });
-    expect(recap.passesVidesLabel()).toBe('');
+    expect(recap['passesVidesLabel']()).toBe('');
     expect(text()).not.toContain('restés vides');
 
     fixture.componentRef.setInput('reamorcage', {
@@ -192,7 +181,7 @@ describe('SolveRecap', () => {
       postesPassesVides: 3,
     });
     fixture.detectChanges();
-    expect(recap.passesVidesLabel()).toBe('3 sièges passés sont restés vides.');
+    expect(recap['passesVidesLabel']()).toBe('3 sièges passés sont restés vides.');
     expect(text()).toContain('3 sièges passés sont restés vides.');
   });
 
@@ -200,29 +189,31 @@ describe('SolveRecap', () => {
     const recap = createRecap({
       reamorcage: { mode: 'PLAN_COURANT', postes: 12, postesLiberes: 0 },
     });
-    expect(recap.reamorcageLabel()).toBe('Point de départ : le plan enregistré, 12 postes repris.');
-    expect(recap.passesVidesLabel()).toBe('');
+    expect(recap['reamorcageLabel']()).toBe(
+      'Point de départ : le plan enregistré, 12 postes repris.',
+    );
+    expect(recap['passesVidesLabel']()).toBe('');
   });
 
   it('recaps a cold start, and stays silent on a payload from before the feature', () => {
     const recap = createRecap({
       reamorcage: { mode: 'AUCUN', postes: 0, postesLiberes: 0, postesPasses: 0 },
     });
-    expect(recap.reamorcageLabel()).toBe('Point de départ : aucun, calcul de zéro.');
+    expect(recap['reamorcageLabel']()).toBe('Point de départ : aucun, calcul de zéro.');
 
     fixture.componentRef.setInput('reamorcage', null);
-    expect(recap.reamorcageLabel()).toBe('');
+    expect(recap['reamorcageLabel']()).toBe('');
   });
 
   it('says how many people the publication would inform, and nothing before any publication', () => {
     const recap = createRecap({ impact: { personnes: 12, publieLe: '2026-09-01T10:00:00Z' } });
-    expect(recap.impactLabel()).toContain('12 personne(s) changeraient');
+    expect(recap['impactLabel']()).toContain('12 personne(s) changeraient');
 
     fixture.componentRef.setInput('impact', { personnes: 0, publieLe: '2026-09-01T10:00:00Z' });
-    expect(recap.impactLabel()).toContain('Personne ne change');
+    expect(recap['impactLabel']()).toContain('Personne ne change');
 
     fixture.componentRef.setInput('impact', null);
-    expect(recap.impactLabel()).toBe('');
+    expect(recap['impactLabel']()).toBe('');
   });
 
   // ADR 0069: a kept reading is said as plainly as a withdrawn one.
@@ -235,17 +226,17 @@ describe('SolveRecap', () => {
         gardeesInchangees: 0,
       },
     });
-    expect(recap.validationsLabel()).toContain('2 journée(s) relue(s) recalculée(s)');
-    expect(recap.validationsGardeesLabel()).toBe(
+    expect(recap['validationsLabel']()).toContain('2 journée(s) relue(s) recalculée(s)');
+    expect(recap['validationsGardeesLabel']()).toBe(
       '3 journée(s) gardent leur relecture : 2 déjà travaillée(s), 1 verrouillée(s) sur la journée.',
     );
 
     fixture.componentRef.setInput('impactValidations', { journees: 1 });
-    expect(recap.validationsGardeesLabel()).toBe('');
+    expect(recap['validationsGardeesLabel']()).toBe('');
 
     fixture.componentRef.setInput('impactValidations', null);
-    expect(recap.validationsLabel()).toBe('');
-    expect(recap.validationsGardeesLabel()).toBe('');
+    expect(recap['validationsLabel']()).toBe('');
+    expect(recap['validationsGardeesLabel']()).toBe('');
   });
 
   it('shows the run only once one has finished', () => {
@@ -265,7 +256,7 @@ describe('SolveRecap', () => {
         score: '0hard/-7434medium/-564soft',
       });
 
-      expect(recap.comparison()).toEqual({
+      expect(recap['comparison']()).toEqual({
         avant: '0hard/-6232medium/-920soft',
         apres: '0hard/-7434medium/-564soft',
       });
@@ -292,13 +283,13 @@ describe('SolveRecap', () => {
         score: '0hard/0medium/0soft',
       });
 
-      expect(recap.comparison()).toBeNull();
+      expect(recap['comparison']()).toBeNull();
     });
 
     it('draws no comparison on the first solve of an edition', () => {
       const recap = createRecap({ previousPlan: null, score: '0hard/0medium/0soft' });
 
-      expect(recap.comparison()).toBeNull();
+      expect(recap['comparison']()).toBeNull();
       expect(text()).not.toContain('Avant :');
     });
   });
@@ -313,7 +304,7 @@ describe('SolveRecap', () => {
         scoreHorsPlancher: '0hard/-1675medium/-564soft',
       });
 
-      expect(recap.horsPlancherLabel()).toContain('Hors plancher : 0hard/-1675medium/-564soft');
+      expect(recap['horsPlancherLabel']()).toContain('Hors plancher : 0hard/-1675medium/-564soft');
       expect(text()).toContain('Hors plancher');
     });
 
@@ -323,11 +314,11 @@ describe('SolveRecap', () => {
         score: '0hard/-6675medium/-564soft',
         scoreHorsPlancher: '0hard/-6675medium/-564soft',
       });
-      expect(recap.horsPlancherLabel()).toBe('');
+      expect(recap['horsPlancherLabel']()).toBe('');
       expect(text()).not.toContain('Hors plancher');
 
       fixture.componentRef.setInput('scoreHorsPlancher', null);
-      expect(recap.horsPlancherLabel()).toBe('');
+      expect(recap['horsPlancherLabel']()).toBe('');
     });
 
     it('sits under the before/after comparison when there is one, and is said once', () => {
@@ -349,7 +340,7 @@ describe('SolveRecap', () => {
       confirm.ask.mockResolvedValue(false);
       const recap = createRecap({ previousPlan: degraded, score: '0hard/-7434medium/-564soft' });
 
-      await recap.restore();
+      await recap['restore']();
 
       expect(confirm.ask).toHaveBeenCalledWith(
         expect.objectContaining({ title: "Revenir au plan d'avant ?", danger: true }),
@@ -363,7 +354,7 @@ describe('SolveRecap', () => {
       snapshots.restaurer.mockResolvedValue({ affectations: 148 });
       const recap = createRecap({ previousPlan: degraded, score: '0hard/-7434medium/-564soft' });
 
-      await recap.restore();
+      await recap['restore']();
 
       expect(snapshots.restaurer).toHaveBeenCalledExactlyOnceWith(12);
       expect(resolution.reload).toHaveBeenCalledOnce();
@@ -372,7 +363,7 @@ describe('SolveRecap', () => {
       expect(restored).toEqual([
         "148 affectation(s) restaurée(s) : le plan d'avant la résolution est de nouveau enregistré.",
       ]);
-      expect(recap.restoring()).toBe(false);
+      expect(recap['restoring']()).toBe(false);
     });
 
     it('reports a refusal and frees the button', async () => {
@@ -380,11 +371,11 @@ describe('SolveRecap', () => {
       snapshots.restaurer.mockRejectedValue(new Error('Instantané introuvable.'));
       const recap = createRecap({ previousPlan: degraded, score: '0hard/-7434medium/-564soft' });
 
-      await recap.restore();
+      await recap['restore']();
 
       expect(failed.at(-1)).toContain('Instantané introuvable.');
       expect(restored).toEqual([]);
-      expect(recap.restoring()).toBe(false);
+      expect(recap['restoring']()).toBe(false);
     });
 
     // Issue #170: the capture this button offers is the one taken just before
@@ -400,7 +391,7 @@ describe('SolveRecap', () => {
         .mockResolvedValueOnce({ affectations: 148 });
       const recap = createRecap({ previousPlan: degraded, score: '0hard/-7434medium/-564soft' });
 
-      await recap.restore();
+      await recap['restore']();
 
       expect(confirm.ask).toHaveBeenCalledTimes(2);
       expect(String(confirm.ask.mock.calls[1][0].message)).toContain('référentiel');
@@ -416,19 +407,19 @@ describe('SolveRecap', () => {
       snapshots.restaurer.mockRejectedValue(new InstantanePerimeError('Référentiel modifié', null));
       const recap = createRecap({ previousPlan: degraded, score: '0hard/-7434medium/-564soft' });
 
-      await recap.restore();
+      await recap['restore']();
 
       expect(snapshots.restaurer).toHaveBeenCalledExactlyOnceWith(12);
       expect(resolution.reload).not.toHaveBeenCalled();
       expect(restored).toEqual([]);
       expect(failed).toEqual([]);
-      expect(recap.restoring()).toBe(false);
+      expect(recap['restoring']()).toBe(false);
     });
 
     it('does nothing without a plan to go back to', async () => {
       const recap = createRecap({ previousPlan: null });
 
-      await recap.restore();
+      await recap['restore']();
 
       expect(confirm.ask).not.toHaveBeenCalled();
     });

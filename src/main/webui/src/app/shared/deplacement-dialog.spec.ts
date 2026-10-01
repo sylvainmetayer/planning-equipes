@@ -24,8 +24,6 @@ describe('DeplacementDialog', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  type Internals = { target: { set: (id: string | null) => void }; submit: () => void };
-
   beforeEach(() => close.mockReset());
 
   it('keeps « Déplacer » disabled until a destination is chosen, then answers it', async () => {
@@ -38,11 +36,11 @@ describe('DeplacementDialog', () => {
     expect(root.querySelector('h2')!.textContent).toContain('Déplacer Alice');
     expect(submit.disabled).toBe(true);
 
-    const page = fixture.componentInstance as unknown as Internals;
-    page.target.set('P2');
+    const page = fixture.componentInstance;
+    page['target'].set('P2');
     await fixture.whenStable();
     expect(submit.disabled).toBe(false);
-    page.submit();
+    page['submit']();
 
     expect(close).toHaveBeenCalledWith({ source: null, target: 'P2' });
   });
@@ -65,9 +63,9 @@ describe('DeplacementDialog', () => {
     });
     expect(root.querySelector('mat-select')).not.toBeNull();
 
-    const page = fixture.componentInstance as unknown as Internals;
-    page.target.set('Alice');
-    page.submit();
+    const page = fixture.componentInstance;
+    page['target'].set('Alice');
+    page['submit']();
     expect(close).toHaveBeenCalledWith({ source: 'p1', target: 'Alice' });
   });
 });

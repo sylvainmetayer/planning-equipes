@@ -19,7 +19,7 @@ import {
   resoudreJour,
   resumerHoraires,
 } from './horaire-stand';
-import { HoraireStand, Stand } from './models';
+import { HoraireStand, JourSemaine, ModeHoraire, Stand, TypeJoursHoraire } from './models';
 import casPartages from './horaire-stand-anomalies.cas.json';
 
 const MESSAGES = {
@@ -532,14 +532,24 @@ describe('estCasParticulier', () => {
   });
 });
 
+/** A rule as the shared file writes it: its enumerations are plain strings until read. */
+interface RuleAsWritten extends Omit<
+  HoraireStand,
+  'id' | 'motif' | 'mode' | 'jours' | 'joursSemaine'
+> {
+  mode: string;
+  jours: string;
+  joursSemaine: string[];
+}
+
 /** The case file `HoraireRuleOverlapsSharedCasesTest` reads too: both sides must find the same things. */
-interface CasPartage {
+interface SharedCase<Rule = Omit<HoraireStand, 'id' | 'motif'>> {
   nom: string;
   effectifParDefaut: number | null;
   /** Absent when the case gives its créneaux: the days are then derived as in production. */
   jours?: JourEdition[];
   creneaux?: { date: string; heureDebut: string; heureFin: string }[];
-  horaires: Omit<HoraireStand, 'id' | 'motif'>[];
+  horaires: Rule[];
   ouvertures: {
     date: string;
     heureDebut: string;
@@ -550,8 +560,43 @@ interface CasPartage {
   attendu: AnomaliesHoraires;
 }
 
+/** `value` as one of `allowed`, or a failure naming the value the file holds. */
+function oneOf<T extends string>(allowed: readonly T[], value: string): T {
+  const found = allowed.find((each) => each === value);
+  if (found === undefined) {
+    throw new Error(`« ${value} » is none of ${allowed.join(', ')}`);
+  }
+  return found;
+}
+
+const RULE_MODES: readonly ModeHoraire[] = ['OUVERTURE', 'FERMETURE'];
+const RULE_DAYS: readonly TypeJoursHoraire[] = ['TOUS', 'JOURS_SEMAINE', 'PLAGE', 'DATES'];
+const WEEKDAYS: readonly JourSemaine[] = [
+  'MONDAY',
+  'TUESDAY',
+  'WEDNESDAY',
+  'THURSDAY',
+  'FRIDAY',
+  'SATURDAY',
+  'SUNDAY',
+];
+
+/** A case of the file with its rules read: each enumeration checked against its type. */
+function readCase(written: SharedCase<RuleAsWritten>): SharedCase {
+  return {
+    ...written,
+    horaires: written.horaires.map((rule) => ({
+      ...rule,
+      mode: oneOf(RULE_MODES, rule.mode),
+      jours: oneOf(RULE_DAYS, rule.jours),
+      joursSemaine: rule.joursSemaine.map((day) => oneOf(WEEKDAYS, day)),
+    })),
+  };
+}
+
 describe('anomaliesHoraires — cas partagés avec le backend', () => {
-  const cases = (casPartages as unknown as { cas: CasPartage[] }).cas;
+  const file: { cas: SharedCase<RuleAsWritten>[] } = casPartages;
+  const cases = file.cas.map(readCase);
 
   it('lit un jeu de cas non vide', () => {
     expect(cases.length).toBeGreaterThan(10);

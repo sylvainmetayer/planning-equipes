@@ -177,9 +177,7 @@ describe('ConsignesSolveurPage', () => {
   it('forgets the keys of the tab it leaves', async () => {
     await monter('/consignes-solveur?onglet=verrouillages&animateur=a1');
 
-    (
-      fixture.componentInstance as unknown as { changerOnglet: (onglet: string) => void }
-    ).changerOnglet('consignes');
+    fixture.componentInstance['changerOnglet']('consignes');
     await fixture.whenStable();
 
     expect(path).toBe('/consignes-solveur?onglet=consignes');

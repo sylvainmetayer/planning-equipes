@@ -11,16 +11,8 @@ import { NotificationService } from '../../core/notification.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { ImportGrilleRapport, Stand } from '../../core/models';
+import { fakeOf, provideFake } from '../../core/testing/fake';
 import { ImportGrilleStandsPage } from './import-grille-stands-page';
-
-type PageInternals = {
-  analyser: () => Promise<void>;
-  importer: () => Promise<void>;
-  rapport: () => ImportGrilleRapport | null;
-  peutImporter: () => boolean;
-  erreur: () => string;
-  nomFichier: { set: (valeur: string) => void };
-};
 
 function rapport(applied: boolean): ImportGrilleRapport {
   return {
@@ -83,11 +75,11 @@ function rapport(applied: boolean): ImportGrilleRapport {
 }
 
 describe('ImportGrilleStandsPage', () => {
-  const standsApi = {
-    analyseGridImport: vi.fn(),
-    applyGridImport: vi.fn(),
-    downloadGridExample: vi.fn(async () => 'ok'),
-  };
+  const standsApi = fakeOf<StandsApi>({
+    analyseGridImport: async () => rapport(false),
+    applyGridImport: async () => rapport(true),
+    downloadGridExample: async () => 'ok',
+  });
   const confirm = { ask: vi.fn(async () => true) };
   const store = {
     reload: vi.fn(async () => undefined),
@@ -95,7 +87,7 @@ describe('ImportGrilleStandsPage', () => {
   };
   const notifications = { notify: vi.fn() };
   let fixture: ComponentFixture<ImportGrilleStandsPage>;
-  let page: PageInternals;
+  let page: ImportGrilleStandsPage;
 
   beforeEach(async () => {
     standsApi.analyseGridImport.mockReset();
@@ -109,14 +101,14 @@ describe('ImportGrilleStandsPage', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        { provide: StandsApi, useValue: standsApi },
+        provideFake(StandsApi, standsApi),
         { provide: ConfirmService, useValue: confirm },
         { provide: ReferenceDataStore, useValue: store },
         { provide: NotificationService, useValue: notifications },
       ],
     });
     fixture = TestBed.createComponent(ImportGrilleStandsPage);
-    page = fixture.componentInstance as unknown as PageInternals;
+    page = fixture.componentInstance;
     await fixture.whenStable();
     // The stands are read once on entry, for their names; the tests below
     // count the reload an import triggers.
@@ -128,24 +120,20 @@ describe('ImportGrilleStandsPage', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  async function chargerEtAnalyser(): Promise<void> {
+  async function loadAndAnalyse(): Promise<void> {
     standsApi.analyseGridImport.mockResolvedValueOnce(rapport(false));
-    (fixture.componentInstance as unknown as { contenu: { set(v: string): void } }).contenu.set(
-      'stand;2026-07-08\n;10:00-12:00\nBOURSE;2\n',
-    );
-    page.nomFichier.set('grille.csv');
-    await page.analyser();
+    page['contenu'].set('stand;2026-07-08\n;10:00-12:00\nBOURSE;2\n');
+    page['nomFichier'].set('grille.csv');
+    await page['analyser']();
     await fixture.whenStable();
   }
 
   it('previews through the analysis endpoint and shows columns, rows and warnings', async () => {
-    await chargerEtAnalyser();
+    await loadAndAnalyse();
 
     expect(standsApi.analyseGridImport).toHaveBeenCalledOnce();
     expect(standsApi.applyGridImport).not.toHaveBeenCalled();
-    expect(
-      (standsApi.analyseGridImport.mock.calls[0] as unknown as [{ fileName: string }])[0].fileName,
-    ).toBe('grille.csv');
+    expect(standsApi.analyseGridImport.mock.calls[0][0].fileName).toBe('grille.csv');
     const text = racine().textContent!.replace(/\s+/g, ' ');
     expect(text).toContain('1 colonne(s) reconnue(s)');
     expect(text).toContain('2026-07-08 montage');
@@ -161,34 +149,34 @@ describe('ImportGrilleStandsPage', () => {
     expect(racine().querySelector('tr[data-ligne="4"]')!.textContent).toContain(
       'Aucun stand « Inconnu »',
     );
-    expect(page.peutImporter()).toBe(true);
+    expect(page['peutImporter']()).toBe(true);
   });
 
   it('imports the same body after a confirmation, reloads the store and reports', async () => {
-    await chargerEtAnalyser();
+    await loadAndAnalyse();
     standsApi.applyGridImport.mockResolvedValueOnce(rapport(true));
 
-    await page.importer();
+    await page['importer']();
     await fixture.whenStable();
 
     expect(confirm.ask).toHaveBeenCalledOnce();
     expect(standsApi.applyGridImport).toHaveBeenCalledOnce();
-    const [corps] = standsApi.applyGridImport.mock.calls[0] as unknown as [unknown];
-    expect(corps).toEqual((standsApi.analyseGridImport.mock.calls[0] as unknown as [unknown])[0]);
+    const [body] = standsApi.applyGridImport.mock.calls[0];
+    expect(body).toEqual(standsApi.analyseGridImport.mock.calls[0][0]);
     expect(store.reload).toHaveBeenCalledOnce();
     expect(notifications.notify).toHaveBeenCalledWith(
       expect.objectContaining({ variant: 'success' }),
     );
-    expect(page.rapport()?.applied).toBe(true);
+    expect(page['rapport']()?.applied).toBe(true);
     // Applied: the import button is gone, nothing to re-import.
-    expect(page.peutImporter()).toBe(false);
+    expect(page['peutImporter']()).toBe(false);
   });
 
   it('writes nothing when the confirmation is refused', async () => {
-    await chargerEtAnalyser();
+    await loadAndAnalyse();
     confirm.ask.mockResolvedValue(false);
 
-    await page.importer();
+    await page['importer']();
 
     expect(standsApi.applyGridImport).not.toHaveBeenCalled();
     expect(store.reload).not.toHaveBeenCalled();
@@ -196,15 +184,13 @@ describe('ImportGrilleStandsPage', () => {
 
   it('shows the server refusal in place and keeps the import off', async () => {
     standsApi.analyseGridImport.mockRejectedValueOnce(new Error("L'édition n'a aucun créneau"));
-    page.nomFichier.set('grille.csv');
-    (fixture.componentInstance as unknown as { contenu: { set(v: string): void } }).contenu.set(
-      'x',
-    );
-    await page.analyser();
+    page['nomFichier'].set('grille.csv');
+    page['contenu'].set('x');
+    await page['analyser']();
     await fixture.whenStable();
 
-    expect(page.erreur()).toContain('aucun créneau');
-    expect(page.rapport()).toBeNull();
-    expect(page.peutImporter()).toBe(false);
+    expect(page['erreur']()).toContain('aucun créneau');
+    expect(page['rapport']()).toBeNull();
+    expect(page['peutImporter']()).toBe(false);
   });
 });

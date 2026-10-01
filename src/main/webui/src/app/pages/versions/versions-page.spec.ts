@@ -77,8 +77,6 @@ const ENTRIES: KpiHistoriqueEntry[] = [
   { id: 1, editionId: 'E1', editionNom: null, kpi: kpi(), creeLe: '2026-08-03T10:00:00Z' },
 ];
 
-type Internals = { ticked: () => string[] };
-
 describe('VersionsPage', () => {
   let fixture: ComponentFixture<VersionsPage>;
   const editingLocked = signal(false);
@@ -174,7 +172,7 @@ describe('VersionsPage', () => {
     checkbox(courant)!.click();
     checkbox(recent)!.click();
     await fixture.whenStable();
-    expect((fixture.componentInstance as unknown as Internals).ticked()).toEqual(['courant', '8']);
+    expect(fixture.componentInstance['ticked']()).toEqual(['courant', '8']);
     // A third tick is refused rather than dropping one silently.
     expect(checkbox(lignes()[3])!.disabled).toBe(true);
 
@@ -217,9 +215,7 @@ describe('VersionsPage', () => {
       snapshot(9, '2026-07-01T10:00:00Z', { editionId: 'E0', editionNom: 'Année 2025' }),
     ]);
 
-    (
-      fixture.componentInstance as unknown as { showAllEditions: (all: boolean) => void }
-    ).showAllEditions(true);
+    fixture.componentInstance['showAllEditions'](true);
     await vi.waitFor(async () => {
       await fixture.whenStable();
       expect(lignes()).toHaveLength(4);

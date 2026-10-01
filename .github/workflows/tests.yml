@@ -423,6 +423,13 @@ jobs:
       - name: Read-only stores check
         run: npm run stores-check
 
+      # The specs' `as unknown as`, `as any` and `as never` only go down, file
+      # by file: a page spec fakes the services of core/ through
+      # core/testing/fake.ts, typed on the class, rather than casting a shape
+      # the compiler never checks.
+      - name: Unknown casts ratchet
+        run: npm run unknown-casts-check
+
       # MatIcon hides its host from assistive tech unless a *static*
       # aria-hidden is in the template, so an icon whose only label is a
       # binding or a tooltip is an icon nobody hears (issue #39). This refuses

@@ -19,6 +19,7 @@ import { ConfirmService } from '../../shared/confirm-dialog';
 import { EtatGel, OpeningLayers, EtatJourneesTypes, RapportOuvertures } from '../../core/models';
 import { JourneesTypesApi } from '../../core/api/journees-types-api';
 import { ReferenceDataStore } from '../../core/reference-data.store';
+import { fakeOf, provideFake } from '../../core/testing/fake';
 import { OuverturesPage } from './ouvertures-page';
 
 /** The open segments of a fixture cell: none when closed, one hour out of two when partial. */
@@ -185,7 +186,25 @@ function mount(
     gel?: EtatGel[];
   } = {},
 ) {
-  const get = vi.fn(async () => options.rapport ?? rapport());
+  const standsApi = fakeOf<StandsApi>({
+    openings: async () => options.rapport ?? rapport(),
+    saveOpeningsGrid: async () => ({
+      stands: [
+        {
+          standId: 'B',
+          regles: 1,
+          exceptions: 0,
+          effectifMin: 3,
+          effectifMax: 3,
+          compacte: true,
+          raison: '',
+        },
+      ],
+    }),
+    openingLayers: async () => layersOfReport(),
+  });
+  const confirm = fakeOf<ConfirmService>({ ask: async () => options.confirme ?? true });
+  const location = fakeOf<Location>({ path: () => '/ouvertures', replaceState: () => undefined });
   const etatJT = vi.fn(async () => {
     const etat = options.journeesTypes === undefined ? etatJourneesTypes() : options.journeesTypes;
     if (etat === null) {
@@ -193,21 +212,6 @@ function mount(
     }
     return etat;
   });
-  const put = vi.fn(async () => ({
-    stands: [
-      {
-        standId: 'B',
-        regles: 1,
-        exceptions: 0,
-        effectifMin: 3,
-        effectifMax: 3,
-        compacte: true,
-        raison: '',
-      },
-    ],
-  }));
-  const layers = vi.fn(async () => layersOfReport());
-  const ask = vi.fn(async () => options.confirme ?? true);
   const reloadStore = vi.fn(async () => undefined);
   const notify = vi.fn();
   TestBed.resetTestingModule();
@@ -225,10 +229,7 @@ function mount(
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
-      {
-        provide: StandsApi,
-        useValue: { openings: get, saveOpeningsGrid: put, openingLayers: layers },
-      },
+      provideFake(StandsApi, standsApi),
       {
         provide: ConsignesStore,
         useValue: {
@@ -258,9 +259,9 @@ function mount(
         provide: SolverJobService,
         useValue: { editingLocked: signal(options.editingLocked ?? false) },
       },
-      { provide: ConfirmService, useValue: { ask } },
+      provideFake(ConfirmService, confirm),
       { provide: NotificationService, useValue: { notify } },
-      { provide: Location, useValue: { path: () => '/ouvertures', replaceState: vi.fn() } },
+      provideFake(Location, location),
       {
         provide: ActivatedRoute,
         useValue: { snapshot: { queryParamMap }, queryParamMap: of(queryParamMap) },
@@ -268,7 +269,17 @@ function mount(
     ],
   });
   const fixture = TestBed.createComponent(OuverturesPage);
-  return { fixture, get, put, ask, notify, etatJT, reloadStore, layers };
+  return {
+    fixture,
+    get: standsApi.openings,
+    put: standsApi.saveOpeningsGrid,
+    ask: confirm.ask,
+    notify,
+    etatJT,
+    reloadStore,
+    layers: standsApi.openingLayers,
+    location,
+  };
 }
 
 function root(fixture: ComponentFixture<OuverturesPage>): HTMLElement {
@@ -354,45 +365,35 @@ describe('OuverturesPage — saisie', () => {
   it('restores the stand search from ?q=, so a link can open the grid on one stand', async () => {
     const { fixture } = mount({ vue: 'saisie', q: 'B' });
     await fixture.whenStable();
-    const page = fixture.componentInstance as unknown as {
-      lignes: () => { standId: string }[];
-      recherche: () => string;
-    };
+    const page = fixture.componentInstance;
 
-    expect(page.recherche()).toBe('B');
-    expect(page.lignes().map((ligne) => ligne.standId)).toEqual(['B']);
+    expect(page['recherche']()).toBe('B');
+    expect(page['lignes']().map((ligne) => ligne.standId)).toEqual(['B']);
   });
 
   /** `?stand=`: the exact stand a « Que faire ? » action named, by name on screen, until « Tout afficher ». */
   it('narrows the grid to the exact stand of ?stand=, and lets it all back', async () => {
     const { fixture } = mount({ vue: 'saisie', stand: 'A' });
     await fixture.whenStable();
-    const page = fixture.componentInstance as unknown as {
-      lignes: () => { standId: string }[];
-      onlyStandName: () => string;
-      showAllStands: () => void;
-    };
+    const page = fixture.componentInstance;
 
-    expect(page.lignes().map((ligne) => ligne.standId)).toEqual(['A']);
+    expect(page['lignes']().map((ligne) => ligne.standId)).toEqual(['A']);
     expect(root(fixture).textContent).toContain('Tout afficher');
-    expect(page.onlyStandName()).not.toBe('A');
+    expect(page['onlyStandName']()).not.toBe('A');
 
-    page.showAllStands();
+    page['showAllStands']();
     await fixture.whenStable();
-    expect(page.lignes().map((ligne) => ligne.standId)).toEqual(['A', 'B']);
+    expect(page['lignes']().map((ligne) => ligne.standId)).toEqual(['A', 'B']);
   });
 
   /** `?date=` with `?stand=`: « Baisser l'effectif demandé » lands on the cell of that stand on that day. */
   it('focuses the first cell of ?date= on the stand of ?stand=, and keeps the day in the address', async () => {
-    const { fixture } = mount({ vue: 'saisie', stand: 'A', date: '2026-07-09' });
+    const { fixture, location } = mount({ vue: 'saisie', stand: 'A', date: '2026-07-09' });
     await fixture.whenStable();
     await new Promise((resolve) => setTimeout(resolve));
     await fixture.whenStable();
 
     expect(document.activeElement).toBe(champ(fixture, 'A', 3));
-    const location = TestBed.inject(Location) as unknown as {
-      replaceState: ReturnType<typeof vi.fn>;
-    };
     expect(location.replaceState).toHaveBeenCalledWith(expect.stringContaining('date=2026-07-09'));
   });
 
@@ -403,26 +404,19 @@ describe('OuverturesPage — saisie', () => {
     await fixture.whenStable();
 
     expect(document.activeElement).toBe(champ(fixture, 'A', 3));
-    const page = fixture.componentInstance as unknown as {
-      changeView: (view: string) => Promise<void>;
-      saisieDate: () => string;
-    };
-    await page.changeView('COMPARER');
-    expect(page.saisieDate()).toBe('');
+    const page = fixture.componentInstance;
+    await page['changeView']('COMPARER');
+    expect(page['saisieDate']()).toBe('');
   });
 
   it('keeps the ?date= being entered when the view toggle emits no view', async () => {
     const { fixture } = mount({ vue: 'saisie', date: '2026-07-09' });
-    const page = fixture.componentInstance as unknown as {
-      changeView: (view: string | undefined) => Promise<void>;
-      saisieDate: () => string;
-      view: () => string;
-    };
+    const page = fixture.componentInstance;
 
-    await page.changeView(undefined);
+    await page['changeView'](undefined);
 
-    expect(page.view()).toBe('GRILLE');
-    expect(page.saisieDate()).toBe('2026-07-09');
+    expect(page['view']()).toBe('GRILLE');
+    expect(page['saisieDate']()).toBe('2026-07-09');
   });
 
   it('wraps each grid in the scrolling box its sticky header needs', async () => {
@@ -473,14 +467,11 @@ describe('OuverturesPage — saisie', () => {
   });
 
   it('narrows the grid to the days of ?du= and ?au=, the moves walking those alone', async () => {
-    const { fixture } = mount({ du: '2026-07-09', au: '2026-07-09' });
+    const { fixture, location } = mount({ du: '2026-07-09', au: '2026-07-09' });
     await fixture.whenStable();
 
     expect(root(fixture).querySelectorAll('.grille-saisie tbody input')).toHaveLength(4);
     expect(root(fixture).querySelector(`[data-cellule="A#${colonne(1)}"]`)).toBeNull();
-    const location = TestBed.inject(Location) as unknown as {
-      replaceState: ReturnType<typeof vi.fn>;
-    };
     const address = String(location.replaceState.mock.calls.at(-1)?.[0] ?? '');
     expect(address).toContain('du=2026-07-09');
     expect(address).toContain('au=2026-07-09');
@@ -507,17 +498,15 @@ describe('OuverturesPage — saisie', () => {
   });
 
   it('draws the layers of ?couches= behind each field, and writes the ticked ones back', async () => {
-    const { fixture, layers } = mount({ couches: 'stand,resultat' });
+    const { fixture, layers, location } = mount({ couches: 'stand,resultat' });
     await fixture.whenStable();
     await new Promise((resolve) => setTimeout(resolve));
     await fixture.whenStable();
-    const page = fixture.componentInstance as unknown as {
-      rowViews: () => { cellules: { rendu: { image: string | null } }[] }[];
-    };
+    const page = fixture.componentInstance;
 
     expect(layers).toHaveBeenCalledWith('2026-07-08', '2026-07-09');
     // Stand A, 10-12: its rule (top lane) and its seats (bottom lane), no band.
-    const image = page.rowViews()[0].cellules[0].rendu.image!;
+    const image = page['rowViews']()[0].cellules[0].rendu.image!;
     expect(image).toContain('var(--ouv-nominal)');
     expect(image).toContain('var(--ouv-regle)');
     expect(image).not.toContain('var(--ouv-bande)');
@@ -526,12 +515,9 @@ describe('OuverturesPage — saisie', () => {
     expect(choix).toHaveLength(4);
     (choix[0] as HTMLInputElement).click();
     await fixture.whenStable();
-    expect(page.rowViews()[0].cellules[0].rendu.image).not.toContain('var(--ouv-nominal)');
+    expect(page['rowViews']()[0].cellules[0].rendu.image).not.toContain('var(--ouv-nominal)');
     (choix[1] as HTMLInputElement).click();
     await fixture.whenStable();
-    const location = TestBed.inject(Location) as unknown as {
-      replaceState: ReturnType<typeof vi.fn>;
-    };
     const address = String(location.replaceState.mock.calls.at(-1)?.[0] ?? '');
     expect(address).not.toContain('vue=');
     expect(address).toMatch(/couches=creneaux(,|%2C)resultat/);
@@ -594,9 +580,7 @@ describe('OuverturesPage — saisie', () => {
     await fixture.whenStable();
     bouton(fixture, 'Enregistrer').click();
     await fixture.whenStable();
-    const [stands] = put.mock.calls[0] as unknown as [
-      { cellules: { effectif: number | null }[] }[],
-    ];
+    const [stands] = put.mock.calls[0];
     expect(stands[0].cellules.map((cellule) => cellule.effectif)).toEqual([2, null, 2, null]);
   });
 
@@ -784,7 +768,7 @@ describe('OuverturesPage — saisie', () => {
     await fixture.whenStable();
     expect(ask).not.toHaveBeenCalled();
     expect(put).toHaveBeenCalledOnce();
-    expect((put.mock.calls[0] as unknown as [{ aplatir: boolean }[]])[0][0].aplatir).toBe(false);
+    expect(put.mock.calls[0][0][0].aplatir).toBe(false);
 
     // Retyping the partial cell itself asks, and a refusal writes nothing.
     taper(champ(fixture, 'B', 1), '2');
@@ -793,9 +777,7 @@ describe('OuverturesPage — saisie', () => {
     await fixture.whenStable();
     expect(ask).toHaveBeenCalledOnce();
     // Named as the grid names it, not by its id.
-    expect((ask.mock.calls[0] as unknown as [{ message: string }])[0].message).toMatch(
-      /^Stand B : /,
-    );
+    expect(ask.mock.calls[0][0].message).toMatch(/^Stand B : /);
     expect(put).toHaveBeenCalledOnce();
   });
 
@@ -811,7 +793,7 @@ describe('OuverturesPage — saisie', () => {
     await fixture.whenStable();
 
     expect(ask).toHaveBeenCalledOnce();
-    const message = (ask.mock.calls[0] as unknown as [{ message: string }])[0].message;
+    const message = ask.mock.calls[0][0].message;
     // One cell, one hour out of two at headcount 1: one hour of opening added.
     expect(message).toContain('1 stand(s), 1 case(s)');
     expect(message).toContain('1 h');
@@ -859,9 +841,7 @@ describe('OuverturesPage — saisie', () => {
 
     taper(champ(fixture, 'B', 2), '3');
     await fixture.whenStable();
-    (
-      fixture.componentInstance as unknown as { changeView(view: string): Promise<void> }
-    ).changeView('COMPARER');
+    void fixture.componentInstance['changeView']('COMPARER');
     await fixture.whenStable();
     expect(ask).toHaveBeenCalledOnce();
     // Refused: still on the entry view, cells intact.
@@ -922,16 +902,7 @@ describe('OuverturesPage — saisie', () => {
     await fixture.whenStable();
     bouton(fixture, 'Enregistrer').click();
     await fixture.whenStable();
-    const [stands] = put.mock.calls[0] as unknown as [
-      {
-        cellules: {
-          creneauId: number;
-          heureDebut: string;
-          heureFin: string;
-          effectif: number | null;
-        }[];
-      }[],
-    ];
+    const [stands] = put.mock.calls[0];
     expect(stands[0].cellules.slice(1, 3)).toEqual([
       { creneauId: 2, heureDebut: '14:00', heureFin: '19:00', effectif: 4 },
       { creneauId: 2, heureDebut: '19:00', heureFin: '20:00', effectif: 2 },
@@ -1056,7 +1027,7 @@ describe('OuverturesPage — grille par journée type', () => {
     ).toBe('Jour normal');
   });
 
-  it('écrit une case sur toutes les dates de sa journée type', async () => {
+  it('writes a cell on every date of its day template', async () => {
     const { fixture, put } = mount({ vue: 'journees-types' });
     await fixture.whenStable();
 
@@ -1067,9 +1038,7 @@ describe('OuverturesPage — grille par journée type', () => {
     bouton(fixture, 'Enregistrer').click();
     await fixture.whenStable();
 
-    const [envoye] = put.mock.calls[0] as unknown as [
-      { standId: string; cellules: { creneauId: number; effectif: number | null }[] }[],
-    ];
+    const [envoye] = put.mock.calls[0];
     expect(envoye).toHaveLength(1);
     // Both 14-20 slots of the edition, one per date the template governs.
     expect(
@@ -1091,7 +1060,7 @@ describe('OuverturesPage — grille par journée type', () => {
     expect(case14.closest('td')!.classList.contains('cellule-ecart')).toBe(true);
   });
 
-  it('applique une colonne de vacation à toutes les dates de la journée type', async () => {
+  it('applies a shift column to every date of the day template', async () => {
     const { fixture, put } = mount({ vue: 'journees-types' });
     await fixture.whenStable();
 
@@ -1106,9 +1075,7 @@ describe('OuverturesPage — grille par journée type', () => {
     bouton(fixture, 'Enregistrer').click();
     await fixture.whenStable();
 
-    const [envoye] = put.mock.calls[0] as unknown as [
-      { standId: string; cellules: { creneauId: number; effectif: number | null }[] }[],
-    ];
+    const [envoye] = put.mock.calls[0];
     expect(envoye.map((stand) => stand.standId)).toEqual(['B']);
     // Both 14-20 slots of the edition, one per date the template governs.
     expect(
@@ -1165,7 +1132,7 @@ describe('OuverturesPage — grille par journée type', () => {
     expect(root(fixture).querySelector('.grille-journees-types')).toBeNull();
   });
   it('reopens « Comparer » from ?vue=comparer&stands=A,B&ref=B, identically', async () => {
-    const { fixture, reloadStore } = mount({ vue: 'comparer', stands: 'A,B', ref: 'B' });
+    const { fixture, reloadStore, location } = mount({ vue: 'comparer', stands: 'A,B', ref: 'B' });
     await fixture.whenStable();
 
     const jours = root(fixture).querySelectorAll('[data-test="comparaison-jour"]');
@@ -1174,9 +1141,6 @@ describe('OuverturesPage — grille par journée type', () => {
     expect(reference.textContent).toContain('Stand B');
     // The rules and the bulk edit read the referential: loaded for this view only.
     expect(reloadStore).toHaveBeenCalledWith(['stands', 'typologies', 'creneaux', 'emplacements']);
-    const location = TestBed.inject(Location) as unknown as {
-      replaceState: ReturnType<typeof vi.fn>;
-    };
     const address = String(location.replaceState.mock.calls.at(-1)?.[0] ?? '');
     expect(address).toContain('vue=comparer');
     expect(address).toMatch(/stands=A(,|%2C)B/);

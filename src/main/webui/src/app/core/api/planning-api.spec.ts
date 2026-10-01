@@ -11,7 +11,7 @@ import { PlanningApi } from './planning-api';
  */
 describe('PlanningApi', () => {
   const api = { get: vi.fn(), post: vi.fn(), downloadGet: vi.fn(), downloadPost: vi.fn() };
-  const PLANNING = { postes: [] } as unknown as PlanningEvenement;
+  const PLANNING: PlanningEvenement = { animateurs: [], postes: [], score: null };
   let planning: PlanningApi;
 
   beforeEach(() => {

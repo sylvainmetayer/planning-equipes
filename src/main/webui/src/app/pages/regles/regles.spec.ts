@@ -74,10 +74,10 @@ describe('regles', () => {
   });
 
   describe('a setting on its row', () => {
-    const legaux = {
+    const legaux: Record<string, string | number | null> = {
       dureeHebdomadaireMaxMinutes: 48 * 60,
       coupureRepasMidiDebut: '12:00:00',
-    } as unknown as Record<string, string | number | null>;
+    };
 
     it('shows a weekly cap in hours and a window as HH:mm', () => {
       expect(

@@ -414,28 +414,31 @@ function heatwaveConsigne(date: string): ConsigneEdition {
 function twoAnimateurPlanning(): PlanningEvenement {
   const morning = creneau({ id: 1, jour: 1 });
   const afternoon = creneau({ id: 2, jour: 1, heureDebut: '14:00', heureFin: '18:00' });
-  return {
-    postes: [
-      poste({
-        id: 'p1',
-        creneau: morning,
-        stand: stand('Tir'),
-        animateur: animateur('a1', 'Alice', 'Martin'),
-      }),
-      poste({
-        id: 'p2',
-        creneau: morning,
-        stand: stand('Tir'),
-        animateur: animateur('a2', 'Bob', 'Durand'),
-      }),
-      poste({
-        id: 'p3',
-        creneau: afternoon,
-        stand: stand('Dixit'),
-        animateur: animateur('a1', 'Alice', 'Martin'),
-      }),
-    ],
-  } as unknown as PlanningEvenement;
+  return planningOf([
+    poste({
+      id: 'p1',
+      creneau: morning,
+      stand: stand('Tir'),
+      animateur: animateur('a1', 'Alice', 'Martin'),
+    }),
+    poste({
+      id: 'p2',
+      creneau: morning,
+      stand: stand('Tir'),
+      animateur: animateur('a2', 'Bob', 'Durand'),
+    }),
+    poste({
+      id: 'p3',
+      creneau: afternoon,
+      stand: stand('Dixit'),
+      animateur: animateur('a1', 'Alice', 'Martin'),
+    }),
+  ]);
+}
+
+// The timeline reads the seats alone.
+function planningOf(postes: PosteAffectation[]): PlanningEvenement {
+  return { animateurs: [], postes, score: null };
 }
 
 describe('AnimateurTimeline', () => {
@@ -567,7 +570,7 @@ describe('AnimateurTimeline', () => {
   });
 
   it('says so when the person holds no seat', async () => {
-    await rendre({ postes: [] } as unknown as PlanningEvenement);
+    await rendre(planningOf([]));
 
     expect(racine().textContent!).toContain(
       "Cet animateur n'a aucun poste dans le planning actuel.",

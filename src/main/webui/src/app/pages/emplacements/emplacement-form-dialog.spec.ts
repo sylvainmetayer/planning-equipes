@@ -15,6 +15,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { Emplacement } from '../../core/models';
+import { Fake, fakeOf, provideFake } from '../../core/testing/fake';
 import { MapPicker } from '../../shared/map-picker';
 import { EmplacementFormDialog } from './emplacement-form-dialog';
 
@@ -22,7 +23,7 @@ function monter(
   emplacement: Emplacement | null,
   options: { editingLocked?: boolean; saveOk?: boolean } = {},
 ) {
-  const save = vi.fn(async () => options.saveOk ?? true);
+  const crud = fakeOf<ReferenceCrudService>({ save: async () => options.saveOk ?? true });
   const close = vi.fn();
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
@@ -32,12 +33,12 @@ function monter(
         provide: SolverJobService,
         useValue: { editingLocked: signal(options.editingLocked ?? false) },
       },
-      { provide: ReferenceCrudService, useValue: { save } },
+      provideFake(ReferenceCrudService, crud),
       { provide: MatDialogRef, useValue: { close } },
       { provide: MAT_DIALOG_DATA, useValue: { emplacement } },
     ],
   });
-  return { fixture: TestBed.createComponent(EmplacementFormDialog), save, close };
+  return { fixture: TestBed.createComponent(EmplacementFormDialog), save: crud.save, close };
 }
 
 function racine(fixture: ComponentFixture<EmplacementFormDialog>): HTMLElement {
@@ -62,8 +63,9 @@ function submit(fixture: ComponentFixture<EmplacementFormDialog>): void {
   racine(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
 }
 
-function payload(save: ReturnType<typeof vi.fn>): Emplacement {
-  return (save.mock.calls[0] as unknown as [string, Emplacement])[1];
+/** What the first save sent: `save` is generic on the row, so it is read through an emplacement's fields. */
+function payload(save: Fake<ReferenceCrudService>['save']) {
+  return save.mock.calls[0][1];
 }
 
 /** Emits the picker's output the way a click on the map does. */
@@ -178,8 +180,8 @@ describe('EmplacementFormDialog', () => {
     submit(fixture);
     await fixture.whenStable();
 
-    expect(payload(save).latitude).toBeNull();
-    expect(payload(save).longitude).toBeNull();
+    expect(payload(save)).toHaveProperty('latitude', null);
+    expect(payload(save)).toHaveProperty('longitude', null);
   });
 
   it('clears a coordinate back to null when the field is emptied', async () => {
@@ -192,8 +194,8 @@ describe('EmplacementFormDialog', () => {
     submit(fixture);
     await fixture.whenStable();
 
-    expect(payload(save).latitude).toBeNull();
-    expect(payload(save).longitude).toBeNull();
+    expect(payload(save)).toHaveProperty('latitude', null);
+    expect(payload(save)).toHaveProperty('longitude', null);
   });
 
   it('keeps the dialog open when the save is refused, and closes on cancel', async () => {

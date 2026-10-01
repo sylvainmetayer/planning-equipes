@@ -12,7 +12,7 @@
 // cancelling — while the lists stay readable. A stale button there lets an
 // animateur act on a planning the organisation considers frozen.
 
-import { provideZonelessChangeDetection, Signal, WritableSignal, signal } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../../core/api.service';
@@ -27,7 +27,6 @@ import {
   SuggestionEchangeView,
   SuggestionsEchangeView,
 } from '../../core/models';
-import { BrouillonDemande } from './echange-brouillon';
 import { EspaceEchangesPage } from './espace-echanges-page';
 
 function poste(overrides: Partial<PosteAnimateurView> = {}): PosteAnimateurView {
@@ -149,50 +148,15 @@ function suggestion(
   };
 }
 
-/** Reaches the protected members the template binds to. */
-type PageInternals = {
-  posteChoisi: WritableSignal<PosteAnimateurView | null>;
-  cibleId: WritableSignal<string>;
-  posteCibleChoisi: WritableSignal<PosteAnimateurView | null>;
-  postesCollegue: Signal<PosteAnimateurView[]>;
-  lookupRefusal: Signal<string | null>;
-  motif: WritableSignal<string>;
-  brouillons: WritableSignal<BrouillonDemande[]>;
-  envoiEnCours: Signal<boolean>;
-  formulaireComplet: Signal<boolean>;
-  optionsCollegues: Signal<{ id: string; label: string }[]>;
-  chosenTarget: Signal<string[]>;
-  heure: (valeur: string | null | undefined) => string;
-  foireOpen: Signal<boolean>;
-  demandes: Signal<
-    { id: string; statutLabel: string; statutClasse: string; attentePublication: boolean }[]
-  >;
-  recuesEnAttente: Signal<{ id: string; attentePublication: boolean }[]>;
-  choisirCible: (cibleId: string) => Promise<void>;
-  choisirPoste: (poste: PosteAnimateurView | null) => void;
-  chercherRemplacants: () => Promise<void>;
-  retenirSuggestion: (suggestion: SuggestionEchangeView) => Promise<void>;
-  suggestionsDe: (nature: NatureEchange) => SuggestionEchangeView[];
-  suggestions: WritableSignal<SuggestionsEchangeView | null>;
-  rechercheEnCours: Signal<boolean>;
-  suggestionsTronquees: Signal<boolean>;
-  ajouter: () => void;
-  retirer: (index: number) => void;
-  soumettre: () => Promise<void>;
-  annuler: (demande: { id: string }) => Promise<void>;
-  accorder: (demande: { id: string }) => Promise<void>;
-  decliner: (demande: { id: string }) => Promise<void>;
-};
-
-function createPage(): PageInternals {
-  return TestBed.createComponent(EspaceEchangesPage).componentInstance as unknown as PageInternals;
+function createPage(): EspaceEchangesPage {
+  return TestBed.createComponent(EspaceEchangesPage).componentInstance;
 }
 
-function withOneDraft(): PageInternals {
+function withOneDraft(): EspaceEchangesPage {
   const page = createPage();
-  page.posteChoisi.set(poste());
-  page.cibleId.set('bob');
-  page.ajouter();
+  page['posteChoisi'].set(poste());
+  page['cibleId'].set('bob');
+  page['ajouter']();
   return page;
 }
 
@@ -249,47 +213,47 @@ describe('EspaceEchangesPage', () => {
   describe('searching who could take the seat over', () => {
     it('searches on the picked seat and keeps the answer', async () => {
       const page = createPage();
-      page.choisirPoste(poste({ creneauId: 7, standId: 'quilles' }));
+      page['choisirPoste'](poste({ creneauId: 7, standId: 'quilles' }));
       espace.suggestionsEchange.mockResolvedValue(suggestions([suggestion('bob', 'LIBERE')]));
 
-      await page.chercherRemplacants();
+      await page['chercherRemplacants']();
 
       expect(espace.suggestionsEchange).toHaveBeenCalledExactlyOnceWith(7, 'quilles');
-      expect(page.suggestions()?.suggestions).toHaveLength(1);
-      expect(page.rechercheEnCours()).toBe(false);
+      expect(page['suggestions']()?.suggestions).toHaveLength(1);
+      expect(page['rechercheEnCours']()).toBe(false);
     });
 
     it('asks for nothing while no seat is picked', async () => {
       const page = createPage();
 
-      await page.chercherRemplacants();
+      await page['chercherRemplacants']();
 
       expect(espace.suggestionsEchange).not.toHaveBeenCalled();
-      expect(page.suggestions()).toBeNull();
+      expect(page['suggestions']()).toBeNull();
     });
 
     // A list found for Monday says nothing about Tuesday: leaving it on screen
     // would answer a question nobody asked.
     it('drops the answer as soon as another seat is picked', async () => {
       const page = createPage();
-      page.choisirPoste(poste());
+      page['choisirPoste'](poste());
       espace.suggestionsEchange.mockResolvedValue(suggestions([suggestion('bob', 'LIBERE')]));
-      await page.chercherRemplacants();
+      await page['chercherRemplacants']();
 
-      page.choisirPoste(poste({ creneauId: 2 }));
+      page['choisirPoste'](poste({ creneauId: 2 }));
 
-      expect(page.suggestions()).toBeNull();
+      expect(page['suggestions']()).toBeNull();
     });
 
     it('reports a failed search instead of leaving a stale list', async () => {
       const page = createPage();
-      page.choisirPoste(poste());
+      page['choisirPoste'](poste());
       espace.suggestionsEchange.mockRejectedValue(new Error('Aucun planning persisté.'));
 
-      await page.chercherRemplacants();
+      await page['chercherRemplacants']();
 
-      expect(page.suggestions()).toBeNull();
-      expect(page.rechercheEnCours()).toBe(false);
+      expect(page['suggestions']()).toBeNull();
+      expect(page['rechercheEnCours']()).toBe(false);
       expect(notifications.notify).toHaveBeenCalledWith(
         expect.objectContaining({ variant: 'error', message: 'Aucun planning persisté.' }),
       );
@@ -298,7 +262,7 @@ describe('EspaceEchangesPage', () => {
     // A truncated search is the best of what was tried, never « nobody else can ».
     it('says when the search stopped short of the whole roster', async () => {
       const page = createPage();
-      page.choisirPoste(poste());
+      page['choisirPoste'](poste());
       espace.suggestionsEchange.mockResolvedValue(
         suggestions(
           [suggestion('bob', 'CROISE', { standCibleId: 'quilles', standCibleNom: 'Quilles' })],
@@ -306,20 +270,20 @@ describe('EspaceEchangesPage', () => {
         ),
       );
 
-      await page.chercherRemplacants();
+      await page['chercherRemplacants']();
 
-      expect(page.suggestionsTronquees()).toBe(true);
+      expect(page['suggestionsTronquees']()).toBe(true);
     });
 
     it('fills the colleague field from the retained suggestion, nothing more', async () => {
       const page = createPage();
       espace.postesCollegue.mockResolvedValue([poste({ creneauId: 9, standId: 'quilles' })]);
 
-      await page.retenirSuggestion(suggestion('bob', 'LIBERE'));
+      await page['retenirSuggestion'](suggestion('bob', 'LIBERE'));
 
-      expect(page.cibleId()).toBe('bob');
+      expect(page['cibleId']()).toBe('bob');
       // A plain échange: the retained name never preselects a seat in return.
-      expect(page.posteCibleChoisi()).toBeNull();
+      expect(page['posteCibleChoisi']()).toBeNull();
       expect(espace.soumettre).not.toHaveBeenCalled();
     });
 
@@ -331,7 +295,7 @@ describe('EspaceEchangesPage', () => {
       const mardi = poste({ creneauId: 9, standId: 'quilles', date: '2026-08-02' });
       espace.postesCollegue.mockResolvedValue([poste({ creneauId: 3, standId: 'tir' }), mardi]);
 
-      await page.retenirSuggestion(
+      await page['retenirSuggestion'](
         suggestion('bob', 'DIRIGE', {
           creneauCibleId: 9,
           standCibleId: 'quilles',
@@ -340,9 +304,9 @@ describe('EspaceEchangesPage', () => {
         }),
       );
 
-      expect(page.cibleId()).toBe('bob');
+      expect(page['cibleId']()).toBe('bob');
       // The very option object the select holds, not a rebuilt lookalike.
-      expect(page.posteCibleChoisi()).toBe(mardi);
+      expect(page['posteCibleChoisi']()).toBe(mardi);
     });
 
     // A seat the colleague no longer holds (the planning moved between the
@@ -352,16 +316,16 @@ describe('EspaceEchangesPage', () => {
       const page = createPage();
       espace.postesCollegue.mockResolvedValue([poste({ creneauId: 3, standId: 'tir' })]);
 
-      await page.retenirSuggestion(
+      await page['retenirSuggestion'](
         suggestion('bob', 'DIRIGE', { creneauCibleId: 9, standCibleId: 'quilles' }),
       );
 
-      expect(page.posteCibleChoisi()).toBeNull();
+      expect(page['posteCibleChoisi']()).toBeNull();
     });
 
     it('splits the answer into the three families the espace lists apart', async () => {
       const page = createPage();
-      page.choisirPoste(poste());
+      page['choisirPoste'](poste());
       espace.suggestionsEchange.mockResolvedValue(
         suggestions([
           suggestion('bob', 'LIBERE'),
@@ -370,11 +334,11 @@ describe('EspaceEchangesPage', () => {
         ]),
       );
 
-      await page.chercherRemplacants();
+      await page['chercherRemplacants']();
 
-      expect(page.suggestionsDe('LIBERE').map((s) => s.animateurId)).toEqual(['bob']);
-      expect(page.suggestionsDe('DIRIGE').map((s) => s.animateurId)).toEqual(['carole']);
-      expect(page.suggestionsDe('CROISE').map((s) => s.animateurId)).toEqual(['david']);
+      expect(page['suggestionsDe']('LIBERE').map((s) => s.animateurId)).toEqual(['bob']);
+      expect(page['suggestionsDe']('DIRIGE').map((s) => s.animateurId)).toEqual(['carole']);
+      expect(page['suggestionsDe']('CROISE').map((s) => s.animateurId)).toEqual(['david']);
     });
   });
 
@@ -383,33 +347,33 @@ describe('EspaceEchangesPage', () => {
       const page = createPage();
       espace.postesCollegue.mockResolvedValue([poste({ creneauId: 9, standId: 'quilles' })]);
 
-      await page.choisirCible('bob');
+      await page['choisirCible']('bob');
 
       expect(espace.postesCollegue).toHaveBeenCalledExactlyOnceWith('bob');
-      expect(page.postesCollegue()).toHaveLength(1);
-      expect(page.cibleId()).toBe('bob');
+      expect(page['postesCollegue']()).toHaveLength(1);
+      expect(page['cibleId']()).toBe('bob');
     });
 
     it('clears the previous colleague seats before loading the new ones', async () => {
       const page = createPage();
       espace.postesCollegue.mockResolvedValue([poste({ creneauId: 9 })]);
-      await page.choisirCible('bob');
-      page.posteCibleChoisi.set(poste({ creneauId: 9 }));
+      await page['choisirCible']('bob');
+      page['posteCibleChoisi'].set(poste({ creneauId: 9 }));
 
       espace.postesCollegue.mockResolvedValue([]);
-      await page.choisirCible('carole');
+      await page['choisirCible']('carole');
 
-      expect(page.postesCollegue()).toEqual([]);
-      expect(page.posteCibleChoisi()).toBeNull();
+      expect(page['postesCollegue']()).toEqual([]);
+      expect(page['posteCibleChoisi']()).toBeNull();
     });
 
     it('asks for nothing when the colleague is unpicked', async () => {
       const page = createPage();
 
-      await page.choisirCible('');
+      await page['choisirCible']('');
 
       expect(espace.postesCollegue).not.toHaveBeenCalled();
-      expect(page.cibleId()).toBe('');
+      expect(page['cibleId']()).toBe('');
     });
 
     // No persisted planning, a network hiccup: the picker stays empty and the
@@ -419,12 +383,12 @@ describe('EspaceEchangesPage', () => {
       const page = createPage();
       espace.postesCollegue.mockRejectedValue(new Error('Aucun planning persisté.'));
 
-      await page.choisirCible('bob');
+      await page['choisirCible']('bob');
 
-      expect(page.postesCollegue()).toEqual([]);
+      expect(page['postesCollegue']()).toEqual([]);
       expect(notifications.notify).not.toHaveBeenCalled();
-      expect(page.cibleId()).toBe('bob');
-      expect(page.lookupRefusal()).toBeNull();
+      expect(page['cibleId']()).toBe('bob');
+      expect(page['lookupRefusal']()).toBeNull();
     });
 
     // Past the ceiling of distinct colleagues, the server says when the list
@@ -435,17 +399,17 @@ describe('EspaceEchangesPage', () => {
       const message =
         'Vous avez consulté les plannings de beaucoup de collègues : la liste revient dans 12 minute(s).';
       espace.postesCollegue.mockRejectedValue(new ApiError(429, 'technical', message));
-      page.posteChoisi.set(poste());
+      page['posteChoisi'].set(poste());
 
-      await page.choisirCible('bob');
+      await page['choisirCible']('bob');
 
-      expect(page.postesCollegue()).toEqual([]);
-      expect(page.lookupRefusal()).toBe(message);
-      expect(page.formulaireComplet()).toBe(true);
+      expect(page['postesCollegue']()).toEqual([]);
+      expect(page['lookupRefusal']()).toBe(message);
+      expect(page['formulaireComplet']()).toBe(true);
 
       espace.postesCollegue.mockResolvedValue([poste({ creneauId: 9 })]);
-      await page.choisirCible('carole');
-      expect(page.lookupRefusal()).toBeNull();
+      await page['choisirCible']('carole');
+      expect(page['lookupRefusal']()).toBeNull();
     });
   });
 
@@ -453,25 +417,25 @@ describe('EspaceEchangesPage', () => {
     it('refuses to add anything while the form is incomplete', () => {
       const page = createPage();
 
-      page.ajouter();
-      expect(page.brouillons()).toEqual([]);
+      page['ajouter']();
+      expect(page['brouillons']()).toEqual([]);
 
-      page.posteChoisi.set(poste());
-      expect(page.formulaireComplet()).toBe(false);
-      page.ajouter();
-      expect(page.brouillons()).toEqual([]);
+      page['posteChoisi'].set(poste());
+      expect(page['formulaireComplet']()).toBe(false);
+      page['ajouter']();
+      expect(page['brouillons']()).toEqual([]);
     });
 
     it('adds a plain demande and resets the whole form behind it', () => {
       const page = createPage();
-      page.posteChoisi.set(poste());
-      page.cibleId.set('bob');
-      page.motif.set('mariage');
+      page['posteChoisi'].set(poste());
+      page['cibleId'].set('bob');
+      page['motif'].set('mariage');
 
-      page.ajouter();
+      page['ajouter']();
 
-      expect(page.brouillons()).toHaveLength(1);
-      expect(page.brouillons()[0]).toMatchObject({
+      expect(page['brouillons']()).toHaveLength(1);
+      expect(page['brouillons']()[0]).toMatchObject({
         creneauId: 1,
         standId: 'tir',
         cibleId: 'bob',
@@ -479,98 +443,102 @@ describe('EspaceEchangesPage', () => {
         creneauCibleId: null,
         standCibleId: null,
       });
-      expect(page.posteChoisi()).toBeNull();
-      expect(page.cibleId()).toBe('');
-      expect(page.motif()).toBe('');
-      expect(page.postesCollegue()).toEqual([]);
+      expect(page['posteChoisi']()).toBeNull();
+      expect(page['cibleId']()).toBe('');
+      expect(page['motif']()).toBe('');
+      expect(page['postesCollegue']()).toEqual([]);
     });
 
     it('resolves the colleague display name from the espace view', () => {
       const page = createPage();
-      page.posteChoisi.set(poste());
-      page.cibleId.set('bob');
+      page['posteChoisi'].set(poste());
+      page['cibleId'].set('bob');
 
-      page.ajouter();
+      page['ajouter']();
 
-      expect(page.brouillons()[0].cibleNom).toBe('Bob Durand');
+      expect(page['brouillons']()[0].cibleNom).toBe('Bob Durand');
     });
 
     /** 152 colleagues are typed, not scrolled: the search holds them as id + name, one picked at most. */
     it('offers the colleagues to a search, and holds the one picked', () => {
       const page = createPage();
 
-      expect(page.optionsCollegues()).toContainEqual({ id: 'bob', label: 'Bob Durand' });
-      expect(page.chosenTarget()).toEqual([]);
-      page.cibleId.set('bob');
-      expect(page.chosenTarget()).toEqual(['bob']);
+      expect(page['optionsCollegues']()).toContainEqual({ id: 'bob', label: 'Bob Durand' });
+      expect(page['chosenTarget']()).toEqual([]);
+      page['cibleId'].set('bob');
+      expect(page['chosenTarget']()).toEqual(['bob']);
     });
 
     it('reads hours without their seconds', () => {
       const page = createPage();
 
-      expect(page.heure('18:00:00')).toBe('18:00');
-      expect(page.heure(null)).toBe('');
+      expect(page['heure']('18:00:00')).toBe('18:00');
+      expect(page['heure'](null)).toBe('');
     });
 
     it('falls back to the colleague id when the view does not name them', () => {
       espaceView.set(view({ collegues: [] }));
       const page = createPage();
-      page.posteChoisi.set(poste());
-      page.cibleId.set('bob');
+      page['posteChoisi'].set(poste());
+      page['cibleId'].set('bob');
 
-      page.ajouter();
+      page['ajouter']();
 
-      expect(page.brouillons()[0].cibleNom).toBe('bob');
+      expect(page['brouillons']()[0].cibleNom).toBe('bob');
     });
 
     it('records an empty motif as absent rather than as an empty string', () => {
       const page = createPage();
-      page.posteChoisi.set(poste());
-      page.cibleId.set('bob');
-      page.motif.set('');
+      page['posteChoisi'].set(poste());
+      page['cibleId'].set('bob');
+      page['motif'].set('');
 
-      page.ajouter();
+      page['ajouter']();
 
-      expect(page.brouillons()[0].motif).toBeNull();
+      expect(page['brouillons']()[0].motif).toBeNull();
     });
 
     // Setting both sides is what makes the exchange directed; a picked seat
     // must carry its créneau AND its stand, or the server sees a plain demande.
     it('makes the exchange directed when a seat is wanted in return', () => {
       const page = createPage();
-      page.posteChoisi.set(poste());
-      page.cibleId.set('bob');
-      page.posteCibleChoisi.set(poste({ creneauId: 9, standId: 'quilles', standNom: 'Quilles' }));
+      page['posteChoisi'].set(poste());
+      page['cibleId'].set('bob');
+      page['posteCibleChoisi'].set(
+        poste({ creneauId: 9, standId: 'quilles', standNom: 'Quilles' }),
+      );
 
-      page.ajouter();
+      page['ajouter']();
 
-      expect(page.brouillons()[0]).toMatchObject({ creneauCibleId: 9, standCibleId: 'quilles' });
-      expect(page.brouillons()[0].creneauCibleLabel).toContain('Quilles');
+      expect(page['brouillons']()[0]).toMatchObject({ creneauCibleId: 9, standCibleId: 'quilles' });
+      expect(page['brouillons']()[0].creneauCibleLabel).toContain('Quilles');
     });
 
     it('labels the offered seat with its date, hours and stand', () => {
       const page = createPage();
-      page.posteChoisi.set(poste({ date: '2026-08-03', heureDebut: '14:00', heureFin: '18:00' }));
-      page.cibleId.set('bob');
+      page['posteChoisi'].set(
+        poste({ date: '2026-08-03', heureDebut: '14:00', heureFin: '18:00' }),
+      );
+      page['cibleId'].set('bob');
 
-      page.ajouter();
+      page['ajouter']();
 
-      expect(page.brouillons()[0].creneauLabel).toContain('2026-08-03');
-      expect(page.brouillons()[0].creneauLabel).toContain('14:00');
-      expect(page.brouillons()[0].standNom).toBe('Tir à la corde');
+      expect(page['brouillons']()[0].creneauLabel).toContain('2026-08-03');
+      expect(page['brouillons']()[0].creneauLabel).toContain('14:00');
+      expect(page['brouillons']()[0].standNom).toBe('Tir à la corde');
     });
 
     it('drops one line of the batch without touching the others', () => {
       const page = createPage();
       for (const creneauId of [1, 2, 3]) {
-        page.posteChoisi.set(poste({ creneauId }));
-        page.cibleId.set('bob');
-        page.ajouter();
+        page['posteChoisi'].set(poste({ creneauId }));
+        page['cibleId'].set('bob');
+        page['ajouter']();
       }
 
-      page.retirer(1);
+      page['retirer'](1);
 
-      expect(page.brouillons().map((brouillon) => brouillon.creneauId)).toEqual([1, 3]);
+      expect(page['brouillons']().map((brouillon) => brouillon.creneauId)).toEqual([1, 3]);
     });
   });
 
@@ -578,7 +546,7 @@ describe('EspaceEchangesPage', () => {
     it('sends nothing when the batch is empty', async () => {
       const page = createPage();
 
-      await page.soumettre();
+      await page['soumettre']();
 
       expect(espace.soumettre).not.toHaveBeenCalled();
     });
@@ -586,20 +554,20 @@ describe('EspaceEchangesPage', () => {
     it('sends the batch as new demandes and clears it', async () => {
       const page = withOneDraft();
 
-      await page.soumettre();
+      await page['soumettre']();
 
       expect(espace.soumettre).toHaveBeenCalledExactlyOnceWith([
         expect.objectContaining({ creneauId: 1, standId: 'tir', cibleId: 'bob' }),
       ]);
-      expect(page.brouillons()).toEqual([]);
-      expect(page.envoiEnCours()).toBe(false);
+      expect(page['brouillons']()).toEqual([]);
+      expect(page['envoiEnCours']()).toBe(false);
     });
 
     it('confirms a fully feasible batch without an alarm', async () => {
       const page = withOneDraft();
       espace.soumettre.mockResolvedValue([demande('d1', 'PROPOSEE')]);
 
-      await page.soumettre();
+      await page['soumettre']();
 
       expect(notifications.notify).toHaveBeenCalledWith(
         expect.objectContaining({ variant: 'success' }),
@@ -616,7 +584,7 @@ describe('EspaceEchangesPage', () => {
         demande('d3', 'PROPOSEE', { prevalidationOk: false }),
       ]);
 
-      await page.soumettre();
+      await page['soumettre']();
 
       expect(notifications.notify).toHaveBeenCalledWith(
         expect.objectContaining({ variant: 'warning', message: expect.stringContaining('2') }),
@@ -628,7 +596,7 @@ describe('EspaceEchangesPage', () => {
       const page = withOneDraft();
       espace.soumettre.mockResolvedValue([demande('d1', 'PROPOSEE', { prevalidationOk: null })]);
 
-      await page.soumettre();
+      await page['soumettre']();
 
       expect(notifications.notify).toHaveBeenCalledWith(
         expect.objectContaining({ variant: 'success' }),
@@ -639,16 +607,16 @@ describe('EspaceEchangesPage', () => {
       const page = withOneDraft();
       espace.soumettre.mockRejectedValue(new Error('Foire fermée.'));
 
-      await page.soumettre();
+      await page['soumettre']();
 
-      expect(page.brouillons()).toHaveLength(1);
+      expect(page['brouillons']()).toHaveLength(1);
       expect(notifications.notify).toHaveBeenCalledWith(
         expect.objectContaining({
           variant: 'error',
           message: expect.stringContaining('Foire fermée.'),
         }),
       );
-      expect(page.envoiEnCours()).toBe(false);
+      expect(page['envoiEnCours']()).toBe(false);
     });
 
     it('refuses a second submission while the first is still in flight', async () => {
@@ -660,16 +628,16 @@ describe('EspaceEchangesPage', () => {
         }),
       );
 
-      const first = page.soumettre();
+      const first = page['soumettre']();
       await Promise.resolve();
-      expect(page.envoiEnCours()).toBe(true);
+      expect(page['envoiEnCours']()).toBe(true);
 
-      await page.soumettre();
+      await page['soumettre']();
       expect(espace.soumettre).toHaveBeenCalledOnce();
 
       release([]);
       await first;
-      expect(page.envoiEnCours()).toBe(false);
+      expect(page['envoiEnCours']()).toBe(false);
     });
   });
 
@@ -678,9 +646,9 @@ describe('EspaceEchangesPage', () => {
       espaceDemandes.set([demande('d1', 'PROPOSEE'), demande('d2', 'ACCEPTEE')]);
       const page = createPage();
 
-      expect(page.demandes()).toHaveLength(2);
-      expect(page.demandes()[0].statutLabel).not.toBe('');
-      expect(page.demandes()[0].statutClasse).not.toBe(page.demandes()[1].statutClasse);
+      expect(page['demandes']()).toHaveLength(2);
+      expect(page['demandes']()[0].statutLabel).not.toBe('');
+      expect(page['demandes']()[0].statutClasse).not.toBe(page['demandes']()[1].statutClasse);
     });
 
     // Only the ones still waiting for MY agreement are actionable; the rest of
@@ -694,7 +662,7 @@ describe('EspaceEchangesPage', () => {
       ]);
       const page = createPage();
 
-      expect(page.recuesEnAttente().map((row) => row.id)).toEqual(['d1', 'd4']);
+      expect(page['recuesEnAttente']().map((row) => row.id)).toEqual(['d1', 'd4']);
     });
 
     // Issue #531: the espace serves the published plan, so between the
@@ -713,7 +681,7 @@ describe('EspaceEchangesPage', () => {
       ]);
       const page = createPage();
 
-      expect(page.demandes().map((row) => row.attentePublication)).toEqual([
+      expect(page['demandes']().map((row) => row.attentePublication)).toEqual([
         true,
         false,
         false,
@@ -726,23 +694,29 @@ describe('EspaceEchangesPage', () => {
     it('never flags a demande received as waiting for a publication', () => {
       espaceRecues.set([demande('d1', 'EN_ATTENTE_CIBLE')]);
 
-      expect(createPage().recuesEnAttente()[0].attentePublication).toBe(false);
+      expect(createPage()['recuesEnAttente']()[0].attentePublication).toBe(false);
     });
 
     it('treats a closed foire as read-only, and an unloaded espace as open', () => {
       espaceView.set(view({ foireOuverte: false }));
-      expect(createPage().foireOpen()).toBe(false);
+      expect(createPage()['foireOpen']()).toBe(false);
 
       espaceView.set(null);
-      expect(createPage().foireOpen()).toBe(true);
+      expect(createPage()['foireOpen']()).toBe(true);
     });
   });
 
   describe('acting on a demande', () => {
+    // The rows the template hands to each button: one received, one of mine.
+    beforeEach(() => {
+      espaceRecues.set([demande('d1', 'EN_ATTENTE_CIBLE')]);
+      espaceDemandes.set([demande('d1', 'PROPOSEE')]);
+    });
+
     it('confirms an agreement and says the organisation will arbitrate', async () => {
       const page = createPage();
 
-      await page.accorder({ id: 'd1' });
+      await page['accorder'](page['recuesEnAttente']()[0]);
 
       expect(espace.accorderRecue).toHaveBeenCalledExactlyOnceWith('d1');
       expect(notifications.notify).toHaveBeenCalledWith(
@@ -753,7 +727,7 @@ describe('EspaceEchangesPage', () => {
     it('confirms a refusal and says the colleague is informed', async () => {
       const page = createPage();
 
-      await page.decliner({ id: 'd1' });
+      await page['decliner'](page['recuesEnAttente']()[0]);
 
       expect(espace.declinerRecue).toHaveBeenCalledExactlyOnceWith('d1');
       expect(notifications.notify).toHaveBeenCalledWith(
@@ -764,7 +738,7 @@ describe('EspaceEchangesPage', () => {
     it('confirms a withdrawal', async () => {
       const page = createPage();
 
-      await page.annuler({ id: 'd1' });
+      await page['annuler'](page['demandes']()[0]);
 
       expect(espace.annuler).toHaveBeenCalledExactlyOnceWith('d1');
       expect(notifications.notify).toHaveBeenCalledWith(
@@ -775,9 +749,21 @@ describe('EspaceEchangesPage', () => {
     // An animateur has no console: a rejected action that says nothing looks
     // like a click that did not register.
     it.each([
-      ['accorder', (page: PageInternals) => page.accorder({ id: 'd1' }), espace.accorderRecue],
-      ['decliner', (page: PageInternals) => page.decliner({ id: 'd1' }), espace.declinerRecue],
-      ['annuler', (page: PageInternals) => page.annuler({ id: 'd1' }), espace.annuler],
+      [
+        'accorder',
+        (page: EspaceEchangesPage) => page['accorder'](page['recuesEnAttente']()[0]),
+        espace.accorderRecue,
+      ],
+      [
+        'decliner',
+        (page: EspaceEchangesPage) => page['decliner'](page['recuesEnAttente']()[0]),
+        espace.declinerRecue,
+      ],
+      [
+        'annuler',
+        (page: EspaceEchangesPage) => page['annuler'](page['demandes']()[0]),
+        espace.annuler,
+      ],
     ])('reports a refused %s instead of failing silently', async (_name, act, stub) => {
       const page = createPage();
       stub.mockRejectedValue(new Error('Demande déjà tranchée.'));

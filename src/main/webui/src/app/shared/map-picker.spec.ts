@@ -40,8 +40,8 @@ function mount() {
 }
 
 /** The private marker, reached deliberately: its drag state is the whole subject. */
-function marker(picker: MapPicker): { dragging?: { enabled(): boolean } } | undefined {
-  return (picker as unknown as { marker?: { dragging?: { enabled(): boolean } } }).marker;
+function marker(picker: MapPicker) {
+  return picker['marker'];
 }
 
 describe('MapPicker', () => {
@@ -95,8 +95,7 @@ describe('MapPicker', () => {
     host.longitude.set(-1.55);
     fixture.detectChanges();
 
-    const placed = (picker as unknown as { marker?: { getLatLng(): { lat: number; lng: number } } })
-      .marker;
+    const placed = marker(picker);
     expect(placed?.getLatLng().lat).toBeCloseTo(47.2);
     expect(placed?.getLatLng().lng).toBeCloseTo(-1.55);
   });

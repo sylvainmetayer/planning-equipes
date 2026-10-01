@@ -4,7 +4,7 @@
 // report on screen, and that a failure shows a sentence and not a blank card.
 
 import { Location } from '@angular/common';
-import { Provider, provideZonelessChangeDetection, Signal, signal } from '@angular/core';
+import { Provider, provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import {
@@ -19,6 +19,7 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { VerrouillageStore } from '../../core/verrouillage.store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysesApi } from '../../core/api/analyses-api';
+import { fakeOf, provideFake } from '../../core/testing/fake';
 import { FragilitePage } from './fragilite-page';
 
 function rapport(partial: Partial<RapportFragilite> = {}): RapportFragilite {
@@ -38,11 +39,11 @@ function rapport(partial: Partial<RapportFragilite> = {}): RapportFragilite {
 }
 
 /** What « Verrouiller » writes through; its creations are read back by the gestures' tests. */
-const verrous = {
-  create: vi.fn(async () => []),
-  reload: vi.fn(async () => undefined),
-  estAnimateurVerrouille: vi.fn((): boolean => false),
-};
+const verrous = fakeOf<VerrouillageStore>({
+  create: async () => [],
+  reload: async () => undefined,
+  estAnimateurVerrouille: () => false,
+});
 
 /**
  * The referential the page names typologies and stands from — reloading it is
@@ -61,7 +62,7 @@ function referentiel(
         reload: vi.fn(async () => undefined),
       },
     },
-    { provide: VerrouillageStore, useValue: verrous },
+    provideFake(VerrouillageStore, verrous),
     { provide: SolverJobService, useValue: { editingLocked: signal(false) } },
   ];
 }
@@ -79,13 +80,6 @@ function deferred<T>(): {
   });
   return { promise, resolve, reject };
 }
-
-type PageInternals = {
-  rapport: Signal<RapportFragilite | null>;
-  chargement: Signal<boolean>;
-  erreur: Signal<string>;
-  recharger: () => void;
-};
 
 describe('FragilitePage loading', () => {
   const analysesApi = { fragility: vi.fn() };
@@ -107,9 +101,9 @@ describe('FragilitePage loading', () => {
     });
   });
 
-  function createPage(): PageInternals {
+  function createPage(): FragilitePage {
     fixture = TestBed.createComponent(FragilitePage);
-    return fixture.componentInstance as unknown as PageInternals;
+    return fixture.componentInstance;
   }
 
   function text(): string {
@@ -147,15 +141,11 @@ describe('FragilitePage loading', () => {
     });
     analysesApi.fragility.mockResolvedValue(rapport());
 
-    const page = TestBed.createComponent(FragilitePage).componentInstance as unknown as {
-      view: Signal<string>;
-      filtre: Signal<string>;
-      recherche: Signal<string>;
-    };
+    const page = TestBed.createComponent(FragilitePage).componentInstance;
 
-    expect(page.view()).toBe('COMPETENCES');
-    expect(page.filtre()).toBe('CRITIQUES');
-    expect(page.recherche()).toBe('Alice');
+    expect(page['view']()).toBe('COMPETENCES');
+    expect(page['filtre']()).toBe('CRITIQUES');
+    expect(page['recherche']()).toBe('Alice');
   });
 
   it('says it is analysing while the first report is in flight, and shows it once it lands', async () => {
@@ -163,11 +153,11 @@ describe('FragilitePage loading', () => {
     analysesApi.fragility.mockReturnValue(pending.promise);
     const page = createPage();
 
-    expect(page.chargement()).toBe(true);
+    expect(page['chargement']()).toBe(true);
     expect(text()).toContain('Analyse de la fragilité du planning');
 
     pending.resolve(rapport());
-    await vi.waitFor(() => expect(page.chargement()).toBe(false));
+    await vi.waitFor(() => expect(page['chargement']()).toBe(false));
     expect(text()).toContain('Douze groupes analysés.');
     expect(analysesApi.fragility).toHaveBeenCalledOnce();
   });
@@ -179,7 +169,7 @@ describe('FragilitePage loading', () => {
       rapport({ aucunAnimateur: true, message: "Aucun animateur n'est saisi." }),
     );
     const page = createPage();
-    await vi.waitFor(() => expect(page.rapport()).not.toBeNull());
+    await vi.waitFor(() => expect(page['rapport']()).not.toBeNull());
 
     expect(text()).toContain('Aucun animateur saisi');
     expect(text()).not.toContain('Aucun planning persisté');
@@ -190,44 +180,44 @@ describe('FragilitePage loading', () => {
     analysesApi.fragility.mockRejectedValue(new Error('Aucun planning enregistré.'));
     const page = createPage();
 
-    await vi.waitFor(() => expect(page.erreur()).toContain('Aucun planning enregistré.'));
-    expect(page.rapport()).toBeNull();
+    await vi.waitFor(() => expect(page['erreur']()).toContain('Aucun planning enregistré.'));
+    expect(page['rapport']()).toBeNull();
     expect(text()).toContain('Aucun planning enregistré.');
   });
 
   it('keeps the report on screen while a refresh is in flight, without a second progress bar', async () => {
     analysesApi.fragility.mockResolvedValueOnce(rapport());
     const page = createPage();
-    await vi.waitFor(() => expect(page.rapport()).not.toBeNull());
+    await vi.waitFor(() => expect(page['rapport']()).not.toBeNull());
     const pending = deferred<RapportFragilite>();
     analysesApi.fragility.mockReturnValue(pending.promise);
 
-    page.recharger();
-    await vi.waitFor(() => expect(page.chargement()).toBe(true));
+    page['recharger']();
+    await vi.waitFor(() => expect(page['chargement']()).toBe(true));
 
-    expect(page.rapport()).not.toBeNull();
+    expect(page['rapport']()).not.toBeNull();
     expect(text()).toContain('Douze groupes analysés.');
     expect((fixture.nativeElement as HTMLElement).querySelector('mat-progress-bar')).toBeNull();
 
     pending.resolve(rapport({ message: 'Treize groupes analysés.' }));
-    await vi.waitFor(() => expect(page.chargement()).toBe(false));
+    await vi.waitFor(() => expect(page['chargement']()).toBe(false));
     expect(text()).toContain('Treize groupes analysés.');
   });
 
   it('shows the failure of a refresh in place of the report, and the report again on the next success', async () => {
     analysesApi.fragility.mockResolvedValueOnce(rapport());
     const page = createPage();
-    await vi.waitFor(() => expect(page.rapport()).not.toBeNull());
+    await vi.waitFor(() => expect(page['rapport']()).not.toBeNull());
 
     analysesApi.fragility.mockRejectedValueOnce(new Error('Serveur injoignable.'));
-    page.recharger();
-    await vi.waitFor(() => expect(page.erreur()).toContain('Serveur injoignable.'));
+    page['recharger']();
+    await vi.waitFor(() => expect(page['erreur']()).toContain('Serveur injoignable.'));
     expect(text()).toContain('Serveur injoignable.');
     expect(text()).not.toContain('Douze groupes analysés.');
 
     analysesApi.fragility.mockResolvedValueOnce(rapport());
-    page.recharger();
-    await vi.waitFor(() => expect(page.erreur()).toBe(''));
+    page['recharger']();
+    await vi.waitFor(() => expect(page['erreur']()).toBe(''));
     expect(text()).toContain('Douze groupes analysés.');
   });
 });
@@ -439,20 +429,18 @@ describe('FragilitePage gestures', () => {
   it('says what the lock freezes, and what the server asks to check about it', async () => {
     verrous.create.mockResolvedValueOnce([
       {
-        type: 'VERROU_SIEGE_EN_ECART',
+        type: 'VERROUILLAGE_SUR_VIOLATION_DURE',
         message: 'Le siège S1 du 2026-07-12 enfreint déjà une règle dure.',
       },
-    ] as never);
+    ]);
     await TestBed.inject(Router).navigateByUrl('/');
     const fixture = TestBed.createComponent(FragilitePage);
     await fixture.whenStable();
     fixture.detectChanges();
-    const page = fixture.componentInstance as unknown as {
-      lockImpact(ligne: AnimateurFragilite): string;
-    };
+    const page = fixture.componentInstance;
     const root = fixture.nativeElement as HTMLElement;
 
-    expect(page.lockImpact(animateur())).toBe(
+    expect(page['lockImpact'](animateur())).toBe(
       '3 affectation(s) déjà enregistrée(s) seront figées par ce verrouillage.',
     );
     root.querySelector<HTMLButtonElement>('.fragilite-gestes button')!.click();

@@ -2,7 +2,7 @@
 // writes the tab back, and that a tab's own view state lives next to it.
 
 import { Location } from '@angular/common';
-import { provideZonelessChangeDetection, Signal } from '@angular/core';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideLocationMocks } from '@angular/common/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
@@ -15,13 +15,7 @@ import { PlanningApi } from '../../core/api/planning-api';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { VerrouillageStore } from '../../core/verrouillage.store';
-import { OngletDiagnostic } from './diagnostic';
 import { DiagnosticPage } from './diagnostic-page';
-
-type PageInternals = {
-  onglet: Signal<OngletDiagnostic>;
-  changerOnglet: (onglet: OngletDiagnostic) => void;
-};
 
 describe('DiagnosticPage', () => {
   let fixture: ComponentFixture<DiagnosticPage>;
@@ -44,7 +38,7 @@ describe('DiagnosticPage', () => {
     }
   });
 
-  async function monter(queryParams: Record<string, string> = {}): Promise<PageInternals> {
+  async function monter(queryParams: Record<string, string> = {}): Promise<DiagnosticPage> {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
@@ -98,7 +92,7 @@ describe('DiagnosticPage', () => {
     TestBed.inject(Location).replaceState(query ? `/diagnostic?${query}` : '/diagnostic');
     fixture = TestBed.createComponent(DiagnosticPage);
     await fixture.whenStable();
-    return fixture.componentInstance as unknown as PageInternals;
+    return fixture.componentInstance;
   }
 
   function racine(): HTMLElement {
@@ -108,7 +102,7 @@ describe('DiagnosticPage', () => {
   it('opens on the problems, without a second heading under its own', async () => {
     const page = await monter();
 
-    expect(page.onglet()).toBe('problemes');
+    expect(page['onglet']()).toBe('problemes');
     expect(racine().querySelector('app-problemes-page')).not.toBeNull();
     expect(racine().querySelectorAll('h1')).toHaveLength(1);
     expect(analysesApi.staffing).not.toHaveBeenCalled();
@@ -117,7 +111,7 @@ describe('DiagnosticPage', () => {
   it('opens the Tension tab from ?onglet=tension, under the page heading alone', async () => {
     const page = await monter({ onglet: 'tension' });
 
-    expect(page.onglet()).toBe('tension');
+    expect(page['onglet']()).toBe('tension');
     expect(racine().querySelector('app-tension-tab')).not.toBeNull();
     expect(racine().querySelectorAll('h1')).toHaveLength(1);
     expect(analysesApi.tension).toHaveBeenCalled();
@@ -145,7 +139,7 @@ describe('DiagnosticPage', () => {
   it("opens on the tab the URL names, and keeps that tab's own state next to it", async () => {
     const page = await monter({ onglet: 'fragilite', q: 'Alice' });
 
-    expect(page.onglet()).toBe('fragilite');
+    expect(page['onglet']()).toBe('fragilite');
     expect(racine().querySelector('app-fragilite-page')).not.toBeNull();
     // The tab wrote its own key, the page its own: neither erased the other.
     const url = TestBed.inject(Location).path();
@@ -160,12 +154,12 @@ describe('DiagnosticPage', () => {
   it("keeps a tab's own state when it is left and opened again", async () => {
     const page = await monter({ onglet: 'fragilite', q: 'Alice' });
 
-    page.changerOnglet('besoin');
+    page['changerOnglet']('besoin');
     TestBed.tick();
     await fixture.whenStable();
     expect(TestBed.inject(Location).path()).toContain('q=Alice');
 
-    page.changerOnglet('fragilite');
+    page['changerOnglet']('fragilite');
     TestBed.tick();
     await fixture.whenStable();
 
@@ -177,13 +171,13 @@ describe('DiagnosticPage', () => {
   it('switches the tab and writes it back, nothing for the default one', async () => {
     const page = await monter();
 
-    page.changerOnglet('besoin');
+    page['changerOnglet']('besoin');
     TestBed.tick();
     await fixture.whenStable();
     expect(racine().querySelector('app-staffing-page')).not.toBeNull();
     expect(TestBed.inject(Location).path()).toContain('onglet=besoin');
 
-    page.changerOnglet('problemes');
+    page['changerOnglet']('problemes');
     TestBed.tick();
     await fixture.whenStable();
     expect(TestBed.inject(Location).path()).not.toContain('onglet=');

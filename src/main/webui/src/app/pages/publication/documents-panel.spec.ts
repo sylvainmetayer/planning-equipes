@@ -4,27 +4,25 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { PlanningApi } from '../../core/api/planning-api';
 import { PlanningStateService } from '../../core/planning-state.service';
+import { PlanningEvenement } from '../../core/models';
 import { SolverJobService } from '../../core/solver-job.service';
+import { fakeOf, provideFake } from '../../core/testing/fake';
 import { DocumentsPanel } from './documents-panel';
 
-type Internals = {
-  feuilles: () => Promise<void>;
-  archive: () => Promise<void>;
-  classeur: () => Promise<void>;
-  changements: () => Promise<void>;
-};
+// The planning the browser holds: what the archive sends, as it is.
+const EMPTY_PLANNING: PlanningEvenement = { animateurs: [], postes: [], score: null };
 
 describe('DocumentsPanel', () => {
-  const planningApi = {
-    exportFeuilles: vi.fn(),
-    exportBundle: vi.fn(),
-    exportGlobalPdf: vi.fn(),
-    exportPublicationDiff: vi.fn(),
-  };
-  const planningState = { require: vi.fn() };
+  const planningApi = fakeOf<PlanningApi>({
+    exportFeuilles: async () => '',
+    exportBundle: async () => '',
+    exportGlobalPdf: async () => '',
+    exportPublicationDiff: async () => '',
+  });
+  const planningState = fakeOf<PlanningStateService>({ require: async () => EMPTY_PLANNING });
 
   beforeEach(() => {
     Object.values(planningApi).forEach((stub) => stub.mockReset());
@@ -33,8 +31,8 @@ describe('DocumentsPanel', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        { provide: PlanningApi, useValue: planningApi },
-        { provide: PlanningStateService, useValue: planningState },
+        provideFake(PlanningApi, planningApi),
+        provideFake(PlanningStateService, planningState),
         { provide: SolverJobService, useValue: { editingLocked: () => false } },
       ],
     });
@@ -53,15 +51,14 @@ describe('DocumentsPanel', () => {
   });
 
   it('sends the planning the browser holds for the archive, and reports the outcome', async () => {
-    planningState.require.mockResolvedValue({ postes: [] });
     planningApi.exportBundle.mockResolvedValue('Téléchargement démarré.');
     const fixture = TestBed.createComponent(DocumentsPanel);
     const messages: string[] = [];
     fixture.componentInstance.reported.subscribe((message) => messages.push(message));
 
-    await (fixture.componentInstance as unknown as Internals).archive();
+    await fixture.componentInstance['archive']();
 
-    expect(planningApi.exportBundle).toHaveBeenCalledExactlyOnceWith({ postes: [] });
+    expect(planningApi.exportBundle).toHaveBeenCalledExactlyOnceWith(EMPTY_PLANNING);
     expect(messages.at(-1)).toBe('Téléchargement démarré.');
   });
 
@@ -71,7 +68,7 @@ describe('DocumentsPanel', () => {
     const messages: string[] = [];
     fixture.componentInstance.reported.subscribe((message) => messages.push(message));
 
-    await (fixture.componentInstance as unknown as Internals).classeur();
+    await fixture.componentInstance['classeur']();
 
     expect(messages.at(-1)).toContain('Planning vide.');
   });

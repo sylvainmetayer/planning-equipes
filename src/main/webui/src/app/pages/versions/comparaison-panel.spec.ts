@@ -5,7 +5,7 @@
 // the comparison says something it does not mean. The metric rows themselves
 // are the business of `comparateur-metrics.spec.ts`.
 
-import { provideZonelessChangeDetection, Signal } from '@angular/core';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConstraintsApi } from '../../core/api/constraints-api';
@@ -102,19 +102,6 @@ function comparaison(overrides: Partial<ComparaisonSnapshots> = {}): Comparaison
   };
 }
 
-/** Reaches the protected members the template binds to. */
-type PanelInternals = {
-  comparaison: Signal<ComparaisonSnapshots | null>;
-  chargement: Signal<boolean>;
-  error: Signal<string>;
-  lignes: Signal<LigneMetrique[]>;
-  kpiRecalcule: Signal<boolean>;
-  cotesPerimes: Signal<string[]>;
-  libelleCote: (cote: CoteComparaison) => string;
-  deltaLabel: (ligne: LigneMetrique) => string;
-  violationsLabel: (valeur: number | null) => string;
-};
-
 function ligne(overrides: Partial<LigneMetrique> = {}): LigneMetrique {
   return {
     cle: 'scoreSoft',
@@ -155,13 +142,13 @@ describe('ComparaisonPanel', () => {
     base: string,
     variante: string,
     snapshots: PlanSnapshot[] = [],
-  ): Promise<PanelInternals> {
+  ): Promise<ComparaisonPanel> {
     fixture = TestBed.createComponent(ComparaisonPanel);
     fixture.componentRef.setInput('base', base);
     fixture.componentRef.setInput('variante', variante);
     fixture.componentRef.setInput('snapshots', snapshots);
     await fixture.whenStable();
-    return fixture.componentInstance as unknown as PanelInternals;
+    return fixture.componentInstance;
   }
 
   it('asks for the two sides it is given, and keeps what comes back', async () => {
@@ -170,9 +157,9 @@ describe('ComparaisonPanel', () => {
     const panel = await open('7', 'courant');
 
     expect(planningApi.compareSnapshots).toHaveBeenCalledExactlyOnceWith('7', 'courant');
-    expect(panel.comparaison()).not.toBeNull();
-    expect(panel.lignes().length).toBeGreaterThan(0);
-    expect(panel.chargement()).toBe(false);
+    expect(panel['comparaison']()).not.toBeNull();
+    expect(panel['lignes']().length).toBeGreaterThan(0);
+    expect(panel['chargement']()).toBe(false);
   });
 
   it('is loading while the comparison is in flight', async () => {
@@ -180,45 +167,45 @@ describe('ComparaisonPanel', () => {
     planningApi.compareSnapshots.mockReturnValue(pending.promise);
 
     const panel = await openWithoutWaiting('7', '8');
-    expect(panel.chargement()).toBe(true);
+    expect(panel['chargement']()).toBe(true);
 
     pending.resolve(comparaison());
     await fixture.whenStable();
-    expect(panel.chargement()).toBe(false);
+    expect(panel['chargement']()).toBe(false);
   });
 
   /** Like `open`, without waiting for the comparison to land. */
-  async function openWithoutWaiting(base: string, variante: string): Promise<PanelInternals> {
+  async function openWithoutWaiting(base: string, variante: string): Promise<ComparaisonPanel> {
     fixture = TestBed.createComponent(ComparaisonPanel);
     fixture.componentRef.setInput('base', base);
     fixture.componentRef.setInput('variante', variante);
     fixture.detectChanges();
-    return fixture.componentInstance as unknown as PanelInternals;
+    return fixture.componentInstance;
   }
 
   it('compares again when another pair is ticked, and drops the previous table first', async () => {
     planningApi.compareSnapshots.mockResolvedValue(comparaison());
     const panel = await open('7', '8');
-    expect(panel.comparaison()).not.toBeNull();
+    expect(panel['comparaison']()).not.toBeNull();
 
     planningApi.compareSnapshots.mockRejectedValue(new Error('Comparaison impossible.'));
     fixture.componentRef.setInput('variante', 'courant');
     await fixture.whenStable();
 
     expect(planningApi.compareSnapshots).toHaveBeenLastCalledWith('7', 'courant');
-    expect(panel.error()).toContain('Comparaison impossible.');
-    expect(panel.comparaison()).toBeNull();
-    expect(panel.lignes()).toEqual([]);
+    expect(panel['error']()).toContain('Comparaison impossible.');
+    expect(panel['comparaison']()).toBeNull();
+    expect(panel['lignes']()).toEqual([]);
   });
 
   it('flags the degraded mode when either side had its KPI recomputed, and only then', async () => {
     planningApi.compareSnapshots.mockResolvedValue(
       comparaison({ variante: cote({ snapshotId: 8, kpiRecalcule: true }) }),
     );
-    expect((await open('7', '8')).kpiRecalcule()).toBe(true);
+    expect((await open('7', '8'))['kpiRecalcule']()).toBe(true);
 
     planningApi.compareSnapshots.mockResolvedValue(comparaison());
-    expect((await open('7', '8')).kpiRecalcule()).toBe(false);
+    expect((await open('7', '8'))['kpiRecalcule']()).toBe(false);
   });
 
   // Read from the comparison displayed: the warning describes the table on screen.
@@ -230,29 +217,29 @@ describe('ComparaisonPanel', () => {
       snapshot({ id: 8, libelle: 'Après canicule', perime: false }),
     ]);
 
-    expect(panel.cotesPerimes()).toEqual(['Avant canicule']);
+    expect(panel['cotesPerimes']()).toEqual(['Avant canicule']);
   });
 
   it('names the unlabelled side the currently persisted plan', async () => {
     planningApi.compareSnapshots.mockResolvedValue(comparaison());
     const panel = await open('7', '8');
 
-    expect(panel.libelleCote(cote({ libelle: null }))).toContain('persisté');
-    expect(panel.libelleCote(cote({ libelle: 'Avant canicule' }))).toBe('Avant canicule');
+    expect(panel['libelleCote'](cote({ libelle: null }))).toContain('persisté');
+    expect(panel['libelleCote'](cote({ libelle: 'Avant canicule' }))).toBe('Avant canicule');
   });
 
   it('words a delta: a dash when unknown, signed, rounded, and says its direction', async () => {
     planningApi.compareSnapshots.mockResolvedValue(comparaison());
     const panel = await open('7', '8');
 
-    expect(panel.deltaLabel(ligne({ delta: null }))).toBe('—');
-    expect(panel.deltaLabel(ligne({ delta: 4 }))).toBe('+4');
-    expect(panel.deltaLabel(ligne({ delta: -4 }))).toBe('-4');
-    expect(panel.deltaLabel(ligne({ delta: 1.25 }))).toBe('+1.3');
-    expect(panel.deltaLabel(ligne({ delta: 4, tendance: 'amelioration' }))).toContain(
+    expect(panel['deltaLabel'](ligne({ delta: null }))).toBe('—');
+    expect(panel['deltaLabel'](ligne({ delta: 4 }))).toBe('+4');
+    expect(panel['deltaLabel'](ligne({ delta: -4 }))).toBe('-4');
+    expect(panel['deltaLabel'](ligne({ delta: 1.25 }))).toBe('+1.3');
+    expect(panel['deltaLabel'](ligne({ delta: 4, tendance: 'amelioration' }))).toContain(
       'amélioration',
     );
-    expect(panel.deltaLabel(ligne({ delta: -4, tendance: 'degradation' }))).toContain(
+    expect(panel['deltaLabel'](ligne({ delta: -4, tendance: 'degradation' }))).toContain(
       'dégradation',
     );
   });
@@ -261,8 +248,8 @@ describe('ComparaisonPanel', () => {
     planningApi.compareSnapshots.mockResolvedValue(comparaison());
     const panel = await open('7', '8');
 
-    expect(panel.violationsLabel(null)).toContain('non mesuré');
-    expect(panel.violationsLabel(0)).toBe('0');
+    expect(panel['violationsLabel'](null)).toContain('non mesuré');
+    expect(panel['violationsLabel'](0)).toBe('0');
   });
 });
 

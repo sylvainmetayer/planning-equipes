@@ -6,14 +6,13 @@
 // These four states are exactly what a migration to `httpResource()` would
 // re-implement, which is why they are pinned here first.
 
-import { provideZonelessChangeDetection, Signal } from '@angular/core';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Location } from '@angular/common';
 import { provideRouter, Router } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import {
-  BorneStaffing,
   CompetenceStaffing,
   JourStaffing,
   SemaineStaffing,
@@ -126,33 +125,8 @@ function summary(overrides: Partial<StaffingSummary> = {}): StaffingSummary {
   };
 }
 
-/** Reaches the protected members the template binds to. */
-type PageInternals = {
-  summary: Signal<StaffingSummary | null>;
-  loading: Signal<boolean>;
-  error: Signal<string>;
-  columns: string[];
-  heuresParSemaine: Signal<number>;
-  heuresSemaineCritique: Signal<number>;
-  projectionLabel: Signal<string>;
-  jourCritiqueLabel: (jour: JourStaffing) => string;
-  semaineCritiqueLabel: () => string;
-  estBorneRetenue: (borne: BorneStaffing) => boolean;
-  pauseMinutes: () => number;
-  joursTravaillesMax: () => number;
-  competenceColumns: string[];
-  competence: Signal<CompetenceStaffing | null>;
-  estGoulot: (ligne: TypologieStaffing) => boolean;
-  reserveLabel: Signal<string>;
-  siegesNonAttribuesLabel: Signal<string>;
-  siegesReservesLabel: Signal<string>;
-  referentielsManquantsLabel: Signal<string>;
-  /** Private to the component; reachable here because `private` is compile-time only. */
-  staffing: { reload(): boolean };
-};
-
-function createPage(): PageInternals {
-  return TestBed.createComponent(StaffingPage).componentInstance as unknown as PageInternals;
+function createPage(): StaffingPage {
+  return TestBed.createComponent(StaffingPage).componentInstance;
 }
 
 describe('StaffingPage', () => {
@@ -187,8 +161,8 @@ describe('StaffingPage', () => {
 
       const page = createPage();
 
-      expect(page.loading()).toBe(true);
-      expect(page.summary()).toBeNull();
+      expect(page['loading']()).toBe(true);
+      expect(page['summary']()).toBeNull();
     });
 
     it('stops loading once the summary lands', async () => {
@@ -197,14 +171,14 @@ describe('StaffingPage', () => {
       const page = createPage();
 
       pending.resolve(summary({ minimumTotal: 33 }));
-      await vi.waitFor(() => expect(page.loading()).toBe(false));
+      await vi.waitFor(() => expect(page['loading']()).toBe(false));
 
-      expect(page.summary()?.minimumTotal).toBe(33);
+      expect(page['summary']()?.minimumTotal).toBe(33);
     });
 
     it('reads the summary from the server on creation instead of computing it in the browser', async () => {
       const page = createPage();
-      await vi.waitFor(() => expect(page.loading()).toBe(false));
+      await vi.waitFor(() => expect(page['loading']()).toBe(false));
 
       expect(analysesApi.staffing).toHaveBeenCalledOnce();
     });
@@ -215,22 +189,22 @@ describe('StaffingPage', () => {
       analysesApi.staffing.mockRejectedValue(new Error('Référentiel incomplet.'));
 
       const page = createPage();
-      await vi.waitFor(() => expect(page.loading()).toBe(false));
+      await vi.waitFor(() => expect(page['loading']()).toBe(false));
 
-      expect(page.error()).toContain('Référentiel incomplet.');
-      expect(page.summary()).toBeNull();
+      expect(page['error']()).toContain('Référentiel incomplet.');
+      expect(page['summary']()).toBeNull();
     });
 
     it('clears the error once a later load succeeds', async () => {
       analysesApi.staffing.mockRejectedValueOnce(new Error('Référentiel incomplet.'));
       const page = createPage();
-      await vi.waitFor(() => expect(page.error()).not.toBe(''));
+      await vi.waitFor(() => expect(page['error']()).not.toBe(''));
 
       analysesApi.staffing.mockResolvedValue(summary());
-      page.staffing.reload();
-      await vi.waitFor(() => expect(page.error()).toBe(''));
+      page['staffing'].reload();
+      await vi.waitFor(() => expect(page['error']()).toBe(''));
 
-      expect(page.summary()).not.toBeNull();
+      expect(page['summary']()).not.toBeNull();
     });
 
     // Deliberate, and different from the hours screen: the error is cleared on
@@ -238,13 +212,13 @@ describe('StaffingPage', () => {
     // previous summary on screen behind its message rather than blanking it.
     it('keeps the previous summary visible when a refresh fails', async () => {
       const page = createPage();
-      await vi.waitFor(() => expect(page.summary()).not.toBeNull());
+      await vi.waitFor(() => expect(page['summary']()).not.toBeNull());
 
       analysesApi.staffing.mockRejectedValue(new Error('Référentiel incomplet.'));
-      page.staffing.reload();
-      await vi.waitFor(() => expect(page.error()).toContain('Référentiel incomplet.'));
+      page['staffing'].reload();
+      await vi.waitFor(() => expect(page['error']()).toContain('Référentiel incomplet.'));
 
-      expect(page.summary()).not.toBeNull();
+      expect(page['summary']()).not.toBeNull();
     });
   });
 
@@ -261,11 +235,11 @@ describe('StaffingPage', () => {
       );
 
       const page = createPage();
-      await vi.waitFor(() => expect(page.summary()).not.toBeNull());
+      await vi.waitFor(() => expect(page['summary']()).not.toBeNull());
 
-      expect(page.heuresParSemaine()).toBe(0);
-      expect(page.heuresSemaineCritique()).toBe(0);
-      expect(page.semaineCritiqueLabel()).toBe('');
+      expect(page['heuresParSemaine']()).toBe(0);
+      expect(page['heuresSemaineCritique']()).toBe(0);
+      expect(page['semaineCritiqueLabel']()).toBe('');
     });
 
     it('names the missing stands rather than blaming the créneaux', async () => {
@@ -274,10 +248,10 @@ describe('StaffingPage', () => {
       );
 
       const page = createPage();
-      await vi.waitFor(() => expect(page.summary()).not.toBeNull());
+      await vi.waitFor(() => expect(page['summary']()).not.toBeNull());
 
-      expect(page.referentielsManquantsLabel()).toContain('Aucun stand');
-      expect(page.referentielsManquantsLabel()).not.toContain('Aucun créneau');
+      expect(page['referentielsManquantsLabel']()).toContain('Aucun stand');
+      expect(page['referentielsManquantsLabel']()).not.toContain('Aucun créneau');
     });
 
     it('names the missing créneaux, and both when both are missing', async () => {
@@ -285,17 +259,17 @@ describe('StaffingPage', () => {
         summary({ parJour: [], referentielsManquants: ['CRENEAUX'] }),
       );
       const page = createPage();
-      await vi.waitFor(() => expect(page.summary()).not.toBeNull());
-      expect(page.referentielsManquantsLabel()).toContain('Aucun créneau');
-      expect(page.referentielsManquantsLabel()).not.toContain('Aucun stand');
+      await vi.waitFor(() => expect(page['summary']()).not.toBeNull());
+      expect(page['referentielsManquantsLabel']()).toContain('Aucun créneau');
+      expect(page['referentielsManquantsLabel']()).not.toContain('Aucun stand');
 
       analysesApi.staffing.mockResolvedValue(
         summary({ parJour: [], referentielsManquants: ['STANDS', 'CRENEAUX', 'ANIMATEURS'] }),
       );
       const empty = createPage();
-      await vi.waitFor(() => expect(empty.summary()).not.toBeNull());
-      expect(empty.referentielsManquantsLabel()).toContain('Aucun stand');
-      expect(empty.referentielsManquantsLabel()).toContain('Aucun créneau');
+      await vi.waitFor(() => expect(empty['summary']()).not.toBeNull());
+      expect(empty['referentielsManquantsLabel']()).toContain('Aucun stand');
+      expect(empty['referentielsManquantsLabel']()).toContain('Aucun créneau');
     });
 
     it('keeps the bounds and the day table when only the animateurs are missing', async () => {
@@ -310,12 +284,12 @@ describe('StaffingPage', () => {
       );
 
       const page = createPage();
-      await vi.waitFor(() => expect(page.summary()).not.toBeNull());
+      await vi.waitFor(() => expect(page['summary']()).not.toBeNull());
 
-      expect(page.referentielsManquantsLabel()).toBe('');
-      expect(page.summary()!.minimumTotal).toBe(22);
-      expect(page.summary()!.parJour).toHaveLength(1);
-      expect(page.competence()!.animateursTotal).toBe(0);
+      expect(page['referentielsManquantsLabel']()).toBe('');
+      expect(page['summary']()!.minimumTotal).toBe(22);
+      expect(page['summary']()!.parJour).toHaveLength(1);
+      expect(page['competence']()!.animateursTotal).toBe(0);
     });
 
     it('reports no hours per week while nothing is loaded', () => {
@@ -323,9 +297,9 @@ describe('StaffingPage', () => {
 
       const page = createPage();
 
-      expect(page.heuresParSemaine()).toBe(0);
-      expect(page.projectionLabel()).toBe('');
-      expect(page.estBorneRetenue('PIC_AVEC_PAUSE')).toBe(false);
+      expect(page['heuresParSemaine']()).toBe(0);
+      expect(page['projectionLabel']()).toBe('');
+      expect(page['estBorneRetenue']('PIC_AVEC_PAUSE')).toBe(false);
     });
   });
 
@@ -348,11 +322,11 @@ describe('StaffingPage', () => {
       );
 
       const page = createPage();
-      await vi.waitFor(() => expect(page.summary()).not.toBeNull());
+      await vi.waitFor(() => expect(page['summary']()).not.toBeNull());
 
-      expect(page.heuresParSemaine()).toBe(20);
-      expect(page.heuresSemaineCritique()).toBe(96);
-      expect(page.semaineCritiqueLabel()).toContain('2026-W30');
+      expect(page['heuresParSemaine']()).toBe(20);
+      expect(page['heuresSemaineCritique']()).toBe(96);
+      expect(page['semaineCritiqueLabel']()).toContain('2026-W30');
     });
 
     it('highlights the rotation bound like any other when the server retained it', async () => {
@@ -361,11 +335,11 @@ describe('StaffingPage', () => {
       );
 
       const page = createPage();
-      await vi.waitFor(() => expect(page.summary()).not.toBeNull());
+      await vi.waitFor(() => expect(page['summary']()).not.toBeNull());
 
-      expect(page.estBorneRetenue('ROTATION_JOURS')).toBe(true);
-      expect(page.estBorneRetenue('PIC_AVEC_PAUSE')).toBe(false);
-      expect(page.joursTravaillesMax()).toBe(6);
+      expect(page['estBorneRetenue']('ROTATION_JOURS')).toBe(true);
+      expect(page['estBorneRetenue']('PIC_AVEC_PAUSE')).toBe(false);
+      expect(page['joursTravaillesMax']()).toBe(6);
     });
 
     // A projection, not a bound — so it only appears when it says something
@@ -379,8 +353,8 @@ describe('StaffingPage', () => {
         }),
       );
       const page = createPage();
-      await vi.waitFor(() => expect(page.summary()).not.toBeNull());
-      expect(page.projectionLabel()).toContain('31');
+      await vi.waitFor(() => expect(page['summary']()).not.toBeNull());
+      expect(page['projectionLabel']()).toContain('31');
 
       analysesApi.staffing.mockResolvedValue(
         summary({
@@ -389,8 +363,8 @@ describe('StaffingPage', () => {
           indisponibilitesDeclarees: true,
         }),
       );
-      page.staffing.reload();
-      await vi.waitFor(() => expect(page.projectionLabel()).toBe(''));
+      page['staffing'].reload();
+      await vi.waitFor(() => expect(page['projectionLabel']()).toBe(''));
 
       analysesApi.staffing.mockResolvedValue(
         summary({
@@ -399,9 +373,9 @@ describe('StaffingPage', () => {
           indisponibilitesDeclarees: false,
         }),
       );
-      page.staffing.reload();
+      page['staffing'].reload();
       await vi.waitFor(() => expect(analysesApi.staffing).toHaveBeenCalledTimes(3));
-      expect(page.projectionLabel()).toBe('');
+      expect(page['projectionLabel']()).toBe('');
     });
 
     // Fifth bound (issue #438): a grid with no room to eat needs more people
@@ -413,28 +387,28 @@ describe('StaffingPage', () => {
       );
 
       const page = createPage();
-      await vi.waitFor(() => expect(page.summary()).not.toBeNull());
+      await vi.waitFor(() => expect(page['summary']()).not.toBeNull());
 
-      expect(page.estBorneRetenue('COUPURE_REPAS')).toBe(true);
-      expect(page.estBorneRetenue('ROTATION_JOURS')).toBe(false);
-      expect(page.estBorneRetenue('PIC_SIMULTANE')).toBe(false);
+      expect(page['estBorneRetenue']('COUPURE_REPAS')).toBe(true);
+      expect(page['estBorneRetenue']('ROTATION_JOURS')).toBe(false);
+      expect(page['estBorneRetenue']('PIC_SIMULTANE')).toBe(false);
     });
 
     it('highlights the bound the server actually retained, and only that one', async () => {
       analysesApi.staffing.mockResolvedValue(summary({ borneRetenue: 'CHARGE_HORAIRE' }));
 
       const page = createPage();
-      await vi.waitFor(() => expect(page.summary()).not.toBeNull());
+      await vi.waitFor(() => expect(page['summary']()).not.toBeNull());
 
-      expect(page.estBorneRetenue('CHARGE_HORAIRE')).toBe(true);
-      expect(page.estBorneRetenue('PIC_AVEC_PAUSE')).toBe(false);
-      expect(page.estBorneRetenue('PIC_SIMULTANE')).toBe(false);
+      expect(page['estBorneRetenue']('CHARGE_HORAIRE')).toBe(true);
+      expect(page['estBorneRetenue']('PIC_AVEC_PAUSE')).toBe(false);
+      expect(page['estBorneRetenue']('PIC_SIMULTANE')).toBe(false);
     });
 
     it('names the busiest day by its number, date and open stands', () => {
       const page = createPage();
 
-      const label = page.jourCritiqueLabel(
+      const label = page['jourCritiqueLabel'](
         jour({ jour: 4, date: '2026-08-04', standsOuverts: 27 }),
       );
 
@@ -446,17 +420,17 @@ describe('StaffingPage', () => {
     it('lists the peaks and the day minimum as columns of their own', () => {
       const page = createPage();
 
-      expect(page.columns).toContain('picSimultane');
-      expect(page.columns).toContain('picAvecPause');
-      expect(page.columns).toContain('minimumJour');
+      expect(page['columns']).toContain('picSimultane');
+      expect(page['columns']).toContain('picAvecPause');
+      expect(page['columns']).toContain('minimumJour');
     });
   });
 
   /** Loads a page whose summary carries the given breakdown, and waits for it. */
-  async function pageWith(overrides: Partial<CompetenceStaffing>): Promise<PageInternals> {
+  async function pageWith(overrides: Partial<CompetenceStaffing>): Promise<StaffingPage> {
     analysesApi.staffing.mockResolvedValue(summary({ parCompetence: competence(overrides) }));
     const page = createPage();
-    await vi.waitFor(() => expect(page.competence()).not.toBeNull());
+    await vi.waitFor(() => expect(page['competence']()).not.toBeNull());
     return page;
   }
 
@@ -468,7 +442,7 @@ describe('StaffingPage', () => {
       const page = await pageWith({ polyvalents: 7 });
 
       expect(analysesApi.staffing).toHaveBeenCalledOnce();
-      expect(page.competence()?.polyvalents).toBe(7);
+      expect(page['competence']()?.polyvalents).toBe(7);
     });
 
     it('has no breakdown to show while nothing is loaded', () => {
@@ -476,48 +450,48 @@ describe('StaffingPage', () => {
 
       const page = createPage();
 
-      expect(page.competence()).toBeNull();
-      expect(page.reserveLabel()).toBe('');
+      expect(page['competence']()).toBeNull();
+      expect(page['reserveLabel']()).toBe('');
     });
 
     it('highlights the rows the server reported a shortfall on, and only those', () => {
       const page = createPage();
 
-      expect(page.estGoulot(typologie({ manque: 4 }))).toBe(true);
-      expect(page.estGoulot(typologie({ manque: 0 }))).toBe(false);
+      expect(page['estGoulot'](typologie({ manque: 4 }))).toBe(true);
+      expect(page['estGoulot'](typologie({ manque: 0 }))).toBe(false);
     });
 
     it('announces the absence of a bottleneck without claiming a reserve there is none of', async () => {
       const withReserve = await pageWith({ manqueTotal: 0, polyvalents: 4 });
-      expect(withReserve.reserveLabel()).toContain('Aucun goulot');
-      expect(withReserve.reserveLabel()).toContain('4');
+      expect(withReserve['reserveLabel']()).toContain('Aucun goulot');
+      expect(withReserve['reserveLabel']()).toContain('4');
 
       const withoutReserve = await pageWith({ manqueTotal: 0, polyvalents: 0 });
-      expect(withoutReserve.reserveLabel()).toContain('Aucun goulot');
-      expect(withoutReserve.reserveLabel()).not.toContain('0 polyvalents');
+      expect(withoutReserve['reserveLabel']()).toContain('Aucun goulot');
+      expect(withoutReserve['reserveLabel']()).not.toContain('0 polyvalents');
     });
 
     it('says a reserve of zero is no notion here when no typologie is marked polyvalente', async () => {
       const page = await pageWith({ manqueTotal: 3, polyvalents: 0, typologieNinjaDefinie: false });
 
-      expect(page.reserveLabel()).toContain('Aucune typologie');
-      expect(page.reserveLabel()).not.toContain('plus mince');
+      expect(page['reserveLabel']()).toContain('Aucune typologie');
+      expect(page['reserveLabel']()).not.toContain('plus mince');
     });
 
     it('reads the shortfall against the polyvalent reserve, which absorbs it or does not', async () => {
       const absorbable = await pageWith({ manqueTotal: 2, polyvalents: 5 });
-      expect(absorbable.reserveLabel()).toContain('peuvent y répondre');
-      expect(absorbable.reserveLabel()).not.toContain('plus mince');
+      expect(absorbable['reserveLabel']()).toContain('peuvent y répondre');
+      expect(absorbable['reserveLabel']()).not.toContain('plus mince');
 
       const shortfall = await pageWith({ manqueTotal: 8, polyvalents: 5 });
-      expect(shortfall.reserveLabel()).toContain('8');
-      expect(shortfall.reserveLabel()).toContain('plus mince');
+      expect(shortfall['reserveLabel']()).toContain('8');
+      expect(shortfall['reserveLabel']()).toContain('plus mince');
     });
 
     it('reports the seats no single typologie can claim', async () => {
       const page = await pageWith({ siegesNonAttribues: 14 });
 
-      expect(page.siegesNonAttribuesLabel()).toContain('14');
+      expect(page['siegesNonAttribuesLabel']()).toContain('14');
     });
 
     // The opposite case of the one above, and the loud one: a stand proposing
@@ -528,14 +502,14 @@ describe('StaffingPage', () => {
         siegesReservesAuxPolyvalents: 20,
         typologieNinjaDefinie: true,
       });
-      expect(withNinja.siegesReservesLabel()).toContain('20');
-      expect(withNinja.siegesReservesLabel()).toContain('seuls les polyvalents');
+      expect(withNinja['siegesReservesLabel']()).toContain('20');
+      expect(withNinja['siegesReservesLabel']()).toContain('seuls les polyvalents');
 
       const withoutNinja = await pageWith({
         siegesReservesAuxPolyvalents: 20,
         typologieNinjaDefinie: false,
       });
-      expect(withoutNinja.siegesReservesLabel()).toContain('personne');
+      expect(withoutNinja['siegesReservesLabel']()).toContain('personne');
     });
 
     // Offering the reinforcements against their own shortage would promise an
@@ -543,8 +517,8 @@ describe('StaffingPage', () => {
     it('never offers the polyvalent reserve against a shortfall on the polyvalent typologie itself', async () => {
       const page = await pageWith({ manqueTotal: 2, manquePolyvalents: 2, polyvalents: 3 });
 
-      expect(page.reserveLabel()).toContain('rien ne peut absorber');
-      expect(page.reserveLabel()).not.toContain('peuvent y répondre');
+      expect(page['reserveLabel']()).toContain('rien ne peut absorber');
+      expect(page['reserveLabel']()).not.toContain('peuvent y répondre');
     });
   });
 

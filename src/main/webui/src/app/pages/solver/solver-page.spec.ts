@@ -7,7 +7,7 @@
 // `solver-volumetry`, `incremental-result` — and render here for real, on the
 // same mocks.
 
-import { provideZonelessChangeDetection, Signal, signal } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
@@ -33,15 +33,13 @@ import {
   FeasibilityReport,
   JobView,
   PlanningDiagnostic,
-  ImpactPublication,
   PreviousPlan,
-  ReamorcageEffectue,
   ResultatSolveIncremental,
   ScoreSentence,
   ScoreTrace,
   StatistiquesIncremental,
 } from '../../core/models';
-import { HardIssue } from '../../shared/feasibility-banner';
+import { ReplanificationDialog } from './replanification-dialog';
 import { SolverPage } from './solver-page';
 
 function contrainte(name: string, score: string, matchCount = 1): ConstraintDiagnostic {
@@ -134,28 +132,6 @@ function jobView(overrides: Partial<JobView> = {}): JobView {
     ...overrides,
   };
 }
-
-/** Reaches the protected/private members the template and the job service reach. */
-type PageInternals = {
-  output: Signal<string>;
-  feasibility: Signal<FeasibilityReport | null>;
-  hardScore: Signal<number | null>;
-  hardIssues: Signal<HardIssue[]>;
-  incrementalStats: Signal<StatistiquesIncremental | null>;
-  incrementalChangements: Signal<ChangementAffectation[]>;
-  raisonVerrou: Signal<string>;
-  lastRunAt: Signal<string | null>;
-  planPrecedent: Signal<PreviousPlan | null>;
-  score: Signal<string | null>;
-  reamorcageEffectue: Signal<ReamorcageEffectue | null>;
-  impactPublication: Signal<ImpactPublication | null>;
-  pointDeDepart: Signal<string>;
-  planEnregistre: Signal<boolean>;
-  reading: Signal<ScoreSentence[] | null>;
-  onPlanPrecedentRestaure: (message: string) => void;
-  onRecommencerDeZero: () => Promise<void>;
-  onTimefoldSolve: (reamorcage?: string) => Promise<void>;
-};
 
 /** A sentence of a reading, told apart by its words. */
 function phrase(texte: string): ScoreSentence {
@@ -314,9 +290,9 @@ describe('SolverPage', () => {
 
   let fixture: ComponentFixture<SolverPage>;
 
-  function createPage(): PageInternals {
+  function createPage(): SolverPage {
     fixture = TestBed.createComponent(SolverPage);
-    return fixture.componentInstance as unknown as PageInternals;
+    return fixture.componentInstance;
   }
 
   /** Pushes a job result the way `SolverJobService` does, whoever started the job. */
@@ -328,7 +304,20 @@ describe('SolverPage', () => {
 
   /** A stored analysis carrying one sentence, analysed at `analysedAt`. */
   function stored(analysedAt: string, texte: string): ConstraintsView {
-    return { analysedAt, lecture: [phrase(texte)] } as unknown as ConstraintsView;
+    return {
+      analysedAt,
+      scoreGlobal: null,
+      postesNonPourvus: null,
+      faisabilite: null,
+      hardScore: null,
+      contraintes: [],
+      contraintesAdHocEnCause: [],
+      scoreHorsPlancher: null,
+      plancherMedium: null,
+      plancherSoft: null,
+      pivotEcarts: [],
+      lecture: [phrase(texte)],
+    };
   }
 
   /** The order of the page, and the words on it (issue #719). */
@@ -391,15 +380,17 @@ describe('SolverPage', () => {
     });
 
     it('shows « Corriger » what changed since the plan before asking for a perimeter', async () => {
-      const page = createPage() as unknown as { onSolveIncremental: () => Promise<void> };
+      const page = createPage();
       dialog.open.mockClear();
 
       // The dialog never closes here: only what it was opened with matters.
-      void page.onSolveIncremental();
+      void page['onSolveIncremental']();
       await vi.waitFor(() => expect(dialog.open).toHaveBeenCalledOnce());
 
-      const [, config] = dialog.open.mock.calls[0] as unknown as [unknown, { data: unknown }];
-      expect(config.data).toEqual({ depuis: '' });
+      expect(dialog.open).toHaveBeenCalledWith(
+        ReplanificationDialog,
+        expect.objectContaining({ data: { depuis: '' } }),
+      );
     });
   });
 
@@ -408,22 +399,22 @@ describe('SolverPage', () => {
       constraints.set(stored('2026-07-01T10:00:00Z', 'avant'));
       const page = createPage();
       await fixture.whenStable();
-      expect(page.reading()?.[0].texte).toBe('avant');
+      expect(page['reading']()?.[0].texte).toBe('avant');
 
       pushResult('SOLVE', diagnostic({ lecture: [phrase('comparée')] }));
       await fixture.whenStable();
-      expect(page.reading()?.[0].texte).toBe('comparée');
+      expect(page['reading']()?.[0].texte).toBe('comparée');
 
       // The re-read after the solve brings the solve's own analysis: the
       // reading with its comparison still stands.
       constraints.set(stored('2026-07-01T11:00:00Z', 'la même sans comparaison'));
       await fixture.whenStable();
-      expect(page.reading()?.[0].texte).toBe('comparée');
+      expect(page['reading']()?.[0].texte).toBe('comparée');
 
       // A later analysis — the plan re-analysed or rewritten since.
       constraints.set(stored('2026-07-01T12:00:00Z', 'plus récente'));
       await fixture.whenStable();
-      expect(page.reading()?.[0].texte).toBe('plus récente');
+      expect(page['reading']()?.[0].texte).toBe('plus récente');
     });
 
     it('gives way to the stored analysis once the previous plan is restored', async () => {
@@ -431,13 +422,13 @@ describe('SolverPage', () => {
       const page = createPage();
       pushResult('SOLVE', diagnostic({ lecture: [phrase('comparée')] }));
       await fixture.whenStable();
-      expect(page.reading()?.[0].texte).toBe('comparée');
+      expect(page['reading']()?.[0].texte).toBe('comparée');
       problemes.reload.mockClear();
 
-      page.onPlanPrecedentRestaure('Plan restauré.');
+      page['onPlanPrecedentRestaure']('Plan restauré.');
       await fixture.whenStable();
 
-      expect(page.reading()?.[0].texte).toBe('stockée');
+      expect(page['reading']()?.[0].texte).toBe('stockée');
       expect(problemes.reload).toHaveBeenCalledOnce();
     });
   });
@@ -462,7 +453,7 @@ describe('SolverPage', () => {
       pushResult('SOLVE', diagnostic());
 
       expect(planningState.set).toHaveBeenCalledExactlyOnceWith(null);
-      expect(page.hardScore()).toBe(-3);
+      expect(page['hardScore']()).toBe(-3);
     });
 
     it('keeps the feasibility report the diagnostic carries', () => {
@@ -470,7 +461,7 @@ describe('SolverPage', () => {
 
       pushResult('SOLVE', diagnostic({ faisabilite: report() }));
 
-      expect(page.feasibility()?.manqueAnimateurs).toBe(2);
+      expect(page['feasibility']()?.manqueAnimateurs).toBe(2);
     });
 
     // `ConstraintDiagnostic` carries no `niveau`, unlike the Contraintes page:
@@ -489,7 +480,7 @@ describe('SolverPage', () => {
         }),
       );
 
-      expect(page.hardIssues()).toEqual([{ name: 'reposObligatoire', matchCount: 14 }]);
+      expect(page['hardIssues']()).toEqual([{ name: 'reposObligatoire', matchCount: 14 }]);
     });
 
     it('reports no hard issue on a plan that satisfies every hard rule', () => {
@@ -500,7 +491,7 @@ describe('SolverPage', () => {
         diagnostic({ contraintes: [contrainte('equiteHeures', '0hard/0medium/-120soft')] }),
       );
 
-      expect(page.hardIssues()).toEqual([]);
+      expect(page['hardIssues']()).toEqual([]);
     });
 
     /**
@@ -514,10 +505,10 @@ describe('SolverPage', () => {
 
       pushResult('SOLVE', diagnostic({ score: '-3hard/0medium/-120soft' }));
 
-      expect(page.output()).not.toContain('postesNonPourvus');
-      expect(page.output()).not.toContain('-3hard/0medium/-120soft');
-      expect(page.output()).not.toContain('{');
-      expect(page.output()).toContain('Résolution terminée');
+      expect(page['output']()).not.toContain('postesNonPourvus');
+      expect(page['output']()).not.toContain('-3hard/0medium/-120soft');
+      expect(page['output']()).not.toContain('{');
+      expect(page['output']()).toContain('Résolution terminée');
     });
 
     /** The sentence says which of the two it was, since the panel no longer shows the numbers. */
@@ -525,10 +516,10 @@ describe('SolverPage', () => {
       const page = createPage();
 
       pushResult('SOLVE', diagnostic({ faisabilite: { ...report(), feasible: false } }));
-      expect(page.output()).toContain("n'est pas encore faisable");
+      expect(page['output']()).toContain("n'est pas encore faisable");
 
       pushResult('SOLVE', diagnostic({ faisabilite: { ...report(), feasible: true } }));
-      expect(page.output()).toContain('est faisable');
+      expect(page['output']()).toContain('est faisable');
     });
 
     it('re-reads the problem sources the solve rewrote server-side', () => {
@@ -569,7 +560,7 @@ describe('SolverPage', () => {
       pushResult('SOLVE', null);
 
       expect(planningState.set).not.toHaveBeenCalled();
-      expect(page.hardScore()).toBeNull();
+      expect(page['hardScore']()).toBeNull();
     });
   });
 
@@ -581,7 +572,7 @@ describe('SolverPage', () => {
 
       pushResult('SOLVE_INCREMENTAL', incrementalResult());
 
-      expect(page.hardScore()).toBe(0);
+      expect(page['hardScore']()).toBe(0);
       expect(planningState.set).toHaveBeenCalledExactlyOnceWith(null);
     });
 
@@ -590,20 +581,23 @@ describe('SolverPage', () => {
 
       pushResult('SOLVE_INCREMENTAL', incrementalResult());
 
-      expect(page.incrementalStats()?.postesLiberes).toBe(20);
-      expect(page.incrementalChangements().map((row) => row.standId)).toEqual(['tir', 'quilles']);
+      expect(page['incrementalStats']()?.postesLiberes).toBe(20);
+      expect(page['incrementalChangements']().map((row) => row.standId)).toEqual([
+        'tir',
+        'quilles',
+      ]);
     });
 
     // The diff would otherwise describe a planning that no longer exists.
     it('clears the incremental diff as soon as a full solve replaces the plan', () => {
       const page = createPage();
       pushResult('SOLVE_INCREMENTAL', incrementalResult());
-      expect(page.incrementalStats()).not.toBeNull();
+      expect(page['incrementalStats']()).not.toBeNull();
 
       pushResult('SOLVE', diagnostic());
 
-      expect(page.incrementalStats()).toBeNull();
-      expect(page.incrementalChangements()).toEqual([]);
+      expect(page['incrementalStats']()).toBeNull();
+      expect(page['incrementalChangements']()).toEqual([]);
     });
   });
 
@@ -624,9 +618,9 @@ describe('SolverPage', () => {
         resultat({ snapshotId: 12, score: '0hard/-6232medium/-920soft', degraded: true }),
       );
 
-      expect(page.planPrecedent()?.score).toBe('0hard/-6232medium/-920soft');
-      expect(page.score()).toBe('0hard/-7434medium/-564soft');
-      expect(page.planPrecedent()?.degraded).toBe(true);
+      expect(page['planPrecedent']()?.score).toBe('0hard/-6232medium/-920soft');
+      expect(page['score']()).toBe('0hard/-7434medium/-564soft');
+      expect(page['planPrecedent']()?.degraded).toBe(true);
     });
 
     // The whole point is to be believed: flagging a solve that improved things
@@ -639,7 +633,7 @@ describe('SolverPage', () => {
         resultat({ snapshotId: 12, score: '0hard/-9000medium/-999soft', degraded: false }),
       );
 
-      expect(page.planPrecedent()?.degraded).toBe(false);
+      expect(page['planPrecedent']()?.degraded).toBe(false);
     });
 
     it('keeps the snapshot to go back to even when its score is unknown', () => {
@@ -647,8 +641,8 @@ describe('SolverPage', () => {
 
       pushResult('SOLVE', resultat({ snapshotId: 12, score: null, degraded: false }));
 
-      expect(page.planPrecedent()?.snapshotId).toBe(12);
-      expect(page.planPrecedent()?.score).toBeNull();
+      expect(page['planPrecedent']()?.snapshotId).toBe(12);
+      expect(page['planPrecedent']()?.score).toBeNull();
     });
 
     it('keeps no previous plan on the first solve of an edition', () => {
@@ -656,7 +650,7 @@ describe('SolverPage', () => {
 
       pushResult('SOLVE', resultat(null));
 
-      expect(page.planPrecedent()).toBeNull();
+      expect(page['planPrecedent']()).toBeNull();
     });
 
     // A job that finished before this shipped answers a bare diagnostic: it
@@ -666,8 +660,8 @@ describe('SolverPage', () => {
 
       pushResult('SOLVE', diagnostic({ hardScore: 0 }));
 
-      expect(page.hardScore()).toBe(0);
-      expect(page.planPrecedent()).toBeNull();
+      expect(page['hardScore']()).toBe(0);
+      expect(page['planPrecedent']()).toBeNull();
     });
   });
 
@@ -686,8 +680,8 @@ describe('SolverPage', () => {
       const page = createPage();
       await fixture.whenStable();
 
-      expect(page.pointDeDepart()).toContain('Aucun plan enregistré');
-      expect(page.planEnregistre()).toBe(false);
+      expect(page['pointDeDepart']()).toContain('Aucun plan enregistré');
+      expect(page['planEnregistre']()).toBe(false);
     });
 
     it('announces the saved plan it will restart from', async () => {
@@ -695,9 +689,9 @@ describe('SolverPage', () => {
       const page = createPage();
       await fixture.whenStable();
 
-      expect(page.pointDeDepart()).toContain('12 affectations');
-      expect(page.pointDeDepart()).toContain('repart du plan enregistré');
-      expect(page.planEnregistre()).toBe(true);
+      expect(page['pointDeDepart']()).toContain('12 affectations');
+      expect(page['pointDeDepart']()).toContain('repart du plan enregistré');
+      expect(page['planEnregistre']()).toBe(true);
     });
 
     it('says nothing rather than something wrong when the count cannot be read', async () => {
@@ -705,8 +699,8 @@ describe('SolverPage', () => {
       const page = createPage();
       await fixture.whenStable();
 
-      expect(page.pointDeDepart()).toBe('');
-      expect(page.planEnregistre()).toBe(false);
+      expect(page['pointDeDepart']()).toBe('');
+      expect(page['planEnregistre']()).toBe(false);
     });
 
     // The recap puts these in words (`solve-recap.spec.ts`); the page's part
@@ -721,17 +715,20 @@ describe('SolverPage', () => {
         reamorcage: { mode: 'PLAN_COURANT', postes: 10, postesLiberes: 2, postesPasses: 0 },
         impactPublication: { personnes: 12, publieLe: '2026-09-01T10:00:00Z' },
       });
-      expect(page.reamorcageEffectue()).toEqual({
+      expect(page['reamorcageEffectue']()).toEqual({
         mode: 'PLAN_COURANT',
         postes: 10,
         postesLiberes: 2,
         postesPasses: 0,
       });
-      expect(page.impactPublication()).toEqual({ personnes: 12, publieLe: '2026-09-01T10:00:00Z' });
+      expect(page['impactPublication']()).toEqual({
+        personnes: 12,
+        publieLe: '2026-09-01T10:00:00Z',
+      });
 
       pushResult('SOLVE', diagnostic({ hardScore: 0 }));
-      expect(page.reamorcageEffectue()).toBeNull();
-      expect(page.impactPublication()).toBeNull();
+      expect(page['reamorcageEffectue']()).toBeNull();
+      expect(page['impactPublication']()).toBeNull();
     });
 
     // The diffusion moved to « Export & publication » (issue #320): this page
@@ -751,7 +748,7 @@ describe('SolverPage', () => {
     it('sends the default start with the everyday button, and nothing else', async () => {
       const page = createPage();
 
-      await page.onTimefoldSolve();
+      await page['onTimefoldSolve']();
 
       expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(undefined, false, 'AUTO');
     });
@@ -762,7 +759,7 @@ describe('SolverPage', () => {
       await fixture.whenStable();
       confirm.ask.mockResolvedValueOnce(false);
 
-      await page.onRecommencerDeZero();
+      await page['onRecommencerDeZero']();
 
       expect(confirm.ask).toHaveBeenCalledWith(
         expect.objectContaining({ title: 'Recommencer de zéro ?', danger: true }),
@@ -776,7 +773,7 @@ describe('SolverPage', () => {
       await fixture.whenStable();
       confirm.ask.mockResolvedValueOnce(true);
 
-      await page.onRecommencerDeZero();
+      await page['onRecommencerDeZero']();
 
       expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(undefined, false, 'AUCUN');
     });
@@ -798,7 +795,7 @@ describe('SolverPage', () => {
       ]);
       confirm.ask.mockResolvedValueOnce(false);
 
-      await page.onRecommencerDeZero();
+      await page['onRecommencerDeZero']();
 
       const message = (confirm.ask.mock.calls[0][0] as { message: string }).message;
       expect(message).toContain('1 journée(s) relue(s) perdront leur relecture.');
@@ -819,7 +816,7 @@ describe('SolverPage', () => {
       const kept = vi.spyOn(validations, 'keptByColdStart');
       confirm.ask.mockResolvedValueOnce(false);
 
-      await page.onRecommencerDeZero();
+      await page['onRecommencerDeZero']();
 
       expect(kept).not.toHaveBeenCalled();
       expect((confirm.ask.mock.calls[0][0] as { message: string }).message).not.toContain(
@@ -850,7 +847,7 @@ describe('SolverPage', () => {
       const page = createPage();
       await fixture.whenStable();
 
-      await page.onTimefoldSolve();
+      await page['onTimefoldSolve']();
 
       expect(confirm.ask).not.toHaveBeenCalled();
       expect(jobs.submitSolveFromReferenceData).toHaveBeenCalled();
@@ -862,7 +859,7 @@ describe('SolverPage', () => {
       await fixture.whenStable();
       confirm.ask.mockResolvedValueOnce(false);
 
-      await page.onTimefoldSolve();
+      await page['onTimefoldSolve']();
 
       expect(confirm.ask).toHaveBeenCalledWith(
         expect.objectContaining({ title: 'Lancer malgré un problème bloquant ?', danger: true }),
@@ -884,7 +881,7 @@ describe('SolverPage', () => {
       await fixture.whenStable();
       confirm.ask.mockResolvedValueOnce(false);
 
-      await page.onTimefoldSolve();
+      await page['onTimefoldSolve']();
 
       const detail = await confirm.ask.mock.calls.at(-1)![0].detail;
       expect(detail).toContain('C01');
@@ -899,7 +896,7 @@ describe('SolverPage', () => {
       await fixture.whenStable();
       confirm.ask.mockResolvedValueOnce(true);
 
-      await page.onTimefoldSolve();
+      await page['onTimefoldSolve']();
 
       expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(undefined, false, 'AUTO');
     });
@@ -913,7 +910,7 @@ describe('SolverPage', () => {
       await fixture.whenStable();
       confirm.ask.mockResolvedValueOnce(false);
 
-      await page.onRecommencerDeZero();
+      await page['onRecommencerDeZero']();
 
       expect(confirm.ask).toHaveBeenCalledTimes(1);
       expect(jobs.submitSolveFromReferenceData).not.toHaveBeenCalled();
@@ -929,7 +926,7 @@ describe('SolverPage', () => {
       await fixture.whenStable();
       confirm.ask.mockResolvedValueOnce(false);
 
-      await page.onTimefoldSolve();
+      await page['onTimefoldSolve']();
 
       expect(confirm.ask).toHaveBeenCalledWith(
         expect.objectContaining({ title: 'Calculer sans la saisie en cours ?' }),
@@ -946,7 +943,7 @@ describe('SolverPage', () => {
       await fixture.whenStable();
       confirm.ask.mockResolvedValueOnce(true);
 
-      await page.onTimefoldSolve();
+      await page['onTimefoldSolve']();
 
       expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(undefined, false, 'AUTO');
     });
@@ -955,7 +952,7 @@ describe('SolverPage', () => {
       const page = createPage();
       await fixture.whenStable();
 
-      await page.onTimefoldSolve();
+      await page['onTimefoldSolve']();
 
       expect(confirm.ask).not.toHaveBeenCalled();
       expect(jobs.submitSolveFromReferenceData).toHaveBeenCalled();
@@ -968,7 +965,7 @@ describe('SolverPage', () => {
     it('says nothing while nothing holds the lock', () => {
       const page = createPage();
 
-      expect(page.raisonVerrou()).toBe('');
+      expect(page['raisonVerrou']()).toBe('');
     });
 
     it('names a running job, whoever started it', () => {
@@ -976,7 +973,7 @@ describe('SolverPage', () => {
       activeJob.set(tracked());
       const page = createPage();
 
-      expect(page.raisonVerrou()).toBe('Une résolution est en cours (autre navigateur).');
+      expect(page['raisonVerrou']()).toBe('Une résolution est en cours (autre navigateur).');
     });
 
     // Pessimistic before the first server answer: the service reports busy
@@ -987,7 +984,7 @@ describe('SolverPage', () => {
       activeJob.set(null);
       const page = createPage();
 
-      expect(page.raisonVerrou()).toContain("n'est pas encore connu");
+      expect(page['raisonVerrou']()).toContain("n'est pas encore connu");
     });
 
     // The export moved to « Export & publication » (issue #320), and with it
@@ -996,19 +993,19 @@ describe('SolverPage', () => {
     it('names nothing but the solver, now that the exports left the page', () => {
       const page = createPage();
 
-      expect(page.raisonVerrou()).toBe('');
+      expect(page['raisonVerrou']()).toBe('');
     });
 
     it('goes back to silence once the job ends', () => {
       solverBusy.set(true);
       activeJob.set(tracked());
       const page = createPage();
-      expect(page.raisonVerrou()).not.toBe('');
+      expect(page['raisonVerrou']()).not.toBe('');
 
       solverBusy.set(false);
       activeJob.set(null);
 
-      expect(page.raisonVerrou()).toBe('');
+      expect(page['raisonVerrou']()).toBe('');
     });
   });
 
@@ -1023,9 +1020,9 @@ describe('SolverPage', () => {
       ]);
 
       const page = createPage();
-      await vi.waitFor(() => expect(page.lastRunAt()).not.toBeNull());
+      await vi.waitFor(() => expect(page['lastRunAt']()).not.toBeNull());
 
-      expect(page.lastRunAt()).toBe('2026-08-01T12:00:00Z');
+      expect(page['lastRunAt']()).toBe('2026-08-01T12:00:00Z');
     });
 
     it('reports no run when none has ever finished', async () => {
@@ -1034,7 +1031,7 @@ describe('SolverPage', () => {
       const page = createPage();
       await vi.waitFor(() => expect(jobs.listJobs).toHaveBeenCalled());
 
-      expect(page.lastRunAt()).toBeNull();
+      expect(page['lastRunAt']()).toBeNull();
     });
 
     // Best-effort: the page still works without the history.
@@ -1044,7 +1041,7 @@ describe('SolverPage', () => {
       const page = createPage();
       await vi.waitFor(() => expect(jobs.listJobs).toHaveBeenCalled());
 
-      expect(page.lastRunAt()).toBeNull();
+      expect(page['lastRunAt']()).toBeNull();
       expect(notifications.notify).not.toHaveBeenCalled();
     });
 
@@ -1070,8 +1067,8 @@ describe('SolverPage', () => {
       activeJob.set(tracked({ mine: false }));
       TestBed.tick();
 
-      expect(page.output()).toContain('verrouillées');
-      expect(page.output()).toContain('autre navigateur');
+      expect(page['output']()).toContain('verrouillées');
+      expect(page['output']()).toContain('autre navigateur');
     });
 
     it('says nothing when the running job is mine', () => {
@@ -1080,7 +1077,7 @@ describe('SolverPage', () => {
       activeJob.set(tracked({ mine: true }));
       TestBed.tick();
 
-      expect(page.output()).toBe('');
+      expect(page['output']()).toBe('');
     });
   });
 });

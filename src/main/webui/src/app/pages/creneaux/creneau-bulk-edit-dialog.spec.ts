@@ -12,6 +12,7 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { Creneau } from '../../core/models';
+import { Fake, fakeOf, provideFake } from '../../core/testing/fake';
 import { CreneauBulkEditDialog } from './creneau-bulk-edit-dialog';
 
 const CRENEAUX: Creneau[] = [
@@ -20,7 +21,9 @@ const CRENEAUX: Creneau[] = [
 ];
 
 function monter(creneaux: Creneau[], options: { editingLocked?: boolean; saved?: number } = {}) {
-  const saveMany = vi.fn(async () => options.saved ?? creneaux.length);
+  const crud = fakeOf<ReferenceCrudService>({
+    saveMany: async () => options.saved ?? creneaux.length,
+  });
   const close = vi.fn();
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
@@ -31,12 +34,25 @@ function monter(creneaux: Creneau[], options: { editingLocked?: boolean; saved?:
         provide: SolverJobService,
         useValue: { editingLocked: signal(options.editingLocked ?? false) },
       },
-      { provide: ReferenceCrudService, useValue: { saveMany } },
+      provideFake(ReferenceCrudService, crud),
       { provide: MatDialogRef, useValue: { close } },
       { provide: MAT_DIALOG_DATA, useValue: { creneaux } },
     ],
   });
-  return { fixture: TestBed.createComponent(CreneauBulkEditDialog), saveMany, close };
+  return {
+    fixture: TestBed.createComponent(CreneauBulkEditDialog),
+    saveMany: crud.saveMany,
+    close,
+  };
+}
+
+/**
+ * The timeslots of the first batch. `saveMany` is generic over its rows, so
+ * its recorded call holds the constraint `{ id }`; this dialog only writes
+ * timeslots.
+ */
+function savedCreneaux(saveMany: Fake<ReferenceCrudService>['saveMany']): readonly Creneau[] {
+  return saveMany.mock.calls[0][1] as readonly Creneau[];
 }
 
 function racine(fixture: ComponentFixture<CreneauBulkEditDialog>): HTMLElement {
@@ -91,7 +107,8 @@ describe('CreneauBulkEditDialog', () => {
     submit(fixture);
     await fixture.whenStable();
 
-    const [resource, payloads] = saveMany.mock.calls[0] as unknown as [string, Creneau[]];
+    const [resource] = saveMany.mock.calls[0];
+    const payloads = savedCreneaux(saveMany);
     expect(resource).toBe('creneaux');
     expect(payloads.map((creneau) => [creneau.id, creneau.heureDebut, creneau.heureFin])).toEqual([
       [1, '09:00', '12:00'],

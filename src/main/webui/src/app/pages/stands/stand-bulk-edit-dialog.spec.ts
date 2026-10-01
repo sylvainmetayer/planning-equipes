@@ -19,6 +19,7 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { Creneau, Emplacement, EtatGel, Stand } from '../../core/models';
+import { fakeOf, provideFake } from '../../core/testing/fake';
 import { StandBulkEditDialog } from './stand-bulk-edit-dialog';
 import { StandBulkPatch } from './stand-bulk-edit';
 
@@ -68,29 +69,32 @@ function mount(
     gel?: EtatGel[];
   } = {},
 ) {
-  const saveMany = vi.fn(async () => options.saveMany ?? stands.length);
+  const crud = fakeOf<ReferenceCrudService>({
+    saveMany: async () => options.saveMany ?? stands.length,
+  });
+  const saveMany = crud.saveMany;
   const allStands = [...stands, stand('hors-selection'), ...(options.modeles ?? [])];
-  const close = vi.fn();
+  const close = vi.fn<(result?: boolean) => void>();
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
-      {
-        provide: ReferenceDataStore,
-        useValue: {
+      provideFake(
+        ReferenceDataStore,
+        fakeOf<ReferenceDataStore>({
           typologies: signal(TYPOLOGIES),
           creneaux: signal(options.creneaux ?? []),
           emplacements: signal(EMPLACEMENTS),
           stands: signal(allStands),
-        },
-      },
-      {
-        provide: SolverJobService,
-        useValue: { editingLocked: signal(options.editingLocked ?? false) },
-      },
-      { provide: ReferenceCrudService, useValue: { saveMany } },
-      { provide: MatDialogRef, useValue: { close } },
+        }),
+      ),
+      provideFake(
+        SolverJobService,
+        fakeOf<SolverJobService>({ editingLocked: signal(options.editingLocked ?? false) }),
+      ),
+      provideFake(ReferenceCrudService, crud),
+      provideFake(MatDialogRef, fakeOf<MatDialogRef<StandBulkEditDialog, boolean>>({ close })),
       { provide: MAT_DIALOG_DATA, useValue: { stands, modele: options.modele } },
-      { provide: EditionsApi, useValue: { gel: vi.fn(async () => options.gel ?? []) } },
+      provideFake(EditionsApi, fakeOf<EditionsApi>({ gel: async () => options.gel ?? [] })),
     ],
   });
   return { fixture: TestBed.createComponent(StandBulkEditDialog), saveMany, close };
@@ -143,9 +147,7 @@ async function fill(
   fixture: ComponentFixture<StandBulkEditDialog>,
   patch: Partial<StandBulkPatch>,
 ): Promise<void> {
-  (fixture.componentInstance as unknown as { update(patch: Partial<StandBulkPatch>): void }).update(
-    patch,
-  );
+  fixture.componentInstance['update'](patch);
   await fixture.whenStable();
 }
 
@@ -348,15 +350,17 @@ describe('StandBulkEditDialog', () => {
     root(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
     await fixture.whenStable();
 
-    const [, payloads] = saveMany.mock.calls[0] as unknown as [string, Stand[]];
+    const [, payloads] = saveMany.mock.calls[0];
     expect(payloads).toHaveLength(2);
-    for (const stand of payloads) {
-      expect(stand.horaires).toHaveLength(1);
-      expect(stand.horaires[0].fenetres).toEqual([
-        { heureDebut: '14:00', heureFin: null, effectif: null },
-      ]);
+    // `saveMany` is generic on the row: its calls are read through the paths of a stand.
+    for (const each of payloads) {
+      expect(each).toHaveProperty('horaires.length', 1);
+      expect(each).toHaveProperty(
+        ['horaires', 0, 'fenetres'],
+        [{ heureDebut: '14:00', heureFin: null, effectif: null }],
+      );
       // The editor's own state stays in the form.
-      expect(stand.horaires[0]).not.toHaveProperty('saisie');
+      expect(each).not.toHaveProperty(['horaires', 0, 'saisie']);
     }
   });
 
@@ -448,9 +452,7 @@ describe('StandBulkEditDialog', () => {
     // Naming no model changes nothing, like "Définir" without an emplacement.
     expect(submit(fixture).disabled).toBe(true);
 
-    (
-      fixture.componentInstance as unknown as { choisirStandModele(id: string | null): void }
-    ).choisirStandModele('PAVILLON');
+    fixture.componentInstance['choisirStandModele']('PAVILLON');
     await fixture.whenStable();
 
     expect(submit(fixture).disabled).toBe(false);
@@ -484,17 +486,18 @@ describe('StandBulkEditDialog', () => {
     root(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
     await fixture.whenStable();
 
-    const [, payloads] = saveMany.mock.calls[0] as unknown as [string, Stand[]];
+    const [, payloads] = saveMany.mock.calls[0];
     expect(payloads.map((each) => each.id)).toEqual(['s1', 's2']);
     for (const each of payloads) {
-      expect(each.horaires).toHaveLength(1);
-      expect(each.horaires[0].id).toBeNull();
-      expect(each.horaires[0].fenetres).toEqual([
-        { heureDebut: '14:00', heureFin: null, effectif: 3 },
-      ]);
-      expect(each.ouvertures).toHaveLength(1);
-      expect(each.ouvertures[0].id).toBeNull();
-      expect(each.ouvertures[0].date).toBe('2026-07-10');
+      expect(each).toHaveProperty('horaires.length', 1);
+      expect(each).toHaveProperty(['horaires', 0, 'id'], null);
+      expect(each).toHaveProperty(
+        ['horaires', 0, 'fenetres'],
+        [{ heureDebut: '14:00', heureFin: null, effectif: 3 }],
+      );
+      expect(each).toHaveProperty('ouvertures.length', 1);
+      expect(each).toHaveProperty(['ouvertures', 0, 'id'], null);
+      expect(each).toHaveProperty(['ouvertures', 0, 'date'], '2026-07-10');
     }
   });
 
@@ -562,13 +565,15 @@ describe('StandBulkEditDialog', () => {
     await fixture.whenStable();
 
     expect(saveMany).toHaveBeenCalledOnce();
-    const [resource, payloads] = saveMany.mock.calls[0] as unknown as [string, Stand[]];
+    const [resource, payloads] = saveMany.mock.calls[0];
     expect(resource).toBe('stands');
     // The store also holds 'hors-selection'; it must not be written.
     expect(payloads.map((each) => each.id)).toEqual(['s1', 's2']);
     // Only the field that was filled in moved; the rest keeps each row's value.
-    expect(payloads.every((each) => each.premium)).toBe(true);
-    expect(payloads.map((each) => each.effectifMin)).toEqual([1, 1]);
+    expect(payloads).toMatchObject([
+      { premium: true, effectifMin: 1 },
+      { premium: true, effectifMin: 1 },
+    ]);
     expect(close).toHaveBeenCalledWith(true);
   });
 

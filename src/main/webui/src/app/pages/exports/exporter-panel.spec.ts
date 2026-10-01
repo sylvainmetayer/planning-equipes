@@ -47,24 +47,16 @@ describe('ExporterPanel', () => {
     });
   });
 
-  type Internals = {
-    basculer: (target: string, coche: boolean) => void;
-    telecharger: () => Promise<void>;
-    peutTelecharger: () => boolean;
-    total: () => number;
-    exporterScenario: () => Promise<void>;
-  };
-
   async function monter(): Promise<{
     fixture: ComponentFixture<ExporterPanel>;
-    page: Internals;
+    page: ExporterPanel;
     racine: HTMLElement;
   }> {
     const fixture = TestBed.createComponent(ExporterPanel);
     await fixture.whenStable();
     return {
       fixture,
-      page: fixture.componentInstance as unknown as Internals,
+      page: fixture.componentInstance,
       racine: fixture.nativeElement as HTMLElement,
     };
   }
@@ -83,7 +75,7 @@ describe('ExporterPanel', () => {
     expect(lignes[3].textContent).toContain('creneaux.csv');
     expect(lignes[4].textContent).toContain('journees-types.csv');
     expect(carteCsv.querySelectorAll('mat-checkbox input:checked')).toHaveLength(6);
-    expect(page.total()).toBe(42);
+    expect(page['total']()).toBe(42);
   });
 
   /** Ticked but empty is worth saying: the archive carries a header and nothing else. */
@@ -96,13 +88,13 @@ describe('ExporterPanel', () => {
   it('downloads only what stays ticked, and says so in the button', async () => {
     const { fixture, page } = await monter();
 
-    page.basculer('ANIMATEURS', false);
-    page.basculer('EMPLACEMENTS', false);
-    page.basculer('JOURNEES_TYPES', false);
+    page['basculer']('ANIMATEURS', false);
+    page['basculer']('EMPLACEMENTS', false);
+    page['basculer']('JOURNEES_TYPES', false);
     await fixture.whenStable();
-    expect(page.total()).toBe(37);
+    expect(page['total']()).toBe(37);
 
-    await page.telecharger();
+    await page['telecharger']();
 
     expect(api.telecharger).toHaveBeenCalledOnce();
     expect(api.telecharger.mock.calls[0][0]).toEqual(['TYPOLOGIES', 'STANDS', 'CRENEAUX']);
@@ -112,12 +104,12 @@ describe('ExporterPanel', () => {
     const { fixture, page } = await monter();
 
     for (const target of CIBLES_EXPORT_CSV) {
-      page.basculer(target, false);
+      page['basculer'](target, false);
     }
     await fixture.whenStable();
 
-    expect(page.peutTelecharger()).toBe(false);
-    await page.telecharger();
+    expect(page['peutTelecharger']()).toBe(false);
+    await page['telecharger']();
     expect(api.telecharger).not.toHaveBeenCalled();
   });
 
@@ -125,7 +117,7 @@ describe('ExporterPanel', () => {
     api.telecharger.mockRejectedValue(new Error('réseau coupé'));
     const { fixture, page, racine } = await monter();
 
-    await page.telecharger();
+    await page['telecharger']();
     await fixture.whenStable();
 
     expect(racine.querySelector('.field-error')!.textContent).toContain('réseau coupé');
@@ -136,7 +128,7 @@ describe('ExporterPanel', () => {
   it('writes the current edition out as a scenario, and says where it went', async () => {
     const { fixture, page, racine } = await monter();
 
-    await page.exporterScenario();
+    await page['exporterScenario']();
     await fixture.whenStable();
 
     expect(planningApi.exportScenario).toHaveBeenCalledOnce();
@@ -147,7 +139,7 @@ describe('ExporterPanel', () => {
     planningApi.exportScenario.mockRejectedValue(new Error('réseau coupé'));
     const { fixture, page, racine } = await monter();
 
-    await page.exporterScenario();
+    await page['exporterScenario']();
     await fixture.whenStable();
 
     expect(racine.textContent).toContain('réseau coupé');

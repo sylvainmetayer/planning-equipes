@@ -411,7 +411,7 @@ describe('segmentsPartiels et aplatissement', () => {
   });
 
   it('collects the stretches of the partial cells only, and sends aplatir with the body', () => {
-    const rapport = {
+    const rapport: RapportOuvertures = {
       jours: [
         {
           date: '2026-07-08',
@@ -479,7 +479,7 @@ describe('segmentsPartiels et aplatissement', () => {
       standsJamaisOuverts: 0,
       postesTotal: 0,
       anomalies: [],
-    } as unknown as RapportOuvertures;
+    };
 
     expect(Array.from(segmentsPartiels(rapport).keys())).toEqual(['A#1@14:00-20:00']);
     const cols = colonnes(rapport);

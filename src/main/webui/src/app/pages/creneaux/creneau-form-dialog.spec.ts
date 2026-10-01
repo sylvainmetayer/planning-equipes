@@ -16,13 +16,14 @@ import { JoursFeriesService } from '../../core/jours-feries.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { Creneau } from '../../core/models';
+import { Fake, fakeOf, provideFake } from '../../core/testing/fake';
 import { CreneauFormDialog } from './creneau-form-dialog';
 
 function monter(
   creneau: Creneau | null,
   options: { editingLocked?: boolean; saveOk?: boolean } = {},
 ) {
-  const save = vi.fn(async () => options.saveOk ?? true);
+  const crud = fakeOf<ReferenceCrudService>({ save: async () => options.saveOk ?? true });
   const close = vi.fn();
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
@@ -32,7 +33,7 @@ function monter(
         provide: SolverJobService,
         useValue: { editingLocked: signal(options.editingLocked ?? false) },
       },
-      { provide: ReferenceCrudService, useValue: { save } },
+      provideFake(ReferenceCrudService, crud),
       {
         provide: JoursFeriesService,
         useValue: {
@@ -44,7 +45,7 @@ function monter(
       { provide: MAT_DIALOG_DATA, useValue: { creneau } },
     ],
   });
-  return { fixture: TestBed.createComponent(CreneauFormDialog), save, close };
+  return { fixture: TestBed.createComponent(CreneauFormDialog), save: crud.save, close };
 }
 
 function racine(fixture: ComponentFixture<CreneauFormDialog>): HTMLElement {
@@ -65,9 +66,13 @@ function submit(fixture: ComponentFixture<CreneauFormDialog>): void {
   racine(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
 }
 
-/** Payload of the single `crud.save` call, as the service received it. */
-function payload(save: ReturnType<typeof vi.fn>): Partial<Creneau> {
-  return (save.mock.calls[0] as unknown as [string, Partial<Creneau>])[1];
+/**
+ * Payload of the single `crud.save` call, as the service received it. `save`
+ * is generic over its payload, so its recorded call holds the constraint
+ * `{ id? }`; this form only saves timeslots.
+ */
+function payload(save: Fake<ReferenceCrudService>['save']): Partial<Creneau> {
+  return save.mock.calls[0][1] as Partial<Creneau>;
 }
 
 const CRENEAU: Creneau = {
@@ -144,11 +149,7 @@ describe('CreneauFormDialog', () => {
       couverturePause: false,
       modifieLe: null,
     });
-    const [, , editingId] = save.mock.calls[0] as unknown as [
-      string,
-      Partial<Creneau>,
-      number | null,
-    ];
+    const [, , editingId] = save.mock.calls[0];
     expect(editingId).toBeNull();
     expect(close).toHaveBeenCalledWith(true);
   });
@@ -170,7 +171,7 @@ describe('CreneauFormDialog', () => {
       couverturePause: false,
       modifieLe: null,
     });
-    expect((save.mock.calls[0] as unknown as [string, unknown, number])[2]).toBe(7);
+    expect(save.mock.calls[0][2]).toBe(7);
   });
 
   it('keeps the dialog open when the save is refused', async () => {

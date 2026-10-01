@@ -118,7 +118,7 @@ async function setUp(
     await fixture.whenStable();
   }
   fixture.detectChanges();
-  const page = fixture.componentInstance as unknown as { setPeriod(value: string): void };
+  const page = fixture.componentInstance;
   return { fixture, page, replaceState, opened, element: fixture.nativeElement as HTMLElement };
 }
 
@@ -216,12 +216,12 @@ describe('RepartitionHeuresView', () => {
     expect(replaceState).toHaveBeenLastCalledWith('/journee?zoom=e%3APLACE');
 
     // The day of its period under a key of its own: `date` is the page's day.
-    page.setPeriod('d:2026-07-09');
+    page['setPeriod']('d:2026-07-09');
     await fixture.whenStable();
     fixture.detectChanges();
     expect(replaceState).toHaveBeenLastCalledWith('/journee?jourTreemap=2026-07-09');
 
-    page.setPeriod('all');
+    page['setPeriod']('all');
     await fixture.whenStable();
     fixture.detectChanges();
     expect(replaceState).toHaveBeenLastCalledWith('/journee');
@@ -231,13 +231,13 @@ describe('RepartitionHeuresView', () => {
     // A phone-width card: 240 × 144 px.
     vi.stubGlobal(
       'ResizeObserver',
-      class {
+      class implements ResizeObserver {
         constructor(private readonly callback: ResizeObserverCallback) {}
         observe(): void {
           queueMicrotask(() =>
             this.callback(
               [{ contentRect: { width: 240, height: 144 } } as ResizeObserverEntry],
-              this as unknown as ResizeObserver,
+              this,
             ),
           );
         }

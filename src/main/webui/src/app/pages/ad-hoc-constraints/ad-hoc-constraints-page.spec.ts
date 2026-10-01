@@ -11,6 +11,7 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { seedStore } from '../../core/testing/seed-store';
+import { AdHocConstraintFormDialog } from './ad-hoc-constraint-form-dialog';
 import { AdHocConstraintsPage } from './ad-hoc-constraints-page';
 
 function contrainte(id: string): ContrainteAdHoc {
@@ -161,12 +162,6 @@ describe('AdHocConstraintsPage', () => {
 
   /** `?ids=a,b`: the adjustments a problem named, side by side, until « Tout afficher ». */
   describe('the narrowing to the adjustments involved', () => {
-    type Internals = {
-      rows: () => ContrainteAdHoc[];
-      onlyIds: () => string[];
-      showAll: () => void;
-    };
-
     it('shows only the adjustments the URL names, and all of them once asked', async () => {
       await TestBed.inject(Router).navigateByUrl('/?ids=AH2,AH3');
       seedStore(referenceData, 'contraintes', [
@@ -176,23 +171,22 @@ describe('AdHocConstraintsPage', () => {
       ]);
       const fixture = TestBed.createComponent(AdHocConstraintsPage);
       await fixture.whenStable();
-      const page = fixture.componentInstance as unknown as Internals;
+      const page = fixture.componentInstance;
 
-      expect(page.rows().map((row) => row.id)).toEqual(['AH2', 'AH3']);
+      expect(page['rows']().map((row) => row.id)).toEqual(['AH2', 'AH3']);
       expect((fixture.nativeElement as HTMLElement).textContent).toContain('AH2, AH3');
 
-      page.showAll();
+      page['showAll']();
       await fixture.whenStable();
-      expect(page.rows().map((row) => row.id)).toEqual(['AH1', 'AH2', 'AH3']);
-      expect(page.onlyIds()).toEqual([]);
+      expect(page['rows']().map((row) => row.id)).toEqual(['AH1', 'AH2', 'AH3']);
+      expect(page['onlyIds']()).toEqual([]);
     });
 
     it('shows everything without the parameter', async () => {
       createPage([contrainte('AH1'), contrainte('AH2')]);
-      const page = TestBed.createComponent(AdHocConstraintsPage)
-        .componentInstance as unknown as Internals;
+      const page = TestBed.createComponent(AdHocConstraintsPage).componentInstance;
 
-      expect(page.rows()).toHaveLength(2);
+      expect(page['rows']()).toHaveLength(2);
     });
   });
 
@@ -204,11 +198,10 @@ describe('AdHocConstraintsPage', () => {
       await Promise.resolve();
 
       expect(dialog.open).toHaveBeenCalledOnce();
-      const [, config] = dialog.open.mock.calls[0] as unknown as [
-        unknown,
-        { data: { contrainte: ContrainteAdHoc } },
-      ];
-      expect(config.data.contrainte.id).toBe('AH2');
+      expect(dialog.open).toHaveBeenCalledWith(
+        AdHocConstraintFormDialog,
+        expect.objectContaining({ data: { contrainte: expect.objectContaining({ id: 'AH2' }) } }),
+      );
     });
 
     it('opens nothing for an adjustment the référentiel does not hold', async () => {

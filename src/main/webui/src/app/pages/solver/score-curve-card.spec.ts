@@ -2,20 +2,12 @@
 // and both are about not lying: whether the card is on screen at all, and
 // whether the curve on hand really describes the run being reported.
 
-import { provideZonelessChangeDetection, Signal, WritableSignal, signal } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ScorePoint, ScoreTrace } from '../../core/models';
+import { ScoreTrace } from '../../core/models';
 import { SolverJobService, TrackedJob } from '../../core/solver-job.service';
 import { SCORE_CURVE_STORAGE_KEY, ScoreCurveCard } from './score-curve-card';
-
-type CardInternals = {
-  trace: Signal<ScoreTrace | null>;
-  points: Signal<ScorePoint[]>;
-  visible: Signal<boolean>;
-  folded: WritableSignal<boolean>;
-  toggle: () => void;
-};
 
 function tracked(overrides: Partial<TrackedJob> = {}): TrackedJob {
   return {
@@ -42,8 +34,8 @@ const trace = (overrides: Partial<ScoreTrace> = {}): ScoreTrace => ({
   ...overrides,
 });
 
-function createCard(): CardInternals {
-  return TestBed.createComponent(ScoreCurveCard).componentInstance as unknown as CardInternals;
+function createCard(): ScoreCurveCard {
+  return TestBed.createComponent(ScoreCurveCard).componentInstance;
 }
 
 describe('ScoreCurveCard', () => {
@@ -74,8 +66,8 @@ describe('ScoreCurveCard', () => {
   it('shows nothing at all when no solve has ever run', () => {
     const card = createCard();
 
-    expect(card.visible()).toBe(false);
-    expect(card.trace()).toBeNull();
+    expect(card['visible']()).toBe(false);
+    expect(card['trace']()).toBeNull();
   });
 
   it('keeps the curve of the last run up once it is over', () => {
@@ -85,8 +77,8 @@ describe('ScoreCurveCard', () => {
     scoreTraceEdition.set(trace({ termine: true }));
     const card = createCard();
 
-    expect(card.visible()).toBe(true);
-    expect(card.points()).toHaveLength(1);
+    expect(card['visible']()).toBe(true);
+    expect(card['points']()).toHaveLength(1);
   });
 
   it('brings the card up as soon as a solve starts on this edition', () => {
@@ -96,8 +88,8 @@ describe('ScoreCurveCard', () => {
     editingLocked.set(true);
     const card = createCard();
 
-    expect(card.visible()).toBe(true);
-    expect(card.points()).toEqual([]);
+    expect(card['visible']()).toBe(true);
+    expect(card['points']()).toEqual([]);
   });
 
   it('drops the previous run’s curve the moment another job takes the solver', () => {
@@ -109,8 +101,8 @@ describe('ScoreCurveCard', () => {
     editingLocked.set(true);
     const card = createCard();
 
-    expect(card.trace()).toBeNull();
-    expect(card.visible()).toBe(true);
+    expect(card['trace']()).toBeNull();
+    expect(card['visible']()).toBe(true);
   });
 
   it('leaves the card out for a solve running on another edition', () => {
@@ -120,7 +112,7 @@ describe('ScoreCurveCard', () => {
     editingLocked.set(false);
     const card = createCard();
 
-    expect(card.visible()).toBe(false);
+    expect(card['visible']()).toBe(false);
   });
 
   it('reads the curve once when it appears', () => {
@@ -138,25 +130,25 @@ describe('ScoreCurveCard', () => {
   describe('folding it away', () => {
     it('starts unfolded, and remembers the fold across visits', () => {
       const card = createCard();
-      expect(card.folded()).toBe(false);
+      expect(card['folded']()).toBe(false);
 
-      card.toggle();
+      card['toggle']();
 
-      expect(card.folded()).toBe(true);
+      expect(card['folded']()).toBe(true);
       // Written where the drawer writes its own folded groups: a fold the
       // next visit forgets is a gesture to make again on every load.
       expect(localStorage.getItem(SCORE_CURVE_STORAGE_KEY)).toBe('true');
       // And a card rebuilt (a navigation, a reload) comes back folded.
-      expect(createCard().folded()).toBe(true);
+      expect(createCard()['folded']()).toBe(true);
     });
 
     it('unfolds again, and stops remembering', () => {
       localStorage.setItem(SCORE_CURVE_STORAGE_KEY, 'true');
       const card = createCard();
 
-      card.toggle();
+      card['toggle']();
 
-      expect(card.folded()).toBe(false);
+      expect(card['folded']()).toBe(false);
       expect(localStorage.getItem(SCORE_CURVE_STORAGE_KEY)).toBe('false');
     });
 
@@ -167,10 +159,10 @@ describe('ScoreCurveCard', () => {
       // history is the entire reason the curve exists.
       scoreTraceEdition.set(trace());
       const card = createCard();
-      card.toggle();
+      card['toggle']();
 
-      expect(card.points()).toHaveLength(1);
-      expect(card.visible()).toBe(true);
+      expect(card['points']()).toHaveLength(1);
+      expect(card['visible']()).toBe(true);
       // Points that landed while folded are held just the same.
       scoreTraceEdition.set(
         trace({
@@ -180,11 +172,11 @@ describe('ScoreCurveCard', () => {
           ],
         }),
       );
-      expect(card.points()).toHaveLength(2);
+      expect(card['points']()).toHaveLength(2);
 
-      card.toggle();
-      expect(card.folded()).toBe(false);
-      expect(card.points()).toHaveLength(2);
+      card['toggle']();
+      expect(card['folded']()).toBe(false);
+      expect(card['points']()).toHaveLength(2);
     });
   });
 });

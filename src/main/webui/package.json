@@ -32,6 +32,7 @@
     "table-headers-check": "node scripts/check-table-headers.js",
     "new-window-check": "node scripts/check-new-window-links.js",
     "stores-check": "node scripts/check-readonly-stores.js",
+    "unknown-casts-check": "node scripts/check-unknown-casts.js",
     "api-schema": "node scripts/refresh-api-schema.js",
     "licences": "node scripts/licences-tierces.js",
     "licences-check": "node scripts/licences-tierces.js --check",

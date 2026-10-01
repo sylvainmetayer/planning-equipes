@@ -368,6 +368,40 @@ test neuf démarre l'application, elle disparaît quand un test est converti, et
 annotations — en disant quelle ligne écrire. Il se lit donc comme la mesure de
 D4 : sa longueur est la dette, et elle ne peut que se voir.
 
+### Les specs du frontend
+
+Une spec de page teste l'**orchestration** — ce que la page demande à ses
+services, et ce qu'elle fait de la réponse — par des **faux services typés** :
+`core/testing/fake.ts` (`fakeOf`, `provideFake`) construit un faux d'une classe
+de `core/` (les `core/api/*`, les stores) avec les seules méthodes dont la spec
+a besoin, chacune typée sur la classe. On simule la méthode, plus l'URL, et
+`faux.methode.mock.calls[0]` est le tuple de ses paramètres : une méthode
+renommée ou un argument changé ne compile plus, là où un
+`as unknown as [string, Item]` restait vert. Un membre protégé du composant se
+lit `page['membre']`, vérifié par le compilateur. Le rendu Material n'est
+testé que là où il est le sujet (un libellé accessible, une erreur NG01352).
+
+`npm run unknown-casts-check` (job `frontend`) tient le compte des casts qui
+font taire le compilateur — `as unknown as`, `as any` et `as never`, une seule
+dette sous trois graphies, qu'aucune règle eslint ne tient dans une spec
+(`no-explicit-any` y est coupé) — de chaque spec contre
+`scripts/unknown-casts-baseline.json` :
+une spec au-dessus de sa ligne échoue, une spec en dessous aussi, pour que la
+référence soit abaissée — `npm run unknown-casts-check -- --update`, qui
+réécrit la baseline et refuse d'en relever le total. Une ligne peut monter
+seule tant que le total ne monte pas : une spec renommée ou déplacée, un test
+passé d'une spec à l'autre emporte ses casts, et l'ancien chemin se retrouve
+sous sa ligne quand le nouveau la dépasse — les casts ont changé de fichier,
+ils ne se sont pas multipliés. La vérification refuse ce déplacement tant que
+`--update` ne l'a pas enregistré, si bien qu'il passe toujours par un commit
+de la baseline. Le compte ne peut que baisser : 221 `as unknown as` à la mise
+en place du cliquet, 177 après la première réduction (les quatre specs qui en
+portaient le plus), 186 une fois comptés les 9 `as never` qu'il ne voyait pas
+(aucun `as any`), puis **zéro** : la baseline est vide, et une spec qui écrit
+un de ces transtypages fait échouer la CI. Les fixtures que ces transtypages
+masquaient (des types d'avertissement et un niveau de compétence qui
+n'existaient plus) ont été corrigées en chemin.
+
 **Un test de service neuf naît unitaire.** A1, A4 et A11 ont rendu les services
 constructibles sans conteneur — `new PlanningService(…)` avec
 `EmptyReferenceData`, comme le font `PlanningServicePlainTest`,

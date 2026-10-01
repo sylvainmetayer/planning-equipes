@@ -26,6 +26,7 @@ import { ConfirmService } from '../../shared/confirm-dialog';
 import { LegalDisableConfirmService } from './legal-disable-dialog';
 import { ReglesCalcul } from './regles-calcul';
 import { ReglesPage } from './regles-page';
+import { OngletRegles } from './regles';
 
 function rule(overrides: Partial<ConstraintView>): ConstraintView {
   return {
@@ -109,14 +110,6 @@ function catalogue(contraintes: ConstraintView[]): ConstraintsView {
     contraintes,
   };
 }
-
-type Internals = {
-  toggle: (constraint: ConstraintView, event: MatSlideToggleChange) => Promise<void>;
-  setImportance: (constraint: ConstraintView, importance: 'FAIBLE' | 'NORMALE' | 'FORTE') => void;
-  save: () => Promise<void>;
-  dirty: () => boolean;
-  onglet: () => string;
-};
 
 describe('ReglesPage', () => {
   let fixture: ComponentFixture<ReglesPage>;
@@ -203,8 +196,8 @@ describe('ReglesPage', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  function page(): Internals {
-    return fixture.componentInstance as unknown as Internals;
+  function page(): ReglesPage {
+    return fixture.componentInstance;
   }
 
   function rowNames(): string[] {
@@ -235,34 +228,43 @@ describe('ReglesPage', () => {
     champ.value = '44';
     champ.dispatchEvent(new Event('input'));
     await fixture.whenStable();
-    expect(page().dirty()).toBe(true);
+    expect(page()['dirty']()).toBe(true);
     expect(constraintsApi['saveLegalParameters']).not.toHaveBeenCalled();
 
-    await page().save();
+    await page()['save']();
 
     expect(constraintsApi['saveLegalParameters']).toHaveBeenCalledExactlyOnceWith({
       ...LEGAUX,
       heureDebutSoiree: '19:00',
       dureeHebdomadaireMaxMinutes: 44 * 60,
     });
-    expect(page().dirty()).toBe(false);
+    expect(page()['dirty']()).toBe(false);
   });
 
   it('keeps a protected rule on when the confirmation is refused', async () => {
-    const event = new MatSlideToggleChange({ checked: false } as unknown as MatSlideToggle, false);
+    // The switch of the rule's row, flipped off by the click the event reports.
+    const row = Array.from(racine().querySelectorAll('tbody tr')).find((each) =>
+      each.textContent?.includes('Durée hebdomadaire'),
+    );
+    const toggle = fixture.debugElement
+      .queryAll(By.directive(MatSlideToggle))
+      .find((each) => row?.contains(each.nativeElement as Node))!
+      .injector.get(MatSlideToggle);
+    toggle.checked = false;
+    const event = new MatSlideToggleChange(toggle, false);
 
-    await page().toggle(HEBDO, event);
+    await page()['toggle'](HEBDO, event);
 
     expect(allowsDisabling).toHaveBeenCalledOnce();
     expect(event.source.checked).toBe(true);
-    expect(page().dirty()).toBe(false);
+    expect(page()['dirty']()).toBe(false);
   });
 
   it('writes an importance only on « Enregistrer », as its weight', async () => {
-    page().setImportance(CHARGE, 'FORTE');
+    page()['setImportance'](CHARGE, 'FORTE');
     expect(constraintsApi['setWeight']).not.toHaveBeenCalled();
 
-    await page().save();
+    await page()['save']();
 
     expect(constraintsApi['setWeight']).toHaveBeenCalledExactlyOnceWith('equilibrerCharge', 25);
   });
@@ -270,7 +272,7 @@ describe('ReglesPage', () => {
   it('opens the panel of the rule the address names, on that rule’s tab', async () => {
     await rendre({ regle: 'equilibrerCharge' });
 
-    expect(page().onglet()).toBe('qualite');
+    expect(page()['onglet']()).toBe('qualite');
     expect(rowNames()).toEqual(['Charge équilibrée']);
     const panneau = racine().querySelector('.regles-panneau') as HTMLElement;
     expect(panneau.textContent).toContain('Charge équilibrée');
@@ -304,7 +306,7 @@ describe('ReglesPage', () => {
     await fixture.whenStable();
     expect(ligne.querySelector('.regles-personnalise')).toBeNull();
     expect(revenir.disabled).toBe(true);
-    await page().save();
+    await page()['save']();
 
     expect(constraintsApi['setWeight']).toHaveBeenCalledExactlyOnceWith('posteDoitEtrePourvu', 1);
   });
@@ -319,23 +321,20 @@ describe('ReglesPage', () => {
   });
 
   it('keeps what « Calcul » holds unsaved across a tab switch, and asks before leaving', async () => {
-    const changerOnglet = (onglet: string) =>
-      (page() as unknown as { changerOnglet: (value: string) => void }).changerOnglet(onglet);
+    const switchTab = (tab: OngletRegles) => page()['changerOnglet'](tab);
     expect(fixture.debugElement.query(By.directive(ReglesCalcul))).toBeNull();
-    changerOnglet('calcul');
+    switchTab('calcul');
     await fixture.whenStable();
     const calcul = () => fixture.debugElement.query(By.directive(ReglesCalcul));
     const before = calcul().componentInstance as ReglesCalcul;
-    (before as unknown as { soireeDraft: { set: (value: string) => void } }).soireeDraft.set(
-      '19:30',
-    );
+    before['soireeDraft'].set('19:30');
     await fixture.whenStable();
     expect(before.dirty()).toBe(true);
 
-    changerOnglet('legal');
+    switchTab('legal');
     await fixture.whenStable();
 
-    expect(page().onglet()).toBe('legal');
+    expect(page()['onglet']()).toBe('legal');
     expect(calcul().componentInstance).toBe(before);
     expect((calcul().nativeElement as HTMLElement).hidden).toBe(true);
     await fixture.componentInstance.canLeave();
@@ -346,7 +345,7 @@ describe('ReglesPage', () => {
     await expect(fixture.componentInstance.canLeave()).resolves.toBe(true);
     expect(ask).not.toHaveBeenCalled();
 
-    page().setImportance(CHARGE, 'FAIBLE');
+    page()['setImportance'](CHARGE, 'FAIBLE');
 
     await fixture.componentInstance.canLeave();
     expect(ask).toHaveBeenCalledOnce();

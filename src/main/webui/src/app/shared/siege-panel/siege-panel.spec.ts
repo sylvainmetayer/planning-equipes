@@ -24,10 +24,24 @@ import {
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { VerrouillageStore } from '../../core/verrouillage.store';
+import { fakeOf } from '../../core/testing/fake';
 import { ConfirmData, ConfirmOption, ConfirmService } from '../confirm-dialog';
 import { SeatPanel } from './siege-panel';
 
-const TIR = { id: 'tir', nom: 'Tir à l’arc', typologiesProposees: [] } as unknown as Stand;
+const TIR: Stand = {
+  id: 'tir',
+  nom: 'Tir à l’arc',
+  typologiesProposees: [],
+  effectifMin: 1,
+  effectifMax: 2,
+  reserveMajeurs: false,
+  premium: false,
+  niveauEffort: 'NORMAL',
+  emplacement: null,
+  indisponibilites: [],
+  ouvertures: [],
+  horaires: [],
+};
 const MATIN: Creneau = {
   id: 1,
   jour: 1,
@@ -43,7 +57,7 @@ function planning(): PlanningEvenement {
     { id: 'P1', stand: TIR, creneau: MATIN, animateur: alice },
     { id: 'P2', stand: TIR, creneau: MATIN, animateur: null },
   ];
-  return { postes, animateurs: [alice, bruno] } as unknown as PlanningEvenement;
+  return { postes, animateurs: [alice, bruno], score: null };
 }
 
 const ZERO = { hardScore: 0, mediumScore: 0, softScore: 0 };
@@ -59,15 +73,15 @@ describe('SeatPanel', () => {
   };
   const postesApi = { place: vi.fn(), explanation: vi.fn() };
   const jourJ = { suggestions: vi.fn(), marquerAbsent: vi.fn() };
-  const verrous = {
+  const verrous = fakeOf<VerrouillageStore>({
     verrouillages: locks,
-    reload: vi.fn(async () => undefined),
-    create: vi.fn(async () => []),
-    remove: vi.fn(async () => undefined),
+    reload: async () => undefined,
+    create: async () => [],
+    remove: async () => undefined,
     estStandVerrouille: () => false,
     estCreneauVerrouille: () => false,
     estJourVerrouille: () => false,
-  };
+  });
   const jobs = {
     editingLocked,
     solverBusy: signal(false),
@@ -312,8 +326,8 @@ describe('SeatPanel', () => {
 
   it('says what the server wants read about a lock it laid', async () => {
     verrous.create.mockResolvedValue([
-      { type: 'VERROU_SIEGE_EN_DEFAUT', message: 'Un siège gelé casse une règle dure.' },
-    ] as never);
+      { type: 'VERROUILLAGE_SUR_VIOLATION_DURE', message: 'Un siège gelé casse une règle dure.' },
+    ]);
     const root = await mount('P1');
 
     button(root, 'Verrouiller').click();

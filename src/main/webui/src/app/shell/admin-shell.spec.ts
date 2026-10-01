@@ -9,7 +9,7 @@
 
 import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { provideZonelessChangeDetection, Signal, WritableSignal, signal } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { BRANDING, BRANDING_NEUTRE } from '../core/branding';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
@@ -34,39 +34,12 @@ import {
 import { memoryStorage } from '../core/testing/brouillon';
 import { SESSION_END_BUS, SessionEndBus } from '../core/session-end';
 import { AdminShell } from './admin-shell';
+import { NavGroup } from './nav-groups';
 import { GelInvitation } from '../core/gel-invitation';
 
 const NAV_STORAGE_KEY = 'planning-equipes.nav.collapsedGroups';
 const THEME_STORAGE_KEY = 'planning-equipes.theme';
 const NEWS_STORAGE_KEY = 'planning-equipes.nouveautes.vues';
-
-interface NavGroupShape {
-  id: string;
-  title: string;
-  links: { path: string; label: string }[];
-}
-
-/** Reaches the protected members the template binds to. */
-type ShellInternals = {
-  navGroups: NavGroupShape[];
-  drawerMode: Signal<'over' | 'side'>;
-  drawerOpen: WritableSignal<boolean>;
-  collapsedGroups: Signal<ReadonlySet<string>>;
-  allCollapsed: Signal<boolean>;
-  hasUnreadAlert: Signal<boolean>;
-  notificationBadgeContent: Signal<string>;
-  notificationBadgeDescription: Signal<string>;
-  toggleDrawer: () => void;
-  isCollapsed: (group: NavGroupShape) => boolean;
-  toggleGroup: (group: NavGroupShape) => void;
-  toggleAllGroups: () => void;
-  onNavigate: () => void;
-  themeIcon: Signal<string>;
-  themeLabel: Signal<string>;
-  toggleTheme: () => void;
-  focusContenu: (event: Event) => void;
-  logout: () => Promise<void>;
-};
 
 // A router navigation swaps the content but leaves the focus on the link
 // that was clicked: without this a keyboard user tabs back through the
@@ -264,8 +237,8 @@ describe('AdminShell', () => {
     document.documentElement.style.colorScheme = '';
   });
 
-  function createShell(): ShellInternals {
-    return createFixture().componentInstance as unknown as ShellInternals;
+  function createShell(): AdminShell {
+    return createFixture().componentInstance;
   }
 
   function createFixture(): ComponentFixture<AdminShell> {
@@ -388,14 +361,14 @@ describe('AdminShell', () => {
     it('docks on a large screen and overlays on a small one', () => {
       const shell = createShell();
 
-      expect(shell.drawerMode()).toBe('side');
-      expect(shell.drawerOpen()).toBe(true);
+      expect(shell['drawerMode']()).toBe('side');
+      expect(shell['drawerOpen']()).toBe(true);
 
       handset.next({ matches: true });
       TestBed.tick();
 
-      expect(shell.drawerMode()).toBe('over');
-      expect(shell.drawerOpen()).toBe(false);
+      expect(shell['drawerMode']()).toBe('over');
+      expect(shell['drawerOpen']()).toBe(false);
     });
 
     // `linkedSignal`, not an `effect` writing a signal: derived until written,
@@ -403,16 +376,16 @@ describe('AdminShell', () => {
     it('stays user-controllable, and is reset by the next breakpoint change', () => {
       const shell = createShell();
 
-      shell.toggleDrawer();
-      expect(shell.drawerOpen()).toBe(false);
+      shell['toggleDrawer']();
+      expect(shell['drawerOpen']()).toBe(false);
 
       handset.next({ matches: true });
       TestBed.tick();
-      expect(shell.drawerOpen()).toBe(false);
+      expect(shell['drawerOpen']()).toBe(false);
 
       handset.next({ matches: false });
       TestBed.tick();
-      expect(shell.drawerOpen()).toBe(true);
+      expect(shell['drawerOpen']()).toBe(true);
     });
 
     /*
@@ -428,10 +401,10 @@ describe('AdminShell', () => {
       TestBed.tick();
       expect(snackBar.dismiss).not.toHaveBeenCalled();
 
-      shell.toggleDrawer();
+      shell['toggleDrawer']();
       TestBed.tick();
 
-      expect(shell.drawerOpen()).toBe(true);
+      expect(shell['drawerOpen']()).toBe(true);
       expect(snackBar.dismiss).toHaveBeenCalled();
     });
 
@@ -441,7 +414,7 @@ describe('AdminShell', () => {
     it('leaves the snackbar alone while the drawer is docked', () => {
       const shell = createShell();
 
-      expect(shell.drawerOpen()).toBe(true);
+      expect(shell['drawerOpen']()).toBe(true);
       expect(snackBar.dismiss).not.toHaveBeenCalled();
     });
 
@@ -449,19 +422,19 @@ describe('AdminShell', () => {
       const shell = createShell();
       handset.next({ matches: true });
       TestBed.tick();
-      shell.drawerOpen.set(true);
+      shell['drawerOpen'].set(true);
 
-      shell.onNavigate();
+      shell['onNavigate']();
 
-      expect(shell.drawerOpen()).toBe(false);
+      expect(shell['drawerOpen']()).toBe(false);
     });
 
     it('stays open after navigating on a large screen', () => {
       const shell = createShell();
 
-      shell.onNavigate();
+      shell['onNavigate']();
 
-      expect(shell.drawerOpen()).toBe(true);
+      expect(shell['drawerOpen']()).toBe(true);
     });
   });
 
@@ -469,21 +442,21 @@ describe('AdminShell', () => {
     it('starts with every group open', () => {
       const shell = createShell();
 
-      expect(shell.collapsedGroups().size).toBe(0);
-      expect(shell.allCollapsed()).toBe(false);
-      expect(shell.isCollapsed(shell.navGroups[0])).toBe(false);
+      expect(shell['collapsedGroups']().size).toBe(0);
+      expect(shell['allCollapsed']()).toBe(false);
+      expect(shell['isCollapsed'](shell['navGroups'][0])).toBe(false);
     });
 
     it('folds and unfolds one group, and remembers it across visits', () => {
       const shell = createShell();
-      const group = shell.navGroups[0];
+      const group = shell['navGroups'][0];
 
-      shell.toggleGroup(group);
-      expect(shell.isCollapsed(group)).toBe(true);
+      shell['toggleGroup'](group);
+      expect(shell['isCollapsed'](group)).toBe(true);
       expect(JSON.parse(localStorage.getItem(NAV_STORAGE_KEY) ?? '[]')).toEqual([group.id]);
 
-      shell.toggleGroup(group);
-      expect(shell.isCollapsed(group)).toBe(false);
+      shell['toggleGroup'](group);
+      expect(shell['isCollapsed'](group)).toBe(false);
       expect(JSON.parse(localStorage.getItem(NAV_STORAGE_KEY) ?? '[]')).toEqual([]);
     });
 
@@ -494,62 +467,62 @@ describe('AdminShell', () => {
 
       const shell = createShell();
 
-      expect(shell.collapsedGroups()).toEqual(new Set(['preparer']));
+      expect(shell['collapsedGroups']()).toEqual(new Set(['preparer']));
     });
 
     it('folds every group at once, and unfolds them all on the second press', () => {
       const shell = createShell();
 
-      shell.toggleAllGroups();
-      expect(shell.allCollapsed()).toBe(true);
-      expect(shell.collapsedGroups().size).toBe(shell.navGroups.length);
+      shell['toggleAllGroups']();
+      expect(shell['allCollapsed']()).toBe(true);
+      expect(shell['collapsedGroups']().size).toBe(shell['navGroups'].length);
 
-      shell.toggleAllGroups();
-      expect(shell.allCollapsed()).toBe(false);
-      expect(shell.collapsedGroups().size).toBe(0);
+      shell['toggleAllGroups']();
+      expect(shell['allCollapsed']()).toBe(false);
+      expect(shell['collapsedGroups']().size).toBe(0);
     });
 
     // One group still open means the control must still read "fold them all",
     // however many of the others are already folded.
     it('is not "all folded" while a single group is still open', () => {
       const shell = createShell();
-      for (const group of shell.navGroups.slice(0, -1)) {
-        shell.toggleGroup(group);
+      for (const group of shell['navGroups'].slice(0, -1)) {
+        shell['toggleGroup'](group);
       }
 
-      expect(shell.allCollapsed()).toBe(false);
+      expect(shell['allCollapsed']()).toBe(false);
 
-      shell.toggleAllGroups();
+      shell['toggleAllGroups']();
 
-      expect(shell.allCollapsed()).toBe(true);
-      expect(shell.collapsedGroups().size).toBe(shell.navGroups.length);
+      expect(shell['allCollapsed']()).toBe(true);
+      expect(shell['collapsedGroups']().size).toBe(shell['navGroups'].length);
     });
 
     it('persists the fold-all as well', () => {
       const shell = createShell();
 
-      shell.toggleAllGroups();
+      shell['toggleAllGroups']();
 
       expect(JSON.parse(localStorage.getItem(NAV_STORAGE_KEY) ?? '[]')).toHaveLength(
-        shell.navGroups.length,
+        shell['navGroups'].length,
       );
     });
   });
 
   describe('the one menu', () => {
-    const paths = (groups: NavGroupShape[]): string[] =>
+    const paths = (groups: NavGroup[]): string[] =>
       groups.flatMap((group) => group.links.map((link) => link.path));
 
     // #709: no mode hides a step of the cycle any more; the drawer is the
     // same for everybody, and a screen that is rare goes down its group.
     it('renders every entry of every group, with no mode toggle', () => {
       const fixture = createFixture();
-      const shell = fixture.componentInstance as unknown as ShellInternals;
+      const shell = fixture.componentInstance;
       const rendered = Array.from(
         (fixture.nativeElement as HTMLElement).querySelectorAll('nav a[mat-list-item]'),
       ).map((anchor) => anchor.getAttribute('href'));
 
-      expect(rendered).toEqual(paths(shell.navGroups));
+      expect(rendered).toEqual(paths(shell['navGroups']));
       expect(fixture.nativeElement.textContent).not.toContain('Menu simple');
       expect(fixture.nativeElement.textContent).not.toContain('Menu avancé');
     });
@@ -647,9 +620,9 @@ describe('AdminShell', () => {
       const shell = createShell();
       TestBed.inject(NotificationService).push('info', 'Résolution terminée');
 
-      expect(shell.hasUnreadAlert()).toBe(false);
-      expect(shell.notificationBadgeContent()).toBe('1');
-      expect(shell.notificationBadgeDescription()).toContain('1');
+      expect(shell['hasUnreadAlert']()).toBe(false);
+      expect(shell['notificationBadgeContent']()).toBe('1');
+      expect(shell['notificationBadgeDescription']()).toContain('1');
     });
 
     // The count is replaced, not merely coloured: a warning glyph is what makes
@@ -658,9 +631,9 @@ describe('AdminShell', () => {
       const shell = createShell();
       pushAlert();
 
-      expect(shell.hasUnreadAlert()).toBe(true);
-      expect(shell.notificationBadgeContent()).toBe('⚠');
-      expect(shell.notificationBadgeDescription()).toContain('Alerte');
+      expect(shell['hasUnreadAlert']()).toBe(true);
+      expect(shell['notificationBadgeContent']()).toBe('⚠');
+      expect(shell['notificationBadgeDescription']()).toContain('Alerte');
     });
 
     /** Already on `/#a-traiter`, the router goes nowhere: the shell scrolls the section back itself. */
@@ -692,8 +665,8 @@ describe('AdminShell', () => {
       const shell = createShell();
       pushAlert(true);
 
-      expect(shell.hasUnreadAlert()).toBe(false);
-      expect(shell.notificationBadgeContent()).toBe('0');
+      expect(shell['hasUnreadAlert']()).toBe(false);
+      expect(shell['notificationBadgeContent']()).toBe('0');
     });
   });
 
@@ -814,8 +787,8 @@ describe('AdminShell', () => {
     it('lists every group with a stable id and at least one link', () => {
       const shell = createShell();
 
-      expect(shell.navGroups.length).toBeGreaterThan(0);
-      for (const group of shell.navGroups) {
+      expect(shell['navGroups'].length).toBeGreaterThan(0);
+      for (const group of shell['navGroups']) {
         expect(group.id).not.toBe('');
         expect(group.links.length).toBeGreaterThan(0);
       }
@@ -824,14 +797,14 @@ describe('AdminShell', () => {
     it('gives every group a distinct id, or folding one would fold another', () => {
       const shell = createShell();
 
-      const ids = shell.navGroups.map((group) => group.id);
+      const ids = shell['navGroups'].map((group) => group.id);
       expect(new Set(ids).size).toBe(ids.length);
     });
 
     it('routes every internal link to a distinct path', () => {
       const shell = createShell();
 
-      const paths = shell.navGroups.flatMap((group) => group.links.map((link) => link.path));
+      const paths = shell['navGroups'].flatMap((group) => group.links.map((link) => link.path));
       expect(new Set(paths).size).toBe(paths.length);
     });
   });
@@ -846,26 +819,26 @@ describe('AdminShell', () => {
     it('cycles système → clair → sombre and says so', () => {
       const shell = createShell();
 
-      expect(shell.themeIcon()).toBe('light_mode');
-      expect(shell.themeLabel()).toContain('automatique');
+      expect(shell['themeIcon']()).toBe('light_mode');
+      expect(shell['themeLabel']()).toContain('automatique');
       expect(autoMarker(fixture)).not.toBeNull();
 
-      shell.toggleTheme();
+      shell['toggleTheme']();
       TestBed.tick();
-      expect(shell.themeIcon()).toBe('light_mode');
-      expect(shell.themeLabel()).toContain('clair');
+      expect(shell['themeIcon']()).toBe('light_mode');
+      expect(shell['themeLabel']()).toContain('clair');
       expect(autoMarker(fixture)).toBeNull();
 
-      shell.toggleTheme();
+      shell['toggleTheme']();
       TestBed.tick();
-      expect(shell.themeIcon()).toBe('dark_mode');
-      expect(shell.themeLabel()).toContain('sombre');
+      expect(shell['themeIcon']()).toBe('dark_mode');
+      expect(shell['themeLabel']()).toContain('sombre');
       expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
       expect(autoMarker(fixture)).toBeNull();
 
-      shell.toggleTheme();
+      shell['toggleTheme']();
       TestBed.tick();
-      expect(shell.themeIcon()).toBe('light_mode');
+      expect(shell['themeIcon']()).toBe('light_mode');
       expect(autoMarker(fixture)).not.toBeNull();
     });
 
@@ -877,13 +850,13 @@ describe('AdminShell', () => {
       const media = stubMachineScheme(false);
       const shell = createShell();
 
-      expect(shell.themeIcon()).toBe('light_mode');
+      expect(shell['themeIcon']()).toBe('light_mode');
 
       media.emit(true);
       TestBed.tick();
 
-      expect(shell.themeIcon()).toBe('dark_mode');
-      expect(shell.themeLabel()).toContain('automatique');
+      expect(shell['themeIcon']()).toBe('dark_mode');
+      expect(shell['themeLabel']()).toContain('automatique');
       expect(autoMarker(fixture)).not.toBeNull();
     });
 
@@ -891,13 +864,13 @@ describe('AdminShell', () => {
     it('ignores the machine once a scheme has been chosen', () => {
       const media = stubMachineScheme(false);
       const shell = createShell();
-      shell.toggleTheme();
+      shell['toggleTheme']();
       TestBed.tick();
 
       media.emit(true);
       TestBed.tick();
 
-      expect(shell.themeIcon()).toBe('light_mode');
+      expect(shell['themeIcon']()).toBe('light_mode');
       expect(autoMarker(fixture)).toBeNull();
     });
 
@@ -907,7 +880,7 @@ describe('AdminShell', () => {
     it('announces the new scheme', () => {
       const shell = createShell();
 
-      shell.toggleTheme();
+      shell['toggleTheme']();
 
       expect(announcer.announce).toHaveBeenCalledWith(expect.stringContaining('clair'), 'polite');
     });
@@ -918,10 +891,10 @@ describe('AdminShell', () => {
     // shell preloaded, so nothing keeps polling behind the login page.
     it('drops the session cookie, then leaves for /login', async () => {
       const assign = vi.fn();
-      vi.spyOn(window, 'location', 'get').mockReturnValue({ assign } as unknown as Location);
+      vi.spyOn(window, 'location', 'get').mockReturnValue({ ...window.location, assign });
       const shell = createShell();
 
-      await shell.logout();
+      await shell['logout']();
 
       expect(adminApi.logout).toHaveBeenCalledOnce();
       expect(assign).toHaveBeenCalledExactlyOnceWith('/login');
@@ -932,11 +905,11 @@ describe('AdminShell', () => {
     // worse than leaving anyway.
     it('leaves even when the server refuses the logout', async () => {
       const assign = vi.fn();
-      vi.spyOn(window, 'location', 'get').mockReturnValue({ assign } as unknown as Location);
+      vi.spyOn(window, 'location', 'get').mockReturnValue({ ...window.location, assign });
       adminApi.logout.mockRejectedValue(new Error('Serveur indisponible.'));
       const shell = createShell();
 
-      await expect(shell.logout()).rejects.toThrow();
+      await expect(shell['logout']()).rejects.toThrow();
 
       expect(assign).toHaveBeenCalledExactlyOnceWith('/login');
       vi.restoreAllMocks();
@@ -967,13 +940,13 @@ describe('AdminShell', () => {
     // previous one's entries — nor, for a fiche animateur, read them.
     it('drops every one of them at logout, whatever the edition', async () => {
       const assign = vi.fn();
-      vi.spyOn(window, 'location', 'get').mockReturnValue({ assign } as unknown as Location);
+      vi.spyOn(window, 'location', 'get').mockReturnValue({ ...window.location, assign });
       const { local, session } = storages();
       const shell = createShell();
       writeDraft(local, 'planning-equipes.brouillon.consigne.ed-2#nouveau', {}, null);
       writeDraft(session, 'planning-equipes.brouillon.animateur.ed-1#a1', {}, null);
 
-      await shell.logout();
+      await shell['logout']();
 
       expect([...local.entries.keys()]).toEqual(['planning-equipes.editionId']);
       expect(session.length).toBe(0);

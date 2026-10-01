@@ -8,7 +8,7 @@
 // is pinned here is the glue the five reference pages repeat, not the CRUD
 // service underneath (`reference-crud.service.spec.ts` owns that).
 
-import { provideZonelessChangeDetection, signal, Signal } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
@@ -21,7 +21,6 @@ import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
-import { TableSelection } from '../../core/table-selection';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { CauseInfaisabilite, Emplacement, EtatGel, Stand } from '../../core/models';
 import { StandsPage } from './stands-page';
@@ -51,27 +50,6 @@ function stand(overrides: Partial<Stand> & { id: string }): Stand {
 function emplacement(id: string, nom: string): Emplacement {
   return { id, nom, latitude: null, longitude: null };
 }
-
-/** One recurring rule holding `fenetres` windows — a rule is one row, not `fenetres` rows. */
-/** Reaches the protected members the template binds to. */
-type PageInternals = {
-  columns: Signal<string[]>;
-  filtre: { set: (value: string) => void };
-  standsFiltres: Signal<Stand[]>;
-  selection: TableSelection<string>;
-  compactageEnCours: Signal<boolean>;
-  editingLocked: Signal<boolean>;
-  typologiesOf: (stand: Stand) => { id: string; label: string }[];
-  effectifSuffix: (stand: Stand) => string;
-  emplacementLabel: (stand: Stand) => string;
-  ouvertLabel: (stand: Stand) => string;
-  compacterHoraires: () => Promise<void>;
-  remove: (stand: Stand) => Promise<void>;
-  removeSelection: () => Promise<void>;
-  editSelection: () => void;
-  openCreate: () => void;
-  edit: (stand: Stand) => void;
-};
 
 /** The page reads the snapshot of the route it is created under: navigate first, create after. */
 async function arriveWith(edit: string): Promise<void> {
@@ -147,9 +125,9 @@ describe('StandsPage', () => {
     referenceData = TestBed.inject(ReferenceDataStore);
   });
 
-  function createPage(stands: Stand[] = []): PageInternals {
+  function createPage(stands: Stand[] = []): StandsPage {
     seedStore(referenceData, 'stands', stands);
-    return TestBed.createComponent(StandsPage).componentInstance as unknown as PageInternals;
+    return TestBed.createComponent(StandsPage).componentInstance;
   }
 
   /**
@@ -167,16 +145,12 @@ describe('StandsPage', () => {
 
   it('leaves the filter and the sort of a link to the Lieux tab to the Lieux table', async () => {
     await TestBed.inject(Router).navigateByUrl('/?onglet=lieux&q=Hall&sort=nom&dir=asc');
-    const page = createPage([stand({ id: 'S1', nom: 'Hall des jeux' })]) as unknown as {
-      onglet: Signal<string>;
-      filtre: Signal<string>;
-      sort: Signal<{ active: string; direction: string }>;
-    };
+    const page = createPage([stand({ id: 'S1', nom: 'Hall des jeux' })]);
 
-    expect(page.onglet()).toBe('lieux');
+    expect(page['onglet']()).toBe('lieux');
     // Coming back to the stands shows them all, in the order of their ids.
-    expect(page.filtre()).toBe('');
-    expect(page.sort().active).toBe('');
+    expect(page['filtre']()).toBe('');
+    expect(page['sort']().active).toBe('');
   });
 
   // A location of the « Lieu » column, or the palette's « Stands › Lieux »:
@@ -184,24 +158,19 @@ describe('StandsPage', () => {
   it('follows a navigation to the Lieux tab and back while the page is on screen', async () => {
     const router = TestBed.inject(Router);
     await router.navigateByUrl('/?sort=nom&dir=asc');
-    const page = createPage([stand({ id: 'S1', nom: 'Hall des jeux' })]) as unknown as {
-      onglet: Signal<string>;
-      filtre: Signal<string>;
-      sort: Signal<{ active: string; direction: string }>;
-      emplacementFilter: Signal<string>;
-    };
-    expect(page.onglet()).toBe('stands');
-    expect(page.sort().active).toBe('nom');
+    const page = createPage([stand({ id: 'S1', nom: 'Hall des jeux' })]);
+    expect(page['onglet']()).toBe('stands');
+    expect(page['sort']().active).toBe('nom');
 
     await router.navigateByUrl('/?onglet=lieux&q=Hall');
-    expect(page.onglet()).toBe('lieux');
-    expect(page.filtre()).toBe('');
-    expect(page.sort().active).toBe('');
+    expect(page['onglet']()).toBe('lieux');
+    expect(page['filtre']()).toBe('');
+    expect(page['sort']().active).toBe('');
 
     await router.navigateByUrl('/?emplacement=L1&q=jeux');
-    expect(page.onglet()).toBe('stands');
-    expect(page.emplacementFilter()).toBe('L1');
-    expect(page.filtre()).toBe('jeux');
+    expect(page['onglet']()).toBe('stands');
+    expect(page['emplacementFilter']()).toBe('L1');
+    expect(page['filtre']()).toBe('jeux');
   });
 
   /** `?ids=`: the rows an import just wrote, opened by « Voir les N lignes importées ». */
@@ -218,11 +187,11 @@ describe('StandsPage', () => {
         stand({ id: 'S3', nom: 'Magie' }),
       ]);
       const fixture = TestBed.createComponent(StandsPage);
-      const page = fixture.componentInstance as unknown as { standsFiltres: () => Stand[] };
+      const page = fixture.componentInstance;
       await fixture.whenStable();
       const element = fixture.nativeElement as HTMLElement;
 
-      expect(page.standsFiltres().map((each) => each.id)).toEqual(['S1', 'S3']);
+      expect(page['standsFiltres']().map((each) => each.id)).toEqual(['S1', 'S3']);
       expect(element.textContent).toContain('Filtre : lignes importées (2)');
 
       Array.from(element.querySelectorAll('button'))
@@ -230,7 +199,7 @@ describe('StandsPage', () => {
         .click();
       await fixture.whenStable();
 
-      expect(page.standsFiltres()).toHaveLength(3);
+      expect(page['standsFiltres']()).toHaveLength(3);
       expect(element.textContent).not.toContain('lignes importées');
     });
   });
@@ -246,7 +215,7 @@ describe('StandsPage', () => {
       const page = createPage([stand({ id: 'tir' }), stand({ id: 'quilles' })]);
 
       // The ids in their natural order, by default.
-      expect(page.standsFiltres().map((row) => row.id)).toEqual(['quilles', 'tir']);
+      expect(page['standsFiltres']().map((row) => row.id)).toEqual(['quilles', 'tir']);
     });
 
     it('matches on the id and on the name', () => {
@@ -255,11 +224,11 @@ describe('StandsPage', () => {
         stand({ id: 'quilles', nom: 'Molkky' }),
       ]);
 
-      page.filtre.set('molkky');
-      expect(page.standsFiltres().map((row) => row.id)).toEqual(['quilles']);
+      page['filtre'].set('molkky');
+      expect(page['standsFiltres']().map((row) => row.id)).toEqual(['quilles']);
 
-      page.filtre.set('tir');
-      expect(page.standsFiltres().map((row) => row.id)).toEqual(['tir']);
+      page['filtre'].set('tir');
+      expect(page['standsFiltres']().map((row) => row.id)).toEqual(['tir']);
     });
 
     it('matches on a proposed typologie', () => {
@@ -268,9 +237,9 @@ describe('StandsPage', () => {
         stand({ id: 'quilles', typologiesProposees: ['STRATEGIE'] }),
       ]);
 
-      page.filtre.set('strategie');
+      page['filtre'].set('strategie');
 
-      expect(page.standsFiltres().map((row) => row.id)).toEqual(['quilles']);
+      expect(page['standsFiltres']().map((row) => row.id)).toEqual(['quilles']);
     });
 
     it('matches on the emplacement name and id', () => {
@@ -279,17 +248,17 @@ describe('StandsPage', () => {
         stand({ id: 'quilles', emplacement: emplacement('halle', 'Halle') }),
       ]);
 
-      page.filtre.set('prairie');
+      page['filtre'].set('prairie');
 
-      expect(page.standsFiltres().map((row) => row.id)).toEqual(['tir']);
+      expect(page['standsFiltres']().map((row) => row.id)).toEqual(['tir']);
     });
 
     it('shows nothing rather than everything when nothing matches', () => {
       const page = createPage([stand({ id: 'tir' })]);
 
-      page.filtre.set('introuvable');
+      page['filtre'].set('introuvable');
 
-      expect(page.standsFiltres()).toEqual([]);
+      expect(page['standsFiltres']()).toEqual([]);
     });
   });
 
@@ -301,9 +270,9 @@ describe('StandsPage', () => {
         stand({ id: 'palet' }),
       ]);
 
-      page.selection.toggle('tir');
-      page.selection.toggle('palet');
-      await page.removeSelection();
+      page['selection'].toggle('tir');
+      page['selection'].toggle('palet');
+      await page['removeSelection']();
 
       expect(crud.removeMany).toHaveBeenCalledWith('stands', ['palet', 'tir'], expect.anything());
     });
@@ -312,11 +281,11 @@ describe('StandsPage', () => {
     // stop weighing on the selection.
     it('forgets a stand deleted in the meantime', () => {
       const page = createPage([stand({ id: 'tir' }), stand({ id: 'quilles' })]);
-      page.selection.toggleAll();
+      page['selection'].toggleAll();
 
       seedStore(referenceData, 'stands', [stand({ id: 'quilles' })]);
 
-      expect(page.selection.selectedIds()).toEqual(['quilles']);
+      expect(page['selection'].selectedIds()).toEqual(['quilles']);
     });
 
     // "Tout sélectionner" must follow what the table shows, not the whole
@@ -324,17 +293,17 @@ describe('StandsPage', () => {
     it('narrows select-all to the filtered rows', () => {
       const page = createPage([stand({ id: 'tir' }), stand({ id: 'quilles' })]);
 
-      page.filtre.set('tir');
-      page.selection.toggleAll();
+      page['filtre'].set('tir');
+      page['selection'].toggleAll();
 
-      expect(page.selection.selectedIds()).toEqual(['tir']);
+      expect(page['selection'].selectedIds()).toEqual(['tir']);
     });
 
     it('hands the bulk-edit dialog exactly the selected stands', () => {
       const page = createPage([stand({ id: 'tir' }), stand({ id: 'quilles' })]);
 
-      page.selection.toggle('quilles');
-      page.editSelection();
+      page['selection'].toggle('quilles');
+      page['editSelection']();
 
       expect(dialog.open).toHaveBeenCalledWith(
         expect.anything(),
@@ -345,7 +314,7 @@ describe('StandsPage', () => {
     it('deletes a single row on its own, without touching the selection', async () => {
       const page = createPage([stand({ id: 'tir' })]);
 
-      await page.remove(stand({ id: 'tir', nom: "Tir à l'arc" }));
+      await page['remove'](stand({ id: 'tir', nom: "Tir à l'arc" }));
 
       expect(crud.remove).toHaveBeenCalledWith('stands', 'tir', expect.anything(), {
         name: { text: "Tir à l'arc" },
@@ -358,8 +327,8 @@ describe('StandsPage', () => {
     it('renders a dash rather than an empty cell for a stand without typologie or emplacement', () => {
       const page = createPage();
 
-      expect(page.typologiesOf(stand({ id: 'tir' }))).toEqual([]);
-      expect(page.emplacementLabel(stand({ id: 'tir' }))).toBe('—');
+      expect(page['typologiesOf'](stand({ id: 'tir' }))).toEqual([]);
+      expect(page['emplacementLabel'](stand({ id: 'tir' }))).toBe('—');
     });
 
     it('lists the typologies of a stand by label, comma separated', () => {
@@ -371,9 +340,9 @@ describe('StandsPage', () => {
       const page = createPage();
 
       expect(
-        page
-          .typologiesOf(stand({ id: 'tir', typologiesProposees: ['T1', 'T2'] }))
-          .map((typologie) => typologie.label),
+        page['typologiesOf'](stand({ id: 'tir', typologiesProposees: ['T1', 'T2'] })).map(
+          (typologie) => typologie.label,
+        ),
       ).toEqual(["Jeux d'ambiance", 'Stratégie']);
     });
 
@@ -386,16 +355,16 @@ describe('StandsPage', () => {
         stand({ id: 'S2', typologiesProposees: [] }),
       ]);
 
-      page.filtre.set('ambiance');
+      page['filtre'].set('ambiance');
 
-      expect(page.standsFiltres().map((row) => row.id)).toEqual(['S1']);
+      expect(page['standsFiltres']().map((row) => row.id)).toEqual(['S1']);
     });
 
     it('names the emplacement of a stand', () => {
       const page = createPage();
 
       expect(
-        page.emplacementLabel(
+        page['emplacementLabel'](
           stand({ id: 'tir', emplacement: emplacement('prairie', 'Grande prairie') }),
         ),
       ).toBe('Grande prairie');
@@ -404,13 +373,13 @@ describe('StandsPage', () => {
     it('carries no suffix on a plain stand', () => {
       const page = createPage();
 
-      expect(page.effectifSuffix(stand({ id: 'tir' }))).toBe('');
+      expect(page['effectifSuffix'](stand({ id: 'tir' }))).toBe('');
     });
 
     it('accumulates the adults-only, premium and exhausting markers', () => {
       const page = createPage();
 
-      const suffix = page.effectifSuffix(
+      const suffix = page['effectifSuffix'](
         stand({ id: 'tir', reserveMajeurs: true, premium: true, niveauEffort: 'EPUISANT' }),
       );
 
@@ -422,7 +391,7 @@ describe('StandsPage', () => {
     it('marks only what the stand actually is', () => {
       const page = createPage();
 
-      const suffix = page.effectifSuffix(stand({ id: 'tir', premium: true }));
+      const suffix = page['effectifSuffix'](stand({ id: 'tir', premium: true }));
 
       expect(suffix).toContain('premium');
       expect(suffix).not.toContain('majeurs');
@@ -433,7 +402,7 @@ describe('StandsPage', () => {
     it('counts the open days and the seats of a stand, a dash before the report is in', () => {
       const page = createPage();
 
-      expect(page.ouvertLabel(stand({ id: 'tir' }))).toBe('—');
+      expect(page['ouvertLabel'](stand({ id: 'tir' }))).toBe('—');
     });
   });
 
@@ -446,7 +415,7 @@ describe('StandsPage', () => {
         fenetresApres: 0,
       });
 
-      await page.compacterHoraires();
+      await page['compacterHoraires']();
 
       expect(standsApi.compactSchedules).toHaveBeenCalledExactlyOnceWith(false);
       expect(confirm.ask).not.toHaveBeenCalled();
@@ -464,7 +433,7 @@ describe('StandsPage', () => {
       });
       confirm.ask.mockResolvedValue(false);
 
-      await page.compacterHoraires();
+      await page['compacterHoraires']();
 
       expect(confirm.ask).toHaveBeenCalledWith(
         expect.objectContaining({ message: expect.stringContaining('24') }),
@@ -482,7 +451,7 @@ describe('StandsPage', () => {
       });
       crud.reload.mockClear();
 
-      await page.compacterHoraires();
+      await page['compacterHoraires']();
 
       expect(standsApi.compactSchedules).toHaveBeenLastCalledWith(true);
       expect(crud.reload).toHaveBeenCalledOnce();
@@ -495,9 +464,9 @@ describe('StandsPage', () => {
       const page = createPage();
       standsApi.compactSchedules.mockRejectedValue(new Error('Compactage refusé.'));
 
-      await page.compacterHoraires();
+      await page['compacterHoraires']();
 
-      expect(page.compactageEnCours()).toBe(false);
+      expect(page['compactageEnCours']()).toBe(false);
       expect(crud.reportError).toHaveBeenCalledOnce();
       expect(notifications.notify).not.toHaveBeenCalled();
     });
@@ -506,16 +475,16 @@ describe('StandsPage', () => {
   it('exposes the editing lock as the job service sees it, not as its own copy', () => {
     const page = createPage();
 
-    expect(page.editingLocked()).toBe(false);
+    expect(page['editingLocked']()).toBe(false);
   });
 
   it('keeps a checkbox column and an actions column around the data ones', () => {
     const page = createPage();
 
-    expect(page.columns()[0]).toBe('select');
-    expect(page.columns().at(-1)).toBe('actions');
+    expect(page['columns']()[0]).toBe('select');
+    expect(page['columns']().at(-1)).toBe('actions');
     // No plan held yet: nothing to cover.
-    expect(page.columns()).not.toContain('couverture');
+    expect(page['columns']()).not.toContain('couverture');
   });
 });
 
@@ -580,13 +549,9 @@ describe('StandsPage table', () => {
   /** Pastes `text` on the table, as Ctrl+V on its first row does, and answers the previewed plan. */
   async function paste(text: string): Promise<PastePlan<Stand>> {
     previewConfirm.mockClear();
-    const page = fixture.componentInstance as unknown as {
-      onPaste: (event: ClipboardEvent) => Promise<void>;
-    };
-    await page.onPaste({
-      clipboardData: { getData: () => text },
-      preventDefault: vi.fn(),
-    } as unknown as ClipboardEvent);
+    const event = new Event('paste', { cancelable: true }) as ClipboardEvent;
+    Object.defineProperty(event, 'clipboardData', { value: { getData: () => text } });
+    await fixture.componentInstance['onPaste'](event);
     expect(previewConfirm).toHaveBeenCalledOnce();
     return previewConfirm.mock.calls[0][0];
   }
@@ -677,25 +642,26 @@ describe('StandsPage table', () => {
         [
           's1',
           {
-            type: 'STAND_SANS_COMPETENCE',
+            type: 'CRENEAU_SOUS_EFFECTIF',
             severite: 'CRITIQUE',
-            message: 'Aucun animateur compétent pour ce stand.',
+            message: 'Il manque un animateur à ce stand.',
             creneauId: null,
             date: null,
             heureDebut: null,
             heureFin: null,
             standIds: ['s1'],
+            contrainteIds: [],
             demande: 1,
             capacite: 0,
             manque: 1,
-          } as unknown as CauseInfaisabilite,
+          },
         ],
       ]),
     );
     await rendre([stand({ id: 's1', nom: 'Loup-Garou' })]);
 
     const icone = racine().querySelector('.row-problem-icon')!;
-    expect(icone.getAttribute('aria-label')).toBe('Aucun animateur compétent pour ce stand.');
+    expect(icone.getAttribute('aria-label')).toBe('Il manque un animateur à ce stand.');
   });
 
   it('distinguishes an empty referential from a filter that matched nothing', async () => {
@@ -735,8 +701,8 @@ describe('StandsPage table', () => {
   it('greys out what a stands freeze refuses as a whole, with its padlock, but not the edit', async () => {
     gel = [{ famille: 'STANDS', libelle: 'Stands', fige: true, figeLe: '2026-07-01T08:00:00Z' }];
     await rendre([stand({ id: 's1', nom: 'Loup-Garou' })]);
-    const page = fixture.componentInstance as unknown as PageInternals;
-    page.selection.toggle('s1');
+    const page = fixture.componentInstance;
+    page['selection'].toggle('s1');
     await fixture.whenStable();
 
     expect(racine().querySelector('app-gel-notice .gel-notice')).not.toBeNull();

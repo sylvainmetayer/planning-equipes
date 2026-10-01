@@ -45,7 +45,7 @@ describe('edition courante', () => {
       vi.spyOn(window, 'location', 'get').mockReturnValue({
         ...window.location,
         reload,
-      } as unknown as Location);
+      });
 
       setStoredEditionIdAndReload('ed-2026');
 
@@ -60,7 +60,7 @@ describe('edition courante', () => {
       vi.spyOn(window, 'location', 'get').mockReturnValue({
         ...window.location,
         reload: vi.fn(),
-      } as unknown as Location);
+      });
 
       setStoredEditionIdAndReload('ed-2026');
 
