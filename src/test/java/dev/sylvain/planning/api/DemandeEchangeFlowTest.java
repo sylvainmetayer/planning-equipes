@@ -486,8 +486,7 @@ class DemandeEchangeFlowTest {
                 .statusCode(200)
                 .extract()
                 .path("[0].id");
-        given().header("X-Edition-Id", "E1")
-                .cookie("planning-espace", sessionBruno)
+        given().header("X-Edition-Id", "E1").header(EspaceSessions.EN_TETE, sessionBruno)
                 .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + tokenOf("ECH-B") + "/demandes-recues/" + demandeId + "/refus")
