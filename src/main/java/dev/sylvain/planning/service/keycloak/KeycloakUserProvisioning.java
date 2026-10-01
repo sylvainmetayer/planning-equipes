@@ -11,6 +11,7 @@ import jakarta.inject.Inject;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -458,6 +459,48 @@ public class KeycloakUserProvisioning {
         } catch (RuntimeException e) {
             // Never fails the delete: see the class javadoc.
             Log.errorf(e, "Keycloak account could not be disabled for %s", normalisee);
+        }
+    }
+
+    /**
+     * {@link #retirer} for a whole replacement import: the realm is listed
+     * once instead of searched address by address, so a roster of a hundred and
+     * fifty deleted fiches costs one pass and not as many round trips inside
+     * the import's request. Same rule — an address another fiche still carries
+     * keeps its account — and same promise: never fails.
+     */
+    public void retirerTous(Collection<String> emails) {
+        if (!actif() || emails == null) {
+            return;
+        }
+        Set<String> aRetirer = new LinkedHashSet<>();
+        for (String email : emails) {
+            if (email != null && !email.isBlank()) {
+                aRetirer.add(email.trim().toLowerCase(Locale.ROOT));
+            }
+        }
+        try {
+            aRetirer.removeIf(repository::emailAnimateurExiste);
+            if (aRetirer.isEmpty()) {
+                return;
+            }
+            RealmResource realm = realm();
+            Map<String, UserRepresentation> comptes = accountsByAddress(realm);
+            for (String adresse : aRetirer) {
+                UserRepresentation utilisateur = comptes.get(adresse);
+                if (utilisateur == null) {
+                    continue;
+                }
+                try {
+                    utilisateur.setEnabled(false);
+                    realm.users().get(utilisateur.getId()).update(utilisateur);
+                    Log.infof("Keycloak account disabled for %s (no fiche left in any edition)", adresse);
+                } catch (RuntimeException e) {
+                    Log.errorf(e, "Keycloak account could not be disabled for %s", adresse);
+                }
+            }
+        } catch (RuntimeException e) {
+            Log.errorf(e, "Keycloak unreachable: %d account(s) left to disable", aRetirer.size());
         }
     }
 
