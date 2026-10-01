@@ -421,11 +421,19 @@ function publication(etat: EtatEdition): LigneEtat {
  * leads to the people who have not answered while there are any — and, with
  * the edition inactive and somebody never reminded, also to the Éditions page
  * where it is activated; once everybody has answered, to the list alone. An alert
- * only once the reminder delay set there has passed.
+ * only once the reminder delay set there has passed — except for a failed
+ * send, counted apart and linked first: waiting changes nothing to it.
  */
 function confirmations(etat: EtatEdition): LigneEtat {
-  const { confirmes, relances, silencieux, statut, relancesAutomatiques, delaiRelanceHeures } =
-    etat.confirmations;
+  const {
+    confirmes,
+    relances,
+    silencieux,
+    echecsEnvoi,
+    statut,
+    relancesAutomatiques,
+    delaiRelanceHeures,
+  } = etat.confirmations;
   const titre = $localize`:@@accueil.ligne.confirmations:Accusés de réception`;
   if (statut === 'A_FAIRE') {
     return {
@@ -444,24 +452,40 @@ function confirmations(etat: EtatEdition): LigneEtat {
   const relance = relancesAutomatiques
     ? $localize`:@@accueil.detail.confirmations.relancesActives:relance automatique après ${heures}:heures: h`
     : $localize`:@@accueil.detail.confirmations.relancesEditionInactive:pas de relance automatique : édition inactive`;
+  // A failed send is not a silence: counted apart, and first to act on —
+  // an address to correct or a phone call, which no reminder replaces.
+  const echecs =
+    echecsEnvoi > 0
+      ? ' · ' +
+        $localize`:@@accueil.detail.confirmations.echecsEnvoi:${echecsEnvoi}:echecs: échec(s) d'envoi`
+      : '';
+  let lien: LienEtat;
+  if (echecsEnvoi > 0) {
+    lien = {
+      route: '/animateurs',
+      queryParams: { envoi: 'echec' },
+      libelle: $localize`:@@accueil.lien.confirmations.echecs:Voir les échecs d'envoi`,
+    };
+  } else if (relances + silencieux > 0) {
+    lien = {
+      // Diffuser's table, on the people who have not answered: their
+      // reminder is one click away there.
+      route: '/publication',
+      queryParams: { filtre: 'silencieux' },
+      libelle: $localize`:@@accueil.lien.confirmations.silencieux:Voir qui n'a pas répondu`,
+    };
+  } else {
+    lien = {
+      route: '/animateurs',
+      libelle: $localize`:@@accueil.lien.confirmations.voir:Voir les animateurs`,
+    };
+  }
   const ligne: LigneEtat = {
     id: 'confirmations',
     titre,
     statut,
-    detail: `${comptage} · ${relance}`,
-    lien:
-      relances + silencieux > 0
-        ? {
-            // Diffuser's table, on the people who have not answered: their
-            // reminder is one click away there.
-            route: '/publication',
-            queryParams: { filtre: 'silencieux' },
-            libelle: $localize`:@@accueil.lien.confirmations.silencieux:Voir qui n'a pas répondu`,
-          }
-        : {
-            route: '/animateurs',
-            libelle: $localize`:@@accueil.lien.confirmations.voir:Voir les animateurs`,
-          },
+    detail: `${comptage}${echecs} · ${relance}`,
+    lien,
   };
   // The reminders only leave the active edition (ADR 0072): activating it
   // only helps somebody no reminder reached yet.

@@ -286,7 +286,7 @@ class EtatEditionServiceTest {
                 false,
                 f.faisabilite(),
                 new ApercuPublication(false, false, false, RESOLU_LE.minusSeconds(3600), 3, 0, List.of(), 0),
-                new SyntheseConfirmations(1, 1, 0, RESOLU_LE.minusSeconds(3600), false),
+                new SyntheseConfirmations(1, 1, 0, 0, RESOLU_LE.minusSeconds(3600), false),
                 f.foireOuverte(),
                 2,
                 new ProgressionValidations(0, 0, List.of()),
@@ -760,14 +760,14 @@ class EtatEditionServiceTest {
         EtatEditionView.EtatATraiter ancien = aTraiter(
                 NOTHING_TODAY,
                 f.publication(),
-                new SyntheseConfirmations(10, 4, 6, ilYaCinqJours, false),
+                new SyntheseConfirmations(10, 4, 6, 0, ilYaCinqJours, false),
                 f.relecture(),
                 false,
                 f.lastDataChange());
         EtatEditionView.EtatATraiter recent = aTraiter(
                 NOTHING_TODAY,
                 f.publication(),
-                new SyntheseConfirmations(10, 4, 6, hier, false),
+                new SyntheseConfirmations(10, 4, 6, 0, hier, false),
                 f.relecture(),
                 false,
                 f.lastDataChange());
@@ -782,7 +782,7 @@ class EtatEditionServiceTest {
         EtatEditionView.EtatATraiter bloc = aTraiter(
                 NOTHING_TODAY,
                 new ApercuPublication(true, false, false, null, 12, 0, List.of(), 0),
-                new SyntheseConfirmations(0, 0, 0, null, true),
+                new SyntheseConfirmations(0, 0, 0, 0, null, true),
                 filledFacts().relecture(),
                 false,
                 filledFacts().lastDataChange());
@@ -991,7 +991,7 @@ class EtatEditionServiceTest {
                 false,
                 new FeasibilityReport(true, 0, List.of(), 0, 0, 0, "Réalisable."),
                 new ApercuPublication(true, true, false, null, 0, 0, List.of(), 0),
-                new SyntheseConfirmations(0, 0, 0, null, true),
+                new SyntheseConfirmations(0, 0, 0, 0, null, true),
                 true,
                 0,
                 new ProgressionValidations(0, 0, List.of()),
@@ -1022,7 +1022,7 @@ class EtatEditionServiceTest {
                 false,
                 new FeasibilityReport(true, 0, List.of(), 0, 0, 0, "Réalisable."),
                 new ApercuPublication(false, false, false, publieLe, 0, 0, List.of(), 0),
-                new SyntheseConfirmations(2, 0, 0, publieLe, false),
+                new SyntheseConfirmations(2, 0, 0, 0, publieLe, false),
                 true,
                 0,
                 new ProgressionValidations(0, 0, List.of()),
@@ -1254,6 +1254,20 @@ class EtatEditionServiceTest {
         assertThat(bloc.relancesNonEnvoyees()).isEqualTo(1);
     }
 
+    /** Two alerts about one person — no address, then a send that failed — are one reminder to make. */
+    @Test
+    void unsentRemindersAreCountedPerPerson() {
+        Facts f = filledFacts();
+        Instant publieLe = f.confirmations().dernierePublicationLe();
+        List<Alerte> alertes = List.of(
+                alerte("RELANCE_INJOIGNABLE", "A1|x", publieLe.plusSeconds(3600)),
+                alerte("RELANCE_INJOIGNABLE", "A1|x|echec", publieLe.plusSeconds(7200)));
+
+        EtatEditionView.EtatATraiter bloc = aTraiter(duringTheEvent(List.of(), null, List.of(), alertes, null));
+
+        assertThat(bloc.relancesNonEnvoyees()).isEqualTo(1);
+    }
+
     @Test
     void aFailedNightlyBackupIsToHandleWithItsTime() {
         Instant nuit = MAINTENANT.minus(Duration.ofHours(5));
@@ -1274,6 +1288,11 @@ class EtatEditionServiceTest {
     /* ----------------------------- Acknowledgements ---------------------------- */
 
     private static EtatEditionView.EtatConfirmations confirmationsAfter(Duration depuisPublication, boolean armees) {
+        return confirmationsAfter(depuisPublication, armees, 0);
+    }
+
+    private static EtatEditionView.EtatConfirmations confirmationsAfter(
+            Duration depuisPublication, boolean armees, int echecsEnvoi) {
         Facts f = filledFacts();
         Instant publieLe = MAINTENANT.minus(depuisPublication);
         TodayFacts today =
@@ -1295,7 +1314,7 @@ class EtatEditionServiceTest {
                         false,
                         f.faisabilite(),
                         f.publication(),
-                        new SyntheseConfirmations(10, 0, 143, publieLe, false),
+                        new SyntheseConfirmations(10, 0, 143 - echecsEnvoi, echecsEnvoi, publieLe, false),
                         f.foireOuverte(),
                         0,
                         f.relecture(),
@@ -1309,6 +1328,19 @@ class EtatEditionServiceTest {
     void theSilentOnlyCallForAttentionPastTheReminderDelay() {
         assertThat(confirmationsAfter(Duration.ofHours(1), true).statut()).isEqualTo(Statut.INFO);
         assertThat(confirmationsAfter(Duration.ofHours(72), true).statut()).isEqualTo(Statut.ATTENTION);
+    }
+
+    /**
+     * A mail that failed asks for a gesture at once — an address to correct, a
+     * phone call — and waiting out the reminder delay changes nothing to it.
+     */
+    @Test
+    void aFailedSendCallsForAttentionWithoutWaitingForTheDelay() {
+        EtatEditionView.EtatConfirmations etat = confirmationsAfter(Duration.ofHours(1), true, 3);
+
+        assertThat(etat.statut()).isEqualTo(Statut.ATTENTION);
+        assertThat(etat.echecsEnvoi()).isEqualTo(3);
+        assertThat(etat.silencieux()).isEqualTo(140);
     }
 
     @Test

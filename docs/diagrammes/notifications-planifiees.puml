@@ -2,7 +2,9 @@
 ' L'envoi horaire : trois tâches, pour la seule édition active, lues sur le
 ' plan publié. Chaque envoi est d'abord réservé en base sur une clé : un
 ' passage de plus ne renvoie rien. Tout part en meilleur effort, par le
-' dispatcher. Voir docs/exploitation.md, « Les envois automatiques de nuit ».
+' dispatcher, qui rend l'issue au lieu de la lever : un échec laisse une
+' alerte et ne compte pas comme un envoi. Voir docs/exploitation.md, « Les
+' envois automatiques de nuit ».
 skinparam backgroundColor #FFFFFF
 skinparam responseMessageBelowArrow true
 hide footbox
@@ -22,6 +24,7 @@ boundary "SMTP" as smtp
 cron -> service : scheduledRun()
 service -> service : run()
 service -> service : purgeHistory()
+note right : historique des actions et résultats\ndes envois, au-delà de JOURNAL_RETENTION
 service -> contexte : activeEditionId()
 alt aucune édition active
   contexte --> service : vide : rien ne part (ADR 0072)
@@ -46,12 +49,16 @@ group dans chaque tâche, pour chaque destinataire
     alt clé déjà réservée
       journal --> veille : faux, rien ne part
     else
-      veille ->> dispatcher : Notification.RappelVeille (événement CDI)
-      dispatcher -> dispatcher : surNotification(notification)
+      veille -> dispatcher : deliver(Notification.RappelVeille)
       dispatcher -> redacteur : rediger(notification)
       redacteur --> dispatcher : MailDraft (gabarit Qute)
       dispatcher -> smtp : envoi
-      note right of dispatcher : le seul catch des mails d'accompagnement :\nun SMTP en panne n'annule rien
+      note right of dispatcher : le seul catch des mails d'accompagnement :\nun SMTP en panne n'annule rien, et le résultat\nest enregistré contre l'animateur (envoi_mail)
+      dispatcher --> veille : issue : parti, ou échec et sa catégorie
+      alt échec de l'envoi
+        veille -> journal : claim(RAPPEL_VEILLE_INJOIGNABLE, clé|echec, libellé, ALERTE)
+        note right : la réservation reste : pas de nouvel essai chaque heure ;\nla relance, elle, laisse la personne à NON_VU et rend sa clé à la main
+      end
     end
   end
 end

@@ -39,7 +39,7 @@ class RelanceConfirmationMailTest {
 
     @Test
     void theNightWritesExactlyTheSharedRendering() {
-        MailDraft nuit = writer.rediger(new Notification.RelanceConfirmation("alice@example.org", "Alice", LIEN))
+        MailDraft nuit = writer.rediger(new Notification.RelanceConfirmation("A1", "alice@example.org", "Alice", LIEN))
                 .orElseThrow();
         MailContent partage = RelanceConfirmationMail.render(templates, ProductName.neutral(), "Alice", LIEN);
 
@@ -52,7 +52,7 @@ class RelanceConfirmationMailTest {
     /** The two edge cases of the template — no first name, no link — stay aligned too. */
     @Test
     void theNightAgreesWithoutAFirstNameAndWithoutALink() {
-        MailDraft nuit = writer.rediger(new Notification.RelanceConfirmation("alice@example.org", "  ", null))
+        MailDraft nuit = writer.rediger(new Notification.RelanceConfirmation("A1", "alice@example.org", "  ", null))
                 .orElseThrow();
         MailContent partage = RelanceConfirmationMail.render(templates, ProductName.neutral(), "  ", null);
 

@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.notification;
 
+import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sylvain.planning.domain.Animateur;
@@ -9,23 +10,34 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.analyse.AlerteService;
+import dev.sylvain.planning.service.mail.MailDeliveryRepository;
+import dev.sylvain.planning.service.mail.MailMetrics;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
+import dev.sylvain.planning.service.publication.PlanPublieService;
 import dev.sylvain.planning.service.publication.RelanceManuelleService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.quarkus.mailer.Mail;
+import io.quarkus.mailer.Mailer;
 import io.quarkus.mailer.MockMailbox;
+import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -74,6 +86,9 @@ class NotificationsPlanifieesTest {
     AlerteService alerteService;
 
     @Inject
+    PlanPublieService planPublie;
+
+    @Inject
     JournalNotificationsRepository journal;
 
     @Inject
@@ -82,12 +97,22 @@ class NotificationsPlanifieesTest {
     @Inject
     DataSource dataSource;
 
+    @Inject
+    MeterRegistry meterRegistry;
+
+    @Inject
+    MailDeliveryRepository deliveries;
+
+    /** How many sends the refusing relay of {@link #relayRefuses} was asked for. */
+    private final AtomicInteger refusals = new AtomicInteger();
+
     @BeforeEach
     void seed() {
         mailbox.clear();
         execute("DELETE FROM plan_snapshot");
         execute("DELETE FROM notification_planifiee");
         execute("DELETE FROM confirmation_planning");
+        execute("DELETE FROM envoi_mail");
         persistence.clearDatabase();
         persistPlan();
         donnerEmail("PLAN-A", EMAIL_ALICE);
@@ -286,7 +311,323 @@ class NotificationsPlanifieesTest {
         assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).hasSize(1);
     }
 
+    /* ------------- #663 — a failed send is not a silence ------------------- */
+
+    /**
+     * The asymmetry this fixes: the night used to mark Alice « relancée »
+     * before firing a notification whose failure was swallowed — reminded on
+     * screen, never reminded again, and nobody told. Now the status stays, an
+     * alert is left, and the night keeps its own attempt so it does not hammer
+     * a relay that is down.
+     */
+    @Test
+    void aNightReminderThatFailsLeavesTheStatusAlertsAndDoesNotInsist() {
+        relayRefuses("421 4.3.0 Try again later");
+        java.time.Instant plusTard = java.time.Instant.now().plus(java.time.Duration.ofHours(80));
+
+        assertThat(relanceConfirmation.run(actives(), plusTard)).isZero();
+        assertThat(relanceConfirmation.run(actives(), plusTard.plusSeconds(3600)))
+                .isZero();
+
+        assertThat(refusals)
+                .as("the night's attempt is kept: one attempt, not one per hour")
+                .hasValue(1);
+        assertThat(confirmationService.byAnimateur())
+                .filteredOn(vue -> vue.animateurId().equals("PLAN-A"))
+                .singleElement()
+                .satisfies(vue -> {
+                    assertThat(vue.statut()).isEqualTo("NON_VU");
+                    assertThat(vue.relanceLe()).isNull();
+                    assertThat(vue.dernierEnvoi().statut()).isEqualTo("ECHEC");
+                    assertThat(vue.dernierEnvoi().categorie()).isEqualTo("TEMPORAIRE");
+                    assertThat(vue.dernierEnvoi().type()).isEqualTo("relance-confirmation");
+                    assertThat(vue.dernierEnvoi().enEchec()).isTrue();
+                });
+        assertThat(alerteService.alertes(null))
+                .filteredOn(
+                        alerte -> "RELANCE_INJOIGNABLE".equals(alerte.type()) && "PLAN-A".equals(alerte.animateurId()))
+                .singleElement()
+                .satisfies(alerte -> {
+                    assertThat(alerte.severite()).isEqualTo("ALERTE");
+                    assertThat(alerte.libelle()).contains("relancez à la main");
+                });
+        ConfirmationPlanningService.SyntheseConfirmations synthese = confirmationService.synthese();
+        assertThat(synthese.echecsEnvoi()).isEqualTo(1);
+        assertThat(synthese.relances()).isZero();
+        assertThat(synthese.silencieux()).as("Bruno, who has no address").isEqualTo(1);
+    }
+
+    /** The night keeps its claim, but the person was never reminded: the hand may try again. */
+    @Test
+    void theHandMayRetryAReminderTheNightCouldNotSend() {
+        relayRefuses("421 4.3.0 Try again later");
+        java.time.Instant plusTard = java.time.Instant.now().plus(java.time.Duration.ofHours(80));
+        relanceConfirmation.run(actives(), plusTard);
+        relayAccepts();
+
+        RelanceManuelleService.RapportRelance rapport = relanceManuelle.relancer(List.of("PLAN-A"));
+
+        assertThat(rapport.envoyes()).containsExactly("PLAN-A");
+        assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).hasSize(1);
+        assertThat(relanceConfirmation.run(actives(), plusTard.plusSeconds(3600)))
+                .isZero();
+        assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).hasSize(1);
+    }
+
+    /**
+     * The hand's retry does not hang on the last mail sent to Alice: a
+     * day-before reminder that left in between used to hide the night's
+     * failure, and Alice was refused as already reminded while still silent.
+     */
+    @Test
+    void anotherMailAfterTheNightsFailureDoesNotCloseTheHandsRetry() {
+        relayRefuses("421 4.3.0 Try again later");
+        java.time.Instant plusTard = java.time.Instant.now().plus(java.time.Duration.ofHours(80));
+        relanceConfirmation.run(actives(), plusTard);
+        relayAccepts();
+        assertThat(rappelVeille.run(actives(), VEILLE_AU_SOIR)).isEqualTo(1);
+        mailbox.clear();
+
+        RelanceManuelleService.RapportRelance rapport = relanceManuelle.relancer(List.of("PLAN-A"));
+
+        assertThat(rapport.envoyes()).containsExactly("PLAN-A");
+        assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).hasSize(1);
+    }
+
+    /**
+     * Two hands on the same failed reminder write once: the retry goes through
+     * the very key a first reminder claims, which another click — here, one
+     * still sending — holds.
+     */
+    @Test
+    void aRetryHeldByAnotherHandIsNotSentTwice() {
+        relayRefuses("421 4.3.0 Try again later");
+        java.time.Instant plusTard = java.time.Instant.now().plus(java.time.Duration.ofHours(80));
+        relanceConfirmation.run(actives(), plusTard);
+        relayAccepts();
+        String cle = "PLAN-A|" + planPublie.lastPublication().publieLe();
+        assertThat(journal.claim(JournalNotificationsRepository.Type.RELANCE_CONFIRMATION, cle, "PLAN-A"))
+                .as("the other hand, mid-send")
+                .isTrue();
+
+        RelanceManuelleService.RapportRelance rapport = relanceManuelle.relancer(List.of("PLAN-A"));
+
+        assertThat(rapport.envoyes()).isEmpty();
+        assertThat(rapport.dejaRelancesPourCettePublication()).containsExactly("PLAN-A");
+        assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).isEmpty();
+    }
+
+    /**
+     * The night's own refusal follows the rule the alert states: nothing is
+     * sent to the refused address again, and the first edit of the fiche puts
+     * Alice back in the next run — the night does not hold her for good.
+     */
+    @Test
+    void aNightReminderToARefusedAddressResumesOnceTheFicheIsEdited() {
+        relayRefuses("550 5.1.1 Recipient address rejected");
+        java.time.Instant plusTard = java.time.Instant.now().plus(java.time.Duration.ofHours(80));
+        assertThat(relanceConfirmation.run(actives(), plusTard)).isZero();
+        relayAccepts();
+
+        assertThat(relanceConfirmation.run(actives(), plusTard.plusSeconds(3600)))
+                .isZero();
+        assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).isEmpty();
+        assertThat(alerteService.alertes(null))
+                .filteredOn(alerte -> "PLAN-A".equals(alerte.animateurId()))
+                .extracting(alerte -> alerte.severite() + " " + alerte.libelle())
+                .anySatisfy(ligne -> assertThat(ligne).startsWith("ALERTE").contains("Corrigez-la"))
+                .anySatisfy(ligne -> assertThat(ligne).startsWith("WARNING").contains("Corrigez-la"));
+
+        donnerEmail("PLAN-A", "planifiee-alice-corrigee@example.org");
+
+        assertThat(relanceConfirmation.run(actives(), plusTard.plusSeconds(7200)))
+                .isEqualTo(1);
+        assertThat(mailbox.getMailsSentTo("planifiee-alice-corrigee@example.org"))
+                .hasSize(1);
+    }
+
+    /**
+     * A failure alert is not swallowed by the address-less warning raised
+     * before it: the fiche got its address since, and the send that followed
+     * failed — each one has a key of its own.
+     */
+    @Test
+    void aSendFailureAfterAnAddresslessWarningStillLeavesItsAlert() {
+        java.time.Instant plusTard = java.time.Instant.now().plus(java.time.Duration.ofHours(80));
+        relanceConfirmation.run(actives(), plusTard);
+        rappelVeille.run(actives(), VEILLE_AU_SOIR);
+        donnerEmail("PLAN-B", "planifiee-bruno@example.org");
+        relayRefuses("421 4.3.0 Try again later");
+
+        relanceConfirmation.run(actives(), plusTard.plusSeconds(3600));
+        rappelVeille.run(actives(), VEILLE_AU_SOIR.plusHours(1));
+
+        assertThat(alerteService.alertes(null))
+                .filteredOn(alerte -> "PLAN-B".equals(alerte.animateurId()))
+                .extracting(alerte -> alerte.type() + " " + alerte.severite())
+                .containsExactlyInAnyOrder(
+                        "RELANCE_INJOIGNABLE WARNING",
+                        "RELANCE_INJOIGNABLE ALERTE",
+                        "RAPPEL_VEILLE_INJOIGNABLE WARNING",
+                        "RAPPEL_VEILLE_INJOIGNABLE ALERTE");
+    }
+
+    /**
+     * A reminder that left is not undone by a later refusal: Alice, reminded,
+     * whose day-before reminder then bounced, is « already reminded » to the
+     * hand, not « address refused ».
+     */
+    @Test
+    void someoneAlreadyRemindedIsReportedSoEvenAfterALaterRefusal() {
+        assertThat(relanceManuelle.relancer(List.of("PLAN-A")).envoyes()).containsExactly("PLAN-A");
+        relayRefuses("550 5.1.1 Recipient address rejected");
+        rappelVeille.run(actives(), VEILLE_AU_SOIR);
+
+        RelanceManuelleService.RapportRelance rapport = relanceManuelle.relancer(List.of("PLAN-A"));
+
+        assertThat(rapport.dejaRelancesPourCettePublication()).containsExactly("PLAN-A");
+        assertThat(rapport.adresseRefusee()).isEmpty();
+    }
+
+    /** The day-before reminder that fails leaves an alert too, once. */
+    @Test
+    void aDayBeforeReminderThatFailsLeavesAnAlertOnce() {
+        relayRefuses("454 4.7.0 TLS not available");
+
+        assertThat(rappelVeille.run(actives(), VEILLE_AU_SOIR)).isZero();
+        assertThat(rappelVeille.run(actives(), VEILLE_AU_SOIR.plusHours(1))).isZero();
+
+        assertThat(refusals).hasValue(1);
+        assertThat(alerteService.alertes(null))
+                .filteredOn(alerte ->
+                        "RAPPEL_VEILLE_INJOIGNABLE".equals(alerte.type()) && "PLAN-A".equals(alerte.animateurId()))
+                .singleElement()
+                .satisfies(alerte -> {
+                    assertThat(alerte.severite()).isEqualTo("ALERTE");
+                    assertThat(alerte.libelle()).doesNotContain(EMAIL_ALICE).doesNotContain("Alice");
+                });
+    }
+
+    /**
+     * « Ne pas insister »: once the relay refused Alice's address, neither the
+     * hand nor the night writes to it again — until the fiche is edited, which
+     * is the organiser's answer to the refusal.
+     */
+    @Test
+    void aRefusedAddressIsNotRemindedUntilTheFicheIsEdited() {
+        relayRefuses("550 5.1.1 Recipient address rejected");
+        assertThat(relanceManuelle.relancer(List.of("PLAN-A")).echecs()).containsExactly("PLAN-A");
+        relayAccepts();
+
+        RelanceManuelleService.RapportRelance rapport = relanceManuelle.relancer(List.of("PLAN-A"));
+        java.time.Instant plusTard = java.time.Instant.now().plus(java.time.Duration.ofHours(80));
+        int nuit = relanceConfirmation.run(actives(), plusTard);
+
+        assertThat(rapport.adresseRefusee()).containsExactly("PLAN-A");
+        assertThat(rapport.envoyes()).isEmpty();
+        assertThat(nuit).isZero();
+        assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).isEmpty();
+        assertThat(alerteService.alertes(null))
+                .filteredOn(alerte -> alerte.cle().endsWith("|adresse-refusee"))
+                .singleElement()
+                .satisfies(alerte -> assertThat(alerte.animateurId()).isEqualTo("PLAN-A"));
+
+        donnerEmail("PLAN-A", "planifiee-alice-corrigee@example.org");
+
+        assertThat(relanceConfirmation.run(actives(), plusTard.plusSeconds(3600)))
+                .isEqualTo(1);
+        assertThat(mailbox.getMailsSentTo("planifiee-alice-corrigee@example.org"))
+                .hasSize(1);
+    }
+
+    /** What is kept of a send is an id, a template, a state and a date — never the address. */
+    @Test
+    void aRecordedSendKeepsNoAddress() {
+        relayRefuses("550 5.1.1 <" + EMAIL_ALICE + ">: Recipient address rejected");
+        rappelVeille.run(actives(), VEILLE_AU_SOIR);
+
+        List<String> colonnes = new ArrayList<>();
+        List<String> valeurs = new ArrayList<>();
+        try (Connection connection = dataSource.getConnection();
+                Statement statement = connection.createStatement();
+                ResultSet rs = statement.executeQuery("SELECT * FROM envoi_mail")) {
+            ResultSetMetaData meta = rs.getMetaData();
+            while (rs.next()) {
+                for (int i = 1; i <= meta.getColumnCount(); i++) {
+                    colonnes.add(meta.getColumnName(i));
+                    valeurs.add(String.valueOf(rs.getObject(i)));
+                }
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException(e);
+        }
+
+        assertThat(colonnes)
+                .containsOnly("edition_id", "id", "animateur_id", "type", "statut", "categorie_echec", "envoye_le");
+        assertThat(valeurs)
+                .contains("PLAN-A", "rappel-veille", "ECHEC", "ADRESSE_REFUSEE")
+                .noneMatch(valeur -> valeur.contains("@"));
+    }
+
+    /** The Animateurs page reads the failure from the confirmations route, beside the answer. */
+    @Test
+    void theConfirmationsRouteExposesTheLastSendBesideTheAnswer() {
+        relayRefuses("535 5.7.8 Authentication credentials invalid");
+        rappelVeille.run(actives(), VEILLE_AU_SOIR);
+
+        io.restassured.path.json.JsonPath confirmations = given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/animateurs/confirmations")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
+        java.util.Map<String, Object> alice = confirmations.getMap("find { it.animateurId == 'PLAN-A' }");
+
+        assertThat(alice).containsEntry("statut", "NON_VU");
+        assertThat(confirmations.getString("find { it.animateurId == 'PLAN-A' }.dernierEnvoi.statut"))
+                .isEqualTo("ECHEC");
+        assertThat(confirmations.getString("find { it.animateurId == 'PLAN-A' }.dernierEnvoi.categorie"))
+                .isEqualTo("AUTHENTIFICATION");
+        assertThat(confirmations.getString("find { it.animateurId == 'PLAN-A' }.dernierEnvoi.le"))
+                .isNotBlank();
+        assertThat(confirmations.getString("find { it.animateurId == 'PLAN-B' }.dernierEnvoi"))
+                .as("nothing was ever sent to Bruno, who has no address")
+                .isNull();
+        assertThat(confirmations.prettify()).doesNotContain("@");
+        assertThat(given().header("X-Edition-Id", "E1")
+                        .when()
+                        .get("/api/animateurs/confirmations/synthese")
+                        .then()
+                        .statusCode(200)
+                        .extract()
+                        .jsonPath()
+                        .getInt("echecsEnvoi"))
+                .isEqualTo(1);
+    }
+
     /* -------------------------------- Helpers ------------------------------ */
+
+    /** Every mail from now on meets a relay answering {@code reply}, counted in {@link #refusals}. */
+    private void relayRefuses(String reply) {
+        Mailer refusing = mails -> {
+            refusals.incrementAndGet();
+            throw new IllegalStateException(reply);
+        };
+        QuarkusMock.installMockForType(
+                new MailMetrics(meterRegistry, deliveries) {
+                    @Override
+                    public void send(Mailer mailer, String template, Mail mail, String animateurId) {
+                        super.send(refusing, template, mail, animateurId);
+                    }
+                },
+                MailMetrics.class);
+    }
+
+    /** The relay is back: mails reach the mock mailbox again. */
+    private void relayAccepts() {
+        QuarkusMock.installMockForType(new MailMetrics(meterRegistry, deliveries), MailMetrics.class);
+    }
 
     /** An armed edition, with the delays this test reasons about. */
     private static ParametresNotifications actives() {

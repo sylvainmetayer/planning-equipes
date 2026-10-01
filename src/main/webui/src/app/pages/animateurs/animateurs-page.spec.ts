@@ -267,6 +267,7 @@ describe('AnimateursPage table', () => {
         dejaRelancesPourCettePublication: [],
         echecs: [],
         sansPoste: [],
+        adresseRefusee: [],
       })),
     };
     TestBed.configureTestingModule({
@@ -505,6 +506,7 @@ describe('AnimateursPage table', () => {
       dejaRelancesPourCettePublication: [],
       echecs: [],
       sansPoste: [],
+      adresseRefusee: [],
     });
     await rendre([
       person('alice', { prenom: 'Alice', nom: 'Martin' }),

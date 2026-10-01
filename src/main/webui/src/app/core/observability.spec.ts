@@ -25,6 +25,7 @@ const CONFIG: AppConfig = {
   devMode: false,
   dragDropEnabled: false,
   version: '',
+  mailMock: false,
 };
 
 describe('loadAppConfig', () => {
@@ -49,6 +50,7 @@ describe('loadAppConfig', () => {
       devMode: false,
       dragDropEnabled: false,
       version: '',
+      mailMock: false,
     });
   });
 
@@ -61,6 +63,7 @@ describe('loadAppConfig', () => {
       devMode: false,
       dragDropEnabled: false,
       version: '',
+      mailMock: false,
     });
   });
 });

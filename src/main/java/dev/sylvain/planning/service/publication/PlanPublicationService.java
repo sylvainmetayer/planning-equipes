@@ -651,6 +651,7 @@ public class PlanPublicationService {
             byte[] pdf = planningExportService.exportAnimateurPdfPublie(planning, destinataire.animateurId());
             Animateur animateur = animateur(destinataire.animateurId());
             mailService.sendPlanningPublie(
+                    destinataire.animateurId(),
                     destinataire.email(),
                     pdf,
                     PlanningExportService.planningFileName(destinataire.nomAffiche(), "pdf"),

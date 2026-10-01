@@ -154,6 +154,40 @@ vivent maintenant à deux endroits : `MailService` pour la seconde,
 (`Notification`, interface scellée), `NotificationWriter` le rédige par `switch`
 exhaustif, et le `catch` n'est écrit qu'une fois.
 
+### Le résultat d'un envoi remonte, la politique ne change pas
+
+Chaque courriel quitte l'application par un seul point, `service/mail/MailMetrics`,
+qui le compte déjà par gabarit. Quand il est adressé à un animateur, ce même
+point **enregistre son résultat** (`MailDeliveryRepository`, table
+`envoi_mail`) : parti, ou en échec avec une catégorie lue sur l'exception
+(`MailFailureCategory` — relais injoignable, authentification, adresse refusée,
+temporaire, autre). L'identifiant vient de l'appelant : un paramètre des
+méthodes de `MailService`, et pour une notification le sous-type scellé
+`Notification.ToAnimateur`, que portent tous les enregistrements destinés à un
+animateur — le répartiteur n'a jamais à retrouver quelqu'un par son adresse.
+L'enregistrement se fait **à côté** des deux politiques : l'échec est
+enregistré *puis* relancé, donc `MailService` le propage toujours et le
+répartiteur l'avale toujours ; une base qui refuse la ligne est journalisée et
+ne change rien à l'envoi.
+
+Deux appelants avaient besoin de connaître l'issue sans changer de politique :
+les tâches de nuit. Le rappel de la veille et la relance des silencieux
+appellent `NotificationDispatcher.deliver`, qui écrit et envoie tout de suite
+et **rend** l'issue au lieu de la propager — rien n'est levé, l'opération
+décrite tient toujours. Sur un échec, la relance ne passe plus la personne à
+`RELANCE` et laisse une alerte `ALERTE` sur l'accueil, comme la relance à la
+main. La clé que la nuit partage avec la main (`animateurId|publication`) est
+rendue, pour que « Relancer maintenant » la trouve libre et que deux mains qui
+cliquent ensemble n'écrivent qu'une fois ; la nuit garde une clé à elle (la
+même, suffixée `|nuit`), une tentative par personne et par publication, pour ne
+pas réécrire chaque heure à un relais en panne. Seule une adresse refusée rend
+aussi celle-là : la personne est tenue à l'écart tant que la fiche n'a pas été
+modifiée, et la modification doit la remettre dans le passage suivant. L'alerte
+d'un échec a sa propre clé (suffixe `|echec`) : l'avertissement « aucune
+adresse » levé avant, sur la clé nue, ne l'avale pas. Les autres notifications
+continuent d'être tirées comme des faits (`Event.fire`), sans attendre
+l'issue.
+
 ### Le texte des mails est dans des gabarits, pas dans le Java
 
 Chaque mail est une paire de gabarits Qute sous

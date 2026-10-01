@@ -41,6 +41,7 @@ import {
   ContrainteAdHoc,
   DayOff,
   DaySeat,
+  LastMailDelivery,
   NiveauCompetence,
   PlanningEvenement,
   SeveriteFragilite,
@@ -77,6 +78,9 @@ import {
   seatCounts,
 } from '../animateurs/animateur-roster';
 import { resumeRelance } from '../animateurs/relance-resume';
+import { lastDeliveryLabel } from '../animateurs/mail-delivery';
+import { injectAppConfig } from '../../core/app-config';
+import { intlLocale } from '../../core/locale';
 import { formatColonne, indicateursFiche, libelleColonne } from '../equite/equite';
 import {
   CompetenceDraft,
@@ -178,6 +182,8 @@ export class AnimateurFichePage {
   private readonly verrous = inject(VerrouillageStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
+  /** The mailer is mocked on this server: a « sent » mail never left it. */
+  private readonly mailMock = injectAppConfig().mailMock;
 
   /** The id in the address; a change of person reloads the fiche. */
   protected readonly animateurId = toSignal(
@@ -427,6 +433,11 @@ export class AnimateurFichePage {
   protected readonly confirmationLabel = confirmationLabel;
   protected readonly statutDemandeLabel = statutDemandeLabel;
   protected readonly shortTime = shortTime;
+
+  /** The last mail sent to this person, in words — « parti », « simulé », or the failure and why. */
+  protected lastDeliveryLabel(envoi: LastMailDelivery): string {
+    return lastDeliveryLabel(envoi, this.mailMock, intlLocale());
+  }
   protected readonly seatLabel = seatLabel;
 
   constructor() {

@@ -818,6 +818,24 @@ tire `envoisEnEchec` — les personnes dont le **dernier** envoi a échoué —,
 publication tant qu'il en reste : rien n'a changé pour elles, elles n'ont
 simplement rien reçu.
 
+Ce registre n'est pas le seul, et les deux ne se confondent pas. `envoi_mail`
+garde le résultat de **tout** courriel adressé à un animateur — code d'accès,
+invitation, relances, rappel de la veille, échanges, covoiturage, absences,
+plannings compris —, écrit à l'unique point de sortie des courriels, avec une
+catégorie lue sur le code SMTP (`RELAIS_INJOIGNABLE`, `AUTHENTIFICATION`,
+`ADRESSE_REFUSEE`, `TEMPORAIRE`, `AUTRE` ; un code étendu l'emporte sur le
+code de réponse, et seul un `5.1.x` y désigne le destinataire — un `553 5.7.1`
+est l'expéditeur refusé, pas l'adresse). `envoi_planning` répond à « quelle
+version a-t-il reçue ? » sur l'écran Diffuser ; `envoi_mail` à « a-t-il pu être
+joint ? » sur la page Animateurs : `dernierEnvoi` de
+`GET /api/animateurs/confirmations`, à côté du statut de confirmation et jamais
+mêlé à lui, et `echecsEnvoi` de la synthèse, compté à part des relancés et des
+silencieux parmi les personnes qui ont un poste — la population exacte du filtre
+`?envoi=echec` que son lien ouvre, quand la colonne, elle, dit « échec
+d'envoi » aussi d'une invitation sans poste. `ENVOYE` y veut dire « remis au relais », rien de plus — et rien du
+tout sous `MAIL_MOCK=true`, que `GET /api/config` dit (`mailMock`) pour que
+l'écran l'écrive « simulé ».
+
 `GET /api/planning/publication/etat` — **qui a reçu quelle version**, une ligne
 par animateur de l'édition, qu'il reste ou non quelqu'un à prévenir : la
 version qu'on lui a annoncée (`version.numero`, le rang de la publication dans

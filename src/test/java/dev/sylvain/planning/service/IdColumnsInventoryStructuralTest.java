@@ -50,6 +50,9 @@ class IdColumnsInventoryStructuralTest {
                     "envoi_planning.animateur_id",
                     "who a delivery of a planning was for; the ledger outlives the fiche"),
             Map.entry(
+                    "envoi_mail.animateur_id",
+                    "who a mail was for; kept until JOURNAL_RETENTION or the edition goes, like the ledger"),
+            Map.entry(
                     "journal_action.acteur_id",
                     "an animateur id when the actor is one, « admin » or « mcp » otherwise"),
             Map.entry(

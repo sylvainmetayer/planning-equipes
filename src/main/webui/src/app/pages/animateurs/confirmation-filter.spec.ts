@@ -1,11 +1,13 @@
-// The two acknowledgement filters (issue #504), pinned down without a table:
+// The acknowledgement filters (issue #504), pinned down without a table:
 // who counts as « jamais confirmé », who counts as « silencieux depuis N
-// jours », and how the URL params are read back — tolerantly.
+// jours », who counts as « échec d'envoi », and how the URL params are read
+// back — tolerantly.
 
 import { describe, expect, it } from 'vitest';
-import type { ConfirmationView } from '../../core/models';
+import type { ConfirmationView, LastMailDelivery } from '../../core/models';
 import {
   SILENCE_JOURS_DEFAUT,
+  failedSend,
   readModeAccuses,
   readNeverReminded,
   keptByAcknowledgement,
@@ -48,6 +50,65 @@ describe('readModeAccuses', () => {
       expect(readModeAccuses(null, silence).mode, `silence=${silence}`).toBe('tous');
     }
     expect(readModeAccuses('inconnu', null).mode).toBe('tous');
+  });
+});
+
+/** The last mail to Alice, refused by the relay two days after the publication. */
+function echec(patch: Partial<LastMailDelivery> = {}): LastMailDelivery {
+  return {
+    statut: 'ECHEC',
+    categorie: 'ADRESSE_REFUSEE',
+    le: '2026-07-03T10:00:00Z',
+    type: 'relance-confirmation',
+    ficheModifieeDepuis: false,
+    enEchec: true,
+    ...patch,
+  };
+}
+
+describe("the « échec d'envoi » filter", () => {
+  it('is read from envoi=echec, and a valid silence still wins', () => {
+    expect(readModeAccuses(null, null, 'echec').mode).toBe('echec');
+    expect(readModeAccuses('jamais', null, 'echec').mode).toBe('echec');
+    expect(readModeAccuses(null, '4', 'echec').mode).toBe('silence');
+    expect(readModeAccuses(null, null, 'autre').mode).toBe('tous');
+  });
+
+  it('keeps whoever holds a seat, has not confirmed and whose last mail failed', () => {
+    const failed = reponse({ dernierEnvoi: echec() });
+
+    expect(failedSend(failed)).toBe(true);
+    expect(keptByAcknowledgement('echec', 3, failed, PUBLICATION, MAINTENANT)).toBe(true);
+  });
+
+  it('counts under « échec d’envoi » the people the home screen counts: a seat first', () => {
+    const seatless = reponse({ affecte: false, dernierEnvoi: echec() });
+
+    expect(failedSend(seatless), 'the column still says the invitation bounced').toBe(true);
+    expect(
+      keptByAcknowledgement('echec', 3, seatless, PUBLICATION, MAINTENANT),
+      'echecsEnvoi only counts seated people, and its link opens this filter',
+    ).toBe(false);
+  });
+
+  it('leaves out a mail that left, a fiche edited since, and whoever confirmed', () => {
+    const parti = reponse({
+      dernierEnvoi: echec({ statut: 'ENVOYE', categorie: null, enEchec: false }),
+    });
+    const corrige = reponse({ dernierEnvoi: echec({ ficheModifieeDepuis: true, enEchec: false }) });
+    const confirme = reponse({ statut: 'CONFIRME', dernierEnvoi: echec() });
+
+    for (const confirmation of [parti, corrige, confirme, reponse()]) {
+      expect(keptByAcknowledgement('echec', 3, confirmation, PUBLICATION, MAINTENANT)).toBe(false);
+    }
+  });
+
+  it('is not a silence: « silencieux depuis » leaves it out, « jamais confirmés » keeps it', () => {
+    const failed = reponse({ dernierEnvoi: echec() });
+
+    expect(keptByAcknowledgement('silence', 3, failed, PUBLICATION, MAINTENANT)).toBe(false);
+    expect(keptByAcknowledgement('silence', 3, reponse(), PUBLICATION, MAINTENANT)).toBe(true);
+    expect(keptByAcknowledgement('jamais', 3, failed, PUBLICATION, MAINTENANT)).toBe(true);
   });
 });
 

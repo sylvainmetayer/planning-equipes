@@ -137,7 +137,7 @@ public class EspaceAccesService {
         // valid code behind that the animateur never received? It does — but a
         // replaced code is strictly safer than the previous one, and the next
         // request will replace it again. The send failure itself propagates.
-        mailService.sendAccessCode(animateur.getEmail(), animateur.getPrenom(), code);
+        mailService.sendAccessCode(animateurId, animateur.getEmail(), animateur.getPrenom(), code);
         return new CodeEnvoye(mask(animateur.getEmail()));
     }
 

@@ -224,13 +224,19 @@ class EtatEnvoisResourceTest {
         }
 
         @Override
-        public void sendPlanningPublie(String emailAnimateur, byte[] pdf, String fileName, PlanningPublie message) {
+        public void sendPlanningPublie(
+                String animateurId, String emailAnimateur, byte[] pdf, String fileName, PlanningPublie message) {
             throw new IllegalStateException("550 5.1.1 recipient refused");
         }
 
         @Override
         public void sendIndividualPlanning(
-                String emailAnimateur, String prenom, String lienEspace, byte[] pdf, String fileName) {
+                String animateurId,
+                String emailAnimateur,
+                String prenom,
+                String lienEspace,
+                byte[] pdf,
+                String fileName) {
             throw new IllegalStateException("550 5.1.1 recipient refused");
         }
     }

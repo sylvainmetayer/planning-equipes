@@ -55,7 +55,7 @@ class MailServiceTest {
     /** Each send is counted under the template that wrote it, never under a recipient. */
     @Test
     void aSentMailIsCountedUnderItsTemplate() {
-        service.sendAccessCode("alice@example.org", "Alice", "042137");
+        service.sendAccessCode("A1", "alice@example.org", "Alice", "042137");
 
         assertThat(registry.get("planning.mail.sent")
                         .tag("template", "code-acces")
@@ -70,7 +70,7 @@ class MailServiceTest {
     void aFailedSendIsCountedAndStillPropagates() {
         MailService failing = failingService();
 
-        assertThatThrownBy(() -> failing.sendAccessCode("alice@example.org", "Alice", "042137"))
+        assertThatThrownBy(() -> failing.sendAccessCode("A1", "alice@example.org", "Alice", "042137"))
                 .isInstanceOf(IllegalStateException.class);
 
         assertThat(registry.get("planning.mail.failures")
@@ -82,10 +82,11 @@ class MailServiceTest {
     }
 
     @Test
-    void lEnvoiDuPlanningJointLePdfEtLeLienEspace() {
+    void thePlanningMailAttachesThePdfAndTheEspaceLink() {
         byte[] pdf = new byte[] {1, 2, 3};
 
         service.sendIndividualPlanning(
+                "A1",
                 "alice@example.org",
                 "Alice",
                 "https://planning.example.org/animateur/jeton-1",
@@ -107,8 +108,8 @@ class MailServiceTest {
 
     /** With no public URL (no espace link), the mail leaves without the link. */
     @Test
-    void lEnvoiDuPlanningSansLienEspaceResteComplet() {
-        service.sendIndividualPlanning("alice@example.org", null, null, new byte[] {1}, "planning.pdf");
+    void thePlanningMailWithoutAnEspaceLinkIsStillComplete() {
+        service.sendIndividualPlanning("A1", "alice@example.org", null, null, new byte[] {1}, "planning.pdf");
 
         assertThat(envoyes).hasSize(1);
         assertThat(envoyes.get(0).getText()).contains("Bonjour,").doesNotContain("espace en ligne");
@@ -116,8 +117,8 @@ class MailServiceTest {
 
     /** The access code leaves in clear in the body, with how long it is valid. */
     @Test
-    void leCodeDAccesEstEnvoyeAvecSaDureeDeValidite() {
-        service.sendAccessCode("alice@example.org", "Alice", "042137");
+    void theAccessCodeIsSentWithItsValidity() {
+        service.sendAccessCode("A1", "alice@example.org", "Alice", "042137");
 
         assertThat(envoyes).hasSize(1);
         assertThat(envoyes.get(0).getSubject()).contains("code d'accès");
@@ -132,7 +133,7 @@ class MailServiceTest {
     void aFailedAccessCodeSendPropagatesToTheCaller() {
         service = failingService();
 
-        assertThatThrownBy(() -> service.sendAccessCode("alice@example.org", "Alice", "042137"))
+        assertThatThrownBy(() -> service.sendAccessCode("A1", "alice@example.org", "Alice", "042137"))
                 .isInstanceOf(IllegalStateException.class);
     }
 
@@ -145,7 +146,7 @@ class MailServiceTest {
         service = failingService();
 
         assertThatThrownBy(() -> service.sendIndividualPlanning(
-                        "alice@example.org", "Alice", null, new byte[] {1}, "planning.pdf"))
+                        "A1", "alice@example.org", "Alice", null, new byte[] {1}, "planning.pdf"))
                 .isInstanceOf(IllegalStateException.class);
     }
 
@@ -157,7 +158,7 @@ class MailServiceTest {
     void aFailedManualReminderPropagates() {
         service = failingService();
 
-        assertThatThrownBy(() -> service.sendRelanceConfirmation("alice@example.org", "Alice", null))
+        assertThatThrownBy(() -> service.sendRelanceConfirmation("A1", "alice@example.org", "Alice", null))
                 .isInstanceOf(IllegalStateException.class);
     }
 
@@ -169,7 +170,7 @@ class MailServiceTest {
     @Test
     void theManualReminderIsTheSharedRenderingWithTheEspaceLink() {
         String lien = "https://planning.example.org/animateur/jeton-1";
-        service.sendRelanceConfirmation("alice@example.org", "Alice", lien);
+        service.sendRelanceConfirmation("A1", "alice@example.org", "Alice", lien);
         MailContent partage = RelanceConfirmationMail.render(templates, ProductName.neutral(), "Alice", lien);
 
         assertThat(envoyes).hasSize(1);
@@ -199,5 +200,32 @@ class MailServiceTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("MAIL_ADMIN");
         assertThat(envoyes).isEmpty();
+    }
+
+    /**
+     * The explicit sends are recorded against the animateur too, and the
+     * failure still propagates: recording is next to the policy, not a
+     * replacement for it.
+     */
+    @Test
+    void aFailedExplicitSendIsRecordedByIdAndStillPropagates() {
+        List<String> recorded = new ArrayList<>();
+        MailService failing = new MailService(
+                mails -> {
+                    throw new IllegalStateException("535 5.7.8 Authentication failed");
+                },
+                new AdminAddress(Optional.of("admin@example.org")),
+                ProductName.neutral(),
+                templates,
+                new MailMetrics(
+                        registry,
+                        (animateurId, template, outcome) ->
+                                recorded.add(animateurId + " " + template + " " + outcome.category())));
+
+        assertThatThrownBy(() -> failing.sendRelanceConfirmation("A1", "alice@example.org", "Alice", null))
+                .isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(failing::sendTestMail).isInstanceOf(IllegalStateException.class);
+
+        assertThat(recorded).containsExactly("A1 mail/relance-confirmation AUTHENTIFICATION");
     }
 }

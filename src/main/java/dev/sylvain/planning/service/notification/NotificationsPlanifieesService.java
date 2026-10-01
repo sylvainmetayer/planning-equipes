@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.notification;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.journal.JournalActionService;
+import dev.sylvain.planning.service.mail.MailDeliveryRepository;
 import dev.sylvain.planning.service.referentiel.ParametresService;
 import io.quarkus.scheduler.Scheduled;
 import io.quarkus.scheduler.Scheduler;
@@ -59,6 +60,9 @@ public class NotificationsPlanifieesService {
     /** Applies the history's retention, once a night (issue #406). */
     private final JournalActionService journal;
 
+    /** The outcome of each mail to an animateur, kept as long as the history. */
+    private final MailDeliveryRepository deliveries;
+
     private final String zone;
 
     private final String cron;
@@ -72,6 +76,7 @@ public class NotificationsPlanifieesService {
             AlerteEchangeJob alerteEchange,
             Scheduler scheduler,
             JournalActionService journal,
+            MailDeliveryRepository deliveries,
             @ConfigProperty(name = "planning.notifications.zone") String zone,
             @ConfigProperty(name = "planning.notifications.cron") String cron) {
         this.editionContext = editionContext;
@@ -81,6 +86,7 @@ public class NotificationsPlanifieesService {
         this.alerteEchange = alerteEchange;
         this.scheduler = scheduler;
         this.journal = journal;
+        this.deliveries = deliveries;
         this.zone = zone;
         this.cron = cron;
     }
@@ -127,7 +133,10 @@ public class NotificationsPlanifieesService {
     }
 
     /**
-     * Drops the history lines that have aged out (issue #406).
+     * Drops the history lines that have aged out (issue #406), and the
+     * recorded outcomes of the mails sent to animateurs with them — the same
+     * {@code JOURNAL_RETENTION}: a send result is a trace of the same kind,
+     * and only the latest one per person is ever read.
      *
      * <p>Rides along with the nightly sweep rather than carrying a
      * {@code @Scheduled} of its own: every scheduler is one more thing to
@@ -145,6 +154,14 @@ public class NotificationsPlanifieesService {
             }
         } catch (RuntimeException e) {
             LOG.error("The history could not be purged; the nightly sends carry on", e);
+        }
+        try {
+            int purgees = deliveries.purgeBefore(Instant.now().minus(journal.retention()));
+            if (purgees > 0) {
+                LOG.infof("Mail deliveries: %d rows older than %s dropped", purgees, journal.retention());
+            }
+        } catch (RuntimeException e) {
+            LOG.error("The mail deliveries could not be purged; the nightly sends carry on", e);
         }
     }
 

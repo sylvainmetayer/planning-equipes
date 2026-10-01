@@ -1825,7 +1825,7 @@
         }
       },
       "ConfigView" : {
-        "required" : [ "devMode", "dragDropEnabled", "version" ],
+        "required" : [ "devMode", "dragDropEnabled", "version", "mailMock" ],
         "type" : "object",
         "properties" : {
           "sentryDsn" : {
@@ -1845,6 +1845,9 @@
           },
           "version" : {
             "type" : "string"
+          },
+          "mailMock" : {
+            "type" : "boolean"
           }
         }
       },
@@ -1917,6 +1920,9 @@
           },
           "relanceLe" : {
             "$ref" : "#/components/schemas/Instant"
+          },
+          "dernierEnvoi" : {
+            "$ref" : "#/components/schemas/LastMailDelivery"
           }
         }
       },
@@ -3935,7 +3941,7 @@
         }
       },
       "EtatConfirmations" : {
-        "required" : [ "confirmes", "delaiRelanceHeures", "relances", "relancesAutomatiques", "silencieux", "statut" ],
+        "required" : [ "confirmes", "delaiRelanceHeures", "echecsEnvoi", "relances", "relancesAutomatiques", "silencieux", "statut" ],
         "type" : "object",
         "properties" : {
           "confirmes" : {
@@ -3947,6 +3953,10 @@
             "format" : "int32"
           },
           "silencieux" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "echecsEnvoi" : {
             "type" : "integer",
             "format" : "int32"
           },
@@ -5515,6 +5525,30 @@
           },
           "creeLe" : {
             "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
+      "LastMailDelivery" : {
+        "type" : "object",
+        "required" : [ "statut", "le", "type", "ficheModifieeDepuis", "enEchec" ],
+        "properties" : {
+          "statut" : {
+            "type" : "string"
+          },
+          "categorie" : {
+            "type" : "string"
+          },
+          "le" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "type" : {
+            "type" : "string"
+          },
+          "ficheModifieeDepuis" : {
+            "type" : "boolean"
+          },
+          "enEchec" : {
+            "type" : "boolean"
           }
         }
       },
@@ -7902,7 +7936,7 @@
         }
       },
       "RapportRelance" : {
-        "required" : [ "envoyes", "dejaConfirmes", "sansEmail", "dejaRelancesPourCettePublication", "echecs", "sansPoste" ],
+        "required" : [ "envoyes", "dejaConfirmes", "sansEmail", "dejaRelancesPourCettePublication", "echecs", "sansPoste", "adresseRefusee" ],
         "type" : "object",
         "properties" : {
           "envoyes" : {
@@ -7936,6 +7970,12 @@
             }
           },
           "sansPoste" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "adresseRefusee" : {
             "type" : "array",
             "items" : {
               "type" : "string"
@@ -9499,7 +9539,7 @@
         }
       },
       "SyntheseConfirmations" : {
-        "required" : [ "confirmes", "relances", "silencieux", "jamaisPublie" ],
+        "required" : [ "confirmes", "relances", "silencieux", "echecsEnvoi", "jamaisPublie" ],
         "type" : "object",
         "properties" : {
           "confirmes" : {
@@ -9511,6 +9551,10 @@
             "format" : "int32"
           },
           "silencieux" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "echecsEnvoi" : {
             "type" : "integer",
             "format" : "int32"
           },

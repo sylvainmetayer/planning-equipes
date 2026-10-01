@@ -140,8 +140,8 @@ public class AnimateurResource {
     }
 
     /**
-     * The same answers in three numbers (issue #504) — confirmed, reminded,
-     * silent — next to the date of the publication they answer, for the head
+     * The same answers in four numbers (issue #504) — confirmed, reminded,
+     * silent, not reached — next to the date of the publication they answer, for the head
      * of the Animateurs page and for whichever screen needs the counts without
      * summing the table itself.
      */

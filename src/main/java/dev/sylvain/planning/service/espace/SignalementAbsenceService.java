@@ -344,12 +344,14 @@ public class SignalementAbsenceService {
                     notifications.fire(
                             accepted
                                     ? new Notification.AbsenceReportAccepted(
+                                            animateur.getId(),
                                             animateur.getEmail(),
                                             animateur.getPrenom(),
                                             signalement.jour(),
                                             poste,
                                             lien)
                                     : new Notification.AbsenceReportFiled(
+                                            animateur.getId(),
                                             animateur.getEmail(),
                                             animateur.getPrenom(),
                                             signalement.jour(),

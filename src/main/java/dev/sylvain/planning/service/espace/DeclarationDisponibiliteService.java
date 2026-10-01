@@ -260,7 +260,12 @@ public class DeclarationDisponibiliteService {
         }
         try {
             mailService.sendInvitationDeclaration(
-                    animateur.getEmail(), animateur.getPrenom(), lien.get(), fenetre.debut(), fenetre.fin());
+                    animateur.getId(),
+                    animateur.getEmail(),
+                    animateur.getPrenom(),
+                    lien.get(),
+                    fenetre.debut(),
+                    fenetre.fin());
             return true;
         } catch (RuntimeException e) {
             // The address is what the operator needs to act; the name is

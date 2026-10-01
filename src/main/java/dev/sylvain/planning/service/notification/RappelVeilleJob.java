@@ -5,11 +5,11 @@ import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.espace.ApplicationLinks;
+import dev.sylvain.planning.service.mail.MailDeliveryOutcome;
 import dev.sylvain.planning.service.publication.PlanPublieService;
 import dev.sylvain.planning.service.publication.PublicationDiffService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
@@ -18,6 +18,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.jboss.logging.Logger;
 
 /**
@@ -40,6 +41,12 @@ import org.jboss.logging.Logger;
  * recorded as an alert of the recent messages of the home screen: the organiser is the one
  * who can pick up a phone, and dropping the person silently would be the worst
  * of the three possible behaviours.</p>
+ *
+ * <p>So is a reminder whose mail failed, with an {@code ALERTE} rather than a
+ * warning: the person expects to be reminded and was not. The claim is kept —
+ * a relay that is down at 19 h is likely down at 20 h, and the evening must
+ * not be spent writing to it every hour — so the alert, which outlives the
+ * night, is what tells the organiser to call.</p>
  */
 @ApplicationScoped
 public class RappelVeilleJob {
@@ -56,7 +63,7 @@ public class RappelVeilleJob {
 
     private final JournalNotificationsRepository journal;
 
-    private final Event<Notification> notifications;
+    private final NotificationDispatcher dispatcher;
 
     @Inject
     public RappelVeilleJob(
@@ -65,13 +72,13 @@ public class RappelVeilleJob {
             PublicationDiffService diffService,
             ApplicationLinks liens,
             JournalNotificationsRepository journal,
-            Event<Notification> notifications) {
+            NotificationDispatcher dispatcher) {
         this.planPublieService = planPublieService;
         this.referenceDataService = referenceDataService;
         this.diffService = diffService;
         this.liens = liens;
         this.journal = journal;
-        this.notifications = notifications;
+        this.dispatcher = dispatcher;
     }
 
     /**
@@ -125,8 +132,9 @@ public class RappelVeilleJob {
     /**
      * One person's reminder.
      *
-     * @return true when a mail was actually fired — false when it had already
-     *         gone out, or when there is nobody to write to
+     * @return true when a mail actually left — false when it had already
+     *         gone out, when there is nobody to write to, or when the send
+     *         failed
      */
     private boolean remind(Animateur fiche, LocalDate demain, List<PosteAffectation> postes) {
         String cle = fiche.getId() + "|" + demain;
@@ -147,13 +155,28 @@ public class RappelVeilleJob {
         if (!journal.claim(JournalNotificationsRepository.Type.RAPPEL_VEILLE, cle, fiche.getId())) {
             return false;
         }
-        notifications.fire(new Notification.RappelVeille(
+        Optional<MailDeliveryOutcome> issue = dispatcher.deliver(new Notification.RappelVeille(
+                fiche.getId(),
                 fiche.getEmail(),
                 fiche.getPrenom(),
                 demain,
                 lines(postes),
                 liens.espaceAnimateur(fiche.getAccessToken()).orElse(null)));
-        return true;
+        if (issue.isPresent() && !issue.get().wasSent()) {
+            // A key of its own: the address-less warning may already hold
+            // the bare one — the fiche got its address since — and the
+            // insert would then drop this alert without a word.
+            journal.claim(
+                    JournalNotificationsRepository.Type.RAPPEL_VEILLE_INJOIGNABLE,
+                    cle + JournalNotificationsRepository.FAILURE_SUFFIX,
+                    fiche.getId(),
+                    "Rappel de la veille non parti : l'envoi du courriel a échoué."
+                            + " Cette personne est affectée le " + NotificationWriter.JOUR.format(demain)
+                            + " et doit être prévenue à la main.",
+                    JournalNotificationsRepository.Severite.ALERTE);
+            return false;
+        }
+        return issue.isPresent();
     }
 
     /** « Cirque 14h-18h », in the order the day is worked. */

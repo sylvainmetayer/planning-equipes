@@ -2459,6 +2459,8 @@ export interface AppConfig {
   dragDropEnabled: boolean;
   /** Backend version, as the startup line prints it (docs/versioning.md). */
   version: string;
+  /** The mailer is mocked (`MAIL_MOCK=true`): a mail recorded as sent never left the server. */
+  mailMock: boolean;
 }
 
 /**
@@ -3117,6 +3119,30 @@ export interface ConfirmationView {
   affecte: boolean;
   confirmeLe: string | null;
   relanceLe: string | null;
+  /** The last mail sent to them, whatever it was; absent when none is on record. */
+  dernierEnvoi?: LastMailDelivery | null;
+}
+
+/** Why a mail could not leave, read off the relay's answer (`MailFailureCategory`). */
+export type CategorieEchecEnvoi =
+  'RELAIS_INJOIGNABLE' | 'AUTHENTIFICATION' | 'ADRESSE_REFUSEE' | 'TEMPORAIRE' | 'AUTRE';
+
+/**
+ * The outcome of the last mail sent to one animateur — no address, no content.
+ * `ENVOYE` means handed to the relay: not read, not even received, and nothing
+ * at all under a mocked mailer (`AppConfig.mailMock`).
+ */
+export interface LastMailDelivery {
+  statut: 'ENVOYE' | 'ECHEC';
+  /** Why it failed; absent when it left. */
+  categorie?: CategorieEchecEnvoi | null;
+  le: string;
+  /** The template's name: `relance-confirmation`, `rappel-veille`, `planning-publie`… */
+  type: string;
+  /** The fiche was edited after it — what lifts a failure. */
+  ficheModifieeDepuis: boolean;
+  /** It failed and the fiche was not edited since: « échec d'envoi », not a silence. */
+  enEchec: boolean;
 }
 
 /** What the espace reads back after the click: its own new state, and nothing about anybody else. */
@@ -3135,6 +3161,8 @@ export interface SyntheseConfirmations {
   confirmes: number;
   relances: number;
   silencieux: number;
+  /** Not confirmed and their last mail failed: counted in neither `relances` nor `silencieux`. */
+  echecsEnvoi: number;
   dernierePublicationLe: string | null;
   jamaisPublie: boolean;
 }
@@ -3156,6 +3184,8 @@ export interface RapportRelance {
   dejaRelancesPourCettePublication: string[];
   echecs: string[];
   sansPoste: string[];
+  /** Not attempted: the relay refused their address at the last send, and the fiche was not edited since. */
+  adresseRefusee: string[];
 }
 
 /** « Je ne pourrai pas venir », offered to the espaces of the edition or not — on by default. */
@@ -4502,6 +4532,8 @@ export interface EtatConfirmations {
   confirmes: number;
   relances: number;
   silencieux: number;
+  /** Not reached rather than silent: « à vérifier » at once. */
+  echecsEnvoi: number;
   /** « À vérifier » only once `delaiRelanceHeures` have passed since the publication. */
   statut: StatutEtat;
   /** The nightly sends are armed on this edition (Paramètres › E-mails): off by default. */

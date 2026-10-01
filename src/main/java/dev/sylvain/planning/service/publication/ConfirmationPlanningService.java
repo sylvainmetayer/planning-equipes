@@ -3,6 +3,8 @@ package dev.sylvain.planning.service.publication;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.StatutConfirmation;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.mail.MailDelivery;
+import dev.sylvain.planning.service.mail.MailDeliveryRepository;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -11,6 +13,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,6 +30,12 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * whose own schedule moved (see {@link PlanPublicationService}): somebody whose
  * days did not budge has already answered the question they are being asked,
  * and asking again would train everyone to click without reading.</p>
+ *
+ * <p>Next to the answer, and never mixed with it, the outcome of the last mail
+ * sent to each person ({@link MailDeliveryRepository}): « has confirmed » and
+ * « could be reached » are two questions — somebody may confirm and then see
+ * their day-before reminder bounce. A silence whose last mail failed is not a
+ * silence, and it is counted apart.</p>
  */
 @ApplicationScoped
 public class ConfirmationPlanningService {
@@ -37,22 +46,28 @@ public class ConfirmationPlanningService {
 
     private final PlanPublieService planPublieService;
 
+    private final MailDeliveryRepository deliveries;
+
     @Inject
     public ConfirmationPlanningService(
             ConfirmationPlanningRepository repository,
             ReferenceDataService referenceDataService,
-            PlanPublieService planPublieService) {
+            PlanPublieService planPublieService,
+            MailDeliveryRepository deliveries) {
         this.repository = repository;
         this.referenceDataService = referenceDataService;
         this.planPublieService = planPublieService;
+        this.deliveries = deliveries;
     }
 
     /**
      * One animateur's answer, as the admin table shows it.
      *
-     * @param affecte holds at least one seat in the published plan — the only
-     *                people the question is even asked of; the others show as
-     *                "sans objet" rather than as silent
+     * @param affecte      holds at least one seat in the published plan — the
+     *                     only people the question is even asked of; the
+     *                     others show as "sans objet" rather than as silent
+     * @param dernierEnvoi the last mail sent to them, whatever it was,
+     *                     {@code null} when none is on record
      */
     @Schema(requiredProperties = {"affecte"})
     public record ConfirmationView(
@@ -61,7 +76,41 @@ public class ConfirmationPlanningService {
             String statut,
             boolean affecte,
             Instant confirmeLe,
-            Instant relanceLe) {}
+            Instant relanceLe,
+            LastMailDelivery dernierEnvoi) {}
+
+    /**
+     * The outcome of the last mail sent to one animateur — no address, no
+     * content: what left and when, or why it did not.
+     *
+     * @param statut              {@code ENVOYE} (handed to the relay — not
+     *                            read, not even received) or {@code ECHEC}
+     * @param categorie           why it failed: {@code RELAIS_INJOIGNABLE},
+     *                            {@code AUTHENTIFICATION},
+     *                            {@code ADRESSE_REFUSEE}, {@code TEMPORAIRE}
+     *                            or {@code AUTRE}; {@code null} when it left
+     * @param le                  when it was attempted
+     * @param type                which mail it was, the template's name
+     *                            ({@code relance-confirmation})
+     * @param ficheModifieeDepuis the fiche was edited after it — what lifts a
+     *                            failure: the address corrected, or the person
+     *                            reached otherwise
+     * @param enEchec             it failed, and the fiche was not edited since
+     */
+    @Schema(requiredProperties = {"statut", "le", "type", "ficheModifieeDepuis", "enEchec"})
+    public record LastMailDelivery(
+            String statut, String categorie, Instant le, String type, boolean ficheModifieeDepuis, boolean enEchec) {
+
+        static LastMailDelivery of(MailDelivery delivery, Instant ficheModifieLe) {
+            return new LastMailDelivery(
+                    delivery.status().name(),
+                    delivery.category() == null ? null : delivery.category().name(),
+                    delivery.sentAt(),
+                    delivery.type(),
+                    delivery.ficheModifiedSince(ficheModifieLe),
+                    delivery.failingFor(ficheModifieLe));
+        }
+    }
 
     /** What the espace reads back after the click: its own new state, and nothing about anybody else. */
     public record AccuseReception(String statut, Instant confirmeLe) {}
@@ -79,12 +128,22 @@ public class ConfirmationPlanningService {
      *
      * @param dernierePublicationLe when the plan the answers are about left,
      *                              {@code null} while nothing was ever published
-     * @param jamaisPublie          true before the first publication: the three
+     * @param echecsEnvoi           people who have not confirmed and whose last
+     *                              mail failed, with no edit of their fiche
+     *                              since — counted here and in neither
+     *                              {@code relances} nor {@code silencieux}: they
+     *                              were not silent, they were not reached
+     * @param jamaisPublie          true before the first publication: the four
      *                              counts are then all zero, and mean nothing
      */
-    @Schema(requiredProperties = {"confirmes", "relances", "silencieux", "jamaisPublie"})
+    @Schema(requiredProperties = {"confirmes", "relances", "silencieux", "echecsEnvoi", "jamaisPublie"})
     public record SyntheseConfirmations(
-            int confirmes, int relances, int silencieux, Instant dernierePublicationLe, boolean jamaisPublie) {}
+            int confirmes,
+            int relances,
+            int silencieux,
+            int echecsEnvoi,
+            Instant dernierePublicationLe,
+            boolean jamaisPublie) {}
 
     /**
      * Records the animateur's own click. Idempotent: clicking twice keeps the
@@ -141,42 +200,63 @@ public class ConfirmationPlanningService {
     /** The whole edition's answers, one line per animateur, sorted by display name. */
     public List<ConfirmationView> byAnimateur() {
         Map<String, ConfirmationPlanningRepository.Confirmation> stockees = repository.byAnimateur();
+        Map<String, MailDelivery> derniersEnvois = deliveries.latestByAnimateur();
         Collection<String> affectes = assignedAnimateurs();
         List<ConfirmationView> vues = new ArrayList<>();
         for (Animateur animateur : referenceDataService.listAnimateurs()) {
             ConfirmationPlanningRepository.Confirmation stored = stockees.get(animateur.getId());
+            MailDelivery dernierEnvoi = derniersEnvois.get(animateur.getId());
             vues.add(new ConfirmationView(
                     animateur.getId(),
                     animateur.nomAffiche(),
                     (stored == null ? StatutConfirmation.NON_VU : stored.statut()).name(),
                     affectes.contains(animateur.getId()),
                     stored == null ? null : stored.confirmeLe(),
-                    stored == null ? null : stored.relanceLe()));
+                    stored == null ? null : stored.relanceLe(),
+                    dernierEnvoi == null ? null : LastMailDelivery.of(dernierEnvoi, animateur.getModifieLe())));
         }
         vues.sort(Comparator.comparing(ConfirmationView::nomAffiche, String.CASE_INSENSITIVE_ORDER));
         return List.copyOf(vues);
     }
 
-    /** The three counts of the head of the page, over the people the published plan gives a seat to. */
+    /**
+     * The four counts of the head of the page, over the people the published
+     * plan gives a seat to. They add up to that number: whoever has not
+     * confirmed is a failed send, a reminded person or a silent one, never two
+     * of them.
+     */
     public SyntheseConfirmations synthese() {
         PlanSnapshotService.SnapshotMeta publication = planPublieService.lastPublication();
         if (publication == null) {
-            return new SyntheseConfirmations(0, 0, 0, null, true);
+            return new SyntheseConfirmations(0, 0, 0, 0, null, true);
         }
         Map<String, ConfirmationPlanningRepository.Confirmation> stockees = repository.byAnimateur();
+        Map<String, MailDelivery> derniersEnvois = deliveries.latestByAnimateur();
+        Map<String, Instant> modifieLe = new HashMap<>();
+        for (Animateur animateur : referenceDataService.listAnimateurs()) {
+            modifieLe.put(animateur.getId(), animateur.getModifieLe());
+        }
         int confirmes = 0;
         int relances = 0;
         int silencieux = 0;
+        int echecsEnvoi = 0;
         for (String animateurId : assignedAnimateurs()) {
             ConfirmationPlanningRepository.Confirmation stored = stockees.get(animateurId);
             StatutConfirmation statut = stored == null ? StatutConfirmation.NON_VU : stored.statut();
+            MailDelivery dernierEnvoi = derniersEnvois.get(animateurId);
+            if (statut != StatutConfirmation.CONFIRME
+                    && dernierEnvoi != null
+                    && dernierEnvoi.failingFor(modifieLe.get(animateurId))) {
+                echecsEnvoi++;
+                continue;
+            }
             switch (statut) {
                 case CONFIRME -> confirmes++;
                 case RELANCE -> relances++;
                 case NON_VU -> silencieux++;
             }
         }
-        return new SyntheseConfirmations(confirmes, relances, silencieux, publication.publieLe(), false);
+        return new SyntheseConfirmations(confirmes, relances, silencieux, echecsEnvoi, publication.publieLe(), false);
     }
 
     /**

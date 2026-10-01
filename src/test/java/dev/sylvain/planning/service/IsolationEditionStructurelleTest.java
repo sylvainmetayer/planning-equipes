@@ -108,6 +108,7 @@ class IsolationEditionStructurelleTest {
             "plan_snapshot",
             "publication_destinataire",
             "envoi_planning",
+            "envoi_mail",
             "declaration_disponibilite",
             "declaration_coequipier",
             "signalement_absence",
@@ -212,6 +213,9 @@ class IsolationEditionStructurelleTest {
      *       is a property of the table, not of an edition. Writing every other
      *       statement of that repository through {@code prepareScoped} is what
      *       keeps the exception to this one line.</li>
+     *   <li>{@code MailDeliveryRepository.purgeBefore} does the same for the
+     *       recorded outcome of the mails sent to animateurs, on the same
+     *       night and with the same retention, for the same reason.</li>
      *   <li>{@code StaffingVerificationRepository.closeInterrupted} closes the
      *       staffing checks a stop cut short, across every edition, once at
      *       startup — which has no edition of its own, and a check is
@@ -232,6 +236,7 @@ class IsolationEditionStructurelleTest {
                     + " s.publie_le, e.nom AS edition_nom, e.reference_modifie_le, s.consignes , s.contenu, s.kpi"
                     + " FROM plan_snapshot s LEFT JOIN edition e ON e.id = s.edition_id WHERE s.id = ?",
             "DELETE FROM journal_action WHERE survenu_le < ?",
+            "DELETE FROM envoi_mail WHERE envoye_le < ?",
             "UPDATE verification_besoin SET etat = 'ECHEC', terminee_le = now(), erreur = ? WHERE etat = 'EN_COURS'");
 
     /**

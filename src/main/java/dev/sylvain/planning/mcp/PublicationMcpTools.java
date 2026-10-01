@@ -193,7 +193,9 @@ public class PublicationMcpTools {
                     + "active — tout comme celle-ci, refusée sur une autre édition. ENVOIE UN COURRIEL à chacun "
                     + "d'eux. Même message que la nuit, même règle : personne ne reçoit deux fois la relance d'une "
                     + "même publication, par la nuit ou à la main — les personnes déjà relancées, déjà confirmées, "
-                    + "sans adresse ou sans poste sont rendues par id dans le compte rendu au lieu d'être écrites. "
+                    + "sans adresse ou sans poste sont rendues par id dans le compte rendu au lieu d'être écrites, "
+                    + "comme celles dont l'adresse a été refusée par le serveur de messagerie au dernier envoi tant "
+                    + "que leur fiche n'a pas été modifiée depuis (adresseRefusee). "
                     + "Refusé si rien n'a jamais été publié ou si un id est inconnu. Consulter synthese_confirmations "
                     + "ou lister_animateurs d'abord.",
             annotations =
@@ -212,15 +214,18 @@ public class PublicationMcpTools {
                 rapport.sansEmail(),
                 rapport.dejaRelancesPourCettePublication(),
                 rapport.echecs(),
-                rapport.sansPoste());
+                rapport.sansPoste(),
+                rapport.adresseRefusee());
     }
 
     @Tool(
             name = "synthese_confirmations",
-            description = "Accusés de réception du planning publié en trois nombres — confirmés, relancés, "
-                    + "silencieux — parmi les animateurs qui ont un poste sur ce planning, avec la date de la "
-                    + "dernière publication. N'envoie rien. jamaisPublie vrai veut dire que la question n'a encore "
-                    + "été posée à personne.",
+            description = "Accusés de réception du planning publié en quatre nombres — confirmés, relancés, "
+                    + "silencieux, échecs d'envoi — parmi les animateurs qui ont un poste sur ce planning, avec la "
+                    + "date de la dernière publication. Un échec d'envoi est une personne qui n'a pas confirmé et "
+                    + "dont le dernier courriel n'est pas parti (fiche non modifiée depuis) : elle n'est pas "
+                    + "silencieuse, elle n'a pas été jointe. N'envoie rien et ne donne aucune adresse. jamaisPublie "
+                    + "vrai veut dire que la question n'a encore été posée à personne.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -234,6 +239,7 @@ public class PublicationMcpTools {
                 synthese.confirmes(),
                 synthese.relances(),
                 synthese.silencieux(),
+                synthese.echecsEnvoi(),
                 synthese.dernierePublicationLe(),
                 synthese.jamaisPublie());
     }
@@ -325,6 +331,10 @@ public class PublicationMcpTools {
      *                                         rule: the night or an earlier
      *                                         hand already wrote to them about
      *                                         this publication
+     * @param adresseRefusee                   not attempted: the relay refused
+     *                                         their address at the last send,
+     *                                         and the fiche has not been edited
+     *                                         since
      */
     public record RapportRelanceView(
             List<String> envoyes,
@@ -332,12 +342,20 @@ public class PublicationMcpTools {
             List<String> sansEmail,
             List<String> dejaRelancesPourCettePublication,
             List<String> echecs,
-            List<String> sansPoste) {}
+            List<String> sansPoste,
+            List<String> adresseRefusee) {}
 
     /**
      * @param dernierePublicationLe the publication the answers are about;
      *                              {@code null} when nothing was ever published
+     * @param echecsEnvoi           not confirmed, and their last mail failed —
+     *                              counted in neither relances nor silencieux
      */
     public record SyntheseConfirmationsView(
-            int confirmes, int relances, int silencieux, Instant dernierePublicationLe, boolean jamaisPublie) {}
+            int confirmes,
+            int relances,
+            int silencieux,
+            int echecsEnvoi,
+            Instant dernierePublicationLe,
+            boolean jamaisPublie) {}
 }

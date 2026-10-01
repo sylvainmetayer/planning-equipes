@@ -35,6 +35,10 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * (docs/versioning.md). It is what {@code scripts/verifier-deploiement.sh}
  * compares with the version the operator meant to deploy; the footer of every
  * page already shows it, so publishing it here reveals nothing new.</p>
+ *
+ * <p>And whether the mailer is <b>mocked</b> ({@code MAIL_MOCK=true}): nothing
+ * leaves then, yet every send is recorded as gone, and the Animateurs page
+ * must word that « simulé » rather than let it pass for a delivery.</p>
  */
 @Path("/config")
 @Produces(MediaType.APPLICATION_JSON)
@@ -48,16 +52,20 @@ public class ConfigResource {
 
     private final String version;
 
+    private final boolean mailMock;
+
     @Inject
     public ConfigResource(
             ConfigObservabilite observabilite,
             DevMode devMode,
             ConfigAdmin admin,
-            @ConfigProperty(name = "quarkus.application.version") String version) {
+            @ConfigProperty(name = "quarkus.application.version") String version,
+            @ConfigProperty(name = "quarkus.mailer.mock", defaultValue = "false") boolean mailMock) {
         this.observabilite = observabilite;
         this.devMode = devMode;
         this.admin = admin;
         this.version = version;
+        this.mailMock = mailMock;
     }
 
     @GET
@@ -68,7 +76,8 @@ public class ConfigResource {
                 observabilite.cloudflare().webAnalyticsToken().orElse(""),
                 devMode.isActive(),
                 admin.dragDropEnabled(),
-                version);
+                version,
+                mailMock);
     }
 
     /**
@@ -83,13 +92,16 @@ public class ConfigResource {
      * @param version            backend version: {@code X.Y.Z} on a release
      *                           image, the short SHA on a recette image,
      *                           {@code 999-SNAPSHOT} in a local build
+     * @param mailMock           the mailer is mocked: a mail recorded as sent
+     *                           never left the server
      */
-    @Schema(requiredProperties = {"devMode", "dragDropEnabled", "version"})
+    @Schema(requiredProperties = {"devMode", "dragDropEnabled", "version", "mailMock"})
     public record ConfigView(
             String sentryDsn,
             String sentryEnvironment,
             String cloudflareWebAnalyticsToken,
             boolean devMode,
             boolean dragDropEnabled,
-            String version) {}
+            String version,
+            boolean mailMock) {}
 }

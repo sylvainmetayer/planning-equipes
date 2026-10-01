@@ -6,7 +6,7 @@
     </mat-card-subtitle>
   </mat-card-header>
   @if (syntheseLabel(); as synthese) {
-    <!-- The three counts of the acknowledgement column, and the publication
+    <!-- The four counts of the acknowledgement column, and the publication
          they answer: what the organiser reads before deciding whom to chase. -->
     <output class="confirmations-synthese status-paragraph">{{ synthese }}</output>
   }
@@ -26,6 +26,7 @@
         <mat-option value="tous" i18n="@@animateurs.accuses.tous">Tous</mat-option>
         <mat-option value="jamais" i18n="@@animateurs.accuses.jamais">Jamais confirmés</mat-option>
         <mat-option value="silence" i18n="@@animateurs.accuses.silence">Silencieux depuis N jours</mat-option>
+        <mat-option value="echec" i18n="@@animateurs.accuses.echec">Échec d'envoi</mat-option>
       </mat-select>
     </mat-form-field>
     @if (accuses() === 'silence') {
@@ -181,6 +182,9 @@
         <td mat-cell *matCellDef="let animateur">
           @if (confirmationLabel(animateur); as libelle) {
             <span [matTooltip]="confirmationDate(animateur) ?? ''">{{ libelle }}</span>
+            @if (failureDetail(animateur); as detail) {
+              <span class="envoi-echec-detail">{{ detail }}</span>
+            }
             @if (confirmationDate(animateur); as date) {
               <span class="visually-hidden"> — {{ date }}</span>
             }

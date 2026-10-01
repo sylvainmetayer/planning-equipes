@@ -925,6 +925,8 @@ public class EtatEditionService {
         Statut statut;
         if (synthese.jamaisPublie()) {
             statut = Statut.A_FAIRE;
+        } else if (synthese.echecsEnvoi() > 0) {
+            statut = Statut.ATTENTION;
         } else if (synthese.silencieux() == 0 && synthese.relances() == 0) {
             statut = Statut.FAIT;
         } else if (synthese.dernierePublicationLe() == null
@@ -939,6 +941,7 @@ public class EtatEditionService {
                 synthese.confirmes(),
                 synthese.relances(),
                 synthese.silencieux(),
+                synthese.echecsEnvoi(),
                 statut,
                 today.relancesAutomatiques(),
                 today.delaiRelanceHeures());
@@ -1053,6 +1056,9 @@ public class EtatEditionService {
      * manual one — since the last publication, among the alerts
      * {@link #stillStanding} kept, so about somebody still silent: one about
      * an older plan was about a schedule the publication since has replaced.
+     * Counted per person: the warning of a fiche without an address and the
+     * alert of the send that failed once it had one are two alerts, and one
+     * person to chase.
      */
     static int unsentReminders(List<Alerte> alertes, SyntheseConfirmations confirmations) {
         Instant publication = confirmations.dernierePublicationLe();
@@ -1065,6 +1071,8 @@ public class EtatEditionService {
                         .equals(alerte.type()))
                 .filter(alerte ->
                         alerte.declencheLe() != null && !alerte.declencheLe().isBefore(publication))
+                .map(Alerte::animateurId)
+                .distinct()
                 .count();
     }
 
