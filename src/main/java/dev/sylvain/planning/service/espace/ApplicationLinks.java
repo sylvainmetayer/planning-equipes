@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.espace;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.UriBuilder;
+import java.time.LocalDate;
 import java.util.Optional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -50,7 +51,21 @@ public class ApplicationLinks {
      */
     private static final String ECRAN_PARAMETRES = "parametres";
 
+    /** The query parameter an admin screen reads its tab from. */
+    private static final String TAB_PARAM = "onglet";
+
     private static final String ONGLET_GLOBAUX = "globaux";
+
+    /** The Paramètres tab of the edition's own settings, where the weather alert lives. */
+    private static final String ONGLET_EDITION = "edition";
+
+    /** Its weather block, an anchor of the page. */
+    private static final String ANCRE_METEO = "meteo";
+
+    /** Admin screen « Consignes au solveur », and the tab where the consignes are posed. */
+    private static final String ECRAN_CONSIGNES = "consignes-solveur";
+
+    private static final String ONGLET_CONSIGNES = "consignes";
 
     /** Admin screen « Diffuser », where a publication is prepared and its sends are followed. */
     private static final String ECRAN_PUBLICATION = "publication";
@@ -101,7 +116,7 @@ public class ApplicationLinks {
     public Optional<String> parametresGlobauxScreen() {
         return base.map(url -> UriBuilder.fromUri(url)
                 .path(ECRAN_PARAMETRES)
-                .queryParam("onglet", ONGLET_GLOBAUX)
+                .queryParam(TAB_PARAM, ONGLET_GLOBAUX)
                 .build()
                 .toString());
     }
@@ -109,6 +124,48 @@ public class ApplicationLinks {
     public Optional<String> disponibilitesScreen() {
         return base.map(url ->
                 UriBuilder.fromUri(url).path(ECRAN_DISPONIBILITES).build().toString());
+    }
+
+    /** The weather alert's settings, which the mail saying the service stopped answering links to. */
+    public Optional<String> parametresMeteoScreen() {
+        return base.map(url -> UriBuilder.fromUri(url)
+                .path(ECRAN_PARAMETRES)
+                .queryParam(TAB_PARAM, ONGLET_EDITION)
+                .fragment(ANCRE_METEO)
+                .build()
+                .toString());
+    }
+
+    /**
+     * The consignes of one date, as a weather alert points at them — in the
+     * application, the address the home screen's « Préparer la consigne »
+     * follows. With {@code create}, the form opens on that date, pre-filled
+     * with {@code presetId} when there is one; without, the date's existing
+     * consigne is shown. Nothing is applied by following it.
+     */
+    public static String consigneRoute(LocalDate date, String presetId, boolean create) {
+        return consignes(UriBuilder.fromPath("/"), date, presetId, create);
+    }
+
+    /** The same, absolute, for the mail of a weather alert. */
+    public Optional<String> consigneScreen(LocalDate date, String presetId, boolean create) {
+        return base.map(url -> consignes(UriBuilder.fromUri(url), date, presetId, create));
+    }
+
+    /** The preset id travels as a template value, encoded rather than concatenated. */
+    private static String consignes(UriBuilder start, LocalDate date, String presetId, boolean create) {
+        UriBuilder route = start.path(ECRAN_CONSIGNES)
+                .queryParam(TAB_PARAM, ONGLET_CONSIGNES)
+                .queryParam("date", date.toString());
+        if (create) {
+            route.queryParam("nouvelle", "1");
+            if (presetId != null) {
+                return route.queryParam("prereglage", "{prereglage}")
+                        .build(presetId)
+                        .toString();
+            }
+        }
+        return route.build().toString();
     }
 
     /** The Diffuser screen, which an outgoing webhook announcing a publication links to. */

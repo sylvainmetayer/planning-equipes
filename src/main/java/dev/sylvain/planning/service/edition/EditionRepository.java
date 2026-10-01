@@ -120,6 +120,14 @@ public class EditionRepository {
                             + "repas_soir_debut, repas_soir_fin, repas_coupure_minutes, repas_justification, "
                             + "cree_le"),
             new TableToCopy("prereglage_consigne_fenetre", "prereglage_id, position, heure_debut, heure_fin"),
+            // The weather alert travels with the presets it suggests (ADR 0074),
+            // switched OFF: `actif` is left out, so the copy falls back on its
+            // default — an edition just duplicated queries nobody until someone
+            // decides it should.
+            new TableToCopy(
+                    "parametres_meteo",
+                    "horizon_jours, seuil_temperature, seuil_rafales, orage, prereglage_chaleur, prereglage_vent, "
+                            + "prereglage_orage"),
             // The id counters travel with the ids they handed out (ADR 0050):
             // the copy keeps every id verbatim, so its next animateur must be
             // numbered after the ones it inherited, not from A1 again. Copied

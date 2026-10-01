@@ -1,0 +1,11 @@
+Le service météo ne répond plus depuis le {depuis} : les prévisions de « {edition} » ne sont plus vérifiées, et aucune alerte météo ne peut être levée.
+
+Dernière erreur : {erreur}
+
+Ce message ne revient pas pour cette panne ; l'alerte reprend d'elle-même dès que le service répond.
+{#if lien}
+
+Les réglages de l'alerte météo : {lien}
+{/if}
+
+Données météo : Open-Meteo.com (CC BY 4.0).

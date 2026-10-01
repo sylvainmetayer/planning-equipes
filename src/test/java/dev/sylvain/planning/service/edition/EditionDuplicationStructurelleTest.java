@@ -51,6 +51,10 @@ class EditionDuplicationStructurelleTest {
             Map.entry("animateur.modifie_le", "same"),
             Map.entry("journee_type.modifie_le", "same"),
             Map.entry("prereglage_consigne.modifie_le", "same"),
+            Map.entry("parametres_meteo.modifie_le", "same"),
+            Map.entry(
+                    "parametres_meteo.actif",
+                    "a duplicated edition queries nobody until someone arms it: the copy falls back on FALSE"),
             Map.entry(
                     "animateur.access_token",
                     "credential: the default mints a fresh one per edition, so one person's espace "

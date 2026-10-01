@@ -4,6 +4,7 @@
 
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { NotificationService } from '../../core/notification.service';
@@ -115,5 +116,53 @@ describe('MessagesRecents', () => {
 
   it('falls back to the clock when no date is frozen', () => {
     expect(dayLabel(new Date(), serverToday(''))).toBe("Aujourd'hui");
+  });
+});
+
+describe('MessagesRecents — a weather alert', () => {
+  it('leads to the consigne it suggests, without applying anything', async () => {
+    const navigateByUrl = vi.fn().mockResolvedValue(true);
+    const lien = '/consignes-solveur?onglet=consignes&date=2026-07-15&nouvelle=1&prereglage=P1';
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        {
+          provide: AnalysesApi,
+          useValue: {
+            alerts: vi.fn().mockResolvedValue([
+              {
+                type: 'METEO_ALERTE',
+                cle: '2026-07-15|HEAT|1',
+                declencheLe: '2026-07-13T04:00:00Z',
+                libelle:
+                  'Mer. 15/07 : 36 °C prévus à Kiosque (seuil 33 °C). Suggestion : Plan canicule.',
+                severite: 'WARNING',
+                animateurId: null,
+                nomAffiche: null,
+                lien,
+              },
+            ]),
+          },
+        },
+        { provide: DateMockService, useValue: { dateDuJour: () => '' } },
+        { provide: Router, useValue: { navigateByUrl } },
+      ],
+    });
+    const fixture = TestBed.createComponent(MessagesRecents);
+    fixture.componentRef.setInput('ouvert', true);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(element.querySelector('a')).not.toBeNull();
+    });
+    const lienPreparer = element.querySelector('a')!;
+    expect(lienPreparer.textContent).toContain('Préparer la consigne');
+    expect(lienPreparer.getAttribute('href')).toBe(lien);
+    lienPreparer.click();
+    expect(navigateByUrl).toHaveBeenCalledWith(lien);
   });
 });

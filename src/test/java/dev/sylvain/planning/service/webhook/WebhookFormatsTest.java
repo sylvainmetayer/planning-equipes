@@ -203,7 +203,12 @@ class WebhookFormatsTest {
                         null,
                         2),
                 new Notification.BackupRecovered(
-                        ZonedDateTime.of(2026, 7, 12, 4, 0, 0, 0, ZoneId.of("Europe/Paris")), "dump.sql", 2));
+                        ZonedDateTime.of(2026, 7, 12, 4, 0, 0, 0, ZoneId.of("Europe/Paris")), "dump.sql", 2),
+                new Notification.WeatherAlert(
+                        "Année 2026",
+                        List.of(new Notification.WeatherAlert.Line(
+                                LocalDate.of(2026, 7, 15), "orage", "Orage prévu.", 95, 95, 0, 1, null, null))),
+                new Notification.WeatherUnreachable("Année 2026", LocalDate.of(2026, 7, 11), "500"));
 
         List<WebhookEmitter.Occurrence> occurrences = new ArrayList<>();
         for (Notification notification : notifications) {
@@ -218,6 +223,7 @@ class WebhookFormatsTest {
                         WebhookEvent.SOLVE_FINISHED,
                         WebhookEvent.SWAPS_PENDING,
                         WebhookEvent.BACKUP_FAILED,
+                        WebhookEvent.WEATHER_ALERT,
                         WebhookEvent.PLANNING_PUBLISHED);
 
         for (WebhookEmitter.Occurrence occurrence : occurrences) {
@@ -233,6 +239,41 @@ class WebhookFormatsTest {
                         .doesNotContain("Jeanne", "Dupont", "Paul", "Durand", "@example.org", "TOKEN", "1990");
             }
         }
+    }
+
+    @Test
+    void aWeatherAlertSaysWhatAndWhenButNoPlaceName() {
+        Notification.WeatherAlert alerte = new Notification.WeatherAlert(
+                "Année 2026",
+                List.of(new Notification.WeatherAlert.Line(
+                        LocalDate.of(2026, 7, 15),
+                        "chaleur",
+                        "Mer. 15/07 : 36 °C prévus à Kiosque (seuil 33 °C).",
+                        36,
+                        33,
+                        1,
+                        2,
+                        "P1",
+                        "https://planning.example.org/consignes-solveur?onglet=consignes&date=2026-07-15")));
+        WebhookEmitter.Occurrence occurrence =
+                WebhookEmitter.occurrence(alerte, LINKS).orElseThrow();
+        WebhookMessage message = new WebhookMessage(
+                occurrence.event().code(),
+                Instant.parse("2026-07-13T04:00:00Z"),
+                new WebhookMessage.EditionRef("2026", "Année 2026"),
+                occurrence.data(),
+                occurrence.link());
+
+        assertThat(occurrence.event()).isEqualTo(WebhookEvent.WEATHER_ALERT);
+        assertThat(render(WebhookFormat.GENERIC, message))
+                .contains("\"evenement\":\"meteo.alerte\"")
+                .contains("\"alertes\":[{\"date\":\"2026-07-15\",\"phenomene\":\"chaleur\",\"valeur\":36,"
+                        + "\"seuil\":33,\"palier\":1,\"lieux\":2,\"prereglageSuggere\":\"P1\"}]")
+                .doesNotContain("Kiosque");
+        assertThat(render(WebhookFormat.SLACK, message))
+                .contains("*Alerte météo*")
+                .contains("36 °C le 2026-07-15 (seuil 33 °C). Rien n'est appliqué sans vous. "
+                        + "Données météo : Open-Meteo.com (CC BY 4.0).");
     }
 
     /** A delivery that outlives an upgrade dropping its event still says something. */

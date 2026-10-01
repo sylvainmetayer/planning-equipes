@@ -21,6 +21,9 @@
                     <span class="notification-title">{{ qui }}</span>
                   }
                   <span class="notification-message">{{ alerte.libelle }}</span>
+                  @if (alerte.lien; as lien) {
+                    <a [href]="lien" (click)="open($event, lien)" i18n="@@notifications.alertes.preparerConsigne">Préparer la consigne</a>
+                  }
                 </div>
                 <span class="notification-timestamp">{{ formattedDateTime(alerte.declencheLe) }}</span>
               </div>

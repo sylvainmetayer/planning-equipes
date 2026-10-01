@@ -66,7 +66,17 @@ public class JournalNotificationsRepository {
         RELANCE_INJOIGNABLE,
 
         /** A swap request has been waiting too long (issue #300). Key: the demande id. */
-        ALERTE_ECHANGE
+        ALERTE_ECHANGE,
+
+        /**
+         * A weather alert (ADR 0074). Key: {@code date|PHENOMENON|level} — a
+         * stable forecast finds its key taken, a worsening one claims the next
+         * level. The levels below are claimed as plain locks.
+         */
+        METEO_ALERTE,
+
+        /** The weather service has stopped answering. Key: {@code injoignable|first day of the streak}. */
+        METEO_INJOIGNABLE
     }
 
     /**

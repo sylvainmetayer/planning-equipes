@@ -1,0 +1,137 @@
+@if (view(); as etat) {
+  @if (reglages(); as reglage) {
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@parametres.meteo.title">Alerte météo</h2>
+        <mat-card-subtitle i18n="@@parametres.meteo.subtitle">
+          Chaque matin, la prévision des lieux de l'événement ; un seuil franchi suggère un préréglage de consigne, sans rien appliquer.
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        @if (!etat.serviceEnabled) {
+          <p class="locked-hint" i18n="@@parametres.meteo.coupee">L'alerte météo est coupée sur cette instance (variable METEO_ENABLED).</p>
+        } @else if (!etat.editionMayEmit) {
+          <p class="locked-hint" i18n="@@parametres.meteo.editionMuette">Rien ne part de cette édition tant qu'elle n'est pas l'édition active (page Éditions).</p>
+        }
+
+        <mat-slide-toggle [checked]="reglage.actif" (change)="patch({ actif: $event.checked })" i18n="@@parametres.meteo.actif">
+          Surveiller la météo pour cette édition
+        </mat-slide-toggle>
+
+        <div class="form-grid">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label i18n="@@parametres.meteo.horizon">Horizon (jours)</mat-label>
+            <input matInput type="number" min="1" max="14" [value]="reglage.horizonJours"
+                   (change)="updateNumber('horizonJours', $any($event.target).value, 1, 14)" />
+            <mat-hint i18n="@@parametres.meteo.horizonAide">De 1 à 14 jours à l'avance.</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label i18n="@@parametres.meteo.seuilTemperature">Chaleur à partir de (°C)</mat-label>
+            <input matInput type="number" min="20" max="50" [value]="reglage.seuilTemperature"
+                   (change)="updateNumber('seuilTemperature', $any($event.target).value, 20, 50)" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label i18n="@@parametres.meteo.prereglageChaleur">Préréglage suggéré (chaleur)</mat-label>
+            <mat-select [value]="reglage.prereglageChaleur" (selectionChange)="patch({ prereglageChaleur: $event.value })">
+              <mat-option [value]="null" i18n="@@parametres.meteo.aucunPrereglage">Aucun</mat-option>
+              @for (prereglage of prereglages(); track prereglage.id) {
+                <mat-option [value]="prereglage.id">{{ prereglage.nom }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label i18n="@@parametres.meteo.seuilRafales">Rafales à partir de (km/h)</mat-label>
+            <input matInput type="number" min="20" max="200" [value]="reglage.seuilRafales"
+                   (change)="updateNumber('seuilRafales', $any($event.target).value, 20, 200)" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label i18n="@@parametres.meteo.prereglageVent">Préréglage suggéré (vent)</mat-label>
+            <mat-select [value]="reglage.prereglageVent" (selectionChange)="patch({ prereglageVent: $event.value })">
+              <mat-option [value]="null" i18n="@@parametres.meteo.aucunPrereglage">Aucun</mat-option>
+              @for (prereglage of prereglages(); track prereglage.id) {
+                <mat-option [value]="prereglage.id">{{ prereglage.nom }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-slide-toggle [checked]="reglage.orage" (change)="patch({ orage: $event.checked })" i18n="@@parametres.meteo.orage">
+            Alerter en cas d'orage
+          </mat-slide-toggle>
+
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label i18n="@@parametres.meteo.prereglageOrage">Préréglage suggéré (orage)</mat-label>
+            <mat-select [value]="reglage.prereglageOrage" (selectionChange)="patch({ prereglageOrage: $event.value })">
+              <mat-option [value]="null" i18n="@@parametres.meteo.aucunPrereglage">Aucun</mat-option>
+              @for (prereglage of prereglages(); track prereglage.id) {
+                <mat-option [value]="prereglage.id">{{ prereglage.nom }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        @switch (etat.state.outcome) {
+          @case ('READ') {
+            <output class="calendar-meta status-paragraph" i18n="@@parametres.meteo.etatLu">Prévisions lues le {{ etat.state.lastReadAt | date: 'd MMMM à HH:mm' }}.</output>
+          }
+          @case ('OUT_OF_FORECAST') {
+            <output class="calendar-meta status-paragraph" i18n="@@parametres.meteo.etatHorsPrevision">Hors prévision : aucune date de l'événement dans les jours prévus.</output>
+          }
+          @case ('NO_PLACE') {
+            <output class="calendar-meta status-paragraph" i18n="@@parametres.meteo.etatAucunLieu">Aucun lieu à interroger : aucun stand ouvert n'a d'emplacement géolocalisé.</output>
+          }
+          @case ('UNREACHABLE') {
+            <p class="locked-hint" role="alert" i18n="@@parametres.meteo.etatInjoignable">Service météo injoignable depuis le {{ etat.state.unreachableSince | date: 'd MMMM à HH:mm' }} : {{ etat.state.error }}</p>
+          }
+        }
+
+        @if (test(); as rapport) {
+          <section aria-live="polite">
+            <h3 i18n="@@parametres.meteo.testTitre">Prévision du moment</h3>
+            @if (rapport.outOfForecast) {
+              <p class="empty-hint" i18n="@@parametres.meteo.testHorsPrevision">Hors prévision : aucune date de l'événement dans les jours prévus.</p>
+            } @else if (rapport.noPlace) {
+              <p class="empty-hint" i18n="@@parametres.meteo.testAucunLieu">Aucun lieu à interroger.</p>
+            } @else if (rapport.error) {
+              <p class="locked-hint" i18n="@@parametres.meteo.testErreur">Service météo injoignable : {{ rapport.error }}</p>
+            } @else {
+              <ul>
+                @for (jour of rapport.days; track jour.date) {
+                  <li>
+                    <strong>{{ jour.date | date: 'EEE d MMM' }}</strong>
+                    <ng-container i18n="@@parametres.meteo.testJour"> : {{ jour.maxTemperature ?? '—' }} °C, rafales {{ jour.maxGust ?? '—' }} km/h, sur {{ jour.places }} lieu(x)</ng-container>
+                    @if (jour.storm) {
+                      <ng-container i18n="@@parametres.meteo.testOrage">, orage prévu</ng-container>
+                    }
+                    @for (phenomene of jour.exceeded; track phenomene) {
+                      <span class="calendar-meta" i18n="@@parametres.meteo.testDepasse"> — seuil franchi : {{ phenomenonLabel(phenomene) }}</span>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+          </section>
+        }
+
+        <p class="calendar-meta">
+          <ng-container i18n="@@parametres.meteo.attribution">Données météo :</ng-container>
+          <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a>
+          (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>)
+        </p>
+      </mat-card-content>
+      <mat-card-actions class="card-actions">
+        <button matButton="filled" type="button" [disabled]="enregistrement()" (click)="save()">
+          <mat-icon>save</mat-icon>
+          <ng-container i18n="@@common.save">Enregistrer</ng-container>
+        </button>
+        <button matButton="outlined" type="button" [disabled]="testRunning() || !etat.serviceEnabled" (click)="tester()">
+          <mat-icon>cloud_sync</mat-icon>
+          <ng-container i18n="@@parametres.meteo.tester">Tester maintenant</ng-container>
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  }
+}

@@ -347,6 +347,9 @@
           },
           "nomAffiche" : {
             "type" : "string"
+          },
+          "lien" : {
+            "type" : "string"
           }
         }
       },
@@ -6515,6 +6518,10 @@
           "data" : { }
         }
       },
+      "Outcome" : {
+        "type" : "string",
+        "enum" : [ "READ", "OUT_OF_FORECAST", "NO_PLACE", "UNREACHABLE" ]
+      },
       "Ouverture" : {
         "type" : "object",
         "required" : [ "standId", "debut" ],
@@ -6600,6 +6607,42 @@
           },
           "heureDebutSoiree" : {
             "$ref" : "#/components/schemas/LocalTime"
+          }
+        }
+      },
+      "ParametresMeteo" : {
+        "required" : [ "actif", "horizonJours", "seuilTemperature", "seuilRafales", "orage" ],
+        "type" : "object",
+        "properties" : {
+          "actif" : {
+            "type" : "boolean"
+          },
+          "horizonJours" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "seuilTemperature" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "seuilRafales" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "orage" : {
+            "type" : "boolean"
+          },
+          "prereglageChaleur" : {
+            "type" : "string"
+          },
+          "prereglageVent" : {
+            "type" : "string"
+          },
+          "prereglageOrage" : {
+            "type" : "string"
+          },
+          "modifieLe" : {
+            "$ref" : "#/components/schemas/Instant"
           }
         }
       },
@@ -7539,6 +7582,31 @@
           "maxCreneaux" : {
             "type" : "integer",
             "format" : "int32"
+          }
+        }
+      },
+      "RaisedAlert" : {
+        "required" : [ "date", "phenomenon", "level", "label" ],
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "phenomenon" : {
+            "type" : "string"
+          },
+          "level" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "label" : {
+            "type" : "string"
+          },
+          "raisedAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "suggestedPreset" : {
+            "type" : "string"
           }
         }
       },
@@ -10068,6 +10136,113 @@
           },
           "walkOnBreak" : {
             "type" : "boolean"
+          }
+        }
+      },
+      "WeatherAlertsView" : {
+        "required" : [ "active", "state", "alerts" ],
+        "type" : "object",
+        "properties" : {
+          "active" : {
+            "type" : "boolean"
+          },
+          "state" : {
+            "$ref" : "#/components/schemas/WeatherState"
+          },
+          "alerts" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RaisedAlert"
+            }
+          }
+        }
+      },
+      "WeatherDaySummary" : {
+        "required" : [ "date", "places", "storm", "exceeded" ],
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "maxTemperature" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "maxGust" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "storm" : {
+            "type" : "boolean"
+          },
+          "places" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "exceeded" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
+      "WeatherSettingsView" : {
+        "required" : [ "settings", "state", "serviceEnabled", "editionMayEmit" ],
+        "type" : "object",
+        "properties" : {
+          "settings" : {
+            "$ref" : "#/components/schemas/ParametresMeteo"
+          },
+          "state" : {
+            "$ref" : "#/components/schemas/WeatherState"
+          },
+          "serviceEnabled" : {
+            "type" : "boolean"
+          },
+          "editionMayEmit" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "WeatherState" : {
+        "type" : "object",
+        "properties" : {
+          "outcome" : {
+            "$ref" : "#/components/schemas/Outcome"
+          },
+          "lastAttemptAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "lastReadAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "unreachableSince" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "error" : {
+            "type" : "string"
+          }
+        }
+      },
+      "WeatherTestReport" : {
+        "required" : [ "outOfForecast", "noPlace", "days" ],
+        "type" : "object",
+        "properties" : {
+          "outOfForecast" : {
+            "type" : "boolean"
+          },
+          "noPlace" : {
+            "type" : "boolean"
+          },
+          "error" : {
+            "type" : "string"
+          },
+          "days" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/WeatherDaySummary"
+            }
           }
         }
       },
@@ -15267,6 +15442,71 @@
         },
         "summary" : "Get Parametres Solveur",
         "tags" : [ "Parametres Resource" ]
+      }
+    },
+    "/api/parametres/meteo" : {
+      "put" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ParametresMeteo"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WeatherSettingsView"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Update",
+        "tags" : [ "Weather Resource" ]
+      },
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WeatherSettingsView"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Get",
+        "tags" : [ "Weather Resource" ]
+      }
+    },
+    "/api/parametres/meteo/test" : {
+      "post" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WeatherTestReport"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Test",
+        "tags" : [ "Weather Resource" ]
       }
     },
     "/api/pauses" : {

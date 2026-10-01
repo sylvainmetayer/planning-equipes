@@ -39,6 +39,7 @@ import { AffichageMuralLinks } from './affichage-mural-links';
 import { ContactOrganisationCard } from './contact-organisation-card';
 import { GuichetsCard } from './guichets-card';
 import { ParametresNotificationsPanel } from './parametres-notifications';
+import { ParametresMeteoPanel } from './parametres-meteo';
 import { errorPrefix } from '../../core/error-message';
 import { keepViewInQueryParams } from '../../core/view-query-params';
 import { OngletParametres, readOngletParametres } from './parametres';
@@ -100,6 +101,7 @@ export const REPLACE_KEYWORD = 'REMPLACER';
     FeasibilityBanner,
     OutputPanel,
     ParametresNotificationsPanel,
+    ParametresMeteoPanel,
     GelReferentielCard,
     HorlogeSimuleeCard,
     WebhooksCard,

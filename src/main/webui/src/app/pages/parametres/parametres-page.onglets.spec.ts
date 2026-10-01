@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
 import { AffichageMuralApi } from '../../core/api/affichage-mural-api';
 import { AdminApi } from '../../core/api/admin-api';
+import { WeatherApi } from '../../core/api/weather-api';
 import { DisponibilitesApi } from '../../core/api/disponibilites-api';
 import { EchangesApi } from '../../core/api/echanges-api';
 import { JourJService } from '../../core/jour-j.service';
@@ -91,6 +92,33 @@ describe('ParametresPage — onglets', () => {
           },
         },
         { provide: AffichageMuralApi, useValue: { list: vi.fn(async () => []) } },
+        {
+          provide: WeatherApi,
+          useValue: {
+            settings: vi.fn(async () => ({
+              settings: {
+                actif: false,
+                horizonJours: 5,
+                seuilTemperature: 33,
+                seuilRafales: 60,
+                orage: true,
+                prereglageChaleur: null,
+                prereglageVent: null,
+                prereglageOrage: null,
+                modifieLe: null,
+              },
+              state: {
+                outcome: null,
+                lastAttemptAt: null,
+                lastReadAt: null,
+                unreachableSince: null,
+                error: null,
+              },
+              serviceEnabled: true,
+              editionMayEmit: false,
+            })),
+          },
+        },
         {
           provide: ReferenceCrudService,
           useValue: {
@@ -176,6 +204,7 @@ describe('ParametresPage — onglets', () => {
     expect(textOf()).toContain('Guichets');
     expect(textOf()).toContain('Rappels et relances automatiques');
     expect(textOf()).toContain("Contact de l'organisation");
+    expect(textOf()).toContain('Alerte météo');
     // What decides the plan is not here any more: one line points to it.
     expect(textOf()).not.toContain('Paramètres légaux');
     expect(textOf()).not.toContain('Typologie ninja');
@@ -190,6 +219,7 @@ describe('ParametresPage — onglets', () => {
     expect(textOf()).toContain('Sauvegarde automatique');
     expect(textOf()).toContain('Export SQL');
     expect(textOf()).toContain('Raccourcis clavier');
+    expect(textOf()).toContain('Webhooks');
   });
 
   /** The covoiturage has no switch of its own: it says it follows the collection. */

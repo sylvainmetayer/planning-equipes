@@ -614,6 +614,38 @@ l'export SQL. Les secrets y sont chiffrés (`SecretCipher`, AES-GCM,
 `WEBHOOKS_SECRET_KEY`). La garde et ses raisons :
 [`securite.md`](securite.md) § Appels sortants.
 
+### L'alerte météo
+
+`service/weather/WeatherAlertJob` est le cinquième `@Scheduled`
+([ADR 0074](decisions/0074-deux-jobs-planifies-de-plus-webhooks-et-meteo.md)) :
+chaque matin (`METEO_CRON`, heure d'instance dans `NOTIFICATIONS_TIMEZONE`), il
+entre dans l'édition active — la seule que `OutboundEditionPolicy` laisse
+émettre, aucune entre deux événements —, si son alerte est activée, et laisse `WeatherAlertService` faire le reste :
+
+- **les dates** : celles de l'événement dans `[aujourd'hui ; + horizon]`, où
+  « aujourd'hui » est celui de `JourJClock`, intersectées avec ce qu'Open-Meteo
+  prévoit vraiment — les seize jours réels à venir. Vide : rien n'est
+  interrogé, l'écran dit « hors prévision » ;
+- **les lieux** : les emplacements géolocalisés des stands ouverts ces jours-là,
+  lus par `listSolvedStands()` — consignes comprises —, arrondis à 0,01° et
+  dédoublonnés ; une seule requête (`OpenMeteoClient`, le client HTTP du JDK)
+  les porte tous ;
+- **l'alerte** : par date et par phénomène (chaleur, rafales, orage), une ligne
+  de `notification_planifiee` réservée sous `date|PHÉNOMÈNE|palier` — les
+  paliers inférieurs réservés comme simples verrous, si bien que seule une
+  prévision qui **s'aggrave** reparle —, un courriel à l'administrateur
+  (`Notification.WeatherAlert`) et l'événement de webhook `meteo.alerte`.
+  L'alerte suggère le préréglage de consigne réglé pour ce phénomène, ou nomme
+  la consigne déjà en place ; elle **n'en pose jamais**. Son lien ouvre le
+  formulaire de consigne prérempli (`?prereglage=`) — sauf pour aujourd'hui,
+  où une consigne ne se pose plus : l'alerte dit la prévision, sans
+  suggestion ni lien ;
+- **un service muet** n'est jamais propagé : `meteo_etat` garde « injoignable
+  depuis… », et un seul avertissement part au deuxième jour.
+
+Les réglages (`parametres_meteo`) suivent l'édition — exportés, recopiés par la
+duplication **éteints** —, l'état (`meteo_etat`) reste celui de la machine.
+
 ## Conteneurisation
 
 `docker-compose.yml` : l'application (build multi-stage, JRE en image finale,

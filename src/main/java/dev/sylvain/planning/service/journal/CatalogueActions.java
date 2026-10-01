@@ -137,6 +137,7 @@ public final class CatalogueActions {
     private static final String PARAMETRES_QUALITE_MODIFIES = "PARAMETRES_QUALITE_MODIFIES";
     private static final String PARAMETRES_SOLVEUR_MODIFIES = "PARAMETRES_SOLVEUR_MODIFIES";
     private static final String PARAMETRES_NOTIFICATIONS_MODIFIES = "PARAMETRES_NOTIFICATIONS_MODIFIES";
+    private static final String PARAMETRES_METEO_MODIFIES = "PARAMETRES_METEO_MODIFIES";
     private static final String CONTACT_ORGANISATION_MODIFIE = "CONTACT_ORGANISATION_MODIFIE";
     private static final String CONTRAINTE_ACTIVEE = "CONTRAINTE_ACTIVEE";
     private static final String CONTRAINTE_DESACTIVEE = "CONTRAINTE_DESACTIVEE";
@@ -375,6 +376,7 @@ public final class CatalogueActions {
         changesData(PARAMETRES_QUALITE_MODIFIES, "Paramètres de qualité modifiés", Entite.PARAMETRES);
         changesData(PARAMETRES_SOLVEUR_MODIFIES, "Paramètres du solveur modifiés", Entite.PARAMETRES);
         action(PARAMETRES_NOTIFICATIONS_MODIFIES, "Paramètres de notifications modifiés", Entite.PARAMETRES);
+        action(PARAMETRES_METEO_MODIFIES, "Réglages de l'alerte météo modifiés", Entite.PARAMETRES);
         action(CONTACT_ORGANISATION_MODIFIE, "Contact de l'organisation modifié", Entite.PARAMETRES);
         changesData(CONTRAINTE_ACTIVEE, "Contrainte activée", Entite.PARAMETRES);
         changesData(CONTRAINTE_DESACTIVEE, "Contrainte désactivée", Entite.PARAMETRES);
@@ -439,6 +441,9 @@ public final class CatalogueActions {
         // The end of a staffing check, on its own thread: it belongs to the
         // edition it was started from, which the service enters to write it.
         action("VERIFICATION_BESOIN_TERMINEE", "Vérification du besoin terminée", Entite.VERIFICATION_BESOIN);
+        // The morning weather query raised at least one alert (ADR 0074) — a
+        // suggestion and an admin mail, never a consigne posed.
+        action("ALERTE_METEO_LEVEE", "Alerte météo levée", Entite.PARAMETRES);
     }
 
     /**
@@ -577,6 +582,7 @@ public final class CatalogueActions {
         route("ParametresResource#updateParametresQualite", PARAMETRES_QUALITE_MODIFIES);
         route("ParametresResource#updateParametresSolveur", PARAMETRES_SOLVEUR_MODIFIES);
         route("ParametresResource#updateParametresNotifications", PARAMETRES_NOTIFICATIONS_MODIFIES);
+        route("WeatherResource#update", PARAMETRES_METEO_MODIFIES);
         route("ParametresResource#updateContactOrganisation", CONTACT_ORGANISATION_MODIFIE);
         route("ConstraintResource#setActif", CONTRAINTE_ACTIVEE);
         route("ConstraintResource#setPoids", CONTRAINTE_PONDEREE);
@@ -788,6 +794,9 @@ public final class CatalogueActions {
         untracked("ReferenceDataResource#validateScenarioFile", "valide un fichier, n'écrit rien");
         untracked("JourJResource#suggestions", "suggestions de remplacement, n'écrit rien");
         untracked("AffichageMuralResource#qrCode", "dessine le QR code d'une adresse, n'écrit rien");
+        untracked(
+                "WeatherResource#test",
+                "interroge le service météo et résume la prévision, sans lever d'alerte ni rien écrire");
         untracked("DebugResource#throwTestException", "lève une exception pour vérifier la remontée d'erreurs");
     }
 

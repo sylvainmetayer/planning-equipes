@@ -127,6 +127,11 @@ export class ConsignesPage implements OnInit {
    * the address is rewritten in place (ADR 0018), which the snapshot never sees.
    */
   private readonly dateParam = currentViewParams().get('date');
+  /**
+   * `?prereglage=` — the preset a weather alert suggests: the form opens
+   * filled with it, and nothing is posed before « Enregistrer ».
+   */
+  private readonly prereglageParam = currentViewParams().get('prereglage');
   /** The date a link named (`?date=`), highlighted in the table. */
   protected readonly targetDate = computed(() =>
     resolveDateParam(this.dateParam, this.aujourdhui()),
@@ -182,6 +187,7 @@ export class ConsignesPage implements OnInit {
         existante ? 'modifier' : 'poser',
         existante,
         date && this.datesCandidates().includes(date) ? [date] : [],
+        existante ? null : this.prereglageParam,
       );
     });
   }
@@ -243,6 +249,7 @@ export class ConsignesPage implements OnInit {
     mode: ModeConsigne,
     consigne: ConsigneEdition | null,
     datesInitiales: string[],
+    prereglageInitial: string | null = null,
   ): void {
     if (this.editingLocked()) {
       return;
@@ -254,6 +261,7 @@ export class ConsignesPage implements OnInit {
           mode,
           consigne,
           datesInitiales,
+          prereglageInitial,
           datesCandidates: this.datesCandidates(),
           prereglages: this.prereglages(),
           stands: this.referentiel.stands(),

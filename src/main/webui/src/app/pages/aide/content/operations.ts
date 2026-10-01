@@ -109,6 +109,44 @@ export function buildOperationsSections(): HelpSection[] {
       ],
     },
     {
+      id: 'alerte-meteo',
+      icon: 'thunderstorm',
+      title: $localize`:@@aide.meteo.title:Alerte météo`,
+      summary: $localize`:@@aide.meteo.summary:Chaque matin, la prévision des lieux de l'événement ; un seuil franchi suggère un préréglage de consigne, que rien n'applique sans vous.`,
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.meteo.intro:Paramètres, onglet Édition, carte « Alerte météo » : cochez « Surveiller la météo pour cette édition », puis réglez l'horizon (1 à 14 jours, 5 par défaut), les seuils de chaleur (33 °C par défaut) et de rafales (60 km/h), l'orage, et pour chaque phénomène le préréglage de consigne à suggérer. Chaque matin, à 6 h sauf réglage de l'exploitant, l'application lit chez Open-Meteo la prévision des emplacements géolocalisés des stands ouverts, pour l'édition active seulement : une édition inactive, ou dont l'alerte est éteinte, n'interroge rien. Dupliquer une édition recopie ces réglages, alerte éteinte.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.meteo.alerte:Un seuil franchi lève une alerte : sur l'accueil, dans « Messages récents », par courriel à l'administration et par webhook. Elle nomme la date, le phénomène et le préréglage suggéré, ou la consigne déjà posée ce jour-là. « Préparer la consigne » ouvre l'onglet Consignes sur le formulaire rempli à cette date avec ce préréglage : rien n'est posé avant que vous ayez relu les stands et cliqué « Enregistrer ». Une alerte sur aujourd'hui dit la prévision, sans suggestion ni lien : une journée commencée ne prend plus de consigne. Une même prévision ne sonne qu'une fois, et de nouveau seulement si elle s'aggrave (deux degrés, dix km/h de plus, la grêle avec l'orage).`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.meteo.etat:La carte dit l'état de la dernière lecture : prévisions lues, « hors prévision » quand aucune date de l'événement ne tombe dans les seize jours qu'Open-Meteo prévoit réellement (une date simulée lointaine, par exemple), aucun lieu à interroger faute d'emplacement géolocalisé, ou service injoignable depuis une date ; la lecture reprend alors le lendemain, et un seul courriel d'avertissement part au deuxième jour d'échec. « Tester maintenant » interroge tout de suite avec les seuils de l'édition et affiche, jour par jour, les maxima et les seuils franchis, sans lever d'alerte. Données météo : Open-Meteo.com (CC BY 4.0).`,
+        },
+      ],
+      links: [
+        {
+          route: '/parametres',
+          queryParams: { onglet: 'edition' },
+          fragment: 'meteo',
+          label: $localize`:@@aide.lien.parametresMeteo:Paramètres › Alerte météo`,
+        },
+        {
+          route: '/consignes-solveur',
+          queryParams: { onglet: 'consignes' },
+          label: $localize`:@@consignesSolveur.onglet.consignes:Consignes`,
+        },
+        {
+          route: '/',
+          fragment: 'a-traiter',
+          label: $localize`:@@aide.lien.aTraiter:Accueil — À traiter aujourd'hui`,
+        },
+      ],
+    },
+    {
       id: 'jour-j',
       icon: 'emergency',
       title: $localize`:@@aide.aujourdhui.title:Aujourd'hui (jour J)`,

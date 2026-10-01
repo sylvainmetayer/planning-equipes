@@ -103,6 +103,10 @@ public class DatabaseDumpService {
             "consigne_edition_creneau",
             "prereglage_consigne",
             "prereglage_consigne_fenetre",
+            // The weather alert's settings: thresholds and the presets they
+            // suggest, so after the presets they point at (ADR 0074). Its
+            // state, meteo_etat, is the machine's and stays out.
+            "parametres_meteo",
             "demande_echange",
             "planning_resolution",
             "parametres_legaux",
@@ -199,6 +203,9 @@ public class DatabaseDumpService {
      *       opened <em>this</em> database, beside {@code flyway_schema_history},
      *       which no dump carries either. Replaying another instance's would
      *       make the receiving one claim versions it never ran.</li>
+     *   <li>{@code meteo_etat} — what the last weather query of an edition
+     *       saw on this instance: when it read, since when the service is
+     *       unreachable. Another instance's would show a read it never made.</li>
      *   <li>{@code webhook}, {@code webhook_livraison} — the outgoing webhooks
      *       of this instance and the journal of their deliveries. Secrets
      *       (encrypted with a key the receiving instance does not hold) and the
@@ -217,6 +224,7 @@ public class DatabaseDumpService {
             "journal_action",
             "verification_besoin",
             "version_applicative",
+            "meteo_etat",
             "webhook",
             "webhook_livraison");
 

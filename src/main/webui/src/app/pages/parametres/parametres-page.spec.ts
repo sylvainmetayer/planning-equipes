@@ -29,8 +29,32 @@ import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
 import { ScenarioImportService } from '../../core/scenario-import.service';
 import { REPLACE_KEYWORD, ParametresPage } from './parametres-page';
 import type { DemandeRecopie } from '../../shared/confirmation-recopie';
-import type { EtatSauvegarde } from '../../core/models';
+import type { EtatSauvegarde, WeatherSettingsView } from '../../core/models';
 import { Fake, fakeOf, provideFake } from '../../core/testing/fake';
+import { WeatherApi } from '../../core/api/weather-api';
+
+const METEO: WeatherSettingsView = {
+  settings: {
+    actif: true,
+    horizonJours: 5,
+    seuilTemperature: 33,
+    seuilRafales: 60,
+    orage: true,
+    prereglageChaleur: null,
+    prereglageVent: null,
+    prereglageOrage: null,
+    modifieLe: '2026-07-01T08:00:00Z',
+  },
+  state: {
+    outcome: 'UNREACHABLE',
+    lastAttemptAt: '2026-07-12T04:00:00Z',
+    lastReadAt: null,
+    unreachableSince: '2026-07-11T04:00:00Z',
+    error: 'Le service météo a répondu 500.',
+  },
+  serviceEnabled: true,
+  editionMayEmit: true,
+};
 
 function text(element: HTMLElement): string {
   return element.textContent!.replace(/\s+/g, ' ').trim();
@@ -47,6 +71,7 @@ describe('ParametresPage rendering', () => {
   let fixture: ComponentFixture<ParametresPage>;
   let api: { get: ReturnType<typeof vi.fn> };
   let adminApi: Fake<AdminApi>;
+  let weatherApi: Fake<WeatherApi>;
   let recopie: { demander: ReturnType<typeof vi.fn> };
   let instantane: { proposer: ReturnType<typeof vi.fn> };
   let notify: ReturnType<typeof vi.fn>;
@@ -126,6 +151,26 @@ describe('ParametresPage rendering', () => {
       organisationContact: async () => ({ telephone: '01 23 45 67 89', email: null }),
       saveOrganisationContact: async (contact) => contact,
     });
+    weatherApi = fakeOf<WeatherApi>({
+      settings: () => Promise.resolve(METEO),
+      save: (settings) => Promise.resolve({ ...METEO, settings }),
+      test: () =>
+        Promise.resolve({
+          outOfForecast: false,
+          noPlace: false,
+          error: null,
+          days: [
+            {
+              date: '2026-07-15',
+              maxTemperature: 36,
+              maxGust: 40,
+              storm: false,
+              places: 2,
+              exceeded: ['chaleur'],
+            },
+          ],
+        }),
+    });
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
@@ -133,6 +178,7 @@ describe('ParametresPage rendering', () => {
         provideRouter([]),
         { provide: ApiService, useValue: api },
         provideFake(AdminApi, adminApi),
+        provideFake(WeatherApi, weatherApi),
         {
           provide: EditionStore,
           useValue: {
@@ -231,6 +277,24 @@ describe('ParametresPage rendering', () => {
     expect(trouve, `carte « ${titre} » absente`).toBeDefined();
     return trouve as HTMLElement;
   }
+
+  it('shows the weather alert, its last state and the attribution, and tests it on demand', async () => {
+    await rendre();
+
+    const text = racine().textContent!.replace(/\s+/g, ' ');
+    expect(text).toContain('Alerte météo');
+    expect(text).toContain('Service météo injoignable depuis le');
+    expect(text).toContain('Open-Meteo.com');
+    const tester = Array.from(racine().querySelectorAll('button')).find((bouton) =>
+      bouton.textContent!.includes('Tester maintenant'),
+    )!;
+    tester.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(weatherApi.test).toHaveBeenCalledOnce();
+    expect(racine().textContent).toContain('seuil franchi : chaleur');
+  });
 
   it('locks the SQL dump replay while a solve runs', async () => {
     await rendre({ onglet: 'Instance' });

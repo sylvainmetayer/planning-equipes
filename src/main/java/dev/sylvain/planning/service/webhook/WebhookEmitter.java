@@ -15,6 +15,7 @@ import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -147,6 +148,15 @@ public class WebhookEmitter {
                                 "echecsConsecutifs",
                                 n.consecutiveFailures()),
                         links.parametresGlobauxScreen().orElse(null)));
+            case Notification.WeatherAlert n ->
+                Optional.of(new Occurrence(
+                        WebhookEvent.WEATHER_ALERT,
+                        data("nombre", n.lines().size(), "alertes", weatherLines(n)),
+                        n.lines().stream()
+                                .map(Notification.WeatherAlert.Line::link)
+                                .filter(java.util.Objects::nonNull)
+                                .findFirst()
+                                .orElse(null)));
             case Notification.TargetSolicited _,
                     Notification.DemandeDeclinee _,
                     Notification.EmpechementSignale _,
@@ -157,8 +167,30 @@ public class WebhookEmitter {
                     Notification.CarpoolCancelled _,
                     Notification.RappelVeille _,
                     Notification.RelanceConfirmation _,
-                    Notification.BackupRecovered _ -> Optional.empty();
+                    Notification.BackupRecovered _,
+                    Notification.WeatherUnreachable _ -> Optional.empty();
         };
+    }
+
+    /** Each alert as counts and ids: the sentence names places, the payload does not need to. */
+    private static List<Map<String, Object>> weatherLines(Notification.WeatherAlert alert) {
+        return alert.lines().stream()
+                .map(line -> data(
+                        "date",
+                        line.date().toString(),
+                        "phenomene",
+                        line.phenomenon(),
+                        "valeur",
+                        line.value(),
+                        "seuil",
+                        line.threshold(),
+                        "palier",
+                        line.level(),
+                        "lieux",
+                        line.places(),
+                        "prereglageSuggere",
+                        line.presetId()))
+                .toList();
     }
 
     static Occurrence occurrence(PlanningPublished published, ApplicationLinks links) {

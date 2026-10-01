@@ -128,7 +128,9 @@ class IsolationEditionStructurelleTest {
             "compteur_identifiant",
             "gel_referentiel",
             "lien_affichage_mural",
-            "lien_affichage_mural_emplacement");
+            "lien_affichage_mural_emplacement",
+            "parametres_meteo",
+            "meteo_etat");
 
     /**
      * The tables the backend queries <b>outside</b> any edition, and why. An

@@ -3285,6 +3285,12 @@ export interface AlerteView {
   animateurId: string | null;
   /** Resolved server-side at read time; `null` when the fiche is gone. */
   nomAffiche: string | null;
+  /**
+   * Where the alert is acted upon, an address of the application — the
+   * consignes of a weather alert's date, the form open on the suggested
+   * preset; `null` for the others.
+   */
+  lien: string | null;
 }
 
 /**
@@ -4085,6 +4091,65 @@ export interface WebhookTestResult {
   httpStatus: number | null;
   durationMs: number;
   error: string | null;
+}
+
+/* ------------------------------- Weather alert ----------------------------- */
+
+/**
+ * What the weather alert watches on this edition, and which consigne preset
+ * it suggests per phenomenon — a suggestion, never applied.
+ */
+export interface ParametresMeteo {
+  actif: boolean;
+  /** Days ahead, 1 to 14. */
+  horizonJours: number;
+  /** °C, daily maximum. */
+  seuilTemperature: number;
+  /** km/h, daily maximum gust. */
+  seuilRafales: number;
+  orage: boolean;
+  prereglageChaleur: string | null;
+  prereglageVent: string | null;
+  prereglageOrage: string | null;
+  /** The precondition of the next save. */
+  modifieLe: string | null;
+}
+
+/** How the last morning query ended. */
+export type WeatherOutcome = 'READ' | 'OUT_OF_FORECAST' | 'NO_PLACE' | 'UNREACHABLE';
+
+export interface WeatherState {
+  outcome: WeatherOutcome | null;
+  lastAttemptAt: string | null;
+  lastReadAt: string | null;
+  unreachableSince: string | null;
+  error: string | null;
+}
+
+export interface WeatherSettingsView {
+  settings: ParametresMeteo;
+  state: WeatherState;
+  /** `METEO_ENABLED`: false cuts the feature for the instance. */
+  serviceEnabled: boolean;
+  /** Whether this edition may emit outward at all — whether it is the active one. */
+  editionMayEmit: boolean;
+}
+
+/** One date of « Tester maintenant ». `exceeded` holds `chaleur`, `rafales`, `orage`. */
+export interface WeatherDaySummary {
+  date: string;
+  maxTemperature: number | null;
+  maxGust: number | null;
+  storm: boolean;
+  places: number;
+  exceeded: string[];
+}
+
+export interface WeatherTestReport {
+  outOfForecast: boolean;
+  noPlace: boolean;
+  error: string | null;
+  days: WeatherDaySummary[];
 }
 
 /* --------------------------- Mode « jour J » ------------------------------ */
