@@ -201,8 +201,8 @@ export class GrantRightDialog {
       ) {
         return;
       }
-      const derniere = this.grid.hasValue() ? this.grid.value().derniereDate : null;
-      const expiryDate = defaultResponsableExpiry(derniere, new Date());
+      const lastDay = this.grid.hasValue() ? this.grid.value().derniereDate : null;
+      const expiryDate = defaultResponsableExpiry(lastDay, new Date());
       if (this.draft().expiryDate !== expiryDate) {
         this.draft.update((draft) => ({ ...draft, expiryDate }));
       }

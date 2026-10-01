@@ -467,7 +467,7 @@ class EspacePlanPublieTest {
      * claim, and outside the collection its two pages are not offered.
      *
      * <p>A fiche without an address no longer opens its espace at all — the
-     * address is what the Keycloak session is matched against (ADR 0069) —
+     * address is what the Keycloak session is matched against (ADR 0070) —
      * so that last state is read off the view the espace would render.</p>
      */
     @Test

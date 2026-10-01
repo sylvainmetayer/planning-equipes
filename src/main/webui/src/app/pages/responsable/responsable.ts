@@ -28,12 +28,12 @@ export function timeOf(dateTime: string): string {
 }
 
 /** Every day a shift of the scope starts on, in order. */
-export function daysOf(vue: ResponsableView | null): string[] {
-  if (!vue) {
+export function daysOf(view: ResponsableView | null): string[] {
+  if (!view) {
     return [];
   }
   const days = new Set<string>();
-  for (const stand of vue.stands) {
+  for (const stand of view.stands) {
     for (const vacation of stand.vacations) {
       days.add(dayOf(vacation.debut));
     }
@@ -68,8 +68,8 @@ export function windowsOn(membre: MembreEquipe, day: string): PlageMembre[] {
 }
 
 /** The people of the team working on `day`. */
-export function teamOn(vue: ResponsableView | null, day: string): MembreEquipe[] {
-  return (vue?.equipe ?? []).filter((membre) => windowsOn(membre, day).length > 0);
+export function teamOn(view: ResponsableView | null, day: string): MembreEquipe[] {
+  return (view?.equipe ?? []).filter((membre) => windowsOn(membre, day).length > 0);
 }
 
 /** « 10:00 – 12:00 », the end dated when it falls on the next day. */
@@ -88,6 +88,6 @@ export function staffingLabel(vacation: VacationResponsable): string {
 }
 
 /** Whether at least one stand of the view names who holds its shifts. */
-export function anyNamed(vue: ResponsableView | null): boolean {
-  return (vue?.stands ?? []).some((stand) => stand.nominatif);
+export function anyNamed(view: ResponsableView | null): boolean {
+  return (view?.stands ?? []).some((stand) => stand.nominatif);
 }

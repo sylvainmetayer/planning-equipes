@@ -57,7 +57,7 @@
       <app-status-message [text]="erreur()" tone="error" />
     }
     @case ('pret') {
-      @if (vue(); as v) {
+      @if (view(); as v) {
         <header class="responsable-entete">
           <h1>{{ v.editionNom }}</h1>
           @if (editions().length > 1) {
@@ -179,13 +179,13 @@
             </mat-card-header>
             <mat-card-content>
               @if (jour(); as j) {
-                @if (equipeDuJour().length === 0) {
+                @if (teamOfDay().length === 0) {
                   <p class="responsable-vide" i18n="@@responsable.equipe.vide">
                     Personne de votre équipe ce jour-là.
                   </p>
                 } @else {
                   <ul class="responsable-equipe">
-                    @for (membre of equipeDuJour(); track membre.cle) {
+                    @for (membre of teamOfDay(); track membre.cle) {
                       <li>
                         <strong>{{ membre.prenom }} {{ membre.nom }}</strong>
                         <ul>

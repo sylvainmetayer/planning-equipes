@@ -43,13 +43,13 @@ const ALICE: MembreEquipe = {
   ],
 };
 
-function view(patch: Partial<ResponsableView> = {}): ResponsableView {
+function makeView(patch: Partial<ResponsableView> = {}): ResponsableView {
   return { editionId: '2026', editionNom: 'Année 2026', stands: [BUVETTE], equipe: [], ...patch };
 }
 
 describe('daysOf and initialDay', () => {
   it('lists the days shifts start on, in order', () => {
-    expect(daysOf(view())).toEqual(['2026-07-11', '2026-07-12']);
+    expect(daysOf(makeView())).toEqual(['2026-07-11', '2026-07-12']);
     expect(daysOf(null)).toEqual([]);
   });
 
@@ -69,10 +69,10 @@ describe('one day of a stand and of a person', () => {
   });
 
   it("keeps a person's windows of the day, and the team working that day", () => {
-    const vue = view({ equipe: [ALICE] });
+    const view = makeView({ equipe: [ALICE] });
     expect(windowsOn(ALICE, '2026-07-11')).toHaveLength(2);
-    expect(teamOn(vue, '2026-07-11')).toEqual([ALICE]);
-    expect(teamOn(vue, '2026-07-12')).toEqual([]);
+    expect(teamOn(view, '2026-07-11')).toEqual([ALICE]);
+    expect(teamOn(view, '2026-07-12')).toEqual([]);
   });
 });
 
@@ -90,7 +90,7 @@ describe('labels', () => {
   });
 
   it('tells whether any stand is shown by name', () => {
-    expect(anyNamed(view())).toBe(false);
-    expect(anyNamed(view({ stands: [{ ...BUVETTE, nominatif: true }] }))).toBe(true);
+    expect(anyNamed(makeView())).toBe(false);
+    expect(anyNamed(makeView({ stands: [{ ...BUVETTE, nominatif: true }] }))).toBe(true);
   });
 });

@@ -77,15 +77,15 @@ export class ResponsablePage {
   protected readonly erreur = signal('');
   protected readonly editions = signal<EditionResponsable[]>([]);
   protected readonly editionId = signal<string | null>(null);
-  protected readonly vue = signal<ResponsableView | null>(null);
+  protected readonly view = signal<ResponsableView | null>(null);
   protected readonly jour = signal<string | null>(null);
   protected readonly onglet = signal<OngletResponsable>('planning');
 
-  protected readonly jours = computed(() => daysOf(this.vue()));
-  protected readonly nomme = computed(() => anyNamed(this.vue()));
-  protected readonly equipeDuJour = computed(() => {
+  protected readonly jours = computed(() => daysOf(this.view()));
+  protected readonly nomme = computed(() => anyNamed(this.view()));
+  protected readonly teamOfDay = computed(() => {
     const jour = this.jour();
-    return jour ? teamOn(this.vue(), jour) : [];
+    return jour ? teamOn(this.view(), jour) : [];
   });
   protected readonly accountHref = accountUrl('/responsable');
 
@@ -120,9 +120,9 @@ export class ResponsablePage {
     this.etat.set('chargement');
     this.editionId.set(editionId);
     try {
-      const vue = await this.api.view(editionId);
-      this.vue.set(vue);
-      this.jour.set(initialDay(daysOf(vue), jourDemande, toDateKey(new Date())));
+      const view = await this.api.view(editionId);
+      this.view.set(view);
+      this.jour.set(initialDay(daysOf(view), jourDemande, toDateKey(new Date())));
       this.etat.set('pret');
       this.syncUrl();
     } catch (error) {
