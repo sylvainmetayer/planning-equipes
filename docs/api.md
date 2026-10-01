@@ -258,6 +258,11 @@ Ce qu'il faut savoir avant de s'en servir :
   en `ECHEC` au démarrage suivant, avec la raison.
 - **Les exceptions ad hoc et le plan publié sont laissés de côté** : ils
   nomment des personnes que l'équipe fictive ne contient pas.
+- **Le plan en place sert de point de départ** quand l'édition en a un : le
+  planning de chaque animateur réel passe à un membre fictif, majeur à majeur,
+  mineur à mineur, les plus chargés d'abord. Une équipe au moins aussi
+  nombreuse que celle du plan part donc d'un plan réalisable ; une équipe plus
+  petite part des sièges que ses membres tiennent, les autres restant vides.
 
 Le solve s'arrête dès qu'un plan est réalisable, et au plus tard au bout de
 cette durée. La décision et les options écartées sont dans

@@ -26,9 +26,12 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Month;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Deque;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -240,6 +243,7 @@ public class StaffingVerificationService {
     private final EditionContext editionContext;
     private final StaffingVerificationRepository repository;
     private final JournalActionService journal;
+    private final PlanningPersistenceService persistence;
 
     private final AtomicBoolean enCours = new AtomicBoolean();
     /** Set when a solve started while the running check held the cores: the check gives way. */
@@ -261,7 +265,8 @@ public class StaffingVerificationService {
             SolverJobService solverJobService,
             EditionContext editionContext,
             StaffingVerificationRepository repository,
-            JournalActionService journal) {
+            JournalActionService journal,
+            PlanningPersistenceService persistence) {
         this.planningService = planningService;
         this.referenceDataService = referenceDataService;
         this.staffingService = staffingService;
@@ -269,6 +274,7 @@ public class StaffingVerificationService {
         this.editionContext = editionContext;
         this.repository = repository;
         this.journal = journal;
+        this.persistence = persistence;
     }
 
     /**
@@ -336,8 +342,21 @@ public class StaffingVerificationService {
                 throw new BusinessError.Conflict(
                         "Une résolution est en cours : lancez la vérification du besoin une fois qu'elle est terminée.");
             }
-            PlanningEvenement problem = problem(
-                    seats, team(nombreMajeurs, nombreMineurs, referenceDataService.listTypologies(), firstDay(seats)));
+            LocalDate premierJour = firstDay(seats);
+            List<Animateur> team =
+                    team(nombreMajeurs, nombreMineurs, referenceDataService.listTypologies(), premierJour);
+            PlanningEvenement problem = problem(seats, team);
+            // From the plan in place, when there is one: the question is the
+            // headcount, not how fast a cold search finds a plan — and a team
+            // the real solve staffs from that plan must not fail here for want
+            // of time.
+            seedFromPlan(
+                    problem.getPostes(),
+                    team,
+                    nombreMajeurs,
+                    persistence.loadAnimateursByStandCreneau(),
+                    referenceDataService.listAnimateurs(),
+                    premierJour);
             // Every read of the edition happens here, on the request: the
             // solve below runs on a thread that designates no edition.
             planningService.prepareHypothetical(problem);
@@ -511,6 +530,60 @@ public class StaffingVerificationService {
             team.add(animateur);
         }
         return team;
+    }
+
+    /**
+     * Seeds the made-up team's seats from the edition's persisted plan: each
+     * real animateur's whole schedule goes to one made-up member — adults to
+     * adults, minors to minors, then to adults — the busiest first. A made-up
+     * member holds every category and is free every day, so a schedule a real
+     * person could keep, they keep too: a plan that staffed the seats with R
+     * people seeds a feasible start for any team of at least R. Whoever finds
+     * no member left leaves their seats empty, for the solve to fill. The
+     * seeds stay movable — a start, never a constraint.
+     *
+     * @param plan       the persisted tenants, by stand × timeslot, as
+     *                   {@link PlanningPersistenceService#loadAnimateursByStandCreneau}
+     *                   reads them; empty when nothing was ever solved
+     * @param reels      the edition's animateurs, for their age on the first day
+     * @return how many seats were seeded
+     */
+    static int seedFromPlan(
+            List<PosteAffectation> postes,
+            List<Animateur> team,
+            int majeurs,
+            Map<String, List<String>> plan,
+            List<Animateur> reels,
+            LocalDate premierJour) {
+        if (plan == null || plan.isEmpty()) {
+            return 0;
+        }
+        Map<String, Integer> tenus = new HashMap<>();
+        plan.values().forEach(ids -> ids.forEach(id -> tenus.merge(id, 1, Integer::sum)));
+        Map<String, Animateur> parId = new HashMap<>();
+        reels.forEach(animateur -> parId.put(animateur.getId(), animateur));
+        Deque<Animateur> adultes = new ArrayDeque<>(team.subList(0, Math.min(majeurs, team.size())));
+        Deque<Animateur> mineurs = new ArrayDeque<>(team.subList(Math.min(majeurs, team.size()), team.size()));
+        Map<String, String> alias = new HashMap<>();
+        tenus.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue()
+                        .reversed()
+                        .thenComparing(Map.Entry.comparingByKey()))
+                .map(Map.Entry::getKey)
+                .forEach(id -> {
+                    Animateur reel = parId.get(id);
+                    boolean mineur = reel != null && premierJour != null && reel.isMineurOn(premierJour);
+                    Animateur membre = mineur && !mineurs.isEmpty() ? mineurs.poll() : adultes.poll();
+                    if (membre != null) {
+                        alias.put(id, membre.getId());
+                    }
+                });
+        // Positions are kept: a tenant with no member leaves a hole at their
+        // place, so the seats after it keep theirs.
+        Map<String, List<String>> traduit = new HashMap<>();
+        plan.forEach((cle, ids) -> traduit.put(
+                cle, ids.stream().map(id -> alias.getOrDefault(id, "")).toList()));
+        return ProblemBuilder.reamorcerDepuisAffectations(postes, team, traduit, List.of())[0];
     }
 
     /** The first dated timeslot of the grid, {@code null} when there is none. */
