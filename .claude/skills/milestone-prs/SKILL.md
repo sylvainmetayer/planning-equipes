@@ -86,8 +86,9 @@ Do not start writing code before the answers are in.
 - Call `subscribe_pr_activity` on each PR. Arm a check-in with `send_later`
   about an hour out, and re-arm it silently while a PR is open.
 - A stacked PR's `pull_request` workflows may not start after a force-push.
-  Dispatch them on the branch with `actions_run_trigger`: `tests.yml`,
-  `e2e.yml`, and `restauration.yml` when the scripts changed.
+  Dispatch them on the branch with `actions_run_trigger`: `tests.yml` (its
+  `e2e` job runs the Playwright suite — dispatching `e2e.yml` as well would
+  play it twice), and `restauration.yml` when the scripts changed.
 - On red CI, read the job log and root-cause it. Push a fix, or comment on the
   PR once saying why the failure is not this PR's.
 

@@ -172,8 +172,8 @@ async function nomsComplets(): Promise<Map<string, string>> {
   return new Map(fiches.map((fiche) => [fiche.id, `${fiche.prenom} ${fiche.nom}`]));
 }
 
-// @lourd in the title is a Playwright tag: e2e.yml leaves it out, e2e-lourd.yml
-// plays it on the stack that lets the clock be set.
+// @lourd in the title is a Playwright tag: the `e2e` job of tests.yml leaves it
+// out, e2e-lourd.yml plays it on the stack that lets the clock be set.
 test('les journées déjà travaillées sortent de chaque résolution telles qu’elles y sont entrées @lourd', async ({
   browser,
 }) => {

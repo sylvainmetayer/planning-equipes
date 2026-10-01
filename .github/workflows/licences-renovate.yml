@@ -177,7 +177,7 @@ jobs:
           fi
 
           # Ce qui tournait encore sur le commit remplacé ne prouve plus rien.
-          for wf in tests.yml e2e.yml e2e-lourd.yml securite.yml scenario-tests.yml; do
+          for wf in tests.yml e2e-lourd.yml securite.yml scenario-tests.yml; do
             for status in in_progress queued; do
               gh run list --workflow "$wf" --commit "$SUPERSEDED_SHA" --status "$status" \
                 --json databaseId --jq '.[].databaseId' \
@@ -185,7 +185,9 @@ jobs:
             done
           done
 
-          for wf in tests.yml e2e.yml securite.yml; do
+          # Tests porte l'E2E ordinaire (son job `e2e`) : relancer aussi
+          # e2e.yml la jouerait deux fois.
+          for wf in tests.yml securite.yml; do
             gh workflow run "$wf" --ref "$BRANCH"
           done
           # Les deux workflows lourds ont `pom.xml` dans leurs chemins et la

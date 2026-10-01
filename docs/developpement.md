@@ -563,8 +563,8 @@ dépassera.
 `festival-hivernal` (`canicule-festival-hivernal.spec.ts`) importe la fixture
 réelle, la résout trois fois pour de vrai et la publie trois fois avec un PDF
 par personne : treize minutes sur un runner GitHub, les quarante-deux autres
-specs — cent quatre-vingt-quinze tests — en prennent sept. `e2e.yml` la laisse
-de côté (`--grep-invert @lourd`) et `e2e-lourd.yml` la joue (`--grep @lourd`)
+specs — cent quatre-vingt-quinze tests — en prennent sept. Le job `e2e` de
+`tests.yml` la laisse de côté (`--grep-invert @lourd`) et `e2e-lourd.yml` la joue (`--grep @lourd`)
 sur les changements du solveur, des consignes, de la publication, du `pom.xml`
 et de ses propres fichiers — sa liste `paths`, à tenir à jour comme celle des
 scénarios — et chaque nuit sur `main`. Comme les tests de scénario, et pour la
@@ -582,7 +582,8 @@ Paramètres › Instance, trois résolutions, les journées passées identiques,
 « N postes déjà commencés » et le refus d'un déplacement sur une journée
 passée — et il lui faut une pile qui accepte l'horloge simulée. `e2e-lourd.yml`
 passe `horloge-simulee: true` à `e2e-suite.yml`, qui monte alors l'application
-avec `HORLOGE_SIMULEE_AUTORISEE=true` ; `e2e.yml` ne le fait pas, et
+avec `HORLOGE_SIMULEE_AUTORISEE=true` ; le job `e2e` de `tests.yml` ne le
+fait pas, et
 `jour-j.spec.ts` y vérifie que figer la date est refusé. En local, lancez
 l'application avec cette variable et jouez la spec seule
 (`npm run e2e -- passe-fige.spec.ts`) : sur cette pile, le refus que vérifie
@@ -878,11 +879,12 @@ Les workflows vivent sous `.github/workflows/`, lisibles tels quels. Quelques
 points qui ne s'y voient pas :
 
 - **une poussée coûte une quarantaine de minutes de runner**, quel que soit
-  son contenu : Tests (≈ 13 + 3), E2E (≈ 10), scénarios (≈ 8 dès que la PR a
-  touché le solveur), Sécurité (≈ 1). D'où trois filtres : `tests.yml` et
-  `e2e.yml` ignorent une poussée qui ne touche que `docs/` et le Markdown
-  (moins les fichiers qu'un test relit ou que le job compare à son build,
-  réinclus nommément) ; les specs Playwright `@lourd` ont leur workflow, comme
+  son contenu : Tests (≈ 13 + 3, plus ≈ 8 pour son job `e2e`), scénarios
+  (≈ 8 dès que la PR a touché le solveur), Sécurité (≈ 1). D'où trois
+  filtres : `tests.yml` ignore une poussée qui ne touche que `docs/` et le
+  Markdown (moins les fichiers qu'un test relit ou que le job compare à son
+  build, réinclus nommément), et son job `e2e` y ajoute ces fichiers-là — un
+  petit job `e2e-scope` relit le diff comme GitHub lit `paths` ; les specs Playwright `@lourd` ont leur workflow, comme
   les scénarios ; et une PR Renovate ne joue ni les scénarios ni la spec
   `@lourd` — les deux seuls workflows qui ont `pom.xml` dans leurs chemins —
   hors du label `timefold` ou `quarkus` (ou `playwright` pour la spec
@@ -896,7 +898,7 @@ points qui ne s'y voient pas :
   fait échouer le contrôle par construction (le job `test` le joue d'ailleurs
   en premier, avant les treize minutes de tests). Une poussée faite avec
   `GITHUB_TOKEN` ne déclenche aucun workflow : le job relance lui-même Tests,
-  E2E et Sécurité par `workflow_dispatch` sur la branche — et les deux
+  (E2E compris) et Sécurité par `workflow_dispatch` sur la branche — et les deux
   workflows lourds sous le même label qui les gouverne ailleurs —, après avoir
   annulé ce qui tournait encore sur le commit remplacé. Deux jobs séparés, et
   c'est délibéré : la régénération lance des plugins Maven dont la version
@@ -937,6 +939,27 @@ points qui ne s'y voient pas :
   les deux) : deux workflows qui poussent sur la même branche se refusent l'un
   l'autre, et un groupe de concurrence partagé ne l'empêcherait pas — GitHub ne
   garde qu'une exécution en attente par groupe, tous workflows confondus ;
+- **le bundle Angular n'est construit que deux fois par poussée** : par
+  Quinoa dans le `./mvnw verify` du job `test`, et par `npm run build` dans le
+  job `frontend`, qui en a besoin pour les budgets d'`angular.json`. Le job
+  `e2e` de `tests.yml` ne package plus : le job `test` téléverse
+  `target/quarkus-app` (artefact `quarkus-app`, gardé sept jours pour qu'un
+  « Re-run failed jobs » de l'E2E le retrouve) juste après ses tests, et
+  `e2e-suite.yml` le reprend quand on lui passe `app-artifact`.
+  `-Pcoverage`, posé sur `main`, n'attache l'agent JaCoCo qu'aux JVM de test :
+  le jar est le même. Le prix est l'attente — la pile ne monte qu'une fois
+  tout le `verify -DskipITs=false` du job `test` passé, tests d'intégration
+  compris, et un seul test backend rouge, unitaire ou d'intégration, laisse
+  l'E2E de côté.
+  Sans `app-artifact`, la pile package elle-même : c'est le cas
+  d'`e2e-lourd.yml` et d'`e2e.yml`, qui ne sert plus que par
+  `workflow_dispatch`. Le check garde son nom, « e2e / e2e » ;
+- **`docker-ghcr.yml` garde le dépôt Maven de l'image d'un build à l'autre.**
+  Le `RUN --mount=type=cache,target=/root/.m2` du `Dockerfile` vit dans le
+  builder BuildKit, jetable, et `cache-to: type=gha` n'exporte que les
+  couches : chaque image retéléchargeait `.m2`. `actions/cache` (clé sur
+  `pom.xml`) et `reproducible-containers/buildkit-cache-dance` le versent dans
+  le builder avant la construction et l'en retirent à la fin du job ;
 - **sur `main`, une fusion annule les runs de la précédente**
   (`cancel-in-progress`) : seule la dernière fusion d'une rafale est vérifiée
   là, la PR l'ayant déjà été. Les minutes annulées sont perdues, un run
