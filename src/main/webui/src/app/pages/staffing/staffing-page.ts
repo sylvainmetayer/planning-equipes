@@ -486,13 +486,13 @@ export class StaffingPage implements OnInit {
     if (verification.etat === 'ECHEC') {
       return verification.erreur ?? '';
     }
-    const equipe = teamLabel(verification);
+    const team = teamLabel(verification);
     const duree = verification.dureeSecondes ?? 0;
     if (verification.realisable) {
-      return $localize`:@@staffing.verification.ok:Avec ${equipe}:equipe:, tous les sièges sont pourvus sans enfreindre aucune règle dure (calcul de ${duree}:duree: s).`;
+      return $localize`:@@staffing.verification.ok:Avec ${team}:equipe:, tous les sièges sont pourvus sans enfreindre aucune règle dure (calcul de ${duree}:duree: s).`;
     }
     const vides = verification.siegesNonPourvus ?? 0;
-    return $localize`:@@staffing.verification.ko:Avec ${equipe}:equipe:, aucun plan complet trouvé en ${duree}:duree: s (${vides}:vides: sièges vides ou une règle dure enfreinte). Ce n'est pas une preuve : essayez avec davantage de monde ou plus de temps pour comparer.`;
+    return $localize`:@@staffing.verification.ko:Avec ${team}:equipe:, aucun plan complet trouvé en ${duree}:duree: s (${vides}:vides: sièges vides ou une règle dure enfreinte). Ce n'est pas une preuve : essayez avec davantage de monde ou plus de temps pour comparer.`;
   });
 
   /** Reads the edition's last check once, then follows it while it runs. */
