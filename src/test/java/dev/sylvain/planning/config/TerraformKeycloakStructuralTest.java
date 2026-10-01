@@ -78,8 +78,22 @@ class TerraformKeycloakStructuralTest {
         assertThat(resources.get("keycloak_realm.planning"))
                 .containsPattern("passwordless_passkeys_enabled\\s*=\\s*true");
         assertThat(KeycloakConfigFiles.read(Path.of("terraform/keycloak/versions.tf")))
-                .as("passwordless_passkeys_enabled exists from provider 5.8 on")
-                .contains("version = \"~> 5.8\"");
+                .as("passwordless_passkeys_enabled exists from provider 5.8 on, discoverable_credential from 5.9")
+                .contains("version = \"~> 5.9\"");
+    }
+
+    /**
+     * Production requires a discoverable credential like the development
+     * realm, through the attribute that replaces the deprecated
+     * {@code require_resident_key} — known to Keycloak from 26.7 and to the
+     * provider from 5.9 on.
+     */
+    @Test
+    void passkeysAreDiscoverableAsInDevelopment() {
+        assertThat(realm.path("webAuthnPolicyPasswordlessResidentKey").asText()).isEqualTo("required");
+        assertThat(resources.get("keycloak_realm.planning"))
+                .containsPattern("discoverable_credential\\s*=\\s*\"required\"")
+                .doesNotContainPattern("require_resident_key\\s*=");
     }
 
     @Test
