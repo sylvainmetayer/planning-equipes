@@ -477,6 +477,16 @@ public class PlanningService {
         return solveRunner.solveUntilFeasible(problem, secondsLimitSecurite);
     }
 
+    /** @see SolveRunner#prepareHypothetical */
+    public void prepareHypothetical(PlanningEvenement problem) {
+        solveRunner.prepareHypothetical(problem);
+    }
+
+    /** @see SolveRunner#solvePreparedUntilFeasible */
+    public PlanningEvenement solvePreparedUntilFeasible(PlanningEvenement problem, long secondsLimitSecurite) {
+        return solveRunner.solvePreparedUntilFeasible(problem, secondsLimitSecurite);
+    }
+
     /** @see SolveRunner#prepareForAnalysis */
     void prepareForAnalysis(PlanningEvenement planning) {
         solveRunner.prepareForAnalysis(planning);

@@ -3,8 +3,8 @@
     <mat-card-header>
       <h1 mat-card-title i18n="@@staffing.title">Besoin minimum en effectif</h1>
       <mat-card-subtitle i18n="@@staffing.description">
-        Combien d'animateurs il faut au minimum pour tenir tous les sièges, avant toute saisie d'animateur : la plus
-        haute de quatre bornes, chacune issue d'une règle du solveur.
+        Combien d'animateurs recruter, et lesquels, pour tenir tous les sièges : la plus haute des bornes, chacune
+        issue d'une règle du solveur.
       </mat-card-subtitle>
     </mat-card-header>
   }
@@ -20,12 +20,12 @@
           <div class="staffing-stat-label" i18n="@@staffing.minimumTotal">Minimum retenu</div>
         </mat-card>
         <mat-card appearance="outlined" class="staffing-stat">
-          <div class="staffing-stat-value">{{ resume.minimumMajeurs }}</div>
-          <div class="staffing-stat-label" i18n="@@staffing.minimumMajeurs">dont majeurs</div>
+          <div class="staffing-stat-value">{{ resume.majeursMin }}</div>
+          <div class="staffing-stat-label" i18n="@@staffing.majeursMin">majeurs au moins</div>
         </mat-card>
         <mat-card appearance="outlined" class="staffing-stat">
-          <div class="staffing-stat-value">{{ resume.minimumMineurs }}</div>
-          <div class="staffing-stat-label" i18n="@@staffing.minimumMineurs">dont mineurs (au plus)</div>
+          <div class="staffing-stat-value">{{ resume.mineursMax }}</div>
+          <div class="staffing-stat-label" i18n="@@staffing.mineursMax">mineurs au plus, pour {{ resume.effectifReference }} personnes</div>
         </mat-card>
       </div>
 
@@ -81,6 +81,14 @@
           ne se tiennent pas à cent, même si le pic d'une seule journée s'arrête là.</ng-container>
           <a class="staffing-lien" routerLink="/ouvertures" i18n="@@staffing.lien.horaires">Horaires des stands</a>
         </p>
+        <p [class.staffing-binding]="estBorneRetenue('ENCHAINEMENT_JOURS')">
+          <mat-icon inline aria-hidden="true">event_repeat</mat-icon>
+          <strong i18n="@@staffing.sequenceBound.label">Enchaînement des jours : {{ resume.enchainementTotal }}</strong>
+          <ng-container i18n="@@staffing.sequenceBound.description"> — les calendriers de repos réels, jour après jour :
+          {{ joursTravaillesMax() }} jours par semaine, {{ consecutiveCapLabel() }}.</ng-container>
+          <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'qualite', regle: 'maxJoursConsecutifsTravaillesDur' }"
+             i18n="@@staffing.lien.joursAffilee">Jours d'affilée</a>
+        </p>
       </div>
 
       @if (projectionLabel(); as projection) {
@@ -90,14 +98,45 @@
         </p>
       }
 
-      <p class="empty-hint staffing-caveat">
-        <mat-icon inline aria-hidden="true">warning</mat-icon>
-        <span>
-          <ng-container i18n="@@staffing.caveat.optimiste">Ces minimums sont optimistes : répartition parfaite, compétences, repos quotidien et
-          disponibilités ignorés. Une fois les animateurs saisis,</ng-container>
-          <a routerLink="/solveur" i18n="@@staffing.caveat.solveur">vérifiez la faisabilité sur le Solveur</a>.
-        </span>
-      </p>
+      <!-- The floor proves « at least »; a solve of a made-up team of that size says « and that suffices ». -->
+      <section class="staffing-verification" aria-labelledby="staffing-verification-titre">
+        <h2 id="staffing-verification-titre" class="staffing-verification-titre" i18n="@@staffing.verification.title">Vérifier par un solve</h2>
+        <p class="empty-hint" i18n="@@staffing.verification.description">
+          Une équipe fictive de majeurs, disponibles tous les jours et compétents partout, tient-elle tous les sièges ?
+          Le plan de l'édition n'est pas touché.
+        </p>
+        <div class="staffing-verification-actions">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label i18n="@@staffing.verification.effectif">Effectif à vérifier</mat-label>
+            <input matInput type="number" min="1" name="teamSizeToCheck" [placeholder]="'' + resume.minimumTotal"
+                   [ngModel]="teamSizeToCheck()" (ngModelChange)="changerEffectif($event)" [disabled]="verificationRunning()" />
+          </mat-form-field>
+          <button mat-flat-button type="button" [disabled]="verificationRunning()" (click)="lancerVerification()">
+            <mat-icon aria-hidden="true">play_arrow</mat-icon>
+            <ng-container i18n="@@staffing.verification.lancer">Vérifier</ng-container>
+          </button>
+        </div>
+        <app-status-message [text]="verificationErreur()" tone="error" />
+        @if (verification(); as verif) {
+          @if (verif.etat === 'EN_COURS') {
+            <mat-progress-bar mode="indeterminate" />
+            <p class="empty-hint" i18n="@@staffing.verification.enCours">Calcul en cours avec {{ verif.effectif }} personnes, {{ verif.plafondSecondes }} s au plus…</p>
+          } @else {
+            <p class="staffing-caveat" [class.staffing-critical]="!verif.realisable">
+              <mat-icon inline aria-hidden="true">{{ verif.realisable ? 'check_circle' : 'error' }}</mat-icon>
+              <span>{{ verificationLabel() }}</span>
+            </p>
+            @if (verif.reglesEnDefaut.length > 0) {
+              <p class="empty-hint">
+                <ng-container i18n="@@staffing.verification.regles">Règles en défaut :</ng-container>
+                @for (regle of verif.reglesEnDefaut; track regle) {
+                  <a class="staffing-lien" routerLink="/regles" [queryParams]="{ regle: regle }">{{ regle }}</a>
+                }
+              </p>
+            }
+          }
+        }
+      </section>
 
       @if (referentielsManquantsLabel(); as manquants) {
         <p class="empty-hint">{{ manquants }}</p>
@@ -139,6 +178,17 @@
                 <strong [class.staffing-critical]="row.minimumJour === resume.jourCritique?.minimumJour">{{ row.minimumJour }}</strong>
               </td>
             </ng-container>
+            <ng-container matColumnDef="majeursRequis">
+              <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@staffing.column.majeursRequis">Majeurs requis</th>
+              <td mat-cell *matCellDef="let row">{{ row.majeursRequis }}</td>
+            </ng-container>
+            <!-- Out of the reference team: more people declared off than this, and the day no longer holds. -->
+            <ng-container matColumnDef="absentsMax">
+              <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@staffing.column.absentsMax">Absents tolérés</th>
+              <td mat-cell *matCellDef="let row">
+                <span [class.staffing-critical]="isDayOverTolerance(row)">{{ row.absentsMax }}</span>
+              </td>
+            </ng-container>
             <!-- The « avant » margin of the day, at its tightest: who has not declared the date unavailable, minus the seats. -->
             <ng-container matColumnDef="marge">
               <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@staffing.column.marge">Disponibles − sièges</th>
@@ -162,6 +212,32 @@
             <tr mat-row *matRowDef="let row; columns: columns"></tr>
           </table>
         </div>
+        <div class="table-wrapper staffing-semaines">
+          <table mat-table [dataSource]="resume.parSemaine">
+            <caption class="visually-hidden" i18n="@@staffing.semaines.caption">Indisponibilités que chaque semaine peut absorber</caption>
+            <ng-container matColumnDef="semaine">
+              <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@staffing.semaines.column.semaine">Semaine</th>
+              <td mat-cell *matCellDef="let row">{{ row.semaine }}</td>
+            </ng-container>
+            <ng-container matColumnDef="joursPersonne">
+              <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@staffing.semaines.column.joursPersonne">Jours-personne</th>
+              <td mat-cell *matCellDef="let row">{{ row.joursPersonne }}</td>
+            </ng-container>
+            <ng-container matColumnDef="budget">
+              <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@staffing.semaines.column.budget">Indisponibilités tolérées au-delà du repos</th>
+              <td mat-cell *matCellDef="let row">{{ row.budgetIndisponibilites }}</td>
+            </ng-container>
+            <ng-container matColumnDef="declarees">
+              <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@staffing.semaines.column.declarees">Déclarées au-delà</th>
+              <td mat-cell *matCellDef="let row">
+                <span [class.staffing-critical]="isWeekOverBudget(row)">{{ row.indisponibilitesAuDela }}</span>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="semaineColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: semaineColumns"></tr>
+          </table>
+        </div>
+        <p class="empty-hint" i18n="@@staffing.semaines.hint">Un jour d'indisponibilité par personne et par semaine complète ne coûte rien : c'est son repos hebdomadaire.</p>
         @if (rapportMarge(); as marge) {
           <details class="staffing-marge-detail">
             <summary i18n="@@staffing.marge.detail">Disponibles − sièges, tranche par tranche</summary>
@@ -184,25 +260,29 @@
       </mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
-      @if (goulot.animateursTotal === 0) {
-        <!--
-          Checked before the empty table: the bounds above are proven without a single
-          animateur, but there is nobody to compare them to — saying "no seat is attached to a
-          single typologie" there would blame the stands for a missing staff list.
-        -->
-        <p class="empty-hint" i18n="@@staffing.competence.noAnimateurs">
-          Aucun animateur saisi pour le moment : le goulot par compétence ne peut pas être calculé. Renseignez la
-          liste des animateurs.
-        </p>
-      } @else if (goulot.parTypologie.length === 0) {
+      @if (goulot.parTypologie.length === 0) {
         <p class="empty-hint" i18n="@@staffing.competence.empty">
           Aucun siège n'est rattaché à une typologie unique : rien à décliner par compétence pour le moment.
         </p>
       } @else {
-        <p class="empty-hint staffing-caveat">
-          <mat-icon inline aria-hidden="true">groups_2</mat-icon>
-          <span>{{ reserveLabel() }}</span>
-        </p>
+        @if (goulot.animateursTotal === 0) {
+          <!-- Before any animateur, the rows are the recruitment brief: how many to recruit on each typologie. -->
+          <p class="empty-hint staffing-caveat">
+            <mat-icon inline aria-hidden="true">person_add</mat-icon>
+            <span i18n="@@staffing.competence.brief">Aucun animateur saisi : le minimum de chaque typologie est le nombre de personnes à recruter sur cette compétence.</span>
+          </p>
+        } @else {
+          <p class="empty-hint staffing-caveat">
+            <mat-icon inline aria-hidden="true">groups_2</mat-icon>
+            <span>{{ reserveLabel() }}</span>
+          </p>
+        }
+        @if (cumulLabel(); as cumul) {
+          <p class="empty-hint staffing-caveat">
+            <mat-icon inline aria-hidden="true">diversity_3</mat-icon>
+            <span>{{ cumul }}</span>
+          </p>
+        }
         <div class="table-wrapper">
           <table mat-table [dataSource]="goulot.parTypologie">
             <caption class="visually-hidden" i18n="@@staffing.competence.table.caption">
@@ -238,6 +318,9 @@
               <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@staffing.competence.column.minimum">Minimum requis</th>
               <td mat-cell *matCellDef="let row">
                 <strong>{{ row.minimumTotal }}</strong>
+                @if (row.borneRetenue === 'PLAFOND_TYPOLOGIE') {
+                  <span class="staffing-marge-tranche" i18n="@@staffing.competence.plafond">{{ row.plafondCreneaux }} créneaux au plus par personne</span>
+                }
               </td>
             </ng-container>
             <ng-container matColumnDef="specialistes">

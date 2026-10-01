@@ -18,6 +18,7 @@ import dev.sylvain.planning.service.referentiel.ReferenceData;
 import dev.sylvain.planning.solver.PlanningConstraintProvider;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -237,6 +238,41 @@ final class SolveRunner {
      */
     public PlanningEvenement solveUntilFeasible(PlanningEvenement problem, long secondsLimitSecurite) {
         prepareProblem(problem);
+        return solvePreparedUntilFeasible(problem, secondsLimitSecurite);
+    }
+
+    /**
+     * Prepares a problem that is not the edition's plan but a question asked
+     * about it — a made-up team staffing the edition's seats, under the
+     * edition's rules. Everything {@link #prepareProblem} reads from the
+     * edition, except what names the edition's real animateurs: the ad hoc
+     * exceptions (a forced assignment would name somebody absent from the
+     * team, and break the plan for a reason that is not the question) and
+     * the published plan the stability rule compares to.
+     */
+    void prepareHypothetical(PlanningEvenement problem) {
+        prepareProblem(problem);
+        problem.setContraintesAdHoc(List.of());
+        problem.setAffectationsPubliees(List.of());
+        // The question is « does this team fill every seat »: an edition that
+        // switched the rule off would let an empty seat cost nothing, and the
+        // solve stop on a plan with holes in it.
+        List<ConstraintToggle> toggles = new ArrayList<>(problem.getConstraintsDesactivees().stream()
+                .filter(toggle -> !SEAT_RULE.equals(toggle.getNom()))
+                .toList());
+        toggles.add(new ConstraintToggle(SEAT_RULE, true));
+        problem.setConstraintsDesactivees(toggles);
+    }
+
+    /** The hard rule a check by a solve must always hold: every seat filled. */
+    static final String SEAT_RULE = "posteDoitEtrePourvu";
+
+    /**
+     * {@link #solveUntilFeasible} on a problem already prepared — by
+     * {@link #prepareHypothetical} — so the solve itself reads nothing from
+     * the edition and can run on a thread that has none.
+     */
+    PlanningEvenement solvePreparedUntilFeasible(PlanningEvenement problem, long secondsLimitSecurite) {
         FrozenPast.pin(problem.getPostes());
         // The first stage of a two-stage solve (FeasibilityFirstSolve) is
         // exactly this search — until feasibility, stability suspended — so a

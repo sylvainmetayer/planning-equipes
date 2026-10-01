@@ -19,6 +19,7 @@ import {
   PreviousEdition,
   SemaineStaffing,
   StaffingSummary,
+  StaffingVerification,
   TypologieStaffing,
 } from '../../core/models';
 import { StaffingPage } from './staffing-page';
@@ -57,6 +58,8 @@ function jour(overrides: Partial<JourStaffing> = {}): JourStaffing {
     picRepas: 0,
     minimumJour: 22,
     disponibles: 40,
+    absentsMax: 0,
+    majeursRequis: 0,
     ...overrides,
   };
 }
@@ -72,6 +75,8 @@ function semaine(overrides: Partial<SemaineStaffing> = {}): SemaineStaffing {
     chargeTotal: 30,
     joursPersonne: 154,
     rotationTotal: 26,
+    budgetIndisponibilites: 2,
+    indisponibilitesAuDela: 0,
     ...overrides,
   };
 }
@@ -89,6 +94,9 @@ function typologie(overrides: Partial<TypologieStaffing> = {}): TypologieStaffin
     picRepas: 0,
     chargeTotal: 3,
     rotationTotal: 4,
+    enchainementTotal: 4,
+    plafondCreneaux: null,
+    minimumPlafond: 0,
     minimumTotal: 6,
     borneRetenue: 'PIC_AVEC_PAUSE',
     specialistes: 6,
@@ -107,6 +115,7 @@ function competence(overrides: Partial<CompetenceStaffing> = {}): CompetenceStaf
     manquePolyvalents: 0,
     animateursTotal: 40,
     typologieNinjaDefinie: true,
+    planchersCumules: 6,
     ...overrides,
   };
 }
@@ -129,13 +138,29 @@ function summary(overrides: Partial<StaffingSummary> = {}): StaffingSummary {
     borneRetenue: 'PIC_AVEC_PAUSE',
     minimumAvecIndisponibilites: 22,
     indisponibilitesDeclarees: false,
-    minimumMajeurs: 15,
-    minimumMineurs: 7,
+    enchainementTotal: 20,
+    joursConsecutifsMax: null,
+    effectifReference: 22,
+    majeursMin: 15,
+    mineursMax: 7,
     dureeHebdomadaireMaxMinutes: 2880,
     dureeQuotidienneMaxMinutes: 600,
     joursTravaillesMaxParSemaine: 6,
     parCompetence: competence(),
     referentielsManquants: [],
+    ...overrides,
+  };
+}
+
+/** One check by a solve, running unless a test says otherwise. */
+function verification(overrides: Partial<StaffingVerification> = {}): StaffingVerification {
+  return {
+    etat: 'EN_COURS',
+    effectif: 22,
+    sieges: 40,
+    lanceeLe: '2026-10-01T10:00:00Z',
+    plafondSecondes: 600,
+    reglesEnDefaut: [],
     ...overrides,
   };
 }
@@ -151,6 +176,9 @@ describe('StaffingPage', () => {
     margin: vi.fn(),
     trainingPlan: vi.fn(async () => null),
     exportTrainingPlan: vi.fn(),
+    // The check by a solve: none run yet unless a test says otherwise.
+    staffingVerification: vi.fn(),
+    verifyStaffing: vi.fn(),
   };
 
   // No earlier edition left a measure, unless a test says otherwise.
@@ -165,6 +193,9 @@ describe('StaffingPage', () => {
     analysesApi.staffing.mockResolvedValue(summary());
     analysesApi.margin.mockReset();
     analysesApi.margin.mockResolvedValue(null);
+    analysesApi.staffingVerification.mockReset();
+    analysesApi.staffingVerification.mockResolvedValue(null);
+    analysesApi.verifyStaffing.mockReset();
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
@@ -580,8 +611,8 @@ describe('StaffingPage', () => {
 
   /**
    * Every figure leads to the screen that changes it: a day to its stands'
-   * opening hours, a bound to the settings it is proved on, the feasibility
-   * check to the Solveur — and the « avant » margin is a column of the days.
+   * opening hours, a bound to the settings it is proved on — and the « avant »
+   * margin is a column of the days.
    */
   describe('the links from each figure to the screen that changes it', () => {
     it('links each day to its opening hours, and prints its tightest margin', async () => {
@@ -626,7 +657,7 @@ describe('StaffingPage', () => {
       );
       expect(hrefs).toContain('/ouvertures?du=2026-09-01&au=2026-09-01');
       expect(hrefs).toContain('/regles?onglet=legal&regle=coupureRepasObligatoire');
-      expect(hrefs).toContain('/solveur');
+      expect(hrefs).toContain('/regles?onglet=qualite&regle=maxJoursConsecutifsTravaillesDur');
       expect(root.querySelector('.staffing-marge')?.textContent).toBe('-2');
       expect(root.querySelector('.staffing-marge-tranche')?.textContent).toBe('18:00-22:00');
       expect(root.textContent).toContain('Horaires des stands du 01/09');
@@ -747,6 +778,130 @@ describe('StaffingPage', () => {
         'td.mat-column-precedente',
       );
       expect(cellule?.textContent?.trim()).toBe('—');
+    });
+  });
+
+  describe('the recruitment brief', () => {
+    it('shows each typologie minimum before any animateur, without the pool columns', async () => {
+      const before = await pageWith({ animateursTotal: 0 });
+      expect(before['competenceColumns']()).toEqual(['typologie', 'sieges', 'minimumTotal']);
+
+      const after = await pageWith({ animateursTotal: 12 });
+      expect(after['competenceColumns']()).toContain('specialistes');
+      expect(after['competenceColumns']()).toContain('manque');
+    });
+
+    it('says how many typologies each recruit must carry once the rows add up past the floor', async () => {
+      analysesApi.staffing.mockResolvedValue(
+        summary({ minimumTotal: 20, parCompetence: competence({ planchersCumules: 30 }) }),
+      );
+      const page = createPage();
+      await vi.waitFor(() => expect(page['summary']()).not.toBeNull());
+
+      expect(page['cumulLabel']()).toContain('30');
+      expect(page['cumulLabel']()).toContain('20');
+      expect(page['cumulLabel']()).toContain('1.5');
+
+      analysesApi.staffing.mockResolvedValue(
+        summary({ minimumTotal: 20, parCompetence: competence({ planchersCumules: 20 }) }),
+      );
+      page['staffing'].reload();
+      await vi.waitFor(() => expect(page['cumulLabel']()).toBe(''));
+    });
+
+    it('names the cap on days in a row the sequence bound was proved under', async () => {
+      analysesApi.staffing.mockResolvedValue(summary({ joursConsecutifsMax: 6 }));
+      const page = createPage();
+      await vi.waitFor(() => expect(page['consecutiveCapLabel']()).toContain('6'));
+    });
+
+    it('flags a week and a day whose declared days off go beyond what they absorb', async () => {
+      const page = await pageWith({ animateursTotal: 40 });
+
+      expect(
+        page['isWeekOverBudget'](semaine({ budgetIndisponibilites: 2, indisponibilitesAuDela: 3 })),
+      ).toBe(true);
+      expect(
+        page['isWeekOverBudget'](semaine({ budgetIndisponibilites: 2, indisponibilitesAuDela: 2 })),
+      ).toBe(false);
+      // 40 known, 35 free that day: five away for four tolerated.
+      expect(page['isDayOverTolerance'](jour({ disponibles: 35, absentsMax: 4 }))).toBe(true);
+      expect(page['isDayOverTolerance'](jour({ disponibles: 36, absentsMax: 4 }))).toBe(false);
+    });
+  });
+
+  describe('the check by a solve', () => {
+    it('starts a check of the size typed in, and follows it until it ends', async () => {
+      vi.useFakeTimers();
+      try {
+        analysesApi.verifyStaffing.mockResolvedValue(verification({ effectif: 25 }));
+        analysesApi.staffingVerification.mockResolvedValue(null);
+        // No call by hand: the zoneless test bed runs ngOnInit on its own first check.
+        const page = createPage();
+        await vi.waitFor(() => expect(analysesApi.staffingVerification).toHaveBeenCalledOnce());
+
+        page['changerEffectif']('25');
+        await page['lancerVerification']();
+
+        expect(analysesApi.verifyStaffing).toHaveBeenCalledWith(25);
+        expect(page['verification']()?.etat).toBe('EN_COURS');
+        expect(page['verificationLabel']()).toBe('');
+
+        analysesApi.staffingVerification.mockResolvedValue(
+          verification({
+            effectif: 25,
+            etat: 'TERMINEE',
+            realisable: true,
+            dureeSecondes: 42,
+            siegesNonPourvus: 0,
+          }),
+        );
+        await vi.advanceTimersByTimeAsync(3000);
+
+        expect(page['verification']()?.etat).toBe('TERMINEE');
+        expect(page['verificationLabel']()).toContain('25');
+        expect(page['verificationLabel']()).toContain('42');
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('stops following the check once the screen is left, even with a read in flight', async () => {
+      vi.useFakeTimers();
+      try {
+        const pending = deferred<StaffingVerification | null>();
+        analysesApi.staffingVerification.mockReturnValueOnce(pending.promise);
+        const fixture = TestBed.createComponent(StaffingPage);
+        fixture.componentInstance.ngOnInit();
+
+        fixture.destroy();
+        pending.resolve(verification({ etat: 'EN_COURS' }));
+        await vi.advanceTimersByTimeAsync(10000);
+
+        expect(analysesApi.staffingVerification).toHaveBeenCalledOnce();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('checks the floor when nothing is typed in, and never calls a failure a proof', async () => {
+      analysesApi.verifyStaffing.mockResolvedValue(
+        verification({
+          etat: 'TERMINEE',
+          realisable: false,
+          siegesNonPourvus: 3,
+          dureeSecondes: 600,
+          reglesEnDefaut: ['posteDoitEtrePourvu'],
+        }),
+      );
+      const page = createPage();
+
+      page['changerEffectif']('');
+      await page['lancerVerification']();
+
+      expect(analysesApi.verifyStaffing).toHaveBeenCalledWith(null);
+      expect(page['verificationLabel']()).toContain('3');
+      expect(page['verificationLabel']()).toContain('pas une preuve');
     });
   });
 });

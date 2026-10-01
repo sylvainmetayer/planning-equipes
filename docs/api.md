@@ -207,6 +207,52 @@ pourvoir n'est pas un feu vert. Et sa capacité par créneau ne compte un mineur
 qu'aux côtés d'un majeur, hors de sa nuit légale, d'un jour férié et des stands
 réservés aux majeurs — une équipe de mineurs seuls n'y couvre plus rien.
 
+### Le besoin en animateurs : des minimums, un plafond, une vérification
+
+`GET /api/staffing` rend des **minimums prouvés** : aucune équipe plus petite ne
+tient les sièges. Trois de ses chiffres se lisent autrement, et c'est là que
+l'écran se trompe facilement de sens :
+
+- `mineursMax` est un **plafond**, calculé pour `effectifReference` (le
+  minimum, ou les animateurs saisis s'ils sont plus nombreux). C'est le nombre
+  au-delà duquel recruter des mineurs empêche de tenir, jamais un nombre de
+  mineurs à recruter. Il ignore les jours d'affilée et les 4 h 30 de travail
+  continu des mineurs ; un solve peut en tenir moins.
+- `absentsMax` (par jour) et `budgetIndisponibilites` (par semaine) se lisent
+  contre ce même effectif de référence. Le budget d'une semaine complète
+  s'entend **au-delà** du jour de repos que chacun doit déjà prendre : un jour
+  d'absence par personne et par semaine ne coûte rien. `indisponibilitesAuDela`
+  compte les jours que les animateurs saisis ont déclarés au-delà de ce repos.
+- Le plafond de jours d'affilée (`joursConsecutifsMax`) n'est lu que si
+  `maxJoursConsecutifsTravaillesDur` est allumée, et vaut `null` sinon. Une
+  règle moyenne peut être enfreinte : elle ne doit pas faire recruter.
+
+`POST /api/staffing/verification` lance un solve des sièges de l'édition par
+une **équipe fictive** et répond `202` sans attendre. L'équipe compte `effectif`
+personnes, le minimum quand le corps n'en dit rien. Elles sont majeures,
+disponibles tous les jours et compétentes sur toutes les typologies.
+`GET /api/staffing/verification` rend la dernière vérification de l'édition,
+en cours ou terminée, ou `204` s'il n'y en a eu aucune depuis le démarrage.
+Quatre choses à savoir avant de s'en servir :
+
+- **Rien de l'édition n'est écrit** : ni le plan, ni les animateurs, ni la file
+  du solveur. Le geste n'est donc pas journalisé.
+- **Une seule vérification à la fois, toutes éditions confondues, et aucune
+  pendant une résolution.** Le solveur est partagé par toutes les éditions :
+  une seconde demande reçoit `409` au lieu d'attendre son tour.
+- **Un échec ne prouve rien.** Le solve s'arrête au premier plan qui n'enfreint
+  aucune règle dure. Un `realisable: false` dit seulement qu'aucun plan complet
+  n'a été trouvé dans le temps imparti. `posteDoitEtrePourvu` est toujours
+  tenue pendant la vérification, même si l'édition l'a éteinte.
+- **Le résultat vit en mémoire** et se perd au redémarrage.
+- **Les exceptions ad hoc et le plan publié sont laissés de côté** : ils
+  nomment des personnes que l'équipe fictive ne contient pas.
+
+Le solve s'arrête dès qu'un plan est réalisable, et au plus tard au bout de
+`planning.staffing.verification.seconds-limit`. La décision et les options
+écartées sont dans
+[0071](decisions/0071-le-besoin-en-animateurs-un-minimum-exact-verifie-par-une-equipe-fictive.md).
+
 ### Ce que la prochaine résolution recevra
 
 `GET /api/solve/entrees` compte, en une lecture, ce que la page Solveur annonce

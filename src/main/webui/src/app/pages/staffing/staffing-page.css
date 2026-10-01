@@ -87,3 +87,25 @@
   color: var(--app-accent);
   white-space: nowrap;
 }
+
+/* The check by a solve: what « at least N » becomes once N people really staff the seats. */
+.staffing-verification {
+  margin: 1rem 0 1.25rem;
+}
+
+.staffing-verification-titre {
+  margin: 0 0 0.25rem;
+  font: var(--mat-sys-title-medium);
+}
+
+.staffing-verification-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.5rem 0;
+}
+
+.staffing-semaines {
+  margin-top: 1rem;
+}

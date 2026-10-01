@@ -1962,6 +1962,14 @@ export interface JourStaffing {
   minimumJour: number;
   /** Known animateurs not declaring that day off. Equals the pool while nothing is declared. */
   disponibles: number;
+  /** How many of `effectifReference` may be away that day with the day still held. */
+  absentsMax: number;
+  /**
+   * How many of the day's people must be adults: all of them on a public
+   * holiday, otherwise the peak of the seats no minor may hold (stand reserved
+   * to adults, night of a 16-17 year old).
+   */
+  majeursRequis: number;
 }
 
 /**
@@ -1985,11 +1993,24 @@ export interface SemaineStaffing {
   /** Sum of the days' `minimumJour`: the (animateur, jour travaillé) pairs required. */
   joursPersonne: number;
   rotationTotal: number;
+  /**
+   * Person-days of unavailability `effectifReference` people can absorb that
+   * week beyond the rest day a full week owes everybody anyway.
+   */
+  budgetIndisponibilites: number;
+  /** Days the known animateurs declared off that week beyond that free rest day. */
+  indisponibilitesAuDela: number;
 }
 
 /** Which bound `GET /api/staffing` ended up retaining for `minimumTotal`. */
 export type BorneStaffing =
-  'PIC_SIMULTANE' | 'PIC_AVEC_PAUSE' | 'CHARGE_HORAIRE' | 'ROTATION_JOURS' | 'COUPURE_REPAS';
+  | 'PIC_SIMULTANE'
+  | 'PIC_AVEC_PAUSE'
+  | 'CHARGE_HORAIRE'
+  | 'ROTATION_JOURS'
+  | 'COUPURE_REPAS'
+  | 'ENCHAINEMENT_JOURS'
+  | 'PLAFOND_TYPOLOGIE';
 
 /**
  * A referential the edition has not filled in yet, as `GET /api/staffing`
@@ -2016,6 +2037,12 @@ export interface TypologieStaffing {
   picRepas: number;
   chargeTotal: number;
   rotationTotal: number;
+  /** The exact cover of this typologie's days, as `StaffingSummary.enchainementTotal`. */
+  enchainementTotal: number;
+  /** The typologie's `maxCreneauxParAnimateur`, `null` when it carries none. */
+  plafondCreneaux?: number | null;
+  /** What that cap forces on its own: ⌈sièges ÷ plafond⌉ distinct people. */
+  minimumPlafond: number;
   minimumTotal: number;
   borneRetenue: BorneStaffing;
   /**
@@ -2061,6 +2088,33 @@ export interface CompetenceStaffing {
    * rather than as a shortage of backup.
    */
   typologieNinjaDefinie: boolean;
+  /** Sum of every row's minimum: the team the seats would need if nobody held two typologies. */
+  planchersCumules: number;
+}
+
+/** Where a check of the staffing floor stands. */
+export type VerificationState = 'EN_COURS' | 'TERMINEE' | 'ECHEC';
+
+/**
+ * `POST|GET /api/staffing/verification`: a solve of the edition's seats by a
+ * made-up team — adults, available every day, competent everywhere — that
+ * says whether `effectif` people suffice. Nothing of the edition is written.
+ */
+export interface StaffingVerification {
+  etat: VerificationState;
+  effectif: number;
+  sieges: number;
+  lanceeLe: string;
+  termineeLe?: string | null;
+  dureeSecondes?: number | null;
+  plafondSecondes: number;
+  /** `null` until the solve ends. */
+  realisable?: boolean | null;
+  siegesNonPourvus?: number | null;
+  scoreDur?: number | null;
+  /** Hard rules the best plan still breaks, by catalogue name, the most broken first. */
+  reglesEnDefaut: string[];
+  erreur?: string | null;
 }
 
 /**
@@ -2096,8 +2150,19 @@ export interface StaffingSummary {
   minimumAvecIndisponibilites: number;
   /** Whether anybody declared a day off at all — what tells "all free" from "unknown". */
   indisponibilitesDeclarees: boolean;
-  minimumMajeurs: number;
-  minimumMineurs: number;
+  /**
+   * The exact cover of the day sequence: six days per ISO week and, when the
+   * edition holds it hard, the cap on days in a row — together.
+   */
+  enchainementTotal: number;
+  /** The cap on days in a row the floor was proved under; `null` when the hard rule is off. */
+  joursConsecutifsMax?: number | null;
+  /** The team every « how many may » figure is read against: the floor, or the roster when larger. */
+  effectifReference: number;
+  /** The most adults one day needs. */
+  majeursMin: number;
+  /** A ceiling on minors for `effectifReference` people — never a target. */
+  mineursMax: number;
   dureeHebdomadaireMaxMinutes: number;
   /** Art. L3121-18: 10 h. Not configurable — the bounds read it, they do not set it. */
   dureeQuotidienneMaxMinutes: number;

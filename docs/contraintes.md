@@ -274,6 +274,16 @@ reproche pas une série terminée. Dans une fenêtre à cheval sur le passé, un
 déjà travaillé compte qui l'a réellement tenu, pas son plancher : un siège passé
 resté vide n'est jamais reproché, et ce plancher gonflerait la demande.
 
+**L'écran Besoin compte la règle dure exactement.** La fenêtre ci-dessus
+répond « la grille tient-elle avec ces animateurs ? ». L'écran Besoin répond à
+une autre question : « combien en faut-il au moins ? ». Quand la forme dure est
+allumée, il cherche le plus petit effectif dont les calendriers de repos
+tiennent ensemble les six jours par semaine et le seuil d'affilée, par un flot
+maximal sur les jours de repos — voir
+[0071](decisions/0071-le-besoin-en-animateurs-un-minimum-exact-verifie-par-une-equipe-fictive.md).
+La forme moyenne seule ne relève jamais ce chiffre : une règle que le solveur
+peut enfreindre ne doit pas faire recruter.
+
 Ce qui tranche reste un **plan** : construit à part et importé, l'écran
 Problèmes le juge, et zéro écart dur prouve que le besoin est tenable avec les
 règles telles qu'elles sont codées. La seconde question est celle du
