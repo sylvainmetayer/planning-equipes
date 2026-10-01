@@ -118,8 +118,8 @@
           </mat-form-field>
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label i18n="@@staffing.verification.duree">Durée max (s)</mat-label>
-            <input matInput type="number" min="10" max="3600" name="secondsToCheck"
-                   i18n-placeholder="@@staffing.verification.dureeDefaut" placeholder="par défaut"
+            <input matInput type="number" min="10" name="secondsToCheck"
+                   i18n-placeholder="@@staffing.verification.dureeDefaut" placeholder="comme une résolution"
                    [ngModel]="secondsToCheck()" (ngModelChange)="setSeconds($event)" [disabled]="verificationRunning()" />
           </mat-form-field>
           <button mat-flat-button type="button" [disabled]="verificationRunning()" (click)="lancerVerification()">

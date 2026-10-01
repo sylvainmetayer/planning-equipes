@@ -90,10 +90,15 @@ Pour la vérification, deux formes ont été écartées :
    construite en mémoire. Les mineurs ont seize ans au premier jour : ils
    relèvent du régime des 16–18 ans pendant tout l'événement, jamais du régime
    plus strict d'avant seize ans. L'organisateur choisit N, M et la durée du
-   solve, bornée entre 10 s et une heure ; par défaut, N est le minimum moins
-   les mineurs, M vaut zéro et la durée est
-   `planning.staffing.verification.seconds-limit`. Elle est résolue sous les règles de l'édition, sans exceptions ad
-   hoc ni plan publié, et le solve s'arrête dès qu'un plan est réalisable.
+   solve, entre 10 s et le plafond d'exploitant d'une résolution ; par défaut,
+   N est le minimum moins les mineurs, M vaut zéro et la durée est **celle
+   d'une résolution de l'édition** (écran Solveur, sinon
+   `planning.solver.seconds-limit`). Une durée propre, plus courte, a été
+   écartée : elle déclarait en échec une équipe dont la vraie résolution, avec
+   autant de monde, réussissait — le plan existait, le temps manquait. L'équipe
+   fictive, compétente partout, ouvre au solveur bien plus de combinaisons
+   qu'une vraie équipe : elle ne cherche pas plus vite. L'équipe est résolue
+   sous les règles de l'édition, sans exceptions ad hoc ni plan publié, et le solve s'arrête dès qu'un plan est réalisable.
    `posteDoitEtrePourvu` y est toujours tenue : la question est de savoir si
    l'équipe pourvoit chaque siège. Un échec ne prouve donc pas qu'il manque du
    monde, seulement qu'aucun plan complet n'a été trouvé dans le temps imparti.
@@ -120,6 +125,5 @@ Pour la vérification, deux formes ont été écartées :
   demanderait un flot à deux classes, qui n'est plus un flot simple.
 - Les sièges d'un stand qui propose plusieurs typologies restent hors des lignes
   par typologie. Une ligne « union » est possible plus tard.
-- La vérification prend les cœurs du serveur pendant quelques minutes, au plus
-  `planning.staffing.verification.seconds-limit`. Une seconde demande reçoit un
-  409 au lieu d'attendre son tour.
+- La vérification prend les cœurs du serveur aussi longtemps qu'une résolution,
+  au plus. Une seconde demande reçoit un 409 au lieu d'attendre son tour.

@@ -13,6 +13,7 @@ import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
 import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.solve.ProblemBuilder.Seats;
+import dev.sylvain.planning.service.solve.SolverBudgetBounds;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import jakarta.annotation.PreDestroy;
@@ -34,7 +35,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.jboss.logging.Logger;
 
@@ -83,9 +83,6 @@ public class StaffingVerificationService {
 
     /** Above this, the question is no longer « does the floor hold » but a load test. */
     static final int EFFECTIF_MAX = 5000;
-
-    /** The longest a check may be given: beyond an hour, it is a solve in its own right. */
-    static final long DUREE_MAX_SECONDES = 3600;
 
     /** The shortest: below this, the solver has barely built its first plan. */
     static final long DUREE_MIN_SECONDES = 10;
@@ -237,7 +234,6 @@ public class StaffingVerificationService {
     private final EditionContext editionContext;
     private final StaffingVerificationRepository repository;
     private final JournalActionService journal;
-    private final long plafondSecondes;
 
     private final AtomicBoolean enCours = new AtomicBoolean();
     /** The row the running check writes to, {@code 0} when none runs on this instance. */
@@ -257,9 +253,7 @@ public class StaffingVerificationService {
             SolverJobService solverJobService,
             EditionContext editionContext,
             StaffingVerificationRepository repository,
-            JournalActionService journal,
-            @ConfigProperty(name = "planning.staffing.verification.seconds-limit", defaultValue = "600")
-                    long plafondSecondes) {
+            JournalActionService journal) {
         this.planningService = planningService;
         this.referenceDataService = referenceDataService;
         this.staffingService = staffingService;
@@ -267,7 +261,6 @@ public class StaffingVerificationService {
         this.editionContext = editionContext;
         this.repository = repository;
         this.journal = journal;
-        this.plafondSecondes = plafondSecondes;
     }
 
     /**
@@ -278,7 +271,7 @@ public class StaffingVerificationService {
      *                      the staffing screen shows, less the minors
      * @param mineurs       the minors of the team, {@code null} for none
      * @param dureeSecondes the time the solve is given at most, {@code null}
-     *                      for the configured one
+     *                      for the time a solve of the edition gets
      * @throws BusinessError.Conflict when a check is already running, in any
      *                                edition, or a solve holds the solver
      * @throws BusinessError.Invalid  when the edition has no seat to fill, or
@@ -304,10 +297,17 @@ public class StaffingVerificationService {
             throw new BusinessError.Invalid(
                     "L'effectif à vérifier doit être compris entre 1 et " + EFFECTIF_MAX + " : " + taille + ".");
         }
-        long plafond = dureeSecondes == null ? plafondSecondes : dureeSecondes;
-        if (dureeSecondes != null && (plafond < DUREE_MIN_SECONDES || plafond > DUREE_MAX_SECONDES)) {
+        // The time a solve of the edition gets: the question « does the
+        // floor hold » is asked against the plan a real solve would find, and
+        // a check given less fails where that solve succeeds.
+        SolverBudgetBounds bounds = referenceDataService.getSolverBudgetBounds();
+        Integer dureeEdition = referenceDataService.getParametresSolveur().dureeResolutionSecondes();
+        long plafond = dureeSecondes != null
+                ? dureeSecondes
+                : dureeEdition != null ? dureeEdition : bounds.defaultSecondsLimit();
+        if (dureeSecondes != null && (plafond < DUREE_MIN_SECONDES || plafond > bounds.maxSecondsLimit())) {
             throw new BusinessError.Invalid("La durée de la vérification doit être comprise entre " + DUREE_MIN_SECONDES
-                    + " et " + DUREE_MAX_SECONDES + " secondes : " + plafond + ".");
+                    + " et " + bounds.maxSecondsLimit() + " secondes : " + plafond + ".");
         }
         // The solver is shared by every edition, one job at a time: a check
         // would take the cores a running solve was budgeted on.

@@ -4955,7 +4955,7 @@
   "staffing.verification.majeurs": "Adults",
   "staffing.verification.mineurs": "Minors",
   "staffing.verification.duree": "Max time (s)",
-  "staffing.verification.dureeDefaut": "default",
+  "staffing.verification.dureeDefaut": "same as a solve",
   "staffing.verification.historique": "Previous checks",
   "staffing.verification.equipe": "{$effectif} people",
   "staffing.verification.equipeMixte": "{$effectif} people ({$majeurs} adults, {$mineurs} minors)",

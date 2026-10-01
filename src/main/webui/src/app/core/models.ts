@@ -2127,12 +2127,12 @@ export interface StaffingVerification {
 /**
  * `POST /api/staffing/verification`: the made-up team and the time it is
  * given. A `null` figure is left to the server — the floor less the minors,
- * no minor, the configured time.
+ * no minor, the time a solve of the edition gets.
  */
 export interface DemandeVerification {
   majeurs: number | null;
   mineurs: number | null;
-  /** From 10 s to an hour. */
+  /** From 10 s to the operator's ceiling on a solve; `null` for the time a solve of the edition gets. */
   dureeSecondes: number | null;
 }
 
