@@ -19,9 +19,11 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -137,6 +139,11 @@ public class ScenarioImportService {
             sections.parametresLegaux().ifPresent(referenceDataService::updateParametresLegaux);
             sections.parametresQualite().ifPresent(referenceDataService::updateParametresQualite);
             sections.parametresSolveur().ifPresent(referenceDataService::importParametresSolveur);
+            // Read before the write: only an address the file brings into the
+            // edition is expected anew. One the edition already carried keeps
+            // an account an administrator may have closed on purpose.
+            Set<String> dejaPresentes = KeycloakUserProvisioning.byAddress(referenceDataService.listAnimateurs())
+                    .keySet();
             referenceDataService.importFromPlanning(importe.planning());
             applyTypologies(sections);
             applyJourneesTypes(sections);
@@ -144,10 +151,11 @@ public class ScenarioImportService {
             applyConsignes(sections);
             // Inside the target edition, once its fiches are written: their
             // accounts, and no mail — the invitations wait for the organiser.
-            // Every fiche is new to the edition an import writes.
             List<Animateur> importes = referenceDataService.listAnimateurs();
-            comptes.provisionMissing(
-                    importes, KeycloakUserProvisioning.byAddress(importes).keySet());
+            Set<String> nouvelles =
+                    new HashSet<>(KeycloakUserProvisioning.byAddress(importes).keySet());
+            nouvelles.removeAll(dejaPresentes);
+            comptes.provisionMissing(importes, nouvelles);
         });
     }
 

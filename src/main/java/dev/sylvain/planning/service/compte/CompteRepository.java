@@ -141,7 +141,6 @@ public class CompteRepository {
         });
     }
 
-    /** Sets or clears {@code desactive_le}; answers whether the account exists. */
     /**
      * Deactivates ({@code desactiveLe} set) or reactivates ({@code null}) an
      * account. Reactivating also forgets the realm subject it was bound to:

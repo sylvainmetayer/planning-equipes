@@ -4,15 +4,18 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import java.security.SecureRandom;
 import java.util.Objects;
+import java.util.Set;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailSenderProvider;
+import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
@@ -21,12 +24,18 @@ import org.keycloak.sessions.AuthenticationSessionModel;
  * authenticator for.
  *
  * <p><b>Skeleton.</b> The flow is complete and the guards below are the ones
- * that matter, but three things are deliberately left plain and are called out
+ * that matter, but two things are deliberately left plain and are called out
  * in {@code docs/keycloak.md}: the code lives in the authentication session
- * rather than in a store shared across nodes, the message is sent through
- * Keycloak's plain-text sender rather than a theme template, and the attempt
- * counter is per-session. Each is fine for one server and a realm imported from
- * a file; none is fine for several replicas behind a load balancer.</p>
+ * rather than in a store shared across nodes, and the message is sent through
+ * Keycloak's plain-text sender rather than a theme template. Each is fine for
+ * one server and a realm imported from a file; the first is not fine for
+ * several replicas behind a load balancer.</p>
+ *
+ * <p><b>Bounds.</b> A page rendered again keeps its code and its count of wrong
+ * tries; a new code is drawn only when none stands, and at most once a minute
+ * per account; every wrong code is also reported to the realm's brute-force
+ * detection, which locks the account temporarily, so that starting the login
+ * over does not wipe the tally.</p>
  *
  * <p>Why an authenticator rather than the "magic link" that circulates in
  * examples: a link in a mailbox is a bearer credential that survives being
@@ -55,6 +64,21 @@ public class EmailCodeAuthenticator implements Authenticator {
     static final int ESSAIS_MAX_DEFAUT = 5;
 
     /**
+     * The least time between two codes mailed to one account, whichever login
+     * attempts ask for them: held in Keycloak's single-use store, so it
+     * survives a fresh session and is shared by every node.
+     */
+    static final int DELAI_ENTRE_ENVOIS_SECONDES = 60;
+
+    /**
+     * The category a wrong code is counted under in the brute-force detection:
+     * a one-time code, like the TOTP — one of the three Keycloak accepts.
+     */
+    private static final Set<String> CATEGORIE_ECHEC = Set.of("otp");
+
+    private static final String CLEF_ENVOI = "planning.code.email.envoi.";
+
+    /**
      * {@link SecureRandom} and not {@code Math.random()}: this value is a
      * credential, and a predictable one is no credential at all.
      */
@@ -70,8 +94,37 @@ public class EmailCodeAuthenticator implements Authenticator {
             return;
         }
 
-        String code = tireUnCode();
+        BruteForceProtector protecteur = context.getSession().getProvider(BruteForceProtector.class);
+        if (protecteur.isTemporarilyDisabled(context.getSession(), context.getRealm(), utilisateur)
+                || protecteur.isPermanentlyLockedOut(context.getSession(), context.getRealm(), utilisateur)) {
+            // Too many wrong codes (or passwords) on this account: no new code
+            // is drawn, and no mail goes out, until the realm's lockout ends.
+            context.getEvent().user(utilisateur).error(Errors.USER_TEMPORARILY_DISABLED);
+            context.failureChallenge(
+                    AuthenticationFlowError.USER_TEMPORARILY_DISABLED,
+                    context.form().setError("tooManyAttempts").createErrorPage(Response.Status.FORBIDDEN));
+            return;
+        }
+
         AuthenticationSessionModel session = context.getAuthenticationSession();
+        if (session.getAuthNote(NOTE_CODE) != null && !expire(session)) {
+            // The page was rendered again — a reload, the back button: the code
+            // already mailed is still the one expected, and so is its count of
+            // wrong tries. Drawing a new one here would hand out five fresh
+            // guesses and one more mail per reload.
+            context.challenge(context.form().createForm(FORM));
+            return;
+        }
+        if (!context.getSession()
+                .singleUseObjects()
+                .putIfAbsent(CLEF_ENVOI + utilisateur.getId(), DELAI_ENTRE_ENVOIS_SECONDES)) {
+            // A code left for this account a moment ago, from another attempt:
+            // the mailbox is not flooded, and this attempt waits.
+            context.challenge(context.form().setError("codeDejaEnvoye").createForm(FORM));
+            return;
+        }
+
+        String code = tireUnCode();
         session.setAuthNote(NOTE_CODE, code);
         session.setAuthNote(
                 NOTE_EXPIRATION,
@@ -118,6 +171,19 @@ public class EmailCodeAuthenticator implements Authenticator {
                 attendu.getBytes(java.nio.charset.StandardCharsets.UTF_8),
                 Objects.requireNonNullElse(saisi, "")
                         .getBytes(java.nio.charset.StandardCharsets.UTF_8))) {
+            // Counted against the account too, so that restarting the login
+            // does not wipe the tally: the realm's brute-force detection locks
+            // the account after its own number of failures.
+            if (context.getUser() != null) {
+                context.getSession()
+                        .getProvider(BruteForceProtector.class)
+                        .failedLogin(
+                                context.getRealm(),
+                                context.getUser(),
+                                context.getConnection(),
+                                context.getUriInfo(),
+                                CATEGORIE_ECHEC);
+            }
             if (essais >= essaisMax(context)) {
                 // Le code est brûlé, pas seulement refusé : sans cela, cinq
                 // essais par rechargement de page rendraient la borne décorative.

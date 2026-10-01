@@ -9,7 +9,8 @@
 --      l'allume quand le planning est stabilisé. Une ligne par édition,
 --      absente tant que rien n'a été réglé — même convention que
 --      contact_organisation : l'absence vaut « effectifs seuls ». La ligne
---      disparaît avec l'édition et la suit à la duplication ;
+--      disparaît avec l'édition et ne suit PAS à la duplication : la prochaine
+--      édition repart éteinte ;
 --   2. habilitation.nominatif, l'exception au cas par cas : NULL suit
 --      l'édition, VRAI ou FAUX l'emporte sur elle pour ce seul droit.
 --
