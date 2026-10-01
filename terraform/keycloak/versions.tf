@@ -29,7 +29,11 @@ terraform {
 provider "keycloak" {
   client_id = "admin-cli"
   url       = var.keycloak_url
-  # Volontairement absents d'ici : le fournisseur lit KEYCLOAK_USER et
-  # KEYCLOAK_PASSWORD. Un identifiant d'administration dans un fichier
-  # versionné est un identifiant publié.
+  # Jamais en clair ici : un identifiant d'administration dans un fichier
+  # versionné est un identifiant publié. Laissées à null, ces deux variables
+  # laissent le fournisseur lire KEYCLOAK_USER et KEYCLOAK_PASSWORD ; une
+  # configuration qui appelle ce dossier comme module (le bloc provider le
+  # suit) les renseigne depuis son propre coffre.
+  username = var.admin_username
+  password = var.admin_password
 }

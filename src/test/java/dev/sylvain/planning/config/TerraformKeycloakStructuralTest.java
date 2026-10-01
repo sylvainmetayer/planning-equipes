@@ -96,6 +96,24 @@ class TerraformKeycloakStructuralTest {
                 .doesNotContainPattern("require_resident_key\\s*=");
     }
 
+    /**
+     * The admin credentials reach the provider through two variables that
+     * default to null, so the environment ({@code KEYCLOAK_USER},
+     * {@code KEYCLOAK_PASSWORD}) still applies when nobody sets them, and a
+     * configuration calling this directory as a module can pass them from
+     * its own vault.
+     */
+    @Test
+    void theAdminCredentialsAreVariablesThatFallBackOnTheEnvironment() {
+        assertThat(KeycloakConfigFiles.read(Path.of("terraform/keycloak/versions.tf")))
+                .containsPattern("username\\s*=\\s*var\\.admin_username")
+                .containsPattern("password\\s*=\\s*var\\.admin_password");
+        String variables = KeycloakConfigFiles.read(Path.of("terraform/keycloak/variables.tf"));
+        assertThat(variables)
+                .containsPattern("variable \"admin_username\" \\{[^}]*default\\s*=\\s*null")
+                .containsPattern("variable \"admin_password\" \\{[^}]*default\\s*=\\s*null\\s*sensitive\\s*=\\s*true");
+    }
+
     @Test
     void anInvitationLinkLastsTwoDaysAsInDevelopment() {
         assertThat(realm.path("actionTokenGeneratedByAdminLifespan").asInt()).isEqualTo(48 * 3600);
