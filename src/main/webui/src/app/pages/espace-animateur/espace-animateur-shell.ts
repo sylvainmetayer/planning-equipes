@@ -5,6 +5,7 @@ import {
   computed,
   ElementRef,
   inject,
+  OnInit,
   signal,
   viewChild,
   ViewEncapsulation,
@@ -71,7 +72,7 @@ import { EspaceContact } from './espace-contact';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EspaceAnimateurShell {
+export class EspaceAnimateurShell implements OnInit {
   protected readonly espace = inject(EspaceAnimateurService);
   protected readonly locale: AppLocale = getStoredLocale();
 
@@ -115,12 +116,15 @@ export class EspaceAnimateurShell {
   private readonly pageFocus = inject(PageFocusService);
   private readonly contenu = viewChild<ElementRef<HTMLElement>>('contenu');
 
-  constructor() {
+  ngOnInit(): void {
     const jeton = this.route.snapshot.paramMap.get('jeton');
     if (jeton) {
       void this.espace.charger(jeton).then(() => this.diagnoseRefusal());
       void this.detectResponsable();
     }
+  }
+
+  constructor() {
     // Same contract as the admin shell: moving to another tab of the espace
     // hands the focus to <main> and speaks the new page's title, instead of
     // leaving it on the link just clicked with the whole toolbar to cross

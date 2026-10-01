@@ -11,7 +11,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 /**
- * The break-glass door closed, as production ships it (ADR 0070): the
+ * The break-glass door closed, as production ships it (ADR 0071): the
  * embedded account's password opens nothing, and the interface is told there
  * is no password form to offer.
  */

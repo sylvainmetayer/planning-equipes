@@ -408,10 +408,4 @@ public class EspaceAnimateurResource {
         return PlanningExportService.planningFileName(
                 PlanningExportService.resolveAnimateurName(planning, animateurCourant()), extension, format);
     }
-
-    private static Response badRequest(IllegalArgumentException e) {
-        return Response.status(Response.Status.BAD_REQUEST)
-                .entity(new ValidationError(e.getMessage()))
-                .build();
-    }
 }

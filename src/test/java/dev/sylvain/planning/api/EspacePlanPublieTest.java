@@ -441,7 +441,7 @@ class EspacePlanPublieTest {
      * A fiche without an address is precisely the case this feature exists
      * for: the mail never left, so the espace is the only place those
      * sentences can still be read — once the address is added and the person
-     * signs in (the espace itself needs the address since ADR 0070).
+     * signs in (the espace itself needs the address since ADR 0071).
      */
     @Test
     void unePublicationQuiNAPasPuPartirResteLisibleDansLEspace() {
@@ -467,7 +467,7 @@ class EspacePlanPublieTest {
      * claim, and outside the collection its two pages are not offered.
      *
      * <p>A fiche without an address no longer opens its espace at all — the
-     * address is what the Keycloak session is matched against (ADR 0070) —
+     * address is what the Keycloak session is matched against (ADR 0071) —
      * so that last state is read off the view the espace would render.</p>
      */
     @Test

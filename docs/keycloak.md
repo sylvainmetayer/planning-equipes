@@ -10,7 +10,7 @@ Keycloak est **obligatoire en production** : `OIDC_ENABLED` vaut `true` par
 défaut, et l'ancien compte `admin` unique ne survit que comme **compte de
 secours**, fermé tant qu'on ne l'ouvre pas explicitement. Le pourquoi de ce
 choix — et des options écartées — est dans
-[`decisions/0070-keycloak-obligatoire-comptes-nominatifs.md`](decisions/0070-keycloak-obligatoire-comptes-nominatifs.md).
+[`decisions/0071-keycloak-obligatoire-comptes-nominatifs.md`](decisions/0071-keycloak-obligatoire-comptes-nominatifs.md).
 
 | Surface | Comment on y entre |
 | --- | --- |

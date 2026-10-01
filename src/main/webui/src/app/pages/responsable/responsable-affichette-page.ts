@@ -1,6 +1,13 @@
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -101,7 +108,7 @@ import { shiftsOn, staffingLabel, windowLabel } from './responsable';
   styleUrl: './responsable-affichette-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ResponsableAffichettePage {
+export class ResponsableAffichettePage implements OnInit {
   private readonly api = inject(ResponsableApi);
   private readonly route = inject(ActivatedRoute);
 
@@ -123,7 +130,7 @@ export class ResponsableAffichettePage {
   protected readonly windowLabel = windowLabel;
   protected readonly staffingLabel = staffingLabel;
 
-  constructor() {
+  ngOnInit(): void {
     void this.load();
   }
 
