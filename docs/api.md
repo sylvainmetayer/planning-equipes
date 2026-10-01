@@ -537,6 +537,19 @@ publication (issue #34). L'écran Versions du plan le dit avant le clic : badge
 « plan publié » sur celle en cours, bouton *Supprimer* désactivé avec le motif,
 badge « publié, remplacé » sur les précédentes.
 
+**Une exception : la publication qui mesure une journée écoulée** (`409`
+aussi). Réalisé vs planifié compare chaque journée terminée au plan publié en
+vigueur au **début** de la journée — son premier créneau. Tant qu'une
+publication remplacée est ce plan-là pour au moins une journée écoulée de son
+édition, la supprimer confierait la journée à une autre publication et
+réécrirait son écart après coup — ce qu'une republication n'a pas le droit de
+faire non plus. Le refus nomme la date de la journée, jamais une personne, et
+vaut aussi pour l'outil MCP `supprimer_instantane`. Il se lit avant la
+suppression plutôt que dans la requête : la réponse dépend de l'horloge et des
+créneaux. Une publication qui n'a mesuré aucune journée (deux publications
+avant l'événement : seule la seconde compte) ou seulement une journée comptée à
+part (référence tardive, exclue des totaux) se supprime normalement.
+
 Le repère de comparaison d'une personne différée (`plan_notifie_id`, issue #503)
 peut désigner une de ces publications : la supprimer la fait relire comme
 « jamais prévenue », et sa prochaine publication lui annoncera son planning

@@ -153,7 +153,11 @@ public class DatabaseDumpService {
             //
             // Last in the list because it depends on nothing: deletes are
             // issued in reverse, so it goes first, and nothing references it.
-            "kpi_historique");
+            "kpi_historique",
+            // The frozen realised measure of finished editions (ADR 0070):
+            // no foreign key either, for the same reason — it outlives the
+            // edition it describes, and a restore must bring it back.
+            "kpi_realise");
 
     /**
      * The nine tables deliberately left out, and why each one stays out.

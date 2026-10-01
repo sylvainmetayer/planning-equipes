@@ -397,6 +397,16 @@ export function buildNavGroups(): NavGroup[] {
           shortcut: 'a',
           keywords: $localize`:@@nav.keywords.aujourdhui:jour J absent remplacer téléphone TV mural`,
         },
+        {
+          // The days already held, read against what had been published:
+          // during the event for the elapsed days, and after it.
+          path: '/realise',
+          label: $localize`:@@nav.link.realise:Réalisé vs planifié`,
+          icon: 'balance',
+          // `r` is the Règles': `l` of « réalisé ».
+          shortcut: 'l',
+          keywords: $localize`:@@nav.keywords.realise:écart bilan absences remplacements tenu publié jour J`,
+        },
       ],
     },
     {

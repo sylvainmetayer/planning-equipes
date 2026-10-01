@@ -160,7 +160,9 @@ Single Quarkus service, no separate solver microservice. Package root:
     away**; in memory, so the first read after a restart re-derives it from that
     plan instead of answering "never analysed"), `PlanningPersistenceService`,
     `PlanSnapshotService`, `SnapshotComparisonService`, `DeplacementService`.
-  - `service/analyse/` — what is read from a plan without solving it.
+  - `service/analyse/` — what is read from a plan without solving it —
+    Réalisé vs planifié included (`RealisedVsPlannedService`, see the
+    third `@Scheduled` below).
   - `service/referentiel/` — `ReferenceDataService` (facade over one service
     per referential family — `StandService`, `AnimateurService`,
     `CreneauService`, … — over one repository per family, plus
@@ -442,7 +444,7 @@ Single Quarkus service, no separate solver microservice. Package root:
   and must move with the `postgres:` image of the production stack. See
   `docs/decisions/0015-sauvegarde-par-pg-dump-restauration-hors-application.md`.
 - **`service/notification/NotificationsPlanifieesService` is the application's
-  second (and last) `@Scheduled`**, and the single entry point of the three
+  second `@Scheduled`**, and the single entry point of the three
   nightly sends — day-before reminder, reminder of the unconfirmed, alert on
   stale swap requests. It follows the `backup` conventions (configurable cron
   and zone, `SKIP` on overlap, failure logged rather than propagated) and adds
@@ -456,6 +458,28 @@ Single Quarkus service, no separate solver microservice. Package root:
   `INSERT … ON CONFLICT DO NOTHING` and the message goes out only for the call
   that won the insert, so an hourly cron writes to nobody twice. Reading then
   acting would let two runs both read "not yet".
+- **`service/analyse/RealisedFreezeJob` is the third (and last) `@Scheduled`**
+  (ADR 0070): once a night it freezes the Réalisé vs planifié measure of every
+  edition whose last timeslot has ended and that published something, into
+  `kpi_realise`, where the next edition reads it. Same conventions as the
+  other two (cron and zone from `REALISE_CRON` / `REALISE_TIMEZONE`, `SKIP` on
+  overlap, failure logged, editions entered through `executeIn`, one
+  `try/catch` each), and it **does not read the notifications arming flag**:
+  it sends nothing, and that flag guards mails, not measures. **It writes
+  once**: an edition that has its rows is skipped (`ON CONFLICT DO NOTHING`
+  behind the check), so `fige_le` is the first night after the event; an
+  edition whose report says the past is not frozen is skipped and logged;
+  re-freezing is an operator's SQL `DELETE` of the edition's rows, never a
+  route. `kpi_realise` carries no foreign key and keeps the names it shows,
+  like `kpi_historique`: the measure outlives the deletion of its edition.
+  The measure itself is `RealisedVsPlannedAnalyzer`, over
+  `ChangementsJourneeService.compareSeats` — never a comparison of its own —
+  each day elapsed (its last timeslot over) against the publication in force
+  when its first timeslot started; a day measured against a later
+  publication is shown and summed nowhere, and a publication that is the
+  reference of an elapsed day refuses deletion (`PlanSnapshotService.delete`).
+  The realised is read from a `RealisedSource` (the declared one today; a
+  presence check-in would replace that bean, not the measure).
 - Persistence: PostgreSQL + Flyway migrations in
   `src/main/resources/db/migration/`. Schema change = **new versioned file**;
   never edit an applied migration. `FlywayMigrationsFrozenTest` holds both

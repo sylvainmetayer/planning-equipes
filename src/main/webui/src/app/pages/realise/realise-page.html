@@ -1,0 +1,211 @@
+<h1 class="page-title" i18n="@@nav.link.realise">Réalisé vs planifié</h1>
+<p class="realise-sous-titre" i18n="@@realise.subtitle">
+  L'écart entre le planning publié et ce qui a été tenu, stand par stand, sur les journées écoulées.
+</p>
+
+<div class="realise-toolbar">
+  <button matButton type="button" [disabled]="chargement()" (click)="recharger()">
+    <mat-icon>refresh</mat-icon>
+    <ng-container i18n="@@common.refresh">Actualiser</ng-container>
+  </button>
+  <button matButton type="button" [disabled]="chargement() || exportBusy() || !rapport()?.cells?.length"
+          (click)="exporter()">
+    <mat-icon>download</mat-icon>
+    <ng-container i18n="@@realise.export">Exporter en CSV</ng-container>
+  </button>
+</div>
+<app-output-panel [text]="output()" />
+
+@if (chargement() && !rapport()) {
+  <mat-progress-bar mode="indeterminate" />
+} @else if (erreur()) {
+  <app-status-message [text]="erreur()" tone="error" />
+} @else if (rapport(); as rapport) {
+  <p class="realise-nature">
+    <mat-icon aria-hidden="true">info</mat-icon>
+    @if (rapport.nature === 'DECLARED') {
+      <span i18n="@@realise.nature.declare">Réalisé déclaré : ce que l'outil a enregistré (absences, remplacements), pas un pointage de présence.</span>
+    } @else {
+      <span i18n="@@realise.nature.constate">Réalisé constaté : les présences pointées sur les stands.</span>
+    }
+  </p>
+  @if (!rapport.frozenPast) {
+    <p class="realise-alerte-ligne" role="note">
+      <mat-icon aria-hidden="true">warning</mat-icon>
+      <span i18n="@@realise.passeNonFige">Le passé figé est désactivé : une résolution a pu réécrire des journées écoulées, le réalisé n'est pas garanti.</span>
+    </p>
+  }
+
+  @if (!rapport.referenceAvailable) {
+    <p class="empty-hint">
+      <ng-container i18n="@@realise.sansReference">Rien n'a encore été publié : il n'y a pas de référence à laquelle comparer.</ng-container>
+      <a routerLink="/publication" i18n="@@realise.versPublication">Publier le planning</a>
+    </p>
+  } @else if (rapport.days.length === 0) {
+    <p class="empty-hint" i18n="@@realise.aucuneJournee">Aucune journée écoulée : l'écart se lit une fois une journée terminée.</p>
+  } @else {
+    @if (unreferenced().length > 0) {
+      <p class="calendar-meta" i18n="@@realise.joursSansReference">Journées sans publication en vigueur, non comptées : {{ unreferenced().join(', ') }}</p>
+    }
+    @if (lateReference().length > 0) {
+      <p class="calendar-meta" i18n="@@realise.joursTardifs">Commencées avant toute publication, donc comparées à la suivante : hachurées, et comptées dans aucun total ni dans la mesure transmise à l'édition suivante : {{ lateReference().join(', ') }}</p>
+    }
+
+    <h2 class="realise-titre" i18n="@@realise.evenement">Sur l'événement</h2>
+    <div class="realise-chiffres">
+      @let evenement = rapport.event;
+      <span class="staffing-stat">
+        <span class="staffing-stat-value">{{ evenement.publishedSeats }}</span>
+        <span class="staffing-stat-label" i18n="@@realise.chiffre.publies">sièges publiés</span>
+      </span>
+      <span class="staffing-stat">
+        <span class="staffing-stat-value">{{ evenement.absences }} ({{ pourcentage(evenement.absenceRate) }})</span>
+        <span class="staffing-stat-label" i18n="@@realise.chiffre.absences">absences</span>
+      </span>
+      <span class="staffing-stat">
+        <span class="staffing-stat-value">{{ evenement.replacements }} ({{ pourcentage(evenement.replacementRate) }})</span>
+        <span class="staffing-stat-label" i18n="@@realise.chiffre.remplacements">remplacements</span>
+      </span>
+      <span class="staffing-stat">
+        <span class="staffing-stat-value">{{ evenement.emptySeats }}</span>
+        <span class="staffing-stat-label" i18n="@@realise.chiffre.vides">restés vides</span>
+      </span>
+      <span class="staffing-stat">
+        <span class="staffing-stat-value">{{ evenement.removedSeats }}</span>
+        <span class="staffing-stat-label" i18n="@@realise.chiffre.retires">retirés</span>
+      </span>
+      <span class="staffing-stat">
+        <span class="staffing-stat-value">{{ heures(evenement.publishedMinutes) }} / {{ heures(evenement.realisedMinutes) }}</span>
+        <span class="staffing-stat-label" i18n="@@realise.chiffre.heures">heures publiées / réalisées</span>
+      </span>
+      <span class="staffing-stat">
+        <span class="staffing-stat-value">{{ heures(evenement.lostMinutes) }}</span>
+        <span class="staffing-stat-label" i18n="@@realise.chiffre.perdues">heures perdues</span>
+      </span>
+    </div>
+
+    @if (grille(); as grille) {
+      @if (grille.lignes.length === 0) {
+        <p class="empty-hint" i18n="@@realise.grilleVide">Aucun siège publié sur les journées comptées.</p>
+      } @else {
+        <h2 class="realise-titre" i18n="@@realise.parStandEtJour">Par stand et par journée</h2>
+        <ul class="realise-legende">
+          <li><span class="realise-pastille realise-tenu"></span><ng-container i18n="@@realise.legende.tenu">tenu comme publié</ng-container></li>
+          <li><span class="realise-pastille realise-remplace"></span><ng-container i18n="@@realise.legende.remplace">absence ou remplacement</ng-container></li>
+          <li><span class="realise-pastille realise-vide"></span><ng-container i18n="@@realise.legende.vide">siège resté vide</ng-container></li>
+          <li><span class="realise-pastille realise-retire"></span><ng-container i18n="@@realise.legende.retire">retiré ou ajouté</ng-container></li>
+        </ul>
+        <app-planning-grille
+          caption="Réalisé vs planifié : une ligne par stand, une colonne par journée écoulée, absences et sièges vides"
+          i18n-caption="@@realise.caption"
+          header="Stand"
+          i18n-header="@@realise.enTete"
+          [jours]="grille.jours"
+          [lignes]="grille.lignes"
+          [syntheses]="syntheses"
+          [pied]="grille.pied"
+          [jourMarque]="openedCell()?.jour ?? null"
+          (caseActivee)="open($event)"
+        >
+          <ng-template appGrilleEntete let-ligne>
+            <a class="planning-grille-lien" [routerLink]="['/stands', ligne.id]" tabindex="-1">{{ rangee(ligne).standNom }}</a>
+          </ng-template>
+          <ng-template appGrilleCase let-ligne let-index="index">
+            @let cellule = rangee(ligne).cellules[index];
+            @if (cellule) {
+              <span class="realise-case-compte">{{ cellule.counts.absences }}/{{ cellule.counts.publishedSeats }}</span>
+              @if (cellule.counts.emptySeats > 0) {
+                <span class="realise-case-vides" i18n="@@realise.case.vides">{{ cellule.counts.emptySeats }} vide(s)</span>
+              }
+            }
+          </ng-template>
+        </app-planning-grille>
+      }
+    }
+
+    @if (openedCell(); as cellule) {
+      <section class="realise-detail" aria-labelledby="realise-detail-titre">
+        <div class="realise-detail-entete">
+          <h2 id="realise-detail-titre" class="realise-titre">
+            {{ detail()?.standNom ?? cellule.standId }} — {{ cellule.jour }}
+          </h2>
+          <a matButton [routerLink]="['/journee']" [queryParams]="{ date: cellule.jour, vue: 'changements', reference: 'publication', stand: cellule.standId }"
+             i18n="@@realise.detail.journee">Voir la journée</a>
+          <button matIconButton type="button" (click)="close()" aria-label="Fermer le détail"
+                  i18n-aria-label="@@realise.detail.fermer">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        @if (detailChargement()) {
+          <mat-progress-bar mode="indeterminate" />
+        }
+        <app-status-message [text]="detailErreur()" tone="error" />
+        @if (detail(); as detail) {
+          @if (!detail.referenceAvailable) {
+            <p class="empty-hint" i18n="@@realise.detail.sansReference">Rien à comparer sur cette journée : elle n'est pas écoulée, ou rien n'était publié.</p>
+          } @else if (detail.lines.length === 0) {
+            <p class="empty-hint" i18n="@@realise.detail.aucun">Tenu comme publié : aucune vacation n'a changé.</p>
+          } @else {
+            <table class="realise-detail-table">
+              <caption class="visually-hidden" i18n="@@realise.detail.caption">Vacations du stand dont le titulaire ou les horaires ont changé</caption>
+              <thead>
+                <tr>
+                  <th scope="col" i18n="@@realise.detail.col.horaires">Horaires</th>
+                  <th scope="col" i18n="@@realise.detail.col.issue">Écart</th>
+                  <th scope="col" i18n="@@realise.detail.col.titulaires">Publié → tenu</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (ligne of detail.lines; track $index) {
+                  <tr>
+                    <td>{{ ligne.seat.heureDebut.slice(0, 5) }}–{{ ligne.seat.heureFin.slice(0, 5) }}</td>
+                    <td>
+                      {{ libelleIssue(ligne.outcome) }}
+                      @if (ligne.absence) {
+                        <span class="realise-badge-absence" i18n="@@realise.detail.absence">absence</span>
+                      }
+                    </td>
+                    <td>{{ titulaires(ligne) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        }
+      </section>
+    }
+
+    @if (rapport.byTypologie.length > 0) {
+      <h2 class="realise-titre" i18n="@@realise.parTypologie">Par typologie</h2>
+      <div class="table-wrapper">
+        <table class="realise-typologies">
+          <caption class="visually-hidden" i18n="@@realise.typologies.caption">Écart par typologie : un stand à plusieurs typologies compte dans chacune</caption>
+          <thead>
+            <tr>
+              <th scope="col" i18n="@@realise.typologies.col.typologie">Typologie</th>
+              <th scope="col" i18n="@@realise.col.publies">Publiés</th>
+              <th scope="col" i18n="@@realise.col.absences">Absences</th>
+              <th scope="col" i18n="@@realise.col.tauxAbsence">Taux d'absence</th>
+              <th scope="col" i18n="@@realise.col.remplacements">Remplacements</th>
+              <th scope="col" i18n="@@realise.col.vides">Restés vides</th>
+              <th scope="col" i18n="@@realise.col.perdues">Heures perdues</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (total of rapport.byTypologie; track total.key) {
+              <tr>
+                <th scope="row">{{ total.label }}</th>
+                <td>{{ total.counts.publishedSeats }}</td>
+                <td>{{ total.counts.absences }}</td>
+                <td>{{ pourcentage(total.counts.absenceRate) }}</td>
+                <td>{{ total.counts.replacements }}</td>
+                <td>{{ total.counts.emptySeats }}</td>
+                <td>{{ heures(total.counts.lostMinutes) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+}

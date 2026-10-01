@@ -104,8 +104,9 @@ describe('app.routes', () => {
     // Le compte exact plutôt qu'un plancher : un plancher laisse supprimer six
     // titres sans rien dire, et c'est ce chiffre-là que les descriptions de PR
     // annonçaient de travers.
-    // `/marge` lost its title when it became two tabs of the Diagnostic.
-    expect(titrees).toHaveLength(39);
+    // `/marge` lost its title when it became two tabs of the Diagnostic;
+    // `/realise` (Réalisé vs planifié) brought one.
+    expect(titrees).toHaveLength(40);
     TestBed.configureTestingModule({
       providers: [provideZonelessChangeDetection(), provideRouter([])],
     });

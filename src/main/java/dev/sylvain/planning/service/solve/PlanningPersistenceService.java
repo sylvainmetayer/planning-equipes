@@ -1,7 +1,9 @@
 package dev.sylvain.planning.service.solve;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.OuvertureStand;
@@ -1058,75 +1060,134 @@ public class PlanningPersistenceService {
      * before, and is dropped when its créneau is gone.</p>
      */
     public PlanningEvenement assemblerPlanning(List<Siege> sieges) {
+        return getAssembler().assemble(sieges);
+    }
+
+    /**
+     * The referential read <b>once</b>, for a caller that assembles several
+     * seat lists against it — every publication a report compares, say —
+     * rather than paying {@link #assemblerPlanning}'s whole read per list.
+     * Each {@link PlanAssembler#assemble} resolves exactly as that method
+     * does; the plans it returns share the referential's instances, and the
+     * timeslots rebuilt for deleted ones are shared across them too, one per
+     * id, numbered over one grid — the referential's and every one rebuilt so
+     * far.
+     */
+    public PlanAssembler getAssembler() {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
-        Map<String, Animateur> animateursById = indexById(animateurs, Animateur::getId);
         List<Creneau> creneaux = referenceDataService.listCreneaux();
         List<Stand> stands = referenceDataService.listStands();
         // Every group's créneaux, not just the active one's: this view shows what
         // is persisted, so the horaires have to be resolved against the same
         // days it displays.
         referenceDataService.resolveHoraires(stands, creneaux);
-        Map<String, Stand> standsById = indexById(stands, Stand::getId);
-        Map<Long, Creneau> creneauxById = indexById(creneaux, Creneau::getId);
+        return new PlanAssembler(
+                animateurs,
+                creneaux,
+                stands,
+                referenceDataService.snapshotContraintes(),
+                referenceDataService.getParametresLegaux(),
+                referenceDataService.fenetresRepas());
+    }
 
-        // Créneaux the référentiel no longer holds, rebuilt from the seats that
-        // name them — one instance per id, so two seats of the same deleted
-        // vacation stand on the same créneau, as they did when it existed.
-        Map<Long, Creneau> disparus = new LinkedHashMap<>();
+    /** Seat lists resolved against one read of the referential — see {@link #getAssembler()}. */
+    public static final class PlanAssembler {
 
-        List<PosteAffectation> postes = new ArrayList<>();
-        for (Siege siege : sieges) {
-            Stand stand = standsById.get(siege.standId());
-            Creneau creneau = creneauxById.get(siege.creneauId());
-            if (creneau == null && siege.vacation() != null) {
-                creneau = disparus.computeIfAbsent(siege.creneauId(), unused -> creneauDisparu(siege));
-            }
-            if (stand == null || creneau == null) {
-                continue;
-            }
-            PosteAffectation poste = new PosteAffectation(siege.posteId(), stand, creneau);
-            if (siege.animateurId() != null) {
-                poste.setAnimateur(animateursById.get(siege.animateurId()));
-            }
-            poste.setHeureDebutEffective(siege.heureDebutEffective());
-            poste.setHeureFinEffective(siege.heureFinEffective());
-            poste.setSuiteDe(siege.suiteDe());
-            postes.add(poste);
+        private final List<Animateur> animateurs;
+
+        private final Map<String, Animateur> animateursById;
+
+        private final List<Creneau> creneaux;
+
+        private final Map<String, Stand> standsById;
+
+        private final Map<Long, Creneau> creneauxById;
+
+        private final List<ContrainteAdHoc> contraintes;
+
+        private final ParametresLegaux parametres;
+
+        private final List<FenetreRepas> fenetresRepas;
+
+        /**
+         * Créneaux the référentiel no longer holds, rebuilt from the seats that
+         * name them — one instance per id, so two seats of the same deleted
+         * vacation stand on the same créneau, as they did when it existed.
+         */
+        private final Map<Long, Creneau> disparus = new LinkedHashMap<>();
+
+        private PlanAssembler(
+                List<Animateur> animateurs,
+                List<Creneau> creneaux,
+                List<Stand> stands,
+                List<ContrainteAdHoc> contraintes,
+                ParametresLegaux parametres,
+                List<FenetreRepas> fenetresRepas) {
+            this.animateurs = animateurs;
+            this.animateursById = indexById(animateurs, Animateur::getId);
+            this.creneaux = creneaux;
+            this.standsById = indexById(stands, Stand::getId);
+            this.creneauxById = indexById(creneaux, Creneau::getId);
+            this.contraintes = contraintes;
+            this.parametres = parametres;
+            this.fenetresRepas = fenetresRepas;
         }
 
-        // The day numbers of a grid are computed over the whole grid, from its
-        // earliest date (Creneau.assignerJours, run by the référentiel read
-        // above). A rebuilt créneau joins that grid, so the numbering is run
-        // again over both: left at its default, it would read as the eve of
-        // day 1 for the night-rest rule, and two rebuilt créneaux on different
-        // dates would count as one day wherever a read-out groups by jour.
-        if (!disparus.isEmpty()) {
-            List<Creneau> grille = new ArrayList<>(creneaux);
-            grille.addAll(disparus.values());
-            Creneau.assignerJours(grille);
-        }
+        /** One seat list, resolved — see {@link PlanningPersistenceService#assemblerPlanning}. */
+        public PlanningEvenement assemble(List<Siege> sieges) {
+            int disparusAvant = disparus.size();
+            List<PosteAffectation> postes = new ArrayList<>();
+            for (Siege siege : sieges) {
+                Stand stand = standsById.get(siege.standId());
+                Creneau creneau = creneauxById.get(siege.creneauId());
+                if (creneau == null && siege.vacation() != null) {
+                    creneau = disparus.computeIfAbsent(siege.creneauId(), unused -> creneauDisparu(siege));
+                }
+                if (stand == null || creneau == null) {
+                    continue;
+                }
+                PosteAffectation poste = new PosteAffectation(siege.posteId(), stand, creneau);
+                if (siege.animateurId() != null) {
+                    poste.setAnimateur(animateursById.get(siege.animateurId()));
+                }
+                poste.setHeureDebutEffective(siege.heureDebutEffective());
+                poste.setHeureFinEffective(siege.heureFinEffective());
+                poste.setSuiteDe(siege.suiteDe());
+                postes.add(poste);
+            }
 
-        LocalDate dateDebut = postes.stream()
-                .map(poste -> poste.getCreneau().getDate())
-                .filter(Objects::nonNull)
-                .min(LocalDate::compareTo)
-                .orElse(null);
-        PlanningEvenement evenement =
-                new PlanningEvenement(dateDebut, animateurs, postes, referenceDataService.snapshotContraintes());
-        // The plan carries the legal parameters it was made under, so every
-        // read-out downstream (breaks, exports, the animateur's espace) reads
-        // the organiser's declarations from the plan itself.
-        ParametresLegaux parametres = referenceDataService.getParametresLegaux();
-        evenement.setParametresLegaux(List.of(parametres));
-        // And the meal windows those parameters declare. They used to be left
-        // unset here: every reader that takes them from the plan — the
-        // animateur's PDF, their timeline, the espace — then saw a plan with no
-        // meal window at all, so `PauseAnalyzer` owed no coupure repas and none
-        // was ever drawn. The screens that pass the windows in themselves (the
-        // Pauses screen, the Intendance one) were right all along, which is
-        // exactly why the hole was invisible.
-        evenement.setFenetresRepas(referenceDataService.fenetresRepas());
-        return evenement;
+            // The day numbers of a grid are computed over the whole grid, from its
+            // earliest date (Creneau.assignerJours, run by the référentiel read
+            // above). A rebuilt créneau joins that grid, so the numbering is run
+            // again over both: left at its default, it would read as the eve of
+            // day 1 for the night-rest rule, and two rebuilt créneaux on different
+            // dates would count as one day wherever a read-out groups by jour.
+            if (disparus.size() > disparusAvant) {
+                List<Creneau> grille = new ArrayList<>(creneaux);
+                grille.addAll(disparus.values());
+                Creneau.assignerJours(grille);
+            }
+
+            LocalDate dateDebut = postes.stream()
+                    .map(poste -> poste.getCreneau().getDate())
+                    .filter(Objects::nonNull)
+                    .min(LocalDate::compareTo)
+                    .orElse(null);
+            PlanningEvenement evenement = new PlanningEvenement(dateDebut, animateurs, postes, contraintes);
+            // The plan carries the legal parameters it was made under, so every
+            // read-out downstream (breaks, exports, the animateur's espace) reads
+            // the organiser's declarations from the plan itself.
+            evenement.setParametresLegaux(List.of(parametres));
+            // And the meal windows those parameters declare. They used to be left
+            // unset here: every reader that takes them from the plan — the
+            // animateur's PDF, their timeline, the espace — then saw a plan with no
+            // meal window at all, so `PauseAnalyzer` owed no coupure repas and none
+            // was ever drawn. The screens that pass the windows in themselves (the
+            // Pauses screen, the Intendance one) were right all along, which is
+            // exactly why the hole was invisible.
+            evenement.setFenetresRepas(fenetresRepas);
+            return evenement;
+        }
     }
 
     /**
@@ -1168,7 +1229,7 @@ public class PlanningPersistenceService {
         return sieges;
     }
 
-    private <T, K> Map<K, T> indexById(List<T> items, Function<T, K> idFn) {
+    private static <T, K> Map<K, T> indexById(List<T> items, Function<T, K> idFn) {
         Map<K, T> byId = new HashMap<>();
         for (T item : items) {
             K id = idFn.apply(item);

@@ -1,0 +1,22 @@
+/* « Réalisé de l'édition précédente »: one line under the Versions table. */
+
+.edition-precedente {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+}
+
+.edition-precedente-titre {
+  font: var(--mat-sys-title-small);
+  margin: 0 0 0.25rem;
+}
+
+.edition-precedente-ligne {
+  margin: 0;
+  font: var(--mat-sys-body-medium);
+}
+
+.edition-precedente-ligne a {
+  margin-inline-start: 0.5rem;
+}

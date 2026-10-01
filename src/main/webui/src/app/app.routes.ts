@@ -408,6 +408,13 @@ const adminRoutes: Routes = [
   // its query parameters travel with it.
   { path: 'jour-j', redirectTo: redirectKeepingQuery('aujourdhui') },
   {
+    // The gap between the published plan and the plan held, per stand and
+    // per elapsed day — the event read afterwards.
+    path: 'realise',
+    title: () => $localize`:@@route.realise:Réalisé vs planifié`,
+    loadComponent: () => import('./pages/realise/realise-page').then((m) => m.RealisePage),
+  },
+  {
     path: 'diagnostic',
     title: () => $localize`:@@route.diagnostic:Diagnostic`,
     canActivate: [benchTabToJournee, trainingTabToNeed],

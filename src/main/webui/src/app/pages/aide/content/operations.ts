@@ -218,6 +218,39 @@ export function buildOperationsSections(): HelpSection[] {
       ],
     },
     {
+      id: 'realise',
+      icon: 'balance',
+      title: $localize`:@@aide.realise.title:Réalisé vs planifié`,
+      summary: $localize`:@@aide.realise.summary:Pendant et après l'événement, l'écart entre le planning publié et ce qui a été tenu, stand par stand et journée par journée.`,
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.realise.reference:Chaque journée écoulée, une fois son dernier créneau terminé (vacation de nuit comprise), est comparée au planning publié en vigueur au début de cette journée, c'est-à-dire à l'ouverture de son premier créneau : une republication faite avant cette ouverture compte pour la journée, une republication en cours d'événement change la référence des journées suivantes, jamais celle des journées passées. Une journée pas encore terminée et les jours à venir ne sont pas comptés : il n'y a pas d'écart sur ce qui n'a pas encore eu lieu. Tant que rien n'a été publié, l'écran dit qu'il n'y a rien à comparer. Une journée commencée avant toute publication est comparée à la première publication faite après, et l'écran la signale : elle reste affichée, mais n'entre dans aucun total ni dans la mesure transmise à l'édition suivante, car cette publication contient déjà les changements de la journée, qui s'y liraient comme tenus.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.realise.declare:Le réalisé est déclaré : c'est le planning tel que l'outil l'a enregistré, absences marquées sur l'écran Aujourd'hui et remplacements compris, et le passé figé empêche un calcul de le réécrire. Ce n'est pas un pointage de présence. Si le passé figé est désactivé sur l'instance, l'écran prévient que le réalisé n'est plus garanti.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.realise.compteurs:Pour chaque case : les sièges publiés ; les absences, c'est-à-dire les titulaires publiés marqués absents sur leur créneau ; les remplacements, sièges tenus par quelqu'un d'autre que la personne publiée ; les sièges restés vides, et les heures qu'ils ont coûtées. Un siège coupé en cours de vacation par une absence compte comme une absence : repris pour la suite, comme un remplacement ; laissé vide, comme un siège resté vide, dont seules les heures non tenues sont perdues. Une personne passée d'un créneau à un autre du même stand laisse son siège publié vide et en occupe un nouveau. Un siège retiré par une consigne, ou dont le créneau a été supprimé après la publication, est compté « retiré », jamais comme une absence. Un échange publié avant la journée n'est pas un écart. Une vacation de nuit appartient à la journée où elle commence.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.realise.detail:Une case ouvre la liste de ses vacations qui ont changé, avec les noms : ils ne s'affichent qu'ici. Les totaux par typologie comptent un stand à plusieurs typologies dans chacune. L'export CSV ne contient que les stands, les jours et les compteurs, aucune personne, et il est inscrit à l'historique des actions.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.realise.historique:La nuit qui suit le dernier créneau d'une édition, sa mesure est figée par typologie, une fois pour toutes : une correction faite après coup ne la modifie plus. Elle est conservée même si l'édition est supprimée. L'édition suivante, celle dont l'événement commence après, la retrouve sous le tableau de Versions du plan et, pour information seulement, dans une colonne de l'onglet Besoin du Diagnostic : aucun calcul ne la reprend. Une publication remplacée qui était en vigueur au début d'une journée écoulée ne peut plus être supprimée de Versions du plan : la supprimer réécrirait l'écart de cette journée.`,
+        },
+      ],
+      links: [
+        { route: '/realise', label: $localize`:@@nav.link.realise:Réalisé vs planifié` },
+        { route: '/aujourdhui', label: $localize`:@@nav.link.aujourdhui:Aujourd'hui` },
+        { route: '/versions', label: $localize`:@@nav.link.versions:Versions du plan` },
+      ],
+    },
+    {
       id: 'consulter',
       icon: 'calendar_month',
       title: $localize`:@@aide.views.title:Consulter le planning`,

@@ -186,8 +186,10 @@ public class InstantaneMcpTools {
     @Tool(
             name = "supprimer_instantane",
             description = "Supprime un instantané. Le planning courant n'est pas touché. La dernière"
-                    + " publication est refusée : c'est le plan que les animateurs ont reçu. Les"
-                    + " publications qu'elle a remplacées se suppriment normalement.",
+                    + " publication est refusée : c'est le plan que les animateurs ont reçu. Une publication"
+                    + " qu'elle a remplacée est refusée aussi tant qu'elle était le plan en vigueur au début"
+                    + " d'une journée écoulée : « Réalisé vs planifié » mesure cette journée par rapport à elle."
+                    + " Les autres publications remplacées se suppriment normalement.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,

@@ -567,6 +567,23 @@ publication s'il y en a une. `referenceDisponible` faux veut dire « rien à
 comparer », jamais « aucun changement ». Des ids et des comptes : les phrases
 du courriel restent à l'écran Journée.
 
+**Tout l'événement, après coup.** `realise_vs_planifie` rend l'écran Réalisé vs
+planifié : pour chaque stand et chaque journée **écoulée** — sa dernière
+vacation terminée, jamais les jours à venir —, les sièges publiés, tenus, les
+absences, les remplacements, les sièges restés vides, retirés (consigne,
+créneau supprimé : jamais une absence) ou ajoutés, et les minutes publiées,
+réalisées et perdues ; les totaux par stand, par jour, par typologie et pour
+l'événement. Chaque journée est comparée à la publication en vigueur à son
+début — son premier créneau —, par la même comparaison que
+`changements_journee`. Une journée commencée avant toute publication
+(`lateReference`) est rendue mais comptée dans aucun total : la publication
+faite après coup contient déjà ses changements. Des comptes et des noms de stand,
+aucune personne — le détail nominatif d'une case reste à l'écran.
+`referenceAvailable` faux veut dire « rien n'a jamais été publié » ;
+`frozenPast` faux, que le passé figé est désactivé et que le réalisé n'est
+plus garanti ; `nature` vaut `DECLARED` : ce que l'outil a enregistré, pas un
+pointage de présence.
+
 `publier_planning` capture d'abord l'instantané publié, puis écrit aux gens :
 un envoi qui échoue à mi-chemin laisse un planning publié cohérent et une trace
 qui dit qui a été manqué. C'est cette trace que relit

@@ -38,6 +38,7 @@ import { ConfirmService } from '../../shared/confirm-dialog';
 import { PromptDialog } from '../../shared/prompt-dialog';
 import { confirmStaleRestore } from '../../shared/stale-snapshot-confirm';
 import { StatusMessage } from '../../shared/status-message';
+import { EditionPrecedente } from './edition-precedente';
 import { ComparaisonPanel } from './comparaison-panel';
 import {
   CURRENT_PLAN,
@@ -71,6 +72,7 @@ type TableRow = VersionRow | { kind: 'courant'; key: typeof CURRENT_PLAN; date: 
   selector: 'app-versions-page',
   imports: [
     ComparaisonPanel,
+    EditionPrecedente,
     MatButtonModule,
     MatCheckboxModule,
     MatChipsModule,
@@ -285,10 +287,18 @@ export class VersionsPage implements OnInit {
     return $localize`:@@snapshots.stale.tooltip:Référentiel modifié le ${moment}:moment:, après cette capture : le plan ne décrit plus les données actuelles.`;
   }
 
-  /** The delete button says why it is out on the plan on display. */
+  /**
+   * The delete button says why it is out on the plan on display, and warns on
+   * a replaced publication that the server may keep it: one in force when an
+   * elapsed day started still measures that day (Réalisé vs planifié), which
+   * only the server knows — its refusal names the day.
+   */
   protected deleteTooltip(snapshot: PlanSnapshot): string {
-    return this.isPublished(snapshot)
-      ? $localize`:@@snapshots.delete.publieTooltip:Le plan publié ne peut pas être supprimé : c'est celui que les animateurs ont reçu. La prochaine publication prendra sa place.`
+    if (this.isPublished(snapshot)) {
+      return $localize`:@@snapshots.delete.publieTooltip:Le plan publié ne peut pas être supprimé : c'est celui que les animateurs ont reçu. La prochaine publication prendra sa place.`;
+    }
+    return snapshot.publieLe
+      ? $localize`:@@snapshots.delete.remplaceTooltip:Supprimer — refusé si cette publication était en vigueur au début d'une journée écoulée : Réalisé vs planifié mesure cette journée par rapport à elle.`
       : $localize`:@@common.delete:Supprimer`;
   }
 

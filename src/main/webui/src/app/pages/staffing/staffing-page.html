@@ -265,8 +265,15 @@
                 }
               </td>
             </ng-container>
-            <tr mat-header-row *matHeaderRowDef="competenceColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: competenceColumns" [class.staffing-goulot]="estGoulot(row)"></tr>
+            <ng-container matColumnDef="precedente">
+              <th mat-header-cell scope="col" *matHeaderCellDef
+                  title="Réalisé de l'édition précédente, pour information : n'entre dans aucun calcul"
+                  i18n-title="@@staffing.competence.column.precedente.titre"
+                  i18n="@@staffing.competence.column.precedente">Édition précédente</th>
+              <td mat-cell *matCellDef="let row">{{ previousFor(row) }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="colonnesTypologie()"></tr>
+            <tr mat-row *matRowDef="let row; columns: colonnesTypologie()" [class.staffing-goulot]="estGoulot(row)"></tr>
           </table>
         </div>
         @if (goulot.siegesNonAttribues > 0) {

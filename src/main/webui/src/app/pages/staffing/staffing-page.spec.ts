@@ -12,14 +12,29 @@ import { Location } from '@angular/common';
 import { provideRouter, Router } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysesApi } from '../../core/api/analyses-api';
+import { RealiseApi } from '../../core/api/realise-api';
 import {
   CompetenceStaffing,
   JourStaffing,
+  PreviousEdition,
   SemaineStaffing,
   StaffingSummary,
   TypologieStaffing,
 } from '../../core/models';
 import { StaffingPage } from './staffing-page';
+
+/** No earlier edition left a measure: the Besoin tab shows no previous column. */
+const NO_PREVIOUS_EDITION: PreviousEdition = {
+  available: false,
+  editionId: null,
+  editionNom: null,
+  firstDay: null,
+  lastDay: null,
+  countedDays: null,
+  frozenAt: null,
+  event: null,
+  byTypologie: [],
+};
 
 /** A promise whose settlement the test drives, to observe the in-flight state. */
 function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
@@ -138,7 +153,14 @@ describe('StaffingPage', () => {
     exportTrainingPlan: vi.fn(),
   };
 
+  // No earlier edition left a measure, unless a test says otherwise.
+  const realiseApi = {
+    previousEdition: vi.fn((): Promise<PreviousEdition> => Promise.resolve(NO_PREVIOUS_EDITION)),
+  };
+
   beforeEach(() => {
+    realiseApi.previousEdition.mockReset();
+    realiseApi.previousEdition.mockResolvedValue(NO_PREVIOUS_EDITION);
     analysesApi.staffing.mockReset();
     analysesApi.staffing.mockResolvedValue(summary());
     analysesApi.margin.mockReset();
@@ -148,6 +170,7 @@ describe('StaffingPage', () => {
         provideZonelessChangeDetection(),
         provideRouter([]),
         { provide: AnalysesApi, useValue: analysesApi },
+        { provide: RealiseApi, useValue: realiseApi },
       ],
     });
   });
@@ -650,4 +673,98 @@ describe('StaffingPage', () => {
       expect(section.querySelector('app-formation-page')).not.toBeNull();
     });
   });
+
+  /**
+   * The previous edition's measure, beside each game category and for
+   * information only: matched by name, never by id alone; absent, no column
+   * at all.
+   */
+  describe("the previous edition's realised", () => {
+    it('adds a column only when an earlier edition left a measure', async () => {
+      analysesApi.staffing.mockResolvedValue(
+        summary({
+          parCompetence: competence({
+            parTypologie: [
+              typologie({ typologie: 'ESCAPE', manque: 0 }),
+              typologie({ typologie: 'T42', label: 'Quiz', manque: 0 }),
+            ],
+          }),
+        }),
+      );
+      const fixture = TestBed.createComponent(StaffingPage);
+      await fixture.whenStable();
+      fixture.detectChanges();
+      const root = fixture.nativeElement as HTMLElement;
+      expect(root.textContent).not.toContain('Édition précédente');
+
+      realiseApi.previousEdition.mockResolvedValue({
+        ...NO_PREVIOUS_EDITION,
+        available: true,
+        editionId: 'E1',
+        editionNom: 'Année 2025',
+        byTypologie: [
+          { key: 'ESCAPE', label: 'Escape game', counts: counts(20, 5, 90) },
+          // Another edition's id for the same name: read by its name.
+          { key: 'T7', label: 'quiz', counts: counts(10, 0, 0) },
+        ],
+      });
+      const withMeasure = TestBed.createComponent(StaffingPage);
+      await withMeasure.whenStable();
+      withMeasure.detectChanges();
+
+      const cellules = Array.from(
+        (withMeasure.nativeElement as HTMLElement).querySelectorAll<HTMLElement>(
+          'td.mat-column-precedente',
+        ),
+      ).map((cellule) => cellule.textContent?.trim() ?? '');
+      expect(cellules).toHaveLength(2);
+      expect(cellules[0]).toMatch(/25\s?%/);
+      expect(cellules[0]).toContain('1,5 h');
+      expect(cellules[1]).toMatch(/0\s?%/);
+    });
+
+    it('never reads a category of last year by its id alone', async () => {
+      analysesApi.staffing.mockResolvedValue(
+        summary({
+          parCompetence: competence({
+            parTypologie: [typologie({ typologie: 'T1', label: 'Stratégie', manque: 0 })],
+          }),
+        }),
+      );
+      realiseApi.previousEdition.mockResolvedValue({
+        ...NO_PREVIOUS_EDITION,
+        available: true,
+        editionId: 'E1',
+        editionNom: 'Année 2025',
+        // Last year's T1 was another category: its counter is no name.
+        byTypologie: [{ key: 'T1', label: 'Escape game', counts: counts(20, 5, 90) }],
+      });
+      const fixture = TestBed.createComponent(StaffingPage);
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const cellule = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
+        'td.mat-column-precedente',
+      );
+      expect(cellule?.textContent?.trim()).toBe('—');
+    });
+  });
 });
+
+/** The counters of a previous measure: published seats, absences, lost minutes. */
+function counts(publies: number, absences: number, minutesPerdues: number) {
+  return {
+    publishedSeats: publies,
+    keptSeats: publies,
+    absences,
+    replacements: 0,
+    emptySeats: 0,
+    removedSeats: 0,
+    addedSeats: 0,
+    publishedMinutes: publies * 120,
+    realisedMinutes: publies * 120 - minutesPerdues,
+    lostMinutes: minutesPerdues,
+    absenceRate: publies === 0 ? null : absences / publies,
+    replacementRate: publies === 0 ? null : 0,
+  };
+}

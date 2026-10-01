@@ -18,6 +18,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
+import { RealiseApi } from '../../core/api/realise-api';
 import {
   CelluleMarge,
   CompetenceStaffing,
@@ -32,6 +33,7 @@ import { FormationPage } from '../formation/formation-page';
 import { libelleJour as jourCourt } from '../formation/formation';
 import { libelleTranche, NiveauMarge, niveauMarge, signe } from '../marge/marge';
 import { MarginBeforeGrid } from '../marge/margin-before-grid';
+import { mesurePrecedente, resumePrecedent } from '../realise/mesure';
 
 /** The tightest timeslot of one day before a solve, as the per-day table prints it. */
 export interface MargeJour {
@@ -128,6 +130,25 @@ export class StaffingPage {
     'manque',
   ];
   private readonly analysesApi = inject(AnalysesApi);
+  private readonly realiseApi = inject(RealiseApi);
+
+  /**
+   * The previous edition's realised measure, shown beside each game category
+   * for information only: nothing on this tab reads it, and a failed read
+   * shows nothing rather than an error.
+   */
+  private readonly precedenteResource = resource({
+    loader: () => this.realiseApi.previousEdition(),
+  });
+  protected readonly precedente = computed(() => {
+    const mesure =
+      this.precedenteResource.status() === 'error' ? null : this.precedenteResource.value();
+    return mesure?.available ? mesure : null;
+  });
+  /** The game category table's columns, the previous edition's last when there is one. */
+  protected readonly colonnesTypologie = computed(() =>
+    this.precedente() ? [...this.competenceColumns, 'precedente'] : this.competenceColumns,
+  );
 
   /** Read when the screen opens: nothing here changes without a new solve or a referential edit. */
   private readonly staffing = resource({ loader: () => this.analysesApi.staffing() });
@@ -298,6 +319,12 @@ export class StaffingPage {
       ? $localize`:@@staffing.competence.polyvalentsOnly:${sieges}:count: sièges appartiennent à des stands ne proposant aucune typologie : seuls les polyvalents peuvent les tenir, ils sont donc comptés dans la ligne de la typologie polyvalente.`
       : $localize`:@@staffing.competence.nobodyEligible:${sieges}:count: sièges appartiennent à des stands sans typologie, et aucune typologie n'est marquée « polyvalente » : personne ne peut les tenir. Renseignez la typologie de ces stands.`;
   });
+
+  /** The previous edition's absence rate and lost hours on this game category, « — » without one. */
+  protected previousFor(ligne: TypologieStaffing): string {
+    const mesure = mesurePrecedente(this.precedente(), ligne.typologie, ligne.label);
+    return mesure ? resumePrecedent(mesure.counts) : '—';
+  }
 
   /**
    * On the icon itself rather than in the template: `MatIcon` sets its own

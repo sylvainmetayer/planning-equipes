@@ -21,7 +21,7 @@ import org.jboss.logging.Logger;
  * #298, #299, #300), and the one place that decides <b>whether an edition may
  * be written to at all</b>.
  *
- * <p>Modelled on {@code BackupService}, the application's other scheduled job:
+ * <p>Modelled on {@code BackupService}, the application's first scheduled job:
  * a configurable cron and time zone, {@code SKIP} on overlap rather than a
  * queue, and a failure that is logged rather than propagated — the scheduler
  * would swallow it into a line nobody reads, and the next run would try again
@@ -131,10 +131,11 @@ public class NotificationsPlanifieesService {
     /**
      * Drops the history lines that have aged out (issue #406).
      *
-     * <p>Rides along with the nightly sweep rather than carrying a second
-     * {@code @Scheduled}: this application has exactly two schedulers, the
-     * backup and this one, and a third one for a delete statement would be a
-     * third thing to configure, to time-zone and to explain. Best-effort like
+     * <p>Rides along with the nightly sweep rather than carrying a
+     * {@code @Scheduled} of its own: every scheduler is one more thing to
+     * configure, to time-zone and to explain, and a delete statement is not
+     * worth one — the third, {@code RealisedFreezeJob}, is argued in ADR 0070
+     * for what it writes. Best-effort like
      * everything else here — an unpurged journal is a table that grows, not a
      * night that fails.</p>
      */

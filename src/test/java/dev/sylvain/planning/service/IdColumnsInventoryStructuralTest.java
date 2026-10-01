@@ -58,6 +58,12 @@ class IdColumnsInventoryStructuralTest {
                             + "a deleted row's line keeps naming it"),
             Map.entry("kpi_historique.edition_id", "an edition id; the curves outlive a deleted edition"),
             Map.entry("kpi_historique.kpi", "figures only, no id"),
+            Map.entry(
+                    "kpi_realise.edition_id",
+                    "an edition id; the frozen realised measure outlives a deleted edition (ADR 0070)"),
+            Map.entry(
+                    "kpi_realise.typologie_id",
+                    "a game category id of that edition, empty for the whole event's row; its name is kept beside"),
             Map.entry("planning_resolution.dosage", "rule names and weights, no id"),
             Map.entry(
                     "notification_planifiee.animateur_id",
