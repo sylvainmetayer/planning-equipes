@@ -51,7 +51,7 @@ import { shiftsOn, staffingLabel, windowLabel } from './responsable';
             @if (s.emplacementNom) {
               {{ s.emplacementNom }} ·
             }
-            {{ jour | date: 'EEEE d MMMM y' }} · {{ vue()?.editionNom }}
+            {{ jour | date: 'EEEE d MMMM y' }} · {{ view()?.editionNom }}
           </p>
         </header>
         @if (vacations().length === 0) {
@@ -88,7 +88,7 @@ import { shiftsOn, staffingLabel, windowLabel } from './responsable';
             </tbody>
           </table>
         }
-        @if (vue()?.publieLe; as publieLe) {
+        @if (view()?.publieLe; as publieLe) {
           <footer i18n="@@responsable.affichette.pied">
             Planning publié le {{ publieLe | date: 'd MMMM y, HH:mm' }} — il peut avoir changé depuis.
           </footer>
@@ -111,8 +111,10 @@ export class ResponsableAffichettePage {
 
   protected readonly chargement = signal(true);
   protected readonly erreur = signal('');
-  protected readonly vue = signal<ResponsableView | null>(null);
-  protected readonly stand = computed<StandResponsable | null>(() => this.vue()?.stands[0] ?? null);
+  protected readonly view = signal<ResponsableView | null>(null);
+  protected readonly stand = computed<StandResponsable | null>(
+    () => this.view()?.stands[0] ?? null,
+  );
   protected readonly vacations = computed(() => {
     const stand = this.stand();
     return stand ? shiftsOn(stand, this.jour) : [];
@@ -127,7 +129,7 @@ export class ResponsableAffichettePage {
 
   private async load(): Promise<void> {
     try {
-      this.vue.set(await this.api.view(this.editionId, this.standId));
+      this.view.set(await this.api.view(this.editionId, this.standId));
     } catch (error) {
       this.erreur.set(
         error instanceof HttpErrorResponse && error.status === 404

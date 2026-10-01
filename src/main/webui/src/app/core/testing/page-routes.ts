@@ -6,7 +6,9 @@ import { routes } from '../../app.routes';
 
 /**
  * Every page as an address: the top-level routes and the children of the
- * admin shell, without the login page, a parameter or the wildcard.
+ * admin shell, without the login page, the stand manager's own screens
+ * (`/responsable`, opened by a right of their own, not an admin destination),
+ * a parameter or the wildcard.
  */
 export function pageRoutes(): string[] {
   const shell = routes.find((route) => route.path === '' && route.children);
@@ -17,6 +19,7 @@ export function pageRoutes(): string[] {
         route.children === undefined &&
         route.path !== undefined &&
         route.path !== 'login' &&
+        !route.path.startsWith('responsable') &&
         !route.path.includes(':') &&
         !route.path.includes('*'),
     )
