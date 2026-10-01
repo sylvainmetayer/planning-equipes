@@ -128,6 +128,7 @@ dev/sylvain/planning/mcp/ParametresSolveurMcpToolsTest.java
 dev/sylvain/planning/mcp/PlanificationMcpToolsTest.java
 dev/sylvain/planning/mcp/ReferentielMcpToolsTest.java
 dev/sylvain/planning/mcp/RefusMetierMcpToolsTest.java
+dev/sylvain/planning/mcp/RefusedWhileSolvingDoorsTest.java
 dev/sylvain/planning/mcp/ReparationMcpToolsTest.java
 dev/sylvain/planning/mcp/ScenarioMcpToolsTest.java
 dev/sylvain/planning/mcp/SolveurMcpToolsQueueTest.java

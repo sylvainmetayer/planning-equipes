@@ -130,15 +130,16 @@ public class PlanningPersistenceService {
      * which is why this is a scoped {@code DELETE} rather than the
      * {@code TRUNCATE} it used to be. Refused while any family of the
      * referential is frozen: a reset destroys what the freeze protects.
+     *
+     * <p>Refused while a solve holds this edition's solver, and the stakes are
+     * higher here than for a single delete: the landing persist would put back
+     * stands, animateurs, timeslots and seats, but neither the locations, the
+     * opening hours, the stands' game categories and dated openings nor the
+     * ad hoc constraints — leaving the edition half-restored.</p>
      */
     @RefusedWhileFrozen
+    @RefusedWhileSolving
     public void clearDatabase() {
-        // Refused while a solve holds this edition's solver, and the stakes are
-        // higher here than for a single delete: the landing persist would put
-        // back stands, animateurs, créneaux and poste_affectation, but not
-        // emplacement, stand_horaire, stand_typologie, stand_ouverture nor the
-        // ad hoc constraints — leaving the edition half-restored (issue #328).
-        solverJobs.refuseIfSolving();
         scope.write("Failed to clear the database", this::clearPlanningTables);
     }
 
@@ -441,9 +442,9 @@ public class PlanningPersistenceService {
      * @param standCibleId {@code null} for a simple takeover (the target was
      *                     free on the créneau)
      */
+    @RefusedWhileSolving
     public void applyEchange(
             long creneauId, String standDemandeurId, String demandeurId, String cibleId, String standCibleId) {
-        solverJobs.refuseIfSolving();
         scope.writeAndReturn("Failed to apply the échange to the persisted planning", connection -> {
             int updated = reaffecterSiege(connection, creneauId, standDemandeurId, demandeurId, cibleId);
             if (updated == 0) {
@@ -464,6 +465,7 @@ public class PlanningPersistenceService {
      * sit on two different créneaux — the demandeur's goes to the target, the
      * target's goes to the demandeur. Same one-transaction surgical updates.
      */
+    @RefusedWhileSolving
     public void applyDirectedEchange(
             long creneauId,
             String standDemandeurId,
@@ -471,7 +473,6 @@ public class PlanningPersistenceService {
             String cibleId,
             long creneauCibleId,
             String standCibleId) {
-        solverJobs.refuseIfSolving();
         scope.writeAndReturn("Failed to apply the échange dirigé to the persisted planning", connection -> {
             int updated = reaffecterSiege(connection, creneauId, standDemandeurId, demandeurId, cibleId);
             if (updated == 0) {
@@ -505,8 +506,8 @@ public class PlanningPersistenceService {
      * @return true when a seat was actually reassigned, false when this edition
      *         holds no such seat
      */
+    @RefusedWhileSolving
     public boolean reaffecterPoste(String posteId, String animateurId) {
-        solverJobs.refuseIfSolving();
         return scope.writeAndReturn("Failed to reassign the poste", connection -> {
                     // Not prepareScoped: the SET clause claims placeholder 1, so the
                     // edition_id predicate is bound explicitly here.
@@ -535,8 +536,8 @@ public class PlanningPersistenceService {
      * @return false when the seat holds somebody else, or this edition holds
      *         no such seat: nothing was written
      */
+    @RefusedWhileSolving
     public boolean reassignSeatIfHeldBy(String posteId, String animateurId, String expectedHolderId) {
-        solverJobs.refuseIfSolving();
         return scope.writeAndReturn("Failed to reassign the poste", connection -> {
                     // Not prepareScoped: the SET clause claims placeholder 1. IS NOT
                     // DISTINCT FROM lets a null expected holder mean « still empty ».
@@ -557,7 +558,9 @@ public class PlanningPersistenceService {
      * Several seats changing hands at once, one transaction (issue #308): a
      * movement rewrites two rows, and a swap half done would leave one person
      * in two places. {@code null} empties a seat, like {@link #reaffecterPoste}.
+     * Refused while a solve holds the edition, like every seat write.
      */
+    @RefusedWhileSolving
     public void reaffecterPostes(Map<String, String> animateurParPoste) {
         scope.write("Failed to move the seats", connection -> {
             // Not prepareScoped: the SET clause claims placeholder 1.
@@ -619,6 +622,7 @@ public class PlanningPersistenceService {
      *                          must hold each ({@code null}: nobody)
      * @param refusal           what a failed precondition throws
      */
+    @RefusedWhileSolving
     public void splitAndReassign(
             List<Scission> scissions,
             List<Narrowing> narrowings,
@@ -636,6 +640,7 @@ public class PlanningPersistenceService {
      * something else with it and must land whole or not at all — the
      * absence reported from an espace, claimed in the same transaction.
      */
+    @RefusedWhileSolving
     public void splitAndReassign(
             Connection connection,
             List<Scission> scissions,
@@ -644,7 +649,6 @@ public class PlanningPersistenceService {
             Map<String, String> expectedHolders,
             Supplier<? extends RuntimeException> refusal)
             throws SQLException {
-        solverJobs.refuseIfSolving();
         // Not prepareScoped: the SET clause claims placeholder 1. IS NOT
         // DISTINCT FROM lets a null before-image mean « the timeslot's
         // end » and « nobody ».

@@ -36,20 +36,16 @@ public class DeplacementService {
 
     private final ConstraintAnalysisStore analysisStore;
 
-    private final SolverJobService solverJobs;
-
     @Inject
     public DeplacementService(
             PlanningService planningService,
             PlanningPersistenceService persistence,
             ReferenceDataService referenceDataService,
-            ConstraintAnalysisStore analysisStore,
-            SolverJobService solverJobs) {
+            ConstraintAnalysisStore analysisStore) {
         this.planningService = planningService;
         this.persistence = persistence;
         this.referenceDataService = referenceDataService;
         this.analysisStore = analysisStore;
-        this.solverJobs = solverJobs;
     }
 
     /**
@@ -73,12 +69,13 @@ public class DeplacementService {
      * @throws BusinessError.Invalid when the move would worsen the hard score,
      *                               naming the rules it would break, or when
      *                               one of the seats is locked
+     * @throws SolverJobService.SolverBusyException while a solve holds the
+     *                               edition: its landing would overwrite the
+     *                               move without a word
      */
+    @RefusedWhileSolving
     public DeplacementSimulation apply(
             String posteSourceId, String posteCibleId, String animateurCibleId, String occupantAttendu) {
-        // A solve landing later would overwrite the move without a word: same
-        // refusal as every referential write (issue #328).
-        solverJobs.refuseIfSolving();
         PlanningEvenement persiste = persistedPlan();
         refuseIfMoved(persiste, posteSourceId, occupantAttendu);
         DeplacementSimulation simulation =
@@ -105,13 +102,16 @@ public class DeplacementService {
      * {@link PlanningWhatIf#placeOnFreeSeat} — on the plan prepared as this
      * service prepares it for a move, plus the two a move makes and a direct
      * write does not: the seat still free, and no lock on the person
-     * receiving it. The solve guard is the write's own, first of its checks.
+     * receiving it. Refused while a solve holds the edition before the plan
+     * is even read, like {@link #apply}; the write's own guard, first of its
+     * checks, then says the same thing again.
      *
      * @throws BusinessError.Conflict when the seat is no longer free
      * @throws BusinessError.Invalid  when the seating would break a hard rule,
      *                                naming it, or a lock covers the seat or
      *                                the person
      */
+    @RefusedWhileSolving
     public DeplacementSimulation place(String posteId, String animateurId) {
         DeplacementSimulation placement = planningService.placeOnFreeSeat(persistedPlan(), posteId, animateurId);
         refreshAnalysis();

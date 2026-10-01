@@ -10,7 +10,7 @@ import dev.sylvain.planning.service.referentiel.CreneauGridService.RapportGrille
 import dev.sylvain.planning.service.referentiel.JourneesTypesMaterialisation.Affectation;
 import dev.sylvain.planning.service.referentiel.JourneesTypesMaterialisation.Plan;
 import dev.sylvain.planning.service.referentiel.JourneesTypesMaterialisation.Reconnaissance;
-import dev.sylvain.planning.service.solve.SolverJobService;
+import dev.sylvain.planning.service.solve.RefusedWhileSolving;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.LocalDate;
@@ -44,20 +44,16 @@ public class JourneeTypeService {
 
     private final ConsigneRepository consignes;
 
-    private final SolverJobService solverJobs;
-
     @Inject
     public JourneeTypeService(
             JourneeTypeRepository repository,
             CreneauRepository creneaux,
             ReferenceDataChangeTracker changeTracker,
-            ConsigneRepository consignes,
-            SolverJobService solverJobs) {
+            ConsigneRepository consignes) {
         this.repository = repository;
         this.creneaux = creneaux;
         this.changeTracker = changeTracker;
         this.consignes = consignes;
-        this.solverJobs = solverJobs;
     }
 
     /* ------------------------------ Templates ------------------------------ */
@@ -267,8 +263,8 @@ public class JourneeTypeService {
 
     /** Writes the plan: the calendar's vacations become the edition's grid. */
     @RefusedWhileFrozen(ReferentialFamily.CRENEAUX)
+    @RefusedWhileSolving
     public Application apply() {
-        solverJobs.refuseIfSolving();
         Plan plan = planCourant();
         RapportApplication rapport = rapport(plan);
         if (!plan.isEmpty()) {

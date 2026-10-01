@@ -7,7 +7,7 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteRepository;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService;
-import dev.sylvain.planning.service.solve.SolverJobService;
+import dev.sylvain.planning.service.solve.RefusedWhileSolving;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.io.IOException;
@@ -185,8 +185,6 @@ public class AnimateurCsvImportService {
 
     private final ReferenceDataChangeTracker changeTracker;
 
-    private final SolverJobService solverJobs;
-
     private final ReferenceUsageService usages;
 
     private final GelReferentielService gel;
@@ -198,7 +196,6 @@ public class AnimateurCsvImportService {
             DeclarationDisponibiliteService declarations,
             DeclarationDisponibiliteRepository declarationRepository,
             ReferenceDataChangeTracker changeTracker,
-            SolverJobService solverJobs,
             ReferenceUsageService usages,
             GelReferentielService gel) {
         this.animateurs = animateurs;
@@ -206,7 +203,6 @@ public class AnimateurCsvImportService {
         this.declarations = declarations;
         this.declarationRepository = declarationRepository;
         this.changeTracker = changeTracker;
-        this.solverJobs = solverJobs;
         this.usages = usages;
         this.gel = gel;
     }
@@ -251,8 +247,8 @@ public class AnimateurCsvImportService {
      *         malformed row failed to name is the accident this import exists
      *         to avoid
      */
+    @RefusedWhileSolving
     public AnimateurCsvImportReport apply(AnimateurCsvImportRequest request) {
-        solverJobs.refuseIfSolving();
         Analysis analysis = analyse(request);
         AnimateurCsvImportReport report = analysis.report();
         if (!nameableMapping(report.mapping())) {

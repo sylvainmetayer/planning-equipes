@@ -6,7 +6,7 @@ import dev.sylvain.planning.service.journal.CurrentAction;
 import dev.sylvain.planning.service.referentiel.GrilleCompetences.LigneCompetences;
 import dev.sylvain.planning.service.referentiel.GrilleCompetences.ResultatLigne;
 import dev.sylvain.planning.service.referentiel.GrilleCompetences.SaisieCompetences;
-import dev.sylvain.planning.service.solve.SolverJobService;
+import dev.sylvain.planning.service.solve.RefusedWhileSolving;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
@@ -39,15 +39,11 @@ public class CompetencesGrilleService {
 
     private final AnimateurService animateurs;
 
-    private final SolverJobService solverJobs;
-
     private final CurrentAction currentAction;
 
     @Inject
-    public CompetencesGrilleService(
-            AnimateurService animateurs, SolverJobService solverJobs, CurrentAction currentAction) {
+    public CompetencesGrilleService(AnimateurService animateurs, CurrentAction currentAction) {
         this.animateurs = animateurs;
-        this.solverJobs = solverJobs;
         this.currentAction = currentAction;
     }
 
@@ -67,8 +63,8 @@ public class CompetencesGrilleService {
      * and nothing legitimate sends more of them.
      */
     @RefusedWhileFrozen(ReferentialFamily.COMPETENCES)
+    @RefusedWhileSolving
     public List<LigneCompetences> saveGrid(List<SaisieCompetences> saisies) {
-        solverJobs.refuseIfSolving();
         if (saisies.size() > MAX_ROWS) {
             throw new BusinessError.Invalid("Trop de lignes envoyées : " + grouped(MAX_ROWS) + " lignes au maximum.");
         }

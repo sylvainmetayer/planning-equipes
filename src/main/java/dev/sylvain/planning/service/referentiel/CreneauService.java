@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ConcurrentModificationGuard;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
+import dev.sylvain.planning.service.solve.RefusedWhileSolving;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -28,20 +29,16 @@ public class CreneauService {
 
     private final ConcurrentModificationGuard staleWrites;
 
-    private final SolverJobService solverJobs;
-
     @Inject
     public CreneauService(
             CreneauRepository repository,
             ParametresService parametres,
             ReferenceDataChangeTracker changeTracker,
-            ConcurrentModificationGuard staleWrites,
-            SolverJobService solverJobs) {
+            ConcurrentModificationGuard staleWrites) {
         this.repository = repository;
         this.parametres = parametres;
         this.changeTracker = changeTracker;
         this.staleWrites = staleWrites;
-        this.solverJobs = solverJobs;
     }
 
     public List<Creneau> list() {
@@ -90,8 +87,8 @@ public class CreneauService {
      * {@link SolverJobService#refuseIfSolving}.</p>
      */
     @RefusedWhileFrozen(ReferentialFamily.CRENEAUX)
+    @RefusedWhileSolving
     public Creneau update(Long id, Creneau creneau) {
-        solverJobs.refuseIfSolving();
         CreneauValidator.check(creneau);
         if (!repository.creneauExists(id)) {
             throw new BusinessError.NotFound("Créneau inconnu : " + id);
@@ -111,8 +108,8 @@ public class CreneauService {
      * {@link SolverJobService#refuseIfSolving}.</p>
      */
     @RefusedWhileFrozen(ReferentialFamily.CRENEAUX)
+    @RefusedWhileSolving
     public void delete(Long id) {
-        solverJobs.refuseIfSolving();
         repository.deleteCreneau(id);
         changeTracker.markModified();
     }
@@ -131,13 +128,14 @@ public class CreneauService {
      * {@link Creneau#assignerJours} over the whole edition — which is also
      * what keeps the numbering correct when a batch adds a date earlier than
      * every existing one.</p>
+     *
+     * <p>Refused while a solve runs: a recurrence and a derivation both land
+     * here, and both add rows a running solve would not know about — the same
+     * reason delete and replace refuse.</p>
      */
     @RefusedWhileFrozen(ReferentialFamily.CRENEAUX)
+    @RefusedWhileSolving
     public List<Creneau> createInBulk(List<Creneau> creneaux) {
-        // A recurrence and a derivation both land here, and both add rows a
-        // running solve would not know about — the same reason delete and
-        // replace refuse.
-        solverJobs.refuseIfSolving();
         List<Creneau> crees = new ArrayList<>();
         creneaux.forEach(CreneauValidator::check);
         try {
@@ -158,12 +156,14 @@ public class CreneauService {
         return crees;
     }
 
-    /** Deletes a batch of créneaux, for the same "one intent, one edit" reason as {@link #createInBulk}. */
+    /**
+     * Deletes a batch of timeslots, for the same "one intent, one edit" reason
+     * as {@link #createInBulk}. Refused while a solve runs once for the lot,
+     * not once per row: the whole batch is refused or none of it is.
+     */
     @RefusedWhileFrozen(ReferentialFamily.CRENEAUX)
+    @RefusedWhileSolving
     public int deleteInBulk(Collection<Long> ids) {
-        // Checked once for the lot, not once per row: the whole batch is refused
-        // or none of it is, and the solver state cannot change under us anyway.
-        solverJobs.refuseIfSolving();
         int supprimes = 0;
         try {
             for (Long id : ids) {
@@ -184,8 +184,8 @@ public class CreneauService {
      * {@link #create(Connection, Creneau)}, including why a freeze does not
      * refuse it: it removes the créneaux a consigne added.
      */
+    @RefusedWhileSolving
     public int deleteInBulk(Connection connection, Collection<Long> ids) throws SQLException {
-        solverJobs.refuseIfSolving();
         int supprimes = 0;
         for (Long id : ids) {
             repository.deleteCreneauTx(connection, id);
@@ -203,12 +203,14 @@ public class CreneauService {
      * level, for the reason {@link #createInBulk} spells out: one file is one
      * edit, not one edit per row. Nothing is removed — a timeslot the file
      * leaves out stays, which is the doctrine of every CSV import here.</p>
+     *
+     * <p>Refused while a solve runs: both halves add or move rows it would
+     * not know about, the same reason the bulk create and the replace
+     * refuse.</p>
      */
     @RefusedWhileFrozen(ReferentialFamily.CRENEAUX)
+    @RefusedWhileSolving
     public void importer(List<Creneau> aCreer, List<Creneau> aMettreAJour) {
-        // Both halves add or move rows a running solve would not know about,
-        // the same reason the bulk create and the replace refuse.
-        solverJobs.refuseIfSolving();
         aCreer.forEach(CreneauValidator::check);
         aMettreAJour.forEach(CreneauValidator::check);
         for (Creneau creneau : aCreer) {
@@ -230,8 +232,8 @@ public class CreneauService {
      * the grid.
      */
     @RefusedWhileFrozen(ReferentialFamily.CRENEAUX)
+    @RefusedWhileSolving
     public List<Creneau> replace(List<Creneau> creneaux) {
-        solverJobs.refuseIfSolving();
         for (Creneau creneau : creneaux) {
             CreneauValidator.check(creneau);
         }

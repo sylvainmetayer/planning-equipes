@@ -419,7 +419,9 @@ durablement se pose avec `verrouiller`.
 Chaque outil d'écriture a une réponse écrite à la question « et si un calcul
 tient l'édition ? », et `McpWarnsWhileSolvingStructuralTest` fait échouer le
 build sur un outil qui n'en a pas — et relit, pour chaque outil refusé, que la
-méthode de service nommée appelle bien `refuseIfSolving` :
+méthode de service nommée porte bien `@RefusedWhileSolving` (ou, pour un refus
+conditionnel, l'appel explicite que `RefusedWhileSolvingStructuralTest`
+argumente) :
 
 | Pendant une résolution de l'édition | Outils | Ce que reçoit l'assistant |
 | --- | --- | --- |

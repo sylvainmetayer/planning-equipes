@@ -251,6 +251,19 @@ Single Quarkus service, no separate solver microservice. Package root:
   case nor argued as open — and on an annotated method called on `this`, which
   bypasses the interceptor. Consignes stay open: their grid write goes through
   the in-transaction timeslot methods, which only `ConsigneService` calls.
+- **A write a running solve would undo is refused, by annotation too.** A
+  solve's landing re-upserts the stands, timeslots and animateurs its problem
+  names and rewrites every seat, so a service method writing them carries
+  `@RefusedWhileSolving` (`service/solve/`, interceptor calling
+  `SolverJobService.refuseIfSolving`: `409` with the job, `SolverOccupeMapper`)
+  — on the service, so the MCP tool, which never crosses JAX-RS, meets it as
+  the REST route does. Never write `refuseIfSolving()` by hand at the head of a
+  method: the explicit call is kept only where the refusal is conditional (a
+  dry run reads freely) or no interceptor can run. `RefusedWhileSolvingStructuralTest`
+  fails on a write method of the referential, consigne or plan-writing services
+  (and of any bean holding the guard) that is neither annotated, nor argued
+  open or imperative, on an unargued explicit call anywhere, and on an annotated
+  method called on `this`.
 - **Mails follow two opposite failure policies, and the split is structural.**
   `MailService` holds only what an admin explicitly asks for (an animateur's
   planning, an espace access code, the Débogage test mail): the mail *is* the
@@ -400,11 +413,12 @@ Single Quarkus service, no separate solver microservice. Package root:
      designate an animateur by id, never by nom/prénom
      (`McpRefusMetierStructurelleTest` holds both halves).
   5. a write tool says what happens while a solve holds its edition: refused
-     in 409 by `refuseIfSolving` — every write the landing would undo: the
-     stand, animateur and créneau edits and deletes, the seat writes
-     (`reaffecterPoste`, `applyEchange`, moves, restores), consignes, imports
-     and reset; the test reads the guard back in the service methods it
-     names — or accepted and annotated
+     in 409 by `@RefusedWhileSolving` on the service method — every write the
+     landing would undo: the stand, animateur and créneau edits and deletes,
+     the seat writes (`reaffecterPoste`, `applyEchange`, moves, restores),
+     consignes, imports and reset; the test reads the annotation back on the
+     service methods it names (or the argued explicit call of a conditional
+     refusal) — or accepted and annotated
      `@WarnsWhileSolving` — its answer, a `WarningCarrier`, then carries
      `RESOLUTION_EN_COURS` (`mcp/WarningCodes`) — or excluded with its reason
      (`McpWarnsWhileSolvingStructuralTest`). Never turn a refused write into

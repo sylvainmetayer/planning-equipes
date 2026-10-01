@@ -19,8 +19,8 @@ import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.SuggestionsReparation;
+import dev.sylvain.planning.service.solve.RefusedWhileSolving;
 import dev.sylvain.planning.service.solve.SeatSplit;
-import dev.sylvain.planning.service.solve.SolverJobService;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -91,8 +91,6 @@ public class JourJService {
 
     private final PlanningService planningService;
 
-    private final SolverJobService solverJobs;
-
     private final SecurityIdentity identity;
 
     private final JourJClock clock;
@@ -113,7 +111,6 @@ public class JourJService {
             dev.sylvain.planning.service.consigne.ConsigneService consigneService,
             PlanningPersistenceService persistenceService,
             PlanningService planningService,
-            SolverJobService solverJobs,
             SecurityIdentity identity,
             JourJClock clock,
             SignalementAbsenceRepository signalements,
@@ -125,7 +122,6 @@ public class JourJService {
         this.consigneService = consigneService;
         this.persistenceService = persistenceService;
         this.planningService = planningService;
-        this.solverJobs = solverJobs;
         this.identity = identity;
         this.clock = clock;
         this.signalements = signalements;
@@ -323,7 +319,13 @@ public class JourJService {
      * {@link ContrainteAdHocContradictions} exists to replace.</p>
      *
      * <p>The exceptions and the seats are written in one transaction.</p>
+     *
+     * <p>Refused while a solve holds the edition, seats to free or not, and
+     * before any of the checks above: the solve read neither these exceptions
+     * nor the freed seats, and its landing could seat the absent person on the
+     * day again.</p>
      */
+    @RefusedWhileSolving
     public AbsenceMarquee recordAbsence(
             String animateurId, String raison, LocalDate date, LocalDateTime maintenantDemande) {
         return recordAbsence(animateurId, raison, date, maintenantDemande, null);
@@ -337,6 +339,7 @@ public class JourJService {
      * @throws BusinessError.Invalid when that timeslot is not among the ones
      *         still ahead that day
      */
+    @RefusedWhileSolving
     public AbsenceMarquee recordAbsence(
             String animateurId, String raison, LocalDate date, LocalDateTime maintenantDemande, Long creneauId) {
         return recordAbsence(animateurId, raison, date, maintenantDemande, creneauId, null);
@@ -349,6 +352,7 @@ public class JourJService {
      * the absence's own write refuses after it, rolls the whole of it back:
      * nothing needs giving back by hand.
      */
+    @RefusedWhileSolving
     public AbsenceMarquee recordAbsence(
             String animateurId,
             String raison,
@@ -397,12 +401,6 @@ public class JourJService {
                 .sorted(Comparator.comparing(PosteAffectation::getId))
                 .toList();
         refuseLockedSeats(aLiberer);
-        // Refused while a solve holds the edition, seats to free or not: the
-        // solve read neither these exceptions nor the freed seats, and its
-        // landing could seat the absent person on the day again. Asked here,
-        // before the exceptions are written, so a refusal leaves nothing half
-        // done.
-        solverJobs.refuseIfSolving();
 
         String motif = motif(raison, jour, maintenant);
         Instant ecritLe = Instant.now();

@@ -9,7 +9,7 @@ import dev.sylvain.planning.service.referentiel.GrilleHorairesStands.SaisieCellu
 import dev.sylvain.planning.service.referentiel.StandGrilleImportReport.ImportGrilleAction;
 import dev.sylvain.planning.service.referentiel.StandGrilleImportReport.ImportedColumn;
 import dev.sylvain.planning.service.referentiel.StandGrilleImportReport.ImportedGrilleRow;
-import dev.sylvain.planning.service.solve.SolverJobService;
+import dev.sylvain.planning.service.solve.RefusedWhileSolving;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.text.Normalizer;
@@ -82,20 +82,16 @@ public class StandGrilleImportService {
 
     private final ReferenceDataChangeTracker changeTracker;
 
-    private final SolverJobService solverJobs;
-
     @Inject
     public StandGrilleImportService(
             StandService stands,
             CreneauService creneaux,
             StandRepository repository,
-            ReferenceDataChangeTracker changeTracker,
-            SolverJobService solverJobs) {
+            ReferenceDataChangeTracker changeTracker) {
         this.stands = stands;
         this.creneaux = creneaux;
         this.repository = repository;
         this.changeTracker = changeTracker;
-        this.solverJobs = solverJobs;
     }
 
     public StandGrilleImportReport preview(StandGrilleImportRequest request) {
@@ -107,8 +103,8 @@ public class StandGrilleImportService {
      * forty stands after a rollback would be a lie nothing could catch up on.
      */
     @RefusedWhileFrozen(ReferentialFamily.STANDS)
+    @RefusedWhileSolving
     public StandGrilleImportReport apply(StandGrilleImportRequest request) {
-        solverJobs.refuseIfSolving();
         Analyse analyse = analyse(request);
         if (analyse.aEcrire.isEmpty()) {
             throw new BusinessError.Invalid("Aucune ligne acceptée : rien à importer.");

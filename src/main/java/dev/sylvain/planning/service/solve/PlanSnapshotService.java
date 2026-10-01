@@ -67,8 +67,6 @@ public class PlanSnapshotService {
 
     private final PlanningKpiService kpiService;
 
-    private final SolverJobService solverJobs;
-
     private final ConsigneRepository consigneRepository;
 
     /**
@@ -88,7 +86,6 @@ public class PlanSnapshotService {
             PlanningPersistenceService persistenceService,
             ConstraintAnalysisStore analysisStore,
             PlanningKpiService kpiService,
-            SolverJobService solverJobs,
             ConsigneRepository consigneRepository,
             ObjectMapper objectMapper) {
         this.automatiquesConservees = automatiquesConservees;
@@ -97,7 +94,6 @@ public class PlanSnapshotService {
         this.persistenceService = persistenceService;
         this.analysisStore = analysisStore;
         this.kpiService = kpiService;
-        this.solverJobs = solverJobs;
         this.consigneRepository = consigneRepository;
         this.objectMapper = objectMapper;
     }
@@ -662,8 +658,8 @@ public class PlanSnapshotService {
      * @param forcer restore a stale snapshot anyway. Never widens anything
      *               else: a missing reference stays refused whatever this says
      */
+    @RefusedWhileSolving
     public RestaurationResult restaurer(long id, boolean forcer) {
-        solverJobs.refuseIfSolving();
         SnapshotDetail detail = load(id);
         if (detail == null) {
             return null;

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
+import dev.sylvain.planning.service.solve.RefusedWhileSolving;
 import io.quarkiverse.mcp.server.Tool;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -28,8 +29,8 @@ import org.junit.jupiter.api.Test;
  * and the answer is written down, never left to omission.
  *
  * <p>Three answers exist. The write is <b>refused</b> in {@code 409} while a
- * solve holds its edition ({@code SolverJobService.refuseIfSolving}, on the
- * writes whose data the landing would bring back); it is <b>accepted and
+ * solve holds its edition ({@link RefusedWhileSolving}, on the service methods
+ * whose data the landing would bring back); it is <b>accepted and
  * warned about</b> ({@link WarnsWhileSolving}, the answer then carries
  * {@link WarningCodes#RESOLUTION_EN_COURS}); or it has <b>nothing to do with a
  * solve</b>, and says why. A write tool in none of the three fails the build:
@@ -37,7 +38,9 @@ import org.junit.jupiter.api.Test;
  * will not reflect it merely because nobody thought of the case.</p>
  *
  * <p>The refused list names the service methods holding the guard, and that
- * statement is read back in their source; the three lists are disjoint and
+ * statement is read back on them — the annotation, or for the few that refuse
+ * in one branch only, the explicit call {@code RefusedWhileSolvingStructuralTest}
+ * argues; the three lists are disjoint and
  * exhaustive, so moving a tool from one to another is a line somebody
  * reviews.</p>
  */
@@ -148,9 +151,12 @@ class McpWarnsWhileSolvingStructuralTest {
     }
 
     /**
-     * The refused list is a statement about the services; it is read back in
-     * their source, so a guard removed from a method named here fails the
-     * build instead of turning a refused write into a silent one.
+     * The refused list is a statement about the services; it is read back on
+     * them, so a guard removed from a method named here fails the build
+     * instead of turning a refused write into a silent one. The annotation
+     * answers for the method; a method without it must call the guard by hand,
+     * which {@code RefusedWhileSolvingStructuralTest} accepts only with its
+     * reason.
      */
     @Test
     void eachRefusedToolNamesMethodsThatHoldTheGuard() throws IOException {
@@ -158,25 +164,45 @@ class McpWarnsWhileSolvingStructuralTest {
         for (Map.Entry<String, String> entry : new TreeMap<>(REFUSED).entrySet()) {
             for (String method : entry.getValue().split(",\\s*")) {
                 String[] parts = method.trim().split("\\.");
-                if (!methodBodies(parts[0], parts[1]).stream().anyMatch(body -> body.contains("refuseIfSolving("))) {
+                boolean annotated = Arrays.stream(serviceClass(parts[0]).getDeclaredMethods())
+                        .filter(declared -> declared.getName().equals(parts[1]))
+                        .anyMatch(declared -> declared.isAnnotationPresent(RefusedWhileSolving.class));
+                if (!annotated
+                        && methodBodies(parts[0], parts[1]).stream()
+                                .noneMatch(body -> body.contains("refuseIfSolving("))) {
                     unguarded.add(entry.getKey() + " → " + method.trim());
                 }
             }
         }
         assertThat(unguarded)
-                .as("chaque méthode nommée dans REFUSED appelle solverJobs.refuseIfSolving()")
+                .as("chaque méthode nommée dans REFUSED porte @RefusedWhileSolving, ou appelle refuseIfSolving()"
+                        + " dans une branche argumentée par RefusedWhileSolvingStructuralTest")
                 .isEmpty();
+    }
+
+    /** The class {@code className} of the backend, found by its source file. */
+    private static Class<?> serviceClass(String className) throws IOException {
+        String relative = SOURCES.relativize(sourceFile(className)).toString();
+        String name = "dev.sylvain.planning."
+                + relative.substring(0, relative.length() - ".java".length()).replace('/', '.');
+        try {
+            return Class.forName(name);
+        } catch (ClassNotFoundException e) {
+            throw new AssertionError("classe introuvable : " + name, e);
+        }
+    }
+
+    private static Path sourceFile(String className) throws IOException {
+        try (Stream<Path> files = Files.walk(SOURCES)) {
+            return files.filter(path -> path.getFileName().toString().equals(className + ".java"))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("classe introuvable : " + className));
+        }
     }
 
     /** The bodies of every method {@code method} of {@code className}, overloads included. */
     private static List<String> methodBodies(String className, String method) throws IOException {
-        Path file;
-        try (Stream<Path> files = Files.walk(SOURCES)) {
-            file = files.filter(path -> path.getFileName().toString().equals(className + ".java"))
-                    .findFirst()
-                    .orElseThrow(() -> new AssertionError("classe introuvable : " + className));
-        }
-        String source = Files.readString(file);
+        String source = Files.readString(sourceFile(className));
         List<String> bodies = new ArrayList<>();
         Matcher declaration = Pattern.compile("\\n    public [\\w<>, .?]+ " + Pattern.quote(method) + "\\(")
                 .matcher(source);

@@ -29,7 +29,7 @@ class VerrouillageMcpToolsTest {
         ReferentielFictif() {
             super(
                     null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-                    null, null, null, null);
+                    null, null, null);
         }
 
         @Override
