@@ -2097,12 +2097,19 @@ export type VerificationState = 'EN_COURS' | 'TERMINEE' | 'ECHEC';
 
 /**
  * `POST|GET /api/staffing/verification`: a solve of the edition's seats by a
- * made-up team — adults, available every day, competent everywhere — that
- * says whether `effectif` people suffice. Nothing of the edition is written.
+ * made-up team — `majeurs` adults and `mineurs` minors aged sixteen, available
+ * every day, competent everywhere — that says whether `effectif` people
+ * suffice. Nothing of the edition's plan is written; the check itself is
+ * kept, and the history names it.
  */
 export interface StaffingVerification {
+  /** The check's id, which the history's lines carry. */
+  id: number;
   etat: VerificationState;
+  /** `majeurs + mineurs`. */
   effectif: number;
+  majeurs: number;
+  mineurs: number;
   sieges: number;
   lanceeLe: string;
   termineeLe?: string | null;
@@ -2115,6 +2122,18 @@ export interface StaffingVerification {
   /** Hard rules the best plan still breaks, by catalogue name, the most broken first. */
   reglesEnDefaut: string[];
   erreur?: string | null;
+}
+
+/**
+ * `POST /api/staffing/verification`: the made-up team and the time it is
+ * given. A `null` figure is left to the server — the floor less the minors,
+ * no minor, the configured time.
+ */
+export interface DemandeVerification {
+  majeurs: number | null;
+  mineurs: number | null;
+  /** From 10 s to an hour. */
+  dureeSecondes: number | null;
 }
 
 /**
@@ -3192,6 +3211,8 @@ export interface EntreeHistorique {
   resultat: 'SUCCES' | 'REFUS';
   /** HTTP status when the action came from a request, `null` for a scheduled one. */
   statut: number | null;
+  /** The staffing check the line names, joined at read time; absent on every other line. */
+  verification?: StaffingVerification | null;
 }
 
 /** One entry of the action inventory, from `GET /api/historique/actions`. */

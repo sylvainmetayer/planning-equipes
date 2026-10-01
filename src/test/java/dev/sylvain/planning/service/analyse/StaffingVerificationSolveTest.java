@@ -36,6 +36,8 @@ class StaffingVerificationSolveTest {
 
     private static final List<TypologieItem> TYPOLOGIES = List.of(new TypologieItem("JEUX", "Jeux"));
 
+    private static final LocalDate LUNDI = LocalDate.of(2026, 7, 6);
+
     private final PlanningService planningService = new PlanningService(
             420L,
             0L,
@@ -65,7 +67,7 @@ class StaffingVerificationSolveTest {
         List<TypologieItem> typologies =
                 List.of(new TypologieItem("JEUX", "Jeux"), new TypologieItem("NINJA", "Ninja", true));
 
-        var team = StaffingVerificationService.team(3, typologies);
+        var team = StaffingVerificationService.team(3, 0, typologies, LUNDI);
 
         assertThat(team).hasSize(3).allSatisfy(animateur -> {
             assertThat(animateur.getCompetences()).containsOnlyKeys("JEUX", "NINJA");
@@ -76,9 +78,23 @@ class StaffingVerificationSolveTest {
     }
 
     @Test
+    void theMadeUpMinorsAreSixteenToSeventeenThroughoutTheEvent() {
+        var team = StaffingVerificationService.team(2, 3, TYPOLOGIES, LUNDI);
+
+        assertThat(team).hasSize(5);
+        assertThat(team.subList(0, 2)).allMatch(animateur -> animateur.isMajeurOn(LUNDI));
+        assertThat(team.subList(2, 5)).allSatisfy(animateur -> {
+            assertThat(animateur.isMineurOn(LUNDI)).isTrue();
+            assertThat(animateur.isMineurOn(LUNDI.plusMonths(11))).isTrue();
+            assertThat(animateur.getDateNaissance()).isEqualTo(LUNDI.minusYears(16));
+        });
+        assertThat(team).extracting(animateur -> animateur.getId()).doesNotHaveDuplicates();
+    }
+
+    @Test
     void theCheckAlwaysHoldsTheSeatRuleEvenWhenTheEditionSwitchedItOff() {
         PlanningEvenement problem =
-                StaffingVerificationService.problem(week(), StaffingVerificationService.team(4, TYPOLOGIES));
+                StaffingVerificationService.problem(week(), StaffingVerificationService.team(4, 0, TYPOLOGIES, LUNDI));
         problem.setConstraintsDesactivees(List.of(new ConstraintToggle("posteDoitEtrePourvu", false)));
 
         planningService.prepareHypothetical(problem);
@@ -90,8 +106,8 @@ class StaffingVerificationSolveTest {
     }
 
     private PlanningEvenement solve(Seats seats, int effectif, long seconds) {
-        PlanningEvenement problem =
-                StaffingVerificationService.problem(seats, StaffingVerificationService.team(effectif, TYPOLOGIES));
+        PlanningEvenement problem = StaffingVerificationService.problem(
+                seats, StaffingVerificationService.team(effectif, 0, TYPOLOGIES, LUNDI));
         planningService.prepareHypothetical(problem);
         return planningService.solvePreparedUntilFeasible(problem, seconds);
     }
@@ -100,10 +116,9 @@ class StaffingVerificationSolveTest {
     private static Seats week() {
         Stand stand = new Stand("A", "A", Set.of("JEUX"), 3, 3, false);
         List<Creneau> creneaux = new ArrayList<>();
-        LocalDate lundi = LocalDate.of(2026, 7, 6);
         for (int jour = 0; jour < 7; jour++) {
             creneaux.add(
-                    new Creneau((long) jour, jour + 1, lundi.plusDays(jour), LocalTime.of(10, 0), LocalTime.of(12, 0)));
+                    new Creneau((long) jour, jour + 1, LUNDI.plusDays(jour), LocalTime.of(10, 0), LocalTime.of(12, 0)));
         }
         List<PosteAffectation> postes = ProblemBuilder.buildPostes(List.of(stand), creneaux);
         return new Seats(List.of(stand), creneaux, postes);

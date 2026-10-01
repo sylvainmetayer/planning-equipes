@@ -443,7 +443,8 @@ class DatabaseResourceTest {
                 .doesNotContain("espace_session")
                 .doesNotContain("lien_affichage_mural")
                 .doesNotContain("solver_job")
-                .doesNotContain("journal_action");
+                .doesNotContain("journal_action")
+                .doesNotContain("verification_besoin");
     }
 
     /**

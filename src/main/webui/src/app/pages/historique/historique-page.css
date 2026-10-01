@@ -46,6 +46,7 @@
 
   .historique-cible,
   .historique-champs,
+  .historique-resultat,
   .historique-qui {
     grid-column: 2;
   }
@@ -63,6 +64,12 @@
 
 .historique-champs {
   color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+/* A staffing check's outcome sits where an edit's fields would: a line
+   naming a check carries no field. */
+.historique-resultat {
   font: var(--mat-sys-body-small);
 }
 

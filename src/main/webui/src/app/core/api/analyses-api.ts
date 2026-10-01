@@ -23,6 +23,7 @@ import {
   RapportTension,
   StaffingSummary,
   StaffingVerification,
+  DemandeVerification,
   TypologieItem,
 } from '../models';
 
@@ -66,8 +67,12 @@ export class AnalysesApi {
   }
 
   /** Starts a solve of the seats by a made-up team of `effectif` people — the floor when omitted. */
-  verifyStaffing(effectif: number | null): Promise<StaffingVerification> {
-    return this.api.post<StaffingVerification>('/api/staffing/verification', { effectif });
+  /**
+   * Starts a check; a `null` figure leaves it to the server — the floor less
+   * the minors, no minor, the configured time.
+   */
+  verifyStaffing(demande: DemandeVerification): Promise<StaffingVerification> {
+    return this.api.post<StaffingVerification>('/api/staffing/verification', demande);
   }
 
   /** The edition's last check, running or finished; `null` when none was run (204). */

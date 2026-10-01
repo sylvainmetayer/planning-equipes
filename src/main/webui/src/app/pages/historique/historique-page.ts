@@ -37,6 +37,7 @@ import {
   natureQuery,
   parJournee,
   qui,
+  resultOf,
   surQuoi,
 } from './historique';
 
@@ -189,6 +190,10 @@ export class HistoriquePage implements OnInit {
 
   protected surQuoi(entree: EntreeHistorique): string {
     return surQuoi(entree);
+  }
+
+  protected resultOf(entree: EntreeHistorique): string {
+    return resultOf(entree);
   }
 
   /** « 14:32 » — the day is already the group's heading. */

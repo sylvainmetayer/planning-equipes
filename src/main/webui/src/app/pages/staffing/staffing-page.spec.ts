@@ -155,8 +155,11 @@ function summary(overrides: Partial<StaffingSummary> = {}): StaffingSummary {
 /** One check by a solve, running unless a test says otherwise. */
 function verification(overrides: Partial<StaffingVerification> = {}): StaffingVerification {
   return {
+    id: 1,
     etat: 'EN_COURS',
     effectif: 22,
+    majeurs: 22,
+    mineurs: 0,
     sieges: 40,
     lanceeLe: '2026-10-01T10:00:00Z',
     plafondSecondes: 600,
@@ -831,25 +834,36 @@ describe('StaffingPage', () => {
   });
 
   describe('the check by a solve', () => {
-    it('starts a check of the size typed in, and follows it until it ends', async () => {
+    it('starts a check of the team and time typed in, and follows it until it ends', async () => {
       vi.useFakeTimers();
       try {
-        analysesApi.verifyStaffing.mockResolvedValue(verification({ effectif: 25 }));
+        analysesApi.verifyStaffing.mockResolvedValue(
+          verification({ effectif: 25, majeurs: 20, mineurs: 5 }),
+        );
         analysesApi.staffingVerification.mockResolvedValue(null);
         // No call by hand: the zoneless test bed runs ngOnInit on its own first check.
         const page = createPage();
         await vi.waitFor(() => expect(analysesApi.staffingVerification).toHaveBeenCalledOnce());
 
-        page['changerEffectif']('25');
+        page['setAdults']('20');
+        page['setMinors']('5');
+        page['setSeconds']('120');
         await page['lancerVerification']();
 
-        expect(analysesApi.verifyStaffing).toHaveBeenCalledWith(25);
+        expect(analysesApi.verifyStaffing).toHaveBeenCalledWith({
+          majeurs: 20,
+          mineurs: 5,
+          dureeSecondes: 120,
+        });
         expect(page['verification']()?.etat).toBe('EN_COURS');
         expect(page['verificationLabel']()).toBe('');
+        expect(page['verificationTeam']()).toBe('25 personnes (20 majeurs, 5 mineurs)');
 
         analysesApi.staffingVerification.mockResolvedValue(
           verification({
             effectif: 25,
+            majeurs: 20,
+            mineurs: 5,
             etat: 'TERMINEE',
             realisable: true,
             dureeSecondes: 42,
@@ -859,7 +873,7 @@ describe('StaffingPage', () => {
         await vi.advanceTimersByTimeAsync(3000);
 
         expect(page['verification']()?.etat).toBe('TERMINEE');
-        expect(page['verificationLabel']()).toContain('25');
+        expect(page['verificationLabel']()).toContain('25 personnes (20 majeurs, 5 mineurs)');
         expect(page['verificationLabel']()).toContain('42');
       } finally {
         vi.useRealTimers();
@@ -896,10 +910,14 @@ describe('StaffingPage', () => {
       );
       const page = createPage();
 
-      page['changerEffectif']('');
+      page['setAdults']('');
       await page['lancerVerification']();
 
-      expect(analysesApi.verifyStaffing).toHaveBeenCalledWith(null);
+      expect(analysesApi.verifyStaffing).toHaveBeenCalledWith({
+        majeurs: null,
+        mineurs: null,
+        dureeSecondes: null,
+      });
       expect(page['verificationLabel']()).toContain('3');
       expect(page['verificationLabel']()).toContain('pas une preuve');
     });

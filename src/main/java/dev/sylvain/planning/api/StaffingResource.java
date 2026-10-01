@@ -47,11 +47,15 @@ public class StaffingResource {
     }
 
     /**
-     * The size of the made-up team a check staffs the seats with.
+     * The made-up team a check staffs the seats with, and the time it is given.
      *
-     * @param effectif {@code null} or absent for the floor the screen shows
+     * @param majeurs       the adults; {@code null} or absent for the floor the
+     *                      screen shows, less the minors
+     * @param mineurs       the minors, aged sixteen on the first day; absent for none
+     * @param dureeSecondes the time the solve is given at most, from 10 s to an
+     *                      hour; absent for the server's default
      */
-    public record VerificationRequest(Integer effectif) {}
+    public record VerificationRequest(Integer majeurs, Integer mineurs, Long dureeSecondes) {}
 
     /**
      * Never an error on an empty edition: this only feeds a read-only screen,
@@ -72,11 +76,13 @@ public class StaffingResource {
     @Path("/verification")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response verify(VerificationRequest request) {
-        StaffingVerification started = verificationService.start(request == null ? null : request.effectif());
+        StaffingVerification started = request == null
+                ? verificationService.start(null, null, null)
+                : verificationService.start(request.majeurs(), request.mineurs(), request.dureeSecondes());
         return Response.accepted(started).build();
     }
 
-    /** The last check of the edition, running or finished; {@code 204} when none was run since the start. */
+    /** The last check of the edition, running or finished; {@code 204} when none was ever run. */
     @GET
     @Path("/verification")
     public Response verification() {

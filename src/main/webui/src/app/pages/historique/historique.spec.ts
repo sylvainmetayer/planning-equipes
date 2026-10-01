@@ -11,6 +11,7 @@ import {
   natureQuery,
   parJournee,
   qui,
+  resultOf,
   surQuoi,
 } from './historique';
 
@@ -69,6 +70,45 @@ describe('filter', () => {
     expect(filter(entrees, 'TOUS', 'TOUS', '', 'stand').map((e) => e.id)).toEqual([2]);
     // Accent- and case-insensitive, like every other quick filter here.
     expect(filter(entrees, 'TOUS', 'TOUS', '', 'MODIFIEE').map((e) => e.id)).toEqual([1]);
+  });
+});
+
+describe('resultOf', () => {
+  const check = entree({
+    id: 9,
+    action: 'VERIFICATION_BESOIN_TERMINEE',
+    libelle: 'Vérification du besoin terminée',
+    acteur: 'SYSTEME',
+    acteurId: null,
+    entite: 'VERIFICATION_BESOIN',
+    entiteId: '3',
+    entiteNom: null,
+    champs: [],
+    statut: null,
+    verification: {
+      id: 3,
+      etat: 'TERMINEE',
+      effectif: 140,
+      majeurs: 140,
+      mineurs: 0,
+      sieges: 900,
+      lanceeLe: '2026-10-01T10:00:00Z',
+      plafondSecondes: 600,
+      realisable: false,
+      siegesNonPourvus: 12,
+      reglesEnDefaut: [],
+    },
+  });
+
+  it('reads a staffing check’s outcome beside its line, and nothing on any other', () => {
+    expect(resultOf(check)).toBe(
+      '140 personnes, 600 s au plus : aucun plan complet, 12 sièges vides',
+    );
+    expect(resultOf(entree())).toBe('');
+  });
+
+  it('lets the search find a trial by its size', () => {
+    expect(filter([entree(), check], 'TOUS', 'TOUS', '', '140').map((e) => e.id)).toEqual([9]);
   });
 });
 

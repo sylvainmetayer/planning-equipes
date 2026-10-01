@@ -54,8 +54,12 @@ Pour la vérification, deux formes ont été écartées :
   monde, une compétence absente et une indisponibilité déclarée, que les lignes
   par compétence et le budget d'indisponibilités mesurent déjà à part.
 - **Passer par la file du solveur.** La vérification y prendrait la place d'une
-  vraie résolution. Elle serait aussi persistée et rejouée au démarrage, pour un
-  chiffre que la prochaine modification d'un stand rend caduc.
+  vraie résolution, et serait rejouée au démarrage alors que la prochaine
+  modification d'un stand rend son chiffre caduc.
+- **Garder le résultat en mémoire.** Un organisateur qui dimensionne son équipe
+  essaie plusieurs tailles et revient comparer : « ça casse à 140, ça passe à
+  160 ». Un résultat perdu au redémarrage, ou remplacé par l'essai suivant, ne
+  laisse pas cette trace.
 
 ## Décision
 
@@ -81,17 +85,30 @@ Pour la vérification, deux formes ont été écartées :
    d'indisponibilité elle absorbe **au-delà** du jour de repos qu'une semaine
    complète doit déjà à chacun. Un jour d'absence posé sur ce repos ne coûte
    rien.
-5. **Vérification par un solve.** Une équipe fictive de N majeurs, disponibles
-   tous les jours et compétents sur toutes les typologies, est construite en
-   mémoire. Elle est résolue sous les règles de l'édition, sans exceptions ad
+5. **Vérification par un solve.** Une équipe fictive de N majeurs et M mineurs,
+   disponibles tous les jours et compétents sur toutes les typologies, est
+   construite en mémoire. Les mineurs ont seize ans au premier jour : ils
+   relèvent du régime des 16–18 ans pendant tout l'événement, jamais du régime
+   plus strict d'avant seize ans. L'organisateur choisit N, M et la durée du
+   solve, bornée entre 10 s et une heure ; par défaut, N est le minimum moins
+   les mineurs, M vaut zéro et la durée est
+   `planning.staffing.verification.seconds-limit`. Elle est résolue sous les règles de l'édition, sans exceptions ad
    hoc ni plan publié, et le solve s'arrête dès qu'un plan est réalisable.
    `posteDoitEtrePourvu` y est toujours tenue : la question est de savoir si
    l'équipe pourvoit chaque siège. Un échec ne prouve donc pas qu'il manque du
    monde, seulement qu'aucun plan complet n'a été trouvé dans le temps imparti.
    Une seule vérification tourne à la fois dans toute l'application, et aucune
-   ne démarre pendant une résolution. Le dernier
-   résultat de chaque édition reste en mémoire. Rien de l'édition n'est écrit, et
-   le geste n'est pas journalisé.
+   ne démarre pendant une résolution. Ni le plan, ni les animateurs, ni la file
+   du solveur ne sont écrits.
+6. **Chaque vérification est conservée et journalisée.** Elle est écrite dans
+   `verification_besoin` au lancement, puis complétée à la fin du solve.
+   L'historique trace le lancement (par l'administrateur) et la fin (par
+   l'application). Ses lignes ne portent que l'identifiant de la vérification :
+   l'équipe, la durée et le résultat sont joints à la lecture, comme le nom d'un
+   animateur. Une ligne restée « en cours » sans solve qui tourne a été
+   interrompue par un redémarrage, et se lit ainsi. La table n'est ni recopiée
+   par la duplication d'une édition, ni emportée par le dump, comme
+   `journal_action`.
 
 ## Conséquences
 

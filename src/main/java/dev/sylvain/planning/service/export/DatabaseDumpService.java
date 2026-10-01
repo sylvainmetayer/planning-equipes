@@ -160,7 +160,7 @@ public class DatabaseDumpService {
             "kpi_realise");
 
     /**
-     * The nine tables deliberately left out, and why each one stays out.
+     * The ten tables deliberately left out, and why each one stays out.
      *
      * <p>They share a shape: none of them describes <em>the dataset</em>. They
      * describe the machine it runs on, or who is currently allowed to touch it,
@@ -188,6 +188,9 @@ public class DatabaseDumpService {
      *       import <em>erases</em> the local journal, since the dump deletes
      *       what it carries. An audit trail that an import can wipe is not
      *       one.</li>
+     *   <li>{@code verification_besoin} — the staffing checks the history
+     *       names by id, left out with it for the same reason: an import must
+     *       not erase the trail of trials an organiser came back to read.</li>
      *   <li>{@code version_applicative} — the application versions that
      *       opened <em>this</em> database, beside {@code flyway_schema_history},
      *       which no dump carries either. Replaying another instance's would
@@ -203,6 +206,7 @@ public class DatabaseDumpService {
             "lien_affichage_mural_emplacement",
             "solver_job",
             "journal_action",
+            "verification_besoin",
             "version_applicative");
 
     private static final Set<String> ALLOWED_TABLES = Set.copyOf(TABLES);
