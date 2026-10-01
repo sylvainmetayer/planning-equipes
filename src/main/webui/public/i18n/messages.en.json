@@ -4963,5 +4963,8 @@
   "historique.verification.enCours": "{$essai}: running",
   "historique.verification.echec": "{$essai}: {$erreur}",
   "historique.verification.ok": "{$essai}: every seat filled in {$duree} s",
-  "historique.verification.ko": "{$essai}: no complete plan, {$vides} seats empty"
+  "historique.verification.ko": "{$essai}: no complete plan, {$vides} seats empty",
+  "staffing.capBound.label": "Timeslot cap of a game category: {$INTERPOLATION}",
+  "staffing.capBound.description": " — a game category limits how many timeslots one person may hold over the edition: its seats need at least that many distinct people. The per-category sheet below says which one. ",
+  "staffing.lien.plafondTypologie": "Cap per game category"
 }

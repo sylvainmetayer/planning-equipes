@@ -1,4 +1,4 @@
-package dev.sylvain.planning.service.analyse;
+package dev.sylvain.planning.service.solve;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -9,10 +9,10 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.EmptyReferenceData;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
+import dev.sylvain.planning.service.analyse.StaffingAnalyzer;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
-import dev.sylvain.planning.service.solve.PlanningService;
-import dev.sylvain.planning.service.solve.ProblemBuilder;
 import dev.sylvain.planning.service.solve.ProblemBuilder.Seats;
 import java.time.LocalDate;
 import java.time.LocalTime;

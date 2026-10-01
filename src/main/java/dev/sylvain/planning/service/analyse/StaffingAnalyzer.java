@@ -271,7 +271,8 @@ public class StaffingAnalyzer {
         /**
          * A game category's cap on the timeslots one animateur may hold over
          * the edition ({@code maxCreneauxParAnimateur}): its seats need at least
-         * that many distinct people. Only ever retained on a category row.
+         * that many distinct people — a floor on the whole team as well as on
+         * the category's row.
          */
         PLAFOND_TYPOLOGIE
     }
@@ -580,26 +581,36 @@ public class StaffingAnalyzer {
      *                                          {@code null} otherwise — a medium
      *                                          rule may be broken, so it raises
      *                                          no floor
+     * @param plafondTypologieActif             whether the edition holds
+     *                                          {@code plafondCreneauxParTypologie}:
+     *                                          switched off, a category's cap
+     *                                          binds nobody and raises no floor
      */
     public record StaffingRules(
             int dureeHebdomadaireMaxMinutes,
             int dureePauseMinutes,
             int dureeHebdomadaireMaxMineurMinutes,
             List<FenetreRepas> fenetresRepas,
-            Integer joursConsecutifsMax) {
+            Integer joursConsecutifsMax,
+            boolean plafondTypologieActif) {
 
         public StaffingRules {
             fenetresRepas = fenetresRepas == null ? List.of() : List.copyOf(fenetresRepas);
         }
 
-        /** The rules of the older entry points: no cap on days in a row, the legal 35 h for minors. */
+        /**
+         * The rules of the older entry points: no cap on days in a row, the
+         * legal 35 h for minors, the categories' caps held as the catalogue
+         * holds them by default.
+         */
         static StaffingRules of(int dureeHebdomadaireMaxMinutes, int dureePauseMinutes, List<FenetreRepas> fenetres) {
             return new StaffingRules(
                     dureeHebdomadaireMaxMinutes,
                     dureePauseMinutes,
                     ParametresLegaux.DUREE_HEBDOMADAIRE_MAX_MINEUR_MINUTES_PAR_DEFAUT,
                     fenetres,
-                    null);
+                    null,
+                    true);
         }
     }
 
@@ -714,7 +725,8 @@ public class StaffingAnalyzer {
         int dureePauseMinutes = rules.dureePauseMinutes();
         List<Siege> sieges = sieges(postes);
         Map<LocalDate, BesoinJour> besoins = besoinsByDate(sieges, dureePauseMinutes, fenetres);
-        Bornes bornes = bornes(besoins, rules);
+        Map<String, Integer> plancherPlafonds = capFloors(sieges, typologies, rules);
+        Bornes bornes = withCapFloor(bornes(besoins, rules), plancherPlafonds);
         List<Animateur> connus = animateurs == null ? List.of() : animateurs;
         // The team every « how many may » figure is read against: the floor,
         // or the animateurs already entered when there are more of them.
@@ -799,7 +811,7 @@ public class StaffingAnalyzer {
                 dureeHebdomadaireMaxMinutes,
                 PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES,
                 PlafondsLegauxMajeurs.JOURS_TRAVAILLES_MAX_PAR_SEMAINE,
-                bottleneckPerCategory(sieges, connus, typologies, rules),
+                bottleneckPerCategory(sieges, connus, typologies, rules, plancherPlafonds),
                 referentielsManquants == null ? List.of() : List.copyOf(referentielsManquants));
     }
 
@@ -850,7 +862,11 @@ public class StaffingAnalyzer {
      * the two attribution rules this rests on.
      */
     private static CompetenceStaffing bottleneckPerCategory(
-            List<Siege> sieges, List<Animateur> animateurs, List<TypologieItem> typologies, StaffingRules rules) {
+            List<Siege> sieges,
+            List<Animateur> animateurs,
+            List<TypologieItem> typologies,
+            StaffingRules rules,
+            Map<String, Integer> plancherPlafonds) {
         List<Animateur> connus = animateurs == null ? List.of() : animateurs;
         List<TypologieItem> referentiel = typologies == null ? List.of() : typologies;
 
@@ -860,13 +876,8 @@ public class StaffingAnalyzer {
                 .findFirst()
                 .orElse(null);
         Map<String, String> labels = new LinkedHashMap<>();
-        Map<String, Integer> plafonds = new LinkedHashMap<>();
-        referentiel.forEach(typologie -> {
-            labels.put(typologie.id(), typologie.label());
-            if (typologie.maxCreneauxParAnimateur() != null && typologie.maxCreneauxParAnimateur() > 0) {
-                plafonds.put(typologie.id(), typologie.maxCreneauxParAnimateur());
-            }
-        });
+        Map<String, Integer> plafonds = caps(referentiel, rules);
+        referentiel.forEach(typologie -> labels.put(typologie.id(), typologie.label()));
 
         SeatAttribution attribution = SeatAttribution.of(sieges, ninja);
         Map<String, List<Siege>> parTypologie = attribution.parTypologie;
@@ -879,12 +890,10 @@ public class StaffingAnalyzer {
             String id = entree.getKey();
             Bornes bornes =
                     bornes(besoinsByDate(entree.getValue(), rules.dureePauseMinutes(), rules.fenetresRepas()), rules);
-            // Each seat is one timeslot held: a cap of k timeslots per
-            // animateur over the edition spreads them over ⌈seats ÷ k⌉ people
-            // at least, whatever the days look like.
+            // Read over every seat of a stand proposing the category, as the
+            // rule counts them — not only the seats attributed to this row.
             Integer plafond = plafonds.get(id);
-            int minimumPlafond =
-                    plafond == null ? 0 : Math.ceilDiv(entree.getValue().size(), plafond);
+            int minimumPlafond = plancherPlafonds.getOrDefault(id, 0);
             int minimum = Math.max(bornes.minimumTotal(), minimumPlafond);
             BorneRetenue retenue =
                     minimumPlafond > bornes.minimumTotal() ? BorneRetenue.PLAFOND_TYPOLOGIE : bornes.borneRetenue();
@@ -932,6 +941,78 @@ public class StaffingAnalyzer {
                 connus.size(),
                 ninja != null,
                 lignes.stream().mapToInt(TypologieStaffing::minimumTotal).sum());
+    }
+
+    /**
+     * The categories' caps the edition holds: none when
+     * {@code plafondCreneauxParTypologie} is switched off, since a rule the
+     * solver does not enforce must not raise the number to recruit.
+     */
+    private static Map<String, Integer> caps(List<TypologieItem> typologies, StaffingRules rules) {
+        Map<String, Integer> plafonds = new LinkedHashMap<>();
+        if (!rules.plafondTypologieActif() || typologies == null) {
+            return plafonds;
+        }
+        for (TypologieItem typologie : typologies) {
+            if (typologie.maxCreneauxParAnimateur() != null && typologie.maxCreneauxParAnimateur() > 0) {
+                plafonds.put(typologie.id(), typologie.maxCreneauxParAnimateur());
+            }
+        }
+        return plafonds;
+    }
+
+    /**
+     * What each capped category forces on its own: {@code plafondCreneauxParTypologie}
+     * counts, for each animateur, every seat they hold on a stand proposing
+     * the category, and allows {@code k} of them — so those seats need
+     * {@code ⌈seats ÷ k⌉} distinct people at least, whatever the days look
+     * like. A floor on the whole team, not only on the category's row.
+     */
+    private static Map<String, Integer> capFloors(
+            List<Siege> sieges, List<TypologieItem> typologies, StaffingRules rules) {
+        Map<String, Integer> plafonds = caps(typologies, rules);
+        Map<String, Integer> planchers = new LinkedHashMap<>();
+        if (plafonds.isEmpty()) {
+            return planchers;
+        }
+        Map<String, Integer> siegesProposant = new LinkedHashMap<>();
+        for (Siege siege : sieges) {
+            if (siege.stand() == null || siege.stand().getTypologiesProposees() == null) {
+                continue;
+            }
+            for (String typologie : siege.stand().getTypologiesProposees()) {
+                if (plafonds.containsKey(typologie)) {
+                    siegesProposant.merge(typologie, 1, Integer::sum);
+                }
+            }
+        }
+        siegesProposant.forEach(
+                (typologie, nombre) -> planchers.put(typologie, Math.ceilDiv(nombre, plafonds.get(typologie))));
+        return planchers;
+    }
+
+    /** {@code bornes}, raised to the largest cap floor when one exceeds it. */
+    private static Bornes withCapFloor(Bornes bornes, Map<String, Integer> plancherPlafonds) {
+        int plancher = plancherPlafonds.values().stream()
+                .mapToInt(Integer::intValue)
+                .max()
+                .orElse(0);
+        if (plancher <= bornes.minimumTotal()) {
+            return bornes;
+        }
+        return new Bornes(
+                bornes.heures(),
+                bornes.semaines(),
+                bornes.picSimultane(),
+                bornes.picAvecPause(),
+                bornes.picRepas(),
+                bornes.chargeTotal(),
+                bornes.rotationTotal(),
+                bornes.enchainementTotal(),
+                plancher,
+                BorneRetenue.PLAFOND_TYPOLOGIE,
+                bornes.parSemaine(),
+                bornes.semaineCritique());
     }
 
     /** Each seat given to the one category that can claim it, when one can. */

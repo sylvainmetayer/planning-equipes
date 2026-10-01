@@ -344,9 +344,13 @@ class StaffingAnalyzerTest {
         }
 
         StaffingSummary sansPlafond = analyzer.analyze(
-                postes, List.of(), TYPOLOGIES, new StaffingRules(48 * 60, 30, 35 * 60, List.of(), null), List.of());
+                postes,
+                List.of(),
+                TYPOLOGIES,
+                new StaffingRules(48 * 60, 30, 35 * 60, List.of(), null, true),
+                List.of());
         StaffingSummary avecPlafond = analyzer.analyze(
-                postes, List.of(), TYPOLOGIES, new StaffingRules(48 * 60, 30, 35 * 60, List.of(), 6), List.of());
+                postes, List.of(), TYPOLOGIES, new StaffingRules(48 * 60, 30, 35 * 60, List.of(), 6, true), List.of());
 
         assertThat(sansPlafond.rotationTotal()).isEqualTo(7);
         assertThat(sansPlafond.minimumTotal()).isEqualTo(7);
@@ -377,15 +381,32 @@ class StaffingAnalyzerTest {
             postes.addAll(postes(stand, creneau, 1));
         }
 
-        TypologieStaffing ligne = analyzer.analyze(postes, List.of(), typologies, 48 * 60, 30)
-                .parCompetence()
-                .parTypologie()
-                .getFirst();
+        StaffingSummary summary = analyzer.analyze(postes, List.of(), typologies, 48 * 60, 30);
+        TypologieStaffing ligne = summary.parCompetence().parTypologie().getFirst();
 
         assertThat(ligne.plafondCreneaux()).isEqualTo(4);
         assertThat(ligne.minimumPlafond()).isEqualTo(3);
         assertThat(ligne.minimumTotal()).isEqualTo(3);
         assertThat(ligne.borneRetenue()).isEqualTo(BorneRetenue.PLAFOND_TYPOLOGIE);
+        // The whole team needs those three people too: the floor the screen
+        // tells the organiser to recruit is never below a category's row.
+        assertThat(summary.minimumTotal()).isEqualTo(3);
+        assertThat(summary.borneRetenue()).isEqualTo(BorneRetenue.PLAFOND_TYPOLOGIE);
+
+        StaffingSummary regleEteinte = analyzer.analyze(
+                postes,
+                List.of(),
+                typologies,
+                new StaffingRules(48 * 60, 30, 35 * 60, List.of(), null, false),
+                List.of());
+        TypologieStaffing ligneSansRegle =
+                regleEteinte.parCompetence().parTypologie().getFirst();
+
+        // Switched off, the cap binds nobody: it raises no floor.
+        assertThat(ligneSansRegle.plafondCreneaux()).isNull();
+        assertThat(ligneSansRegle.minimumPlafond()).isZero();
+        assertThat(regleEteinte.minimumTotal()).isLessThan(3);
+        assertThat(regleEteinte.borneRetenue()).isNotEqualTo(BorneRetenue.PLAFOND_TYPOLOGIE);
     }
 
     @Test

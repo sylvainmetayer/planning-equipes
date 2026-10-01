@@ -238,7 +238,7 @@ final class SolveRunner {
      */
     public PlanningEvenement solveUntilFeasible(PlanningEvenement problem, long secondsLimitSecurite) {
         prepareProblem(problem);
-        return solvePreparedUntilFeasible(problem, secondsLimitSecurite);
+        return solvePreparedUntilFeasible(problem, secondsLimitSecurite, solver -> {});
     }
 
     /**
@@ -271,8 +271,12 @@ final class SolveRunner {
      * {@link #solveUntilFeasible} on a problem already prepared — by
      * {@link #prepareHypothetical} — so the solve itself reads nothing from
      * the edition and can run on a thread that has none.
+     *
+     * @param onSolverReady handed the solver before it starts, so a caller can
+     *                      stop it early from another thread
      */
-    PlanningEvenement solvePreparedUntilFeasible(PlanningEvenement problem, long secondsLimitSecurite) {
+    PlanningEvenement solvePreparedUntilFeasible(
+            PlanningEvenement problem, long secondsLimitSecurite, Consumer<Solver<PlanningEvenement>> onSolverReady) {
         FrozenPast.pin(problem.getPostes());
         // The first stage of a two-stage solve (FeasibilityFirstSolve) is
         // exactly this search — until feasibility, stability suspended — so a
@@ -293,6 +297,7 @@ final class SolveRunner {
         SolverConfiguration.adaptToProblem(solverConfig, problem);
         Solver<PlanningEvenement> solver =
                 SolverFactory.<PlanningEvenement>create(solverConfig).buildSolver();
+        onSolverReady.accept(solver);
         try {
             PlanningEvenement solved = solver.solve(problem);
             solved.setPonderationsContraintes(weights);

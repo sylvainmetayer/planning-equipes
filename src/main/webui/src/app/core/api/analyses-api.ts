@@ -66,7 +66,6 @@ export class AnalysesApi {
     return this.api.get<StaffingSummary>('/api/staffing');
   }
 
-  /** Starts a solve of the seats by a made-up team of `effectif` people — the floor when omitted. */
   /**
    * Starts a check; a `null` figure leaves it to the server — the floor less
    * the minors, no minor, the time a solve of the edition gets.

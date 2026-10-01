@@ -247,13 +247,15 @@ Ce qu'il faut savoir avant de s'en servir :
   résultat, joints à la lecture : c'est ce qui permet de comparer les essais.
 - **Une seule vérification à la fois, toutes éditions confondues, et aucune
   pendant une résolution.** Le solveur est partagé par toutes les éditions :
-  une seconde demande reçoit `409` au lieu d'attendre son tour.
+  une seconde demande reçoit `409` au lieu d'attendre son tour, et une
+  résolution qui démarre interrompt la vérification en cours, qui se lit alors
+  en `ECHEC` avec la raison.
 - **Un échec ne prouve rien.** Le solve s'arrête au premier plan qui n'enfreint
   aucune règle dure. Un `realisable: false` dit seulement qu'aucun plan complet
   n'a été trouvé dans le temps imparti. `posteDoitEtrePourvu` est toujours
   tenue pendant la vérification, même si l'édition l'a éteinte.
-- **Un redémarrage interrompt la vérification en cours** : elle se lit alors
-  en `ECHEC`, avec la raison.
+- **Un arrêt du serveur interrompt la vérification en cours** : elle est close
+  en `ECHEC` au démarrage suivant, avec la raison.
 - **Les exceptions ad hoc et le plan publié sont laissés de côté** : ils
   nomment des personnes que l'équipe fictive ne contient pas.
 

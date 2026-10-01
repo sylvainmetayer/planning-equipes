@@ -1,8 +1,8 @@
-package dev.sylvain.planning.service.analyse;
+package dev.sylvain.planning.service.solve;
 
 import dev.sylvain.planning.service.JdbcEditionScope;
-import dev.sylvain.planning.service.analyse.StaffingVerificationService.StaffingVerification;
-import dev.sylvain.planning.service.analyse.StaffingVerificationService.VerificationState;
+import dev.sylvain.planning.service.solve.StaffingVerificationService.StaffingVerification;
+import dev.sylvain.planning.service.solve.StaffingVerificationService.VerificationState;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.sql.Array;
@@ -103,6 +103,27 @@ public class StaffingVerificationRepository {
                 ps.setString(9, scope.editionId());
                 ps.setLong(10, done.id());
                 ps.executeUpdate();
+            }
+        });
+    }
+
+    /**
+     * Closes every check left {@code EN_COURS}, across every edition at once.
+     *
+     * <p>Deliberately not edition-scoped: it runs once at startup, which has
+     * no edition of its own, and a check is interrupted by the stop whatever
+     * edition started it. Run through a plain statement rather than
+     * {@link JdbcEditionScope#prepareScoped}, and named in
+     * {@code EXCEPTIONS_ASSUMEES} for that reason.</p>
+     *
+     * @return how many checks were closed
+     */
+    public int closeInterrupted(String erreur) {
+        return scope.writeAndReturn("Failed to close the interrupted staffing checks", connection -> {
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "UPDATE verification_besoin SET etat = 'ECHEC', terminee_le = now(), erreur = ? WHERE etat = 'EN_COURS'")) {
+                ps.setString(1, erreur);
+                return ps.executeUpdate();
             }
         });
     }

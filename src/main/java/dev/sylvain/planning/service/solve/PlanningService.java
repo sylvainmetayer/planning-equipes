@@ -484,7 +484,13 @@ public class PlanningService {
 
     /** @see SolveRunner#solvePreparedUntilFeasible */
     public PlanningEvenement solvePreparedUntilFeasible(PlanningEvenement problem, long secondsLimitSecurite) {
-        return solveRunner.solvePreparedUntilFeasible(problem, secondsLimitSecurite);
+        return solveRunner.solvePreparedUntilFeasible(problem, secondsLimitSecurite, solver -> {});
+    }
+
+    /** @see SolveRunner#solvePreparedUntilFeasible */
+    public PlanningEvenement solvePreparedUntilFeasible(
+            PlanningEvenement problem, long secondsLimitSecurite, Consumer<Solver<PlanningEvenement>> onSolverReady) {
+        return solveRunner.solvePreparedUntilFeasible(problem, secondsLimitSecurite, onSolverReady);
     }
 
     /** @see SolveRunner#prepareForAnalysis */

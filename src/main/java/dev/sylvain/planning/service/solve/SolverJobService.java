@@ -14,6 +14,7 @@ import io.quarkus.runtime.StartupEvent;
 import io.sentry.Sentry;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Event;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import java.time.Duration;
@@ -144,6 +145,9 @@ public class SolverJobService {
     /** The edition's solver settings, read on the request thread when a job is submitted. */
     private final ReferenceData referenceData;
 
+    /** Told when a job takes the solver, so a staffing check holding the cores gives way. */
+    private final Event<SolveStarting> solveStarting;
+
     @Inject
     public SolverJobService(
             SolverJobTasks tasks,
@@ -155,8 +159,10 @@ public class SolverJobService {
             SolverMetrics metrics,
             SolveBudgetPolicy budgetPolicy,
             ReferenceData referenceData,
+            Event<SolveStarting> solveStarting,
             @ConfigProperty(name = "planning.jobs.reprise-au-demarrage", defaultValue = "true")
                     boolean replayAtStartup) {
+        this.solveStarting = solveStarting;
         this.budgetPolicy = budgetPolicy;
         this.referenceData = referenceData;
         this.tasks = tasks;
@@ -447,6 +453,12 @@ public class SolverJobService {
         job.markRunning();
         persistence.store(job);
         jobStream.publish();
+        try {
+            solveStarting.fire(new SolveStarting(job.getId()));
+        } catch (RuntimeException e) {
+            // A listener that fails must not cost the solve it was told about.
+            LOG.warnf(e, "A listener of the start of job %s failed", job.getId());
+        }
         Object result = null;
         Exception failure = null;
         try {

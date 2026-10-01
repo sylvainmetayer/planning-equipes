@@ -76,7 +76,8 @@ public class StaffingService {
                 parametres.dureePauseMinutes(false),
                 parametres.getDureeHebdomadaireMaxMineurMinutes(),
                 fenetresRepas(),
-                jours != null && jours.hard() ? jours.cap() : null);
+                jours != null && jours.hard() ? jours.cap() : null,
+                !referenceDataService.getContraintesDesactivees().contains("plafondCreneauxParTypologie"));
     }
 
     /**
