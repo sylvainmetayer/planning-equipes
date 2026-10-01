@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { PlanningEvenement, RapportOuvertures, Stand } from '../../core/models';
+import {
+  Animateur,
+  EtatOuverture,
+  PlanningEvenement,
+  PosteAffectation,
+  RapportOuvertures,
+  Stand,
+} from '../../core/models';
 import { coverageRate, sortStands, standCoverage, standOpenings } from './stand-order';
 
 function stand(id: string, nom: string, partial: Partial<Stand> = {}): Stand {
@@ -18,6 +25,66 @@ function stand(id: string, nom: string, partial: Partial<Stand> = {}): Stand {
     horaires: [],
     ...partial,
   };
+}
+
+/** The openings report of one stand, one day per state given. */
+function openingsReport(
+  standId: string,
+  postes: number,
+  states: EtatOuverture[],
+): RapportOuvertures {
+  return {
+    jours: [],
+    stands: [
+      {
+        standId,
+        nom: standId,
+        effectifMin: 1,
+        jours: states.map((etat, index) => ({
+          date: `2026-07-${String(10 + index)}`,
+          etat,
+          source: 'REGLE',
+          fenetres: [],
+          minutesOuvertes: 0,
+          minutesAmplitude: 0,
+          postes: 0,
+          creneaux: [],
+        })),
+        minutesOuvertes: 0,
+        postes,
+        modifieLe: null,
+      },
+    ],
+    standsJamaisOuverts: 0,
+    postesTotal: postes,
+    anomalies: [],
+  };
+}
+
+function animateur(id: string): Animateur {
+  return {
+    id,
+    prenom: id,
+    nom: id,
+    dateNaissance: '1990-01-01',
+    manager: false,
+    competences: {},
+    souhaits: [],
+    joursIndisponibles: [],
+  };
+}
+
+function seat(id: string, standId: string, animateurId: string | null): PosteAffectation {
+  return {
+    id,
+    stand: stand(standId, standId),
+    creneau: null,
+    animateur: animateurId ? animateur(animateurId) : null,
+  };
+}
+
+function planning(postes: PosteAffectation[]): PlanningEvenement {
+  return { animateurs: [], postes, score: null };
 }
 
 const context = {
@@ -54,32 +121,17 @@ describe('stand order', () => {
   });
 
   it('counts the open days and the seats of each stand from the openings report', () => {
-    const rapport = {
-      stands: [
-        {
-          standId: 'S1',
-          postes: 7,
-          jours: [{ etat: 'OUVERT_TOTAL' }, { etat: 'FERME' }, { etat: 'OUVERT_PARTIEL' }],
-        },
-      ],
-    } as unknown as RapportOuvertures;
+    const report = openingsReport('S1', 7, ['OUVERT_TOTAL', 'FERME', 'OUVERT_PARTIEL']);
 
-    expect(standOpenings(rapport).get('S1')).toEqual({ joursOuverts: 2, postes: 7 });
+    expect(standOpenings(report).get('S1')).toEqual({ joursOuverts: 2, postes: 7 });
     expect(standOpenings(null).size).toBe(0);
   });
 
   it('covers nothing before a plan holds anybody, then counts the held seats per stand', () => {
-    const vide = {
-      postes: [{ id: 'p1', stand: { id: 'S1' }, animateur: null }],
-    } as unknown as PlanningEvenement;
-    expect(standCoverage(vide).size).toBe(0);
+    const empty = planning([seat('p1', 'S1', null)]);
+    expect(standCoverage(empty).size).toBe(0);
 
-    const plan = {
-      postes: [
-        { id: 'p1', stand: { id: 'S1' }, animateur: { id: 'a1' } },
-        { id: 'p2', stand: { id: 'S1' }, animateur: null },
-      ],
-    } as unknown as PlanningEvenement;
+    const plan = planning([seat('p1', 'S1', 'a1'), seat('p2', 'S1', null)]);
     expect(standCoverage(plan).get('S1')).toEqual({ pourvus: 1, postes: 2 });
     expect(coverageRate(standCoverage(plan).get('S1'))).toBe(0.5);
     expect(coverageRate(undefined)).toBeNull();

@@ -16,18 +16,45 @@ import { ApiService } from '../../core/api.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
-import { TableSelection } from '../../core/table-selection';
 import { TypologiesPage } from './typologies-page';
 import type { Animateur, EtatGel, Stand, TypologieItem } from '../../core/models';
 import { seedStore } from '../../core/testing/seed-store';
 import { rowMenuItem } from '../../core/testing/row-menu';
 import { expectOnlyInEmptyState } from '../../core/testing/empty-state';
 
-/** Reaches the protected members the template binds to. */
-type PageInternals = {
-  selection: TableSelection<string>;
-  removeSelection: () => Promise<void>;
-};
+function stand(id: string, nom: string, typologiesProposees: string[]): Stand {
+  return {
+    id,
+    nom,
+    typologiesProposees,
+    effectifMin: 1,
+    effectifMax: 2,
+    reserveMajeurs: false,
+    premium: false,
+    niveauEffort: 'NORMAL',
+    emplacement: null,
+    indisponibilites: [],
+    ouvertures: [],
+    horaires: [],
+  };
+}
+
+function animateur(
+  id: string,
+  competences: Animateur['competences'],
+  souhaits: string[],
+): Animateur {
+  return {
+    id,
+    prenom: id,
+    nom: id,
+    dateNaissance: '1990-01-01',
+    manager: false,
+    competences,
+    souhaits,
+    joursIndisponibles: [],
+  };
+}
 
 describe('TypologiesPage', () => {
   let referenceData: ReferenceDataStore;
@@ -58,9 +85,9 @@ describe('TypologiesPage', () => {
     referenceData = TestBed.inject(ReferenceDataStore);
   });
 
-  function createPage(typologies: TypologieItem[]): PageInternals {
+  function createPage(typologies: TypologieItem[]): TypologiesPage {
     seedStore(referenceData, 'typologies', typologies);
-    return TestBed.createComponent(TypologiesPage).componentInstance as unknown as PageInternals;
+    return TestBed.createComponent(TypologiesPage).componentInstance;
   }
 
   describe('multi-selection', () => {
@@ -71,9 +98,9 @@ describe('TypologiesPage', () => {
         { id: 'AMBIANCE', label: 'Ambiance' },
       ]);
 
-      page.selection.toggle('STRATEGIE');
-      page.selection.toggle('AMBIANCE');
-      await page.removeSelection();
+      page['selection'].toggle('STRATEGIE');
+      page['selection'].toggle('AMBIANCE');
+      await page['removeSelection']();
 
       // In the order the table shows them: the ids, naturally sorted.
       expect(crud.removeMany).toHaveBeenCalledWith(
@@ -90,11 +117,11 @@ describe('TypologiesPage', () => {
         { id: 'STRATEGIE', label: 'Stratégie' },
         { id: 'JOKER', label: 'Joker' },
       ]);
-      page.selection.toggleAll();
+      page['selection'].toggleAll();
 
       seedStore(referenceData, 'typologies', [{ id: 'JOKER', label: 'Joker' }]);
 
-      expect(page.selection.selectedIds()).toEqual(['JOKER']);
+      expect(page['selection'].selectedIds()).toEqual(['JOKER']);
     });
   });
 });
@@ -402,13 +429,13 @@ describe('TypologiesPage table', () => {
 
     function seedUsage(): void {
       seedStore(referenceData, 'stands', [
-        { id: 'S1', nom: 'Stand 1', typologiesProposees: ['echecs', 'cartes'] },
-        { id: 'S2', nom: 'Stand 2', typologiesProposees: ['des'] },
-      ] as Stand[]);
+        stand('S1', 'Stand 1', ['echecs', 'cartes']),
+        stand('S2', 'Stand 2', ['des']),
+      ]);
       seedStore(referenceData, 'animateurs', [
-        { id: 'A1', competences: { cartes: 'REFERENT', des: 'AUTONOME' }, souhaits: ['echecs'] },
-        { id: 'A2', competences: { des: 'DEBUTANT' }, souhaits: ['echecs'] },
-      ] as unknown as Animateur[]);
+        animateur('A1', { cartes: 'REFERENT', des: 'AUTONOME' }, ['echecs']),
+        animateur('A2', { des: 'DEBUTANT' }, ['echecs']),
+      ]);
     }
 
     async function withQuery(query: string): Promise<void> {

@@ -67,11 +67,9 @@ describe('EditionActuelleBar', () => {
     await fixture.whenStable();
     const basculer = vi.spyOn(store, 'basculer').mockImplementation(() => undefined);
 
-    // `basculer` is protected (template-only API); the test drives it through a
-    // structural view of the component instead of loosening its visibility.
-    (fixture.componentInstance as unknown as { basculer: (e: Edition) => void }).basculer(
-      edition('A', 'Année 2025'),
-    );
+    // `basculer` is protected (template-only API); the test reaches it by name,
+    // type-checked, instead of loosening its visibility.
+    fixture.componentInstance['basculer'](edition('A', 'Année 2025'));
 
     expect(basculer).toHaveBeenCalledWith(edition('A', 'Année 2025'));
   });

@@ -13,17 +13,7 @@ import { LigneStandConsigne, PreselectionConsigne, Stand } from '../../core/mode
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConsigneFormData, ConsigneFormDialog } from './consigne-form-dialog';
-import { StandForm } from './consignes';
 import { noDraftStorage, fakeDialogRef } from '../../core/testing/brouillon';
-
-/** What the spec drives on the component, without the template's Material controls. */
-interface DialogInternals {
-  stands: () => StandForm[];
-  chargementStands: () => boolean;
-  erreurs: () => string[];
-  dates: () => string[];
-  onDates(dates: string[]): void;
-}
 
 function ligne(standId: string): LigneStandConsigne {
   return {
@@ -51,7 +41,7 @@ async function settle(fixture: ComponentFixture<ConsigneFormDialog>): Promise<vo
 
 describe('ConsigneFormDialog — the stands list', () => {
   let fixture: ComponentFixture<ConsigneFormDialog>;
-  let dialog: DialogInternals;
+  let dialog: ConsigneFormDialog;
   let requests: Array<{ date: string; resolve: (value: PreselectionConsigne) => void }>;
 
   function mount(datesInitiales: string[], stands: Stand[] = []): void {
@@ -87,7 +77,7 @@ describe('ConsigneFormDialog — the stands list', () => {
       ],
     });
     fixture = TestBed.createComponent(ConsigneFormDialog);
-    dialog = fixture.componentInstance as unknown as DialogInternals;
+    dialog = fixture.componentInstance;
   }
 
   beforeEach(() => mount(['2026-07-11']));
@@ -97,7 +87,7 @@ describe('ConsigneFormDialog — the stands list', () => {
     await settle(fixture);
     expect(requests.map((request) => request.date)).toEqual(['2026-07-11']);
 
-    dialog.onDates(['2026-07-12']);
+    dialog['onDates'](['2026-07-12']);
     fixture.detectChanges();
     await settle(fixture);
     expect(requests.map((request) => request.date)).toEqual(['2026-07-11', '2026-07-12']);
@@ -105,12 +95,12 @@ describe('ConsigneFormDialog — the stands list', () => {
     // The second reply lands first, then the first one arrives late.
     requests[1].resolve(preselection('2026-07-12', 'B'));
     await settle(fixture);
-    expect(dialog.stands().map((stand) => stand.standId)).toEqual(['B']);
-    expect(dialog.chargementStands()).toBe(false);
+    expect(dialog['stands']().map((stand) => stand.standId)).toEqual(['B']);
+    expect(dialog['chargementStands']()).toBe(false);
 
     requests[0].resolve(preselection('2026-07-11', 'A'));
     await settle(fixture);
-    expect(dialog.stands().map((stand) => stand.standId)).toEqual(['B']);
+    expect(dialog['stands']().map((stand) => stand.standId)).toEqual(['B']);
   });
 
   it('keeps what was chosen for a stand across a re-read', async () => {
@@ -118,17 +108,15 @@ describe('ConsigneFormDialog — the stands list', () => {
     await settle(fixture);
     requests[0].resolve(preselection('2026-07-11', 'A', 'B'));
     await settle(fixture);
-    expect(dialog.stands().map((stand) => stand.coche)).toEqual([true, true]);
+    expect(dialog['stands']().map((stand) => stand.coche)).toEqual([true, true]);
 
-    (
-      fixture.componentInstance as unknown as { patchStand(id: string, p: object): void }
-    ).patchStand('A', { coche: false });
-    dialog.onDates(['2026-07-12']);
+    dialog['patchStand']('A', { coche: false });
+    dialog['onDates'](['2026-07-12']);
     await settle(fixture);
     requests[1].resolve(preselection('2026-07-12', 'A', 'C'));
     await settle(fixture);
 
-    expect(dialog.stands().map((stand) => [stand.standId, stand.coche])).toEqual([
+    expect(dialog['stands']().map((stand) => [stand.standId, stand.coche])).toEqual([
       ['A', false],
       ['C', true],
     ]);
@@ -136,9 +124,7 @@ describe('ConsigneFormDialog — the stands list', () => {
 
   it('names the preview stands by their name, an unknown id kept as-is', () => {
     mount(['2026-07-11'], [{ id: 'S1', nom: 'Bourse aux jeux' } as Stand]);
-    const text = (
-      fixture.componentInstance as unknown as { standsText(ids: string[]): string }
-    ).standsText(['S1', 'S9']);
+    const text = dialog['standsText'](['S1', 'S9']);
     expect(text).toBe('Bourse aux jeux, S9');
   });
 
@@ -147,8 +133,8 @@ describe('ConsigneFormDialog — the stands list', () => {
     fixture.detectChanges();
     await settle(fixture);
 
-    expect(dialog.dates()).toEqual([]);
-    expect(dialog.erreurs()).toContain('DATES');
+    expect(dialog['dates']()).toEqual([]);
+    expect(dialog['erreurs']()).toContain('DATES');
     expect(requests).toEqual([]);
   });
 });

@@ -34,19 +34,33 @@ describe('CreneauxApi', () => {
    * paths carry nothing but the rule itself.
    */
   it('posts the derivation and recurrence calls, preview and write alike, with no mode', async () => {
-    const request = { dateDebut: '2026-07-06', dateFin: '2026-07-07' } as DerivationRequest;
-    const regle = { jours: 'TOUS' } as unknown as RegleRecurrence;
+    const request: DerivationRequest = {
+      dateDebut: '2026-07-06',
+      dateFin: '2026-07-07',
+      heureFermeture: '00:00',
+      dureeMinimaleMinutes: 60,
+      remplacer: false,
+    };
+    const rule: RegleRecurrence = {
+      jours: 'TOUS',
+      dateDebut: null,
+      dateFin: null,
+      joursSemaine: [],
+      dates: [],
+      exclusions: [],
+      fenetres: [{ heureDebut: '10:00', heureFin: '12:00' }],
+    };
 
     await creneaux.previewDerivation(request);
     await creneaux.derive(request);
-    await creneaux.previewRecurrence(regle);
-    await creneaux.createRecurrence(regle);
+    await creneaux.previewRecurrence(rule);
+    await creneaux.createRecurrence(rule);
 
     expect(api.post.mock.calls).toEqual([
       ['/api/creneaux/derivation/apercu', request],
       ['/api/creneaux/derivation', request],
-      ['/api/creneaux/recurrence/apercu', regle],
-      ['/api/creneaux/recurrence', regle],
+      ['/api/creneaux/recurrence/apercu', rule],
+      ['/api/creneaux/recurrence', rule],
     ]);
   });
 });

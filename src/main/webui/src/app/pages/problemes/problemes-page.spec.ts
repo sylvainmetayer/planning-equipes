@@ -4,14 +4,16 @@ import { provideRouter, Router } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
 import {
+  Animateur,
   ConstraintsView,
+  Creneau,
   ConstraintView,
   FeasibilityReport,
   PlanningEvenement,
   RapportPauses,
+  Stand,
 } from '../../core/models';
 import { PlanningStateService } from '../../core/planning-state.service';
-import { ActionProbleme } from '../../core/problemes';
 import { SolverJobService } from '../../core/solver-job.service';
 import { SeatPlacement } from '../../shared/siege-panel/seat-placement';
 import { ProblemesPage } from './problemes-page';
@@ -115,44 +117,89 @@ const CONSTRAINTS: ConstraintsView = {
   lecture: [],
 };
 
-const PAUSES = {
+const PAUSES: RapportPauses = {
+  journeesAnalysees: 1,
+  pausesDues: 1,
   relaisManquants: 1,
+  coupuresRepasDues: 0,
+  coupuresRepasManquantes: 0,
   journees: [
     {
       animateurId: 'a2',
       date: '2026-07-12',
+      jour: 1,
       nomComplet: 'Anonyme',
+      mineur: false,
       sequences: [
         {
+          debut: '09:00',
+          fin: '15:00',
+          minutes: 360,
           pausesDues: [
             {
               debut: '14:00',
               fin: '14:20',
+              heureLimite: '14:00',
+              dureeMinutes: 20,
               standId: 'S2',
               standNom: 'Stand deux',
               creneauId: 7,
+              relais: [],
               relaisDisponible: false,
+              simultanee: false,
             },
           ],
         },
       ],
+      pausesPlanifiees: [],
+      coupuresRepas: [],
     },
   ],
-} as unknown as RapportPauses;
+  message: '',
+};
+
+function animateur(id: string, prenom: string, nom: string): Animateur {
+  return {
+    id,
+    prenom,
+    nom,
+    dateNaissance: '1990-01-01',
+    manager: false,
+    competences: {},
+    souhaits: [],
+    joursIndisponibles: [],
+  };
+}
+
+const FIRST_STAND: Stand = {
+  id: 'S1',
+  nom: 'Stand un',
+  typologiesProposees: [],
+  effectifMin: 1,
+  effectifMax: 2,
+  reserveMajeurs: false,
+  premium: false,
+  niveauEffort: 'NORMAL',
+  emplacement: null,
+  indisponibilites: [],
+  ouvertures: [],
+  horaires: [],
+};
+
+const CRENEAU_COURT: Creneau = {
+  id: 42,
+  jour: 1,
+  date: '2026-07-12',
+  heureDebut: '10:00',
+  heureFin: '12:00',
+};
 
 /** One free seat on the short timeslot, and one person to place on it. */
-const PLAN = {
-  animateurs: [{ id: 'a1', prenom: 'Alice', nom: 'Martin' }],
-  postes: [
-    {
-      id: 'P1',
-      stand: { id: 'S1', nom: 'Stand un' },
-      creneau: { id: 42, jour: 1, date: '2026-07-12', heureDebut: '10:00', heureFin: '12:00' },
-      animateur: null,
-    },
-  ],
+const PLAN: PlanningEvenement = {
+  animateurs: [animateur('a1', 'Alice', 'Martin')],
+  postes: [{ id: 'P1', stand: FIRST_STAND, creneau: CRENEAU_COURT, animateur: null }],
   score: null,
-} as unknown as PlanningEvenement;
+};
 
 describe('ProblemesPage — « Que faire ? »', () => {
   let fixture: ComponentFixture<ProblemesPage>;
@@ -315,20 +362,18 @@ describe('ProblemesPage — « Que faire ? »', () => {
     planningState.loadForDisplay.mockResolvedValueOnce({
       ...PLAN,
       postes: [
-        ...(PLAN.postes ?? []),
+        ...PLAN.postes,
         {
           id: 'P2',
-          stand: { id: 'S1', nom: 'Stand un' },
-          creneau: { id: 42, jour: 1, date: '2026-07-12', heureDebut: '10:00', heureFin: '12:00' },
-          animateur: { id: 'a7' },
+          stand: FIRST_STAND,
+          creneau: CRENEAU_COURT,
+          animateur: animateur('a7', 'Anonyme', 'Sept'),
         },
       ],
-    } as unknown as PlanningEvenement);
-    const page = fixture.componentInstance as unknown as {
-      whoCanHold(action: ActionProbleme): Promise<void>;
-    };
+    });
+    const page = fixture.componentInstance;
 
-    await page.whoCanHold({
+    await page['whoCanHold']({
       code: 'VOIR_BANC',
       libelle: 'Qui peut remplacer ?',
       explication: '',

@@ -24,11 +24,8 @@ import { EmptyEditionCard, CLEAR_KEYWORD } from './empty-edition-card';
 import type { DemandeRecopie } from '../../shared/confirmation-recopie';
 import type { Edition, EtatGel } from '../../core/models';
 
-/** Reaches the protected handler the template binds the button to. */
-type PageInternals = { empty: () => Promise<void> };
-
-function page(): PageInternals {
-  return TestBed.createComponent(EmptyEditionCard).componentInstance as unknown as PageInternals;
+function page(): EmptyEditionCard {
+  return TestBed.createComponent(EmptyEditionCard).componentInstance;
 }
 
 /** What `GET /api/editions/courant/gel` answers when two families are frozen. */
@@ -96,7 +93,7 @@ describe('EmptyEditionCard', () => {
   }
 
   it('empties the edition once its name has been typed back', async () => {
-    await page().empty();
+    await page()['empty']();
 
     expect(demande().valeurAttendue).toBe('Année 2026');
     expect(instantane.proposer).toHaveBeenCalledOnce();
@@ -108,7 +105,7 @@ describe('EmptyEditionCard', () => {
   it('sends nothing when the confirmation was refused', async () => {
     recopie.demander.mockResolvedValue(false);
 
-    await page().empty();
+    await page()['empty']();
 
     expect(instantane.proposer).not.toHaveBeenCalled();
     expect(api.post).not.toHaveBeenCalled();
@@ -118,7 +115,7 @@ describe('EmptyEditionCard', () => {
   // whole instance would scare the user out of a safe operation, and one
   // hinting at nothing would let them empty the wrong edition.
   it('names the edition it is about to empty, and says what is left', async () => {
-    await page().empty();
+    await page()['empty']();
 
     expect(demande().title).toContain('Année 2026');
     expect(demande().message).toContain('Année 2026');
@@ -134,7 +131,7 @@ describe('EmptyEditionCard', () => {
   it('reloads the editions before asking, rather than degrading the transcription', async () => {
     courant.mockReturnValueOnce(null).mockReturnValue({ id: 'e1', nom: 'Année 2026' } as Edition);
 
-    await page().empty();
+    await page()['empty']();
 
     expect(rechargerEditions).toHaveBeenCalled();
     expect(demande().valeurAttendue).toBe('Année 2026');
@@ -143,7 +140,7 @@ describe('EmptyEditionCard', () => {
   it('falls back to a keyword when the edition stays unknown after the reload', async () => {
     courant.mockReturnValue(null);
 
-    await page().empty();
+    await page()['empty']();
 
     expect(demande().valeurAttendue).toBe(CLEAR_KEYWORD);
     expect(demande().message).toContain("l'édition courante");
@@ -154,7 +151,7 @@ describe('EmptyEditionCard', () => {
   it('treats a blank edition name as no name at all', async () => {
     courant.mockReturnValue({ id: 'e1', nom: '   ' } as Edition);
 
-    await page().empty();
+    await page()['empty']();
 
     expect(demande().valeurAttendue).toBe(CLEAR_KEYWORD);
   });
@@ -169,7 +166,7 @@ describe('EmptyEditionCard', () => {
       },
     });
 
-    await page().empty();
+    await page()['empty']();
 
     expect(recopie.demander).not.toHaveBeenCalled();
     expect(api.post).not.toHaveBeenCalled();
@@ -185,7 +182,7 @@ describe('EmptyEditionCard', () => {
     const internals = page();
     await TestBed.inject(GelReferentielStore).ensureLoaded();
 
-    await internals.empty();
+    await internals['empty']();
 
     expect(recopie.demander).not.toHaveBeenCalled();
     expect(instantane.proposer).not.toHaveBeenCalled();

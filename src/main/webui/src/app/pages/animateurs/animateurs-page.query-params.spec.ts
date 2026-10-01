@@ -2,18 +2,17 @@
 // survive a refresh. Kept apart from animateurs-page.spec.ts, which pins the
 // alert badges and the rendered table.
 
-import { Signal, WritableSignal, provideZonelessChangeDetection } from '@angular/core';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { Location } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
-import { MatDialog } from '@angular/material/dialog';
-import { Sort } from '@angular/material/sort';
+import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { provideLocationMocks } from '@angular/common/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
 import { AnimateursApi } from '../../core/api/animateurs-api';
-import { Animateur } from '../../core/models';
+import { Animateur, NiveauCompetence } from '../../core/models';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -24,32 +23,19 @@ function animateur(
   id: string,
   prenom: string,
   nom: string,
-  competences: Record<string, string> = {},
+  competences: Record<string, NiveauCompetence> = {},
 ): Animateur {
   return {
     id,
     prenom,
     nom,
+    dateNaissance: '1990-01-01',
+    manager: false,
     competences,
     souhaits: [],
     joursIndisponibles: [],
-  } as unknown as Animateur;
+  };
 }
-
-type PageInternals = {
-  filtre: WritableSignal<string>;
-  sort: WritableSignal<Sort>;
-  accuses: WritableSignal<'tous' | 'jamais' | 'silence'>;
-  silenceJours: WritableSignal<number>;
-  neverReminded: WritableSignal<boolean>;
-  viewChanged: Signal<boolean>;
-  animateursFiltres: Signal<Animateur[]>;
-  typologiesFiltrees: Signal<string[]>;
-  typologieLabel: Signal<string>;
-  souhaitLabel: Signal<string>;
-  removeChip(key: string): void;
-  resetView(): void;
-};
 
 /** Alice holds a seat and never answered; Bob holds one and confirmed. */
 const CONFIRMATIONS = [
@@ -77,7 +63,11 @@ const CONFIRMATIONS = [
  * landing on the current screen depends on.
  */
 async function setUpRoute(url: string) {
-  const dialog = { open: vi.fn(() => ({ afterClosed: () => of(undefined) })) };
+  const dialog = {
+    open: vi.fn((_component: unknown, _config?: MatDialogConfig) => ({
+      afterClosed: () => of(undefined),
+    })),
+  };
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
@@ -113,10 +103,10 @@ async function setUpRoute(url: string) {
   });
   const store = TestBed.inject(ReferenceDataStore);
   seedStore(store, 'animateurs', [
-    animateur('alice', 'Alice', 'Martin', { ESCAPE: 'CONFIRME' }),
+    animateur('alice', 'Alice', 'Martin', { ESCAPE: 'REFERENT' }),
     animateur('bob', 'Bob', 'Durand'),
   ]);
-  seedStore(store, 'typologies', [{ id: 'ESCAPE', label: 'Escape game' }] as never);
+  seedStore(store, 'typologies', [{ id: 'ESCAPE', label: 'Escape game' }]);
   const router = TestBed.inject(Router);
   await router.navigateByUrl(url);
   const fixture = TestBed.createComponent(AnimateursPage);
@@ -139,7 +129,11 @@ function setUp(
   confirmations: object[] = CONFIRMATIONS,
 ) {
   const replaceState = vi.fn();
-  const dialog = { open: vi.fn(() => ({ afterClosed: () => of(undefined) })) };
+  const dialog = {
+    open: vi.fn((_component: unknown, _config?: MatDialogConfig) => ({
+      afterClosed: () => of(undefined),
+    })),
+  };
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
@@ -178,17 +172,17 @@ function setUp(
   });
   const store = TestBed.inject(ReferenceDataStore);
   seedStore(store, 'animateurs', [
-    animateur('alice', 'Alice', 'Martin', { ESCAPE: 'CONFIRME' }),
+    animateur('alice', 'Alice', 'Martin', { ESCAPE: 'REFERENT' }),
     animateur('bob', 'Bob', 'Durand'),
     ...(confirmations.includes(CAROLE_RELANCEE) ? [animateur('carole', 'Carole', 'Petit')] : []),
   ]);
-  seedStore(store, 'typologies', [{ id: 'ESCAPE', label: 'Escape game' }] as never);
+  seedStore(store, 'typologies', [{ id: 'ESCAPE', label: 'Escape game' }]);
   const fixture = TestBed.createComponent(AnimateursPage);
   return {
     fixture,
     replaceState,
     dialog,
-    page: fixture.componentInstance as unknown as PageInternals,
+    page: fixture.componentInstance,
   };
 }
 
@@ -200,23 +194,23 @@ describe('AnimateursPage query-param sync', () => {
   it('seeds the filter and the sort from the URL, and filters the rows accordingly', () => {
     const { page } = setUp({ q: 'durand', sort: 'majorite', dir: 'asc' });
 
-    expect(page.filtre()).toBe('durand');
-    expect(page.sort()).toEqual({ active: 'majorite', direction: 'asc' });
-    expect(page.animateursFiltres().map((each) => each.id)).toEqual(['bob']);
+    expect(page['filtre']()).toBe('durand');
+    expect(page['sort']()).toEqual({ active: 'majorite', direction: 'asc' });
+    expect(page['animateursFiltres']().map((each) => each.id)).toEqual(['bob']);
   });
 
   it('shows the whole referential, unsorted, when the URL carries nothing', () => {
     const { page } = setUp({});
 
-    expect(page.filtre()).toBe('');
-    expect(page.sort()).toEqual({ active: '', direction: '' });
-    expect(page.viewChanged()).toBe(false);
+    expect(page['filtre']()).toBe('');
+    expect(page['sort']()).toEqual({ active: '', direction: '' });
+    expect(page['viewChanged']()).toBe(false);
   });
 
   it('ignores a sort whose direction is not a direction', () => {
     const { page } = setUp({ sort: 'majorite', dir: '' });
 
-    expect(page.sort()).toEqual({ active: '', direction: '' });
+    expect(page['sort']()).toEqual({ active: '', direction: '' });
   });
 
   it('writes filter and sort back to the URL (replacing, not pushing history)', async () => {
@@ -234,15 +228,15 @@ describe('AnimateursPage query-param sync', () => {
     it('keeps only the animateurs holding an appreciation on one of the typologies named', () => {
       const { page } = setUp({ typologie: 'ESCAPE,QUIZ' });
 
-      expect(page.typologiesFiltrees()).toEqual(['ESCAPE', 'QUIZ']);
-      expect(page.animateursFiltres().map((each) => each.id)).toEqual(['alice']);
-      expect(page.viewChanged()).toBe(true);
+      expect(page['typologiesFiltrees']()).toEqual(['ESCAPE', 'QUIZ']);
+      expect(page['animateursFiltres']().map((each) => each.id)).toEqual(['alice']);
+      expect(page['viewChanged']()).toBe(true);
     });
 
     it('names the typologies by their label, the id when the référentiel has none', () => {
       const { page } = setUp({ typologie: 'ESCAPE,QUIZ' });
 
-      expect(page.typologieLabel()).toBe('Escape game, QUIZ');
+      expect(page['typologieLabel']()).toBe('Escape game, QUIZ');
     });
 
     it('writes the filter to the URL, and drops it with the chip', async () => {
@@ -250,10 +244,10 @@ describe('AnimateursPage query-param sync', () => {
       await fixture.whenStable();
       expect(replaceState).toHaveBeenLastCalledWith('/animateurs?typologie=ESCAPE');
 
-      page.removeChip('typologie');
+      page['removeChip']('typologie');
       await fixture.whenStable();
 
-      expect(page.animateursFiltres().map((each) => each.id)).toEqual(['alice', 'bob']);
+      expect(page['animateursFiltres']().map((each) => each.id)).toEqual(['alice', 'bob']);
       expect(replaceState).toHaveBeenLastCalledWith('/animateurs');
     });
   });
@@ -264,15 +258,15 @@ describe('AnimateursPage query-param sync', () => {
       const { fixture, page, replaceState } = setUp({ ids: 'bob' });
       await fixture.whenStable();
 
-      expect(page.animateursFiltres().map((each) => each.id)).toEqual(['bob']);
+      expect(page['animateursFiltres']().map((each) => each.id)).toEqual(['bob']);
       expect((fixture.nativeElement as HTMLElement).textContent).toContain('Lignes importées (1)');
-      expect(page.viewChanged()).toBe(true);
+      expect(page['viewChanged']()).toBe(true);
       expect(replaceState).toHaveBeenLastCalledWith('/animateurs?ids=bob');
 
-      page.removeChip('ids');
+      page['removeChip']('ids');
       await fixture.whenStable();
 
-      expect(page.animateursFiltres().map((each) => each.id)).toEqual(['alice', 'bob']);
+      expect(page['animateursFiltres']().map((each) => each.id)).toEqual(['alice', 'bob']);
       expect(replaceState).toHaveBeenLastCalledWith('/animateurs');
     });
   });
@@ -290,15 +284,15 @@ describe('AnimateursPage query-param sync', () => {
       ]);
       await fixture.whenStable();
 
-      expect(page.animateursFiltres().map((each) => each.id)).toEqual(['bob']);
-      expect(page.souhaitLabel()).toBe('Escape game');
-      expect(page.viewChanged()).toBe(true);
+      expect(page['animateursFiltres']().map((each) => each.id)).toEqual(['bob']);
+      expect(page['souhaitLabel']()).toBe('Escape game');
+      expect(page['viewChanged']()).toBe(true);
       expect(replaceState).toHaveBeenLastCalledWith('/animateurs?souhait=ESCAPE');
 
-      page.removeChip('souhait');
+      page['removeChip']('souhait');
       await fixture.whenStable();
 
-      expect(page.animateursFiltres().map((each) => each.id)).toEqual(['alice', 'bob']);
+      expect(page['animateursFiltres']().map((each) => each.id)).toEqual(['alice', 'bob']);
       expect(replaceState).toHaveBeenLastCalledWith('/animateurs');
     });
   });
@@ -318,8 +312,8 @@ describe('AnimateursPage query-param sync', () => {
       await fixture.whenStable();
 
       expect(dialog.open).toHaveBeenCalledOnce();
-      const [, config] = dialog.open.mock.calls[0] as unknown as [unknown, { data: unknown }];
-      expect(config.data).toEqual({ animateur: expect.objectContaining({ id: 'bob' }) });
+      const [, config] = dialog.open.mock.calls[0];
+      expect(config?.data).toEqual({ animateur: expect.objectContaining({ id: 'bob' }) });
       expect(location.path()).not.toContain('edit=');
     });
 
@@ -356,14 +350,14 @@ describe('AnimateursPage query-param sync', () => {
       silence: '3',
     });
     await fixture.whenStable();
-    expect(page.viewChanged()).toBe(true);
+    expect(page['viewChanged']()).toBe(true);
     replaceState.mockClear();
 
-    page.resetView();
+    page['resetView']();
     await fixture.whenStable();
 
-    expect(page.viewChanged()).toBe(false);
-    expect(page.accuses()).toBe('tous');
+    expect(page['viewChanged']()).toBe(false);
+    expect(page['accuses']()).toBe('tous');
     expect(replaceState).toHaveBeenLastCalledWith('/animateurs');
   });
 
@@ -374,31 +368,31 @@ describe('AnimateursPage query-param sync', () => {
     const { fixture, page } = setUp({ confirmation: 'jamais' });
     await fixture.whenStable();
 
-    expect(page.accuses()).toBe('jamais');
-    expect(page.viewChanged()).toBe(true);
-    expect(page.animateursFiltres().map((each) => each.id)).toEqual(['alice']);
+    expect(page['accuses']()).toBe('jamais');
+    expect(page['viewChanged']()).toBe(true);
+    expect(page['animateursFiltres']().map((each) => each.id)).toEqual(['alice']);
   });
 
   it('seeds « silencieux depuis N jours » from the URL, N included', async () => {
     const { fixture, page } = setUp({ silence: '7' });
     await fixture.whenStable();
 
-    expect(page.accuses()).toBe('silence');
-    expect(page.silenceJours()).toBe(7);
+    expect(page['accuses']()).toBe('silence');
+    expect(page['silenceJours']()).toBe(7);
     // Published years ago in the fixture: Alice has been silent for far longer than 7 days.
-    expect(page.animateursFiltres().map((each) => each.id)).toEqual(['alice']);
+    expect(page['animateursFiltres']().map((each) => each.id)).toEqual(['alice']);
   });
 
   it('writes the chosen mode back to the URL, and only the param that mode uses', async () => {
     const { fixture, replaceState, page } = setUp({});
     await fixture.whenStable();
 
-    page.accuses.set('jamais');
+    page['accuses'].set('jamais');
     await fixture.whenStable();
     expect(replaceState).toHaveBeenLastCalledWith('/animateurs?confirmation=jamais');
 
-    page.accuses.set('silence');
-    page.silenceJours.set(5);
+    page['accuses'].set('silence');
+    page['silenceJours'].set(5);
     await fixture.whenStable();
     expect(replaceState).toHaveBeenLastCalledWith('/animateurs?silence=5');
   });
@@ -407,8 +401,8 @@ describe('AnimateursPage query-param sync', () => {
     const { fixture, page } = setUp({ silence: 'beaucoup' });
     await fixture.whenStable();
 
-    expect(page.accuses()).toBe('tous');
-    expect(page.animateursFiltres()).toHaveLength(2);
+    expect(page['accuses']()).toBe('tous');
+    expect(page['animateursFiltres']()).toHaveLength(2);
   });
 
   // « Jamais relancés »: the list « À traiter aujourd'hui » counts as silent to
@@ -421,8 +415,8 @@ describe('AnimateursPage query-param sync', () => {
     ]);
     await fixture.whenStable();
 
-    expect(page.neverReminded()).toBe(true);
-    expect(page.animateursFiltres().map((each) => each.id)).toEqual(['alice']);
+    expect(page['neverReminded']()).toBe(true);
+    expect(page['animateursFiltres']().map((each) => each.id)).toEqual(['alice']);
   });
 
   it('keeps the reminded among the silent without the criterion', async () => {
@@ -432,8 +426,8 @@ describe('AnimateursPage query-param sync', () => {
     ]);
     await fixture.whenStable();
 
-    expect(page.neverReminded()).toBe(false);
-    expect(page.animateursFiltres().map((each) => each.id)).toEqual(['alice', 'carole']);
+    expect(page['neverReminded']()).toBe(false);
+    expect(page['animateursFiltres']().map((each) => each.id)).toEqual(['alice', 'carole']);
   });
 
   it('writes the criterion to the URL only while a mode is on, and the reset drops it', async () => {
@@ -441,17 +435,17 @@ describe('AnimateursPage query-param sync', () => {
     await fixture.whenStable();
     expect(replaceState).toHaveBeenLastCalledWith('/animateurs?silence=3&relance=jamais');
 
-    page.accuses.set('tous');
+    page['accuses'].set('tous');
     await fixture.whenStable();
     expect(replaceState).toHaveBeenLastCalledWith('/animateurs');
 
-    page.accuses.set('jamais');
+    page['accuses'].set('jamais');
     await fixture.whenStable();
     expect(replaceState).toHaveBeenLastCalledWith('/animateurs?confirmation=jamais&relance=jamais');
 
-    page.resetView();
+    page['resetView']();
     await fixture.whenStable();
-    expect(page.neverReminded()).toBe(false);
+    expect(page['neverReminded']()).toBe(false);
     expect(replaceState).toHaveBeenLastCalledWith('/animateurs');
   });
 });

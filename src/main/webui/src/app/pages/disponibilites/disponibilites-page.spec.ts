@@ -14,27 +14,29 @@ import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DisponibilitesApi } from '../../core/api/disponibilites-api';
-import { DeclarationAdminView, TeammateRequestView } from '../../core/models';
+import { DeclarationAdminView, StatutDeclaration, TeammateRequestView } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { DisponibilitesPage } from './disponibilites-page';
 import { oldestFirst, readDisponibilitesTab, readPendingOnly } from './declarations-filter';
 
-function declaration(id: string, statut: string, creeLe: string): DeclarationAdminView {
+function declaration(id: string, statut: StatutDeclaration, creeLe: string): DeclarationAdminView {
   return {
     id,
+    animateurId: `animateur-${id}`,
     statut,
     creeLe,
     decideLe: statut === 'EN_ATTENTE' ? null : '2026-07-04T08:00:00Z',
     animateurNom: `Animateur ${id}`,
     joursIndisponibles: [],
+    souhaits: [],
     souhaitsLabels: [],
     joursActuels: [],
     souhaitsActuelsLabels: [],
     commentaire: null,
     commentaireAdmin: null,
-  } as unknown as DeclarationAdminView;
+  };
 }
 
 const RECENTE = declaration('recente', 'EN_ATTENTE', '2026-07-03T08:00:00Z');
@@ -120,21 +122,20 @@ describe('DisponibilitesPage « en attente »', () => {
     expect(root.textContent).toContain('Déjà traitées');
     expect(replaceState).toHaveBeenLastCalledWith('/disponibilites');
 
-    (
-      fixture.componentInstance as unknown as { pendingOnly: { set(v: boolean): void } }
-    ).pendingOnly.set(true);
+    fixture.componentInstance['pendingOnly'].set(true);
     await fixture.whenStable();
     expect(replaceState).toHaveBeenLastCalledWith('/disponibilites?statut=en-attente');
     expect(root.textContent).not.toContain('Déjà traitées');
   });
 });
 
-const DECLARATION = {
+const DECLARATION: DeclarationAdminView = {
   id: 'D1',
   animateurId: 'a1',
   animateurNom: 'A. N.',
   statut: 'EN_ATTENTE',
   joursIndisponibles: ['2026-07-14'],
+  souhaits: [],
   souhaitsLabels: [],
   joursActuels: [],
   souhaitsActuelsLabels: [],
@@ -142,7 +143,7 @@ const DECLARATION = {
   commentaireAdmin: null,
   creeLe: '2026-07-01T08:00:00Z',
   decideLe: null,
-} as unknown as DeclarationAdminView;
+};
 
 function button(fixture: ComponentFixture<DisponibilitesPage>, label: string): HTMLButtonElement {
   return [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')].find((candidate) =>

@@ -13,12 +13,20 @@ interface CasPartage {
   nom: string;
   typologies: { id: string; ninja?: boolean }[];
   stands: { id: string; typologies: string[] }[];
-  animateurs: { id: string; competences: Record<string, string>; souhaits?: string[] }[];
-  attendu: Record<string, Partial<Omit<UsageTypologie, 'typologieId' | 'etat'>> & { etat: string }>;
+  animateurs: {
+    id: string;
+    competences: Record<string, string | undefined>;
+    souhaits?: string[];
+  }[];
+  // `| undefined`: the JSON import types a key one case lacks as an optional `undefined`.
+  attendu: Record<
+    string,
+    (Partial<Omit<UsageTypologie, 'typologieId' | 'etat'>> & { etat: string }) | undefined
+  >;
 }
 
 describe('usagesTypologies — cas partagés avec CoherenceAnalyzerTypologieUsageTest', () => {
-  const cases = (casPartages as unknown as { cas: CasPartage[] }).cas;
+  const cases: CasPartage[] = casPartages.cas;
 
   it('lit un jeu de cas non vide', () => {
     expect(cases.length).toBeGreaterThanOrEqual(10);
@@ -54,6 +62,7 @@ describe('usagesTypologies — cas partagés avec CoherenceAnalyzerTypologieUsag
       expect(usages).toHaveLength(Object.keys(cas.attendu).length);
       for (const usage of usages) {
         const attendu = cas.attendu[usage.typologieId];
+        if (!attendu) throw new Error(`no expected usage for ${usage.typologieId}`);
         expect(usage).toEqual({
           typologieId: usage.typologieId,
           competents: attendu.competents ?? 0,

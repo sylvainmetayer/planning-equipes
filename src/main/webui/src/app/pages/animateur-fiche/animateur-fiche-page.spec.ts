@@ -19,6 +19,7 @@ import { PostesApi } from '../../core/api/postes-api';
 import { ApiError } from '../../core/api.service';
 import { ConsignesStore } from '../../core/consignes.store';
 import { Animateur, AnimateurProfile } from '../../core/models';
+import { fakeOf, provideFake } from '../../core/testing/fake';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
@@ -156,7 +157,7 @@ describe('AnimateurFichePage', () => {
     equityReport: vi.fn(),
   };
   const verrous = { create: vi.fn(async () => []), remove: vi.fn(async () => undefined) };
-  const crud = { save: vi.fn(async () => true) };
+  const crud = fakeOf<ReferenceCrudService>({ save: async () => true });
   const confirm = { ask: vi.fn(async () => true) };
   const notify = vi.fn();
   const dialog = { open: vi.fn() };
@@ -182,7 +183,7 @@ describe('AnimateurFichePage', () => {
           useValue: { catalogue: vi.fn(async () => ({ contraintes: [] })) },
         },
         { provide: VerrouillageStore, useValue: verrous },
-        { provide: ReferenceCrudService, useValue: crud },
+        provideFake(ReferenceCrudService, crud),
         { provide: ConfirmService, useValue: confirm },
         { provide: NotificationService, useValue: { notify } },
         { provide: MatDialog, useValue: dialog },
@@ -502,25 +503,21 @@ describe('AnimateurFichePage', () => {
     });
     await fixture.whenStable();
 
-    const page = fixture.componentInstance as unknown as { dayOutcome: () => unknown };
-    expect(page.dayOutcome()).toBeNull();
+    expect(fixture.componentInstance['dayOutcome']()).toBeNull();
   });
 
   it('forgets the radar axes and the compared person on a change of person', async () => {
     api.profile.mockResolvedValue(profile());
     await render({ section: 'equite', axes: 'heuresJourFerie', comparer: 'a2' });
-    const page = fixture.componentInstance as unknown as {
-      radarAxes: () => string[];
-      comparedId: () => string;
-    };
-    expect(page.radarAxes()).toEqual(['heuresJourFerie']);
-    expect(page.comparedId()).toBe('a2');
+    const page = fixture.componentInstance;
+    expect(page['radarAxes']()).toEqual(['heuresJourFerie']);
+    expect(page['comparedId']()).toBe('a2');
 
     paramMap.next(convertToParamMap({ id: 'a0' }));
     await fixture.whenStable();
 
-    expect(page.radarAxes()).toEqual([]);
-    expect(page.comparedId()).toBe('');
+    expect(page['radarAxes']()).toEqual([]);
+    expect(page['comparedId']()).toBe('');
   });
 
   it('names the person in the snack bar of a sent planning, and only their id in the journal', async () => {
@@ -549,33 +546,27 @@ describe('AnimateurFichePage', () => {
     button('Enregistrer').click();
     await vi.waitFor(() => expect(crud.save).toHaveBeenCalled());
 
-    const [ressource, payload, id] = crud.save.mock.calls[0] as unknown as [
-      string,
-      Animateur,
-      string,
-    ];
-    expect(ressource).toBe('animateurs');
+    // `save` is generic on the row: the payload is read through the fields of an animateur.
+    const [resource, payload, id] = crud.save.mock.calls[0];
+    expect(resource).toBe('animateurs');
     expect(id).toBe('a1');
-    expect(payload.competences).toEqual({ JEU: 'REFERENT', CUBE: 'AUTONOME' });
-    expect(payload.souhaits).toEqual(['CUBE']);
+    expect(payload).toHaveProperty('competences', { JEU: 'REFERENT', CUBE: 'AUTONOME' });
+    expect(payload).toHaveProperty('souhaits', ['CUBE']);
   });
 
   it('keeps unsaved competence edits across a reload another section caused', async () => {
     api.profile.mockResolvedValue(profile());
     await render({ section: 'competences' });
-    const page = fixture.componentInstance as unknown as {
-      competenceLines: () => { typologieId: string; niveau: string | null }[];
-      reload: () => void;
-    };
+    const page = fixture.componentInstance;
     await pickFirstLevel('Autonome');
 
     // A gesture of another section — a lock, a day off — reads the fiche again.
     api.profile.mockResolvedValue(profile({ verrous: [] }));
-    page.reload();
+    page['reload']();
     await vi.waitFor(() => expect(api.profile).toHaveBeenCalledTimes(2));
     await fixture.whenStable();
 
-    const cube = page.competenceLines().find((line) => line.typologieId === 'CUBE');
+    const cube = page['competenceLines']().find((line) => line.typologieId === 'CUBE');
     expect(cube?.niveau).toBe('AUTONOME');
     expect(button('Enregistrer').disabled).toBe(false);
   });

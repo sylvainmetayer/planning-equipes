@@ -19,6 +19,7 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { Creneau, Emplacement, HoraireStand, Stand } from '../../core/models';
+import { Fake, fakeOf, provideFake } from '../../core/testing/fake';
 import { StandFormDialog } from './stand-form-dialog';
 import { noDraftStorage, fakeDialogRef } from '../../core/testing/brouillon';
 
@@ -83,7 +84,7 @@ function taper(champ: HTMLInputElement, valeur: string): void {
 }
 
 function mount(donnee: Stand | null, options: { editingLocked?: boolean; stands?: Stand[] } = {}) {
-  const save = vi.fn(async () => true);
+  const crud = fakeOf<ReferenceCrudService>({ save: async () => true });
   const close = vi.fn();
   TestBed.configureTestingModule({
     providers: [
@@ -101,13 +102,21 @@ function mount(donnee: Stand | null, options: { editingLocked?: boolean; stands?
         provide: SolverJobService,
         useValue: { editingLocked: signal(options.editingLocked ?? false) },
       },
-      { provide: ReferenceCrudService, useValue: { save } },
+      provideFake(ReferenceCrudService, crud),
       { provide: MatDialogRef, useValue: fakeDialogRef(close) },
       ...noDraftStorage(),
       { provide: MAT_DIALOG_DATA, useValue: { stand: donnee } },
     ],
   });
-  return { fixture: TestBed.createComponent(StandFormDialog), save, close };
+  return { fixture: TestBed.createComponent(StandFormDialog), save: crud.save, close };
+}
+
+/**
+ * The stand of the first save. `save` is generic over its payload, so its
+ * recorded call holds the constraint `{ id? }`; this dialog only saves stands.
+ */
+function savedStand(save: Fake<ReferenceCrudService>['save']): Stand {
+  return save.mock.calls[0][1] as Stand;
 }
 
 function root(fixture: ComponentFixture<StandFormDialog>): HTMLElement {
@@ -188,9 +197,7 @@ function pavillon(): Stand {
 }
 
 function copyFrom(fixture: ComponentFixture<StandFormDialog>, standId: string): void {
-  (
-    fixture.componentInstance as unknown as { copyHorairesFrom(id: string | null): void }
-  ).copyHorairesFrom(standId);
+  fixture.componentInstance['copyHorairesFrom'](standId);
 }
 
 function previewCells(fixture: ComponentFixture<StandFormDialog>): string[] {
@@ -541,7 +548,7 @@ describe('StandFormDialog', () => {
     root(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
     await fixture.whenStable();
 
-    const [, payload] = save.mock.calls[0] as unknown as [string, Stand];
+    const payload = savedStand(save);
     expect(payload.horaires[0].fenetres).toEqual([
       { heureDebut: '10:00', heureFin: '12:00', effectif: 3 },
       { heureDebut: '14:00', heureFin: null, effectif: null },
@@ -585,7 +592,7 @@ describe('StandFormDialog', () => {
 
     root(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
     await fixture.whenStable();
-    const [, payload] = save.mock.calls[0] as unknown as [string, Stand];
+    const payload = savedStand(save);
     expect(payload.horaires[0].fenetres.map((fenetre) => fenetre.effectif)).toEqual([3, 2]);
   });
 
@@ -691,7 +698,7 @@ describe('StandFormDialog', () => {
     expect(submit(fixture).disabled).toBe(false);
     root(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
     await fixture.whenStable();
-    const [, payload] = save.mock.calls[0] as unknown as [string, Stand];
+    const payload = savedStand(save);
     expect(payload.ouvertures[0].effectif).toBe(5);
   });
 
@@ -754,10 +761,8 @@ describe('StandFormDialog', () => {
     const select = root(fixture).querySelector('mat-select[name="copyHorairesFrom"]')!;
     expect(select).not.toBeNull();
     expect(nomAccessible(root(fixture), select)).toBe('Copier les horaires de…');
-    const modeles = (
-      fixture.componentInstance as unknown as { standsModeles(): Stand[] }
-    ).standsModeles();
-    expect(modeles.map((each) => each.id)).toEqual(['PAVILLON']);
+    const models = fixture.componentInstance['standsModeles']();
+    expect(models.map((each) => each.id)).toEqual(['PAVILLON']);
   });
 
   it('hides the copy field when there is no other stand to copy from', async () => {
@@ -793,7 +798,7 @@ describe('StandFormDialog', () => {
 
     root(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
     await fixture.whenStable();
-    const [, payload] = save.mock.calls[0] as unknown as [string, Stand];
+    const payload = savedStand(save);
     // New rows of this stand: no id travels from the model.
     expect(payload.horaires[0].id).toBeNull();
     expect(payload.horaires[0].fenetres).toEqual([
@@ -845,11 +850,8 @@ describe('StandFormDialog', () => {
     await fixture.whenStable();
 
     expect(save).toHaveBeenCalledOnce();
-    const [resource, payload, editingId] = save.mock.calls[0] as unknown as [
-      string,
-      Stand,
-      string | null,
-    ];
+    const [resource, , editingId] = save.mock.calls[0];
+    const payload = savedStand(save);
     expect(resource).toBe('stands');
     expect(payload.id).toBe('s42');
     expect(payload.nom).toBe('Dixit');
@@ -871,7 +873,7 @@ describe('StandFormDialog', () => {
   it('keeps the dialog open when the save is refused', async () => {
     TestBed.resetTestingModule();
     const close = vi.fn();
-    const save = vi.fn(async () => false);
+    const crud = fakeOf<ReferenceCrudService>({ save: async () => false });
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
@@ -885,7 +887,7 @@ describe('StandFormDialog', () => {
           },
         },
         { provide: SolverJobService, useValue: { editingLocked: signal(false) } },
-        { provide: ReferenceCrudService, useValue: { save } },
+        provideFake(ReferenceCrudService, crud),
         { provide: MatDialogRef, useValue: fakeDialogRef(close) },
         ...noDraftStorage(),
         { provide: MAT_DIALOG_DATA, useValue: { stand: stand() } },
@@ -899,7 +901,7 @@ describe('StandFormDialog', () => {
       .dispatchEvent(new Event('submit'));
     await fixture.whenStable();
 
-    expect(save).toHaveBeenCalledOnce();
+    expect(crud.save).toHaveBeenCalledOnce();
     expect(close).not.toHaveBeenCalled();
   });
 });

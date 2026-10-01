@@ -51,7 +51,18 @@ function redirectTarget(
 ): string {
   const route = allRoutes(routes).find((candidate) => candidate.path === path);
   const redirectTo = route?.redirectTo as RedirectFunction;
-  return redirectTo({ queryParams, fragment } as unknown as ActivatedRouteSnapshot) as string;
+  return redirectTo(snapshotOf(queryParams, fragment)) as string;
+}
+
+/**
+ * The snapshot a guard or a redirect receives, holding these query params and
+ * this fragment — what the functions under test read of it.
+ */
+function snapshotOf(
+  queryParams: Record<string, string>,
+  fragment: string | null = null,
+): ActivatedRouteSnapshot {
+  return Object.assign(new ActivatedRouteSnapshot(), { queryParams, fragment });
 }
 
 /**
@@ -95,12 +106,16 @@ describe('app.routes', () => {
     // annonçaient de travers.
     // `/marge` lost its title when it became two tabs of the Diagnostic.
     expect(titrees).toHaveLength(39);
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), provideRouter([])],
+    });
+    const state = TestBed.inject(Router).routerState.snapshot;
     for (const route of titrees) {
       // Une fonction, et non une chaîne : c'est ce qui permet au titre de
       // passer par $localize sans être évalué au chargement du module, avant
       // que les traductions ne soient chargées.
       expect(typeof route.title, `route ${route.path}`).toBe('function');
-      const resolu = (route.title as ResolveFn<string>)(undefined as never, undefined as never);
+      const resolu = (route.title as ResolveFn<string>)(state.root, state);
       expect(resolu, `route ${route.path}`).toBeTruthy();
     }
   });
@@ -271,13 +286,7 @@ describe('app.routes', () => {
       });
       const guard = (queryParams: Record<string, string>): unknown =>
         TestBed.runInInjectionContext(() =>
-          benchTabToJournee(
-            {
-              queryParams,
-              queryParamMap: convertToParamMap(queryParams),
-            } as unknown as ActivatedRouteSnapshot,
-            {} as RouterStateSnapshot,
-          ),
+          benchTabToJournee(snapshotOf(queryParams), TestBed.inject(Router).routerState.snapshot),
         );
 
       expect(String(guard({ onglet: 'banc', creneau: '12', stand: 'S1' }))).toBe(
@@ -303,13 +312,7 @@ describe('app.routes', () => {
       });
       const guard = (queryParams: Record<string, string>): unknown =>
         TestBed.runInInjectionContext(() =>
-          trainingTabToNeed(
-            {
-              queryParams,
-              queryParamMap: convertToParamMap(queryParams),
-            } as unknown as ActivatedRouteSnapshot,
-            {} as RouterStateSnapshot,
-          ),
+          trainingTabToNeed(snapshotOf(queryParams), TestBed.inject(Router).routerState.snapshot),
         );
 
       expect(String(guard({ onglet: 'former' }))).toBe('/diagnostic?onglet=besoin&section=former');
@@ -461,10 +464,7 @@ describe('app.routes', () => {
   /** `/constraints` became « Règles du planning » (issue #720). */
   describe("l'ancienne adresse des contraintes", () => {
     function target(queryParams: Record<string, string>, fragment: string | null): string {
-      return redirectConstraintsToRegles({
-        queryParams,
-        fragment,
-      } as unknown as ActivatedRouteSnapshot) as string;
+      return redirectConstraintsToRegles(snapshotOf(queryParams, fragment)) as string;
     }
 
     it('garde la règle demandée, que la page ouvre sur son onglet', () => {
@@ -480,7 +480,7 @@ describe('app.routes', () => {
   /** The Autopsie became « Versions du plan » (issue #702): its every-edition view survives. */
   describe("l'ancienne adresse de l'Autopsie", () => {
     function target(queryParams: Record<string, string>): string {
-      return redirectKpiToVersions({ queryParams } as unknown as ActivatedRouteSnapshot) as string;
+      return redirectKpiToVersions(snapshotOf(queryParams)) as string;
     }
 
     it('garde la vue de toutes les éditions, et elle seule', () => {

@@ -3,7 +3,7 @@
 // label, and every line carrying a link to the screen that moves it. The
 // wording itself is `accueil.spec.ts`'s business.
 
-import { provideZonelessChangeDetection, Signal } from '@angular/core';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -122,13 +122,6 @@ function deferred<T>(): {
   return { promise, resolve, reject };
 }
 
-type PageInternals = {
-  etatEdition: Signal<EtatEdition | null>;
-  chargement: Signal<boolean>;
-  erreur: Signal<string>;
-  recharger: () => void;
-};
-
 describe('AccueilPage', () => {
   const editionsApi = { etat: vi.fn(), coherence: vi.fn() };
   const analysesApi = { alerts: vi.fn(async () => []) };
@@ -164,9 +157,9 @@ describe('AccueilPage', () => {
     });
   });
 
-  function createPage(): PageInternals {
+  function createPage(): AccueilPage {
     fixture = TestBed.createComponent(AccueilPage);
-    return fixture.componentInstance as unknown as PageInternals;
+    return fixture.componentInstance;
   }
 
   function element(): HTMLElement {
@@ -183,11 +176,11 @@ describe('AccueilPage', () => {
     editionsApi.etat.mockReturnValue(pending.promise);
     const page = createPage();
 
-    expect(page.chargement()).toBe(true);
+    expect(page['chargement']()).toBe(true);
     expect(text()).toContain("Lecture de l'état de l'édition");
 
     pending.resolve(etat());
-    await vi.waitFor(() => expect(page.chargement()).toBe(false));
+    await vi.waitFor(() => expect(page['chargement']()).toBe(false));
     expect(element().querySelectorAll('li.accueil-ligne')).toHaveLength(12);
     expect(text()).toContain('Année 2026');
     expect(editionsApi.etat).toHaveBeenCalledOnce();
@@ -196,7 +189,7 @@ describe('AccueilPage', () => {
   it('draws each state with its label, on the line it belongs to', async () => {
     editionsApi.etat.mockResolvedValue(etat());
     const page = createPage();
-    await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+    await vi.waitFor(() => expect(page['etatEdition']()).not.toBeNull());
     const racine = element();
 
     const ligne = (id: string) => racine.querySelector<HTMLElement>(`li[data-ligne="${id}"]`)!;
@@ -220,7 +213,7 @@ describe('AccueilPage', () => {
       }),
     );
     const page = createPage();
-    await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+    await vi.waitFor(() => expect(page['etatEdition']()).not.toBeNull());
 
     const ligne = element().querySelector<HTMLElement>('li[data-ligne="problemes"]')!;
     expect(ligne.classList.contains('accueil-ligne-info')).toBe(true);
@@ -244,7 +237,7 @@ describe('AccueilPage', () => {
       }),
     );
     const page = createPage();
-    await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+    await vi.waitFor(() => expect(page['etatEdition']()).not.toBeNull());
     await fixture.whenStable();
 
     const hrefs = Array.from(element().querySelectorAll<HTMLAnchorElement>('a.accueil-lien')).map(
@@ -269,8 +262,8 @@ describe('AccueilPage', () => {
     editionsApi.etat.mockRejectedValue(new Error('Serveur injoignable.'));
     const page = createPage();
 
-    await vi.waitFor(() => expect(page.erreur()).toContain('Serveur injoignable.'));
-    expect(page.etatEdition()).toBeNull();
+    await vi.waitFor(() => expect(page['erreur']()).toContain('Serveur injoignable.'));
+    expect(page['etatEdition']()).toBeNull();
     expect(text()).toContain('Serveur injoignable.');
     expect(element().querySelectorAll('li.accueil-ligne')).toHaveLength(0);
   });
@@ -278,11 +271,11 @@ describe('AccueilPage', () => {
   it('keeps the checklist on screen behind the failure of a refresh', async () => {
     editionsApi.etat.mockResolvedValueOnce(etat());
     const page = createPage();
-    await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+    await vi.waitFor(() => expect(page['etatEdition']()).not.toBeNull());
 
     editionsApi.etat.mockRejectedValueOnce(new Error('Serveur injoignable.'));
-    page.recharger();
-    await vi.waitFor(() => expect(page.erreur()).toContain('Serveur injoignable.'));
+    page['recharger']();
+    await vi.waitFor(() => expect(page['erreur']()).toContain('Serveur injoignable.'));
     expect(element().querySelectorAll('li.accueil-ligne')).toHaveLength(12);
   });
 
@@ -294,7 +287,7 @@ describe('AccueilPage', () => {
     const unregister = vi.fn();
     jobs.onResult.mockReturnValue(unregister);
     const page = createPage();
-    await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+    await vi.waitFor(() => expect(page['etatEdition']()).not.toBeNull());
 
     expect(jobs.onResult.mock.calls.map(([type]) => type)).toEqual(['SOLVE', 'SOLVE_INCREMENTAL']);
     const [[, surSolve], [, surIncremental]] = jobs.onResult.mock.calls;
@@ -333,7 +326,7 @@ describe('AccueilPage', () => {
     const setItem = vi.spyOn(Storage.prototype, 'setItem');
     try {
       const page = createPage();
-      await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+      await vi.waitFor(() => expect(page['etatEdition']()).not.toBeNull());
       await fixture.whenStable();
       element()
         .querySelector<HTMLButtonElement>('li[data-ligne="coherence"] button.accueil-lien')!
@@ -350,7 +343,7 @@ describe('AccueilPage', () => {
   it('states the freeze and leads to Paramètres, with no editable panel', async () => {
     editionsApi.etat.mockResolvedValue(etat());
     const page = createPage();
-    await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+    await vi.waitFor(() => expect(page['etatEdition']()).not.toBeNull());
     await fixture.whenStable();
 
     const ligne = element().querySelector<HTMLElement>('li[data-ligne="gel"]')!;
@@ -387,7 +380,7 @@ describe('AccueilPage', () => {
       anomalies: [horsOuverture, { ...horsOuverture, objetId: '8' }],
     });
     const page = createPage();
-    await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+    await vi.waitFor(() => expect(page['etatEdition']()).not.toBeNull());
     await fixture.whenStable();
 
     const bouton = element().querySelector<HTMLButtonElement>(
@@ -427,7 +420,7 @@ describe('AccueilPage', () => {
   it("keeps « À traiter aujourd'hui » where the bell lands, its list only when something waits", async () => {
     editionsApi.etat.mockResolvedValueOnce(etat());
     const page = createPage();
-    await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+    await vi.waitFor(() => expect(page['etatEdition']()).not.toBeNull());
     expect(element().querySelector('#a-traiter')).not.toBeNull();
     expect(element().querySelector('.accueil-a-traiter-liste')).toBeNull();
     expect(text()).toContain("Rien n'attend de décision aujourd'hui.");
@@ -436,7 +429,7 @@ describe('AccueilPage', () => {
     editionsApi.etat.mockResolvedValueOnce(
       etat({ aTraiter: { ...etat().aTraiter, echangesAArbitrer: 2, echangesEnAlerte: 1 } }),
     );
-    page.recharger();
+    page['recharger']();
     await vi.waitFor(() =>
       expect(element().querySelector('.accueil-a-traiter-liste')).not.toBeNull(),
     );
@@ -451,7 +444,7 @@ describe('AccueilPage', () => {
   it('offers to archive the edition once its event is over, and only then', async () => {
     editionsApi.etat.mockResolvedValueOnce(etat());
     const page = createPage();
-    await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+    await vi.waitFor(() => expect(page['etatEdition']()).not.toBeNull());
     expect(element().querySelector('[data-bloc="archive"]')).toBeNull();
 
     editionsApi.etat.mockResolvedValueOnce(
@@ -466,7 +459,7 @@ describe('AccueilPage', () => {
         },
       }),
     );
-    page.recharger();
+    page['recharger']();
     await vi.waitFor(() => expect(element().querySelector('[data-bloc="archive"]')).not.toBeNull());
     const lien = element().querySelector('[data-bloc="archive"] a')!;
     expect(lien.textContent).toContain("Archiver l'édition");
@@ -486,7 +479,7 @@ describe('AccueilPage', () => {
       }),
     );
     const page = createPage();
-    await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+    await vi.waitFor(() => expect(page['etatEdition']()).not.toBeNull());
     await fixture.whenStable();
 
     const bloc = element().querySelector<HTMLElement>('[data-bloc="demarrer"]')!;
@@ -518,7 +511,7 @@ describe('AccueilPage', () => {
       }),
     );
     const page = createPage();
-    await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+    await vi.waitFor(() => expect(page['etatEdition']()).not.toBeNull());
     await fixture.whenStable();
 
     const jour = element().querySelector<HTMLElement>('[data-bloc="jour"]')!;
@@ -545,7 +538,7 @@ describe('AccueilPage', () => {
       anomalies: [],
     });
     const page = createPage();
-    await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+    await vi.waitFor(() => expect(page['etatEdition']()).not.toBeNull());
     await fixture.whenStable();
     const [[, surSolve]] = jobs.onResult.mock.calls;
 
@@ -574,7 +567,7 @@ describe('AccueilPage', () => {
       etat({ aTraiter: { ...etat().aTraiter, rappelsNonEnvoyes: 1 } }),
     );
     const page = createPage();
-    await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+    await vi.waitFor(() => expect(page['etatEdition']()).not.toBeNull());
     await fixture.whenStable();
     expect(element().querySelector('#alertes-nuit')).not.toBeNull();
 

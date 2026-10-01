@@ -7,7 +7,6 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { APP_CONFIG } from '../../core/app-config';
 import { AffectationExplanationService } from '../../core/affectation-explanation.service';
@@ -22,6 +21,7 @@ import {
   Stand,
 } from '../../core/models';
 import { MatDialog } from '@angular/material/dialog';
+import { DeplacementDialog } from '../../shared/deplacement-dialog';
 import { RailJourView } from './rail-jour-vue';
 
 function stand(id: string): Stand {
@@ -290,17 +290,18 @@ describe('RailJourView', () => {
   // move dialog when the instance has not switched drag and drop on.
   it('opens the move on Enter even when the instance has not switched drag and drop on', async () => {
     await rendre(planningDeuxJours());
-    const open = vi
-      .spyOn(TestBed.inject(MatDialog), 'open')
-      .mockReturnValue({ afterClosed: () => of(undefined) } as never);
+    const dialog = TestBed.inject(MatDialog);
     const lineOfAlice = Array.from(racine().querySelectorAll<HTMLElement>('[data-ligne]')).find(
       (each) => each.getAttribute('aria-label')!.includes('Alice'),
     )!;
 
     lineOfAlice.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
 
-    expect(open).toHaveBeenCalledTimes(1);
+    expect(dialog.openDialogs.map((ref) => ref.componentInstance)).toEqual([
+      expect.any(DeplacementDialog),
+    ]);
     expect(racine().querySelector('.rail-bloc-poignee')).toBeNull();
+    dialog.closeAll();
   });
 
   // #711: a shift is a button opening the page's Siège panel on its seat.

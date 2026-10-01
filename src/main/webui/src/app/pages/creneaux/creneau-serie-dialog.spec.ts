@@ -13,6 +13,7 @@ import { JoursFeriesService } from '../../core/jours-feries.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { RapportRecurrence } from '../../core/models';
+import { fakeOf, provideFake } from '../../core/testing/fake';
 import { CreneauSerieDialog } from './creneau-serie-dialog';
 
 function apercu(patch: Partial<RapportRecurrence['controle']> = {}): RapportRecurrence {
@@ -41,14 +42,16 @@ function monter(
   } = {},
 ) {
   // Two stubs, not one: a test must tell a preview from a write.
-  const preview = vi.fn(async () => options.reponse ?? apercu());
-  const post = vi.fn(async () => options.reponse ?? apercu());
+  const creneauxApi = fakeOf<CreneauxApi>({
+    previewRecurrence: async () => options.reponse ?? apercu(),
+    createRecurrence: async () => options.reponse ?? apercu(),
+  });
   const close = vi.fn();
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
-      { provide: CreneauxApi, useValue: { previewRecurrence: preview, createRecurrence: post } },
+      provideFake(CreneauxApi, creneauxApi),
       { provide: ReferenceCrudService, useValue: { reportError: vi.fn() } },
       {
         provide: JoursFeriesService,
@@ -68,7 +71,12 @@ function monter(
       },
     ],
   });
-  return { fixture: TestBed.createComponent(CreneauSerieDialog), preview, post, close };
+  return {
+    fixture: TestBed.createComponent(CreneauSerieDialog),
+    preview: creneauxApi.previewRecurrence,
+    post: creneauxApi.createRecurrence,
+    close,
+  };
 }
 
 function racine(fixture: ComponentFixture<CreneauSerieDialog>): HTMLElement {
@@ -154,8 +162,8 @@ describe('CreneauSerieDialog', () => {
     await fixture.whenStable();
 
     expect(preview).toHaveBeenCalledOnce();
-    const [corps] = preview.mock.calls[0] as unknown as [unknown];
-    expect(corps).toEqual({
+    const [body] = preview.mock.calls[0];
+    expect(body).toEqual({
       jours: 'TOUS',
       dateDebut: '2026-07-06',
       dateFin: '2026-07-07',
@@ -175,7 +183,7 @@ describe('CreneauSerieDialog', () => {
 
     bouton(fixture, 'Créer la série').click();
     await fixture.whenStable();
-    expect(post).toHaveBeenCalledExactlyOnceWith(corps);
+    expect(post).toHaveBeenCalledExactlyOnceWith(body);
     expect(close).toHaveBeenCalledWith(apercu());
   });
 
@@ -248,13 +256,13 @@ describe('CreneauSerieDialog', () => {
   it('reveals the weekday boxes on the weekday scope, and the dates field on the date scope', async () => {
     const { fixture } = monter();
     await fixture.whenStable();
-    const composant = fixture.componentInstance as unknown as { patch(patch: object): void };
+    const dialog = fixture.componentInstance;
 
-    composant.patch({ jours: 'JOURS_SEMAINE' });
+    dialog['patch']({ jours: 'JOURS_SEMAINE' });
     await fixture.whenStable();
     expect(racine(fixture).querySelectorAll('.horaire-jours-semaine mat-checkbox')).toHaveLength(7);
 
-    composant.patch({ jours: 'DATES' });
+    dialog['patch']({ jours: 'DATES' });
     await fixture.whenStable();
     expect(racine(fixture).querySelector('input[name="dates"]')).not.toBeNull();
     expect(racine(fixture).querySelector('input[name="dateDebut"]')).toBeNull();

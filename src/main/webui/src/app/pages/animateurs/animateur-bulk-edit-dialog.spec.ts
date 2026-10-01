@@ -14,6 +14,7 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { Animateur, EtatGel } from '../../core/models';
+import { Fake, fakeOf, provideFake } from '../../core/testing/fake';
 import { AnimateurBulkEditDialog } from './animateur-bulk-edit-dialog';
 
 const TYPOLOGIES = [
@@ -48,7 +49,9 @@ function monter(
   animateurs: Animateur[],
   options: { editingLocked?: boolean; saved?: number; gel?: EtatGel[] } = {},
 ) {
-  const saveMany = vi.fn(async () => options.saved ?? animateurs.length);
+  const crud = fakeOf<ReferenceCrudService>({
+    saveMany: async () => options.saved ?? animateurs.length,
+  });
   const close = vi.fn();
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
@@ -59,13 +62,17 @@ function monter(
         provide: SolverJobService,
         useValue: { editingLocked: signal(options.editingLocked ?? false) },
       },
-      { provide: ReferenceCrudService, useValue: { saveMany } },
+      provideFake(ReferenceCrudService, crud),
       { provide: MatDialogRef, useValue: { close } },
       { provide: MAT_DIALOG_DATA, useValue: { animateurs } },
       { provide: EditionsApi, useValue: { gel: vi.fn(async () => options.gel ?? []) } },
     ],
   });
-  return { fixture: TestBed.createComponent(AnimateurBulkEditDialog), saveMany, close };
+  return {
+    fixture: TestBed.createComponent(AnimateurBulkEditDialog),
+    saveMany: crud.saveMany,
+    close,
+  };
 }
 
 function racine(fixture: ComponentFixture<AnimateurBulkEditDialog>): HTMLElement {
@@ -97,8 +104,17 @@ async function choisir(
   await fixture.whenStable();
 }
 
-function payloads(saveMany: ReturnType<typeof vi.fn>): Animateur[] {
-  return (saveMany.mock.calls[0] as unknown as [string, Animateur[]])[1];
+/** The rows the first `saveMany` sent; generic on the row, they are matched field by field. */
+function payloads(saveMany: Fake<ReferenceCrudService>['saveMany']) {
+  return saveMany.mock.calls[0][1];
+}
+
+/**
+ * Rows holding exactly `values` in `field`, one per row and in order: what
+ * `rows.map((each) => each[field])` compared with `toEqual` used to say.
+ */
+function rowsWith<K extends keyof Animateur>(field: K, values: Animateur[K][]): unknown[] {
+  return values.map((value) => expect.objectContaining({ [field]: value }));
 }
 
 describe('AnimateurBulkEditDialog', () => {
@@ -120,13 +136,11 @@ describe('AnimateurBulkEditDialog', () => {
     submit(fixture);
     await fixture.whenStable();
 
-    expect(payloads(saveMany).map((each) => [each.id, each.manager])).toEqual([
-      ['a1', true],
-      ['a2', true],
-    ]);
+    expect(payloads(saveMany)).toEqual(rowsWith('id', ['a1', 'a2']));
+    expect(payloads(saveMany)).toEqual(rowsWith('manager', [true, true]));
     // The three untouched edits must leave every other field exactly as it was.
-    expect(payloads(saveMany)[0].competences).toEqual({ ambiance: 'DEBUTANT' });
-    expect(payloads(saveMany)[1].joursIndisponibles).toEqual(['2026-07-14']);
+    expect(payloads(saveMany)[0]).toHaveProperty('competences', { ambiance: 'DEBUTANT' });
+    expect(payloads(saveMany)[1]).toHaveProperty('joursIndisponibles', ['2026-07-14']);
     expect(close).toHaveBeenCalledWith(true);
   });
 
@@ -164,7 +178,7 @@ describe('AnimateurBulkEditDialog', () => {
     await choisir(fixture, 'manager', 'Oui');
     submit(fixture);
     await fixture.whenStable();
-    expect(payloads(saveMany).map((each) => each.manager)).toEqual([true, true]);
+    expect(payloads(saveMany)).toEqual(rowsWith('manager', [true, true]));
   });
 
   it('waits for a typologie before enabling an appreciation edit', async () => {
@@ -192,10 +206,9 @@ describe('AnimateurBulkEditDialog', () => {
     submit(fixture);
     await fixture.whenStable();
 
-    expect(payloads(saveMany).map((each) => each.competences)).toEqual([
-      { ambiance: 'REFERENT' },
-      { ambiance: 'REFERENT' },
-    ]);
+    expect(payloads(saveMany)).toEqual(
+      rowsWith('competences', [{ ambiance: 'REFERENT' }, { ambiance: 'REFERENT' }]),
+    );
   });
 
   it('leaves the level select locked on a removal, which has no level to pick', async () => {
@@ -212,7 +225,7 @@ describe('AnimateurBulkEditDialog', () => {
 
     submit(fixture);
     await fixture.whenStable();
-    expect(payloads(saveMany).map((each) => each.competences)).toEqual([{}, {}]);
+    expect(payloads(saveMany)).toEqual(rowsWith('competences', [{}, {}]));
   });
 
   it('clears everyone’s souhaits when replacing them with nothing', async () => {
@@ -226,7 +239,7 @@ describe('AnimateurBulkEditDialog', () => {
 
     submit(fixture);
     await fixture.whenStable();
-    expect(payloads(saveMany).map((each) => each.souhaits)).toEqual([[], []]);
+    expect(payloads(saveMany)).toEqual(rowsWith('souhaits', [[], []]));
   });
 
   it('adds an unavailable day to everyone, without duplicating it for those who had it', async () => {
@@ -244,10 +257,9 @@ describe('AnimateurBulkEditDialog', () => {
 
     submit(fixture);
     await fixture.whenStable();
-    expect(payloads(saveMany).map((each) => each.joursIndisponibles)).toEqual([
-      ['2026-07-14'],
-      ['2026-07-14'],
-    ]);
+    expect(payloads(saveMany)).toEqual(
+      rowsWith('joursIndisponibles', [['2026-07-14'], ['2026-07-14']]),
+    );
   });
 
   it('keeps the dialog open when the server saved nothing', async () => {

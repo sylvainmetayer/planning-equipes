@@ -680,6 +680,24 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   not wired into the Maven `%test` phase (Quinoa stays disabled there), run by a
   dedicated CI job. Favour testing `core/` logic (services with a mocked
   `ApiService`, pure helpers) over heavy component-rendering tests.
+- **A page spec tests orchestration through typed fake services.** The
+  services of `core/` (the `core/api/*` classes, the stores) are faked through
+  `core/testing/fake.ts` — `fakeOf<T>({ method: impl })`, provided by
+  `provideFake(T, fake)` — with only the methods the spec needs, each typed on
+  the class: mock the method, not the URL, and read its calls back as
+  `fake.method.mock.calls[0]`, the method's own parameter tuple. A component's
+  protected member is read as `page['member']`, type-checked, never through a
+  cast to a shape the spec declares. Material rendering is tested only where
+  it is the subject (an accessible name, an NG01352). A cast that silences
+  the compiler in a spec — `as unknown as`, `as any`, `as never`, one debt
+  under three spellings, none of them held by eslint in a spec — is the debt
+  this replaces: `scripts/check-unknown-casts.js`
+  (`npm run unknown-casts-check`, run in CI) holds its count per spec against
+  `scripts/unknown-casts-baseline.json`, which can only go down — a spec below
+  its line fails until `npm run unknown-casts-check -- --update` lowers it,
+  and `--update` never raises the total — one line may rise within an
+  unchanged total, the casts of a spec renamed or moved. The count is now
+  zero and the baseline empty: a spec that writes a cast fails CI.
 - End-to-end tests are Playwright specs in `src/main/webui/e2e` (`npm run
   e2e`): the issue #165 security perimeter (auth wall, espace animateur
   boundary, full échange flow with refusal and cancellation), a smoke sweep of

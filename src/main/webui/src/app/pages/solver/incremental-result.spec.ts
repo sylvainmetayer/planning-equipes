@@ -113,7 +113,7 @@ describe('IncrementalResult', () => {
   });
 
   it('shows the hours alone when the créneau carries no date', () => {
-    const root = render([changement({ date: null as unknown as string })]);
+    const root = render([changement({ date: null })]);
 
     expect(rows(root)[0]).toMatch(/^10:00 – 12:00/);
   });

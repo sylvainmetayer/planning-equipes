@@ -16,13 +16,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { TypologieItem } from '../../core/models';
+import { fakeOf, provideFake } from '../../core/testing/fake';
 import { TypologieFormDialog } from './typologie-form-dialog';
 
 function monter(
   typologie: TypologieItem | null,
   options: { editingLocked?: boolean; saveOk?: boolean } = {},
 ) {
-  const save = vi.fn(async () => options.saveOk ?? true);
+  const crud = fakeOf<ReferenceCrudService>({ save: async () => options.saveOk ?? true });
   const close = vi.fn();
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
@@ -32,12 +33,12 @@ function monter(
         provide: SolverJobService,
         useValue: { editingLocked: signal(options.editingLocked ?? false) },
       },
-      { provide: ReferenceCrudService, useValue: { save } },
+      provideFake(ReferenceCrudService, crud),
       { provide: MatDialogRef, useValue: { close } },
       { provide: MAT_DIALOG_DATA, useValue: { typologie } },
     ],
   });
-  return { fixture: TestBed.createComponent(TypologieFormDialog), save, close };
+  return { fixture: TestBed.createComponent(TypologieFormDialog), save: crud.save, close };
 }
 
 function racine(fixture: ComponentFixture<TypologieFormDialog>): HTMLElement {
@@ -137,13 +138,8 @@ describe('TypologieFormDialog', () => {
     await fixture.whenStable();
     submit(fixture);
     await fixture.whenStable();
-    const [, payload, editingId] = save.mock.calls[0] as unknown as [
-      string,
-      TypologieItem,
-      string | null,
-    ];
-    expect(payload.id).toBe('');
-    expect(payload.code).toBe('AMBIANCE');
+    const [, payload, editingId] = save.mock.calls[0];
+    expect(payload).toMatchObject({ id: '', code: 'AMBIANCE' });
     expect(editingId).toBeNull();
 
     save.mockClear();
@@ -151,7 +147,7 @@ describe('TypologieFormDialog', () => {
     await fixture.whenStable();
     submit(fixture);
     await fixture.whenStable();
-    expect((save.mock.calls[0] as unknown as [string, TypologieItem])[1].code).toBeNull();
+    expect(save.mock.calls[0][1]).toMatchObject({ code: null });
   });
 
   it('fills the form from the typologie and saves the edited values, trimmed', async () => {
@@ -165,11 +161,7 @@ describe('TypologieFormDialog', () => {
     await fixture.whenStable();
 
     expect(save).toHaveBeenCalledOnce();
-    const [resource, payload, editingId] = save.mock.calls[0] as unknown as [
-      string,
-      TypologieItem,
-      string | null,
-    ];
+    const [resource, payload, editingId] = save.mock.calls[0];
     expect(resource).toBe('typologies');
     expect(payload).toEqual({
       id: 'ambiance',
@@ -200,9 +192,7 @@ describe('TypologieFormDialog', () => {
     submit(fixture);
     await fixture.whenStable();
 
-    expect(
-      (save.mock.calls[0] as unknown as [string, TypologieItem])[1].maxCreneauxParAnimateur,
-    ).toBe(6);
+    expect(save.mock.calls[0][1]).toMatchObject({ maxCreneauxParAnimateur: 6 });
 
     save.mockClear();
     saisir(fixture, 'maxCreneauxParAnimateur', '');
@@ -210,9 +200,7 @@ describe('TypologieFormDialog', () => {
     submit(fixture);
     await fixture.whenStable();
 
-    expect(
-      (save.mock.calls[0] as unknown as [string, TypologieItem])[1].maxCreneauxParAnimateur,
-    ).toBe(null);
+    expect(save.mock.calls[0][1]).toMatchObject({ maxCreneauxParAnimateur: null });
   });
 
   /**
@@ -234,16 +222,14 @@ describe('TypologieFormDialog', () => {
     await fixture.whenStable();
     submit(fixture);
     await fixture.whenStable();
-    expect((save.mock.calls[0] as unknown as [string, TypologieItem])[1].description).toBe(
-      'Trois soirées de formation',
-    );
+    expect(save.mock.calls[0][1]).toMatchObject({ description: 'Trois soirées de formation' });
 
     save.mockClear();
     saisir(fixture, 'description', '   ');
     await fixture.whenStable();
     submit(fixture);
     await fixture.whenStable();
-    expect((save.mock.calls[0] as unknown as [string, TypologieItem])[1].description).toBe(null);
+    expect(save.mock.calls[0][1]).toMatchObject({ description: null });
   });
 
   it('carries the ninja flag over untouched, since a PUT replaces the whole row', async () => {
@@ -257,7 +243,7 @@ describe('TypologieFormDialog', () => {
 
     // The flag is invisible in this dialog: dropping it would silently move the
     // ninja typologie to nothing on the next label fix.
-    expect((save.mock.calls[0] as unknown as [string, TypologieItem])[1].ninja).toBe(true);
+    expect(save.mock.calls[0][1]).toMatchObject({ ninja: true });
   });
 
   it('keeps the dialog open when the save is refused', async () => {

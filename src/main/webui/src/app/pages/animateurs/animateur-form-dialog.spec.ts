@@ -23,6 +23,7 @@ import { Router, provideRouter } from '@angular/router';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { AnimateurFormDialog } from './animateur-form-dialog';
 import { noDraftStorage, fakeDialogRef, memoryStorage } from '../../core/testing/brouillon';
+import { Fake, fakeOf, provideFake } from '../../core/testing/fake';
 import {
   LOCAL_DRAFT_STORAGE,
   SESSION_DRAFT_STORAGE,
@@ -66,7 +67,7 @@ function monter(
   } = {},
 ) {
   const ask = vi.fn(async () => options.confirme ?? true);
-  const save = vi.fn(async () => options.saveOk ?? true);
+  const crud = fakeOf<ReferenceCrudService>({ save: async () => options.saveOk ?? true });
   const close = vi.fn();
   const gel = vi.fn(async () => options.gel ?? []);
   TestBed.resetTestingModule();
@@ -85,7 +86,7 @@ function monter(
         provide: SolverJobService,
         useValue: { editingLocked: signal(options.editingLocked ?? false) },
       },
-      { provide: ReferenceCrudService, useValue: { save } },
+      provideFake(ReferenceCrudService, crud),
       { provide: EditionsApi, useValue: { gel } },
       { provide: MatDialogRef, useValue: fakeDialogRef(close) },
       ...(options.storages
@@ -98,7 +99,13 @@ function monter(
       { provide: ConfirmService, useValue: { ask } },
     ],
   });
-  return { fixture: TestBed.createComponent(AnimateurFormDialog), save, close, gel, ask };
+  return {
+    fixture: TestBed.createComponent(AnimateurFormDialog),
+    save: crud.save,
+    close,
+    gel,
+    ask,
+  };
 }
 
 function racine(fixture: ComponentFixture<AnimateurFormDialog>): HTMLElement {
@@ -136,8 +143,9 @@ function submit(fixture: ComponentFixture<AnimateurFormDialog>): void {
   racine(fixture).querySelector('form')!.dispatchEvent(new Event('submit'));
 }
 
-function payload(save: ReturnType<typeof vi.fn>): Animateur {
-  return (save.mock.calls[0] as unknown as [string, Animateur])[1];
+function payload(save: Fake<ReferenceCrudService>['save']): Animateur {
+  // `save` is generic over its payload: the call is typed on its bound, the form sends an Animateur.
+  return save.mock.calls[0][1] as Animateur;
 }
 
 /** Names the `<form>` really registered — a `[name]` binding leaves no attribute. */

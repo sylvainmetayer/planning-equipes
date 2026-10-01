@@ -30,6 +30,7 @@ import { ScenarioImportService } from '../../core/scenario-import.service';
 import { REPLACE_KEYWORD, ParametresPage } from './parametres-page';
 import type { DemandeRecopie } from '../../shared/confirmation-recopie';
 import type { EtatSauvegarde } from '../../core/models';
+import { Fake, fakeOf, provideFake } from '../../core/testing/fake';
 
 function text(element: HTMLElement): string {
   return element.textContent!.replace(/\s+/g, ' ').trim();
@@ -45,16 +46,7 @@ function file(nom: string, contenu: string): File {
 describe('ParametresPage rendering', () => {
   let fixture: ComponentFixture<ParametresPage>;
   let api: { get: ReturnType<typeof vi.fn> };
-  let adminApi: {
-    mailConfig: ReturnType<typeof vi.fn>;
-    backups: ReturnType<typeof vi.fn>;
-    setBackupsActive: ReturnType<typeof vi.fn>;
-    exportDatabase: ReturnType<typeof vi.fn>;
-    importDatabase: ReturnType<typeof vi.fn>;
-    notificationSettings: ReturnType<typeof vi.fn>;
-    organisationContact: ReturnType<typeof vi.fn>;
-    saveOrganisationContact: ReturnType<typeof vi.fn>;
-  };
+  let adminApi: Fake<AdminApi>;
   let recopie: { demander: ReturnType<typeof vi.fn> };
   let instantane: { proposer: ReturnType<typeof vi.fn> };
   let notify: ReturnType<typeof vi.fn>;
@@ -114,33 +106,33 @@ describe('ParametresPage rendering', () => {
     recopie = { demander: vi.fn(async () => true) };
     instantane = { proposer: vi.fn(async () => undefined) };
     api = { get: vi.fn(async () => []) };
-    adminApi = {
-      mailConfig: vi.fn(async () => ({
+    adminApi = fakeOf<AdminApi>({
+      mailConfig: async () => ({
         adminEmail: options.adminEmail === undefined ? 'admin@exemple.test' : options.adminEmail,
-      })),
-      backups: vi.fn(async () => options.sauvegarde ?? SAUVEGARDE),
-      setBackupsActive: vi.fn(async (active: boolean) => ({
+      }),
+      backups: async () => options.sauvegarde ?? SAUVEGARDE,
+      setBackupsActive: async (active) => ({
         ...(options.sauvegarde ?? SAUVEGARDE),
         active,
-      })),
-      exportDatabase: vi.fn(async () => 'Téléchargement démarré.'),
-      importDatabase: vi.fn(async () => ({ message: 'Base remplacée.' })),
-      notificationSettings: vi.fn(async () => ({
+      }),
+      exportDatabase: async () => 'Téléchargement démarré.',
+      importDatabase: async () => ({ message: 'Base remplacée.' }),
+      notificationSettings: async () => ({
         actives: false,
         heureRappelVeille: '18:00:00',
         delaiRelanceHeures: 72,
         ancienneteEchangeJours: 3,
-      })),
-      organisationContact: vi.fn(async () => ({ telephone: '01 23 45 67 89', email: null })),
-      saveOrganisationContact: vi.fn(async (contact: unknown) => contact),
-    };
+      }),
+      organisationContact: async () => ({ telephone: '01 23 45 67 89', email: null }),
+      saveOrganisationContact: async (contact) => contact,
+    });
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
         { provide: ApiService, useValue: api },
-        { provide: AdminApi, useValue: adminApi },
+        provideFake(AdminApi, adminApi),
         {
           provide: EditionStore,
           useValue: {
@@ -389,7 +381,7 @@ describe('ParametresPage rendering', () => {
     await fixture.whenStable();
 
     expect(adminApi.exportDatabase).toHaveBeenCalledOnce();
-    const [filename] = adminApi.exportDatabase.mock.calls[0] as unknown as [string];
+    const [filename] = adminApi.exportDatabase.mock.calls[0];
     expect(filename.endsWith('.sql')).toBe(true);
   });
 

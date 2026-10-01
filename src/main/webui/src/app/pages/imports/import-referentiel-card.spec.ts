@@ -1,7 +1,7 @@
 // The shared referential import card: what it posts, what it renders of the
 // report, and the one thing that must never happen — a write without a preview.
 
-import { provideZonelessChangeDetection } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -9,7 +9,8 @@ import { ImportsApi } from '../../core/api/imports-api';
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { ConfirmService } from '../../shared/confirm-dialog';
-import { RapportImportReferentiel } from '../../core/models';
+import { RapportImportReferentiel, Stand } from '../../core/models';
+import { Fake, fakeOf, provideFake } from '../../core/testing/fake';
 import {
   ImportReferentielCard,
   referentialParamsOf,
@@ -50,6 +51,24 @@ function rapport(partial: Partial<RapportImportReferentiel> = {}): RapportImport
   };
 }
 
+function stand(id: string, code: string | null, nom: string): Stand {
+  return {
+    id,
+    code,
+    nom,
+    typologiesProposees: [],
+    effectifMin: 1,
+    effectifMax: 1,
+    reserveMajeurs: false,
+    premium: false,
+    niveauEffort: 'NORMAL',
+    emplacement: null,
+    indisponibilites: [],
+    ouvertures: [],
+    horaires: [],
+  };
+}
+
 async function mount(
   target: RapportImportReferentiel['cible'] = 'STANDS',
 ): Promise<ComponentFixture<ImportReferentielCard>> {
@@ -62,56 +81,50 @@ async function mount(
 }
 
 describe('ImportReferentielCard', () => {
-  const api = { analyse: vi.fn(), importer: vi.fn(), telechargerExemple: vi.fn() };
-  const confirm = { ask: vi.fn(async () => true) };
-  const notifications = { notify: vi.fn() };
-  const store = {
-    reload: vi.fn(async () => undefined),
-    typologies: () => [],
-    emplacements: () => [],
-    stands: () => [
-      { id: 's-1', code: 'S1', nom: 'Stand un' },
-      { id: 's-2', code: null, nom: 'Stand Deux' },
-      { id: 's-3', code: 'S3', nom: 'Stand trois' },
-    ],
-    creneaux: () => [],
-  };
+  let api: Fake<ImportsApi>;
+  let confirm: Fake<ConfirmService>;
+  let notifications: Fake<NotificationService>;
+  let store: Fake<ReferenceDataStore>;
 
   beforeEach(() => {
-    for (const stub of Object.values(api)) {
-      stub.mockReset();
-    }
-    confirm.ask.mockClear();
-    confirm.ask.mockResolvedValue(true);
-    notifications.notify.mockClear();
+    api = fakeOf<ImportsApi>({
+      analyse: async () => rapport(),
+      importer: async () => rapport(),
+      telechargerExemple: async () => '',
+    });
+    confirm = fakeOf<ConfirmService>({ ask: async () => true });
+    notifications = fakeOf<NotificationService>({ notify: () => undefined });
+    store = fakeOf<ReferenceDataStore>({
+      reload: async () => undefined,
+      typologies: signal([]),
+      emplacements: signal([]),
+      stands: signal([
+        stand('s-1', 'S1', 'Stand un'),
+        stand('s-2', null, 'Stand Deux'),
+        stand('s-3', 'S3', 'Stand trois'),
+      ]),
+      creneaux: signal([]),
+    });
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        { provide: ImportsApi, useValue: api },
-        { provide: ConfirmService, useValue: confirm },
-        { provide: NotificationService, useValue: notifications },
-        { provide: ReferenceDataStore, useValue: store },
+        provideFake(ImportsApi, api),
+        provideFake(ConfirmService, confirm),
+        provideFake(NotificationService, notifications),
+        provideFake(ReferenceDataStore, store),
       ],
     });
   });
 
-  type Internals = {
-    nomFichier: { set: (v: string) => void };
-    analyser: () => Promise<void>;
-    importer: () => Promise<void>;
-    peutImporter: () => boolean;
-    onColle: (csv: string) => Promise<void>;
-  };
-
   it('renders each row with its action, its reason and the typologies about to be created', async () => {
     api.analyse.mockResolvedValue(rapport());
     const fixture = await mount();
-    const card = fixture.componentInstance as unknown as Internals;
+    const card = fixture.componentInstance;
 
-    card.nomFichier.set('stands.csv');
-    await card.analyser();
+    card['nomFichier'].set('stands.csv');
+    await card['analyser']();
     await fixture.whenStable();
 
     const racine = fixture.nativeElement as HTMLElement;
@@ -126,32 +139,32 @@ describe('ImportReferentielCard', () => {
     api.analyse.mockResolvedValue(rapport());
     api.importer.mockResolvedValue(rapport({ applied: true, rejected: 1, created: 1 }));
     const fixture = await mount();
-    const card = fixture.componentInstance as unknown as Internals;
+    const card = fixture.componentInstance;
 
-    card.nomFichier.set('stands.csv');
-    await card.analyser();
+    card['nomFichier'].set('stands.csv');
+    await card['analyser']();
     await fixture.whenStable();
-    expect(card.peutImporter()).toBe(true);
+    expect(card['peutImporter']()).toBe(true);
 
-    await card.importer();
+    await card['importer']();
 
     expect(confirm.ask).toHaveBeenCalledOnce();
     expect(api.importer).toHaveBeenCalledOnce();
     expect(store.reload).toHaveBeenCalled();
     expect(notifications.notify).toHaveBeenCalledOnce();
     // Applied: the button closes rather than offering to write twice.
-    expect(card.peutImporter()).toBe(false);
+    expect(card['peutImporter']()).toBe(false);
   });
 
   it('refuses to write when the operator says no', async () => {
     api.analyse.mockResolvedValue(rapport());
     confirm.ask.mockResolvedValue(false);
     const fixture = await mount();
-    const card = fixture.componentInstance as unknown as Internals;
+    const card = fixture.componentInstance;
 
-    card.nomFichier.set('stands.csv');
-    await card.analyser();
-    await card.importer();
+    card['nomFichier'].set('stands.csv');
+    await card['analyser']();
+    await card['importer']();
 
     expect(api.importer).not.toHaveBeenCalled();
   });
@@ -159,13 +172,13 @@ describe('ImportReferentielCard', () => {
   it('offers nothing to write when every row is refused', async () => {
     api.analyse.mockResolvedValue(rapport({ accepted: 0, created: 0, rejected: 2 }));
     const fixture = await mount();
-    const card = fixture.componentInstance as unknown as Internals;
+    const card = fixture.componentInstance;
 
-    card.nomFichier.set('stands.csv');
-    await card.analyser();
+    card['nomFichier'].set('stands.csv');
+    await card['analyser']();
     await fixture.whenStable();
 
-    expect(card.peutImporter()).toBe(false);
+    expect(card['peutImporter']()).toBe(false);
   });
 
   /**
@@ -196,11 +209,11 @@ describe('ImportReferentielCard', () => {
     ];
     api.importer.mockResolvedValue(written);
     const fixture = await mount();
-    const card = fixture.componentInstance as unknown as Internals;
+    const card = fixture.componentInstance;
 
-    card.nomFichier.set('stands.csv');
-    await card.analyser();
-    await card.importer();
+    card['nomFichier'].set('stands.csv');
+    await card['analyser']();
+    await card['importer']();
     await fixture.whenStable();
 
     const lien = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('a')).find(
@@ -227,11 +240,11 @@ describe('ImportReferentielCard', () => {
     api.analyse.mockResolvedValue(modeles);
     api.importer.mockResolvedValue({ ...modeles, applied: true });
     const fixture = await mount('JOURNEES_TYPES');
-    const card = fixture.componentInstance as unknown as Internals;
+    const card = fixture.componentInstance;
 
-    card.nomFichier.set('journees.csv');
-    await card.analyser();
-    await card.importer();
+    card['nomFichier'].set('journees.csv');
+    await card['analyser']();
+    await card['importer']();
     await fixture.whenStable();
 
     const lien = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('a')).find(
@@ -249,11 +262,11 @@ describe('ImportReferentielCard', () => {
     fixture.componentRef.setInput('lienReferentiel', false);
     const emitted = vi.fn();
     fixture.componentInstance.imported.subscribe(emitted);
-    const card = fixture.componentInstance as unknown as Internals;
+    const card = fixture.componentInstance;
 
-    card.nomFichier.set('stands.csv');
-    await card.analyser();
-    await card.importer();
+    card['nomFichier'].set('stands.csv');
+    await card['analyser']();
+    await card['importer']();
     await fixture.whenStable();
 
     expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('lignes importées');
@@ -263,9 +276,9 @@ describe('ImportReferentielCard', () => {
   it('previews pasted cells exactly as it would a file', async () => {
     api.analyse.mockResolvedValue(rapport());
     const fixture = await mount();
-    const card = fixture.componentInstance as unknown as Internals;
+    const card = fixture.componentInstance;
 
-    await card.onColle('"code";"nom"\n"S1";"Stand un"\n');
+    await card['onColle']('"code";"nom"\n"S1";"Stand un"\n');
 
     expect(api.analyse).toHaveBeenCalledWith('STANDS', {
       fileName: 'collage.csv',

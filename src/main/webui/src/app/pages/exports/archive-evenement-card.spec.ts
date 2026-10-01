@@ -10,16 +10,6 @@ import { ArchiveEvenementApi } from '../../core/api/archive-evenement-api';
 import { ArchiveAvailability, ArchivePart } from '../../core/models';
 import { ArchiveEvenementCard } from './archive-evenement-card';
 
-type Internals = {
-  basculer: (part: ArchivePart, coche: boolean) => void;
-  telecharger: () => Promise<void>;
-  parties: () => ArchivePart[];
-  peutTelecharger: () => boolean;
-  feuille: { set: (value: boolean) => void };
-  message: () => string;
-  erreur: () => string;
-};
-
 describe('ArchiveEvenementCard', () => {
   const api = {
     availability: vi.fn<() => Promise<ArchiveAvailability>>(),
@@ -48,7 +38,7 @@ describe('ArchiveEvenementCard', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     return {
-      page: fixture.componentInstance as unknown as Internals,
+      page: fixture.componentInstance,
       racine: fixture.nativeElement as HTMLElement,
     };
   }
@@ -60,16 +50,22 @@ describe('ArchiveEvenementCard', () => {
       resolutionEnCours: false,
     });
 
-    expect(page.parties()).toEqual(['pdfGlobal', 'equite', 'heures', 'referentiels', 'scenario']);
+    expect(page['parties']()).toEqual([
+      'pdfGlobal',
+      'equite',
+      'heures',
+      'referentiels',
+      'scenario',
+    ]);
     expect(racine.textContent).toContain('LISEZMOI.txt');
     expect(racine.querySelectorAll('li[data-part]')).toHaveLength(7);
 
-    await page.telecharger();
+    await page['telecharger']();
     expect(api.telecharger).toHaveBeenCalledWith(
       ['pdfGlobal', 'equite', 'heures', 'referentiels', 'scenario'],
       'livret',
     );
-    expect(page.message()).toContain('téléchargé');
+    expect(page['message']()).toContain('téléchargé');
   });
 
   it('greys out what reads the plan while there is none, and never asks for it', async () => {
@@ -85,15 +81,15 @@ describe('ArchiveEvenementCard', () => {
     expect(racine.querySelector('li[data-part="publication"]')!.textContent).toContain(
       'aucune publication',
     );
-    expect(page.parties()).toEqual(['referentiels', 'scenario']);
+    expect(page['parties']()).toEqual(['referentiels', 'scenario']);
   });
 
   it('offers the sheet layout once the individual documents are taken, and sends it', async () => {
     const { page } = await mount({ planResolu: true, publie: true, resolutionEnCours: false });
 
-    page.basculer('individuels', true);
-    page.feuille.set(true);
-    await page.telecharger();
+    page['basculer']('individuels', true);
+    page['feuille'].set(true);
+    await page['telecharger']();
 
     expect(api.telecharger).toHaveBeenCalledWith(
       ['pdfGlobal', 'equite', 'heures', 'referentiels', 'scenario', 'individuels'],
@@ -104,16 +100,16 @@ describe('ArchiveEvenementCard', () => {
   it('refuses to download nothing, and says why a refused archive failed', async () => {
     const { page } = await mount({ planResolu: true, publie: true, resolutionEnCours: false });
     for (const part of ['pdfGlobal', 'equite', 'heures', 'referentiels', 'scenario'] as const) {
-      page.basculer(part, false);
+      page['basculer'](part, false);
     }
-    expect(page.peutTelecharger()).toBe(false);
-    await page.telecharger();
+    expect(page['peutTelecharger']()).toBe(false);
+    await page['telecharger']();
     expect(api.telecharger).not.toHaveBeenCalled();
 
-    page.basculer('scenario', true);
+    page['basculer']('scenario', true);
     api.telecharger.mockRejectedValueOnce(new Error('Aucune donnée de référence à exporter.'));
-    await page.telecharger();
-    expect(page.erreur()).toContain('Aucune donnée');
+    await page['telecharger']();
+    expect(page['erreur']()).toContain('Aucune donnée');
   });
 
   it('says the archive carries the last persisted plan while a solve runs', async () => {

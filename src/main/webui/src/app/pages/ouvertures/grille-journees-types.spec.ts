@@ -89,8 +89,10 @@ function rapport(): RapportOuvertures {
         modifieLe: '2026-09-12T10:00:00Z',
       },
     ],
+    standsJamaisOuverts: 0,
+    postesTotal: 0,
     anomalies: [],
-  } as unknown as RapportOuvertures;
+  };
 }
 
 function etat(): EtatJourneesTypes {

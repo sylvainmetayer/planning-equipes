@@ -29,7 +29,7 @@ describe('session-end', () => {
   });
 
   it('falls back on a storage event carrying no data but a moment', () => {
-    const target = new EventTarget() as unknown as Window;
+    const target = new EventTarget();
     const written: string[] = [];
     const bus: SessionEndBus = {
       channel: null,

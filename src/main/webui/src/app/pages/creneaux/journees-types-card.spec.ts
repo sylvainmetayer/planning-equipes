@@ -13,6 +13,7 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { EtatGel, EtatJourneesTypes } from '../../core/models';
+import { JourneesTypesApplicationDialog } from './journees-types-application-dialog';
 import { JourneesTypesCard } from './journees-types-card';
 
 const ETAT: EtatJourneesTypes = {
@@ -39,25 +40,16 @@ const ETAT: EtatJourneesTypes = {
   datesSousConsigne: [],
 };
 
-type CardInternals = {
-  du: { set: (v: string) => void };
-  au: { set: (v: string) => void };
-  journeeTypeChoisie: { set: (v: number | null) => void };
-  ajouterDates: () => Promise<void>;
-  retirer: (date: string) => Promise<void>;
-  appliquer: () => Promise<void>;
-};
-
 async function mount(): Promise<{
   fixture: ComponentFixture<JourneesTypesCard>;
-  card: CardInternals;
+  card: JourneesTypesCard;
   racine: HTMLElement;
 }> {
   const fixture = TestBed.createComponent(JourneesTypesCard);
   await fixture.whenStable();
   return {
     fixture,
-    card: fixture.componentInstance as unknown as CardInternals,
+    card: fixture.componentInstance,
     racine: fixture.nativeElement as HTMLElement,
   };
 }
@@ -120,11 +112,11 @@ describe('JourneesTypesCard', () => {
   it('adds a range of dates to the chosen template and writes the calendar as a whole', async () => {
     const { fixture, card } = await mount();
 
-    card.du.set('2027-07-14');
-    card.au.set('2027-07-15');
-    card.journeeTypeChoisie.set(2);
+    card['du'].set('2027-07-14');
+    card['au'].set('2027-07-15');
+    card['journeeTypeChoisie'].set(2);
     await fixture.whenStable();
-    await card.ajouterDates();
+    await card['ajouterDates']();
 
     expect(api.setCalendrier).toHaveBeenCalledOnce();
     expect(api.setCalendrier.mock.calls[0][0]).toEqual([
@@ -138,7 +130,7 @@ describe('JourneesTypesCard', () => {
   it('removes a date without touching the others', async () => {
     const { card } = await mount();
 
-    await card.retirer('2027-07-12');
+    await card['retirer']('2027-07-12');
 
     expect(api.setCalendrier.mock.calls[0][0]).toEqual([{ date: '2027-07-13', journeeTypeId: 2 }]);
   });
@@ -154,16 +146,15 @@ describe('JourneesTypesCard', () => {
     api.previewApplication.mockResolvedValue(apercu);
     const { card } = await mount();
 
-    await card.appliquer();
+    await card['appliquer']();
 
     expect(api.previewApplication).toHaveBeenCalledOnce();
     expect(api.apply).not.toHaveBeenCalled();
     expect(dialog.open).toHaveBeenCalledOnce();
-    const [, config] = dialog.open.mock.calls[0] as unknown as [
-      unknown,
-      { data: { apercu: unknown } },
-    ];
-    expect(config.data.apercu).toBe(apercu);
+    expect(dialog.open).toHaveBeenCalledWith(
+      JourneesTypesApplicationDialog,
+      expect.objectContaining({ data: { apercu } }),
+    );
   });
 
   it('greys out applying the calendar under a timeslots freeze, and leaves the calendar open', async () => {
@@ -177,12 +168,12 @@ describe('JourneesTypesCard', () => {
       (each) => each.textContent?.includes('Appliquer le calendrier'),
     )!;
     expect(applyButton.disabled).toBe(true);
-    await card.appliquer();
+    await card['appliquer']();
     expect(api.previewApplication).not.toHaveBeenCalled();
     expect(dialog.open).not.toHaveBeenCalled();
 
     // The templates and the calendar are not timeslots: writing them stays open.
-    await card.retirer('2027-07-12');
+    await card['retirer']('2027-07-12');
     expect(api.setCalendrier).toHaveBeenCalledOnce();
   });
 

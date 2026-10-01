@@ -88,7 +88,8 @@ describe('row presentation', () => {
     expect(classeAction('UPDATED')).toBe('import-ligne-maj');
     expect(classeAction('REJECTED')).toBe('import-ligne-rejet');
     expect(
-      new Set(['CREATED', 'UPDATED', 'REJECTED'].map((a) => iconeAction(a as never))).size,
+      new Set((['CREATED', 'UPDATED', 'REJECTED'] as const).map((action) => iconeAction(action)))
+        .size,
     ).toBe(3);
   });
 });

@@ -31,11 +31,6 @@ describe('ExemplesCard', () => {
 
   let fixture: ComponentFixture<ExemplesCard>;
 
-  type Internals = {
-    onSelectScenario: (name: string) => void;
-    onLoadSample: () => Promise<void>;
-  };
-
   beforeEach(() => {
     editingLocked.set(false);
     gel.mockReset();
@@ -74,11 +69,11 @@ describe('ExemplesCard', () => {
     });
   });
 
-  async function monter(): Promise<{ page: Internals; racine: HTMLElement }> {
+  async function monter(): Promise<{ page: ExemplesCard; racine: HTMLElement }> {
     fixture = TestBed.createComponent(ExemplesCard);
     await fixture.whenStable();
     return {
-      page: fixture.componentInstance as unknown as Internals,
+      page: fixture.componentInstance,
       racine: fixture.nativeElement as HTMLElement,
     };
   }
@@ -110,7 +105,7 @@ describe('ExemplesCard', () => {
   it('loads the realistic example by its file name, which the screen never shows', async () => {
     const { page } = await monter();
 
-    await page.onLoadSample();
+    await page['onLoadSample']();
 
     expect(scenarioImport.importer).toHaveBeenCalledExactlyOnceWith({
       kind: 'name',
@@ -121,8 +116,8 @@ describe('ExemplesCard', () => {
   it('imports the selected scenario by name, through the shared choreography', async () => {
     const { page } = await monter();
 
-    page.onSelectScenario('gamme-01-1j-2stands-3animateurs.yaml');
-    await page.onLoadSample();
+    page['onSelectScenario']('gamme-01-1j-2stands-3animateurs.yaml');
+    await page['onLoadSample']();
 
     expect(scenarioImport.importer).toHaveBeenCalledExactlyOnceWith({
       kind: 'name',
@@ -135,7 +130,7 @@ describe('ExemplesCard', () => {
     scenarioImport.importer.mockResolvedValue({ status: 'cancelled', result: null });
     const { page, racine } = await monter();
 
-    await page.onLoadSample();
+    await page['onLoadSample']();
     await fixture.whenStable();
 
     expect(racine.textContent).not.toContain('» chargé');
@@ -148,7 +143,7 @@ describe('ExemplesCard', () => {
 
     expect(bouton().disabled).toBe(true);
     // And again in the handler, for the job that starts between render and click.
-    await page.onLoadSample();
+    await page['onLoadSample']();
     expect(scenarioImport.importer).not.toHaveBeenCalled();
   });
 
@@ -171,7 +166,7 @@ describe('ExemplesCard', () => {
     expect(notice!.textContent).toContain('sera refusé jusqu');
     expect(bouton().disabled).toBe(false);
 
-    await page.onLoadSample();
+    await page['onLoadSample']();
     expect(scenarioImport.importer).toHaveBeenCalledOnce();
   });
 

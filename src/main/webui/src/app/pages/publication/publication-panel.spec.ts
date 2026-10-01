@@ -3,7 +3,7 @@
 // reflex in front of a screen that says nothing is to click again. The
 // documents moved to their own tab (documents-panel.spec.ts).
 
-import { provideZonelessChangeDetection, Signal, signal } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlanningApi } from '../../core/api/planning-api';
@@ -14,23 +14,6 @@ import { GelInvitation } from '../../core/gel-invitation';
 import { PublicationSelection } from './publication-selection';
 
 const gelOffer = vi.fn().mockResolvedValue(undefined);
-
-type PanelInternals = {
-  busy: Signal<boolean>;
-  publishable: Signal<boolean>;
-  recipientsInFlight: Signal<number>;
-  publish: () => Promise<void>;
-  publishSentence: Signal<string>;
-  rows: Signal<{ animateurId: string }[]>;
-  minorCount: Signal<number>;
-  notifiedCount: Signal<number>;
-  minorHidden: Signal<boolean>;
-  isExcluded: (animateurId: string) => boolean;
-  toggleExclusion: (animateurId: string, prevenir: boolean) => void;
-  toggleMinorFilter: (masquer: boolean) => void;
-  chooseSort: (tri: 'nom' | 'ampleur') => void;
-  reloadPreview: () => Promise<void>;
-};
 
 function recipient(partiel: Record<string, unknown>): Record<string, unknown> {
   return {
@@ -95,13 +78,13 @@ describe('PublicationPanel', () => {
     });
   });
 
-  function createPanel(): PanelInternals {
+  function createPanel(): PublicationPanel {
     fixture = TestBed.createComponent(PublicationPanel);
     messages = [];
     published = 0;
     fixture.componentInstance.reported.subscribe((message) => messages.push(message));
     fixture.componentInstance.published.subscribe(() => published++);
-    return fixture.componentInstance as unknown as PanelInternals;
+    return fixture.componentInstance;
   }
 
   /** A publication that hangs until the test lets it finish. */
@@ -116,10 +99,10 @@ describe('PublicationPanel', () => {
     return { terminer: () => finish() };
   }
 
-  async function panelPret(): Promise<PanelInternals> {
+  async function panelPret(): Promise<PublicationPanel> {
     planningApi.publicationPreview.mockResolvedValue(apercuPret);
     const panel = createPanel();
-    await vi.waitFor(() => expect(panel.publishable()).toBe(true));
+    await vi.waitFor(() => expect(panel['publishable']()).toBe(true));
     return panel;
   }
 
@@ -134,19 +117,19 @@ describe('PublicationPanel', () => {
     const envoi = envoiSuspendu();
     const panel = await panelPret();
 
-    const publication = panel.publish();
+    const publication = panel['publish']();
     await vi.waitFor(() => expect(planningApi.publish).toHaveBeenCalledTimes(1));
 
-    expect(panel.busy()).toBe(true);
+    expect(panel['busy']()).toBe(true);
     // The count is frozen at the start: the preview reloads at the end and
     // would otherwise fall to zero in the middle of the sentence.
-    expect(panel.recipientsInFlight()).toBe(3);
+    expect(panel['recipientsInFlight']()).toBe(3);
 
     envoi.terminer();
     await publication;
     // A published plan is the second milestone at which freezing is offered.
     expect(gelOffer).toHaveBeenCalledWith('publication');
-    expect(panel.busy()).toBe(false);
+    expect(panel['busy']()).toBe(false);
     // And the preview was re-read once the mail went out.
     expect(planningApi.publicationPreview).toHaveBeenCalledTimes(2);
   });
@@ -155,10 +138,10 @@ describe('PublicationPanel', () => {
     confirm.ask.mockResolvedValue(true);
     const envoi = envoiSuspendu();
     const panel = await panelPret();
-    const publication = panel.publish();
+    const publication = panel['publish']();
     await vi.waitFor(() => expect(planningApi.publish).toHaveBeenCalledTimes(1));
 
-    await panel.publish();
+    await panel['publish']();
 
     // Real mail to real people: a second click must not send it twice.
     expect(planningApi.publish).toHaveBeenCalledTimes(1);
@@ -180,11 +163,11 @@ describe('PublicationPanel', () => {
     const envoi = envoiSuspendu();
     const panel = await panelPret();
 
-    const publication = panel.publish();
+    const publication = panel['publish']();
     await vi.waitFor(() => expect(confirm.ask).toHaveBeenCalledTimes(1));
-    expect(panel.busy()).toBe(true);
+    expect(panel['busy']()).toBe(true);
 
-    await panel.publish();
+    await panel['publish']();
     expect(confirm.ask).toHaveBeenCalledTimes(1);
 
     confirmer();
@@ -197,10 +180,10 @@ describe('PublicationPanel', () => {
     confirm.ask.mockResolvedValue(false);
     const panel = await panelPret();
 
-    await panel.publish();
+    await panel['publish']();
 
     expect(planningApi.publish).not.toHaveBeenCalled();
-    expect(panel.busy()).toBe(false);
+    expect(panel['busy']()).toBe(false);
   });
 
   it('releases the button when the send fails', async () => {
@@ -208,11 +191,11 @@ describe('PublicationPanel', () => {
     planningApi.publish.mockRejectedValue(new Error('SMTP injoignable'));
     const panel = await panelPret();
 
-    await panel.publish();
+    await panel['publish']();
 
     // Otherwise a failed send would leave the action locked until reload,
     // with no way to try again.
-    expect(panel.busy()).toBe(false);
+    expect(panel['busy']()).toBe(false);
     expect(messages.at(-1)).toContain('SMTP injoignable');
   });
 
@@ -223,20 +206,20 @@ describe('PublicationPanel', () => {
     await vi.waitFor(() => expect(planningApi.publicationPreview).toHaveBeenCalled());
     await fixture.whenStable();
 
-    expect(panel.publishable()).toBe(false);
+    expect(panel['publishable']()).toBe(false);
     expect(fixture.componentInstance.preview()).toBeNull();
   });
 
   /* -------------------------- The review table --------------------------- */
 
-  async function panelWith(destinataires: Record<string, unknown>[]): Promise<PanelInternals> {
+  async function panelWith(destinataires: Record<string, unknown>[]): Promise<PublicationPanel> {
     planningApi.publicationPreview.mockResolvedValue({
       ...apercuPret,
       nombreConcernes: destinataires.length,
       destinataires,
     });
     const panel = createPanel();
-    await vi.waitFor(() => expect(panel.rows()).toHaveLength(destinataires.length));
+    await vi.waitFor(() => expect(panel['rows']()).toHaveLength(destinataires.length));
     return panel;
   }
 
@@ -254,11 +237,11 @@ describe('PublicationPanel', () => {
         recipient({ animateurId: 'a2', nomAffiche: 'Bruno Petit' }),
       ]);
 
-      panel.toggleExclusion('a2', false);
-      expect(panel.isExcluded('a2')).toBe(true);
-      expect(panel.notifiedCount()).toBe(1);
+      panel['toggleExclusion']('a2', false);
+      expect(panel['isExcluded']('a2')).toBe(true);
+      expect(panel['notifiedCount']()).toBe(1);
 
-      await panel.publish();
+      await panel['publish']();
 
       expect(planningApi.publish).toHaveBeenCalledExactlyOnceWith(['a2']);
       expect(messages.at(-1)).toContain('Bruno Petit');
@@ -272,10 +255,10 @@ describe('PublicationPanel', () => {
         recipient({ animateurId: 'a2', nomAffiche: 'Bruno Petit' }),
       ]);
 
-      expect(panel.publishSentence()).toContain('2');
-      expect(panel.publishSentence()).toContain('met à jour leur espace');
-      panel.toggleExclusion('a2', false);
-      expect(panel.publishSentence()).toContain('1');
+      expect(panel['publishSentence']()).toContain('2');
+      expect(panel['publishSentence']()).toContain('met à jour leur espace');
+      panel['toggleExclusion']('a2', false);
+      expect(panel['publishSentence']()).toContain('1');
     });
 
     /**
@@ -285,10 +268,10 @@ describe('PublicationPanel', () => {
     it('goes inert when every single person has been unticked', async () => {
       const panel = await panelWith([recipient({})]);
 
-      panel.toggleExclusion('a1', false);
+      panel['toggleExclusion']('a1', false);
 
-      expect(panel.notifiedCount()).toBe(0);
-      expect(panel.publishable()).toBe(false);
+      expect(panel['notifiedCount']()).toBe(0);
+      expect(panel['publishable']()).toBe(false);
     });
 
     it('folds the minor changes away without excluding them', async () => {
@@ -297,12 +280,12 @@ describe('PublicationPanel', () => {
         recipient({ animateurId: 'a2', mineur: true, ajouts: 0, deplacements: 1 }),
       ]);
 
-      expect(panel.minorCount()).toBe(1);
-      panel.toggleMinorFilter(true);
+      expect(panel['minorCount']()).toBe(1);
+      panel['toggleMinorFilter'](true);
 
-      expect(panel.rows()).toHaveLength(1);
+      expect(panel['rows']()).toHaveLength(1);
       // Hiding is looking, not deciding: both people are still to be notified.
-      expect(panel.notifiedCount()).toBe(2);
+      expect(panel['notifiedCount']()).toBe(2);
     });
 
     it('puts the biggest change first when asked to', async () => {
@@ -311,9 +294,9 @@ describe('PublicationPanel', () => {
         recipient({ animateurId: 'a2', ajouts: 3, retraits: 1 }),
       ]);
 
-      panel.chooseSort('ampleur');
+      panel['chooseSort']('ampleur');
 
-      expect(panel.rows().map((ligne) => ligne.animateurId)).toEqual(['a2', 'a1']);
+      expect(panel['rows']().map((ligne) => ligne.animateurId)).toEqual(['a2', 'a1']);
     });
 
     /**
@@ -326,17 +309,17 @@ describe('PublicationPanel', () => {
         recipient({}),
         recipient({ animateurId: 'a2', nomAffiche: 'Bruno Petit' }),
       ]);
-      panel.toggleExclusion('a2', false);
+      panel['toggleExclusion']('a2', false);
 
       planningApi.publicationPreview.mockResolvedValue({
         ...apercuPret,
         nombreConcernes: 1,
         destinataires: [recipient({})],
       });
-      await panel.reloadPreview();
+      await panel['reloadPreview']();
 
-      expect(panel.isExcluded('a2')).toBe(false);
-      expect(panel.notifiedCount()).toBe(1);
+      expect(panel['isExcluded']('a2')).toBe(false);
+      expect(panel['notifiedCount']()).toBe(1);
     });
   });
 });

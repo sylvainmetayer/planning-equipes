@@ -2,7 +2,7 @@
 // failure between them leaves: the stand kept, a retry sending the hours
 // alone, never a second stand, and closing onto the new stand's fiche.
 
-import { provideZonelessChangeDetection, signal, WritableSignal } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { provideRouter } from '@angular/router';
@@ -14,18 +14,6 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { StandCreationDialog } from './stand-creation-dialog';
-import { CreationWeekday, CreationWindow } from './stand-creation';
-
-type DialogInternals = {
-  nom: WritableSignal<string>;
-  typologies: WritableSignal<string[]>;
-  windows: WritableSignal<CreationWindow[]>;
-  weekdays: WritableSignal<CreationWeekday[]>;
-  createdId: () => string | null;
-  hoursError: () => string;
-  create: () => Promise<void>;
-  cancel: () => void;
-};
 
 describe('StandCreationDialog', () => {
   const store = {
@@ -67,13 +55,12 @@ describe('StandCreationDialog', () => {
   });
 
   /** A stand of three on every window, where the first step said one: a grid to write. */
-  function filled(): DialogInternals {
-    const dialog = TestBed.createComponent(StandCreationDialog)
-      .componentInstance as unknown as DialogInternals;
-    dialog.nom.set('Loup-Garou');
-    dialog.typologies.set(['T1']);
-    dialog.windows.set([{ key: '10:00-12:00', label: '10:00–12:00', open: true, effectif: 3 }]);
-    dialog.weekdays.set([{ day: 6, open: true }]);
+  function filled(): StandCreationDialog {
+    const dialog = TestBed.createComponent(StandCreationDialog).componentInstance;
+    dialog['nom'].set('Loup-Garou');
+    dialog['typologies'].set(['T1']);
+    dialog['windows'].set([{ key: '10:00-12:00', label: '10:00–12:00', open: true, effectif: 3 }]);
+    dialog['weekdays'].set([{ day: 6, open: true }]);
     return dialog;
   }
 
@@ -82,14 +69,14 @@ describe('StandCreationDialog', () => {
     standsApi.saveOpeningsGrid.mockResolvedValueOnce({ stands: [] });
     const dialog = filled();
 
-    await dialog.create();
+    await dialog['create']();
     expect(store.save).toHaveBeenCalledOnce();
     expect(crud.reportError).toHaveBeenCalled();
-    expect(dialog.createdId()).toBe('S9');
-    expect(dialog.hoursError()).toContain("ses horaires n'ont pas été enregistrés");
+    expect(dialog['createdId']()).toBe('S9');
+    expect(dialog['hoursError']()).toContain("ses horaires n'ont pas été enregistrés");
     expect(dialogRef.close).not.toHaveBeenCalled();
 
-    await dialog.create();
+    await dialog['create']();
     expect(store.save).toHaveBeenCalledOnce();
     expect(standsApi.saveOpeningsGrid).toHaveBeenCalledTimes(2);
     expect(dialogRef.close).toHaveBeenCalledWith('S9');
@@ -99,17 +86,17 @@ describe('StandCreationDialog', () => {
     standsApi.saveOpeningsGrid.mockRejectedValueOnce(new Error('grille refusée'));
     const dialog = filled();
 
-    await dialog.create();
-    dialog.cancel();
+    await dialog['create']();
+    dialog['cancel']();
 
     expect(dialogRef.close).toHaveBeenCalledWith('S9');
   });
 
   it('writes no grid when the hours were left as laid', async () => {
     const dialog = filled();
-    dialog.windows.set([{ key: '10:00-12:00', label: '10:00–12:00', open: true, effectif: 1 }]);
+    dialog['windows'].set([{ key: '10:00-12:00', label: '10:00–12:00', open: true, effectif: 1 }]);
 
-    await dialog.create();
+    await dialog['create']();
 
     expect(standsApi.saveOpeningsGrid).not.toHaveBeenCalled();
     expect(dialogRef.close).toHaveBeenCalledWith('S9');

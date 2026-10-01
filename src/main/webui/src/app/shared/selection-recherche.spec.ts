@@ -9,16 +9,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { OptionSelection, SelectionRecherche } from './selection-recherche';
 
-/** Structural view of the component's template-only API. */
-interface PickerApi {
-  saisie: { set(value: string): void };
-  optionsFiltrees(): OptionSelection[];
-  resume(): string;
-  choisir(id: string): void;
-  retirer(id: string): void;
-  onSaisieSimple(valeur: string): void;
-}
-
 const ANIMATEURS: OptionSelection[] = [
   { id: 'A1', label: 'Émile Zola' },
   { id: 'A2', label: 'Amélie Nothomb' },
@@ -27,61 +17,61 @@ const ANIMATEURS: OptionSelection[] = [
 
 describe('SelectionRecherche', () => {
   let fixture: ComponentFixture<SelectionRecherche>;
-  let picker: PickerApi;
+  let picker: SelectionRecherche;
 
   beforeEach(() => {
     TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
     fixture = TestBed.createComponent(SelectionRecherche);
     fixture.componentRef.setInput('options', ANIMATEURS);
-    picker = fixture.componentInstance as unknown as PickerApi;
+    picker = fixture.componentInstance;
   });
 
   it('filters on accent- and case-insensitive text', () => {
-    picker.saisie.set('emile');
-    expect(picker.optionsFiltrees().map((option) => option.id)).toEqual(['A1']);
+    picker['saisie'].set('emile');
+    expect(picker['optionsFiltrees']().map((option) => option.id)).toEqual(['A1']);
 
-    picker.saisie.set('NOTHOMB');
-    expect(picker.optionsFiltrees().map((option) => option.id)).toEqual(['A2']);
+    picker['saisie'].set('NOTHOMB');
+    expect(picker['optionsFiltrees']().map((option) => option.id)).toEqual(['A2']);
   });
 
   it('replaces the value in single mode', () => {
-    picker.choisir('A1');
+    picker['choisir']('A1');
     expect(fixture.componentInstance.valeurs()).toEqual(['A1']);
 
-    picker.choisir('A3');
+    picker['choisir']('A3');
     expect(fixture.componentInstance.valeurs()).toEqual(['A3']);
   });
 
   it('accumulates and removes in multiple mode, never offering a pick twice', () => {
     fixture.componentRef.setInput('multiple', true);
 
-    picker.choisir('A1');
-    picker.choisir('A2');
+    picker['choisir']('A1');
+    picker['choisir']('A2');
     expect(fixture.componentInstance.valeurs()).toEqual(['A1', 'A2']);
-    expect(picker.optionsFiltrees().map((option) => option.id)).toEqual(['A3']);
+    expect(picker['optionsFiltrees']().map((option) => option.id)).toEqual(['A3']);
 
-    picker.retirer('A1');
+    picker['retirer']('A1');
     expect(fixture.componentInstance.valeurs()).toEqual(['A2']);
   });
 
   it('clearing the field clears the selection, so the input never lies', () => {
-    picker.choisir('A1');
-    picker.onSaisieSimple('');
+    picker['choisir']('A1');
+    picker['onSaisieSimple']('');
     expect(fixture.componentInstance.valeurs()).toEqual([]);
   });
 
   it('says how many entries the list holds, and how many the filter kept', () => {
-    expect(picker.resume()).toBe('3 entrée(s) — tapez pour filtrer');
+    expect(picker['resume']()).toBe('3 entrée(s) — tapez pour filtrer');
 
-    picker.saisie.set('ol');
-    expect(picker.resume()).toBe('1 proposition(s) sur 3');
+    picker['saisie'].set('ol');
+    expect(picker['resume']()).toBe('1 proposition(s) sur 3');
   });
 
   it('counts the picks rather than the propositions in multiple mode', () => {
     fixture.componentRef.setInput('multiple', true);
-    picker.choisir('A1');
+    picker['choisir']('A1');
 
-    expect(picker.resume()).toBe('1 sélectionné(s) sur 3');
+    expect(picker['resume']()).toBe('1 sélectionné(s) sur 3');
   });
 
   it('caps the proposition list, so a 150-entry referential never renders whole', () => {
@@ -93,7 +83,7 @@ describe('SelectionRecherche', () => {
       })),
     );
 
-    expect(picker.optionsFiltrees()).toHaveLength(50);
+    expect(picker['optionsFiltrees']()).toHaveLength(50);
   });
 
   it('renders the field with the label as its accessible name in multiple mode', async () => {
@@ -108,8 +98,8 @@ describe('SelectionRecherche', () => {
 
   it('renders one removable chip per pick, each naming what it removes', async () => {
     fixture.componentRef.setInput('multiple', true);
-    picker.choisir('A1');
-    picker.choisir('A3');
+    picker['choisir']('A1');
+    picker['choisir']('A3');
     await fixture.whenStable();
 
     const racine = fixture.nativeElement as HTMLElement;
@@ -141,17 +131,17 @@ describe('SelectionRecherche', () => {
   // callers read the selection to export a planning, and the person on screen
   // is the one the user believes they picked.
   it('drops the pick as soon as the typed text stops naming it', () => {
-    picker.choisir('A1');
-    picker.onSaisieSimple('zzz');
+    picker['choisir']('A1');
+    picker['onSaisieSimple']('zzz');
 
     expect(fixture.componentInstance.valeurs()).toEqual([]);
   });
 
   it('keeps the pick while the text still names it', () => {
-    picker.choisir('A1');
+    picker['choisir']('A1');
     // `choisir` writes the option's own label into the field; retyping it
     // character for character must not drop the selection.
-    picker.onSaisieSimple('Émile Zola');
+    picker['onSaisieSimple']('Émile Zola');
 
     expect(fixture.componentInstance.valeurs()).toEqual(['A1']);
   });
@@ -204,7 +194,7 @@ describe('SelectionRecherche', () => {
 
     fixture.componentRef.setInput('valeurs', ['A3']);
     await fixture.whenStable();
-    picker.onSaisieSimple('Marc');
+    picker['onSaisieSimple']('Marc');
     await fixture.whenStable();
     expect(fixture.componentInstance.valeurs()).toEqual([]);
     expect(champ()).toBe('Marc');

@@ -11,7 +11,7 @@
 
 import { Router, provideRouter } from '@angular/router';
 import { rowMenuItem } from '../../core/testing/row-menu';
-import { provideZonelessChangeDetection, signal, Signal } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
@@ -20,12 +20,12 @@ import { ApiService } from '../../core/api.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
-import { TableSelection } from '../../core/table-selection';
 import { Emplacement, EtatGel } from '../../core/models';
 import { DetailDialog } from '../../shared/detail-dialog';
 import { EmplacementFormDialog } from './emplacement-form-dialog';
 import { EmplacementsPage } from './emplacements-page';
 import { seedStore } from '../../core/testing/seed-store';
+import { fakeOf, provideFake } from '../../core/testing/fake';
 import { expectOnlyInEmptyState } from '../../core/testing/empty-state';
 
 // A degree of latitude is ~111 km, so 0.001° ≈ 111 m: near enough to place a
@@ -34,42 +34,28 @@ function emplacement(id: string, overrides: Partial<Emplacement> = {}): Emplacem
   return { id, nom: id, latitude: null, longitude: null, ...overrides };
 }
 
-/** Reaches the protected members the template binds to. */
-type PageInternals = {
-  columns: string[];
-  filtre: { set: (value: string) => void };
-  emplacementsFiltres: Signal<Emplacement[]>;
-  selection: TableSelection<string>;
-  editingLocked: Signal<boolean>;
-  coordonneesLabel: (emplacement: Emplacement) => string;
-  voisinLePlusProche: (emplacement: Emplacement) => string;
-  /** Private to the component; reachable here because `private` is compile-time only. */
-  voisins: Signal<Map<string, { libelle: string; metres: number | null }>>;
-  remove: (emplacement: Emplacement) => Promise<void>;
-  removeSelection: () => Promise<void>;
-  editSelection: () => void;
-};
-
 describe('EmplacementsPage', () => {
   let referenceData: ReferenceDataStore;
-  const crud = {
-    reload: vi.fn(async () => undefined),
-    remove: vi.fn(async () => true),
-    removeMany: vi.fn(async () => 0),
-    warningsOf: vi.fn(() => []),
-  };
+  const crud = fakeOf<ReferenceCrudService>({
+    reload: async () => true,
+    remove: async () => true,
+    removeMany: async () => 0,
+    warningsOf: () => [],
+    save: async () => true,
+  });
   const dialog = { open: vi.fn(() => ({ afterClosed: () => ({ subscribe: vi.fn() }) })) };
 
   beforeEach(() => {
     crud.reload.mockClear();
     crud.remove.mockClear();
     crud.removeMany.mockClear();
+    crud.save.mockClear();
     dialog.open.mockClear();
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
         { provide: ApiService, useValue: { get: vi.fn() } },
-        { provide: ReferenceCrudService, useValue: crud },
+        provideFake(ReferenceCrudService, crud),
         {
           provide: SolverJobService,
           useValue: { solverBusy: () => false, editingLocked: () => false },
@@ -80,9 +66,9 @@ describe('EmplacementsPage', () => {
     referenceData = TestBed.inject(ReferenceDataStore);
   });
 
-  function createPage(emplacements: Emplacement[] = []): PageInternals {
+  function createPage(emplacements: Emplacement[] = []): EmplacementsPage {
     seedStore(referenceData, 'emplacements', emplacements);
-    return TestBed.createComponent(EmplacementsPage).componentInstance as unknown as PageInternals;
+    return TestBed.createComponent(EmplacementsPage).componentInstance;
   }
 
   it('loads the referential on entry rather than showing whatever the previous page left', () => {
@@ -96,7 +82,7 @@ describe('EmplacementsPage', () => {
       const page = createPage([emplacement('prairie'), emplacement('halle')]);
 
       // The ids in their natural order, by default.
-      expect(page.emplacementsFiltres().map((row) => row.id)).toEqual(['halle', 'prairie']);
+      expect(page['emplacementsFiltres']().map((row) => row.id)).toEqual(['halle', 'prairie']);
     });
 
     it('matches on the id and on the name', () => {
@@ -105,11 +91,11 @@ describe('EmplacementsPage', () => {
         emplacement('halle', { nom: 'Halle couverte' }),
       ]);
 
-      page.filtre.set('couverte');
-      expect(page.emplacementsFiltres().map((row) => row.id)).toEqual(['halle']);
+      page['filtre'].set('couverte');
+      expect(page['emplacementsFiltres']().map((row) => row.id)).toEqual(['halle']);
 
-      page.filtre.set('prairie');
-      expect(page.emplacementsFiltres().map((row) => row.id)).toEqual(['prairie']);
+      page['filtre'].set('prairie');
+      expect(page['emplacementsFiltres']().map((row) => row.id)).toEqual(['prairie']);
     });
 
     it('matches on the coordinates, which is how a misplaced point is found', () => {
@@ -118,17 +104,17 @@ describe('EmplacementsPage', () => {
         emplacement('halle', { latitude: 48.9, longitude: 1.5 }),
       ]);
 
-      page.filtre.set('47.123');
+      page['filtre'].set('47.123');
 
-      expect(page.emplacementsFiltres().map((row) => row.id)).toEqual(['prairie']);
+      expect(page['emplacementsFiltres']().map((row) => row.id)).toEqual(['prairie']);
     });
 
     it('shows nothing rather than everything when nothing matches', () => {
       const page = createPage([emplacement('prairie')]);
 
-      page.filtre.set('introuvable');
+      page['filtre'].set('introuvable');
 
-      expect(page.emplacementsFiltres()).toEqual([]);
+      expect(page['emplacementsFiltres']()).toEqual([]);
     });
   });
 
@@ -140,9 +126,9 @@ describe('EmplacementsPage', () => {
         emplacement('chapiteau'),
       ]);
 
-      page.selection.toggle('prairie');
-      page.selection.toggle('chapiteau');
-      await page.removeSelection();
+      page['selection'].toggle('prairie');
+      page['selection'].toggle('chapiteau');
+      await page['removeSelection']();
 
       expect(crud.removeMany).toHaveBeenCalledWith(
         'emplacements',
@@ -153,27 +139,27 @@ describe('EmplacementsPage', () => {
 
     it('forgets an emplacement deleted in the meantime', () => {
       const page = createPage([emplacement('prairie'), emplacement('halle')]);
-      page.selection.toggleAll();
+      page['selection'].toggleAll();
 
       seedStore(referenceData, 'emplacements', [emplacement('halle')]);
 
-      expect(page.selection.selectedIds()).toEqual(['halle']);
+      expect(page['selection'].selectedIds()).toEqual(['halle']);
     });
 
     it('narrows select-all to the filtered rows', () => {
       const page = createPage([emplacement('prairie'), emplacement('halle')]);
 
-      page.filtre.set('prairie');
-      page.selection.toggleAll();
+      page['filtre'].set('prairie');
+      page['selection'].toggleAll();
 
-      expect(page.selection.selectedIds()).toEqual(['prairie']);
+      expect(page['selection'].selectedIds()).toEqual(['prairie']);
     });
 
     it('hands the bulk-edit dialog exactly the selected emplacements', () => {
       const page = createPage([emplacement('prairie'), emplacement('halle')]);
 
-      page.selection.toggle('halle');
-      page.editSelection();
+      page['selection'].toggle('halle');
+      page['editSelection']();
 
       expect(dialog.open).toHaveBeenCalledWith(
         expect.anything(),
@@ -186,7 +172,7 @@ describe('EmplacementsPage', () => {
     it('deletes a single row on its own, without touching the selection', async () => {
       const page = createPage([emplacement('prairie')]);
 
-      await page.remove(emplacement('prairie', { nom: 'Prairie du bas' }));
+      await page['remove'](emplacement('prairie', { nom: 'Prairie du bas' }));
 
       expect(crud.remove).toHaveBeenCalledWith('emplacements', 'prairie', expect.anything(), {
         name: { text: 'Prairie du bas' },
@@ -199,21 +185,21 @@ describe('EmplacementsPage', () => {
     it('renders a dash for a place that has never been located', () => {
       const page = createPage();
 
-      expect(page.coordonneesLabel(emplacement('prairie'))).toBe('—');
+      expect(page['coordonneesLabel'](emplacement('prairie'))).toBe('—');
     });
 
     it('renders a dash when only one of the two coordinates is set', () => {
       const page = createPage();
 
-      expect(page.coordonneesLabel(emplacement('prairie', { latitude: 47.1 }))).toBe('—');
-      expect(page.coordonneesLabel(emplacement('prairie', { longitude: 1.5 }))).toBe('—');
+      expect(page['coordonneesLabel'](emplacement('prairie', { latitude: 47.1 }))).toBe('—');
+      expect(page['coordonneesLabel'](emplacement('prairie', { longitude: 1.5 }))).toBe('—');
     });
 
     it('renders both coordinates to five decimals, which is metre-level precision', () => {
       const page = createPage();
 
       expect(
-        page.coordonneesLabel(emplacement('prairie', { latitude: 47.1, longitude: 1.5 })),
+        page['coordonneesLabel'](emplacement('prairie', { latitude: 47.1, longitude: 1.5 })),
       ).toBe('47.10000, 1.50000');
     });
 
@@ -221,7 +207,7 @@ describe('EmplacementsPage', () => {
     it('renders a coordinate of zero rather than treating it as missing', () => {
       const page = createPage();
 
-      expect(page.coordonneesLabel(emplacement('prairie', { latitude: 0, longitude: 0 }))).toBe(
+      expect(page['coordonneesLabel'](emplacement('prairie', { latitude: 0, longitude: 0 }))).toBe(
         '0.00000, 0.00000',
       );
     });
@@ -236,11 +222,11 @@ describe('EmplacementsPage', () => {
         emplacement('halle', { latitude: 47.102, longitude: 1.5 }),
       ]);
 
-      const voisins = page.voisins();
-      page.voisinLePlusProche(emplacement('prairie', { latitude: 47.1, longitude: 1.5 }));
-      page.voisinLePlusProche(emplacement('halle', { latitude: 47.102, longitude: 1.5 }));
+      const voisins = page['voisins']();
+      page['voisinLePlusProche'](emplacement('prairie', { latitude: 47.1, longitude: 1.5 }));
+      page['voisinLePlusProche'](emplacement('halle', { latitude: 47.102, longitude: 1.5 }));
 
-      expect(page.voisins()).toBe(voisins);
+      expect(page['voisins']()).toBe(voisins);
       expect(voisins.get('prairie')?.libelle).toContain('halle');
       expect(voisins.get('halle')?.libelle).toContain('prairie');
     });
@@ -249,7 +235,7 @@ describe('EmplacementsPage', () => {
       const page = createPage([emplacement('prairie', { latitude: 47.1, longitude: 1.5 })]);
 
       expect(
-        page.voisinLePlusProche(emplacement('prairie', { latitude: 47.1, longitude: 1.5 })),
+        page['voisinLePlusProche'](emplacement('prairie', { latitude: 47.1, longitude: 1.5 })),
       ).toBe('');
     });
 
@@ -259,7 +245,7 @@ describe('EmplacementsPage', () => {
         emplacement('halle', { latitude: 47.1, longitude: 1.5 }),
       ]);
 
-      expect(page.voisinLePlusProche(emplacement('prairie'))).toBe('');
+      expect(page['voisinLePlusProche'](emplacement('prairie'))).toBe('');
     });
 
     it('ignores the other places that have no coordinates', () => {
@@ -269,7 +255,7 @@ describe('EmplacementsPage', () => {
       ]);
 
       expect(
-        page.voisinLePlusProche(emplacement('prairie', { latitude: 47.1, longitude: 1.5 })),
+        page['voisinLePlusProche'](emplacement('prairie', { latitude: 47.1, longitude: 1.5 })),
       ).toBe('');
     });
 
@@ -282,7 +268,7 @@ describe('EmplacementsPage', () => {
         proche,
       ]);
 
-      const label = page.voisinLePlusProche(
+      const label = page['voisinLePlusProche'](
         emplacement('prairie', { latitude: 47.1, longitude: 1.5 }),
       );
 
@@ -296,7 +282,7 @@ describe('EmplacementsPage', () => {
         emplacement('halle', { latitude: 47.102, longitude: 1.5 }),
       ]);
 
-      const label = page.voisinLePlusProche(
+      const label = page['voisinLePlusProche'](
         emplacement('prairie', { latitude: 47.1, longitude: 1.5 }),
       );
 
@@ -313,7 +299,7 @@ describe('EmplacementsPage', () => {
         emplacement('halle', { latitude: 47.105, longitude: 1.5 }),
       ]);
 
-      const label = page.voisinLePlusProche(
+      const label = page['voisinLePlusProche'](
         emplacement('prairie', { latitude: 47.1, longitude: 1.5 }),
       );
 
@@ -326,7 +312,7 @@ describe('EmplacementsPage', () => {
         emplacement('halle', { latitude: 47.102, longitude: 1.5 }),
       ]);
 
-      const label = page.voisinLePlusProche(
+      const label = page['voisinLePlusProche'](
         emplacement('prairie', { latitude: 47.1, longitude: 1.5 }),
       );
 
@@ -341,7 +327,7 @@ describe('EmplacementsPage', () => {
       ]);
 
       expect(
-        page.voisinLePlusProche(emplacement('prairie', { latitude: 47.1, longitude: 1.5 })),
+        page['voisinLePlusProche'](emplacement('prairie', { latitude: 47.1, longitude: 1.5 })),
       ).toContain('halle');
     });
   });
@@ -349,14 +335,14 @@ describe('EmplacementsPage', () => {
   it('exposes the editing lock as the job service sees it, not as its own copy', () => {
     const page = createPage();
 
-    expect(page.editingLocked()).toBe(false);
+    expect(page['editingLocked']()).toBe(false);
   });
 
   it('keeps a checkbox column and an actions column around the data ones', () => {
     const page = createPage();
 
-    expect(page.columns[0]).toBe('select');
-    expect(page.columns.at(-1)).toBe('actions');
+    expect(page['columns'][0]).toBe('select');
+    expect(page['columns'].at(-1)).toBe('actions');
   });
 
   // A marker dropped and refused: the map is asked to lay it back where the place still is.
@@ -364,20 +350,14 @@ describe('EmplacementsPage', () => {
     const page = createPage([
       emplacement('hall', { nom: 'Hall A', latitude: 47.2, longitude: -1.5 }),
     ]);
-    const internals = page as unknown as {
-      move: (move: { id: string; latitude: number; longitude: number }) => Promise<void>;
-      mapRevision: Signal<number>;
-    };
-    const save = vi.fn(async () => false);
-    (crud as unknown as { save: typeof save }).save = save;
+    crud.save.mockResolvedValueOnce(false);
 
-    await internals.move({ id: 'hall', latitude: 48, longitude: 2 });
-    expect(save).toHaveBeenCalled();
-    expect(internals.mapRevision()).toBe(1);
+    await page['move']({ id: 'hall', latitude: 48, longitude: 2 });
+    expect(crud.save).toHaveBeenCalled();
+    expect(page['mapRevision']()).toBe(1);
 
-    save.mockResolvedValue(true);
-    await internals.move({ id: 'hall', latitude: 48, longitude: 2 });
-    expect(internals.mapRevision()).toBe(1);
+    await page['move']({ id: 'hall', latitude: 48, longitude: 2 });
+    expect(page['mapRevision']()).toBe(1);
   });
 });
 

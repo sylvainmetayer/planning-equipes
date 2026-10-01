@@ -10,11 +10,10 @@
 
 import { StandsApi } from '../../core/api/stands-api';
 import { rowMenuItem } from '../../core/testing/row-menu';
-import { provideZonelessChangeDetection, Signal, WritableSignal, signal } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
-import { Sort } from '@angular/material/sort';
 import { provideRouter, Router } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreneauxApi } from '../../core/api/creneaux-api';
@@ -27,7 +26,6 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { GelReferentielStore } from '../../core/gel-referentiel.store';
 import { SolverJobService } from '../../core/solver-job.service';
-import { TableSelection } from '../../core/table-selection';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { CauseInfaisabilite, Creneau } from '../../core/models';
 import { CreneauxPage } from './creneaux-page';
@@ -154,21 +152,6 @@ const OUVERTURES = {
   anomalies: [],
 };
 
-/** Reaches the protected members the template binds to. */
-type PageInternals = {
-  columns: string[];
-  sort: WritableSignal<Sort>;
-  creneauxAffiches: Signal<Creneau[]>;
-  selection: TableSelection<number>;
-  causeParCreneau: Signal<Map<number, CauseInfaisabilite>>;
-  editingLocked: Signal<boolean>;
-  remove: (creneau: Creneau) => Promise<void>;
-  removeSelection: () => Promise<void>;
-  editSelection: () => void;
-  openSerie: (fenetres?: string) => void;
-  openDerivation: () => void;
-};
-
 describe('CreneauxPage', () => {
   let referenceData: ReferenceDataStore;
   const crud = {
@@ -255,9 +238,9 @@ describe('CreneauxPage', () => {
     referenceData = TestBed.inject(ReferenceDataStore);
   });
 
-  function createPage(creneaux: Creneau[] = []): PageInternals {
+  function createPage(creneaux: Creneau[] = []): CreneauxPage {
     seedStore(referenceData, 'creneaux', creneaux);
-    return TestBed.createComponent(CreneauxPage).componentInstance as unknown as PageInternals;
+    return TestBed.createComponent(CreneauxPage).componentInstance;
   }
 
   /** `?edit=<id>` (issue #489): a cause names a créneau, and its link lands here with the form open. */
@@ -269,11 +252,7 @@ describe('CreneauxPage', () => {
       await Promise.resolve();
 
       expect(dialog.open).toHaveBeenCalledOnce();
-      const [, config] = dialog.open.mock.calls[0] as unknown as [
-        unknown,
-        { data: { creneau: Creneau } },
-      ];
-      expect(config.data.creneau.id).toBe(12);
+      expect(dialog.open.mock.calls[0]).toMatchObject([{}, { data: { creneau: { id: 12 } } }]);
     });
 
     it('opens nothing for a créneau the référentiel does not hold', async () => {
@@ -294,11 +273,11 @@ describe('CreneauxPage', () => {
       creneau({ id: 14, jour: 2 }),
     ]);
     const fixture = TestBed.createComponent(CreneauxPage);
-    const page = fixture.componentInstance as unknown as PageInternals;
+    const page = fixture.componentInstance;
     await fixture.whenStable();
     const element = fixture.nativeElement as HTMLElement;
 
-    expect(page.creneauxAffiches().map((row) => row.id)).toEqual([12, 14]);
+    expect(page['creneauxAffiches']().map((row) => row.id)).toEqual([12, 14]);
     expect(element.textContent).toContain('Filtre : lignes importées (2)');
 
     Array.from(element.querySelectorAll('button'))
@@ -306,7 +285,7 @@ describe('CreneauxPage', () => {
       .click();
     await fixture.whenStable();
 
-    expect(page.creneauxAffiches()).toHaveLength(3);
+    expect(page['creneauxAffiches']()).toHaveLength(3);
     await TestBed.inject(Router).navigateByUrl('/');
   });
 
@@ -328,7 +307,7 @@ describe('CreneauxPage', () => {
     );
     const page = createPage([creneau({ id: 1, jour: 1 })]);
 
-    page.openSerie('09:00-12:00');
+    page['openSerie']('09:00-12:00');
     expect(dialog.open).not.toHaveBeenCalled();
   });
 
@@ -344,7 +323,7 @@ describe('CreneauxPage', () => {
     it('keeps the store order while no sort is applied', () => {
       const page = createPage([creneau({ id: 9, jour: 3 }), creneau({ id: 1, jour: 1 })]);
 
-      expect(page.creneauxAffiches().map((row) => row.id)).toEqual([9, 1]);
+      expect(page['creneauxAffiches']().map((row) => row.id)).toEqual([9, 1]);
     });
 
     it('sorts chronologically by day then start time, and reverses on descending', () => {
@@ -354,11 +333,11 @@ describe('CreneauxPage', () => {
         creneau({ id: 2, jour: 1, heureDebut: '09:00' }),
       ]);
 
-      page.sort.set({ active: 'jour', direction: 'asc' });
-      expect(page.creneauxAffiches().map((row) => row.id)).toEqual([2, 1, 3]);
+      page['sort'].set({ active: 'jour', direction: 'asc' });
+      expect(page['creneauxAffiches']().map((row) => row.id)).toEqual([2, 1, 3]);
 
-      page.sort.set({ active: 'jour', direction: 'desc' });
-      expect(page.creneauxAffiches().map((row) => row.id)).toEqual([3, 1, 2]);
+      page['sort'].set({ active: 'jour', direction: 'desc' });
+      expect(page['creneauxAffiches']().map((row) => row.id)).toEqual([3, 1, 2]);
     });
 
     // The worst slots must be groupable, which is why this column sorts on the
@@ -376,16 +355,16 @@ describe('CreneauxPage', () => {
         ]),
       );
 
-      page.sort.set({ active: 'probleme', direction: 'asc' });
+      page['sort'].set({ active: 'probleme', direction: 'asc' });
 
-      expect(page.creneauxAffiches().map((row) => row.id)).toEqual([2, 1, 3]);
+      expect(page['creneauxAffiches']().map((row) => row.id)).toEqual([2, 1, 3]);
     });
 
     it('leaves the store untouched while sorting', () => {
       const page = createPage([creneau({ id: 9, jour: 3 }), creneau({ id: 1, jour: 1 })]);
 
-      page.sort.set({ active: 'jour', direction: 'asc' });
-      page.creneauxAffiches();
+      page['sort'].set({ active: 'jour', direction: 'asc' });
+      page['creneauxAffiches']();
 
       expect(referenceData.creneaux().map((row) => row.id)).toEqual([9, 1]);
     });
@@ -398,20 +377,20 @@ describe('CreneauxPage', () => {
       const page = createPage([creneau({ id: 12, jour: 1 })]);
       causeParCreneauId.set(new Map([['12', cause(3)]]));
 
-      expect(page.causeParCreneau().get(12)?.manque).toBe(3);
+      expect(page['causeParCreneau']().get(12)?.manque).toBe(3);
     });
 
     it('holds nothing while no diagnostic has been loaded', () => {
       const page = createPage([creneau({ id: 12, jour: 1 })]);
 
-      expect(page.causeParCreneau().size).toBe(0);
+      expect(page['causeParCreneau']().size).toBe(0);
     });
 
     it('ignores a cause naming a slot the referential no longer holds', () => {
       const page = createPage([creneau({ id: 12, jour: 1 })]);
       causeParCreneauId.set(new Map([['99', cause(3)]]));
 
-      expect(page.causeParCreneau().size).toBe(0);
+      expect(page['causeParCreneau']().size).toBe(0);
     });
   });
 
@@ -423,20 +402,20 @@ describe('CreneauxPage', () => {
         creneau({ id: 3, jour: 3 }),
       ]);
 
-      page.selection.toggle(1);
-      page.selection.toggle(3);
-      await page.removeSelection();
+      page['selection'].toggle(1);
+      page['selection'].toggle(3);
+      await page['removeSelection']();
 
       expect(crud.removeMany).toHaveBeenCalledWith('creneaux', [1, 3], expect.anything());
     });
 
     it('forgets a slot deleted in the meantime', () => {
       const page = createPage([creneau({ id: 1, jour: 1 }), creneau({ id: 2, jour: 2 })]);
-      page.selection.toggleAll();
+      page['selection'].toggleAll();
 
       seedStore(referenceData, 'creneaux', [creneau({ id: 2, jour: 2 })]);
 
-      expect(page.selection.selectedIds()).toEqual([2]);
+      expect(page['selection'].selectedIds()).toEqual([2]);
     });
 
     // The selection is keyed on the displayed rows, not on the store: it
@@ -450,19 +429,19 @@ describe('CreneauxPage', () => {
         creneau({ id: 2, jour: 2 }),
         creneau({ id: 3, jour: 3 }),
       ]);
-      page.sort.set({ active: 'jour', direction: 'desc' });
+      page['sort'].set({ active: 'jour', direction: 'desc' });
 
-      page.selection.toggleAll();
+      page['selection'].toggleAll();
 
-      expect(page.selection.selectedIds()).toEqual([3, 2, 1]);
+      expect(page['selection'].selectedIds()).toEqual([3, 2, 1]);
       expect(referenceData.creneaux().map((row) => row.id)).toEqual([1, 2, 3]);
     });
 
     it('hands the bulk-edit dialog exactly the selected slots', () => {
       const page = createPage([creneau({ id: 1, jour: 1 }), creneau({ id: 2, jour: 2 })]);
 
-      page.selection.toggle(2);
-      page.editSelection();
+      page['selection'].toggle(2);
+      page['editSelection']();
 
       expect(dialog.open).toHaveBeenCalledWith(
         expect.anything(),
@@ -473,7 +452,7 @@ describe('CreneauxPage', () => {
     it('deletes a single row on its own, without touching the selection', async () => {
       const page = createPage([creneau({ id: 1, jour: 1 })]);
 
-      await page.remove(creneau({ id: 1, jour: 1 }));
+      await page['remove'](creneau({ id: 1, jour: 1 }));
 
       expect(crud.remove).toHaveBeenCalledWith('creneaux', 1, expect.anything(), {
         name: { text: '2026-08-01 10:00–12:00' },
@@ -485,7 +464,7 @@ describe('CreneauxPage', () => {
   it('exposes the editing lock as the job service sees it, not as its own copy', () => {
     const page = createPage();
 
-    expect(page.editingLocked()).toBe(false);
+    expect(page['editingLocked']()).toBe(false);
   });
 });
 
@@ -504,6 +483,7 @@ describe('CreneauxPage rendering', () => {
     control: vi.fn(),
   };
   const confirm = { ask: vi.fn(async () => false) };
+  const dialog = { open: vi.fn(() => ({ afterClosed: () => of(undefined) })) };
   const crud = {
     reload: vi.fn(async () => undefined),
     remove: vi.fn(async () => true),
@@ -545,6 +525,7 @@ describe('CreneauxPage rendering', () => {
     brancher(creneauxApi);
     confirm.ask.mockClear();
     confirm.ask.mockResolvedValue(false);
+    dialog.open.mockClear();
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
@@ -565,10 +546,7 @@ describe('CreneauxPage rendering', () => {
         },
         { provide: ReferenceCrudService, useValue: crud },
         { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked } },
-        {
-          provide: MatDialog,
-          useValue: { open: vi.fn(() => ({ afterClosed: () => of(undefined) })) },
-        },
+        { provide: MatDialog, useValue: dialog },
         { provide: ConfirmService, useValue: confirm },
         { provide: NotificationService, useValue: { notify: vi.fn() } },
         { provide: PlanningResolutionStore, useValue: { reload: vi.fn(async () => undefined) } },
@@ -713,16 +691,13 @@ describe('CreneauxPage rendering', () => {
 
     it('opens the série dialog on the timeslots a day template handed over, with the current verdict', async () => {
       await renderAndRead([creneau({ id: 1, jour: 1 })]);
-      const dialog = TestBed.inject(MatDialog) as unknown as { open: ReturnType<typeof vi.fn> };
-      const page = fixture.componentInstance as unknown as PageInternals;
-
-      page.openSerie('09:00-12:00, 14:00-18:00');
+      fixture.componentInstance['openSerie']('09:00-12:00, 14:00-18:00');
       expect(dialog.open).toHaveBeenCalledOnce();
-      expect((dialog.open.mock.calls[0] as unknown as [unknown, { data: object }])[1].data).toEqual(
-        {
-          controleActuel: { ...CONTROLE },
-          fenetres: '09:00-12:00, 14:00-18:00',
-        },
+      expect(dialog.open).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          data: { controleActuel: { ...CONTROLE }, fenetres: '09:00-12:00, 14:00-18:00' },
+        }),
       );
       // No longer a button of its own: the day template's dialog carries it.
       expect(
@@ -737,16 +712,12 @@ describe('CreneauxPage rendering', () => {
         creneau({ id: 2, jour: 2, date: '2026-08-03' }),
         creneau({ id: 1, jour: 1, date: '2026-08-01' }),
       ]);
-      const dialog = TestBed.inject(MatDialog) as unknown as { open: ReturnType<typeof vi.fn> };
-
       (await autreFacon('Dériver des horaires des stands')).click();
 
       expect(dialog.open).toHaveBeenCalledOnce();
-      expect((dialog.open.mock.calls[0] as unknown as [unknown, { data: object }])[1].data).toEqual(
-        {
-          dateDebut: '2026-08-01',
-          dateFin: '2026-08-03',
-        },
+      expect(dialog.open).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ data: { dateDebut: '2026-08-01', dateFin: '2026-08-03' } }),
       );
     });
   });

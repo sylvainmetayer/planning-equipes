@@ -5,20 +5,22 @@
 import { Location } from '@angular/common';
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MatDialog } from '@angular/material/dialog';
+import { ComponentType } from '@angular/cdk/portal';
+import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { JourneesTypesApi } from '../../core/api/journees-types-api';
 import { StandsApi } from '../../core/api/stands-api';
 import { ApiService } from '../../core/api.service';
-import { PlanningEvenement, Stand } from '../../core/models';
+import { Animateur, Creneau, PlanningEvenement, Stand } from '../../core/models';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
+import { Fake, fakeOf, provideFake } from '../../core/testing/fake';
 import { ConfirmService } from '../../shared/confirm-dialog';
-import { StandFormDialog } from '../stands/stand-form-dialog';
+import { StandFormData, StandFormDialog } from '../stands/stand-form-dialog';
 import { StandFichePage } from './stand-fiche-page';
 
 function stand(id: string, nom: string, partial: Partial<Stand> = {}): Stand {
@@ -39,31 +41,48 @@ function stand(id: string, nom: string, partial: Partial<Stand> = {}): Stand {
   };
 }
 
-const PLAN = {
+const CRENEAU: Creneau = {
+  id: 1,
+  jour: 1,
+  date: '2026-07-11',
+  heureDebut: '10:00:00',
+  heureFin: '12:00:00',
+};
+
+const ALICE: Animateur = {
+  id: 'a1',
+  prenom: 'Alice',
+  nom: 'Martin',
+  dateNaissance: '1990-01-01',
+  manager: false,
+  competences: {},
+  souhaits: [],
+  joursIndisponibles: [],
+};
+
+const PLAN: PlanningEvenement = {
+  animateurs: [ALICE],
   postes: [
-    {
-      id: 'p1',
-      stand: { id: 'S2' },
-      creneau: { id: 1, jour: 1, date: '2026-07-11', heureDebut: '10:00:00', heureFin: '12:00:00' },
-      animateur: { id: 'a1' },
-    },
-    {
-      id: 'p2',
-      stand: { id: 'S2' },
-      creneau: { id: 1, jour: 1, date: '2026-07-11', heureDebut: '10:00:00', heureFin: '12:00:00' },
-      animateur: null,
-    },
+    { id: 'p1', stand: stand('S2', 'Stand 2'), creneau: CRENEAU, animateur: ALICE },
+    { id: 'p2', stand: stand('S2', 'Stand 2'), creneau: CRENEAU, animateur: null },
   ],
-} as unknown as PlanningEvenement;
+  score: null,
+};
 
 describe('StandFichePage', () => {
-  const dialog = { open: vi.fn() };
+  // The one `MatDialog` method the page calls, typed on what it hands the stand form.
+  const dialog = {
+    open: vi.fn((_component: ComponentType<unknown>, _config: MatDialogConfig<StandFormData>) => ({
+      afterClosed: () => of(false),
+    })),
+  };
   let fixture: ComponentFixture<StandFichePage>;
   let queryParams: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
+  let store: Fake<ReferenceDataStore>;
+  let standsApi: Fake<StandsApi>;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    dialog.open.mockReturnValue({ afterClosed: () => of(false) });
   });
 
   async function render(
@@ -72,41 +91,46 @@ describe('StandFichePage', () => {
     stands: Stand[] = [stand('S1', 'Stand 1'), stand('S2', 'Stand 2'), stand('S3', 'Stand 3')],
   ): Promise<void> {
     queryParams = new BehaviorSubject(convertToParamMap(params));
+    store = fakeOf<ReferenceDataStore>({
+      stands: signal(stands),
+      typologies: signal([{ id: 'T1', label: 'Enfance', ninja: false }]),
+      emplacements: signal([]),
+      creneaux: signal([]),
+      reload: async () => undefined,
+    });
+    standsApi = fakeOf<StandsApi>({
+      openings: async () => ({
+        jours: [],
+        stands: [
+          {
+            standId: 'S2',
+            nom: 'Stand 2',
+            effectifMin: 2,
+            jours: [],
+            minutesOuvertes: 0,
+            postes: 56,
+            modifieLe: null,
+          },
+        ],
+        standsJamaisOuverts: 0,
+        postesTotal: 56,
+        anomalies: [
+          {
+            type: 'FENETRE_SANS_EFFET',
+            standId: 'S2',
+            standNom: 'Stand 2',
+            date: '2026-07-12',
+            message: 'Fenêtre 07:00-08:00 hors de tout créneau',
+          },
+        ],
+      }),
+    });
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
         { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
-        {
-          provide: StandsApi,
-          useValue: {
-            openings: vi.fn(async () => ({
-              jours: [],
-              stands: [
-                {
-                  standId: 'S2',
-                  nom: 'Stand 2',
-                  effectifMin: 2,
-                  jours: [],
-                  minutesOuvertes: 0,
-                  postes: 56,
-                  modifieLe: null,
-                },
-              ],
-              standsJamaisOuverts: 0,
-              postesTotal: 56,
-              anomalies: [
-                {
-                  type: 'FENETRE_SANS_EFFET',
-                  standId: 'S2',
-                  standNom: 'Stand 2',
-                  date: '2026-07-12',
-                  message: 'Fenêtre 07:00-08:00 hors de tout créneau',
-                },
-              ],
-            })),
-          },
-        },
+        provideFake(StandsApi, standsApi),
         { provide: JourneesTypesApi, useValue: { etat: vi.fn(async () => null) } },
         {
           provide: PlanningStateService,
@@ -119,16 +143,7 @@ describe('StandFichePage', () => {
             causeParStandId: () => new Map(),
           },
         },
-        {
-          provide: ReferenceDataStore,
-          useValue: {
-            stands: signal(stands),
-            typologies: signal([{ id: 'T1', label: 'Enfance', ninja: false }]),
-            emplacements: signal([]),
-            creneaux: signal([]),
-            reload: vi.fn(async () => undefined),
-          },
-        },
+        provideFake(ReferenceDataStore, store),
         { provide: SolverJobService, useValue: { editingLocked: signal(false) } },
         { provide: ConfirmService, useValue: { ask: vi.fn(async () => true) } },
         { provide: MatDialog, useValue: dialog },
@@ -214,31 +229,22 @@ describe('StandFichePage', () => {
     await render('S2', { modifier: '1' });
 
     await vi.waitFor(() => expect(dialog.open).toHaveBeenCalled());
-    const [component, config] = dialog.open.mock.calls[0] as unknown as [
-      unknown,
-      { data: { stand: Stand; identityOnly: boolean } },
-    ];
+    const [component, config] = dialog.open.mock.calls[0];
     expect(component).toBe(StandFormDialog);
-    expect(config.data.stand.id).toBe('S2');
-    expect(config.data.identityOnly).toBe(true);
+    expect(config.data?.stand?.id).toBe('S2');
+    expect(config.data?.identityOnly).toBe(true);
   });
 
   it('reads the stand again once its grid is saved, its new stamp and headcounts with it', async () => {
     await render('S2');
-    const store = TestBed.inject(ReferenceDataStore) as unknown as {
-      reload: ReturnType<typeof vi.fn>;
-    };
-    const openings = TestBed.inject(StandsApi) as unknown as {
-      openings: ReturnType<typeof vi.fn>;
-    };
     store.reload.mockClear();
-    const before = openings.openings.mock.calls.length;
+    const before = standsApi.openings.mock.calls.length;
 
-    (fixture.componentInstance as unknown as { onGridSaved: () => void }).onGridSaved();
+    fixture.componentInstance['onGridSaved']();
     await fixture.whenStable();
 
     expect(store.reload).toHaveBeenCalledWith(['stands']);
-    expect(openings.openings.mock.calls.length).toBeGreaterThan(before);
+    expect(standsApi.openings.mock.calls.length).toBeGreaterThan(before);
   });
 
   it('answers an unknown id with a sentence', async () => {

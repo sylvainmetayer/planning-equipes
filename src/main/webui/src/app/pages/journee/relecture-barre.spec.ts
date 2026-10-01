@@ -23,6 +23,49 @@ function poste(id: string, occupe: boolean): PosteAffectation {
   };
 }
 
+/** One day of `a-p1` owing a break on S1 that nobody can relay. */
+function pausesReport(): RapportPauses {
+  return {
+    journeesAnalysees: 1,
+    pausesDues: 1,
+    relaisManquants: 1,
+    coupuresRepasDues: 0,
+    coupuresRepasManquantes: 0,
+    journees: [
+      {
+        animateurId: 'a-p1',
+        nomComplet: 'Alice Martin',
+        mineur: false,
+        date: '2026-09-05',
+        jour: 1,
+        sequences: [
+          {
+            debut: '10:00',
+            fin: '16:00',
+            minutes: 360,
+            pausesDues: [
+              {
+                debut: '13:00',
+                fin: '13:20',
+                heureLimite: '14:00',
+                dureeMinutes: 20,
+                standId: 'S1',
+                standNom: 'Tir',
+                relais: [],
+                relaisDisponible: false,
+                simultanee: false,
+              },
+            ],
+          },
+        ],
+        pausesPlanifiees: [],
+        coupuresRepas: [],
+      },
+    ],
+    message: '',
+  };
+}
+
 async function monter(
   options: {
     actif?: PastilleRelecture;
@@ -74,15 +117,7 @@ async function monter(
   fixture.componentRef.setInput('jour', '2026-09-05');
   fixture.componentRef.setInput('numero', 1);
   fixture.componentRef.setInput('postes', [poste('p1', true), poste('p2', false)]);
-  fixture.componentRef.setInput('pauses', {
-    journees: [
-      {
-        jour: 1,
-        animateurId: 'a-p1',
-        sequences: [{ pausesDues: [{ relaisDisponible: false, standId: 'S1' }] }],
-      },
-    ],
-  } as unknown as RapportPauses);
+  fixture.componentRef.setInput('pauses', pausesReport());
   fixture.componentRef.setInput('active', options.actif ?? 'aucune');
   await fixture.whenStable();
   const pastilles = (): HTMLButtonElement[] =>
