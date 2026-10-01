@@ -156,10 +156,12 @@ const PLAN = {
 
 describe('ProblemesPage — « Que faire ? »', () => {
   let fixture: ComponentFixture<ProblemesPage>;
+  /** What `/api/feasibility` answers; a test may swap it before re-creating the page. */
+  let feasibility: FeasibilityReport = FEASIBILITY;
   const api = {
     get: vi.fn(async (url: string) => {
       if (url === '/api/feasibility') {
-        return FEASIBILITY;
+        return feasibility;
       }
       if (url === '/api/pauses') {
         return PAUSES;
@@ -197,6 +199,7 @@ describe('ProblemesPage — « Que faire ? »', () => {
   };
 
   beforeEach(async () => {
+    feasibility = FEASIBILITY;
     Object.values(api).forEach((stub) => stub.mockClear());
     placement.choose.mockClear();
     placement.place.mockClear();
@@ -229,6 +232,27 @@ describe('ProblemesPage — « Que faire ? »', () => {
   function card(text: string): HTMLElement {
     return cards().find((candidate) => candidate.textContent?.includes(text))!;
   }
+
+  // A feasible report may still carry warnings (a tight cap on days in a row):
+  // « aucun problème de capacité » would contradict the card listed below it.
+  it('says a feasible plan has points of attention when warnings remain', async () => {
+    feasibility = {
+      ...FEASIBILITY,
+      feasible: true,
+      manqueAnimateurs: 0,
+      message: 'Le planning est réalisable. Point de vigilance : le plafond est à la limite.',
+      causes: [{ ...FEASIBILITY.causes[0], type: 'PLAFOND_JOURS_CONSECUTIFS', manque: 0 }],
+    };
+    fixture = TestBed.createComponent(ProblemesPage);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain(
+      'Le planning est réalisable, avec 1 point(s) de vigilance listé(s) ci-dessous.',
+    );
+    expect(text).not.toContain('Aucun problème de capacité détecté');
+  });
 
   it('gives every problem at least one action, with its explanation and its button', () => {
     expect(cards()).toHaveLength(3);

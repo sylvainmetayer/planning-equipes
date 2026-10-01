@@ -1,8 +1,6 @@
 package dev.sylvain.planning.service.validation;
 
-import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PastHorizon;
-import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.ValidationJournee;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
@@ -18,11 +16,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -220,9 +215,9 @@ public class ValidationJourneeService {
      * The readings a cold start would keep, and why — read before it is
      * launched, so its confirmation can say which reviewed days survive it.
      * The same rule as {@link #withdrawAfterSolve}, judged on the timeslots
-     * rather than on seats not generated yet: a day is in the frozen past once
-     * every one of its timeslots has started at its effective start, as
-     * {@link FeasibilityAnalyzer#hasStarted} reads it.
+     * rather than on seats not generated yet, by
+     * {@link FeasibilityAnalyzer#frozenDays} — a timeslot no stand opens
+     * holds no seat and freezes nothing, as on the seats of a solve.
      *
      * @param horizon the moment the past is judged against; {@code null} when
      *                the freeze is off, and then no day is past
@@ -233,7 +228,8 @@ public class ValidationJourneeService {
             return List.of();
         }
         Set<LocalDate> lockedDays = lockedDays();
-        Set<LocalDate> figes = horizon == null ? Set.of() : frozenDays(horizon);
+        Set<LocalDate> figes = FeasibilityAnalyzer.frozenDays(
+                referenceDataService.listCreneaux(), referenceDataService.listSolvedStands(), horizon);
         List<KeptReading> gardees = new ArrayList<>();
         for (LocalDate jour : validatedDays(validations)) {
             if (figes.contains(jour)) {
@@ -243,27 +239,6 @@ public class ValidationJourneeService {
             }
         }
         return gardees;
-    }
-
-    /** The days every timeslot of which had started at {@code horizon}. */
-    private Set<LocalDate> frozenDays(PastHorizon horizon) {
-        List<Stand> stands = referenceDataService.listSolvedStands();
-        Map<LocalDate, Boolean> parJour = new HashMap<>();
-        for (Creneau creneau : referenceDataService.listCreneaux()) {
-            if (creneau.getDate() != null) {
-                parJour.merge(
-                        creneau.getDate(),
-                        FeasibilityAnalyzer.hasStarted(creneau, stands, horizon),
-                        Boolean::logicalAnd);
-            }
-        }
-        Set<LocalDate> figes = new HashSet<>();
-        parJour.forEach((jour, commence) -> {
-            if (commence) {
-                figes.add(jour);
-            }
-        });
-        return figes;
     }
 
     private static List<LocalDate> validatedDays(List<ValidationJournee> validations) {

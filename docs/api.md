@@ -1815,9 +1815,14 @@ jour. Ses `demande` et `capacite` comptent des **jours-personnes**, pas des
 sièges ; `manque` vaut le déficit, 0 sur une simple marge mince. Elle est
 `CRITIQUE` seulement quand c'est une preuve sous la forme dure, `ELEVE`
 autrement. Une cause `ELEVE` de ce type **ne rend pas le rapport non
-réalisable** (`feasible` reste vrai), car la grille tient sur le papier. Quand
-la grille passe, la même cause peut venir du plan enregistré, dont les
-personnes employées par jour ne sont relues que si la règle est allumée.
+réalisable** (`feasible` reste vrai), car la grille tient sur le papier. Une
+`CRITIQUE` de ce type se range avec les contradictions, avant les
+sous-effectifs, pour ne jamais tomber hors des dix causes renvoyées. Le plan
+enregistré n'est relu que dans deux cas. Pendant l'événement, un jour passé
+compte les personnes qui l'ont réellement travaillé, pas son plancher. Sous la
+forme dure, quand la grille passe, la même cause peut venir du plan en place.
+La forme moyenne, allumée par défaut, ne déclenche aucune lecture du plan avant
+l'événement.
 L'arithmétique et ses limites sont dans `docs/contraintes.md`.
 
 **Ce que l'IHM en fait avant de lancer.** Les trois causes ci-dessus et la

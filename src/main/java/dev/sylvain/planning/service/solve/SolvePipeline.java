@@ -23,7 +23,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -274,7 +273,7 @@ public class SolvePipeline {
         }
         // Read before the persist overwrites it: what the plan in place held is
         // the only thing the days that moved can be compared against.
-        Optional<BeforeImage> avant = assignmentsBeforePersist();
+        Optional<PlanningPersistenceService.HeldCells> avant = assignmentsBeforePersist();
         persistenceService.persistAfterSolve(resolu, replaced == null ? null : replaced.id());
         recordDosage(dosage);
         PlanningDiagnosticService.PlanningDiagnostic diagnostic = planningService.diagnose(resolu);
@@ -334,7 +333,7 @@ public class SolvePipeline {
         Thread.interrupted();
         PlanningDiagnosticService.PlanningDiagnostic diagnostic = planningService.diagnose(resolu);
         boolean kept = keepsPartialPlan(scoreBefore, diagnostic.score());
-        Optional<BeforeImage> avant = kept ? assignmentsBeforePersist() : Optional.empty();
+        Optional<PlanningPersistenceService.HeldCells> avant = kept ? assignmentsBeforePersist() : Optional.empty();
         if (kept) {
             persistenceService.persistAfterSolve(resolu, replaced == null ? null : replaced.id());
             recordDosage(dosage);
@@ -398,12 +397,6 @@ public class SolvePipeline {
     }
 
     /**
-     * The plan in place before a solve overwrites it: who held each cell, and
-     * the date of each — what dates a cell the solved plan no longer has.
-     */
-    record BeforeImage(Map<String, List<String>> holders, Map<String, LocalDate> dates) {}
-
-    /**
      * The plan in place, seat by cell — the before-image the days that moved
      * are read from, or empty when there is nothing to compare.
      *
@@ -416,15 +409,12 @@ public class SolvePipeline {
      * <p>Best-effort: a failure here costs the recap a figure and leaves the
      * readings alone, it never fails a solve.</p>
      */
-    private Optional<BeforeImage> assignmentsBeforePersist() {
+    private Optional<PlanningPersistenceService.HeldCells> assignmentsBeforePersist() {
         try {
             if (!validationService.hasValidations()) {
                 return Optional.empty();
             }
-            Map<String, List<String>> holders = persistenceService.loadAnimateursByStandCreneau();
-            return holders == null
-                    ? Optional.empty()
-                    : Optional.of(new BeforeImage(holders, persistenceService.loadHeldCellDates()));
+            return Optional.ofNullable(persistenceService.loadHeldCells());
         } catch (RuntimeException e) {
             LOG.warn("The persisted plan could not be read back; no reading is withdrawn", e);
             return Optional.empty();
@@ -439,7 +429,8 @@ public class SolvePipeline {
      * <p>Best-effort like the publication impact: an edition nobody reviews
      * must not see a solve fail on a figure it does not read.</p>
      */
-    private ImpactValidations impactValidations(BeforeImage avant, PlanningEvenement resolu, boolean coldStart) {
+    private ImpactValidations impactValidations(
+            PlanningPersistenceService.HeldCells avant, PlanningEvenement resolu, boolean coldStart) {
         try {
             ValidationJourneeService.ReadingsOutcome bilan = validationService.withdrawAfterSolve(
                     ReplanificationDiff.joursModifies(avant.holders(), avant.dates(), resolu),

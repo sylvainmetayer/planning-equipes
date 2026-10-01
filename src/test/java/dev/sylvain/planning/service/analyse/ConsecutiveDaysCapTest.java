@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.CauseInfaisabilite;
@@ -165,6 +166,122 @@ class ConsecutiveDaysCapTest {
 
         assertThat(analyze(animateurs(4), new ConsecutiveDaysRule(2, true), plan)
                         .causes())
+                .isEmpty();
+    }
+
+    /**
+     * A proven cap guarantees a negative hard score like a contradiction: it
+     * ranks before the shortfalls, so the cap of ten causes never pushes it
+     * out of the Solveur's confirmation.
+     */
+    @Test
+    void aProvenCapRanksBeforeTheShortfalls() {
+        List<Animateur> animateurs = animateurs(2);
+        LocalDate j4 = J1.plusDays(3);
+        animateurs.forEach(animateur -> animateur.setJoursIndisponibles(Set.of(j4)));
+        List<Creneau> quatreJours = new ArrayList<>(creneaux);
+        quatreJours.add(creneau(4, j4, 10, 12));
+
+        FeasibilityReport report = analyzer.analyze(
+                animateurs,
+                List.of(stand),
+                quatreJours,
+                List.of(),
+                false,
+                new ConsecutiveDaysRule(2, true),
+                PlanContext.NONE);
+
+        assertThat(report.causes())
+                .extracting(CauseInfaisabilite::type)
+                .containsExactly(
+                        TypeCauseInfaisabilite.PLAFOND_JOURS_CONSECUTIFS, TypeCauseInfaisabilite.CRENEAU_SOUS_EFFECTIF);
+    }
+
+    /** A warning left beside a real shortfall is not counted among the blocking causes. */
+    @Test
+    void aWarningIsNotCountedAmongTheBlockingCauses() {
+        Stand soir = new Stand("stand-2", "Stand 2", Set.of("STRATEGIE"), 3, 3, false);
+        Creneau apresMidi = creneau(9, J1, 14, 16);
+        List<Creneau> grille = new ArrayList<>(creneaux);
+        grille.add(apresMidi);
+
+        FeasibilityReport report = analyzer.analyze(
+                animateurs(2),
+                List.of(stand, soir),
+                grille,
+                List.of(),
+                false,
+                new ConsecutiveDaysRule(2, false),
+                PlanContext.NONE);
+
+        // Four timeslots short — the second stand opens on every one of them —
+        // and the cap's warning: four block, five are listed.
+        assertThat(report.feasible()).isFalse();
+        assertThat(report.totalCauses()).isEqualTo(5);
+        assertThat(report.causes())
+                .filteredOn(cause -> cause.type() == TypeCauseInfaisabilite.PLAFOND_JOURS_CONSECUTIFS)
+                .singleElement()
+                .extracting(CauseInfaisabilite::severite)
+                .isEqualTo(SeveriteInfaisabilite.ELEVE);
+        assertThat(report.message()).contains("4 causes bloquantes ont été détectées");
+    }
+
+    /** Under the medium rule the score already charges a plan's overruns: the plan in place is not read. */
+    @Test
+    void thePlanInPlaceIsNotReadUnderTheMediumRuleAlone() {
+        PlanContext plan = new PlanContext(List.of(), Set::of, null, () -> {
+            throw new AssertionError("the plan must not be read");
+        });
+
+        assertThat(analyze(animateurs(4), new ConsecutiveDaysRule(2, false), plan)
+                        .causes())
+                .isEmpty();
+    }
+
+    /**
+     * During the event a past day counts whoever worked it, not its floor: an
+     * empty past seat is never charged. Here the first two days ran with one
+     * person each, so the cap still holds — barely.
+     */
+    @Test
+    void aPastDayCountsWhoWorkedItNotItsFloor() {
+        PastHorizon troisiemeMatin = new PastHorizon(J1.plusDays(2), LocalTime.of(9, 0));
+        PlanContext enCours = new PlanContext(
+                List.of(), Set::of, troisiemeMatin, () -> Map.of(J1, Set.of("a1"), J1.plusDays(1), Set.of("a2")));
+
+        CauseInfaisabilite cause = onlyCapCause(analyze(animateurs(2), new ConsecutiveDaysRule(2, true), enCours));
+
+        assertThat(cause.severite()).isEqualTo(SeveriteInfaisabilite.ELEVE);
+        assertThat(cause.demande()).isEqualTo(4);
+    }
+
+    /** …and when both worked both past days, the third one cannot be held: the proof stands. */
+    @Test
+    void aPastWorkedInFullStillProvesTheShortfall() {
+        PastHorizon troisiemeMatin = new PastHorizon(J1.plusDays(2), LocalTime.of(9, 0));
+        Set<String> tous = Set.of("a1", "a2");
+        PlanContext enCours =
+                new PlanContext(List.of(), Set::of, troisiemeMatin, () -> Map.of(J1, tous, J1.plusDays(1), tous));
+
+        CauseInfaisabilite cause = onlyCapCause(analyze(animateurs(2), new ConsecutiveDaysRule(2, true), enCours));
+
+        assertThat(cause.severite()).isEqualTo(SeveriteInfaisabilite.CRITIQUE);
+        assertThat(cause.demande()).isEqualTo(6);
+    }
+
+    /** A timeslot no stand opens holds no seat: it neither holds a day back from the past nor makes one past. */
+    @Test
+    void aTimeslotNoStandOpensFreezesNothing() {
+        Creneau soir = creneau(8, J1, 18, 20);
+        Stand fermeLeSoir = new Stand("stand-3", "Stand 3", Set.of("STRATEGIE"), 1, 1, false);
+        fermeLeSoir.setIndisponibilites(List.of(
+                new IndisponibiliteStand(null, soir.getDate(), soir.getHeureDebut(), soir.getHeureFin(), null)));
+        PastHorizon quinzeHeures = new PastHorizon(J1, LocalTime.of(15, 0));
+
+        assertThat(FeasibilityAnalyzer.frozenDays(
+                        List.of(creneaux.getFirst(), soir), List.of(fermeLeSoir), quinzeHeures))
+                .containsExactly(J1);
+        assertThat(FeasibilityAnalyzer.frozenDays(List.of(soir), List.of(fermeLeSoir), quinzeHeures))
                 .isEmpty();
     }
 
