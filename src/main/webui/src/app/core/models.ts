@@ -3236,6 +3236,74 @@ export interface DemandeEchangeView {
   communiqueeLe: string | null;
 }
 
+/** A rate as the two counts it is made of; the denominator may be zero. */
+export interface EchangeRate {
+  numerateur: number;
+  denominateur: number;
+}
+
+/** One delay of the foire, in seconds; the three figures are null when nothing was measured. */
+export interface EchangeDelay {
+  mesurees: number;
+  /** Requests whose statut says the delay exists but that lack one of its timestamps. */
+  sansHorodatage: number;
+  medianeSecondes: number | null;
+  centile90Secondes: number | null;
+  moyenneSecondes: number | null;
+}
+
+export interface EchangeDayCount {
+  jour: string;
+  nombre: number;
+}
+
+export interface EchangeStandCount {
+  standId: string;
+  /** Null for a stand deleted since. */
+  standNom: string | null;
+  nombre: number;
+}
+
+export interface EchangeConstraintCount {
+  contrainte: string;
+  nombre: number;
+}
+
+/**
+ * The statistics of the foire au planning over a period of creation days
+ * (`GET /api/echanges/statistiques`): aggregates only, no name.
+ */
+export interface EchangeStatistics {
+  /** First creation day counted; null = unbounded. */
+  du: string | null;
+  au: string | null;
+  /** True when the period is the configured foire window. */
+  fenetreFoire: boolean;
+  fuseau: string;
+  creees: number;
+  dirigees: number;
+  enAttenteCible: number;
+  enAttenteOrganisation: number;
+  acceptees: number;
+  refusees: number;
+  refuseesCible: number;
+  annulees: number;
+  accordCollegues: EchangeRate;
+  acceptationOrganisation: EchangeRate;
+  aboutissement: EchangeRate;
+  prevalidees: EchangeRate;
+  acceptationNonPrevalidees: EchangeRate;
+  delaiReponseCollegue: EchangeDelay;
+  delaiArbitrage: EchangeDelay;
+  delaiCommunication: EchangeDelay;
+  delaiAnnulation: EchangeDelay;
+  parJourCreation: EchangeDayCount[];
+  parJourEvenement: EchangeDayCount[];
+  creneauRetire: number;
+  parStand: EchangeStandCount[];
+  contraintesViolees: EchangeConstraintCount[];
+}
+
 /** Payload of a new demande, one entry of the submission batch. */
 export interface NouvelleDemandeEchange {
   creneauId: number;

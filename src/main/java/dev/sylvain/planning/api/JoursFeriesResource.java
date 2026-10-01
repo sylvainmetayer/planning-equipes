@@ -1,7 +1,6 @@
 package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.JoursFeries.PublicHoliday;
-import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.referentiel.JoursFeriesService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -9,8 +8,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
-import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 
 /**
@@ -33,18 +30,6 @@ public class JoursFeriesResource {
     /** The holidays from {@code debut} to {@code fin}, both included, in calendar order. */
     @GET
     public List<PublicHoliday> list(@QueryParam("debut") String debut, @QueryParam("fin") String fin) {
-        return joursFeries.between(date("debut", debut), date("fin", fin));
-    }
-
-    static LocalDate date(String nom, String valeur) {
-        if (valeur == null || valeur.isBlank()) {
-            return null;
-        }
-        try {
-            return LocalDate.parse(valeur);
-        } catch (DateTimeParseException _) {
-            throw new BusinessError.Invalid(
-                    "Paramètre « " + nom + " » illisible : " + valeur + " (attendu AAAA-MM-JJ)");
-        }
+        return joursFeries.between(DateQueryParam.parse("debut", debut), DateQueryParam.parse("fin", fin));
     }
 }

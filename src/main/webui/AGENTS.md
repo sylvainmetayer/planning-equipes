@@ -385,7 +385,13 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   aimed at those two through `PlanningApi.publishTo`, and « Corriger le
   reste », the incremental solve, on its card; the header counts the requests
   arrived since this browser's last visit, `core/derniere-visite`, a chrome
-  preference), `/aujourdhui` (« Aujourd'hui » — the day-of hub,
+  preference; `?onglet=stats`, « Statistiques », the aggregates of the foire
+  over its window, the edition or two dates (`?periode=`), every figure
+  linking back to the queue narrowed by the URL — creation period `du`/`au`
+  and `mesure` (what a figure counts beyond a statut: the colleague's answer,
+  the requests a delay was measured over) read by the server, `statuts`,
+  `dirigees`, `prevalidee`, `jour`, `stand`, `contrainte` — shown as removable
+  chips; opened on that tab, the page loads no list), `/aujourdhui` (« Aujourd'hui » — the day-of hub,
   `pages/jour-j/`, `/jour-j` redirecting to it with its query params: a
   search over the whole roster — name, id or phone —, mark somebody absent,
   repair the seats they held — the timeslot under way included, split at

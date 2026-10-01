@@ -4,7 +4,10 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
@@ -21,9 +24,11 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
+import io.restassured.path.json.JsonPath;
 import jakarta.inject.Inject;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -433,6 +438,169 @@ class DemandeEchangeFlowTest {
         List<Mail> mails = mailbox.getMailsSentTo("ech-bruno@example.org");
         assertThat(mails).hasSize(1);
         assertThat(mails.get(0).getText()).contains("2 échanges de créneaux");
+    }
+
+    /**
+     * The statistics count a swap request as soon as it exists, its colleague's
+     * refusal lands in its own figure, and the list narrowed to the same
+     * creation day shows it — the link every figure of the screen follows.
+     */
+    @Test
+    void theStatisticsCountARequestAndTheListOfItsCreationDayShowsIt() {
+        persistTwoSeatPlanning();
+        LocalDate today = LocalDate.now(ZoneId.of("Europe/Paris"));
+        int creees = editionStatistics().getInt("creees");
+        int refuseesCible = editionStatistics().getInt("refuseesCible");
+
+        String demandeId = given().contentType(ContentType.JSON)
+                .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\",\"cibleId\":\"ECH-B\"}]")
+                .when()
+                .post("/api/espace-animateur/" + tokenOf("ECH-A") + "/demandes")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("[0].id");
+        given().cookie("planning-espace", sessionBruno)
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/api/espace-animateur/" + tokenOf("ECH-B") + "/demandes-recues/" + demandeId + "/refus")
+                .then()
+                .statusCode(200);
+
+        given().queryParam("periode", "edition")
+                .when()
+                .get("/api/echanges/statistiques")
+                .then()
+                .statusCode(200)
+                .body("creees", equalTo(creees + 1))
+                .body("refuseesCible", equalTo(refuseesCible + 1))
+                .body("fuseau", equalTo("Europe/Paris"))
+                .body("fenetreFoire", equalTo(false))
+                .body("parStand.find { it.standId == 'ECH-S1' }.standNom", equalTo("Stand un"));
+
+        given().queryParam("du", today.toString())
+                .queryParam("au", today.toString())
+                .when()
+                .get("/api/echanges")
+                .then()
+                .statusCode(200)
+                .body("id", hasItem(demandeId));
+        given().queryParam("du", today.plusDays(1).toString())
+                .when()
+                .get("/api/echanges")
+                .then()
+                .statusCode(200)
+                .body("id", not(hasItem(demandeId)));
+        given().queryParam("du", today.toString())
+                .queryParam("au", today.minusDays(1).toString())
+                .when()
+                .get("/api/echanges/statistiques")
+                .then()
+                .statusCode(400);
+
+        // The colleague answered, with a refusal: answered, not agreed, and its reply measured.
+        assertThat(listMeasured("repondues")).contains(demandeId);
+        assertThat(listMeasured("accordees")).doesNotContain(demandeId);
+        assertThat(listMeasured("delai-reponse")).contains(demandeId);
+        given().queryParam("mesure", "toutes")
+                .when()
+                .get("/api/echanges")
+                .then()
+                .statusCode(400);
+    }
+
+    /**
+     * A refusal by the organisation before the colleague said anything leaves
+     * the colleague's agreement rate as it was: nobody answered.
+     */
+    @Test
+    void anAdminRefusalBeforeTheColleaguesAnswerIsNoAnswerOfTheColleague() {
+        persistTwoSeatPlanning();
+        int answered = editionStatistics().getInt("accordCollegues.denominateur");
+        int unstamped = editionStatistics().getInt("delaiReponseCollegue.sansHorodatage");
+
+        String demandeId = given().contentType(ContentType.JSON)
+                .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\",\"cibleId\":\"ECH-B\"}]")
+                .when()
+                .post("/api/espace-animateur/" + tokenOf("ECH-A") + "/demandes")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("[0].id");
+        given().contentType(ContentType.JSON)
+                .body("{\"commentaire\":\"non\"}")
+                .when()
+                .post("/api/echanges/" + demandeId + "/refus")
+                .then()
+                .statusCode(200);
+
+        JsonPath after = editionStatistics();
+        assertThat(after.getInt("accordCollegues.denominateur")).isEqualTo(answered);
+        assertThat(after.getInt("delaiReponseCollegue.sansHorodatage")).isEqualTo(unstamped);
+        assertThat(listMeasured("repondues")).doesNotContain(demandeId);
+    }
+
+    private List<String> listMeasured(String mesure) {
+        return given().queryParam("mesure", mesure)
+                .when()
+                .get("/api/echanges")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("id", String.class);
+    }
+
+    /** Without a period asked, a bounded foire window is the period; « edition » asks for everything. */
+    @Test
+    void theStatisticsDefaultToTheFoireWindowWhenItIsBounded() {
+        LocalDate today = LocalDate.now(ZoneId.of("Europe/Paris"));
+        try {
+            given().contentType(ContentType.JSON)
+                    .body(Map.of(
+                            "foireOuverte",
+                            true,
+                            "debut",
+                            today.minusDays(3).toString(),
+                            "fin",
+                            today.plusDays(3).toString()))
+                    .when()
+                    .put("/api/echanges/configuration")
+                    .then()
+                    .statusCode(200);
+
+            given().when()
+                    .get("/api/echanges/statistiques")
+                    .then()
+                    .statusCode(200)
+                    .body("du", equalTo(today.minusDays(3).toString()))
+                    .body("au", equalTo(today.plusDays(3).toString()))
+                    .body("fenetreFoire", equalTo(true));
+            given().queryParam("periode", "edition")
+                    .when()
+                    .get("/api/echanges/statistiques")
+                    .then()
+                    .statusCode(200)
+                    .body("du", nullValue())
+                    .body("fenetreFoire", equalTo(false));
+        } finally {
+            given().contentType(ContentType.JSON)
+                    .body("{\"foireOuverte\":true}")
+                    .when()
+                    .put("/api/echanges/configuration")
+                    .then()
+                    .statusCode(200);
+        }
+    }
+
+    private JsonPath editionStatistics() {
+        return given().queryParam("periode", "edition")
+                .when()
+                .get("/api/echanges/statistiques")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
     }
 
     /** Bruno (the target) agrees: the demande enters the admin queue. */

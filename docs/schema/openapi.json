@@ -3293,6 +3293,187 @@
         "type" : "string",
         "enum" : [ "ROW", "FICHE", "REPLACED", "NAMESAKE", "NEW_ADDRESS" ]
       },
+      "EchangeConstraintCount" : {
+        "type" : "object",
+        "properties" : {
+          "contrainte" : {
+            "type" : "string"
+          },
+          "nombre" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "EchangeDayCount" : {
+        "type" : "object",
+        "properties" : {
+          "jour" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "nombre" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "EchangeDelay" : {
+        "type" : "object",
+        "properties" : {
+          "mesurees" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "sansHorodatage" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "medianeSecondes" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "centile90Secondes" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "moyenneSecondes" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
+      "EchangeRate" : {
+        "type" : "object",
+        "properties" : {
+          "numerateur" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "denominateur" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "EchangeStandCount" : {
+        "type" : "object",
+        "properties" : {
+          "standId" : {
+            "type" : "string"
+          },
+          "standNom" : {
+            "type" : "string"
+          },
+          "nombre" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "EchangeStatistics" : {
+        "type" : "object",
+        "properties" : {
+          "du" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "au" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "fenetreFoire" : {
+            "type" : "boolean"
+          },
+          "fuseau" : {
+            "type" : "string"
+          },
+          "creees" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "dirigees" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "enAttenteCible" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "enAttenteOrganisation" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "acceptees" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "refusees" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "refuseesCible" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "annulees" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "accordCollegues" : {
+            "$ref" : "#/components/schemas/EchangeRate"
+          },
+          "acceptationOrganisation" : {
+            "$ref" : "#/components/schemas/EchangeRate"
+          },
+          "aboutissement" : {
+            "$ref" : "#/components/schemas/EchangeRate"
+          },
+          "prevalidees" : {
+            "$ref" : "#/components/schemas/EchangeRate"
+          },
+          "acceptationNonPrevalidees" : {
+            "$ref" : "#/components/schemas/EchangeRate"
+          },
+          "delaiReponseCollegue" : {
+            "$ref" : "#/components/schemas/EchangeDelay"
+          },
+          "delaiArbitrage" : {
+            "$ref" : "#/components/schemas/EchangeDelay"
+          },
+          "delaiCommunication" : {
+            "$ref" : "#/components/schemas/EchangeDelay"
+          },
+          "delaiAnnulation" : {
+            "$ref" : "#/components/schemas/EchangeDelay"
+          },
+          "parJourCreation" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/EchangeDayCount"
+            }
+          },
+          "parJourEvenement" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/EchangeDayCount"
+            }
+          },
+          "creneauRetire" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "parStand" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/EchangeStandCount"
+            }
+          },
+          "contraintesViolees" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/EchangeConstraintCount"
+            }
+          }
+        }
+      },
       "Edition" : {
         "type" : "object",
         "properties" : {
@@ -11574,6 +11755,25 @@
     },
     "/api/echanges" : {
       "get" : {
+        "parameters" : [ {
+          "name" : "au",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "du",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "mesure",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -11637,6 +11837,43 @@
           }
         },
         "summary" : "Configuration",
+        "tags" : [ "Demande Echange Resource" ]
+      }
+    },
+    "/api/echanges/statistiques" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "au",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "du",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "periode",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EchangeStatistics"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Statistics",
         "tags" : [ "Demande Echange Resource" ]
       }
     },

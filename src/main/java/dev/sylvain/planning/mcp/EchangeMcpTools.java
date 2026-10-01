@@ -2,8 +2,12 @@ package dev.sylvain.planning.mcp;
 
 import dev.sylvain.planning.domain.DemandeEchange;
 import dev.sylvain.planning.domain.StatutDemandeEchange;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.espace.DemandeEchangeService;
 import dev.sylvain.planning.service.espace.DemandeEchangeService.FenetreFoire;
+import dev.sylvain.planning.service.espace.EchangeStatistics;
+import dev.sylvain.planning.service.espace.EchangeStatistics.EchangeConstraintCount;
+import dev.sylvain.planning.service.espace.EchangeStatisticsService;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.DemandeEchangeView;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
@@ -45,14 +49,18 @@ public class EchangeMcpTools {
 
     private final ReferenceDataService referenceDataService;
 
+    private final EchangeStatisticsService statisticsService;
+
     @Inject
     EchangeMcpTools(
             DemandeEchangeService demandeEchangeService,
             EspaceAnimateurService espaceAnimateurService,
-            ReferenceDataService referenceDataService) {
+            ReferenceDataService referenceDataService,
+            EchangeStatisticsService statisticsService) {
         this.demandeEchangeService = demandeEchangeService;
         this.espaceAnimateurService = espaceAnimateurService;
         this.referenceDataService = referenceDataService;
+        this.statisticsService = statisticsService;
     }
 
     @Tool(
@@ -83,16 +91,38 @@ public class EchangeMcpTools {
             name = "consulter_foire_echanges",
             description = "Consulte la fenêtre de la foire aux échanges : l'interrupteur, ses dates éventuelles, "
                     + "et si elle accepte quelque chose aujourd'hui. Une foire fermée rend les espaces animateurs "
-                    + "consultables mais non modifiables.",
+                    + "consultables mais non modifiables. Rend aussi ses statistiques sur une période de création "
+                    + "des demandes (par défaut la fenêtre de la foire quand elle est datée, sinon toute l'édition ; "
+                    + "touteEdition=true demande toute l'édition même quand la fenêtre est datée) : "
+                    + "volumes, taux d'accord des collègues, d'acceptation par l'organisation et d'aboutissement, "
+                    + "part des demandes prévalidées, délais en secondes (médiane, 90e centile, moyenne, demandes "
+                    + "sans horodatage), répartitions par jour et par stand, contraintes dures les plus cassées. "
+                    + "Chaque taux est donné en numérateur et dénominateur. Agrégats seuls, aucun animateur.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    FoireView getFoireEchanges(
+    FoireConsultationView getFoireEchanges(
+            @ToolArg(description = "Premier jour de création compté (AAAA-MM-JJ)", required = false) String du,
+            @ToolArg(description = "Dernier jour de création compté (AAAA-MM-JJ)", required = false) String au,
+            @ToolArg(
+                            description = "true : toute l'édition, même quand la fenêtre de la foire est datée "
+                                    + "(incompatible avec du et au)",
+                            required = false)
+                    Boolean touteEdition,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return foireView();
+        StatisticsPeriod period = statisticsPeriod(du, au, touteEdition);
+        FoireView foire = foireView();
+        return new FoireConsultationView(
+                foire.ouverte(),
+                foire.debut(),
+                foire.fin(),
+                foire.ouverteAujourdhui(),
+                anonymised(
+                        statisticsService.statistics(period.from(), period.to(), period.wholeEdition()),
+                        AnonymisationViolations.of(referenceDataService)));
     }
 
     @Tool(
@@ -196,6 +226,40 @@ public class EchangeMcpTools {
                 AnonymisationViolations.of(referenceDataService));
     }
 
+    /**
+     * The period of {@code consulter_foire_echanges}, as REST reads
+     * {@code du}, {@code au} and {@code periode=edition}: no bound is the foire
+     * window when it is dated, {@code touteEdition} the whole edition whatever
+     * the window. Asking for both the whole edition and a bound is a
+     * contradiction, refused rather than settled silently.
+     */
+    static StatisticsPeriod statisticsPeriod(String du, String au, Boolean touteEdition) {
+        LocalDate from = McpArgs.date(du, "du");
+        LocalDate to = McpArgs.date(au, "au");
+        boolean wholeEdition = Boolean.TRUE.equals(touteEdition);
+        if (wholeEdition && (from != null || to != null)) {
+            throw new BusinessError.Invalid("touteEdition=true ne se combine ni avec du ni avec au");
+        }
+        if (from != null && to != null && to.isBefore(from)) {
+            throw new BusinessError.Invalid("La fin de la période précède son début");
+        }
+        return new StatisticsPeriod(from, to, wholeEdition);
+    }
+
+    /** The creation days the statistics are asked for; both {@code null} and not whole: the default. */
+    record StatisticsPeriod(LocalDate from, LocalDate to, boolean wholeEdition) {}
+
+    /**
+     * The statistics as MCP sends them: aggregates already, and the constraint
+     * lines run through the anonymisation like every other violation line —
+     * they are catalogue descriptions, but nothing here relies on it.
+     */
+    static EchangeStatistics anonymised(EchangeStatistics statistiques, AnonymisationViolations anonymisation) {
+        return statistiques.withContraintesViolees(statistiques.contraintesViolees().stream()
+                .map(ligne -> new EchangeConstraintCount(anonymisation.anonymiser(ligne.contrainte()), ligne.nombre()))
+                .toList());
+    }
+
     static DemandeView toView(DemandeEchangeView demande, AnonymisationViolations anonymisation) {
         return new DemandeView(
                 demande.id(),
@@ -273,6 +337,19 @@ public class EchangeMcpTools {
      *                          accepts nothing today
      */
     public record FoireView(boolean ouverte, LocalDate debut, LocalDate fin, boolean ouverteAujourdhui) {}
+
+    /**
+     * The foire window and its statistics over the period asked.
+     *
+     * @param statistiques aggregates only, by stand id and name and by day —
+     *                     never an animateur
+     */
+    public record FoireConsultationView(
+            boolean ouverte,
+            LocalDate debut,
+            LocalDate fin,
+            boolean ouverteAujourdhui,
+            EchangeStatistics statistiques) {}
 
     /** Scores are rendered as text ({@code "0hard/-12medium/…"}), as everywhere else in this package. */
     public record ImpactEchangeView(
