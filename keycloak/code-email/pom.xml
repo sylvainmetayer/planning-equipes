@@ -27,10 +27,10 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- Celle de l'image : docker/keycloak/Dockerfile part de
-         quay.io/keycloak/keycloak:26.5.7, et les deux versions bougent
+         quay.io/keycloak/keycloak:26.7.5, et les deux versions bougent
          ensemble. Un greffon compilé contre une autre lignée se charge puis
          casse à la première méthode disparue. -->
-    <keycloak.version>26.5.7</keycloak.version>
+    <keycloak.version>26.7.5</keycloak.version>
     <!-- Le JDK de Keycloak, pas celui de l'application : le serveur tourne sur
          21, et un JAR compilé pour 25 y lève UnsupportedClassVersionError. -->
     <maven.compiler.release>21</maven.compiler.release>
