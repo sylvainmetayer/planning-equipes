@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.solve;
 import ai.timefold.solver.core.api.solver.Solver;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.analyse.Dosage;
 import dev.sylvain.planning.service.analyse.KpiHistoriqueService;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
@@ -19,10 +20,13 @@ import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -174,16 +178,23 @@ public class SolvePipeline {
     public record ImpactPublication(int personnes, Instant publieLe) {}
 
     /**
-     * Readings this solve invalidated: days somebody had marked « relu et
-     * accepté » and on which a seat has just moved. {@code null} when it
-     * withdrew none — an edition nobody reviews, or a solve that moved nothing
-     * anybody had read — so the recap says nothing rather than « 0 ».
+     * What this solve did to the « relu et accepté » of the days: how many
+     * readings it withdrew, and how many it kept, by reason — so a reading the
+     * operator believes gone and that is not shows as kept, with why. {@code null}
+     * on an edition carrying no reading, so the recap says nothing rather than
+     * « 0 ».
      *
-     * <p>A day also carrying a {@code JOUR} lock keeps its validation and is
-     * not counted: the solver could not move anything there, so the reading
-     * still describes what is in place.</p>
+     * <p>The rule is {@link ValidationJourneeService#withdrawAfterSolve}'s: a
+     * reading survives when its day was not recomputed.</p>
+     *
+     * @param journees           readings withdrawn
+     * @param gardeesPassees     kept: every seat of the day had started (ADR 0044)
+     * @param gardeesVerrouillees kept: the day carries a {@code JOUR} lock
+     * @param gardeesInchangees  kept: started from the plan in place, the solve
+     *                           gave the day back as it was read; always 0 on a
+     *                           cold start
      */
-    public record ImpactValidations(int journees) {}
+    public record ImpactValidations(int journees, int gardeesPassees, int gardeesVerrouillees, int gardeesInchangees) {}
 
     /**
      * The common case: the problem is already there, and the edition is the one
@@ -263,7 +274,7 @@ public class SolvePipeline {
         }
         // Read before the persist overwrites it: what the plan in place held is
         // the only thing the days that moved can be compared against.
-        Optional<Map<String, List<String>>> avant = assignmentsBeforePersist();
+        Optional<BeforeImage> avant = assignmentsBeforePersist();
         persistenceService.persistAfterSolve(resolu, replaced == null ? null : replaced.id());
         recordDosage(dosage);
         PlanningDiagnosticService.PlanningDiagnostic diagnostic = planningService.diagnose(resolu);
@@ -285,7 +296,8 @@ public class SolvePipeline {
                 withComparison,
                 PreviousPlan.of(replaced == null ? null : replaced.id(), scoreBefore, diagnostic.score()),
                 impactPublication(resolu),
-                avant.map(image -> impactValidations(image, resolu)).orElse(null),
+                avant.map(image -> impactValidations(image, resolu, startedCold(probleme)))
+                        .orElse(null),
                 null,
                 solved.feasibilityFirst());
     }
@@ -322,7 +334,7 @@ public class SolvePipeline {
         Thread.interrupted();
         PlanningDiagnosticService.PlanningDiagnostic diagnostic = planningService.diagnose(resolu);
         boolean kept = keepsPartialPlan(scoreBefore, diagnostic.score());
-        Optional<Map<String, List<String>>> avant = kept ? assignmentsBeforePersist() : Optional.empty();
+        Optional<BeforeImage> avant = kept ? assignmentsBeforePersist() : Optional.empty();
         if (kept) {
             persistenceService.persistAfterSolve(resolu, replaced == null ? null : replaced.id());
             recordDosage(dosage);
@@ -345,7 +357,8 @@ public class SolvePipeline {
                 // A kept partial plan replaced the persisted one just the same:
                 // the readings of the days it moved are as stale as after a
                 // solve that finished, and nothing else would ever withdraw them.
-                avant.map(image -> impactValidations(image, resolu)).orElse(null),
+                avant.map(image -> impactValidations(image, resolu, startedCold(probleme)))
+                        .orElse(null),
                 new Interruption(kept, diagnostic.score(), scoreBefore),
                 solved.feasibilityFirst());
     }
@@ -385,6 +398,12 @@ public class SolvePipeline {
     }
 
     /**
+     * The plan in place before a solve overwrites it: who held each cell, and
+     * the date of each — what dates a cell the solved plan no longer has.
+     */
+    record BeforeImage(Map<String, List<String>> holders, Map<String, LocalDate> dates) {}
+
+    /**
      * The plan in place, seat by cell — the before-image the days that moved
      * are read from, or empty when there is nothing to compare.
      *
@@ -397,12 +416,15 @@ public class SolvePipeline {
      * <p>Best-effort: a failure here costs the recap a figure and leaves the
      * readings alone, it never fails a solve.</p>
      */
-    private Optional<Map<String, List<String>>> assignmentsBeforePersist() {
+    private Optional<BeforeImage> assignmentsBeforePersist() {
         try {
             if (!validationService.hasValidations()) {
                 return Optional.empty();
             }
-            return Optional.ofNullable(persistenceService.loadAnimateursByStandCreneau());
+            Map<String, List<String>> holders = persistenceService.loadAnimateursByStandCreneau();
+            return holders == null
+                    ? Optional.empty()
+                    : Optional.of(new BeforeImage(holders, persistenceService.loadHeldCellDates()));
         } catch (RuntimeException e) {
             LOG.warn("The persisted plan could not be read back; no reading is withdrawn", e);
             return Optional.empty();
@@ -410,20 +432,59 @@ public class SolvePipeline {
     }
 
     /**
-     * Withdraws the « relu et accepté » of every day this solve moved a seat
-     * on, and says how many were withdrawn — « 2 journées validées ont bougé ».
+     * Withdraws the « relu et accepté » of every day this solve made stale, and
+     * says what it withdrew and what it kept — « 2 journées validées ont
+     * bougé », « 3 gardent leur relecture ».
      *
      * <p>Best-effort like the publication impact: an edition nobody reviews
      * must not see a solve fail on a figure it does not read.</p>
      */
-    private ImpactValidations impactValidations(Map<String, List<String>> avant, PlanningEvenement resolu) {
+    private ImpactValidations impactValidations(BeforeImage avant, PlanningEvenement resolu, boolean coldStart) {
         try {
-            int journees = validationService.withdrawMovedDays(ReplanificationDiff.joursModifies(avant, resolu));
-            return journees == 0 ? null : new ImpactValidations(journees);
+            ValidationJourneeService.ReadingsOutcome bilan = validationService.withdrawAfterSolve(
+                    ReplanificationDiff.joursModifies(avant.holders(), avant.dates(), resolu),
+                    frozenDays(resolu),
+                    coldStart);
+            return bilan.isEmpty()
+                    ? null
+                    : new ImpactValidations(
+                            bilan.withdrawn(), bilan.keptPast(), bilan.keptLocked(), bilan.keptUnchanged());
         } catch (RuntimeException e) {
-            LOG.warn("The readings of the days this solve moved could not be withdrawn", e);
+            LOG.warn("The readings of the days this solve recomputed could not be withdrawn", e);
             return null;
         }
+    }
+
+    /**
+     * Whether the problem was built from scratch — « Recommencer de zéro » —
+     * rather than re-seeded from the plan in place. Only a full solve reports
+     * where it started; an incremental re-solve always starts from the plan.
+     */
+    private static boolean startedCold(Object probleme) {
+        return probleme instanceof ProblemBuilder.ProblemeReamorce reamorce
+                && reamorce.reamorcage() == Reamorcage.AUCUN;
+    }
+
+    /**
+     * The days whose every seat had started when the problem was built: re-seeded
+     * and pinned (ADR 0044), they are the one part of a plan no solve recomputes.
+     */
+    static Set<LocalDate> frozenDays(PlanningEvenement resolu) {
+        Map<LocalDate, Boolean> parJour = new HashMap<>();
+        if (resolu != null && resolu.getPostes() != null) {
+            for (PosteAffectation poste : resolu.getPostes()) {
+                if (poste.getCreneau() != null && poste.getCreneau().getDate() != null) {
+                    parJour.merge(poste.getCreneau().getDate(), poste.isPasse(), Boolean::logicalAnd);
+                }
+            }
+        }
+        Set<LocalDate> figes = new HashSet<>();
+        parJour.forEach((jour, passe) -> {
+            if (passe) {
+                figes.add(jour);
+            }
+        });
+        return figes;
     }
 
     /**

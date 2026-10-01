@@ -6,6 +6,7 @@ import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
 import {
   DemandeValidationJournee,
+  KeptReading,
   PrerequisJournee,
   ProgressionValidations,
   ResultatValidationJournee,
@@ -23,6 +24,11 @@ export class ValidationsApi {
   /** How far the reading has got — what the progress banners show. */
   progression(): Promise<ProgressionValidations> {
     return this.api.get<ProgressionValidations>('/api/validations/progression');
+  }
+
+  /** The readings « Recommencer de zéro » would keep — the past and the `JOUR`-locked days. */
+  keptByColdStart(): Promise<KeptReading[]> {
+    return this.api.get<KeptReading[]>('/api/validations/a-froid');
   }
 
   /** What to check before accepting a day; never a refusal, only a read-out. */

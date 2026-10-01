@@ -23,6 +23,7 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService, TrackedJob } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { ValidationsStore } from '../../core/validations.store';
 import { ModifiedFormsRegistry, UnsavedEntry } from '../../core/formulaires-modifies';
 import {
   CauseInfaisabilite,
@@ -778,6 +779,52 @@ describe('SolverPage', () => {
       await page.onRecommencerDeZero();
 
       expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(undefined, false, 'AUCUN');
+    });
+
+    // ADR 0069: the reviewed days a cold start keeps are named before it runs.
+    it('says which reviewed days starting over keeps, and how many lose their review', async () => {
+      persistedCount(12);
+      const page = createPage();
+      await fixture.whenStable();
+      const validations = TestBed.inject(ValidationsStore);
+      vi.spyOn(validations, 'progression').mockReturnValue({
+        journees: 4,
+        journeesValidees: 3,
+        joursValides: ['2026-07-08', '2026-07-09', '2026-07-10'],
+      });
+      vi.spyOn(validations, 'keptByColdStart').mockResolvedValue([
+        { jour: '2026-07-08', motif: 'PASSE' },
+        { jour: '2026-07-10', motif: 'VERROU' },
+      ]);
+      confirm.ask.mockResolvedValueOnce(false);
+
+      await page.onRecommencerDeZero();
+
+      const message = (confirm.ask.mock.calls[0][0] as { message: string }).message;
+      expect(message).toContain('1 journée(s) relue(s) perdront leur relecture.');
+      expect(message).toContain('08/07 (déjà travaillée)');
+      expect(message).toContain('10/07 (verrouillée)');
+    });
+
+    it('says nothing of reviews on an edition nobody reviews', async () => {
+      persistedCount(12);
+      const page = createPage();
+      await fixture.whenStable();
+      const validations = TestBed.inject(ValidationsStore);
+      vi.spyOn(validations, 'progression').mockReturnValue({
+        journees: 4,
+        journeesValidees: 0,
+        joursValides: [],
+      });
+      const kept = vi.spyOn(validations, 'keptByColdStart');
+      confirm.ask.mockResolvedValueOnce(false);
+
+      await page.onRecommencerDeZero();
+
+      expect(kept).not.toHaveBeenCalled();
+      expect((confirm.ask.mock.calls[0][0] as { message: string }).message).not.toContain(
+        'relecture',
+      );
     });
   });
 

@@ -2527,12 +2527,19 @@ export interface ImpactPublication {
 }
 
 /**
- * Days somebody had marked « relu et accepté » and on which this solve moved a
- * seat: their reading was withdrawn, because nobody has read what the solver
- * just wrote. A day also frozen keeps its reading and is not counted.
+ * What this solve did to the « relu et accepté » of the days (ADR 0069): how
+ * many readings it withdrew, and how many it kept, by reason. A reading
+ * survives only when its day was not recomputed.
  */
 export interface ImpactValidations {
+  /** Readings withdrawn. */
   journees: number;
+  /** Kept: every seat of the day had started. Absent on results from before ADR 0069. */
+  gardeesPassees?: number;
+  /** Kept: the day carries a `JOUR` lock. */
+  gardeesVerrouillees?: number;
+  /** Kept: started from the plan in place, the solve gave the day back as it was read. */
+  gardeesInchangees?: number;
 }
 
 /**
@@ -4448,6 +4455,16 @@ export interface CoherenceReport {
  * mark, not a lock: it freezes nothing, and the panel offers the lock beside it
  * without ever implying it.
  */
+/** Why a reading outlives a solve (ADR 0069). */
+export type KeepReason = 'PASSE' | 'VERROU' | 'INCHANGEE';
+
+/** A reading « Recommencer de zéro » would keep, and why. */
+export interface KeptReading {
+  /** `AAAA-MM-JJ`. */
+  jour: string;
+  motif: KeepReason;
+}
+
 export interface ValidationJournee {
   id: string;
   /** `AAAA-MM-JJ`. */

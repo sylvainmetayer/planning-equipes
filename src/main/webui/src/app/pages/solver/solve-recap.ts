@@ -164,7 +164,7 @@ export class SolveRecap {
   });
 
   /**
-   * « 2 journées validées ont bougé » — the readings this solve withdrew.
+   * « 2 journées relues recalculées » — the readings this solve withdrew.
    *
    * Shown next to the publication impact because it answers the neighbouring
    * question: not who has to be told, but what nobody has read since. Silent
@@ -176,7 +176,40 @@ export class SolveRecap {
     if (!impact || impact.journees === 0) {
       return '';
     }
-    return $localize`:@@solver.impact.validations:${impact.journees}:count: journée(s) validée(s) ont bougé : leur relecture a été retirée.`;
+    return $localize`:@@solver.impact.validations:${impact.journees}:count: journée(s) relue(s) recalculée(s) : leur relecture a été retirée.`;
+  });
+
+  /**
+   * « 3 journées gardent leur relecture : 2 déjà travaillées, 1 verrouillée »
+   * — the readings this solve kept, and why (ADR 0069). Said as plainly as
+   * the withdrawn ones: a reading believed gone and still there passes off as
+   * read a plan nobody reopened.
+   */
+  protected readonly validationsGardeesLabel = computed(() => {
+    const impact = this.impactValidations();
+    const passees = impact?.gardeesPassees ?? 0;
+    const verrouillees = impact?.gardeesVerrouillees ?? 0;
+    const inchangees = impact?.gardeesInchangees ?? 0;
+    const total = passees + verrouillees + inchangees;
+    if (total === 0) {
+      return '';
+    }
+    const motifs: string[] = [];
+    if (passees > 0) {
+      motifs.push($localize`:@@solver.impact.gardees.passees:${passees}:count: déjà travaillée(s)`);
+    }
+    if (verrouillees > 0) {
+      motifs.push(
+        $localize`:@@solver.impact.gardees.verrouillees:${verrouillees}:count: verrouillée(s) sur la journée`,
+      );
+    }
+    if (inchangees > 0) {
+      motifs.push(
+        $localize`:@@solver.impact.gardees.inchangees:${inchangees}:count: rendue(s) à l'identique`,
+      );
+    }
+    const detail = motifs.join(', ');
+    return $localize`:@@solver.impact.gardees:${total}:count: journée(s) gardent leur relecture : ${detail}:detail:.`;
   });
 
   /**

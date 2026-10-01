@@ -94,9 +94,29 @@ public final class ReplanificationDiff {
      * the solve that moved what was read.</p>
      */
     public static Set<LocalDate> joursModifies(Map<String, List<String>> avant, PlanningEvenement solved) {
+        return joursModifies(avant, Map.of(), solved);
+    }
+
+    /**
+     * The same, also counting the cells the solved plan no longer has: a cell
+     * held before and gone since — its opening withdrawn, its stand closed by
+     * a consigne — moved as much as one handed to somebody else, since nothing
+     * of what was read there is still worked. Such a cell has no seat left to
+     * date it by, hence {@code datesAvant}, the date of each cell of the
+     * before-image ({@link PlanningPersistenceService#loadHeldCellDates()}); a
+     * cell it cannot date is left out rather than guessed.
+     */
+    public static Set<LocalDate> joursModifies(
+            Map<String, List<String>> avant, Map<String, LocalDate> datesAvant, PlanningEvenement solved) {
         Set<LocalDate> jours = new LinkedHashSet<>();
-        for (Map.Entry<String, List<PosteAffectation>> entry :
-                seatsByStandAndCreneau(solved).entrySet()) {
+        Map<String, List<PosteAffectation>> cellules = seatsByStandAndCreneau(solved);
+        avant.forEach((key, holders) -> {
+            LocalDate date = datesAvant.get(key);
+            if (!cellules.containsKey(key) && holders != null && !holders.isEmpty() && date != null) {
+                jours.add(date);
+            }
+        });
+        for (Map.Entry<String, List<PosteAffectation>> entry : cellules.entrySet()) {
             List<String> sortedBefore = avant.getOrDefault(entry.getKey(), List.of()).stream()
                     .sorted()
                     .toList();

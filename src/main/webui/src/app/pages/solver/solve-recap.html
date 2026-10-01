@@ -19,6 +19,9 @@
     @if (validationsLabel()) {
       <p class="calendar-meta solver-impact-validations">{{ validationsLabel() }}</p>
     }
+    @if (validationsGardeesLabel()) {
+      <p class="calendar-meta solver-impact-validations-gardees">{{ validationsGardeesLabel() }}</p>
+    }
     @if (!comparison() && horsPlancherLabel()) {
       <p class="calendar-meta solver-hors-plancher">{{ horsPlancherLabel() }}</p>
     }
