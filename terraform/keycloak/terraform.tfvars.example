@@ -1,7 +1,8 @@
 # Copiez en `terraform.tfvars` (ignoré par git) et remplissez.
 #
 # Les identifiants d'administration ne se mettent PAS ici : le fournisseur lit
-# l'environnement.
+# l'environnement (ou admin_username / admin_password, quand ce dossier est
+# appelé comme module par une configuration qui a son propre coffre).
 #
 #   export KEYCLOAK_USER=terraform
 #   export KEYCLOAK_PASSWORD='...'
