@@ -65,9 +65,9 @@ class SolverJobReamorcageTest {
      * Every fixture lives in an edition of its own: the shared one carries the
      * other classes' leftovers (a scenario's animateurs, a stand or two), and a
      * "two seats, one animateur" problem is only infeasible when nobody else
-     * is around to take the second seat.
+     * is around to take the second seat. Drawn by the application when the
+     * edition is created (ADR 0050).
      */
-    /** Drawn by the application when the edition is created (ADR 0050). */
     private static String edition;
 
     @Test

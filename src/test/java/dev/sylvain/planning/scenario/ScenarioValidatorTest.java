@@ -172,12 +172,6 @@ class ScenarioValidatorTest {
     private static Stream<Path> scenariosLivres() throws IOException {
         return ScenariosLivres.all().stream();
     }
-    /**
-     * The consigne sections (ADR 0043) are checked like the rest: a band that
-     * starts, a motif, and a reason as soon as the meal windows are restated.
-     * What only the whole file can tell — a stand or a créneau the section
-     * names — is the import's to refuse, like every other cross-reference.
-     */
     /** The weights follow the settings' bound (ADR 0057): 500 is valid, 501 is not, whatever the old 100. */
     @Test
     void aWeightIsBoundedLikeTheSettings() {
@@ -189,6 +183,12 @@ class ScenarioValidatorTest {
                 .contains("poids");
     }
 
+    /**
+     * The consigne sections (ADR 0043) are checked like the rest: a band that
+     * starts, a motif, and a reason as soon as the meal windows are restated.
+     * What only the whole file can tell — a stand or a créneau the section
+     * names — is the import's to refuse, like every other cross-reference.
+     */
     @Test
     void aConsigneWithoutABandStartOrAMotifIsReported() {
         String consigne = """

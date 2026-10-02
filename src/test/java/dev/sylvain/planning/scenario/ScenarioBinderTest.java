@@ -122,15 +122,16 @@ class ScenarioBinderTest {
      * `java.util.ArrayList<…>` ».
      */
     @Test
-    void uneSectionMalFormeeNommeLaCleEtLaFormeAttendue() {
-        assertThatThrownBy(() -> ScenarioBinder.bind(
-                        MINIMAL.replaceFirst("(?s)creneaux:.*?stands:", "creneaux: pas-une-liste\nstands:")))
+    void aMalformedSectionNamesTheKeyAndTheExpectedShape() {
+        String scalarCreneaux = MINIMAL.replaceFirst("(?s)creneaux:.*?stands:", "creneaux: pas-une-liste\nstands:");
+        String scalarFestival = MINIMAL.replace("festival:\n  dateDebut: 2026-07-08", "festival: pas-un-bloc");
+
+        assertThatThrownBy(() -> ScenarioBinder.bind(scalarCreneaux))
                 .isInstanceOf(ScenarioFormatException.class)
                 .hasMessageContaining("« creneaux » doit être une liste")
                 .satisfies(e -> assertThat(e.getMessage()).doesNotContain("java."));
 
-        assertThatThrownBy(() -> ScenarioBinder.bind(
-                        MINIMAL.replace("festival:\n  dateDebut: 2026-07-08", "festival: pas-un-bloc")))
+        assertThatThrownBy(() -> ScenarioBinder.bind(scalarFestival))
                 .isInstanceOf(ScenarioFormatException.class)
                 .hasMessageContaining("« festival » doit être un bloc de champs");
     }
@@ -145,8 +146,10 @@ class ScenarioBinderTest {
 
     /** A bad hour deep in a stand says where it is: sixty-five stands is a lot to reread. */
     @Test
-    void uneHeureInvalideNommeSonChemin() {
-        assertThatThrownBy(() -> ScenarioBinder.bind(MINIMAL.replace("heureFin: \"12:00\"", "heureFin: \"25:00\"")))
+    void anInvalidHourNamesItsPath() {
+        String badHour = MINIMAL.replace("heureFin: \"12:00\"", "heureFin: \"25:00\"");
+
+        assertThatThrownBy(() -> ScenarioBinder.bind(badHour))
                 .isInstanceOf(ScenarioFormatException.class)
                 .hasMessageContaining("stands[0].ouvertures[0].heureFin")
                 .hasMessageContaining("25:00");
@@ -262,7 +265,7 @@ class ScenarioBinderTest {
      * relay, and its author would find out from the solver.
      */
     @Test
-    void lesClesDePauseRetireesSontRefuseesParLeurNomAvecLeurRemplacement() throws IOException {
+    void removedPauseKeysAreRefusedByNameWithTheirReplacement() throws IOException {
         String scenario = Files.readString(Path.of("src/main/resources/scenarios/scenario.yml"));
         assertThat(scenario).doesNotContain("pauseSurPoste").doesNotContain("pauseMinimaleEntreVacations");
 
@@ -272,7 +275,8 @@ class ScenarioBinderTest {
                         "dureePauseMajeurMinutes: 30", "dureePauseMinutes",
                         "dureePauseMineurMinutes: 30", "L3162-3")
                 .entrySet()) {
-            assertThatThrownBy(() -> ScenarioBinder.bind(scenario + "\nparametresLegaux:\n  " + cle.getKey() + "\n"))
+            String withRemovedKey = scenario + "\nparametresLegaux:\n  " + cle.getKey() + "\n";
+            assertThatThrownBy(() -> ScenarioBinder.bind(withRemovedKey))
                     .as(cle.getKey())
                     .isInstanceOf(ScenarioFormatException.class)
                     .hasMessageContaining(cle.getKey().substring(0, cle.getKey().indexOf(':')))

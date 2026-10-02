@@ -132,16 +132,37 @@ class FrozenPastAcceptanceTest {
         assertThat(persistedHardScore()).isZero();
 
         // 4. An incremental solve re-opening the Monday: nothing to re-open.
-        JsonPath incremental = solveIncremental("{\"animateurIds\":[],\"jours\":[\"" + J1 + "\"],\"standIds\":[]}");
+        assertIncrementalReopensNothingOn(J1, postesPasses, passeAttendu);
+
+        // 5. A consigne on Thursday, solved: the past still identical, the
+        //    future re-solved to zero hard on the new grid.
+        List<String> jeudiNominal = seatShapes(J4);
+        layConsigne();
+        assertSolvedKeepingThePast(solveComplet(), postesPasses, passeAttendu);
+        assertThat(seatShapes(J4)).isNotEqualTo(jeudiNominal);
+
+        // 6. « Demain on réouvre en nominal »: lifted, solved, the Thursday
+        //    back to its nominal shape, the past byte-identical across all three.
+        liftConsigneOn(J4);
+        JsonPath leve = solveComplet();
+        assertThat(leve.getInt("result.diagnostic.hardScore")).isZero();
+        assertThat(pastSeats(seatsByDay())).isEqualTo(passeAttendu);
+        assertThat(seatShapes(J4)).isEqualTo(jeudiNominal);
+        assertThat(persistedHardScore()).isZero();
+    }
+
+    /** An incremental solve re-opening {@code jour}, already worked: nothing moves, the past stays as it was. */
+    private void assertIncrementalReopensNothingOn(
+            String jour, int postesPasses, Map<String, List<String>> passeAttendu) {
+        JsonPath incremental = solveIncremental("{\"animateurIds\":[],\"jours\":[\"" + jour + "\"],\"standIds\":[]}");
         assertThat(incremental.getInt("result.statistiques.postesPasses")).isEqualTo(postesPasses);
         assertThat(incremental.getInt("result.statistiques.postesLiberesManuellement"))
                 .isZero();
         assertThat(incremental.getList("result.changements")).isEmpty();
         assertThat(pastSeats(seatsByDay())).isEqualTo(passeAttendu);
+    }
 
-        // 5. A consigne on Thursday, solved: the past still identical, the
-        //    future re-solved to zero hard on the new grid.
-        List<String> jeudiNominal = seatShapes(J4);
+    private static void layConsigne() {
         given().header("X-Edition-Id", "E1")
                 .contentType(ContentType.JSON)
                 .body(consigne())
@@ -149,23 +170,16 @@ class FrozenPastAcceptanceTest {
                 .post("/api/consignes")
                 .then()
                 .statusCode(200);
-        assertSolvedKeepingThePast(solveComplet(), postesPasses, passeAttendu);
-        assertThat(seatShapes(J4)).isNotEqualTo(jeudiNominal);
+    }
 
-        // 6. « Demain on réouvre en nominal »: lifted, solved, the Thursday
-        //    back to its nominal shape, the past byte-identical across all three.
+    private static void liftConsigneOn(String date) {
         given().header("X-Edition-Id", "E1")
                 .contentType(ContentType.JSON)
-                .body(Map.of("dates", List.of(J4)))
+                .body(Map.of("dates", List.of(date)))
                 .when()
                 .post("/api/consignes/levee")
                 .then()
                 .statusCode(204);
-        JsonPath leve = solveComplet();
-        assertThat(leve.getInt("result.diagnostic.hardScore")).isZero();
-        assertThat(pastSeats(seatsByDay())).isEqualTo(passeAttendu);
-        assertThat(seatShapes(J4)).isEqualTo(jeudiNominal);
-        assertThat(persistedHardScore()).isZero();
     }
 
     /** A full solve at zero hard that reports the past seats and leaves them as they were. */
@@ -239,16 +253,7 @@ class FrozenPastAcceptanceTest {
         }
         assertThat(absent).as("somebody on the Wednesday morning").isNotNull();
 
-        JsonPath marquee = given().header("X-Edition-Id", "E1")
-                .contentType(ContentType.JSON)
-                .body(Map.of("animateurId", absent))
-                .when()
-                .post("/api/jour-j/absences")
-                .then()
-                .statusCode(200)
-                .extract()
-                .jsonPath();
-        List<Map<String, Object>> liberes = marquee.getList("postesLiberes");
+        List<Map<String, Object>> liberes = markAbsent(absent).getList("postesLiberes");
         Map<String, Object> reste = liberes.stream()
                 .filter(poste -> "10:20:00".equals(String.valueOf(poste.get("heureDebut"))))
                 .findFirst()
@@ -260,25 +265,7 @@ class FrozenPastAcceptanceTest {
         String absentId = absent;
         assertThat(seatsByDay().get(J3))
                 .anySatisfy(siege -> assertThat(siege).endsWith("@10:00:00|10:20:00|" + absentId));
-        // Aujourd'hui offers it as the rest of the timeslot, new since the publication.
-        JsonPath jourJ = given().header("X-Edition-Id", "E1")
-                .when()
-                .get("/api/jour-j")
-                .then()
-                .statusCode(200)
-                .extract()
-                .jsonPath();
-        List<Map<String, Object>> aPourvoir = jourJ.getList("postesAPourvoir");
-        assertThat(aPourvoir)
-                .filteredOn(poste -> resteId.equals(poste.get("posteId")))
-                .singleElement()
-                .satisfies(poste -> assertThat(poste.get("resteDuCreneau")).isEqualTo(true));
-        // The part already over is history: neither a seat to fill nor a duty
-        // the absent person is still counted on.
-        String origineId = resteId.substring(0, resteId.indexOf('~'));
-        assertThat(aPourvoir).noneMatch(poste -> origineId.equals(poste.get("posteId")));
-        assertThat(jourJ.getList("animateursDeService.animateurId", String.class))
-                .doesNotContain(absentId);
+        assertOfferedAsTheRestOfTheTimeslot(resteId, absentId);
 
         List<String> candidats = given().header("X-Edition-Id", "E1")
                 .when()
@@ -304,6 +291,42 @@ class FrozenPastAcceptanceTest {
         assertThat(seatsByDay().get(J3))
                 .anySatisfy(siege -> assertThat(siege).endsWith("@10:00:00|10:20:00|" + absentId))
                 .anySatisfy(siege -> assertThat(siege).contains("@10:20:00|"));
+    }
+
+    private static JsonPath markAbsent(String animateurId) {
+        return given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
+                .body(Map.of("animateurId", animateurId))
+                .when()
+                .post("/api/jour-j/absences")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
+    }
+
+    /**
+     * Aujourd'hui offers the split seat as the rest of the timeslot, new since
+     * the publication; the part already over is history — neither a seat to
+     * fill nor a duty the absent person is still counted on.
+     */
+    private static void assertOfferedAsTheRestOfTheTimeslot(String resteId, String absentId) {
+        JsonPath jourJ = given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/jour-j")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
+        List<Map<String, Object>> aPourvoir = jourJ.getList("postesAPourvoir");
+        assertThat(aPourvoir)
+                .filteredOn(poste -> resteId.equals(poste.get("posteId")))
+                .singleElement()
+                .satisfies(poste -> assertThat(poste).containsEntry("resteDuCreneau", true));
+        String origineId = resteId.substring(0, resteId.indexOf('~'));
+        assertThat(aPourvoir).noneMatch(poste -> origineId.equals(poste.get("posteId")));
+        assertThat(jourJ.getList("animateursDeService.animateurId", String.class))
+                .doesNotContain(absentId);
     }
 
     /**

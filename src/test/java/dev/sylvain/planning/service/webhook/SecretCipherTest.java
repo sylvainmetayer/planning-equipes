@@ -30,8 +30,9 @@ class SecretCipherTest {
     @Test
     void anotherKeyCannotOpenIt() {
         String stored = new SecretCipher(Optional.of(KEY)).encrypt("secret");
+        SecretCipher other = new SecretCipher(Optional.of(OTHER_KEY));
 
-        assertThatThrownBy(() -> new SecretCipher(Optional.of(OTHER_KEY)).decrypt(stored))
+        assertThatThrownBy(() -> other.decrypt(stored))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageNotContaining("secret");
     }
@@ -48,12 +49,12 @@ class SecretCipherTest {
 
     @Test
     void aKeyOfTheWrongSizeFailsAtOnce() {
-        String court = Base64.getEncoder().encodeToString(new byte[16]);
+        Optional<String> tooShort = Optional.of(Base64.getEncoder().encodeToString(new byte[16]));
+        Optional<String> notBase64 = Optional.of("pas du base64 !");
 
-        assertThatThrownBy(() -> new SecretCipher(Optional.of(court)))
+        assertThatThrownBy(() -> new SecretCipher(tooShort))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("32 octets");
-        assertThatThrownBy(() -> new SecretCipher(Optional.of("pas du base64 !")))
-                .isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> new SecretCipher(notBase64)).isInstanceOf(IllegalStateException.class);
     }
 }

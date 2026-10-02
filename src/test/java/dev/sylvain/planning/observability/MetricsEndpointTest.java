@@ -77,10 +77,9 @@ class MetricsEndpointTest {
     void theProductionStackDoesNotPublishTheManagementPort() throws IOException {
         String compose = Files.readString(Path.of("docker-compose.prod.yml"));
 
-        assertThat(compose).contains("\"127.0.0.1:8080:8080\"");
         // A port mapping is a list item "host:container"; the one comment
         // naming the scrape URL is not.
-        assertThat(compose).doesNotContainPattern("(?m)^\\s*-\\s*\"?[0-9.:]*9000");
+        assertThat(compose).contains("\"127.0.0.1:8080:8080\"").doesNotContainPattern("(?m)^\\s*-\\s*\"?[0-9.:]*9000");
     }
 
     /**

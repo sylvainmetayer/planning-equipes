@@ -78,15 +78,15 @@ class EchangeStatisticsServiceTest {
         assertThat(stats.delaiCommunication()).isEqualTo(new EchangeDelay(2, 0, 45_000L, 78_120L, 45_000L));
         assertThat(stats.delaiAnnulation()).isEqualTo(new EchangeDelay(1, 0, 14_400L, 14_400L, 14_400L));
 
-        assertThat(stats.parJourCreation()).hasSize(13);
-        assertThat(stats.parJourCreation().getFirst()).isEqualTo(new EchangeDayCount(LocalDate.of(2026, 6, 1), 1));
         assertThat(stats.parJourCreation())
+                .hasSize(13)
+                .startsWith(new EchangeDayCount(LocalDate.of(2026, 6, 1), 1))
+                .endsWith(new EchangeDayCount(LocalDate.of(2026, 6, 13), 2))
                 .contains(
                         new EchangeDayCount(LocalDate.of(2026, 6, 2), 0),
                         new EchangeDayCount(LocalDate.of(2026, 6, 10), 2),
                         new EchangeDayCount(LocalDate.of(2026, 6, 11), 2),
                         new EchangeDayCount(LocalDate.of(2026, 6, 12), 1));
-        assertThat(stats.parJourCreation().getLast()).isEqualTo(new EchangeDayCount(LocalDate.of(2026, 6, 13), 2));
 
         assertThat(stats.parJourEvenement())
                 .containsExactly(

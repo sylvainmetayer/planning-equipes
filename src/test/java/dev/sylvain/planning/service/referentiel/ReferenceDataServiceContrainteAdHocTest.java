@@ -72,8 +72,9 @@ class ReferenceDataServiceContrainteAdHocTest {
     @Test
     void anAffinityOnAnAlreadyIncompatiblePairIsRejected() {
         String incompatibilite = create(contrainte(TypeContrainteAdHoc.INCOMPATIBILITE, premier, second));
+        ContrainteAdHoc affinite = contrainte(TypeContrainteAdHoc.AFFINITE, premier, second);
 
-        assertThatThrownBy(() -> create(contrainte(TypeContrainteAdHoc.AFFINITE, premier, second)))
+        assertThatThrownBy(() -> create(affinite))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining(incompatibilite)
                 .hasMessageContaining("incompatible");
@@ -84,7 +85,8 @@ class ReferenceDataServiceContrainteAdHocTest {
         String affinite = create(contrainte(TypeContrainteAdHoc.AFFINITE, premier, second));
 
         // The same pair, declared the other way round: the contradiction must be seen.
-        assertThatThrownBy(() -> create(contrainte(TypeContrainteAdHoc.INCOMPATIBILITE, second, premier)))
+        ContrainteAdHoc incompatibilite = contrainte(TypeContrainteAdHoc.INCOMPATIBILITE, second, premier);
+        assertThatThrownBy(() -> create(incompatibilite))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining(affinite);
     }
@@ -128,7 +130,9 @@ class ReferenceDataServiceContrainteAdHocTest {
     void aForcedSeatOnAnUnavailableSlotIsRefused() {
         String indisponibilite = create(onCreneau(TypeContrainteAdHoc.INDISPONIBILITE_FORCEE, matin, premier));
 
-        assertThatThrownBy(() -> create(onCreneau(TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, premier)))
+        ContrainteAdHoc affectation = onCreneau(TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, premier);
+
+        assertThatThrownBy(() -> create(affectation))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining(indisponibilite)
                 .hasMessageContaining("indisponible");
@@ -140,7 +144,9 @@ class ReferenceDataServiceContrainteAdHocTest {
         // carries their ids.
         String premiere = create(onCreneau(TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, premier));
 
-        assertThatThrownBy(() -> create(onCreneau(TypeContrainteAdHoc.AFFECTATION_FORCEE, chevauchant, premier)))
+        ContrainteAdHoc chevauchante = onCreneau(TypeContrainteAdHoc.AFFECTATION_FORCEE, chevauchant, premier);
+
+        assertThatThrownBy(() -> create(chevauchante))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining(premiere)
                 .hasMessageContaining("chevauchent");
@@ -151,7 +157,9 @@ class ReferenceDataServiceContrainteAdHocTest {
         String incompatibilite = create(contrainte(TypeContrainteAdHoc.INCOMPATIBILITE, premier, second));
         String affectation = create(onCreneau(TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, premier));
 
-        assertThatThrownBy(() -> create(onCreneau(TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, second)))
+        ContrainteAdHoc secondeAffectation = onCreneau(TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, second);
+
+        assertThatThrownBy(() -> create(secondeAffectation))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining(incompatibilite)
                 .hasMessageContaining(affectation)

@@ -815,8 +815,7 @@ class RefusedWhileSolvingStructuralTest {
             Map.of(JdbcEditionScope.class, Set.of("write", "writeAndReturn", "delete"));
 
     /** {@code private static final String NAME = "INSERT …";}: a constant a body names instead of its SQL. */
-    private static final Pattern STRING_CONSTANT =
-            Pattern.compile("static final String (\\w+)\\s*=\\s*(.*?);", Pattern.DOTALL);
+    private static final Pattern STRING_CONSTANT = Pattern.compile("static final String (\\w++)\\s*+=\\s*+([^;]*+);");
 
     /** A method of the backend by name, every overload at once: what a call in a body designates. */
     private record Callee(Class<?> classe, String name) {}
@@ -921,7 +920,7 @@ class RefusedWhileSolvingStructuralTest {
                             && facts.writingConstants().matcher(body).find();
             Matcher own = CALL_ON_THIS.matcher(body);
             while (own.find()) {
-                String name = own.group(1) != null ? own.group(1) : own.group(2);
+                String name = own.group(own.group(1) != null ? 1 : 2);
                 if (facts.methods().contains(name)) {
                     callees.add(new Callee(classe, name));
                 }

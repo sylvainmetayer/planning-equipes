@@ -702,7 +702,7 @@ class DemandeEchangeFlowTest {
      * withdrawing it themselves.
      */
     @Test
-    void uneDemandeAnnuleeParSonAuteurNeLuiVautAucunMessageDePublication() {
+    void aRequestWithdrawnByItsAuthorEarnsThemNoPublicationMessage() {
         persistTwoSeatPlanning();
         String token = tokenOf("ECH-A");
 
@@ -733,8 +733,8 @@ class DemandeEchangeFlowTest {
         // And it does not stay in the queue for ever: the withdrawal stamps
         // annule_le, never decide_le, so it never enters it.
         assertThat(demandeEchangeService.decisionsNonCommuniquees())
-                .extracting(dev.sylvain.planning.domain.DemandeEchange::getId)
-                .doesNotContain(demandeId);
+                .filteredOn(demande -> demandeId.equals(demande.getId()))
+                .isEmpty();
     }
 
     /** An empty batch is a no-op, not an error: nothing stored, no mail. */

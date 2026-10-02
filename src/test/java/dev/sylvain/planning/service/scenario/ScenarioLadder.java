@@ -334,8 +334,8 @@ final class ScenarioLadder {
                             .as("ad hoc %s", contrainte.getId())
                             .noneMatch(poste -> creneauxDuPremier.contains(poste.getCreneau()));
                 }
-                case AFFINITE -> {
-                    // A soft reward: nothing to hold.
+                case AFFINITE, ARRIVEE_GROUPEE -> {
+                    // Soft rules: nothing to hold.
                 }
             }
         }

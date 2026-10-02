@@ -234,10 +234,11 @@ class FormationAnalyzerTest {
                 List.of(JOUR_1));
 
         assertThat(ligne(plan, "ESCAPE").candidats()).isEmpty();
-        assertThat(FormationAnalyzer.generateCsv(plan))
-                .isEqualTo("typologie;manque besoin;competences rares;sans specialiste;postes irremplacables;"
-                        + "jours en tension;animateur;niveau;souhait;jours en tension disponibles\n"
-                        + "Escape game;0;1;0;0;1;aucun candidat : recrutement;;;\n");
+        assertThat(FormationAnalyzer.generateCsv(plan)).isEqualTo("""
+                        typologie;manque besoin;competences rares;sans specialiste;postes irremplacables;\
+                        jours en tension;animateur;niveau;souhait;jours en tension disponibles
+                        Escape game;0;1;0;0;1;aucun candidat : recrutement;;;
+                        """);
     }
 
     @Test
