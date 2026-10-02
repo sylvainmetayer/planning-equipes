@@ -537,10 +537,12 @@ fonctionnalité qui **supprime**.
 ### La tâche des notifications planifiées
 
 `service/notification/NotificationsPlanifieesService` est le deuxième `@Scheduled`,
-et le seul point d'entrée des trois envois de nuit — rappel de la veille
+et le seul point d'entrée des quatre envois de nuit — rappel de la veille
 (`RappelVeilleJob`), relance des non-confirmés (`RelanceConfirmationJob`),
-alerte sur les demandes d'échange qui dorment (`AlerteEchangeJob`). Le profil
-`%test` désactive le planificateur pour les trois tâches ; les tests appellent
+alerte sur les demandes d'échange qui dorment (`AlerteEchangeJob`), relance de
+la collecte des disponibilités aux invités qui n'ont rien déclaré
+(`RelanceCollecteJob`, qui lit les invités dans `envoi_mail`). Le profil
+`%test` désactive le planificateur pour les quatre tâches ; les tests appellent
 les services directement.
 
 Il suit les conventions du paquet `backup` — cron et fuseau configurables,

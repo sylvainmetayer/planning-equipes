@@ -111,6 +111,10 @@ export function buildAnimateurSideSections(): HelpSection[] {
               text: $localize`:@@aide.dispo.def.prevenir:Une case à cocher au moment d'ouvrir, jamais un réglage permanent : elle envoie à chacun le lien de son espace, directement sur l'onglet de déclaration. Cochez-la au premier tour ; laissez-la de côté quand vous rouvrez après une correction, sinon tout le monde reçoit une relance pour rien. Elle est refusée hors de l'édition active : ouvrir la collecte d'une édition en préparation est permis, écrire à ses animateurs non, et leur espace reste fermé jusqu'à l'activation.`,
             },
             {
+              term: $localize`:@@aide.dispo.term.relance:Relance automatique`,
+              text: $localize`:@@aide.dispo.def.relance:Un réglage de la carte Guichets, éteint par défaut. Allumé, il écrit une fois, trois jours avant la date de fin, à chaque animateur qui a reçu l'invitation et n'a envoyé aucune déclaration, avec le lien de son espace. Sans date de fin, collecte fermée ou édition inactive, rien ne part. Déplacer la fin rend possible une nouvelle relance.`,
+            },
+            {
               term: $localize`:@@aide.dispo.term.decision:Appliquer ou refuser, en bloc`,
               text: $localize`:@@aide.dispo.def.decision:L'écran montre côte à côte ce que l'animateur déclare et ce que sa fiche dit aujourd'hui. Appliquer écrit la proposition entière sur sa fiche ; le planning enregistré est alors signalé comme périmé, et la régénération reste une action à part. Refuser ne modifie rien, et votre motif est lu par l'animateur dans son espace. Il n'y a délibérément pas de validation ligne à ligne : un désaccord se règle par un mot, et l'animateur renvoie une version corrigée.`,
             },

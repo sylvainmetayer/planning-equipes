@@ -28,6 +28,15 @@
           <ng-container i18n="@@dispo.fenetre.prevenir">Prévenir les animateurs par e-mail en ouvrant (lien vers leur espace)</ng-container>
         </mat-checkbox>
       }
+      <mat-checkbox [checked]="collectionReminder()" [disabled]="collectionSaving() || collecte() === null"
+                    (change)="collectionReminder.set($event.checked)">
+        <ng-container i18n="@@parametres.guichets.relanceCollecte">Relancer par e-mail, trois jours avant la fin, les invités qui n'ont rien déclaré</ng-container>
+      </mat-checkbox>
+      @if (collectionReminder() && !collecteFin()) {
+        <p class="locked-hint" i18n="@@parametres.guichets.relanceSansFin">Sans date de fin, aucune relance ne part.</p>
+      } @else {
+        <p class="calendar-meta" i18n="@@parametres.guichets.relanceAide">Une seule relance par personne, envoyée par les envois automatiques de l'édition active, à qui a reçu l'invitation et n'a envoyé aucune déclaration.</p>
+      }
       <div class="card-actions">
         <button matButton="filled" type="button" [disabled]="collectionSaving() || collecte() === null"
                 (click)="saveCollecte()">

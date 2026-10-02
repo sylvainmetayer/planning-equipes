@@ -150,6 +150,11 @@ export class GuichetEtat implements OnInit {
     };
   });
   protected readonly saving = signal(false);
+  /**
+   * The collection's reminder switch, as loaded: closing writes the whole
+   * configuration, and must hand it back unchanged rather than switch it off.
+   */
+  private readonly collectionReminder = signal(false);
   protected readonly phrase = computed(() => {
     const etat = this.etat();
     return etat ? phraseGuichet(this.guichet(), etat) : '';
@@ -174,6 +179,7 @@ export class GuichetEtat implements OnInit {
         });
       } else {
         const configuration = await this.disponibilitesApi.configuration();
+        this.collectionReminder.set(configuration.relanceAutomatique);
         this.loaded.set({
           state: {
             ouvert: configuration.collecteOuverte,
@@ -213,6 +219,7 @@ export class GuichetEtat implements OnInit {
           collecteOuverte: false,
           debut: etat.debut,
           fin: etat.fin,
+          relanceAutomatique: this.collectionReminder(),
           prevenirAnimateurs: false,
         });
         this.notifications.notify({

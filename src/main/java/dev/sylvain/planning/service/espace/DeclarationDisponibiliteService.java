@@ -183,6 +183,22 @@ public class DeclarationDisponibiliteService {
      * nothing refusable is left after the write. What can still fail
      * afterwards is per-animateur, and that is reported rather than
      * thrown.</p>
+     *
+     * @param relanceAutomatique the reminder three days before {@code fin};
+     *                           {@code null} keeps the stored value, so that a
+     *                           caller unaware of the switch — an older client,
+     *                           a script, an assistant that left it out — never
+     *                           turns it off by omission
+     */
+    public ConfigurationAppliquee configure(
+            boolean ouverte, LocalDate debut, LocalDate fin, Boolean relanceAutomatique, boolean prevenirAnimateurs) {
+        boolean relance = relanceAutomatique == null ? repository.fenetre().relanceAutomatique() : relanceAutomatique;
+        return configure(new FenetreCollecte(ouverte, debut, fin, relance), prevenirAnimateurs);
+    }
+
+    /**
+     * Same call, with the reminder switch stated: the whole window as it is
+     * to be stored.
      */
     public ConfigurationAppliquee configure(FenetreCollecte fenetre, boolean prevenirAnimateurs) {
         FenetreCollecte demandee = fenetre == null ? FenetreCollecte.closed() : fenetre;

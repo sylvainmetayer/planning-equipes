@@ -149,6 +149,7 @@ public class NotificationDispatcher {
                     Notification.ResolutionTerminee _,
                     Notification.RappelVeille _,
                     Notification.RelanceConfirmation _,
+                    Notification.RelanceCollecte _,
                     Notification.PendingEchanges _,
                     // The weather is read for the active edition only, and the
                     // alert speaks of that edition's dates and places.

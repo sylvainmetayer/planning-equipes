@@ -146,7 +146,9 @@ public class DisponibiliteMcpTools {
             description = "Ouvre ou ferme la collecte des disponibilités, et la borne éventuellement par des "
                     + "dates. prevenirAnimateurs ENVOIE UN COURRIEL à chaque animateur avec le lien de son espace : "
                     + "c'est une décision par ouverture, pas un réglage, et personne n'est invité à une collecte qu'on "
-                    + "ferme. L'invitation est comptée, jamais nominative.",
+                    + "ferme. L'invitation est comptée, jamais nominative. relanceAutomatique est un réglage "
+                    + "conservé : à trois jours de la fin, la tâche de nuit ENVOIE UN COURRIEL de relance aux invités "
+                    + "qui n'ont rien déclaré ; omis, il garde sa valeur.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -159,9 +161,17 @@ public class DisponibiliteMcpTools {
             @ToolArg(description = "Fin de la collecte (AAAA-MM-JJ)", required = false) String fin,
             @ToolArg(description = "Envoyer maintenant l'invitation à déclarer (courriels)", required = false)
                     Boolean prevenirAnimateurs,
+            @ToolArg(
+                            description = "Relance automatique à J-3 de la fin aux invités sans déclaration "
+                                    + "(omis : inchangée)",
+                            required = false)
+                    Boolean relanceAutomatique,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         ConfigurationAppliquee appliquee = declarationService.configure(
-                new FenetreCollecte(ouverte, McpArgs.date(debut, "debut"), McpArgs.date(fin, "fin")),
+                ouverte,
+                McpArgs.date(debut, "debut"),
+                McpArgs.date(fin, "fin"),
+                relanceAutomatique,
                 Boolean.TRUE.equals(prevenirAnimateurs));
         return toView(appliquee.fenetre(), appliquee.invitation());
     }
@@ -230,6 +240,7 @@ public class DisponibiliteMcpTools {
                 fenetre.ouverte(),
                 fenetre.debut(),
                 fenetre.fin(),
+                fenetre.relanceAutomatique(),
                 invitation == null
                         ? null
                         : new InvitationView(
@@ -262,10 +273,13 @@ public class DisponibiliteMcpTools {
             List<LocalDate> joursActuels) {}
 
     /**
+     * @param relanceAutomatique the reminder three days before {@code fin}, to
+     *                   the invited who declared nothing
      * @param invitation what the invitation mails did, when this call sent
      *                   them; {@code null} otherwise
      */
-    public record CollecteView(boolean ouverte, LocalDate debut, LocalDate fin, InvitationView invitation) {}
+    public record CollecteView(
+            boolean ouverte, LocalDate debut, LocalDate fin, boolean relanceAutomatique, InvitationView invitation) {}
 
     /**
      * @param sansAdresse how many animateurs have no address on their fiche —

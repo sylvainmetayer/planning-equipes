@@ -89,6 +89,7 @@ public class NotificationWriter {
             case Notification.ResolutionTerminee n -> resolutionTerminee(n);
             case Notification.RappelVeille n -> rappelVeille(n);
             case Notification.RelanceConfirmation n -> relanceConfirmation(n);
+            case Notification.RelanceCollecte n -> relanceCollecte(n);
             case Notification.PendingEchanges n -> pendingEchanges(n);
             case Notification.BackupFailed n -> backupFailed(n);
             case Notification.BackupRecovered n -> backupRecovered(n);
@@ -283,6 +284,28 @@ public class NotificationWriter {
         MailContent content = RelanceConfirmationMail.render(templates, productName, n.prenom(), n.lienEspace());
         return Optional.of(new MailDraft(
                 n.email(), content.subject(), content.text(), content.html(), RelanceConfirmationMail.TEMPLATE));
+    }
+
+    /**
+     * The collection closes soon and nothing was declared: the deadline, and
+     * where to declare. Says neither what the others did nor how many are
+     * late — it is written to one person about their own answer.
+     */
+    private Optional<MailDraft> relanceCollecte(Notification.RelanceCollecte n) {
+        if (withoutRecipient(n.email())) {
+            return Optional.empty();
+        }
+        return Optional.of(draft(
+                n.email(),
+                "mail/relance-collecte",
+                productName.subject("vos disponibilités sont attendues avant le " + JOUR.format(n.fin())),
+                MailTemplates.values(
+                        KEY_PRENOM,
+                        blankToNull(n.prenom()),
+                        "fin",
+                        JOUR.format(n.fin()),
+                        KEY_LIEN_ESPACE,
+                        n.lienEspace())));
     }
 
     /**

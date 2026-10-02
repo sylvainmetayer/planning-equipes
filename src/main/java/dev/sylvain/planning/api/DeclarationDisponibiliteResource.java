@@ -89,9 +89,12 @@ public class DeclarationDisponibiliteResource {
     @Path("/configuration")
     public ConfigurationCollecte configure(ConfigurationCollecte configuration) {
         ConfigurationCollecte demandee =
-                configuration == null ? new ConfigurationCollecte(false, null, null, false, null) : configuration;
+                configuration == null ? new ConfigurationCollecte(false, null, null, null, false, null) : configuration;
         DeclarationDisponibiliteService.ConfigurationAppliquee appliquee = declarationService.configure(
-                new FenetreCollecte(demandee.collecteOuverte(), demandee.debut(), demandee.fin()),
+                demandee.collecteOuverte(),
+                demandee.debut(),
+                demandee.fin(),
+                demandee.relanceAutomatique(),
                 demandee.prevenirAnimateurs());
         return ConfigurationCollecte.of(appliquee.fenetre(), appliquee.invitation());
     }
@@ -100,6 +103,11 @@ public class DeclarationDisponibiliteResource {
      * The collection window, plus the one-shot decision that rides with a
      * change of it.
      *
+     * @param relanceAutomatique a stored setting: three days before {@code fin},
+     *                           the nightly job reminds whoever was invited
+     *                           and has declared nothing. Off by default;
+     *                           always answered, and left out of a request it
+     *                           keeps its stored value
      * @param prevenirAnimateurs request only: send the invitation mails now.
      *                           Never echoed back — it is an action, not a
      *                           stored setting
@@ -112,11 +120,13 @@ public class DeclarationDisponibiliteResource {
             boolean collecteOuverte,
             LocalDate debut,
             LocalDate fin,
+            Boolean relanceAutomatique,
             boolean prevenirAnimateurs,
             InvitationReport invitation) {
 
         static ConfigurationCollecte of(FenetreCollecte fenetre, InvitationReport invitation) {
-            return new ConfigurationCollecte(fenetre.ouverte(), fenetre.debut(), fenetre.fin(), false, invitation);
+            return new ConfigurationCollecte(
+                    fenetre.ouverte(), fenetre.debut(), fenetre.fin(), fenetre.relanceAutomatique(), false, invitation);
         }
     }
 

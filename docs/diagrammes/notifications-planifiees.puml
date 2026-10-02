@@ -1,7 +1,8 @@
 @startuml
-' L'envoi horaire : trois tâches, pour la seule édition active, lues sur le
-' plan publié. Chaque envoi est d'abord réservé en base sur une clé : un
-' passage de plus ne renvoie rien. Tout part en meilleur effort, par le
+' L'envoi horaire : quatre tâches, pour la seule édition active — trois lues
+' sur le plan publié, la quatrième sur la fenêtre de collecte. Chaque envoi
+' est d'abord réservé en base sur une clé : un passage de plus ne renvoie
+' rien. Tout part en meilleur effort, par le
 ' dispatcher, qui rend l'issue au lieu de la lever : un échec laisse une
 ' alerte et ne compte pas comme un envoi. Voir docs/exploitation.md, « Les
 ' envois automatiques de nuit ».
@@ -16,6 +17,7 @@ participant EditionContext as contexte
 participant RappelVeilleJob as veille
 participant RelanceConfirmationJob as relance
 participant AlerteEchangeJob as alerte
+participant RelanceCollecteJob as collecte
 participant JournalNotificationsRepository as journal
 participant NotificationDispatcher as dispatcher
 participant NotificationWriter as redacteur
@@ -37,6 +39,8 @@ else l'édition active
   note right of relance : délai écoulé depuis la publication :\nceux qui n'ont pas accusé réception
   service -> alerte : run(paramètres, maintenant)
   note right of alerte : demandes PROPOSEE plus anciennes\nque ancienneteEchangeJours
+  service -> collecte : run(maintenant)
+  note right of collecte : interrupteur allumé, fin de collecte\ndans 0 à 3 jours, passé 9 h : invités\nsans déclaration (clé animateur|fin)
 end
 
 group dans chaque tâche, pour chaque destinataire

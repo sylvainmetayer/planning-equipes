@@ -48,12 +48,15 @@ public class DeclarationDisponibiliteRepository {
      * @param debut   first day the espace accepts a declaration, {@code null}
      *                for "as soon as it is open"
      * @param fin     last day it does, {@code null} for "until it is closed"
+     * @param relanceAutomatique the nightly reminder, three days before
+     *                {@code fin}, to the invited who declared nothing; off
+     *                until somebody turns it on, like the window itself
      */
-    public record FenetreCollecte(boolean ouverte, LocalDate debut, LocalDate fin) {
+    public record FenetreCollecte(boolean ouverte, LocalDate debut, LocalDate fin, boolean relanceAutomatique) {
 
         /** What an edition nobody configured looks like. */
         public static FenetreCollecte closed() {
-            return new FenetreCollecte(false, null, null);
+            return new FenetreCollecte(false, null, null, false);
         }
 
         /** True on {@code jour}: the switch is on and the day is inside the bounds. */
@@ -66,31 +69,37 @@ public class DeclarationDisponibiliteRepository {
         return scope.read("Failed to read the collection window", connection -> {
             try (PreparedStatement ps = scope.prepareScoped(
                             connection,
-                            "SELECT collecte_ouverte, date_debut, date_fin FROM parametres_collecte "
-                                    + "WHERE edition_id = ?");
+                            "SELECT collecte_ouverte, date_debut, date_fin, relance_automatique "
+                                    + "FROM parametres_collecte WHERE edition_id = ?");
                     ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) {
                     return FenetreCollecte.closed();
                 }
                 return new FenetreCollecte(
-                        rs.getBoolean("collecte_ouverte"), date(rs, "date_debut"), date(rs, "date_fin"));
+                        rs.getBoolean("collecte_ouverte"),
+                        date(rs, "date_debut"),
+                        date(rs, "date_fin"),
+                        rs.getBoolean("relance_automatique"));
             }
         });
     }
 
     public void saveFenetre(FenetreCollecte fenetre) {
         String sql = """
-                    INSERT INTO parametres_collecte (edition_id, collecte_ouverte, date_debut, date_fin)
-                    VALUES (?, ?, ?, ?)
+                    INSERT INTO parametres_collecte (edition_id, collecte_ouverte, date_debut, date_fin,
+                        relance_automatique)
+                    VALUES (?, ?, ?, ?, ?)
                     ON CONFLICT (edition_id) DO UPDATE SET
                         collecte_ouverte = EXCLUDED.collecte_ouverte,
                         date_debut = EXCLUDED.date_debut,
-                        date_fin = EXCLUDED.date_fin""";
+                        date_fin = EXCLUDED.date_fin,
+                        relance_automatique = EXCLUDED.relance_automatique""";
         scope.write("Failed to store the collection window", connection -> {
             try (PreparedStatement ps = scope.prepareScoped(connection, sql)) {
                 ps.setBoolean(2, fenetre.ouverte());
                 ps.setObject(3, fenetre.debut());
                 ps.setObject(4, fenetre.fin());
+                ps.setBoolean(5, fenetre.relanceAutomatique());
                 ps.executeUpdate();
             }
         });

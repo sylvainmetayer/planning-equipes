@@ -1887,6 +1887,9 @@
           "fin" : {
             "$ref" : "#/components/schemas/LocalDate"
           },
+          "relanceAutomatique" : {
+            "type" : "boolean"
+          },
           "prevenirAnimateurs" : {
             "type" : "boolean"
           },

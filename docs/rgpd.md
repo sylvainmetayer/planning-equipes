@@ -367,8 +367,9 @@ complètes. Quatre points sont connus et se consignent :
   libre**, et c'est à ce titre qu'il est traité — sans que rien n'y soit
   demandé, ni exigé, ni exploité au-delà de la décision qu'il éclaire ;
 - **les envois automatiques de nuit écrivent sans qu'un humain relise** : le
-  rappel de la veille et la relance de confirmation partent d'une tâche
-  planifiée, vers des adresses d'animateurs, mineurs compris. Trois bornes sont
+  rappel de la veille, la relance de confirmation et la relance de la collecte
+  des disponibilités partent d'une tâche planifiée, vers des adresses
+  d'animateurs, mineurs compris. Trois bornes sont
   posées et se consignent telles quelles : rien ne part que de l'**édition
   active**, qu'un administrateur désigne explicitement (toute édition naît
   inactive, et l'espace, le flux ICS et l'affichage mural d'une édition

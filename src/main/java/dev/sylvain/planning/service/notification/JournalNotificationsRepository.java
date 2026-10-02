@@ -65,6 +65,19 @@ public class JournalNotificationsRepository {
          */
         RELANCE_INJOIGNABLE,
 
+        /**
+         * The collection of availabilities closes soon and an invited
+         * animateur declared nothing. Key: {@code animateurId|fin}, so a
+         * window whose end moved may remind again; each day's attempt also
+         * claims {@code animateurId|fin|day}, kept when its send fails so the
+         * hourly runs do not insist and the next day retries. Its alerts
+         * follow the deadline's key: {@link JournalNotificationsRepository#FAILURE_SUFFIX}
+         * for a send that failed, {@code |sans-adresse} for a fiche without
+         * an address, {@code |adresse-refusee} for an address the relay
+         * refused and nobody has corrected since.
+         */
+        RELANCE_COLLECTE,
+
         /** A swap request has been waiting too long (issue #300). Key: the demande id. */
         ALERTE_ECHANGE,
 

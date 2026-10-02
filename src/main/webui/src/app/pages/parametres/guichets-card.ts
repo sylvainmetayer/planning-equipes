@@ -67,6 +67,8 @@ export class GuichetsCard implements OnInit {
   protected readonly collectionOpen = signal(false);
   protected readonly collecteDebut = signal('');
   protected readonly collecteFin = signal('');
+  /** Stored with the window: the reminder three days before its end, off until turned on. */
+  protected readonly collectionReminder = signal(false);
   /**
    * Ticked per opening, never stored: the invitation is indispensable on the
    * first round and merely tiresome when the window is reopened after a
@@ -122,6 +124,7 @@ export class GuichetsCard implements OnInit {
     this.collectionOpen.set(configuration.collecteOuverte);
     this.collecteDebut.set(configuration.debut ?? '');
     this.collecteFin.set(configuration.fin ?? '');
+    this.collectionReminder.set(configuration.relanceAutomatique);
   }
 
   private applySignalements(configuration: ConfigurationSignalements): void {
@@ -150,6 +153,7 @@ export class GuichetsCard implements OnInit {
         collecteOuverte: open,
         debut: this.collecteDebut() || null,
         fin: this.collecteFin() || null,
+        relanceAutomatique: this.collectionReminder(),
         prevenirAnimateurs: open && this.prevenir(),
       });
       this.applyCollecte(reponse);
