@@ -443,15 +443,15 @@ export class StaffingPage implements OnInit {
     return total > 0 && total - jour.disponibles > jour.absentsMax;
   }
 
-  protected setAdults(valeur: number | string | null): void {
+  protected setAdults(valeur: FigureInput): void {
     this.adultsToCheck.set(readFigure(valeur));
   }
 
-  protected setMinors(valeur: number | string | null): void {
+  protected setMinors(valeur: FigureInput): void {
     this.minorsToCheck.set(readFigure(valeur));
   }
 
-  protected setSeconds(valeur: number | string | null): void {
+  protected setSeconds(valeur: FigureInput): void {
     this.secondsToCheck.set(readFigure(valeur));
   }
 
@@ -523,8 +523,11 @@ export class StaffingPage implements OnInit {
   }
 }
 
+/** What a number field hands over: a figure, its text, or nothing. */
+type FigureInput = number | string | null;
+
 /** A figure typed in a number field, `null` when the field is empty or unreadable. */
-function readFigure(valeur: number | string | null): number | null {
+function readFigure(valeur: FigureInput): number | null {
   const figure = valeur === null || valeur === '' ? null : Number(valeur);
   return figure !== null && Number.isFinite(figure) ? figure : null;
 }

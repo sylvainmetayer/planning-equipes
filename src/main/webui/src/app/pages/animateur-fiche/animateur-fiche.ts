@@ -304,8 +304,7 @@ export function carriedDrafts(
   previous: { source: CompetenceSource; value: CompetenceDraft[] } | undefined,
 ): CompetenceDraft[] {
   if (
-    previous &&
-    previous.source.animateurId === source.animateurId &&
+    previous?.source.animateurId === source.animateurId &&
     source.animateur !== null &&
     !sameDrafts(previous.value, previous.source.drafts) &&
     competencesChanged(source.animateur, previous.value)

@@ -149,13 +149,12 @@ export function standsFermes(moments: readonly StandMoment[]): StandsFermes[] {
   }
   return [...byTime.entries()]
     .map(([reouverture, noms]) => ({ reouverture, noms }))
-    .sort((a, b) =>
-      a.reouverture === null
-        ? 1
-        : b.reouverture === null
-          ? -1
-          : a.reouverture.localeCompare(b.reouverture),
-    );
+    .sort((a, b) => {
+      if (a.reouverture === null) {
+        return 1;
+      }
+      return b.reouverture === null ? -1 : a.reouverture.localeCompare(b.reouverture);
+    });
 }
 
 /** One column of the printed table: a shift window of the day. */
@@ -228,7 +227,7 @@ export function groupByEmplacement(moments: readonly StandMoment[]): GroupeEmpla
   for (const moment of moments) {
     const nom = moment.stand.emplacementNom;
     const dernier = groupes.at(-1);
-    if (dernier && dernier.emplacementNom === nom) {
+    if (dernier?.emplacementNom === nom) {
       dernier.stands.push(moment);
     } else {
       groupes.push({ emplacementNom: nom, stands: [moment] });

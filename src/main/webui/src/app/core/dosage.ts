@@ -105,5 +105,5 @@ function ruleState(dosage: Dosage, name: string): string {
 }
 
 function sortedEntries(record: Record<string, number> | undefined): [string, number][] {
-  return Object.entries(record ?? {}).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+  return Object.entries(record ?? {}).sort(([a], [b]) => compareCodeUnits(a, b));
 }

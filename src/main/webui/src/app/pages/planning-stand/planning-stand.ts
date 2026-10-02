@@ -140,22 +140,46 @@ function libelleCase(
   }
 }
 
-/**
- * The grid, one line per stand of the plan kept by the filters, alphabetical,
- * one cell per day in the page's order; and its footer, the day's filled seats
- * over its seats and the event's totals.
- */
-export function buildTableauStands(
+/** The short name of a seat's holder, empty on a free seat. */
+function holderName(poste: PosteAffectation): string {
+  return poste.animateur
+    ? nomCourt(poste.animateur.prenom, poste.animateur.nom, poste.animateur.id)
+    : '';
+}
+
+/** One stand on one day: its places, how many are held, by whom, and the seat a click opens. */
+function standCase(acc: Accumulateur, jour: JourGrille, continued: ReadonlySet<string>): CaseStand {
+  const daySeats = [...(acc.parJour.get(jour.key) ?? [])].sort(
+    (gauche, droite) =>
+      (gauche.heureDebutEffective ?? gauche.creneau!.heureDebut).localeCompare(
+        droite.heureDebutEffective ?? droite.creneau!.heureDebut,
+      ) || gauche.id.localeCompare(droite.id),
+  );
+  const tenus = daySeats.filter((poste) => poste.animateur);
+  const places = daySeats.filter((poste) => !continued.has(poste.id));
+  const placesTenues = places.filter((poste) => poste.animateur).length;
+  const base = {
+    statut: statusOf(places.length, placesTenues),
+    sieges: places.length,
+    pourvus: placesTenues,
+    noms: tenus.map(holderName),
+    posteId: (daySeats.find((poste) => !poste.animateur) ?? daySeats[0])?.id ?? null,
+  };
+  return {
+    ...base,
+    classe: `planning-stand-${base.statut}`,
+    libelle: libelleCase(acc.standNom, jour, base),
+    active: base.posteId !== null,
+  };
+}
+
+/** Stand id → its seats day by day and its required and filled minutes, over every seat of a known day. */
+function accumulateByStand(
   postes: readonly PosteAffectation[],
   jours: readonly JourEvenement[],
-  colonnes: readonly JourGrille[],
-  filtres: FiltresStand,
-): TableauStands {
+): Map<string, Accumulateur> {
   const byStand = new Map<string, Accumulateur>();
   const keyByDay = new Map(jours.map((jour) => [jour.jour, jour.key]));
-  // A seat split on the day (ADR 0066) is one place, counted on its
-  // continuation; both parts keep their names and their hours.
-  const continued = continuedSeatIds(postes);
   for (const poste of postes) {
     const stand = poste.stand;
     const creneau = poste.creneau;
@@ -183,6 +207,24 @@ export function buildTableauStands(
       acc.minutesPourvues += minutes;
     }
   }
+  return byStand;
+}
+
+/**
+ * The grid, one line per stand of the plan kept by the filters, alphabetical,
+ * one cell per day in the page's order; and its footer, the day's filled seats
+ * over its seats and the event's totals.
+ */
+export function buildTableauStands(
+  postes: readonly PosteAffectation[],
+  jours: readonly JourEvenement[],
+  colonnes: readonly JourGrille[],
+  filtres: FiltresStand,
+): TableauStands {
+  const byStand = accumulateByStand(postes, jours);
+  // A seat split on the day (ADR 0066) is one place, counted on its
+  // continuation; both parts keep their names and their hours.
+  const continued = continuedSeatIds(postes);
 
   const lignes: LigneStand[] = [];
   for (const [standId, acc] of byStand) {
@@ -193,41 +235,12 @@ export function buildTableauStands(
     if (filtres.animateur && !all.some((poste) => poste.animateur?.id === filtres.animateur)) {
       continue;
     }
-    const noms = (poste: PosteAffectation): string =>
-      poste.animateur
-        ? nomCourt(poste.animateur.prenom, poste.animateur.nom, poste.animateur.id)
-        : '';
-    if (!correspondAuFiltre(filtres.recherche, [acc.standNom, ...all.map(noms)])) {
+    if (!correspondAuFiltre(filtres.recherche, [acc.standNom, ...all.map(holderName)])) {
       continue;
     }
-    let sieges = 0;
-    let pourvus = 0;
-    const cases = colonnes.map((jour) => {
-      const daySeats = [...(acc.parJour.get(jour.key) ?? [])].sort(
-        (gauche, droite) =>
-          (gauche.heureDebutEffective ?? gauche.creneau!.heureDebut).localeCompare(
-            droite.heureDebutEffective ?? droite.creneau!.heureDebut,
-          ) || gauche.id.localeCompare(droite.id),
-      );
-      const tenus = daySeats.filter((poste) => poste.animateur);
-      const places = daySeats.filter((poste) => !continued.has(poste.id));
-      const placesTenues = places.filter((poste) => poste.animateur).length;
-      sieges += places.length;
-      pourvus += placesTenues;
-      const base = {
-        statut: statusOf(places.length, placesTenues),
-        sieges: places.length,
-        pourvus: placesTenues,
-        noms: tenus.map(noms),
-        posteId: (daySeats.find((poste) => !poste.animateur) ?? daySeats[0])?.id ?? null,
-      };
-      return {
-        ...base,
-        classe: `planning-stand-${base.statut}`,
-        libelle: libelleCase(acc.standNom, jour, base),
-        active: base.posteId !== null,
-      };
-    });
+    const cases = colonnes.map((jour) => standCase(acc, jour, continued));
+    const sieges = cases.reduce((somme, cellule) => somme + cellule.sieges, 0);
+    const pourvus = cases.reduce((somme, cellule) => somme + cellule.pourvus, 0);
     lignes.push({
       id: standId,
       standId,

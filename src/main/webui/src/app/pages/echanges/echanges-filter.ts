@@ -86,14 +86,14 @@ export function readMeasure(value: string | null): ListMeasure | null {
 /** The value of `?jour=` for the requests whose timeslot no longer exists. */
 export const REMOVED_TIMESLOT = 'retire';
 
-const STATUTS: readonly StatutDemandeEchange[] = [
+const STATUTS: ReadonlySet<StatutDemandeEchange> = new Set<StatutDemandeEchange>([
   'EN_ATTENTE_CIBLE',
   'PROPOSEE',
   'ACCEPTEE',
   'REFUSEE',
   'REFUSEE_CIBLE',
   'ANNULEE',
-];
+]);
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -101,9 +101,7 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
 export function readListFilter(params: ParamMap): ListFilter {
   const statuts = (params.get('statuts') ?? '')
     .split(',')
-    .filter((value): value is StatutDemandeEchange =>
-      STATUTS.includes(value as StatutDemandeEchange),
-    );
+    .filter((value): value is StatutDemandeEchange => STATUTS.has(value as StatutDemandeEchange));
   const prevalidated = params.get('prevalidee');
   const day = params.get('jour');
   return {
