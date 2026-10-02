@@ -7,16 +7,9 @@ on:
       - 'v*'
   workflow_dispatch:
 
-# `id-token` and `attestations` are what lets this workflow sign, and publish
-# to the repository's attestation store, the provenance and the SBOM of the
-# image it just pushed — see the two attest steps at the end of the job.
+# Read-only by default; the job below holds the write scopes it needs.
 permissions:
   contents: read
-  packages: write
-  id-token: write
-  attestations: write
-  # The vulnerability scan of the image goes to the Security tab as well.
-  security-events: write
 
 concurrency:
   group: docker-ghcr-${{ github.ref }}
@@ -29,6 +22,16 @@ jobs:
     # provenance verifiable once the repository is public. Every workflow runs
     # there now; this one always did.
     runs-on: ubuntu-latest
+    # `id-token` and `attestations` are what lets this job sign, and publish
+    # to the repository's attestation store, the provenance and the SBOM of the
+    # image it just pushed — see the two attest steps at the end of the job.
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+      # The vulnerability scan of the image goes to the Security tab as well.
+      security-events: write
     # ~23 min réels tant que l'image se construisait aussi pour arm64 sous
     # QEMU ; sans elle, c'est la moitié. Le plafond reste large : c'est un
     # garde-fou contre un blocage, pas une prévision.
