@@ -3,7 +3,7 @@
 - **Statut** : remplacé par [0029](0029-retrait-des-familles-de-relais.md) — les familles de relais sont retirées
 - **Date** : septembre 2026
 - **Portée** : référentiel des stands, génération des postes, IHM, import
-- **Issue** : #390
+- **Origine** : un stand ajouté décalait la famille de relais de tous les stands qui le suivaient
 
 ## Contexte
 

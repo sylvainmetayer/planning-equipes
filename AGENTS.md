@@ -749,7 +749,8 @@ The doc layout is intentional — respect it when adding or updating docs.
    link forward to the one that replaces it. The chain of revisions is the
    value; the latest state alone is not.
    Two rules keep these records publishable: **no issue references** (they
-   point at a backlog that stays private) and **no client operating data** —
+   point at a backlog that stays private; `DocumentationStructuralTest`
+   refuses a `#123`) and **no client operating data** —
    figures are allowed only when they are reproducible on a scenario versioned
    under `src/main/resources/scenarios/`.
 7. Don't create planning/notes/tracking Markdown files in the repository.

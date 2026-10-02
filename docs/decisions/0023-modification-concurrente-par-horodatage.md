@@ -6,10 +6,10 @@
 
 ## Contexte
 
-Un seul compte administrateur, partagé (#294
-n'existe pas), et plusieurs façons d'ouvrir la même fiche en même temps : deux
+Un seul compte administrateur, partagé (les comptes nominatifs
+n'existent pas), et plusieurs façons d'ouvrir la même fiche en même temps : deux
 onglets, deux personnes, un assistant MCP pendant qu'un écran est ouvert. Rien
-ne détectait le cas (#362) :
+ne détectait le cas :
 la seconde sauvegarde écrasait la première, sans un mot. `ReferenceDataChangeTracker`
 existait, mais il ne sait dire que « le référentiel a bougé depuis le dernier
 solve », pas « cette fiche a bougé depuis que vous l'avez ouverte ».
@@ -19,7 +19,7 @@ solve », pas « cette fiche a bougé depuis que vous l'avez ouverte ».
 **(A) Un verrou pessimiste** — la fiche s'ouvre en édition pour une session et
 se ferme aux autres. Écarté : ~150 fiches, une poignée d'administrateurs, un
 compte partagé qui rend les sessions indiscernables, et le verrou d'un onglet
-oublié à rendre par une intervention. Coût disproportionné, dit l'issue.
+oublié à rendre par une intervention. Coût disproportionné, disait la demande.
 
 **(B) Un compteur de version en mémoire**, dans `ReferenceDataChangeTracker`.
 Écarté : il ne survit pas à un redémarrage — la première sauvegarde après un
@@ -68,7 +68,7 @@ MCP passent des arguments, pas des en-têtes.
 - Le contrôle est **par ligne**, jamais par lot : l'édition en masse refuse la
   seule ligne modifiée ailleurs et écrit les autres, le compte rendu la nomme.
 - Ce n'est pas un verrou : la seconde session est prévenue, elle n'est pas
-  empêchée. Le jour où #294
-  distinguera les sessions, le message pourra dire *qui*, avec la même colonne.
+  empêchée. Le jour où des comptes nominatifs
+  distingueront les sessions, le message pourra dire *qui*, avec la même colonne.
 - La résolution champ à champ reste hors périmètre : l'utilisateur recharge et
-  ressaisit ce qu'il voulait, ce que l'issue posait comme limite.
+  ressaisit ce qu'il voulait, ce que la demande posait comme limite.

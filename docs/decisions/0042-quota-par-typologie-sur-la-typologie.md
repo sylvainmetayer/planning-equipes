@@ -8,8 +8,7 @@
 
 L'organisateur veut pouvoir dire, en contrainte **dure** : sur cette typologie,
 un animateur ne tient pas plus de N créneaux sur l'ensemble de l'édition. Le cas
-qui motive la demande est celui des **hommes jeu**, 4 créneaux au maximum
-(issue #594).
+qui motive la demande est celui des **hommes jeu**, 4 créneaux au maximum.
 
 Rien ne permettait de l'exprimer :
 

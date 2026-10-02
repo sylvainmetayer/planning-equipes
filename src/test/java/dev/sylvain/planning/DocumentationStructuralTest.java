@@ -220,6 +220,73 @@ class DocumentationStructuralTest {
                 .isEmpty();
     }
 
+    /* ---------------------------- docs/decisions --------------------------- */
+
+    private static final Path DECISIONS = Path.of("docs/decisions");
+
+    /**
+     * {@code #123} written in prose: not a Markdown anchor ({@code ](#…)}), not
+     * an {@code href="#…"}, not an HTML entity ({@code &#123;}), not the
+     * fragment of a URL, not a hex colour ({@code #123abc} runs on past the
+     * digits). Code — fenced blocks and inline spans — is not prose and is
+     * skipped before this runs, which is what keeps {@code `#333`} out.
+     */
+    private static final Pattern ISSUE_REFERENCE = Pattern.compile("(?<!\\]\\()(?<![\\w&/\"'])#\\d+\\b");
+
+    /** An inline code span, removed from a line before it is scanned. */
+    private static final Pattern CODE_SPAN = Pattern.compile("`[^`]*`");
+
+    /**
+     * No decision record cites an issue (rule 6 of AGENTS.md): the records are
+     * published, the backlog they would point at is not, so a reference is a
+     * dead link to a reader and a leak of what the backlog holds. What the
+     * issue named is written out instead.
+     */
+    @Test
+    void noDecisionRecordCitesAnIssue() throws IOException {
+        List<String> references = new ArrayList<>();
+        try (Stream<Path> files = Files.list(DECISIONS)) {
+            for (Path file :
+                    files.filter(f -> f.toString().endsWith(".md")).sorted().toList()) {
+                List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
+                boolean inFence = false;
+                for (int i = 0; i < lines.size(); i++) {
+                    if (lines.get(i).strip().startsWith("```")) {
+                        inFence = !inFence;
+                        continue;
+                    }
+                    if (inFence) {
+                        continue;
+                    }
+                    for (String reference : issueReferences(lines.get(i))) {
+                        references.add(file + ":" + (i + 1) + " " + reference);
+                    }
+                }
+            }
+        }
+        assertThat(references)
+                .as("issue references in docs/decisions — write out what the issue named instead")
+                .isEmpty();
+    }
+
+    @Test
+    void anIssueReferenceIsToldFromAnAnchorAnEntityAndAColour() {
+        assertThat(issueReferences("refusé (#123), puis issue #45 et #6.")).containsExactly("#123", "#45", "#6");
+        assertThat(issueReferences("voir [la section](#2-contexte), &#160; et `#1f2a3b`"))
+                .isEmpty();
+        assertThat(issueReferences("https://example.org/page#12 et C#")).isEmpty();
+        assertThat(issueReferences("<a href=\"#12\">, `#000` et `#333333`")).isEmpty();
+    }
+
+    static List<String> issueReferences(String line) {
+        List<String> references = new ArrayList<>();
+        Matcher matcher = ISSUE_REFERENCE.matcher(CODE_SPAN.matcher(line).replaceAll(""));
+        while (matcher.find()) {
+            references.add(matcher.group());
+        }
+        return references;
+    }
+
     /* ------------------------------ AGENTS.md ----------------------------- */
 
     /**

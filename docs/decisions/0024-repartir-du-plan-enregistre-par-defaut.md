@@ -8,7 +8,7 @@
 
 Le bouton de résolution repartait toujours de zéro, et rien ne le disait.
 Mesuré sur l'édition réelle 2026 (3 499 postes, 153 animateurs, 600 s par
-solve, graine fixe, #174) :
+solve, graine fixe) :
 
 | | hard | medium | soft |
 | --- | --- | --- | --- |
@@ -19,8 +19,8 @@ solve, graine fixe, #174) :
 Une relance à froid détruisait 1 202 points de medium acquis ; repartir du
 plan les conservait et en gagnait 185. Le sujet n'était donc pas la vitesse
 mais la **non-régression**. Aucun mécanisme existant ne rendait ce service :
-le solve incrémental (#86) repart du plan mais **épingle** tout ce qui reste
-valable — il stabilise, il ne ré-optimise pas — et les verrous (#87)
+le solve incrémental repart du plan mais **épingle** tout ce qui reste
+valable — il stabilise, il ne ré-optimise pas — et les verrous
 n'épinglent que ce qu'on verrouille.
 
 Restait à décider où loger le choix, et ce qui serait le défaut.
@@ -28,7 +28,7 @@ Restait à décider où loger le choix, et ce qui serait le défaut.
 ## Options envisagées
 
 **(A) Une case à cocher « repartir du plan actuel »**, cochée par défaut
-quand un plan existe — la forme proposée par l'issue. Écarté : une option que
+quand un plan existe — la forme proposée par la demande. Écarté : une option que
 personne ne décoche est du bruit d'écran, et une page qui portait déjà deux
 boutons parlant de mécanisme (« Résoudre avec Timefold », « Replanifier
 (incrémental) ») n'avait pas besoin d'un troisième concept.
@@ -75,12 +75,12 @@ Six règles :
 6. **Ce qui n'est pas promis.** Le gain propre du réamorçage est modeste
    (~3 %) ; un plan de départ infaisable n'achète aucun raccourci ; et le
    résultat peut descendre sous le plan de départ quand le référentiel a
-   changé entre-temps — `previousPlan` (#274) continue de le montrer.
+   changé entre-temps — `previousPlan`, le plan d'avant la résolution, continue de le montrer.
 
 ## Conséquences
 
 - La brique est une opération de service (`buildFromReferenceData(Reamorcage)`),
-  pas une option d'écran : la reprise d'un job `INTERROMPU` (#183) devient un
+  pas une option d'écran : la reprise d'un job `INTERROMPU` au redémarrage devient un
   appel de plus, avec un point de contrôle périodique à ajouter.
 - Les libellés parlent d'intention ; « Timefold » et « incrémental » ne sont
   plus que des mots d'infobulle et d'aide. La section d'aide « Calculer,
