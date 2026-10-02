@@ -455,11 +455,13 @@ public class ArchiveEvenementService {
         if (value == null) {
             return "";
         }
-        return Normalizer.normalize(value, Normalizer.Form.NFD)
+        String dashed = Normalizer.normalize(value, Normalizer.Form.NFD)
                 .replaceAll("\\p{M}+", "")
                 .replaceAll("[^A-Za-z0-9]+", "-")
-                // The line above leaves at most one dash at each end.
-                .replaceAll("^-|-$", "")
                 .toLowerCase(java.util.Locale.ROOT);
+        // The replacement above leaves at most one dash at each end.
+        int start = dashed.startsWith("-") ? 1 : 0;
+        int end = dashed.endsWith("-") ? dashed.length() - 1 : dashed.length();
+        return start >= end ? "" : dashed.substring(start, end);
     }
 }

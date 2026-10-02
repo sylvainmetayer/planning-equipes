@@ -168,7 +168,7 @@ describe('EspaceEchangesPage', () => {
     view: espaceView,
     demandes: espaceDemandes,
     demandesRecues: espaceRecues,
-    postesCollegue: vi.fn(),
+    colleagueSeats: vi.fn(),
     suggestionsEchange: vi.fn(),
     soumettre: vi.fn(),
     annuler: vi.fn(),
@@ -182,7 +182,7 @@ describe('EspaceEchangesPage', () => {
     espaceDemandes.set([]);
     espaceRecues.set([]);
     for (const stub of [
-      espace.postesCollegue,
+      espace.colleagueSeats,
       espace.suggestionsEchange,
       espace.soumettre,
       espace.annuler,
@@ -192,7 +192,7 @@ describe('EspaceEchangesPage', () => {
       stub.mockReset();
     }
     notifications.notify.mockReset();
-    espace.postesCollegue.mockResolvedValue([]);
+    espace.colleagueSeats.mockResolvedValue([]);
     espace.suggestionsEchange.mockResolvedValue(suggestions([]));
     espace.soumettre.mockResolvedValue([]);
     espace.annuler.mockResolvedValue(undefined);
@@ -277,7 +277,7 @@ describe('EspaceEchangesPage', () => {
 
     it('fills the colleague field from the retained suggestion, nothing more', async () => {
       const page = createPage();
-      espace.postesCollegue.mockResolvedValue([poste({ creneauId: 9, standId: 'quilles' })]);
+      espace.colleagueSeats.mockResolvedValue([poste({ creneauId: 9, standId: 'quilles' })]);
 
       await page['retenirSuggestion'](suggestion('bob', 'LIBERE'));
 
@@ -293,7 +293,7 @@ describe('EspaceEchangesPage', () => {
     it('preselects the seat wanted in return for a cross-day trade', async () => {
       const page = createPage();
       const mardi = poste({ creneauId: 9, standId: 'quilles', date: '2026-08-02' });
-      espace.postesCollegue.mockResolvedValue([poste({ creneauId: 3, standId: 'tir' }), mardi]);
+      espace.colleagueSeats.mockResolvedValue([poste({ creneauId: 3, standId: 'tir' }), mardi]);
 
       await page['retenirSuggestion'](
         suggestion('bob', 'DIRIGE', {
@@ -314,7 +314,7 @@ describe('EspaceEchangesPage', () => {
     // sending a directed demande on a seat nobody owns.
     it('falls back to a plain swap when the seat wanted in return is gone', async () => {
       const page = createPage();
-      espace.postesCollegue.mockResolvedValue([poste({ creneauId: 3, standId: 'tir' })]);
+      espace.colleagueSeats.mockResolvedValue([poste({ creneauId: 3, standId: 'tir' })]);
 
       await page['retenirSuggestion'](
         suggestion('bob', 'DIRIGE', { creneauCibleId: 9, standCibleId: 'quilles' }),
@@ -345,22 +345,22 @@ describe('EspaceEchangesPage', () => {
   describe('picking the colleague', () => {
     it('loads the colleague seats so the "wanted in return" picker has real options', async () => {
       const page = createPage();
-      espace.postesCollegue.mockResolvedValue([poste({ creneauId: 9, standId: 'quilles' })]);
+      espace.colleagueSeats.mockResolvedValue([poste({ creneauId: 9, standId: 'quilles' })]);
 
       await page['choisirCible']('bob');
 
-      expect(espace.postesCollegue).toHaveBeenCalledExactlyOnceWith('bob');
+      expect(espace.colleagueSeats).toHaveBeenCalledExactlyOnceWith('bob');
       expect(page['postesCollegue']()).toHaveLength(1);
       expect(page['cibleId']()).toBe('bob');
     });
 
     it('clears the previous colleague seats before loading the new ones', async () => {
       const page = createPage();
-      espace.postesCollegue.mockResolvedValue([poste({ creneauId: 9 })]);
+      espace.colleagueSeats.mockResolvedValue([poste({ creneauId: 9 })]);
       await page['choisirCible']('bob');
       page['posteCibleChoisi'].set(poste({ creneauId: 9 }));
 
-      espace.postesCollegue.mockResolvedValue([]);
+      espace.colleagueSeats.mockResolvedValue([]);
       await page['choisirCible']('carole');
 
       expect(page['postesCollegue']()).toEqual([]);
@@ -372,7 +372,7 @@ describe('EspaceEchangesPage', () => {
 
       await page['choisirCible']('');
 
-      expect(espace.postesCollegue).not.toHaveBeenCalled();
+      expect(espace.colleagueSeats).not.toHaveBeenCalled();
       expect(page['cibleId']()).toBe('');
     });
 
@@ -381,7 +381,7 @@ describe('EspaceEchangesPage', () => {
     // showing the animateur an error they can do nothing about.
     it('leaves the picker empty and silent when the seats cannot be loaded', async () => {
       const page = createPage();
-      espace.postesCollegue.mockRejectedValue(new Error('Aucun planning persisté.'));
+      espace.colleagueSeats.mockRejectedValue(new Error('Aucun planning persisté.'));
 
       await page['choisirCible']('bob');
 
@@ -398,7 +398,7 @@ describe('EspaceEchangesPage', () => {
       const page = createPage();
       const message =
         'Vous avez consulté les plannings de beaucoup de collègues : la liste revient dans 12 minute(s).';
-      espace.postesCollegue.mockRejectedValue(new ApiError(429, 'technical', message));
+      espace.colleagueSeats.mockRejectedValue(new ApiError(429, 'technical', message));
       page['posteChoisi'].set(poste());
 
       await page['choisirCible']('bob');
@@ -407,7 +407,7 @@ describe('EspaceEchangesPage', () => {
       expect(page['lookupRefusal']()).toBe(message);
       expect(page['formulaireComplet']()).toBe(true);
 
-      espace.postesCollegue.mockResolvedValue([poste({ creneauId: 9 })]);
+      espace.colleagueSeats.mockResolvedValue([poste({ creneauId: 9 })]);
       await page['choisirCible']('carole');
       expect(page['lookupRefusal']()).toBeNull();
     });
@@ -786,7 +786,7 @@ describe('EspaceEchangesPage rendering', () => {
   const espaceDemandes = signal<DemandeEchangeView[]>([]);
   const espaceRecues = signal<DemandeEchangeView[]>([]);
   let espace: {
-    postesCollegue: ReturnType<typeof vi.fn>;
+    colleagueSeats: ReturnType<typeof vi.fn>;
     soumettre: ReturnType<typeof vi.fn>;
     annuler: ReturnType<typeof vi.fn>;
     accorderRecue: ReturnType<typeof vi.fn>;
@@ -795,7 +795,7 @@ describe('EspaceEchangesPage rendering', () => {
 
   async function rendre(): Promise<void> {
     espace = {
-      postesCollegue: vi.fn(() => Promise.resolve([])),
+      colleagueSeats: vi.fn(() => Promise.resolve([])),
       soumettre: vi.fn(() => Promise.resolve(undefined)),
       annuler: vi.fn(() => Promise.resolve(undefined)),
       accorderRecue: vi.fn(() => Promise.resolve(undefined)),

@@ -274,7 +274,7 @@ export class EspaceEchangesPage {
       return;
     }
     try {
-      this.postesCollegue.set(await this.espace.postesCollegue(cibleId));
+      this.postesCollegue.set(await this.espace.colleagueSeats(cibleId));
     } catch (error) {
       // No seats loadable (no persisted planning, network...): the picker
       // simply stays empty and the demande falls back to the plain semantics.
