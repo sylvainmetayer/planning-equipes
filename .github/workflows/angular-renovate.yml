@@ -71,6 +71,7 @@ jobs:
       - name: Checkout the branch of the pull request
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           # La branche elle-même, pas le commit de fusion que `pull_request`
           # extrait par défaut : c'est là que le commit doit aller. Tout
           # l'historique : le point de départ de la PR se calcule avec
@@ -200,6 +201,8 @@ jobs:
       - name: Checkout the head the patch was built on
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # The job pushes the migration commit back onto the Renovate branch.
+          persist-credentials: true
           ref: ${{ needs.migrer.outputs.head }}
 
       - name: Retrieve the patch
