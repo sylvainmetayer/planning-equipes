@@ -1,4 +1,10 @@
 FROM maven:3.9-eclipse-temurin-25 AS build
+# Les paquets apt ne sont pas épinglés à une version (hadolint DL3008) : les
+# dépôts Debian/Ubuntu et PGDG retirent les anciennes, un build épinglé
+# casserait au premier correctif de sécurité, et Renovate ne sait pas les
+# suivre. Ce qui est figé, c'est l'image de base ; le scan Trivy de l'image
+# publiée surveille le reste.
+# hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
 WORKDIR /workspace
 COPY pom.xml .
@@ -19,7 +25,9 @@ WORKDIR /app
 # du dépôt PGDG et non de celui d'Ubuntu, qui n'offre que la version 16 : un
 # pg_dump plus ancien que le serveur refuse de tourner, et le serveur de la pile
 # de production est un PostgreSQL 18. Cette version-là est donc à faire évoluer
-# en même temps que l'image `postgres:` de docker-compose.prod.yml.
+# en même temps que l'image `postgres:` de docker-compose.prod.yml. Pas de
+# version de paquet épinglée : voir l'étape de construction plus haut.
+# hadolint ignore=DL3008
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates curl gnupg \
     && install -d /usr/share/postgresql-common/pgdg \

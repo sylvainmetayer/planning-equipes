@@ -696,6 +696,50 @@ réponse illisible ou un service muet n'est jamais propagé : il est noté
 (« injoignable depuis… ») et dit une fois à l'administrateur au deuxième jour.
 `METEO_ENABLED=false` coupe la fonctionnalité pour l'instance.
 
+## Analyses automatiques
+
+Ce qu'un outil trouve seul est vérifié à chaque poussée, pas découvert par un
+audit. Chaque analyse **échoue dans le log** de la PR ; celles qui savent
+produire un SARIF le publient en plus dans l'onglet *Security* du dépôt, où une
+alerte se trie (corrigée, faux positif, risque accepté) avec sa raison. Le
+dépôt étant public, cet onglet ne coûte rien.
+
+| Analyse | Où | Ce qu'elle voit | Ses exceptions |
+| --- | --- | --- | --- |
+| Trivy, dépendances | `securite.yml`, job `dependances` | CVE corrigeables HIGH/CRITICAL de `pom.xml` et `package-lock.json` | `.trivyignore` |
+| Revue des dépendances | `securite.yml`, job `revue-dependances` (PR seulement) | Ce qu'une PR **ajoute** : dépendance vulnérable (HIGH et plus, développement compris), licence non libre | dans le job |
+| Semgrep OSS | `securite.yml`, job `code` | Motifs Java, TypeScript, OWASP, Dockerfile, workflows, configuration d'agent | `nosemgrep` site par site, voir ci-dessous |
+| actionlint, zizmor | `securite.yml`, job `workflows` | Validité des workflows ; leur sécurité : injection de template, identifiants laissés par le checkout, cache empoisonnable, permissions | `.github/zizmor.yml`, chaque règle avec sa raison |
+| hadolint | `securite.yml`, job `workflows` | Le `Dockerfile` et le shell de ses `RUN` | `# hadolint ignore=…` sur la ligne, raison au-dessus |
+| Trivy, image | `docker-ghcr.yml` avant signature ; `securite.yml`, job `image`, chaque semaine | Paquets système de l'image : couche Ubuntu, JRE, `postgresql-client` | `.trivyignore` |
+| CodeQL | `codeql.yml` | Flux de données d'une classe à l'autre (Java, TypeScript, workflows) | dans l'onglet *Security* |
+| OpenSSF Scorecard | `scorecard.yml` | Pratiques de la chaîne d'approvisionnement du dépôt, note publique (badge du README) | dans l'onglet *Security* |
+| OWASP ZAP *baseline* | `tests.yml`, job `dast` | L'application démarrée vue sans compte : en-têtes, cookies, erreurs | `.github/zap-baseline.tsv` |
+| GitGuardian | application GitHub | Secrets poussés | `.gitguardian.yaml` |
+
+Le scan de l'image dans `docker-ghcr.yml` **barre la publication** : une image
+qui porte une CVE corrigeable HIGH ou CRITICAL ne reçoit ni signature, ni
+`:main`, ni numéro de version — elle reste sous son seul `sha-…`, pour le
+diagnostic. Le cas ordinaire se règle en reconstruisant : l'image de base
+`eclipse-temurin` est republiée quand Ubuntu corrige. Une version de release
+est construite **sans aucun cache** (couches et `.m2`) : un cache GitHub peut
+s'écrire depuis d'autres jobs du dépôt, et une version signée ne doit rien en
+hériter.
+
+**Ajouter une entrée à `.trivyignore`** (le fichier n'existe pas tant qu'aucune
+n'est nécessaire) : l'identifiant de la CVE, et au-dessus, en commentaire, la
+date, la raison — chemin de code non atteint, aucun correctif publié pour le
+paquet de l'image — et la condition qui permettra de la retirer. Une entrée
+sans date ne se relit jamais.
+
+Deux protections sont des **réglages du dépôt**, pas des fichiers, et se
+vérifient dans *Settings → Advanced Security* : le *secret scanning* avec la
+*push protection* — qui refuse le `git push` porteur d'un secret, là où
+GitGuardian ne le voit qu'une fois poussé — et le graphe de dépendances, que
+lit la revue des dépendances. La configuration « par défaut » de CodeQL doit
+y rester **désactivée** : GitHub refuse les résultats de `codeql.yml` quand
+elle est active.
+
 ## Analyse statique : les suppressions et leur justification
 
 Le job `code` de `securite.yml` (Semgrep OSS) fait échouer la CI sur toute

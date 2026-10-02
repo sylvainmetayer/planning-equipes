@@ -15,6 +15,8 @@ permissions:
   packages: write
   id-token: write
   attestations: write
+  # The vulnerability scan of the image goes to the Security tab as well.
+  security-events: write
 
 concurrency:
   group: docker-ghcr-${{ github.ref }}
@@ -269,6 +271,49 @@ jobs:
       - name: Stop the smoke-test container
         if: always()
         run: docker rm -f smoke >/dev/null 2>&1 || true
+
+      # What no file of the repository lists — the Ubuntu layer, the JRE, the
+      # PGDG postgresql-client — scanned on the image that will be deployed,
+      # by digest. Same bar as the dependency scan of securite.yml: a fixable
+      # HIGH or CRITICAL fails the job here, before anything is signed or
+      # tagged, so a vulnerable build never becomes `:main` or a release. A
+      # finding that cannot be acted on goes to `.trivyignore`, dated and with
+      # its reason (docs/securite.md). The published images are scanned again
+      # every week by securite.yml, for the CVE published after the build.
+      #
+      # `cache: false`: this workflow publishes, and reads no cache it does not
+      # need (zizmor, `cache-poisoning`).
+      - name: Scan the image for vulnerabilities (Trivy)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
+          scanners: vuln
+          format: table
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+          ignore-unfixed: true
+          cache: 'false'
+
+      - name: Image scan results for the Security tab (Trivy, SARIF)
+        if: success() || failure()
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
+          scanners: vuln
+          format: sarif
+          output: trivy-image.sarif
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          exit-code: '0'
+          ignore-unfixed: true
+          cache: 'false'
+          skip-setup-trivy: true
+
+      - name: Publish the image scan to the Security tab
+        if: success() || failure()
+        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          sarif_file: trivy-image.sarif
+          category: trivy-image-build
 
       # Syft reads the pushed image rather than the source tree: what has to be
       # inventoried is what actually ships (the JVM layer, the Quarkus app and

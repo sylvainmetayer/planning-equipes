@@ -912,9 +912,10 @@ il n'est sain que si l'affectation gelée est déjà bonne — d'où l'ordre
 Les workflows vivent sous `.github/workflows/`, lisibles tels quels. Quelques
 points qui ne s'y voient pas :
 
-- **une poussée coûte une quarantaine de minutes de runner**, quel que soit
-  son contenu : Tests (≈ 13 + 3, plus ≈ 8 pour son job `e2e`), scénarios
-  (≈ 8 dès que la PR a touché le solveur), Sécurité (≈ 1). D'où trois
+- **une poussée coûte une cinquantaine de minutes de runner**, quel que soit
+  son contenu : Tests (≈ 13 + 3, plus ≈ 8 pour son job `e2e` et quelques-unes
+  pour l'analyse dynamique `dast`), scénarios (≈ 8 dès que la PR a touché le
+  solveur), Sécurité et CodeQL (quelques minutes chacun, en parallèle). D'où trois
   filtres : `tests.yml` ignore une poussée qui ne touche que `docs/` et le
   Markdown (moins les fichiers qu'un test relit ou que le job compare à son
   build, réinclus nommément), et son job `e2e` y ajoute ces fichiers-là — un
@@ -1005,8 +1006,21 @@ points qui ne s'y voient pas :
   complet par fusion en coûterait davantage. L'E2E lourd range son groupe par
   type d'événement : une fusion n'annule donc pas le rattrapage nocturne, qui
   serait parti sans bruit — un run annulé n'est pas rouge ;
-- **l'image publiée porte un SBOM et une signature cosign en mode keyless**. Les
-  attestations GitHub natives attendent l'ouverture du dépôt ;
+- **l'image publiée porte un SBOM et une signature cosign en mode keyless**,
+  et les attestations GitHub natives (provenance, SBOM) depuis que le dépôt est
+  public ;
+- **l'image est scannée par Trivy avant d'être signée** : une CVE corrigeable
+  HIGH ou CRITICAL dans ses paquets système l'arrête sous son seul tag
+  `sha-…`. Une version (`v*`) est construite sans cache, couches et `.m2`
+  compris — voir [`securite.md`](securite.md) § Analyses automatiques, qui
+  liste aussi tout ce que `securite.yml`, `codeql.yml`, `scorecard.yml` et le
+  job `dast` de `tests.yml` vérifient ;
+- **les analyses publient dans l'onglet *Security*** (SARIF) en plus d'échouer
+  dans le log : Trivy, Semgrep, zizmor, CodeQL et Scorecard. Un workflow
+  ajouté est lu par actionlint et zizmor (`securite.yml`, job `workflows`) :
+  pas de `${{ … }}` dans le corps d'un `run:` — la valeur passe par `env:` —,
+  `persist-credentials: false` sur chaque `actions/checkout` qui ne pousse
+  rien, et aucun cache lu par un build qui publie une version ;
 - **tous les workflows tournent sur des runners GitHub** (`ubuntu-latest`).
   Le résultat des tests se suit alors depuis la page d'une PR, sans dépendre
   de la disponibilité de la machine d'un seul développeur ; le prix est que

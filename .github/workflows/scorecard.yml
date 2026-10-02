@@ -1,0 +1,58 @@
+name: Scorecard
+
+# OpenSSF Scorecard note les pratiques de la chaîne d'approvisionnement du
+# dépôt — actions épinglées, permissions des workflows, protection de branche,
+# revue, signature des versions, outils d'analyse branchés — et publie le
+# résultat sur l'API publique de l'OpenSSF, que lit le badge du README. Chaque
+# critère manqué arrive dans l'onglet Security avec sa remédiation.
+#
+# Ce workflow a une forme imposée : pour que `publish_results` soit accepté, le
+# job ne peut contenir que des actions d'une liste blanche, ni `env:` ni
+# `defaults:` au niveau du workflow, ni conteneur, ni service. Ne rien y
+# ajouter d'autre.
+
+on:
+  # Une règle de protection de branche changée change la note.
+  branch_protection_rule:
+  push:
+    branches:
+      - main
+  schedule:
+    # Lundi 5 h 40 UTC, après Sécurité et CodeQL.
+    - cron: '40 5 * * 1'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  analyse:
+    name: Scorecard
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+      # Publier dans l'onglet Security.
+      security-events: write
+      # Publier sur l'API de l'OpenSSF : le jeton OIDC prouve que le résultat
+      # vient bien de ce workflow, de ce dépôt.
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Analyse
+        uses: ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc # v2.4.4
+        with:
+          results_file: scorecard.sarif
+          results_format: sarif
+          publish_results: true
+
+      - name: Publier dans l'onglet Security
+        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          sarif_file: scorecard.sarif
+          category: scorecard
