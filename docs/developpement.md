@@ -981,7 +981,12 @@ points qui ne s'y voient pas :
   « Re-run failed jobs » de l'E2E le retrouve) juste après ses tests, et
   `e2e-suite.yml` le reprend quand on lui passe `app-artifact`.
   `-Pcoverage`, posé sur chaque exécution, n'attache l'agent JaCoCo qu'aux JVM de test :
-  le jar est le même. Le prix est l'attente — la pile ne monte qu'une fois
+  le jar est le même. L'agent seul ne mesure rien d'un `@QuarkusTest` : Quarkus
+  réécrit le bytecode des beans qu'il charge, qui ne correspondent plus à
+  `target/classes`, et chaque bean passait pour non couvert. Le profil ajoute
+  donc l'extension `quarkus-jacoco` (en `test`, elle n'entre pas dans le jar),
+  qui instrumente ces classes elle-même ; l'agent laisse de côté le
+  `QuarkusClassLoader`, et les deux écrivent dans `target/jacoco-quarkus.exec`. Le prix est l'attente — la pile ne monte qu'une fois
   tout le `verify -DskipITs=false` du job `test` passé, tests d'intégration
   compris, et un seul test backend rouge, unitaire ou d'intégration, laisse
   l'E2E de côté.
