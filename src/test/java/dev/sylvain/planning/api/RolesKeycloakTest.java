@@ -44,7 +44,8 @@ class RolesKeycloakTest {
 
     @Test
     void leRoleAdminDuRealmOuvreLApi() {
-        given().header("Authorization", porteur("roles-admin@example.org", "user", "admin"))
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur("roles-admin@example.org", "user", "admin"))
                 .when()
                 .get("/api/animateurs")
                 .then()
@@ -57,17 +58,20 @@ class RolesKeycloakTest {
      */
     @Test
     void unAnimateurOuUnCompteOrdinaireNOuvrePasLApi() {
-        given().header("Authorization", porteur("roles-animateur@example.org", "user", "animateur"))
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur("roles-animateur@example.org", "user", "animateur"))
                 .when()
                 .get("/api/animateurs")
                 .then()
                 .statusCode(403);
-        given().header("Authorization", porteur("roles-user@example.org", "user"))
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur("roles-user@example.org", "user"))
                 .when()
                 .get("/api/animateurs")
                 .then()
                 .statusCode(403);
-        given().header("Authorization", porteur("roles-user@example.org", "user"))
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur("roles-user@example.org", "user"))
                 .when()
                 .get("/q/openapi")
                 .then()
@@ -76,7 +80,8 @@ class RolesKeycloakTest {
 
     @Test
     void laSessionDitQuiEtAvecQuelsRoles() {
-        given().header("Authorization", porteur("roles-moi@example.org", "user", "admin"))
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur("roles-moi@example.org", "user", "admin"))
                 .when()
                 .get("/api/auth/me")
                 .then()
@@ -84,7 +89,8 @@ class RolesKeycloakTest {
                 .body("authentifie", equalTo(true))
                 .body("nom", equalTo("roles-moi@example.org"))
                 .body("roles", hasItem("admin"));
-        given().header("Authorization", porteur("roles-moi@example.org", "user", "admin"))
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur("roles-moi@example.org", "user", "admin"))
                 .when()
                 .post("/api/auth/logout")
                 .then()
@@ -103,12 +109,14 @@ class RolesKeycloakTest {
         Compte compte = comptes.create(email, "RH");
         comptes.grant(compte.id(), RoleHabilitation.RH, null, null, List.of(), "test");
 
-        given().header("Authorization", porteur(email, "user"))
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur(email, "user"))
                 .when()
                 .get("/api/auth/me")
                 .then()
                 .body("roles", hasItem("rh"));
-        given().header("Authorization", porteur(email, "user"))
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur(email, "user"))
                 .when()
                 .get("/api/animateurs")
                 .then()
@@ -123,12 +131,13 @@ class RolesKeycloakTest {
                 compte.id(), RoleHabilitation.RH, null, Instant.now().plus(Duration.ofDays(1)), List.of(), "test");
         comptes.withdraw(compte.id(), avec.habilitations().getFirst().id());
 
-        given().header("Authorization", porteur(email, "user"))
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur(email, "user"))
                 .when()
                 .get("/api/auth/me")
                 .then()
                 .body("roles", not(hasItem("rh")));
-        given().when().get("/api/auth/me").then().body("authentifie", equalTo(false));
+        given().header("X-Edition-Id", "E1").when().get("/api/auth/me").then().body("authentifie", equalTo(false));
     }
 
     /**
@@ -165,7 +174,8 @@ class RolesKeycloakTest {
         Compte compte = comptes.create(email, null);
         comptes.deactivate(compte.id());
 
-        given().header("Authorization", porteur(email, "user", "admin"))
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur(email, "user", "admin"))
                 .when()
                 .get("/api/animateurs")
                 .then()
@@ -174,7 +184,8 @@ class RolesKeycloakTest {
 
     @Test
     void laConnexionKeycloakRenvoieVersUnCheminDeLApplication() {
-        given().header("Authorization", porteur("roles-retour@example.org", "user", "admin"))
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur("roles-retour@example.org", "user", "admin"))
                 .redirects()
                 .follow(false)
                 .when()
@@ -190,7 +201,8 @@ class RolesKeycloakTest {
      */
     @Test
     void unAnimateurAtteintSesMoyensDeConnexionDansKeycloak() {
-        given().header("Authorization", porteur("roles-passkey@example.org", "user", "animateur"))
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur("roles-passkey@example.org", "user", "animateur"))
                 .redirects()
                 .follow(false)
                 .when()
@@ -209,7 +221,8 @@ class RolesKeycloakTest {
                                         "http://localhost:8081/animateur/jeton-1",
                                         java.nio.charset.StandardCharsets.UTF_8)));
         // A way back to another site is not offered: it falls back to the root.
-        given().header("Authorization", porteur("roles-passkey@example.org", "user", "animateur"))
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur("roles-passkey@example.org", "user", "animateur"))
                 .redirects()
                 .follow(false)
                 .when()
@@ -221,7 +234,8 @@ class RolesKeycloakTest {
                         org.hamcrest.Matchers.endsWith("&referrer_uri="
                                 + java.net.URLEncoder.encode(
                                         "http://localhost:8081/", java.nio.charset.StandardCharsets.UTF_8)));
-        given().redirects()
+        given().header("X-Edition-Id", "E1")
+                .redirects()
                 .follow(false)
                 .when()
                 .get("/api/auth/oidc/compte")
@@ -243,20 +257,23 @@ class RolesKeycloakTest {
         String recente =
                 OidcJetons.jeton(email, List.of("user", "admin"), Instant.now().minusSeconds(30));
 
-        given().header("Authorization", "Bearer " + ancienne)
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", "Bearer " + ancienne)
                 .when()
                 .get("/api/mcp/statut")
                 .then()
                 .statusCode(200)
                 .body("revelationParReconnexion", equalTo(true));
-        given().header("Authorization", "Bearer " + ancienne)
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", "Bearer " + ancienne)
                 .contentType("application/json")
                 .body("{}")
                 .when()
                 .post("/api/mcp/cle")
                 .then()
                 .statusCode(401);
-        given().header("Authorization", "Bearer " + recente)
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", "Bearer " + recente)
                 .contentType("application/json")
                 .body("{}")
                 .when()
@@ -275,7 +292,8 @@ class RolesKeycloakTest {
     void unJetonSansAdresseVerifieeNeGardeAucunRole() {
         String email = "roles-non-verifie-" + UUID.randomUUID() + "@example.org";
         String jeton = OidcJetons.jeton(email, List.of("user", "admin"), "planning-app", email, false);
-        given().header("Authorization", "Bearer " + jeton)
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", "Bearer " + jeton)
                 .when()
                 .get("/api/animateurs")
                 .then()
@@ -292,14 +310,16 @@ class RolesKeycloakTest {
         String sujet = "sujet-" + UUID.randomUUID();
         String avant = sujet + "-avant@example.org";
         String apres = sujet + "-apres@example.org";
-        given().header(
+        given().header("X-Edition-Id", "E1")
+                .header(
                         "Authorization",
                         "Bearer " + OidcJetons.jeton(sujet, List.of("user", "admin"), "planning-app", avant, true))
                 .when()
                 .get("/api/animateurs")
                 .then()
                 .statusCode(200);
-        given().header(
+        given().header("X-Edition-Id", "E1")
+                .header(
                         "Authorization",
                         "Bearer " + OidcJetons.jeton(sujet, List.of("user", "admin"), "planning-app", apres, true))
                 .when()
@@ -315,7 +335,8 @@ class RolesKeycloakTest {
                 .satisfies(compte -> org.assertj.core.api.Assertions.assertThat(compte.email())
                         .isEqualTo(apres));
         comptes.deactivate(siens.getFirst().id());
-        given().header(
+        given().header("X-Edition-Id", "E1")
+                .header(
                         "Authorization",
                         "Bearer " + OidcJetons.jeton(sujet, List.of("user", "admin"), "planning-app", apres, true))
                 .when()

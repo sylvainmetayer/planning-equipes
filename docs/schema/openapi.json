@@ -1088,6 +1088,23 @@
           }
         }
       },
+      "BilanComptes" : {
+        "type" : "object",
+        "properties" : {
+          "crees" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "invites" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "echecs" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
       "BorneRetenue" : {
         "type" : "string",
         "enum" : [ "PIC_SIMULTANE", "PIC_AVEC_PAUSE", "CHARGE_HORAIRE", "ROTATION_JOURS", "COUPURE_REPAS", "ENCHAINEMENT_JOURS", "PLAFOND_TYPOLOGIE" ]
@@ -1580,14 +1597,6 @@
           }
         }
       },
-      "CodeSession" : {
-        "type" : "object",
-        "properties" : {
-          "code" : {
-            "type" : "string"
-          }
-        }
-      },
       "CoherenceFamily" : {
         "type" : "string",
         "enum" : [ "STANDS", "CRENEAUX", "ANIMATEURS", "AJUSTEMENTS", "CAPACITE" ]
@@ -1834,6 +1843,38 @@
           }
         }
       },
+      "Compte" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "nom" : {
+            "type" : "string"
+          },
+          "sujet" : {
+            "type" : "string"
+          },
+          "creeLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "derniereConnexionLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "desactiveLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "habilitations" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Habilitation"
+            }
+          }
+        }
+      },
       "CompteEntiteView" : {
         "type" : "object",
         "required" : [ "entite", "nombre" ],
@@ -1848,7 +1889,7 @@
         }
       },
       "ConfigView" : {
-        "required" : [ "devMode", "dragDropEnabled", "version", "mailMock" ],
+        "required" : [ "devMode", "dragDropEnabled", "version", "mailMock", "authOidc", "authSecours" ],
         "type" : "object",
         "properties" : {
           "sentryDsn" : {
@@ -1870,6 +1911,12 @@
             "type" : "string"
           },
           "mailMock" : {
+            "type" : "boolean"
+          },
+          "authOidc" : {
+            "type" : "boolean"
+          },
+          "authSecours" : {
             "type" : "boolean"
           }
         }
@@ -2931,6 +2978,14 @@
           }
         }
       },
+      "Deconnexion" : {
+        "type" : "object",
+        "properties" : {
+          "urlDeconnexion" : {
+            "type" : "string"
+          }
+        }
+      },
       "DeliveryStatus" : {
         "type" : "string",
         "enum" : [ "PENDING", "DELIVERED", "FAILED", "ABANDONED" ]
@@ -3860,6 +3915,24 @@
           }
         }
       },
+      "EditionResponsable" : {
+        "required" : [ "editionId", "editionNom", "active", "expireLe" ],
+        "type" : "object",
+        "properties" : {
+          "editionId" : {
+            "type" : "string"
+          },
+          "editionNom" : {
+            "type" : "string"
+          },
+          "active" : {
+            "type" : "boolean"
+          },
+          "expireLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
       "Emplacement" : {
         "type" : "object",
         "properties" : {
@@ -4442,6 +4515,18 @@
           },
           "statut" : {
             "$ref" : "#/components/schemas/Statut"
+          }
+        }
+      },
+      "EtatInvitations" : {
+        "type" : "object",
+        "properties" : {
+          "actif" : {
+            "type" : "boolean"
+          },
+          "enAttente" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -5074,6 +5159,41 @@
             "items" : {
               "$ref" : "#/components/schemas/GroupView"
             }
+          }
+        }
+      },
+      "Habilitation" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "role" : {
+            "$ref" : "#/components/schemas/RoleHabilitation"
+          },
+          "editionId" : {
+            "type" : "string"
+          },
+          "expireLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "standIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "nominatif" : {
+            "type" : "boolean"
+          },
+          "creePar" : {
+            "type" : "string"
+          },
+          "creeLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "retireeLe" : {
+            "$ref" : "#/components/schemas/Instant"
           }
         }
       },
@@ -6530,6 +6650,27 @@
           }
         }
       },
+      "MembreEquipe" : {
+        "type" : "object",
+        "required" : [ "cle", "prenom", "nom", "plages" ],
+        "properties" : {
+          "cle" : {
+            "type" : "string"
+          },
+          "prenom" : {
+            "type" : "string"
+          },
+          "nom" : {
+            "type" : "string"
+          },
+          "plages" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PlageMembre"
+            }
+          }
+        }
+      },
       "MentionsLegalesView" : {
         "required" : [ "mesureAudience", "suiviErreurs", "demoInstance", "accessibilite" ],
         "type" : "object",
@@ -6719,6 +6860,17 @@
         "type" : "string",
         "enum" : [ "NORMAL", "EPUISANT" ]
       },
+      "NouveauCompte" : {
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string"
+          },
+          "nom" : {
+            "type" : "string"
+          }
+        }
+      },
       "NouveauSignalement" : {
         "type" : "object",
         "properties" : {
@@ -6784,6 +6936,29 @@
           },
           "standCibleId" : {
             "type" : "string"
+          }
+        }
+      },
+      "NouvelleHabilitation" : {
+        "type" : "object",
+        "properties" : {
+          "role" : {
+            "$ref" : "#/components/schemas/RoleHabilitation"
+          },
+          "editionId" : {
+            "type" : "string"
+          },
+          "expireLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "standIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "nominatif" : {
+            "type" : "boolean"
           }
         }
       },
@@ -7025,6 +7200,14 @@
           }
         }
       },
+      "ParametresResponsables" : {
+        "type" : "object",
+        "properties" : {
+          "nominatif" : {
+            "type" : "boolean"
+          }
+        }
+      },
       "ParametresSolveur" : {
         "required" : [ "mailFinResolution" ],
         "type" : "object",
@@ -7150,9 +7333,36 @@
           }
         }
       },
+      "PersonneVacation" : {
+        "type" : "object",
+        "required" : [ "prenom", "nom" ],
+        "properties" : {
+          "prenom" : {
+            "type" : "string"
+          },
+          "nom" : {
+            "type" : "string"
+          }
+        }
+      },
       "Phase" : {
         "type" : "string",
         "enum" : [ "PREPARATION", "EVENEMENT", "APRES" ]
+      },
+      "PlageMembre" : {
+        "type" : "object",
+        "required" : [ "debut", "fin" ],
+        "properties" : {
+          "debut" : {
+            "$ref" : "#/components/schemas/LocalDateTime"
+          },
+          "fin" : {
+            "$ref" : "#/components/schemas/LocalDateTime"
+          },
+          "standNom" : {
+            "type" : "string"
+          }
+        }
       },
       "PlanFormation" : {
         "required" : [ "aucunAnimateur", "aucuneCompetence", "planPersiste", "typologies" ],
@@ -8891,6 +9101,33 @@
           }
         }
       },
+      "ResponsableView" : {
+        "required" : [ "editionId", "editionNom", "stands", "equipe" ],
+        "type" : "object",
+        "properties" : {
+          "editionId" : {
+            "type" : "string"
+          },
+          "editionNom" : {
+            "type" : "string"
+          },
+          "publieLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "stands" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/StandResponsable"
+            }
+          },
+          "equipe" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/MembreEquipe"
+            }
+          }
+        }
+      },
       "ResultatLigne" : {
         "type" : "string",
         "enum" : [ "WRITTEN", "STALE", "REJECTED" ]
@@ -8906,6 +9143,10 @@
             "type" : "boolean"
           }
         }
+      },
+      "RoleHabilitation" : {
+        "type" : "string",
+        "enum" : [ "RH", "RESPONSABLE_STAND" ]
       },
       "RunningCheck" : {
         "required" : [ "editionId", "id", "effectif", "lanceeLe", "plafondSecondes" ],
@@ -9738,6 +9979,30 @@
           }
         }
       },
+      "StandResponsable" : {
+        "type" : "object",
+        "required" : [ "standId", "standNom", "nominatif", "vacations" ],
+        "properties" : {
+          "standId" : {
+            "type" : "string"
+          },
+          "standNom" : {
+            "type" : "string"
+          },
+          "emplacementNom" : {
+            "type" : "string"
+          },
+          "nominatif" : {
+            "type" : "boolean"
+          },
+          "vacations" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/VacationResponsable"
+            }
+          }
+        }
+      },
       "Statut" : {
         "type" : "string",
         "enum" : [ "A_FAIRE", "ATTENTION", "INFO", "FAIT" ]
@@ -9751,7 +10016,7 @@
         "enum" : [ "ENVOYE", "SANS_EMAIL", "ECHEC", "EXCLU" ]
       },
       "StatutMcp" : {
-        "required" : [ "configuree" ],
+        "required" : [ "configuree", "revelationParReconnexion" ],
         "type" : "object",
         "properties" : {
           "configuree" : {
@@ -9759,11 +10024,14 @@
           },
           "header" : {
             "type" : "string"
+          },
+          "revelationParReconnexion" : {
+            "type" : "boolean"
           }
         }
       },
       "StatutSession" : {
-        "required" : [ "authentifie" ],
+        "required" : [ "authentifie", "roles" ],
         "type" : "object",
         "properties" : {
           "authentifie" : {
@@ -9771,6 +10039,12 @@
           },
           "nom" : {
             "type" : "string"
+          },
+          "roles" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
           }
         }
       },
@@ -10217,6 +10491,32 @@
           },
           "heureFin" : {
             "$ref" : "#/components/schemas/LocalTime"
+          }
+        }
+      },
+      "VacationResponsable" : {
+        "type" : "object",
+        "required" : [ "debut", "fin", "pourvus", "vides", "personnes" ],
+        "properties" : {
+          "debut" : {
+            "$ref" : "#/components/schemas/LocalDateTime"
+          },
+          "fin" : {
+            "$ref" : "#/components/schemas/LocalDateTime"
+          },
+          "pourvus" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "vides" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "personnes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PersonneVacation"
+            }
           }
         }
       },
@@ -10836,6 +11136,13 @@
           }
         }
       }
+    },
+    "securitySchemes" : {
+      "SecurityScheme" : {
+        "type" : "openIdConnect",
+        "openIdConnectUrl" : "http://keycloak:8081/realms/planning/.well-known/openid-configuration",
+        "description" : "Authentication"
+      }
     }
   },
   "paths" : {
@@ -11220,6 +11527,40 @@
         "tags" : [ "Animateur Resource" ]
       }
     },
+    "/api/animateurs/invitations" : {
+      "post" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BilanComptes"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Send Invitations",
+        "tags" : [ "Animateur Resource" ]
+      },
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EtatInvitations"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Invitation Status",
+        "tags" : [ "Animateur Resource" ]
+      }
+    },
     "/api/animateurs/relances" : {
       "post" : {
         "requestBody" : {
@@ -11461,7 +11802,9 @@
             "description" : "OK",
             "content" : {
               "application/json" : {
-                "schema" : { }
+                "schema" : {
+                  "$ref" : "#/components/schemas/Deconnexion"
+                }
               }
             }
           }
@@ -11486,6 +11829,70 @@
         },
         "summary" : "Me",
         "tags" : [ "Auth Resource" ]
+      }
+    },
+    "/api/auth/oidc/compte" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "retour",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Manage Sign In Methods",
+        "tags" : [ "Auth Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ ]
+        } ]
+      }
+    },
+    "/api/auth/oidc/login" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "redirect",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Oidc Login",
+        "tags" : [ "Auth Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ ]
+        } ]
       }
     },
     "/api/backups" : {
@@ -11623,6 +12030,211 @@
         },
         "summary" : "Get",
         "tags" : [ "Branding Resource" ]
+      }
+    },
+    "/api/comptes" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Compte"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary" : "List",
+        "tags" : [ "Compte Resource" ]
+      },
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/NouveauCompte"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Compte"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Create",
+        "tags" : [ "Compte Resource" ]
+      }
+    },
+    "/api/comptes/administrateurs" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/NouveauCompte"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Compte"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Invite Administrator",
+        "tags" : [ "Compte Resource" ]
+      }
+    },
+    "/api/comptes/{id}/desactivation" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Compte"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Deactivate",
+        "tags" : [ "Compte Resource" ]
+      }
+    },
+    "/api/comptes/{id}/habilitations" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/NouvelleHabilitation"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Compte"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Grant",
+        "tags" : [ "Compte Resource" ]
+      }
+    },
+    "/api/comptes/{id}/habilitations/{habilitationId}" : {
+      "delete" : {
+        "parameters" : [ {
+          "name" : "habilitationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Compte"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Withdraw",
+        "tags" : [ "Compte Resource" ]
+      }
+    },
+    "/api/comptes/{id}/reactivation" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Compte"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Reactivate",
+        "tags" : [ "Compte Resource" ]
       }
     },
     "/api/config" : {
@@ -13803,22 +14415,6 @@
         "tags" : [ "Espace Animateur Resource" ]
       }
     },
-    "/api/espace-animateur/{jeton}/code" : {
-      "post" : {
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : { }
-              }
-            }
-          }
-        },
-        "summary" : "Request Code",
-        "tags" : [ "Espace Animateur Resource" ]
-      }
-    },
     "/api/espace-animateur/{jeton}/collegues/{collegueId}/postes" : {
       "get" : {
         "parameters" : [ {
@@ -14132,35 +14728,6 @@
           }
         },
         "summary" : "Planning Pdf",
-        "tags" : [ "Espace Animateur Resource" ]
-      }
-    },
-    "/api/espace-animateur/{jeton}/session" : {
-      "post" : {
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/CodeSession"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : { }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request"
-          }
-        },
-        "summary" : "Open Session",
         "tags" : [ "Espace Animateur Resource" ]
       }
     },
@@ -15832,6 +16399,53 @@
         "tags" : [ "Parametres Resource" ]
       }
     },
+    "/api/parametres-responsables" : {
+      "put" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ParametresResponsables"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ParametresResponsables"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Update Parametres Responsables",
+        "tags" : [ "Parametres Resource" ]
+      },
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ParametresResponsables"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Get Parametres Responsables",
+        "tags" : [ "Parametres Resource" ]
+      }
+    },
     "/api/parametres-solveur" : {
       "put" : {
         "requestBody" : {
@@ -17375,6 +17989,59 @@
         },
         "summary" : "Validate Scenario File",
         "tags" : [ "Reference Data Resource" ]
+      }
+    },
+    "/api/responsable/editions" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/EditionResponsable"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Editions",
+        "tags" : [ "Responsable Resource" ]
+      }
+    },
+    "/api/responsable/editions/{editionId}" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "editionId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "stand",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ResponsableView"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "View",
+        "tags" : [ "Responsable Resource" ]
       }
     },
     "/api/solve" : {
