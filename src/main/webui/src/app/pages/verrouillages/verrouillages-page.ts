@@ -1,3 +1,4 @@
+import { LiveAnnouncer } from '@angular/cdk/a11y';
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -14,6 +15,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -41,8 +43,14 @@ import {
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { RouterLink } from '@angular/router';
 import { errorMessage } from '../../core/error-message';
+import { SessionExpireeError } from '../../core/api.service';
 import { compareCodeUnits } from '../../core/string-order';
 import { HhmmPipe } from '../../shared/hhmm-pipe';
+import { BulkActionsBar } from '../../shared/bulk-actions-bar';
+import { bulkNotifications } from '../../core/reference-crud.service';
+import { locksPluralLabel } from '../../core/entity-labels';
+import { TableSelection } from '../../core/table-selection';
+import { TableNavigation, trackRowById } from '../../core/table-navigation';
 
 /** Manually creatable types: ANIMATEUR_CRENEAU locks are only ever posed by an accepted échange (issue #165). */
 type TypeVerrouillageManuel = Exclude<TypeVerrouillage, 'ANIMATEUR_CRENEAU'>;
@@ -103,10 +111,12 @@ function phrases(avertissements: readonly Avertissement[]): string {
 @Component({
   selector: 'app-verrouillages-page',
   imports: [
+    BulkActionsBar,
     HhmmPipe,
     FormsModule,
     MatCardModule,
     MatButtonModule,
+    MatCheckboxModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
@@ -122,7 +132,7 @@ export class VerrouillagesPage implements OnInit {
   /** A lock was laid down or lifted: the next solve has something new to respect. */
   readonly changed = output<void>();
 
-  protected readonly columns = ['type', 'cible', 'etat', 'raison', 'actions'];
+  protected readonly columns = ['select', 'type', 'cible', 'etat', 'raison', 'actions'];
   protected readonly types = TYPE_VALUES.map((value) => ({ value, label: typeLabel(value) }));
   protected readonly store = inject(ReferenceDataStore);
   protected readonly verrous = inject(VerrouillageStore);
@@ -205,7 +215,28 @@ export class VerrouillagesPage implements OnInit {
       })),
   );
 
+  /** Keyed on the rows on screen, so « tout sélectionner » follows the narrowing. */
+  protected readonly selection = new TableSelection<string>(
+    computed(() => this.rows().map((row) => row.id)),
+  );
+
+  /**
+   * Roving tabindex over the rows: the arrows move the focus, Espace ticks the
+   * row — `core/table-navigation.ts`, as on the referential tables. A lock has
+   * no form, so Entrée opens nothing.
+   */
+  protected readonly navigation = new TableNavigation<VerrouillageRow, string>({
+    rows: this.rows,
+    id: (row) => row.id,
+    host: () => this.host.nativeElement,
+    selection: this.selection,
+    announcer: inject(LiveAnnouncer),
+  });
+  /** Rows kept across a reload of the store, and the focus with them. */
+  protected readonly trackById = trackRowById;
+
   private readonly injector = inject(Injector);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
 
@@ -378,6 +409,86 @@ export class VerrouillagesPage implements OnInit {
       });
     } catch (error) {
       this.report(error);
+    }
+  }
+
+  /**
+   * True from the click on « Déverrouiller la sélection » until its report:
+   * the bar's button is greyed out meanwhile, and a second click returns at
+   * once rather than starting a second loop over the same locks.
+   */
+  protected readonly bulkRunning = signal(false);
+
+  /**
+   * « Déverrouiller la sélection »: one confirmation with the count, then one
+   * DELETE per lock — the API has no bulk route — and one report saying what
+   * was lifted and what was refused, a running solve's 409 included.
+   */
+  protected async unlockSelection(): Promise<void> {
+    const ids = this.selection.selectedIds();
+    if (ids.length === 0 || this.bulkRunning()) {
+      return;
+    }
+    this.bulkRunning.set(true);
+    try {
+      await this.unlock(ids);
+    } catch (error) {
+      // An expired session is not news: the interceptor is already sending
+      // the user to the login page.
+      if (!(error instanceof SessionExpireeError)) {
+        this.report(error);
+      }
+    } finally {
+      this.bulkRunning.set(false);
+    }
+  }
+
+  private async unlock(ids: readonly string[]): Promise<void> {
+    const count = ids.length;
+    const confirmed = await this.confirm.ask({
+      title: $localize`:@@verrouillages.bulk.confirmTitle:Déverrouiller ${count}:count: verrouillage(s) ?`,
+      message: $localize`:@@verrouillages.deleteMessage:La prochaine résolution pourra de nouveau modifier ces affectations.`,
+      confirmLabel: $localize`:@@verrouillages.deleteConfirm:Déverrouiller`,
+      danger: true,
+    });
+    if (!confirmed) {
+      return;
+    }
+    // Read before the batch: the locks it lifts leave the rows with the re-read.
+    const rows = new Map(this.rows().map((row) => [row.id, row]));
+    const result = await this.verrous.removeMany(ids);
+    if (result.succes.length > 0) {
+      this.changed.emit();
+    }
+    const label = locksPluralLabel();
+    for (const notification of bulkNotifications(
+      result,
+      (done) =>
+        $localize`:@@crud.deletedMany:Suppression de ${done}:count: ${label}:label: effectuée.`,
+      (failed) =>
+        $localize`:@@crud.deleteManyFailed:${failed}:count: ${label}:label: n'ont pas pu être supprimés.`,
+      (id) => this.failureName(rows.get(String(id)), String(id)),
+    )) {
+      this.notifications.notify(notification);
+    }
+  }
+
+  /**
+   * What a refused lock is called in the report: its type and a target that
+   * names nobody — an animateur by id, never by name, since the report is
+   * copied into a log that outlives the logout (`docs/rgpd.md` §7).
+   */
+  private failureName(row: VerrouillageRow | undefined, id: string): string {
+    if (!row) {
+      return id;
+    }
+    switch (row.type) {
+      case 'ANIMATEUR':
+        return `${row.typeLabel} ${row.animateurId ?? id}`;
+      case 'ANIMATEUR_CRENEAU':
+        return `${row.typeLabel} ${row.animateurId ?? id} · ${vacationLabel(row)}`;
+      default:
+        return `${row.typeLabel} ${row.cibleLabel}`;
     }
   }
 

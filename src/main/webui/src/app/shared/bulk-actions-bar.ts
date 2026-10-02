@@ -42,8 +42,12 @@ import { MatIconModule } from '@angular/material/icon';
         [disabled]="disabled() || removeDisabled()"
         (click)="remove.emit()"
       >
-        <mat-icon>delete</mat-icon>
-        <ng-container i18n="@@bulk.deleteSelection">Supprimer la sélection</ng-container>
+        <mat-icon>{{ removeIcon() }}</mat-icon>
+        @if (removeLabel(); as label) {
+          {{ label }}
+        } @else {
+          <ng-container i18n="@@bulk.deleteSelection">Supprimer la sélection</ng-container>
+        }
       </button>
       <button matButton type="button" (click)="clear.emit()">
         <ng-container i18n="@@bulk.clearSelection">Tout désélectionner</ng-container>
@@ -58,6 +62,13 @@ export class BulkActionsBar {
   readonly disabled = input(false);
   /** Greys out the delete alone — a freeze refuses deleting rows it still lets the bulk edit change. */
   readonly removeDisabled = input(false);
+  /**
+   * What the delete button says when « Supprimer la sélection » is not the
+   * gesture — « Déverrouiller la sélection » on the locks. `null` keeps it.
+   */
+  readonly removeLabel = input<string | null>(null);
+  /** The delete button's icon, with {@link removeLabel}. */
+  readonly removeIcon = input('delete');
   /** False on the pages whose entities share no bulk-editable field (typologies). */
   readonly editable = input(true);
   /** True when a text filter is narrowing the table the selection was made in. */

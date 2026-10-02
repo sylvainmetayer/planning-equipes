@@ -84,6 +84,18 @@ describe('BulkActionsBar', () => {
     expect(bouton('Supprimer la sélection')).toBeDefined();
   });
 
+  it('words the delete as the page asks — « Déverrouiller la sélection » on the locks', () => {
+    rendre({ removeLabel: 'Déverrouiller la sélection', removeIcon: 'lock_open' });
+
+    const unlockButton = bouton('Déverrouiller la sélection');
+    expect(unlockButton.textContent).not.toContain('Supprimer la sélection');
+    expect(unlockButton.querySelector('mat-icon')!.textContent!.trim()).toBe('lock_open');
+    const emis: string[] = [];
+    fixture.componentInstance.remove.subscribe(() => emis.push('remove'));
+    unlockButton.click();
+    expect(emis).toEqual(['remove']);
+  });
+
   it('offers « Relancer maintenant » only to the page that asked for it', () => {
     rendre({});
     expect(boutons().some((each) => each.textContent!.includes('Relancer maintenant'))).toBe(false);

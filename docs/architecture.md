@@ -406,10 +406,11 @@ consommé. C'est ainsi qu'on ajoute un comportement clavier ici. Échap n'est
 écrit nulle part : aucun dialogue n'utilise `disableClose`, donc `MatDialog`
 ferme déjà le dialogue du dessus et rend le focus.
 
-Le tabindex mobile des cinq tables de données de référence (une seule ligne
-atteignable par Tab, flèches, Début/Fin, Entrée pour ouvrir, Espace pour
-cocher) est mutualisé dans `core/table-navigation.ts`, à côté de
-`core/table-selection.ts` qu'il pilote.
+Le tabindex mobile des cinq tables de données de référence, et des tables
+des ajustements manuels et des verrouillages (une seule ligne atteignable par
+Tab, flèches, Début/Fin, Entrée pour ouvrir, Espace pour cocher) est mutualisé
+dans `core/table-navigation.ts`, à côté de `core/table-selection.ts` qu'il
+pilote.
 
 **On entre dans le tableau par le filtre.** Le tabindex mobile est invisible :
 la ligne qui porte `tabindex="0"` se trouve derrière la case « tout

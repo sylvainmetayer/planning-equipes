@@ -23,3 +23,12 @@ export function labelCreneauxPluriel(): string {
 export function labelTypologiesPluriel(): string {
   return $localize`:@@typologies.entityLabelPluriel:typologies`;
 }
+
+/** The manual adjustments — `ContrainteAdHoc` in the code, « ajustements » on screen. */
+export function adjustmentsPluralLabel(): string {
+  return $localize`:@@adHoc.entityLabelPlural:ajustements`;
+}
+
+export function locksPluralLabel(): string {
+  return $localize`:@@verrouillages.entityLabelPlural:verrouillages`;
+}

@@ -1,3 +1,4 @@
+import { LiveAnnouncer } from '@angular/cdk/a11y';
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -12,6 +13,7 @@ import {
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
@@ -37,6 +39,10 @@ import {
 import { TableFilter } from '../../shared/table-filter';
 import { correspondAuFiltre } from '../../core/text-filter';
 import { formatHeure } from '../../core/time-of-day';
+import { TableSelection } from '../../core/table-selection';
+import { TableNavigation, trackRowById } from '../../core/table-navigation';
+import { adjustmentsPluralLabel } from '../../core/entity-labels';
+import { BulkActionsBar } from '../../shared/bulk-actions-bar';
 
 /** Called lazily (never at module scope, see `app.ts`'s `buildNavGroups`). */
 function contrainteTypeLabel(value: TypeContrainteAdHoc): string {
@@ -76,8 +82,10 @@ function contrainteTypeLabel(value: TypeContrainteAdHoc): string {
 @Component({
   selector: 'app-ad-hoc-constraints-page',
   imports: [
+    BulkActionsBar,
     MatCardModule,
     MatButtonModule,
+    MatCheckboxModule,
     MatIconModule,
     MatTableModule,
     MatTooltipModule,
@@ -94,7 +102,15 @@ export class AdHocConstraintsPage {
   /** `?personne=`: the rows naming somebody whose name holds these words, or whose id this is. */
   protected readonly personne = signal('');
 
-  protected readonly columns = ['id', 'type', 'animateurs', 'portee', 'raison', 'actions'];
+  protected readonly columns = [
+    'select',
+    'id',
+    'type',
+    'animateurs',
+    'portee',
+    'raison',
+    'actions',
+  ];
   protected readonly store = inject(ReferenceDataStore);
   protected readonly jobs = inject(SolverJobService);
   /**
@@ -108,6 +124,7 @@ export class AdHocConstraintsPage {
   protected readonly editingLocked = this.jobs.editingLocked;
 
   private readonly injector = inject(Injector);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly pageTitle = viewChild<ElementRef<HTMLElement>>('pageTitle');
   private readonly crud = inject(ReferenceCrudService);
   private readonly dialog = inject(MatDialog);
@@ -139,6 +156,41 @@ export class AdHocConstraintsPage {
         ]),
       );
   });
+
+  /**
+   * Keyed on the rows on screen, so « tout sélectionner » follows the
+   * narrowing — and on the ones this screen may delete: a grouped arrival a
+   * covoiturage stands behind is cancelled from its own tab, and the server
+   * would refuse it here.
+   */
+  private readonly selectableIds = computed(() =>
+    this.rows()
+      .filter((contrainte) => !contrainte.issueDeCovoiturage)
+      .map((contrainte) => contrainte.id),
+  );
+  protected readonly selection = new TableSelection<string>(this.selectableIds);
+  /**
+   * Nothing on screen may be ticked — no row, or only grouped arrivals: the
+   * header checkbox is greyed out rather than ticking nothing while showing
+   * a tick.
+   */
+  protected readonly nothingSelectable = computed(() => this.selectableIds().length === 0);
+
+  /**
+   * Roving tabindex over the rows: the arrows move the focus, Entrée opens
+   * the form, Espace ticks the row — `core/table-navigation.ts`, as on the
+   * referential tables.
+   */
+  protected readonly navigation = new TableNavigation<ContrainteAdHoc, string>({
+    rows: this.rows,
+    id: (contrainte) => contrainte.id,
+    host: () => this.host.nativeElement,
+    selection: this.selection,
+    open: (contrainte) => this.openRow(contrainte),
+    announcer: inject(LiveAnnouncer),
+  });
+  /** Rows kept across a reload of the store, and the focus with them. */
+  protected readonly trackById = trackRowById;
 
   /** The one-action reset of the narrowing. */
   protected showAll(): void {
@@ -205,6 +257,29 @@ export class AdHocConstraintsPage {
     return $localize`:@@adHoc.scope.creneau:créneau J${creneau.jour}:jour: · ${creneau.date}:date: ${debut}:heureDebut:–${fin}:heureFin:`;
   }
 
+  /**
+   * Entrée on a row: its form, refused — the key left alone — while a solve
+   * runs, or on a grouped arrival a covoiturage stands behind, which has none.
+   */
+  private openRow(contrainte: ContrainteAdHoc): boolean {
+    if (this.editingLocked() || contrainte.issueDeCovoiturage) {
+      return false;
+    }
+    this.edit(contrainte);
+    return true;
+  }
+
+  /**
+   * The row's keys, except Space on a row nobody may tick: a grouped arrival
+   * a covoiturage stands behind stays out of the selection.
+   */
+  protected onRowKeydown(event: KeyboardEvent, index: number, contrainte: ContrainteAdHoc): void {
+    if (event.key === ' ' && contrainte.issueDeCovoiturage) {
+      return;
+    }
+    this.navigation.onKeydown(event, index);
+  }
+
   protected openCreate(): void {
     this.openDialog(null);
   }
@@ -242,6 +317,37 @@ export class AdHocConstraintsPage {
     );
     if (removed) {
       this.changed.emit();
+    }
+  }
+
+  /**
+   * True from the click on « Supprimer la sélection » until its report: the
+   * bar's button is greyed out meanwhile, and a second click returns at once
+   * rather than starting a second loop over the same rows.
+   */
+  protected readonly bulkRunning = signal(false);
+
+  /**
+   * « Supprimer la sélection »: one confirmation with the count, then one
+   * DELETE per adjustment — the API has no bulk route — and one report saying
+   * what went and what was refused, a running solve's 409 included.
+   */
+  protected async removeSelection(): Promise<void> {
+    if (this.bulkRunning()) {
+      return;
+    }
+    this.bulkRunning.set(true);
+    try {
+      const removed = await this.crud.removeMany(
+        'contraintes-ad-hoc',
+        this.selection.selectedIds(),
+        adjustmentsPluralLabel(),
+      );
+      if (removed > 0) {
+        this.changed.emit();
+      }
+    } finally {
+      this.bulkRunning.set(false);
     }
   }
 }

@@ -11,7 +11,8 @@ import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
-import { ReferenceDataStore } from '../../core/reference-data.store';
+import { BulkResult, ReferenceDataStore } from '../../core/reference-data.store';
+import { SessionExpireeError } from '../../core/api.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { VerrouillageStore } from '../../core/verrouillage.store';
 import {
@@ -197,6 +198,7 @@ describe('VerrouillagesPage impact and list', () => {
       reload: () => Promise.resolve(undefined),
       create: () => Promise.resolve([]),
       remove: () => Promise.resolve(undefined),
+      removeMany: (ids) => Promise.resolve({ succes: [...ids], echecs: [], avertissements: [] }),
     });
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -421,7 +423,7 @@ describe('VerrouillagesPage impact and list', () => {
     ]);
 
     const cibles = Array.from(racine().querySelectorAll('tbody tr')).map((row) =>
-      row.querySelectorAll('td')[1].textContent!.trim(),
+      row.querySelectorAll('td')[2].textContent!.trim(),
     );
     expect(cibles).toEqual([
       'Amélie Nothomb',
@@ -431,9 +433,9 @@ describe('VerrouillagesPage impact and list', () => {
       'Marcel Proust · 2026-07-10 10:00–12:00',
     ]);
     // The type posed by an accepted échange is named too, not left blank.
-    expect(racine().querySelectorAll('tbody tr')[4].querySelector('td')!.textContent!).toContain(
-      'Animateur sur un créneau',
-    );
+    expect(
+      racine().querySelectorAll('tbody tr')[4].querySelectorAll('td')[1].textContent!,
+    ).toContain('Animateur sur un créneau');
   });
 
   it('keeps a lock whose vacation the grid no longer holds, and says it is waiting', async () => {
@@ -457,8 +459,8 @@ describe('VerrouillagesPage impact and list', () => {
     ]);
 
     const cellules = racine().querySelectorAll('tbody tr')[0].querySelectorAll('td');
-    expect(cellules[1].textContent!.trim()).toBe('2026-07-11 14:00–18:00');
-    expect(cellules[2].textContent!).toContain('En attente');
+    expect(cellules[2].textContent!.trim()).toBe('2026-07-11 14:00–18:00');
+    expect(cellules[3].textContent!).toContain('En attente');
   });
 
   it('falls back to the stored id when the target no longer exists', async () => {
@@ -476,7 +478,7 @@ describe('VerrouillagesPage impact and list', () => {
 
     // A lock aimed at a deleted animateur must stay visible, and removable.
     expect(
-      racine().querySelectorAll('tbody tr')[0].querySelectorAll('td')[1].textContent!.trim(),
+      racine().querySelectorAll('tbody tr')[0].querySelectorAll('td')[2].textContent!.trim(),
     ).toBe('disparu');
   });
 
@@ -534,6 +536,152 @@ describe('VerrouillagesPage impact and list', () => {
     expect(
       (racine().querySelector('tbody .row-actions button') as HTMLButtonElement).disabled,
     ).toBe(true);
+  });
+
+  describe('the selection and « Déverrouiller la sélection »', () => {
+    const LOCKS = [lock('V1', 'a1'), lock('V2', 'a2'), lock('V3', null)];
+
+    function checkboxes(): HTMLInputElement[] {
+      return [...racine().querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]')];
+    }
+
+    function bulkButton(label: string): HTMLButtonElement {
+      const button = [...racine().querySelectorAll<HTMLButtonElement>('.bulk-bar button')].find(
+        (each) => each.textContent!.includes(label),
+      );
+      expect(button, `bouton « ${label} » absent`).toBeDefined();
+      return button!;
+    }
+
+    async function tick(...indexes: number[]): Promise<void> {
+      for (const index of indexes) {
+        checkboxes()[index].click();
+      }
+      await fixture.whenStable();
+    }
+
+    it('selects every lock of the narrowing with « tout sélectionner », and ticks one with Space', async () => {
+      await rendre(planning(), LOCKS);
+      const page = fixture.componentInstance;
+      page['onlyAnimateurs'].set(['a1', 'a2']);
+      await fixture.whenStable();
+
+      racine().querySelector<HTMLInputElement>('thead input[type="checkbox"]')!.click();
+      await fixture.whenStable();
+      expect(page['selection'].selectedIds()).toEqual(['V1', 'V2']);
+      expect(racine().querySelector('.bulk-bar-scope')).not.toBeNull();
+      expect(bulkButton('Déverrouiller la sélection')).toBeDefined();
+
+      page['showAll']();
+      await fixture.whenStable();
+      const row = racine().querySelectorAll<HTMLElement>('tbody tr')[2];
+      row.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+      await fixture.whenStable();
+      expect(page['selection'].selectedIds()).toEqual(['V1', 'V2', 'V3']);
+      expect(row.classList).toContain('row-selected');
+    });
+
+    it('unlocks the ticked locks after one confirmation giving their count', async () => {
+      await rendre(planning(), LOCKS);
+      const changed: unknown[] = [];
+      fixture.componentInstance.changed.subscribe((event) => changed.push(event));
+      await tick(0, 2);
+
+      bulkButton('Déverrouiller la sélection').click();
+      await fixture.whenStable();
+
+      expect(confirm.ask).toHaveBeenCalledOnce();
+      expect(confirm.ask.mock.calls[0][0].title).toBe('Déverrouiller 2 verrouillage(s) ?');
+      expect(verrous.removeMany).toHaveBeenCalledWith(['V1', 'V3']);
+      expect(verrous.remove).not.toHaveBeenCalled();
+      expect(changed).toHaveLength(1);
+      const report = notify.mock.calls.at(-1)![0];
+      expect(report.variant).toBe('success');
+      expect(report.title).toBe('Suppression de 2 verrouillages effectuée.');
+    });
+
+    it('lifts nothing when the confirmation is declined', async () => {
+      await rendre(planning(), LOCKS);
+      confirm.ask.mockResolvedValue(false);
+      await tick(0);
+
+      bulkButton('Déverrouiller la sélection').click();
+      await fixture.whenStable();
+
+      expect(verrous.removeMany).not.toHaveBeenCalled();
+      expect(notify).not.toHaveBeenCalled();
+    });
+
+    it('reports what was lifted and what a running solve refused, naming nobody', async () => {
+      await rendre(planning(), LOCKS);
+      const changed: unknown[] = [];
+      fixture.componentInstance.changed.subscribe((event) => changed.push(event));
+      verrous.removeMany.mockResolvedValue({
+        succes: ['V1'],
+        echecs: [{ id: 'V2', message: 'Une résolution est en cours sur cette édition.' }],
+        avertissements: [],
+      });
+      await tick(0, 1);
+
+      bulkButton('Déverrouiller la sélection').click();
+      await fixture.whenStable();
+
+      // The lifted one is gone: the next solve has something new to respect.
+      expect(changed).toHaveLength(1);
+      const report = notify.mock.calls.at(-1)![0];
+      expect(report.variant).toBe('error');
+      expect(report.title).toBe("1 verrouillages n'ont pas pu être supprimés.");
+      expect(report.message).toContain('Suppression de 1 verrouillages effectuée.');
+      expect(report.message).toContain(
+        'Animateur a2 : Une résolution est en cours sur cette édition.',
+      );
+      // The report outlives the logout in the notifications log: an id, never a name.
+      expect(report.message).not.toContain('Proust');
+    });
+
+    it('refuses a second start while a batch runs, and greys the button meanwhile', async () => {
+      await rendre(planning(), LOCKS);
+      let finish!: (result: BulkResult) => void;
+      verrous.removeMany.mockReturnValue(new Promise<BulkResult>((resolve) => (finish = resolve)));
+      await tick(0, 1);
+
+      const first = fixture.componentInstance['unlockSelection']();
+      await fixture.whenStable();
+      expect(bulkButton('Déverrouiller la sélection').disabled).toBe(true);
+      // A second click reaching the handler anyway (a double click) starts nothing.
+      await fixture.componentInstance['unlockSelection']();
+
+      expect(confirm.ask).toHaveBeenCalledOnce();
+      expect(verrous.removeMany).toHaveBeenCalledOnce();
+
+      finish({ succes: ['V1', 'V2'], echecs: [], avertissements: [] });
+      await first;
+      await fixture.whenStable();
+      expect(bulkButton('Déverrouiller la sélection').disabled).toBe(false);
+    });
+
+    it('stays silent when the session expired mid-batch, and lets a new batch start', async () => {
+      await rendre(planning(), LOCKS);
+      verrous.removeMany.mockRejectedValue(new SessionExpireeError());
+      await tick(0);
+
+      bulkButton('Déverrouiller la sélection').click();
+      await fixture.whenStable();
+
+      // The interceptor is already on its way to the login page.
+      expect(notify).not.toHaveBeenCalled();
+      expect(fixture.componentInstance['bulkRunning']()).toBe(false);
+    });
+
+    it('greys the bulk unlock out while a solve runs, never the deselect', async () => {
+      await rendre(planning(), LOCKS);
+      await tick(0);
+      editingLocked.set(true);
+      await fixture.whenStable();
+
+      expect(bulkButton('Déverrouiller la sélection').disabled).toBe(true);
+      expect(bulkButton('Tout désélectionner').disabled).toBe(false);
+    });
   });
 });
 

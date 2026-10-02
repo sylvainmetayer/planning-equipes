@@ -496,6 +496,10 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
+          text: $localize`:@@aide.consignesSolveur.selection:Sur les onglets Ajustements et Verrouillages, cochez plusieurs lignes (« Tout sélectionner » suit le filtre, Espace coche la ligne au clavier) pour les supprimer ou les déverrouiller d'un geste, après une seule confirmation. Chaque ligne part seule : un refus, celui d'une résolution en cours par exemple, n'arrête pas les autres, et le message final dit ce qui est passé et ce qui a été refusé. Une arrivée groupée issue d'un covoiturage ne se coche pas.`,
+        },
+        {
+          kind: 'paragraph',
           text: $localize`:@@aide.consignesSolveur.relancer:Après toute saisie sur l'un des trois onglets (un ajustement, un verrou, une consigne), la page propose « Relancer le calcul » sur place. Après une consigne, c'est une correction quand un plan existe : elle ne rouvre que les places que la bande a ôtées ou ajoutées. Après un ajustement ou un verrou, c'est un calcul complet qui repart du plan : une correction figerait toutes les places encore valides, et l'affectation imposée ou le verrou levé n'y changerait rien. Le Solveur compte ces saisies dans « Ce calcul tiendra compte de ».`,
         },
       ],

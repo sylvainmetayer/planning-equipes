@@ -4,7 +4,7 @@
 import { Injectable, Injector, inject, signal } from '@angular/core';
 import { ApiError, SessionExpireeError } from './api.service';
 import { Avertissement, estJournalisable } from './models';
-import { NotificationService } from './notification.service';
+import { NotificationService, NotifyOptions } from './notification.service';
 import { PlanningResolutionStore } from './planning-resolution.store';
 import { BulkResult, RecordId, ReferenceDataStore, SaveResult } from './reference-data.store';
 import { ReferenceUsageService } from './reference-usage.service';
@@ -404,72 +404,14 @@ export class ReferenceCrudService {
     }
   }
 
-  /**
-   * One snack bar per batch: a success when everything went through, an error
-   * carrying the first failing ids otherwise — a batch of fifty must not open
-   * fifty snack bars.
-   */
+  /** One snack bar per batch, see {@link bulkNotifications}. */
   private reportBulk(
     result: BulkResult,
     successTitle: (count: number) => string,
     failureTitle: (count: number) => string,
   ): void {
-    if (result.echecs.length === 0 && result.avertissements.length > 0) {
-      // Every row went through, and some of them raised something: one snack
-      // bar for the batch, kept open, exactly as a single save does.
-      this.notifications.notify({
-        title: $localize`:@@crud.bulkSavedWithWarnings:${successTitle(result.succes.length)}:saved: ${result.avertissements.length}:count: point(s) à vérifier.`,
-        message: detailler(result.avertissements),
-        messageJournal: detailler(result.avertissements.filter(estJournalisable)),
-        variant: 'warning',
-        timeout: 0,
-      });
-      return;
-    }
-    if (result.echecs.length === 0) {
-      this.notifications.notify({
-        title: successTitle(result.succes.length),
-        variant: 'success',
-        timeout: 4000,
-      });
-      return;
-    }
-    const details = result.echecs
-      .slice(0, MAX_ECHECS_DETAILLES)
-      .map((echec) => `${echec.id} : ${echec.message}`)
-      .join(' · ');
-    const restants = result.echecs.length - MAX_ECHECS_DETAILLES;
-    // A row refused as stale cannot be retried from here: the dialog still
-    // holds the values it opened with, so saving again re-sends the same
-    // out-of-date stamp and fails identically (issue #362). The selection has
-    // just been reloaded, so the way out is to reopen it.
-    const concurrentes = result.echecs.filter((echec) => echec.concurrente).length;
-    const suite =
-      concurrentes > 0
-        ? ' ' +
-          $localize`:@@crud.bulkConcurrent:${concurrentes}:count: ligne(s) modifiées par une autre session : la liste a été rechargée, refaites la sélection.`
-        : '';
-    this.notifications.notify({
-      title: failureTitle(result.echecs.length),
-      message:
-        (restants > 0
-          ? details + ' · ' + $localize`:@@crud.bulkMoreErrors:et ${restants}:count: autre(s)`
-          : details) + suite,
-      variant: 'error',
-      timeout: concurrentes > 0 ? 0 : undefined,
-    });
-    // A partly failed batch still wrote most of its rows, and what they raised
-    // is not cancelled by the one row the server refused. The snack bar is
-    // taken by the refusal — Material shows one at a time, a second `open()`
-    // would hide it — so the warnings go to the recent messages of the home page instead of
-    // being dropped.
-    if (result.avertissements.length > 0) {
-      this.notifications.notify({
-        title: $localize`:@@crud.bulkPartialWarnings:${result.avertissements.length}:count: point(s) à vérifier sur les lignes enregistrées.`,
-        message: detailler(result.avertissements.filter(estJournalisable)),
-        variant: 'warning',
-        silent: true,
-      });
+    for (const notification of bulkNotifications(result, successTitle, failureTitle)) {
+      this.notifications.notify(notification);
     }
   }
 
@@ -502,6 +444,87 @@ export class ReferenceCrudService {
       variant: 'error',
     });
   }
+}
+
+/**
+ * The report of a batch — a bulk delete, a bulk save — as the notifications to
+ * show: one snack bar per batch, a success when everything went through, an
+ * error otherwise, carrying how many rows did go through and the first
+ * failing ones — a batch of fifty must not open fifty snack bars.
+ *
+ * <p>Pure, and exported for the batches that run outside the referential
+ * store — the planning locks — so every table words its bulk outcome alike.
+ * `name` says what a failure line calls its row; the id by default, and
+ * never a person's identity: every notification is copied into a log that
+ * outlives the logout (`docs/rgpd.md` §7).</p>
+ */
+export function bulkNotifications(
+  result: BulkResult,
+  successTitle: (count: number) => string,
+  failureTitle: (count: number) => string,
+  name: (id: RecordId) => string = String,
+): NotifyOptions[] {
+  if (result.echecs.length === 0 && result.avertissements.length > 0) {
+    // Every row went through, and some of them raised something: one snack
+    // bar for the batch, kept open, exactly as a single save does.
+    return [
+      {
+        title: $localize`:@@crud.bulkSavedWithWarnings:${successTitle(result.succes.length)}:saved: ${result.avertissements.length}:count: point(s) à vérifier.`,
+        message: detailler(result.avertissements),
+        messageJournal: detailler(result.avertissements.filter(estJournalisable)),
+        variant: 'warning',
+        timeout: 0,
+      },
+    ];
+  }
+  if (result.echecs.length === 0) {
+    return [{ title: successTitle(result.succes.length), variant: 'success', timeout: 4000 }];
+  }
+  const details = result.echecs
+    .slice(0, MAX_ECHECS_DETAILLES)
+    .map((echec) => `${name(echec.id)} : ${echec.message}`)
+    .join(' · ');
+  const restants = result.echecs.length - MAX_ECHECS_DETAILLES;
+  // A row refused as stale cannot be retried from here: the dialog still
+  // holds the values it opened with, so saving again re-sends the same
+  // out-of-date stamp and fails identically (issue #362). The selection has
+  // just been reloaded, so the way out is to reopen it.
+  const concurrentes = result.echecs.filter((echec) => echec.concurrente).length;
+  const suite =
+    concurrentes > 0
+      ? ' ' +
+        $localize`:@@crud.bulkConcurrent:${concurrentes}:count: ligne(s) modifiées par une autre session : la liste a été rechargée, refaites la sélection.`
+      : '';
+  // What did go through, before what did not: a partly refused batch still
+  // wrote those rows, and the reader must not take the red for « nothing ».
+  const passed = result.succes.length > 0 ? successTitle(result.succes.length) + ' ' : '';
+  const notifications: NotifyOptions[] = [
+    {
+      title: failureTitle(result.echecs.length),
+      message:
+        passed +
+        (restants > 0
+          ? details + ' · ' + $localize`:@@crud.bulkMoreErrors:et ${restants}:count: autre(s)`
+          : details) +
+        suite,
+      variant: 'error',
+      timeout: concurrentes > 0 ? 0 : undefined,
+    },
+  ];
+  // A partly failed batch still wrote most of its rows, and what they raised
+  // is not cancelled by the one row the server refused. The snack bar is
+  // taken by the refusal — Material shows one at a time, a second `open()`
+  // would hide it — so the warnings go to the recent messages of the home page instead of
+  // being dropped.
+  if (result.avertissements.length > 0) {
+    notifications.push({
+      title: $localize`:@@crud.bulkPartialWarnings:${result.avertissements.length}:count: point(s) à vérifier sur les lignes enregistrées.`,
+      message: detailler(result.avertissements.filter(estJournalisable)),
+      variant: 'warning',
+      silent: true,
+    });
+  }
+  return notifications;
 }
 
 /** What the screen calls the entity: its name, or its id when it has none. */
