@@ -19,6 +19,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -133,10 +135,7 @@ public class JourneeTypeService {
 
     /** The whole calendar, rewritten: a date at most once, every template named must exist. */
     public List<Affectation> setCalendrier(List<Affectation> calendrier) {
-        Set<Long> ids = new HashSet<>();
-        for (JourneeType journeeType : repository.list()) {
-            ids.add(journeeType.getId());
-        }
+        Set<Long> ids = repository.list().stream().map(JourneeType::getId).collect(Collectors.toSet());
         checkCalendrier(calendrier, ids);
         repository.replaceCalendrier(calendrier);
         return repository.calendrier();
@@ -286,23 +285,13 @@ public class JourneeTypeService {
 
     /** The créneaux on dates the calendar leaves alone — part of the grid the verdict judges. */
     private List<Creneau> creneauxNonGouvernes(Plan plan) {
-        Set<Long> touches = new HashSet<>();
-        for (Creneau creneau : plan.conserves()) {
-            touches.add(creneau.getId());
-        }
-        for (Creneau creneau : plan.misAJour()) {
-            touches.add(creneau.getId());
-        }
-        for (Creneau creneau : plan.aSupprimer()) {
-            touches.add(creneau.getId());
-        }
-        List<Creneau> restants = new ArrayList<>();
-        for (Creneau creneau : creneaux.listCreneaux()) {
-            if (!touches.contains(creneau.getId())) {
-                restants.add(creneau);
-            }
-        }
-        return restants;
+        Set<Long> touches = Stream.of(plan.conserves(), plan.misAJour(), plan.aSupprimer())
+                .flatMap(List::stream)
+                .map(Creneau::getId)
+                .collect(Collectors.toSet());
+        return creneaux.listCreneaux().stream()
+                .filter(creneau -> !touches.contains(creneau.getId()))
+                .toList();
     }
 
     private RapportApplication rapport(Plan plan) {

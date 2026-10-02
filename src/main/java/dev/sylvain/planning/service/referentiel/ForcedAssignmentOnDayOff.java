@@ -123,12 +123,10 @@ public final class ForcedAssignmentOnDayOff {
         Stand stand = contrainte.getStand() == null
                 ? null
                 : standsParId.get(contrainte.getStand().getId());
-        for (Creneau creneau : creneaux) {
-            if (creneau.getDate() != null && (stand == null || creneau.isStandOpen(stand))) {
-                dates.add(creneau.getDate());
-            }
-        }
-        return dates;
+        return creneaux.stream()
+                .filter(creneau -> creneau.getDate() != null && (stand == null || creneau.isStandOpen(stand)))
+                .map(Creneau::getDate)
+                .collect(Collectors.toCollection(TreeSet::new));
     }
 
     private static <T> Map<String, T> index(List<T> elements, Function<T, String> id) {

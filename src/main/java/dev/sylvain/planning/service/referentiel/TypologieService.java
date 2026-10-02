@@ -29,6 +29,9 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class TypologieService implements TypologieLibelles {
 
+    /** How a refused code names the game category it would have collided with. */
+    private static final String THE_TYPOLOGIE = "la typologie";
+
     private final TypologieRepository repository;
 
     private final ReferenceDataChangeTracker changeTracker;
@@ -95,7 +98,7 @@ public class TypologieService implements TypologieLibelles {
     @RefusedWhileFrozen(ReferentialFamily.TYPOLOGIES_EMPLACEMENTS)
     TypologieItem create(Connection connection, TypologieItem typologie) throws SQLException {
         String code = Codes.normalise(typologie.code(), IdGenerator.Kind.TYPOLOGIE);
-        Codes.refuseTaken(code, repository.idByCode(connection, code), null, "la typologie");
+        Codes.refuseTaken(code, repository.idByCode(connection, code), null, THE_TYPOLOGIE);
         return repository.saveTypologie(
                 connection,
                 new TypologieItem(
@@ -132,7 +135,7 @@ public class TypologieService implements TypologieLibelles {
             ids.raise(IdGenerator.Kind.TYPOLOGIE, IdGenerator.numberOf(IdGenerator.Kind.TYPOLOGIE, typologie.id()));
         }
         String code = Codes.normalise(typologie.code(), IdGenerator.Kind.TYPOLOGIE);
-        Codes.refuseTaken(code, repository.idByCode(code), typologie.id(), "la typologie");
+        Codes.refuseTaken(code, repository.idByCode(code), typologie.id(), THE_TYPOLOGIE);
         TypologieItem ecrite = repository.saveTypologie(
                 new TypologieItem(
                         typologie.id(),
@@ -158,7 +161,7 @@ public class TypologieService implements TypologieLibelles {
             throw new BusinessError.NotFound("Typologie inconnue : " + id);
         }
         String code = Codes.normalise(typologie.code(), IdGenerator.Kind.TYPOLOGIE);
-        Codes.refuseTaken(code, repository.idByCode(code), id, "la typologie");
+        Codes.refuseTaken(code, repository.idByCode(code), id, THE_TYPOLOGIE);
         gel.refuseIfFrozen(
                 ReferentialFamily.TYPOLOGIES_EMPLACEMENTS,
                 () -> GelReferentielService.changesFrozenTypologieFields(stored(id), typologie));

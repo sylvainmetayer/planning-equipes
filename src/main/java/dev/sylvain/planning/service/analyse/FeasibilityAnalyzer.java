@@ -13,7 +13,6 @@ import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.diagnostic.BlockerPlaybook;
 import dev.sylvain.planning.service.referentiel.ContrainteAdHocContradictions;
-import dev.sylvain.planning.service.referentiel.ContrainteAdHocContradictions.Contradiction;
 import dev.sylvain.planning.service.referentiel.ForcedAssignmentOnDayOff;
 import dev.sylvain.planning.service.referentiel.ForcedAssignmentOnExcludedSeats;
 import dev.sylvain.planning.service.referentiel.ForcedAssignmentOnLockedSchedule;
@@ -276,17 +275,7 @@ public class FeasibilityAnalyzer {
                 totalCauses,
                 causesCritiques,
                 causesElevees,
-                reportMessage(
-                        sansAnimateur,
-                        sansCreneau,
-                        sansPoste,
-                        feasible,
-                        manqueAnimateurs,
-                        totalCauses,
-                        (int) causes.stream()
-                                .filter(cause -> !isWarningOnly(cause))
-                                .count(),
-                        topCauses));
+                reportMessage(sansAnimateur, sansCreneau, sansPoste, feasible, manqueAnimateurs, causes, topCauses));
     }
 
     /** The headline: an empty referential says so before any count of causes. */
@@ -296,9 +285,9 @@ public class FeasibilityAnalyzer {
             boolean sansPoste,
             boolean feasible,
             int manqueAnimateurs,
-            int totalCauses,
-            int bloquantes,
+            List<CauseInfaisabilite> causes,
             List<CauseInfaisabilite> topCauses) {
+        int totalCauses = causes.size();
         if (sansAnimateur) {
             return buildMessageWithoutAnimateur(totalCauses);
         }
@@ -308,6 +297,8 @@ public class FeasibilityAnalyzer {
         if (sansPoste) {
             return MESSAGE_SANS_POSTE;
         }
+        int bloquantes =
+                (int) causes.stream().filter(cause -> !isWarningOnly(cause)).count();
         return buildMessage(feasible, manqueAnimateurs, totalCauses, bloquantes, topCauses);
     }
 
@@ -372,33 +363,31 @@ public class FeasibilityAnalyzer {
      */
     private List<CauseInfaisabilite> contraintesContradictoires(
             List<ContrainteAdHoc> contraintes, List<Creneau> creneaux) {
-        List<CauseInfaisabilite> causes = new ArrayList<>();
-        for (Contradiction contradiction : ContrainteAdHocContradictions.detectAll(contraintes, creneaux)) {
-            causes.add(new CauseInfaisabilite(
-                    TypeCauseInfaisabilite.CONTRAINTES_AD_HOC_CONTRADICTOIRES,
-                    SeveriteInfaisabilite.CRITIQUE,
-                    contradiction.message(),
-                    null,
-                    null,
-                    null,
-                    null,
-                    List.of(),
-                    contradiction.contrainteIds(),
-                    0,
-                    0,
-                    0,
-                    BlockerPlaybook.forCause(
-                            TypeCauseInfaisabilite.CONTRAINTES_AD_HOC_CONTRADICTOIRES.name(),
-                            new BlockerPlaybook.Context(
-                                    null,
-                                    null,
-                                    List.of(),
-                                    List.of(),
-                                    contradiction.contrainteIds(),
-                                    List.of(),
-                                    false))));
-        }
-        return causes;
+        return ContrainteAdHocContradictions.detectAll(contraintes, creneaux).stream()
+                .map(contradiction -> new CauseInfaisabilite(
+                        TypeCauseInfaisabilite.CONTRAINTES_AD_HOC_CONTRADICTOIRES,
+                        SeveriteInfaisabilite.CRITIQUE,
+                        contradiction.message(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        List.of(),
+                        contradiction.contrainteIds(),
+                        0,
+                        0,
+                        0,
+                        BlockerPlaybook.forCause(
+                                TypeCauseInfaisabilite.CONTRAINTES_AD_HOC_CONTRADICTOIRES.name(),
+                                new BlockerPlaybook.Context(
+                                        null,
+                                        null,
+                                        List.of(),
+                                        List.of(),
+                                        contradiction.contrainteIds(),
+                                        List.of(),
+                                        false))))
+                .toList();
     }
 
     /**
@@ -413,16 +402,13 @@ public class FeasibilityAnalyzer {
             List<Stand> stands,
             List<Creneau> creneaux,
             PastHorizon horizon) {
-        List<CauseInfaisabilite> causes = new ArrayList<>();
-        for (ForcedAssignmentOnDayOff.Conflit conflit :
-                ForcedAssignmentOnDayOff.detectAll(contraintes, animateurs, stands, creneaux, horizon)) {
-            causes.add(forcedAssignmentCause(
-                    TypeCauseInfaisabilite.AFFECTATION_FORCEE_JOUR_INDISPONIBLE,
-                    conflit.contrainte(),
-                    conflit.message(),
-                    conflit.dates()));
-        }
-        return causes;
+        return ForcedAssignmentOnDayOff.detectAll(contraintes, animateurs, stands, creneaux, horizon).stream()
+                .map(conflit -> forcedAssignmentCause(
+                        TypeCauseInfaisabilite.AFFECTATION_FORCEE_JOUR_INDISPONIBLE,
+                        conflit.contrainte(),
+                        conflit.message(),
+                        conflit.dates()))
+                .toList();
     }
 
     /**
@@ -437,16 +423,13 @@ public class FeasibilityAnalyzer {
             List<Stand> stands,
             List<Creneau> creneaux,
             PastHorizon horizon) {
-        List<CauseInfaisabilite> causes = new ArrayList<>();
-        for (ForcedAssignmentOnExcludedSeats.Conflit conflit :
-                ForcedAssignmentOnExcludedSeats.detectAll(contraintes, animateurs, stands, creneaux, horizon)) {
-            causes.add(forcedAssignmentCause(
-                    TypeCauseInfaisabilite.AFFECTATION_FORCEE_MOTIF_LEGAL,
-                    conflit.contrainte(),
-                    conflit.message(),
-                    conflit.dates()));
-        }
-        return causes;
+        return ForcedAssignmentOnExcludedSeats.detectAll(contraintes, animateurs, stands, creneaux, horizon).stream()
+                .map(conflit -> forcedAssignmentCause(
+                        TypeCauseInfaisabilite.AFFECTATION_FORCEE_MOTIF_LEGAL,
+                        conflit.contrainte(),
+                        conflit.message(),
+                        conflit.dates()))
+                .toList();
     }
 
     /**
@@ -468,21 +451,20 @@ public class FeasibilityAnalyzer {
                                 contrainte != null && contrainte.getType() == TypeContrainteAdHoc.AFFECTATION_FORCEE)) {
             return List.of();
         }
-        List<CauseInfaisabilite> causes = new ArrayList<>();
-        for (ForcedAssignmentOnLockedSchedule.Conflit conflit : ForcedAssignmentOnLockedSchedule.detectAll(
-                contraintes,
-                contexte.verrouillages(),
-                stands,
-                creneaux,
-                contexte.placesTenues().get(),
-                contexte.horizon())) {
-            causes.add(forcedAssignmentCause(
-                    TypeCauseInfaisabilite.AFFECTATION_FORCEE_SIEGE_VERROUILLE,
-                    conflit.contrainte(),
-                    conflit.message(),
-                    conflit.dates()));
-        }
-        return causes;
+        return ForcedAssignmentOnLockedSchedule.detectAll(
+                        contraintes,
+                        contexte.verrouillages(),
+                        stands,
+                        creneaux,
+                        contexte.placesTenues().get(),
+                        contexte.horizon())
+                .stream()
+                .map(conflit -> forcedAssignmentCause(
+                        TypeCauseInfaisabilite.AFFECTATION_FORCEE_SIEGE_VERROUILLE,
+                        conflit.contrainte(),
+                        conflit.message(),
+                        conflit.dates()))
+                .toList();
     }
 
     /** A cause that warns without making the plan infeasible: a tight or soft cap on days in a row. */
@@ -875,11 +857,11 @@ public class FeasibilityAnalyzer {
         public static ConsecutiveDaysRule of(PlanningEvenement plan) {
             boolean hard = ConstraintCatalog.isActive(plan.getConstraintsDesactivees(), HARD_RULE);
             boolean medium = ConstraintCatalog.isActive(plan.getConstraintsDesactivees(), MEDIUM_RULE);
+            if (!hard && !medium) {
+                return null;
+            }
             List<ParametresQualite> qualite = plan.getParametresQualite();
-            return hard || medium
-                    ? new ConsecutiveDaysRule(
-                            cap(qualite == null || qualite.isEmpty() ? null : qualite.getFirst()), hard)
-                    : null;
+            return new ConsecutiveDaysRule(cap(qualite == null || qualite.isEmpty() ? null : qualite.getFirst()), hard);
         }
 
         private static boolean active(Set<String> contraintesDesactivees, String nom) {

@@ -177,6 +177,26 @@ public final class TensionAnalyzer {
         private final Set<String> specialisteUnique = new TreeSet<>();
         private final Set<String> sansSpecialisteStands = new TreeSet<>();
         private boolean specialisteUniqueSansRenfort;
+
+        void addSeat(PosteFragile poste, String animateurId) {
+            fragiles += poste.siegesLiberes();
+            if (poste.irremplacable()) {
+                irremplacables += poste.siegesLiberes();
+                animateurs.add(animateurId);
+            }
+        }
+
+        void addRare(CompetenceRare rare) {
+            if (rare.specialistes() == 0) {
+                sansSpecialiste++;
+                sansSpecialisteStands.add(rare.standId());
+            } else {
+                specialisteUnique.add(rare.standId());
+                if (rare.renforts() == 0) {
+                    specialisteUniqueSansRenfort = true;
+                }
+            }
+        }
     }
 
     /** Worst first, then the tightest margin, then the earliest. */
@@ -196,65 +216,10 @@ public final class TensionAnalyzer {
      */
     public static RapportTension compute(
             RapportMarge apres, FragiliteFindings fragilite, Collection<Creneau> creneaux, PastHorizon horizon) {
-        Map<Long, CelluleKey> cellulesParCreneau = new HashMap<>();
-        for (Creneau creneau : creneaux) {
-            if (creneau.getId() != null && creneau.getDate() != null) {
-                cellulesParCreneau.put(
-                        creneau.getId(),
-                        new CelluleKey(creneau.getDate(), creneau.getHeureDebut(), creneau.getHeureFin()));
-            }
-        }
-
-        Map<CelluleKey, Constats> constats = new HashMap<>();
-        for (AnimateurFragilite ligne : fragilite.animateurs()) {
-            for (PosteFragile poste : ligne.postes()) {
-                CelluleKey cle = cellulesParCreneau.get(poste.creneauId());
-                if (cle == null || poste.remplacants() > REMPLACANTS_FRAGILE) {
-                    continue;
-                }
-                Constats cellule = constats.computeIfAbsent(cle, ignore -> new Constats());
-                cellule.fragiles += poste.siegesLiberes();
-                if (poste.irremplacable()) {
-                    cellule.irremplacables += poste.siegesLiberes();
-                    cellule.animateurs.add(ligne.animateurId());
-                }
-            }
-        }
-        for (CompetenceRare rare : fragilite.competencesRares()) {
-            CelluleKey cle = cellulesParCreneau.get(rare.creneauId());
-            if (cle == null) {
-                continue;
-            }
-            Constats cellule = constats.computeIfAbsent(cle, ignore -> new Constats());
-            if (rare.specialistes() == 0) {
-                cellule.sansSpecialiste++;
-                cellule.sansSpecialisteStands.add(rare.standId());
-            } else {
-                cellule.specialisteUnique.add(rare.standId());
-                if (rare.renforts() == 0) {
-                    cellule.specialisteUniqueSansRenfort = true;
-                }
-            }
-        }
-
+        Map<Long, CelluleKey> cellulesParCreneau = cellsByTimeslot(creneaux);
+        Map<CelluleKey, Constats> constats = findings(fragilite, cellulesParCreneau);
         boolean sansAnimateur = apres.animateursTotal() == 0;
-        List<JourTension> jours = new ArrayList<>();
-        if (!sansAnimateur) {
-            for (JourMarge jourMarge : apres.jours()) {
-                List<CelluleTension> cellules = new ArrayList<>();
-                for (CelluleMarge marge : jourMarge.cellules()) {
-                    Constats cellule = constats.getOrDefault(
-                            new CelluleKey(marge.date(), marge.debut(), marge.fin()), new Constats());
-                    boolean passee = horizon != null && horizon.hasStarted(marge.date(), marge.debut());
-                    cellules.add(rate(marge, cellule, passee));
-                }
-                CelluleTension pire = cellules.stream()
-                        .filter(cellule -> !cellule.passee())
-                        .min(ORDRE_PIRE)
-                        .orElse(null);
-                jours.add(new JourTension(jourMarge.date(), jourMarge.jour(), List.copyOf(cellules), pire));
-            }
-        }
+        List<JourTension> jours = sansAnimateur ? List.of() : days(apres, constats, horizon);
 
         CelluleTension pire = jours.stream()
                 .map(JourTension::pireCellule)
@@ -276,42 +241,62 @@ public final class TensionAnalyzer {
                 message(sansAnimateur, jours, critiques, pire));
     }
 
-    private static CelluleTension rate(CelluleMarge marge, Constats constats, boolean passee) {
-        int vides = marge.besoin();
-        List<MotifTension> motifs = new ArrayList<>();
-        GraviteTension gravite = null;
-        if (!passee) {
-            if (marge.marge() < 0) {
-                motifs.add(MotifTension.SIEGES_VIDES_NON_COUVRABLES);
+    private static Map<Long, CelluleKey> cellsByTimeslot(Collection<Creneau> creneaux) {
+        Map<Long, CelluleKey> cellulesParCreneau = new HashMap<>();
+        for (Creneau creneau : creneaux) {
+            if (creneau.getId() != null && creneau.getDate() != null) {
+                cellulesParCreneau.put(
+                        creneau.getId(),
+                        new CelluleKey(creneau.getDate(), creneau.getHeureDebut(), creneau.getHeureFin()));
             }
-            if (constats.irremplacables > 0) {
-                motifs.add(MotifTension.SIEGE_IRREMPLACABLE);
-            }
-            if (constats.sansSpecialiste > 0) {
-                motifs.add(MotifTension.STAND_SANS_SPECIALISTE);
-            }
-            if (!motifs.isEmpty()) {
-                gravite = GraviteTension.CRITIQUE;
-            } else {
-                if (marge.marge() == 0 && vides > 0) {
-                    motifs.add(MotifTension.MARGE_NULLE_AVEC_SIEGES_VIDES);
-                }
-                if (constats.fragiles > marge.marge()) {
-                    motifs.add(MotifTension.FRAGILES_AU_DELA_DE_LA_MARGE);
-                }
-                if (!motifs.isEmpty()) {
-                    gravite = GraviteTension.ELEVEE;
-                } else {
-                    if (constats.fragiles > 0) {
-                        motifs.add(MotifTension.SIEGES_FRAGILES);
-                    }
-                    if (constats.specialisteUniqueSansRenfort) {
-                        motifs.add(MotifTension.SPECIALISTE_UNIQUE_SANS_RENFORT);
-                    }
-                    gravite = motifs.isEmpty() ? GraviteTension.CALME : GraviteTension.SURVEILLEE;
+        }
+        return cellulesParCreneau;
+    }
+
+    /** The fragility findings, gathered on the cell of their timeslot. */
+    private static Map<CelluleKey, Constats> findings(
+            FragiliteFindings fragilite, Map<Long, CelluleKey> cellulesParCreneau) {
+        Map<CelluleKey, Constats> constats = new HashMap<>();
+        for (AnimateurFragilite ligne : fragilite.animateurs()) {
+            for (PosteFragile poste : ligne.postes()) {
+                CelluleKey cle = cellulesParCreneau.get(poste.creneauId());
+                if (cle != null && poste.remplacants() <= REMPLACANTS_FRAGILE) {
+                    constats.computeIfAbsent(cle, ignore -> new Constats()).addSeat(poste, ligne.animateurId());
                 }
             }
         }
+        for (CompetenceRare rare : fragilite.competencesRares()) {
+            CelluleKey cle = cellulesParCreneau.get(rare.creneauId());
+            if (cle != null) {
+                constats.computeIfAbsent(cle, ignore -> new Constats()).addRare(rare);
+            }
+        }
+        return constats;
+    }
+
+    private static List<JourTension> days(RapportMarge apres, Map<CelluleKey, Constats> constats, PastHorizon horizon) {
+        List<JourTension> jours = new ArrayList<>();
+        for (JourMarge jourMarge : apres.jours()) {
+            List<CelluleTension> cellules = new ArrayList<>();
+            for (CelluleMarge marge : jourMarge.cellules()) {
+                Constats cellule =
+                        constats.getOrDefault(new CelluleKey(marge.date(), marge.debut(), marge.fin()), new Constats());
+                boolean passee = horizon != null && horizon.hasStarted(marge.date(), marge.debut());
+                cellules.add(rate(marge, cellule, passee));
+            }
+            CelluleTension pire = cellules.stream()
+                    .filter(cellule -> !cellule.passee())
+                    .min(ORDRE_PIRE)
+                    .orElse(null);
+            jours.add(new JourTension(jourMarge.date(), jourMarge.jour(), List.copyOf(cellules), pire));
+        }
+        return jours;
+    }
+
+    private static CelluleTension rate(CelluleMarge marge, Constats constats, boolean passee) {
+        int vides = marge.besoin();
+        List<MotifTension> motifs = new ArrayList<>();
+        GraviteTension gravite = passee ? null : grade(marge, constats, motifs);
         return new CelluleTension(
                 marge.date(),
                 marge.jour(),
@@ -329,6 +314,42 @@ public final class TensionAnalyzer {
                 passee,
                 gravite,
                 List.copyOf(motifs));
+    }
+
+    /**
+     * The gravity of a cell still ahead, its reasons added to {@code motifs}:
+     * the first tier with a reason decides, the lower ones are not read.
+     */
+    private static GraviteTension grade(CelluleMarge marge, Constats constats, List<MotifTension> motifs) {
+        int vides = marge.besoin();
+        if (marge.marge() < 0) {
+            motifs.add(MotifTension.SIEGES_VIDES_NON_COUVRABLES);
+        }
+        if (constats.irremplacables > 0) {
+            motifs.add(MotifTension.SIEGE_IRREMPLACABLE);
+        }
+        if (constats.sansSpecialiste > 0) {
+            motifs.add(MotifTension.STAND_SANS_SPECIALISTE);
+        }
+        if (!motifs.isEmpty()) {
+            return GraviteTension.CRITIQUE;
+        }
+        if (marge.marge() == 0 && vides > 0) {
+            motifs.add(MotifTension.MARGE_NULLE_AVEC_SIEGES_VIDES);
+        }
+        if (constats.fragiles > marge.marge()) {
+            motifs.add(MotifTension.FRAGILES_AU_DELA_DE_LA_MARGE);
+        }
+        if (!motifs.isEmpty()) {
+            return GraviteTension.ELEVEE;
+        }
+        if (constats.fragiles > 0) {
+            motifs.add(MotifTension.SIEGES_FRAGILES);
+        }
+        if (constats.specialisteUniqueSansRenfort) {
+            motifs.add(MotifTension.SPECIALISTE_UNIQUE_SANS_RENFORT);
+        }
+        return motifs.isEmpty() ? GraviteTension.CALME : GraviteTension.SURVEILLEE;
     }
 
     /** One sentence for the banner, like the margin's; the grid says the rest. */

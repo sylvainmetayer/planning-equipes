@@ -635,14 +635,7 @@ public class AnimateurCsvImportService {
                 groups.computeIfAbsent(keys[i], k -> new KeyGroup()).add(i, unchanged[i]);
             }
         }
-        Map<IdentityKey, List<Animateur>> untouchedByKey = new HashMap<>();
-        for (Animateur existant : existants) {
-            if (!idsTouches.contains(existant.getId()) && existant.getDateNaissance() != null) {
-                untouchedByKey
-                        .computeIfAbsent(IdentityKey.of(existant), k -> new ArrayList<>())
-                        .add(existant);
-            }
-        }
+        Map<IdentityKey, List<Animateur>> untouchedByKey = untouchedByKey(existants, idsTouches);
 
         List<RowOutcome> flagged = new ArrayList<>(outcomes.size());
         for (int i = 0; i < outcomes.size(); i++) {
@@ -669,37 +662,61 @@ public class AnimateurCsvImportService {
             }
 
             List<Animateur> fiches = unchanged[i] ? List.of() : untouchedByKey.getOrDefault(key, List.of());
-            for (Animateur autre : fiches.subList(0, Math.min(fiches.size(), LISTED_DUPLICATES))) {
-                warnings.add(ficheWarning(outcome, autre.getId(), replacement));
-                doublons.add(AnimateurCsvImportReport.ProbableDuplicate.fiche(
-                        replacement
-                                ? AnimateurCsvImportReport.DuplicateKind.REPLACED
-                                : AnimateurCsvImportReport.DuplicateKind.FICHE,
-                        autre.getId()));
-            }
-            if (fiches.size() > LISTED_DUPLICATES) {
-                int rest = fiches.size() - LISTED_DUPLICATES;
-                warnings.add(grouped(rest) + (rest == 1 ? " autre fiche" : " autres fiches")
-                        + (replacement ? ", que le remplacement complet supprime," : ", que l'import conserve,")
-                        + " porte" + (rest == 1 ? "" : "nt") + " aussi les mêmes nom, prénom et date de naissance.");
-            }
+            flagFiches(outcome, fiches, replacement, warnings, doublons);
 
-            if (doublons.isEmpty()) {
-                flagged.add(outcome);
-                continue;
-            }
-            AnimateurCsvImportReport.ImportedRow row = outcome.reported();
-            flagged.add(outcome.withReported(new AnimateurCsvImportReport.ImportedRow(
-                    row.line(),
-                    row.label(),
-                    row.animateurId(),
-                    row.action(),
-                    row.reasons(),
-                    List.copyOf(warnings),
-                    row.joursIndisponibles(),
-                    List.copyOf(doublons))));
+            flagged.add(doublons.isEmpty() ? outcome : withDuplicates(outcome, warnings, doublons));
         }
         return flagged;
+    }
+
+    /** The fiches the import keeps, by identity key: those it does not touch, with a birth date. */
+    private static Map<IdentityKey, List<Animateur>> untouchedByKey(List<Animateur> existants, Set<String> idsTouches) {
+        Map<IdentityKey, List<Animateur>> untouchedByKey = new HashMap<>();
+        for (Animateur existant : existants) {
+            if (!idsTouches.contains(existant.getId()) && existant.getDateNaissance() != null) {
+                untouchedByKey
+                        .computeIfAbsent(IdentityKey.of(existant), k -> new ArrayList<>())
+                        .add(existant);
+            }
+        }
+        return untouchedByKey;
+    }
+
+    /** The kept fiches a row shares its key with: the first {@link #LISTED_DUPLICATES} named, the rest counted. */
+    private static void flagFiches(
+            RowOutcome outcome,
+            List<Animateur> fiches,
+            boolean replacement,
+            List<String> warnings,
+            List<AnimateurCsvImportReport.ProbableDuplicate> doublons) {
+        for (Animateur autre : fiches.subList(0, Math.min(fiches.size(), LISTED_DUPLICATES))) {
+            warnings.add(ficheWarning(outcome, autre.getId(), replacement));
+            doublons.add(AnimateurCsvImportReport.ProbableDuplicate.fiche(
+                    replacement
+                            ? AnimateurCsvImportReport.DuplicateKind.REPLACED
+                            : AnimateurCsvImportReport.DuplicateKind.FICHE,
+                    autre.getId()));
+        }
+        if (fiches.size() > LISTED_DUPLICATES) {
+            int rest = fiches.size() - LISTED_DUPLICATES;
+            warnings.add(grouped(rest) + (rest == 1 ? " autre fiche" : " autres fiches")
+                    + (replacement ? ", que le remplacement complet supprime," : ", que l'import conserve,")
+                    + " porte" + (rest == 1 ? "" : "nt") + " aussi les mêmes nom, prénom et date de naissance.");
+        }
+    }
+
+    private static RowOutcome withDuplicates(
+            RowOutcome outcome, List<String> warnings, List<AnimateurCsvImportReport.ProbableDuplicate> doublons) {
+        AnimateurCsvImportReport.ImportedRow row = outcome.reported();
+        return outcome.withReported(new AnimateurCsvImportReport.ImportedRow(
+                row.line(),
+                row.label(),
+                row.animateurId(),
+                row.action(),
+                row.reasons(),
+                List.copyOf(warnings),
+                row.joursIndisponibles(),
+                List.copyOf(doublons)));
     }
 
     /**

@@ -28,9 +28,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.ToDoubleFunction;
+import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -171,13 +173,11 @@ public class EquiteService {
         // The event's days are the dates the plan holds créneaux for, seats
         // filled or not: a day nothing is scheduled on is outside the event,
         // not a rest day (same reading as the Repos screen).
-        TreeSet<LocalDate> joursEvenement = new TreeSet<>();
+        TreeSet<LocalDate> joursEvenement = postes.stream()
+                .map(poste -> poste.getCreneau().getDate())
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(TreeSet::new));
         TreeSet<String> semaines = new TreeSet<>();
-        for (PosteAffectation poste : postes) {
-            if (poste.getCreneau().getDate() != null) {
-                joursEvenement.add(poste.getCreneau().getDate());
-            }
-        }
 
         Map<String, Tally> tallies = new LinkedHashMap<>();
         for (Animateur animateur : animateursInOrder(planning, postes)) {
@@ -197,12 +197,10 @@ public class EquiteService {
         deductBreaksDue(tallies, postes, parametres);
 
         List<LocalDate> jours = new ArrayList<>(joursEvenement);
-        List<LigneEquite> lignes = new ArrayList<>();
-        for (Tally tally : tallies.values()) {
-            if (tally.postes > 0) {
-                lignes.add(tally.toLigne(jours));
-            }
-        }
+        List<LigneEquite> lignes = tallies.values().stream()
+                .filter(tally -> tally.postes > 0)
+                .map(tally -> tally.toLigne(jours))
+                .toList();
         List<String> semainesTriees = new ArrayList<>(semaines);
         return new RapportEquite(
                 debutSoiree,
@@ -222,11 +220,10 @@ public class EquiteService {
         if (planning != null && planning.getAnimateurs() != null) {
             ordered.addAll(planning.getAnimateurs());
         }
-        for (PosteAffectation poste : postes) {
-            if (poste.getAnimateur() != null) {
-                ordered.add(poste.getAnimateur());
-            }
-        }
+        postes.stream()
+                .map(PosteAffectation::getAnimateur)
+                .filter(Objects::nonNull)
+                .forEach(ordered::add);
         return ordered;
     }
 

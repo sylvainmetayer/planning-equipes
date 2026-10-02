@@ -32,7 +32,7 @@ public enum WeightChangeOrigin {
     static WeightChangeOrigin parse(String value) {
         try {
             return value == null ? SCREEN : valueOf(value);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException _) {
             return SCREEN;
         }
     }

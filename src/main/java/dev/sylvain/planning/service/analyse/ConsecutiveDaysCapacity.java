@@ -8,9 +8,11 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -161,18 +163,19 @@ final class ConsecutiveDaysCapacity {
         if (cap <= 0) {
             return null;
         }
-        LocalDate first = null;
-        LocalDate last = null;
-        for (Creneau creneau : creneaux) {
-            LocalDate date = creneau.getDate();
-            if (date != null) {
-                first = first == null || date.isBefore(first) ? date : first;
-                last = last == null || date.isAfter(last) ? date : last;
-            }
-        }
+        LocalDate first = creneaux.stream()
+                .map(Creneau::getDate)
+                .filter(Objects::nonNull)
+                .min(Comparator.naturalOrder())
+                .orElse(null);
         if (first == null) {
             return null;
         }
+        LocalDate last = creneaux.stream()
+                .map(Creneau::getDate)
+                .filter(Objects::nonNull)
+                .max(Comparator.naturalOrder())
+                .orElseThrow();
         int days = (int) ChronoUnit.DAYS.between(first, last) + 1;
         if (days <= cap) {
             // No window of cap + 1 days fits in the event: nobody can run past
@@ -188,14 +191,7 @@ final class ConsecutiveDaysCapacity {
             // offer: a day nobody is needed is a rest day for all.
             needed[i] = floors.getOrDefault(date, 0) > 0;
         }
-        List<boolean[]> availability = new ArrayList<>();
-        for (Animateur animateur : animateurs) {
-            boolean[] available = new boolean[days];
-            for (int i = 0; i < days; i++) {
-                available[i] = needed[i] && !animateur.isIndisponibleOn(first.plusDays(i));
-            }
-            availability.add(available);
-        }
+        List<boolean[]> availability = availability(first, needed);
 
         Window worst = null;
         int tight = 0;
@@ -204,20 +200,8 @@ final class ConsecutiveDaysCapacity {
             if (isPast(first.plusDays(end))) {
                 continue;
             }
-            int windowDemand = 0;
-            for (int i = start; i <= end; i++) {
-                windowDemand += demand[i];
-            }
-            int windowSupply = 0;
-            for (boolean[] available : availability) {
-                int count = 0;
-                for (int i = start; i <= end; i++) {
-                    if (available[i]) {
-                        count++;
-                    }
-                }
-                windowSupply += Math.min(cap, count);
-            }
+            int windowDemand = sum(demand, start, end);
+            int windowSupply = supply(availability, start, end);
             int margin = windowSupply - windowDemand;
             if (isTight(margin, windowDemand)) {
                 tight++;
@@ -230,6 +214,43 @@ final class ConsecutiveDaysCapacity {
             return null;
         }
         return new Window(worst.debut(), worst.fin(), worst.demand(), worst.supply(), tight - 1);
+    }
+
+    /** Per animateur, the days from {@code first} they can be put on: needed by somebody, and not off. */
+    private List<boolean[]> availability(LocalDate first, boolean[] needed) {
+        List<boolean[]> availability = new ArrayList<>();
+        for (Animateur animateur : animateurs) {
+            boolean[] available = new boolean[needed.length];
+            for (int i = 0; i < needed.length; i++) {
+                available[i] = needed[i] && !animateur.isIndisponibleOn(first.plusDays(i));
+            }
+            availability.add(available);
+        }
+        return availability;
+    }
+
+    /** The sum of {@code values} from {@code start} to {@code end}, both included. */
+    private static int sum(int[] values, int start, int end) {
+        int total = 0;
+        for (int i = start; i <= end; i++) {
+            total += values[i];
+        }
+        return total;
+    }
+
+    /** What the window from {@code start} to {@code end} can draw: each animateur's available days, capped. */
+    private int supply(List<boolean[]> availability, int start, int end) {
+        int supply = 0;
+        for (boolean[] available : availability) {
+            int count = 0;
+            for (int i = start; i <= end; i++) {
+                if (available[i]) {
+                    count++;
+                }
+            }
+            supply += Math.min(cap, count);
+        }
+        return supply;
     }
 
     /**
@@ -256,20 +277,8 @@ final class ConsecutiveDaysCapacity {
     static Map<LocalDate, Integer> floors(List<Stand> stands, List<Creneau> creneaux) {
         Map<LocalDate, TreeMap<Integer, Integer>> deltas = new HashMap<>();
         for (Creneau creneau : creneaux) {
-            if (creneau.getDate() == null || creneau.getHeureDebut() == null) {
-                continue;
-            }
-            int origin = creneau.getHeureDebut().toSecondOfDay() / 60;
-            for (Stand stand : stands) {
-                for (Creneau.SegmentOuvert segment : creneau.segmentsOuverts(stand)) {
-                    int seats = creneau.siegesSegment(segment.effectif());
-                    if (seats <= 0 || segment.finMinutes() <= segment.debutMinutes()) {
-                        continue;
-                    }
-                    TreeMap<Integer, Integer> day = deltas.computeIfAbsent(creneau.getDate(), d -> new TreeMap<>());
-                    day.merge(origin + segment.debutMinutes(), seats, Integer::sum);
-                    day.merge(origin + segment.finMinutes(), -seats, Integer::sum);
-                }
+            if (creneau.getDate() != null && creneau.getHeureDebut() != null) {
+                addDeltas(deltas, creneau, stands);
             }
         }
         Map<LocalDate, Integer> result = new HashMap<>();
@@ -286,5 +295,21 @@ final class ConsecutiveDaysCapacity {
             result.put(date, peak);
         });
         return result;
+    }
+
+    /** The seats {@code creneau} opens on every stand, as deltas on the minutes from its day's midnight. */
+    private static void addDeltas(
+            Map<LocalDate, TreeMap<Integer, Integer>> deltas, Creneau creneau, List<Stand> stands) {
+        int origin = creneau.getHeureDebut().toSecondOfDay() / 60;
+        for (Stand stand : stands) {
+            for (Creneau.SegmentOuvert segment : creneau.segmentsOuverts(stand)) {
+                int seats = creneau.siegesSegment(segment.effectif());
+                if (seats > 0 && segment.finMinutes() > segment.debutMinutes()) {
+                    TreeMap<Integer, Integer> day = deltas.computeIfAbsent(creneau.getDate(), d -> new TreeMap<>());
+                    day.merge(origin + segment.debutMinutes(), seats, Integer::sum);
+                    day.merge(origin + segment.finMinutes(), -seats, Integer::sum);
+                }
+            }
+        }
     }
 }
