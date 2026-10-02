@@ -59,19 +59,20 @@ NOMS = ["Blanc", "Roux", "Richard", "Henry", "Petit", "Michel", "Garcia",
 
 
 def generer_scenario(date_debut_str, nb_jours, nb_stands, nb_animateurs, seed=None):
-    if seed is not None:
-        random.seed(seed)
+    # One generator instance seeded once: the same seed gives the same file,
+    # and the draws never touch the module-level generator.
+    rng = random.Random(seed)
 
     date_debut = datetime.strptime(date_debut_str, "%Y-%m-%d")
     creneaux = generer_creneaux(date_debut, nb_jours)
-    stands = generer_stands(nb_stands)
+    stands = generer_stands(rng, nb_stands)
 
     return {
         "festival": {"dateDebut": date_debut_str},
         "creneaux": creneaux,
         "emplacements": [dict(emplacement) for emplacement in EMPLACEMENTS],
         "stands": stands,
-        "animateurs": generer_animateurs(date_debut, nb_jours, nb_animateurs),
+        "animateurs": generer_animateurs(rng, date_debut, nb_jours, nb_animateurs),
         "postes": generer_postes(stands, creneaux),
     }
 
@@ -91,27 +92,27 @@ def generer_creneaux(date_debut, nb_jours):
     return creneaux
 
 
-def generer_stands(nb_stands):
+def generer_stands(rng, nb_stands):
     stands = []
     for i in range(1, nb_stands + 1):
-        effectif_min = random.randint(2, 4)
-        effectif_max = effectif_min + random.randint(0, 2)
-        typologies = random.sample(TYPOLOGIES, k=random.randint(1, 2))
+        effectif_min = rng.randint(2, 4)
+        effectif_max = effectif_min + rng.randint(0, 2)
+        typologies = rng.sample(TYPOLOGIES, k=rng.randint(1, 2))
         stand = {
             "id": f"STAND-{i:03d}",
             "nom": f"Stand {typologies[0].capitalize()} {i:03d}",
             "typologiesProposees": typologies,
             "effectifMin": effectif_min,
             "effectifMax": effectif_max,
-            "reserveMajeurs": random.choice([True, False, False]),
+            "reserveMajeurs": rng.choice([True, False, False]),
         }
-        if random.random() < PART_STANDS_AVEC_EMPLACEMENT:
-            stand["emplacementId"] = random.choice(EMPLACEMENTS)["id"]
+        if rng.random() < PART_STANDS_AVEC_EMPLACEMENT:
+            stand["emplacementId"] = rng.choice(EMPLACEMENTS)["id"]
         stands.append(stand)
     return stands
 
 
-def generer_animateurs(date_debut, nb_jours, nb_animateurs):
+def generer_animateurs(rng, date_debut, nb_jours, nb_animateurs):
     # Plage de dates pour des animateurs de 16 à 66 ans lors du festival.
     dob_start = datetime.strptime("1960-01-01", "%Y-%m-%d")
     dob_end = datetime.strptime("2010-12-31", "%Y-%m-%d")
@@ -119,20 +120,20 @@ def generer_animateurs(date_debut, nb_jours, nb_animateurs):
 
     animateurs = []
     for i in range(1, nb_animateurs + 1):
-        manager = random.random() < PART_MANAGERS
+        manager = rng.random() < PART_MANAGERS
         # Une à trois compétences distinctes, chacune avec son niveau.
-        nb_competences = random.randint(1, 3)
+        nb_competences = rng.randint(1, 3)
         competences = {
-            typo: random.choice(NIVEAUX)
-            for typo in random.sample(TYPOLOGIES, k=nb_competences)
+            typo: rng.choice(NIVEAUX)
+            for typo in rng.sample(TYPOLOGIES, k=nb_competences)
         }
-        jours_indispos = tirer_jours_indisponibles(date_debut, nb_jours)
-        random_dob = dob_start + timedelta(days=random.randint(0, dob_delta_days))
+        jours_indispos = tirer_jours_indisponibles(rng, date_debut, nb_jours)
+        random_dob = dob_start + timedelta(days=rng.randint(0, dob_delta_days))
 
         animateurs.append({
             "id": f"A{i}",
-            "prenom": random.choice(PRENOMS),
-            "nom": random.choice(NOMS),
+            "prenom": rng.choice(PRENOMS),
+            "nom": rng.choice(NOMS),
             "dateNaissance": random_dob.strftime("%Y-%m-%d"),
             "manager": manager,
             "competences": competences,
@@ -141,12 +142,12 @@ def generer_animateurs(date_debut, nb_jours, nb_animateurs):
     return animateurs
 
 
-def tirer_jours_indisponibles(date_debut, nb_jours):
-    nb_jours_indispo = random.randint(0, 3)
+def tirer_jours_indisponibles(rng, date_debut, nb_jours):
+    nb_jours_indispo = rng.randint(0, 3)
     if not nb_jours_indispo:
         return []
     return sorted({
-        (date_debut + timedelta(days=random.randint(0, nb_jours - 1))).strftime("%Y-%m-%d")
+        (date_debut + timedelta(days=rng.randint(0, nb_jours - 1))).strftime("%Y-%m-%d")
         for _ in range(nb_jours_indispo)
     })
 
