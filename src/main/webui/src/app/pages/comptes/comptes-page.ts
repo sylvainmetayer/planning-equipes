@@ -4,6 +4,7 @@ import {
   Component,
   ElementRef,
   Injector,
+  OnInit,
   ViewEncapsulation,
   afterNextRender,
   computed,
@@ -94,7 +95,7 @@ const STATE_ORDER: Record<RightState, number> = { active: 0, expired: 1, withdra
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ComptesPage {
+export class ComptesPage implements OnInit {
   private readonly comptesApi = inject(ComptesApi);
   private readonly adminApi = inject(AdminApi);
   private readonly standsApi = inject(StandsApi);
@@ -216,6 +217,9 @@ export class ComptesPage {
       q: optionalParam(this.filter()),
       compte: this.selectedId(),
     }));
+  }
+
+  ngOnInit(): void {
     void this.reload();
     this.adminApi
       .session()
