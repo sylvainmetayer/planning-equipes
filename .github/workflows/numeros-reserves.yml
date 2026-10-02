@@ -1,0 +1,42 @@
+# Deux PR ouvertes qui prennent le même numéro de migration Flyway ou d'ADR.
+#
+# Aucune des deux n'a tort tant qu'aucune n'est fusionnée : la seconde à
+# fusionner devra renuméroter, et `check-reserved-numbers.sh` (job `frontend`
+# de Tests) la refusera dès que la première aura atterri. Ce workflow le dit
+# plus tôt, par un avertissement posé sur le fichier, et n'échoue jamais pour
+# une collision : il n'échoue que si l'API est illisible, pour ne pas conclure
+# « aucune collision » sans avoir rien lu.
+name: Numéros réservés
+
+on:
+  pull_request:
+    paths:
+      - 'src/main/resources/db/migration/**'
+      - 'docs/decisions/**'
+      - '.github/workflows/numeros-reserves.yml'
+      - '.github/scripts/check-open-pr-numbers.sh'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: numeros-reserves-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  pr-ouvertes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Compare with the numbers the other open pull requests add
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: bash .github/scripts/check-open-pr-numbers.sh

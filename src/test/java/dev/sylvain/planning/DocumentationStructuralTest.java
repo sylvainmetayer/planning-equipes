@@ -11,7 +11,9 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -266,6 +268,25 @@ class DocumentationStructuralTest {
         }
         assertThat(references)
                 .as("issue references in docs/decisions — write out what the issue named instead")
+                .isEmpty();
+    }
+
+    /**
+     * Two records never share a number. Two branches both taking the next one
+     * is the usual way it happens; {@code check-reserved-numbers.sh} refuses
+     * the second branch against its base, this holds the tree once both landed.
+     */
+    @Test
+    void noTwoDecisionRecordsShareANumber() throws IOException {
+        Map<String, List<String>> byNumber;
+        try (Stream<Path> files = Files.list(DECISIONS)) {
+            byNumber = files.map(f -> f.getFileName().toString())
+                    .filter(name -> name.matches("\\d{4}-.*\\.md"))
+                    .sorted()
+                    .collect(Collectors.groupingBy(name -> name.substring(0, 4), TreeMap::new, Collectors.toList()));
+        }
+        assertThat(byNumber.values().stream().filter(names -> names.size() > 1).toList())
+                .as("decision records sharing a number — the one merged last renumbers")
                 .isEmpty();
     }
 
