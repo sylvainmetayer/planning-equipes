@@ -8,6 +8,7 @@ import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.consigne.ConsigneRepository;
 import dev.sylvain.planning.service.consigne.ConsigneService;
 import dev.sylvain.planning.service.edition.EditionService;
+import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.referentiel.GelReferentielService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.WeightChangeOrigin;
@@ -57,6 +58,9 @@ public class ScenarioImportService {
 
     private final GelReferentielService gel;
 
+    /** The account of the request: the author of the ajustements an import creates. */
+    private final JournalActionService journal;
+
     @Inject
     public ScenarioImportService(
             ReferenceDataService referenceDataService,
@@ -64,7 +68,9 @@ public class ScenarioImportService {
             EditionContext editionContext,
             ConsigneRepository consigneRepository,
             ScenarioTargetIds identifiants,
-            GelReferentielService gel) {
+            GelReferentielService gel,
+            JournalActionService journal) {
+        this.journal = journal;
         this.referenceDataService = referenceDataService;
         this.editionService = editionService;
         this.editionContext = editionContext;
@@ -114,6 +120,14 @@ public class ScenarioImportService {
             ScenarioYamlReader.ScenarioImporte importe = ScenarioYamlReader.fromDto(
                     ScenarioIdRemap.remap(scenario, identifiants.of()), referenceDataService::getParametresLegaux);
             ScenarioYamlReader.ScenarioSections sections = importe.sections();
+            // A file names no author: the ajustements it creates are the
+            // importer's, like any other creation.
+            String auteur = journal.nomAdmin();
+            if (importe.planning().getContraintesAdHoc() != null) {
+                importe.planning()
+                        .getContraintesAdHoc()
+                        .forEach(contrainte -> contrainte.setCreeParUtilisateurId(auteur));
+            }
             sections.parametresLegaux().ifPresent(referenceDataService::updateParametresLegaux);
             sections.parametresQualite().ifPresent(referenceDataService::updateParametresQualite);
             sections.parametresSolveur().ifPresent(referenceDataService::importParametresSolveur);

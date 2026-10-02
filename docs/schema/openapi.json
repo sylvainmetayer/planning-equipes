@@ -2335,7 +2335,8 @@
             "type" : "string"
           },
           "creeParUtilisateurId" : {
-            "type" : "string"
+            "type" : "string",
+            "readOnly" : true
           },
           "creeLe" : {
             "$ref" : "#/components/schemas/Instant"

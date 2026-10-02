@@ -922,6 +922,11 @@ export interface ContrainteAdHoc {
   creneau: { id: number } | null;
   stand: { id: string } | null;
   raison: string;
+  /**
+   * Read-only: the account that created it (`admin`, `mcp`) or the server
+   * gesture that did (`jour-j`, `collecte`), set by the server and kept by
+   * every edit. Ignored when sent.
+   */
   creeParUtilisateurId?: string;
   creeLe?: string;
   /**
