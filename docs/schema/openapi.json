@@ -5083,6 +5083,10 @@
           "zero" : {
             "type" : "boolean"
           },
+          "structuralScore" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
           "hardScore" : {
             "type" : "integer",
             "format" : "int64"
