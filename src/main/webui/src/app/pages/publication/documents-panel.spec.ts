@@ -17,12 +17,14 @@ const EMPTY_PLANNING: PlanningEvenement = { animateurs: [], postes: [], score: n
 
 describe('DocumentsPanel', () => {
   const planningApi = fakeOf<PlanningApi>({
-    exportFeuilles: async () => '',
-    exportBundle: async () => '',
-    exportGlobalPdf: async () => '',
-    exportPublicationDiff: async () => '',
+    exportFeuilles: () => Promise.resolve(''),
+    exportBundle: () => Promise.resolve(''),
+    exportGlobalPdf: () => Promise.resolve(''),
+    exportPublicationDiff: () => Promise.resolve(''),
   });
-  const planningState = fakeOf<PlanningStateService>({ require: async () => EMPTY_PLANNING });
+  const planningState = fakeOf<PlanningStateService>({
+    require: () => Promise.resolve(EMPTY_PLANNING),
+  });
 
   beforeEach(() => {
     Object.values(planningApi).forEach((stub) => stub.mockReset());

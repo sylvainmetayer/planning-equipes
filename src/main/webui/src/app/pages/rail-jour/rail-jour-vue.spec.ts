@@ -314,7 +314,7 @@ describe('RailJourView', () => {
     shift.click();
 
     expect(opened).toHaveLength(1);
-    expect(shift.closest('[data-poste-id]')!.getAttribute('data-poste-id')).toBe(opened[0]);
+    expect(shift.closest<HTMLElement>('[data-poste-id]')!.dataset['posteId']).toBe(opened[0]);
   });
 
   // The shift label is out of the tab order, inside a hidden track: Space on

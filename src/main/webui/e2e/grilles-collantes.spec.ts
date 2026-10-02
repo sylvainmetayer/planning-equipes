@@ -83,7 +83,7 @@ interface Mesures {
  * celui de la fenêtre, et dans le même aller-retour : une mesure par élément
  * laisserait la page défiler entre deux.
  */
-async function mesurer(
+function mesurer(
   grille: Locator,
   collants: Collant[],
   lignes: { premiere: string; seconde: string } | null,

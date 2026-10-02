@@ -96,7 +96,7 @@ async function setUp(
       {
         provide: ReferenceDataStore,
         useValue: {
-          reload: vi.fn(async () => undefined),
+          reload: vi.fn(() => Promise.resolve(undefined)),
           stands: signal([TIR, DIXIT, IDLE]),
           typologies: signal([
             { id: 'AMB', label: 'Ambiance' },
@@ -242,8 +242,12 @@ describe('RepartitionHeuresView', () => {
           );
         }
         // Material's form fields observe too, and let go one element at a time.
-        unobserve(): void {}
-        disconnect(): void {}
+        unobserve(): void {
+          // Nothing observed by this stub needs releasing.
+        }
+        disconnect(): void {
+          // Nothing observed by this stub needs releasing.
+        }
       },
     );
     const { fixture, element } = await setUp();

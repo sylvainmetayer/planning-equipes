@@ -70,7 +70,7 @@ function mount(
   } = {},
 ) {
   const crud = fakeOf<ReferenceCrudService>({
-    saveMany: async () => options.saveMany ?? stands.length,
+    saveMany: () => Promise.resolve(options.saveMany ?? stands.length),
   });
   const saveMany = crud.saveMany;
   const allStands = [...stands, stand('hors-selection'), ...(options.modeles ?? [])];
@@ -94,7 +94,10 @@ function mount(
       provideFake(ReferenceCrudService, crud),
       provideFake(MatDialogRef, fakeOf<MatDialogRef<StandBulkEditDialog, boolean>>({ close })),
       { provide: MAT_DIALOG_DATA, useValue: { stands, modele: options.modele } },
-      provideFake(EditionsApi, fakeOf<EditionsApi>({ gel: async () => options.gel ?? [] })),
+      provideFake(
+        EditionsApi,
+        fakeOf<EditionsApi>({ gel: () => Promise.resolve(options.gel ?? []) }),
+      ),
     ],
   });
   return { fixture: TestBed.createComponent(StandBulkEditDialog), saveMany, close };

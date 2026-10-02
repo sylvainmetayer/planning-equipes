@@ -45,12 +45,19 @@ function typologie(id: string, ninja = false): TypologieItem {
   return { id, label: id, ninja } as TypologieItem;
 }
 
+async function create(typologies: TypologieItem[] = []): Promise<ReglesCalcul> {
+  seedStore(TestBed.inject(ReferenceDataStore), 'typologies', typologies);
+  const fixture = TestBed.createComponent(ReglesCalcul);
+  await fixture.whenStable();
+  return fixture.componentInstance;
+}
+
 describe('ReglesCalcul', () => {
   const duree = signal<number | null>(180);
   const plateau = signal<number | null>(null);
   const mail = signal(false);
   const solverSettings = {
-    refresh: vi.fn(async () => undefined),
+    refresh: vi.fn(() => Promise.resolve(undefined)),
     setSettings: vi.fn(),
     bounds: signal<SolverBudgetBounds | null>(INSTANCE),
     dureeResolutionSecondes: duree,
@@ -71,27 +78,30 @@ describe('ReglesCalcul', () => {
     mail.set(false);
     solverSettings.setSettings.mockReset();
     solverSettings.setSettings.mockImplementation(
-      async (seconds: number | null, plateauSeconds: number | null, mailFin: boolean) => {
+      (seconds: number | null, plateauSeconds: number | null, mailFin: boolean) => {
         duree.set(seconds);
         plateau.set(plateauSeconds);
         mail.set(mailFin);
+        return Promise.resolve();
       },
     );
     constraintsApi = {
-      legalParameters: vi.fn(async () => ({ ...LEGAUX })),
-      saveLegalParameters: vi.fn(async (legaux: typeof LEGAUX) => legaux),
+      legalParameters: vi.fn(() => Promise.resolve({ ...LEGAUX })),
+      saveLegalParameters: vi.fn((legaux: typeof LEGAUX) => Promise.resolve(legaux)),
     };
-    crud = { save: vi.fn(async () => true) };
+    crud = { save: vi.fn(() => Promise.resolve(true)) };
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
+        { provide: ApiService, useValue: { get: vi.fn(() => Promise.resolve([])) } },
         { provide: SolverSettingsService, useValue: solverSettings },
         { provide: ConstraintsApi, useValue: constraintsApi },
         {
           provide: AdminApi,
-          useValue: { mailConfig: vi.fn(async () => ({ adminEmail: 'admin@exemple.test' })) },
+          useValue: {
+            mailConfig: vi.fn(() => Promise.resolve({ adminEmail: 'admin@exemple.test' })),
+          },
         },
         { provide: ReferenceCrudService, useValue: crud },
         { provide: NotificationService, useValue: { notify: vi.fn() } },
@@ -103,13 +113,6 @@ describe('ReglesCalcul', () => {
       ],
     });
   });
-
-  async function create(typologies: TypologieItem[] = []): Promise<ReglesCalcul> {
-    seedStore(TestBed.inject(ReferenceDataStore), 'typologies', typologies);
-    const fixture = TestBed.createComponent(ReglesCalcul);
-    await fixture.whenStable();
-    return fixture.componentInstance;
-  }
 
   it('reads the budget in the largest unit that keeps it whole, and writes nothing', async () => {
     const calcul = await create();

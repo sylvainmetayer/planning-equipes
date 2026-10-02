@@ -136,7 +136,7 @@ describe('PlanningGrille', () => {
     const { cellule } = await monter();
     expect(cellule(1, 1).dataset['siegeCle']).toBe('grille|l2|d2');
     expect(cellule(0, 0).dataset['siegeCle']).toBe('grille|l1|d1');
-    expect(cellule(0, 1).hasAttribute('data-siege-cle')).toBe(false);
+    expect(cellule(0, 1).dataset['siegeCle']).toBeUndefined();
   });
 
   it('asks its caller for a sort, ascending, descending, then none', async () => {

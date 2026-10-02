@@ -62,6 +62,16 @@ function planning(): PlanningEvenement {
 
 const ZERO = { hardScore: 0, mediumScore: 0, softScore: 0 };
 
+function button(root: HTMLElement, text: string): HTMLButtonElement {
+  const found = Array.from(root.querySelectorAll<HTMLButtonElement>('button')).find((candidate) =>
+    candidate.textContent?.includes(text),
+  );
+  if (!found) {
+    throw new Error(`no button « ${text} »`);
+  }
+  return found;
+}
+
 describe('SeatPanel', () => {
   let fixture: ComponentFixture<SeatPanel>;
   const locks = signal<VerrouillagePlanning[]>([]);
@@ -75,9 +85,9 @@ describe('SeatPanel', () => {
   const jourJ = { suggestions: vi.fn(), marquerAbsent: vi.fn() };
   const verrous = fakeOf<VerrouillageStore>({
     verrouillages: locks,
-    reload: async () => undefined,
-    create: async () => [],
-    remove: async () => undefined,
+    reload: () => Promise.resolve(undefined),
+    create: () => Promise.resolve([]),
+    remove: () => Promise.resolve(undefined),
     estStandVerrouille: () => false,
     estCreneauVerrouille: () => false,
     estJourVerrouille: () => false,
@@ -85,17 +95,16 @@ describe('SeatPanel', () => {
   const jobs = {
     editingLocked,
     solverBusy: signal(false),
-    submitSolveIncremental: vi.fn(async () => ({})),
+    submitSolveIncremental: vi.fn(() => Promise.resolve({})),
   };
   const dialog = { open: vi.fn() };
   const confirm = {
-    ask: vi.fn(async () => true),
+    ask: vi.fn(() => Promise.resolve(true)),
     askWithOption: vi.fn(
-      async (
-        _data: ConfirmData & { option: ConfirmOption },
-      ): Promise<{ checked: boolean } | null> => ({
-        checked: true,
-      }),
+      (_data: ConfirmData & { option: ConfirmOption }): Promise<{ checked: boolean } | null> =>
+        Promise.resolve({
+          checked: true,
+        }),
     ),
   };
 
@@ -147,13 +156,18 @@ describe('SeatPanel', () => {
         {
           provide: ConstraintsApi,
           useValue: {
-            catalogue: vi.fn(async () => ({
-              contraintes: [{ name: 'equilibrerCharge', libelleCourt: 'Charge équilibrée' }],
-            })),
+            catalogue: vi.fn(() =>
+              Promise.resolve({
+                contraintes: [{ name: 'equilibrerCharge', libelleCourt: 'Charge équilibrée' }],
+              }),
+            ),
           },
         },
         { provide: VerrouillageStore, useValue: verrous },
-        { provide: ReferenceDataStore, useValue: { reload: vi.fn(async () => undefined) } },
+        {
+          provide: ReferenceDataStore,
+          useValue: { reload: vi.fn(() => Promise.resolve(undefined)) },
+        },
         { provide: SolverJobService, useValue: jobs },
         { provide: MatDialog, useValue: dialog },
         { provide: ConfirmService, useValue: confirm },
@@ -165,16 +179,6 @@ describe('SeatPanel', () => {
     fixture.componentRef.setInput('posteId', posteId);
     await fixture.whenStable();
     return fixture.nativeElement as HTMLElement;
-  }
-
-  function button(root: HTMLElement, text: string): HTMLButtonElement {
-    const found = Array.from(root.querySelectorAll<HTMLButtonElement>('button')).find((candidate) =>
-      candidate.textContent?.includes(text),
-    );
-    if (!found) {
-      throw new Error(`no button « ${text} »`);
-    }
-    return found;
   }
 
   it('is a labelled side panel naming the stand, the time and the holder', async () => {

@@ -64,34 +64,36 @@ describe('ScenarioImportService', () => {
     importResult = null;
     impactResponse = impact();
     api = {
-      get: vi.fn(async (url: string) => {
+      get: vi.fn((url: string) => {
         if (url.includes('impact-import')) {
           if (impactResponse instanceof Error) {
-            throw impactResponse;
+            return Promise.reject(impactResponse);
           }
-          return impactResponse;
+          return Promise.resolve(impactResponse);
         }
         if (url.includes('cible-scenario')) {
-          return target();
+          return Promise.resolve(target());
         }
-        throw new Error(`Unexpected GET ${url}`);
+        return Promise.reject(new Error(`Unexpected GET ${url}`));
       }),
-      getDansEdition: vi.fn(async () => {
+      getDansEdition: vi.fn(() => {
         if (impactResponse instanceof Error) {
-          throw impactResponse;
+          return Promise.reject(impactResponse);
         }
-        return impactResponse;
+        return Promise.resolve(impactResponse);
       }),
-      post: vi.fn(async () => importResult),
-      postRaw: vi.fn(async (url: string) => (url.includes('cible') ? target() : importResult)),
+      post: vi.fn(() => Promise.resolve(importResult)),
+      postRaw: vi.fn((url: string) =>
+        Promise.resolve(url.includes('cible') ? target() : importResult),
+      ),
     };
-    confirm = { ask: vi.fn(async () => true) };
-    snapshots = { capturer: vi.fn(async () => undefined) };
+    confirm = { ask: vi.fn(() => Promise.resolve(true)) };
+    snapshots = { capturer: vi.fn(() => Promise.resolve(undefined)) };
     notifications = { notify: vi.fn() };
     editions = {
       courant: signal<Edition | null>(EDITION_COURANTE),
       basculer: vi.fn(),
-      reload: vi.fn(async () => refreshed.push('editions')),
+      reload: vi.fn(() => Promise.resolve(refreshed.push('editions'))),
     };
 
     TestBed.configureTestingModule({
@@ -109,19 +111,21 @@ describe('ScenarioImportService', () => {
         },
         {
           provide: ReferenceDataStore,
-          useValue: { reload: vi.fn(async () => refreshed.push('referenceData')) },
+          useValue: { reload: vi.fn(() => Promise.resolve(refreshed.push('referenceData'))) },
         },
         {
           provide: PlanningResolutionStore,
-          useValue: { reload: vi.fn(async () => refreshed.push('resolution')) },
+          useValue: { reload: vi.fn(() => Promise.resolve(refreshed.push('resolution'))) },
         },
         {
           provide: SolverSettingsService,
-          useValue: { refresh: vi.fn(async () => refreshed.push('solverSettings')) },
+          useValue: { refresh: vi.fn(() => Promise.resolve(refreshed.push('solverSettings'))) },
         },
         {
           provide: ProblemesStore,
-          useValue: { reloadFeasibility: vi.fn(async () => refreshed.push('problemes')) },
+          useValue: {
+            reloadFeasibility: vi.fn(() => Promise.resolve(refreshed.push('problemes'))),
+          },
         },
       ],
     });
@@ -168,9 +172,7 @@ describe('ScenarioImportService', () => {
     });
 
     it('reports an unreadable file as such, and never imports it', async () => {
-      api.postRaw = vi.fn(async () => {
-        throw new Error('mapping values are not allowed here');
-      });
+      api.postRaw = vi.fn(() => Promise.reject(new Error('mapping values are not allowed here')));
 
       await expect(
         service.importer({ kind: 'file', fileName: 'festival.yaml', content: ': broken' }),
@@ -183,7 +185,7 @@ describe('ScenarioImportService', () => {
 
   describe('confirmation', () => {
     it('imports nothing at all when the confirmation is declined', async () => {
-      confirm.ask = vi.fn(async () => false);
+      confirm.ask = vi.fn(() => Promise.resolve(false));
 
       const outcome = await service.importer({ kind: 'name', name: 'edition-1708' });
 
@@ -203,8 +205,8 @@ describe('ScenarioImportService', () => {
     it('announces an edition the file names but that has no id yet as one to create', async () => {
       // The section gives only a name: the application draws the id on import.
       const namedOnly = target({ editionNomFichier: 'Édition importée' });
-      api.get = vi.fn(async (url: string) =>
-        url.includes('cible-scenario') ? namedOnly : impact(),
+      api.get = vi.fn((url: string) =>
+        Promise.resolve(url.includes('cible-scenario') ? namedOnly : impact()),
       );
 
       await service.importer({ kind: 'name', name: 'edition-1708' });
@@ -244,10 +246,12 @@ describe('ScenarioImportService', () => {
 
     it('does not capture the current plan when the import writes into another edition', async () => {
       impactResponse = impact({ planningResolu: true });
-      api.postRaw = vi.fn(async (url: string) =>
-        url.includes('cible')
-          ? target({ editionId: 'ed-2027', existe: true, editionNomExistant: 'Année 2027' })
-          : importResult,
+      api.postRaw = vi.fn((url: string) =>
+        Promise.resolve(
+          url.includes('cible')
+            ? target({ editionId: 'ed-2027', existe: true, editionNomExistant: 'Année 2027' })
+            : importResult,
+        ),
       );
 
       await service.importer({ kind: 'file', fileName: 'f.yaml', content: 'x' });
@@ -257,9 +261,7 @@ describe('ScenarioImportService', () => {
 
     it('imports anyway when the snapshot fails, but says so instead of staying silent', async () => {
       impactResponse = impact({ planningResolu: true });
-      snapshots.capturer = vi.fn(async () => {
-        throw new Error('disque plein');
-      });
+      snapshots.capturer = vi.fn(() => Promise.reject(new Error('disque plein')));
 
       const outcome = await service.importer({ kind: 'name', name: 'edition-1708' });
 

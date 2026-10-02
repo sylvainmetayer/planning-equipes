@@ -71,10 +71,10 @@ function demande(id: string): DemandeEchangeView {
 }
 
 class FakeApi {
-  get = vi.fn(async (_url: string): Promise<unknown> => null);
-  getPreservingHttpError = vi.fn(async (_url: string): Promise<unknown> => null);
-  post = vi.fn(async (_url: string, _body: unknown): Promise<unknown> => null);
-  deleteReturning = vi.fn(async (_url: string): Promise<unknown> => null);
+  get = vi.fn((_url: string): Promise<unknown> => Promise.resolve(null));
+  getPreservingHttpError = vi.fn((_url: string): Promise<unknown> => Promise.resolve(null));
+  post = vi.fn((_url: string, _body: unknown): Promise<unknown> => Promise.resolve(null));
+  deleteReturning = vi.fn((_url: string): Promise<unknown> => Promise.resolve(null));
 }
 
 describe('EspaceAnimateurService', () => {
@@ -94,8 +94,8 @@ describe('EspaceAnimateurService', () => {
   });
 
   it('charge la vue et les demandes du jeton, et vide toute erreur passée', async () => {
-    api.getPreservingHttpError.mockImplementation(async (url: string) =>
-      url.endsWith('/demandes') ? [demande('D1')] : view(),
+    api.getPreservingHttpError.mockImplementation((url: string) =>
+      Promise.resolve(url.endsWith('/demandes') ? [demande('D1')] : view()),
     );
 
     await service.charger('jeton-1');
@@ -112,8 +112,8 @@ describe('EspaceAnimateurService', () => {
   });
 
   it('un échec de chargement pose le message et remet la vue à zéro', async () => {
-    api.getPreservingHttpError.mockImplementation(async (url: string) =>
-      url.endsWith('/demandes') ? [demande('D1')] : view(),
+    api.getPreservingHttpError.mockImplementation((url: string) =>
+      Promise.resolve(url.endsWith('/demandes') ? [demande('D1')] : view()),
     );
     await service.charger('jeton-1');
 
@@ -127,8 +127,8 @@ describe('EspaceAnimateurService', () => {
   });
 
   it("la rotation de l'abonnement remplace le jeton sans recharger l'espace", async () => {
-    api.getPreservingHttpError.mockImplementation(async (url: string) =>
-      url.endsWith('/demandes') ? [demande('D1')] : view(),
+    api.getPreservingHttpError.mockImplementation((url: string) =>
+      Promise.resolve(url.endsWith('/demandes') ? [demande('D1')] : view()),
     );
     await service.charger('jeton-1');
     api.getPreservingHttpError.mockClear();
@@ -157,8 +157,8 @@ describe('EspaceAnimateurService', () => {
 
   it("valider le code ouvre la session puis recharge l'espace", async () => {
     seedStore(service, 'jeton', 'jeton-1');
-    api.getPreservingHttpError.mockImplementation(async (url: string) =>
-      url.endsWith('/demandes') ? [demande('D1')] : view(),
+    api.getPreservingHttpError.mockImplementation((url: string) =>
+      Promise.resolve(url.endsWith('/demandes') ? [demande('D1')] : view()),
     );
 
     await service.validerCode('123456');
@@ -171,8 +171,8 @@ describe('EspaceAnimateurService', () => {
   });
 
   it('la soumission poste le lot et insère les demandes stockées en tête de liste', async () => {
-    api.getPreservingHttpError.mockImplementation(async (url: string) =>
-      url.endsWith('/demandes') ? [demande('ANCIENNE')] : view(),
+    api.getPreservingHttpError.mockImplementation((url: string) =>
+      Promise.resolve(url.endsWith('/demandes') ? [demande('ANCIENNE')] : view()),
     );
     await service.charger('jeton-1');
     api.post.mockResolvedValue([demande('NOUVELLE')]);
@@ -189,8 +189,8 @@ describe('EspaceAnimateurService', () => {
   });
 
   it("l'annulation poste puis recharge la liste depuis le serveur", async () => {
-    api.getPreservingHttpError.mockImplementation(async (url: string) =>
-      url.endsWith('/demandes') ? [demande('D1')] : view(),
+    api.getPreservingHttpError.mockImplementation((url: string) =>
+      Promise.resolve(url.endsWith('/demandes') ? [demande('D1')] : view()),
     );
     await service.charger('jeton-1');
 

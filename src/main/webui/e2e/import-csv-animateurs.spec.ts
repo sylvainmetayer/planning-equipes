@@ -21,7 +21,7 @@ let admin: APIRequestContext;
 const NOMS = ['Duranteau', 'Lefèvreau'] as const;
 
 /** The persons of the dirty file that must not land, as « prénom nom ». */
-const REFUSES = ['Carla Moreau', 'Diego Santos', 'Elena Rossi', 'Farid Belkacem'];
+const REFUSES = new Set(['Carla Moreau', 'Diego Santos', 'Elena Rossi', 'Farid Belkacem']);
 
 /** The seeded day, as a French spreadsheet writes it. */
 const JOUR_EVENEMENT = SEED.jour.split('-').reverse().join('/');
@@ -41,9 +41,10 @@ test.afterAll(async () => {
 });
 
 async function nettoyer(): Promise<void> {
+  const noms = NOMS.map((nom) => `'${nom}'`).join(', ');
   const script = [
-    `delete from poste_affectation where animateur_id in (select id from animateur where nom in (${NOMS.map((nom) => `'${nom}'`).join(', ')}));`,
-    `delete from animateur where nom in (${NOMS.map((nom) => `'${nom}'`).join(', ')});`,
+    `delete from poste_affectation where animateur_id in (select id from animateur where nom in (${noms}));`,
+    `delete from animateur where nom in (${noms});`,
   ].join('\n');
   const reponse = await admin.post('/api/database/import', {
     headers: { 'Content-Type': 'text/plain' },
@@ -159,7 +160,7 @@ test('un fichier propre : aperçu, validation, rapport, et les fiches en base', 
   await page.context().close();
 });
 
-test('un fichier sale : les lignes fautives sont rejetées, les bonnes passent quand même', async ({
+test('a dirty file: the faulty rows are rejected, the good ones still go through', async ({
   browser,
 }) => {
   const page = await pageAdmin(browser, admin);
@@ -197,7 +198,7 @@ test('un fichier sale : les lignes fautives sont rejetées, les bonnes passent q
   const personnes = roster.map((animateur) => `${animateur.prenom} ${animateur.nom}`);
   expect(personnes).toContain('Amélie Duranteau');
   expect(personnes).toContain('Bruno Lefèvreau');
-  expect(personnes.filter((personne) => REFUSES.includes(personne))).toEqual([]);
+  expect(personnes.filter((personne) => REFUSES.has(personne))).toEqual([]);
 
   await page.context().close();
 });

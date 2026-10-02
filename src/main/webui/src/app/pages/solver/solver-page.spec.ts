@@ -166,12 +166,12 @@ describe('SolverPage', () => {
     verification: () => verification(),
     file: () => [],
     scoreTraceEdition,
-    chargerCourbeScore: vi.fn(async () => undefined),
+    chargerCourbeScore: vi.fn(() => Promise.resolve(undefined)),
     activeJobDescription: vi.fn(() => 'Une résolution est en cours (autre navigateur).'),
     estimatedEndMs: () => null,
     remainingSeconds: () => null,
     listJobs: vi.fn(),
-    submitSolveFromReferenceData: vi.fn(async () => ({})),
+    submitSolveFromReferenceData: vi.fn(() => Promise.resolve({})),
     onResult: vi.fn((type: string, handler: (result: unknown) => void) => {
       handlers.set(type, [...(handlers.get(type) ?? []), handler]);
       return () =>
@@ -182,15 +182,17 @@ describe('SolverPage', () => {
     }),
   };
   const planningApi = {
-    solveInputs: vi.fn(async () => ({
-      locks: 2,
-      adjustments: 0,
-      consignes: [{ date: '2026-08-02', motif: 'Canicule' }],
-      pendingDeclarations: 1,
-      disabledRules: 0,
-      changesSinceSolve: 3,
-      solvedAt: null,
-    })),
+    solveInputs: vi.fn(() =>
+      Promise.resolve({
+        locks: 2,
+        adjustments: 0,
+        consignes: [{ date: '2026-08-02', motif: 'Canicule' }],
+        pendingDeclarations: 1,
+        disabledRules: 0,
+        changesSinceSolve: 3,
+        solvedAt: null,
+      }),
+    ),
     persistedCount: vi.fn(),
     publicationPreview: vi.fn(),
     publish: vi.fn(),
@@ -284,10 +286,10 @@ describe('SolverPage', () => {
         { provide: PlanningResolutionStore, useValue: resolution },
         { provide: ProblemesStore, useValue: problemes },
         // « Dernières versions du plan » reads the history and the snapshots.
-        { provide: AnalysesApi, useValue: { kpiHistory: vi.fn(async () => []) } },
+        { provide: AnalysesApi, useValue: { kpiHistory: vi.fn(() => Promise.resolve([])) } },
         {
           provide: PlanSnapshotStore,
-          useValue: { snapshots: signal([]), reload: vi.fn(async () => undefined) },
+          useValue: { snapshots: signal([]), reload: vi.fn(() => Promise.resolve(undefined)) },
         },
       ],
     });
@@ -298,6 +300,10 @@ describe('SolverPage', () => {
   function createPage(): SolverPage {
     fixture = TestBed.createComponent(SolverPage);
     return fixture.componentInstance;
+  }
+
+  function racine(): HTMLElement {
+    return fixture.nativeElement as HTMLElement;
   }
 
   /** Pushes a job result the way `SolverJobService` does, whoever started the job. */
@@ -327,10 +333,6 @@ describe('SolverPage', () => {
 
   /** The order of the page, and the words on it (issue #719). */
   describe('the page as it reads', () => {
-    function racine(): HTMLElement {
-      return fixture.nativeElement as HTMLElement;
-    }
-
     it('puts the feasibility first, then what the solve receives, then the buttons', async () => {
       createPage();
       await fixture.whenStable();

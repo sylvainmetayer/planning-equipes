@@ -35,13 +35,15 @@ async function monter(filtres: { typologie?: string; filtre?: string } = {}) {
       {
         provide: PlanningApi,
         useValue: {
-          typologiesReport: vi.fn(async () => ({
-            typologies: [
-              ligne('AMB', 'Ambiance', null),
-              ligne('STRAT', 'Stratégie', '45 jeux à apprendre'),
-            ],
-            jours: [],
-          })),
+          typologiesReport: vi.fn(() =>
+            Promise.resolve({
+              typologies: [
+                ligne('AMB', 'Ambiance', null),
+                ligne('STRAT', 'Stratégie', '45 jeux à apprendre'),
+              ],
+              jours: [],
+            }),
+          ),
         },
       },
     ],

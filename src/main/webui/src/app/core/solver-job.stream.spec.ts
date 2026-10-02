@@ -152,7 +152,9 @@ class FakeApi {
    */
   scoreTrace: Promise<ScoreTrace | null> = Promise.resolve(null);
 
-  getResponse = vi.fn(async () => this.activeResponses.shift() ?? { status: 204, body: null });
+  getResponse = vi.fn(() =>
+    Promise.resolve(this.activeResponses.shift() ?? { status: 204, body: null }),
+  );
   get = vi.fn(async (url: string): Promise<JobView | JobView[] | ScoreTrace | null> => {
     if (url === '/api/jobs/score') {
       return this.scoreTrace;
@@ -242,7 +244,7 @@ describe('SolverJobService — server-sent events', () => {
   });
 
   it('keeps polling slowly under a live stream instead of trusting it alone', async () => {
-    api.getResponse = vi.fn(async () => ({ status: 200, body: job() }));
+    api.getResponse = vi.fn(() => Promise.resolve({ status: 200, body: job() }));
     service.start();
     await vi.advanceTimersByTimeAsync(0);
     FakeEventSource.last.emitState(job());
@@ -260,7 +262,7 @@ describe('SolverJobService — server-sent events', () => {
   });
 
   it('falls back to polling when the stream goes silent without ever reporting an error', async () => {
-    api.getResponse = vi.fn(async () => ({ status: 200, body: job() }));
+    api.getResponse = vi.fn(() => Promise.resolve({ status: 200, body: job() }));
     service.start();
     await vi.advanceTimersByTimeAsync(0);
     FakeEventSource.last.emitState(job());
@@ -283,7 +285,7 @@ describe('SolverJobService — server-sent events', () => {
   });
 
   it('falls back to polling when the stream errors out', async () => {
-    api.getResponse = vi.fn(async () => ({ status: 200, body: job() }));
+    api.getResponse = vi.fn(() => Promise.resolve({ status: 200, body: job() }));
     service.start();
     await vi.advanceTimersByTimeAsync(0);
     FakeEventSource.last.emitState(job());
@@ -407,7 +409,7 @@ describe('SolverJobService — server-sent events', () => {
 
   it('polls exactly as before in a browser with no EventSource at all', async () => {
     delete (globalThis as { EventSource?: unknown }).EventSource;
-    api.getResponse = vi.fn(async () => ({ status: 200, body: job() }));
+    api.getResponse = vi.fn(() => Promise.resolve({ status: 200, body: job() }));
 
     service.start();
     await vi.advanceTimersByTimeAsync(0);

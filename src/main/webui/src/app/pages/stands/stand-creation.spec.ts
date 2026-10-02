@@ -68,13 +68,12 @@ describe('stand creation', () => {
   });
 
   it('writes « open 10–12 at 2, 14–20 at 4, closed on Mondays » as cells, nothing typed but numbers', () => {
-    const windows = creationWindows(COLONNES, 2).map((window) =>
-      window.label === '12-14'
-        ? { ...window, open: false }
-        : window.label === '14-20'
-          ? { ...window, effectif: 4 }
-          : window,
-    );
+    const windows = creationWindows(COLONNES, 2).map((window) => {
+      if (window.label === '12-14') {
+        return { ...window, open: false };
+      }
+      return window.label === '14-20' ? { ...window, effectif: 4 } : window;
+    });
     const weekdays = [
       { day: 1, open: false },
       { day: 0, open: true },

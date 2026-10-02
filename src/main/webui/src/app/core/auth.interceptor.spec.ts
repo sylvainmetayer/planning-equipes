@@ -9,7 +9,7 @@ import { SESSION_DRAFT_STORAGE, draftKey, writeDraft } from './brouillon-formula
 import { memoryStorage } from './testing/brouillon';
 
 class FakeRouter {
-  navigateByUrl = vi.fn(async () => true);
+  navigateByUrl = vi.fn(() => Promise.resolve(true));
 }
 
 /** Runs the interceptor on `url` with a next handler answering `status`. */

@@ -95,14 +95,14 @@ test("l'export CSV d'équité répond avec une ligne par animateur", async ({ br
   await page.context().close();
 });
 
-test("l'ancienne lecture « Fiche » mène à la section équité de la fiche, radar affiché", async ({
+test('the former « Fiche » reading leads to the equity section of the fiche, radar shown', async ({
   browser,
 }) => {
   const page = await pageAdmin(browser, admin);
   await page.goto(`/equite?vue=fiche&animateur=${SEED.demandeur}&axes=heuresJourFerie`);
 
   await expect(page).toHaveURL(
-    new RegExp(`/animateurs/${SEED.demandeur}\\?section=equite&axes=heuresJourFerie$`),
+    new RegExp(String.raw`/animateurs/${SEED.demandeur}\?section=equite&axes=heuresJourFerie$`),
   );
   await expect(page.locator('#contenu')).toContainText('Identité et contact');
   await expect(page.locator('#fiche-section-equite')).toHaveAttribute('open', '');

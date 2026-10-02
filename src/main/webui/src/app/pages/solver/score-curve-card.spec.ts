@@ -47,7 +47,7 @@ describe('ScoreCurveCard', () => {
     activeJob,
     editingLocked: () => editingLocked(),
     scoreTraceEdition,
-    chargerCourbeScore: vi.fn(async () => undefined),
+    chargerCourbeScore: vi.fn(() => Promise.resolve(undefined)),
   };
 
   beforeEach(() => {
