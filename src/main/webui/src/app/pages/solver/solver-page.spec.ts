@@ -23,6 +23,7 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService, TrackedJob } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { RunningStaffingCheck } from '../../core/solver-stream';
 import { ValidationsStore } from '../../core/validations.store';
 import { ModifiedFormsRegistry, UnsavedEntry } from '../../core/formulaires-modifies';
 import {
@@ -151,6 +152,8 @@ describe('SolverPage', () => {
   const activeJob = signal<TrackedJob | null>(null);
   const solverBusy = signal(false);
   const editingLocked = signal(false);
+  /** A staffing check holding the cores — a solve launched now interrupts it. */
+  const verification = signal<RunningStaffingCheck | null>(null);
   /** The live score curve of issue #304, already narrowed to this edition. */
   const scoreTraceEdition = signal<ScoreTrace | null>(null);
   /** Handlers the page registers per job type, so the tests can push a result. */
@@ -160,6 +163,7 @@ describe('SolverPage', () => {
     activeJob,
     solverBusy: () => solverBusy(),
     editingLocked: () => editingLocked(),
+    verification: () => verification(),
     file: () => [],
     scoreTraceEdition,
     chargerCourbeScore: vi.fn(async () => undefined),
@@ -229,6 +233,7 @@ describe('SolverPage', () => {
     activeJob.set(null);
     solverBusy.set(false);
     editingLocked.set(false);
+    verification.set(null);
     scoreTraceEdition.set(null);
     causesBloquantes.set([]);
     constraints.set(null);
@@ -763,6 +768,27 @@ describe('SolverPage', () => {
 
       expect(confirm.ask).toHaveBeenCalledWith(
         expect.objectContaining({ title: 'Recommencer de zéro ?', danger: true }),
+      );
+      expect(jobs.submitSolveFromReferenceData).not.toHaveBeenCalled();
+    });
+
+    it('asks before interrupting a running staffing check, and launches nothing when refused', async () => {
+      persistedCount(12);
+      verification.set({
+        editionId: 'E1',
+        id: 3,
+        effectif: 153,
+        lanceeLe: '2026-10-02T06:55:39Z',
+        plafondSecondes: 480,
+      });
+      const page = createPage();
+      await fixture.whenStable();
+      confirm.ask.mockResolvedValueOnce(false);
+
+      await page['onTimefoldSolve']();
+
+      expect(confirm.ask).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Interrompre la vérification du besoin ?', danger: true }),
       );
       expect(jobs.submitSolveFromReferenceData).not.toHaveBeenCalled();
     });

@@ -249,7 +249,10 @@ Ce qu'il faut savoir avant de s'en servir :
   pendant une résolution.** Le solveur est partagé par toutes les éditions :
   une seconde demande reçoit `409` au lieu d'attendre son tour, et une
   résolution qui démarre interrompt la vérification en cours, qui se lit alors
-  en `ECHEC` avec la raison.
+  en `ECHEC` avec la raison. La vérification en cours voyage dans l'état du
+  solveur (`GET /api/jobs/stream`, champ `verification`) : l'indicateur du
+  solveur tourne pendant qu'elle calcule, et l'écran Solveur demande
+  confirmation avant de lancer une résolution qui l'interromprait.
 - **Un échec ne prouve rien.** Le solve s'arrête au premier plan qui n'enfreint
   aucune règle dure. Un `realisable: false` dit seulement qu'aucun plan complet
   n'a été trouvé dans le temps imparti. `posteDoitEtrePourvu` est toujours

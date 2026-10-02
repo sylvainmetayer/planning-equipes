@@ -35,10 +35,25 @@ export const STREAM_SILENCE_MS = 45000;
 const STREAM_RETRY_MIN_MS = 1000;
 const STREAM_RETRY_MAX_MS = 30000;
 
+/**
+ * A staffing check holding the solver's cores, in any edition — carried by the
+ * stream next to the running job, like the rest of this event outside the
+ * OpenAPI contract. Not a job: a solve that starts interrupts it.
+ */
+export interface RunningStaffingCheck {
+  editionId: string;
+  id: number;
+  effectif: number;
+  lanceeLe: string;
+  plafondSecondes: number;
+}
+
 /** One `state` event: everything `/jobs/active` and `/jobs/file` answer. */
 export interface JobsStreamState {
   active: JobView | null;
   file: JobView[];
+  /** The staffing check holding the cores, when one runs. */
+  verification?: RunningStaffingCheck | null;
 }
 
 /** What the stream reports to whoever owns the state. */

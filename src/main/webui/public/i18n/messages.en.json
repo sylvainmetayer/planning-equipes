@@ -4966,5 +4966,9 @@
   "historique.verification.ko": "{$essai}: no complete plan, {$vides} seats empty",
   "staffing.capBound.label": "Timeslot cap of a game category: {$INTERPOLATION}",
   "staffing.capBound.description": " — a game category limits how many timeslots one person may hold over the edition: its seats need at least that many distinct people. The per-category sheet below says which one. ",
-  "staffing.lien.plafondTypologie": "Cap per game category"
+  "staffing.lien.plafondTypologie": "Cap per game category",
+  "job.verificationIndicator": "Staffing check running: {$effectif} people, {$plafond} s at most. Launching a solve will interrupt it.",
+  "solver.verification.confirm.title": "Interrupt the staffing check?",
+  "solver.verification.confirm.message": "A staffing check is running with {$effectif} people. The solver runs one computation at a time: launching this solve will interrupt it, and the check will end as failed.",
+  "solver.verification.confirm.action": "Launch and interrupt"
 }

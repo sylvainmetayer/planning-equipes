@@ -42,6 +42,22 @@ import { SolverJobService } from '../core/solver-job.service';
           <span class="solver-file-badge">{{ jobs.file().length }}</span>
         }
       </a>
+    } @else if (jobs.verification(); as verification) {
+      <a
+        matIconButton
+        routerLink="/diagnostic"
+        [queryParams]="{ onglet: 'besoin' }"
+        class="solver-running-indicator"
+        [matTooltip]="checkDescription()"
+        matTooltipPosition="below"
+        [attr.aria-label]="checkDescription()"
+      >
+        @if (branding.mascotIconUrl) {
+          <img [src]="branding.mascotIconUrl" alt="" class="solver-running-icon" />
+        } @else {
+          <mat-icon class="solver-running-icon solver-running-fallback">autorenew</mat-icon>
+        }
+      </a>
     }
   `,
   styles: `
@@ -92,6 +108,21 @@ import { SolverJobService } from '../core/solver-job.service';
 export class SolverRunningIndicator {
   protected readonly jobs = inject(SolverJobService);
   protected readonly branding = inject(BRANDING);
+
+  /**
+   * A staffing check holds the cores the same way a solve does: shown with
+   * the same spinning mark, so nobody launches a solve thinking the solver is
+   * idle — it would interrupt the check.
+   */
+  protected readonly checkDescription = computed(() => {
+    const verification = this.jobs.verification();
+    if (!verification) {
+      return '';
+    }
+    const effectif = verification.effectif;
+    const plafond = verification.plafondSecondes;
+    return $localize`:@@job.verificationIndicator:Vérification du besoin en cours : ${effectif}:effectif: personnes, ${plafond}:plafond: s au plus. Lancer une résolution l'interrompra.`;
+  });
 
   /** The running job, plus how many are planned behind it. */
   protected readonly description = computed(() => {

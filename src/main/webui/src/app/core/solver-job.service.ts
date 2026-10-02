@@ -40,7 +40,7 @@ import {
   ScoreTrace,
 } from './models';
 import { applyScoreDelta } from './score-trace';
-import { JobsStreamState, SolverStream } from './solver-stream';
+import { JobsStreamState, RunningStaffingCheck, SolverStream } from './solver-stream';
 
 /**
  * How often the server-side solver lock is re-read. Two paces rather than one:
@@ -140,6 +140,13 @@ export class SolverJobService {
    * Server-side state shared by every client: a run planned from another
    * browser shows up (and can be removed) here too.
    */
+  /**
+   * The staffing check holding the cores, as the stream last reported it — not
+   * a job, but it shares the solver: the toolbar shows it, and launching a
+   * solve interrupts it.
+   */
+  private readonly _verification = signal<RunningStaffingCheck | null>(null);
+  readonly verification = this._verification.asReadonly();
   private readonly _file = signal<JobView[]>([]);
   readonly file = this._file.asReadonly();
   /**
@@ -274,8 +281,10 @@ export class SolverJobService {
    * soon as it goes quiet, polling is what keeps the screen truthful.
    */
   private readonly stream = new SolverStream({
-    onState: (state: JobsStreamState) =>
-      void this.applyServerState(state.active ?? null, state.file ?? []),
+    onState: (state: JobsStreamState) => {
+      this._verification.set(state.verification ?? null);
+      void this.applyServerState(state.active ?? null, state.file ?? []);
+    },
     onScore: (delta) => this._scoreTrace.set(applyScoreDelta(this.scoreTrace(), delta)),
     onAlive: () => this.schedulePolling(),
     onLost: () => this.onStreamLost(),
