@@ -26,6 +26,11 @@ import java.util.stream.Collectors;
  * with a reason is what allows {@code JournalCoverageStructurelleTest} to
  * fail on any write entry point that is in neither list. Nothing can be left
  * out by simply forgetting it.</p>
+ *
+ * <p>The admin form login is not an action of this catalogue:
+ * {@code /j_security_check} is handled before JAX-RS, in no edition, and its
+ * logins, failures and lockouts go to the instance's own journal,
+ * {@link LoginJournalService} (ADR 0076).</p>
  */
 public final class CatalogueActions {
 

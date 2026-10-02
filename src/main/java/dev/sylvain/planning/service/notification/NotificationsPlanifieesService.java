@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.notification;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.journal.JournalActionService;
+import dev.sylvain.planning.service.journal.LoginJournalService;
 import dev.sylvain.planning.service.mail.MailDeliveryRepository;
 import dev.sylvain.planning.service.referentiel.ParametresService;
 import dev.sylvain.planning.service.webhook.WebhookService;
@@ -67,6 +68,9 @@ public class NotificationsPlanifieesService {
     /** Applies the webhook journal's retention, on the same night. */
     private final WebhookService webhooks;
 
+    /** The admin logins, kept as long as the history (ADR 0076). */
+    private final LoginJournalService loginJournal;
+
     private final String zone;
 
     @Inject
@@ -80,6 +84,7 @@ public class NotificationsPlanifieesService {
             JournalActionService journal,
             MailDeliveryRepository deliveries,
             WebhookService webhooks,
+            LoginJournalService loginJournal,
             @ConfigProperty(name = "planning.notifications.zone") String zone) {
         this.editionContext = editionContext;
         this.parametresService = parametresService;
@@ -90,6 +95,7 @@ public class NotificationsPlanifieesService {
         this.journal = journal;
         this.deliveries = deliveries;
         this.webhooks = webhooks;
+        this.loginJournal = loginJournal;
         this.zone = zone;
     }
 
@@ -138,8 +144,8 @@ public class NotificationsPlanifieesService {
      * Drops the history lines that have aged out (issue #406), and the
      * recorded outcomes of the mails sent to animateurs with them — the same
      * {@code JOURNAL_RETENTION}: a send result is a trace of the same kind,
-     * and only the latest one per person is ever read — and the webhook
-     * deliveries past their own retention.
+     * and only the latest one per person is ever read —, the admin logins
+     * with that same retention, and the webhook deliveries past their own.
      *
      * <p>Rides along with the nightly sweep rather than carrying a
      * {@code @Scheduled} of its own: every scheduler is one more thing to
@@ -165,6 +171,16 @@ public class NotificationsPlanifieesService {
             }
         } catch (RuntimeException e) {
             LOG.error("The mail deliveries could not be purged; the nightly sends carry on", e);
+        }
+        // The admin logins, with the same retention: an address is personal
+        // data, and the journal answers the same season-long question.
+        try {
+            int purgees = loginJournal.purgeBefore(Instant.now().minus(journal.retention()));
+            if (purgees > 0) {
+                LOG.infof("Admin logins: %d lines older than %s dropped", purgees, journal.retention());
+            }
+        } catch (RuntimeException e) {
+            LOG.error("The admin logins could not be purged; the nightly sends carry on", e);
         }
         // The webhook deliveries past their thirty days, for the same reason
         // and on the same night: a table that grows, not a night that fails.

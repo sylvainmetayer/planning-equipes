@@ -173,7 +173,7 @@ public class DatabaseDumpService {
             "kpi_realise");
 
     /**
-     * The twelve tables deliberately left out, and why each one stays out.
+     * The tables deliberately left out, and why each one stays out.
      *
      * <p>They share a shape: none of them describes <em>the dataset</em>. They
      * describe the machine it runs on, or who is currently allowed to touch it,
@@ -216,6 +216,12 @@ public class DatabaseDumpService {
      *       (encrypted with a key the receiving instance does not hold) and the
      *       state of a machine, not the dataset: a restore elsewhere would make
      *       that instance post into somebody else's channels.</li>
+     *   <li>{@code journal_connexion} — the admin logins of this instance
+     *       (ADR 0076), out for both reasons at once: like
+     *       {@code journal_action}, an audit trail an import would erase,
+     *       since the dump deletes what it carries; like the webhooks, the
+     *       state of this machine — another instance's logins and addresses
+     *       would claim connections it never received.</li>
      * </ul>
      */
     static final List<String> DELIBERATELY_NOT_DUMPED = List.of(
@@ -231,7 +237,8 @@ public class DatabaseDumpService {
             "version_applicative",
             "meteo_etat",
             "webhook",
-            "webhook_livraison");
+            "webhook_livraison",
+            "journal_connexion");
 
     private static final Set<String> ALLOWED_TABLES = Set.copyOf(TABLES);
 

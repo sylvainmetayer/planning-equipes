@@ -418,6 +418,14 @@ complètes. Quatre points sont connus et se consignent :
   (`JOURNAL_RETENTION`, appliquée chaque nuit) et cascade avec son édition ;
   elle survit à la fiche jusque-là, comme `notification_planifiee`, et ne
   nomme alors plus personne ;
+- **le journal des connexions administrateur (`journal_connexion`)** garde,
+  pour chaque tentative sur le formulaire de connexion — réussie, échouée, ou
+  le verrouillage qu'elle déclenche —, **l'horodatage et l'adresse IP du
+  client**, et rien d'autre : ni le mot de passe, ni l'identifiant saisis. Il
+  vise la sécurité de l'accès aux données des animateurs (« quelqu'un a-t-il
+  forcé le mot de passe ? »). Table de l'instance, hors édition ; elle a **la
+  purge de l'historique des actions** (`JOURNAL_RETENTION`) et ne voyage pas
+  dans l'export SQL ;
 - **l'historique des actions (`journal_action`) trace qui a fait quoi**, et
   c'est un traitement à consigner comme tel. Il suit la même règle que le
   journal ci-dessus, et deux de plus. Il ne stocke **ni nom, ni adresse, ni

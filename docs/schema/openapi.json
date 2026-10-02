@@ -163,6 +163,26 @@
           }
         }
       },
+      "AdminLoginView" : {
+        "required" : [ "id", "survenuLe", "evenement", "adresse" ],
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "survenuLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "evenement" : {
+            "type" : "string",
+            "enum" : [ "CONNEXION", "ECHEC", "VERROUILLAGE" ]
+          },
+          "adresse" : {
+            "type" : "string"
+          }
+        }
+      },
       "Affectation" : {
         "type" : "object",
         "properties" : {
@@ -14459,6 +14479,42 @@
           }
         },
         "summary" : "Changements",
+        "tags" : [ "Historique Resource" ]
+      }
+    },
+    "/api/historique/connexions" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "avant",
+          "in" : "query",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }, {
+          "name" : "limite",
+          "in" : "query",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AdminLoginView"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Connexions",
         "tags" : [ "Historique Resource" ]
       }
     },

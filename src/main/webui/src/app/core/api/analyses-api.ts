@@ -9,6 +9,7 @@ import {
   AlerteView,
   BancDeTouche,
   ChangementsDonnees,
+  AdminLoginView,
   Emplacement,
   ActionHistorique,
   EntreeHistorique,
@@ -162,6 +163,19 @@ export class AnalysesApi {
     });
     dropEmpty(params);
     return this.api.get<EntreeHistorique[]>(`/api/historique?${params}`);
+  }
+
+  /**
+   * One page of the admin logins of the instance, newest first — the same
+   * whatever edition is selected; `avant` is the id of the last line shown.
+   */
+  loginJournal(avant: number | null, limite: number): Promise<AdminLoginView[]> {
+    const params = new URLSearchParams({
+      avant: avant === null ? '' : `${avant}`,
+      limite: `${limite}`,
+    });
+    dropEmpty(params);
+    return this.api.get<AdminLoginView[]>(`/api/historique/connexions?${params}`);
   }
 
   /** The inventory of actions, with the server's classification of each. */

@@ -8,164 +8,204 @@
   </mat-card-header>
 
   <mat-card-content>
-    <div class="historique-controles">
-      <mat-form-field appearance="outline" class="historique-search">
-        <mat-label i18n="@@historique.filter.search">Rechercher</mat-label>
-        <input
-          matInput
-          data-page-filter
-          [ngModel]="recherche()"
-          (ngModelChange)="recherche.set($event)"
-          i18n-placeholder="@@historique.filter.searchPlaceholder"
-          placeholder="une action, une personne, un identifiant"
-        />
-      </mat-form-field>
+    <mat-button-toggle-group
+      class="historique-onglets"
+      [value]="onglet()"
+      (change)="changeOnglet($event.value)"
+      i18n-aria-label="@@historique.onglet.label"
+      aria-label="Onglet de l'historique"
+    >
+      <mat-button-toggle value="actions">
+        <mat-icon>manage_search</mat-icon>
+        <ng-container i18n="@@historique.onglet.actions">Actions</ng-container>
+      </mat-button-toggle>
+      <mat-button-toggle value="connexions">
+        <mat-icon>login</mat-icon>
+        <ng-container i18n="@@historique.onglet.connexions">Connexions</ng-container>
+      </mat-button-toggle>
+    </mat-button-toggle-group>
 
-      <mat-form-field appearance="outline">
-        <mat-label i18n="@@historique.filter.entite">Objet</mat-label>
-        <mat-select [ngModel]="entite()" (ngModelChange)="entite.set($event)">
-          <mat-option value="" i18n="@@historique.filter.entiteAll">Tous</mat-option>
-          @for (valeur of entites(); track valeur) {
-            <mat-option [value]="valeur">{{ valeur }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
+    @if (onglet() === 'connexions') {
+      <app-connexions-admin />
+    } @else {
+      <div class="historique-controles">
+        <mat-form-field appearance="outline" class="historique-search">
+          <mat-label i18n="@@historique.filter.search">Rechercher</mat-label>
+          <input
+            matInput
+            data-page-filter
+            [ngModel]="recherche()"
+            (ngModelChange)="recherche.set($event)"
+            i18n-placeholder="@@historique.filter.searchPlaceholder"
+            placeholder="une action, une personne, un identifiant"
+          />
+        </mat-form-field>
 
-      <mat-button-toggle-group
-        [ngModel]="acteur()"
-        (ngModelChange)="acteur.set($event)"
-        i18n-aria-label="@@historique.filter.acteurLabel"
-        aria-label="Filtrer par auteur"
-      >
-        <mat-button-toggle value="TOUS" i18n="@@historique.filter.tous">Tous</mat-button-toggle>
-        <mat-button-toggle value="ADMIN" i18n="@@historique.filter.admin">Administration</mat-button-toggle>
-        <mat-button-toggle value="ANIMATEUR" i18n="@@historique.filter.animateur">Animateurs</mat-button-toggle>
-        <mat-button-toggle value="ANONYME" i18n="@@historique.filter.anonyme">Non identifié</mat-button-toggle>
-        <mat-button-toggle value="ASSISTANT" i18n="@@historique.filter.assistant">Assistant</mat-button-toggle>
-        <mat-button-toggle value="SYSTEME" i18n="@@historique.filter.systeme">Application</mat-button-toggle>
-      </mat-button-toggle-group>
-
-      <mat-button-toggle-group
-        [ngModel]="resultat()"
-        (ngModelChange)="resultat.set($event)"
-        i18n-aria-label="@@historique.filter.resultatLabel"
-        aria-label="Filtrer par résultat"
-      >
-        <mat-button-toggle value="TOUS" i18n="@@historique.filter.resultatTous">Tout</mat-button-toggle>
-        <mat-button-toggle value="SUCCES" i18n="@@historique.filter.succes">Abouti</mat-button-toggle>
-        <mat-button-toggle value="REFUS" i18n="@@historique.filter.refus">Refusé</mat-button-toggle>
-      </mat-button-toggle-group>
-
-      <mat-button-toggle-group
-        [ngModel]="nature()"
-        (ngModelChange)="changeNature($event)"
-        i18n-aria-label="@@historique.filter.natureLabel"
-        aria-label="Filtrer par nature d'action"
-      >
-        <mat-button-toggle value="TOUTES" i18n="@@historique.filter.natureToutes">Toutes</mat-button-toggle>
-        <mat-button-toggle
-          value="EXPORTS"
-          i18n="@@historique.filter.exports"
-          i18n-matTooltip="@@historique.filter.exportsTooltip"
-          matTooltip="Les fichiers sortis de l'application : exports de l'administration et téléchargements depuis l'espace animateur."
-          >Exports</mat-button-toggle
-        >
-        <mat-button-toggle
-          value="DONNEES"
-          i18n="@@historique.filter.donnees"
-          i18n-matTooltip="@@historique.filter.donneesTooltip"
-          matTooltip="Les modifications que le prochain calcul verra : référentiels, ajustements, verrouillages, règles."
-          >Données</mat-button-toggle
-        >
-      </mat-button-toggle-group>
-
-      <mat-form-field appearance="outline" class="historique-periode">
-        <mat-label i18n="@@historique.filter.depuis">Depuis</mat-label>
-        <input matInput type="datetime-local" [ngModel]="depuisLocal()" (ngModelChange)="changeDepuis($event)" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="historique-periode">
-        <mat-label i18n="@@historique.filter.jusqua">Jusqu'à</mat-label>
-        <input matInput type="datetime-local" [ngModel]="jusquaLocal()" (ngModelChange)="changeJusqua($event)" />
-      </mat-form-field>
-
-      @if (viewChanged()) {
-        <button matButton type="button" (click)="reinitialiser()">
-          <mat-icon>filter_alt_off</mat-icon>
-          <ng-container i18n="@@historique.filter.reset">Tout afficher</ng-container>
-        </button>
-      }
-
-      <button matButton type="button" (click)="recharger()" [disabled]="chargement()">
-        <mat-icon>refresh</mat-icon>
-        <ng-container i18n="@@common.refresh">Actualiser</ng-container>
-      </button>
-    </div>
-
-    @if (chargement()) {
-      <mat-progress-bar mode="indeterminate" />
-    }
-    <app-status-message [text]="erreur()" tone="error" />
-
-    @if (!chargement() && filtrees().length === 0) {
-      <p class="empty-hint" i18n="@@historique.empty">
-        Aucune action à afficher. L'historique se remplit dès qu'une donnée change, et les lignes trop anciennes en
-        sortent d'elles-mêmes.
-      </p>
-    }
-
-    @for (journee of journees(); track journee.jour) {
-      <h2 class="historique-jour">{{ jourLisible(journee.jour) }}</h2>
-      <ul class="historique-liste">
-        @for (entree of journee.entrees; track entree.id) {
-          <li class="historique-ligne" [class.historique-refus]="entree.resultat === 'REFUS'">
-            <span class="historique-heure">{{ heure(entree.survenuLe) }}</span>
-            <span class="historique-libelle">
-              {{ entree.libelle }}
-              @if (entree.resultat === 'REFUS') {
-                <span
-                  class="historique-badge"
-                  i18n="@@historique.refuse"
-                  i18n-matTooltip="@@historique.refuseTooltip"
-                  matTooltip="L'action a été refusée : elle n'a rien changé."
-                  >refusée</span
-                >
-              }
-            </span>
-            <span class="historique-cible">{{ surQuoi(entree) }}</span>
-            @if (resultOf(entree); as resultat) {
-              <span class="historique-resultat">{{ resultat }}</span>
+        <mat-form-field appearance="outline">
+          <mat-label i18n="@@historique.filter.entite">Objet</mat-label>
+          <mat-select [ngModel]="entite()" (ngModelChange)="entite.set($event)">
+            <mat-option value="" i18n="@@historique.filter.entiteAll">Tous</mat-option>
+            @for (valeur of entites(); track valeur) {
+              <mat-option [value]="valeur">{{ valeur }}</mat-option>
             }
-            @if (entree.champs.length > 0) {
-              @if (isExport(entree)) {
-                <span
-                  class="historique-champs"
-                  i18n-matTooltip="@@historique.champsExportTooltip"
-                  matTooltip="Ce que l'export a emporté. Seuls les noms sont conservés, jamais le contenu."
-                  >{{ entree.champs.join(', ') }}</span
-                >
-              } @else {
-                <span
-                  class="historique-champs"
-                  i18n-matTooltip="@@historique.champsTooltip"
-                  matTooltip="Les champs qui ont changé. Leurs valeurs ne sont pas conservées."
-                  >{{ entree.champs.join(', ') }}</span
-                >
-              }
-            }
-            <span class="historique-qui">{{ qui(entree) }}</span>
-          </li>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-button-toggle-group
+          [ngModel]="acteur()"
+          (ngModelChange)="acteur.set($event)"
+          i18n-aria-label="@@historique.filter.acteurLabel"
+          aria-label="Filtrer par auteur"
+        >
+          <mat-button-toggle value="TOUS" i18n="@@historique.filter.tous">Tous</mat-button-toggle>
+          <mat-button-toggle value="ADMIN" i18n="@@historique.filter.admin">Administration</mat-button-toggle>
+          <mat-button-toggle value="ANIMATEUR" i18n="@@historique.filter.animateur">Animateurs</mat-button-toggle>
+          <mat-button-toggle value="ANONYME" i18n="@@historique.filter.anonyme">Non identifié</mat-button-toggle>
+          <mat-button-toggle value="ASSISTANT" i18n="@@historique.filter.assistant">Assistant</mat-button-toggle>
+          <mat-button-toggle value="SYSTEME" i18n="@@historique.filter.systeme">Application</mat-button-toggle>
+        </mat-button-toggle-group>
+
+        <mat-button-toggle-group
+          [ngModel]="resultat()"
+          (ngModelChange)="resultat.set($event)"
+          i18n-aria-label="@@historique.filter.resultatLabel"
+          aria-label="Filtrer par résultat"
+        >
+          <mat-button-toggle value="TOUS" i18n="@@historique.filter.resultatTous">Tout</mat-button-toggle>
+          <mat-button-toggle value="SUCCES" i18n="@@historique.filter.succes">Abouti</mat-button-toggle>
+          <mat-button-toggle value="REFUS" i18n="@@historique.filter.refus">Refusé</mat-button-toggle>
+        </mat-button-toggle-group>
+
+        <mat-button-toggle-group
+          [ngModel]="nature()"
+          (ngModelChange)="changeNature($event)"
+          i18n-aria-label="@@historique.filter.natureLabel"
+          aria-label="Filtrer par nature d'action"
+        >
+          <mat-button-toggle value="TOUTES" i18n="@@historique.filter.natureToutes">Toutes</mat-button-toggle>
+          <mat-button-toggle
+            value="EXPORTS"
+            i18n="@@historique.filter.exports"
+            i18n-matTooltip="@@historique.filter.exportsTooltip"
+            matTooltip="Les fichiers sortis de l'application : exports de l'administration et téléchargements depuis l'espace animateur."
+            >Exports</mat-button-toggle
+          >
+          <mat-button-toggle
+            value="DONNEES"
+            i18n="@@historique.filter.donnees"
+            i18n-matTooltip="@@historique.filter.donneesTooltip"
+            matTooltip="Les modifications que le prochain calcul verra : référentiels, ajustements, verrouillages, règles."
+            >Données</mat-button-toggle
+          >
+        </mat-button-toggle-group>
+
+        <mat-form-field appearance="outline" class="historique-periode">
+          <mat-label i18n="@@historique.filter.depuis">Depuis</mat-label>
+          <input
+            matInput
+            type="datetime-local"
+            [ngModel]="depuisLocal()"
+            (ngModelChange)="changeDepuis($event)"
+            (blur)="commitPeriod()"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="historique-periode">
+          <mat-label i18n="@@historique.filter.jusqua">Jusqu'à</mat-label>
+          <input
+            matInput
+            type="datetime-local"
+            [ngModel]="jusquaLocal()"
+            (ngModelChange)="changeJusqua($event)"
+            (blur)="commitPeriod()"
+          />
+        </mat-form-field>
+
+        @if (viewChanged()) {
+          <button matButton type="button" (click)="reinitialiser()">
+            <mat-icon>filter_alt_off</mat-icon>
+            <ng-container i18n="@@historique.filter.reset">Tout afficher</ng-container>
+          </button>
         }
-      </ul>
-    }
 
-    @if (suivant() !== null) {
-      <div class="historique-suite">
-        <button matButton type="button" (click)="loadMore()" [disabled]="chargement()">
-          <mat-icon>expand_more</mat-icon>
-          <ng-container i18n="@@historique.chargerPlus">Charger plus</ng-container>
+        <button matButton type="button" (click)="recharger()" [disabled]="chargement()">
+          <mat-icon>refresh</mat-icon>
+          <ng-container i18n="@@common.refresh">Actualiser</ng-container>
         </button>
       </div>
+
+      @if (chargement()) {
+        <mat-progress-bar mode="indeterminate" />
+      }
+      <app-status-message [text]="erreur()" tone="error" />
+
+      @if (!chargement() && filtrees().length === 0) {
+        @if (entrees().length > 0 && suivant() !== null) {
+          <p class="empty-hint" i18n="@@historique.emptyLoaded">
+            Aucune des lignes chargées ne correspond à ces filtres ; l'historique en compte de plus anciennes, que
+            « Charger plus » fait venir.
+          </p>
+        } @else {
+          <p class="empty-hint" i18n="@@historique.empty">
+            Aucune action à afficher. L'historique se remplit dès qu'une donnée change, et les lignes trop anciennes en
+            sortent d'elles-mêmes.
+          </p>
+        }
+      }
+
+      @for (journee of journees(); track journee.jour) {
+        <h2 class="historique-jour">{{ jourLisible(journee.jour) }}</h2>
+        <ul class="historique-liste">
+          @for (entree of journee.entrees; track entree.id) {
+            <li class="historique-ligne" [class.historique-refus]="entree.resultat === 'REFUS'">
+              <span class="historique-heure">{{ heure(entree.survenuLe) }}</span>
+              <span class="historique-libelle">
+                {{ entree.libelle }}
+                @if (entree.resultat === 'REFUS') {
+                  <span
+                    class="historique-badge"
+                    i18n="@@historique.refuse"
+                    i18n-matTooltip="@@historique.refuseTooltip"
+                    matTooltip="L'action a été refusée : elle n'a rien changé."
+                    >refusée</span
+                  >
+                }
+              </span>
+              <span class="historique-cible">{{ surQuoi(entree) }}</span>
+              @if (resultOf(entree); as resultat) {
+                <span class="historique-resultat">{{ resultat }}</span>
+              }
+              @if (entree.champs.length > 0) {
+                @if (isExport(entree)) {
+                  <span
+                    class="historique-champs"
+                    i18n-matTooltip="@@historique.champsExportTooltip"
+                    matTooltip="Ce que l'export a emporté. Seuls les noms sont conservés, jamais le contenu."
+                    >{{ entree.champs.join(', ') }}</span
+                  >
+                } @else {
+                  <span
+                    class="historique-champs"
+                    i18n-matTooltip="@@historique.champsTooltip"
+                    matTooltip="Les champs qui ont changé. Leurs valeurs ne sont pas conservées."
+                    >{{ entree.champs.join(', ') }}</span
+                  >
+                }
+              }
+              <span class="historique-qui">{{ qui(entree) }}</span>
+            </li>
+          }
+        </ul>
+      }
+
+      @if (suivant() !== null) {
+        <div class="historique-suite">
+          <button matButton type="button" (click)="loadMore()" [disabled]="chargement()">
+            <mat-icon>expand_more</mat-icon>
+            <ng-container i18n="@@historique.chargerPlus">Charger plus</ng-container>
+          </button>
+        </div>
+      }
     }
   </mat-card-content>
 </mat-card>

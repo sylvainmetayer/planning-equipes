@@ -177,6 +177,10 @@ class IsolationEditionStructurelleTest {
      *       may emit — partitioning the configuration would have to be
      *       redone every time another edition takes over. The nightly backup
      *       failure they announce is not even an edition's.</li>
+     *   <li>{@code journal_connexion} — the admin logins (ADR 0076). The
+     *       form login is handled before any request names an edition, and a
+     *       login opens every edition at once: there is no edition to file
+     *       it under, and the screen shows it whatever edition is chosen.</li>
      * </ul>
      */
     private static final List<String> TABLES_HORS_EDITION = List.of(
@@ -189,7 +193,8 @@ class IsolationEditionStructurelleTest {
             "creneau_remap",
             "version_applicative",
             "webhook",
-            "webhook_livraison");
+            "webhook_livraison",
+            "journal_connexion");
 
     /**
      * The deliberately cross-edition statements, and why.

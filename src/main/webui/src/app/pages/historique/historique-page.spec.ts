@@ -8,6 +8,7 @@ import { Location } from '@angular/common';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
+import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysesApi, HistoryQuery } from '../../core/api/analyses-api';
 import { ActionHistorique, EntreeHistorique } from '../../core/models';
@@ -68,6 +69,7 @@ describe('HistoriquePage', () => {
   const analysesApi = fakeOf<AnalysesApi>({
     actionHistory: () => Promise.resolve([line()]),
     actionInventory: () => Promise.resolve(INVENTORY),
+    loginJournal: () => Promise.resolve([]),
   });
   const location = { path: vi.fn(() => '/historique'), replaceState: vi.fn() };
 
@@ -80,7 +82,10 @@ describe('HistoriquePage', () => {
         { provide: Location, useValue: location },
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } },
+          useValue: {
+            snapshot: { queryParamMap: convertToParamMap(queryParams) },
+            queryParamMap: of(convertToParamMap(queryParams)),
+          },
         },
       ],
     });
@@ -227,6 +232,40 @@ describe('HistoriquePage', () => {
     expect(lastAddress()).toBe('/historique');
   });
 
+  it('opens the logins tab from the address, and writes it back', async () => {
+    setUp({ onglet: 'connexions' });
+    const page = createPage();
+    await vi.waitFor(() => expect(page['chargement']()).toBe(false));
+
+    expect(page['onglet']()).toBe('connexions');
+    expect(lastAddress()).toBe('/historique?onglet=connexions');
+
+    page['changeOnglet']('actions');
+    TestBed.tick();
+    expect(lastAddress()).toBe('/historique');
+  });
+
+  /** The logins tab names no edition: opened there, the page reads nothing of the history. */
+  it('reads the actions only once their tab shows, and once', async () => {
+    setUp({ onglet: 'connexions' });
+    const page = createPage();
+    TestBed.tick();
+
+    expect(analysesApi.actionHistory).not.toHaveBeenCalled();
+    expect(analysesApi.actionInventory).not.toHaveBeenCalled();
+
+    page['changeOnglet']('actions');
+    TestBed.tick();
+    await vi.waitFor(() => expect(page['chargement']()).toBe(false));
+    page['changeOnglet']('connexions');
+    TestBed.tick();
+    page['changeOnglet']('actions');
+    TestBed.tick();
+
+    expect(analysesApi.actionHistory).toHaveBeenCalledExactlyOnceWith(FIRST_PAGE);
+    expect(analysesApi.actionInventory).toHaveBeenCalledOnce();
+  });
+
   it('reloads from the server when « Exports » is chosen, and back', async () => {
     setUp();
     const page = createPage();
@@ -305,6 +344,29 @@ describe('HistoriquePage', () => {
     expect(page['erreur']()).not.toBe('');
     expect(page['entrees']()).toEqual([]);
     expect(page['suivant']()).toBeNull();
+  });
+
+  /**
+   * The actor, outcome, object and search filters read the loaded lines only:
+   * when they hide all of them while the server holds more, the page says so
+   * rather than « Aucune action à afficher ».
+   */
+  it('says the loaded lines match nothing while older ones remain', async () => {
+    const full = Array.from({ length: PAGE_HISTORIQUE + 1 }, (_, i) => line({ id: 1000 - i }));
+    analysesApi.actionHistory.mockResolvedValueOnce(full);
+    setUp();
+    const fixture = TestBed.createComponent(HistoriquePage);
+    fixture.detectChanges();
+    const page = fixture.componentInstance;
+    await vi.waitFor(() => expect(page['chargement']()).toBe(false));
+
+    page['acteur'].set('ANIMATEUR');
+    fixture.detectChanges();
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+    expect(text).toContain('Aucune des lignes chargées ne correspond à ces filtres');
+    expect(text).not.toContain('Aucune action à afficher');
+    expect(text).toContain('Charger plus');
   });
 
   it('classifies a line by the server’s catalogue', async () => {

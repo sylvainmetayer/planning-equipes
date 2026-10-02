@@ -392,6 +392,47 @@ propres services, et la mauvaise pour une plage publique.
 Ce verrou ne remplace pas la limitation de débit par IP du proxy, qui vaut pour
 tout le reste — exports, résolution, API entière.
 
+#### La trace qu'il laisse
+
+Chaque issue du form login est consignée dans le **journal des connexions** de
+l'instance (table `journal_connexion`, onglet « Connexions » de la page
+*Historique*, quelle que soit l'édition choisie —
+[ADR 0076](decisions/0076-journal-des-connexions-admin-par-instance.md)) :
+la connexion réussie, **chaque échec**, et **le verrouillage**, une fois, sur
+l'échec qui atteint `CONNEXION_MAX_ECHECS`. Chaque ligne porte son horodatage et
+l'adresse que le verrou compte, lue de la même façon (`X-Forwarded-For` par la
+droite derrière un proxy déclaré). **Ni le mot de passe ni l'identifiant
+saisis** n'y entrent : un identifiant faux est souvent un mot de passe tapé
+dans le mauvais champ.
+
+Une tentative refusée en `429` pendant le verrou n'écrit rien : elle n'a essayé
+aucun identifiant, et une ligne par refus livrerait la table à quiconque
+martèle le formulaire. L'écriture quitte la boucle d'événements pour un
+travailleur ; si elle échoue, la tentative est tranchée quand même et l'échec
+part au journal applicatif, en une ligne, sans pile d'appels. Les lignes suivent
+la rétention de l'historique (`JOURNAL_RETENTION`, purge de nuit) et ne
+voyagent pas dans l'export SQL.
+
+Le verrou est par adresse : une attaque menée depuis beaucoup d'adresses n'est
+jamais bloquée longtemps, et chacun de ses échecs serait une ligne de plus. La
+trace est donc bornée, pour l'instance entière :
+
+| Plafond | Valeur | Au-delà |
+| --- | --- | --- |
+| Tentatives échouées journalisées | 1 000 par heure | comptées, non écrites (l'échec et son éventuel verrouillage ensemble) |
+| Écritures en attente d'un travailleur | 64 | comptées, non écrites — connexions réussies comprises |
+
+Une connexion réussie n'est jamais retenue par le premier plafond. Une fenêtre
+saturée le dit en **un seul** avertissement, à la première tentative écartée ;
+leur nombre suit en une ligne à l'ouverture de la fenêtre suivante. Seule la
+trace est bornée : le verrou compte toujours chaque échec. Une adresse seule
+reste loin du plafond (une vingtaine d'échecs par heure avec les réglages par
+défaut) : l'atteindre est déjà le signe d'une attaque distribuée.
+
+Une connexion attestée par le proxy (mode `planning.auth.remote-user.*`) ne
+passe pas par ce formulaire et n'y figure donc pas : c'est le proxy qui la
+journalise.
+
 ### Quota de calcul
 
 Une instance exposée avec un mot de passe partagé — une démonstration

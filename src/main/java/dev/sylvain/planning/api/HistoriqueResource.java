@@ -7,6 +7,7 @@ import dev.sylvain.planning.service.journal.CatalogueActions;
 import dev.sylvain.planning.service.journal.EntreeJournal;
 import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.journal.JournalActionService.HistoryNature;
+import dev.sylvain.planning.service.journal.LoginJournalService;
 import dev.sylvain.planning.service.journal.ReferenceDataChanges;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.StaffingVerificationService;
@@ -61,14 +62,18 @@ public class HistoriqueResource {
 
     private final StaffingVerificationService verifications;
 
+    private final LoginJournalService connexions;
+
     @Inject
     public HistoriqueResource(
             JournalActionService journal,
             ReferenceDataService referenceData,
-            StaffingVerificationService verifications) {
+            StaffingVerificationService verifications,
+            LoginJournalService connexions) {
         this.journal = journal;
         this.referenceData = referenceData;
         this.verifications = verifications;
+        this.connexions = connexions;
     }
 
     /**
@@ -201,6 +206,41 @@ public class HistoriqueResource {
     /** How many times one family moved; the screen writes « 3 animateurs » from it. */
     @Schema(requiredProperties = {"entite", "nombre"})
     public record CompteEntiteView(String entite, int nombre) {}
+
+    /**
+     * The admin logins of the instance, newest first: every successful login,
+     * every failure and every lockout of the form login, with the client
+     * address (ADR 0076). Instance-wide: the same lines whatever edition the
+     * request names, a login belonging to none.
+     *
+     * @param limite how many lines, 200 when absent, 500 at most
+     * @param avant  the id of the last line already shown — the same keyset
+     *               cursor as the history of actions
+     */
+    @GET
+    @Path("/connexions")
+    public List<AdminLoginView> connexions(@QueryParam("limite") Integer limite, @QueryParam("avant") Long avant) {
+        return connexions.page(avant, limite).stream()
+                .map(entree -> new AdminLoginView(
+                        entree.id(), entree.survenuLe(), entree.evenement().name(), entree.adresse()))
+                .toList();
+    }
+
+    /**
+     * One attempt on the admin form login — never what was typed.
+     *
+     * @param evenement {@code CONNEXION}, {@code ECHEC} or {@code VERROUILLAGE}
+     * @param adresse   the client address the login lock counts against
+     */
+    @Schema(requiredProperties = {"id", "survenuLe", "evenement", "adresse"})
+    public record AdminLoginView(
+            long id,
+            Instant survenuLe,
+
+            @Schema(enumeration = {"CONNEXION", "ECHEC", "VERROUILLAGE"})
+            String evenement,
+
+            String adresse) {}
 
     /** The inventory of actions, so the screen can offer a filter it did not invent. */
     @GET

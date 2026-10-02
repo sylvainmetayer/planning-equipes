@@ -444,6 +444,14 @@ export function buildNavGroups(): NavGroup[] {
           label: $localize`:@@nav.link.historique:Historique`,
           icon: 'manage_search',
           keywords: $localize`:@@nav.keywords.historique:journal actions`,
+          tabs: [
+            tab(
+              'onglet',
+              'connexions',
+              $localize`:@@historique.onglet.connexions:Connexions`,
+              $localize`:@@nav.keywords.historiqueConnexions:connexion login mot de passe verrouillage adresse`,
+            ),
+          ],
         },
         { path: '/aide', label: $localize`:@@nav.link.aide:Aide`, icon: 'help_outline' },
         { path: '/mcp-client', label: $localize`:@@nav.link.mcp:MCP`, icon: 'smart_toy' },

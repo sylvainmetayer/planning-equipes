@@ -39,6 +39,7 @@ api.EspaceAnimateurResource$AbonnementToken = abonnementToken
 api.EspaceAnimateurResource$CodeSession = code
 api.FrozenReferentialError = code, familles, message
 api.HistoriqueResource$ActionView = code, entite, export, libelle
+api.HistoriqueResource$AdminLoginView = adresse, evenement, id, survenuLe
 api.HistoriqueResource$ChangementsView = dernieres, parEntite, total
 api.HistoriqueResource$CompteEntiteView = entite, nombre
 api.HistoriqueResource$EntreeHistoriqueView = acteur, acteurId, acteurNom, action, champs, entite, entiteId, entiteNom, id, libelle, resultat, statut, survenuLe, verification
