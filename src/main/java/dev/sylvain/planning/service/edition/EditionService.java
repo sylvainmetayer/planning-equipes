@@ -5,6 +5,9 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.IdGenerator;
 import dev.sylvain.planning.service.referentiel.ParametresService;
+import dev.sylvain.planning.service.solve.SolverJobService;
+import dev.sylvain.planning.service.solve.SolverJobService.JobStatus;
+import dev.sylvain.planning.service.solve.StaffingVerificationService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.List;
@@ -27,12 +30,21 @@ public class EditionService {
     /** Opens a duplicated edition's weight history with the dosage it inherited. */
     private final ParametresService parametres;
 
+    /** The solver jobs and staffing checks still working on an edition refuse its deletion. */
+    private final SolverJobService solverJobs;
+
+    private final StaffingVerificationService staffingChecks;
+
     @Inject
     public EditionService(
             EditionRepository repository,
             EditionContext editionContext,
             IdGenerator ids,
-            ParametresService parametres) {
+            ParametresService parametres,
+            SolverJobService solverJobs,
+            StaffingVerificationService staffingChecks) {
+        this.solverJobs = solverJobs;
+        this.staffingChecks = staffingChecks;
         this.parametres = parametres;
         this.repository = repository;
         this.editionContext = editionContext;
@@ -113,11 +125,23 @@ public class EditionService {
 
     /**
      * Drops the edition and, by {@code ON DELETE CASCADE}, its whole reference
-     * model. Three refusals, all of them recoverable states the UI must not be
+     * model. Four refusals, all of them recoverable states the UI must not be
      * able to walk into: the active edition (every link, mail and wall display
      * it serves would vanish with it — deactivate it first), the edition the
      * caller is currently working in (every subsequent screen would lose its
-     * edition), and the last remaining one.
+     * edition), the last remaining one, and an edition a computation still
+     * works on.
+     *
+     * <p>That last one is a {@code 409}: a solver job of the edition, running
+     * or waiting in the queue — a queue replayed at startup included —, or a
+     * staffing check under way on it. The job would otherwise start, or land
+     * its plan, in an edition gone from under it, and fail on the way. Not
+     * {@code @RefusedWhileSolving}, whose interceptor asks about the
+     * <em>current</em> edition: the edition here is the one the argument
+     * names, and a queued job counts. Checked, then deleted, like every
+     * guard of the application: a job submitted in the instant between the
+     * two fails on the foreign key of {@code solver_job} rather than
+     * running.</p>
      */
     public void delete(String id) {
         requireExisting(id);
@@ -132,8 +156,28 @@ public class EditionService {
         if (Objects.equals(id, currentEditionOrNone())) {
             throw new BusinessError.Invalid("Impossible de supprimer l'édition courante — basculez ailleurs d'abord");
         }
+        refuseIfComputing(id);
         repository.delete(id);
         editionContext.invaliderCache();
+    }
+
+    /** Refuses deleting an edition a solver job or a staffing check still works on. */
+    private void refuseIfComputing(String id) {
+        solverJobs.findUnfinishedJob(id).ifPresent(job -> {
+            throw new BusinessError.Conflict(
+                    job.getStatus() == JobStatus.QUEUED
+                            ? "Impossible de supprimer cette édition : une résolution y attend son tour dans la file"
+                                    + " du solveur — retirez-la de la file depuis l'écran Solveur d'abord."
+                            : "Impossible de supprimer cette édition : une résolution y est en cours — attendez"
+                                    + " qu'elle se termine, ou arrêtez-la depuis l'écran Solveur.");
+        });
+        if (staffingChecks
+                .running()
+                .filter(check -> check.editionId().equals(id))
+                .isPresent()) {
+            throw new BusinessError.Conflict("Impossible de supprimer cette édition : une vérification du besoin y est"
+                    + " en cours — attendez qu'elle se termine.");
+        }
     }
 
     /**

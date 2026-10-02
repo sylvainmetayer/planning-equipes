@@ -355,7 +355,8 @@ public class EditionMcpTools {
             name = "supprimer_edition",
             description = "Supprime une édition ET tout ce qu'elle contient : stands, animateurs, créneaux, "
                     + "contraintes, planning résolu. Destructif et irréversible, à ne lancer que sur demande explicite. "
-                    + "L'édition active et la dernière édition restante sont refusées.",
+                    + "L'édition active, la dernière édition restante et une édition sur laquelle une résolution "
+                    + "tourne ou attend dans la file, ou une vérification du besoin est en cours, sont refusées.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
