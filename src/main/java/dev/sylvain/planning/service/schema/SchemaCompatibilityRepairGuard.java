@@ -36,8 +36,15 @@ import org.flywaydb.core.api.configuration.FluentConfiguration;
  * and reads the history through a copy of the configuration it is handed
  * instead: the same migrations, the same history table, its own connection.</p>
  */
+// @Singleton, not @ApplicationScoped: the customizer runs while the Flyway
+// bean is being built, before startup, and hands Flyway `this` as a callback —
+// a client proxy would add a lazy indirection to a bean that must be real at
+// that point, and is the form Quarkus documents for FlywayConfigurationCustomizer.
 @Singleton
 public class SchemaCompatibilityRepairGuard implements FlywayConfigurationCustomizer, Callback {
+
+    /** Typed, not a bare {@code callbacks()}: Flyway overloads it for {@code Callback...} and {@code String...}. */
+    private static final Callback[] NO_CALLBACKS = {};
 
     private final ApplicationVersionRepository versions;
 
@@ -101,7 +108,7 @@ public class SchemaCompatibilityRepairGuard implements FlywayConfigurationCustom
     private static MigrationInfo[] history(Configuration configuration) {
         return Flyway.configure(configuration.getClassLoader())
                 .configuration(configuration)
-                .callbacks(new Callback[0])
+                .callbacks(NO_CALLBACKS)
                 .load()
                 .info()
                 .all();

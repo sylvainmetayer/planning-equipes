@@ -34,10 +34,8 @@ import dev.sylvain.planning.scenario.dto.EmplacementDto;
 import dev.sylvain.planning.scenario.dto.FenetreConsigneDto;
 import dev.sylvain.planning.scenario.dto.FenetreHoraireDto;
 import dev.sylvain.planning.scenario.dto.HoraireStandDto;
-import dev.sylvain.planning.scenario.dto.IndisponibiliteStandDto;
 import dev.sylvain.planning.scenario.dto.JourneeTypeDto;
 import dev.sylvain.planning.scenario.dto.OuvertureConsigneDto;
-import dev.sylvain.planning.scenario.dto.OuvertureStandDto;
 import dev.sylvain.planning.scenario.dto.ParametresLegauxDto;
 import dev.sylvain.planning.scenario.dto.ParametresQualiteDto;
 import dev.sylvain.planning.scenario.dto.ParametresSolveurDto;
@@ -47,7 +45,6 @@ import dev.sylvain.planning.scenario.dto.RepasConsigneDto;
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
 import dev.sylvain.planning.scenario.dto.StandDto;
 import dev.sylvain.planning.scenario.dto.TypologieDto;
-import dev.sylvain.planning.scenario.dto.VacationTypeDto;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.consigne.ConsigneService;
 import dev.sylvain.planning.service.referentiel.AnimateurService;
@@ -78,6 +75,7 @@ import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * From the file's shape to the domain: a {@link ScenarioDto}, bound by
@@ -233,10 +231,9 @@ final class ScenarioDomainMapper {
             standsParId.put(stand.getId(), stand);
         }
 
-        List<Animateur> animateurs = new ArrayList<>();
-        for (AnimateurDto dto : required(scenario.animateurs(), "animateurs")) {
-            animateurs.add(animateur(dto));
-        }
+        List<Animateur> animateurs = required(scenario.animateurs(), "animateurs").stream()
+                .map(ScenarioDomainMapper::animateur)
+                .collect(Collectors.toCollection(ArrayList::new));
         // A scenario carries its own typologie referential, so the ninja typologie
         // comes from the file itself — the database one may not be loaded yet (or
         // may describe a different event entirely).
@@ -271,28 +268,26 @@ final class ScenarioDomainMapper {
             stand.setEmplacement(emplacementsParId.get(dto.emplacementId()));
         }
         if (dto.indisponibilites() != null) {
-            List<IndisponibiliteStand> indisponibilites = new ArrayList<>();
-            for (IndisponibiliteStandDto indispo : dto.indisponibilites()) {
-                indisponibilites.add(new IndisponibiliteStand(
-                        null,
-                        required(indispo.date(), "stands.indisponibilites.date"),
-                        required(indispo.heureDebut(), "stands.indisponibilites.heureDebut"),
-                        indispo.heureFin(),
-                        indispo.motif()));
-            }
+            List<IndisponibiliteStand> indisponibilites = dto.indisponibilites().stream()
+                    .map(indispo -> new IndisponibiliteStand(
+                            null,
+                            required(indispo.date(), "stands.indisponibilites.date"),
+                            required(indispo.heureDebut(), "stands.indisponibilites.heureDebut"),
+                            indispo.heureFin(),
+                            indispo.motif()))
+                    .collect(Collectors.toCollection(ArrayList::new));
             stand.setIndisponibilites(indisponibilites);
         }
         if (dto.ouvertures() != null) {
-            List<OuvertureStand> ouvertures = new ArrayList<>();
-            for (OuvertureStandDto ouverture : dto.ouvertures()) {
-                ouvertures.add(new OuvertureStand(
-                        null,
-                        required(ouverture.date(), "stands.ouvertures.date"),
-                        required(ouverture.heureDebut(), "stands.ouvertures.heureDebut"),
-                        ouverture.heureFin(),
-                        ouverture.motif(),
-                        ouverture.effectif()));
-            }
+            List<OuvertureStand> ouvertures = dto.ouvertures().stream()
+                    .map(ouverture -> new OuvertureStand(
+                            null,
+                            required(ouverture.date(), "stands.ouvertures.date"),
+                            required(ouverture.heureDebut(), "stands.ouvertures.heureDebut"),
+                            ouverture.heureFin(),
+                            ouverture.motif(),
+                            ouverture.effectif()))
+                    .collect(Collectors.toCollection(ArrayList::new));
             stand.setOuvertures(ouvertures);
         }
         if (dto.horaires() != null) {
@@ -309,11 +304,7 @@ final class ScenarioDomainMapper {
      * closing time" (see {@link FenetreHoraire}).
      */
     private static List<HoraireStand> horaires(List<HoraireStandDto> horairesDto) {
-        List<HoraireStand> horaires = new ArrayList<>();
-        for (HoraireStandDto dto : horairesDto) {
-            horaires.add(horaire(dto));
-        }
-        return horaires;
+        return horairesDto.stream().map(ScenarioDomainMapper::horaire).collect(Collectors.toCollection(ArrayList::new));
     }
 
     private static HoraireStand horaire(HoraireStandDto dto) {
@@ -383,11 +374,9 @@ final class ScenarioDomainMapper {
      * leave the constraint pointing at nothing.</p>
      */
     private static List<ContrainteAdHoc> contraintesAdHoc(List<ContrainteAdHocDto> dtos, ReferenceScenario reference) {
-        List<ContrainteAdHoc> contraintes = new ArrayList<>();
-        for (ContrainteAdHocDto dto : dtos) {
-            contraintes.add(contrainteAdHoc(dto, reference));
-        }
-        return contraintes;
+        return dtos.stream()
+                .map(dto -> contrainteAdHoc(dto, reference))
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     private static ContrainteAdHoc contrainteAdHoc(ContrainteAdHocDto dto, ReferenceScenario reference) {
@@ -472,10 +461,9 @@ final class ScenarioDomainMapper {
             return Optional.empty();
         }
         int coupureMinutes = coupureRepasMinutes(scenario);
-        Set<String> standsDuFichier = new HashSet<>();
-        for (StandDto stand : required(scenario.stands(), "stands")) {
-            standsDuFichier.add(stand.id());
-        }
+        Set<String> standsDuFichier = required(scenario.stands(), "stands").stream()
+                .map(StandDto::id)
+                .collect(Collectors.toCollection(HashSet::new));
         Set<ConsigneService.VacationRef> creneauxDuFichier = new HashSet<>();
         Set<LocalDate> joursGrille = new HashSet<>();
         for (CreneauDto creneau : required(scenario.creneaux(), "creneaux")) {
@@ -668,13 +656,12 @@ final class ScenarioDomainMapper {
         List<JourneesTypesMaterialisation.Affectation> calendrier = new ArrayList<>();
         long provisoire = -1;
         for (JourneeTypeDto dto : dtos) {
-            List<VacationType> vacations = new ArrayList<>();
-            for (VacationTypeDto vacation : required(dto.vacations(), "journeesTypes.vacations")) {
-                vacations.add(new VacationType(
-                        required(vacation.heureDebut(), "journeesTypes.vacations.heureDebut"),
-                        required(vacation.heureFin(), "journeesTypes.vacations.heureFin"),
-                        Boolean.TRUE.equals(vacation.couverturePause())));
-            }
+            List<VacationType> vacations = required(dto.vacations(), "journeesTypes.vacations").stream()
+                    .map(vacation -> new VacationType(
+                            required(vacation.heureDebut(), "journeesTypes.vacations.heureDebut"),
+                            required(vacation.heureFin(), "journeesTypes.vacations.heureFin"),
+                            Boolean.TRUE.equals(vacation.couverturePause())))
+                    .collect(Collectors.toCollection(ArrayList::new));
             JourneeType journeeType = new JourneeType(provisoire, required(dto.nom(), "journeesTypes.nom"), vacations);
             journeesTypes.add(journeeType);
             if (dto.dates() != null) {
@@ -704,18 +691,16 @@ final class ScenarioDomainMapper {
         if (dtos == null) {
             return List.of();
         }
-        List<TypologieItem> typologies = new ArrayList<>();
-        for (TypologieDto dto : dtos) {
-            typologies.add(new TypologieItem(
-                    dto.id(),
-                    dto.code(),
-                    dto.label(),
-                    Boolean.TRUE.equals(dto.ninja()),
-                    dto.maxCreneauxParAnimateur(),
-                    dto.description(),
-                    null));
-        }
-        return typologies;
+        return dtos.stream()
+                .map(dto -> new TypologieItem(
+                        dto.id(),
+                        dto.code(),
+                        dto.label(),
+                        Boolean.TRUE.equals(dto.ninja()),
+                        dto.maxCreneauxParAnimateur(),
+                        dto.description(),
+                        null))
+                .toList();
     }
 
     /** The legal parameters, meal break and vacation ceiling included. */

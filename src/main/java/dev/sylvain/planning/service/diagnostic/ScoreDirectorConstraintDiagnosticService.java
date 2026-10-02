@@ -14,10 +14,8 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Diagnoses through the solver's own score director, which the Community
@@ -97,12 +95,10 @@ public final class ScoreDirectorConstraintDiagnosticService implements Constrain
             // The one calculation. It also writes the score onto the solution,
             // which is how diagnose() reads its hard score back.
             HardMediumSoftScore score = scoreDirector.calculateScore().raw();
-            List<ConstraintContribution> contributions = new ArrayList<>();
-            for (ConstraintMatchTotal<HardMediumSoftScore> total :
-                    scoreDirector.getConstraintMatchTotalMap().values()) {
-                contributions.add(
-                        new ConstraintContribution(total.getConstraintRef().id(), total.getScore(), matchFacts(total)));
-            }
+            List<ConstraintContribution> contributions = scoreDirector.getConstraintMatchTotalMap().values().stream()
+                    .map(total -> new ConstraintContribution(
+                            total.getConstraintRef().id(), total.getScore(), matchFacts(total)))
+                    .toList();
             return new PlanningAnalysis(score, contributions);
         }
     }
@@ -224,10 +220,9 @@ public final class ScoreDirectorConstraintDiagnosticService implements Constrain
     }
 
     private static List<MatchFacts> matchFacts(ConstraintMatchTotal<HardMediumSoftScore> total) {
-        List<ConstraintJustification> justifications = new ArrayList<>();
-        for (ConstraintMatch<HardMediumSoftScore> match : total.getConstraintMatchSet()) {
-            justifications.add(match.getJustification());
-        }
+        List<ConstraintJustification> justifications = total.getConstraintMatchSet().stream()
+                .<ConstraintJustification>map(ConstraintMatch::getJustification)
+                .toList();
         return distinctFacts(justifications);
     }
 
@@ -257,13 +252,6 @@ public final class ScoreDirectorConstraintDiagnosticService implements Constrain
      * already includes every match.</p>
      */
     static List<MatchFacts> distinctFacts(List<ConstraintJustification> justifications) {
-        Set<ConstraintJustification> seen = new LinkedHashSet<>();
-        List<MatchFacts> matches = new ArrayList<>();
-        for (ConstraintJustification justification : justifications) {
-            if (seen.add(justification)) {
-                matches.add(MatchFacts.of(justification));
-            }
-        }
-        return matches;
+        return justifications.stream().distinct().map(MatchFacts::of).toList();
     }
 }

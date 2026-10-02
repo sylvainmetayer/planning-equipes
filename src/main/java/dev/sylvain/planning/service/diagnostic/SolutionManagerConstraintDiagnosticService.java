@@ -7,7 +7,6 @@ import ai.timefold.solver.core.api.score.analysis.ScoreAnalysis;
 import ai.timefold.solver.core.api.solver.SolutionManager;
 import ai.timefold.solver.core.api.solver.SolverFactory;
 import dev.sylvain.planning.domain.PlanningEvenement;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -36,13 +35,12 @@ public final class SolutionManagerConstraintDiagnosticService implements Constra
     @Override
     public PlanningAnalysis analyze(PlanningEvenement solution) {
         ScoreAnalysis<HardMediumSoftScore> analysis = solutionManager.analyze(solution);
-        List<ConstraintContribution> contributions = new ArrayList<>();
-        for (ConstraintAnalysis<HardMediumSoftScore> constraintAnalysis : analysis.constraintAnalyses()) {
-            contributions.add(new ConstraintContribution(
-                    constraintAnalysis.constraintRef().id(),
-                    constraintAnalysis.score(),
-                    matchFacts(constraintAnalysis)));
-        }
+        List<ConstraintContribution> contributions = analysis.constraintAnalyses().stream()
+                .map(constraintAnalysis -> new ConstraintContribution(
+                        constraintAnalysis.constraintRef().id(),
+                        constraintAnalysis.score(),
+                        matchFacts(constraintAnalysis)))
+                .toList();
         return new PlanningAnalysis(analysis.score(), contributions);
     }
 

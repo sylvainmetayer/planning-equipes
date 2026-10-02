@@ -544,16 +544,15 @@ public final class PlanningWhatIf {
                 ? HardMediumSoftScore.ZERO
                 : hypotheses.get(titulaire.getId()).delta();
 
-        List<AnimateurAvailability> lignes = new ArrayList<>(banc.size());
-        for (Animateur animateur : banc) {
-            lignes.add(availability(solved, cible, animateur, hypotheses.get(animateur.getId()), reference));
-        }
         // Available first: this screen is opened to find someone, and the
         // people who can take the seat without breaking anything are the
         // answer — the refusals are the explanation of why the list is short.
-        lignes.sort(Comparator.comparing(AnimateurAvailability::disponible, Comparator.reverseOrder())
-                .thenComparing(AnimateurAvailability::degradeLePlan)
-                .thenComparing(AnimateurAvailability::animateurId, NaturalOrder.OF_IDS));
+        List<AnimateurAvailability> lignes = banc.stream()
+                .map(animateur -> availability(solved, cible, animateur, hypotheses.get(animateur.getId()), reference))
+                .sorted(Comparator.comparing(AnimateurAvailability::disponible, Comparator.reverseOrder())
+                        .thenComparing(AnimateurAvailability::degradeLePlan)
+                        .thenComparing(AnimateurAvailability::animateurId, NaturalOrder.OF_IDS))
+                .toList();
         int disponibles =
                 (int) lignes.stream().filter(AnimateurAvailability::disponible).count();
         return new CreneauAvailability(
@@ -580,11 +579,10 @@ public final class PlanningWhatIf {
             Animateur animateur,
             AffectationHypothesis hypothese,
             HardMediumSoftScore reference) {
-        Set<String> contraintes = new LinkedHashSet<>();
-        for (EligibleAnimateurMoveFilter.Motif motif :
-                EligibleAnimateurMoveFilter.motifs(cible, animateur, solved.parametresLegaux())) {
-            contraintes.add(motif.contrainte());
-        }
+        Set<String> contraintes =
+                EligibleAnimateurMoveFilter.motifs(cible, animateur, solved.parametresLegaux()).stream()
+                        .map(EligibleAnimateurMoveFilter.Motif::contrainte)
+                        .collect(Collectors.toCollection(LinkedHashSet::new));
         if (hypothese != null) {
             contraintes.addAll(hypothese.contraintesAggravees());
         }
@@ -882,11 +880,12 @@ public final class PlanningWhatIf {
         }
 
         BusinessError.Conflict refusal() {
-            return holderId == null
-                    ? new BusinessError.Conflict("Ce siège n'est plus libre : le planning a changé depuis l'ouverture "
-                            + "de cette vue. Rechargez-la avant d'y placer quelqu'un.")
-                    : new BusinessError.Conflict("Ce siège n'est plus tenu par la personne affichée : le planning a "
-                            + "changé depuis l'ouverture de cette vue. Rechargez-la avant de le modifier.");
+            return new BusinessError.Conflict(
+                    holderId == null
+                            ? "Ce siège n'est plus libre : le planning a changé depuis l'ouverture "
+                                    + "de cette vue. Rechargez-la avant d'y placer quelqu'un."
+                            : "Ce siège n'est plus tenu par la personne affichée : le planning a "
+                                    + "changé depuis l'ouverture de cette vue. Rechargez-la avant de le modifier.");
         }
     }
 
@@ -975,26 +974,10 @@ public final class PlanningWhatIf {
         List<PosteAffectation> demandes =
                 posteIds.stream().map(id -> findPoste(persiste, id)).toList();
         if (precondition != null) {
-            for (PosteAffectation poste : demandes) {
-                String holder = poste.getAnimateur() == null
-                        ? null
-                        : poste.getAnimateur().getId();
-                if (!Objects.equals(holder, precondition.holderId())) {
-                    throw precondition.refusal();
-                }
-            }
+            refuseIfHolderMoved(demandes, precondition);
         }
         Animateur repreneur = animateurId == null ? null : findAnimateur(persiste, animateurId);
-        List<VerrouillagePlanning> verrouillages = referenceDataService.listVerrouillages();
-        for (PosteAffectation poste : demandes) {
-            if (verrouillages.stream().anyMatch(verrouillage -> verrouillage.couvre(poste))) {
-                throw new BusinessError.Invalid(
-                        "Ce poste est verrouillé : déverrouillez-le avant d'y appliquer une réparation.");
-            }
-            if (receiverLocksApply) {
-                refuseIfReceiverLocked(verrouillages, animateurId, poste);
-            }
-        }
+        refuseIfLocked(demandes, animateurId, receiverLocksApply);
         // Read once, so every seat of the gesture is judged against the same
         // minute. A seat over is refused; a held seat under way is split at
         // « now » and the write lands on its remainder, an empty one is
@@ -1036,6 +1019,31 @@ public final class PlanningWhatIf {
                 ecritures,
                 titulairesAttendus,
                 precondition == null ? PlanningWhatIf::staleSplitRefusal : precondition::refusal);
+    }
+
+    /** Refuses the gesture when a seat no longer holds whom the view showed on it. */
+    private static void refuseIfHolderMoved(List<PosteAffectation> demandes, SeatPrecondition precondition) {
+        for (PosteAffectation poste : demandes) {
+            String holder =
+                    poste.getAnimateur() == null ? null : poste.getAnimateur().getId();
+            if (!Objects.equals(holder, precondition.holderId())) {
+                throw precondition.refusal();
+            }
+        }
+    }
+
+    /** Refuses a locked seat and, when {@code receiverLocksApply}, a seat the receiver's own locks forbid. */
+    private void refuseIfLocked(List<PosteAffectation> demandes, String animateurId, boolean receiverLocksApply) {
+        List<VerrouillagePlanning> verrouillages = referenceDataService.listVerrouillages();
+        for (PosteAffectation poste : demandes) {
+            if (verrouillages.stream().anyMatch(verrouillage -> verrouillage.couvre(poste))) {
+                throw new BusinessError.Invalid(
+                        "Ce poste est verrouillé : déverrouillez-le avant d'y appliquer une réparation.");
+            }
+            if (receiverLocksApply) {
+                refuseIfReceiverLocked(verrouillages, animateurId, poste);
+            }
+        }
     }
 
     /**

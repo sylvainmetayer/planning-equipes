@@ -200,15 +200,19 @@ public final class FrozenPast {
             List<String> tenants = animateursPersistes.getOrDefault(key, List.of());
             int place = prochainePlace.merge(key, 1, Integer::sum) - 1;
             if (isPast(poste, horizon)) {
-                poste.setPasse(true);
+                markPast(poste, place < tenants.size() ? tenants.get(place) : null, animateursById);
                 passes++;
-                if (!poste.isVerrouille()) {
-                    String tenantId = place < tenants.size() ? tenants.get(place) : null;
-                    poste.setAnimateur(tenantId == null ? null : animateursById.get(tenantId));
-                    poste.setVerrouille(true);
-                }
             }
         }
         return passes;
+    }
+
+    /** Marks a seat past and, unless a lock already holds it, pins it to whoever held that place. */
+    private static void markPast(PosteAffectation poste, String tenantId, Map<String, Animateur> animateursById) {
+        poste.setPasse(true);
+        if (!poste.isVerrouille()) {
+            poste.setAnimateur(tenantId == null ? null : animateursById.get(tenantId));
+            poste.setVerrouille(true);
+        }
     }
 }

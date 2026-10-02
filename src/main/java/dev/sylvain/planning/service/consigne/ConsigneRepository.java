@@ -311,20 +311,18 @@ public class ConsigneRepository {
                     }
                 }
             }
-            List<PrereglageConsigne> prereglages = new ArrayList<>();
-            for (PrereglageConsigne brut : parId.values()) {
-                prereglages.add(new PrereglageConsigne(
-                        brut.id(),
-                        brut.nom(),
-                        brut.fermetureDebut(),
-                        brut.fermetureFin(),
-                        brut.motif(),
-                        fenetres.getOrDefault(brut.id(), List.of()),
-                        brut.creeLe(),
-                        brut.modifieLe(),
-                        brut.repas()));
-            }
-            return prereglages;
+            return parId.values().stream()
+                    .map(brut -> new PrereglageConsigne(
+                            brut.id(),
+                            brut.nom(),
+                            brut.fermetureDebut(),
+                            brut.fermetureFin(),
+                            brut.motif(),
+                            fenetres.getOrDefault(brut.id(), List.of()),
+                            brut.creeLe(),
+                            brut.modifieLe(),
+                            brut.repas()))
+                    .toList();
         });
     }
 

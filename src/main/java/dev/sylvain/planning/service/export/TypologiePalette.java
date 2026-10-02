@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * The colour a stand is drawn in on a timeline, and the legend that explains
@@ -128,10 +129,9 @@ final class TypologiePalette {
                 vues.add(typologie);
             }
         }
-        List<Entree> entrees = new ArrayList<>();
-        for (String id : vues) {
-            entrees.add(new Entree(libelle(id), couleur(id)));
-        }
+        List<Entree> entrees = vues.stream()
+                .map(id -> new Entree(libelle(id), couleur(id)))
+                .collect(Collectors.toCollection(ArrayList::new));
         if (sansTypologie) {
             entrees.add(new Entree("Sans typologie", SANS_TYPOLOGIE));
         }

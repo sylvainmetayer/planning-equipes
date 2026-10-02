@@ -17,6 +17,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Stream;
 
 /**
  * One animateur's planning, arranged the way the document reads it rather than
@@ -249,16 +250,13 @@ record AnimateurPlanningView(
             List<PauseAnalyzer.PauseAnimateurView> pauses,
             List<PauseAnalyzer.CoupureAnimateurView> coupures,
             Map<PosteAffectation, List<PauseAnalyzer.CoupureAnimateurView>> coupuresParPoste) {
-        List<String> lignes = new ArrayList<>();
-        for (PauseAnalyzer.PauseAnimateurView pause : pauses) {
-            if (pause.fallsInside(poste)) {
-                lignes.add(pauseText(pause, coupureQuiCouvre(coupures, pause)));
-            }
-        }
-        for (PauseAnalyzer.CoupureAnimateurView coupure : coupuresParPoste.getOrDefault(poste, List.of())) {
-            lignes.add(coupureText(coupure));
-        }
-        return List.copyOf(lignes);
+        return Stream.concat(
+                        pauses.stream()
+                                .filter(pause -> pause.fallsInside(poste))
+                                .map(pause -> pauseText(pause, coupureQuiCouvre(coupures, pause))),
+                        coupuresParPoste.getOrDefault(poste, List.of()).stream()
+                                .map(AnimateurPlanningView::coupureText))
+                .toList();
     }
 
     /** « Repas de 13:00 à 14:00 (60 min) », the meal break of issue #598. */

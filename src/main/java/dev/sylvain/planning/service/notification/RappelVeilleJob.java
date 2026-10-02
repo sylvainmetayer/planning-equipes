@@ -181,16 +181,14 @@ public class RappelVeilleJob {
 
     /** « Cirque 14h-18h », in the order the day is worked. */
     private List<String> lines(List<PosteAffectation> postes) {
-        List<String> lines = new ArrayList<>();
-        for (PosteAffectation poste : postes) {
-            lines.add(diffService.libelleCreneauSeul(new PublicationDiffService.Vacation(
-                    poste.getCreneau().getDate(),
-                    poste.heureDebutEffectif(),
-                    poste.heureFinEffectif(),
-                    poste.getStand().getId(),
-                    poste.getStand().getNom())));
-        }
-        return List.copyOf(lines);
+        return postes.stream()
+                .map(poste -> diffService.libelleCreneauSeul(new PublicationDiffService.Vacation(
+                        poste.getCreneau().getDate(),
+                        poste.heureDebutEffectif(),
+                        poste.heureFinEffectif(),
+                        poste.getStand().getId(),
+                        poste.getStand().getNom())))
+                .toList();
     }
 
     /**

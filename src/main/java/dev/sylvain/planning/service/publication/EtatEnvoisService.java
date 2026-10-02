@@ -162,20 +162,43 @@ public class EtatEnvoisService {
         for (DestinatairePublication destinataire : apercu.destinataires()) {
             aPrevenir.put(destinataire.animateurId(), destinataire);
         }
-        Map<String, Long> marqueurs = notifiedPlans.byAnimateur();
-        Map<String, Envoi> derniers = envois.latestByAnimateur();
-        Map<String, Instant> rappels = notifications.lastByAnimateur(JournalNotificationsRepository.Type.RAPPEL_VEILLE);
-        Map<String, Instant> rappelsEchoues =
-                notifications.lastByAnimateur(JournalNotificationsRepository.Type.RAPPEL_VEILLE_INJOIGNABLE);
-        Map<String, Instant> relancesEchouees =
-                notifications.lastByAnimateur(JournalNotificationsRepository.Type.RELANCE_INJOIGNABLE);
         Map<String, ConfirmationPlanningService.ConfirmationView> confirmations = new HashMap<>();
         for (ConfirmationPlanningService.ConfirmationView vue : confirmationService.byAnimateur()) {
             confirmations.put(vue.animateurId(), vue);
         }
+        Readings readings = new Readings(
+                parSnapshot,
+                aPrevenir,
+                confirmations,
+                notifiedPlans.byAnimateur(),
+                envois.latestByAnimateur(),
+                notifications.lastByAnimateur(JournalNotificationsRepository.Type.RAPPEL_VEILLE),
+                notifications.lastByAnimateur(JournalNotificationsRepository.Type.RAPPEL_VEILLE_INJOIGNABLE),
+                notifications.lastByAnimateur(JournalNotificationsRepository.Type.RELANCE_INJOIGNABLE));
 
-        List<LigneEnvoi> lignes = new ArrayList<>();
-        for (Animateur animateur : referenceDataService.listAnimateurs()) {
+        List<LigneEnvoi> lignes = referenceDataService.listAnimateurs().stream()
+                .map(readings::ligne)
+                .sorted(Comparator.comparing(LigneEnvoi::nomAffiche, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+        return new EtatEnvois(
+                versions.isEmpty() ? null : versions.getLast(),
+                editionContext.isActive(editionContext.editionIdCourant()),
+                apercu.nombreConcernes(),
+                lignes);
+    }
+
+    /** Everything the table reads once, per animateur id, and turns into one line per person. */
+    private record Readings(
+            Map<Long, VersionPubliee> parSnapshot,
+            Map<String, DestinatairePublication> aPrevenir,
+            Map<String, ConfirmationPlanningService.ConfirmationView> confirmations,
+            Map<String, Long> marqueurs,
+            Map<String, Envoi> derniers,
+            Map<String, Instant> rappels,
+            Map<String, Instant> rappelsEchoues,
+            Map<String, Instant> relancesEchouees) {
+
+        LigneEnvoi ligne(Animateur animateur) {
             String id = animateur.getId();
             DestinatairePublication destinataire = aPrevenir.get(id);
             ConfirmationPlanningService.ConfirmationView confirmation = confirmations.get(id);
@@ -184,7 +207,7 @@ public class EtatEnvoisService {
             Instant relanceEchouee = relancesEchouees.get(id);
             Instant relance = latest(confirmation == null ? null : confirmation.relanceLe(), relanceEchouee);
             Long marqueur = marqueurs.get(id);
-            lignes.add(new LigneEnvoi(
+            return new LigneEnvoi(
                     id,
                     animateur.nomAffiche(),
                     animateur.getEmail() != null && !animateur.getEmail().isBlank(),
@@ -199,14 +222,8 @@ public class EtatEnvoisService {
                     confirmation == null ? null : confirmation.confirmeLe(),
                     destinataire != null,
                     destinataire != null && destinataire.reporte(),
-                    destinataire == null ? List.of() : destinataire.jours()));
+                    destinataire == null ? List.of() : destinataire.jours());
         }
-        lignes.sort(Comparator.comparing(LigneEnvoi::nomAffiche, String.CASE_INSENSITIVE_ORDER));
-        return new EtatEnvois(
-                versions.isEmpty() ? null : versions.getLast(),
-                editionContext.isActive(editionContext.editionIdCourant()),
-                apercu.nombreConcernes(),
-                List.copyOf(lignes));
     }
 
     /** The edition's publications, oldest first, numbered from 1. */

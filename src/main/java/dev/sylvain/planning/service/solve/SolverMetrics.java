@@ -10,6 +10,7 @@ import io.micrometer.core.instrument.Timer;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.Duration;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 /**
@@ -42,12 +43,12 @@ public class SolverMetrics {
      * them at zero from the start rather than only after the first failure —
      * an absent series and a zero one do not read the same on an alert.
      */
-    void bind(Supplier<Number> queueSize, Supplier<Boolean> active) {
+    void bind(Supplier<Number> queueSize, BooleanSupplier active) {
         Gauge.builder(QUEUE_SIZE, queueSize)
                 .description("Solver jobs waiting for the solver")
                 .strongReference(true)
                 .register(registry);
-        Gauge.builder(ACTIVE, () -> active.get() ? 1 : 0)
+        Gauge.builder(ACTIVE, () -> active.getAsBoolean() ? 1 : 0)
                 .description("1 while a solver job holds the solver, 0 otherwise")
                 .strongReference(true)
                 .register(registry);

@@ -41,32 +41,26 @@ final class PosteStatistics {
     }
 
     static int distinctStandCount(List<PosteAffectation> postes) {
-        Set<String> ids = new LinkedHashSet<>();
-        for (PosteAffectation poste : postes) {
-            if (poste.getStand() != null) {
-                ids.add(poste.getStand().getId());
-            }
-        }
-        return ids.size();
+        return (int) postes.stream()
+                .filter(poste -> poste.getStand() != null)
+                .map(poste -> poste.getStand().getId())
+                .distinct()
+                .count();
     }
 
     static int distinctCreneauCount(List<PosteAffectation> postes) {
-        Set<Long> ids = new LinkedHashSet<>();
-        for (PosteAffectation poste : postes) {
-            if (poste.getCreneau() != null) {
-                ids.add(poste.getCreneau().getId());
-            }
-        }
-        return ids.size();
+        return (int) postes.stream()
+                .filter(poste -> poste.getCreneau() != null)
+                .map(poste -> poste.getCreneau().getId())
+                .distinct()
+                .count();
     }
 
     static int distinctDayCount(List<PosteAffectation> postes) {
-        Set<Integer> jours = new LinkedHashSet<>();
-        for (PosteAffectation poste : postes) {
-            if (poste.getCreneau() != null) {
-                jours.add(poste.getCreneau().getJour());
-            }
-        }
-        return jours.size();
+        return (int) postes.stream()
+                .filter(poste -> poste.getCreneau() != null)
+                .map(poste -> poste.getCreneau().getJour())
+                .distinct()
+                .count();
     }
 }

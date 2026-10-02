@@ -18,7 +18,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -26,6 +25,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 import org.openpdf.text.Chunk;
 import org.openpdf.text.Document;
 import org.openpdf.text.Element;
@@ -132,9 +132,12 @@ public class GlobalPlanningPdf {
         // The origin of a seat split on the day (ADR 0066) has a line of its
         // own — who held 09:00-09:20 — but no place: its continuation's line
         // counts it.
-        Set<String> continues = SeatPlaces.continuedIds(planning.getPostes());
+        // A planning that never carried seats has no line, rather than a
+        // NullPointerException half-way through the document.
+        List<PosteAffectation> tous = planning.getPostes() == null ? List.of() : planning.getPostes();
+        Set<String> continues = SeatPlaces.continuedIds(tous);
         Map<String, List<PosteAffectation>> parCle = new LinkedHashMap<>();
-        for (PosteAffectation poste : planning.getPostes()) {
+        for (PosteAffectation poste : tous) {
             Creneau creneau = poste.getCreneau();
             Stand stand = poste.getStand();
             if (creneau == null || stand == null) {
@@ -320,11 +323,9 @@ public class GlobalPlanningPdf {
 
         /** The distinct windows of a set of lines, in chronological order — the columns of a table. */
         static List<Fenetre> fenetres(List<LigneAffectation> lignes) {
-            Set<Fenetre> distinctes = new LinkedHashSet<>();
-            for (LigneAffectation ligne : lignes) {
-                distinctes.add(new Fenetre(ligne.debut(), ligne.fin()));
-            }
-            return distinctes.stream()
+            return lignes.stream()
+                    .map(ligne -> new Fenetre(ligne.debut(), ligne.fin()))
+                    .distinct()
                     .sorted(Comparator.comparing(Fenetre::debut).thenComparing(Fenetre::fin))
                     .toList();
         }
@@ -509,10 +510,9 @@ public class GlobalPlanningPdf {
     }
 
     private PdfPTable pastillesLettres(PlanView plan) {
-        Set<String> lettres = new TreeSet<>();
-        for (String nom : plan.totauxParAnimateur.keySet()) {
-            lettres.add(nom.isEmpty() ? "?" : nom.substring(0, 1).toUpperCase(Locale.FRENCH));
-        }
+        Set<String> lettres = plan.totauxParAnimateur.keySet().stream()
+                .map(nom -> nom.isEmpty() ? "?" : nom.substring(0, 1).toUpperCase(Locale.FRENCH))
+                .collect(Collectors.toCollection(TreeSet::new));
         PdfPTable table = new PdfPTable(26);
         table.setWidthPercentage(100);
         table.setSpacingBefore(4f);

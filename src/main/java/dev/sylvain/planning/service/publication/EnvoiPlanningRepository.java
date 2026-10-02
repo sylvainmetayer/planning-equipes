@@ -98,7 +98,7 @@ public class EnvoiPlanningRepository {
     }
 
     /** Records the deliveries of one publication or of one resend, in one batch. */
-    public void record(List<Envoi> envois) {
+    public void recordAll(List<Envoi> envois) {
         if (envois.isEmpty()) {
             return;
         }

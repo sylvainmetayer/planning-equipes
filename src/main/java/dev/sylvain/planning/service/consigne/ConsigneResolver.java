@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * The fourth layer of a stand's schedule: the edition's consignes, applied on
@@ -156,30 +157,24 @@ public final class ConsigneResolver {
 
     /** Lands the day: every dated row of that date is replaced by what is left. */
     private static void land(Stand stand, LocalDate date, List<Segment> restes) {
-        List<IndisponibiliteStand> fermetures = new ArrayList<>();
-        for (IndisponibiliteStand fermeture : stand.getIndisponibilitesEffectives()) {
-            if (!date.equals(fermeture.getDate())) {
-                fermetures.add(fermeture);
-            }
-        }
-        List<OuvertureStand> ouvertures = new ArrayList<>();
-        for (OuvertureStand ouverture : stand.getOuverturesEffectives()) {
-            if (!date.equals(ouverture.getDate())) {
-                ouvertures.add(ouverture);
-            }
-        }
+        List<IndisponibiliteStand> fermetures = stand.getIndisponibilitesEffectives().stream()
+                .filter(fermeture -> !date.equals(fermeture.getDate()))
+                .collect(Collectors.toCollection(ArrayList::new));
+        List<OuvertureStand> ouvertures = stand.getOuverturesEffectives().stream()
+                .filter(ouverture -> !date.equals(ouverture.getDate()))
+                .collect(Collectors.toCollection(ArrayList::new));
         if (restes.isEmpty()) {
             fermetures.add(new IndisponibiliteStand(null, date, LocalTime.MIDNIGHT, null, MOTIF_CONSIGNE));
         }
-        for (Segment reste : restes) {
-            ouvertures.add(new OuvertureStand(
-                    null,
-                    date,
-                    heure(reste.bornes()[0]),
-                    endOrNull(reste.bornes()[1]),
-                    MOTIF_CONSIGNE,
-                    reste.effectif()));
-        }
+        ouvertures.addAll(restes.stream()
+                .map(reste -> new OuvertureStand(
+                        null,
+                        date,
+                        heure(reste.bornes()[0]),
+                        endOrNull(reste.bornes()[1]),
+                        MOTIF_CONSIGNE,
+                        reste.effectif()))
+                .toList());
         stand.setFenetresEffectives(fermetures, ouvertures);
     }
 
@@ -188,9 +183,9 @@ public final class ConsigneResolver {
 
         @Override
         public boolean equals(Object other) {
-            return other instanceof Segment segment
-                    && Arrays.equals(bornes, segment.bornes)
-                    && Objects.equals(effectif, segment.effectif);
+            return other instanceof Segment(int[] autresBornes, Integer autreEffectif)
+                    && Arrays.equals(bornes, autresBornes)
+                    && Objects.equals(effectif, autreEffectif);
         }
 
         @Override
@@ -222,15 +217,13 @@ public final class ConsigneResolver {
         if (modeOuverture) {
             return segments;
         }
-        List<int[]> fermes = new ArrayList<>();
-        for (IndisponibiliteStand fermeture : stand.getIndisponibilitesEffectives()) {
-            if (date.equals(fermeture.getDate()) && fermeture.hasValidRange()) {
-                fermes.add(minutes(fermeture.getHeureDebut(), fermeture.getHeureFin()));
-            }
-        }
-        for (int[] reste : soustraire(new int[] {0, MINUTES_PAR_JOUR}, fermes)) {
-            segments.add(new Segment(reste, null));
-        }
+        List<int[]> fermes = stand.getIndisponibilitesEffectives().stream()
+                .filter(fermeture -> date.equals(fermeture.getDate()) && fermeture.hasValidRange())
+                .map(fermeture -> minutes(fermeture.getHeureDebut(), fermeture.getHeureFin()))
+                .toList();
+        segments.addAll(soustraire(new int[] {0, MINUTES_PAR_JOUR}, fermes).stream()
+                .map(reste -> new Segment(reste, null))
+                .toList());
         return segments;
     }
 

@@ -28,6 +28,7 @@ import dev.sylvain.planning.solver.ConstraintCatalog;
 import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Month;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -41,6 +42,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -390,15 +392,14 @@ public final class EditionDeltaComparator {
             Function<T, String> code,
             Function<T, String> label,
             FieldComparison<T> fields) {
-        List<DeltaLine> lines = new ArrayList<>();
-        for (T row : matching.removed()) {
-            lines.add(new DeltaLine(
-                    DeltaChange.REMOVED, null, id.apply(row), null, code.apply(row), label.apply(row), List.of()));
-        }
-        for (T row : matching.added()) {
-            lines.add(new DeltaLine(
-                    DeltaChange.ADDED, null, null, id.apply(row), code.apply(row), label.apply(row), List.of()));
-        }
+        List<DeltaLine> lines = new ArrayList<>(matching.removed().stream()
+                .map(row -> new DeltaLine(
+                        DeltaChange.REMOVED, null, id.apply(row), null, code.apply(row), label.apply(row), List.of()))
+                .toList());
+        lines.addAll(matching.added().stream()
+                .map(row -> new DeltaLine(
+                        DeltaChange.ADDED, null, null, id.apply(row), code.apply(row), label.apply(row), List.of()))
+                .toList());
         for (Pair<T> pair : matching.pairs()) {
             List<String> changed = fields.apply(pair.reference(), pair.target());
             // A code given on one side only is a difference the fields do not see.
@@ -611,7 +612,7 @@ public final class EditionDeltaComparator {
     }
 
     /** Where the opening days of every edition are put: rank N is this date plus N days. */
-    private static final LocalDate RANKED = LocalDate.of(1, 1, 1);
+    private static final LocalDate RANKED = LocalDate.of(1, Month.JANUARY, 1);
 
     /** Where the other dates are put: this date plus their distance to the first opening day. */
     private static final LocalDate OFF_GRID = RANKED.minusYears(1000);
@@ -699,32 +700,31 @@ public final class EditionDeltaComparator {
             for (int i = 0; i < Math.max(a.size(), b.size()); i++) {
                 Creneau ca = i < a.size() ? a.get(i) : null;
                 Creneau cb = i < b.size() ? b.get(i) : null;
-                if (cb == null) {
-                    lines.add(new DeltaTimeslotLine(
-                            DeltaChange.REMOVED, null, day, debut, dateA, dateB, id(ca), null, List.of()));
-                } else if (ca == null) {
-                    lines.add(new DeltaTimeslotLine(
-                            DeltaChange.ADDED, null, day, debut, dateA, dateB, null, id(cb), List.of()));
-                } else {
-                    List<String> fields = ChampsModifies.surCreneau(ca, cb).stream()
-                            .filter(field -> !CRENEAU_FIELDS_IGNORED.contains(field))
-                            .toList();
-                    if (!fields.isEmpty()) {
-                        lines.add(new DeltaTimeslotLine(
-                                DeltaChange.MODIFIED,
-                                DeltaMatch.POSITION,
-                                day,
-                                debut,
-                                dateA,
-                                dateB,
-                                id(ca),
-                                id(cb),
-                                fields));
-                    }
-                }
+                positionLine(day, debut, dateA, dateB, ca, cb).ifPresent(lines::add);
             }
         }
         return lines;
+    }
+
+    /** The line of the {@code i}-th shift starting at {@code debut} on either side — none when both match. */
+    private static Optional<DeltaTimeslotLine> positionLine(
+            int day, LocalTime debut, LocalDate dateA, LocalDate dateB, Creneau ca, Creneau cb) {
+        if (cb == null) {
+            return Optional.of(new DeltaTimeslotLine(
+                    DeltaChange.REMOVED, null, day, debut, dateA, dateB, id(ca), null, List.of()));
+        }
+        if (ca == null) {
+            return Optional.of(
+                    new DeltaTimeslotLine(DeltaChange.ADDED, null, day, debut, dateA, dateB, null, id(cb), List.of()));
+        }
+        List<String> fields = ChampsModifies.surCreneau(ca, cb).stream()
+                .filter(field -> !CRENEAU_FIELDS_IGNORED.contains(field))
+                .toList();
+        if (fields.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(new DeltaTimeslotLine(
+                DeltaChange.MODIFIED, DeltaMatch.POSITION, day, debut, dateA, dateB, id(ca), id(cb), fields));
     }
 
     private static Map<LocalTime, List<Creneau>> byStart(List<Creneau> creneaux) {
