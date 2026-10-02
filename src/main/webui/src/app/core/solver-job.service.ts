@@ -136,17 +136,17 @@ export class SolverJobService {
   private readonly _activeJob = signal<TrackedJob | null>(null);
   readonly activeJob = this._activeJob.asReadonly();
   /**
-   * Solves planned behind the running one, in the order they will start.
-   * Server-side state shared by every client: a run planned from another
-   * browser shows up (and can be removed) here too.
-   */
-  /**
    * The staffing check holding the cores, as the stream last reported it — not
    * a job, but it shares the solver: the toolbar shows it, and launching a
    * solve interrupts it.
    */
   private readonly _verification = signal<RunningStaffingCheck | null>(null);
   readonly verification = this._verification.asReadonly();
+  /**
+   * Solves planned behind the running one, in the order they will start.
+   * Server-side state shared by every client: a run planned from another
+   * browser shows up (and can be removed) here too.
+   */
   private readonly _file = signal<JobView[]>([]);
   readonly file = this._file.asReadonly();
   /**

@@ -119,9 +119,9 @@ export class SolverRunningIndicator {
     if (!verification) {
       return '';
     }
-    const effectif = verification.effectif;
-    const plafond = verification.plafondSecondes;
-    return $localize`:@@job.verificationIndicator:Vérification du besoin en cours : ${effectif}:effectif: personnes, ${plafond}:plafond: s au plus. Lancer une résolution l'interrompra.`;
+    const size = verification.effectif;
+    const limit = verification.plafondSecondes;
+    return $localize`:@@job.verificationIndicator:Vérification du besoin en cours : ${size}:effectif: personnes, ${limit}:plafond: s au plus. Lancer une résolution l'interrompra.`;
   });
 
   /** The running job, plus how many are planned behind it. */

@@ -103,6 +103,7 @@ describe('AdminShell', () => {
     onResult: vi.fn(),
     file: () => [],
     activeJob: () => null,
+    verification: () => null,
   };
   const announcer = { announce: vi.fn() };
   // `openDialogs` too: the global shortcuts (issue #314) ask MatDialog whether
