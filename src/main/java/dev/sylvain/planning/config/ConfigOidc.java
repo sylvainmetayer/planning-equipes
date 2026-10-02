@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Keycloak-backed authentication (see {@code docs/keycloak.md}, ADR 0071).
+ * Keycloak-backed authentication (see {@code docs/keycloak.md}, ADR 0075).
  *
  * <p>Mandatory in production: the administrator, the espace animateur and
  * {@code /mcp} all authenticate through the realm. Turning it off is only

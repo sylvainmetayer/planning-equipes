@@ -2764,7 +2764,7 @@ export interface StatutSession {
 
 /**
  * The roles an administrator grants in the application, per edition (ADR
- * 0071). The global ones — `admin`, `mcp`, `animateur` — are Keycloak realm
+ * 0075). The global ones — `admin`, `mcp`, `animateur` — are Keycloak realm
  * roles and never appear here.
  */
 export type RoleHabilitation = 'RH' | 'RESPONSABLE_STAND';
@@ -2834,7 +2834,7 @@ export interface ParametresResponsables {
 export interface EditionResponsable {
   editionId: string;
   editionNom: string;
-  defaut: boolean;
+  active: boolean;
   expireLe: string | null;
 }
 

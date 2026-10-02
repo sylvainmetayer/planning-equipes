@@ -20,8 +20,8 @@ import {
 const NOW = new Date('2026-06-15T10:00:00Z');
 
 const EDITIONS: Edition[] = [
-  { id: '2025', nom: 'Année 2025', defaut: false, creeLe: null },
-  { id: '2026', nom: 'Année 2026', defaut: true, creeLe: null },
+  { id: '2025', nom: 'Année 2025', active: false, creeLe: null },
+  { id: '2026', nom: 'Année 2026', active: true, creeLe: null },
 ];
 
 function right(patch: Partial<Habilitation> = {}): Habilitation {

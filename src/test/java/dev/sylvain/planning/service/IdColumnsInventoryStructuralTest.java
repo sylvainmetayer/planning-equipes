@@ -52,6 +52,7 @@ class IdColumnsInventoryStructuralTest {
             Map.entry(
                     "envoi_mail.animateur_id",
                     "who a mail was for; kept until JOURNAL_RETENTION or the edition goes, like the ledger"),
+            Map.entry(
                     "habilitation.edition_id",
                     "the edition a right is scoped to, NULL for all; no key so that a dump import, which deletes "
                             + "and recreates the editions, does not cascade the instance's rights away"),

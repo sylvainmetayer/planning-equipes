@@ -31,6 +31,7 @@ const CONFIG: AppConfig = {
   devMode: false,
   dragDropEnabled: false,
   version: '',
+  mailMock: false,
   authOidc: true,
   authSecours: false,
 };

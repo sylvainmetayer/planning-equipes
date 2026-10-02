@@ -67,7 +67,6 @@ public class ConfigResource {
             ConfigAdmin admin,
             @ConfigProperty(name = "quarkus.application.version") String version,
             @ConfigProperty(name = "quarkus.mailer.mock", defaultValue = "false") boolean mailMock,
-
             ConfigOidc oidc,
             ConfigSecours secours) {
         this.observabilite = observabilite;
