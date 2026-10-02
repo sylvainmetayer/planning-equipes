@@ -34,7 +34,7 @@ import { ConfirmService } from '../../shared/confirm-dialog';
 import {
   changeSummary,
   confirmationLabel,
-  filterRecipients,
+  withoutMinorChanges,
   readRecipientSort,
   sortRecipients,
   RecipientSort,
@@ -116,12 +116,13 @@ export class PublicationPanel implements OnInit {
   /** Who the admin took out of this send — shared with the table under the panel. */
   private readonly excluded = this.selection.excluded;
 
-  protected readonly rows = computed(() =>
-    sortRecipients(
-      filterRecipients(this.preview()?.destinataires ?? [], this.minorHidden()),
+  protected readonly rows = computed(() => {
+    const destinataires = this.preview()?.destinataires ?? [];
+    return sortRecipients(
+      this.minorHidden() ? withoutMinorChanges(destinataires) : [...destinataires],
       this.sortOrder(),
-    ),
-  );
+    );
+  });
 
   /** How many rows the filter is currently folding away — said, so nothing hides silently. */
   protected readonly minorCount = computed(

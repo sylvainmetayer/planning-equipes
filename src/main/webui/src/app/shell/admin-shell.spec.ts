@@ -934,7 +934,7 @@ describe('AdminShell', () => {
         'planning-equipes.brouillon.stand.ed-1#s2',
         'planning-equipes.editionId',
       ]);
-      expect(session.length).toBe(0);
+      expect(session).toHaveLength(0);
     });
 
     // A shared régie computer: the next person must not be offered the
@@ -950,7 +950,7 @@ describe('AdminShell', () => {
       await shell['logout']();
 
       expect([...local.entries.keys()]).toEqual(['planning-equipes.editionId']);
-      expect(session.length).toBe(0);
+      expect(session).toHaveLength(0);
       expect(announced).toEqual(['logout']);
       vi.restoreAllMocks();
     });
@@ -965,7 +965,7 @@ describe('AdminShell', () => {
 
       busTarget.dispatchEvent(new MessageEvent('message', { data: 'logout' }));
 
-      expect(session.length).toBe(0);
+      expect(session).toHaveLength(0);
       expect(local.entries.has('planning-equipes.brouillon.stand.ed-1#s1')).toBe(true);
     });
   });

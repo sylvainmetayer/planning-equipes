@@ -475,8 +475,8 @@ describe('AnimateurFormDialog', () => {
       // Destroyed with the write pending, as a navigation would: it goes out now.
       fixture.destroy();
 
-      expect(storages.local.length).toBe(0);
-      expect(storages.session.length).toBe(1);
+      expect(storages.local).toHaveLength(0);
+      expect(storages.session).toHaveLength(1);
       const written = JSON.parse(storages.session.getItem(storages.session.key(0)!)!);
       expect(written.draft.nom).toBe('Nothomb-Martin');
     });
@@ -511,7 +511,7 @@ describe('AnimateurFormDialog', () => {
       submit(fixture);
       await fixture.whenStable();
       expect(payload(save).nom).toBe('Interrompue');
-      expect(session.length).toBe(0);
+      expect(session).toHaveLength(0);
     });
 
     it('offers nothing to another fiche', async () => {

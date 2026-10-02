@@ -42,7 +42,7 @@
         @for (jour of joursSemaine; track jour) {
           <mat-checkbox [name]="nom('horaireJour') + indexHoraire + jour" [disabled]="disabled()"
                         [ngModel]="horaire.joursSemaine.includes(jour)"
-                        (ngModelChange)="basculerJourSemaine(indexHoraire, jour, $event)">
+                        (ngModelChange)="$event ? tickWeekday(indexHoraire, jour) : untickWeekday(indexHoraire, jour)">
             {{ libelleJourSemaine(jour) }}
           </mat-checkbox>
         }

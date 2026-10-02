@@ -6,7 +6,8 @@ import { describe, expect, it } from 'vitest';
 import {
   StandDraft,
   ajouterA,
-  basculerJour,
+  addWeekday,
+  removeWeekday,
   brouillonInvalide,
   conflitOuvertureFermeture,
   datesFromText,
@@ -124,15 +125,15 @@ describe('list edits', () => {
   });
 });
 
-describe('basculerJour', () => {
+describe('addWeekday / removeWeekday', () => {
   it('adds a day once, however many times it is ticked', () => {
-    expect(basculerJour(['MONDAY'], 'FRIDAY', true)).toEqual(['MONDAY', 'FRIDAY']);
-    expect(basculerJour(['MONDAY', 'FRIDAY'], 'FRIDAY', true)).toEqual(['MONDAY', 'FRIDAY']);
+    expect(addWeekday(['MONDAY'], 'FRIDAY')).toEqual(['MONDAY', 'FRIDAY']);
+    expect(addWeekday(['MONDAY', 'FRIDAY'], 'FRIDAY')).toEqual(['MONDAY', 'FRIDAY']);
   });
 
   it('removes a day, and does nothing when it was not there', () => {
-    expect(basculerJour(['MONDAY', 'FRIDAY'], 'MONDAY', false)).toEqual(['FRIDAY']);
-    expect(basculerJour(['FRIDAY'], 'MONDAY', false)).toEqual(['FRIDAY']);
+    expect(removeWeekday(['MONDAY', 'FRIDAY'], 'MONDAY')).toEqual(['FRIDAY']);
+    expect(removeWeekday(['FRIDAY'], 'MONDAY')).toEqual(['FRIDAY']);
   });
 });
 
@@ -390,8 +391,6 @@ describe('toDraft', () => {
 });
 
 describe('versStand', () => {
-  it('sends the relay family as a number, and null to let the server pick', () => {});
-
   const emplacements = [{ id: 'salle-1', nom: 'Salle 1' }] as Emplacement[];
 
   it('keeps the drawn id as is, and trims the name and the code', () => {

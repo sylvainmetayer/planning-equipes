@@ -399,7 +399,7 @@ describe('SolverJobService', () => {
       service.stop();
       await vi.advanceTimersByTimeAsync(10 * 60 * 1000);
 
-      expect(api.getResponse.mock.calls.length).toBe(afterStart);
+      expect(api.getResponse.mock.calls).toHaveLength(afterStart);
     });
 
     it('can be restarted after a stop, as a new shell would', async () => {

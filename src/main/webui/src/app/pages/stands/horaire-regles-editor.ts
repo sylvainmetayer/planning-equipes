@@ -29,7 +29,8 @@ import { FenetreHoraire, JourSemaine, Stand } from '../../core/models';
 import {
   HoraireDraft,
   ajouterA,
-  basculerJour,
+  addWeekday,
+  removeWeekday,
   datesFromText,
   fenetreVide,
   patchDansListe,
@@ -237,12 +238,21 @@ export class HoraireReglesEditor {
   }
 
   /** Seven checkboxes rather than a multi-select: the shape the question has. */
-  protected basculerJourSemaine(indexHoraire: number, jour: JourSemaine, coche: boolean): void {
+  protected tickWeekday(indexHoraire: number, jour: JourSemaine): void {
+    this.patchWeekdays(indexHoraire, (jours) => addWeekday(jours, jour));
+  }
+
+  protected untickWeekday(indexHoraire: number, jour: JourSemaine): void {
+    this.patchWeekdays(indexHoraire, (jours) => removeWeekday(jours, jour));
+  }
+
+  private patchWeekdays(
+    indexHoraire: number,
+    change: (joursSemaine: readonly JourSemaine[]) => JourSemaine[],
+  ): void {
     const horaire = this.horaires()[indexHoraire];
     if (horaire) {
-      this.patchHoraire(indexHoraire, {
-        joursSemaine: basculerJour(horaire.joursSemaine, jour, coche),
-      });
+      this.patchHoraire(indexHoraire, { joursSemaine: change(horaire.joursSemaine) });
     }
   }
 

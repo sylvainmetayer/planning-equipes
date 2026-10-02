@@ -255,9 +255,9 @@ export class JourJPage implements OnInit {
         variant: 'success',
       });
       await this.recharger();
-      for (const poste of marquee.postesLiberes) {
-        await this.chercherRemplacants(poste.posteId);
-      }
+      await Promise.all(
+        marquee.postesLiberes.map((poste) => this.chercherRemplacants(poste.posteId)),
+      );
     } catch (error) {
       // A contradiction with an existing exception, or a locked seat: the
       // server names both sides, so the message is shown whole and kept open.
@@ -302,9 +302,9 @@ export class JourJPage implements OnInit {
         variant: 'success',
       });
       await this.recharger();
-      for (const poste of marquee.postesLiberes) {
-        await this.chercherRemplacants(poste.posteId);
-      }
+      await Promise.all(
+        marquee.postesLiberes.map((poste) => this.chercherRemplacants(poste.posteId)),
+      );
     } catch (error) {
       this.notifications.notify({
         title: $localize`:@@jourJ.absence.refusee:Absence refusée`,
@@ -476,11 +476,11 @@ export class JourJPage implements OnInit {
       });
       await this.recharger();
       const trousRestants = new Set(this.trous().map((trou) => trou.posteId));
-      for (const identifiant of aRafraichir) {
-        if (trousRestants.has(identifiant)) {
-          await this.chercherRemplacants(identifiant);
-        }
-      }
+      await Promise.all(
+        aRafraichir
+          .filter((identifiant) => trousRestants.has(identifiant))
+          .map((identifiant) => this.chercherRemplacants(identifiant)),
+      );
     } catch (error) {
       this.notifications.notify({
         title: $localize`:@@jourJ.affectation.echec:Affectation refusée`,

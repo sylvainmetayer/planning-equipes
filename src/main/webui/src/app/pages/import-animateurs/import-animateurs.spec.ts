@@ -7,7 +7,7 @@ import {
   ficheLinkable,
   iconeAction,
   isFlagged,
-  visibleRows,
+  flaggedRows,
   libelleColonne,
   mappingNommeQuelquun,
   mappingVide,
@@ -116,11 +116,10 @@ const ON_ROW_3: ImportCsvDoublon = { kind: 'ROW', line: 3, animateurId: null };
 const NAMESAKE: ImportCsvDoublon = { kind: 'NAMESAKE', line: null, animateurId: 'A1' };
 
 describe('probable duplicates', () => {
-  it('narrows the rows to the flagged ones only when asked', () => {
+  it('narrows the rows to the flagged ones', () => {
     const rows = [row(2, [ON_ROW_3]), row(3, [{ ...ON_ROW_3, line: 2 }]), row(4)];
 
-    expect(visibleRows(rows, false).map((ligne) => ligne.line)).toEqual([2, 3, 4]);
-    expect(visibleRows(rows, true).map((ligne) => ligne.line)).toEqual([2, 3]);
+    expect(flaggedRows(rows).map((ligne) => ligne.line)).toEqual([2, 3]);
     expect(isFlagged(rows[2])).toBe(false);
   });
 
