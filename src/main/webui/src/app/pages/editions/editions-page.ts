@@ -28,7 +28,7 @@ import { errorMessage } from '../../core/error-message';
 import { EmptyEditionCard } from './empty-edition-card';
 
 /** The shape of an edition id (`E1`, `E2`…), which the server refuses as a name. */
-const NOM_FORME_ID = /^[Ee][1-9][0-9]*$/;
+const NOM_FORME_ID = /^[Ee][1-9]\d*$/;
 
 /**
  * Manages the editions the whole referential is partitioned into: create an

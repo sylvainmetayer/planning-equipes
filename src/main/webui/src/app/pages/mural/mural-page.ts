@@ -164,7 +164,7 @@ export class MuralPage implements OnInit, OnDestroy {
       return;
     }
     this.timers = [
-      setInterval(() => void this.poll(), RAFRAICHISSEMENT_MS),
+      setInterval(() => this.poll(), RAFRAICHISSEMENT_MS),
       setInterval(
         () => this.page.update((index) => nextPage(index, this.pages().length)),
         ROTATION_MS,
@@ -255,7 +255,7 @@ export class MuralPage implements OnInit, OnDestroy {
     if (!grille || tuiles.length === 0) {
       return;
     }
-    const gap = parseFloat(getComputedStyle(grille).rowGap) || 0;
+    const gap = Number.parseFloat(getComputedStyle(grille).rowGap) || 0;
     const occupe = ['.mural-entete', '.mural-fermes', '.mural-bandeau']
       .map((selecteur) => racine.querySelector<HTMLElement>(selecteur)?.offsetHeight ?? 0)
       .reduce((somme, hauteur) => somme + hauteur, 0);
@@ -269,8 +269,7 @@ export class MuralPage implements OnInit, OnDestroy {
     };
     const previous = this.mesure();
     if (
-      !previous ||
-      previous.largeurGrille !== mesure.largeurGrille ||
+      previous?.largeurGrille !== mesure.largeurGrille ||
       previous.hauteurDisponible !== mesure.hauteurDisponible ||
       previous.hauteurTuile !== mesure.hauteurTuile ||
       previous.largeurTuile !== mesure.largeurTuile

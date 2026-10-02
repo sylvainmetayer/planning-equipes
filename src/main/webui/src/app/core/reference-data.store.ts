@@ -243,7 +243,8 @@ export class ReferenceDataStore {
       try {
         const avertissements = avertissementsDe(await action(id));
         result.avertissements.push(...avertissements);
-        (result.avertissementsParId ??= new Map()).set(id, avertissements);
+        result.avertissementsParId ??= new Map();
+        result.avertissementsParId.set(id, avertissements);
         result.succes.push(id);
       } catch (error) {
         result.echecs.push({

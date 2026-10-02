@@ -23,6 +23,11 @@ function moment(date: string | null): number {
   return Number.isNaN(parsed) ? Number.NEGATIVE_INFINITY : parsed;
 }
 
+/** At the same instant, a solve before a snapshot. */
+function kindOrder(kind: VersionRow['kind']): number {
+  return kind === 'resolution' ? 0 : 1;
+}
+
 /**
  * The edition's solves and snapshots, newest first. At the same instant the
  * solve comes first: the automatic snapshot of the next one is taken later,
@@ -54,7 +59,7 @@ export function versionRows(
   return rows.sort(
     (a, b) =>
       moment(b.date) - moment(a.date) ||
-      (a.kind === b.kind ? 0 : a.kind === 'resolution' ? -1 : 1) ||
+      kindOrder(a.kind) - kindOrder(b.kind) ||
       a.key.localeCompare(b.key),
   );
 }

@@ -337,77 +337,69 @@ function scopedClassesOf(sheet, own, globalClasses) {
   return scoped;
 }
 
+/** The stylesheets a page renders with: its components' own, and its shell's unencapsulated ones. */
+function sheetsOfPage(ctx, page, members) {
+  const { byFile, emulated } = ctx;
+  const sheets = new Set();
+  for (const f of members) for (const s of byFile.get(f).styles) sheets.add(s);
+  // A shell sheet reaches its pages only when the shell renders it
+  // unencapsulated: emulated, Angular rewrites its selectors to the shell's
+  // own template, and a page using one of its classes gets nothing.
+  if (page.shell)
+    for (const s of byFile.get(page.shell).styles) if (!emulated.has(s)) sheets.add(s);
+  return sheets;
+}
+
 /** Rule 1, page by page; fills `usersOfSheet` (stylesheet -> pages that attach it) on the way. */
 function checkPageScopes(ctx, failures) {
-  const { byFile, routed, globalClasses, sheetClasses, emulated, unscoped, usersOfSheet } = ctx;
+  const { byFile, routed, globalClasses, sheetClasses, unscoped, usersOfSheet } = ctx;
   for (const page of routed) {
     const members = closure(byFile, page.file);
     const scope = new Set(globalClasses);
-    const sheets = new Set();
-    for (const f of members) for (const s of byFile.get(f).styles) sheets.add(s);
-    // A shell sheet reaches its pages only when the shell renders it
-    // unencapsulated: emulated, Angular rewrites its selectors to the shell's
-    // own template, and a page using one of its classes gets nothing.
-    if (page.shell)
-      for (const s of byFile.get(page.shell).styles) if (!emulated.has(s)) sheets.add(s);
-    for (const s of sheets) {
+    for (const s of sheetsOfPage(ctx, page, members)) {
       for (const k of sheetClasses.get(s)) scope.add(k);
       addTo(usersOfSheet, s, page.file);
     }
+    const outOfScope = (c) => !scope.has(c) && unscoped.has(c);
     for (const f of members) {
-      for (const c of byFile.get(f).used) {
-        if (!scope.has(c) && unscoped.has(c)) {
-          failures.push(
-            `${relative(APP, page.file)} : ${relative(APP, f)} uses .${c}, defined only in a stylesheet this page does not load`,
-          );
-        }
+      for (const c of [...byFile.get(f).used].filter(outOfScope)) {
+        failures.push(
+          `${relative(APP, page.file)} : ${relative(APP, f)} uses .${c}, defined only in a stylesheet this page does not load`,
+        );
       }
     }
   }
+}
+
+/** The classes some unencapsulated stylesheet defines: the global partials and every page sheet. */
+function unencapsulatedClasses(ctx) {
+  const { globalClasses, sheetClasses, emulated } = ctx;
+  const defined = new Set(globalClasses);
+  for (const [sheet, classes] of sheetClasses)
+    if (!emulated.has(sheet)) for (const c of classes) defined.add(c);
+  return defined;
+}
+
+/** The components other than `owner` that use the class `c`. */
+function usersOtherThan(byFile, owner, c) {
+  return [...byFile.values()].filter((comp) => comp.file !== owner.file && comp.used.has(c));
 }
 
 // A class only an emulated sheet defines, used outside the component that
 // owns the sheet, is styled nowhere: the leak the commit that re-scoped the
 // `.etat-*` classes fixed by hand, on the four templates it happened to see.
 function checkEmulatedLeaks(ctx, failures) {
-  const { byFile, globalClasses, sheetClasses, emulated } = ctx;
-  const definedUnencapsulated = new Set(globalClasses);
-  for (const [sheet, classes] of sheetClasses)
-    if (!emulated.has(sheet)) for (const c of classes) definedUnencapsulated.add(c);
+  const { byFile, sheetClasses, emulated } = ctx;
+  const definedUnencapsulated = unencapsulatedClasses(ctx);
   for (const owner of byFile.values()) {
     for (const sheet of owner.styles.filter((s) => emulated.has(s))) {
       const leaking = [...(sheetClasses.get(sheet) ?? [])].filter(
         (c) => !definedUnencapsulated.has(c),
       );
       for (const c of leaking) {
-        for (const comp of byFile.values()) {
-          if (comp.file !== owner.file && comp.used.has(c)) {
-            failures.push(
-              `${relative(ROOT, sheet)} defines .${c} under emulated encapsulation, which ${relative(APP, comp.file)} uses: styled nowhere`,
-            );
-          }
-        }
-      }
-    }
-  }
-}
-
-/** Rule 2: a page stylesheet's class used outside the pages that attach it. */
-function checkSheetLeaks(ctx, failures) {
-  const { byFile, globalClasses, sheetClasses, emulated, scopedIn, pageOfComponent, usersOfSheet } =
-    ctx;
-  for (const [sheet, owners] of usersOfSheet) {
-    if (emulated.has(sheet)) continue;
-    const exposed = [...(sheetClasses.get(sheet) ?? [])].filter(
-      (c) => !globalClasses.has(c) && !scopedIn.get(sheet)?.has(c),
-    );
-    for (const c of exposed) {
-      for (const comp of byFile.values()) {
-        if (!comp.used.has(c)) continue;
-        const its = pageOfComponent.get(comp.file) ?? new Set([comp.file]);
-        if (![...its].some((p) => owners.has(p))) {
+        for (const comp of usersOtherThan(byFile, owner, c)) {
           failures.push(
-            `${relative(ROOT, sheet)} defines .${c}, used by ${relative(APP, comp.file)} outside the pages that load it`,
+            `${relative(ROOT, sheet)} defines .${c} under emulated encapsulation, which ${relative(APP, comp.file)} uses: styled nowhere`,
           );
         }
       }
@@ -415,8 +407,40 @@ function checkSheetLeaks(ctx, failures) {
   }
 }
 
-function main() {
-  const byFile = components();
+/** The components using the class `c` outside every page in `owners`. */
+function usersOutsidePages(ctx, owners, c) {
+  const { byFile, pageOfComponent } = ctx;
+  return [...byFile.values()].filter((comp) => {
+    if (!comp.used.has(c)) return false;
+    const its = pageOfComponent.get(comp.file) ?? new Set([comp.file]);
+    return ![...its].some((p) => owners.has(p));
+  });
+}
+
+/** Rule 2: a page stylesheet's class used outside the pages that attach it. */
+function checkSheetLeaks(ctx, failures) {
+  const { globalClasses, sheetClasses, emulated, scopedIn, usersOfSheet } = ctx;
+  for (const [sheet, owners] of usersOfSheet) {
+    if (emulated.has(sheet)) continue;
+    const exposed = [...(sheetClasses.get(sheet) ?? [])].filter(
+      (c) => !globalClasses.has(c) && !scopedIn.get(sheet)?.has(c),
+    );
+    for (const c of exposed) {
+      for (const comp of usersOutsidePages(ctx, owners, c)) {
+        failures.push(
+          `${relative(ROOT, sheet)} defines .${c}, used by ${relative(APP, comp.file)} outside the pages that load it`,
+        );
+      }
+    }
+  }
+}
+
+/**
+ * Everything the three rules read: the components, the routed pages, and per
+ * stylesheet whether Angular scopes it, which of its classes its own selectors
+ * scope, and the pages each component renders in.
+ */
+function buildContext(byFile, globalClasses, sheetClasses) {
   const shells = [
     ...new Set(
       pages(byFile)
@@ -424,16 +448,6 @@ function main() {
         .filter(Boolean),
     ),
   ].map((file) => ({ file, shell: null }));
-  const { reached, globalClasses, allDefined, sheetClasses } = definedClasses(byFile);
-  // rule 3: every stylesheet is loaded by something. A route sheet whose
-  // `styleUrl` was dropped leaves the screen unstyled and its classes out of
-  // `allDefined` at the same time — rules 1 and 2 go blind exactly when they
-  // should shout, since a class nobody defines is never "out of scope".
-  const orphans = walk(ROOT, [])
-    .filter((f) => f.endsWith('.css') && !reached.has(f))
-    .map((f) => `${relative(ROOT, f)} is loaded by nothing: neither styles.css nor a styleUrl`);
-  recordUsedClasses(byFile, allDefined);
-
   // rule 2: a page stylesheet's class used outside the pages that attach it.
   // A class only ever named next to another class of the same sheet
   // (`.carte-jour-pastille.etat-ferme`, `.fragilite-synthese .synthese-alerte`)
@@ -454,8 +468,7 @@ function main() {
   const unscoped = new Set(globalClasses);
   for (const [sheet, classes] of sheetClasses)
     for (const c of classes) if (!scopedIn.get(sheet)?.has(c)) unscoped.add(c);
-
-  const ctx = {
+  return {
     byFile,
     routed,
     globalClasses,
@@ -466,6 +479,21 @@ function main() {
     unscoped,
     usersOfSheet: new Map(),
   };
+}
+
+function main() {
+  const byFile = components();
+  const { reached, globalClasses, allDefined, sheetClasses } = definedClasses(byFile);
+  // rule 3: every stylesheet is loaded by something. A route sheet whose
+  // `styleUrl` was dropped leaves the screen unstyled and its classes out of
+  // `allDefined` at the same time — rules 1 and 2 go blind exactly when they
+  // should shout, since a class nobody defines is never "out of scope".
+  const orphans = walk(ROOT, [])
+    .filter((f) => f.endsWith('.css') && !reached.has(f))
+    .map((f) => `${relative(ROOT, f)} is loaded by nothing: neither styles.css nor a styleUrl`);
+  recordUsedClasses(byFile, allDefined);
+
+  const ctx = buildContext(byFile, globalClasses, sheetClasses);
   const failures = [];
   checkPageScopes(ctx, failures);
   checkEmulatedLeaks(ctx, failures);

@@ -204,6 +204,25 @@ export function ratio(value: number | null): string {
   return value === null ? '—' : `${Math.round(value * 100)} %`;
 }
 
+/** « +3 stands »: the net change of one counted family, `null` for a family the summary does not count. */
+function familyPart(
+  family: EditionDelta['summary']['families'][number]['family'],
+  net: number,
+): string | null {
+  switch (family) {
+    case 'STAND':
+      return $localize`:@@comparerEditions.resume.stands:${signed(net)}:n: stands`;
+    case 'ANIMATEUR':
+      return $localize`:@@comparerEditions.resume.animateurs:${signed(net)}:n: animateurs`;
+    case 'TYPOLOGIE':
+      return $localize`:@@comparerEditions.resume.typologies:${signed(net)}:n: typologies`;
+    case 'EMPLACEMENT':
+      return $localize`:@@comparerEditions.resume.emplacements:${signed(net)}:n: emplacements`;
+    default:
+      return null;
+  }
+}
+
 /**
  * « +3 stands, −12 animateurs, +410 heures à pourvoir »: the net change of
  * every family that moved, then the hours to fill. Empty when nothing differs.
@@ -212,31 +231,9 @@ export function summaryParts(delta: EditionDelta): string[] {
   const parts: string[] = [];
   for (const count of delta.summary.families) {
     const net = count.added - count.removed;
-    switch (count.family) {
-      case 'STAND':
-        if (net !== 0) {
-          parts.push($localize`:@@comparerEditions.resume.stands:${signed(net)}:n: stands`);
-        }
-        break;
-      case 'ANIMATEUR':
-        if (net !== 0) {
-          parts.push($localize`:@@comparerEditions.resume.animateurs:${signed(net)}:n: animateurs`);
-        }
-        break;
-      case 'TYPOLOGIE':
-        if (net !== 0) {
-          parts.push($localize`:@@comparerEditions.resume.typologies:${signed(net)}:n: typologies`);
-        }
-        break;
-      case 'EMPLACEMENT':
-        if (net !== 0) {
-          parts.push(
-            $localize`:@@comparerEditions.resume.emplacements:${signed(net)}:n: emplacements`,
-          );
-        }
-        break;
-      default:
-        break;
+    const part = net === 0 ? null : familyPart(count.family, net);
+    if (part) {
+      parts.push(part);
     }
   }
   const jours = delta.summary.targetDays - delta.summary.referenceDays;

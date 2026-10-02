@@ -368,8 +368,7 @@ export function squarify(items: readonly WeightedItem[], bounds: Rect): PlacedRe
   const placed: PlacedRect[] = [];
   let free: Rect = { ...bounds };
   let row: { id: string; area: number }[] = [];
-  for (let index = 0; index < areas.length; index++) {
-    const item = areas[index];
+  for (const item of areas) {
     const side = Math.min(free.width, free.height);
     if (row.length === 0 || worst([...row, item], side) <= worst(row, side)) {
       row.push(item);

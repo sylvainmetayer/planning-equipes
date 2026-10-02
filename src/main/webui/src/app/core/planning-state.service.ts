@@ -23,10 +23,10 @@ export class PlanningStateService {
    * the Administration page may launch solver jobs, so switching tabs can no
    * longer spawn parallel solver runs.
    */
-  async loadForDisplay(): Promise<PlanningEvenement> {
+  loadForDisplay(): Promise<PlanningEvenement> {
     const current = this.lastSolvedPlanning();
     if (current) {
-      return current;
+      return Promise.resolve(current);
     }
     return this.api.get<PlanningEvenement>('/api/planning/persisted');
   }

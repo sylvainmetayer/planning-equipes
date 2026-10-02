@@ -607,6 +607,17 @@ function relatedDetails(contributions: ContributionAdHoc[]): string[] {
   return [$localize`:@@problemes.detail.adHocEnCause:Ajustements en cause : ${noms}:noms:`];
 }
 
+/** What the problems are read from besides the report and the constraints. */
+export interface ProblemSources {
+  contraintesAdHocEnCause?: ContributionAdHoc[];
+  pauses?: RapportPauses | null;
+  nomsStands?: LabelIndex;
+  nomsAnimateurs?: LabelIndex;
+  walks?: WalkSequenceReport | null;
+  groupedArrivals?: GroupedArrivalReport | null;
+  lieux?: { pivot?: readonly CellulePivot[]; creneaux?: TimeslotIndex };
+}
+
 /**
  * Builds the ranked problem list. Both arguments are optional so the caller can
  * render whatever it already has: the feasibility report is available before any
@@ -629,14 +640,17 @@ function relatedDetails(contributions: ContributionAdHoc[]): string[] {
 export function construireProblemes(
   report: FeasibilityReport | null,
   contraintes: ConstraintView[] = [],
-  contraintesAdHocEnCause: ContributionAdHoc[] = [],
-  pauses: RapportPauses | null = null,
-  nomsStands: LabelIndex = new Map(),
-  nomsAnimateurs: LabelIndex = new Map(),
-  walks: WalkSequenceReport | null = null,
-  groupedArrivals: GroupedArrivalReport | null = null,
-  lieux: { pivot?: readonly CellulePivot[]; creneaux?: TimeslotIndex } = {},
+  sources: ProblemSources = {},
 ): Probleme[] {
+  const {
+    contraintesAdHocEnCause = [],
+    pauses = null,
+    nomsStands = new Map(),
+    nomsAnimateurs = new Map(),
+    walks = null,
+    groupedArrivals = null,
+    lieux = {},
+  } = sources;
   const problemes: Probleme[] = [];
   const pivot = lieux.pivot ?? [];
   const creneaux: TimeslotIndex = lieux.creneaux ?? new Map();

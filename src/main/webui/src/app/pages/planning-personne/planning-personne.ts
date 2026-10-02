@@ -270,11 +270,7 @@ function detailsByDay(
     }
     journee.fenetres.push(`${formatHeure(debut)}–${formatHeure(fin)}`);
     const previous = journee.seats.at(-1);
-    if (
-      previous &&
-      previous.stand === stand &&
-      minutesOfDay(previous.end) === minutesOfDay(debut)
-    ) {
+    if (previous?.stand === stand && minutesOfDay(previous.end) === minutesOfDay(debut)) {
       previous.end = fin;
     } else {
       journee.seats.push({ stand, start: debut, end: fin });
@@ -297,7 +293,10 @@ function comparer(gauche: LignePersonne, droite: LignePersonne, tri: SortState):
   const a = gauche.valeurs[tri.active] ?? null;
   const b = droite.valeurs[tri.active] ?? null;
   if (a === null || b === null) {
-    return a === b ? 0 : a === null ? -1 : 1;
+    if (a === b) {
+      return 0;
+    }
+    return a === null ? -1 : 1;
   }
   return a - b;
 }
@@ -352,6 +351,113 @@ function totalled(cle: string): boolean {
   );
 }
 
+/** Animateur id → the stands they hold a seat on, for the stand filters. */
+function standsHeld(postes: readonly PosteAffectation[]): Map<string, Set<string>> {
+  const standsOf = new Map<string, Set<string>>();
+  for (const poste of postes) {
+    if (poste.animateur && poste.stand) {
+      const ensemble = standsOf.get(poste.animateur.id) ?? new Set<string>();
+      ensemble.add(poste.stand.id);
+      standsOf.set(poste.animateur.id, ensemble);
+    }
+  }
+  return standsOf;
+}
+
+/** Whether a person's line passes the filters: the person, their stands, the rest, the search. */
+function kept(
+  ligneRepos: LigneRepos,
+  byDay: Map<number, JourneePersonne>,
+  stands: ReadonlySet<string> | undefined,
+  filtres: FiltresPersonne,
+): boolean {
+  const id = ligneRepos.animateurId;
+  const retenus = filtres.standsRetenus;
+  if (filtres.animateur && id !== filtres.animateur) {
+    return false;
+  }
+  if (retenus && ![...(stands ?? [])].some((stand) => retenus.has(stand))) {
+    return false;
+  }
+  if (filtres.sansReposSeulement && !ligneRepos.sansRepos) {
+    return false;
+  }
+  const personStands = [...byDay.values()].flatMap((journee) => journee.stands);
+  return correspondAuFiltre(filtres.recherche, [ligneRepos.nom, id, ...personStands]);
+}
+
+/** One day of one person: what the cell shows, its colour, and what it says when read aloud. */
+function personCase(
+  jour: JourEvenement,
+  cellule: LigneRepos['cellules'][number] | undefined,
+  journee: JourneePersonne | undefined,
+): CasePersonne {
+  const statut = cellule?.statut ?? 'repos';
+  const classes = [`planning-personne-${statut}`];
+  if (cellule?.conflit) {
+    classes.push('planning-personne-conflit');
+  }
+  if (journee?.soiree) {
+    classes.push('planning-personne-soiree');
+  }
+  const stands = journee?.stands.join(', ') ?? '';
+  const dayHours = journee?.fenetres.join(', ') ?? '';
+  return {
+    statut,
+    stands,
+    heures: dayHours,
+    seats: (journee?.seats ?? []).map((seat) => ({
+      hours: `${formatHeure(seat.start)}–${formatHeure(seat.end)}`,
+      stand: seat.stand,
+    })),
+    posteId: journee?.posteId ?? null,
+    classe: classes.join(' '),
+    libelle: journee
+      ? `${cellule?.tooltip ?? jour.title} — ${stands} ${dayHours}`
+      : (cellule?.tooltip ?? jour.title),
+    active: journee !== undefined,
+  };
+}
+
+/**
+ * The hours of the people on screen, added up: what the roster costs, week
+ * by week and overall, and what the payroll's premiums weigh.
+ */
+function footerTotals(
+  keys: readonly string[],
+  lignes: readonly LignePersonne[],
+): Record<string, string> {
+  const totals: Record<string, string> = {};
+  for (const key of keys) {
+    if (totalled(key)) {
+      totals[key] = formatValue(
+        key,
+        lignes.reduce((somme, ligne) => somme + (ligne.valeurs[key] ?? 0), 0),
+      );
+    }
+  }
+  return totals;
+}
+
+/** One person's summary columns, the median gap colouring the hours. */
+function syntheseOf(
+  keys: readonly string[],
+  valeurs: Record<string, number | null>,
+): Record<string, ValeurSynthese> {
+  const gap = gapClass(valeurs[MEDIAN_GAP] ?? null);
+  const synthese: Record<string, ValeurSynthese> = {};
+  for (const key of keys) {
+    const amount = valeurs[key] ?? null;
+    synthese[key] = isWeek(key)
+      ? weekValue(key, amount)
+      : {
+          texte: formatValue(key, amount),
+          classe: key === MEDIAN_GAP || key === 'heuresTotal' ? gap : '',
+        };
+  }
+  return synthese;
+}
+
 /**
  * The grid: one line per animateur of the plan the filters keep, in the Jours
  * de repos order (longest run of worked days first) or in the order a column
@@ -378,17 +484,7 @@ export function buildTableauPersonnes(
   const hoursById = new Map((heures?.animateurs ?? []).map((ligne) => [ligne.animateurId, ligne]));
   const medianeHeures = equite?.syntheses?.['heuresTotal']?.mediane ?? null;
   const keys = summaryKeys(equite);
-  const retenus = filtres.standsRetenus;
-  const standsOf = new Map<string, Set<string>>();
-  if (retenus) {
-    for (const poste of postes) {
-      if (poste.animateur && poste.stand) {
-        const ensemble = standsOf.get(poste.animateur.id) ?? new Set<string>();
-        ensemble.add(poste.stand.id);
-        standsOf.set(poste.animateur.id, ensemble);
-      }
-    }
-  }
+  const standsOf = filtres.standsRetenus ? standsHeld(postes) : new Map<string, Set<string>>();
 
   // Every person's summary, before any filter: the always-empty columns are
   // read over the whole plan.
@@ -406,61 +502,15 @@ export function buildTableauPersonnes(
   const lignes: LignePersonne[] = [];
   for (const ligneRepos of repos.lignes) {
     const id = ligneRepos.animateurId;
-    if (filtres.animateur && id !== filtres.animateur) {
-      continue;
-    }
-    if (retenus && ![...(standsOf.get(id) ?? [])].some((stand) => retenus.has(stand))) {
-      continue;
-    }
-    if (filtres.sansReposSeulement && !ligneRepos.sansRepos) {
-      continue;
-    }
     const byDay = details.get(id) ?? new Map<number, JourneePersonne>();
-    const personStands = [...byDay.values()].flatMap((journee) => journee.stands);
-    if (!correspondAuFiltre(filtres.recherche, [ligneRepos.nom, id, ...personStands])) {
+    if (!kept(ligneRepos, byDay, standsOf.get(id), filtres)) {
       continue;
     }
-    const cases = jours.map((jour): CasePersonne => {
-      const cellule = ligneRepos.cellules[dayColumn.get(jour.jour) ?? -1];
-      const journee = byDay.get(jour.jour);
-      const statut = cellule?.statut ?? 'repos';
-      const classes = [`planning-personne-${statut}`];
-      if (cellule?.conflit) {
-        classes.push('planning-personne-conflit');
-      }
-      if (journee?.soiree) {
-        classes.push('planning-personne-soiree');
-      }
-      const stands = journee?.stands.join(', ') ?? '';
-      const dayHours = journee?.fenetres.join(', ') ?? '';
-      return {
-        statut,
-        stands,
-        heures: dayHours,
-        seats: (journee?.seats ?? []).map((seat) => ({
-          hours: `${formatHeure(seat.start)}–${formatHeure(seat.end)}`,
-          stand: seat.stand,
-        })),
-        posteId: journee?.posteId ?? null,
-        classe: classes.join(' '),
-        libelle: journee
-          ? `${cellule?.tooltip ?? jour.title} — ${stands} ${dayHours}`
-          : (cellule?.tooltip ?? jour.title),
-        active: journee !== undefined,
-      };
-    });
+    const cases = jours.map((jour) =>
+      personCase(jour, ligneRepos.cellules[dayColumn.get(jour.jour) ?? -1], byDay.get(jour.jour)),
+    );
     const valeurs = valeursById.get(id) ?? {};
-    const gap = gapClass(valeurs[MEDIAN_GAP] ?? null);
-    const synthese: Record<string, ValeurSynthese> = {};
-    for (const key of keys) {
-      const amount = valeurs[key] ?? null;
-      synthese[key] = isWeek(key)
-        ? weekValue(key, amount)
-        : {
-            texte: formatValue(key, amount),
-            classe: key === MEDIAN_GAP || key === 'heuresTotal' ? gap : '',
-          };
-    }
+    const synthese = syntheseOf(keys, valeurs);
     lignes.push({
       id,
       animateurId: id,
@@ -494,17 +544,7 @@ export function buildTableauPersonnes(
     repos.jours,
     triees.map((ligne) => ligne.repos),
   );
-  // The hours of the people on screen, added up: what the roster costs, week
-  // by week and overall, and what the payroll's premiums weigh.
-  const totals: Record<string, string> = {};
-  for (const key of keys) {
-    if (totalled(key)) {
-      totals[key] = formatValue(
-        key,
-        triees.reduce((somme, ligne) => somme + (ligne.valeurs[key] ?? 0), 0),
-      );
-    }
-  }
+  const totals = footerTotals(keys, triees);
   return {
     lignes: triees,
     colonnes,

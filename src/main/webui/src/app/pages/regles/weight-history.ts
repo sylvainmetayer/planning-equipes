@@ -5,6 +5,7 @@
 // no charting dependency (see src/main/webui/AGENTS.md).
 
 import { dosageKey } from '../../core/dosage';
+import { compareCodeUnits } from '../../core/string-order';
 import { ConstraintHistory, ResolutionUnderDosage, WeightChange } from '../../core/models';
 
 /** One line of the dated list, oldest first. */
@@ -190,7 +191,7 @@ export function distinctDosages(items: HistoryItem[]): number {
 }
 
 function sortedWeights(record: Record<string, number> | undefined): [string, number][] {
-  return Object.entries(record ?? {}).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+  return Object.entries(record ?? {}).sort(([a], [b]) => compareCodeUnits(a, b));
 }
 
 function timeOf(at: string): number {

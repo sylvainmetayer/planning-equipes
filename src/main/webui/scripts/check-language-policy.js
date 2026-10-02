@@ -131,6 +131,22 @@ const sansAccents = (texte) =>
     .toLowerCase();
 
 /**
+ * Each line's border star, with the blanks before it, turned into one space —
+ * a scan per line rather than a multiline regex, which backtracks.
+ */
+const withoutBorderStars = (brut) =>
+  brut
+    .split('\n')
+    .map((ligne) => {
+      let start = 0;
+      while (start < ligne.length && ligne[start] !== '\r' && /\s/.test(ligne[start])) {
+        start++;
+      }
+      return ligne[start] === '*' ? ' ' + ligne.slice(start + 1) : ligne;
+    })
+    .join('\n');
+
+/**
  * La prose d'un commentaire : ce que le test Java retire avant de compter —
  * étoiles de bordure, balises `{@link …}`, `@param`, balises HTML, et les
  * citations entre guillemets. Un commentaire anglais qui cite un libellé
@@ -139,9 +155,10 @@ const sansAccents = (texte) =>
 const prose = (brut) =>
   blankSpans(
     blankSpans(
-      blankSpans(brut.replace(/^[^\S\r\n]*\*/gm, ' '), '{@', '}', (inner) =>
-        /^\w+\s/.test(inner),
-      ).replace(/@\w+/g, ' '),
+      blankSpans(withoutBorderStars(brut), '{@', '}', (inner) => /^\w+\s/.test(inner)).replace(
+        /@\w+/g,
+        ' ',
+      ),
       '<',
       '>',
     ),
@@ -270,23 +287,35 @@ function addedRanges(diff) {
   for (const ligne of diff.split('\n')) {
     const fichier = /^\+\+\+ b\/(.+)$/.exec(ligne);
     if (fichier) {
-      const chemin = resolve(DEPOT, fichier[1]);
-      courant = chemin.startsWith(SOURCES) && /\.(ts|css)$/.test(chemin) ? chemin : null;
+      courant = checkedSource(fichier[1]);
       if (courant && !parFichier.has(courant)) {
         parFichier.set(courant, []);
       }
       continue;
     }
-    const plage = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/.exec(ligne);
-    if (plage && courant) {
-      const debut = Number(plage[1]);
-      const longueur = plage[2] === undefined ? 1 : Number(plage[2]);
-      if (longueur > 0) {
-        parFichier.get(courant).push([debut, debut + longueur - 1]);
-      }
+    const plage = courant ? addedRange(ligne) : null;
+    if (plage) {
+      parFichier.get(courant).push(plage);
     }
   }
   return parFichier;
+}
+
+/** The absolute path of a file of the diff when this check reads it, else null. */
+function checkedSource(cheminDiff) {
+  const chemin = resolve(DEPOT, cheminDiff);
+  return chemin.startsWith(SOURCES) && /\.(ts|css)$/.test(chemin) ? chemin : null;
+}
+
+/** The `[first, last]` lines a hunk header adds, null for any other line or an empty hunk. */
+function addedRange(ligne) {
+  const plage = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/.exec(ligne);
+  if (!plage) {
+    return null;
+  }
+  const debut = Number(plage[1]);
+  const longueur = plage[2] === undefined ? 1 : Number(plage[2]);
+  return longueur > 0 ? [debut, debut + longueur - 1] : null;
 }
 
 const lignesModifiees = releverLesLignesModifiees();

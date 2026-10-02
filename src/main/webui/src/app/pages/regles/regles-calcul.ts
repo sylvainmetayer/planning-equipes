@@ -130,16 +130,18 @@ export class ReglesCalcul implements OnInit {
       return '';
     }
     const defaults = $localize`:@@solverBudget.defaults:Défaut de l'instance : ${formatSeconds(bounds.defaultSecondsLimit)}:duree:, plateau ${plateauLabel(bounds.defaultPlateauSeconds)}:plateau:.`;
-    return this.customised()
-      ? defaults
-      : `${defaults} ${$localize`:@@solverBudget.followsDefault:Cette édition le suit.`}`;
+    if (this.customised()) {
+      return defaults;
+    }
+    const follows = $localize`:@@solverBudget.followsDefault:Cette édition le suit.`;
+    return `${defaults} ${follows}`;
   });
 
   /** What the solve under way on this edition was actually given, and why it differs, if it does. */
   protected readonly runningText = computed(() => {
     const job = this.jobs.activeJob();
     const edition = this.editions.courant()?.id ?? null;
-    if (!job || job.secondsLimit == null || (edition !== null && job.editionId !== edition)) {
+    if (job?.secondsLimit == null || (edition !== null && job.editionId !== edition)) {
       return '';
     }
     const plateau =

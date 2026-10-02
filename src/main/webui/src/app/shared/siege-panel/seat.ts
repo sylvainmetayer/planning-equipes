@@ -8,6 +8,7 @@ import {
   HardMediumSoftScore,
   NiveauContrainte,
   PosteAffectation,
+  TypeVerrouillage,
   VerrouillagePlanning,
 } from '../../core/models';
 
@@ -112,27 +113,40 @@ export interface SeatLock {
   removable: boolean;
 }
 
+/** The reach each kind of lock has when it covers a seat. */
+const REACH_BY_TYPE: Readonly<Record<TypeVerrouillage, LockReach>> = {
+  ANIMATEUR_CRENEAU: 'seat',
+  ANIMATEUR: 'person',
+  STAND: 'stand',
+  CRENEAU: 'creneau',
+  JOUR: 'day',
+};
+
 function reachOf(lock: VerrouillagePlanning, poste: PosteAffectation): LockReach | null {
+  return covers(lock, poste) ? REACH_BY_TYPE[lock.type] : null;
+}
+
+/** Whether the next solve applies this lock to this seat. */
+function covers(lock: VerrouillagePlanning, poste: PosteAffectation): boolean {
   const holder = poste.animateur?.id ?? null;
   const creneau = poste.creneau;
+  const onHolder = holder !== null && lock.animateurId === holder;
+  const onCreneau = creneau !== null && lock.creneauId === creneau.id;
   switch (lock.type) {
     case 'ANIMATEUR_CRENEAU':
-      return holder !== null &&
-        lock.animateurId === holder &&
-        creneau !== null &&
-        lock.creneauId === creneau.id
-        ? 'seat'
-        : null;
+      return onHolder && onCreneau;
     case 'ANIMATEUR':
-      return holder !== null && lock.animateurId === holder ? 'person' : null;
+      return onHolder;
     case 'STAND':
-      return poste.stand !== null && lock.standId === poste.stand.id ? 'stand' : null;
+      return poste.stand !== null && lock.standId === poste.stand.id;
     case 'CRENEAU':
-      return creneau !== null && lock.creneauId === creneau.id ? 'creneau' : null;
-    case 'JOUR':
-      return creneau?.date && lock.jour === creneau.date ? 'day' : null;
+      return onCreneau;
+    case 'JOUR': {
+      const day = creneau?.date;
+      return !!day && lock.jour === day;
+    }
     default:
-      return null;
+      return false;
   }
 }
 

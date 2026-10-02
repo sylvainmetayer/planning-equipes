@@ -84,8 +84,9 @@ export class AffectationExplanationService {
       params.set('occupant', occupant);
     }
     const query = params.toString();
+    const suffix = query ? `?${query}` : '';
     return this.api.post<void>(
-      `/api/postes/${encodeURIComponent(posteId)}/affectation${query ? `?${query}` : ''}`,
+      `/api/postes/${encodeURIComponent(posteId)}/affectation${suffix}`,
       null,
     );
   }

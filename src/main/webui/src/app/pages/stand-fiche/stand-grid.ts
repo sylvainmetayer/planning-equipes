@@ -184,7 +184,7 @@ export function dayPreview(
     }
     const window = grid.windows[index];
     const last = stretches.at(-1);
-    if (last && last.heureFin === window.heureDebut && last.effectif === effectif) {
+    if (last?.heureFin === window.heureDebut && last.effectif === effectif) {
       last.heureFin = window.heureFin;
     } else {
       stretches.push({ heureDebut: window.heureDebut, heureFin: window.heureFin, effectif });

@@ -273,7 +273,10 @@ function unknownLast(
   }
   const leftUnknown = ageOn(a, context.firstDay) === null;
   const rightUnknown = ageOn(b, context.firstDay) === null;
-  return leftUnknown === rightUnknown ? 0 : leftUnknown ? 1 : -1;
+  if (leftUnknown === rightUnknown) {
+    return 0;
+  }
+  return leftUnknown ? 1 : -1;
 }
 
 /**

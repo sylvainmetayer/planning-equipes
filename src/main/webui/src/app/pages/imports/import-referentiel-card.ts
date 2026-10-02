@@ -18,6 +18,7 @@ import { ImportsApi } from '../../core/api/imports-api';
 import { errorMessage } from '../../core/error-message';
 import {
   ActionImportReferentiel,
+  FreezeFamily,
   ReferentielImportTarget,
   RapportImportReferentiel,
 } from '../../core/models';
@@ -26,7 +27,6 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { GelNotice } from '../../shared/gel-notice';
 import { injectGelReferentiel } from '../../core/gel-referentiel.store';
-import { FreezeFamily } from '../../core/models';
 import { CollageTableur } from './collage-tableur';
 import { PASTE_FILE_NAME } from './collage';
 import { importedRowIds } from './imported-rows';

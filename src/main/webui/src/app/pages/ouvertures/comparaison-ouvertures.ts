@@ -178,7 +178,7 @@ function segmentsOf(
   cellule: CelluleCreneauOuverture | null,
   colonne: ColonneCreneau,
 ): SegmentCellule[] {
-  if (!cellule || cellule.effectif === null) {
+  if (cellule?.effectif == null) {
     return [];
   }
   if (cellule.segments.length > 0) {
@@ -202,7 +202,7 @@ function effectifs(segments: SegmentCellule[]): string {
 }
 
 function cellText(cellule: CelluleCreneauOuverture | null, colonne: ColonneCreneau): string {
-  if (!cellule || cellule.effectif === null) {
+  if (cellule?.effectif == null) {
     return '—';
   }
   if (!cellule.partiel) {

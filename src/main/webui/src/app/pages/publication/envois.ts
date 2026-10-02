@@ -153,7 +153,7 @@ export type TonEnvoi = 'ok' | 'echec' | 'attente' | 'neutre';
  */
 export function deliveryState(ligne: LigneEnvoi, locale: string): { texte: string; ton: TonEnvoi } {
   const envoi = ligne.envoi;
-  if (!ligne.email && (!envoi || envoi.statut !== 'ENVOYE')) {
+  if (!ligne.email && envoi?.statut !== 'ENVOYE') {
     return { texte: $localize`:@@diffuser.etat.sansEmail:sans e-mail`, ton: 'attente' };
   }
   if (!envoi) {

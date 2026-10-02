@@ -158,7 +158,7 @@ export class EspaceAnimateurService {
   }
 
   /** A colleague's seats, for the « créneau souhaité en échange » picker of a directed exchange. */
-  async postesCollegue(collegueId: string): Promise<PosteAnimateurView[]> {
+  postesCollegue(collegueId: string): Promise<PosteAnimateurView[]> {
     return this.api.get<PosteAnimateurView[]>(
       `/api/espace-animateur/${this.jeton()}/collegues/${encodeURIComponent(collegueId)}/postes`,
     );
@@ -169,8 +169,12 @@ export class EspaceAnimateurService {
    * remplacer ? » button, for when the animateur wants rid of a slot and has
    * nobody in mind. Read-only: it creates no demande.
    */
-  async suggestionsEchange(creneauId: number, standId: string): Promise<SuggestionsEchangeView> {
-    const jeton = this.requireJeton();
+  suggestionsEchange(creneauId: number, standId: string): Promise<SuggestionsEchangeView> {
+    const jeton = this.jeton();
+    if (!jeton) {
+      // A rejection, as the other calls give when the espace is not loaded.
+      return Promise.reject(new Error('Espace animateur non chargé'));
+    }
     return this.api.get<SuggestionsEchangeView>(
       `/api/espace-animateur/${jeton}/suggestions-echange` +
         `?creneauId=${creneauId}&standId=${encodeURIComponent(standId)}`,
