@@ -316,6 +316,123 @@ jobs:
       timeout-minutes: 25
       app-artifact: quarkus-app
 
+  # Un regard de l'extérieur sur l'application démarrée : OWASP ZAP en mode
+  # *baseline* parcourt ce qu'un visiteur sans compte atteint et lit chaque
+  # réponse — en-têtes, cookies, contenu des erreurs, fichiers servis. Il
+  # n'attaque rien (aucun scan actif) : c'est la vérification, sur le jar que
+  # le job `test` vient de packager, de ce que docs/securite.md affirme et que
+  # `SecurityHeadersFilter` teste de l'intérieur.
+  #
+  # Chaque alerte fait échouer le job, avertissements compris : une règle
+  # qu'on accepte s'écrit dans `.github/zap-baseline.tsv`, en IGNORE et avec sa
+  # raison, et une règle qui ne doit jamais revenir y passe en FAIL. Le rapport
+  # complet est dans le résumé du job et dans l'artefact `zap-baseline`.
+  #
+  # Même place que `e2e` et pour la même raison : l'application est celle du
+  # job `test`, et la pile ne monte qu'une fois celui-ci passé.
+  dast:
+    needs: [e2e-scope, test]
+    if: >-
+      !cancelled()
+      && needs.e2e-scope.outputs.run == 'true'
+      && needs.test.outputs.packaged == 'true'
+    name: Analyse dynamique (ZAP baseline)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: festival
+          POSTGRES_USER: festival
+          # Pas de mot de passe : base jetable du runner, et GitGuardian lit
+          # les workflows. L'application en envoie un (généré plus bas), que
+          # `trust` ignore — même recette que le smoke test de docker-ghcr.yml.
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U festival -d festival"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Download the application packaged by the Tests job
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: quarkus-app
+          path: target/quarkus-app
+
+      # Le profil de production, comme un déploiement : c'est lui que ZAP doit
+      # voir. Les secrets sont générés ici, aucun n'est écrit dans ce fichier.
+      - name: Start the application
+        env:
+          DB_URL: jdbc:postgresql://localhost:5432/festival
+          DB_USER: festival
+          LEGAL_DEMO_INSTANCE: 'true'
+          MAIL_MOCK: 'true'
+          PUBLIC_URL: http://localhost:8080
+        run: |
+          DB_PASSWORD="$(openssl rand -hex 16)" \
+          ADMIN_PASSWORD="$(openssl rand -hex 16)" \
+          QUARKUS_HTTP_AUTH_SESSION_ENCRYPTION_KEY="$(openssl rand -hex 16)" \
+            java -jar target/quarkus-app/quarkus-run.jar > app.log 2>&1 &
+          for _ in $(seq 1 60); do
+            if curl -fsS http://localhost:8080/q/health/ready > /dev/null; then
+              echo "Application prête."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "L'application n'a pas répondu en 120 s :"
+          cat app.log
+          exit 1
+
+      # Le conteneur ZAP tourne sous l'uid 1000 et écrit ses rapports dans
+      # /zap/wrk : le dossier lui est ouvert en écriture.
+      - name: Scan baseline (ZAP)
+        env:
+          # renovate: datasource=docker depName=ghcr.io/zaproxy/zaproxy
+          ZAP_IMAGE: ghcr.io/zaproxy/zaproxy:2.17.0
+        run: |
+          mkdir -p "$RUNNER_TEMP/zap"
+          cp .github/zap-baseline.tsv "$RUNNER_TEMP/zap/"
+          chmod -R a+rwX "$RUNNER_TEMP/zap"
+          status=0
+          docker run --rm --network host \
+            --volume "$RUNNER_TEMP/zap:/zap/wrk:rw" \
+            "$ZAP_IMAGE" \
+            zap-baseline.py -t http://localhost:8080 \
+              -c zap-baseline.tsv \
+              -r rapport.html -J rapport.json -w rapport.md \
+            || status=$?
+          if [ -f "$RUNNER_TEMP/zap/rapport.md" ]; then
+            cat "$RUNNER_TEMP/zap/rapport.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$status"
+
+      - name: Upload the ZAP report
+        if: success() || failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: zap-baseline
+          path: |
+            ${{ runner.temp }}/zap/rapport.*
+            app.log
+          if-no-files-found: ignore
+          retention-days: 7
+
   frontend:
     # Même garde de fork que le job `test` ci-dessus.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
