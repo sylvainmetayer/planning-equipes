@@ -971,6 +971,9 @@ points qui ne s'y voient pas :
   de déclencher repose le commit. `gitIgnoredAuthors` dans `renovate.json`
   évite que Renovate tienne la branche pour « modifiée » et cesse de la
   rebaser ; une rebase la recrée sans ce commit, que le job repose aussitôt ;
+- **sur une PR Renovate, `artefacts-renovate.yml` recalcule le verrou npm et
+  le wrapper Maven** que Renovate n'a pas su écrire, sur le même modèle à deux
+  jobs ; le détail est au § Renovate ;
 - **sur une PR Renovate qui touche un `@angular/…` du `package.json`,
   `angular-renovate.yml` joue les migrations `ng update`** et les commite sur
   la branche. Renovate ne lance pas les schematics d'Angular, et son
@@ -1148,11 +1151,43 @@ Couvre Maven, le wrapper Maven, Docker, les actions GitHub, npm et
   serait pas la version verrouillée du paquet, et `package.json` épingle
   celle-ci exactement. De même, la règle Quarkus vient après celle des plugins
   de build : `quarkus-maven-plugin` et le BOM partagent
-  `quarkus.platform.version`, que deux PR montaient sinon chacune ;
+  `quarkus.platform.version`, que deux PR montaient sinon chacune. Une règle
+  voisine range dans le même groupe le `quarkus` de `mise.toml` (gestionnaire
+  `mise`, reconnu par son `depName`) : seul, il ouvrait une seconde PR à chaque
+  version de Quarkus ;
 - les **majeures** de Java, PostgreSQL, victools et TypeScript passent par le
   tableau de bord (`dependencyDashboardApproval`) — ce qui suppose que l'issue
   de tableau de bord existe. TypeScript attend qu'Angular accepte la majeure :
   `@angular/compiler-cli` en borne la plage.
+
+Renovate change les versions, puis recalcule les fichiers qui en dérivent ;
+quand ce calcul échoue (« Artifact update problem » sur la PR), il pousse le
+seul fichier source. Deux cas se sont produits :
+
+- **le wrapper Maven** se régénère en lançant `./mvnw`, et `.mvn/jvm.config`
+  porte des options que seul Java 24+ lit (`--sun-misc-unsafe-memory-access`) :
+  la JVM par défaut de Renovate refusait de démarrer. Une règle lui impose
+  Java 25 pour ce gestionnaire (`constraints`) ;
+- **le verrou npm** : `package.json` monté, `package-lock.json` inchangé, et
+  `npm ci` refuse la branche.
+
+`artefacts-renovate.yml` refait ces calculs sur toute PR de Renovate qui touche
+un `package.json` ou `maven-wrapper.properties`, et ne commite que s'il trouve
+une différence. Le verrou est recalculé à partir de l'existant, avec le npm du
+`packageManager`, en installant chaque paquet monté à la version que la PR
+propose — la borne basse de la nouvelle plage
+(`.github/scripts/renovate-proposed-versions.js`) : un recalcul nu prendrait la
+dernière version de la plage, plus jeune que les sept jours que Renovate
+attend. `npm --before` ne convient pas : il cache aussi les versions du verrou
+publiées dans la semaine, et reproduit exactement l'`ERESOLVE …
+@angular/common@undefined` de Renovate. Le wrapper est régénéré par
+`maven-wrapper-plugin` à la version proposée, sous Java 25 ; Renovate ne
+réécrivait que les numéros des commentaires de `mvnw`, et laissait
+`wrapperVersion` à l'ancienne version. L'inventaire des licences suit le
+verrou du frontend dans le même commit. Un vrai conflit de pairs — deux paquets
+d'un même monorepo montés dans deux PR — échoue en le disant : c'est la PR
+qu'il faut regrouper. Même découpage en deux jobs que `licences-renovate.yml`,
+et une PR qui monte Angular reste à `angular-renovate.yml`.
 
 Les PR Renovate passent par le même `check-commits.sh` que les autres, sujet
 sous 72 caractères compris. Pour Maven, où `depName` vaut
