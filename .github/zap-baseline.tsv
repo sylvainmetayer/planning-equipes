@@ -5,3 +5,18 @@
 # revenir passe en FAIL.
 #
 # La liste des règles et de leurs identifiants : https://www.zaproxy.org/docs/alerts/
+
+# Information Disclosure - Suspicious Comments — Les commentaires d'index.html (et de ses copies de repli SPA, dont /sitemap.xml) expliquent pourquoi le titre, la balise robots et les polices sont ce qu'ils sont. Ils sont publics comme le dépôt, et ne nomment ni hôte, ni compte, ni secret.
+10027	IGNORE	(Information Disclosure - Suspicious Comments)
+# Storable and Cacheable Content — Voulu (SpaCacheControlFilter) : les bundles hachés sont mis en cache longtemps, le reste est revalidé (no-cache). Les seules réponses lues sans compte sont ces fichiers statiques, identiques pour tous ; l'API, elle, répond 401.
+10049	IGNORE	(Storable and Cacheable Content)
+# CSP: Wildcard Directive — img-src https: et connect-src https: sont ouverts exprès : le serveur de tuiles et l'endpoint Bugsink sont propres à chaque déploiement, qui les nomme dans CSP (docs/securite.md, « Réglage »).
+10055	IGNORE	(CSP: Wildcard Directive)
+# Timestamp Disclosure - Unix — Faux positif : des constantes à dix chiffres du bundle Angular minifié (1073741824 = 2^30, des graines de hachage), pas un horodatage du serveur.
+10096	IGNORE	(Timestamp Disclosure - Unix)
+# Modern Web Application — Informatif : ZAP signale seulement que l'application est une SPA, ce qu'elle est.
+10109	IGNORE	(Modern Web Application)
+# Cross-Origin-Embedder-Policy Header Missing or Invalid — Pas d'isolation cross-origin : aucune API qui l'exige (SharedArrayBuffer) n'est utilisée, et require-corp bloquerait les tuiles OpenStreetMap, servies sans Cross-Origin-Resource-Policy. COOP same-origin, lui, est posé (SecurityHeadersFilter).
+90004	IGNORE	(Cross-Origin-Embedder-Policy Header Missing or Invalid)
+# Dangerous JS Functions — Ce que ZAP voit, c'est la DÉFINITION de bypassSecurityTrustHtml/Style/Script/Url dans le DomSanitizer d'Angular, embarquée dans le bundle. Le code de l'application n'en appelle aucune (rien dans src/main/webui/src) ; un appel ajouté se verrait en revue, ZAP ne sachant pas distinguer la définition de l'appel.
+10110	IGNORE	(Dangerous JS Functions)
