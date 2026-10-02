@@ -18,7 +18,7 @@ on:
     branches:
       - main
   schedule:
-    # Lundi 5 h 40 UTC, après Sécurité et CodeQL.
+    # Lundi 5 h 40 UTC, après Sécurité.
     - cron: '40 5 * * 1'
   workflow_dispatch:
 
