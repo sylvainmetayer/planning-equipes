@@ -3693,6 +3693,8 @@ export interface ConfigurationCollecte {
   collecteOuverte: boolean;
   debut: string | null;
   fin: string | null;
+  /** Stored: the nightly reminder, three days before `fin`, to the invited who declared nothing. */
+  relanceAutomatique: boolean;
   /** Request only: mail every animateur their espace link now. Never echoed back. */
   prevenirAnimateurs?: boolean;
   /** Response only: `null` when no invitation was asked for. */

@@ -53,7 +53,13 @@ public class MailService {
     private static final String INDIVIDUAL_PLANNING = "mail/planning-individuel";
     private static final String PUBLISHED_PLANNING = "mail/planning-publie";
     private static final String ACCESS_CODE = "mail/code-acces";
-    private static final String AVAILABILITY_INVITATION = "mail/invitation-declaration";
+    /**
+     * The invitation to declare one's availabilities. Public because the
+     * nightly reminder of the collection reads who it reached from
+     * {@code envoi_mail}, which records sends under this template.
+     */
+    public static final String AVAILABILITY_INVITATION = "mail/invitation-declaration";
+
     private static final String TEST_MAIL = "mail/test";
 
     private final Mailer mailer;

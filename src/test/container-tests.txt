@@ -152,6 +152,7 @@ dev/sylvain/planning/service/edition/EditionDuplicationStructurelleTest.java
 dev/sylvain/planning/service/export/DatabaseDumpCoverageTest.java
 dev/sylvain/planning/service/notification/AlerteEchangeJobTest.java
 dev/sylvain/planning/service/notification/NotificationsPlanifieesTest.java
+dev/sylvain/planning/service/notification/RelanceCollecteJobTest.java
 dev/sylvain/planning/service/referentiel/AnimateurCsvExempleTest.java
 dev/sylvain/planning/service/referentiel/AnimateurCsvImportServiceTest.java
 dev/sylvain/planning/service/referentiel/CreneauCsvImportServiceTest.java

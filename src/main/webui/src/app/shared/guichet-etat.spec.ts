@@ -76,4 +76,53 @@ describe('GuichetEtat', () => {
 
     expect(guichet.text()).toContain("Collecte ouverte jusqu'au 10/07");
   });
+
+  it('closes the collection without switching its reminder off', async () => {
+    const saveConfiguration = vi.fn(() => Promise.resolve({}));
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [GuichetEtat],
+      providers: [
+        provideZonelessChangeDetection(),
+        provideRouter([]),
+        {
+          provide: DisponibilitesApi,
+          useValue: {
+            configuration: vi.fn(() =>
+              Promise.resolve({
+                collecteOuverte: true,
+                debut: null,
+                fin: '2026-07-10',
+                relanceAutomatique: true,
+              }),
+            ),
+            saveConfiguration,
+          },
+        },
+        { provide: EchangesApi, useValue: {} },
+        { provide: NotificationService, useValue: { notify: vi.fn() } },
+        { provide: DateMockService, useValue: { dateDuJour: signal('2026-07-05') } },
+      ],
+    });
+    const fixture = TestBed.createComponent(GuichetEtat);
+    fixture.componentRef.setInput('guichet', 'collecte');
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve));
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const fermer = [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')].find(
+      (button) => button.textContent?.trim() === 'Fermer',
+    );
+    fermer?.click();
+    await fixture.whenStable();
+
+    expect(saveConfiguration).toHaveBeenCalledWith({
+      collecteOuverte: false,
+      debut: null,
+      fin: '2026-07-10',
+      relanceAutomatique: true,
+      prevenirAnimateurs: false,
+    });
+  });
 });

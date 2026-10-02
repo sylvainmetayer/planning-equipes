@@ -18,8 +18,9 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
 /**
- * The one scheduled entry point of the three nightly notifications (issues
- * #298, #299, #300), and the one place that decides <b>whether an edition may
+ * The one scheduled entry point of the nightly notifications (issues #298,
+ * #299, #300, and the reminder of the collection of availabilities), and the
+ * one place that decides <b>whether an edition may
  * be written to at all</b>.
  *
  * <p>Modelled on {@code BackupService}, the application's first scheduled job:
@@ -57,6 +58,8 @@ public class NotificationsPlanifieesService {
 
     private final AlerteEchangeJob alerteEchange;
 
+    private final RelanceCollecteJob relanceCollecte;
+
     private final Scheduler scheduler;
 
     /** Applies the history's retention, once a night (issue #406). */
@@ -80,6 +83,7 @@ public class NotificationsPlanifieesService {
             RappelVeilleJob rappelVeille,
             RelanceConfirmationJob relanceConfirmation,
             AlerteEchangeJob alerteEchange,
+            RelanceCollecteJob relanceCollecte,
             Scheduler scheduler,
             JournalActionService journal,
             MailDeliveryRepository deliveries,
@@ -91,6 +95,7 @@ public class NotificationsPlanifieesService {
         this.rappelVeille = rappelVeille;
         this.relanceConfirmation = relanceConfirmation;
         this.alerteEchange = alerteEchange;
+        this.relanceCollecte = relanceCollecte;
         this.scheduler = scheduler;
         this.journal = journal;
         this.deliveries = deliveries;
@@ -124,7 +129,11 @@ public class NotificationsPlanifieesService {
      * @return how many messages actually left
      */
     public int run() {
-        ZonedDateTime maintenant = ZonedDateTime.now(zoneId());
+        return run(ZonedDateTime.now(zoneId()));
+    }
+
+    /** {@link #run()} at a given time — for the tests that place themselves in a day. */
+    int run(ZonedDateTime maintenant) {
         purgeHistory();
         String active = editionContext.activeEditionId().orElse(null);
         if (active == null) {
@@ -199,7 +208,8 @@ public class NotificationsPlanifieesService {
         ParametresNotifications parametres = parametresService.getNotifications();
         int envois = rappelVeille.run(parametres, maintenant)
                 + relanceConfirmation.run(parametres, maintenant.toInstant())
-                + alerteEchange.run(parametres, maintenant.toInstant());
+                + alerteEchange.run(parametres, maintenant.toInstant())
+                + relanceCollecte.run(maintenant);
         if (envois > 0) {
             // The third seam of the history (issue #406): what the application
             // did on its own. Only when something actually left — a night that

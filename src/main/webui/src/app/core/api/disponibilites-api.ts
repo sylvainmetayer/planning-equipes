@@ -26,6 +26,7 @@ export class DisponibilitesApi {
     collecteOuverte: boolean;
     debut: string | null;
     fin: string | null;
+    relanceAutomatique: boolean;
     prevenirAnimateurs: boolean;
   }): Promise<ConfigurationCollecte> {
     return this.api.put<ConfigurationCollecte>('/api/disponibilites/configuration', configuration);

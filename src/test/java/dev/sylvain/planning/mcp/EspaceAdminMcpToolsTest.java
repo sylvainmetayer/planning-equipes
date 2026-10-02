@@ -79,12 +79,13 @@ class EspaceAdminMcpToolsTest {
      * ones by listing the référentiel by id.
      */
     @Test
-    void lInvitationEstCompteeJamaisNominative() {
+    void theInvitationIsCountedNeverNamed() {
         CollecteView vue = DisponibiliteMcpTools.toView(
-                new FenetreCollecte(true, LocalDate.of(2026, 4, 1), LocalDate.of(2026, 4, 30)),
+                new FenetreCollecte(true, LocalDate.of(2026, 4, 1), LocalDate.of(2026, 4, 30), true),
                 new InvitationReport(12, List.of("Camille Martin", "Dominique Roy"), List.of("Alex Nguyen")));
 
         assertThat(vue.ouverte()).isTrue();
+        assertThat(vue.relanceAutomatique()).isTrue();
         assertThat(vue.invitation().envoyes()).isEqualTo(12);
         assertThat(vue.invitation().sansAdresse()).isEqualTo(2);
         assertThat(vue.invitation().echecs()).isEqualTo(1);

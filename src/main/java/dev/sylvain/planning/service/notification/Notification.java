@@ -191,6 +191,20 @@ public sealed interface Notification {
             implements ToAnimateur {}
 
     /**
+     * The collection of availabilities closes in three days or less, and this
+     * person, invited to declare, has declared nothing. Sent once per person
+     * and per closing date: a later {@code fin} is a new deadline, and may
+     * remind again.
+     *
+     * @param fin        the last day a declaration is accepted
+     * @param lienEspace the « Mes disponibilités » page of their espace,
+     *                   {@code null} when no public URL is configured or the
+     *                   fiche carries no token
+     */
+    record RelanceCollecte(String animateurId, String email, String prenom, LocalDate fin, String lienEspace)
+            implements ToAnimateur {}
+
+    /**
      * Swap requests left waiting for a decision (issue #300), counted rather
      * than named: the admin needs to know there is a queue and how old it is,
      * and the Échanges screen — one click away — is where the names live.

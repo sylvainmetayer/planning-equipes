@@ -9,7 +9,9 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * The outcome of every mail sent to an animateur ({@code envoi_mail}): what
@@ -74,6 +76,38 @@ public class MailDeliveryRepository implements MailDeliveryLog {
                 }
             }
             return latest;
+        });
+    }
+
+    /**
+     * The animateurs a {@code template} mail reached in this edition — sent,
+     * not merely attempted. What tells who was invited to declare their
+     * availabilities: the invitation leaves no other trace, and somebody whose
+     * invitation failed was never told there was anything to declare.
+     *
+     * <p>As long-lived as the rows themselves: past {@code JOURNAL_RETENTION}
+     * the sweep has dropped them, and the person no longer reads as reached.</p>
+     *
+     * @param template the template id, with or without its {@code mail/}
+     *                 prefix ({@code mail/invitation-declaration})
+     */
+    public Set<String> animateursReached(String template) {
+        String sql = """
+                SELECT DISTINCT animateur_id
+                FROM envoi_mail
+                WHERE edition_id = ? AND type = ? AND statut = ?""";
+        return scope.read("Failed to read the mail deliveries of a template", connection -> {
+            Set<String> reached = new HashSet<>();
+            try (PreparedStatement ps = scope.prepareScoped(connection, sql)) {
+                ps.setString(2, MailMetrics.label(template));
+                ps.setString(3, MailDeliveryOutcome.Status.ENVOYE.name());
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        reached.add(rs.getString("animateur_id"));
+                    }
+                }
+            }
+            return reached;
         });
     }
 

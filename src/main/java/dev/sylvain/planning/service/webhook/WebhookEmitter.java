@@ -167,6 +167,10 @@ public class WebhookEmitter {
                     Notification.CarpoolCancelled _,
                     Notification.RappelVeille _,
                     Notification.RelanceConfirmation _,
+                    // One mail per person, like the two reminders above: the
+                    // organisation already counts the missing declarations on
+                    // the Disponibilités screen, and a reminder is not news.
+                    Notification.RelanceCollecte _,
                     Notification.BackupRecovered _,
                     Notification.WeatherUnreachable _ -> Optional.empty();
         };

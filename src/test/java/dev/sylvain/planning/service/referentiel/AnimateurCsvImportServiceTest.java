@@ -493,7 +493,7 @@ class AnimateurCsvImportServiceTest {
         String id = inEdition(() -> referenceData.createAnimateur(existant)).getId();
         inEdition(() -> {
             declarationService.configure(
-                    new DeclarationDisponibiliteRepository.FenetreCollecte(true, null, null), false);
+                    new DeclarationDisponibiliteRepository.FenetreCollecte(true, null, null, false), false);
             return declarationService.submit(
                     id, new DeclarationDisponibiliteService.NouvelleDeclaration(List.of(JOUR1), List.of(), null));
         });

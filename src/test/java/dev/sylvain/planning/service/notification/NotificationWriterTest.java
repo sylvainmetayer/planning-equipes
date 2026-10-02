@@ -340,6 +340,34 @@ class NotificationWriterTest {
         assertThat(journee.corps()).contains("votre absence le dimanche 12 juillet");
     }
 
+    /** The collection's reminder says the deadline and where to declare — and nothing without an address. */
+    @Test
+    void theCollectionReminderGivesTheDeadlineAndTheDeclarationLink() {
+        MailDraft relance = rediger(new Notification.RelanceCollecte(
+                "A1",
+                "alice@example.org",
+                "Alice",
+                java.time.LocalDate.of(2026, 7, 11),
+                "https://planning.example.org/animateur/t0k/disponibilites"));
+        MailDraft sansLien = rediger(new Notification.RelanceCollecte(
+                "A1", "alice@example.org", " ", java.time.LocalDate.of(2026, 7, 11), null));
+
+        assertThat(relance.destinataire()).isEqualTo("alice@example.org");
+        assertThat(relance.template()).isEqualTo("mail/relance-collecte");
+        assertThat(relance.sujet()).contains("avant le samedi 11 juillet");
+        assertThat(relance.corps())
+                .contains("Bonjour Alice")
+                .contains("La collecte se termine le samedi 11 juillet")
+                .contains("https://planning.example.org/animateur/t0k/disponibilites");
+        assertThat(relance.html())
+                .contains("samedi 11 juillet")
+                .contains("https://planning.example.org/animateur/t0k/disponibilites");
+        assertThat(sansLien.corps()).doesNotContain("Bonjour Alice").doesNotContain("http");
+        assertThat(redacteur.rediger(new Notification.RelanceCollecte(
+                        "A1", " ", "Alice", java.time.LocalDate.of(2026, 7, 11), null)))
+                .isEmpty();
+    }
+
     @Test
     void withoutAnAdminAddressNoDeclarationIsNotified() {
         redacteur = writer(adminAddress(null), linksTo("https://planning.example.org"));
