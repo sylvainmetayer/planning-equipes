@@ -17,6 +17,10 @@ import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.RapportOuver
 import dev.sylvain.planning.service.analyse.PauseAnalyzer;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
 import dev.sylvain.planning.service.analyse.StaffingService;
+import dev.sylvain.planning.service.analyse.TypologieAnalyzer;
+import dev.sylvain.planning.service.analyse.TypologieAnalyzer.AnimateurTypologie;
+import dev.sylvain.planning.service.analyse.TypologieAnalyzer.LigneTypologie;
+import dev.sylvain.planning.service.analyse.TypologieAnalyzer.RapportTypologies;
 import dev.sylvain.planning.service.analyse.WalkSequenceAnalyzer;
 import dev.sylvain.planning.service.referentiel.CoherenceReferentielService;
 import dev.sylvain.planning.service.referentiel.CoherenceReferentielService.CoherenceFamily;
@@ -36,14 +40,16 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
  * The read-only diagnostics the screens have and MCP did not: how many
  * animateurs the event needs at all ({@code StaffingResource}), when each
  * stand is actually open ({@code OuvertureStandsResource}), how the editions
- * compare over the years ({@code KpiResource}), and what an import would
- * overwrite ({@code ReferenceDataResource}).
+ * compare over the years ({@code KpiResource}), what an import would
+ * overwrite ({@code ReferenceDataResource}), and the plan read by game
+ * category ({@code TypologieAnalyseResource}).
  *
  * <p>None of them carries a personal field: they count seats, hours and
  * stands. The animateurs appear only as totals — "il en faut au moins 148",
@@ -75,6 +81,8 @@ public class DiagnosticMcpTools {
 
     private final GroupedArrivalAnalyzer groupedArrivalAnalyzer;
 
+    private final TypologieAnalyzer typologieAnalyzer;
+
     @Inject
     DiagnosticMcpTools(
             ReferenceDataService referenceDataService,
@@ -86,7 +94,8 @@ public class DiagnosticMcpTools {
             PlanningPersistenceService persistenceService,
             CoherenceReferentielService coherenceService,
             WalkSequenceAnalyzer walkSequenceAnalyzer,
-            GroupedArrivalAnalyzer groupedArrivalAnalyzer) {
+            GroupedArrivalAnalyzer groupedArrivalAnalyzer,
+            TypologieAnalyzer typologieAnalyzer) {
         this.referenceDataService = referenceDataService;
         this.staffingService = staffingService;
         this.margeService = margeService;
@@ -97,6 +106,7 @@ public class DiagnosticMcpTools {
         this.coherenceService = coherenceService;
         this.walkSequenceAnalyzer = walkSequenceAnalyzer;
         this.groupedArrivalAnalyzer = groupedArrivalAnalyzer;
+        this.typologieAnalyzer = typologieAnalyzer;
     }
 
     /** The same reading as {@code GET /api/planning/arrivees-groupees}: ids only. */
@@ -220,6 +230,31 @@ public class DiagnosticMcpTools {
                             openWorldHint = false))
     PlanFormationView suggestTrainingPlan(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return PlanFormationView.of(formationService.plan());
+    }
+
+    /**
+     * The same reading as {@code GET /api/planning/typologies}, through the
+     * same {@link TypologieAnalyzer}, every list of people reduced to ids and
+     * a count: the screen names who holds a game, an assistant reads who they
+     * are through the tools that anonymise.
+     */
+    @Tool(
+            name = "analyser_typologies",
+            description = "Le planning persisté lu par typologie de jeu, sur toute l'édition : pour chaque typologie "
+                    + "(celles du référentiel, tenues ou non, et celles qu'un stand propose sans que le référentiel "
+                    + "les déclare), les heures et les postes tenus, les heures jour par jour (heuresParJour, un jour "
+                    + "sans poste tenu n'y figure pas), et quatre listes d'animateurs par id avec leur compte : "
+                    + "affectés (assis à ce jeu par le plan), compétents (le référentiel les y habilite), compétents "
+                    + "jamais affectés (une réserve inemployée) et affectés sans la compétence. Les mêmes chiffres "
+                    + "que la page Planning, par typologie. Lu sans lancer de résolution ; ids seulement, aucun nom.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    TypologiesView analyzeGameCategories(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        return TypologiesView.of(typologieAnalyzer.rapport());
     }
 
     /**
@@ -599,6 +634,60 @@ public class DiagnosticMcpTools {
                     plan.planPersiste(),
                     plan.aucuneCompetence(),
                     plan.aucunAnimateur());
+        }
+    }
+
+    /** {@link RapportTypologies}, its people by id and count. */
+    public record TypologiesView(List<TypologieView> typologies, List<String> jours) {
+
+        static TypologiesView of(RapportTypologies rapport) {
+            return new TypologiesView(
+                    rapport.typologies().stream().map(TypologieView::of).toList(), rapport.jours());
+        }
+    }
+
+    /**
+     * {@link LigneTypologie} without a name: each of its four lists of people
+     * becomes the ids and how many they are.
+     */
+    public record TypologieView(
+            String typologie,
+            String label,
+            boolean ninja,
+            Integer maxCreneauxParAnimateur,
+            double heures,
+            int postes,
+            Map<String, Double> heuresParJour,
+            AnimateursView affectes,
+            AnimateursView competents,
+            AnimateursView competentsJamaisAffectes,
+            AnimateursView affectesSansCompetence) {
+
+        static TypologieView of(LigneTypologie ligne) {
+            return new TypologieView(
+                    ligne.typologie(),
+                    ligne.label(),
+                    ligne.ninja(),
+                    ligne.maxCreneauxParAnimateur(),
+                    ligne.heures(),
+                    ligne.postes(),
+                    ligne.heuresParJour(),
+                    AnimateursView.of(ligne.animateursAffectes()),
+                    AnimateursView.of(ligne.animateursCompetents()),
+                    AnimateursView.of(ligne.competentsJamaisAffectes()),
+                    AnimateursView.of(ligne.affectesSansCompetence()));
+        }
+    }
+
+    /** A list of people of the typologie reading: how many, and who by id. */
+    public record AnimateursView(int nombre, List<String> animateurIds) {
+
+        static AnimateursView of(List<AnimateurTypologie> animateurs) {
+            List<String> ids = animateurs.stream()
+                    .map(AnimateurTypologie::animateurId)
+                    .sorted()
+                    .toList();
+            return new AnimateursView(ids.size(), ids);
         }
     }
 

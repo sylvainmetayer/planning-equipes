@@ -367,4 +367,65 @@ class DiagnosticMcpToolsTest {
                 .doesNotContain("\"date\"")
                 .doesNotContain("mineur du");
     }
+
+    /**
+     * The tool and the Planning page's « par typologie » read one report: the
+     * same figures for the same edition, the people by id instead of by name.
+     */
+    @Test
+    void theGameCategoryReadingGivesTheScreensFiguresWithoutAName() throws Exception {
+        loadScenario();
+        List<Animateur> animateurs = referenceDataService.listAnimateurs();
+        List<Stand> stands = referenceDataService.listStands();
+        Creneau creneau = referenceDataService.listCreneaux().getFirst();
+        PosteAffectation premier = new PosteAffectation("TYPO-P1", stands.get(0), creneau);
+        premier.setAnimateur(animateurs.get(0));
+        PosteAffectation second = new PosteAffectation("TYPO-P2", stands.get(stands.size() - 1), creneau);
+        second.setAnimateur(animateurs.get(1));
+        persistence.persist(new PlanningEvenement(creneau.getDate(), animateurs, List.of(premier, second)));
+
+        DiagnosticMcpTools.TypologiesView vue = diagnosticTools.analyzeGameCategories("E1");
+        io.restassured.path.json.JsonPath ecran = io.restassured.RestAssured.given()
+                .header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/planning/typologies")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
+
+        assertThat(vue.jours()).isEqualTo(ecran.getList("jours", String.class));
+        assertThat(vue.typologies()).hasSize(ecran.getList("typologies").size());
+        assertThat(vue.typologies())
+                .anySatisfy(ligne -> assertThat(ligne.postes()).isPositive());
+        for (DiagnosticMcpTools.TypologieView ligne : vue.typologies()) {
+            String chemin = "typologies.find { it.typologie == '" + ligne.typologie() + "' }";
+            assertThat(ligne.postes()).as(ligne.typologie()).isEqualTo(ecran.getInt(chemin + ".postes"));
+            assertThat(ligne.heures())
+                    .as(ligne.typologie())
+                    .isCloseTo(ecran.getDouble(chemin + ".heures"), org.assertj.core.api.Assertions.within(1e-6));
+            assertThat(ligne.heuresParJour().keySet())
+                    .as(ligne.typologie())
+                    .isEqualTo(ecran.getMap(chemin + ".heuresParJour").keySet());
+            assertSamePeople(ligne.affectes(), ecran.getList(chemin + ".animateursAffectes.animateurId"));
+            assertSamePeople(ligne.competents(), ecran.getList(chemin + ".animateursCompetents.animateurId"));
+            assertSamePeople(
+                    ligne.competentsJamaisAffectes(), ecran.getList(chemin + ".competentsJamaisAffectes.animateurId"));
+            assertSamePeople(
+                    ligne.affectesSansCompetence(), ecran.getList(chemin + ".affectesSansCompetence.animateurId"));
+        }
+
+        String json = objectMapper.writeValueAsString(vue);
+        assertThat(json).doesNotContain("\"nom\"");
+        for (Animateur animateur : animateurs) {
+            assertThat(json).doesNotContain(animateur.nomAffiche());
+        }
+    }
+
+    private static void assertSamePeople(DiagnosticMcpTools.AnimateursView vue, List<Object> idsEcran) {
+        assertThat(vue.nombre()).isEqualTo(idsEcran.size());
+        assertThat(vue.animateurIds())
+                .containsExactlyInAnyOrderElementsOf(
+                        idsEcran.stream().map(String::valueOf).toList());
+    }
 }
