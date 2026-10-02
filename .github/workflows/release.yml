@@ -23,11 +23,12 @@ on:
         required: true
         type: string
 
-# `contents: write` pour le seul `gh release edit`. Rien n'est poussé sur une
-# branche : il n'y a plus de CHANGELOG.md à tenir, la page de release est la
-# sortie (voir docs/versioning.md § 3).
+# Lecture seule par défaut ; le job reçoit `contents: write` pour le seul
+# `gh release edit`. Rien n'est poussé sur une branche : il n'y a plus de
+# CHANGELOG.md à tenir, la page de release est la sortie (voir
+# docs/versioning.md § 3).
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: release-notes-${{ github.event.release.tag_name || inputs.tag }}
@@ -36,6 +37,8 @@ concurrency:
 jobs:
   notes:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     timeout-minutes: 10
 
     env:
