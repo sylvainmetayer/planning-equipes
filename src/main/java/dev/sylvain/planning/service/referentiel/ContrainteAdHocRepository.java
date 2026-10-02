@@ -230,10 +230,10 @@ public class ContrainteAdHocRepository {
         try (PreparedStatement ins = scope.prepareScoped(connection, """
                 INSERT INTO contrainte_animateur (edition_id, contrainte_id, animateur_id, position)
                 VALUES (?, ?, ?, ?)""")) {
+            ins.setString(2, contrainteId);
             int position = 0;
             for (Animateur animateur : cibles) {
                 if (animateur != null && animateur.getId() != null) {
-                    ins.setString(2, contrainteId);
                     ins.setString(3, animateur.getId());
                     ins.setInt(4, position++);
                     ins.addBatch();

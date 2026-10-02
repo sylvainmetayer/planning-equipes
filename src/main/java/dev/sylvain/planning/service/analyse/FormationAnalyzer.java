@@ -178,28 +178,10 @@ public final class FormationAnalyzer {
         // The fragility report's scarce groups, attributed to every category of
         // their stand: a group with at most one specialist across all its
         // categories has at most one in each of them.
-        Map<String, List<CompetenceRare>> rares = new LinkedHashMap<>();
-        for (CompetenceRare rare : fragilite.competencesRares()) {
-            for (String typologie : rare.typologies()) {
-                rares.computeIfAbsent(typologie, id -> new ArrayList<>()).add(rare);
-            }
-        }
+        Map<String, List<CompetenceRare>> rares = raresByTypologie(fragilite);
 
         // Irreplaceable seat groups, counted once each whoever holds them.
-        Map<String, Set<GroupKey>> irremplacables = new HashMap<>();
-        for (AnimateurFragilite ligne : fragilite.animateurs()) {
-            for (PosteFragile poste : ligne.postes()) {
-                if (!poste.irremplacable()) {
-                    continue;
-                }
-                GroupKey cle = new GroupKey(poste.standId(), poste.creneauId(), poste.heureDebut(), poste.heureFin());
-                for (String typologie : typologiesParStand.getOrDefault(poste.standId(), Set.of())) {
-                    irremplacables
-                            .computeIfAbsent(typologie, id -> new HashSet<>())
-                            .add(cle);
-                }
-            }
-        }
+        Map<String, Set<GroupKey>> irremplacables = irreplaceablesByTypologie(fragilite, typologiesParStand);
 
         Set<String> retenues = new TreeSet<>();
         besoin.values().stream().filter(ligne -> ligne.manque() > 0).forEach(ligne -> retenues.add(ligne.typologie()));
@@ -237,6 +219,35 @@ public final class FormationAnalyzer {
         return new PlanFormation(List.copyOf(lignes), planPersiste, aucuneCompetence, animateurs.isEmpty());
     }
 
+    private static Map<String, List<CompetenceRare>> raresByTypologie(FragiliteFindings fragilite) {
+        Map<String, List<CompetenceRare>> rares = new LinkedHashMap<>();
+        for (CompetenceRare rare : fragilite.competencesRares()) {
+            for (String typologie : rare.typologies()) {
+                rares.computeIfAbsent(typologie, id -> new ArrayList<>()).add(rare);
+            }
+        }
+        return rares;
+    }
+
+    private static Map<String, Set<GroupKey>> irreplaceablesByTypologie(
+            FragiliteFindings fragilite, Map<String, Set<String>> typologiesParStand) {
+        Map<String, Set<GroupKey>> irremplacables = new HashMap<>();
+        for (AnimateurFragilite ligne : fragilite.animateurs()) {
+            for (PosteFragile poste : ligne.postes()) {
+                if (poste.irremplacable()) {
+                    GroupKey cle =
+                            new GroupKey(poste.standId(), poste.creneauId(), poste.heureDebut(), poste.heureFin());
+                    for (String typologie : typologiesParStand.getOrDefault(poste.standId(), Set.of())) {
+                        irremplacables
+                                .computeIfAbsent(typologie, id -> new HashSet<>())
+                                .add(cle);
+                    }
+                }
+            }
+        }
+        return irremplacables;
+    }
+
     private static int specialistsOf(String typologie, Collection<Animateur> animateurs) {
         return (int) animateurs.stream()
                 .filter(animateur -> animateur.getCompetences() != null
@@ -262,13 +273,9 @@ public final class FormationAnalyzer {
             Map<String, NiveauCompetence> competences =
                     animateur.getCompetences() == null ? Map.of() : animateur.getCompetences();
             NiveauCompetence niveau = competences.get(typologie);
-            if (niveau != NiveauCompetence.DEBUTANT && niveau != NiveauCompetence.AUTONOME) {
-                continue;
-            }
-            if (animateur.isNinja() || (ninjaId != null && competences.containsKey(ninjaId))) {
-                continue;
-            }
-            if (reserveeAuxMajeurs && minorThroughout(animateur, joursEvenement)) {
+            boolean trainable = niveau == NiveauCompetence.DEBUTANT || niveau == NiveauCompetence.AUTONOME;
+            boolean ninja = animateur.isNinja() || (ninjaId != null && competences.containsKey(ninjaId));
+            if (!trainable || ninja || (reserveeAuxMajeurs && minorThroughout(animateur, joursEvenement))) {
                 continue;
             }
             int disponibles = (int) joursTension.stream()

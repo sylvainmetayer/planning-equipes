@@ -273,7 +273,10 @@ public class WebhookDeliverer {
             status = DeliveryStatus.FAILED;
         }
         if (!repository.recordAttempt(
-                id, lease, attempts, status, exchange.httpStatus(), exchange.durationMs(), exchange.error(), next)) {
+                id,
+                lease,
+                new WebhookRepository.AttemptOutcome(
+                        attempts, status, exchange.httpStatus(), exchange.durationMs(), exchange.error(), next))) {
             LOG.warnf("Webhook delivery %s lost its lease during the attempt; its outcome is not recorded", id);
         }
         return new Attempt(status, exchange.httpStatus(), exchange.durationMs(), exchange.error());

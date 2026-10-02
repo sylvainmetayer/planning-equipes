@@ -28,6 +28,9 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class StandService {
 
+    /** How a refused code names the stand it would have collided with. */
+    private static final String THE_STAND = "le stand";
+
     private final StandRepository repository;
 
     private final CreneauService creneaux;
@@ -130,7 +133,7 @@ public class StandService {
         validate(stand);
         scope.write("Failed to create stand " + stand.getNom(), connection -> {
             stand.setCode(Codes.normalise(stand.getCode(), IdGenerator.Kind.STAND));
-            Codes.refuseTaken(stand.getCode(), repository.idByCode(connection, stand.getCode()), null, "le stand");
+            Codes.refuseTaken(stand.getCode(), repository.idByCode(connection, stand.getCode()), null, THE_STAND);
             stand.setId(ids.next(connection, IdGenerator.Kind.STAND));
             repository.saveStand(connection, stand, true);
         });
@@ -147,7 +150,7 @@ public class StandService {
     Stand create(Connection connection, Stand stand) throws SQLException {
         StandValidator.check(stand);
         stand.setCode(Codes.normalise(stand.getCode(), IdGenerator.Kind.STAND));
-        Codes.refuseTaken(stand.getCode(), repository.idByCode(connection, stand.getCode()), null, "le stand");
+        Codes.refuseTaken(stand.getCode(), repository.idByCode(connection, stand.getCode()), null, THE_STAND);
         stand.setId(ids.next(connection, IdGenerator.Kind.STAND));
         if (stand.getTypologiesProposees() != null) {
             typologies.validateIds(connection, stand.getTypologiesProposees());
@@ -192,7 +195,7 @@ public class StandService {
                 ReferentialFamily.STANDS,
                 () -> GelReferentielService.changesFrozenStandFields(repository.findStand(id), stand));
         stand.setCode(Codes.normalise(stand.getCode(), IdGenerator.Kind.STAND));
-        Codes.refuseTaken(stand.getCode(), repository.idByCode(stand.getCode()), id, "le stand");
+        Codes.refuseTaken(stand.getCode(), repository.idByCode(stand.getCode()), id, THE_STAND);
         repository.saveStand(stand, false);
         changeTracker.markModified();
         return stand;

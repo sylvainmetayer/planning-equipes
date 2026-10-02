@@ -63,6 +63,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @ApplicationScoped
 public class TeammateRequestService {
 
+    private static final String UNKNOWN_REQUEST = "Demande inconnue : ";
+
     private final TeammateDeclarationRepository repository;
 
     private final DeclarationDisponibiliteRepository declarations;
@@ -345,7 +347,7 @@ public class TeammateRequestService {
         return list().stream()
                 .filter(vue -> vue.id().equals(demande.id()))
                 .findFirst()
-                .orElseThrow(() -> new BusinessError.NotFound("Demande inconnue : " + demande.id()));
+                .orElseThrow(() -> new BusinessError.NotFound(UNKNOWN_REQUEST + demande.id()));
     }
 
     /** The validated demand, the view of it, and what the written exception raised. */
@@ -469,7 +471,7 @@ public class TeammateRequestService {
     public TeammateRequestView cancel(String id, String reason) {
         String motif = checkedReason(reason);
         DemandeCoequipier demande =
-                repository.byId(id).orElseThrow(() -> new BusinessError.NotFound("Demande inconnue : " + id));
+                repository.byId(id).orElseThrow(() -> new BusinessError.NotFound(UNKNOWN_REQUEST + id));
         if (demande.statut() != StatutDemandeCoequipier.VALIDEE || demande.contrainteId() == null) {
             throw new BusinessError.Conflict(NOT_VALIDATED);
         }
@@ -514,7 +516,7 @@ public class TeammateRequestService {
 
     private DemandeCoequipier pendingOrFail(String id) {
         DemandeCoequipier demande =
-                repository.byId(id).orElseThrow(() -> new BusinessError.NotFound("Demande inconnue : " + id));
+                repository.byId(id).orElseThrow(() -> new BusinessError.NotFound(UNKNOWN_REQUEST + id));
         if (demande.statut() != StatutDemandeCoequipier.EN_ATTENTE) {
             throw new BusinessError.Invalid("Cette demande a déjà été traitée");
         }

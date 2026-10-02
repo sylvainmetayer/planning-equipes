@@ -230,10 +230,9 @@ public class PauseAnalyzer {
 
         // 1. Each animateur-day: its stretches, and the breaks they owe, with
         //    the window each break may fall in.
-        List<Journee> journees = new ArrayList<>();
-        for (List<PosteAffectation> postesDuJour : parJournee.values()) {
-            journees.add(journee(postesDuJour, fenetresRepas, declarations));
-        }
+        List<Journee> journees = parJournee.values().stream()
+                .map(postesDuJour -> journee(postesDuJour, fenetresRepas, declarations))
+                .toList();
         // 2. Each stand-day: the rotation, one break after the other.
         demandsByStandDay(journees).values().forEach(PauseAnalyzer::rotation);
         // 3. The views, relays read on the placed breaks.
@@ -542,14 +541,14 @@ public class PauseAnalyzer {
         // The stretches and the breaks they owe come from the domain: the
         // solver's travailContinuMax* read the very same ones, so the
         // screen and the score never disagree on what is due.
-        List<SequenceDemandes> sequences = new ArrayList<>();
-        for (PauseSurPoste.Sequence sequence : PauseSurPoste.sequences(postesDuJour, pauseMinimale)) {
-            List<Demande> demandes = new ArrayList<>();
-            for (PauseSurPoste due : PauseSurPoste.dues(sequence, travailContinuMax, pauseMinimale)) {
-                demandes.add(new Demande(animateur, due.tenu(), due.auPlusTot(), due.auPlusTard(), due.dureeMinutes()));
-            }
-            sequences.add(new SequenceDemandes(sequence, demandes));
-        }
+        List<SequenceDemandes> sequences = PauseSurPoste.sequences(postesDuJour, pauseMinimale).stream()
+                .map(sequence -> new SequenceDemandes(
+                        sequence,
+                        PauseSurPoste.dues(sequence, travailContinuMax, pauseMinimale).stream()
+                                .map(due -> new Demande(
+                                        animateur, due.tenu(), due.auPlusTot(), due.auPlusTard(), due.dureeMinutes()))
+                                .toList()))
+                .toList();
         int jour = postesDuJour.stream()
                 .mapToInt(poste -> poste.getCreneau().getJour())
                 .min()

@@ -123,12 +123,11 @@ public class GroupedArrivalAnalyzer {
                 bornes[1] = fin;
             }
         }
-        List<GroupDayView> vues = new ArrayList<>();
-        for (Map.Entry<LocalDate, Map<String, LocalDateTime[]>> jour : jours.entrySet()) {
-            vues.add(readDay(jour.getKey(), membres, jour.getValue(), tolerance));
-        }
+        List<GroupDayView> vues = jours.entrySet().stream()
+                .map(jour -> readDay(jour.getKey(), membres, jour.getValue(), tolerance))
+                .toList();
         int desalignes = (int) vues.stream().filter(vue -> !vue.aligned()).count();
-        return new GroupView(contrainte.getId(), membres, desalignes, List.copyOf(vues));
+        return new GroupView(contrainte.getId(), membres, desalignes, vues);
     }
 
     private static GroupDayView readDay(

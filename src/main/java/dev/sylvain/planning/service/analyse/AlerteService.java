@@ -7,7 +7,6 @@ import dev.sylvain.planning.service.weather.WeatherAlertService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,19 +92,17 @@ public class AlerteService {
         Function<String, Optional<String>> routes = alertes.stream().anyMatch(AlerteService::isWeather)
                 ? weather.consigneRoutes()
                 : key -> Optional.empty();
-        List<AlerteView> vues = new ArrayList<>();
-        for (JournalNotificationsRepository.Alerte alerte : alertes) {
-            vues.add(new AlerteView(
-                    alerte.type(),
-                    alerte.cle(),
-                    alerte.declencheLe(),
-                    alerte.libelle(),
-                    alerte.severite(),
-                    alerte.animateurId(),
-                    alerte.animateurId() == null ? null : noms.get(alerte.animateurId()),
-                    isWeather(alerte) ? routes.apply(alerte.cle()).orElse(null) : null));
-        }
-        return List.copyOf(vues);
+        return alertes.stream()
+                .map(alerte -> new AlerteView(
+                        alerte.type(),
+                        alerte.cle(),
+                        alerte.declencheLe(),
+                        alerte.libelle(),
+                        alerte.severite(),
+                        alerte.animateurId(),
+                        alerte.animateurId() == null ? null : noms.get(alerte.animateurId()),
+                        isWeather(alerte) ? routes.apply(alerte.cle()).orElse(null) : null))
+                .toList();
     }
 
     /** A weather alert's link is read now, not stored: the preset suggested and the consigne in place are today's. */

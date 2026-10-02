@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Turns the organiser's stand matrix — one row per stand, one column per
@@ -209,13 +210,11 @@ public class StandGrilleImportService {
                     + "Attendu : une ligne de dates, une ligne de bandes « 10:00-12:00 », ou des en-têtes "
                     + "« 2026-07-08 10:00-12:00 ».");
         }
-        List<String> creneauxAbsents = new ArrayList<>();
-        for (Creneau creneau : edition) {
-            if (!colonnes.dejaPris().contains(creneau.getId())) {
-                creneauxAbsents.add(
-                        creneau.getDate() + " " + court(creneau.getHeureDebut()) + "-" + court(creneau.getHeureFin()));
-            }
-        }
+        List<String> creneauxAbsents = edition.stream()
+                .filter(creneau -> !colonnes.dejaPris().contains(creneau.getId()))
+                .map(creneau ->
+                        creneau.getDate() + " " + court(creneau.getHeureDebut()) + "-" + court(creneau.getHeureFin()))
+                .toList();
         if (!creneauxAbsents.isEmpty()) {
             warnings.add(creneauxAbsents.size() + " créneau(x) de l'édition n'ont pas de colonne dans le fichier : "
                     + "leurs cases sont conservées telles quelles pour les stands importés.");
@@ -398,12 +397,10 @@ public class StandGrilleImportService {
             // piece; the others get one cell per column, at the column's own
             // bounds, and what no column covers keeps what the stand had.
             Map<Long, Integer> actuellesDuStand = actuelles.getOrDefault(stand.getId(), Map.of());
-            List<SaisieCellule> saisie = new ArrayList<>();
-            for (Creneau creneau : edition) {
-                if (!lues.dejaPris().contains(creneau.getId())) {
-                    saisie.add(new SaisieCellule(creneau.getId(), actuellesDuStand.get(creneau.getId())));
-                }
-            }
+            List<SaisieCellule> saisie = edition.stream()
+                    .filter(creneau -> !lues.dejaPris().contains(creneau.getId()))
+                    .map(creneau -> new SaisieCellule(creneau.getId(), actuellesDuStand.get(creneau.getId())))
+                    .collect(Collectors.toCollection(ArrayList::new));
             List<String> reasons = new ArrayList<>();
             int ouvertes = readCells(ligne, saisie, reasons);
             if (!reasons.isEmpty()) {
@@ -482,6 +479,15 @@ public class StandGrilleImportService {
                     null,
                     null);
         }
+
+        private static Stand resolve(String texte, Map<String, Stand> parCode, Map<String, List<Stand>> parNom) {
+            Stand parLeCode = parCode.get(texte.trim());
+            if (parLeCode != null) {
+                return parLeCode;
+            }
+            List<Stand> candidats = parNom.getOrDefault(normalise(texte), List.of());
+            return candidats.size() == 1 ? candidats.get(0) : null;
+        }
     }
 
     /**
@@ -512,15 +518,6 @@ public class StandGrilleImportService {
             cellules.put(ligne.standId(), parCreneau);
         }
         return cellules;
-    }
-
-    private static Stand resolve(String texte, Map<String, Stand> parCode, Map<String, List<Stand>> parNom) {
-        Stand parLeCode = parCode.get(texte.trim());
-        if (parLeCode != null) {
-            return parLeCode;
-        }
-        List<Stand> candidats = parNom.getOrDefault(normalise(texte), List.of());
-        return candidats.size() == 1 ? candidats.get(0) : null;
     }
 
     /** Case and accents aside, the way a name is compared by the animateur import too. */

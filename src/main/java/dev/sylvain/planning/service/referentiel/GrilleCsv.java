@@ -121,17 +121,15 @@ public final class GrilleCsv {
     }
 
     private static List<Ligne> lignes(List<CsvParser.Row> rows, List<Colonne> colonnes) {
-        List<Ligne> lignes = new ArrayList<>();
-        for (CsvParser.Row row : rows) {
-            if (!row.blank()) {
-                List<String> cellules = new ArrayList<>();
-                for (Colonne colonne : colonnes) {
-                    cellules.add(row.value(colonne.index()));
-                }
-                lignes.add(new Ligne(row.line(), row.value(0).trim(), cellules));
-            }
-        }
-        return lignes;
+        return rows.stream()
+                .filter(row -> !row.blank())
+                .map(row -> new Ligne(
+                        row.line(),
+                        row.value(0).trim(),
+                        colonnes.stream()
+                                .map(colonne -> row.value(colonne.index()))
+                                .toList()))
+                .toList();
     }
 
     /** A line whose cells past the first are bands (or blank) is the second header, not a stand. */

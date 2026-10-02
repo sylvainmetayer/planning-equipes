@@ -364,10 +364,9 @@ public final class OuvertureStandsAnalyzer {
             int minutesAmplitude,
             List<TrancheCreneau> colonnes) {
         SourceHoraire source = HoraireStandResolver.sourceOfDay(stand, jour.date());
-        List<CelluleCreneau> parCreneau = new ArrayList<>();
-        for (TrancheCreneau colonne : colonnes) {
-            parCreneau.add(celluleCreneau(stand, colonne.creneau(), colonne.colonne()));
-        }
+        List<CelluleCreneau> parCreneau = colonnes.stream()
+                .map(colonne -> celluleCreneau(stand, colonne.creneau(), colonne.colonne()))
+                .toList();
         if (postes.isEmpty()) {
             return new CelluleJour(
                     jour.date(), EtatOuverture.FERME, source, List.of(), 0, minutesAmplitude, 0, parCreneau);

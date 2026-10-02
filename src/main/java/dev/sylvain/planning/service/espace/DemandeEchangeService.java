@@ -124,10 +124,9 @@ public class DemandeEchangeService {
             return List.of();
         }
         PlanningEvenement planning = persistenceService.loadPersistedPlanning();
-        List<DemandeEchange> demandes = new ArrayList<>();
-        for (NouvelleDemande nouvelle : nouvelles) {
-            demandes.add(buildDemande(demandeurId, nouvelle, planning));
-        }
+        List<DemandeEchange> demandes = nouvelles.stream()
+                .map(nouvelle -> buildDemande(demandeurId, nouvelle, planning))
+                .toList();
         for (DemandeEchange demande : demandes) {
             inserer(demande);
         }

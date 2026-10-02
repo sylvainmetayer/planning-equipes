@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -46,32 +48,30 @@ final class HoraireAnomalies {
         if (findings.isEmpty()) {
             return List.of();
         }
-        List<Anomaly> anomalies = new ArrayList<>();
-        for (RulesOverlap overlap : findings.rulesOverlaps()) {
-            anomalies.add(anomaly(
-                    stand,
-                    AnomalyType.REGLES_CHEVAUCHANTES,
-                    null,
-                    rulesOverlapMessage(horaires, overlap),
-                    horaires.get(overlap.otherRule()).getId()));
-        }
-        for (MaskedRule masked : findings.maskedRules()) {
-            anomalies.add(anomaly(
-                    stand,
-                    AnomalyType.REGLE_MASQUEE,
-                    null,
-                    maskedMessage(horaires, masked),
-                    horaires.get(masked.rule()).getId()));
-        }
-        for (WindowsOverlap overlap : findings.windowsOverlaps()) {
-            anomalies.add(anomaly(
-                    stand,
-                    AnomalyType.FENETRES_CHEVAUCHANTES,
-                    overlap.date(),
-                    windowsOverlapMessage(stand, overlap),
-                    overlap.rule() == null ? null : horaires.get(overlap.rule()).getId()));
-        }
-        return anomalies;
+        Stream<Anomaly> rules = findings.rulesOverlaps().stream()
+                .map(overlap -> anomaly(
+                        stand,
+                        AnomalyType.REGLES_CHEVAUCHANTES,
+                        null,
+                        rulesOverlapMessage(horaires, overlap),
+                        horaires.get(overlap.otherRule()).getId()));
+        Stream<Anomaly> masked = findings.maskedRules().stream()
+                .map(rule -> anomaly(
+                        stand,
+                        AnomalyType.REGLE_MASQUEE,
+                        null,
+                        maskedMessage(horaires, rule),
+                        horaires.get(rule.rule()).getId()));
+        Stream<Anomaly> windows = findings.windowsOverlaps().stream()
+                .map(overlap -> anomaly(
+                        stand,
+                        AnomalyType.FENETRES_CHEVAUCHANTES,
+                        overlap.date(),
+                        windowsOverlapMessage(stand, overlap),
+                        overlap.rule() == null
+                                ? null
+                                : horaires.get(overlap.rule()).getId()));
+        return Stream.of(rules, masked, windows).flatMap(Function.identity()).toList();
     }
 
     private static Anomaly anomaly(Stand stand, AnomalyType type, LocalDate date, String message, Long horaireId) {
@@ -103,10 +103,9 @@ final class HoraireAnomalies {
     }
 
     private static String maskedMessage(List<HoraireStand> horaires, MaskedRule masked) {
-        List<String> who = new ArrayList<>();
-        for (int index : masked.maskingRules()) {
-            who.add("« " + fullLabel(horaires.get(index)) + " »");
-        }
+        List<String> who = masked.maskingRules().stream()
+                .map(index -> "« " + fullLabel(horaires.get(index)) + " »")
+                .collect(Collectors.toCollection(ArrayList::new));
         if (masked.maskedByExceptions()) {
             who.add("des exceptions datées");
         }
