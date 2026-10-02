@@ -78,13 +78,36 @@ public class PlanPublieService {
      * treats as « rien à montrer », never as « aucune vacation attribuée ».
      */
     public PlanningEvenement planPublie() {
+        return publicationInForce()
+                .map(PublishedPlan::plan)
+                .orElseGet(() -> persistenceService.assemblerPlanning(List.of()));
+    }
+
+    /**
+     * The publication in force and the plan it holds, read from <b>one</b>
+     * load of the snapshot — where {@link #lastPublication()} followed by
+     * {@link #planPublie()} could date one publication and read the next, were
+     * an admin to publish between the two. Empty when nothing has ever been
+     * published: unlike {@link #planPublie()}, a caller that must say which
+     * plan it read has nothing to read then, not an empty plan.
+     */
+    public Optional<PublishedPlan> publicationInForce() {
         PlanSnapshotService.SnapshotDetail detail = snapshotService.loadLastPublication();
         if (detail == null) {
-            return persistenceService.assemblerPlanning(List.of());
+            return Optional.empty();
         }
-        return persistenceService.assemblerPlanning(
-                detail.affectations().stream().map(PlanSnapshotService::seat).toList());
+        return Optional.of(new PublishedPlan(
+                detail.meta(),
+                persistenceService.assemblerPlanning(detail.affectations().stream()
+                        .map(PlanSnapshotService::seat)
+                        .toList())));
     }
+
+    /**
+     * @param publication the published snapshot's metadata — its {@code publieLe} dates the plan
+     * @param plan        the seats it holds, resolved as {@link #planPublie()} resolves them
+     */
+    public record PublishedPlan(PlanSnapshotService.SnapshotMeta publication, PlanningEvenement plan) {}
 
     /**
      * The plan one given snapshot holds, read exactly as {@link #planPublie()}

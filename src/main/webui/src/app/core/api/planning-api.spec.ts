@@ -44,14 +44,30 @@ describe('PlanningApi', () => {
     expect(api.get).toHaveBeenCalledWith('/api/planning/snapshots/compare?base=courant&variante=8');
   });
 
-  it('posts the planning it was given for the hours report, and its exclusions for a publication', async () => {
-    await planning.hoursReport(PLANNING);
+  it('posts the exclusions of a publication, and an empty body for a reset', async () => {
     await planning.publish();
     await planning.reset();
 
-    expect(api.post).toHaveBeenNthCalledWith(1, '/api/planning/hours', PLANNING);
-    expect(api.post).toHaveBeenNthCalledWith(2, '/api/planning/publication', { exclusions: [] });
-    expect(api.post).toHaveBeenNthCalledWith(3, '/api/planning/reset', {});
+    expect(api.post).toHaveBeenNthCalledWith(1, '/api/planning/publication', { exclusions: [] });
+    expect(api.post).toHaveBeenNthCalledWith(2, '/api/planning/reset', {});
+  });
+
+  /** The server reads the plan: the browser names which one, and sends nothing else. */
+  it('reads the hours report and its CSV by source, and lets the server choose without one', async () => {
+    await planning.hoursReport();
+    await planning.hoursReport('publie');
+    await planning.exportHours('persiste');
+
+    expect(api.post).not.toHaveBeenCalled();
+    expect(api.get.mock.calls.map(([url]) => url)).toEqual([
+      '/api/planning/hours?',
+      '/api/planning/hours?source=publie',
+    ]);
+    expect(api.downloadGet).toHaveBeenCalledWith(
+      '/api/planning/hours/export?source=persiste',
+      'heures-planning.csv',
+      'text/csv',
+    );
   });
 
   /** Deferring somebody is what the body carries, and the only thing (issue #503). */
@@ -67,7 +83,6 @@ describe('PlanningApi', () => {
     await planning.exportScenario();
     await planning.exportGlobalPdf();
     await planning.exportBundle(PLANNING);
-    await planning.exportHours(PLANNING);
 
     expect(api.downloadGet).toHaveBeenNthCalledWith(
       1,
@@ -87,13 +102,6 @@ describe('PlanningApi', () => {
       'planning.zip',
       PLANNING,
       'application/zip',
-    );
-    expect(api.downloadPost).toHaveBeenNthCalledWith(
-      2,
-      '/api/planning/hours/export',
-      'heures-planning.csv',
-      PLANNING,
-      'text/csv',
     );
   });
 

@@ -278,6 +278,7 @@ class HistoriqueResourceTest {
         telechargements.put("/api/planning/export-scenario", "EXPORT_SCENARIO");
         telechargements.put("/api/planning/export/pdf/global", "EXPORT_PDF_GLOBAL");
         telechargements.put("/api/planning/equite/export", "EXPORT_EQUITE");
+        telechargements.put("/api/planning/hours/export?source=persiste", "EXPORT_HEURES");
         telechargements.put("/api/planning/publication/export", "EXPORT_RELECTURE");
         telechargements.put("/api/pauses/intendance/export", "EXPORT_INTENDANCE");
         telechargements.put("/api/formation/export", "EXPORT_FORMATION");

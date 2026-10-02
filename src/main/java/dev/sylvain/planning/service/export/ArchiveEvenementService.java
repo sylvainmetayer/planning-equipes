@@ -6,7 +6,7 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.analyse.EquiteService;
-import dev.sylvain.planning.service.analyse.PlanningHoursService;
+import dev.sylvain.planning.service.analyse.PlanningHoursReader;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.journal.CurrentAction;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
@@ -167,7 +167,7 @@ public class ArchiveEvenementService {
     private final PlanningPersistenceService persistence;
     private final PlanningExportService exports;
     private final EquiteService equite;
-    private final PlanningHoursService hours;
+    private final PlanningHoursReader hours;
     private final ReferentielCsvExportService referentials;
     private final PlanningService planningService;
     private final PlanPublicationService publication;
@@ -186,7 +186,7 @@ public class ArchiveEvenementService {
             PlanningPersistenceService persistence,
             PlanningExportService exports,
             EquiteService equite,
-            PlanningHoursService hours,
+            PlanningHoursReader hours,
             ReferentielCsvExportService referentials,
             PlanningService planningService,
             PlanPublicationService publication,
@@ -281,8 +281,11 @@ public class ArchiveEvenementService {
                 csvEntry(zip, ArchivePart.EQUITE.entry(), EquiteService.generateCsv(equite.rapport()));
             }
             if (parts.contains(ArchivePart.HEURES)) {
-                planning = loadedPlan(planning);
-                csvEntry(zip, ArchivePart.HEURES.entry(), hours.generateCsv(hours.compute(planning)));
+                // The CSV its own export downloads without a source, source line
+                // included: the publication in force when there is one — what
+                // the payroll is paid on, and what the screen opens on — the
+                // persisted plan otherwise. Its first line says which.
+                csvEntry(zip, ArchivePart.HEURES.entry(), hours.csv(hours.read(null)));
             }
             if (parts.contains(ArchivePart.REFERENTIELS)) {
                 referentials.writeEntries(

@@ -11,7 +11,9 @@ import dev.sylvain.planning.service.analyse.EquiteService.RapportEquite;
 import dev.sylvain.planning.service.analyse.EquiteService.SyntheseColonne;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityReport;
-import dev.sylvain.planning.service.analyse.PlanningHoursService;
+import dev.sylvain.planning.service.analyse.PlanningHoursReader;
+import dev.sylvain.planning.service.analyse.PlanningHoursReader.HoursReading;
+import dev.sylvain.planning.service.analyse.PlanningHoursReader.Source;
 import dev.sylvain.planning.service.analyse.PlanningHoursService.HeuresAnimateur;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.DeplacementService;
@@ -43,10 +45,12 @@ import java.util.TreeMap;
  * the last solve, the hours worked per animateur, and the per-poste
  * explanation/swap simulation of {@code AffectationExplanationResource}.
  *
- * <p>The explanation/swap/hours REST endpoints take a whole
+ * <p>The explanation/swap REST endpoints take a whole
  * {@code PlanningEvenement} in their body; here they always run against the
  * planning persisted by the last solve, since an assistant has no practical
- * way to send back a payload that can weigh dozens of MB.
+ * way to send back a payload that can weigh dozens of MB. The hours are read
+ * server-side on both sides, from the persisted plan or the publication in
+ * force.
  *
  * <p>Nothing returned here carries a name: hours are reported per animateur
  * id, and the human-readable constraint details are passed through
@@ -78,7 +82,7 @@ public class PlanningMcpTools {
 
     private final FeasibilityAnalyzer feasibilityAnalyzer;
 
-    private final PlanningHoursService heuresPlanningService;
+    private final PlanningHoursReader hoursReader;
 
     private final EquiteService equiteService;
 
@@ -93,7 +97,7 @@ public class PlanningMcpTools {
             PlanningPersistenceService persistenceService,
             ReferenceDataService referenceDataService,
             FeasibilityAnalyzer feasibilityAnalyzer,
-            PlanningHoursService heuresPlanningService,
+            PlanningHoursReader hoursReader,
             EquiteService equiteService,
             ReferenceDataChangeTracker changeTracker,
             ProblemScaleService problemScaleService) {
@@ -102,7 +106,7 @@ public class PlanningMcpTools {
         this.persistenceService = persistenceService;
         this.referenceDataService = referenceDataService;
         this.feasibilityAnalyzer = feasibilityAnalyzer;
-        this.heuresPlanningService = heuresPlanningService;
+        this.hoursReader = hoursReader;
         this.equiteService = equiteService;
         this.changeTracker = changeTracker;
         this.problemScaleService = problemScaleService;
@@ -295,23 +299,31 @@ public class PlanningMcpTools {
 
     @Tool(
             name = "heures_travaillees",
-            description = "Heures travaillées par animateur d'après le dernier planning persisté, par semaine ISO "
-                    + "et au total. Les animateurs sont désignés par id seul.",
+            description = "Heures travaillées par animateur, par semaine ISO et au total, lues côté serveur : sur le "
+                    + "dernier planning persisté par défaut (source « persiste »), ou sur la publication en vigueur, ce "
+                    + "que les animateurs ont reçu (source « publie »), refusée tant que rien n'a été publié. La réponse "
+                    + "dit quel plan elle a lu et sa date. Les animateurs sont désignés par id seul.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    HeuresView workedHours(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        PlanningEvenement planning = persistenceService.loadPersistedPlanning();
-        if (planning == null || planning.getPostes() == null) {
-            return new HeuresView(List.of(), List.of());
-        }
-        PlanningHoursService.HeuresRapport rapport = heuresPlanningService.compute(planning);
+    HeuresView workedHours(
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition,
+            @ToolArg(
+                            description = "Plan lu : « persiste » (le plan enregistré, par défaut) ou « publie »"
+                                    + " (la publication en vigueur)",
+                            required = false)
+                    String source) {
+        HoursReading reading = hoursReader.read(Source.parse(source).orElse(Source.PERSISTE));
         return new HeuresView(
-                rapport.semaines(),
-                rapport.animateurs().stream().map(PlanningMcpTools::toView).toList());
+                reading.source(),
+                reading.planDate(),
+                reading.report().semaines(),
+                reading.report().animateurs().stream()
+                        .map(PlanningMcpTools::toView)
+                        .toList());
     }
 
     @Tool(
@@ -649,7 +661,13 @@ public class PlanningMcpTools {
         }
     }
 
-    public record HeuresView(List<String> semaines, List<HeuresAnimateurView> animateurs) {}
+    /**
+     * @param source   which plan was read: {@code persiste} or {@code publie}
+     * @param planDate when that plan was dated — its publication, or its last
+     *                 solve or restore; {@code null} when it never was
+     */
+    public record HeuresView(
+            String source, Instant planDate, List<String> semaines, List<HeuresAnimateurView> animateurs) {}
 
     public record HeuresAnimateurView(String animateurId, Map<String, Double> heuresParSemaine, double total) {}
 

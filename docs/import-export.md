@@ -1030,17 +1030,42 @@ fichier entier à chaque appel, soit sept parses complets pour un seul clic.
 
 ## Export des heures
 
-`POST /api/planning/hours/export` rend `heures-planning.csv` — « Heures pour la
-paie (CSV) » de la page Planning, par personne : une ligne par animateur, une
-colonne par semaine ISO (`2026-W33`), plus un total, puis dimanche, jours
-fériés, dimanches fériés et `nuit paie (apres 22h)`. Cette dernière colonne est
-la **seule** trace de la borne fixe de 22 h dans l'application : la soirée est
+`GET /api/planning/hours/export?source=publie|persiste` rend
+`heures-planning.csv` — « Heures pour la paie (CSV) » de la page Planning, par
+personne : une ligne par animateur, une colonne par semaine ISO (`2026-W33`),
+plus un total, puis dimanche, jours fériés, dimanches fériés et `nuit paie
+(apres 22h)`. Cette dernière colonne est la **seule** trace de la borne fixe de 22 h dans l'application : la soirée est
 l'heure réglable des paramètres légaux, et la paie garde sa nuit à part
 ([décision 0055](decisions/0055-une-seule-soiree-la-nuit-de-la-paie-a-part.md)). Les heures
 s'écrivent avec une **virgule** (`4,00`), et le séparateur de champs reste `;` —
 la paire qu'attend un tableur français. Avec un point, la cellule y était lue
 comme du texte : la colonne s'alignait à gauche et `=SOMME()` répondait zéro,
 ce qui est pire qu'un total faux, parce que ça ressemble à une réponse.
+
+**Le serveur lit le plan, le navigateur ne l'envoie plus.** Le fichier se
+calculait sur le planning que l'écran postait : il disait ce qu'un onglet
+tenait à un instant, ni ce que la base contenait ni ce qui avait été publié, et
+personne ne pouvait s'en porter garant devant une paie ou une inspection. Il se
+lit désormais sur la **publication en vigueur** (`publie`, ce que les
+animateurs ont reçu) ou sur le **plan enregistré** (`persiste`). Le plan publié,
+ce sont les sièges figés à la publication, relus comme l'espace animateur les
+relit : contre le référentiel d'aujourd'hui. Un créneau qui existe encore donne
+ses heures actuelles (un créneau supprimé garde celles que la publication a
+notées), les pauses déduites et la soirée suivent les paramètres légaux
+actuels, et un animateur ou un stand supprimé depuis sort du fichier. Rien de ce
+que devient le plan enregistré ne le touche ; une retouche de ces référentiels,
+si : le fichier ne se répète à l'identique d'un appel à l'autre que tant que ni
+la publication ni eux ne bougent. Sans paramètre, c'est la
+publication quand il y en a une, le plan enregistré sinon ; `publie` avant
+toute publication est un `409` (un état de l'édition, pas une ressource
+manquante), pas un fichier vide qui dirait que personne n'a
+travaillé. La **première ligne** nomme la source et sa date — `Source : plan
+publié le 12/07/2026 à 18:30`, `Source : plan enregistré, résolu le …` : le plan
+enregistré n'a pas d'autre date que sa dernière résolution ou restauration (un
+siège retouché à la main depuis n'en laisse aucune), et le fichier dit laquelle
+plutôt que de la faire passer pour celle de sa dernière modification. La ligne
+d'en-tête des colonnes vient ensuite. `GET /api/planning/hours` rend le même
+rapport en JSON, avec la source lue, sa date et `publicationAvailable`.
 
 ## Export de l'équité
 
@@ -1215,7 +1240,7 @@ ne porterait que son manifeste.
 | — | `LISEZMOI.txt` | le manifeste, toujours présent | — |
 | `pdfGlobal` | `planning-global.pdf` | celui de `GET /api/planning/export/pdf/global` | oui |
 | `equite` | `equite.csv` | celui de `GET /api/planning/equite/export` | oui |
-| `heures` | `heures.csv` | celui de `POST /api/planning/hours/export`, sur le plan persisté | oui |
+| `heures` | `heures.csv` | celui de `GET /api/planning/hours/export`, sans `source` : la publication en vigueur s'il y en a une, le plan enregistré sinon | oui |
 | `referentiels` | `referentiels/*.csv` | les six fichiers de `GET /api/reference-data/export-csv` | non |
 | `scenario` | `scenario.yaml` | celui de `GET /api/planning/export-scenario` | non |
 | `publication` | `publication.csv` | celui de `GET /api/planning/publication/export` | non |

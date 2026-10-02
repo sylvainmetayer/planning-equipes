@@ -16,7 +16,23 @@
                   i18n="@@planningPersonne.colonnesVides">Colonnes toujours vides ({{ tableau().vides.length }})</mat-checkbox>
   }
   <span class="planning-personne-espace"></span>
-  <button matButton type="button" [disabled]="exportBusy() || !planning()" (click)="exporterHeures()">
+  <mat-button-toggle-group [value]="shownSource()" (change)="hoursSource.set($event.value)"
+                           aria-label="Heures lues sur" i18n-aria-label="@@planningPersonne.source.label">
+    <mat-button-toggle value="publie" [disabled]="!publicationAvailable()" [disabledInteractive]="true"
+                       [attr.title]="publicationAvailable() ? null : noPublicationLabel"
+                       i18n="@@planningPersonne.source.publie">Plan publié</mat-button-toggle>
+    <mat-button-toggle value="persiste" i18n="@@planningPersonne.source.persiste">Plan enregistré</mat-button-toggle>
+  </mat-button-toggle-group>
+  @if (hoursReading()?.planDate; as planDate) {
+    <span class="planning-personne-source-date">
+      @if (hoursReading()?.source === 'publie') {
+        <ng-container i18n="@@planningPersonne.source.publieLe">publié le {{ planDate | date: 'short' }}</ng-container>
+      } @else {
+        <ng-container i18n="@@planningPersonne.source.resoluLe">résolu le {{ planDate | date: 'short' }}</ng-container>
+      }
+    </span>
+  }
+  <button matButton type="button" [disabled]="exportBusy()" (click)="exporterHeures()">
     <mat-icon>download</mat-icon>
     <ng-container i18n="@@planningPersonne.csvHeures">Heures pour la paie (CSV)</ng-container>
   </button>
@@ -50,6 +66,9 @@
   }
 </ul>
 
+@if (mixedSources()) {
+  <p class="planning-personne-source-note" i18n="@@planningPersonne.source.melange">Les heures (semaines, total, écart, soirée, férié, dimanche, nuit) viennent du plan publié ; la grille des jours, la frise, le week-end et les autres compteurs restent ceux du plan enregistré.</p>
+}
 @if (chargement()) {
   <mat-progress-bar mode="indeterminate" />
 }

@@ -271,6 +271,7 @@ qui vient d'afficher la donnée.
 | `deplacer_affectation`, `simuler_deplacement`, `accepter_demande_echange`, `analyser_impact_echange`, `suggerer_reparations`, `affecter_poste` | refusent un poste dont le créneau est déjà commencé, avec la phrase de l'écran : « Ce créneau est déjà commencé : le passé ne se modifie plus » ([ADR 0044](decisions/0044-le-passe-est-fige.md)) | le passé est un fait pour l'assistant comme pour l'écran ; l'outil de simulation refuse déjà, pour qu'un assistant ne bâtisse pas un plan sur un geste que l'écriture refusera |
 | `modifier_stand`, `modifier_animateur`, `modifier_creneau`, `modifier_emplacement`, `modifier_typologie` | prennent un `modifieLe` **facultatif**, là où l'écran renvoie toujours celui qu'il a chargé | la fusion relit la fiche juste avant d'écrire, donc sans argument le contrôle de modification concurrente (#362) ne dit rien ; un assistant qui a lu la fiche plus tôt (`consulter_*`) et veut être refusé si elle a bougé depuis passe la valeur lue |
 | `lister_affectations`, `consulter_instantane` | plafonnent la liste (200 par défaut) et annoncent le total | un planning réel porte plusieurs milliers de postes ; le total à côté de la liste est ce qui rend la troncature lisible, plutôt qu'un plafond caché |
+| `heures_travaillees` | lit le plan enregistré sans `source`, là où `GET /api/planning/hours` lit la publication en vigueur quand il y en a une ([ci-dessous](#les-heures-se-lisent-sur-le-plan-quon-nomme)) | l'écran sert d'abord la paie, qui se règle sur ce qui a été annoncé ; un assistant lit en général le plan qu'il vient de retoucher, et nomme l'autre quand il le veut |
 | `lister_animateurs`, `lister_stands` | acceptent une `limite` mais ne plafonnent rien par défaut | leur taille est celle du référentiel, pas celle du planning : l'appelant qui les demande les veut en général en entier |
 | `diagnostiquer_plan` | lève une erreur sans planning persisté, là où `POST /api/constraints/diagnostic` renvoie la vue vide | l'écran a un état vide permanent qui dit déjà « aucune analyse » ; une structure vide rendue à un assistant se lit comme « aucune contrainte en défaut » |
 | `publier_planning`, `configurer_collecte_disponibilites` | comptent les personnes sans adresse et les échecs d'envoi, là où le REST les **nomme** | ces listes existent pour un écran qui affiche déjà les fiches ; `lister_destinataires_publication` redonne le détail par id, qui est ce que les autres outils prennent en entrée |
@@ -842,6 +843,19 @@ solveur ne pèse pas est une information pour l'assistant, pas un défaut de la
 résolution. Là où l'écran et l'export CSV nomment les personnes, l'outil ne
 rend que des ids. L'heure de début de soirée se lit et se règle par
 `consulter_parametres_legaux` / `modifier_parametres_legaux`.
+
+## Les heures se lisent sur le plan qu'on nomme
+
+`heures_travaillees` rend, par animateur désigné par id, les heures par semaine
+ISO et le total, calculées côté serveur comme l'écran les lit : sur le **plan
+enregistré** par défaut (`source=persiste`), ou sur la **publication en
+vigueur** — ce que les animateurs ont reçu — avec `source=publie`. La réponse
+dit quel plan elle a lu (`source`) et sa date (`planDate` : la publication, ou
+la dernière résolution ou restauration du plan enregistré). Tant que rien n'a
+été publié, `source=publie` est un refus métier, pas un rapport vide qui dirait
+que personne n'a d'heures. Le défaut reste le plan enregistré, là où l'écran
+ouvre sur le plan publié quand il existe : un assistant qui vient de retoucher
+le planning veut en général lire ce qu'il a fait.
 
 ## Une typologie se lit avec ce qui la tient
 

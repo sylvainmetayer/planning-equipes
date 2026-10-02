@@ -100,7 +100,7 @@ class ArchiveEvenementResourceTest {
     }
 
     /**
-     * Two tests publish, and a publication outlives a reset: left behind, it
+     * Three tests publish, and a publication outlives a reset: left behind, it
      * would tell the next class that this edition was published.
      */
     @AfterEach
@@ -150,24 +150,10 @@ class ArchiveEvenementResourceTest {
 
         assertThat(archive).containsEntry("equite.csv", download("/api/planning/equite/export"));
 
-        // The Heures screen posts the persisted plan it read: the same round trip.
-        String persisted = given().header("X-Edition-Id", "E1")
-                .when()
-                .get("/api/planning/persisted")
-                .then()
-                .statusCode(200)
-                .extract()
-                .asString();
-        byte[] heures = given().header("X-Edition-Id", "E1")
-                .contentType(ContentType.JSON)
-                .body(persisted)
-                .when()
-                .post("/api/planning/hours/export")
-                .then()
-                .statusCode(200)
-                .extract()
-                .asByteArray();
+        // The hours export's own default: nothing published here, so the persisted plan.
+        byte[] heures = download("/api/planning/hours/export");
         assertThat(archive).containsEntry("heures.csv", heures);
+        assertThat(text(heures)).startsWith("\uFEFFSource : plan enregistré, résolu le ");
 
         Map<String, byte[]> referentiels = unzip(download("/api/reference-data/export-csv?typologies=true"
                 + "&emplacements=true&stands=true&creneaux=true&journeesTypes=true&animateurs=true"));
@@ -176,6 +162,23 @@ class ArchiveEvenementResourceTest {
                 (name, content) -> assertThat(archive).as(name).containsEntry("referentiels/" + name, content));
 
         assertThat(text(archive.get("scenario.yaml"))).isEqualTo(text(download("/api/planning/export-scenario")));
+    }
+
+    /** Once something is published, the hours are those of the publication — as the screen opens on them. */
+    @Test
+    void theHoursPartReadsThePublicationInForceLikeItsOwnExport() throws IOException {
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/api/planning/publication")
+                .then()
+                .statusCode(200);
+
+        Map<String, byte[]> archive = unzip(download(ARCHIVE + "?heures=true"));
+
+        byte[] heures = download("/api/planning/hours/export");
+        assertThat(archive).containsEntry("heures.csv", heures);
+        assertThat(text(heures)).startsWith("\uFEFFSource : plan publié le ");
     }
 
     @Test
