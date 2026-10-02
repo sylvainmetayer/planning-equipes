@@ -392,6 +392,21 @@ propres services, et la mauvaise pour une plage publique.
 Ce verrou ne remplace pas la limitation de débit par IP du proxy, qui vaut pour
 tout le reste — exports, résolution, API entière.
 
+### Quota de calcul
+
+Une instance exposée avec un mot de passe partagé — une démonstration
+publique — laisse quiconque lancer des calculs, et un calcul occupe la machine
+des minutes durant. Si cette machine porte aussi une production, deux gardes
+d'exploitant bornent ce qu'un visiteur peut lui coûter :
+`SOLVER_MAX_SOLVES_PER_HOUR` (calculs acceptés sur 60 minutes glissantes) et
+`SOLVER_MAX_QUEUED_JOBS` (tâches en file), avec `SOLVER_SECONDS_LIMIT_MAX` pour
+la durée de chacun. Contrairement aux limiteurs ci-dessus, ils comptent pour
+**toute l'instance**, pas par adresse : c'est la machine qu'on protège, et un
+visiteur qui change d'adresse ne repart pas à zéro. Le refus est un `409` qui
+dit quand revenir, pas un `429`. Coupés par défaut ; réglage et périmètre dans
+[`exploitation.md`](exploitation.md#combien-de-calculs-linstance-accepte), choix
+dans [l'ADR 0075](decisions/0075-quota-de-calcul-de-l-instance-dans-l-application.md).
+
 ## Abonnement ICS : le second jeton, et ce qu'il permet exactement
 
 `GET /api/abonnements/{token}/planning.ics` est la **seule** route de
@@ -820,7 +835,7 @@ L'application ne peut pas s'en occuper à sa place, et ces points sont des
 | Terminer le TLS et rediriger tout le trafic http vers https | HSTS et le flag `Secure` du cookie de l'espace ne s'activent que sur une visite HTTPS |
 | **Renseigner `CONNEXION_PROXYS_FIABLES`** avec les adresses de vos proxys inverses (littérales ou blocs CIDR) | Sans elle, les deux plafonds par adresse ignorent `X-Forwarded-For` et comptent tous les visiteurs derrière le proxy sur un seul compteur — sûr, mais le premier attaquant venu verrouille tout le monde. **Obligatoire dès que `/mcp` sert** : ce plafond-là compte chaque requête, pas les seuls échecs. **Obligatoire aussi dès qu'un lien d'affichage mural existe** : sans elle, quelques requêtes au hasard verrouillent l'adresse du proxy, et un écran nouvellement branché — ou relancé après un redémarrage de l'application — n'affiche rien jusqu'à la fin du verrou. `QUARKUS_HTTP_PROXY_TRUSTED_PROXIES` ne remplace pas ce réglage : il décide si l'en-tête est lu, jamais quel élément est retenu |
 | **Rendre l'origine injoignable autrement que par le proxy** (pare-feu, réseau) | Sans cela, `X-Forwarded-Proto` reste forgeable, et un attaquant qui joint l'origine directement est compté sur sa vraie adresse — ce qui est correct, mais le prive du bénéfice de la liste ci-dessus |
-| Limiter le débit par adresse IP sur tout le site | Les plafonds de l'application sont ciblés (connexion admin, codes de l'espace, serveur MCP, affichage mural) ; le reste — exports, résolution, API — n'en a pas |
+| Limiter le débit par adresse IP sur tout le site | Les plafonds de l'application sont ciblés (connexion admin, codes de l'espace, serveur MCP, affichage mural) ; le reste — exports, API — n'en a pas. Le calcul, lui, a un quota d'instance facultatif (voir *Quota de calcul* ci-dessus), qu'une limite par adresse ne remplace pas |
 | Journaliser sans les URL de l'espace animateur, **de l'abonnement ICS ni de l'affichage mural**, ou purger ces journaux | Les trois jetons voyagent **dans le chemin** : ils atterrissent tels quels dans les journaux d'accès, l'abonnement y revient à chaque synchronisation d'un agenda et l'affichage mural chaque minute |
 | Ne jamais router le port 9000 (métriques), ni le publier sur l'hôte | Il n'a pas d'authentification : il est protégé par le réseau, pas par un mot de passe. Un scraper hors de la pile passe par un tunnel ou un réseau privé, pas par le proxy public |
 | Réserver `/q/health/*` à la source de la supervision, si elle est connue | Rien de sensible n'y est lu, mais une sonde n'a pas à être joignable par le monde entier ; le `healthcheck` du compose passe par la boucle locale et n'en dépend pas |

@@ -149,6 +149,9 @@ public class SolverJobService {
     /** Told when a job takes the solver, so a staffing check holding the cores gives way. */
     private final Event<SolveStarting> solveStarting;
 
+    /** The operator's hourly quota and queue cap, checked at submission only — never on a replay. */
+    private final SolverQuota quota;
+
     @Inject
     public SolverJobService(
             SolverJobTasks tasks,
@@ -161,9 +164,11 @@ public class SolverJobService {
             SolveBudgetPolicy budgetPolicy,
             ReferenceData referenceData,
             Event<SolveStarting> solveStarting,
+            SolverQuota quota,
             @ConfigProperty(name = "planning.jobs.reprise-au-demarrage", defaultValue = "true")
                     boolean replayAtStartup) {
         this.solveStarting = solveStarting;
+        this.quota = quota;
         this.budgetPolicy = budgetPolicy;
         this.referenceData = referenceData;
         this.tasks = tasks;
@@ -344,6 +349,10 @@ public class SolverJobService {
      * active job" check — the same monitor {@link #finishAndChain} holds
      * while it promotes the next queued job, so there is no window in which
      * the solver looks free while a hand-over is under way.
+     *
+     * <p>Every submission — the screen, the API, MCP — passes the operator's
+     * guard here ({@link SolverQuota}): the queue cap when the job would wait,
+     * then the hourly quota.</p>
      */
     private synchronized SolverJob submit(
             JobType type,
@@ -375,7 +384,13 @@ public class SolverJobService {
         String editionId = editionContext.editionIdCourant();
         if (actif.isPresent()) {
             refuseDuplicate(type, editionId);
+            quota.checkQueue(file.size());
         }
+        // Last, under the monitor: a launch refused above consumes nothing,
+        // and two simultaneous requests cannot both take the last run of the
+        // hour. restaurer() never comes through here, so a job replayed
+        // at startup is neither refused nor counted twice.
+        quota.consume();
         SolverJob job = new SolverJob(type, budget, editionId, nomEdition(editionId), scope, reamorcage, rejouable);
         jobs.put(job.getId(), job);
         if (actif.isPresent()) {
