@@ -106,9 +106,9 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `io.prometheus:simpleclient_tracer_common` | 0.16.0 | Apache-2.0 |
 | `io.prometheus:simpleclient_tracer_otel` | 0.16.0 | Apache-2.0 |
 | `io.prometheus:simpleclient_tracer_otel_agent` | 0.16.0 | Apache-2.0 |
-| `io.quarkiverse.mcp:quarkus-mcp-server-core` | 2.0.1 | Apache-2.0 |
-| `io.quarkiverse.mcp:quarkus-mcp-server-http` | 2.0.1 | Apache-2.0 |
-| `io.quarkiverse.mcp:quarkus-mcp-server-sse-client` | 2.0.1 | Apache-2.0 |
+| `io.quarkiverse.mcp:quarkus-mcp-server-core` | 2.0.2 | Apache-2.0 |
+| `io.quarkiverse.mcp:quarkus-mcp-server-http` | 2.0.2 | Apache-2.0 |
+| `io.quarkiverse.mcp:quarkus-mcp-server-sse-client` | 2.0.2 | Apache-2.0 |
 | `io.quarkiverse.quinoa:quarkus-quinoa` | 2.9.1 | Apache-2.0 |
 | `io.quarkus.arc:arc` | 3.39.5 | Apache-2.0 |
 | `io.quarkus.gizmo:gizmo2` | 2.1.1 | Apache-2.0 |
