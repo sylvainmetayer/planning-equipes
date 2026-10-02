@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
  */
 class ScoreReadingTest {
 
-    private static final Pattern CAMEL_CASE = Pattern.compile("\\b\\p{Ll}+\\p{Lu}\\w*");
+    private static final Pattern CAMEL_CASE = Pattern.compile("\\b\\p{Ll}++\\p{Lu}\\w*+");
     private static final Pattern POURCENTAGE = Pattern.compile("(?<!\\d)(\\d++) %");
 
     private static ConstraintDiagnostic rule(String name, String score, int matches) {

@@ -26,7 +26,6 @@ class ConstraintToggleTest extends ConstraintTestBase {
     private final Stand standAdresse = stand("STAND-ADRESSE", false, "ADRESSE");
     private final Stand standMajeurs = stand("STAND-MAJ", true, "STRATEGIE");
     private final Creneau creneauMatin = matin("J1-MATIN", 1, D1);
-    private final Creneau creneauAprem = afternoon("J1-AM", 1, D1);
 
     @Test
     void animateurDisponiblePeutEtreDesactivee() {

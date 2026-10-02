@@ -353,18 +353,18 @@ class JournalCoverageStructurelleTest {
         // silently stopped writing anything.
         Set<String> routes = new java.util.HashSet<>(writingRoutes().keySet());
         routes.addAll(downloadRoutes());
-        assertThat(CatalogueActions.routes().keySet())
+        assertThat(routes)
                 .as("routes du catalogue qui n'existent plus")
-                .allSatisfy(cle -> assertThat(routes).contains(cle));
-        assertThat(CatalogueActions.untracked().keySet())
-                .filteredOn(cle -> cle.contains("#"))
+                .containsAll(CatalogueActions.routes().keySet());
+        assertThat(routes)
                 .as("routes exclues qui n'existent plus")
-                .allSatisfy(cle -> assertThat(routes).contains(cle));
+                .containsAll(CatalogueActions.untracked().keySet().stream()
+                        .filter(cle -> cle.contains("#"))
+                        .toList());
 
-        var outils = writingTools();
-        assertThat(CatalogueActions.outils().keySet())
+        assertThat(writingTools())
                 .as("outils du catalogue qui n'existent plus")
-                .allSatisfy(nom -> assertThat(outils).contains(nom));
+                .containsAll(CatalogueActions.outils().keySet());
     }
 
     /** Every code a route or a tool points at must describe something. */
@@ -425,9 +425,9 @@ class JournalCoverageStructurelleTest {
         atteignables.addAll(CatalogueActions.outils().values());
         atteignables.addAll(codesQuotedBySources());
 
-        assertThat(CatalogueActions.actions().keySet())
+        assertThat(atteignables)
                 .as("actions décrites que rien ne peut écrire")
-                .allSatisfy(code -> assertThat(atteignables).as("%s", code).contains(code));
+                .containsAll(CatalogueActions.actions().keySet());
     }
 
     /**
