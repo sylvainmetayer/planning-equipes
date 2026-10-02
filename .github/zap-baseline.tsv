@@ -1,0 +1,7 @@
+# Règles de ZAP baseline (job `dast` de tests.yml), au format de
+# zap-baseline.py : identifiant, tabulation, IGNORE | WARN | FAIL, tabulation,
+# commentaire. Le job échoue sur tout WARN comme sur tout FAIL : une alerte
+# acceptée s'écrit ici en IGNORE avec sa raison, une alerte qui ne doit pas
+# revenir passe en FAIL.
+#
+# La liste des règles et de leurs identifiants : https://www.zaproxy.org/docs/alerts/
