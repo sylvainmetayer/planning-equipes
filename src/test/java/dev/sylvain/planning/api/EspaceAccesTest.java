@@ -29,7 +29,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * The espace animateur behind Keycloak (ADR 0076): the link alone is not
+ * The espace animateur behind Keycloak (ADR 0077): the link alone is not
  * enough, a Keycloak session carrying the {@code animateur} role and the
  * <b>verified</b> address of the fiche the link designates opens it. The
  * tokens are signed by the in-memory OIDC server, so the guard under test is

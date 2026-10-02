@@ -994,7 +994,7 @@ class DemandeEchangeFlowTest {
         PlansPublies.publier(publication);
 
         // The espace requires a Keycloak session at the fiche's address (ADR
-        // 0076): both actors get an address, a session, and Alice's rides on
+        // 0077): both actors get an address, a session, and Alice's rides on
         // every request by default (harmless on the admin routes).
         donnerEmail("ECH-A", "ech-alice@example.org");
         donnerEmail("ECH-B", "ech-bruno@example.org");

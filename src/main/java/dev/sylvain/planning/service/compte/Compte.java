@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * One person able to sign in, whatever the edition (ADR 0076). Never deleted:
+ * One person able to sign in, whatever the edition (ADR 0077). Never deleted:
  * {@code desactiveLe} closes the account and keeps its history.
  *
  * @param sujet the {@code sub} of the Keycloak token, {@code null} for an

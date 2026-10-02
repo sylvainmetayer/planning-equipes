@@ -383,7 +383,7 @@ jobs:
       # voir. Les secrets sont générés ici, aucun n'est écrit dans ce fichier.
       # Pas de Keycloak sur le runner : l'application démarre avec lui éteint
       # et la porte de secours ouverte, comme le smoke test de docker-ghcr.yml —
-      # la production refuse une instance qui n'a ni l'un ni l'autre (ADR 0076).
+      # la production refuse une instance qui n'a ni l'un ni l'autre (ADR 0077).
       - name: Start the application
         env:
           DB_URL: jdbc:postgresql://localhost:5432/festival

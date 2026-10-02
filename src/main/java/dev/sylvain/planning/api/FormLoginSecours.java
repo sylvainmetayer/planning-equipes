@@ -9,7 +9,7 @@ import jakarta.inject.Inject;
 
 /**
  * Closes {@code /j_security_check} unless the break-glass door is open
- * ({@code ADMIN_SECOURS_ENABLED}, ADR 0076).
+ * ({@code ADMIN_SECOURS_ENABLED}, ADR 0077).
  *
  * <p>Keycloak is the way in, and the realm imposes a second factor on
  * administrators. The form login and its single embedded {@code admin} account
