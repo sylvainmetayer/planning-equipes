@@ -154,7 +154,7 @@ tout instantané portant `publie_le`. Or une édition publie autant de fois
 qu'elle en a besoin : chaque publication laisse sa capture, et le garde-fou les
 protégeait toutes. À la deuxième publication, l'écran Instantanés n'avait plus
 qu'un bouton *Supprimer* qui répondait « Cet instantané est le plan publié »
-sur des plans que plus personne ne lisait (issue #34).
+sur des plans que plus personne ne lisait.
 
 La référence que lit l'espace est **la dernière** publication, une seule
 (`loadLastPublication`). Celles qu'elle a remplacées sont de l'histoire, et se

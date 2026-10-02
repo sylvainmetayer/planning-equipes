@@ -15,7 +15,7 @@ mémoire vive.
 rien dire de son âge, et la page Instantanés n'affichait que `cree_le`. Un
 administrateur restaurait donc en confiance un plan calculé avant l'ajout d'un
 stand ou la suppression d'un animateur : le planning remis en place annulait en
-silence la prise en compte de tout ce qui avait changé depuis (#170).
+silence la prise en compte de tout ce qui avait changé depuis.
 
 L'indice existait déjà, mais il ne pouvait pas servir à ça.
 `ReferenceDataChangeTracker` gardait la date de dernière mutation du
@@ -28,13 +28,13 @@ C'est cette dernière proposition qui a cessé d'être vraie. Sur un bandeau, un
 indice muet ne coûte rien — l'utilisateur n'apprend simplement rien. Devant un
 bouton *Restaurer*, une carte vide se lit « jamais modifié », donc « à jour » :
 après chaque redémarrage, **tout** instantané passerait pour frais, et le badge
-affirmerait précisément l'inverse de ce que l'issue veut éviter. Un « à jour »
+affirmerait précisément l'inverse de ce que la demande veut éviter. Un « à jour »
 faux y est pire que pas de badge du tout.
 
 ## Options envisagées
 
 **(A) Rester en mémoire, badge assumé muet après redémarrage.** C'est ce que
-proposait le corps de l'issue (« commencer best-effort »). Écarté : le badge ne
+proposait la demande (« commencer best-effort »). Écarté : le badge ne
 serait pas *muet* après un redémarrage, il serait *faux*. Une absence
 d'information et une affirmation erronée ne se distinguent pas dans une carte
 vide — il aurait fallu un troisième état « fraîcheur inconnue », qui ramène
@@ -59,7 +59,7 @@ mutation la plus dangereuse pour une restauration serait la seule invisible.
    tort — le sens prudent.
 2. **Pas de cache mémoire devant.** La base devient la seule source, y compris
    pour les autres éditions : le comparateur A/B liste les instantanés de
-   toutes les éditions (#70), ce qu'une carte indexée sur l'édition *courante*
+   toutes les éditions, ce qu'une carte indexée sur l'édition *courante*
    ne sait pas répondre. La fraîcheur se lit donc par instantané, dans la même
    jointure `edition` que le nom de l'édition.
 3. **L'existant est repris à la migration**, sans quoi toute édition antérieure

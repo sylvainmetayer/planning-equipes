@@ -21,10 +21,10 @@ tour.
    pas qu'elle soit planifiée, et vingt minutes prises par relais entre
    collègues remplissent l'art. L3121-16. Une case « pause prise sur le poste »
    a donc été ajoutée. Elle **éteignait** les deux règles ci-dessus.
-3. **Trois correctifs ont bouché ce que cette case ouvrait** : la coupure repas
-   (issue #438), parce qu'une journée 10 h-20 h passait alors inaperçue ; le
+3. **Trois correctifs ont bouché ce que cette case ouvrait** : la coupure repas,
+   parce qu'une journée 10 h-20 h passait alors inaperçue ; le
    relais, vérifié par une règle séparée `pauseSurPosteSansRelais` ; la durée
-   de pause rendue réglable (issue #592), puis portée en dur (issue #31).
+   de pause rendue réglable, puis portée en dur.
 
 Le résultat, sur `main` avant cette décision : **quatre notions appelées
 « pause »** (le trou entre vacations, l'écart minimal entre vacations, la pause
@@ -90,7 +90,7 @@ vacations qui se touchent s'enchaînent.
 
 `dureePauseMajeurMinutes` et `dureePauseMineurMinutes` fusionnent en
 **`dureePauseMinutes`**, plancher 20 (art. L3121-16), **défaut 30**, le cadre
-que l'organisation a arrêté (issue #31).
+que l'organisation a arrêté.
 
 Le plancher du mineur ne se stocke pas, il **s'applique à la lecture** :
 `dureePauseMinutes(true)` rend `max(valeur, 30)`. Refuser une édition à 25

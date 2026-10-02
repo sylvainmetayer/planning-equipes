@@ -49,9 +49,9 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0023](0023-modification-concurrente-par-horodatage.md) | Détecter une modification concurrente par horodatage, sans verrou | Accepté |
 | [0024](0024-repartir-du-plan-enregistre-par-defaut.md) | Une résolution complète repart du plan enregistré par défaut, sans l'épingler | Accepté |
 | [0025](0025-stabilite-du-plan-publie.md) | La stabilité après publication est une règle dosée, pas un gel | Accepté · prolonge 0024 · échelle révisée par 0057 |
-| [0026](0026-famille-de-relais-attribut-du-stand.md) | La famille de relais est un attribut du stand | Remplacé par 0029 · issue #390 |
-| [0027](0027-pas-de-compilation-native.md) | Pas de compilation native | Accepté · issue #392 |
-| [0028](0028-transactions-declaratives-narayana.md) | Transactions déclaratives (`@Transactional`, Narayana) pour les unités de travail composées | **Proposé** · mesuré, non tranché · issue #448 |
+| [0026](0026-famille-de-relais-attribut-du-stand.md) | La famille de relais est un attribut du stand | Remplacé par 0029 |
+| [0027](0027-pas-de-compilation-native.md) | Pas de compilation native | Accepté |
+| [0028](0028-transactions-declaratives-narayana.md) | Transactions déclaratives (`@Transactional`, Narayana) pour les unités de travail composées | **Proposé** · mesuré, non tranché |
 | [0029](0029-retrait-des-familles-de-relais.md) | Les familles de relais sont retirées | Accepté · remplace 0026 |
 | [0030](0030-grille-competences-import-additif.md) | La grille des compétences transpose 0021 : identité par identifiant, case vide inchangée, jamais de suppression | Abandonné · retiré par 0050 |
 | [0031](0031-signaler-le-plancher-sans-le-decider.md) | Une règle qui pénalise tout faute de donnée est signalée comme plancher, jamais désactivée | Accepté |

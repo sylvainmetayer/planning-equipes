@@ -3,7 +3,7 @@
 - **Statut** : accepté, implémenté
 - **Date** : septembre 2026
 - **Portée** : `pom.xml` (profil `native`), `src/main/docker/`, image publiée
-- **Issue** : #392, question 24
+- **Origine** : l'audit d'architecture de septembre 2026, question 24
 
 ## Contexte
 
