@@ -3,7 +3,7 @@
 - **Statut** : accepté, implémenté (socle)
 - **Date** : septembre 2026
 - **Portée** : authentification (administration, espace animateur, MCP), autorisation, schéma (`compte`, `habilitation`, `habilitation_stand`), exploitation (Keycloak, Terraform, Ansible)
-- **Issues** : #294 (comptes nominatifs), #295 (responsable de stand) ; reprend le chantier des PR #565 et #587 du dépôt privé
+- **Origine** : les comptes nominatifs (accès RH en lecture seule) et le responsable de stand ; reprend le chantier de deux PR du dépôt privé
 - **Numérotation** : cette décision a d'abord porté le numéro 0069, puis 0070, 0071, 0075 et 0076, que `main` a pris entre-temps (la relecture, le réalisé figé, le besoin en animateurs, le quota de calcul, le journal des connexions). Ses migrations, `V126` et `V127`, ont suivi la même course : elles n'avaient jamais été publiées, leur numéro et leur commentaire ont donc changé avec elles.
 
 ## Contexte
@@ -21,10 +21,10 @@ partagés ou de longue durée :
   révocation.
 
 Deux autres besoins attendaient ce chantier : un accès **RH en lecture seule**
-(#294) et un **responsable de stand** limité à son périmètre (#295), tous deux
+et un **responsable de stand** limité à son périmètre, tous deux
 impossibles avec un seul compte.
 
-Une première tentative (PR #565, #587 du dépôt privé) a posé un mode Keycloak
+Une première tentative (deux PR du dépôt privé) a posé un mode Keycloak
 **facultatif**, éteint par défaut, avec les rôles portés **uniquement** par le
 realm. Elle a trouvé, en tournant contre un vrai Keycloak, une série de pièges
 que ce dépôt reprend (PKCE des deux côtés, rôles lus dans le jeton d'accès,
@@ -45,7 +45,7 @@ et une session ouverte pendant un incident perd son rôle dès la fermeture.
 Un démarrage de production sans Keycloak **et** sans porte de secours est
 refusé : ce serait une application que personne ne peut administrer.
 
-Écarté — **le mode facultatif** de #565 : il garde deux configurations de
+Écarté — **le mode facultatif** de cette première tentative : il garde deux configurations de
 référence à tester et à documenter pour toujours, et la sécurité d'un
 déploiement dépendrait d'une variable que personne n'a pensé à changer.
 Écarté — **supprimer le compte embarqué** : plus de voie de secours quand
@@ -92,7 +92,7 @@ le **désactive**, jamais ne le supprime, quand plus aucune fiche d'aucune
 | Où | Quoi | Pourquoi là |
 | --- | --- | --- |
 | Realm Keycloak | Identité (adresse vérifiée), second facteur, rôles **globaux** `admin`, `mcp`, `animateur` | Ce sont des faits sur la personne, que l'annuaire sait porter et imposer |
-| Base de l'application | `compte` (identité, désactivation), `habilitation` (rôle délégué, édition ou toutes, expiration), `habilitation_stand` (périmètre) | Un rôle de realm n'est ni par édition, ni par stand, ni daté : #295 aurait dû réinventer ce modèle |
+| Base de l'application | `compte` (identité, désactivation), `habilitation` (rôle délégué, édition ou toutes, expiration), `habilitation_stand` (périmètre) | Un rôle de realm n'est ni par édition, ni par stand, ni daté : le responsable de stand aurait dû réinventer ce modèle |
 
 - Le rôle ordinaire `user` du realm **n'ouvre rien**. Un privilège bâti sur
   « cette personne existe » atteindrait chaque futur compte sans que personne
@@ -111,7 +111,7 @@ le **désactive**, jamais ne le supprime, quand plus aucune fiche d'aucune
 Cette PR pose le **socle** : les tables, l'identité réelle dans
 `SecurityIdentity`, l'API d'administration des comptes, le refus par défaut.
 Les rôles délégués arrivent chacun avec ses projections et son test
-structurel. Le **responsable de stand** (#295) est ouvert dans la même PR :
+structurel. Le **responsable de stand** est ouvert dans la même PR :
 
 - il entre par un **écran dédié** (`/responsable`), avec sa seule session
   Keycloak — le droit est celui du compte, pas d'une fiche, et un responsable
@@ -142,7 +142,7 @@ d'e2e ; un test structurel tient les deux descriptions ensemble.
 
 ### 6. Keycloak plutôt que Rauthy
 
-Repris du PoC du dépôt privé (#586) : Rauthy ne sait pas imposer un second
+Repris du PoC du dépôt privé : Rauthy ne sait pas imposer un second
 facteur **par rôle** — c'est tout le monde ou personne. C'était la raison
 d'être du chantier.
 
