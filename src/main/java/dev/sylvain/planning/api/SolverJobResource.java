@@ -10,6 +10,8 @@ import dev.sylvain.planning.service.solve.ReplanificationScope;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import dev.sylvain.planning.service.solve.SolverJobService.SolverJob;
 import dev.sylvain.planning.service.solve.SolverScoreTrace;
+import dev.sylvain.planning.service.solve.StaffingVerificationService;
+import dev.sylvain.planning.service.solve.StaffingVerificationService.RunningCheck;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
 import jakarta.inject.Inject;
@@ -67,13 +69,17 @@ public class SolverJobResource {
 
     private final EditionContext editionContext;
 
+    private final StaffingVerificationService staffingVerification;
+
     @Inject
     public SolverJobResource(
             SolverJobService solverJobService,
             JobStreamBroadcaster jobStream,
             ConfigJobStream configJobStream,
             SolverScoreTrace scoreTrace,
-            EditionContext editionContext) {
+            EditionContext editionContext,
+            StaffingVerificationService staffingVerification) {
+        this.staffingVerification = staffingVerification;
         this.solverJobService = solverJobService;
         this.jobStream = jobStream;
         this.configJobStream = configJobStream;
@@ -384,7 +390,8 @@ public class SolverJobResource {
                 solverJobService.findActive().map(JobView::withoutResult).orElse(null),
                 solverJobService.fileAttente().stream()
                         .map(JobView::withoutResult)
-                        .toList());
+                        .toList(),
+                staffingVerification.running().orElse(null));
         return sse.newEventBuilder()
                 .name(EVENT_STATE)
                 .mediaType(MediaType.APPLICATION_JSON_TYPE)
@@ -441,8 +448,12 @@ public class SolverJobResource {
      * One server-sent event's worth of solver state: what holds the solver, and
      * what waits behind it. The two used to be two requests; joining them is
      * what removes the second one.
+     *
+     * @param verification the staffing check holding the cores, {@code null}
+     *                     when none runs — not a job, but it shares the solver,
+     *                     and a solve that starts interrupts it
      */
-    public record JobsState(JobView active, List<JobView> file) {}
+    public record JobsState(JobView active, List<JobView> file, RunningCheck verification) {}
 
     /** Payload of a heartbeat: a timestamp, so the event is never empty. */
     public record Heartbeat(Instant at) {}

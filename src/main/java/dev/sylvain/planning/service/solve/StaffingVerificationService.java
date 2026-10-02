@@ -244,8 +244,11 @@ public class StaffingVerificationService {
     private final StaffingVerificationRepository repository;
     private final JournalActionService journal;
     private final PlanningPersistenceService persistence;
+    private final JobStreamBroadcaster jobStream;
 
     private final AtomicBoolean enCours = new AtomicBoolean();
+    /** The check running on this instance, {@code null} when none: what the solver state stream shows. */
+    private final AtomicReference<RunningCheck> running = new AtomicReference<>();
     /** Set when a solve started while the running check held the cores: the check gives way. */
     private final AtomicBoolean yielded = new AtomicBoolean();
     /** The running check's solver, {@code null} until it is built and once it is done. */
@@ -266,7 +269,8 @@ public class StaffingVerificationService {
             EditionContext editionContext,
             StaffingVerificationRepository repository,
             JournalActionService journal,
-            PlanningPersistenceService persistence) {
+            PlanningPersistenceService persistence,
+            JobStreamBroadcaster jobStream) {
         this.planningService = planningService;
         this.referenceDataService = referenceDataService;
         this.staffingService = staffingService;
@@ -275,6 +279,7 @@ public class StaffingVerificationService {
         this.repository = repository;
         this.journal = journal;
         this.persistence = persistence;
+        this.jobStream = jobStream;
     }
 
     /**
@@ -363,6 +368,8 @@ public class StaffingVerificationService {
             started = repository.insert(StaffingVerification.started(
                     nombreMajeurs, nombreMineurs, seats.postes().size(), plafond));
             StaffingVerification launched = started;
+            running.set(new RunningCheck(edition, started.id(), started.effectif(), started.lanceeLe(), plafond));
+            jobStream.publish();
             executor.submit(() -> run(edition, problem, launched));
             return started;
         } catch (RuntimeException e) {
@@ -371,9 +378,26 @@ public class StaffingVerificationService {
             if (started != null) {
                 repository.complete(started.failed("La vérification n'a pas pu démarrer.", Instant.now()));
             }
+            running.set(null);
             enCours.set(false);
             throw e;
         }
+    }
+
+    /**
+     * A check holding the cores, in any edition: the solver is shared, so the
+     * toolbar shows it as it shows a solve, and the Solver screen warns that
+     * launching a solve will interrupt it.
+     *
+     * @param editionId the edition it was started from
+     * @param id        its row of {@code verification_besoin}
+     */
+    @Schema(requiredProperties = {"editionId", "id", "effectif", "lanceeLe", "plafondSecondes"})
+    public record RunningCheck(String editionId, long id, int effectif, Instant lanceeLe, long plafondSecondes) {}
+
+    /** The check running on this instance, in any edition. */
+    public Optional<RunningCheck> running() {
+        return Optional.ofNullable(running.get());
     }
 
     /** The last check of the current edition, running or finished. */
@@ -479,7 +503,9 @@ public class StaffingVerificationService {
         } catch (RuntimeException e) {
             LOG.errorf(e, "The outcome of staffing check %d of edition %s could not be recorded", done.id(), edition);
         } finally {
+            running.set(null);
             enCours.set(false);
+            jobStream.publish();
         }
     }
 

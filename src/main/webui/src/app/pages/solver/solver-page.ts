@@ -432,7 +432,11 @@ export class SolverPage implements OnInit {
    * result says exactly which crews moved.
    */
   protected async onSolveIncremental(): Promise<void> {
-    if (!(await this.confirmUnsavedEntries()) || !(await this.confirmerCausesBloquantes())) {
+    if (
+      !(await this.confirmUnsavedEntries()) ||
+      !(await this.confirmerCausesBloquantes()) ||
+      !(await this.confirmInterruptCheck())
+    ) {
       return;
     }
     // The dialog shows what changed since the plan before asking what else
@@ -542,7 +546,11 @@ export class SolverPage implements OnInit {
    * a plan — « Calculer le planning » already starts cold then.
    */
   protected async onRecommencerDeZero(): Promise<void> {
-    if (!(await this.confirmUnsavedEntries()) || !(await this.confirmerCausesBloquantes())) {
+    if (
+      !(await this.confirmUnsavedEntries()) ||
+      !(await this.confirmerCausesBloquantes()) ||
+      !(await this.confirmInterruptCheck())
+    ) {
       return;
     }
     const affectations = this.affectationsEnregistrees() ?? 0;
@@ -608,7 +616,11 @@ export class SolverPage implements OnInit {
   }
 
   protected async onTimefoldSolve(reamorcage: Reamorcage = 'AUTO'): Promise<void> {
-    if (!(await this.confirmUnsavedEntries()) || !(await this.confirmerCausesBloquantes())) {
+    if (
+      !(await this.confirmUnsavedEntries()) ||
+      !(await this.confirmerCausesBloquantes()) ||
+      !(await this.confirmInterruptCheck())
+    ) {
       return;
     }
     await this.lancerSolve(reamorcage);
@@ -648,6 +660,26 @@ export class SolverPage implements OnInit {
    *
    * A shortfall of animateurs asks nothing: see `causesBloquantes`.
    */
+  /**
+   * A staffing check shares the solver: a solve that starts interrupts it, so
+   * the operator is told before, never after.
+   */
+  private async confirmInterruptCheck(): Promise<boolean> {
+    const verification = this.jobs.verification();
+    if (!verification) {
+      return true;
+    }
+    const effectif = verification.effectif;
+    return (
+      (await this.confirm.ask({
+        title: $localize`:@@solver.verification.confirm.title:Interrompre la vérification du besoin ?`,
+        message: $localize`:@@solver.verification.confirm.message:Une vérification du besoin tourne avec ${effectif}:effectif: personnes. Le solveur ne fait qu'un calcul à la fois : lancer cette résolution l'interrompra, et la vérification se terminera en échec.`,
+        confirmLabel: $localize`:@@solver.verification.confirm.action:Lancer et interrompre`,
+        danger: true,
+      })) === true
+    );
+  }
+
   private async confirmerCausesBloquantes(): Promise<boolean> {
     const bloquantes = this.problemes.causesBloquantes();
     if (bloquantes.length === 0) {

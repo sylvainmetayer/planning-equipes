@@ -8452,6 +8452,30 @@
           }
         }
       },
+      "RunningCheck" : {
+        "required" : [ "editionId", "id", "effectif", "lanceeLe", "plafondSecondes" ],
+        "type" : "object",
+        "properties" : {
+          "editionId" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "effectif" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "lanceeLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "plafondSecondes" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
       "SaisieCellule" : {
         "required" : [ "creneauId" ],
         "type" : "object",
