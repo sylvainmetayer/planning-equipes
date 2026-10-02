@@ -23,15 +23,15 @@ WORKDIR /app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates curl gnupg \
     && install -d /usr/share/postgresql-common/pgdg \
-    && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+    && curl -fsSL --proto '=https' --tlsv1.2 https://www.postgresql.org/media/keys/ACCC4CF8.asc \
          -o /usr/share/postgresql-common/pgdg/pgdg.asc \
-    && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/pgdg.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo $VERSION_CODENAME)-pgdg main" \
+    && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/pgdg.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \
          > /etc/apt/sources.list.d/pgdg.list \
     && apt-get update \
     && apt-get install -y --no-install-recommends postgresql-client-18 \
     && apt-get purge -y curl gnupg \
     && apt-get autoremove -y \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
 # En dehors du répertoire de sauvegarde, l'application n'écrit rien sur le
 # disque, et n'ouvre qu'un port non privilégié : elle n'a aucune raison de
 # tourner en root, où la moindre exécution de code arbitraire s'exercerait sur
@@ -43,9 +43,9 @@ RUN apt-get update \
 # L'image de base est une Ubuntu, qui livre son propre compte `ubuntu` sur ce
 # même 1000 : il faut le retirer d'abord, sinon `useradd` échoue sur un uid
 # déjà pris.
-RUN userdel --remove ubuntu \
+    && userdel --remove ubuntu \
     && groupadd --gid 1000 planning \
-    && useradd --uid 1000 --gid planning --no-create-home --shell /usr/sbin/nologin planning
+    && useradd --uid 1000 --gid planning --no-create-home --shell /usr/sbin/nologin planning \
 # Créé ici, et appartenant déjà à l'utilisateur applicatif : un volume Docker
 # monté sur un chemin qui existe dans l'image en reprend les droits. Sans cela
 # il arriverait en `root:root` et la première sauvegarde échouerait sur un
@@ -55,7 +55,7 @@ RUN userdel --remove ubuntu \
 # écrit encore (BACKUP_DIR=/backups) : un lien vers `/backup` le garde valide,
 # faute de quoi la sauvegarde de nuit échouerait sans que personne n'ait rien
 # touché. Voir docs/exploitation.md § La sauvegarde automatique.
-RUN install -d -o 1000 -g 1000 /backup \
+    && install -d -o 1000 -g 1000 /backup \
     && ln -s /backup /backups \
     && chown -h 1000:1000 /backups
 COPY --from=build --chown=1000:1000 /workspace/target/quarkus-app/ /app/

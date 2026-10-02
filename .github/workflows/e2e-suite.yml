@@ -124,9 +124,12 @@ jobs:
           name: ${{ inputs.app-artifact }}
           path: target/quarkus-app
 
+      # No lifecycle script runs, as in the Tests workflow's frontend job: the
+      # packages that declare one ship prebuilt binaries their scripts only
+      # verify or rebuild.
       - name: Install frontend dependencies
         working-directory: src/main/webui
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       # Pas d'installation de navigateur : l'image en embarque un, outillé.
       # `npx playwright install` en téléchargerait un autre, à côté des

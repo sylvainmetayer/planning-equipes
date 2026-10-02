@@ -10,7 +10,7 @@ tool_name="$(jq -r '.tool_name // empty' <<<"$input")"
 file_path="$(jq -r '.tool_input.file_path // empty' <<<"$input")"
 
 case "$tool_name" in Edit|Write) ;; *) exit 0 ;; esac
-[ -n "$file_path" ] || exit 0
+[[ -n "$file_path" ]] || exit 0
 
 case "$file_path" in
   *.md|*.MD|*.Md) ;;
@@ -18,7 +18,7 @@ case "$file_path" in
 esac
 
 # Only new files are a concern; editing an existing tracked doc is fine.
-[ -e "$file_path" ] && exit 0
+[[ -e "$file_path" ]] && exit 0
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
 case "$file_path" in
@@ -39,7 +39,7 @@ rel_path="${abs_path#"$repo_root"/}"
 lower_path="$(printf '%s' "$rel_path" | tr '[:upper:]' '[:lower:]')"
 
 # New root-level markdown file (README.md already exists and is edited via Edit, not Write).
-if [ "${rel_path#*/}" = "$rel_path" ]; then
+if [[ "${rel_path#*/}" = "$rel_path" ]]; then
   echo "Refusing to create root-level markdown file '$rel_path': AGENTS.md reserves the repo root for README.md only — technical docs go under docs/ (with a row added to docs/README.md), not a new root file." >&2
   exit 2
 fi
@@ -50,6 +50,7 @@ case "$lower_path" in
     echo "Refusing to create '$rel_path': looks like a planning/notes/tracking markdown file. AGENTS.md: don't create planning/notes/tracking Markdown files in the repository." >&2
     exit 2
     ;;
+  *) ;;
 esac
 
 exit 0

@@ -9,7 +9,7 @@ tool_name="$(jq -r '.tool_name // empty' <<<"$input")"
 file_path="$(jq -r '.tool_input.file_path // empty' <<<"$input")"
 
 case "$tool_name" in Edit|Write) ;; *) exit 0 ;; esac
-[ -n "$file_path" ] || exit 0
+[[ -n "$file_path" ]] || exit 0
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
 case "$file_path" in

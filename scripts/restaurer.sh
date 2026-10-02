@@ -60,7 +60,8 @@ ESSAI=false
 OUI=false
 ATTENTE=300
 valeur_option() {
-  [[ $# -ge 2 && -n "$2" ]] || { echo "L'option $1 attend une valeur" >&2; usage >&2; exit 2; }
+  local option="$1" valeur="${2-}"
+  [[ $# -ge 2 && -n "$valeur" ]] || { echo "L'option $option attend une valeur" >&2; usage >&2; exit 2; }
 }
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -94,7 +95,10 @@ dc() { docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" "$@"; }
 # A throwaway container of the application image with the backups volume
 # mounted exactly as the compose file mounts it — its entrypoint replaced, so
 # it works even when the application itself no longer starts.
-volume() { dc run --rm --no-deps -T --entrypoint bash app -c "$1"; }
+volume() {
+  local commande="$1"
+  dc run --rm --no-deps -T --entrypoint bash app -c "$commande"
+}
 # Read from the container itself: whatever BACKUP_DIR the stack gives the
 # application is where its dumps are — empty or unset meaning none, as for
 # the application, whose own default is empty.
@@ -122,10 +126,11 @@ ESSAI_CONTENEUR=""
 # that stops at the first error — so a failure leaves an empty database, never
 # a half-restored one.
 restaurer_base() {
+  local dump="$1"
   dc exec -T postgres dropdb --force --if-exists -U $DB_USER $DB \
     && dc exec -T postgres createdb -U $DB_USER -O $DB_USER $DB \
     && dc exec -T postgres pg_restore --no-owner --single-transaction --exit-on-error \
-         -U $DB_USER -d $DB < "$1"
+         -U $DB_USER -d $DB < "$dump"
 }
 
 # The last successful migration in the data of flyway_schema_history, from the

@@ -15,7 +15,7 @@ status=0
 while IFS= read -r line; do
   sha="${line%%#*}"
   sha="${sha//[[:space:]]/}"
-  [ -n "$sha" ] || continue
+  [[ -n "$sha" ]] || continue
   if ! git cat-file -e "$sha^{commit}" 2>/dev/null; then
     echo ".git-blame-ignore-revs: $sha is not a commit this clone knows"; status=1
   elif ! git merge-base --is-ancestor "$sha" HEAD; then
@@ -23,7 +23,7 @@ while IFS= read -r line; do
   fi
 done < .git-blame-ignore-revs
 
-if [ "$status" -eq 0 ]; then
+if [[ "$status" -eq 0 ]]; then
   echo ".git-blame-ignore-revs: every listed revision is an ancestor of HEAD"
 fi
 exit "$status"
