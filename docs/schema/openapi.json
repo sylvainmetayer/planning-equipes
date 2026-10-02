@@ -5113,8 +5113,8 @@
         }
       },
       "HeuresAnimateur" : {
-        "required" : [ "total", "heuresDimanche", "heuresJourFerie", "heuresDimancheFerie", "heuresNuit", "heuresSoiree" ],
         "type" : "object",
+        "required" : [ "total", "heuresDimanche", "heuresJourFerie", "heuresDimancheFerie", "heuresNuit", "heuresSoiree" ],
         "properties" : {
           "animateurId" : {
             "type" : "string"
@@ -5156,8 +5156,8 @@
         }
       },
       "HeuresRapport" : {
-        "required" : [ "heureDebutSoiree", "semaines", "animateurs" ],
         "type" : "object",
+        "required" : [ "heureDebutSoiree", "semaines", "animateurs" ],
         "properties" : {
           "heureDebutSoiree" : {
             "$ref" : "#/components/schemas/LocalTime"
@@ -5251,6 +5251,25 @@
           "ecarts" : {
             "type" : "integer",
             "format" : "int32"
+          }
+        }
+      },
+      "HoursReading" : {
+        "required" : [ "source", "publicationAvailable", "report" ],
+        "type" : "object",
+        "properties" : {
+          "source" : {
+            "type" : "string",
+            "enum" : [ "persiste", "publie" ]
+          },
+          "planDate" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "publicationAvailable" : {
+            "type" : "boolean"
+          },
+          "report" : {
+            "$ref" : "#/components/schemas/HeuresRapport"
           }
         }
       },
@@ -16256,57 +16275,47 @@
       }
     },
     "/api/planning/hours" : {
-      "post" : {
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/PlanningEvenement"
-              }
-            }
-          },
-          "required" : true
-        },
+      "get" : {
+        "parameters" : [ {
+          "name" : "source",
+          "in" : "query",
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "persiste", "publie" ]
+          }
+        } ],
         "responses" : {
           "200" : {
             "description" : "OK",
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/HeuresRapport"
+                  "$ref" : "#/components/schemas/HoursReading"
                 }
               }
             }
-          },
-          "400" : {
-            "description" : "Bad Request"
           }
         },
-        "summary" : "Compute",
+        "summary" : "Report",
         "tags" : [ "Planning Hours Resource" ]
       }
     },
     "/api/planning/hours/export" : {
-      "post" : {
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/PlanningEvenement"
-              }
-            }
-          },
-          "required" : true
-        },
+      "get" : {
+        "parameters" : [ {
+          "name" : "source",
+          "in" : "query",
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "persiste", "publie" ]
+          }
+        } ],
         "responses" : {
           "200" : {
             "description" : "OK",
             "content" : {
               "text/csv" : { }
             }
-          },
-          "400" : {
-            "description" : "Bad Request"
           }
         },
         "summary" : "Export Csv",

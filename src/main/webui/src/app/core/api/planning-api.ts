@@ -7,12 +7,14 @@
 
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
+import { dropEmpty } from './drop-empty';
 import {
   ApercuPublication,
   EtatEnvois,
   ComparaisonSnapshots,
   CompteRenduEnvoi,
-  HeuresRapport,
+  HoursReading,
+  HoursSource,
   PersistenceStatus,
   RapportEquite,
   RapportTypologies,
@@ -146,16 +148,23 @@ export class PlanningApi {
     );
   }
 
-  /** Worked hours against the legal ceilings, recomputed server-side on the planning sent. */
-  hoursReport(planning: PlanningEvenement): Promise<HeuresRapport> {
-    return this.api.post<HeuresRapport>('/api/planning/hours', planning);
+  /**
+   * The hours report of a plan the server holds: `source` names it, and
+   * without one the server reads the publication in force when there is one.
+   */
+  hoursReport(source: HoursSource | null = null): Promise<HoursReading> {
+    const params = new URLSearchParams({ source: source ?? '' });
+    dropEmpty(params);
+    return this.api.get<HoursReading>(`/api/planning/hours?${params}`);
   }
 
-  exportHours(planning: PlanningEvenement): Promise<string> {
-    return this.api.downloadPost(
-      '/api/planning/hours/export',
+  /** The payroll CSV of that same plan, its first line naming the plan and its date. */
+  exportHours(source: HoursSource | null = null): Promise<string> {
+    const params = new URLSearchParams({ source: source ?? '' });
+    dropEmpty(params);
+    return this.api.downloadGet(
+      `/api/planning/hours/export?${params}`,
       'heures-planning.csv',
-      planning,
       'text/csv',
     );
   }

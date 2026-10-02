@@ -2302,7 +2302,7 @@ export interface BancDeTouche {
   animateurs: AnimateurBanc[];
 }
 
-/** One row of `/api/planning/hours`: hours planned per ISO week (`AAAA-Wss`) plus the total. */
+/** One row of `/api/planning/hours`'s report: hours planned per ISO week (`AAAA-Wss`) plus the total. */
 export interface HeuresAnimateur {
   animateurId: string;
   nom: string;
@@ -2325,6 +2325,22 @@ export interface HeuresRapport {
   heureDebutSoiree: string;
   semaines: string[];
   animateurs: HeuresAnimateur[];
+}
+
+/** Which plan the hours are read from: the persisted one, or the publication in force. */
+export type HoursSource = 'persiste' | 'publie';
+
+/**
+ * `GET /api/planning/hours`: the hours of a plan the server holds, never of one
+ * the browser sends — and which plan that was, with its date.
+ */
+export interface HoursReading {
+  source: HoursSource;
+  /** The publication's date for `publie`, the last solve or restore for `persiste`; null when never solved. */
+  planDate: string | null;
+  /** Whether the edition has a publication in force — the `publie` source exists only then. */
+  publicationAvailable: boolean;
+  report: HeuresRapport;
 }
 
 /**

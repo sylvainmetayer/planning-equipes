@@ -24,6 +24,7 @@ import { dayNavigation } from '../../core/day-navigation';
 import { errorPrefix } from '../../core/error-message';
 import {
   Emplacement,
+  HoursSource,
   PlanningEvenement,
   GroupedArrivalReport,
   WalkSequenceReport,
@@ -64,6 +65,7 @@ import { PlanningStandView } from '../planning-stand/planning-stand-vue';
 import {
   DensitePersonne,
   readDensitePersonne,
+  readHoursSource,
   readPersonView,
   PersonView,
 } from '../planning-personne/planning-personne';
@@ -267,6 +269,8 @@ export class JourneePage implements OnInit {
   protected readonly triPersonne = signal<SortState>(NO_SORT);
   protected readonly allColumns = signal(false);
   protected readonly noRestOnly = signal(false);
+  /** The plan « Par personne » reads its hours from (`source`); null leaves it to the server. */
+  protected readonly hoursSource = signal<HoursSource | null>(null);
   /* The views' own state, read from the URL here and handed over two-way. */
   protected readonly lignesRail = signal<RailVue>('tous');
   protected readonly instantCarte = signal<number | null>(null);
@@ -547,6 +551,7 @@ export class JourneePage implements OnInit {
       this.shownPersonSort().active !== '' ||
       (this.allColumns() && this.axe() === 'personne' && this.personView() === 'synthese') ||
       this.noRestOnly() ||
+      (this.hoursSource() !== null && this.axe() === 'personne') ||
       this.lignesRail() !== 'tous' ||
       this.instantCarte() !== null ||
       this.chargeCarte() !== 'jour' ||
@@ -631,6 +636,7 @@ export class JourneePage implements OnInit {
     this.triPersonne.set(readSort(params));
     this.allColumns.set(params.get('colonnes') === 'toutes');
     this.noRestOnly.set(params.get('sansRepos') === '1');
+    this.hoursSource.set(readHoursSource(params.get('source')));
     this.filtre.set(params.get('q') ?? '');
     this.emplacement.set(params.get('emplacement') ?? '');
     this.typologie.set(params.get('typologie') ?? '');
@@ -690,12 +696,20 @@ export class JourneePage implements OnInit {
     void this.refresh();
   }
 
-  /** The keys only « Par personne » writes: every column of the synthesis, the people without rest. */
-  private personAxisParams(): { colonnes: string | null; sansRepos: string | null } {
+  /**
+   * The keys only « Par personne » writes: every column of the synthesis, the
+   * people without rest, the plan the hours are read from.
+   */
+  private personAxisParams(): {
+    colonnes: string | null;
+    sansRepos: string | null;
+    source: string | null;
+  } {
     const personne = this.axe() === 'personne';
     return {
       colonnes: personne && this.personView() === 'synthese' && this.allColumns() ? 'toutes' : null,
       sansRepos: personne && this.noRestOnly() ? '1' : null,
+      source: personne ? this.hoursSource() : null,
     };
   }
 
@@ -1005,6 +1019,7 @@ export class JourneePage implements OnInit {
     this.triPersonne.set(NO_SORT);
     this.allColumns.set(false);
     this.noRestOnly.set(false);
+    this.hoursSource.set(null);
     this.lignesRail.set('tous');
     this.instantCarte.set(null);
     this.chargeCarte.set('jour');

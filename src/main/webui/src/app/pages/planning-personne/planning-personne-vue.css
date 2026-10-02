@@ -7,6 +7,18 @@
   flex: 1 1 0;
 }
 
+/* The date of the plan the hours are read from, beside the toggle that names it;
+   and, under the published plan, what is not read on it. */
+.planning-personne-source-date,
+.planning-personne-source-note {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.planning-personne-source-note {
+  margin: 0;
+}
+
 .planning-personne-travaille {
   background: var(--mat-sys-secondary-container);
   color: var(--mat-sys-on-secondary-container);

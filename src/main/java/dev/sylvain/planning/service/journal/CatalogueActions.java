@@ -567,12 +567,12 @@ public final class CatalogueActions {
         route("PlanningExportResource#exportAllIcsZip", EXPORT_ICS);
         route("PlanningExportResource#exportAnimateurIcs", EXPORT_ICS_ANIMATEUR);
         route("PlanningExportResource#exportAllBundleZip", EXPORT_ARCHIVE);
-        route("PlanningHoursResource#exportCsv", EXPORT_HEURES);
         // Downloads are GETs, and journalled all the same: a dump, an archive
         // of the referentials or a nominative CSV carries people's data, and
         // leaving with it is an act. JournalCoverageStructurelleTest holds
         // every GET that answers a file to this list or to SANS_TRACE.
         route("DatabaseResource#export", EXPORT_BASE);
+        route("PlanningHoursResource#exportCsv", EXPORT_HEURES);
         route("PlanningExportResource#exportGlobalPdf", EXPORT_PDF_GLOBAL);
         route("ReferenceDataResource#exportCsv", EXPORT_REFERENTIELS);
         route("PlanningResource#exportScenario", EXPORT_SCENARIO);
@@ -799,7 +799,6 @@ public final class CatalogueActions {
         untracked("ConsigneResource#apercuLevee", PREVISUALISATION);
         untracked("previsualiser_reconnaissance_journees_types", PREVISUALISATION);
         untracked("ConstraintResource#diagnose", "relit l'analyse enregistrée, n'écrit rien");
-        untracked("PlanningHoursResource#compute", "calcule les heures d'un planning envoyé, n'écrit rien");
         untracked("ReferenceDataResource#fileScenarioTarget", "lit un fichier pour en annoncer la cible");
         untracked("ReferenceDataResource#validateScenarioFile", "valide un fichier, n'écrit rien");
         untracked("JourJResource#suggestions", "suggestions de remplacement, n'écrit rien");

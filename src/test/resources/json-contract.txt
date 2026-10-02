@@ -154,6 +154,7 @@ service.analyse.PauseAnalyzer$SequenceView = debut, fin, minutes, pausesDues
 service.analyse.PivotEcarts$Cellule = axe, cle, contrainte, ecarts
 service.analyse.PlanningDiagnosticService$ConstraintFloor = libelle, lien, motif, ratio
 service.analyse.PlanningDiagnosticService$ContributionAdHoc = contrainteId, contraintes, raison, type, violations
+service.analyse.PlanningHoursReader$HoursReading = planDate, publicationAvailable, report, source
 service.analyse.PlanningHoursService$HeuresAnimateur = animateurId, heuresDimanche, heuresDimancheFerie, heuresJourFerie, heuresNuit, heuresParSemaine, heuresSoiree, nom, total
 service.analyse.PlanningHoursService$HeuresRapport = animateurs, heureDebutSoiree, semaines
 service.analyse.PlanningKpiService$DayCoverage = postes, pourvus

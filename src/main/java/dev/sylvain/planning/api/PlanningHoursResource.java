@@ -1,39 +1,45 @@
 package dev.sylvain.planning.api;
 
-import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.service.analyse.PlanningHoursService;
-import dev.sylvain.planning.service.analyse.PlanningHoursService.HeuresRapport;
+import dev.sylvain.planning.service.analyse.PlanningHoursReader;
+import dev.sylvain.planning.service.analyse.PlanningHoursReader.HoursReading;
+import dev.sylvain.planning.service.analyse.PlanningHoursReader.Source;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.POST;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
+/**
+ * {@code GET /api/planning/hours}: the hours report of a plan the server holds
+ * — {@code ?source=publie}, the publication in force, or {@code
+ * ?source=persiste}, the persisted plan; without it, the publication when there
+ * is one. {@code …/export} is the same report as the payroll CSV, its first
+ * line naming the plan and its date. Never computed on a plan the client sends.
+ */
 @Path("/planning/hours")
-@Consumes(MediaType.APPLICATION_JSON)
 public class PlanningHoursResource {
 
-    private final PlanningHoursService heuresPlanningService;
+    private final PlanningHoursReader reader;
 
     @Inject
-    public PlanningHoursResource(PlanningHoursService heuresPlanningService) {
-        this.heuresPlanningService = heuresPlanningService;
+    public PlanningHoursResource(PlanningHoursReader reader) {
+        this.reader = reader;
     }
 
-    @POST
+    @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public HeuresRapport compute(PlanningEvenement planningEvenement) {
-        return heuresPlanningService.compute(planningEvenement);
+    public HoursReading report(@QueryParam("source") @Schema(enumeration = {"persiste", "publie"}) String source) {
+        return reader.read(Source.parse(source).orElse(null));
     }
 
-    @POST
+    @GET
     @Path("/export")
     @Produces("text/csv")
-    public Response exportCsv(PlanningEvenement planningEvenement) {
-        HeuresRapport rapport = heuresPlanningService.compute(planningEvenement);
-        String csv = heuresPlanningService.generateCsv(rapport);
-        return CsvDownload.attachment(csv, "heures-planning.csv");
+    public Response exportCsv(@QueryParam("source") @Schema(enumeration = {"persiste", "publie"}) String source) {
+        HoursReading reading = reader.read(Source.parse(source).orElse(null));
+        return CsvDownload.attachment(reader.csv(reading), "heures-planning.csv");
     }
 }

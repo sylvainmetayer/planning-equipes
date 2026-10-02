@@ -1,10 +1,10 @@
 // The pure side of the Planning page's « Par personne » axis (issue #713): the
 // animateurs × days grid with the stand and the hours in the cells, coloured
 // work / rest / unavailable as the Jours de repos grid did (`pages/repos`, whose
-// builder this reads), and at the right the columns of the Équité report and
-// the two payroll counters of the Heures report the Équité did not carry,
-// joined person by person. Kept out of the component so a hundred and fifty
-// lines are tested without rendering one.
+// builder this reads), and at the right the summary columns, joined person by
+// person: the hours from the Heures report — on the plan its toggle names —
+// and the counts it does not carry from the Équité report. Kept out of the
+// component so a hundred and fifty lines are tested without rendering one.
 
 import { intlLocale } from '../../core/locale';
 import {
@@ -12,6 +12,7 @@ import {
   DUREE_HEBDOMADAIRE_MAX_MINEUR_HEURES,
   HeuresAnimateur,
   HeuresRapport,
+  HoursSource,
   LigneEquite,
   PlanningEvenement,
   PosteAffectation,
@@ -52,6 +53,14 @@ export function readDensitePersonne(value: string | null): DensitePersonne {
 }
 
 /**
+ * The plan the hours are read from, as the `source` param names it; anything
+ * else — its absence included — leaves the choice to the server.
+ */
+export function readHoursSource(value: string | null): HoursSource | null {
+  return value === 'publie' || value === 'persiste' ? value : null;
+}
+
+/**
  * The grid of the days; the frise, one proportional bar per person, a month
  * on one screen; the synthesis, the Équité and payroll columns in a table of
  * their own — beside the days they took a screen's width the days needed.
@@ -68,13 +77,40 @@ export const MEDIAN_GAP = 'ecartMediane';
 export const HEURES_DIMANCHE = 'heuresDimanche';
 export const NUIT_PAIE = 'heuresNuit';
 
-/** The summary columns, in the order of the table: the hours, their distance, the weeks, then the rest. */
-export function summaryKeys(equite: RapportEquite | null): string[] {
+/**
+ * The summary columns the Heures report fills rather than the Équité one: the
+ * hours, their distance to the median, the weeks, the evening, the public
+ * holidays and the two payroll counters. They are read on the plan the hours
+ * toggle names — the publication, as soon as there is one — so the table and
+ * the payroll CSV, read from that same report, say the same thing. The other
+ * columns are counts the Heures report does not carry, and stay the Équité's,
+ * on the persisted plan.
+ */
+const HOURS_REPORT_COLUMNS: ReadonlySet<string> = new Set([
+  'heuresTotal',
+  MEDIAN_GAP,
+  'heuresSoiree',
+  'heuresJourFerie',
+  HEURES_DIMANCHE,
+  NUIT_PAIE,
+]);
+
+/** Whether a summary column is read from the Heures report: see {@link HOURS_REPORT_COLUMNS}; the weeks too. */
+export function fromHoursReport(cle: string): boolean {
+  return HOURS_REPORT_COLUMNS.has(cle) || isWeek(cle);
+}
+
+/**
+ * The summary columns, in the order of the table: the hours, their distance,
+ * the weeks — those of the Heures report, the plan the hours are read on —,
+ * then the rest.
+ */
+export function summaryKeys(heures: HeuresRapport | null): string[] {
   const [soiree, weekEnd, ferie, ...reste] = COLUMNS_AFTER_WEEKS;
   return [
     'heuresTotal',
     MEDIAN_GAP,
-    ...(equite?.semaines ?? []),
+    ...(heures?.semaines ?? []),
     soiree,
     weekEnd,
     ferie,
@@ -125,23 +161,63 @@ function valeur(
   heures: HeuresAnimateur | undefined,
   medianeHeures: number | null,
 ): number | null {
-  if (cle === HEURES_DIMANCHE) {
-    return heures ? heures.heuresDimanche : null;
-  }
-  if (cle === NUIT_PAIE) {
-    return heures ? heures.heuresNuit : null;
+  if (fromHoursReport(cle)) {
+    return hoursValue(cle, heures, medianeHeures);
   }
   if (!equite) {
     return null;
   }
-  if (cle === MEDIAN_GAP) {
-    return medianeHeures === null ? null : equite.heuresTotal - medianeHeures;
-  }
-  if (isWeek(cle)) {
-    return equite.heuresParSemaine[cle] ?? 0;
-  }
   const brute = equite[cle as keyof LigneEquite];
   return typeof brute === 'number' ? brute : null;
+}
+
+/** One column the Heures report fills, for one person; null when they hold no seat in the plan it read. */
+function hoursValue(
+  cle: string,
+  heures: HeuresAnimateur | undefined,
+  medianeHeures: number | null,
+): number | null {
+  if (!heures) {
+    return null;
+  }
+  switch (cle) {
+    case 'heuresTotal':
+      return heures.total;
+    case MEDIAN_GAP:
+      return medianeHeures === null ? null : heures.total - medianeHeures;
+    case 'heuresSoiree':
+      return heures.heuresSoiree;
+    case 'heuresJourFerie':
+      return heures.heuresJourFerie;
+    case HEURES_DIMANCHE:
+      return heures.heuresDimanche;
+    case NUIT_PAIE:
+      return heures.heuresNuit;
+    default:
+      return heures.heuresParSemaine[cle] ?? 0;
+  }
+}
+
+/**
+ * The people the Heures report saw holding a seat: it lists every animateur,
+ * a week only for those who work in the plan it read. The others are known
+ * nothing of — a dash, as the Équité says of whoever holds no seat, and out of
+ * the median, which the Équité took over its seated people alone.
+ */
+function seatedHours(heures: HeuresRapport | null): HeuresAnimateur[] {
+  return (heures?.animateurs ?? []).filter(
+    (ligne) => Object.keys(ligne.heuresParSemaine).length > 0,
+  );
+}
+
+/** The middle value, or the mean of the two middle ones; null for nobody — as the Équité synthesis. */
+function median(valeurs: readonly number[]): number | null {
+  if (valeurs.length === 0) {
+    return null;
+  }
+  const triees = [...valeurs].sort((a, b) => a - b);
+  const milieu = Math.floor(triees.length / 2);
+  return triees.length % 2 === 1 ? triees[milieu] : (triees[milieu - 1] + triees[milieu]) / 2;
 }
 
 /** Hours, a count or a rate, the way the Équité screen wrote them; a signed distance for the median column. */
@@ -481,9 +557,10 @@ export function buildTableauPersonnes(
   const debutSoiree = equite?.heureDebutSoiree ? minutesOfDay(equite.heureDebutSoiree) : null;
   const details = detailsByDay(postes, debutSoiree);
   const equityById = new Map((equite?.lignes ?? []).map((ligne) => [ligne.animateurId, ligne]));
-  const hoursById = new Map((heures?.animateurs ?? []).map((ligne) => [ligne.animateurId, ligne]));
-  const medianeHeures = equite?.syntheses?.['heuresTotal']?.mediane ?? null;
-  const keys = summaryKeys(equite);
+  const seated = seatedHours(heures);
+  const hoursById = new Map(seated.map((ligne) => [ligne.animateurId, ligne]));
+  const medianeHeures = median(seated.map((ligne) => ligne.total));
+  const keys = summaryKeys(heures);
   const standsOf = filtres.standsRetenus ? standsHeld(postes) : new Map<string, Set<string>>();
 
   // Every person's summary, before any filter: the always-empty columns are

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   Animateur,
   Creneau,
+  HeuresAnimateur,
   HeuresRapport,
   LigneEquite,
   PlanningEvenement,
@@ -121,21 +122,28 @@ const EQUITE: RapportEquite = {
   colonnesSolveur: [],
 };
 
+function ligneHeures(id: string, nom: string, total: number, heuresDimanche = 0): HeuresAnimateur {
+  return {
+    animateurId: id,
+    nom,
+    heuresParSemaine: total > 0 ? { '2026-W36': total } : {},
+    total,
+    heuresDimanche,
+    heuresJourFerie: 0,
+    heuresDimancheFerie: 0,
+    heuresNuit: 0,
+    heuresSoiree: id === 'a' ? 2 : 0,
+  };
+}
+
+/** The Heures report lists every animateur; Chloé, holding no seat, has no week. */
 const HEURES: HeuresRapport = {
   heureDebutSoiree: '20:00:00',
   semaines: ['2026-W36'],
   animateurs: [
-    {
-      animateurId: 'a',
-      nom: 'Alice X',
-      heuresParSemaine: {},
-      total: 10,
-      heuresDimanche: 3,
-      heuresJourFerie: 0,
-      heuresDimancheFerie: 0,
-      heuresNuit: 0,
-      heuresSoiree: 2,
-    },
+    ligneHeures('a', 'Alice X', 10, 3),
+    ligneHeures('b', 'Bruno X', 3),
+    ligneHeures('c', 'Chloé X', 0),
   ],
 };
 
@@ -218,6 +226,46 @@ describe('Par personne', () => {
     );
   });
 
+  // Read on the published plan, the Heures report says other hours than the
+  // Équité, which reads the persisted one: every hour column follows the
+  // Heures report — the payroll CSV's —, the counts it does not carry stay.
+  it('reads every hour column from the Heures report, the plan the hours toggle names', () => {
+    const publie: HeuresRapport = {
+      heureDebutSoiree: '20:00:00',
+      semaines: ['2026-W37'],
+      animateurs: [
+        { ...ligneHeures('a', 'Alice X', 4), heuresParSemaine: { '2026-W37': 4 } },
+        { ...ligneHeures('b', 'Bruno X', 8), heuresParSemaine: { '2026-W37': 8 } },
+      ],
+    };
+    const { lignes, colonnes, pied } = buildTableauPersonnes(
+      PLANNING,
+      planningDays(PLANNING.postes),
+      EQUITE,
+      publie,
+      {
+        animateur: '',
+        standsRetenus: null,
+        recherche: '',
+        sansReposSeulement: false,
+        toutesColonnes: true,
+        tri: NO_SORT,
+      },
+    );
+    const alice = lignes.find((ligne) => ligne.animateurId === 'a')!;
+
+    expect(colonnes.map((colonne) => colonne.key)).toContain('2026-W37');
+    expect(colonnes.map((colonne) => colonne.key)).not.toContain('2026-W36');
+    expect(alice.synthese['heuresTotal']?.texte).toBe('4');
+    expect(alice.synthese['2026-W37']?.texte).toBe('4');
+    // The median of the published hours, 6: never the Équité's 6,5.
+    expect(alice.synthese['ecartMediane']?.texte).toBe('-2');
+    expect(pied.synthese['heuresTotal']).toBe('12');
+    // The week-end and the seats are counts the Heures report does not carry.
+    expect(alice.synthese['heuresWeekEnd']?.texte).toBe('10');
+    expect(alice.synthese['postes']?.texte).toBe('1');
+  });
+
   it('hides the columns every line leaves at zero, until asked for', () => {
     const cachees = tableau();
     expect(cachees.vides).toEqual(
@@ -226,7 +274,7 @@ describe('Par personne', () => {
     expect(cachees.colonnes.map((colonne) => colonne.key)).not.toContain('heuresNuit');
 
     const all = tableau({ toutesColonnes: true });
-    expect(all.colonnes.map((colonne) => colonne.key)).toEqual(summaryKeys(EQUITE));
+    expect(all.colonnes.map((colonne) => colonne.key)).toEqual(summaryKeys(HEURES));
   });
 
   // Empty over the whole plan: a filter narrowing the grid to Bruno, at zero
@@ -240,15 +288,15 @@ describe('Par personne', () => {
   });
 
   it('flags a week past the ceiling of a minor, and one past the ceiling of all', () => {
-    const lourde: RapportEquite = {
-      ...EQUITE,
-      lignes: [ligneEquite('a', 'Alice X', 50), ligneEquite('b', 'Bruno X', 40)],
+    const lourde: HeuresRapport = {
+      ...HEURES,
+      animateurs: [ligneHeures('a', 'Alice X', 50), ligneHeures('b', 'Bruno X', 40)],
     };
     const { lignes } = buildTableauPersonnes(
       PLANNING,
       planningDays(PLANNING.postes),
+      EQUITE,
       lourde,
-      HEURES,
       {
         animateur: '',
         standsRetenus: null,
@@ -281,9 +329,9 @@ describe('Par personne', () => {
   });
 
   it('sorts the people the reports know nothing of as the lowest value, and keeps them in order', () => {
-    const seuleAlice: RapportEquite = { ...EQUITE, lignes: [ligneEquite('a', 'Alice X', 10)] };
+    const seuleAlice: HeuresRapport = { ...HEURES, animateurs: [ligneHeures('a', 'Alice X', 10)] };
     const ordre = (tri: SortState): string[] =>
-      buildTableauPersonnes(PLANNING, planningDays(PLANNING.postes), seuleAlice, HEURES, {
+      buildTableauPersonnes(PLANNING, planningDays(PLANNING.postes), EQUITE, seuleAlice, {
         animateur: '',
         standsRetenus: null,
         recherche: '',
