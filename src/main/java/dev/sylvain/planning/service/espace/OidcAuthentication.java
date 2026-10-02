@@ -16,7 +16,7 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
  * proved they control?
  *
  * <p>It is the question the six-digit code mailed to the fiche used to answer
- * (ADR 0075 removed it): a verified address in a Keycloak session establishes
+ * (ADR 0076 removed it): a verified address in a Keycloak session establishes
  * the same fact, with a second factor the realm can impose, and one way into
  * the espace instead of two whose weaker one would set the security level.</p>
  *
