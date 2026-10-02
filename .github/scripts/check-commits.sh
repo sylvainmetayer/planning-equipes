@@ -29,7 +29,7 @@ count="$(git rev-list --count --no-merges "$base"..HEAD)"
 while IFS= read -r sha; do
   subject="$(git log -1 --format=%s "$sha")"
   short="$(git log -1 --format=%h "$sha")"
-  if [ "${#subject}" -ge 72 ]; then
+  if [[ "${#subject}" -ge 72 ]]; then
     echo "$short: subject has ${#subject} characters, the limit is 71 — « $subject »"; status=1
   fi
   if ! [[ "$subject" =~ $prefixes ]]; then
@@ -59,7 +59,7 @@ while IFS= read -r sha; do
   done < <(git log -1 --format=%B "$sha" | git interpret-trailers --parse)
 done < <(git rev-list --no-merges "$base"..HEAD)
 
-if [ "$status" -eq 0 ]; then
+if [[ "$status" -eq 0 ]]; then
   echo "commit messages: $count checked, all conform"
 fi
 exit "$status"

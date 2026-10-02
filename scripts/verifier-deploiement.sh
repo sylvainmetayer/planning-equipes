@@ -46,7 +46,8 @@ VERSION_LIBRE=false
 DEMO=""
 POSITIONNELS=()
 valeur_option() {
-  [[ $# -ge 2 && -n "$2" ]] || { echo "L'option $1 attend une valeur" >&2; usage >&2; exit 2; }
+  local option="$1" valeur="${2-}"
+  [[ $# -ge 2 && -n "$valeur" ]] || { echo "L'option $option attend une valeur" >&2; usage >&2; exit 2; }
 }
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -76,9 +77,10 @@ ATTENDUE="${POSITIONNELS[1]:-}"
 # script, et le sourcer exécuterait ce qu'il contient. Tolère un fichier aux
 # fins de ligne Windows, un `export ` en tête et un commentaire en fin de ligne.
 valeur_env() {
+  local cle="$1"
   [[ -f "$ENV_FILE" ]] || return 0
   sed -e 's/\r$//' "$ENV_FILE" \
-    | sed -n -e "s/^[[:space:]]*\(export[[:space:]]\{1,\}\)\{0,1\}$1=//p" \
+    | sed -n -e "s/^[[:space:]]*\(export[[:space:]]\{1,\}\)\{0,1\}$cle=//p" \
     | tail -n1 \
     | sed -e 's/[[:space:]]\{1,\}#.*$//' -e 's/^["'\'']//' -e 's/["'\'']$//'
 }
