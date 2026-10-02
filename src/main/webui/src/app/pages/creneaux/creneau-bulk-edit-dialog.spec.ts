@@ -22,7 +22,7 @@ const CRENEAUX: Creneau[] = [
 
 function monter(creneaux: Creneau[], options: { editingLocked?: boolean; saved?: number } = {}) {
   const crud = fakeOf<ReferenceCrudService>({
-    saveMany: async () => options.saved ?? creneaux.length,
+    saveMany: () => Promise.resolve(options.saved ?? creneaux.length),
   });
   const close = vi.fn();
   TestBed.resetTestingModule();

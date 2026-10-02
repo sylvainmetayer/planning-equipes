@@ -13,8 +13,8 @@ import { EtatGel, JourneeType } from '../../core/models';
 import { JourneeTypeDialog } from './journee-type-dialog';
 
 function monter(journeeType: JourneeType | null, gel: EtatGel[] = []) {
-  const create = vi.fn(async (payload: JourneeType) => ({ ...payload, id: 9 }));
-  const update = vi.fn(async (id: number, payload: JourneeType) => ({ ...payload, id }));
+  const create = vi.fn((payload: JourneeType) => Promise.resolve({ ...payload, id: 9 }));
+  const update = vi.fn((id: number, payload: JourneeType) => Promise.resolve({ ...payload, id }));
   const close = vi.fn();
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
@@ -22,7 +22,7 @@ function monter(journeeType: JourneeType | null, gel: EtatGel[] = []) {
       provideZonelessChangeDetection(),
       { provide: SolverJobService, useValue: { editingLocked: signal(false) } },
       { provide: JourneesTypesApi, useValue: { create, update } },
-      { provide: EditionsApi, useValue: { gel: vi.fn(async () => gel) } },
+      { provide: EditionsApi, useValue: { gel: vi.fn(() => Promise.resolve(gel)) } },
       { provide: ReferenceCrudService, useValue: { reportError: vi.fn() } },
       { provide: MatDialogRef, useValue: { close } },
       { provide: MAT_DIALOG_DATA, useValue: { journeeType } },

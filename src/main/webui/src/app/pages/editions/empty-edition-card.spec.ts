@@ -43,7 +43,7 @@ describe('EmptyEditionCard', () => {
   const instantane = { proposer: vi.fn() };
   const notifications = { notify: vi.fn() };
   const courant = vi.fn<() => Edition | null>();
-  const rechargerEditions = vi.fn(async () => undefined);
+  const rechargerEditions = vi.fn(() => Promise.resolve(undefined));
   let gel: EtatGel[] = [];
 
   beforeEach(() => {
@@ -55,8 +55,8 @@ describe('EmptyEditionCard', () => {
     courant.mockReset();
     api.get.mockResolvedValue({ adminEmail: null });
     gel = [];
-    api.get.mockImplementation(async (url: string) =>
-      url === '/api/editions/courant/gel' ? gel : { adminEmail: null },
+    api.get.mockImplementation((url: string) =>
+      Promise.resolve(url === '/api/editions/courant/gel' ? gel : { adminEmail: null }),
     );
     api.post.mockResolvedValue({ deleted: 0 });
     planningApi.reset.mockReset();
@@ -76,10 +76,22 @@ describe('EmptyEditionCard', () => {
         { provide: ConfirmationRecopie, useValue: recopie },
         { provide: InstantaneAvantAction, useValue: instantane },
         { provide: PlanningStateService, useValue: { set: vi.fn() } },
-        { provide: ReferenceDataStore, useValue: { reload: vi.fn(async () => undefined) } },
-        { provide: PlanningResolutionStore, useValue: { reload: vi.fn(async () => undefined) } },
-        { provide: SolverSettingsService, useValue: { refresh: vi.fn(async () => undefined) } },
-        { provide: ProblemesStore, useValue: { reloadFeasibility: vi.fn(async () => undefined) } },
+        {
+          provide: ReferenceDataStore,
+          useValue: { reload: vi.fn(() => Promise.resolve(undefined)) },
+        },
+        {
+          provide: PlanningResolutionStore,
+          useValue: { reload: vi.fn(() => Promise.resolve(undefined)) },
+        },
+        {
+          provide: SolverSettingsService,
+          useValue: { refresh: vi.fn(() => Promise.resolve(undefined)) },
+        },
+        {
+          provide: ProblemesStore,
+          useValue: { reloadFeasibility: vi.fn(() => Promise.resolve(undefined)) },
+        },
         {
           provide: SolverJobService,
           useValue: { solverBusy: () => false, activeJobDescription: () => '' },

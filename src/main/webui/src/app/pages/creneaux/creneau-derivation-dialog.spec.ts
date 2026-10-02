@@ -44,10 +44,10 @@ function monter(
   } = {},
 ) {
   // Two stubs, not one: a test must tell a preview from a write.
-  const preview = vi.fn(async () => options.reponse ?? apercu());
-  const post = vi.fn(async () => options.reponse ?? apercu());
+  const preview = vi.fn(() => Promise.resolve(options.reponse ?? apercu()));
+  const post = vi.fn(() => Promise.resolve(options.reponse ?? apercu()));
   const close = vi.fn();
-  const ask = vi.fn(async () => options.confirme ?? true);
+  const ask = vi.fn(() => Promise.resolve(options.confirme ?? true));
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [

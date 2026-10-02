@@ -85,7 +85,7 @@ describe('ChangementsView', () => {
 
   beforeEach(() => {
     api.changements.mockReset();
-    api.changements.mockImplementation(async (jour) => changements(jour));
+    api.changements.mockImplementation((jour) => Promise.resolve(changements(jour)));
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),

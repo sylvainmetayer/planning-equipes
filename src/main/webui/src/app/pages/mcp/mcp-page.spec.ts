@@ -32,14 +32,11 @@ describe('McpPage', () => {
 
   async function rendre(prompts: PromptMcp[] | Error): Promise<void> {
     const mcpApi = {
-      prompts: vi.fn(async () => {
-        if (prompts instanceof Error) {
-          throw prompts;
-        }
-        return prompts;
-      }),
-      status: vi.fn(async () => ({ configuree: true, header: 'X-MCP-Api-Key' })),
-      configResponse: vi.fn(async () => new Response(null, { status: 200 })),
+      prompts: vi.fn(() =>
+        prompts instanceof Error ? Promise.reject(prompts) : Promise.resolve(prompts),
+      ),
+      status: vi.fn(() => Promise.resolve({ configuree: true, header: 'X-MCP-Api-Key' })),
+      configResponse: vi.fn(() => Promise.resolve(new Response(null, { status: 200 }))),
       regenerateKey: vi.fn(),
     };
     TestBed.resetTestingModule();
@@ -60,7 +57,7 @@ describe('McpPage', () => {
   }
 
   beforeEach(() => {
-    write = vi.fn(async () => undefined);
+    write = vi.fn(() => Promise.resolve(undefined));
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
       value: { writeText: write },

@@ -50,7 +50,7 @@ function monter(
   options: { editingLocked?: boolean; saved?: number; gel?: EtatGel[] } = {},
 ) {
   const crud = fakeOf<ReferenceCrudService>({
-    saveMany: async () => options.saved ?? animateurs.length,
+    saveMany: () => Promise.resolve(options.saved ?? animateurs.length),
   });
   const close = vi.fn();
   TestBed.resetTestingModule();
@@ -65,7 +65,7 @@ function monter(
       provideFake(ReferenceCrudService, crud),
       { provide: MatDialogRef, useValue: { close } },
       { provide: MAT_DIALOG_DATA, useValue: { animateurs } },
-      { provide: EditionsApi, useValue: { gel: vi.fn(async () => options.gel ?? []) } },
+      { provide: EditionsApi, useValue: { gel: vi.fn(() => Promise.resolve(options.gel ?? [])) } },
     ],
   });
   return {

@@ -66,10 +66,12 @@ function monter(
     confirme?: boolean;
   } = {},
 ) {
-  const ask = vi.fn(async () => options.confirme ?? true);
-  const crud = fakeOf<ReferenceCrudService>({ save: async () => options.saveOk ?? true });
+  const ask = vi.fn(() => Promise.resolve(options.confirme ?? true));
+  const crud = fakeOf<ReferenceCrudService>({
+    save: () => Promise.resolve(options.saveOk ?? true),
+  });
   const close = vi.fn();
-  const gel = vi.fn(async () => options.gel ?? []);
+  const gel = vi.fn(() => Promise.resolve(options.gel ?? []));
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [

@@ -37,7 +37,7 @@ async function render(valeur: MentionsLegales): Promise<HTMLElement> {
     providers: [
       provideZonelessChangeDetection(),
       provideRouter([]),
-      { provide: ApiService, useValue: { get: vi.fn(async () => valeur) } },
+      { provide: ApiService, useValue: { get: vi.fn(() => Promise.resolve(valeur)) } },
     ],
   });
   const fixture = TestBed.createComponent(DeclarationAccessibilitePage);

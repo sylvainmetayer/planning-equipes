@@ -12,12 +12,28 @@ import { ArchiveEvenementApi } from '../../core/api/archive-evenement-api';
 import { PlanningApi } from '../../core/api/planning-api';
 import { ExporterPanel } from './exporter-panel';
 
+async function monter(): Promise<{
+  fixture: ComponentFixture<ExporterPanel>;
+  page: ExporterPanel;
+  racine: HTMLElement;
+}> {
+  const fixture = TestBed.createComponent(ExporterPanel);
+  await fixture.whenStable();
+  return {
+    fixture,
+    page: fixture.componentInstance,
+    racine: fixture.nativeElement as HTMLElement,
+  };
+}
+
 describe('ExporterPanel', () => {
   const api = { volumes: vi.fn(), telecharger: vi.fn() };
   const planningApi = { exportScenario: vi.fn() };
   // The archive card has its own spec; here it only has to render.
   const archiveApi = {
-    availability: vi.fn(async () => ({ planResolu: true, publie: true, resolutionEnCours: false })),
+    availability: vi.fn(() =>
+      Promise.resolve({ planResolu: true, publie: true, resolutionEnCours: false }),
+    ),
     telecharger: vi.fn(),
   };
 
@@ -46,20 +62,6 @@ describe('ExporterPanel', () => {
       ],
     });
   });
-
-  async function monter(): Promise<{
-    fixture: ComponentFixture<ExporterPanel>;
-    page: ExporterPanel;
-    racine: HTMLElement;
-  }> {
-    const fixture = TestBed.createComponent(ExporterPanel);
-    await fixture.whenStable();
-    return {
-      fixture,
-      page: fixture.componentInstance,
-      racine: fixture.nativeElement as HTMLElement,
-    };
-  }
 
   it('lists each referential with its file and its row count, all ticked to begin with', async () => {
     const { racine, page } = await monter();

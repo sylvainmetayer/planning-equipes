@@ -451,21 +451,23 @@ describe('AnimateurTimeline', () => {
     analyses: { breaks?: () => unknown; walks?: () => unknown } = {},
   ): Promise<void> {
     const consignesStore = {
-      reload: vi.fn(async () => undefined),
+      reload: vi.fn(() => Promise.resolve(undefined)),
       consigneOf: (date: string | null) =>
         (options.consignes ?? []).find((each) => each.date === date) ?? null,
     };
     const analysesApi = {
-      typologies: vi.fn(async () => []),
-      breaks: vi.fn(async () => analyses.breaks?.() ?? null),
-      walks: vi.fn(async () => analyses.walks?.() ?? null),
+      typologies: vi.fn(() => Promise.resolve([])),
+      // Deferred, so a throwing fixture becomes a rejected read as with an async mock.
+      breaks: vi.fn(() => Promise.resolve().then(() => analyses.breaks?.() ?? null)),
+      // Deferred, so a throwing fixture becomes a rejected read as with an async mock.
+      walks: vi.fn(() => Promise.resolve().then(() => analyses.walks?.() ?? null)),
     };
     planningState = {
-      loadForDisplay: vi.fn(async () => {
+      loadForDisplay: vi.fn(() => {
         if (!evenement) {
-          throw new Error('boom');
+          return Promise.reject(new Error('boom'));
         }
-        return evenement;
+        return Promise.resolve(evenement);
       }),
     };
     TestBed.resetTestingModule();

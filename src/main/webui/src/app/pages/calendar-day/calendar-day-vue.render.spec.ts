@@ -90,7 +90,7 @@ function mount(options: Options = {}) {
   const open = vi.fn((..._args: unknown[]) => {
     return { afterClosed: () => of<unknown>(undefined) };
   });
-  const get = vi.fn(async () => ({}));
+  const get = vi.fn(() => Promise.resolve({}));
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
@@ -103,7 +103,7 @@ function mount(options: Options = {}) {
       {
         provide: VerrouillageStore,
         useValue: {
-          reload: vi.fn(async () => undefined),
+          reload: vi.fn(() => Promise.resolve(undefined)),
           estJourVerrouille: options.verrous?.estJourVerrouille ?? (() => false),
           estStandVerrouille: options.verrous?.estStandVerrouille ?? (() => false),
           estCreneauVerrouille: options.verrous?.estCreneauVerrouille ?? (() => false),

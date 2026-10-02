@@ -82,10 +82,11 @@ async function monter(
         useValue: {
           changements: vi.fn(
             options.changements ??
-              (async () => ({
-                referenceDisponible: true,
-                parVacation: [{}, {}, {}],
-              })),
+              (() =>
+                Promise.resolve({
+                  referenceDisponible: true,
+                  parVacation: [{}, {}, {}],
+                })),
           ),
         },
       },

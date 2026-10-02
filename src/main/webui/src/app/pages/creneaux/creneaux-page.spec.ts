@@ -95,11 +95,11 @@ function brancher(
   autres: unknown = [],
   surcharges: { diagnostic?: object; controle?: object } = {},
 ): void {
-  creneauxApi.diagnostic.mockImplementation(async () =>
-    reponseApi('/creneaux/diagnostic', autres, surcharges),
+  creneauxApi.diagnostic.mockImplementation(() =>
+    Promise.resolve(reponseApi('/creneaux/diagnostic', autres, surcharges)),
   );
-  creneauxApi.control.mockImplementation(async () =>
-    reponseApi('/creneaux/controle', autres, surcharges),
+  creneauxApi.control.mockImplementation(() =>
+    Promise.resolve(reponseApi('/creneaux/controle', autres, surcharges)),
   );
 }
 
@@ -155,9 +155,9 @@ const OUVERTURES = {
 describe('CreneauxPage', () => {
   let referenceData: ReferenceDataStore;
   const crud = {
-    reload: vi.fn(async () => undefined),
-    remove: vi.fn(async () => true),
-    removeMany: vi.fn(async () => 0),
+    reload: vi.fn(() => Promise.resolve(undefined)),
+    remove: vi.fn(() => Promise.resolve(true)),
+    removeMany: vi.fn(() => Promise.resolve(0)),
     reportError: vi.fn(),
     warningsOf: vi.fn(() => []),
   };
@@ -167,7 +167,7 @@ describe('CreneauxPage', () => {
   };
   const confirm = { ask: vi.fn() };
   const notifications = { notify: vi.fn() };
-  const resolution = { reload: vi.fn(async () => undefined) };
+  const resolution = { reload: vi.fn(() => Promise.resolve(undefined)) };
   const dialog = { open: vi.fn(() => ({ afterClosed: () => of(undefined) })) };
   const causeParCreneauId = signal(new Map<string, CauseInfaisabilite>());
 
@@ -195,11 +195,11 @@ describe('CreneauxPage', () => {
         provideZonelessChangeDetection(),
         provideRouter([]),
         { provide: CreneauxApi, useValue: creneauxApi },
-        { provide: StandsApi, useValue: { openings: vi.fn(async () => OUVERTURES) } },
+        { provide: StandsApi, useValue: { openings: vi.fn(() => Promise.resolve(OUVERTURES)) } },
         {
           provide: ConsignesStore,
           useValue: {
-            reload: vi.fn(async () => undefined),
+            reload: vi.fn(() => Promise.resolve(undefined)),
             etat: () => null,
             consignes: () => [],
             aujourdhui: () => null,
@@ -212,12 +212,14 @@ describe('CreneauxPage', () => {
         {
           provide: JourneesTypesApi,
           useValue: {
-            etat: vi.fn(async () => ({
-              journeesTypes: [],
-              calendrier: [],
-              datesEnEcart: [],
-              datesSousConsigne: [],
-            })),
+            etat: vi.fn(() =>
+              Promise.resolve({
+                journeesTypes: [],
+                calendrier: [],
+                datesEnEcart: [],
+                datesSousConsigne: [],
+              }),
+            ),
           },
         },
         { provide: ReferenceCrudService, useValue: crud },
@@ -231,7 +233,10 @@ describe('CreneauxPage', () => {
         { provide: PlanningResolutionStore, useValue: resolution },
         {
           provide: ProblemesStore,
-          useValue: { reloadFeasibility: vi.fn(async () => undefined), causeParCreneauId },
+          useValue: {
+            reloadFeasibility: vi.fn(() => Promise.resolve(undefined)),
+            causeParCreneauId,
+          },
         },
       ],
     });
@@ -482,12 +487,12 @@ describe('CreneauxPage rendering', () => {
     diagnostic: vi.fn(),
     control: vi.fn(),
   };
-  const confirm = { ask: vi.fn(async () => false) };
+  const confirm = { ask: vi.fn(() => Promise.resolve(false)) };
   const dialog = { open: vi.fn(() => ({ afterClosed: () => of(undefined) })) };
   const crud = {
-    reload: vi.fn(async () => undefined),
-    remove: vi.fn(async () => true),
-    removeMany: vi.fn(async () => 0),
+    reload: vi.fn(() => Promise.resolve(undefined)),
+    remove: vi.fn(() => Promise.resolve(true)),
+    removeMany: vi.fn(() => Promise.resolve(0)),
     reportError: vi.fn(),
     warningsOf: vi.fn(() => []),
   };
@@ -531,11 +536,11 @@ describe('CreneauxPage rendering', () => {
         provideZonelessChangeDetection(),
         provideRouter([]),
         { provide: CreneauxApi, useValue: creneauxApi },
-        { provide: StandsApi, useValue: { openings: vi.fn(async () => OUVERTURES) } },
+        { provide: StandsApi, useValue: { openings: vi.fn(() => Promise.resolve(OUVERTURES)) } },
         {
           provide: ConsignesStore,
           useValue: {
-            reload: vi.fn(async () => undefined),
+            reload: vi.fn(() => Promise.resolve(undefined)),
             etat: () => null,
             consignes: () => [],
             aujourdhui: () => null,
@@ -549,10 +554,16 @@ describe('CreneauxPage rendering', () => {
         { provide: MatDialog, useValue: dialog },
         { provide: ConfirmService, useValue: confirm },
         { provide: NotificationService, useValue: { notify: vi.fn() } },
-        { provide: PlanningResolutionStore, useValue: { reload: vi.fn(async () => undefined) } },
+        {
+          provide: PlanningResolutionStore,
+          useValue: { reload: vi.fn(() => Promise.resolve(undefined)) },
+        },
         {
           provide: ProblemesStore,
-          useValue: { reloadFeasibility: vi.fn(async () => undefined), causeParCreneauId },
+          useValue: {
+            reloadFeasibility: vi.fn(() => Promise.resolve(undefined)),
+            causeParCreneauId,
+          },
         },
       ],
     });

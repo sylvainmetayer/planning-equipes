@@ -795,11 +795,11 @@ describe('EspaceEchangesPage rendering', () => {
 
   async function rendre(): Promise<void> {
     espace = {
-      postesCollegue: vi.fn(async () => []),
-      soumettre: vi.fn(async () => undefined),
-      annuler: vi.fn(async () => undefined),
-      accorderRecue: vi.fn(async () => undefined),
-      declinerRecue: vi.fn(async () => undefined),
+      postesCollegue: vi.fn(() => Promise.resolve([])),
+      soumettre: vi.fn(() => Promise.resolve(undefined)),
+      annuler: vi.fn(() => Promise.resolve(undefined)),
+      accorderRecue: vi.fn(() => Promise.resolve(undefined)),
+      declinerRecue: vi.fn(() => Promise.resolve(undefined)),
     };
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({

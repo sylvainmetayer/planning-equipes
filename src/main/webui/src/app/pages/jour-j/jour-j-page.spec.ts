@@ -128,20 +128,22 @@ describe('JourJPage', () => {
       : [premierEtat];
     let appel = 0;
     jourJ = {
-      etat: vi.fn(async () => etats[Math.min(appel++, etats.length - 1)]),
-      marquerAbsent: vi.fn(async () => marquee()),
-      annulerAbsence: vi.fn(async () => undefined),
-      suggestions: vi.fn(async () => suggestions()),
-      prevenir: vi.fn(async () => ({
-        snapshotId: 9,
-        publieLe: '2026-07-08T11:35:00Z',
-        envoyes: 2,
-        sansEmail: [],
-        echecs: [],
-        differes: [],
-      })),
+      etat: vi.fn(() => Promise.resolve(etats[Math.min(appel++, etats.length - 1)])),
+      marquerAbsent: vi.fn(() => Promise.resolve(marquee())),
+      annulerAbsence: vi.fn(() => Promise.resolve(undefined)),
+      suggestions: vi.fn(() => Promise.resolve(suggestions())),
+      prevenir: vi.fn(() =>
+        Promise.resolve({
+          snapshotId: 9,
+          publieLe: '2026-07-08T11:35:00Z',
+          envoyes: 2,
+          sansEmail: [],
+          echecs: [],
+          differes: [],
+        }),
+      ),
     };
-    reparations = { applyRepair: vi.fn(async () => undefined) };
+    reparations = { applyRepair: vi.fn(() => Promise.resolve(undefined)) };
     notify = vi.fn();
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -152,8 +154,8 @@ describe('JourJPage', () => {
         { provide: AffectationExplanationService, useValue: reparations },
         { provide: NotificationService, useValue: { notify } },
         { provide: SolverJobService, useValue: { editingLocked: signal(false) } },
-        { provide: ConfirmService, useValue: { ask: vi.fn(async () => true) } },
-        { provide: AffichageMuralApi, useValue: { list: vi.fn(async () => []) } },
+        { provide: ConfirmService, useValue: { ask: vi.fn(() => Promise.resolve(true)) } },
+        { provide: AffichageMuralApi, useValue: { list: vi.fn(() => Promise.resolve([])) } },
       ],
     });
     fixture = TestBed.createComponent(JourJPage);
@@ -252,7 +254,7 @@ describe('JourJPage', () => {
       resteDuCreneau: true,
     };
     await rendre(etat(), etat({ postesAPourvoir: [reste] }));
-    jourJ.marquerAbsent = vi.fn(async () => ({ ...marquee(), postesLiberes: [reste] }));
+    jourJ.marquerAbsent = vi.fn(() => Promise.resolve({ ...marquee(), postesLiberes: [reste] }));
 
     await search('alice');
     await cliquer('Marquer absent');
@@ -426,9 +428,9 @@ describe('JourJPage', () => {
    * timeout — it is the only place the operator will read it.
    */
   it('keeps a refusal on screen, message and all', async () => {
-    jourJ.marquerAbsent = vi.fn(async () => {
-      throw new Error('La contrainte FORCE-1 force A1 sur le créneau …');
-    });
+    jourJ.marquerAbsent = vi.fn(() =>
+      Promise.reject(new Error('La contrainte FORCE-1 force A1 sur le créneau …')),
+    );
 
     await search('alice');
     await cliquer('Marquer absent');

@@ -73,28 +73,32 @@ function mount(
   const store = {
     animateurs,
     typologies: signal(TYPOLOGIES),
-    reload: vi.fn(async () => undefined),
+    reload: vi.fn(() => Promise.resolve(undefined)),
   };
   const saveCompetencesGrid = vi.fn(
-    async (_animateurs: SaisieAnimateurCompetences[]): Promise<RapportSaisieCompetences> =>
-      options.rapport ?? {
-        animateurs: [
-          {
-            animateurId: 'B2',
-            resultat: 'WRITTEN',
-            message: null,
-            modifieLe: '2026-09-07T00:00:00Z',
-          },
-        ],
-      },
+    (_animateurs: SaisieAnimateurCompetences[]): Promise<RapportSaisieCompetences> =>
+      Promise.resolve(
+        options.rapport ?? {
+          animateurs: [
+            {
+              animateurId: 'B2',
+              resultat: 'WRITTEN',
+              message: null,
+              modifieLe: '2026-09-07T00:00:00Z',
+            },
+          ],
+        },
+      ),
   );
-  const ask = vi.fn(async (_data: ConfirmData) => options.confirme ?? true);
-  const askThreeWay = vi.fn(async (_data: ConfirmData) => options.choixConflit ?? null);
+  const ask = vi.fn((_data: ConfirmData) => Promise.resolve(options.confirme ?? true));
+  const askThreeWay = vi.fn((_data: ConfirmData) => Promise.resolve(options.choixConflit ?? null));
   const notify = vi.fn();
-  const saveManyWritten = vi.fn(async (_resource: string, fiches: { id: string }[]) =>
-    fiches.map((fiche) => fiche.id).filter((id) => !(options.refusedWishes ?? []).includes(id)),
+  const saveManyWritten = vi.fn((_resource: string, fiches: { id: string }[]) =>
+    Promise.resolve(
+      fiches.map((fiche) => fiche.id).filter((id) => !(options.refusedWishes ?? []).includes(id)),
+    ),
   );
-  const previewConfirm = vi.fn(async (_data: PastePreviewData) => true);
+  const previewConfirm = vi.fn((_data: PastePreviewData) => Promise.resolve(true));
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
@@ -385,8 +389,9 @@ describe('CompetencesPage', () => {
       ],
     });
     // The server's version of A1 is the one it always had: nothing was written.
-    store.reload.mockImplementation(async () => {
+    store.reload.mockImplementation(() => {
       animateurs.set(roster());
+      return Promise.resolve(undefined);
     });
 
     touche(cellule(fixture, 'A1', 'ateliers'), '1');
@@ -417,12 +422,13 @@ describe('CompetencesPage', () => {
       choixConflit: false,
     });
     await fixture.whenStable();
-    store.reload.mockImplementation(async () => {
+    store.reload.mockImplementation(() => {
       animateurs.set(
         roster().map((each) =>
           each.id === 'B2' ? { ...each, competences: { jeux: 'DEBUTANT' } } : each,
         ),
       );
+      return Promise.resolve(undefined);
     });
 
     touche(cellule(fixture, 'B2', 'jeux'), '3');

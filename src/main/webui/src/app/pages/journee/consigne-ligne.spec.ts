@@ -18,7 +18,7 @@ function mount(jour: string, aujourdhui: string | null): HTMLElement {
       {
         provide: ConsignesStore,
         useValue: {
-          reload: vi.fn(async () => undefined),
+          reload: vi.fn(() => Promise.resolve(undefined)),
           etat: () => ({ consignes: [], prereglages: [], aujourdhui, indicateurs: [] }),
           aujourdhui: () => aujourdhui,
           consigneOf: () => null,

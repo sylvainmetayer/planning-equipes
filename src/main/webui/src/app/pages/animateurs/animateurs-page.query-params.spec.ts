@@ -75,24 +75,28 @@ async function setUpRoute(url: string) {
       provideLocationMocks(),
       {
         provide: ApiService,
-        useValue: { get: vi.fn(async () => ({ causes: [], totalCauses: 0, message: '' })) },
+        useValue: {
+          get: vi.fn(() => Promise.resolve({ causes: [], totalCauses: 0, message: '' })),
+        },
       },
       {
         provide: AnimateursApi,
         useValue: {
-          confirmations: vi.fn(async () => CONFIRMATIONS),
-          syntheseConfirmations: vi.fn(async () => ({
-            confirmes: 1,
-            relances: 0,
-            silencieux: 1,
-            dernierePublicationLe: '2020-01-01T10:00:00Z',
-            jamaisPublie: false,
-          })),
+          confirmations: vi.fn(() => Promise.resolve(CONFIRMATIONS)),
+          syntheseConfirmations: vi.fn(() =>
+            Promise.resolve({
+              confirmes: 1,
+              relances: 0,
+              silencieux: 1,
+              dernierePublicationLe: '2020-01-01T10:00:00Z',
+              jamaisPublie: false,
+            }),
+          ),
         },
       },
       {
         provide: ReferenceCrudService,
-        useValue: { reload: vi.fn(async () => undefined), warningsOf: vi.fn(() => []) },
+        useValue: { reload: vi.fn(() => Promise.resolve(undefined)), warningsOf: vi.fn(() => []) },
       },
       {
         provide: SolverJobService,
@@ -139,24 +143,28 @@ function setUp(
       provideZonelessChangeDetection(),
       {
         provide: ApiService,
-        useValue: { get: vi.fn(async () => ({ causes: [], totalCauses: 0, message: '' })) },
+        useValue: {
+          get: vi.fn(() => Promise.resolve({ causes: [], totalCauses: 0, message: '' })),
+        },
       },
       {
         provide: AnimateursApi,
         useValue: {
-          confirmations: vi.fn(async () => confirmations),
-          syntheseConfirmations: vi.fn(async () => ({
-            confirmes: 1,
-            relances: 0,
-            silencieux: 1,
-            dernierePublicationLe: '2020-01-01T10:00:00Z',
-            jamaisPublie: false,
-          })),
+          confirmations: vi.fn(() => Promise.resolve(confirmations)),
+          syntheseConfirmations: vi.fn(() =>
+            Promise.resolve({
+              confirmes: 1,
+              relances: 0,
+              silencieux: 1,
+              dernierePublicationLe: '2020-01-01T10:00:00Z',
+              jamaisPublie: false,
+            }),
+          ),
         },
       },
       {
         provide: ReferenceCrudService,
-        useValue: { reload: vi.fn(async () => undefined), warningsOf: vi.fn(() => []) },
+        useValue: { reload: vi.fn(() => Promise.resolve(undefined)), warningsOf: vi.fn(() => []) },
       },
       {
         provide: SolverJobService,

@@ -22,14 +22,14 @@ describe('DiagnosticPage', () => {
   // Each analysis answers nothing: what is pinned here is which tab is on
   // screen, never what an analysis draws — their own specs cover that.
   const analysesApi = {
-    staffing: vi.fn(async () => null),
-    fragility: vi.fn(async () => null),
-    breaks: vi.fn(async () => null),
-    walks: vi.fn(async () => null),
-    groupedArrivals: vi.fn(async () => null),
-    trainingPlan: vi.fn(async () => null),
-    margin: vi.fn(async () => null),
-    tension: vi.fn(async () => null),
+    staffing: vi.fn(() => Promise.resolve(null)),
+    fragility: vi.fn(() => Promise.resolve(null)),
+    breaks: vi.fn(() => Promise.resolve(null)),
+    walks: vi.fn(() => Promise.resolve(null)),
+    groupedArrivals: vi.fn(() => Promise.resolve(null)),
+    trainingPlan: vi.fn(() => Promise.resolve(null)),
+    margin: vi.fn(() => Promise.resolve(null)),
+    tension: vi.fn(() => Promise.resolve(null)),
   };
 
   beforeEach(() => {
@@ -45,10 +45,10 @@ describe('DiagnosticPage', () => {
         provideZonelessChangeDetection(),
         provideRouter([]),
         provideLocationMocks(),
-        { provide: ApiService, useValue: { get: vi.fn(async () => null) } },
+        { provide: ApiService, useValue: { get: vi.fn(() => Promise.resolve(null)) } },
         { provide: AnalysesApi, useValue: analysesApi },
-        { provide: ConstraintsApi, useValue: { catalogue: vi.fn(async () => null) } },
-        { provide: PlanningApi, useValue: { persistedCount: vi.fn(async () => null) } },
+        { provide: ConstraintsApi, useValue: { catalogue: vi.fn(() => Promise.resolve(null)) } },
+        { provide: PlanningApi, useValue: { persistedCount: vi.fn(() => Promise.resolve(null)) } },
         {
           provide: SolverJobService,
           useValue: {
@@ -64,7 +64,7 @@ describe('DiagnosticPage', () => {
             animateurs: () => [],
             creneaux: () => [],
             typologies: () => [],
-            reload: vi.fn(async () => undefined),
+            reload: vi.fn(() => Promise.resolve(undefined)),
           },
         },
         {
@@ -72,7 +72,7 @@ describe('DiagnosticPage', () => {
           useValue: {
             verrouillages: () => [],
             estAnimateurVerrouille: () => false,
-            reload: vi.fn(async () => undefined),
+            reload: vi.fn(() => Promise.resolve(undefined)),
           },
         },
         {

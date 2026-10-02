@@ -21,8 +21,8 @@ describe('DebugPage — onglets', () => {
   let versions: ApplicationVersion[] = [];
 
   /** Every `GET` the page makes, answered by its path. */
-  async function answer(path: string): Promise<unknown> {
-    return path === '/api/debug/versions' ? versions : { adminEmail: null };
+  function answer(path: string): Promise<unknown> {
+    return Promise.resolve(path === '/api/debug/versions' ? versions : { adminEmail: null });
   }
 
   async function rendre(options: { onglet?: string } = {}): Promise<void> {

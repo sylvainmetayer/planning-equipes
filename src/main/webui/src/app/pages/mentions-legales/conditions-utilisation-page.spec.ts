@@ -25,7 +25,7 @@ function monter() {
     providers: [
       provideZonelessChangeDetection(),
       provideRouter([]),
-      { provide: ApiService, useValue: { get: vi.fn(async () => VIDE) } },
+      { provide: ApiService, useValue: { get: vi.fn(() => Promise.resolve(VIDE)) } },
     ],
   });
   return TestBed.createComponent(ConditionsUtilisationPage);

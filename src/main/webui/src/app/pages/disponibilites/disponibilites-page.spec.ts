@@ -72,9 +72,11 @@ async function setUp(queryParams: Record<string, string>) {
       {
         provide: DisponibilitesApi,
         useValue: {
-          declarations: vi.fn(async () => [RECENTE, ANCIENNE, APPLIQUEE]),
-          configuration: vi.fn(async () => ({ collecteOuverte: true, debut: null, fin: null })),
-          carpools: vi.fn(async () => []),
+          declarations: vi.fn(() => Promise.resolve([RECENTE, ANCIENNE, APPLIQUEE])),
+          configuration: vi.fn(() =>
+            Promise.resolve({ collecteOuverte: true, debut: null, fin: null }),
+          ),
+          carpools: vi.fn(() => Promise.resolve([])),
         },
       },
       { provide: MatDialog, useValue: { open: vi.fn() } },
@@ -151,15 +153,35 @@ function button(fixture: ComponentFixture<DisponibilitesPage>, label: string): H
   ) as HTMLButtonElement;
 }
 
+function pendingCarpool(): TeammateRequestView {
+  return {
+    id: 'K1',
+    animateurId: 'A1',
+    nature: 'COVOITURAGE',
+    status: 'EN_ATTENTE',
+    members: [
+      { animateurId: 'A1', fullName: 'Alice Martin' },
+      { animateurId: 'A2', fullName: 'Bob Durand' },
+    ],
+    confirmedByAll: true,
+    divergentDayCount: 2,
+    divergentDays: ['2026-07-10', '2026-07-11'],
+    contrainteId: null,
+    createdAt: '2026-06-01T10:00:00Z',
+    decidedAt: null,
+    reason: null,
+  };
+}
+
 describe('DisponibilitesPage during a solve', () => {
   const api = {
-    declarations: vi.fn(async () => [DECLARATION]),
-    configuration: vi.fn(async () => ({ collecteOuverte: true, debut: null, fin: null })),
-    carpools: vi.fn(async (): Promise<TeammateRequestView[]> => []),
-    validateCarpool: vi.fn(async () => ({ request: null, avertissements: [] })),
-    setCarpoolAside: vi.fn(async () => undefined),
-    cancelCarpool: vi.fn(async () => undefined),
-    decide: vi.fn(async () => undefined),
+    declarations: vi.fn(() => Promise.resolve([DECLARATION])),
+    configuration: vi.fn(() => Promise.resolve({ collecteOuverte: true, debut: null, fin: null })),
+    carpools: vi.fn((): Promise<TeammateRequestView[]> => Promise.resolve([])),
+    validateCarpool: vi.fn(() => Promise.resolve({ request: null, avertissements: [] })),
+    setCarpoolAside: vi.fn(() => Promise.resolve(undefined)),
+    cancelCarpool: vi.fn(() => Promise.resolve(undefined)),
+    decide: vi.fn(() => Promise.resolve(undefined)),
     saveConfiguration: vi.fn(),
   };
   const notify = vi.fn();
@@ -202,7 +224,7 @@ describe('DisponibilitesPage during a solve', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     locked = signal(false);
-    ask = vi.fn(async () => true);
+    ask = vi.fn(() => Promise.resolve(true));
     dialogAnswer = null;
   });
 
@@ -225,9 +247,9 @@ describe('DisponibilitesPage during a solve', () => {
   });
 
   it('sends nothing when a solve started while the confirmation was open, and says so', async () => {
-    ask = vi.fn(async () => {
+    ask = vi.fn(() => {
       locked.set(true);
-      return true;
+      return Promise.resolve(true);
     });
     const fixture = await mount();
     await fixture.whenStable();
@@ -248,26 +270,6 @@ describe('DisponibilitesPage during a solve', () => {
 
     expect(api.decide).toHaveBeenCalledWith('D1', 'application', null);
   });
-
-  function pendingCarpool(): TeammateRequestView {
-    return {
-      id: 'K1',
-      animateurId: 'A1',
-      nature: 'COVOITURAGE',
-      status: 'EN_ATTENTE',
-      members: [
-        { animateurId: 'A1', fullName: 'Alice Martin' },
-        { animateurId: 'A2', fullName: 'Bob Durand' },
-      ],
-      confirmedByAll: true,
-      divergentDayCount: 2,
-      divergentDays: ['2026-07-10', '2026-07-11'],
-      contrainteId: null,
-      createdAt: '2026-06-01T10:00:00Z',
-      decidedAt: null,
-      reason: null,
-    };
-  }
 
   it('keeps the covoiturage requests off the declarations tab', async () => {
     api.carpools.mockResolvedValueOnce([pendingCarpool()]);

@@ -43,8 +43,8 @@ function monter(
 ) {
   // Two stubs, not one: a test must tell a preview from a write.
   const creneauxApi = fakeOf<CreneauxApi>({
-    previewRecurrence: async () => options.reponse ?? apercu(),
-    createRecurrence: async () => options.reponse ?? apercu(),
+    previewRecurrence: () => Promise.resolve(options.reponse ?? apercu()),
+    createRecurrence: () => Promise.resolve(options.reponse ?? apercu()),
   });
   const close = vi.fn();
   TestBed.resetTestingModule();
@@ -57,7 +57,7 @@ function monter(
         provide: JoursFeriesService,
         useValue: {
           byDate: signal(options.feries ?? new Map()),
-          load: vi.fn(async () => undefined),
+          load: vi.fn(() => Promise.resolve(undefined)),
         },
       },
       {

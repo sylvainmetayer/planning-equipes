@@ -39,9 +39,10 @@ describe('HorlogeSimuleeCard', () => {
       heureMock,
       modifiable,
       actif: () => dateDuJour() !== '',
-      set: vi.fn(async (date: string, heure = '') => {
+      set: vi.fn((date: string, heure = '') => {
         dateDuJour.set(date);
         heureMock.set(date ? heure : '');
+        return Promise.resolve();
       }),
     };
     const params = convertToParamMap(options.focus ? { focus: options.focus } : {});
@@ -171,9 +172,9 @@ describe('HorlogeSimuleeCard', () => {
 
   /** A refusal belongs under the control it is about, not in a toast that scrolls away. */
   it('shows a refusal next to the field', async () => {
-    dates.set = vi.fn(async () => {
-      throw new Error('Figer la date du jour n’est possible qu’en mode développement');
-    });
+    dates.set = vi.fn(() =>
+      Promise.reject(new Error('Figer la date du jour n’est possible qu’en mode développement')),
+    );
 
     champ()!.value = '2026-07-08';
     champ()!.dispatchEvent(new Event('input'));

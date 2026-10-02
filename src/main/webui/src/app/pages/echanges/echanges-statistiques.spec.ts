@@ -147,8 +147,10 @@ describe('statistics-format', () => {
   });
 });
 
-async function render(statistics: EchangeStatistics, period: StatisticsPeriod = { kind: 'foire' }) {
-  const load = vi.fn<EchangesApi['statistics']>(async () => statistics);
+const FOIRE_PERIOD: StatisticsPeriod = { kind: 'foire' };
+
+async function render(statistics: EchangeStatistics, period: StatisticsPeriod = FOIRE_PERIOD) {
+  const load = vi.fn<EchangesApi['statistics']>(() => Promise.resolve(statistics));
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
@@ -236,7 +238,7 @@ describe('EchangeStatisticsTab', () => {
   });
 
   it('reads the statistics again when the page reloads it', async () => {
-    const load = vi.fn<EchangesApi['statistics']>(async () => STATISTICS);
+    const load = vi.fn<EchangesApi['statistics']>(() => Promise.resolve(STATISTICS));
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),

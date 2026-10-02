@@ -89,11 +89,11 @@ function createPage(): AnimateursPage {
 describe('AnimateursPage alert badges', () => {
   let referenceData: ReferenceDataStore;
   let problemes: ProblemesStore;
-  const api = { get: vi.fn(async () => report([])) };
+  const api = { get: vi.fn(() => Promise.resolve(report([]))) };
   const animateursApi = {
-    regenerateToken: vi.fn(async () => undefined),
-    confirmations: vi.fn(async () => []),
-    syntheseConfirmations: vi.fn(async () => SYNTHESE_VIDE),
+    regenerateToken: vi.fn(() => Promise.resolve(undefined)),
+    confirmations: vi.fn(() => Promise.resolve([])),
+    syntheseConfirmations: vi.fn(() => Promise.resolve(SYNTHESE_VIDE)),
   };
 
   beforeEach(() => {
@@ -102,7 +102,7 @@ describe('AnimateursPage alert badges', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
-        { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
+        { provide: Router, useValue: { navigate: vi.fn(() => Promise.resolve(true)) } },
         {
           provide: ActivatedRoute,
           useValue: { snapshot: { queryParamMap: convertToParamMap({}) } },
@@ -111,7 +111,10 @@ describe('AnimateursPage alert badges', () => {
         { provide: AnimateursApi, useValue: animateursApi },
         {
           provide: ReferenceCrudService,
-          useValue: { reload: vi.fn(async () => undefined), warningsOf: vi.fn(() => []) },
+          useValue: {
+            reload: vi.fn(() => Promise.resolve(undefined)),
+            warningsOf: vi.fn(() => []),
+          },
         },
         {
           provide: SolverJobService,
@@ -248,27 +251,29 @@ describe('AnimateursPage table', () => {
     editingLocked.set(false);
     queryParams = {};
     dialog = { open: vi.fn(() => ({ afterClosed: () => of(undefined) })) };
-    confirm = { ask: vi.fn(async () => false) };
+    confirm = { ask: vi.fn(() => Promise.resolve(false)) };
     notify = vi.fn();
     // The referential endpoints answer a list; only /api/feasibility answers a report.
     api = {
-      get: vi.fn(async (url: string) => (url.includes('feasibility') ? report([]) : [])),
+      get: vi.fn((url: string) => Promise.resolve(url.includes('feasibility') ? report([]) : [])),
       saveText: vi.fn(() => 'Fichier enregistré'),
     };
     animateursApi = {
-      recordListExport: vi.fn(async () => undefined),
-      regenerateToken: vi.fn(async () => undefined),
-      confirmations: vi.fn(async () => []),
-      syntheseConfirmations: vi.fn(async () => SYNTHESE_VIDE),
-      remind: vi.fn(async () => ({
-        envoyes: [],
-        dejaConfirmes: [],
-        sansEmail: [],
-        dejaRelancesPourCettePublication: [],
-        echecs: [],
-        sansPoste: [],
-        adresseRefusee: [],
-      })),
+      recordListExport: vi.fn(() => Promise.resolve(undefined)),
+      regenerateToken: vi.fn(() => Promise.resolve(undefined)),
+      confirmations: vi.fn(() => Promise.resolve([])),
+      syntheseConfirmations: vi.fn(() => Promise.resolve(SYNTHESE_VIDE)),
+      remind: vi.fn(() =>
+        Promise.resolve({
+          envoyes: [],
+          dejaConfirmes: [],
+          sansEmail: [],
+          dejaRelancesPourCettePublication: [],
+          echecs: [],
+          sansPoste: [],
+          adresseRefusee: [],
+        }),
+      ),
     };
     TestBed.configureTestingModule({
       providers: [
@@ -289,9 +294,9 @@ describe('AnimateursPage table', () => {
         {
           provide: ReferenceCrudService,
           useValue: {
-            reload: vi.fn(async () => undefined),
-            remove: vi.fn(async () => true),
-            removeMany: vi.fn(async () => 0),
+            reload: vi.fn(() => Promise.resolve(undefined)),
+            remove: vi.fn(() => Promise.resolve(true)),
+            removeMany: vi.fn(() => Promise.resolve(0)),
             reportError: vi.fn(),
             warningsOf: vi.fn(() => []),
           },
@@ -388,14 +393,14 @@ describe('AnimateursPage table', () => {
   });
 
   it('counts the seats off the equity report, never the whole plan', async () => {
-    api.get.mockImplementation(async (url: string) => {
+    api.get.mockImplementation((url: string) => {
       if (url.includes('feasibility')) {
-        return report([]);
+        return Promise.resolve(report([]));
       }
       if (url === '/api/planning/equite') {
-        return { lignes: [{ animateurId: 'alice', postes: 3 }] };
+        return Promise.resolve({ lignes: [{ animateurId: 'alice', postes: 3 }] });
       }
-      return [];
+      return Promise.resolve([]);
     });
     await rendre([person('alice'), person('bob')]);
 
@@ -743,9 +748,7 @@ describe('AnimateursPage table', () => {
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
       value: {
-        writeText: vi.fn(async () => {
-          throw new Error('denied');
-        }),
+        writeText: vi.fn(() => Promise.reject(new Error('denied'))),
       },
     });
 
