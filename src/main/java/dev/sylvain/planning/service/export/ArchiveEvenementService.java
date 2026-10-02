@@ -459,7 +459,7 @@ public class ArchiveEvenementService {
                 .replaceAll("\\p{M}+", "")
                 .replaceAll("[^A-Za-z0-9]+", "-")
                 // The line above leaves at most one dash at each end.
-                .replaceAll("(?:^-)|(?:-$)", "")
+                .replaceAll("^-|-$", "")
                 .toLowerCase(java.util.Locale.ROOT);
     }
 }

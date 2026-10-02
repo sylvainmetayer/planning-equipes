@@ -435,6 +435,22 @@ function checkSheetLeaks(ctx, failures) {
   }
 }
 
+/** The stylesheets of emulated-encapsulation components, which Angular scopes itself. */
+function emulatedSheets(byFile) {
+  const emulated = new Set();
+  for (const c of byFile.values())
+    if (!c.encapsulationNone) for (const s of c.styles) emulated.add(s);
+  return emulated;
+}
+
+/** The global classes, plus every sheet class one of its selectors leaves unscoped. */
+function unscopedClasses(globalClasses, sheetClasses, scopedIn) {
+  const unscoped = new Set(globalClasses);
+  for (const [sheet, classes] of sheetClasses)
+    for (const c of classes) if (!scopedIn.get(sheet)?.has(c)) unscoped.add(c);
+  return unscoped;
+}
+
 /**
  * Everything the three rules read: the components, the routed pages, and per
  * stylesheet whether Angular scopes it, which of its classes its own selectors
@@ -453,9 +469,7 @@ function buildContext(byFile, globalClasses, sheetClasses) {
   // (`.carte-jour-pastille.etat-ferme`, `.fragilite-synthese .synthese-alerte`)
   // is scoped by that sheet and cannot reach another page: not a leak. A
   // sheet of an emulated-encapsulation component is scoped by Angular itself.
-  const emulated = new Set();
-  for (const c of byFile.values())
-    if (!c.encapsulationNone) for (const s of c.styles) emulated.add(s);
+  const emulated = emulatedSheets(byFile);
   const scopedIn = new Map(); // sheet -> classes every selector qualifies by a sibling class of the sheet
   for (const [sheet, own] of sheetClasses) {
     scopedIn.set(sheet, scopedClassesOf(sheet, own, globalClasses));
@@ -465,9 +479,7 @@ function buildContext(byFile, globalClasses, sheetClasses) {
   for (const page of routed)
     for (const f of closure(byFile, page.file)) addTo(pageOfComponent, f, page.file);
   // a class that is scoped wherever it is defined cannot be met by another page: rule 1 ignores it
-  const unscoped = new Set(globalClasses);
-  for (const [sheet, classes] of sheetClasses)
-    for (const c of classes) if (!scopedIn.get(sheet)?.has(c)) unscoped.add(c);
+  const unscoped = unscopedClasses(globalClasses, sheetClasses, scopedIn);
   return {
     byFile,
     routed,

@@ -173,6 +173,21 @@ function pendingCarpool(): TeammateRequestView {
   };
 }
 
+function decidedCarpool(
+  id: string,
+  status: TeammateRequestView['status'],
+  overrides: Partial<TeammateRequestView> = {},
+): TeammateRequestView {
+  return {
+    ...pendingCarpool(),
+    id,
+    status,
+    contrainteId: status === 'ECARTEE' ? null : 'C7',
+    decidedAt: '2026-06-02T10:00:00Z',
+    ...overrides,
+  };
+}
+
 describe('DisponibilitesPage during a solve', () => {
   const api = {
     declarations: vi.fn(() => Promise.resolve([DECLARATION])),
@@ -322,21 +337,6 @@ describe('DisponibilitesPage during a solve', () => {
     api.carpools.mockReset();
     api.carpools.mockResolvedValue([]);
   });
-
-  function decidedCarpool(
-    id: string,
-    status: TeammateRequestView['status'],
-    overrides: Partial<TeammateRequestView> = {},
-  ): TeammateRequestView {
-    return {
-      ...pendingCarpool(),
-      id,
-      status,
-      contrainteId: status === 'ECARTEE' ? null : 'C7',
-      decidedAt: '2026-06-02T10:00:00Z',
-      ...overrides,
-    };
-  }
 
   it('offers to cancel a validated group once, and never a set-aside or cancelled one', async () => {
     api.carpools.mockResolvedValueOnce([

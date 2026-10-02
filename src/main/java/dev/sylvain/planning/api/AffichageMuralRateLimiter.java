@@ -88,7 +88,7 @@ public class AffichageMuralRateLimiter {
         this.config = config;
         this.loginConfig = loginConfig;
         this.muralPath =
-                restRoot + MuralResource.class.getAnnotation(Path.class).value() + "/";
+                restRoot + MuralResource.class.getAnnotation(Path.class).value() + '/';
     }
 
     public void register(@Observes Filters filters) {
