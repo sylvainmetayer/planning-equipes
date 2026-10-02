@@ -124,15 +124,12 @@ export function isFlagged(ligne: ImportCsvLigne): boolean {
 }
 
 /**
- * The rows the report table shows: every one, or only the flagged ones. The
- * counter and the confirmation keep reading the whole report — the filter is
- * a way to read it, not a way to import less.
+ * The flagged rows only, what the report table shows while its filter is on.
+ * The counter and the confirmation keep reading the whole report — the filter
+ * is a way to read it, not a way to import less.
  */
-export function visibleRows(
-  rows: readonly ImportCsvLigne[],
-  flaggedOnly: boolean,
-): readonly ImportCsvLigne[] {
-  return flaggedOnly ? rows.filter(isFlagged) : rows;
+export function flaggedRows(rows: readonly ImportCsvLigne[]): readonly ImportCsvLigne[] {
+  return rows.filter(isFlagged);
 }
 
 /** What the badge of a flagged row says. */

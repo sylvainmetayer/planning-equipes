@@ -84,7 +84,8 @@
           <a class="personne-frise-nom" [routerLink]="['/animateurs', ligne.animateurId]"
              [title]="ficheLabel">{{ ligne.nom }}</a>
           <span class="personne-frise-compteurs">{{ ligne.repos.joursRepos }} / {{ ligne.repos.serieMax }}</span>
-          <span class="personne-frise-barre" role="img" [attr.aria-label]="ligne.repos.resume">
+          <span class="visually-hidden">{{ ligne.repos.resume }}</span>
+          <span class="personne-frise-barre" aria-hidden="true">
             @for (segment of ligne.repos.segments; track segment.premierJour) {
               <span
                 class="personne-frise-segment"

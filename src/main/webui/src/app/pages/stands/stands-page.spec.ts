@@ -723,7 +723,7 @@ describe('StandsPage table', () => {
     const bulk = Array.from(racine().querySelectorAll('app-bulk-actions-bar button')).filter(
       (bouton) => (bouton as HTMLButtonElement).disabled,
     );
-    expect(bulk.length).toBe(2);
+    expect(bulk).toHaveLength(2);
   });
 
   it('checks the headcount pair on the whole pasted row: 4 then 6 on a 1–2 stand passes', async () => {

@@ -4,7 +4,7 @@ import {
   changeCount,
   changeSummary,
   confirmationLabel,
-  filterRecipients,
+  withoutMinorChanges,
   readRecipientSort,
   sortRecipients,
 } from './publication-diff';
@@ -74,12 +74,12 @@ describe('changeCount', () => {
   });
 });
 
-describe('filterRecipients', () => {
-  it('replie les changements mineurs sans toucher aux autres', () => {
+describe('withoutMinorChanges', () => {
+  it('folds the minor changes away without touching the others', () => {
     const lignes = [destinataire({ mineur: true }), destinataire({ animateurId: 'a2' })];
 
-    expect(filterRecipients(lignes, true)).toHaveLength(1);
-    expect(filterRecipients(lignes, false)).toHaveLength(2);
+    expect(withoutMinorChanges(lignes)).toEqual([lignes[1]]);
+    expect(lignes).toHaveLength(2);
   });
 });
 

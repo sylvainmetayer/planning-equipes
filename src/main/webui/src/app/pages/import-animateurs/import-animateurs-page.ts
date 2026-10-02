@@ -41,7 +41,7 @@ import {
   isFlagged,
   libelleColonne,
   mappingNommeQuelquun,
-  visibleRows,
+  flaggedRows,
   withColonne,
 } from './import-animateurs';
 
@@ -152,10 +152,8 @@ export class ImportAnimateursPage {
   /** The report's rows as the table draws them, narrowed while the filter is on and something is flagged. */
   protected readonly shownRows = computed(() => {
     const rapport = this.rapport();
-    return visibleRows(
-      rapport?.rows ?? [],
-      this.flaggedOnly() && (rapport?.doublonsProbables ?? 0) > 0,
-    );
+    const rows = rapport?.rows ?? [];
+    return this.flaggedOnly() && (rapport?.doublonsProbables ?? 0) > 0 ? flaggedRows(rows) : rows;
   });
 
   protected readonly remplacerAnimateurs = signal(false);

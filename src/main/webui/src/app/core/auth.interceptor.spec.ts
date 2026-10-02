@@ -42,7 +42,7 @@ describe('authInterceptor', () => {
     await expect(firstValueFrom(interceptWithError('/api/stands', 401))).rejects.toBeTruthy();
 
     expect(router.navigateByUrl).toHaveBeenCalledWith('/login');
-    expect(sessionDrafts.length).toBe(1);
+    expect(sessionDrafts).toHaveLength(1);
   });
 
   it('renvoie vers /login sur un 401 des API admin, en repropageant l’erreur', async () => {

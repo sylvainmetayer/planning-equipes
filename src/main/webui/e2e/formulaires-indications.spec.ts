@@ -64,7 +64,14 @@ function hintsOverFields(dialog: Locator): Promise<string[]> {
 async function expectNoHintOverAField(page: Page, dialog: Locator): Promise<void> {
   await expect(dialog.locator('mat-hint').first()).toBeVisible();
   // The open animation scales the dialog: measure once it has settled.
-  await page.waitForTimeout(300);
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((animation) => animation.effect?.getTiming().iterations !== Infinity)
+        .map((animation) => animation.finished.catch(() => undefined)),
+    ),
+  );
   expect(await hintsOverFields(dialog)).toEqual([]);
 }
 
