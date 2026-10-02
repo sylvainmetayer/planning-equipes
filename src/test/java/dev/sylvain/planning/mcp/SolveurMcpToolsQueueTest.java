@@ -14,6 +14,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -94,7 +95,7 @@ class SolveurMcpToolsQueueTest {
         int affectations = planningTools.planningState("E1").affectationsPersistees();
         String animateurId = planningTools.listAffectations(null, null, null, false, null, "E1").affectations().stream()
                 .map(AffectationView::animateurId)
-                .filter(id -> id != null)
+                .filter(Objects::nonNull)
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("le solve n'a pourvu aucun poste"));
 
