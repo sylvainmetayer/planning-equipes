@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 import org.eclipse.microprofile.config.Config;
 
 /**
@@ -166,12 +167,11 @@ public class ParametresService {
      */
     public Set<String> disabledContraintes() {
         Map<String, Boolean> etats = repository.getEtatsContraintes();
-        Set<String> desactivees = new LinkedHashSet<>();
-        for (ConstraintDefinition definition : ConstraintCatalog.definitions()) {
-            if (Boolean.FALSE.equals(etats.getOrDefault(definition.name(), definition.activeByDefault()))) {
-                desactivees.add(definition.name());
-            }
-        }
+        Set<String> desactivees = ConstraintCatalog.definitions().stream()
+                .filter(definition ->
+                        Boolean.FALSE.equals(etats.getOrDefault(definition.name(), definition.activeByDefault())))
+                .map(ConstraintDefinition::name)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
         // A row whose name left the catalogue (renamed rule, older database)
         // is kept: it says something was switched off, and dropping it here
         // would quietly claim the opposite.
@@ -275,16 +275,10 @@ public class ParametresService {
         }
         for (String nom : new TreeSet<>(etats.keySet())) {
             boolean defaut = defaultActive(nom);
-            if (etats.get(nom) != defaut) {
+            boolean actif = etats.get(nom);
+            if (actif != defaut) {
                 lines.add(WeightChange.of(
-                        nom,
-                        null,
-                        null,
-                        false,
-                        defaut,
-                        etats.get(nom),
-                        WeightChangeOrigin.DUPLICATION,
-                        sourceEditionId));
+                        nom, null, null, false, defaut, actif, WeightChangeOrigin.DUPLICATION, sourceEditionId));
             }
         }
         repository.recordHistory(lines);

@@ -755,31 +755,8 @@ public final class CoherenceAnalyzer {
         List<TypologieUsage> usages = new ArrayList<>();
         for (TypologieItem typologie : typologies) {
             String id = typologie.id();
-            int referents = 0;
-            int autonomes = 0;
-            int debutants = 0;
-            int polyvalents = 0;
-            int souhaits = 0;
-            for (Animateur animateur : animateurs) {
-                Map<String, NiveauCompetence> competences =
-                        animateur.getCompetences() == null ? Map.of() : animateur.getCompetences();
-                if (competences.containsKey(id)) {
-                    NiveauCompetence niveau = competences.get(id);
-                    if (niveau == NiveauCompetence.REFERENT) {
-                        referents++;
-                    } else if (niveau == NiveauCompetence.AUTONOME) {
-                        autonomes++;
-                    } else {
-                        debutants++;
-                    }
-                } else if (ninjaId != null && competences.containsKey(ninjaId)) {
-                    polyvalents++;
-                }
-                if (animateur.getSouhaits() != null && animateur.getSouhaits().contains(id)) {
-                    souhaits++;
-                }
-            }
-            int competents = referents + autonomes + debutants;
+            HolderCounts holders = HolderCounts.of(id, ninjaId, animateurs);
+            int competents = holders.referents + holders.autonomes + holders.debutants;
             int proposants = (int) stands.stream()
                     .filter(stand -> stand.getTypologiesProposees() != null
                             && stand.getTypologiesProposees().contains(id))
@@ -787,15 +764,49 @@ public final class CoherenceAnalyzer {
             usages.add(new TypologieUsage(
                     id,
                     competents,
-                    referents,
-                    autonomes,
-                    debutants,
-                    polyvalents,
-                    souhaits,
+                    holders.referents,
+                    holders.autonomes,
+                    holders.debutants,
+                    holders.polyvalents,
+                    holders.souhaits,
                     proposants,
                     etat(id.equals(ninjaId), competents, proposants, !animateurs.isEmpty())));
         }
         return List.copyOf(usages);
+    }
+
+    /** Who holds one game category, by level, who covers it as a polyvalent, and who wishes for it. */
+    private static final class HolderCounts {
+        private int referents;
+        private int autonomes;
+        private int debutants;
+        private int polyvalents;
+        private int souhaits;
+
+        static HolderCounts of(String id, String ninjaId, Collection<Animateur> animateurs) {
+            HolderCounts counts = new HolderCounts();
+            for (Animateur animateur : animateurs) {
+                Map<String, NiveauCompetence> competences =
+                        animateur.getCompetences() == null ? Map.of() : animateur.getCompetences();
+                if (competences.containsKey(id)) {
+                    counts.addLevel(competences.get(id));
+                } else if (ninjaId != null && competences.containsKey(ninjaId)) {
+                    counts.polyvalents++;
+                }
+                if (animateur.getSouhaits() != null && animateur.getSouhaits().contains(id)) {
+                    counts.souhaits++;
+                }
+            }
+            return counts;
+        }
+
+        private void addLevel(NiveauCompetence niveau) {
+            switch (niveau) {
+                case REFERENT -> referents++;
+                case AUTONOME -> autonomes++;
+                case null, default -> debutants++;
+            }
+        }
     }
 
     /** How many categories a stand proposes and nobody holds — the count of the Référentiels step. */

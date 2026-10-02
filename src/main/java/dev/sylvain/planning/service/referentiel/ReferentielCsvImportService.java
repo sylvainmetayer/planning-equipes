@@ -30,6 +30,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
+import java.util.stream.Collectors;
 
 /**
  * The referentials an edition is filled from, read from a CSV: typologies,
@@ -60,6 +61,8 @@ import java.util.function.ToIntFunction;
  */
 @ApplicationScoped
 public class ReferentielCsvImportService {
+
+    private static final String COLUMN_LIBELLE = "libelle";
 
     /** A stand the file does not size holds one person: enough to produce a seat, small enough to be obviously provisional. */
     static final int EFFECTIF_PAR_DEFAUT = 1;
@@ -343,8 +346,8 @@ public class ReferentielCsvImportService {
     }
 
     private Analyse analyseTypologies(CsvParser.Table table, Colonnes colonnes) {
-        Coded<TypologieItem> existantes =
-                Coded.of(typologies.list(), TypologieItem::id, TypologieItem::code, TypologieItem::label, "libelle");
+        Coded<TypologieItem> existantes = Coded.of(
+                typologies.list(), TypologieItem::id, TypologieItem::code, TypologieItem::label, COLUMN_LIBELLE);
         List<LigneImportee> lignes = new ArrayList<>();
         List<Ecriture> ecritures = new ArrayList<>();
         Set<String> vus = new LinkedHashSet<>();
@@ -361,7 +364,7 @@ public class ReferentielCsvImportService {
             Set<String> vus,
             List<Ecriture> ecritures) {
         RowKey cle = existantes.key(row, colonnes);
-        String libelle = colonnes.valeur(row, "libelle");
+        String libelle = colonnes.valeur(row, COLUMN_LIBELLE);
         List<String> raisons = new ArrayList<>();
         if (libelle.isBlank()) {
             raisons.add("La colonne « libelle » est vide : c'est le nom lu à l'écran.");
@@ -515,14 +518,7 @@ public class ReferentielCsvImportService {
         List<String> typologiesLues = valeursMultiples(colonnes.valeur(row, "typologies"));
         Set<String> typologiesStand = new LinkedHashSet<>(
                 typologiesLues.isEmpty() && existant != null ? existant.getTypologiesProposees() : typologiesLues);
-        if (typologiesStand.isEmpty()) {
-            raisons.add("Aucune typologie : un stand est toujours rattaché à au moins une typologie de jeu.");
-        }
-        for (String typologie : typologiesStand) {
-            if (!typologiesParCle.containsKey(typologie) && IdGenerator.Kind.TYPOLOGIE.hasGeneratedShape(typologie)) {
-                raisons.add("La typologie « " + typologie + " » n'existe pas dans cette édition.");
-            }
-        }
+        raisons.addAll(typologieReasons(typologiesStand, typologiesParCle));
         Integer effectifMin = null;
         Integer effectifMax = null;
         try {
@@ -561,21 +557,7 @@ public class ReferentielCsvImportService {
         ecrit.setEffectifMin(min);
         ecrit.setEffectifMax(max);
         String id = cle.id();
-        // The typologies are named by code or id in the file; the ones this
-        // import creates only have an id once written, so the names are
-        // resolved when the line is written, after them.
-        Map<String, String> typologiesEcrites = ecritures.typologiesEcrites();
-        ecritures.ecritures().add(service -> {
-            if (typologiesEcrites.isEmpty()) {
-                typologiesEcrites.putAll(service.typologies.idsByCodeOrLabel());
-            }
-            ecrit.setTypologiesProposees(TypologieService.resolveIds(typologiesStand, typologiesEcrites));
-            if (id == null) {
-                service.stands.create(ecrit);
-            } else {
-                service.stands.update(id, ecrit);
-            }
-        });
+        ecritures.ecritures().add(standWrite(id, ecrit, typologiesStand, ecritures.typologiesEcrites()));
         return new LigneImportee(
                 row.line(),
                 cle.cle(),
@@ -585,7 +567,49 @@ public class ReferentielCsvImportService {
                 details);
     }
 
+    /** Why a stand's game categories refuse its row: none at all, or one shaped like an id that names nothing. */
+    private static List<String> typologieReasons(Set<String> typologiesStand, Map<String, String> typologiesParCle) {
+        if (typologiesStand.isEmpty()) {
+            return List.of("Aucune typologie : un stand est toujours rattaché à au moins une typologie de jeu.");
+        }
+        return typologiesStand.stream()
+                .filter(typologie -> !typologiesParCle.containsKey(typologie)
+                        && IdGenerator.Kind.TYPOLOGIE.hasGeneratedShape(typologie))
+                .map(typologie -> "La typologie « " + typologie + " » n'existe pas dans cette édition.")
+                .toList();
+    }
+
+    /**
+     * The write of one stand. Its game categories are named by code or id in
+     * the file; the ones this import creates only have an id once written, so
+     * the names are resolved when the line is written, after them.
+     */
+    private static Ecriture standWrite(
+            String id, Stand ecrit, Set<String> typologiesStand, Map<String, String> typologiesEcrites) {
+        return service -> {
+            if (typologiesEcrites.isEmpty()) {
+                typologiesEcrites.putAll(service.typologies.idsByCodeOrLabel());
+            }
+            ecrit.setTypologiesProposees(TypologieService.resolveIds(typologiesStand, typologiesEcrites));
+            if (id == null) {
+                service.stands.create(ecrit);
+            } else {
+                service.stands.update(id, ecrit);
+            }
+        };
+    }
+
     /** The headcount the file gives, else the stand's own, else the provisional default of a new stand. */
+    private static Ecriture dayTemplateWrite(JourneeType journeeType) {
+        return service -> {
+            if (journeeType.getId() == null) {
+                service.journeesTypes.create(journeeType);
+            } else {
+                service.journeesTypes.update(journeeType.getId(), journeeType);
+            }
+        };
+    }
+
     private static int headcountOrKept(Integer lu, Stand existant, ToIntFunction<Stand> champ) {
         if (lu != null) {
             return lu;
@@ -619,11 +643,12 @@ public class ReferentielCsvImportService {
      * weekend must not empty the rest of the edition.</p>
      */
     private Analyse analyseCreneaux(CsvParser.Table table, Colonnes colonnes) {
-        Map<String, Creneau> existants = new LinkedHashMap<>();
-        for (Creneau creneau : creneaux.list()) {
-            existants.putIfAbsent(
-                    creneauKey(creneau.getDate(), creneau.getHeureDebut(), creneau.getHeureFin()), creneau);
-        }
+        Map<String, Creneau> existants = creneaux.list().stream()
+                .collect(Collectors.toMap(
+                        creneau -> creneauKey(creneau.getDate(), creneau.getHeureDebut(), creneau.getHeureFin()),
+                        Function.identity(),
+                        (premier, doublon) -> premier,
+                        LinkedHashMap::new));
         List<LigneImportee> lignes = new ArrayList<>();
         List<Creneau> aCreer = new ArrayList<>();
         List<Creneau> aMettreAJour = new ArrayList<>();
@@ -725,16 +750,9 @@ public class ReferentielCsvImportService {
             lignes.add(lecture.read(row, colonnes));
         }
 
-        List<Ecriture> ecritures = new ArrayList<>();
-        for (JourneeType journeeType : lecture.valides) {
-            ecritures.add(service -> {
-                if (journeeType.getId() == null) {
-                    service.journeesTypes.create(journeeType);
-                } else {
-                    service.journeesTypes.update(journeeType.getId(), journeeType);
-                }
-            });
-        }
+        List<Ecriture> ecritures = lecture.valides.stream()
+                .map(ReferentielCsvImportService::dayTemplateWrite)
+                .collect(Collectors.toCollection(ArrayList::new));
         if (!lecture.valides.isEmpty()) {
             // Last, and only once: a template created above has no id until it
             // is written, and the calendar is rewritten whole by its service.
@@ -1059,7 +1077,7 @@ public class ReferentielCsvImportService {
 
         /** The {@code code} is the key of a line (ADR 0050); an {@code id} column is not read. */
         private static final Map<ImportTarget, List<String>> REQUISES = Map.of(
-                ImportTarget.TYPOLOGIES, List.of("code", "libelle"),
+                ImportTarget.TYPOLOGIES, List.of("code", COLUMN_LIBELLE),
                 ImportTarget.EMPLACEMENTS, List.of("code", "nom"),
                 ImportTarget.STANDS, List.of("code", "nom", "typologies"),
                 ImportTarget.CRENEAUX, List.of("date", "heureDebut", "heureFin"),

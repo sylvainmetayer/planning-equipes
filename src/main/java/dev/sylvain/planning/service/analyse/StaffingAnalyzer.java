@@ -745,22 +745,21 @@ public class StaffingAnalyzer {
         }
 
         Map<LocalDate, Integer> majeursParJour = adultsRequired(sieges, besoins);
-        List<JourStaffing> parJour = new ArrayList<>();
-        for (BesoinJour besoin : besoins.values()) {
-            parJour.add(new JourStaffing(
-                    besoin.date(),
-                    dayByDate.getOrDefault(besoin.date(), 0),
-                    standsByDate.getOrDefault(besoin.date(), Set.of()).size(),
-                    siegesByDate.getOrDefault(besoin.date(), 0),
-                    besoin.heures(),
-                    besoin.picSimultane(),
-                    besoin.picAvecPause(),
-                    besoin.picRepas(),
-                    besoin.minimum(),
-                    disponibles(connus, besoin.date()),
-                    effectif - besoin.minimum(),
-                    majeursParJour.getOrDefault(besoin.date(), 0)));
-        }
+        List<JourStaffing> parJour = besoins.values().stream()
+                .map(besoin -> new JourStaffing(
+                        besoin.date(),
+                        dayByDate.getOrDefault(besoin.date(), 0),
+                        standsByDate.getOrDefault(besoin.date(), Set.of()).size(),
+                        siegesByDate.getOrDefault(besoin.date(), 0),
+                        besoin.heures(),
+                        besoin.picSimultane(),
+                        besoin.picAvecPause(),
+                        besoin.picRepas(),
+                        besoin.minimum(),
+                        disponibles(connus, besoin.date()),
+                        effectif - besoin.minimum(),
+                        majeursParJour.getOrDefault(besoin.date(), 0)))
+                .toList();
 
         // The critical day is the one that needs the most people, which is the
         // day-level minimum and no longer the raw peak — a long, flat day can
@@ -1049,6 +1048,19 @@ public class StaffingAnalyzer {
                         .add(siege);
             }
         }
+
+        /**
+         * What a stand offers, never {@code null}. Its size is what the attribution
+         * reads: one category is a provable demand for it, several is a demand no
+         * single one can claim, and <b>none</b> is the opposite of several — only a
+         * polyvalent can hold such a seat.
+         */
+        private static Set<String> offeredTypologies(Stand stand) {
+            if (stand == null || stand.getTypologiesProposees() == null) {
+                return Set.of();
+            }
+            return stand.getTypologiesProposees();
+        }
     }
 
     /**
@@ -1068,19 +1080,6 @@ public class StaffingAnalyzer {
             }
         }
         return polyvalents;
-    }
-
-    /**
-     * What a stand offers, never {@code null}. Its size is what the attribution
-     * reads: one category is a provable demand for it, several is a demand no
-     * single one can claim, and <b>none</b> is the opposite of several — only a
-     * polyvalent can hold such a seat.
-     */
-    private static Set<String> offeredTypologies(Stand stand) {
-        if (stand == null || stand.getTypologiesProposees() == null) {
-            return Set.of();
-        }
-        return stand.getTypologiesProposees();
     }
 
     /** The four bounds of the class javadoc, over an arbitrary set of seats. */

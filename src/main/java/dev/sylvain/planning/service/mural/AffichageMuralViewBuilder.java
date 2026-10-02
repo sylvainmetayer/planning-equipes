@@ -5,6 +5,7 @@ import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.analyse.PauseAnalyzer.PauseDueView;
 import dev.sylvain.planning.service.analyse.PauseAnalyzer.RapportPauses;
 import dev.sylvain.planning.service.espace.TimeslotWindows;
 import dev.sylvain.planning.service.mural.AffichageMuralView.MuralAlert;
@@ -26,6 +27,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -477,34 +479,46 @@ public final class AffichageMuralViewBuilder {
         }
         List<MuralAlert> alerts = new ArrayList<>();
         for (var journee : pauses.journees()) {
-            if (!jour.equals(journee.date())) {
-                continue;
-            }
-            for (var sequence : journee.sequences()) {
-                for (var pause : sequence.pausesDues()) {
-                    if (pause.relaisDisponible() || pause.debut() == null || pause.fin() == null) {
-                        continue;
+            if (jour.equals(journee.date())) {
+                Animateur animateur = animateurs.get(journee.animateurId());
+                String nom = animateur == null ? null : noms.get(animateur.getId());
+                for (var sequence : journee.sequences()) {
+                    for (var pause : sequence.pausesDues()) {
+                        breakAlert(pause, sequence.debut(), jour, now, shown, nom)
+                                .ifPresent(alerts::add);
                     }
-                    Stand stand = shown.get(pause.standId());
-                    if (stand == null) {
-                        continue;
-                    }
-                    LocalDateTime[] window = breakWindow(jour, sequence.debut(), pause.debut(), pause.fin());
-                    if (!window[1].isAfter(now) || !window[0].isBefore(now.plus(HORIZON_BREAK))) {
-                        continue;
-                    }
-                    Animateur animateur = animateurs.get(journee.animateurId());
-                    alerts.add(new MuralAlert(
-                            MuralAlertType.BREAK_WITHOUT_RELAY,
-                            stand.getNom() == null ? stand.getId() : stand.getNom(),
-                            window[0],
-                            window[1],
-                            0,
-                            animateur == null ? null : noms.get(animateur.getId())));
                 }
             }
         }
         return alerts;
+    }
+
+    /** The alert one break raises: none when it can be relayed, is off the screen or is not in the coming hour. */
+    private static Optional<MuralAlert> breakAlert(
+            PauseDueView pause,
+            LocalTime stretchStart,
+            LocalDate jour,
+            LocalDateTime now,
+            Map<String, Stand> shown,
+            String nom) {
+        if (pause.relaisDisponible() || pause.debut() == null || pause.fin() == null) {
+            return Optional.empty();
+        }
+        Stand stand = shown.get(pause.standId());
+        if (stand == null) {
+            return Optional.empty();
+        }
+        LocalDateTime[] window = breakWindow(jour, stretchStart, pause.debut(), pause.fin());
+        if (!window[1].isAfter(now) || !window[0].isBefore(now.plus(HORIZON_BREAK))) {
+            return Optional.empty();
+        }
+        return Optional.of(new MuralAlert(
+                MuralAlertType.BREAK_WITHOUT_RELAY,
+                stand.getNom() == null ? stand.getId() : stand.getNom(),
+                window[0],
+                window[1],
+                0,
+                nom));
     }
 
     /**

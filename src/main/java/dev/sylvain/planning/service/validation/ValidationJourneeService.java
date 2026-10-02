@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -267,16 +268,13 @@ public class ValidationJourneeService {
     }
 
     private Set<LocalDate> daysValidatedAmong(Collection<LocalDate> jours) {
-        Set<LocalDate> valides = new LinkedHashSet<>();
         if (jours == null || jours.isEmpty()) {
-            return valides;
+            return new LinkedHashSet<>();
         }
-        for (ValidationJournee validation : repository.list()) {
-            if (jours.contains(validation.jour())) {
-                valides.add(validation.jour());
-            }
-        }
-        return valides;
+        return repository.list().stream()
+                .map(ValidationJournee::jour)
+                .filter(jours::contains)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     /** The days the edition's timeslots span — the only ones a reading can name. */
@@ -291,13 +289,11 @@ public class ValidationJourneeService {
     }
 
     private Set<LocalDate> lockedDays() {
-        Set<LocalDate> jours = new LinkedHashSet<>();
-        for (VerrouillagePlanning verrouillage : referenceDataService.listVerrouillages()) {
-            if (verrouillage.getType() == TypeVerrouillage.JOUR && verrouillage.getJour() != null) {
-                jours.add(verrouillage.getJour());
-            }
-        }
-        return jours;
+        return referenceDataService.listVerrouillages().stream()
+                .filter(verrouillage ->
+                        verrouillage.getType() == TypeVerrouillage.JOUR && verrouillage.getJour() != null)
+                .map(VerrouillagePlanning::getJour)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     /** Whether a lock had to be created; an already-frozen day is not one laid down here. */

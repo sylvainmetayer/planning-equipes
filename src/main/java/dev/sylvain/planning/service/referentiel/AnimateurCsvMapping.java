@@ -48,7 +48,7 @@ public record AnimateurCsvMapping(
         Integer joursIndisponibles,
         Integer telephone) {
 
-    /* The field keys of ALIASES, as {@link #match} is asked for them. */
+    // The field keys of ALIASES, as match() is asked for them.
     private static final String FIELD_PRENOM = "prenom";
     private static final String FIELD_NOM = "nom";
     private static final String FIELD_DATE_NAISSANCE = "dateNaissance";
@@ -69,7 +69,7 @@ public record AnimateurCsvMapping(
      * « Date de naiss. ».</p>
      */
     private static final Map<String, List<String>> ALIASES = Map.ofEntries(
-            Map.entry(FIELD_PRENOM, List.of("prenom", "firstname", "first name", "given name")),
+            Map.entry(FIELD_PRENOM, List.of(FIELD_PRENOM, "firstname", "first name", "given name")),
             Map.entry(FIELD_NOM, List.of("nom", "nom de famille", "lastname", "last name", "surname", "name")),
             Map.entry(
                     FIELD_DATE_NAISSANCE,
@@ -85,10 +85,10 @@ public record AnimateurCsvMapping(
                             "date of birth")),
             Map.entry(
                     FIELD_EMAIL,
-                    List.of("email", "e mail", "mail", "adresse mail", "courriel", "adresse electronique")),
-            Map.entry(FIELD_MANAGER, List.of("manager", "responsable", "encadrant", "chef")),
-            Map.entry(FIELD_COMPETENCES, List.of("competences", "competence", "typologies", "typologie", "skills")),
-            Map.entry(FIELD_SOUHAITS, List.of("souhaits", "souhait", "voeux", "preferences", "wishes")),
+                    List.of(FIELD_EMAIL, "e mail", "mail", "adresse mail", "courriel", "adresse electronique")),
+            Map.entry(FIELD_MANAGER, List.of(FIELD_MANAGER, "responsable", "encadrant", "chef")),
+            Map.entry(FIELD_COMPETENCES, List.of(FIELD_COMPETENCES, "competence", "typologies", "typologie", "skills")),
+            Map.entry(FIELD_SOUHAITS, List.of(FIELD_SOUHAITS, "souhait", "voeux", "preferences", "wishes")),
             Map.entry(
                     FIELD_JOURS_INDISPONIBLES,
                     List.of(
@@ -103,7 +103,14 @@ public record AnimateurCsvMapping(
                             "unavailable days")),
             Map.entry(
                     FIELD_TELEPHONE,
-                    List.of("telephone", "tel", "portable", "mobile", "numero de telephone", "phone", "phone number")));
+                    List.of(
+                            FIELD_TELEPHONE,
+                            "tel",
+                            "portable",
+                            "mobile",
+                            "numero de telephone",
+                            "phone",
+                            "phone number")));
 
     /**
      * Everything unmapped — what a file whose headers say nothing recognisable

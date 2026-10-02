@@ -73,9 +73,9 @@ final class ParametresValidator {
         // decide; giving less is not (issue #592).
         // One duration for the edition, floored at the adult's twenty minutes.
         // A minor's thirty are floored higher still, by the minor's reading of
-        // ParametresLegaux#dureePauseMinutes rather than here: refusing
+        // the break duration in ParametresLegaux rather than here. Refusing
         // an edition that grants twenty-five would force it to give thirty to
-        // everybody, which is not what art. L3162-3 asks for (ADR 0048).
+        // everybody, and art. L3162-3 does not ask for that either (ADR 0048).
         checkPlancher(
                 parametres.getDureePauseMinutes(),
                 PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES,
@@ -166,12 +166,12 @@ final class ParametresValidator {
      */
     private static void checkTrajet(ParametresQualite parametres) {
         double vitesse = asStored(parametres.vitesseMarcheKmH());
-        if (!(vitesse > 0) || vitesse > VITESSE_MARCHE_MAX_KM_H) {
+        if (Double.isNaN(vitesse) || vitesse <= 0 || vitesse > VITESSE_MARCHE_MAX_KM_H) {
             throw new BusinessError.Invalid("La vitesse de marche doit être strictement positive et au plus de "
                     + (int) VITESSE_MARCHE_MAX_KM_H + " km/h.");
         }
         double facteur = asStored(parametres.facteurDetour());
-        if (!(facteur >= 1) || facteur > FACTEUR_DETOUR_MAX) {
+        if (Double.isNaN(facteur) || facteur < 1 || facteur > FACTEUR_DETOUR_MAX) {
             throw new BusinessError.Invalid("Le facteur de détour doit valoir entre 1 et " + (int) FACTEUR_DETOUR_MAX
                     + " : sous 1, le trajet serait plus court que la ligne droite.");
         }

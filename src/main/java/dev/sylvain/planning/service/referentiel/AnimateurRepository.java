@@ -408,6 +408,11 @@ public class AnimateurRepository {
         upsertAnimateur(connection, animateur, conserverEmailSiAbsent, false);
     }
 
+    /** A blank number is no number: the fiche form and a CSV cell both send an empty string for a field cleared. */
+    private static String storedTelephone(String telephone) {
+        return telephone == null || telephone.isBlank() ? null : telephone.trim();
+    }
+
     void upsertAnimateur(
             Connection connection, Animateur animateur, boolean conserverEmailSiAbsent, boolean failIfPresent)
             throws SQLException {
@@ -435,13 +440,7 @@ public class AnimateurRepository {
             ps.setObject(5, animateur.getDateNaissance());
             ps.setBoolean(6, animateur.isManager());
             ps.setString(7, animateur.getEmail());
-            // A blank number is no number: the fiche form and a CSV cell both
-            // send an empty string for a field cleared.
-            String telephone =
-                    animateur.getTelephone() == null || animateur.getTelephone().isBlank()
-                            ? null
-                            : animateur.getTelephone().trim();
-            ps.setString(8, telephone);
+            ps.setString(8, storedTelephone(animateur.getTelephone()));
             WriteStamp.bindPrecondition(ps, 9, !failIfPresent, animateur.getModifieLe());
             Instant ecrit = WriteStamp.writtenOrRefused(ps);
             if (ecrit == null) {

@@ -11,7 +11,6 @@ import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -100,10 +99,9 @@ public class TypologieAnalyzer {
         tousLesIds.addAll(tenus.affectesParTypologie.keySet());
         tousLesIds.addAll(competentsParTypologie.keySet());
 
-        List<LigneTypologie> lignes = new ArrayList<>();
-        for (String id : tousLesIds) {
-            lignes.add(line(id, referentiel.get(id), tenus, competentsParTypologie.getOrDefault(id, Set.of())));
-        }
+        List<LigneTypologie> lignes = tousLesIds.stream()
+                .map(id -> line(id, referentiel.get(id), tenus, competentsParTypologie.getOrDefault(id, Set.of())))
+                .toList();
         return new RapportTypologies(lignes, List.copyOf(tenus.jours));
     }
 
@@ -164,6 +162,10 @@ public class TypologieAnalyzer {
                 }
             }
         }
+
+        private static Set<String> standTypologies(Stand stand) {
+            return stand.getTypologiesProposees() == null ? Set.of() : stand.getTypologiesProposees();
+        }
     }
 
     /** Who the referential vets on each game category; their names join {@code nomParAnimateur}. */
@@ -182,10 +184,6 @@ public class TypologieAnalyzer {
             }
         }
         return competentsParTypologie;
-    }
-
-    private static Set<String> standTypologies(Stand stand) {
-        return stand.getTypologiesProposees() == null ? Set.of() : stand.getTypologiesProposees();
     }
 
     private static Set<String> without(Set<String> ids, Set<String> autres) {

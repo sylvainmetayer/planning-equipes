@@ -34,10 +34,9 @@ public final class PayloadIds {
                     if (imbrique != null) {
                         return imbrique;
                     }
-                } catch (ReflectiveOperationException | RuntimeException e) {
+                } catch (ReflectiveOperationException | RuntimeException _) {
                     // One unreadable component is not the end of the search:
                     // a later one may well carry the id.
-                    continue;
                 }
             }
         }
@@ -53,7 +52,7 @@ public final class PayloadIds {
         try {
             Object id = objet.getClass().getMethod(accesseur).invoke(objet);
             return id == null ? null : String.valueOf(id);
-        } catch (ReflectiveOperationException | RuntimeException e) {
+        } catch (ReflectiveOperationException | RuntimeException _) {
             return null;
         }
     }

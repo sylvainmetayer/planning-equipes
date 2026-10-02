@@ -106,52 +106,43 @@ public final class BreachHotspots {
      * seats' stands and timeslots, already accounted for.
      */
     private static Set<Place> places(MatchFacts match, Predicate<Creneau> timeslotFrozen, PastHorizon horizon) {
-        Set<Place> places = new LinkedHashSet<>();
-        boolean seats = false;
-        Set<Stand> stands = new LinkedHashSet<>();
-        Set<Creneau> creneaux = new LinkedHashSet<>();
-        Set<LocalDate> dates = new LinkedHashSet<>();
-        for (Object fact : PivotEcarts.flatten(match.facts())) {
-            switch (fact) {
-                case PosteAffectation poste
-                when poste.getCreneau() != null -> {
-                    seats = true;
-                    if (!poste.isPasse()) {
-                        places.add(place(poste.getStand(), poste.getCreneau()));
-                    }
-                }
-                case Stand stand -> stands.add(stand);
-                case Creneau creneau -> creneaux.add(creneau);
-                case LocalDate date -> dates.add(date);
-                default -> {
-                    // An animateur, an exception: a person, not a place — the pivot counts them.
-                }
-            }
+        Named named = Named.of(match);
+        if (named.seats) {
+            return named.seatPlaces;
         }
-        if (seats) {
-            return places;
+        if (!named.creneaux.isEmpty()) {
+            named.creneaux.removeIf(timeslotFrozen);
+            return timeslotPlaces(named.stands, named.creneaux);
         }
-        if (!creneaux.isEmpty()) {
-            creneaux.removeIf(timeslotFrozen);
-            if (stands.isEmpty() || (stands.size() > 1 && creneaux.size() > 1)) {
-                // No stand named, or which stand on which timeslot the match does not say.
-                creneaux.forEach(creneau -> places.add(place(null, creneau)));
-            } else {
-                for (Stand stand : stands) {
-                    creneaux.forEach(creneau -> places.add(place(stand, creneau)));
-                }
-            }
-            return places;
-        }
+        Set<LocalDate> dates = named.dates;
         if (!dates.isEmpty()) {
             dates.removeIf(date -> horizon != null && date.isBefore(horizon.today()));
             if (dates.isEmpty()) {
                 // Every day it names is over: nothing left to fix there.
-                return places;
+                return new LinkedHashSet<>();
             }
         }
+        return dayPlaces(named.stands, dates);
+    }
+
+    /** The places a match naming timeslots points at, its stands paired with them when that is no guess. */
+    private static Set<Place> timeslotPlaces(Set<Stand> stands, Set<Creneau> creneaux) {
+        Set<Place> places = new LinkedHashSet<>();
+        if (stands.isEmpty() || (stands.size() > 1 && creneaux.size() > 1)) {
+            // No stand named, or which stand on which timeslot the match does not say.
+            creneaux.forEach(creneau -> places.add(place(null, creneau)));
+        } else {
+            for (Stand stand : stands) {
+                creneaux.forEach(creneau -> places.add(place(stand, creneau)));
+            }
+        }
+        return places;
+    }
+
+    /** The same reading for a day: the stands count only when paired without a guess. */
+    private static Set<Place> dayPlaces(Set<Stand> stands, Set<LocalDate> dates) {
+        Set<Place> places = new LinkedHashSet<>();
         if (stands.isEmpty() || (stands.size() > 1 && dates.size() > 1)) {
-            // The same reading for a day: the stands count only when paired without a guess.
             dates.forEach(date -> places.add(new Place(null, date, null)));
         } else if (dates.isEmpty()) {
             stands.forEach(stand -> places.add(new Place(stand.getId(), null, null)));
@@ -161,6 +152,37 @@ public final class BreachHotspots {
             }
         }
         return places;
+    }
+
+    /** What one match names, sorted by kind: its seats still ahead, and its stands, timeslots and days. */
+    private static final class Named {
+        private final Set<Place> seatPlaces = new LinkedHashSet<>();
+        private final Set<Stand> stands = new LinkedHashSet<>();
+        private final Set<Creneau> creneaux = new LinkedHashSet<>();
+        private final Set<LocalDate> dates = new LinkedHashSet<>();
+        private boolean seats;
+
+        static Named of(MatchFacts match) {
+            Named named = new Named();
+            for (Object fact : PivotEcarts.flatten(match.facts())) {
+                switch (fact) {
+                    case PosteAffectation poste
+                    when poste.getCreneau() != null -> {
+                        named.seats = true;
+                        if (!poste.isPasse()) {
+                            named.seatPlaces.add(place(poste.getStand(), poste.getCreneau()));
+                        }
+                    }
+                    case Stand stand -> named.stands.add(stand);
+                    case Creneau creneau -> named.creneaux.add(creneau);
+                    case LocalDate date -> named.dates.add(date);
+                    default -> {
+                        // An animateur, an exception: a person, not a place — the pivot counts them.
+                    }
+                }
+            }
+            return named;
+        }
     }
 
     private static Place place(Stand stand, Creneau creneau) {

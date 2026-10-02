@@ -17,6 +17,7 @@ import dev.sylvain.planning.service.webhook.DeliveryStatus;
 import dev.sylvain.planning.service.webhook.WebhookDeliverer;
 import dev.sylvain.planning.service.webhook.WebhookFormats;
 import dev.sylvain.planning.service.webhook.WebhookRepository;
+import dev.sylvain.planning.service.webhook.WebhookRepository.AttemptOutcome;
 import dev.sylvain.planning.testing.FakeHttpReceiver;
 import dev.sylvain.planning.testing.FakeHttpReceiver.Script;
 import io.quarkus.test.junit.QuarkusTest;
@@ -71,6 +72,9 @@ class WebhookResourceTest {
 
     @Inject
     WebhookRepository repository;
+
+    private static final AttemptOutcome DELIVERED_IN_FIVE_MS =
+            new AttemptOutcome(2, DeliveryStatus.DELIVERED, 200, 5, null, null);
 
     @Inject
     PlanningPersistenceService persistence;
@@ -464,17 +468,20 @@ class WebhookResourceTest {
 
         // Another attempt's lease records nothing; its own does, and releases it.
         assertThat(repository.recordAttempt(
-                        id, lease.get().minusMillis(1), 1, DeliveryStatus.PENDING, 503, 5, "x", Instant.now()))
+                        id,
+                        lease.get().minusMillis(1),
+                        new AttemptOutcome(1, DeliveryStatus.PENDING, 503, 5, "x", Instant.now())))
                 .isFalse();
         assertThat(repository.recordAttempt(
                         id,
                         lease.get(),
-                        1,
-                        DeliveryStatus.PENDING,
-                        503,
-                        5,
-                        "x",
-                        Instant.now().plus(Duration.ofHours(1))))
+                        new AttemptOutcome(
+                                1,
+                                DeliveryStatus.PENDING,
+                                503,
+                                5,
+                                "x",
+                                Instant.now().plus(Duration.ofHours(1)))))
                 .isTrue();
 
         // Released but not due yet: neither a candidate nor claimable.
@@ -485,15 +492,14 @@ class WebhookResourceTest {
         Instant stale = Instant.now().minus(Duration.ofMinutes(3)).truncatedTo(java.time.temporal.ChronoUnit.SECONDS);
         execute("UPDATE webhook_livraison SET prochain_essai = now() - interval '1 second', "
                 + "en_cours_depuis = TIMESTAMPTZ '" + stale + "'");
-        assertThat(repository.recordAttempt(id, stale, 2, DeliveryStatus.DELIVERED, 200, 5, null, null))
+        assertThat(repository.recordAttempt(id, stale, DELIVERED_IN_FIVE_MS))
                 .as("its own lease, before it is taken over")
                 .isTrue();
         execute("UPDATE webhook_livraison SET statut = 'PENDING', prochain_essai = now() - interval '1 second', "
                 + "en_cours_depuis = TIMESTAMPTZ '" + stale + "'");
         assertThat(repository.dueIds(50, LEASE)).contains(id);
         assertThat(repository.claim(id, LEASE)).isPresent();
-        assertThat(repository.recordAttempt(id, stale, 2, DeliveryStatus.DELIVERED, 200, 5, null, null))
-                .isFalse();
+        assertThat(repository.recordAttempt(id, stale, DELIVERED_IN_FIVE_MS)).isFalse();
         assertThat(repository.findDelivery(id).orElseThrow().status()).isEqualTo(DeliveryStatus.PENDING);
     }
 

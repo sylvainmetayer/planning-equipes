@@ -41,9 +41,9 @@ public final class WebhookFormats {
         /** By content: a record compares an array component by reference. */
         @Override
         public boolean equals(Object other) {
-            return other instanceof Rendered that
-                    && Arrays.equals(body, that.body)
-                    && Objects.equals(contentType, that.contentType);
+            return other instanceof Rendered(byte[] otherBody, String otherContentType)
+                    && Arrays.equals(body, otherBody)
+                    && Objects.equals(contentType, otherContentType);
         }
 
         @Override

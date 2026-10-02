@@ -299,37 +299,44 @@ public class WebhookRepository {
     }
 
     /**
+     * How one attempt ended, as {@link WebhookRepository#recordAttempt} writes it.
+     *
+     * @param attempts      the attempts made so far, this one included
+     * @param httpStatus    the receiver's answer, {@code null} when none came
+     * @param nextAttemptAt when to retry, {@code null} when the delivery is settled
+     */
+    public record AttemptOutcome(
+            int attempts,
+            DeliveryStatus status,
+            Integer httpStatus,
+            long durationMs,
+            String error,
+            Instant nextAttemptAt) {}
+
+    /**
      * Records how an attempt ended and releases the lease — only under the
      * lease the attempt was given: one that lapsed and was taken over belongs
      * to another attempt now, whose outcome this one must not overwrite.
      *
      * @return whether the attempt was recorded
      */
-    public boolean recordAttempt(
-            UUID id,
-            Instant lease,
-            int attempts,
-            DeliveryStatus status,
-            Integer httpStatus,
-            long durationMs,
-            String error,
-            Instant nextAttemptAt) {
+    public boolean recordAttempt(UUID id, Instant lease, AttemptOutcome outcome) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement("""
                         UPDATE webhook_livraison
                         SET tentative = ?, statut = ?, code_http = ?, duree_ms = ?, erreur = ?, prochain_essai = ?,
                         en_cours_depuis = NULL, derniere_tentative_le = now()
                         WHERE id = ? AND en_cours_depuis = ?""")) {
-            ps.setInt(1, attempts);
-            ps.setString(2, status.name());
-            if (httpStatus == null) {
+            ps.setInt(1, outcome.attempts());
+            ps.setString(2, outcome.status().name());
+            if (outcome.httpStatus() == null) {
                 ps.setNull(3, Types.INTEGER);
             } else {
-                ps.setInt(3, httpStatus);
+                ps.setInt(3, outcome.httpStatus());
             }
-            ps.setLong(4, durationMs);
-            ps.setString(5, error);
-            ps.setTimestamp(6, nextAttemptAt == null ? null : Timestamp.from(nextAttemptAt));
+            ps.setLong(4, outcome.durationMs());
+            ps.setString(5, outcome.error());
+            ps.setTimestamp(6, outcome.nextAttemptAt() == null ? null : Timestamp.from(outcome.nextAttemptAt()));
             ps.setObject(7, id);
             ps.setTimestamp(8, Timestamp.from(lease));
             return ps.executeUpdate() == 1;
