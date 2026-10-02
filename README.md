@@ -1,5 +1,12 @@
 # Planning Équipes
 
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=sylvainmetayer_planning-equipes&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=sylvainmetayer_planning-equipes)
+[![Fiabilité](https://sonarcloud.io/api/project_badges/measure?project=sylvainmetayer_planning-equipes&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=sylvainmetayer_planning-equipes)
+[![Sécurité](https://sonarcloud.io/api/project_badges/measure?project=sylvainmetayer_planning-equipes&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=sylvainmetayer_planning-equipes)
+[![Maintenabilité](https://sonarcloud.io/api/project_badges/measure?project=sylvainmetayer_planning-equipes&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=sylvainmetayer_planning-equipes)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=sylvainmetayer_planning-equipes&metric=bugs)](https://sonarcloud.io/summary/new_code?id=sylvainmetayer_planning-equipes)
+[![Code smells](https://sonarcloud.io/api/project_badges/measure?project=sylvainmetayer_planning-equipes&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=sylvainmetayer_planning-equipes)
+
 Application de gestion de planning pour un événement : elle affecte
 automatiquement les animateurs aux stands, en respectant le cadre légal
 (notamment celui des mineurs), les compétences, les disponibilités et l'équité
