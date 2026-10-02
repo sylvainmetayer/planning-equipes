@@ -16,7 +16,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -50,7 +49,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @ApplicationScoped
 public class PlanningKpiService {
 
-    private static final Pattern SCORE_PATTERN = Pattern.compile("(-?+\\d++)hard/(-?+\\d++)medium/(-?+\\d++)soft");
+    private static final Pattern SCORE_PATTERN =
+            Pattern.compile("^(?:-?+\\d++init/)?+(-?+\\d++)hard/(-?+\\d++)medium/(-?+\\d++)soft");
 
     private final PlanningPersistenceService persistenceService;
 
@@ -285,18 +285,21 @@ public class PlanningKpiService {
      * place is its continuation's, the hours are both parts'.
      */
     static List<AffectationKpi> affectationsOf(List<PosteAffectation> postes) {
-        Set<String> continues = SeatPlaces.continuedIds(postes);
-        List<AffectationKpi> affectations = new ArrayList<>();
-        for (PosteAffectation poste : postes) {
-            affectations.add(new AffectationKpi(
-                    poste.getStand().getId(),
-                    String.valueOf(poste.getCreneau().getId()),
-                    poste.getAnimateur() == null ? null : poste.getAnimateur().getId(),
-                    poste.getDureeEffectiveMinutes(),
-                    poste.getCreneau().getDate(),
-                    !continues.contains(poste.getId())));
+        if (postes == null) {
+            return List.of();
         }
-        return affectations;
+        Set<String> continues = SeatPlaces.continuedIds(postes);
+        return postes.stream()
+                .map(poste -> new AffectationKpi(
+                        poste.getStand().getId(),
+                        String.valueOf(poste.getCreneau().getId()),
+                        poste.getAnimateur() == null
+                                ? null
+                                : poste.getAnimateur().getId(),
+                        poste.getDureeEffectiveMinutes(),
+                        poste.getCreneau().getDate(),
+                        !continues.contains(poste.getId())))
+                .toList();
     }
 
     /**
@@ -315,16 +318,15 @@ public class PlanningKpiService {
             creneauxParId.put(String.valueOf(creneau.getId()), creneau);
         }
         Set<String> continues = SeatPlaces.continuedIds(affectations, AffectationSnapshot::suiteDe);
-        List<AffectationKpi> reduites = new ArrayList<>();
-        for (AffectationSnapshot affectation : affectations) {
-            reduites.add(new AffectationKpi(
-                    affectation.standId(),
-                    affectation.creneauId(),
-                    affectation.animateurId(),
-                    dureeMinutes(affectation, creneauxParId.get(affectation.creneauId())),
-                    null,
-                    affectation.posteId() == null || !continues.contains(affectation.posteId())));
-        }
+        List<AffectationKpi> reduites = affectations.stream()
+                .map(affectation -> new AffectationKpi(
+                        affectation.standId(),
+                        affectation.creneauId(),
+                        affectation.animateurId(),
+                        dureeMinutes(affectation, creneauxParId.get(affectation.creneauId())),
+                        null,
+                        affectation.posteId() == null || !continues.contains(affectation.posteId())))
+                .toList();
         return compute(reduites, score, Map.of(), null, null, null);
     }
 
