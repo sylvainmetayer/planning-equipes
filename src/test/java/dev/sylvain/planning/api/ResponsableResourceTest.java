@@ -95,7 +95,7 @@ class ResponsableResourceTest {
         p4.setAnimateur(bruno);
         persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno), List.of(p1, p2, p3, p4)));
 
-        edition = editions.defaultEditionId();
+        edition = editions.activeEditionId().orElseThrow();
         email = "responsable-" + UUID.randomUUID() + "@example.org";
         compte = comptes.create(email, "Rita Responsable");
     }
@@ -132,7 +132,7 @@ class ResponsableResourceTest {
                 .statusCode(200)
                 .body("size()", equalTo(1))
                 .body("[0].editionId", equalTo(edition))
-                .body("[0].defaut", equalTo(true));
+                .body("[0].active", equalTo(true));
         given().header("Authorization", porteur(email, "user"))
                 .when()
                 .get("/api/auth/me")
