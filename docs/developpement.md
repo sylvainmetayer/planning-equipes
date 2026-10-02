@@ -980,7 +980,7 @@ points qui ne s'y voient pas :
   `target/quarkus-app` (artefact `quarkus-app`, gardé sept jours pour qu'un
   « Re-run failed jobs » de l'E2E le retrouve) juste après ses tests, et
   `e2e-suite.yml` le reprend quand on lui passe `app-artifact`.
-  `-Pcoverage`, posé sur `main`, n'attache l'agent JaCoCo qu'aux JVM de test :
+  `-Pcoverage`, posé sur chaque exécution, n'attache l'agent JaCoCo qu'aux JVM de test :
   le jar est le même. Le prix est l'attente — la pile ne monte qu'une fois
   tout le `verify -DskipITs=false` du job `test` passé, tests d'intégration
   compris, et un seul test backend rouge, unitaire ou d'intégration, laisse
@@ -1032,6 +1032,16 @@ points qui ne s'y voient pas :
   **après** l'écriture : la release est déjà publiée quand le workflow
   démarre, rien ne peut plus l'empêcher, et un job rouge est le seul canal qui
   prévienne. Le détail est dans [`versioning.md`](versioning.md) § 3.
+- **SonarCloud est lancé par le job `sonar` de `tests.yml`**, pas par
+  l'analyse automatique de SonarCloud, qui est désactivée : celle-ci ne lisait
+  ni la couverture ni les exclusions. Le job attend `test` et `frontend`, reprend
+  les classes compilées et le rapport JaCoCo (artefact `sonar-backend`, un
+  jour) et le `lcov` de Vitest (`coverage-frontend`), résout les dépendances
+  Java pour l'analyseur, puis lance le scanner avec le secret `SONAR_TOKEN`. Il
+  tourne même quand une suite a échoué : la couverture est alors partielle,
+  les constats restent lisibles. Sa configuration est `sonar-project.properties`
+  à la racine — périmètre, chemins de couverture, et chaque exclusion de règle
+  avec sa raison.
 
 ## Contexte de construction de l'image
 
