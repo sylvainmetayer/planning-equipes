@@ -124,7 +124,7 @@ délais d'attente).
 
 ## Authentification : Keycloak, et la porte de secours
 
-Depuis l'[ADR 0075](decisions/0075-keycloak-obligatoire-comptes-nominatifs.md),
+Depuis l'[ADR 0076](decisions/0076-keycloak-obligatoire-comptes-nominatifs.md),
 tout le monde entre par **Keycloak** — administrateurs, animateurs, clients MCP
 en OAuth2 — et le realm impose un second facteur au rôle `admin`. Mise en place
 et exploitation : [`keycloak.md`](keycloak.md). Ce qui compte ici :

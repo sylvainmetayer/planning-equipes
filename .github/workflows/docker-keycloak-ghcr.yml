@@ -30,14 +30,9 @@ on:
     types: [labeled, synchronize, reopened]
   workflow_dispatch:
 
-# `contents: write` only for the SBOM uploaded as a release asset, as in
-# docker-ghcr.yml; `id-token` and `attestations` are what lets this workflow
-# sign the image it just pushed and publish its provenance and SBOM.
+# Read-only by default; the job below holds the write scopes it needs.
 permissions:
-  contents: write
-  packages: write
-  id-token: write
-  attestations: write
+  contents: read
 
 concurrency:
   group: docker-keycloak-ghcr-${{ github.ref }}
@@ -58,6 +53,14 @@ jobs:
           && contains(github.event.pull_request.labels.*.name, 'publier-image')
           && (github.event.action != 'labeled' || github.event.label.name == 'publier-image'))
     runs-on: ubuntu-latest
+    # `contents: write` only for the SBOM uploaded as a release asset, as in
+    # docker-ghcr.yml; `id-token` and `attestations` are what lets this job
+    # sign the image it just pushed and publish its provenance and SBOM.
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+      attestations: write
     # The extension is a Maven module of a few files and the theme is static:
     # a few minutes. The ceiling is a guard against a hang, not a forecast.
     timeout-minutes: 30
