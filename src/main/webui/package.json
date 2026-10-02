@@ -42,7 +42,7 @@
     "language-policy-inventaire": "node scripts/check-language-policy.js --inventaire"
   },
   "private": true,
-  "packageManager": "npm@10.9.9",
+  "packageManager": "npm@12.1.0",
   "dependencies": {
     "@angular/cdk": "^22.2.1",
     "@angular/common": "^22.2.1",
