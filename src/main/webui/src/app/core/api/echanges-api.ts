@@ -106,9 +106,14 @@ export class EchangesApi {
  * `api-contract-check` can still read every parameter name.
  */
 function dropEmpty(params: URLSearchParams): void {
-  for (const [key, value] of [...params]) {
+  // Collected first: deleting while iterating the live params skips an entry.
+  const empty: string[] = [];
+  params.forEach((value, key) => {
     if (!value) {
-      params.delete(key);
+      empty.push(key);
     }
+  });
+  for (const key of empty) {
+    params.delete(key);
   }
 }

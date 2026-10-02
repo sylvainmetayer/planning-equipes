@@ -122,6 +122,8 @@ test.describe('accessibilité — administration', () => {
 
 test.describe('accessibilité — pages publiques', () => {
   test.beforeEach(({}, testInfo) => {
+    // The public pages are the same on every project: checking them on the
+    // desktop one is enough, the mobile project would only repeat it.
     test.skip(testInfo.project.name === 'mobile', 'jouées une fois, sur le bureau');
   });
 

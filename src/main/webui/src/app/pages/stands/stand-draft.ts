@@ -44,7 +44,6 @@ export interface StandDraft {
   reserveMajeurs: boolean;
   premium: boolean;
   niveauEffort: NiveauEffort;
-  /** Relay family, `null` = let the server pick the least populated one. */
   typologiesProposees: string[];
   emplacementId: string | null;
   indisponibilites: IndisponibiliteStand[];
@@ -96,15 +95,17 @@ export function normaliserEffectif(effectif: number | null | undefined | string)
   return effectif === null || effectif === undefined || effectif === '' ? null : Number(effectif);
 }
 
-/** Adds or removes one weekday of a `JOURS_SEMAINE` rule, without duplicates. */
-export function basculerJour(
+/** Adds one weekday to a `JOURS_SEMAINE` rule, without duplicates. */
+export function addWeekday(joursSemaine: readonly JourSemaine[], jour: JourSemaine): JourSemaine[] {
+  return [...new Set([...joursSemaine, jour])];
+}
+
+/** Removes one weekday from a `JOURS_SEMAINE` rule. */
+export function removeWeekday(
   joursSemaine: readonly JourSemaine[],
   jour: JourSemaine,
-  coche: boolean,
 ): JourSemaine[] {
-  return coche
-    ? [...new Set([...joursSemaine, jour])]
-    : joursSemaine.filter((autre) => autre !== jour);
+  return joursSemaine.filter((autre) => autre !== jour);
 }
 
 /**

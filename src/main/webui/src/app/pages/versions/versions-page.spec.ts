@@ -143,7 +143,7 @@ describe('VersionsPage', () => {
     await vi.waitFor(async () => {
       await fixture.whenStable();
       // The solves and the snapshots land separately: wait for both.
-      expect(racine().querySelectorAll('tbody tr').length).toBe(liste.length + 2);
+      expect(racine().querySelectorAll('tbody tr')).toHaveLength(liste.length + 2);
     });
     return racine();
   }

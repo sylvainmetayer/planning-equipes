@@ -124,7 +124,7 @@ describe('FormDraft', () => {
       vi.advanceTimersByTime(1000);
 
       expect(storage!.getItem(draftKey('animateur', 's1'))).not.toBeNull();
-      expect(other.length).toBe(0);
+      expect(other).toHaveLength(0);
     });
 
     it('puts a stand draft in localStorage', () => {
@@ -135,7 +135,7 @@ describe('FormDraft', () => {
       vi.advanceTimersByTime(1000);
 
       expect(storage!.getItem(KEY)).not.toBeNull();
-      expect(other.length).toBe(0);
+      expect(other).toHaveLength(0);
     });
 
     it('does not overwrite the draft found while its banner waits for an answer', () => {
@@ -159,7 +159,7 @@ describe('FormDraft', () => {
 
       vi.advanceTimersByTime(5000);
 
-      expect(storage!.length).toBe(0);
+      expect(storage!).toHaveLength(0);
     });
 
     it('removes its draft once the entry is back to the opening', () => {
@@ -199,7 +199,7 @@ describe('FormDraft', () => {
       TestBed.tick();
       vi.advanceTimersByTime(1000);
 
-      expect(storage!.length).toBe(0);
+      expect(storage!).toHaveLength(0);
     });
 
     it('does not flush on destroy a write racing the logout purge', () => {
@@ -210,7 +210,7 @@ describe('FormDraft', () => {
       purgeAllDrafts(storage);
       TestBed.resetTestingModule();
 
-      expect(storage!.length).toBe(0);
+      expect(storage!).toHaveLength(0);
     });
 
     it('a form opened after the purge saves its draft as usual', () => {

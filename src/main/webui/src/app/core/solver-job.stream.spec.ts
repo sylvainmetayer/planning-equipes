@@ -327,7 +327,7 @@ describe('SolverJobService — server-sent events', () => {
     const before = FakeEventSource.instances.length;
     FakeEventSource.last.fail();
     await vi.advanceTimersByTimeAsync(30_000);
-    expect(FakeEventSource.instances.length).toBe(before + 1);
+    expect(FakeEventSource.instances).toHaveLength(before + 1);
   });
 
   it('does not duplicate handlers across reconnections', async () => {

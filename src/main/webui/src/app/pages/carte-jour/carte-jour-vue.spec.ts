@@ -309,7 +309,7 @@ describe('CarteJourView', () => {
     await rendre(planningDeuxJours());
 
     const focusables = grille().querySelectorAll('td[tabindex="0"]');
-    expect(focusables.length).toBe(1);
+    expect(focusables).toHaveLength(1);
     const first = focusables[0] as HTMLElement;
     first.focus();
     first.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));

@@ -51,11 +51,10 @@ export function sortRecipients(
  * a decision: hiding somebody does not exclude them, and the count above the
  * table keeps saying how many people the publication would write to.
  */
-export function filterRecipients(
+export function withoutMinorChanges(
   destinataires: readonly DestinatairePublication[],
-  minorHidden: boolean,
 ): DestinatairePublication[] {
-  return minorHidden ? destinataires.filter((each) => !each.mineur) : [...destinataires];
+  return destinataires.filter((each) => !each.mineur);
 }
 
 /**
