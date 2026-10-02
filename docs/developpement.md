@@ -1078,6 +1078,23 @@ points qui ne s'y voient pas :
   **après** l'écriture : la release est déjà publiée quand le workflow
   démarre, rien ne peut plus l'empêcher, et un job rouge est le seul canal qui
   prévienne. Le détail est dans [`versioning.md`](versioning.md) § 3.
+- **un numéro de migration Flyway ou d'ADR ne se prend qu'une fois.** Deux PR
+  ouvertes en même temps prennent volontiers le même « suivant », et
+  `FlywayMigrationsFrozenTest` ne le voit qu'une fois les deux sur `main`.
+  Le job `frontend` de `tests.yml` lance donc
+  `.github/scripts/check-reserved-numbers.sh` contre la **pointe** de la base,
+  pas contre le point de départ de la branche : une migration ajoutée doit
+  dépasser la plus haute version de la base (Flyway refuse une version plus
+  basse qu'une version déjà appliquée), un ADR ajouté doit porter un numéro
+  libre, et le message nomme le fichier déjà là. La seconde PR échoue donc à
+  sa prochaine exécution après la fusion de la première, avant sa propre
+  fusion. `numeros-reserves.yml` regarde plus tôt, parmi les PR ouvertes, les
+  fichiers ajoutés sous `db/migration/` et `docs/decisions/` : une collision
+  y est un avertissement posé sur le fichier, jamais un échec — aucune des deux
+  n'a tort tant que rien n'est fusionné. Il échoue seulement quand l'API ne
+  répond pas, pour ne pas conclure « aucune collision » sans avoir lu.
+  `DocumentationStructuralTest` refuse enfin deux ADR du même numéro dans
+  l'arbre ;
 - **SonarCloud est lancé par le job `sonar` de `tests.yml`**, pas par
   l'analyse automatique de SonarCloud, qui est désactivée : celle-ci ne lisait
   ni la couverture ni les exclusions. Le job attend `test` et `frontend`, reprend

@@ -1,7 +1,9 @@
 name: Tests
 
 # Une poussée qui ne touche que la documentation ne joue pas la suite — sauf
-# les fichiers qu'un test relit (DocumentationStructuralTest, McpToolNamesTest,
+# les fichiers qu'un test relit (DocumentationStructuralTest — docs/decisions/
+# compris, dont il refuse les références d'issue et les numéros doublés, que le
+# job `frontend` compare aussi à la base —, McpToolNamesTest,
 # DiagramsStructuralTest : docs/diagrammes/ et chaque document qui en montre
 # un — un document ajouté à cette liste de diagrammes s'ajoute aussi ici)
 # ou que ce job compare à ce qu'il produit (le contrat OpenAPI, l'inventaire
@@ -23,6 +25,7 @@ on:
       - '!**/*.md'
       - 'docs/schema/**'
       - 'docs/diagrammes/**'
+      - 'docs/decisions/**'
       - 'docs/architecture.md'
       - 'docs/domaine.md'
       - 'docs/exploitation.md'
@@ -41,6 +44,7 @@ on:
       - '!**/*.md'
       - 'docs/schema/**'
       - 'docs/diagrammes/**'
+      - 'docs/decisions/**'
       - 'docs/architecture.md'
       - 'docs/domaine.md'
       - 'docs/exploitation.md'
@@ -471,6 +475,16 @@ jobs:
         env:
           BASE_REF: ${{ github.base_ref }}
         run: bash .github/scripts/check-commits.sh "origin/$BASE_REF"
+
+      # Same job, same reason (the base's tip is needed): a migration or a
+      # decision record added under a number the base already holds. The
+      # other open pull requests are numeros-reserves.yml, which only warns.
+      - name: Check that no migration or decision record reuses a number of the base
+        if: github.event_name == 'pull_request'
+        working-directory: .
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: bash .github/scripts/check-reserved-numbers.sh "origin/$BASE_REF"
 
       # Same job, same reason: the SHA a reformatting had on its branch is not
       # the one main received, and `git blame` ignores an unknown one silently.
