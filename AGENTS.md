@@ -57,6 +57,11 @@ Read before working on constraints or the domain model:
   plays the whole suite, and so should you before pushing.
 - Integration tests (`*IT.java`, failsafe, `skipITs=true` by default):
   `./mvnw verify -DskipITs=false`
+- Mutation tests on the constraint streams (PIT, weekly in CI, ~4 min):
+  `./mvnw -Pmutation test-compile pitest:mutationCoverage`. Below
+  `mutationThreshold` the build fails; a surviving mutant is killed by a test
+  case, never by lowering the threshold. See *Les tests de mutation* in
+  `docs/developpement.md`.
 
 ### Costly test jobs
 

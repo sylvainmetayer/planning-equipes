@@ -1,0 +1,67 @@
+name: Tests de mutation
+
+# PIT modifie le bytecode des contraintes du solveur — une comparaison
+# inversée, un `>` devenu `>=`, une pénalité rendue nulle — et rejoue les
+# tests `ConstraintVerifier` sur chaque mutant. Un mutant qui survit est une
+# règle dont aucun test ne remarque qu'elle a changé : la couverture JaCoCo
+# disait seulement que la ligne avait tourné.
+#
+# Chaque semaine plutôt qu'à chaque poussée : cinq minutes de runner pour une
+# mesure qui bouge peu d'une PR à l'autre. Il part aussi sur
+# une PR qui touche les contraintes ou leurs tests, là où un mutant survivant
+# se corrige pendant qu'on a le contexte en tête. Sous `mutationThreshold`
+# (pom.xml, profil `mutation`), le job échoue ; le rapport HTML dit quels
+# mutants ont survécu, ligne par ligne.
+
+on:
+  pull_request:
+    paths:
+      - 'src/main/java/dev/sylvain/planning/solver/constraints/**'
+      - 'src/test/java/dev/sylvain/planning/solver/constraints/**'
+      - '.github/workflows/mutation.yml'
+  schedule:
+    # Mardi 5 h UTC, à l'écart des analyses du lundi.
+    - cron: '0 5 * * 2'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mutation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pit:
+    # Même garde de fork que tests.yml, conservée pour la même raison.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    name: Mutation des contraintes (PIT)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      # `test-compile` et non `package` : PIT ne lit que les classes et les
+      # tests compilés, et Quinoa (le bundle Angular) n'a rien à faire ici.
+      - name: Run PIT
+        run: ./mvnw -B --no-transfer-progress -Pmutation test-compile pitest:mutationCoverage
+
+      - name: Upload the mutation report
+        if: success() || failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pit-reports
+          path: target/pit-reports/**
+          if-no-files-found: ignore
+          retention-days: 14

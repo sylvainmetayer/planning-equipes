@@ -630,5 +630,59 @@
                 </plugins>
             </build>
         </profile>
+        <!-- Mutation testing with PIT, on the constraint streams and the
+             isolated ConstraintVerifier tests that pin them (AGENTS.md: one
+             penalised and one valid case per constraint). Coverage says a line
+             ran; this says a test fails when the line is wrong. Weekly in CI
+             (.github/workflows/mutation.yml), and below mutationThreshold the
+             build fails. Locally, about four minutes:
+             ./mvnw -Pmutation test-compile pitest:mutationCoverage, then open
+             target/pit-reports/index.html. See docs/developpement.md. -->
+        <profile>
+            <id>mutation</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.pitest</groupId>
+                        <artifactId>pitest-maven</artifactId>
+                        <version>1.30.0</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.pitest</groupId>
+                                <artifactId>pitest-junit5-plugin</artifactId>
+                                <version>1.2.3</version>
+                            </dependency>
+                        </dependencies>
+                        <configuration>
+                            <targetClasses>
+                                <param>dev.sylvain.planning.solver.constraints.*</param>
+                            </targetClasses>
+                            <targetTests>
+                                <param>dev.sylvain.planning.solver.constraints.*Test</param>
+                            </targetTests>
+                            <excludedGroups>
+                                <param>scenario-lent</param>
+                                <param>scenario-extreme</param>
+                            </excludedGroups>
+                            <jvmArgs>
+                                <value>--enable-native-access=ALL-UNNAMED</value>
+                                <value>--sun-misc-unsafe-memory-access=allow</value>
+                            </jvmArgs>
+                            <threads>4</threads>
+                            <!-- Measured at 83 % (614 of 744 mutants killed,
+                                 October 2026): a ratchet a little below, so a
+                                 slower runner's timeouts do not fail it. Raise
+                                 it as the surviving mutants get their test. -->
+                            <mutationThreshold>80</mutationThreshold>
+                            <timestampedReports>false</timestampedReports>
+                            <outputFormats>
+                                <param>HTML</param>
+                                <param>XML</param>
+                            </outputFormats>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 </project>
