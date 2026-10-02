@@ -1,0 +1,270 @@
+# Les fichiers dérivés qu'une PR Renovate n'a pas su écrire : le verrou npm et
+# le wrapper Maven.
+#
+# Renovate change `package.json` puis recalcule `package-lock.json` ; quand ce
+# calcul échoue (« Artifact update problem », `ERESOLVE … @angular/common@undefined`),
+# il pousse le `package.json` seul et `npm ci` refuse la branche. Même chose
+# pour le wrapper : il régénère `mvnw` en le lançant, et `.mvn/jvm.config`
+# porte des options que seul Java 24+ lit — la JVM refusait de démarrer, et
+# Renovate ne réécrivait que les numéros de version des commentaires.
+# `renovate.json` lui impose Java 25 pour le wrapper, mais rien ne garantit
+# qu'un calcul d'artefact réussira demain : ce workflow le refait ici, et ne
+# commite que s'il trouve une différence.
+#
+# Le verrou est recalculé à partir de l'existant avec le npm du
+# `packageManager`, en installant chaque paquet monté à la version que la PR
+# propose (`.github/scripts/renovate-proposed-versions.js`) : un recalcul nu
+# prendrait la dernière version de la plage, plus jeune que les sept jours que
+# Renovate attend (`minimumReleaseAge`).
+#
+# Une PR qui monte Angular est à angular-renovate.yml, qui recalcule déjà le
+# verrou dans son correctif : celui-ci s'efface (`.github/scripts/angular-bump.sh`).
+#
+# Même découpage en deux jobs que licences-renovate.yml et pour la même
+# raison : le premier lance du code que personne n'a relu (npm, le wrapper et
+# les plugins Maven de la PR) avec `contents: read` seulement, et rend un
+# correctif ; le second tient le jeton d'écriture, ne lance que git et gh, et
+# refuse un correctif qui touche autre chose que les fichiers dérivés.
+name: Artefacts Renovate
+
+on:
+  pull_request:
+    paths:
+      - 'src/main/webui/package.json'
+      - '.mvn/wrapper/maven-wrapper.properties'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: artefacts-${{ github.head_ref }}
+  cancel-in-progress: false
+
+jobs:
+  regenerer:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == 'renovate[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    outputs:
+      change: ${{ steps.diff.outputs.change }}
+      head: ${{ steps.head.outputs.sha }}
+
+    steps:
+      - name: Checkout the branch of the pull request
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Record the head the patch is built on
+        id: head
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      # Ce que la PR a changé depuis son point de départ, et la part
+      # qu'angular-renovate.yml prend en charge.
+      - name: Detect what the pull request bumps
+        id: scope
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          angular="$(.github/scripts/angular-bump.sh "$BASE_REF")"
+          fork="$(git merge-base "origin/$BASE_REF" HEAD)"
+          moved() { git diff --quiet "$fork" HEAD -- "$1" && echo false || echo true; }
+          webui="$(moved src/main/webui/package.json)"
+          if [ "$angular" = "true" ]; then webui=false; fi
+          {
+            echo "webui=$webui"
+            echo "wrapper=$(moved .mvn/wrapper/maven-wrapper.properties)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Set up Node
+        if: steps.scope.outputs.webui == 'true'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+
+      # `--package-lock-only` : le verrou seul, sans node_modules ni script
+      # d'installation. Les paquets que la PR monte sont installés à la
+      # version qu'elle propose (la borne basse de la nouvelle plage) : un
+      # recalcul nu prendrait la dernière version de la plage, plus jeune que
+      # les sept jours que Renovate attend. Pas de `--before` non plus : il
+      # masque à npm les versions du verrou publiées dans la semaine, et c'est
+      # exactement l'`ERESOLVE … @angular/common@undefined` de Renovate.
+      # Si npm bute sur son défaut `Cannot read properties of null (reading
+      # 'edgesOut')`, une seconde tentative recalcule le verrou sans nommer de
+      # paquet. Un vrai conflit de pairs échoue aux deux : c'est la PR qu'il
+      # faut regrouper, pas le calcul.
+      - name: Recompute the lockfile from the existing one
+        if: steps.scope.outputs.webui == 'true'
+        working-directory: src/main/webui
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          fork="$(git merge-base "origin/$BASE_REF" HEAD)"
+          git show "$fork:src/main/webui/package.json" > "$RUNNER_TEMP/before.json"
+          # Assigned first: a failure inside `< <(…)` would be ignored.
+          list="$(node ../../../.github/scripts/renovate-proposed-versions.js "$RUNNER_TEMP/before.json" package.json)"
+          proposed=()
+          if [ -n "$list" ]; then mapfile -t proposed <<< "$list"; fi
+          npm_version="$(node -p "(require('./package.json').packageManager || '').replace(/^npm@/, '')")"
+          npm=(npx --yes "npm@${npm_version:-10}" install --package-lock-only --ignore-scripts --no-audit --no-fund)
+          echo "npm ${npm_version:-10} : ${proposed[*]}"
+          if ! "${npm[@]}" "${proposed[@]}"; then
+            echo "::warning::Seconde tentative, sans nommer de paquet : les paquets montés prennent la dernière version de leur plage, sans le délai de sept jours de Renovate. À vérifier dans le diff du verrou."
+            git checkout -- package.json package-lock.json
+            if ! "${npm[@]}"; then
+              echo "::error::Le verrou ne se calcule pas : conflit de dépendances à résoudre dans la PR (voir le journal npm ci-dessus)."
+              exit 1
+            fi
+          fi
+          # `npm install <paquet>@<version>` réécrit la spécification avec
+          # son préfixe `^`, dans package.json et à la racine du verrou :
+          # celle de Renovate fait foi, et un dernier recalcul sans nommer de
+          # paquet remet la racine du verrou d'accord avec elle.
+          git checkout -- package.json
+          "${npm[@]}"
+
+      - name: Set up Java
+        if: steps.scope.outputs.webui == 'true' || steps.scope.outputs.wrapper == 'true'
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      # Le plugin du wrapper à la version que la PR propose, avec la version de
+      # Maven qu'elle propose : il réécrit `mvnw`, `mvnw.cmd`, le téléchargeur
+      # et les propriétés, `wrapperVersion` compris, que Renovate laissait à
+      # l'ancienne version à côté d'une `wrapperUrl` à la nouvelle.
+      - name: Regenerate the Maven wrapper
+        if: steps.scope.outputs.wrapper == 'true'
+        run: |
+          props=.mvn/wrapper/maven-wrapper.properties
+          wrapper="$(sed -n 's#^wrapperUrl=.*/maven-wrapper/\([^/]*\)/.*#\1#p' "$props")"
+          maven="$(sed -n 's#^distributionUrl=.*/apache-maven/\([^/]*\)/.*#\1#p' "$props")"
+          type="$(sed -n 's#^distributionType=##p' "$props")"
+          echo "wrapper $wrapper, Maven $maven, type ${type:-source}"
+          ./mvnw -B --no-transfer-progress -N \
+            "org.apache.maven.plugins:maven-wrapper-plugin:$wrapper:wrapper" \
+            "-Dtype=${type:-source}" "-Dmaven=$maven"
+          # The plugin writes mvnw.cmd with CRLF; the repository keeps it LF,
+          # and the whole file would show as changed otherwise.
+          sed -i 's/\r$//' mvnw.cmd
+
+      # Le verrou du frontend est lu par l'inventaire des licences : s'il a
+      # bougé, licences-renovate.yml ne le verra pas (la PR ne touchait pas le
+      # verrou), c'est donc ici qu'il se régénère.
+      - name: Regenerate the licence inventory
+        if: steps.scope.outputs.webui == 'true'
+        run: |
+          if git diff --quiet -- src/main/webui/package-lock.json; then
+            echo "Verrou inchangé : l'inventaire aussi."
+            exit 0
+          fi
+          ./mvnw -B --no-transfer-progress license:add-third-party
+          node src/main/webui/scripts/licences-tierces.js
+
+      - name: Note whether anything moved
+        id: diff
+        run: |
+          git add -A -- src/main/webui/package-lock.json docs/licences-tierces.md \
+            mvnw mvnw.cmd .mvn/wrapper
+          if git diff --cached --quiet; then
+            echo "Les fichiers dérivés sont déjà ceux de cette PR."
+            echo 'change=false' >> "$GITHUB_OUTPUT"
+          else
+            git diff --cached --binary --no-renames > "$RUNNER_TEMP/artefacts.patch"
+            git diff --cached --stat
+            echo 'change=true' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Hand the patch to the committing job
+        if: steps.diff.outputs.change == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: artefacts-renovate
+          path: ${{ runner.temp }}/artefacts.patch
+
+  commiter:
+    needs: regenerer
+    if: needs.regenerer.outputs.change == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Les seuls droits d'écriture du workflow, et ils ne voient aucun build.
+    permissions:
+      contents: write
+      actions: write
+
+    steps:
+      - name: Checkout the head the patch was built on
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The job pushes the regenerated files back onto the Renovate branch.
+          persist-credentials: true
+          ref: ${{ needs.regenerer.outputs.head }}
+
+      - name: Retrieve the patch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download "$GITHUB_RUN_ID" --name artefacts-renovate --dir "$RUNNER_TEMP/artefacts"
+
+      # Le correctif sort d'un job qui a lancé du code non relu : il ne passe
+      # que s'il ne touche que les fichiers dérivés.
+      - name: Refuse a patch that touches anything else
+        run: |
+          allowed='^(src/main/webui/package-lock\.json|docs/licences-tierces\.md|mvnw|mvnw\.cmd|\.mvn/wrapper/(maven-wrapper\.properties|MavenWrapperDownloader\.java))$'
+          git apply --numstat -z "$RUNNER_TEMP/artefacts/artefacts.patch" | tr '\0' '\n' | cut -f3- | grep -v '^$' > "$RUNNER_TEMP/paths.txt"
+          if grep -vE "$allowed" "$RUNNER_TEMP/paths.txt" | grep -q .; then
+            echo "::error::Le correctif touche d'autres fichiers que les fichiers dérivés :"
+            grep -vE "$allowed" "$RUNNER_TEMP/paths.txt"
+            exit 1
+          fi
+
+      - name: Commit the files and replay the checks on them
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.head_ref }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          SUPERSEDED_SHA="$(git rev-parse HEAD)"
+          labels="$(gh pr view "$PR" --json labels --jq '.labels[].name')"
+          SOLVER_BUMP=false; PLAYWRIGHT_BUMP=false
+          if grep -qxE 'timefold|quarkus' <<<"$labels"; then SOLVER_BUMP=true; fi
+          if grep -qx 'playwright' <<<"$labels"; then PLAYWRIGHT_BUMP=true; fi
+
+          git apply --index "$RUNNER_TEMP/artefacts/artefacts.patch"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m "chore(deps): régénérer les verrous et le wrapper Maven"
+
+          # Jamais forcée : si la branche a bougé, c'est une poussée de
+          # Renovate, qui a déjà mis en file un run de ce workflow sur sa
+          # nouvelle tête (concurrency sans annulation) ; celui-là refera le
+          # travail.
+          if ! git push origin "HEAD:$BRANCH"; then
+            echo "::warning::Poussée refusée : $BRANCH a bougé pendant la régénération. Le run déclenché par sa nouvelle tête reprend le travail."
+            exit 0
+          fi
+
+          for wf in tests.yml e2e-lourd.yml securite.yml scenario-tests.yml; do
+            for status in in_progress queued; do
+              gh run list --workflow "$wf" --commit "$SUPERSEDED_SHA" --status "$status" \
+                --json databaseId --jq '.[].databaseId' \
+                | xargs -r -n1 gh run cancel || true
+            done
+          done
+
+          # Tests porte l'E2E ordinaire : relancer aussi e2e.yml la jouerait deux fois.
+          for wf in tests.yml securite.yml; do
+            gh workflow run "$wf" --ref "$BRANCH"
+          done
+          if [ "$SOLVER_BUMP" = "true" ]; then
+            gh workflow run scenario-tests.yml --ref "$BRANCH"
+          fi
+          if [ "$SOLVER_BUMP" = "true" ] || [ "$PLAYWRIGHT_BUMP" = "true" ]; then
+            gh workflow run e2e-lourd.yml --ref "$BRANCH"
+          fi

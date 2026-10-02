@@ -24,6 +24,14 @@ Keep the config in that one file; document behaviour changes in
   whose `package.json` touches an `@angular/…` package (detected from the diff,
   not from the branch name), recomputes the lockfile if Renovate could not write
   it (never from scratch: that would bypass `minimumReleaseAge`), and commits the result the same two-job way as the licences.
+- `artefacts-renovate.yml` recomputes what Renovate could not write on any
+  other Renovate PR touching a `package.json` or the Maven wrapper (its
+  « Artifact update problem » comment): the npm lockfile, from the existing
+  one, installing each bumped package at the version the PR proposes (never
+  `npm --before`, which hides the lock's own week-old versions and reproduces
+  Renovate's `ERESOLVE`), and the wrapper through `maven-wrapper-plugin` under
+  Java 25 — `.mvn/jvm.config` carries Java 24+ flags. Same two-job split; a
+  genuine peer conflict fails, and means two PRs of one monorepo to group.
 - The scenario workflow runs on a Renovate PR only when it carries the
   `timefold` or `quarkus` label, which `renovate.json` puts on those two groups.
   The `@lourd` e2e specs also run under `playwright`, the label of the group
