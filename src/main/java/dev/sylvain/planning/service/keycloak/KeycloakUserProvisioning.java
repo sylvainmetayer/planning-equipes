@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
@@ -127,7 +128,7 @@ public class KeycloakUserProvisioning {
     @Inject
     AnimateurRepository repository;
 
-    private volatile Keycloak client;
+    private final AtomicReference<Keycloak> client = new AtomicReference<>();
 
     public boolean actif() {
         return config.enabled() && config.provisioning().enabled();
@@ -717,14 +718,15 @@ public class KeycloakUserProvisioning {
      * never needs this connection at all.
      */
     private Keycloak client() {
-        Keycloak courant = client;
+        Keycloak courant = client.get();
         if (courant != null) {
             return courant;
         }
         synchronized (this) {
-            if (client == null) {
+            courant = client.get();
+            if (courant == null) {
                 ConfigOidc.Provisioning provisioning = config.provisioning();
-                client = KeycloakBuilder.builder()
+                courant = KeycloakBuilder.builder()
                         .serverUrl(provisioning
                                 .serverUrl()
                                 .orElseThrow(() -> new IllegalStateException(
@@ -737,16 +739,17 @@ public class KeycloakUserProvisioning {
                                 .orElseThrow(() -> new IllegalStateException(
                                         "planning.auth.oidc.provisioning.client-secret manquante")))
                         .build();
+                client.set(courant);
             }
-            return client;
+            return courant;
         }
     }
 
     @PreDestroy
     synchronized void close() {
-        if (client != null) {
-            client.close();
-            client = null;
+        Keycloak ouvert = client.getAndSet(null);
+        if (ouvert != null) {
+            ouvert.close();
         }
     }
 }
