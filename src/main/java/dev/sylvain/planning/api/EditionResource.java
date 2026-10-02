@@ -249,7 +249,8 @@ public class EditionResource {
      * Drops the edition and its whole reference model. Returns 400 with an
      * explanation when it is the active edition, the current one, or the last
      * remaining one, rather than letting the caller lose data or the links it
-     * serves.
+     * serves — and 409 while a solve or a staffing check still works on it,
+     * running or queued.
      */
     @DELETE
     @Path("/{id}")

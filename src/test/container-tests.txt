@@ -161,6 +161,7 @@ dev/sylvain/planning/service/referentiel/ReferentielCsvImportServiceTest.java
 dev/sylvain/planning/service/referentiel/StandHoraireDatesMigrationTest.java
 dev/sylvain/planning/service/scenario/ScenarioLadderImportTest.java
 dev/sylvain/planning/service/schema/SchemaCompatibilityGuardTest.java
+dev/sylvain/planning/service/solve/EditionDeletionWhileComputingTest.java
 dev/sylvain/planning/service/solve/PlanSnapshotFraicheurTest.java
 dev/sylvain/planning/service/solve/PlanSnapshotServiceSolveGuardTest.java
 dev/sylvain/planning/service/solve/PlanSnapshotSuppressionPublieeTest.java

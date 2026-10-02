@@ -697,6 +697,27 @@ public class SolverJobService {
         return findActive().filter(job -> job.getEditionId().equals(editionId));
     }
 
+    /**
+     * The first job of {@code editionId} not finished yet — queued, about to
+     * run or running —, whatever the edition the caller works in. What refuses
+     * deleting that edition ({@code EditionService#delete}): a running job
+     * would land its plan in an edition gone from under it, a queued one
+     * would start in it.
+     *
+     * <p>Unlike {@link #findActive}, a {@link JobStatus#QUEUED} job counts:
+     * it will read that edition when its turn comes. A queue replayed at
+     * startup ({@link #restaurer}) is in the same registry, so it counts too.
+     * Not a {@code refuseIfSolving}: the question is not whether a landing
+     * would undo a write in the current edition, but whether a job still
+     * needs the edition the caller names — which is never the current one,
+     * since deleting it is refused first.</p>
+     */
+    public Optional<SolverJob> findUnfinishedJob(String editionId) {
+        return jobs.values().stream()
+                .filter(job -> !job.isFinished() && job.getEditionId().equals(editionId))
+                .min(Comparator.comparing(SolverJob::getSubmittedAt));
+    }
+
     /** Newest job first, so the UI can show a readable history. */
     public List<SolverJob> list() {
         return jobs.values().stream()
