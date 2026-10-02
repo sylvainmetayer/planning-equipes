@@ -30,7 +30,6 @@ class ApplicationLinksTest {
         assertThat(liens.disponible()).isTrue();
     }
 
-    /** The regression this component exists to prevent. */
     /** A weather alert's link: the consignes of its date, the form open on the preset — or the existing one. */
     @Test
     void theConsigneOfADateIsReachedInTheAppAndFromAMail() {
@@ -48,6 +47,7 @@ class ApplicationLinksTest {
                 .contains("https://planning.example.org/publication");
     }
 
+    /** The regression this component exists to prevent. */
     @Test
     void unSlashFinalDansLUrlPubliqueNeDonneJamaisUnDoubleSlash() {
         ApplicationLinks liens = linksTo("https://planning.example.org/");

@@ -124,7 +124,6 @@ class ReferenceDataResourceTypologiesTest {
                 .toList();
     }
 
-    /** The generated id of the typologie carrying {@code code} in the default edition. */
     /**
      * The reset keeps the typologies, and another test of this class relabels
      * JEUX_VIDEO: the default label is only derived for a typologie the import
@@ -141,6 +140,7 @@ class ReferenceDataResourceTypologiesTest {
                 .forEach(id -> given().header("X-Edition-Id", "E1").when().delete("/api/typologies/" + id));
     }
 
+    /** The generated id of the typologie carrying {@code code} in the default edition. */
     private static String typologieIdByCode(String code) {
         List<Map<String, Object>> typologies = given().header("X-Edition-Id", "E1")
                 .when()

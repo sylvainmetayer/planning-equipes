@@ -69,10 +69,6 @@ class CompetencesGrilleResourceTest {
         return id;
     }
 
-    private static Map<String, Object> request(String contenu) {
-        return Map.of("fileName", "grille-competences.csv", "content", contenu);
-    }
-
     private static JsonPath animateurs() {
         return given().header("X-Edition-Id", "E1")
                 .when()

@@ -32,6 +32,7 @@ import dev.sylvain.planning.solver.ConstraintCatalog;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -63,7 +64,7 @@ class EditionDeltaComparatorTest {
         ParametresLegaux legaux = new ParametresLegaux();
         final Map<String, Boolean> etats = new HashMap<>();
         final Map<String, Integer> poids = new HashMap<>();
-        final Map<TypeContrainteAdHoc, Integer> ajustements = new HashMap<>();
+        final Map<TypeContrainteAdHoc, Integer> ajustements = new EnumMap<>(TypeContrainteAdHoc.class);
         DeltaVolumes volumes = VOLUMES;
 
         Edition(String id) {

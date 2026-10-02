@@ -204,10 +204,10 @@ class OuvertureStandsResourceTest {
         assertThat(seul.getInt("postesTotal")).isEqualTo(grille.getInt("postesTotal"));
         // The stand's row moved, and the other rows are those its save found.
         Map<String, List<Object>> apresSeul = openingsOf(seul);
-        assertThat(apresSeul.get(standNom)).isNotEqualTo(openingsOf(avant).get(standNom));
+        assertThat(apresSeul).doesNotContainEntry(standNom, openingsOf(avant).get(standNom));
         openingsOf(avant).forEach((nom, cellules) -> {
             if (!nom.equals(standNom)) {
-                assertThat(apresSeul.get(nom)).as(nom).isEqualTo(cellules);
+                assertThat(apresSeul).as(nom).containsEntry(nom, cellules);
             }
         });
     }

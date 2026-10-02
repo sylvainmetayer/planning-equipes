@@ -148,7 +148,7 @@ class ArchiveEvenementResourceTest {
                 .extract()
                 .asByteArray());
 
-        assertThat(archive.get("equite.csv")).isEqualTo(download("/api/planning/equite/export"));
+        assertThat(archive).containsEntry("equite.csv", download("/api/planning/equite/export"));
 
         // The Heures screen posts the persisted plan it read: the same round trip.
         String persisted = given().header("X-Edition-Id", "E1")
@@ -167,13 +167,13 @@ class ArchiveEvenementResourceTest {
                 .statusCode(200)
                 .extract()
                 .asByteArray();
-        assertThat(archive.get("heures.csv")).isEqualTo(heures);
+        assertThat(archive).containsEntry("heures.csv", heures);
 
         Map<String, byte[]> referentiels = unzip(download("/api/reference-data/export-csv?typologies=true"
                 + "&emplacements=true&stands=true&creneaux=true&journeesTypes=true&animateurs=true"));
         assertThat(referentiels).hasSize(6);
-        referentiels.forEach((name, content) ->
-                assertThat(archive.get("referentiels/" + name)).as(name).isEqualTo(content));
+        referentiels.forEach(
+                (name, content) -> assertThat(archive).as(name).containsEntry("referentiels/" + name, content));
 
         assertThat(text(archive.get("scenario.yaml"))).isEqualTo(text(download("/api/planning/export-scenario")));
     }
@@ -306,8 +306,7 @@ class ArchiveEvenementResourceTest {
                 .extract()
                 .jsonPath();
         Map<String, Object> ligne = historique.getMap("find { it.action == 'EXPORT_ARCHIVE_EVENEMENT' }");
-        assertThat(ligne.get("resultat")).isEqualTo("SUCCES");
-        assertThat(ligne.get("acteur")).isEqualTo("ADMIN");
+        assertThat(ligne).containsEntry("resultat", "SUCCES").containsEntry("acteur", "ADMIN");
         // The archive's order, not the query's.
         assertThat((List<?>) ligne.get("champs")).isEqualTo(List.of("equite", "scenario"));
     }

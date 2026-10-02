@@ -293,10 +293,11 @@ class ReferentielMcpToolsTest {
         Instant marqueAvant = changeTracker.lastModifiedAt();
         // effectifMin above effectifMax: refused by StandValidator, after the
         // typologie and the emplacement would already have been written.
+        List<String> typologies = List.of("TYPO-ATOMIQUE");
         assertThatThrownBy(() -> standTools.createCompleteStand(
                         "Stand refusé",
                         "STAND-ATOMIQUE",
-                        List.of("TYPO-ATOMIQUE"),
+                        typologies,
                         true,
                         5,
                         2,
@@ -331,10 +332,11 @@ class ReferentielMcpToolsTest {
 
     @Test
     void aCompleteStandRefusesAnUnknownTypologieWithoutTheCreationOption() {
+        List<String> typologies = List.of("TYPO-INEXISTANTE");
         assertThatThrownBy(() -> standTools.createCompleteStand(
                         "Stand complet",
                         "STAND-COMPLET-2",
-                        List.of("TYPO-INEXISTANTE"),
+                        typologies,
                         null,
                         null,
                         null,

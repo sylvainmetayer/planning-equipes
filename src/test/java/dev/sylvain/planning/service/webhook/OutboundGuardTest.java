@@ -27,7 +27,7 @@ class OutboundGuardTest {
                 // Literals resolve to themselves, as InetAddress.getAllByName does.
                 try {
                     return new InetAddress[] {InetAddress.ofLiteral(host)};
-                } catch (IllegalArgumentException e) {
+                } catch (IllegalArgumentException _) {
                     throw new UnknownHostException(host);
                 }
             }
@@ -167,9 +167,10 @@ class OutboundGuardTest {
     /** No refusal quotes the path: for Slack, Discord and Matrix the path is the secret. */
     @Test
     void aRefusalNeverQuotesThePath() {
-        assertThatThrownBy(() -> guard().check("https://rebind.example.org/services/SECRET-PATH"))
+        OutboundGuard guard = guard();
+        assertThatThrownBy(() -> guard.check("https://rebind.example.org/services/SECRET-PATH"))
                 .hasMessageNotContaining("SECRET-PATH");
-        assertThatThrownBy(() -> guard().check("http://hooks.example.org/services/SECRET-PATH"))
+        assertThatThrownBy(() -> guard.check("http://hooks.example.org/services/SECRET-PATH"))
                 .hasMessageNotContaining("SECRET-PATH");
     }
 

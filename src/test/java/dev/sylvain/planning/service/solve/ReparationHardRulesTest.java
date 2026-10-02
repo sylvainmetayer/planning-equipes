@@ -106,9 +106,11 @@ class ReparationHardRulesTest {
     void emptyingASeatIsNeverScored() {
         PosteAffectation deNuit = new PosteAffectation("p0", plateau, nuit);
         deNuit.setAnimateur(adulte);
+        PlanningWhatIf whatIf = whatIf();
+        PlanningEvenement plan = plan(deNuit);
+        List<String> seats = List.of("p0");
 
-        assertThatThrownBy(() -> whatIf().applyReparations(plan(deNuit), List.of("p0"), null))
-                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> whatIf.applyReparations(plan, seats, null)).isInstanceOf(NullPointerException.class);
     }
 
     /** « Placer » (the Siège panel) goes through the same check: the night rule is named, nothing written. */
@@ -143,10 +145,14 @@ class ReparationHardRulesTest {
     @Test
     void anAcceptableSeatingGetsThroughToTheWrite() {
         PosteAffectation libre = new PosteAffectation("p0", plateau, matin);
+        PlanningWhatIf whatIf = whatIf();
+        PlanningEvenement repairedPlan = plan(libre);
+        List<String> seats = List.of("p0");
+        PlanningEvenement placedPlan = plan(libre);
 
-        assertThatThrownBy(() -> whatIf().applyReparations(plan(libre), List.of("p0"), "A1"))
+        assertThatThrownBy(() -> whatIf.applyReparations(repairedPlan, seats, "A1"))
                 .isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> whatIf().placeOnFreeSeat(plan(libre), "p0", "A1"))
+        assertThatThrownBy(() -> whatIf.placeOnFreeSeat(placedPlan, "p0", "A1"))
                 .isInstanceOf(NullPointerException.class);
         assertThatCode(() -> whatIf().suggererReparations(plan(libre), "p0", null))
                 .doesNotThrowAnyException();

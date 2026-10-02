@@ -341,12 +341,12 @@ class DiagnosticMcpToolsTest {
         for (Animateur animateur : referenceDataService.listAnimateurs()) {
             assertThat(json).doesNotContain(animateur.nomAffiche());
         }
-        assertThat(plan.typologies())
-                .allSatisfy(ligne -> assertThat(ligne.candidats())
-                        .allSatisfy(candidat -> assertThat(candidat.niveau())
-                                .isIn(
-                                        dev.sylvain.planning.domain.NiveauCompetence.DEBUTANT,
-                                        dev.sylvain.planning.domain.NiveauCompetence.AUTONOME)));
+        assertThat(plan.typologies().stream()
+                        .flatMap(ligne -> ligne.candidats().stream())
+                        .map(DiagnosticMcpTools.CandidatFormationView::niveau))
+                .isSubsetOf(
+                        dev.sylvain.planning.domain.NiveauCompetence.DEBUTANT,
+                        dev.sylvain.planning.domain.NiveauCompetence.AUTONOME);
     }
 
     @Test

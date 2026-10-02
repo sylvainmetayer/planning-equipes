@@ -133,8 +133,8 @@ class GelReferentielMcpToolsTest {
         assertThatThrownBy(() -> standTools.createTypologie("Nouvelle", "NOUVELLE", edition))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Frozen.class);
-        assertThatThrownBy(() -> animateurTools.updateAnimateur(
-                        a1, null, Map.of(strategie, "DEBUTANT"), null, null, null, edition))
+        Map<String, String> competences = Map.of(strategie, "DEBUTANT");
+        assertThatThrownBy(() -> animateurTools.updateAnimateur(a1, null, competences, null, null, null, edition))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Frozen.class);
 

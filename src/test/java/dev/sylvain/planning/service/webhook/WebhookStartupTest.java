@@ -49,7 +49,9 @@ class WebhookStartupTest {
 
     @Test
     void aWebhookWithoutTheKeyStopsTheBoot() {
-        assertThatThrownBy(() -> service(sealed(), Optional.empty()).checkAtStartup(null))
+        WebhookService service = service(sealed(), Optional.empty());
+
+        assertThatThrownBy(() -> service.checkAtStartup(null))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("WEBHOOKS_SECRET_KEY");
     }
@@ -57,7 +59,9 @@ class WebhookStartupTest {
     /** One secret is tried: a key opens all of them or none. */
     @Test
     void aWebhookUnderAnotherKeyStopsTheBootToo() {
-        assertThatThrownBy(() -> service(sealed(), Optional.of(OTHER_KEY)).checkAtStartup(null))
+        WebhookService service = service(sealed(), Optional.of(OTHER_KEY));
+
+        assertThatThrownBy(() -> service.checkAtStartup(null))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("n'ouvre pas")
                 .hasMessageNotContaining("T0-PRIVE");

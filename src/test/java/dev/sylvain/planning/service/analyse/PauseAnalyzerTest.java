@@ -643,12 +643,12 @@ class PauseAnalyzerTest {
 
         var parAnimateur = analyzer.pausesByAnimateur(planning);
 
-        assertThat(parAnimateur.keySet()).containsExactlyInAnyOrder("alice", "bob");
-        assertThat(parAnimateur)
-                .containsEntry("alice", analyzer.pausesAnimateur(planning, "alice"))
-                .containsEntry("bob", analyzer.pausesAnimateur(planning, "bob"));
         // Somebody who owes none is simply absent, and the caller falls back on an empty list.
-        assertThat(parAnimateur).doesNotContainKey("repos");
+        assertThat(parAnimateur)
+                .containsOnlyKeys("alice", "bob")
+                .containsEntry("alice", analyzer.pausesAnimateur(planning, "alice"))
+                .containsEntry("bob", analyzer.pausesAnimateur(planning, "bob"))
+                .doesNotContainKey("repos");
     }
 
     private static JourneeAnimateurView journee(RapportPauses rapport, String animateurId) {

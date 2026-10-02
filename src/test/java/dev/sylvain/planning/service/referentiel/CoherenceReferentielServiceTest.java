@@ -176,12 +176,13 @@ class CoherenceReferentielServiceTest {
         CoherenceReport rapport =
                 build(List.of(), solverView, ownHours, creneaux, List.of(), List.of(), List.of(), false);
 
+        Set<String> openingCodes = Set.of(
+                TypeAvertissement.CRENEAU_HORS_OUVERTURE_STANDS.name(),
+                TypeAvertissement.CRENEAU_DEBORDE_OUVERTURE_STANDS.name());
         assertThat(rapport.anomalies())
                 .filteredOn(ligne -> ligne.famille() == CoherenceFamily.CRENEAUX)
-                .extracting(CoherenceIssue::code)
-                .doesNotContain(
-                        TypeAvertissement.CRENEAU_HORS_OUVERTURE_STANDS.name(),
-                        TypeAvertissement.CRENEAU_DEBORDE_OUVERTURE_STANDS.name());
+                .filteredOn(ligne -> openingCodes.contains(ligne.code()))
+                .isEmpty();
     }
 
     /**

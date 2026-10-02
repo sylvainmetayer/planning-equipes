@@ -104,8 +104,11 @@ class OpenMeteoClientTest {
     @Test
     void anErrorStatusIsUnavailableNotAnException() {
         receiver.answer("/v1/forecast", Script.json(500, "{\"reason\":\"boom\"}"));
+        OpenMeteoClient client = client(Duration.ofSeconds(5));
+        List<Coordinates> places = List.of(KIOSQUE);
+        ZoneId utc = ZoneId.of("UTC");
 
-        assertThatThrownBy(() -> client(Duration.ofSeconds(5)).forecast(List.of(KIOSQUE), JOUR, JOUR, ZoneId.of("UTC")))
+        assertThatThrownBy(() -> client.forecast(places, JOUR, JOUR, utc))
                 .isInstanceOf(WeatherUnavailable.class)
                 .hasMessage("Le service météo a répondu 500.");
     }
@@ -114,27 +117,33 @@ class OpenMeteoClientTest {
     void aSlowServiceIsCut() {
         receiver.answer("/v1/forecast", new Script(200, daily(30, 20, 1), Map.of(), 3_000));
 
-        assertThatThrownBy(
-                        () -> client(Duration.ofMillis(500)).forecast(List.of(KIOSQUE), JOUR, JOUR, ZoneId.of("UTC")))
+        OpenMeteoClient client = client(Duration.ofMillis(500));
+        List<Coordinates> places = List.of(KIOSQUE);
+        ZoneId utc = ZoneId.of("UTC");
+
+        assertThatThrownBy(() -> client.forecast(places, JOUR, JOUR, utc))
                 .isInstanceOf(WeatherUnavailable.class)
                 .hasMessageContaining("n'a pas répondu");
     }
 
     @Test
     void anUnexpectedBodyIsUnavailable() {
+        OpenMeteoClient client = client(Duration.ofSeconds(5));
+        List<Coordinates> places = List.of(KIOSQUE);
+        ZoneId utc = ZoneId.of("UTC");
+
         receiver.answer("/v1/forecast", Script.json(200, "{\"error\":true}"));
-        assertThatThrownBy(() -> client(Duration.ofSeconds(5)).forecast(List.of(KIOSQUE), JOUR, JOUR, ZoneId.of("UTC")))
+        assertThatThrownBy(() -> client.forecast(places, JOUR, JOUR, utc))
                 .isInstanceOf(WeatherUnavailable.class)
                 .hasMessageContaining("inattendue");
 
         receiver.answer("/v1/forecast", Script.json(200, "pas du json"));
-        assertThatThrownBy(() -> client(Duration.ofSeconds(5)).forecast(List.of(KIOSQUE), JOUR, JOUR, ZoneId.of("UTC")))
-                .isInstanceOf(WeatherUnavailable.class);
+        assertThatThrownBy(() -> client.forecast(places, JOUR, JOUR, utc)).isInstanceOf(WeatherUnavailable.class);
 
         // Two places asked, one answered: the order would be a guess.
         receiver.answer("/v1/forecast", Script.json(200, "[" + daily(30, 20, 1) + "]"));
-        assertThatThrownBy(() ->
-                        client(Duration.ofSeconds(5)).forecast(List.of(KIOSQUE, CHATEAU), JOUR, JOUR, ZoneId.of("UTC")))
+        List<Coordinates> twoPlaces = List.of(KIOSQUE, CHATEAU);
+        assertThatThrownBy(() -> client.forecast(twoPlaces, JOUR, JOUR, utc))
                 .isInstanceOf(WeatherUnavailable.class)
                 .hasMessageContaining("inattendue");
     }
@@ -142,8 +151,11 @@ class OpenMeteoClientTest {
     @Test
     void aRedirectIsNotFollowed() {
         receiver.answer("/v1/forecast", new Script(302, "", Map.of("Location", receiver.url("/ailleurs")), 0));
+        OpenMeteoClient client = client(Duration.ofSeconds(5));
+        List<Coordinates> places = List.of(KIOSQUE);
+        ZoneId utc = ZoneId.of("UTC");
 
-        assertThatThrownBy(() -> client(Duration.ofSeconds(5)).forecast(List.of(KIOSQUE), JOUR, JOUR, ZoneId.of("UTC")))
+        assertThatThrownBy(() -> client.forecast(places, JOUR, JOUR, utc))
                 .isInstanceOf(WeatherUnavailable.class)
                 .hasMessage("Le service météo a répondu 302.");
         assertThat(receiver.receivedOn("/ailleurs")).isEmpty();

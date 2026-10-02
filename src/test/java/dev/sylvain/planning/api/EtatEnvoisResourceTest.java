@@ -103,7 +103,7 @@ class EtatEnvoisResourceTest {
         assertThat(path(alice, "version", "numero")).isEqualTo(1);
         // Chloé holds a seat and has no address: said, and never « envoyé ».
         Map<String, Object> chloe = ligne(etat, "ETAT-C");
-        assertThat(chloe.get("email")).isEqualTo(false);
+        assertThat(chloe).containsEntry("email", false);
         assertThat(path(chloe, "envoi", "statut")).isEqualTo("SANS_EMAIL");
     }
 
@@ -184,8 +184,7 @@ class EtatEnvoisResourceTest {
                 .extracting(entree -> entree.get("entiteId"))
                 .containsExactlyInAnyOrder("ETAT-A", "ETAT-B");
         assertThat(echecs).allSatisfy(entree -> {
-            assertThat(entree.get("entite")).isEqualTo("ANIMATEUR");
-            assertThat(entree.get("resultat")).isEqualTo("REFUS");
+            assertThat(entree).containsEntry("entite", "ANIMATEUR").containsEntry("resultat", "REFUS");
         });
 
         // A resend from Diffuser that bounces too is journalled the same way:
@@ -198,8 +197,7 @@ class EtatEnvoisResourceTest {
                 .statusCode(500);
         List<Map<String, Object>> afterResend = publicationFailuresJournalled();
         assertThat(afterResend).hasSize(echecs.size() + 1);
-        assertThat(afterResend.getFirst().get("entiteId")).isEqualTo("ETAT-A");
-        assertThat(afterResend.getFirst().get("resultat")).isEqualTo("REFUS");
+        assertThat(afterResend.getFirst()).containsEntry("entiteId", "ETAT-A").containsEntry("resultat", "REFUS");
     }
 
     /** The history's PUBLICATION_ECHEC lines, newest first. */
@@ -257,9 +255,8 @@ class EtatEnvoisResourceTest {
         assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).hasSize(1);
         assertThat(mailbox.getMailsSentTo(EMAIL_BRUNO)).isEmpty();
         JsonPath etat = etat();
-        assertThat(ligne(etat, "ETAT-B").get("aPrevenir")).isEqualTo(true);
-        assertThat(ligne(etat, "ETAT-B").get("differe")).isEqualTo(true);
-        assertThat(ligne(etat, "ETAT-A").get("aPrevenir")).isEqualTo(false);
+        assertThat(ligne(etat, "ETAT-B")).containsEntry("aPrevenir", true).containsEntry("differe", true);
+        assertThat(ligne(etat, "ETAT-A")).containsEntry("aPrevenir", false);
         // Aujourd'hui's « Prévenir les N personnes » counts the same people
         // Diffuser does: Bruno, deferred, although the plan now equals the
         // published one.
