@@ -15,6 +15,7 @@ import dev.sylvain.planning.service.NaturalOrder;
 import dev.sylvain.planning.service.WriteStamp;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -171,7 +172,7 @@ public class StandRepository {
     private void loadHoraires(Connection connection, Map<String, Stand> standsById) throws SQLException {
         Map<Long, HoraireStand> horairesById = new LinkedHashMap<>();
         try (PreparedStatement ps = scope.prepareScoped(connection, """
-                SELECT id, stand_id, mode, type_jours, jours_semaine, date_debut, date_fin, dates, motif
+                SELECT id, stand_id, mode, type_jours, jours_semaine, date_debut, date_fin, dates::text[] AS dates, motif
                 FROM stand_horaire
                 WHERE edition_id = ?
                 ORDER BY stand_id, id""");
@@ -188,7 +189,7 @@ public class StandRepository {
                 horaire.setJoursSemaine(splitCsv(rs.getString("jours_semaine"), DayOfWeek::valueOf));
                 horaire.setDateDebut(rs.getObject("date_debut", LocalDate.class));
                 horaire.setDateFin(rs.getObject("date_fin", LocalDate.class));
-                horaire.setDates(splitCsv(rs.getString("dates"), LocalDate::parse));
+                horaire.setDates(readDates(rs.getArray("dates")));
                 horaire.setMotif(rs.getString(COL_MOTIF));
                 stand.getHoraires().add(horaire);
                 horairesById.put(horaire.getId(), horaire);
@@ -216,7 +217,40 @@ public class StandRepository {
         }
     }
 
-    /** Reads back a comma-separated leaf column (see V37 on why these two aren't normalised). */
+    /**
+     * Reads back the {@code date[]} column (V122), selected as {@code text[]}
+     * so no element goes through the JVM's time zone; an empty set when it is
+     * {@code NULL}.
+     */
+    private static Set<LocalDate> readDates(Array array) throws SQLException {
+        if (array == null) {
+            return Set.of();
+        }
+        try {
+            Set<LocalDate> dates = new LinkedHashSet<>();
+            for (Object date : (Object[]) array.getArray()) {
+                dates.add(LocalDate.parse((String) date));
+            }
+            return dates;
+        } finally {
+            array.free();
+        }
+    }
+
+    /**
+     * Writes a set of dates as the {@code date[]} {@link #readDates} reads, or
+     * {@code null} when empty. Bound as ISO text: the driver's encoding of
+     * {@code java.sql.Date} goes through the JVM's time zone, ISO text does not.
+     */
+    private static Array dateArray(Connection connection, Collection<LocalDate> dates) throws SQLException {
+        if (dates == null || dates.isEmpty()) {
+            return null;
+        }
+        return connection.createArrayOf(
+                "date", dates.stream().sorted().map(LocalDate::toString).toArray(String[]::new));
+    }
+
+    /** Reads back the comma-separated weekdays column, which seven names at most keep in V37's text form. */
     private static <T> Set<T> splitCsv(String csv, Function<String, T> parse) {
         if (csv == null || csv.isBlank()) {
             return Set.of();
@@ -477,7 +511,7 @@ public class StandRepository {
                 ins.setString(5, joindreCsv(horaire.getJoursSemaine()));
                 ins.setObject(6, horaire.getDateDebut());
                 ins.setObject(7, horaire.getDateFin());
-                ins.setString(8, joindreCsv(horaire.getDates()));
+                ins.setArray(8, dateArray(connection, horaire.getDates()));
                 ins.setString(9, horaire.getMotif());
                 try (ResultSet rs = ins.executeQuery()) {
                     rs.next();
