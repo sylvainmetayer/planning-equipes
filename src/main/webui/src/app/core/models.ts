@@ -1072,6 +1072,12 @@ export interface ParametresQualite {
 }
 
 export interface HardMediumSoftScore {
+  /**
+   * The level Timefold 2.7 put above hard: negative only when declarative
+   * shadow variables loop, which this model has none of — so 0 here. Optional
+   * for the same reason as `feasible` below.
+   */
+  structuralScore?: number;
   hardScore: number;
   mediumScore: number;
   softScore: number;
