@@ -57,14 +57,16 @@ class McpKeyLockoutTest {
         // expired, or that sends requests in parallel, must not lock its
         // address out of the shared key.
         for (int i = 0; i < CEILING * 2; i++) {
-            given().header("X-Edition-Id", "E1").header("Authorization", "Bearer eyJhbGciOiJub25lIn0.eyJzdWIiOiJ4In0.signature")
+            given().header("X-Edition-Id", "E1")
+                    .header("Authorization", "Bearer eyJhbGciOiJub25lIn0.eyJzdWIiOiJ4In0.signature")
                     .when()
                     .post("/mcp")
                     .then()
                     .statusCode(401);
         }
 
-        given().header("X-Edition-Id", "E1").header("X-MCP-Api-Key", "mauvaise-cle")
+        given().header("X-Edition-Id", "E1")
+                .header("X-MCP-Api-Key", "mauvaise-cle")
                 .when()
                 .post("/mcp")
                 .then()

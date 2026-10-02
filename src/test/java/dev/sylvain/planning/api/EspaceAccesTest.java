@@ -29,7 +29,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * The espace animateur behind Keycloak (ADR 0071): the link alone is not
+ * The espace animateur behind Keycloak (ADR 0075): the link alone is not
  * enough, a Keycloak session carrying the {@code animateur} role and the
  * <b>verified</b> address of the fiche the link designates opens it. The
  * tokens are signed by the in-memory OIDC server, so the guard under test is
@@ -87,7 +87,8 @@ class EspaceAccesTest {
                 .then()
                 .statusCode(401)
                 .body("message", containsString("connectez-vous"));
-        given().header("X-Edition-Id", "E1").when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/espace-animateur/" + token + "/demandes")
                 .then()
                 .statusCode(401);
@@ -114,13 +115,15 @@ class EspaceAccesTest {
         String token = tokenOf("ACCES-A");
         String session = EspaceSessions.open(EMAIL_ALICE);
 
-        given().header("X-Edition-Id", "E1").header(EspaceSessions.EN_TETE, session)
+        given().header("X-Edition-Id", "E1")
+                .header(EspaceSessions.EN_TETE, session)
                 .when()
                 .get("/api/espace-animateur/" + token)
                 .then()
                 .statusCode(200)
                 .body("animateurId", equalTo("ACCES-A"));
-        given().header("X-Edition-Id", "E1").header(EspaceSessions.EN_TETE, session)
+        given().header("X-Edition-Id", "E1")
+                .header(EspaceSessions.EN_TETE, session)
                 .when()
                 .get("/api/espace-animateur/" + token + "/planning.pdf")
                 .then()
@@ -144,7 +147,8 @@ class EspaceAccesTest {
      */
     @Test
     void laSessionDUnAnimateurNOuvrePasLEspaceDUnAutre() {
-        given().header("X-Edition-Id", "E1").header(EspaceSessions.EN_TETE, EspaceSessions.open(EMAIL_ALICE))
+        given().header("X-Edition-Id", "E1")
+                .header(EspaceSessions.EN_TETE, EspaceSessions.open(EMAIL_ALICE))
                 .when()
                 .get("/api/espace-animateur/" + tokenOf("ACCES-B"))
                 .then()
@@ -186,7 +190,8 @@ class EspaceAccesTest {
     void unCompteDesactiveNOuvrePlusLEspace() {
         String token = tokenOf("ACCES-A");
         String session = EspaceSessions.open(EMAIL_ALICE);
-        given().header("X-Edition-Id", "E1").header(EspaceSessions.EN_TETE, session)
+        given().header("X-Edition-Id", "E1")
+                .header(EspaceSessions.EN_TETE, session)
                 .when()
                 .get("/api/espace-animateur/" + token)
                 .then()
@@ -218,7 +223,8 @@ class EspaceAccesTest {
                 .post("/api/espace-animateur/" + token + "/code")
                 .then()
                 .statusCode(404);
-        given().header("X-Edition-Id", "E1").contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"code\":\"123456\"}")
                 .when()
                 .post("/api/espace-animateur/" + token + "/session")
@@ -252,7 +258,8 @@ class EspaceAccesTest {
         String session = EspaceSessions.open(EMAIL_ALICE);
         clearJournal("TELECHARGEMENT_ESPACE_PDF");
 
-        given().header("X-Edition-Id", "E1").header(EspaceSessions.EN_TETE, session)
+        given().header("X-Edition-Id", "E1")
+                .header(EspaceSessions.EN_TETE, session)
                 .when()
                 .get("/api/espace-animateur/" + token + "/planning.pdf")
                 .then()
