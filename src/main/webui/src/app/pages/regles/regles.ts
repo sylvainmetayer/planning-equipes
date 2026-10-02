@@ -218,7 +218,10 @@ export const SEUILS: Readonly<Record<string, SeuilDescriptor>> = {
 };
 
 /** A record of settings as the page holds it: the stored one, or the changes typed over it. */
-export type SettingsRecord = Readonly<Record<string, string | number | null | undefined>>;
+/** One setting as typed or stored: a text, a figure, or nothing yet. */
+type SettingValue = string | number | null | undefined;
+
+export type SettingsRecord = Readonly<Record<string, SettingValue>>;
 
 /**
  * What a field shows: the typed value when there is one, the stored one
@@ -272,12 +275,9 @@ export function hasChanges(stored: SettingsRecord | null, draft: SettingsRecord)
   return Object.entries(draft).some(([field, value]) => !sameValue(stored?.[field], value));
 }
 
-function sameValue(
-  a: string | number | null | undefined,
-  b: string | number | null | undefined,
-): boolean {
+function sameValue(a: SettingValue, b: SettingValue): boolean {
   // `HH:mm:ss` from the server, `HH:mm` from a time input: the same time.
-  const normalise = (value: string | number | null | undefined): string => {
+  const normalise = (value: SettingValue): string => {
     const text = value === null || value === undefined ? '' : String(value);
     return /^\d{2}:\d{2}:\d{2}$/.test(text) ? text.slice(0, 5) : text;
   };

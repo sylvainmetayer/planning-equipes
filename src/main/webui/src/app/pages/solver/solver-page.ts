@@ -632,10 +632,10 @@ export class SolverPage implements OnInit {
    * referential as it is saved, and would silently go without it. Nothing
    * unsaved, nothing asked: the button behaves as it always did.
    */
-  private async confirmUnsavedEntries(): Promise<boolean> {
+  private confirmUnsavedEntries(): Promise<boolean> {
     const entries = this.modifiedForms.unsavedEntries();
     if (entries.length === 0) {
-      return true;
+      return Promise.resolve(true);
     }
     return this.confirm.ask({
       title: $localize`:@@solver.saisies.confirm.title:Calculer sans la saisie en cours ?`,

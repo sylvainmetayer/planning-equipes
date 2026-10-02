@@ -18,10 +18,10 @@
 </mat-button-toggle-group>
 
 @if (relance(); as mode) {
-  <div class="consignes-solveur-relancer" role="status">
+  <output class="consignes-solveur-relancer">
     <span i18n="@@consignesSolveur.relancer">Le prochain calcul en tiendra compte.</span>
     <app-relancer-calcul [mode]="mode" />
-  </div>
+  </output>
 }
 
 @switch (onglet()) {

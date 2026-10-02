@@ -254,23 +254,10 @@ export function openingsByCreneau(rapport: RapportOuvertures): Map<number, Ouver
   const perCreneau = new Map<number, { stands: Set<string>; postes: number }>();
   for (const ligne of rapport.stands) {
     for (const jour of ligne.jours) {
-      const cellsByCreneau = new Map<number, CelluleCreneauOuverture[]>();
-      for (const cellule of jour.creneaux) {
-        if (cellule.segments.length > 0) {
-          cellsByCreneau.set(cellule.creneauId, [
-            ...(cellsByCreneau.get(cellule.creneauId) ?? []),
-            cellule,
-          ]);
-        }
-      }
-      for (const [creneauId, cells] of cellsByCreneau) {
+      for (const [creneauId, cells] of openCellsByCreneau(jour.creneaux)) {
         const entry = perCreneau.get(creneauId) ?? { stands: new Set<string>(), postes: 0 };
         entry.stands.add(ligne.standId);
-        const halved = relays.get(creneauId) ?? false;
-        for (const effectif of joinedSegments(cells)) {
-          const seats = Math.max(1, effectif);
-          entry.postes += halved ? Math.ceil(seats / 2) : seats;
-        }
+        entry.postes += seatsOf(cells, relays.get(creneauId) ?? false);
         perCreneau.set(creneauId, entry);
       }
     }
@@ -278,6 +265,32 @@ export function openingsByCreneau(rapport: RapportOuvertures): Map<number, Ouver
   return new Map(
     [...perCreneau].map(([id, entry]) => [id, { stands: entry.stands.size, postes: entry.postes }]),
   );
+}
+
+/** One stand's cells of one day that open something, grouped by timeslot. */
+function openCellsByCreneau(
+  cellules: readonly CelluleCreneauOuverture[],
+): Map<number, CelluleCreneauOuverture[]> {
+  const cellsByCreneau = new Map<number, CelluleCreneauOuverture[]>();
+  for (const cellule of cellules) {
+    if (cellule.segments.length > 0) {
+      cellsByCreneau.set(cellule.creneauId, [
+        ...(cellsByCreneau.get(cellule.creneauId) ?? []),
+        cellule,
+      ]);
+    }
+  }
+  return cellsByCreneau;
+}
+
+/** The seats one stand asks on one timeslot: at least one per segment, halved on a meal relay. */
+function seatsOf(cells: readonly CelluleCreneauOuverture[], halved: boolean): number {
+  let postes = 0;
+  for (const effectif of joinedSegments(cells)) {
+    const seats = Math.max(1, effectif);
+    postes += halved ? Math.ceil(seats / 2) : seats;
+  }
+  return postes;
 }
 
 /**

@@ -249,9 +249,9 @@ export class StandFichePage {
   }
 
   /** Unsaved cells in the grid would vanish with the page: asked first. */
-  async canLeave(): Promise<boolean> {
+  canLeave(): Promise<boolean> {
     if (!this.grid()?.modified()) {
-      return true;
+      return Promise.resolve(true);
     }
     return this.confirm.ask({
       title: $localize`:@@standFiche.quitter.titre:Abandonner les cases modifiées ?`,

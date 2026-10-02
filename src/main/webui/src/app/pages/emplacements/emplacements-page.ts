@@ -1,7 +1,9 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  OnInit,
   ViewEncapsulation,
+  WritableSignal,
   computed,
   inject,
   signal,
@@ -86,7 +88,7 @@ const SEUIL_ELOIGNEMENT_METRES = 300;
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
+export class EmplacementsPage extends ReferenceTablePage<Emplacement> implements OnInit {
   private readonly gel = injectGelReferentiel();
   /** Creating or deleting a typologie or an emplacement is what a TYPOLOGIES_EMPLACEMENTS freeze refuses (ADR 0052). */
   protected readonly creationLocked = computed(
@@ -139,6 +141,10 @@ export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
 
   /** The template names the rows after the entity, as the other pages do. */
   protected readonly emplacementsFiltres = this.lignesFiltrees;
+
+  private readonly constraintsApi = inject(ConstraintsApi);
+  /** The walking settings the detail reads, filled by `ngOnInit`. */
+  private readonly walking: WritableSignal<WalkingSettings>;
 
   constructor() {
     // The address bar as it is now, not the router's snapshot: this tab is
@@ -242,17 +248,22 @@ export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
     // A link naming a place (the stand fiche's location) lands filtered on it.
     this.filtre.set(params.get('q') ?? '');
     this.sort.set(readSort(params));
-    const constraintsApi = inject(ConstraintsApi);
-    void (async () => {
-      try {
-        const settings = await constraintsApi.qualityParameters();
-        if (settings) {
-          walking.set(settings);
-        }
-      } catch {
-        // The defaults stay: a walking time slightly off beats no walking time.
+    this.walking = walking;
+  }
+
+  ngOnInit(): void {
+    void this.loadWalkingSettings();
+  }
+
+  private async loadWalkingSettings(): Promise<void> {
+    try {
+      const settings = await this.constraintsApi.qualityParameters();
+      if (settings) {
+        this.walking.set(settings);
       }
-    })();
+    } catch {
+      // The defaults stay: a walking time slightly off beats no walking time.
+    }
   }
 
   /** Bumped when a dragged marker's position could not be saved: the map lays it back. */

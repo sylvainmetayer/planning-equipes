@@ -165,9 +165,9 @@ export function loadByEmplacement(
     });
   });
   const charges = Array.from(lieux.values());
-  charges.forEach((charge) =>
-    charge.parStand.sort((left, right) => left.nom.localeCompare(right.nom)),
-  );
+  for (const charge of charges) {
+    charge.parStand.sort((left, right) => left.nom.localeCompare(right.nom));
+  }
   return charges.sort(
     (left, right) =>
       Number(left.emplacementId === null) - Number(right.emplacementId === null) ||
@@ -213,8 +213,8 @@ export function grilleCharge(
     if (charges.every((charge) => charge.sieges === 0)) {
       return;
     }
-    const precedente = colonnes[colonnes.length - 1];
-    if (precedente && precedente.fin === debut && memesCharges(precedente.charges, charges)) {
+    const precedente = colonnes.at(-1);
+    if (precedente?.fin === debut && memesCharges(precedente.charges, charges)) {
       precedente.fin = fin;
       return;
     }

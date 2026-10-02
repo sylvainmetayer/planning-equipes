@@ -4,6 +4,7 @@ import {
   Component,
   ElementRef,
   Injector,
+  OnInit,
   ViewEncapsulation,
   afterNextRender,
   computed,
@@ -166,7 +167,7 @@ interface FreedSeatLine {
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AnimateurFichePage {
+export class AnimateurFichePage implements OnInit {
   private readonly animateursApi = inject(AnimateursApi);
   private readonly planningApi = inject(PlanningApi);
   private readonly postesApi = inject(PostesApi);
@@ -441,22 +442,6 @@ export class AnimateurFichePage {
   protected readonly seatLabel = seatLabel;
 
   constructor() {
-    // The game categories name the appreciations, the roster orders
-    // « précédent / suivant » — the minors on the edition's first day, read
-    // from its timeslots: read once if no page has yet.
-    if (
-      this.store.typologies().length === 0 ||
-      this.store.animateurs().length === 0 ||
-      this.store.creneaux().length === 0
-    ) {
-      void this.store.reload(['typologies', 'animateurs', 'creneaux']).catch(() => undefined);
-    }
-    if (needsConfirmations(this.rosterView)) {
-      void this.loadRosterConfirmations();
-    }
-    if (needsSeats(this.rosterView)) {
-      void this.loadRosterSeats();
-    }
     // The radar's view is this page's to write; the list's view and the
     // section named on arrival are left as they came.
     keepViewInQueryParams(() => ({
@@ -480,6 +465,25 @@ export class AnimateurFichePage {
           watch.destroy();
         }
       });
+    }
+  }
+
+  ngOnInit(): void {
+    // The game categories name the appreciations, the roster orders
+    // « précédent / suivant » — the minors on the edition's first day, read
+    // from its timeslots: read once if no page has yet.
+    if (
+      this.store.typologies().length === 0 ||
+      this.store.animateurs().length === 0 ||
+      this.store.creneaux().length === 0
+    ) {
+      void this.store.reload(['typologies', 'animateurs', 'creneaux']).catch(() => undefined);
+    }
+    if (needsConfirmations(this.rosterView)) {
+      void this.loadRosterConfirmations();
+    }
+    if (needsSeats(this.rosterView)) {
+      void this.loadRosterSeats();
     }
   }
 

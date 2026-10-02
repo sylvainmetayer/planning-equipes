@@ -166,7 +166,12 @@ button.fiche-jour:hover {
   min-width: 0;
 }
 
+/* A <fieldset> naming the group of checkboxes, without its user-agent box. */
 .fiche-radar-options {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
   display: flex;
   flex-wrap: wrap;
   align-items: center;

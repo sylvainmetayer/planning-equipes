@@ -190,7 +190,7 @@ describe('construireProblemes', () => {
       ],
     };
 
-    const problemes = construireProblemes(null, [], [], pauses);
+    const problemes = construireProblemes(null, [], { pauses });
 
     expect(problemes).toHaveLength(1);
     expect(problemes[0].niveau).toBe('AVERTISSEMENT');
@@ -201,8 +201,10 @@ describe('construireProblemes', () => {
     expect(problemes[0].liens).toEqual([
       { route: '/journee', queryParams: { vue: 'pauses' }, libelle: 'Voir les pauses' },
     ]);
-    expect(construireProblemes(null, [], [], { ...pauses, relaisManquants: 0 })).toEqual([]);
-    expect(construireProblemes(null, [], [], null)).toEqual([]);
+    expect(construireProblemes(null, [], { pauses: { ...pauses, relaisManquants: 0 } })).toEqual(
+      [],
+    );
+    expect(construireProblemes(null, [])).toEqual([]);
   });
 
   it('keeps the server ranking of two causes of the same severity', () => {
@@ -226,13 +228,9 @@ describe('construireProblemes', () => {
 
   it('names the stands of a cause by their name, an unknown id kept as-is', () => {
     const noms = new Map([['S1', 'Tir à l’arc']]);
-    const [probleme] = construireProblemes(
-      report([cause({ standIds: ['S1', 'S9'] })]),
-      [],
-      [],
-      null,
-      noms,
-    );
+    const [probleme] = construireProblemes(report([cause({ standIds: ['S1', 'S9'] })]), [], {
+      nomsStands: noms,
+    });
     expect(probleme.details[1]).toContain('Tir à l’arc, S9');
     const stands = probleme.liens.filter((lien) => lien.route === '/stands');
     expect(stands.map((lien) => [lien.libelle, lien.queryParams?.['edit']])).toEqual([
@@ -381,10 +379,12 @@ describe('construireProblemes', () => {
     const [probleme] = construireProblemes(
       null,
       [contrainte({ name: 'affectationForcee', violations: ['P1'] })],
-      [
-        contribution({ contrainteId: 'C1', violations: 3 }),
-        contribution({ contrainteId: 'C2', violations: 1 }),
-      ],
+      {
+        contraintesAdHocEnCause: [
+          contribution({ contrainteId: 'C1', violations: 3 }),
+          contribution({ contrainteId: 'C2', violations: 1 }),
+        ],
+      },
     );
 
     expect(probleme.details[0]).toContain('C1 (3)');
@@ -395,11 +395,11 @@ describe('construireProblemes', () => {
   });
 
   it('leaves a rule no ad hoc exception contributed to untouched', () => {
-    const [probleme] = construireProblemes(
-      null,
-      [contrainte({ name: 'dureeHebdomadaireMax' })],
-      [contribution({ contrainteId: 'C1', contraintes: ['affectationForcee'] })],
-    );
+    const [probleme] = construireProblemes(null, [contrainte({ name: 'dureeHebdomadaireMax' })], {
+      contraintesAdHocEnCause: [
+        contribution({ contrainteId: 'C1', contraintes: ['affectationForcee'] }),
+      ],
+    });
 
     expect(probleme.details).toEqual(['Alice : 52 h semaine 2026-W28']);
     expect(probleme.liens.map((lien) => lien.route)).toEqual(['/regles']);
@@ -439,31 +439,29 @@ describe('construireProblemes', () => {
           ],
         }),
       ],
-      [],
-      null,
-      new Map([
-        ['S7', 'Stand 07'],
-        ['S33', 'Stand 33'],
-      ]),
-      new Map([
-        ['a1', 'Hugo T.'],
-        ['a2', 'Lina F.'],
-        ['a3', 'Zoé A.'],
-        ['a4', 'Marc L.'],
-      ]),
-      null,
-      null,
       {
-        pivot: [
-          { contrainte: 'standComplexeAvecReferent', axe: 'ANIMATEUR', cle: 'a2', ecarts: 1 },
-          { contrainte: 'standComplexeAvecReferent', axe: 'ANIMATEUR', cle: 'a1', ecarts: 4 },
-          { contrainte: 'standComplexeAvecReferent', axe: 'ANIMATEUR', cle: 'a3', ecarts: 1 },
-          { contrainte: 'standComplexeAvecReferent', axe: 'ANIMATEUR', cle: 'a4', ecarts: 1 },
-          { contrainte: 'autreRegle', axe: 'ANIMATEUR', cle: 'a9', ecarts: 9 },
-        ],
-        creneaux: new Map([
-          [12, { date: '2026-07-10', heureDebut: '18:00:00', heureFin: '22:00:00' }],
+        nomsStands: new Map([
+          ['S7', 'Stand 07'],
+          ['S33', 'Stand 33'],
         ]),
+        nomsAnimateurs: new Map([
+          ['a1', 'Hugo T.'],
+          ['a2', 'Lina F.'],
+          ['a3', 'Zoé A.'],
+          ['a4', 'Marc L.'],
+        ]),
+        lieux: {
+          pivot: [
+            { contrainte: 'standComplexeAvecReferent', axe: 'ANIMATEUR', cle: 'a2', ecarts: 1 },
+            { contrainte: 'standComplexeAvecReferent', axe: 'ANIMATEUR', cle: 'a1', ecarts: 4 },
+            { contrainte: 'standComplexeAvecReferent', axe: 'ANIMATEUR', cle: 'a3', ecarts: 1 },
+            { contrainte: 'standComplexeAvecReferent', axe: 'ANIMATEUR', cle: 'a4', ecarts: 1 },
+            { contrainte: 'autreRegle', axe: 'ANIMATEUR', cle: 'a9', ecarts: 9 },
+          ],
+          creneaux: new Map([
+            [12, { date: '2026-07-10', heureDebut: '18:00:00', heureFin: '22:00:00' }],
+          ]),
+        },
       },
     );
 
@@ -491,13 +489,9 @@ describe('construireProblemes', () => {
     const [probleme] = construireProblemes(
       null,
       [contrainte({ name: 'equilibrerCharge', niveau: 'MEDIUM', violations: [] })],
-      [],
-      null,
-      new Map(),
-      new Map(),
-      null,
-      null,
-      { pivot: [{ contrainte: 'equilibrerCharge', axe: 'STAND', cle: 'S1', ecarts: 2 }] },
+      {
+        lieux: { pivot: [{ contrainte: 'equilibrerCharge', axe: 'STAND', cle: 'S1', ecarts: 2 }] },
+      },
     );
 
     expect(probleme.ou).toEqual([
@@ -655,26 +649,30 @@ describe('construireProblemes — tight walks', () => {
       ['S2', 'Buvette'],
     ]);
     const nomsAnimateurs = new Map([['a1', 'Ines Martin']]);
-    const problemes = construireProblemes(null, [], [], null, nomsStands, nomsAnimateurs, {
-      walkingSpeedKmH: 4,
-      detourFactor: 1.3,
-      toleranceMinutes: 5,
-      geolocated: true,
-      walks: [
-        {
-          animateurId: 'a1',
-          date: '2026-08-01',
-          fromStandId: 'S1',
-          toStandId: 'S2',
-          end: '14:00:00',
-          start: '14:10:00',
-          distanceMetres: 1000,
-          walkMinutes: 20,
-          gapMinutes: 10,
-          missingMinutes: 5,
-          walkOnBreak: false,
-        },
-      ],
+    const problemes = construireProblemes(null, [], {
+      nomsStands,
+      nomsAnimateurs,
+      walks: {
+        walkingSpeedKmH: 4,
+        detourFactor: 1.3,
+        toleranceMinutes: 5,
+        geolocated: true,
+        walks: [
+          {
+            animateurId: 'a1',
+            date: '2026-08-01',
+            fromStandId: 'S1',
+            toStandId: 'S2',
+            end: '14:00:00',
+            start: '14:10:00',
+            distanceMetres: 1000,
+            walkMinutes: 20,
+            gapMinutes: 10,
+            missingMinutes: 5,
+            walkOnBreak: false,
+          },
+        ],
+      },
     });
 
     expect(problemes).toHaveLength(1);
@@ -709,12 +707,14 @@ describe('construireProblemes — tight walks', () => {
       missingMinutes: 5,
       walkOnBreak: false,
     });
-    const [probleme] = construireProblemes(null, [], [], null, new Map(), new Map(), {
-      walkingSpeedKmH: 4,
-      detourFactor: 1.3,
-      toleranceMinutes: 5,
-      geolocated: true,
-      walks: [walk('a1', 'S2', 7), walk('a2', 'S3', 9), walk('a2', 'S3', 9), walk('a3', 'S3', 9)],
+    const [probleme] = construireProblemes(null, [], {
+      walks: {
+        walkingSpeedKmH: 4,
+        detourFactor: 1.3,
+        toleranceMinutes: 5,
+        geolocated: true,
+        walks: [walk('a1', 'S2', 7), walk('a2', 'S3', 9), walk('a2', 'S3', 9), walk('a3', 'S3', 9)],
+      },
     });
 
     expect(probleme.ou.map((lieu) => lieu.queryParams)).toEqual([
@@ -730,12 +730,14 @@ describe('construireProblemes — tight walks', () => {
 
   it('adds nothing when no walk is tight', () => {
     expect(
-      construireProblemes(null, [], [], null, new Map(), new Map(), {
-        walkingSpeedKmH: 4,
-        detourFactor: 1.3,
-        toleranceMinutes: 5,
-        geolocated: false,
-        walks: [],
+      construireProblemes(null, [], {
+        walks: {
+          walkingSpeedKmH: 4,
+          detourFactor: 1.3,
+          toleranceMinutes: 5,
+          geolocated: false,
+          walks: [],
+        },
       }),
     ).toEqual([]);
   });
@@ -747,35 +749,38 @@ describe('construireProblemes — covoiturages', () => {
       ['a1', 'Ines Martin'],
       ['a2', 'Oscar Petit'],
     ]);
-    const problemes = construireProblemes(null, [], [], null, new Map(), nomsAnimateurs, null, {
-      toleranceMinutes: 30,
-      groups: [
-        {
-          contrainteId: 'G1',
-          animateurIds: ['a1', 'a2'],
-          misalignedDays: 1,
-          days: [
-            {
-              date: '2026-08-01',
-              aligned: false,
-              working: ['a1'],
-              absent: ['a2'],
-              arrivalSpreadMinutes: 0,
-              departureSpreadMinutes: 0,
-              hours: [],
-            },
-            {
-              date: '2026-08-02',
-              aligned: true,
-              working: ['a1', 'a2'],
-              absent: [],
-              arrivalSpreadMinutes: 10,
-              departureSpreadMinutes: 0,
-              hours: [],
-            },
-          ],
-        },
-      ],
+    const problemes = construireProblemes(null, [], {
+      nomsAnimateurs,
+      groupedArrivals: {
+        toleranceMinutes: 30,
+        groups: [
+          {
+            contrainteId: 'G1',
+            animateurIds: ['a1', 'a2'],
+            misalignedDays: 1,
+            days: [
+              {
+                date: '2026-08-01',
+                aligned: false,
+                working: ['a1'],
+                absent: ['a2'],
+                arrivalSpreadMinutes: 0,
+                departureSpreadMinutes: 0,
+                hours: [],
+              },
+              {
+                date: '2026-08-02',
+                aligned: true,
+                working: ['a1', 'a2'],
+                absent: [],
+                arrivalSpreadMinutes: 10,
+                departureSpreadMinutes: 0,
+                hours: [],
+              },
+            ],
+          },
+        ],
+      },
     });
 
     expect(problemes).toHaveLength(1);

@@ -40,7 +40,7 @@ import { VoirPlanningButton } from '../../shared/voir-planning-button';
 import { MessagesRecents } from './messages-recents';
 
 /** The two places of this page an address may name, the bell's and the night alerts'. */
-const ANCHORS = ['a-traiter', 'alertes-nuit'];
+const ANCHORS = new Set(['a-traiter', 'alertes-nuit']);
 
 /**
  * « État de l'édition », the home screen (issue #485): the cycle of the
@@ -168,7 +168,7 @@ export class AccueilPage {
     // does, once what it names is drawn.
     effect(() => {
       const anchor = this.fragment();
-      if (anchor && ANCHORS.includes(anchor)) {
+      if (anchor && ANCHORS.has(anchor)) {
         afterNextRender(() => this.scrollTo(anchor), { injector: this.injector });
       }
     });

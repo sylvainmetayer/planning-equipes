@@ -259,7 +259,7 @@ export class RepartitionHeuresView {
     effect((onCleanup) => {
       const box = this.treemapBox()?.nativeElement;
       const view = this.document.defaultView;
-      if (!box || !view || typeof view.ResizeObserver === 'undefined') {
+      if (!box || view?.ResizeObserver === undefined) {
         return;
       }
       const observer = new view.ResizeObserver((entries) => {
@@ -275,8 +275,7 @@ export class RepartitionHeuresView {
         const current = this.measured();
         const next = { width, height, rem: rem > 0 ? rem : 16 };
         if (
-          !current ||
-          current.width !== next.width ||
+          current?.width !== next.width ||
           current.height !== next.height ||
           current.rem !== next.rem
         ) {

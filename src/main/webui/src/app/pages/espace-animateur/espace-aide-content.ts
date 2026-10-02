@@ -43,10 +43,9 @@ export interface EspaceAideOptions {
  * `main.ts` has loaded the translation catalog, which happens after this
  * module is imported. Same reasoning as `buildHelpSections()` next door.
  */
-export function buildEspaceAideSections(
-  options: EspaceAideOptions = { signalementsActifs: true },
-): EspaceAideSection[] {
-  const signalements = options.signalementsActifs;
+export function buildEspaceAideSections(options?: EspaceAideOptions): EspaceAideSection[] {
+  // Without options, the gesture is offered: the default of Paramètres › Édition.
+  const signalements = options?.signalementsActifs ?? true;
   const sections: (EspaceAideSection | null)[] = [
     {
       id: 'mon-espace',

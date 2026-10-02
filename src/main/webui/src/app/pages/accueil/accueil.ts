@@ -580,7 +580,11 @@ function formatDate(iso: string | null): string {
  * absence, not as one more green block.
  */
 export function buildToday(etat: EtatEdition): TodayItem[] {
-  const bloc = etat.aTraiter;
+  return [...requestItems(etat.aTraiter), ...failureItems(etat.aTraiter)];
+}
+
+/** What waits on the organiser: declarations, swaps, days to read, the silent, a stale solve. */
+function requestItems(bloc: EtatEdition['aTraiter']): TodayItem[] {
   const items: TodayItem[] = [];
   if (bloc.declarationsEnAttente > 0) {
     const count = bloc.declarationsEnAttente;
@@ -663,6 +667,12 @@ export function buildToday(etat: EtatEdition): TodayItem[] {
       },
     });
   }
+  return items;
+}
+
+/** What failed or did not leave: the backup, the night's sends, then who to warn. */
+function failureItems(bloc: EtatEdition['aTraiter']): TodayItem[] {
+  const items: TodayItem[] = [];
   if (bloc.sauvegardeEnEchec) {
     const quand = formatInstant(bloc.sauvegardeEchecLe);
     items.push({

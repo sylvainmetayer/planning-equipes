@@ -336,29 +336,29 @@ export function buildRailJours(
   return Array.from(jours.entries())
     .sort((left, right) => left[0] - right[0])
     .map(([jour, contenu]) =>
-      buildRailJour(
-        jour,
-        contenu,
+      buildRailJour(jour, contenu, {
         indexPauses,
         walksIndex,
         groupsByMember,
         contraintes,
-        effectif,
+        animateurs: effectif,
         noms,
-      ),
+      }),
     );
 }
 
-function buildRailJour(
-  jour: number,
-  contenu: ContenuJour,
-  indexPauses: IndexPauses,
-  walksIndex: WalksIndex,
-  groupsByMember: Map<string, GroupView[]>,
-  contraintes: ContrainteAdHoc[],
-  animateurs: Animateur[],
-  noms: Map<string, string>,
-): RailJour {
+/** What every day of the rail reads besides its own seats: the event-wide indexes. */
+interface RailSources {
+  indexPauses: IndexPauses;
+  walksIndex: WalksIndex;
+  groupsByMember: Map<string, GroupView[]>;
+  contraintes: ContrainteAdHoc[];
+  animateurs: Animateur[];
+  noms: Map<string, string>;
+}
+
+function buildRailJour(jour: number, contenu: ContenuJour, sources: RailSources): RailJour {
+  const { indexPauses, walksIndex, groupsByMember, contraintes, animateurs, noms } = sources;
   const { date, spans: spansDuJour, spansParAnimateur } = contenu;
   const premier = spansDuJour.reduce(
     (tot, span) => (span.debutMinutes < tot.debutMinutes ? span : tot),
@@ -400,9 +400,11 @@ function buildRailJour(
         spansParAnimateur.get(animateur.id) ?? [],
         merge(blocages.get(animateur.id) ?? []),
         echelle,
-        pausesDe(indexPauses, date, animateur.id),
-        walksOf(walksIndex, date, animateur.id),
-        carpoolOn(groupsByMember.get(animateur.id) ?? [], animateur.id, date, noms),
+        {
+          pausesDuJour: pausesDe(indexPauses, date, animateur.id),
+          walks: walksOf(walksIndex, date, animateur.id),
+          covoiturage: carpoolOn(groupsByMember.get(animateur.id) ?? [], animateur.id, date, noms),
+        },
       ),
     )
     .sort((left, right) => left.nom.localeCompare(right.nom));
@@ -420,6 +422,13 @@ function buildRailJour(
   };
 }
 
+/** One person's day besides their seats: the breaks due, the walks, the shared ride. */
+interface RailLigneExtras {
+  pausesDuJour: PauseDueView[];
+  walks: WalkView[];
+  covoiturage: RailCovoiturage | null;
+}
+
 function buildRailLigne(
   animateur: Animateur,
   nom: string,
@@ -427,10 +436,9 @@ function buildRailLigne(
   spans: Span[],
   fenetresBloquees: Fenetre[],
   echelle: Echelle,
-  pausesDuJour: PauseDueView[] = [],
-  walks: WalkView[] = [],
-  covoiturage: RailCovoiturage | null = null,
+  extras: RailLigneExtras,
 ): RailLigne {
+  const { pausesDuJour, walks, covoiturage } = extras;
   const { debutMinutes, amplitude } = echelle;
   const pauses = segmentsPause(pausesDuJour, debutMinutes, amplitude);
   const blocages: RailBlocage[] = fenetresBloquees.map((fenetre) => ({

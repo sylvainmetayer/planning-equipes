@@ -93,7 +93,8 @@ export function pasteToCsv(text: string): string {
     rows.pop();
   }
   return (
-    rows.map((cells) => cells.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(';')).join('\n') +
-    '\n'
+    rows
+      .map((cells) => cells.map((cell) => `"${cell.replaceAll('"', '""')}"`).join(';'))
+      .join('\n') + '\n'
   );
 }

@@ -661,11 +661,7 @@ export class JourneePage implements OnInit {
       densite: this.densiteParam(),
       portee: this.gridSpanParam(),
       ...sortQueryParams(this.shownPersonSort()),
-      colonnes:
-        this.axe() === 'personne' && this.personView() === 'synthese' && this.allColumns()
-          ? 'toutes'
-          : null,
-      sansRepos: this.axe() === 'personne' && this.noRestOnly() ? '1' : null,
+      ...this.personAxisParams(),
       q: optionalParam(this.filtre()),
       stand: optionalParam(this.stand()),
       animateur: optionalParam(this.animateur()),
@@ -692,6 +688,15 @@ export class JourneePage implements OnInit {
 
   ngOnInit(): void {
     void this.refresh();
+  }
+
+  /** The keys only « Par personne » writes: every column of the synthesis, the people without rest. */
+  private personAxisParams(): { colonnes: string | null; sansRepos: string | null } {
+    const personne = this.axe() === 'personne';
+    return {
+      colonnes: personne && this.personView() === 'synthese' && this.allColumns() ? 'toutes' : null,
+      sansRepos: personne && this.noRestOnly() ? '1' : null,
+    };
   }
 
   /** « Comparer avec… »: opens the second selector on the likeliest twin of the day on screen. */

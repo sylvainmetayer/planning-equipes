@@ -204,9 +204,9 @@ function extremes(): Record<number, string> {
 
 /** `gamme-05-2j-4stands-8animateurs-mineurs.yaml` → its number and, when the name carries it, its size. */
 function readNumbered(name: string, prefix: string): { rang: number; size: string | null } | null {
-  const match = new RegExp(`^${prefix}-(\\d+)(?:-(\\d+)j-(\\d+)stands-(\\d+)animateurs)?`).exec(
-    name,
-  );
+  const match = new RegExp(
+    String.raw`^${prefix}-(\d+)(?:-(\d+)j-(\d+)stands-(\d+)animateurs)?`,
+  ).exec(name);
   if (!match) {
     return null;
   }

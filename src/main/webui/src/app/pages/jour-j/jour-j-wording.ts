@@ -89,42 +89,50 @@ export interface DayCounters {
   aPrevenir: string;
 }
 
+/** The wording of a count: none, one, or more — each built only when it is the one said. */
+function byCount(count: number, none: () => string, one: () => string, many: () => string): string {
+  if (count === 0) {
+    return none();
+  }
+  return count === 1 ? one() : many();
+}
+
 /** « 3 absents », « 1 place vide nouvelle »…: singular and plural said whole, never « (s) ». */
 export function dayCounters(etat: EtatJourJ, nouvelles: number, connues: number): DayCounters {
   const missing = etat.absences.length;
   const echanges = etat.echangesAArbitrer;
   const aPrevenir = etat.aPrevenir.length;
   return {
-    missing:
-      missing === 0
-        ? $localize`:@@aujourdhui.compteur.absents.aucun:Aucun absent`
-        : missing === 1
-          ? $localize`:@@aujourdhui.compteur.absents.un:1 absent`
-          : $localize`:@@aujourdhui.compteur.absents:${missing}:count: absents`,
-    nouvelles:
-      nouvelles === 0
-        ? $localize`:@@aujourdhui.compteur.nouvelles.aucune:Aucune place vide nouvelle`
-        : nouvelles === 1
-          ? $localize`:@@aujourdhui.compteur.nouvelles.une:1 place vide nouvelle`
-          : $localize`:@@aujourdhui.compteur.nouvelles:${nouvelles}:count: places vides nouvelles`,
-    connues:
-      connues === 0
-        ? $localize`:@@aujourdhui.compteur.connues.aucune:Aucune place vide connue`
-        : connues === 1
-          ? $localize`:@@aujourdhui.compteur.connues.une:1 place vide connue`
-          : $localize`:@@aujourdhui.compteur.connues:${connues}:count: places vides connues`,
-    echanges:
-      echanges === 0
-        ? $localize`:@@aujourdhui.compteur.echanges.aucun:Aucun échange à arbitrer`
-        : echanges === 1
-          ? $localize`:@@aujourdhui.compteur.echanges.un:1 échange à arbitrer`
-          : $localize`:@@aujourdhui.compteur.echanges:${echanges}:count: échanges à arbitrer`,
-    aPrevenir:
-      aPrevenir === 0
-        ? $localize`:@@aujourdhui.compteur.aPrevenir.aucun:Rien de non publié`
-        : aPrevenir === 1
-          ? $localize`:@@aujourdhui.compteur.aPrevenir.un:1 personne à prévenir`
-          : $localize`:@@aujourdhui.compteur.aPrevenir:${aPrevenir}:count: personnes à prévenir`,
+    missing: byCount(
+      missing,
+      () => $localize`:@@aujourdhui.compteur.absents.aucun:Aucun absent`,
+      () => $localize`:@@aujourdhui.compteur.absents.un:1 absent`,
+      () => $localize`:@@aujourdhui.compteur.absents:${missing}:count: absents`,
+    ),
+    nouvelles: byCount(
+      nouvelles,
+      () => $localize`:@@aujourdhui.compteur.nouvelles.aucune:Aucune place vide nouvelle`,
+      () => $localize`:@@aujourdhui.compteur.nouvelles.une:1 place vide nouvelle`,
+      () => $localize`:@@aujourdhui.compteur.nouvelles:${nouvelles}:count: places vides nouvelles`,
+    ),
+    connues: byCount(
+      connues,
+      () => $localize`:@@aujourdhui.compteur.connues.aucune:Aucune place vide connue`,
+      () => $localize`:@@aujourdhui.compteur.connues.une:1 place vide connue`,
+      () => $localize`:@@aujourdhui.compteur.connues:${connues}:count: places vides connues`,
+    ),
+    echanges: byCount(
+      echanges,
+      () => $localize`:@@aujourdhui.compteur.echanges.aucun:Aucun échange à arbitrer`,
+      () => $localize`:@@aujourdhui.compteur.echanges.un:1 échange à arbitrer`,
+      () => $localize`:@@aujourdhui.compteur.echanges:${echanges}:count: échanges à arbitrer`,
+    ),
+    aPrevenir: byCount(
+      aPrevenir,
+      () => $localize`:@@aujourdhui.compteur.aPrevenir.aucun:Rien de non publié`,
+      () => $localize`:@@aujourdhui.compteur.aPrevenir.un:1 personne à prévenir`,
+      () => $localize`:@@aujourdhui.compteur.aPrevenir:${aPrevenir}:count: personnes à prévenir`,
+    ),
   };
 }
 

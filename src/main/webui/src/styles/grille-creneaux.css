@@ -62,7 +62,11 @@
 }
 
 .serie-apercu-perimee .jours-resume,
-.serie-apercu-perimee /* The preview's dates that fall on a public holiday, said in one line above the days. */
+.serie-apercu-perimee .serie-bilan {
+  opacity: 0.5;
+}
+
+/* The preview's dates that fall on a public holiday, said in one line above the days. */
 .serie-feries {
   margin: 0.25rem 0;
   font: var(--mat-sys-body-small);
@@ -71,10 +75,6 @@
 
 .jours-resume app-pastille-ferie {
   margin: 0 0.35rem;
-}
-
-.serie-bilan {
-  opacity: 0.5;
 }
 
 .serie-bilan {

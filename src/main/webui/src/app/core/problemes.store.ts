@@ -89,17 +89,15 @@ export class ProblemesStore {
   );
 
   readonly problemes = computed(() =>
-    construireProblemes(
-      this.report(),
-      this.constraints()?.contraintes ?? [],
-      this.constraints()?.contraintesAdHocEnCause ?? [],
-      this.pauses(),
-      this.nomsStands(),
-      this.nomsAnimateurs(),
-      this.walks(),
-      this.groupedArrivals(),
-      { pivot: this.constraints()?.pivotEcarts ?? [], creneaux: this.creneaux() },
-    ),
+    construireProblemes(this.report(), this.constraints()?.contraintes ?? [], {
+      contraintesAdHocEnCause: this.constraints()?.contraintesAdHocEnCause ?? [],
+      pauses: this.pauses(),
+      nomsStands: this.nomsStands(),
+      nomsAnimateurs: this.nomsAnimateurs(),
+      walks: this.walks(),
+      groupedArrivals: this.groupedArrivals(),
+      lieux: { pivot: this.constraints()?.pivotEcarts ?? [], creneaux: this.creneaux() },
+    }),
   );
   readonly comptage = computed(() => compterProblemes(this.problemes()));
 

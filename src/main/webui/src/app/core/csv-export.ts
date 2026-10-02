@@ -28,15 +28,20 @@ function neutralised(text: string): string {
   return /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
 }
 
+/** A field's text before quoting: a figure as is, any other text neutralised. */
+function fieldText(value: string | number | boolean | readonly string[]): string {
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  return neutralised(Array.isArray(value) ? value.join(MULTI_SEPARATOR) : String(value));
+}
+
 /** A field quoted when it must be: a separator, a quote or a line break inside it. */
 function field(value: string | number | boolean | null | undefined | readonly string[]): string {
   if (value === null || value === undefined) {
     return '';
   }
-  const text =
-    typeof value === 'number' || typeof value === 'boolean'
-      ? String(value)
-      : neutralised(Array.isArray(value) ? value.join(MULTI_SEPARATOR) : String(value));
+  const text = fieldText(value);
   return /[;"\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 }
 

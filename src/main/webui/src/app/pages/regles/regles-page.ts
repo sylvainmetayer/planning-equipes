@@ -5,6 +5,7 @@ import {
   computed,
   inject,
   linkedSignal,
+  OnInit,
   signal,
   viewChild,
   ViewEncapsulation,
@@ -141,8 +142,9 @@ function importanceLabel(importance: Importance): string {
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ReglesPage {
+export class ReglesPage implements OnInit {
   private readonly constraintsApi = inject(ConstraintsApi);
+  private readonly referenceData = inject(ReferenceDataStore);
   private readonly dialog = inject(MatDialog);
   private readonly legalDisable = inject(LegalDisableConfirmService);
   private readonly confirm = inject(ConfirmService);
@@ -291,11 +293,12 @@ export class ReglesPage {
         computed(() => this.dirty() || (this.calcul()?.dirty() ?? false)),
       ),
     );
+  }
+
+  ngOnInit(): void {
     void this.load();
     // « Calcul » lists the typologies.
-    void inject(ReferenceDataStore)
-      .reload()
-      .catch(() => undefined);
+    void this.referenceData.reload().catch(() => undefined);
   }
 
   private async load(): Promise<void> {
@@ -586,9 +589,9 @@ export class ReglesPage {
   }
 
   /** Asked by the router before leaving: pending changes are dropped only on purpose. */
-  async canLeave(): Promise<boolean> {
+  canLeave(): Promise<boolean> {
     if (!this.dirty() && !(this.calcul()?.dirty() ?? false)) {
-      return true;
+      return Promise.resolve(true);
     }
     return this.confirm.ask({
       title: $localize`:@@regles.quitter.titre:Abandonner les modifications ?`,

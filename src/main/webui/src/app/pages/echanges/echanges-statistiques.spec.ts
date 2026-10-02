@@ -261,7 +261,8 @@ describe('EchangeStatisticsTab', () => {
     const median = Array.from(root.querySelectorAll('.echanges-stats-valeur')).find((each) =>
       each.textContent?.includes('en médiane'),
     );
-    expect(median?.getAttribute('tabindex')).toBe('0');
+    // A button, so the keyboard reaches the tooltip.
+    expect(median?.tagName).toBe('BUTTON');
     expect(median?.classList).toContain('mat-mdc-tooltip-trigger');
   });
 

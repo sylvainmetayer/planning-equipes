@@ -49,7 +49,7 @@ function* elements(source) {
   while ((opening = OPENING_TAG.exec(source)) !== null) {
     CONTENT.lastIndex = OPENING_TAG.lastIndex;
     const content = CONTENT.exec(source);
-    if (content && content[2] === opening[1]) {
+    if (content?.[2] === opening[1]) {
       yield { attributs: opening[2], expression: content[1].trim(), index: opening.index };
       OPENING_TAG.lastIndex = CONTENT.lastIndex;
     }

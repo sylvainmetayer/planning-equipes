@@ -595,9 +595,9 @@ export class CompetencesPage implements OnInit {
   }
 
   /** Leaving with unsaved cells asks first — they would silently survive, invisible, until the next reload. */
-  async canLeave(): Promise<boolean> {
+  canLeave(): Promise<boolean> {
     if (this.modifiedRows().length === 0) {
-      return true;
+      return Promise.resolve(true);
     }
     return this.confirm.ask({
       title: $localize`:@@competences.quitter.titre:Abandonner les modifications ?`,
