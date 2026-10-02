@@ -11,7 +11,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A local HTTP server standing in for whatever the application calls out to —
@@ -53,6 +55,9 @@ public final class FakeHttpReceiver implements AutoCloseable {
     private final List<Received> received = new CopyOnWriteArrayList<>();
 
     private final Map<String, Script> scripts = new ConcurrentHashMap<>();
+
+    /** Released on close, so a scripted delay never outlives the server. */
+    private final CountDownLatch closed = new CountDownLatch(1);
 
     public FakeHttpReceiver() throws IOException {
         server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
@@ -96,7 +101,12 @@ public final class FakeHttpReceiver implements AutoCloseable {
         Script script = scripts.getOrDefault(path, Script.status(200));
         if (script.delayMillis() > 0) {
             try {
-                Thread.sleep(script.delayMillis());
+                // The scripted slowness of the remote side: wait out the delay, or the close.
+                boolean released = closed.await(script.delayMillis(), TimeUnit.MILLISECONDS);
+                if (released) {
+                    exchange.close();
+                    return;
+                }
             } catch (InterruptedException _) {
                 Thread.currentThread().interrupt();
             }
@@ -114,6 +124,7 @@ public final class FakeHttpReceiver implements AutoCloseable {
 
     @Override
     public void close() {
+        closed.countDown();
         server.stop(0);
     }
 }

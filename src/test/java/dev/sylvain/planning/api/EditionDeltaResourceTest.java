@@ -195,8 +195,9 @@ class EditionDeltaResourceTest {
                 .extract()
                 .asString();
 
-        assertThat(csv).contains("animateur;REMOVED;").contains("volumes;");
         assertThat(csv)
+                .contains("animateur;REMOVED;")
+                .contains("volumes;")
                 .doesNotContain("Deltamartin")
                 .doesNotContain("Bob")
                 .doesNotContain("bob.delta")

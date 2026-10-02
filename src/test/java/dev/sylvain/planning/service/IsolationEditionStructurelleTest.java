@@ -871,16 +871,14 @@ class IsolationEditionStructurelleTest {
      * counted. Anything left unresolved must be a named, argued exception.
      */
     @Test
-    void leScanResoutLeSqlPasseParVariable() throws IOException {
+    void theScanResolvesSqlPassedThroughAVariable() throws IOException {
         List<String> aveugles = enonces(SOURCES).stream()
                 .filter(enonce -> enonce.sql().isBlank())
                 .map(Enonce::indirection)
                 .distinct()
                 .toList();
 
-        assertThat(aveugles)
-                .as("appels dont le scan ne lit aucun SQL")
-                .allSatisfy(cle -> assertThat(INDIRECTIONS_ASSUMEES).containsKey(cle));
+        assertThat(aveugles).as("appels dont le scan ne lit aucun SQL").isSubsetOf(INDIRECTIONS_ASSUMEES.keySet());
     }
 
     /** An exception that no longer exists in the code must leave the list. */
