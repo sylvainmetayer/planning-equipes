@@ -14,8 +14,9 @@ import java.util.stream.Stream;
  *
  * <p>These are the rules {@link EligibleAnimateurMoveFilter} keeps out of the
  * search, and the filter is not a wall: the recreate step of the ruin and
- * recreate move runs its own construction heuristic, which Timefold 2.5 does
- * not let us filter. At one hard point per seat, those rules weighed exactly
+ * recreate move runs its own construction heuristic, which Timefold does not
+ * let us filter (checked again on each bump: see the ruin and recreate
+ * comment of {@code solverConfig.xml}). At one hard point per seat, those rules weighed exactly
  * what an empty seat or an unkept ad hoc exception weighs, and less than a
  * few minutes of missing rest — so on a plan that could not hold everything
  * the solver placed a fifteen-year-old at night rather than leave a seat

@@ -149,8 +149,17 @@
                 NOT screen its candidates, so a ruin move scores 3 to 10 seats
                 against every animateur. That is the whole reason phase 1 drops
                 from ~6 800 to ~30 move evaluations per second here, and it is
-                worth re-checking on a Timefold bump — 2.5 exposes no knob for
-                it.
+                worth re-checking on a Timefold bump. Checked again on 2.7.0
+                (timefold-solver-core-2.7.0-sources.jar, Maven Central): still
+                no knob. RuinRecreateMoveSelectorConfig takes an entitySelector,
+                a variableName and the ruined counts and percentages, nothing
+                for the recreate side; RuinRecreateMoveSelectorFactory hands
+                RuinRecreateConstructionHeuristicPhaseBuilder a bare
+                QueuedEntityPlacerConfig with the default entity selector, whose
+                values are never filtered. 2.6 to 2.7 only passes the enclosing
+                phase's environment mode to that nested heuristic. The one lever
+                Timefold would honour there is an entity-dependent value range
+                on PosteAffectation — a model change, not a configuration one.
             -->
             <ruinRecreateMoveSelector>
                 <fixedProbabilityWeight>1.0</fixedProbabilityWeight>
