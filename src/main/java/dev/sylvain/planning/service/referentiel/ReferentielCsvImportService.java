@@ -126,6 +126,7 @@ public class ReferentielCsvImportService {
      * family: only their application reaches the grid.</p>
      */
     public ReferentielCsvImportReport apply(ImportTarget cible, ReferentielCsvImportRequest request) {
+        // A lambda on purpose: GelReferentielStructuralTest reads the call "gel.refuseIfFrozen(" in this body.
         frozenFamily(cible).ifPresent(family -> gel.refuseIfFrozen(family));
         Analyse analyse = analyse(cible, request);
         for (String code : analyse.typologiesACreer()) {

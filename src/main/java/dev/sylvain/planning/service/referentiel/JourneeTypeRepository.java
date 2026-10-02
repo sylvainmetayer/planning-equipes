@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import javax.sql.DataSource;
 
 /** The day templates, their vacations and the calendar that applies them (V75). */
 @ApplicationScoped
@@ -32,20 +31,14 @@ public class JourneeTypeRepository {
 
     private final ConcurrentModificationGuard staleWrites;
 
-    private final DataSource dataSource;
-
     private final JdbcEditionScope scope;
 
     private final CreneauRepository creneaux;
 
     @Inject
     public JourneeTypeRepository(
-            ConcurrentModificationGuard staleWrites,
-            DataSource dataSource,
-            JdbcEditionScope scope,
-            CreneauRepository creneaux) {
+            ConcurrentModificationGuard staleWrites, JdbcEditionScope scope, CreneauRepository creneaux) {
         this.staleWrites = staleWrites;
-        this.dataSource = dataSource;
         this.scope = scope;
         this.creneaux = creneaux;
     }
@@ -78,7 +71,7 @@ public class JourneeTypeRepository {
             RETURNING modifie_le""";
 
     public List<JourneeType> list() {
-        return scope.read("Failed to list day templates", connection -> listTx(connection));
+        return scope.read("Failed to list day templates", this::listTx);
     }
 
     private List<JourneeType> listTx(Connection connection) throws SQLException {
@@ -110,7 +103,7 @@ public class JourneeTypeRepository {
     }
 
     public List<Affectation> calendrier() {
-        return scope.read("Failed to read the day-template calendar", connection -> calendrierTx(connection));
+        return scope.read("Failed to read the day-template calendar", this::calendrierTx);
     }
 
     private List<Affectation> calendrierTx(Connection connection) throws SQLException {

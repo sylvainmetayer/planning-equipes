@@ -2,7 +2,6 @@ package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.ConcurrentModificationGuard;
 import dev.sylvain.planning.service.IdGenerator;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.TokenOwner;
@@ -25,8 +24,6 @@ public class AnimateurService {
 
     private final ReferenceDataChangeTracker changeTracker;
 
-    private final ConcurrentModificationGuard staleWrites;
-
     private final IdGenerator ids;
 
     private final GelReferentielService gel;
@@ -36,13 +33,11 @@ public class AnimateurService {
             AnimateurRepository repository,
             TypologieService typologies,
             ReferenceDataChangeTracker changeTracker,
-            ConcurrentModificationGuard staleWrites,
             IdGenerator ids,
             GelReferentielService gel) {
         this.repository = repository;
         this.typologies = typologies;
         this.changeTracker = changeTracker;
-        this.staleWrites = staleWrites;
         this.ids = ids;
         this.gel = gel;
     }

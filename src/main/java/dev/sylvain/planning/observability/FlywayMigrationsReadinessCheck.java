@@ -4,6 +4,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.LongSupplier;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.health.HealthCheck;
@@ -64,15 +65,15 @@ public class FlywayMigrationsReadinessCheck implements HealthCheck {
     /** Monotonic, replaceable by a test. */
     LongSupplier nanoTime = System::nanoTime;
 
-    /** An immutable pair published through a volatile field: readers see a whole verdict or none. */
+    /** An immutable pair published through an atomic reference: readers see a whole verdict or none. */
     private record Verdict(HealthCheckResponse response, long computedAt) {}
 
-    private volatile Verdict cached;
+    private final AtomicReference<Verdict> cached = new AtomicReference<>();
 
     @Override
     public HealthCheckResponse call() {
         long now = nanoTime.getAsLong();
-        Verdict current = cached;
+        Verdict current = cached.get();
         if (current != null && now - current.computedAt() < CACHE_TTL.toNanos()) {
             return current.response();
         }
@@ -80,7 +81,7 @@ public class FlywayMigrationsReadinessCheck implements HealthCheck {
         // equally fresh verdict, which is harmless and needs no lock that a
         // hung database could hold every probe thread on.
         HealthCheckResponse response = readHistory();
-        cached = new Verdict(response, now);
+        cached.set(new Verdict(response, now));
         return response;
     }
 

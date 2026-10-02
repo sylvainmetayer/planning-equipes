@@ -69,8 +69,6 @@ public class NotificationsPlanifieesService {
 
     private final String zone;
 
-    private final String cron;
-
     @Inject
     public NotificationsPlanifieesService(
             EditionContext editionContext,
@@ -82,8 +80,7 @@ public class NotificationsPlanifieesService {
             JournalActionService journal,
             MailDeliveryRepository deliveries,
             WebhookService webhooks,
-            @ConfigProperty(name = "planning.notifications.zone") String zone,
-            @ConfigProperty(name = "planning.notifications.cron") String cron) {
+            @ConfigProperty(name = "planning.notifications.zone") String zone) {
         this.editionContext = editionContext;
         this.parametresService = parametresService;
         this.rappelVeille = rappelVeille;
@@ -94,7 +91,6 @@ public class NotificationsPlanifieesService {
         this.deliveries = deliveries;
         this.webhooks = webhooks;
         this.zone = zone;
-        this.cron = cron;
     }
 
     @Scheduled(

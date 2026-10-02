@@ -482,12 +482,11 @@ public final class AffichageMuralViewBuilder {
             if (jour.equals(journee.date())) {
                 Animateur animateur = animateurs.get(journee.animateurId());
                 String nom = animateur == null ? null : noms.get(animateur.getId());
-                for (var sequence : journee.sequences()) {
-                    for (var pause : sequence.pausesDues()) {
-                        breakAlert(pause, sequence.debut(), jour, now, shown, nom)
-                                .ifPresent(alerts::add);
-                    }
-                }
+                journee.sequences().stream()
+                        .flatMap(sequence -> sequence.pausesDues().stream()
+                                .map(pause -> breakAlert(pause, sequence.debut(), jour, now, shown, nom)))
+                        .flatMap(Optional::stream)
+                        .forEach(alerts::add);
             }
         }
         return alerts;

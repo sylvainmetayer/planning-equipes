@@ -14,6 +14,7 @@ import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Two guards on the MCP transport, both counted per source address.
@@ -131,12 +132,12 @@ public class McpRateLimiter {
      * believing it had declared its proxy, while both guards quietly counted
      * every caller on the proxy's own single counter.
      */
-    private volatile TrustedProxies trustedProxies = TrustedProxies.NONE;
+    private final AtomicReference<TrustedProxies> trustedProxies = new AtomicReference<>(TrustedProxies.NONE);
 
     public void register(@Observes Filters filters) {
-        trustedProxies = TrustedProxies.of(proxies(
+        trustedProxies.set(TrustedProxies.of(proxies(
                 config.rateLimit().trustedProxies().orElse(List.of()),
-                loginConfig.proxysFiables().orElse(List.of())));
+                loginConfig.proxysFiables().orElse(List.of()))));
         filters.register(this::apply, PRIORITY);
     }
 
@@ -155,7 +156,7 @@ public class McpRateLimiter {
             context.next();
             return;
         }
-        String address = ClientAddress.of(context, trustedProxies);
+        String address = ClientAddress.of(context, trustedProxies.get());
         int maxFailures = config.lockout().maxFailures();
 
         long locked =

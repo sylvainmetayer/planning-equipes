@@ -7,14 +7,14 @@ import dev.sylvain.planning.service.analyse.RealisedVsPlanned.PreviousEdition;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -108,10 +108,10 @@ public class RealisedHistoryRepository {
             try (PreparedStatement insert = scope.prepareScoped(connection, INSERT)) {
                 // The same on every row: bound once, kept by each addBatch.
                 insert.setString(3, editionNom);
-                insert.setDate(5, Date.valueOf(firstDay));
-                insert.setDate(6, Date.valueOf(lastDay));
+                insert.setObject(5, firstDay);
+                insert.setObject(6, lastDay);
                 insert.setInt(7, countedDays);
-                insert.setTimestamp(18, Timestamp.from(frozenAt));
+                insert.setObject(18, frozenAt.atOffset(ZoneOffset.UTC));
                 for (GapTotal row : rows) {
                     GapCounts counts = row.counts();
                     insert.setString(2, row.key());
@@ -149,7 +149,7 @@ public class RealisedHistoryRepository {
         return scope.read("Failed to read the previous realised measure", connection -> {
             PreviousEdition entete;
             try (PreparedStatement ps = scope.prepareScoped(connection, SELECT_PREVIOUS_EVENT)) {
-                ps.setDate(2, Date.valueOf(firstDay));
+                ps.setObject(2, firstDay);
                 entete = readHeader(ps);
             }
             if (entete == null) {
@@ -164,7 +164,7 @@ public class RealisedHistoryRepository {
             if (!rs.next()) {
                 return null;
             }
-            Timestamp figeLe = rs.getTimestamp("fige_le");
+            OffsetDateTime figeLe = rs.getObject("fige_le", OffsetDateTime.class);
             return new PreviousEdition(
                     true,
                     rs.getString("edition_id"),

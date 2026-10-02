@@ -2,7 +2,6 @@ package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.ConcurrentModificationGuard;
 import dev.sylvain.planning.service.IdGenerator;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
@@ -20,8 +19,6 @@ public class EmplacementService {
 
     private final ReferenceDataChangeTracker changeTracker;
 
-    private final ConcurrentModificationGuard staleWrites;
-
     private final IdGenerator ids;
 
     private final JdbcEditionScope scope;
@@ -30,12 +27,10 @@ public class EmplacementService {
     public EmplacementService(
             EmplacementRepository repository,
             ReferenceDataChangeTracker changeTracker,
-            ConcurrentModificationGuard staleWrites,
             IdGenerator ids,
             JdbcEditionScope scope) {
         this.repository = repository;
         this.changeTracker = changeTracker;
-        this.staleWrites = staleWrites;
         this.ids = ids;
         this.scope = scope;
     }

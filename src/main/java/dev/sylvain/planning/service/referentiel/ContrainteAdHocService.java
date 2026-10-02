@@ -5,7 +5,6 @@ import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.ConcurrentModificationGuard;
 import dev.sylvain.planning.service.IdGenerator;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.referentiel.ContrainteAdHocContradictions.Contradiction;
@@ -38,8 +37,6 @@ public class ContrainteAdHocService {
 
     private final ReferenceDataChangeTracker changeTracker;
 
-    private final ConcurrentModificationGuard staleWrites;
-
     private final IdGenerator ids;
 
     @Inject
@@ -47,12 +44,10 @@ public class ContrainteAdHocService {
             ContrainteAdHocRepository repository,
             CreneauService creneauService,
             ReferenceDataChangeTracker changeTracker,
-            ConcurrentModificationGuard staleWrites,
             IdGenerator ids) {
         this.repository = repository;
         this.creneauService = creneauService;
         this.changeTracker = changeTracker;
-        this.staleWrites = staleWrites;
         this.ids = ids;
     }
 

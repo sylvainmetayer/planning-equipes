@@ -2,7 +2,6 @@ package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.ConcurrentModificationGuard;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.solve.RefusedWhileSolving;
 import dev.sylvain.planning.service.solve.SolverJobService;
@@ -23,22 +22,12 @@ public class CreneauService {
 
     private final CreneauRepository repository;
 
-    private final ParametresService parametres;
-
     private final ReferenceDataChangeTracker changeTracker;
 
-    private final ConcurrentModificationGuard staleWrites;
-
     @Inject
-    public CreneauService(
-            CreneauRepository repository,
-            ParametresService parametres,
-            ReferenceDataChangeTracker changeTracker,
-            ConcurrentModificationGuard staleWrites) {
+    public CreneauService(CreneauRepository repository, ReferenceDataChangeTracker changeTracker) {
         this.repository = repository;
-        this.parametres = parametres;
         this.changeTracker = changeTracker;
-        this.staleWrites = staleWrites;
     }
 
     public List<Creneau> list() {

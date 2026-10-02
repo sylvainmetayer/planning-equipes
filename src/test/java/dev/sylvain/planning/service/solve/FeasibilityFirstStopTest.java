@@ -42,7 +42,7 @@ class FeasibilityFirstStopTest {
                 : List.of();
         // Only the last publication is read by a solve: nothing else of the
         // service is reached, so none of its collaborators is needed.
-        PlanSnapshotService snapshots = new PlanSnapshotService(0, null, null, null, null, null, null, null, null) {
+        PlanSnapshotService snapshots = new PlanSnapshotService(0, null, null, null, null, null, null, null) {
             @Override
             public SnapshotDetail loadLastPublication() {
                 return publication.isEmpty() ? null : new SnapshotDetail(null, publication);
