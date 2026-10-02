@@ -38,7 +38,7 @@ export function daysOf(view: ResponsableView | null): string[] {
       days.add(dayOf(vacation.debut));
     }
   }
-  return [...days].sort();
+  return [...days].sort((a, b) => a.localeCompare(b));
 }
 
 /**
