@@ -20,9 +20,9 @@
       }
       <div class="mural-etat">
         @if (horsLigneDepuis(); as minutes) {
-          <p class="mural-hors-ligne" role="status" i18n="@@mural.horsLigne">Hors ligne depuis {{ minutes }} min</p>
+          <output class="mural-hors-ligne status-paragraph" i18n="@@mural.horsLigne">Hors ligne depuis {{ minutes }} min</output>
         } @else if (horsLigneDepuis() === 0) {
-          <p class="mural-hors-ligne" role="status" i18n="@@mural.horsLigneInstant">Hors ligne depuis moins d'une minute</p>
+          <output class="mural-hors-ligne status-paragraph" i18n="@@mural.horsLigneInstant">Hors ligne depuis moins d'une minute</output>
         } @else if (!impression() && misAJourIlYa() !== null) {
           <p i18n="@@mural.misAJour">Mis à jour il y a {{ misAJourIlYa() }} s</p>
         }
@@ -150,7 +150,7 @@
     }
   } @else if (horsLigneDepuis() !== null) {
     <div class="mural-message">
-      <p role="status" i18n="@@mural.injoignable">Serveur injoignable — nouvel essai dans une minute.</p>
+      <output class="status-paragraph" i18n="@@mural.injoignable">Serveur injoignable — nouvel essai dans une minute.</output>
     </div>
   } @else {
     <div class="mural-message">

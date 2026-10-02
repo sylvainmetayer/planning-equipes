@@ -48,7 +48,8 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
-.mural-etat p {
+.mural-etat p,
+.mural-etat output {
   margin: 0.15rem 0;
 }
 

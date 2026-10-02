@@ -54,9 +54,15 @@
 /* Laid out in the pixels it is measured at and drawn in percentages of them:
    the box keeps a 5:3 ratio whatever the card's width, and the tiles stretch
    with it until the next measure lands. */
+/* A <fieldset> naming the group of tiles: its user-agent border, padding,
+   margin and min-content width reset, so it stays the bare box it was. */
 .repartition-treemap {
   position: relative;
   width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
   aspect-ratio: 5 / 3;
   background: var(--mat-sys-surface-container);
   border-radius: var(--mat-sys-corner-small);

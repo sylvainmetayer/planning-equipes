@@ -41,9 +41,9 @@
       </mat-checkbox>
     }
     @if (etat()?.resolutionEnCours) {
-      <p class="empty-hint" role="status" i18n="@@exports.archive.resolutionEnCours">
+      <output class="empty-hint status-paragraph" i18n="@@exports.archive.resolutionEnCours">
         Une résolution est en cours : l'archive portera le dernier plan enregistré.
-      </p>
+      </output>
     }
     <div class="card-actions">
       <button matButton="filled" (click)="telecharger()" [disabled]="!peutTelecharger()">
@@ -53,10 +53,10 @@
     </div>
     @if (telechargement()) {
       <mat-progress-bar mode="indeterminate" />
-      <p class="empty-hint" role="status" i18n="@@exports.archive.enCours">Préparation de l'archive…</p>
+      <output class="empty-hint status-paragraph" i18n="@@exports.archive.enCours">Préparation de l'archive…</output>
     }
     @if (message()) {
-      <p class="empty-hint" role="status">{{ message() }}</p>
+      <output class="empty-hint status-paragraph">{{ message() }}</output>
     }
     @if (erreur()) {
       <p class="field-error" role="alert">{{ erreur() }}</p>

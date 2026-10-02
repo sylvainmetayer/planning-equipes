@@ -266,8 +266,7 @@
                 @for (colonne of shownColumns(); track colonne.colonneId) {
                   <th scope="col" class="entete-creneau" [class.premier-du-jour]="colonne.rang === 0" [class.colonne-ferie]="holidaysByDate().has(colonne.date)">
                     @if (scissionActive() === colonne.colonneId) {
-                      <!-- eslint-disable-next-line @angular-eslint/template/no-autofocus -- revealed on demand by the « couper » button: the field the user just asked for takes the focus, nothing is stolen on page load -->
-                      <input type="time" class="scission-heure" autofocus
+                      <input #scissionHeure type="time" class="scission-heure"
                              i18n-aria-label="@@ouvertures.saisie.scissionHeure" aria-label="Heure de coupe"
                              (change)="scinder(colonne, $any($event.target).value)"
                              (keydown.escape)="scissionActive.set(null)" />
@@ -280,7 +279,7 @@
                         <button matIconButton type="button" class="scinder-colonne" [disabled]="gridLocked()"
                                 i18n-matTooltip="@@ouvertures.saisie.scinder" matTooltip="Scinder cette colonne à une heure : deux colonnes, pour dire un effectif qui change en cours de créneau"
                                 i18n-aria-label="@@ouvertures.saisie.scinder" aria-label="Scinder cette colonne à une heure : deux colonnes, pour dire un effectif qui change en cours de créneau"
-                                (click)="scissionActive.set(colonne.colonneId)">
+                                (click)="openSplit(colonne.colonneId)">
                           <mat-icon>call_split</mat-icon>
                         </button>
                         <button matIconButton type="button" class="appliquer-colonne" [disabled]="gridLocked()"

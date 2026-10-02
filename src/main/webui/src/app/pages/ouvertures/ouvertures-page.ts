@@ -774,6 +774,16 @@ export class OuverturesPage implements OnInit {
 
   private readonly injector = inject(Injector);
   private readonly pageTitle = viewChild<ElementRef<HTMLElement>>('pageTitle');
+  private readonly splitTime = viewChild<ElementRef<HTMLInputElement>>('scissionHeure');
+
+  /**
+   * Reveals the split-time field of a column and gives it the focus: the field
+   * the user just asked for, revealed on demand, so nothing is stolen on load.
+   */
+  protected openSplit(colonneId: string): void {
+    this.scissionActive.set(colonneId);
+    afterNextRender(() => this.splitTime()?.nativeElement.focus(), { injector: this.injector });
+  }
 
   /** Clears the narrowing to one stand; the button goes with it, the focus to the heading. */
   protected showAllStands(): void {
@@ -971,10 +981,10 @@ export class OuverturesPage implements OnInit {
    * survive, invisible, until the next reload. Wired as the route's
    * `canDeactivate`.
    */
-  async canLeave(): Promise<boolean> {
+  canLeave(): Promise<boolean> {
     const count = this.standsModifies().length;
     if (count === 0) {
-      return true;
+      return Promise.resolve(true);
     }
     return this.confirm.ask({
       title: $localize`:@@ouvertures.saisie.quitterTitle:Abandonner les modifications ?`,

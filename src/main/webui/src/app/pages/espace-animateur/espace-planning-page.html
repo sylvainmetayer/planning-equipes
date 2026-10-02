@@ -205,7 +205,7 @@
       défile horizontalement — c'est elle qui défile, jamais la page — et chaque
       puce est un vrai bouton, avec un libellé complet pour un lecteur d'écran.
     -->
-    <div class="espace-bande" role="group"
+    <fieldset class="espace-bande"
          i18n-aria-label="@@espace.planning.bandeLabel" aria-label="Choisir une journée">
       @for (puce of bandeJours(); track puce.date) {
         <button type="button" class="espace-bande-jour"
@@ -226,7 +226,7 @@
           }
         </button>
       }
-    </div>
+    </fieldset>
 
     @if (jourAffiche(); as jour) {
       <section class="espace-journee" aria-labelledby="espace-journee-titre">

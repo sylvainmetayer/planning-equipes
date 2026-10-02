@@ -37,6 +37,16 @@
   color: var(--mat-sys-on-surface);
 }
 
+/* The median of a delay: a button only so the keyboard reaches the tooltip
+   carrying the mean, drawn as the plain figure of the other tiles. */
+.echanges-stats-moyenne {
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: start;
+  cursor: default;
+}
+
 .echanges-stats-vide {
   color: var(--mat-sys-on-surface-variant);
 }

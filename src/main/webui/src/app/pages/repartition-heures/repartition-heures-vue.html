@@ -82,7 +82,7 @@
           }
         </nav>
 
-        <div #treemap class="repartition-treemap" role="group" [attr.aria-label]="describe(zoomed())">
+        <fieldset #treemap class="repartition-treemap" [attr.aria-label]="describe(zoomed())">
           @for (tile of tiles(); track tile.node.id) {
             @if (tile.depth === 1) {
               <button
@@ -123,7 +123,7 @@
               </div>
             }
           }
-        </div>
+        </fieldset>
         <p class="empty-hint" i18n="@@repartitionHeures.clickHint">Un clic sur un groupe l'agrandit ; sur un stand, il ouvre sa journée.</p>
       }
 
