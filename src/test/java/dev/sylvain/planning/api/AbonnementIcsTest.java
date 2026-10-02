@@ -165,7 +165,8 @@ class AbonnementIcsTest {
         String espaceAvant = accessToken();
         String session = EspaceSessions.open(EMAIL);
 
-        String nouveau = given().header("X-Edition-Id", "E1").header(EspaceSessions.EN_TETE, session)
+        String nouveau = given().header("X-Edition-Id", "E1")
+                .header(EspaceSessions.EN_TETE, session)
                 .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + espaceAvant + "/abonnement")

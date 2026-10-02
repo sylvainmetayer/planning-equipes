@@ -322,7 +322,8 @@ class AuthentificationAdminTest {
         // Keycloak one may still be alive: the answer names the realm's own
         // end-session endpoint, back to /login, so a shared computer does not
         // sign the next person in as the previous one.
-        given().header("X-Edition-Id", "E1").when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/auth/logout")
                 .then()
                 .statusCode(200)

@@ -358,13 +358,15 @@ class DemandeEchangeFlowTest {
                 .path("[0].id");
 
         // Bruno sees it among his received demandes, and declines.
-        given().header("X-Edition-Id", "E1").header(EspaceSessions.EN_TETE, sessionBruno)
+        given().header("X-Edition-Id", "E1")
+                .header(EspaceSessions.EN_TETE, sessionBruno)
                 .when()
                 .get("/api/espace-animateur/" + tokenOf("ECH-B") + "/demandes-recues")
                 .then()
                 .statusCode(200)
                 .body("find { it.id == '" + demandeId + "' }.statut", equalTo("EN_ATTENTE_CIBLE"));
-        given().header("X-Edition-Id", "E1").header(EspaceSessions.EN_TETE, sessionBruno)
+        given().header("X-Edition-Id", "E1")
+                .header(EspaceSessions.EN_TETE, sessionBruno)
                 .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + tokenOf("ECH-B") + "/demandes-recues/" + demandeId + "/refus")
@@ -380,7 +382,8 @@ class DemandeEchangeFlowTest {
                 .post("/api/echanges/" + demandeId + "/acceptation")
                 .then()
                 .statusCode(400);
-        given().header("X-Edition-Id", "E1").header(EspaceSessions.EN_TETE, sessionBruno)
+        given().header("X-Edition-Id", "E1")
+                .header(EspaceSessions.EN_TETE, sessionBruno)
                 .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + tokenOf("ECH-B") + "/demandes-recues/" + demandeId + "/accord")
@@ -486,7 +489,8 @@ class DemandeEchangeFlowTest {
                 .statusCode(200)
                 .extract()
                 .path("[0].id");
-        given().header("X-Edition-Id", "E1").header(EspaceSessions.EN_TETE, sessionBruno)
+        given().header("X-Edition-Id", "E1")
+                .header(EspaceSessions.EN_TETE, sessionBruno)
                 .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + tokenOf("ECH-B") + "/demandes-recues/" + demandeId + "/refus")
@@ -644,7 +648,8 @@ class DemandeEchangeFlowTest {
 
     /** Bruno (the target) agrees: the demande enters the admin queue. */
     private void agreementFromBruno(String demandeId) {
-        given().header("X-Edition-Id", "E1").header(EspaceSessions.EN_TETE, sessionBruno)
+        given().header("X-Edition-Id", "E1")
+                .header(EspaceSessions.EN_TETE, sessionBruno)
                 .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + tokenOf("ECH-B") + "/demandes-recues/" + demandeId + "/accord")
@@ -895,7 +900,8 @@ class DemandeEchangeFlowTest {
         // Bruno acts with his OWN session on his own token: the 400 is the
         // ownership rule, not a session mismatch.
         RestAssured.requestSpecification = null;
-        given().header("X-Edition-Id", "E1").contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .header(EspaceSessions.EN_TETE, sessionBruno)
                 .when()
                 .post("/api/espace-animateur/" + brunoToken + "/demandes/" + demandeId + "/annulation")
@@ -988,7 +994,7 @@ class DemandeEchangeFlowTest {
         PlansPublies.publier(publication);
 
         // The espace requires a Keycloak session at the fiche's address (ADR
-        // 0071): both actors get an address, a session, and Alice's rides on
+        // 0075): both actors get an address, a session, and Alice's rides on
         // every request by default (harmless on the admin routes).
         donnerEmail("ECH-A", "ech-alice@example.org");
         donnerEmail("ECH-B", "ech-bruno@example.org");

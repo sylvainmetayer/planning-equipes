@@ -36,7 +36,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
- * The read-only views of a responsable de stand (issue #295, ADR 0071).
+ * The read-only views of a responsable de stand (issue #295, ADR 0075).
  *
  * <p><b>Who</b> is the account the request authenticated as; <b>where</b> is
  * the rights of that account in force on the edition asked for, never the
@@ -75,7 +75,7 @@ public class ResponsableService {
         this.referenceDataService = referenceDataService;
     }
 
-    /** The editions where {@code compte} is responsable de stand today, default one first. */
+    /** The editions where {@code compte} is responsable de stand today, active one first. */
     public List<EditionResponsable> editions(Compte compte) {
         Instant maintenant = Instant.now();
         Map<String, Instant> expirations = new LinkedHashMap<>();
@@ -90,15 +90,15 @@ public class ResponsableService {
                             ? later(expirations.get(edition), droit.expireLe())
                             : droit.expireLe());
         }
-        String defaut = editions.defaultEditionId();
+        String active = editions.activeEditionId().orElse(null);
         return editions.listEditions().stream()
                 .filter(edition -> expirations.containsKey(edition.getId()))
                 .map(edition -> new EditionResponsable(
                         edition.getId(),
                         edition.getNom(),
-                        edition.getId().equals(defaut),
+                        edition.getId().equals(active),
                         expirations.get(edition.getId())))
-                .sorted(Comparator.comparing((EditionResponsable e) -> !e.defaut())
+                .sorted(Comparator.comparing((EditionResponsable e) -> !e.active())
                         .thenComparing(EditionResponsable::editionNom, String.CASE_INSENSITIVE_ORDER))
                 .toList();
     }

@@ -182,7 +182,7 @@ class IsolationEditionStructurelleTest {
      *       it under, and the screen shows it whatever edition is chosen.</li>
      *   <li>{@code compte} — a person, not a fiche (ADR 0049): one Keycloak
      *   <li>{@code compte} — a person, not a fiche (ADR 0070): one Keycloak
-     *   <li>{@code compte} — a person, not a fiche (ADR 0071): one Keycloak
+     *   <li>{@code compte} — a person, not a fiche (ADR 0075): one Keycloak
      *       identity serves every edition, so the table has no edition to be
      *       partitioned by.</li>
      *   <li>{@code habilitation}, {@code habilitation_stand} — what that person

@@ -187,7 +187,7 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-elytron-security-properties-file</artifactId>
         </dependency>
-        <!-- Keycloak / OIDC login (docs/keycloak.md, ADR 0071). Two tenants: the
+        <!-- Keycloak / OIDC login (docs/keycloak.md, ADR 0075). Two tenants: the
              default one is a web-app tenant for the admin and animateur browser
              sessions, the "mcp" one a service tenant validating bearer tokens on
              /mcp. Mandatory in production; the embedded account above only
@@ -459,7 +459,7 @@
                          exploitant, et déclarent ce que ces tests sont — une
                          instance qui n'est pas en service. Elles passent au
                          processus lancé, pas à celui de Maven.
-                         Keycloak est obligatoire en %prod (ADR 0071) et
+                         Keycloak est obligatoire en %prod (ADR 0075) et
                          aucun realm ne tourne ici : ces tests se connectent
                          par le compte de secours, ouvert pour eux seuls,
                          comme la pile e2e « secours ». -->
