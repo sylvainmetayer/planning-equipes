@@ -55,9 +55,9 @@ public final class TrustedProxies {
 
         @Override
         public boolean equals(Object other) {
-            return other instanceof Entry entry
-                    && prefixBits == entry.prefixBits
-                    && Arrays.equals(address, entry.address);
+            return other instanceof Entry(byte[] otherAddress, int otherPrefixBits)
+                    && prefixBits == otherPrefixBits
+                    && Arrays.equals(address, otherAddress);
         }
 
         @Override

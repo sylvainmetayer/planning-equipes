@@ -17,6 +17,7 @@ import jakarta.inject.Inject;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -372,13 +373,10 @@ public class ConsigneMcpTools {
         if (dates == null || dates.isBlank()) {
             throw new BusinessError.Invalid("dates est requis, ex. « 2027-02-03,2027-02-04 »");
         }
-        List<LocalDate> result = new ArrayList<>();
-        for (String morceau : dates.split(",")) {
-            if (!morceau.isBlank()) {
-                result.add(McpArgs.date(morceau.trim(), "dates"));
-            }
-        }
-        return result;
+        return Arrays.stream(dates.split(","))
+                .filter(morceau -> !morceau.isBlank())
+                .map(morceau -> McpArgs.date(morceau.trim(), "dates"))
+                .toList();
     }
 
     static LocalTime timeOrNull(String valeur) {

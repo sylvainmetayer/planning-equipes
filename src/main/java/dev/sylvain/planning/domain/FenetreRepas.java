@@ -9,6 +9,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * One meal window of the event day, as a problem fact: the hours during which
@@ -104,19 +105,18 @@ public record FenetreRepas(
         if (datees.isEmpty() && exclusions.isEmpty()) {
             return generales;
         }
-        List<FenetreRepas> fenetres = new ArrayList<>();
-        for (FenetreRepas generale : generales) {
-            fenetres.add(new FenetreRepas(
-                    generale.libelle(),
-                    generale.debut(),
-                    generale.fin(),
-                    generale.dureeMinutes(),
-                    generale.auPlusTard(),
-                    null,
-                    exclusions.getOrDefault(generale.libelle(), Set.of())));
-        }
-        fenetres.addAll(datees);
-        return List.copyOf(fenetres);
+        return Stream.concat(
+                        generales.stream()
+                                .map(generale -> new FenetreRepas(
+                                        generale.libelle(),
+                                        generale.debut(),
+                                        generale.fin(),
+                                        generale.dureeMinutes(),
+                                        generale.auPlusTard(),
+                                        null,
+                                        exclusions.getOrDefault(generale.libelle(), Set.of()))),
+                        datees.stream())
+                .toList();
     }
 
     /**
@@ -135,19 +135,25 @@ public record FenetreRepas(
             LocalDate date) {
         int duree = dureeCoupure(repas, parametres);
         if (repas.midiDebut() != null || repas.midiFin() != null || repas.coupureMinutes() != null) {
-            LocalTime debut = repas.midiDebut() != null ? repas.midiDebut() : coalesce(parametres, true, true);
-            LocalTime fin = repas.midiFin() != null ? repas.midiFin() : coalesce(parametres, true, false);
+            LocalTime debut = statedOrEdition(repas.midiDebut(), parametres, true, true);
+            LocalTime fin = statedOrEdition(repas.midiFin(), parametres, true, false);
             if (add(datees, MIDI, debut, fin, duree, true, date)) {
                 exclusions.computeIfAbsent(MIDI, k -> new LinkedHashSet<>()).add(date);
             }
         }
         if (repas.soirDebut() != null || repas.soirFin() != null || repas.coupureMinutes() != null) {
-            LocalTime debut = repas.soirDebut() != null ? repas.soirDebut() : coalesce(parametres, false, true);
-            LocalTime fin = repas.soirFin() != null ? repas.soirFin() : coalesce(parametres, false, false);
+            LocalTime debut = statedOrEdition(repas.soirDebut(), parametres, false, true);
+            LocalTime fin = statedOrEdition(repas.soirFin(), parametres, false, false);
             if (add(datees, SOIR, debut, fin, duree, false, date)) {
                 exclusions.computeIfAbsent(SOIR, k -> new LinkedHashSet<>()).add(date);
             }
         }
+    }
+
+    /** The bound the consigne states, else the edition's. */
+    private static LocalTime statedOrEdition(
+            LocalTime stated, ParametresLegaux parametres, boolean midi, boolean debut) {
+        return stated != null ? stated : coalesce(parametres, midi, debut);
     }
 
     /** The break the consigne states, else the edition's, else none. */

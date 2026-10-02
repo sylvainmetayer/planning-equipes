@@ -12,11 +12,13 @@ import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.Path;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * Two guards on the public wall display route ({@code GET /api/mural/{token}}),
@@ -53,8 +55,11 @@ import java.util.concurrent.ConcurrentHashMap;
 @ApplicationScoped
 public class AffichageMuralRateLimiter {
 
-    /** The public prefix, and the only one: see {@code quarkus.http.auth.permission.affichage-mural}. */
-    static final String MURAL_PATH = "/api/mural/";
+    /**
+     * The public prefix, and the only one: see {@code quarkus.http.auth.permission.affichage-mural}.
+     * Derived from the REST root and {@link MuralResource}'s own path, so moving the route moves the guard.
+     */
+    private final String muralPath;
 
     /** After the security headers, before anything handles the request — as for the other limiters. */
     private static final int PRIORITY = 250;
@@ -76,9 +81,14 @@ public class AffichageMuralRateLimiter {
     private volatile TrustedProxies trustedProxies = TrustedProxies.NONE;
 
     @Inject
-    public AffichageMuralRateLimiter(ConfigAffichageMural config, ConfigAdminLogin loginConfig) {
+    public AffichageMuralRateLimiter(
+            ConfigAffichageMural config,
+            ConfigAdminLogin loginConfig,
+            @ConfigProperty(name = "quarkus.rest.path") String restRoot) {
         this.config = config;
         this.loginConfig = loginConfig;
+        this.muralPath =
+                restRoot + MuralResource.class.getAnnotation(Path.class).value() + "/";
     }
 
     public void register(@Observes Filters filters) {
@@ -88,12 +98,12 @@ public class AffichageMuralRateLimiter {
 
     private void apply(RoutingContext context) {
         String path = context.normalizedPath();
-        if (path == null || !path.startsWith(MURAL_PATH)) {
+        if (path == null || !path.startsWith(muralPath)) {
             context.next();
             return;
         }
         String address = ClientAddress.of(context, trustedProxies);
-        String tokenHash = AffichageMuralService.hash(path.substring(MURAL_PATH.length()));
+        String tokenHash = AffichageMuralService.hash(path.substring(muralPath.length()));
         boolean known = validTokens.containsKey(tokenHash);
 
         if (!known && config.maxRefused() > 0) {

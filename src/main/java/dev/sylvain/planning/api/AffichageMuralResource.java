@@ -94,7 +94,7 @@ public class AffichageMuralResource {
         }
         try {
             return LocalDate.parse(date);
-        } catch (DateTimeParseException e) {
+        } catch (DateTimeParseException _) {
             throw new BusinessError.Invalid("Date invalide : " + date);
         }
     }
