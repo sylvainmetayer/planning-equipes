@@ -84,6 +84,9 @@ public class SolvePipeline {
     /** Resolves the budget of a synchronous solve, the one form that is not a job. */
     private final SolveBudgetPolicy budgetPolicy;
 
+    /** Counts a synchronous solve against the operator's hourly quota, as a job counts. */
+    private final SolverQuota quota;
+
     @Inject
     public SolvePipeline(
             PlanSnapshotService snapshotService,
@@ -98,8 +101,10 @@ public class SolvePipeline {
             PublicationDiffService diffService,
             ValidationJourneeService validationService,
             SolveBudgetPolicy budgetPolicy,
-            PlanDosageRepository planDosage) {
+            PlanDosageRepository planDosage,
+            SolverQuota quota) {
         this.budgetPolicy = budgetPolicy;
+        this.quota = quota;
         this.planDosage = planDosage;
         this.snapshotService = snapshotService;
         this.planningService = planningService;
@@ -205,10 +210,16 @@ public class SolvePipeline {
      * competences it carries over the edition's own (ADR 0052). A solve whose
      * problem the server builds from the edition reads what the freeze
      * protects and is never refused.</p>
+     *
+     * <p>Counted against the operator's hourly quota like any job
+     * ({@link SolverQuota}): it takes the cores outside the queue, which is
+     * one more reason it must not escape the count. The background forms
+     * below are not counted here — their job was, at submission.</p>
      */
     @RefusedWhileFrozen
     public Resolution<PlanningEvenement> execute(PlanningEvenement probleme, Long secondsLimit) {
         SolveBudget budget = budgetPolicy.forSolve(secondsLimit, referenceDataService.getParametresSolveur());
+        quota.consume();
         return execute(
                 editionService.editionCourante().getNom(),
                 () -> probleme,

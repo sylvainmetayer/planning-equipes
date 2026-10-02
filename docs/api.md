@@ -144,7 +144,13 @@ créneaux sont déjà commencés… » en `error`, sans être remonté comme une
 **Un seul job de résolution à la fois pour toute l'application**, verrou porté
 par le serveur. Toute autre session voit le même job actif via
 `/api/jobs/active` et se voit refuser un second lancement en `409`, le corps
-portant le job en cours.
+portant le job en cours. **C'est le seul `409` de lancement dont le corps est
+un job** : le quota horaire et la file plafonnée de l'exploitant
+(`SOLVER_MAX_SOLVES_PER_HOUR`, `SOLVER_MAX_QUEUED_JOBS`, voir
+[`exploitation.md`](exploitation.md#combien-de-calculs-linstance-accepte)), comme
+le référentiel figé, répondent `409` avec un `{ message }` à afficher tel quel.
+Un client distingue les deux par la forme du corps (un `id` et un `status`),
+pas par le statut.
 
 ### Budget de calcul
 

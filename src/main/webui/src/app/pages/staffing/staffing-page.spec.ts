@@ -6,11 +6,13 @@
 // These four states are exactly what a migration to `httpResource()` would
 // re-implement, which is why they are pinned here first.
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Location } from '@angular/common';
 import { provideRouter, Router } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { toError } from '../../core/api.service';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { RealiseApi } from '../../core/api/realise-api';
 import {
@@ -908,6 +910,21 @@ describe('StaffingPage', () => {
       expect(page['adultsPlaceholder']()).toBe('140');
       page['setMinors']('400');
       expect(page['adultsPlaceholder']()).toBe('0');
+    });
+
+    it('shows the instance quota refusal as the server words it, and follows nothing', async () => {
+      const quota =
+        'Cette instance limite le calcul à 12 résolutions par heure. Prochaine résolution possible à 14:32.';
+      // What the API layer throws on that 409: its sentence, nothing to switch on.
+      analysesApi.verifyStaffing.mockRejectedValue(
+        toError(new HttpErrorResponse({ status: 409, error: { message: quota } })),
+      );
+      const page = createPage();
+
+      await page['lancerVerification']();
+
+      expect(page['verificationErreur']()).toBe(quota);
+      expect(page['verification']()).toBeNull();
     });
 
     it('checks the floor when nothing is typed in, and never calls a failure a proof', async () => {

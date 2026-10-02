@@ -135,6 +135,7 @@ dev/sylvain/planning/mcp/RefusMetierMcpToolsTest.java
 dev/sylvain/planning/mcp/RefusedWhileSolvingDoorsTest.java
 dev/sylvain/planning/mcp/ReparationMcpToolsTest.java
 dev/sylvain/planning/mcp/ScenarioMcpToolsTest.java
+dev/sylvain/planning/mcp/SolverQuotaGuardTest.java
 dev/sylvain/planning/mcp/SolveurMcpToolsQueueTest.java
 dev/sylvain/planning/observability/HealthProbesTest.java
 dev/sylvain/planning/observability/MetricsEndpointTest.java

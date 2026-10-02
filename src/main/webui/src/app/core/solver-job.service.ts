@@ -80,6 +80,21 @@ function statusLabel(status: string): string {
   return status.toLowerCase();
 }
 
+/**
+ * Whether a 409 body is the job in the way (`SolverOccupeMapper`), rather than
+ * the `{ message }` of any other refusal.
+ */
+function isJobBody(body: unknown): body is JobView {
+  return (
+    typeof body === 'object' &&
+    body !== null &&
+    'id' in body &&
+    typeof body.id === 'string' &&
+    'status' in body &&
+    typeof body.status === 'string'
+  );
+}
+
 /** Job held by the server, as followed by this client. */
 export interface TrackedJob {
   id: string;
@@ -501,10 +516,15 @@ export class SolverJobService {
    * caller did not ask to queue, or the very same run is already planned on
    * that edition — two different messages, told apart by the conflicting job's
    * own status rather than by a second error shape.
+   *
+   * <p>Only a 409 whose body <b>is a job</b> means that. The others carry a
+   * sentence — the instance's hourly quota or queue cap, a frozen referential
+   * — and read like any refusal: taken for a job, they would adopt a run that
+   * does not exist and print « ? » where the reason belongs.</p>
    */
   private decrireRefus(error: unknown): Error {
-    if (error instanceof HttpErrorResponse && error.status === 409 && error.error) {
-      const conflit = error.error as JobView;
+    if (error instanceof HttpErrorResponse && error.status === 409 && isJobBody(error.error)) {
+      const conflit = error.error;
       if (conflit.status === 'QUEUED') {
         const edition = conflit.editionNom ?? conflit.editionId ?? '?';
         return new Error(

@@ -244,6 +244,39 @@ describe('SolverJobService', () => {
       expect(service.activeJob()?.id).toBe('job-2');
     });
 
+    it('shows the sentence of a 409 that is not a job — the instance quota — and adopts nothing', async () => {
+      api.activeResponses = [{ status: 204, body: null }];
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+      notifications.notify.mockClear();
+      const quota =
+        'Cette instance limite le calcul à 12 résolutions par heure. Prochaine résolution possible à 14:32.';
+      api.postResult = new HttpErrorResponse({ status: 409, error: { message: quota } });
+
+      await expect(service.submitSolveFromReferenceData(120)).rejects.toThrow(quota);
+      await expect(
+        service.submitSolveIncremental({ animateurIds: [], jours: [], standIds: [] }),
+      ).rejects.toThrow(quota);
+
+      // Taken for a job, the refusal would have installed a phantom run.
+      expect(service.activeJob()).toBeNull();
+      expect(notifications.notify).toHaveBeenCalledTimes(2);
+      expect(notifications.notify.mock.calls[0][0].message).toBe(quota);
+      expect(notifications.notify.mock.calls[0][0].variant).toBe('error');
+    });
+
+    it('shows the queue cap refusal as it is worded, without inventing an edition', async () => {
+      api.activeResponses = [{ status: 200, body: job() }];
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+      const cap =
+        "Cette instance limite la file d'attente du solveur à 2 résolutions planifiées. Attendez qu'une résolution démarre, ou retirez-en une de la file.";
+      api.postResult = new HttpErrorResponse({ status: 409, error: { message: cap } });
+
+      await expect(service.submitSolveFromReferenceData(120, true)).rejects.toThrow(cap);
+      expect(service.activeJob()?.id).toBe('job-1');
+    });
+
     it('signale tout refus par une notification, pas seulement par l’erreur rendue', async () => {
       api.activeResponses = [{ status: 204, body: null }];
       service.start();

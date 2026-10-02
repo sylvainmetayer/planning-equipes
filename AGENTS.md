@@ -609,6 +609,10 @@ Single Quarkus service, no separate solver microservice. Package root:
   `docs/decisions/0001-cloisonnement-par-edition.md`.
 - Solver tuning: `planning.solver.seconds-limit` /
   `planning.solver.unimproved-seconds-limit` in `application.properties`.
+  The operator's hourly quota and queue cap (`service/solve/SolverQuota`, ADR
+  0075) are checked at submission in the services, never in a resource: a new
+  way to start a solve calls `consume()` (and `checkQueue` if it can wait), and
+  the startup replay of the persisted queue must keep bypassing both.
 
 ### Frontend
 

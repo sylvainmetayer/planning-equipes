@@ -246,6 +246,7 @@ public class StaffingVerificationService {
     private final JournalActionService journal;
     private final PlanningPersistenceService persistence;
     private final JobStreamBroadcaster jobStream;
+    private final SolverQuota quota;
 
     private final AtomicBoolean enCours = new AtomicBoolean();
     /** The check running on this instance, {@code null} when none: what the solver state stream shows. */
@@ -271,7 +272,9 @@ public class StaffingVerificationService {
             StaffingVerificationRepository repository,
             JournalActionService journal,
             PlanningPersistenceService persistence,
-            JobStreamBroadcaster jobStream) {
+            JobStreamBroadcaster jobStream,
+            SolverQuota quota) {
+        this.quota = quota;
         this.planningService = planningService;
         this.referenceDataService = referenceDataService;
         this.staffingService = staffingService;
@@ -315,7 +318,8 @@ public class StaffingVerificationService {
      * @param dureeSecondes the time the solve is given at most, {@code null}
      *                      for the time a solve of the edition gets
      * @throws BusinessError.Conflict when a check is already running, in any
-     *                                edition, or a solve holds the solver
+     *                                edition, a solve holds the solver, or
+     *                                the instance's hourly quota is spent
      * @throws BusinessError.Invalid  when the edition has no seat to fill, or
      *                                a figure is out of range
      */
@@ -356,6 +360,11 @@ public class StaffingVerificationService {
                 throw new BusinessError.Conflict(
                         "Une résolution est en cours : lancez la vérification du besoin une fois qu'elle est terminée.");
             }
+            // A check is a real solve, up to the instance's duration ceiling,
+            // on the same cores: it counts against the operator's hourly
+            // quota like a job. Outside the queue, so the queue cap does not
+            // apply — one check at a time is its own cap.
+            quota.consume();
             LocalDate premierJour = firstDay(seats);
             List<Animateur> team =
                     team(nombreMajeurs, nombreMineurs, referenceDataService.listTypologies(), premierJour);
