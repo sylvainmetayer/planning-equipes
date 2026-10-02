@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.random.RandomGenerator;
+import java.util.stream.Collectors;
 
 /**
  * Fills an empty seat through the week: the animateur who could hold it is
@@ -283,14 +284,11 @@ public final class WeekRelocationMoveIteratorFactory
 
         /** The animateurs eligible for the hole and free at its hour. */
         private List<Animateur> candidates(PosteAffectation hole) {
-            List<Animateur> candidates = new ArrayList<>();
-            for (Animateur animateur : solution.getAnimateurs()) {
-                if (EligibleAnimateurMoveFilter.isEligible(hole, animateur, parametresLegaux)
-                        && free(animateur, hole)) {
-                    candidates.add(animateur);
-                }
-            }
-            return candidates;
+            // Mutable: the caller shuffles it.
+            return solution.getAnimateurs().stream()
+                    .filter(animateur -> EligibleAnimateurMoveFilter.isEligible(hole, animateur, parametresLegaux)
+                            && free(animateur, hole))
+                    .collect(Collectors.toCollection(ArrayList::new));
         }
 
         /**
@@ -356,13 +354,10 @@ public final class WeekRelocationMoveIteratorFactory
          */
         private List<LocalDate> releasable(
                 Animateur animateur, List<LocalDate> worked, LocalDate added, List<LocalDate> choices) {
-            List<LocalDate> fits = new ArrayList<>();
-            for (LocalDate day : choices) {
-                if (releaseFits(animateur, worked, day, added)) {
-                    fits.add(day);
-                }
-            }
-            return fits;
+            // Mutable: the caller shuffles it.
+            return choices.stream()
+                    .filter(day -> releaseFits(animateur, worked, day, added))
+                    .collect(Collectors.toCollection(ArrayList::new));
         }
 
         /**
@@ -387,14 +382,10 @@ public final class WeekRelocationMoveIteratorFactory
         /** The days an animateur holds only movable seats on: the ones that can be freed entirely. */
         private List<LocalDate> freeable(Animateur animateur) {
             Set<LocalDate> pinned = pinnedDays.getOrDefault(animateur, Set.of());
-            List<LocalDate> days = new ArrayList<>();
-            for (LocalDate day : seats.getOrDefault(animateur, Map.of()).keySet()) {
-                if (!pinned.contains(day)) {
-                    days.add(day);
-                }
-            }
-            Collections.sort(days);
-            return days;
+            return seats.getOrDefault(animateur, Map.of()).keySet().stream()
+                    .filter(day -> !pinned.contains(day))
+                    .sorted()
+                    .collect(Collectors.toCollection(ArrayList::new));
         }
 
         /**
@@ -417,12 +408,10 @@ public final class WeekRelocationMoveIteratorFactory
             Animateur animateur = overlongRuns.get(random.nextInt(overlongRuns.size()));
             List<LocalDate> worked = sorted(held.get(animateur).keySet());
             Set<LocalDate> inOverlongRuns = new HashSet<>(daysOfRunsLongerThan(worked, runCap));
-            List<LocalDate> choices = new ArrayList<>();
-            for (LocalDate day : freeable(animateur)) {
-                if (inOverlongRuns.contains(day)) {
-                    choices.add(day);
-                }
-            }
+            // Mutable: shuffled below when no single day fits.
+            List<LocalDate> choices = freeable(animateur).stream()
+                    .filter(inOverlongRuns::contains)
+                    .collect(Collectors.toCollection(ArrayList::new));
             List<LocalDate> released = releasable(animateur, worked, null, choices);
             if (released.isEmpty()) {
                 // No single day brings the run under the cap: any day of it shortens it.

@@ -1,6 +1,7 @@
 package dev.sylvain.planning.domain;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -94,14 +95,14 @@ public final class JoursFeries {
         LocalDate paques = paques(annee);
         TreeMap<LocalDate, String> feries = new TreeMap<>();
         // Fixed dates (art. L3133-1).
-        feries.put(LocalDate.of(annee, 1, 1), "Jour de l'an");
-        feries.put(LocalDate.of(annee, 5, 1), "Fête du Travail");
-        feries.put(LocalDate.of(annee, 5, 8), "Victoire 1945");
-        feries.put(LocalDate.of(annee, 7, 14), "Fête nationale");
-        feries.put(LocalDate.of(annee, 8, 15), "Assomption");
-        feries.put(LocalDate.of(annee, 11, 1), "Toussaint");
-        feries.put(LocalDate.of(annee, 11, 11), "Armistice 1918");
-        feries.put(LocalDate.of(annee, 12, 25), "Noël");
+        feries.put(LocalDate.of(annee, Month.JANUARY, 1), "Jour de l'an");
+        feries.put(LocalDate.of(annee, Month.MAY, 1), "Fête du Travail");
+        feries.put(LocalDate.of(annee, Month.MAY, 8), "Victoire 1945");
+        feries.put(LocalDate.of(annee, Month.JULY, 14), "Fête nationale");
+        feries.put(LocalDate.of(annee, Month.AUGUST, 15), "Assomption");
+        feries.put(LocalDate.of(annee, Month.NOVEMBER, 1), "Toussaint");
+        feries.put(LocalDate.of(annee, Month.NOVEMBER, 11), "Armistice 1918");
+        feries.put(LocalDate.of(annee, Month.DECEMBER, 25), "Noël");
         // Movable feasts, derived from Easter (art. L3133-1 too). Ascension can
         // land on 1 or 8 May (2008: 1 May): the two names are then joined
         // rather than one of them lost.

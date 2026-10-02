@@ -12,7 +12,7 @@ import dev.sylvain.planning.domain.PlafondsLegauxMineurs;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import java.time.LocalTime;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -140,13 +140,9 @@ public final class EligibleAnimateurMoveFilter {
         if (mask == 0) {
             return List.of();
         }
-        List<Motif> motifs = new ArrayList<>(2);
-        for (Motif motif : Motif.VALUES) {
-            if ((mask & motif.bit()) != 0) {
-                motifs.add(motif);
-            }
-        }
-        return List.copyOf(motifs);
+        return Arrays.stream(Motif.VALUES)
+                .filter(motif -> (mask & motif.bit()) != 0)
+                .toList();
     }
 
     /**

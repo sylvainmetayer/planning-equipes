@@ -107,7 +107,7 @@ public class HistoriqueResource {
         }
         try {
             return Long.valueOf(entree.entiteId());
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException _) {
             return null;
         }
     }

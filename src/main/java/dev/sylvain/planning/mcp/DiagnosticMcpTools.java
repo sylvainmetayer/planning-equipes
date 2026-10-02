@@ -36,6 +36,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * The read-only diagnostics the screens have and MCP did not: how many
@@ -476,44 +477,48 @@ public class DiagnosticMcpTools {
         LocalDate jour = McpArgs.date(date, "date");
         boolean sansRelais = Boolean.TRUE.equals(sansRelaisSeulement);
         boolean planifieesVisibles = standId == null && !sansRelais;
-        List<JourneePausesView> journees = new ArrayList<>();
-        for (PauseAnalyzer.JourneeAnimateurView journee : rapport.journees()) {
-            if (jour != null && !jour.equals(journee.date())) {
-                continue;
-            }
-            List<SequencePausesView> sequences = visibleSequences(journee, standId, sansRelais, planifieesVisibles);
-            boolean planifiees = planifieesVisibles
-                    && (!journee.pausesPlanifiees().isEmpty()
-                            || !journee.coupuresRepas().isEmpty());
-            if (!sequences.isEmpty() || planifiees) {
-                journees.add(new JourneePausesView(
-                        journee.animateurId(),
-                        journee.mineur(),
-                        journee.date(),
-                        journee.jour(),
-                        sequences,
-                        planifieesVisibles ? journee.pausesPlanifiees() : List.of(),
-                        planifieesVisibles ? journee.coupuresRepas() : List.of()));
-            }
-        }
-        int pausesDues = 0;
-        int relaisManquants = 0;
-        for (JourneePausesView journee : journees) {
-            for (SequencePausesView sequence : journee.sequences()) {
-                pausesDues += sequence.pausesDues().size();
-                relaisManquants += (int) sequence.pausesDues().stream()
-                        .filter(pause -> !pause.relaisDisponible())
-                        .count();
-            }
-        }
+        List<JourneePausesView> journees = rapport.journees().stream()
+                .filter(journee -> jour == null || jour.equals(journee.date()))
+                .map(journee -> visibleDay(journee, standId, sansRelais, planifieesVisibles))
+                .flatMap(Optional::stream)
+                .toList();
+        List<PauseDueMcpView> dues = journees.stream()
+                .flatMap(journee -> journee.sequences().stream())
+                .flatMap(sequence -> sequence.pausesDues().stream())
+                .toList();
+        int relaisManquants =
+                (int) dues.stream().filter(pause -> !pause.relaisDisponible()).count();
         return new PausesView(
                 rapport.journeesAnalysees(),
-                pausesDues,
+                dues.size(),
                 relaisManquants,
                 rapport.coupuresRepasDues(),
                 rapport.coupuresRepasManquantes(),
                 journees,
                 rapport.message());
+    }
+
+    /** One day as the filters leave it, or empty when they leave nothing of it. */
+    private static Optional<JourneePausesView> visibleDay(
+            PauseAnalyzer.JourneeAnimateurView journee,
+            String standId,
+            boolean sansRelais,
+            boolean planifieesVisibles) {
+        List<SequencePausesView> sequences = visibleSequences(journee, standId, sansRelais, planifieesVisibles);
+        boolean planifiees = planifieesVisibles
+                && (!journee.pausesPlanifiees().isEmpty()
+                        || !journee.coupuresRepas().isEmpty());
+        if (sequences.isEmpty() && !planifiees) {
+            return Optional.empty();
+        }
+        return Optional.of(new JourneePausesView(
+                journee.animateurId(),
+                journee.mineur(),
+                journee.date(),
+                journee.jour(),
+                sequences,
+                planifieesVisibles ? journee.pausesPlanifiees() : List.of(),
+                planifieesVisibles ? journee.coupuresRepas() : List.of()));
     }
 
     /**

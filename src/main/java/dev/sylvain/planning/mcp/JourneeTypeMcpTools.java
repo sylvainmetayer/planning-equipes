@@ -156,12 +156,9 @@ public class JourneeTypeMcpTools {
             @ToolArg(description = "Dates à retirer (AAAA-MM-JJ)") List<String> dates,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         Set<LocalDate> retirees = McpArgs.dates(dates, "dates");
-        List<Affectation> reecrit = new ArrayList<>();
-        for (Affectation affectation : referenceDataService.etatJourneesTypes().calendrier()) {
-            if (!retirees.contains(affectation.date())) {
-                reecrit.add(affectation);
-            }
-        }
+        List<Affectation> reecrit = referenceDataService.etatJourneesTypes().calendrier().stream()
+                .filter(affectation -> !retirees.contains(affectation.date()))
+                .toList();
         return toView(referenceDataService.setCalendrierJourneesTypes(reecrit));
     }
 
