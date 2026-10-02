@@ -211,9 +211,25 @@ final class StandValidator {
                         horaire.getJoursSemaine(),
                         "Un horaire de portée JOURS_SEMAINE requiert au moins un jour de la semaine");
             case PLAGE -> checkPlage(horaire);
-            case DATES -> requireSome(horaire.getDates(), "Un horaire de portée DATES requiert au moins une date");
+            case DATES -> {
+                requireSome(horaire.getDates(), "Un horaire de portée DATES requiert au moins une date");
+                checkStorableDates(horaire);
+            }
             case TOUS -> {
                 // Nothing else to check: the selector carries no data of its own.
+            }
+        }
+    }
+
+    /**
+     * The years a {@code date[]} element can hold and be read back as ISO text
+     * (V122): refused here by name rather than by the column's CHECK as a 500.
+     */
+    private static void checkStorableDates(HoraireStand horaire) {
+        for (LocalDate date : horaire.getDates()) {
+            if (date.getYear() < 1 || date.getYear() > 9999) {
+                throw new BusinessError.Invalid(
+                        "Un horaire de portée DATES ne prend que des dates des années 1 à 9999 (" + date + ")");
             }
         }
     }
