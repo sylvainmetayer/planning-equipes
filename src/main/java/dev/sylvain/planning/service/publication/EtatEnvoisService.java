@@ -224,6 +224,26 @@ public class EtatEnvoisService {
                     destinataire != null && destinataire.reporte(),
                     destinataire == null ? List.of() : destinataire.jours());
         }
+
+        private static DernierEnvoi dernierEnvoi(Envoi envoi, Map<Long, VersionPubliee> parSnapshot) {
+            VersionPubliee version = envoi.snapshotId() == null ? null : parSnapshot.get(envoi.snapshotId());
+            return new DernierEnvoi(
+                    envoi.nature(),
+                    envoi.statut(),
+                    envoi.cause(),
+                    envoi.envoyeLe(),
+                    version == null ? null : version.numero());
+        }
+
+        private static Instant latest(Instant gauche, Instant droite) {
+            if (gauche == null) {
+                return droite;
+            }
+            if (droite == null) {
+                return gauche;
+            }
+            return gauche.isAfter(droite) ? gauche : droite;
+        }
     }
 
     /** The edition's publications, oldest first, numbered from 1. */
@@ -239,25 +259,5 @@ public class EtatEnvoisService {
             versions.add(new VersionPubliee(meta.id(), rang + 1, meta.publieLe()));
         }
         return versions;
-    }
-
-    private static DernierEnvoi dernierEnvoi(Envoi envoi, Map<Long, VersionPubliee> parSnapshot) {
-        VersionPubliee version = envoi.snapshotId() == null ? null : parSnapshot.get(envoi.snapshotId());
-        return new DernierEnvoi(
-                envoi.nature(),
-                envoi.statut(),
-                envoi.cause(),
-                envoi.envoyeLe(),
-                version == null ? null : version.numero());
-    }
-
-    private static Instant latest(Instant gauche, Instant droite) {
-        if (gauche == null) {
-            return droite;
-        }
-        if (droite == null) {
-            return gauche;
-        }
-        return gauche.isAfter(droite) ? gauche : droite;
     }
 }
