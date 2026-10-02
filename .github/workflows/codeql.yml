@@ -1,0 +1,83 @@
+name: CodeQL
+
+# L'analyse de flux de données de GitHub : elle suit une valeur d'une entrée
+# HTTP jusqu'à une requête SQL, un appel sortant ou un chemin de fichier, d'une
+# classe à l'autre, ce que Semgrep OSS (`securite.yml`, job `code`) ne fait
+# qu'à l'intérieur d'un fichier. Les deux se complètent : Semgrep garde ses
+# motifs et sa barrière dans le log, CodeQL publie dans l'onglet Security, où
+# une alerte se trie (corrigée, faux positif, risque accepté) avec sa raison.
+# Il était écarté tant que le dépôt était privé — le *code scanning* y est
+# payant —, il est gratuit depuis qu'il est public.
+#
+# Trois langages, tous sans construction (`build-mode: none`) : CodeQL extrait
+# Java directement des sources, ce qui évite d'y refaire le `./mvnw package` —
+# Quinoa et le bundle Angular compris — que le job `test` paie déjà. Le prix
+# est une résolution de types moins complète sur ce qui vient des
+# dépendances ; le gain, un job de quelques minutes. `actions` analyse les
+# workflows eux-mêmes, en complément de zizmor.
+#
+# `security-extended` plutôt que la suite par défaut : davantage de requêtes,
+# un peu plus de faux positifs, qui se trient une fois dans l'onglet.
+#
+# Ne pas activer en parallèle la configuration « par défaut » de CodeQL dans
+# les réglages du dépôt : GitHub refuse alors les résultats de ce workflow.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  schedule:
+    # Lundi 5 h 20 UTC, après Sécurité : une requête ajoutée à CodeQL trouve
+    # dans du code qui n'a pas bougé.
+    - cron: '20 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyse:
+    # Même garde de fork que tests.yml, conservée pour la même raison.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    name: Analyse (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [java-kotlin, javascript-typescript, actions]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # `explorbot/` est un harnais d'essai jamais livré (voir securite.yml) ;
+      # les tests et les specs ne servent rien à un attaquant, et y chercher
+      # une injection noierait l'onglet sous des chaînes écrites exprès.
+      - name: Initialise CodeQL
+        uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          queries: security-extended
+          config: |
+            paths-ignore:
+              - explorbot
+              - src/test
+              - src/main/webui/e2e
+              - src/main/webui/src/**/*.spec.ts
+
+      - name: Analyse
+        uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          category: /language:${{ matrix.language }}

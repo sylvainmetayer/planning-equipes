@@ -1,0 +1,22 @@
+# Configuration de zizmor, l'audit de sécurité des workflows (job `workflows`
+# de securite.yml). Chaque règle coupée ici porte sa raison.
+rules:
+  # La syntaxe `uses: $/…` (juillet 2026) que propose cette règle n'est pas
+  # encore lue par actionlint, qui tourne dans le même job et refuse alors
+  # l'appel du workflow réutilisable. À rallumer quand une version d'actionlint
+  # l'accepte : les trois `uses: ./.github/workflows/e2e-suite.yml` passeront
+  # à `$/` dans le même commit.
+  self-repository:
+    disable: true
+
+  # docker-ghcr.yml publie deux choses : une version (tag `v*`), qui ne lit
+  # plus aucun cache depuis que zizmor l'a signalé, et `:main`, l'image mobile
+  # de développement, qui garde ses caches Maven et BuildKit — sans eux chaque
+  # poussée sur main retélécharge tout `.m2`. Un cache de main ne s'écrit que
+  # depuis main (une PR, même de fork, n'écrit que dans le sien) : le risque
+  # restant suppose un job de main déjà compromis. zizmor ne lit pas la
+  # condition sur le tag et signale l'étape quand même ; d'où cette exception,
+  # limitée à ce fichier.
+  cache-poisoning:
+    ignore:
+      - docker-ghcr.yml

@@ -5,14 +5,16 @@ name: Sécurité
 # Internet. GitGuardian couvrait déjà les secrets et Renovate les versions,
 # mais rien ne regardait les vulnérabilités connues des dépendances.
 #
-# L'analyse statique du code revient à Semgrep OSS et non à CodeQL : ce dernier
-# ne sait publier ses résultats que dans l'onglet Security, ce qui suppose le
-# *code scanning* — payant sur un dépôt privé, ce qu'est celui-ci. Semgrep, lui,
-# ne demande rien à GitHub : il échoue dans le log, comme le scan de
-# dépendances.
+# Chaque job est une barrière : il échoue dans le log, sur la PR. Le dépôt
+# étant public, le *code scanning* de GitHub est gratuit, et ceux qui le savent
+# publient AUSSI un SARIF dans l'onglet Security — l'historique, l'annotation
+# sur la ligne de la PR, et un faux positif écarté avec sa raison. Le SARIF
+# s'ajoute à la barrière, il ne la remplace pas. L'analyse de flux de CodeQL,
+# que Semgrep OSS ne fait pas d'un fichier à l'autre, vit dans `codeql.yml`.
 #
 # Le rendez-vous hebdomadaire compte autant que le déclenchement sur PR : une
-# CVE publiée demain touche un `pom.xml` qui n'a pas bougé.
+# CVE publiée demain touche un `pom.xml` qui n'a pas bougé — et une image déjà
+# publiée, que seul le job `image` relit.
 
 on:
   push:
@@ -24,7 +26,8 @@ on:
     - cron: '0 5 * * 1'
   workflow_dispatch:
 
-# Le job ne publie rien côté GitHub : il lit les sources et échoue s'il trouve.
+# Lecture seule par défaut ; un job qui publie un SARIF ajoute, pour lui seul,
+# `security-events: write`.
 permissions:
   contents: read
 
@@ -39,20 +42,23 @@ jobs:
     name: Vulnérabilités des dépendances
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       # Lit `pom.xml` et `src/main/webui/package-lock.json` : les deux
       # écosystèmes du projet en une passe, sans clé d'API (contrairement à
       # OWASP dependency-check, que la limitation de débit du NVD rend pénible
       # en CI).
       # Le job EST la barrière : `exit-code: 1` le fait échouer sur la moindre
-      # vulnérabilité corrigeable, et le tableau part dans le log. Publier
-      # plutôt un SARIF dans l'onglet Security supposerait le *code scanning*,
-      # indisponible ici (voir l'en-tête) — et une analyse dont le résultat
-      # n'atteint personne ne sert à rien.
+      # vulnérabilité corrigeable, et le tableau part dans le log. Le SARIF de
+      # l'étape suivante n'en est que la copie pour l'onglet Security.
       - name: Scan des dépendances (Trivy)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
@@ -82,16 +88,80 @@ jobs:
           # angle mort qui ne protège plus rien.
           skip-dirs: explorbot
 
+      # Toutes les sévérités ici, pas seulement celles qui bloquent : l'onglet
+      # Security est l'endroit où une MEDIUM se lit sans faire rougir une PR.
+      # Chaque entrée est redonnée : l'action garde d'un appel à l'autre une
+      # partie de sa configuration, et c'est ce `exit-code: 0` qui fait de
+      # cette étape une copie et non une seconde barrière.
+      - name: Résultats pour l'onglet Security (Trivy, SARIF)
+        if: success() || failure()
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scanners: vuln
+          scan-ref: .
+          format: sarif
+          output: trivy-dependances.sarif
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          exit-code: '0'
+          ignore-unfixed: true
+          skip-dirs: explorbot
+          skip-setup-trivy: true
+
+      - name: Publier dans l'onglet Security
+        if: success() || failure()
+        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          sarif_file: trivy-dependances.sarif
+          category: trivy-dependances
+
+  # Ce qu'une PR AJOUTE, lu par GitHub dans son graphe de dépendances : une
+  # dépendance vulnérable, et une licence que la diffusion sous AGPL ne
+  # supporte pas. Trivy voit les mêmes vulnérabilités, mais sur l'arbre entier
+  # et une fois la PR écrite ; ici la PR est arrêtée sur ce qu'elle introduit,
+  # avec le résumé dans la page du job.
+  #
+  # Les licences refusées sont celles qui ne sont pas libres au sens de l'OSI
+  # — elles interdisent un usage (commercial, en service) que l'AGPL accorde à
+  # quiconque déploie l'image. L'inventaire complet reste
+  # docs/licences-tierces.md ; ce contrôle n'en est que la garde à l'entrée.
+  revue-dependances:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    name: Revue des dépendances ajoutées
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Les dépendances de développement comptent aussi : elles tournent en CI,
+      # avec le jeton du job.
+      - name: Revue des dépendances
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+          fail-on-scopes: runtime, development
+          deny-licenses: SSPL-1.0, BUSL-1.1, Elastic-2.0, CC-BY-NC-4.0, CC-BY-NC-SA-4.0, CC-BY-NC-ND-4.0, Commons-Clause
+          show-patched-versions: true
+
   code:
     # Même garde de fork que tests.yml, conservée pour la même raison.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     name: Analyse statique du code (Semgrep)
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       # Semgrep tourne dans son image officielle plutôt qu'installé par pip :
       # `actions/setup-python` ne trouve aucun binaire pour la distribution du
@@ -100,8 +170,9 @@ jobs:
       # PEP 668. Docker est de toute façon déjà requis par docker-ghcr.yml.
       #
       # Le dépôt est monté en LECTURE SEULE : Semgrep n'a rien à y écrire, et un
-      # fichier laissé par le conteneur — donc appartenant à root — ferait
-      # échouer le `git clean` du job suivant.
+      # fichier laissé par le conteneur ferait échouer le `git clean` du job
+      # suivant. Le SARIF part dans un dossier à part, et le conteneur tourne
+      # sous l'utilisateur du runner pour que ce fichier-là lui appartienne.
       #
       # Version épinglée comme le reste de la chaîne d'outils : une montée peut
       # ajouter des règles, et donc faire rougir une PR qui n'a rien changé.
@@ -133,8 +204,11 @@ jobs:
           # renovate: datasource=docker depName=semgrep/semgrep
           SEMGREP_IMAGE: semgrep/semgrep:1.178.0
         run: |
+          mkdir -p "$RUNNER_TEMP/semgrep"
           docker run --rm \
+            --user "$(id -u):$(id -g)" \
             --volume "$PWD:/src:ro" \
+            --volume "$RUNNER_TEMP/semgrep:/out" \
             --workdir /src \
             --env HOME=/tmp \
             "$SEMGREP_IMAGE" \
@@ -147,4 +221,152 @@ jobs:
               --config r/ai.ai-best-practices \
               --severity INFO \
               --metrics off \
+              --sarif-output=/out/semgrep.sarif \
               --error
+
+      - name: Publier dans l'onglet Security
+        if: success() || failure()
+        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          sarif_file: ${{ runner.temp }}/semgrep/semgrep.sarif
+          category: semgrep
+
+  # Les workflows sont le code qui tient les clés : le jeton qui pousse sur une
+  # branche Renovate, celui qui signe et publie l'image. Semgrep
+  # (`p/github-actions`) n'en voit qu'une poignée de motifs ; trois outils
+  # dédiés vont plus loin.
+  #
+  # - actionlint valide ce que GitHub n'évalue qu'au lancement : expressions,
+  #   `needs`, entrées d'un workflow réutilisable, et le shell de chaque `run:`
+  #   par ShellCheck — au cran `warning` : les `info` restants sont des
+  #   guillemets simples voulus, passés tels quels à un shell distant ;
+  # - zizmor audite la sécurité : injection de template dans un `run:`,
+  #   identifiants laissés par `actions/checkout`, cache empoisonnable dans un
+  #   workflow de release, permissions trop larges. Le jeton du job active ses
+  #   audits en ligne (commit d'action usurpé, action à vulnérabilité connue).
+  #   Ses exceptions vivent dans `.github/zizmor.yml`, chacune avec sa raison ;
+  # - hadolint lit le `Dockerfile` (bonnes pratiques et ShellCheck des `RUN`),
+  #   là où `p/dockerfile` ne cherche que quelques motifs. Une exception se
+  #   pose sur la ligne, `# hadolint ignore=…`, avec sa raison au-dessus.
+  #
+  # Les trois tournent dans leur image officielle, version épinglée et suivie
+  # par Renovate comme celle de Semgrep, dépôt monté en lecture seule.
+  workflows:
+    # Même garde de fork que tests.yml, conservée pour la même raison.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    name: Workflows et Dockerfile
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Valider les workflows (actionlint)
+        env:
+          # renovate: datasource=docker depName=rhysd/actionlint
+          ACTIONLINT_IMAGE: rhysd/actionlint:1.7.12
+        run: |
+          docker run --rm \
+            --volume "$PWD:/repo:ro" \
+            --workdir /repo \
+            --env "SHELLCHECK_OPTS=-S warning" \
+            "$ACTIONLINT_IMAGE" -color
+
+      # Deux passes : le SARIF pour l'onglet Security (zizmor ne renvoie aucun
+      # code d'échec dans ce format), puis la barrière, en annotations sur la PR.
+      - name: Auditer les workflows (zizmor)
+        if: success() || failure()
+        env:
+          # renovate: datasource=docker depName=ghcr.io/zizmorcore/zizmor
+          ZIZMOR_IMAGE: ghcr.io/zizmorcore/zizmor:1.30.0
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          zizmor() {
+            docker run --rm \
+              --volume "$PWD:/repo:ro" \
+              --workdir /repo \
+              --env GH_TOKEN \
+              "$ZIZMOR_IMAGE" --no-progress "$@" .
+          }
+          zizmor --format sarif > "$RUNNER_TEMP/zizmor.sarif"
+          zizmor --format github
+
+      - name: Publier dans l'onglet Security
+        if: success() || failure()
+        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          sarif_file: ${{ runner.temp }}/zizmor.sarif
+          category: zizmor
+
+      - name: Lire le Dockerfile (hadolint)
+        if: success() || failure()
+        env:
+          # renovate: datasource=docker depName=hadolint/hadolint
+          HADOLINT_IMAGE: hadolint/hadolint:v2.15.1
+        run: docker run --rm -i "$HADOLINT_IMAGE" hadolint - < Dockerfile
+
+  # Les paquets système de l'image (la couche Ubuntu, le JRE, le
+  # postgresql-client du dépôt PGDG) n'apparaissent dans aucun fichier du
+  # dépôt : le job `dependances` ne peut pas les voir. `docker-ghcr.yml` scanne
+  # chaque image qu'il construit, avant de la signer ; ce job relit chaque
+  # semaine celles qui sont DÉJÀ publiées, pour la CVE parue depuis. Pas sur une
+  # PR : il lit des images, pas la branche.
+  #
+  # `:latest` est ce que déploie qui suit les versions, `:main` ce que déploie
+  # la recette. Les deux sont publiques, comme le dépôt : aucune connexion au
+  # registre n'est nécessaire.
+  image:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    name: Vulnérabilités de l'image publiée
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        tag: [latest, main]
+
+    steps:
+      # Le checkout n'apporte que `.trivyignore`, s'il existe un jour.
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Scan de l'image (Trivy)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ghcr.io/${{ github.repository }}:${{ matrix.tag }}
+          scanners: vuln
+          format: table
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+          ignore-unfixed: true
+
+      - name: Résultats pour l'onglet Security (Trivy, SARIF)
+        if: success() || failure()
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ghcr.io/${{ github.repository }}:${{ matrix.tag }}
+          scanners: vuln
+          format: sarif
+          output: trivy-image.sarif
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          exit-code: '0'
+          ignore-unfixed: true
+          skip-setup-trivy: true
+
+      - name: Publier dans l'onglet Security
+        if: success() || failure()
+        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          sarif_file: trivy-image.sarif
+          category: trivy-image-${{ matrix.tag }}
