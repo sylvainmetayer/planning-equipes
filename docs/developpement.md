@@ -439,6 +439,31 @@ Quand il échoue sur un nom légitime : le renommer, ou l'ajouter à
 `EXCEPTIONS_ASSUMEES` **avec sa raison**. Un troisième test vérifie que chaque
 exception correspond encore à du code réel.
 
+### Les tests de mutation
+
+La couverture dit qu'une ligne a tourné, pas qu'un test échouerait si elle
+était fausse. PIT le mesure sur les contraintes du solveur : il altère leur
+bytecode — une comparaison inversée, un `>` devenu `>=`, une pénalité
+annulée —, rejoue les `*ConstraintsTest` sur chaque mutant, et compte ceux
+qu'aucun test ne remarque.
+
+```bash
+./mvnw -Pmutation test-compile pitest:mutationCoverage   # ≈ 4 min
+# rapport : target/pit-reports/index.html, mutant par mutant
+```
+
+| Mesure (octobre 2026) | Valeur |
+| --- | --- |
+| Mutants tués | 614 sur 744 (83 %) |
+| Seuil du build (`mutationThreshold`) | 80 % |
+| Plus faible | `ConstraintToggleSupport` (38 %), `PreferenceConstraints` (78 %) |
+
+`mutation.yml` le joue chaque mardi, et sur une PR qui touche
+`solver/constraints/` ou ses tests. Sous le seuil, le job échoue. Un mutant
+survivant se tue par un cas de test — le plus souvent la valeur limite
+qu'aucun test ne posait (exactement le repos minimal, exactement l'âge de la
+majorité). Le seuil ne descend pas ; il monte quand la mesure monte.
+
 ### Où vivent les scénarios
 
 Tous les scénarios — les fixtures écrites à la main, les trente barreaux de la
