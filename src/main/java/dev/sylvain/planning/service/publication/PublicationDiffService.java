@@ -333,12 +333,12 @@ public class PublicationDiffService {
         List<ChangementVacation> changements = new ArrayList<>();
         apparierMemesHeures(retraits, ajouts, changements);
         apparierMemeStand(retraits, ajouts, changements);
-        for (Vacation ajout : ajouts.values()) {
-            changements.add(new ChangementVacation(TypeChangement.AJOUT, ajout, null, libelleAjout(ajout)));
-        }
-        for (Vacation retrait : retraits.values()) {
-            changements.add(new ChangementVacation(TypeChangement.RETRAIT, retrait, null, libelleRetrait(retrait)));
-        }
+        changements.addAll(ajouts.values().stream()
+                .map(ajout -> new ChangementVacation(TypeChangement.AJOUT, ajout, null, libelleAjout(ajout)))
+                .toList());
+        changements.addAll(retraits.values().stream()
+                .map(retrait -> new ChangementVacation(TypeChangement.RETRAIT, retrait, null, libelleRetrait(retrait)))
+                .toList());
         changements.sort(Comparator.comparing(
                         (ChangementVacation changement) -> changement.vacation().date())
                 .thenComparing(

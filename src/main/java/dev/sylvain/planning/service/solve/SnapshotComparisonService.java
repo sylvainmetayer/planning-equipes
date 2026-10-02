@@ -9,7 +9,6 @@ import dev.sylvain.planning.service.solve.PlanSnapshotService.SnapshotDetail;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -246,11 +245,9 @@ public class SnapshotComparisonService {
         Set<String> contraintes = new LinkedHashSet<>();
         contraintes.addAll(violationsBase.keySet());
         contraintes.addAll(violationsVariante.keySet());
-        List<DiffContrainte> diff = new ArrayList<>();
-        for (String contrainte : contraintes) {
-            diff.add(
-                    new DiffContrainte(contrainte, violationsBase.get(contrainte), violationsVariante.get(contrainte)));
-        }
-        return diff;
+        return contraintes.stream()
+                .map(contrainte -> new DiffContrainte(
+                        contrainte, violationsBase.get(contrainte), violationsVariante.get(contrainte)))
+                .toList();
     }
 }

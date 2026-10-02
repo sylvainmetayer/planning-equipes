@@ -67,7 +67,7 @@ public class ArchiveEvenementService {
      * exports: the mark is what makes a spreadsheet read the accents, and an
      * archive file must be the very bytes its own screen would have saved.
      */
-    private static final String CSV_BOM = "﻿";
+    private static final String CSV_BOM = "\uFEFF";
 
     private static final String MANIFEST = "LISEZMOI.txt";
     private static final String REFERENTIALS_FOLDER = "referentiels/";
@@ -458,7 +458,8 @@ public class ArchiveEvenementService {
         return Normalizer.normalize(value, Normalizer.Form.NFD)
                 .replaceAll("\\p{M}+", "")
                 .replaceAll("[^A-Za-z0-9]+", "-")
-                .replaceAll("^-+|-+$", "")
+                // The line above leaves at most one dash at each end.
+                .replaceAll("(?:^-)|(?:-$)", "")
                 .toLowerCase(java.util.Locale.ROOT);
     }
 }

@@ -115,7 +115,7 @@ class EtatEnvoisResourceTest {
     @Test
     void aFailedSendKeepsTheHomeScreenOffUpToDateUntilItIsResent() {
         publier(Map.of());
-        envois.record(List.of(new EnvoiPlanningRepository.Envoi(
+        envois.recordAll(List.of(new EnvoiPlanningRepository.Envoi(
                 "ETAT-A",
                 null,
                 NatureEnvoi.PUBLICATION,
@@ -283,7 +283,7 @@ class EtatEnvoisResourceTest {
     @Test
     void aDeferralNeverMasksAnEarlierFailure() {
         publier(Map.of());
-        envois.record(List.of(new EnvoiPlanningRepository.Envoi(
+        envois.recordAll(List.of(new EnvoiPlanningRepository.Envoi(
                 "ETAT-B", null, NatureEnvoi.PUBLICATION, StatutEnvoi.ECHEC, CauseEchec.BOITE_PLEINE, Instant.now())));
         persistPlan(true);
 

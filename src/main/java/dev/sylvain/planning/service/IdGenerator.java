@@ -59,7 +59,7 @@ public class IdGenerator {
     /** Prefix of every edition id. */
     public static final String EDITION_PREFIX = "E";
 
-    private static final Pattern EDITION_SHAPE = Pattern.compile("[Ee][1-9][0-9]*");
+    private static final Pattern EDITION_SHAPE = Pattern.compile("[Ee][1-9]\\d*");
 
     private final JdbcEditionScope scope;
 

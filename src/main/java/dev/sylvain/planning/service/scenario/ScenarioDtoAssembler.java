@@ -343,7 +343,7 @@ final class ScenarioDtoAssembler {
     private static List<ContrainteAdHocDto> contraintesAdHoc(
             List<ContrainteAdHoc> contraintes, List<Creneau> creneaux) {
         if (contraintes == null) {
-            return null;
+            return List.of();
         }
         Set<Long> creneauxConnus = creneaux.stream().map(Creneau::getId).collect(Collectors.toSet());
         return contraintes.stream()

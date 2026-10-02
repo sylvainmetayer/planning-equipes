@@ -302,7 +302,7 @@ class WeightHistoryResourceTest {
         editionContext.executeIn(first, () -> {
             PlanningEvenement plan = planningService.buildFromReferenceData();
             persistence.persistAfterSolve(plan, null);
-            planDosage.record(stamped);
+            planDosage.stamp(stamped);
             persistence.persist(plan);
             assertThat(planDosage.current()).isEqualTo(stamped);
 

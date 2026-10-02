@@ -273,14 +273,8 @@ final class ScenarioIdRemap {
         }
         String code = blankAsNull(codeDeclare);
         Set<String> pris = new HashSet<>(ids.values());
-        String cible = null;
-        if (existants.containsKey(reference) && !pris.contains(reference)) {
-            String codeExistant = existants.get(reference);
-            if (code == null || codeExistant == null || code.equals(codeExistant)) {
-                cible = reference;
-            }
-        }
-        String cle = code != null ? code : (kind.hasGeneratedShape(reference) ? null : reference);
+        String cible = keepsItsId(reference, code, existants, pris) ? reference : null;
+        String cle = code != null ? code : implicitCode(kind, reference);
         if (cible == null && cle != null) {
             cible = existants.entrySet().stream()
                     .filter(existant -> cle.equals(existant.getValue()) && !pris.contains(existant.getKey()))
@@ -295,6 +289,20 @@ final class ScenarioIdRemap {
             codes.put(reference, code != null ? code : existants.get(cible));
         }
         ids.put(reference, cible);
+    }
+
+    /** The reference names a free row of the edition whose code, when both sides give one, is the same. */
+    private static boolean keepsItsId(String reference, String code, Map<String, String> existants, Set<String> pris) {
+        if (!existants.containsKey(reference) || pris.contains(reference)) {
+            return false;
+        }
+        String codeExistant = existants.get(reference);
+        return code == null || codeExistant == null || code.equals(codeExistant);
+    }
+
+    /** A reference without a code stands for its own code, unless it has the shape of a generated id. */
+    private static String implicitCode(IdGenerator.Kind kind, String reference) {
+        return kind.hasGeneratedShape(reference) ? null : reference;
     }
 
     private void mapAnimateurs(ScenarioDto scenario) {

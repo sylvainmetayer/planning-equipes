@@ -535,15 +535,11 @@ public class DatabaseDumpService {
         }
 
         private void flush() {
-            addStatement(statements, current);
+            String statement = current.toString().trim();
+            if (!statement.isEmpty()) {
+                statements.add(statement);
+            }
             current.setLength(0);
-        }
-    }
-
-    private static void addStatement(List<String> statements, StringBuilder current) {
-        String statement = current.toString().trim();
-        if (!statement.isEmpty()) {
-            statements.add(statement);
         }
     }
 

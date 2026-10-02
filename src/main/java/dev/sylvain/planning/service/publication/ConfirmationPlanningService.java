@@ -270,13 +270,9 @@ public class ConfirmationPlanningService {
      */
     public List<String> unconfirmed() {
         Map<String, ConfirmationPlanningRepository.Confirmation> stockees = repository.byAnimateur();
-        List<String> attendus = new ArrayList<>();
-        for (String animateurId : assignedAnimateurs()) {
-            if (!stockees.containsKey(animateurId)) {
-                attendus.add(animateurId);
-            }
-        }
-        return List.copyOf(attendus);
+        return assignedAnimateurs().stream()
+                .filter(animateurId -> !stockees.containsKey(animateurId))
+                .toList();
     }
 
     /** Marks the reminder as sent, so the next run leaves that person alone. */

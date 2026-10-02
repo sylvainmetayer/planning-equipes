@@ -609,7 +609,7 @@ public class PlanPublicationService {
             journal.recordAdminAction("PUBLICATION_DIFFEREE", differe.animateurId());
         }
         traceRepository.recordRecipients(meta.id(), trace);
-        envois.record(livraisons);
+        envois.recordAll(livraisons);
         // The marker moves for the people this publication addressed, and for
         // them only. Somebody it had nothing to say to was told nothing, so
         // claiming they know this plan would turn their next message from
@@ -757,13 +757,10 @@ public class PlanPublicationService {
      * message.
      */
     private Set<String> decisionsAnnoncees(Set<String> destinataires) {
-        Set<String> ids = new LinkedHashSet<>();
-        for (DemandeEchange demande : demandeEchangeService.decisionsNonCommuniquees()) {
-            if (libelleDecision(demande) != null && destinataires.contains(demande.getDemandeurId())) {
-                ids.add(demande.getId());
-            }
-        }
-        return ids;
+        return demandeEchangeService.decisionsNonCommuniquees().stream()
+                .filter(demande -> libelleDecision(demande) != null && destinataires.contains(demande.getDemandeurId()))
+                .map(DemandeEchange::getId)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     /** Wording of the decisions taken since the last publication, per demandeur. */
