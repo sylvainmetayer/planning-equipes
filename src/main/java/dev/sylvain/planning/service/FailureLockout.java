@@ -123,14 +123,23 @@ public final class FailureLockout {
         });
     }
 
-    /** One more failure for {@code key}, for a caller that learns of it without having reserved. */
-    public void recordFailure(String key, Duration duration) {
+    /**
+     * One more failure for {@code key}, for a caller that learns of it without
+     * having reserved.
+     *
+     * @return the failures of the run once this one is counted — the caller
+     *         knows the lock has just engaged when it equals its ceiling
+     */
+    public int recordFailure(String key, Duration duration) {
         Instant now = Instant.now();
         makeRoomFor(key, now, duration);
+        int[] failures = {0};
         byKey.compute(key, (ignore, current) -> {
             Run run = live(current, now, duration);
-            return new Run(run.failures() + 1, run.inFlight(), now);
+            failures[0] = run.failures() + 1;
+            return new Run(failures[0], run.inFlight(), now);
         });
+        return failures[0];
     }
 
     /** The run stops there: a success. */

@@ -407,7 +407,9 @@ Single Quarkus service, no separate solver microservice. Package root:
   without a shared secret — a header is a claim, not a proof. Hardening for an
   Internet-facing deployment — browser security headers
   (`SecurityHeadersFilter`), HTTP limits, the four rate limiters
-  (`AdminLoginLimiter` on `/j_security_check`,
+  (`AdminLoginLimiter` on `/j_security_check`, which also writes the
+  instance's admin login journal — logins, failures, lockouts, never what was
+  typed, ADR 0076 —,
   `CodeRequestLimiter` on the espace access codes, `McpRateLimiter` on the
   `/mcp` transport, which carries two guards of its own — a rate ceiling on
   every request and a lockout on a run of refused keys —, and

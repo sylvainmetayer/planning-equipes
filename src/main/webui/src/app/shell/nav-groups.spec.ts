@@ -7,6 +7,7 @@ import {
 import { ONGLETS_DEBUG, readOngletDebug } from '../pages/debug/debug';
 import { ONGLETS_DIAGNOSTIC, readOnglet } from '../pages/diagnostic/diagnostic';
 import { readDisponibilitesTab } from '../pages/disponibilites/declarations-filter';
+import { readHistoriqueTab } from '../pages/historique/historique';
 import { readEchangesTab } from '../pages/echanges/echanges-filter';
 import { ONGLETS_FICHIERS, readOngletFichiers } from '../pages/fichiers/fichiers';
 import { IMPORT_CARDS, readImportCard } from '../pages/imports/imports';
@@ -54,6 +55,12 @@ const TAB_READERS: Record<string, TabReader | readonly TabReader[]> = {
     param: 'onglet',
     opens: (v) => readDisponibilitesTab(v) === v,
     values: ['covoiturage'],
+  },
+  // The actions are the default tab: only the logins are named.
+  '/historique': {
+    param: 'onglet',
+    opens: (v) => readHistoriqueTab(v) === v,
+    values: ['connexions'],
   },
   // The requests are the default tab: only the statistics are named.
   '/echanges': { param: 'onglet', opens: (v) => readEchangesTab(v) === v, values: ['stats'] },

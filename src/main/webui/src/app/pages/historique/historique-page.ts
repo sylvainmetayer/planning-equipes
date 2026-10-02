@@ -3,9 +3,10 @@ import {
   Component,
   computed,
   DestroyRef,
+  effect,
   inject,
-  OnInit,
   signal,
+  untracked,
   ViewEncapsulation,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -18,6 +19,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { errorPrefix } from '../../core/error-message';
@@ -25,10 +27,12 @@ import { intlLocale } from '../../core/locale';
 import { EntreeHistorique } from '../../core/models';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 import { StatusMessage } from '../../shared/status-message';
+import { ConnexionsAdmin } from './connexions-admin';
 import {
   FiltreActeur,
   FiltreNature,
   FiltreResultat,
+  HistoriqueTab,
   cutPage,
   entitesPresentes,
   exportCodes,
@@ -41,6 +45,7 @@ import {
   readInstant,
   readNatureFilter,
   readOutcomeFilter,
+  readHistoriqueTab,
   natureQuery,
   parJournee,
   qui,
@@ -63,6 +68,7 @@ const PERIOD_DEBOUNCE_MS = 600;
 @Component({
   selector: 'app-historique-page',
   imports: [
+    ConnexionsAdmin,
     FormsModule,
     MatButtonModule,
     MatButtonToggleModule,
@@ -81,7 +87,7 @@ const PERIOD_DEBOUNCE_MS = 600;
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class HistoriquePage implements OnInit {
+export class HistoriquePage {
   private readonly analysesApi = inject(AnalysesApi);
   private readonly route = inject(ActivatedRoute);
 
@@ -91,6 +97,8 @@ export class HistoriquePage implements OnInit {
   protected readonly suivant = signal<number | null>(null);
   protected readonly erreur = signal('');
 
+  /** « Actions » of the edition, or « Connexions » of the instance (`?onglet=connexions`). */
+  protected readonly onglet = signal<HistoriqueTab>('actions');
   protected readonly acteur = signal<FiltreActeur>('TOUS');
   protected readonly resultat = signal<FiltreResultat>('TOUS');
   protected readonly nature = signal<FiltreNature>('TOUTES');
@@ -114,6 +122,8 @@ export class HistoriquePage implements OnInit {
   private pendingDepuis: string | null = null;
   private pendingJusqua: string | null = null;
   private periodTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Whether the actions tab has asked for its first page yet. */
+  private actionsRead = false;
 
   protected readonly entites = computed(() => entitesPresentes(this.entrees()));
   protected readonly filtrees = computed(() =>
@@ -143,7 +153,24 @@ export class HistoriquePage implements OnInit {
     this.jusqua.set(readInstant(params.get('jusqua')));
     this.entite.set(params.get('entite') ?? '');
     this.recherche.set(params.get('q') ?? '');
+    // Followed rather than read once: the palette's link to the tab reuses
+    // the component when the page is already open.
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((query) => {
+      this.onglet.set(readHistoriqueTab(query.get('onglet')));
+    });
+    // The edition's actions are read the first time their tab shows: opened
+    // on « Connexions », the page asks nothing of the history.
+    effect(() => {
+      if (this.onglet() === 'actions' && !this.actionsRead) {
+        this.actionsRead = true;
+        untracked(() => {
+          void this.recharger();
+          void this.loadActionInventory();
+        });
+      }
+    });
     keepViewInQueryParams(() => ({
+      onglet: this.onglet() === 'actions' ? null : this.onglet(),
       acteur: this.acteur() === 'TOUS' ? null : this.acteur(),
       resultat: this.resultat() === 'TOUS' ? null : this.resultat(),
       nature: natureQuery(this.nature()),
@@ -154,9 +181,8 @@ export class HistoriquePage implements OnInit {
     }));
   }
 
-  ngOnInit(): void {
-    void this.recharger();
-    void this.loadActionInventory();
+  protected changeOnglet(onglet: HistoriqueTab): void {
+    this.onglet.set(onglet);
   }
 
   /** The first page again, under the filters as they stand. */

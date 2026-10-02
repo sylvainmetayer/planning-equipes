@@ -2,7 +2,7 @@
 // reads. No Angular here, so it is unit-tested without rendering anything.
 
 import { HistoryQuery } from '../../core/api/analyses-api';
-import { ActionHistorique, EntreeHistorique } from '../../core/models';
+import { ActionHistorique, AdminLoginView, EntreeHistorique } from '../../core/models';
 import { correspondAuFiltre } from '../../core/text-filter';
 import { compareCodeUnits } from '../../core/string-order';
 import { historyLabel } from '../staffing/verification';
@@ -75,8 +75,10 @@ export function historyQuery(
  * the cursor of the next page — the id of the last line shown — when the
  * extra line came back.
  */
-export function cutPage(lignes: EntreeHistorique[]): {
-  entrees: EntreeHistorique[];
+export function cutPage<T extends { id: number }>(
+  lignes: T[],
+): {
+  entrees: T[];
   suivant: number | null;
 } {
   if (lignes.length <= PAGE_HISTORIQUE) {
@@ -84,6 +86,25 @@ export function cutPage(lignes: EntreeHistorique[]): {
   }
   const entrees = lignes.slice(0, PAGE_HISTORIQUE);
   return { entrees, suivant: entrees[entrees.length - 1].id };
+}
+
+/** Which tab the page shows: what was done in the edition, or who signed in. */
+export type HistoriqueTab = 'actions' | 'connexions';
+
+export function readHistoriqueTab(valeur: string | null): HistoriqueTab {
+  return valeur === 'connexions' ? 'connexions' : 'actions';
+}
+
+/** What one attempt on the admin login came to, in one word for the list. */
+export function loginLabel(connexion: AdminLoginView): string {
+  switch (connexion.evenement) {
+    case 'CONNEXION':
+      return $localize`:@@historique.connexion.reussie:Connexion réussie`;
+    case 'ECHEC':
+      return $localize`:@@historique.connexion.echec:Échec`;
+    case 'VERROUILLAGE':
+      return $localize`:@@historique.connexion.verrouillage:Adresse verrouillée`;
+  }
 }
 
 /** The codes the server's catalogue flags as a file leaving the application. */

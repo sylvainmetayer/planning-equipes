@@ -451,7 +451,11 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `depuis` exclusive as the server counts) asked of the server, the other
   filters applied to the lines loaded, « Charger plus » asking the next page by
   the cursor of the last line shown; the Solveur's « N modification(s) depuis
-  la dernière résolution » lands on `?nature=donnees&depuis=<the solve>`),
+  la dernière résolution » lands on `?nature=donnees&depuis=<the solve>`;
+  `?onglet=connexions`, « Connexions », the admin form login journal of the
+  instance — logins, failures, lockouts, with time and address, the same
+  whatever edition is selected —, `pages/historique/connexions-admin`, paged
+  the same way),
   `/nouveautes` (« Nouveautés » — what the running version brought, read from
   the repository's commit subjects collected at build time by
   `scripts/generate-news.js` into a gitignored `news-data.ts`, and sorted

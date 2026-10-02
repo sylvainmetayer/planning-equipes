@@ -3279,6 +3279,18 @@ export interface ActionHistorique {
   export: boolean;
 }
 
+/**
+ * One attempt on the admin form login (ADR 0076): when, what came of it and
+ * from which address — never what was typed. Instance-wide, whatever edition
+ * is selected.
+ */
+export interface AdminLoginView {
+  id: number;
+  survenuLe: string;
+  evenement: 'CONNEXION' | 'ECHEC' | 'VERROUILLAGE';
+  adresse: string;
+}
+
 export interface AlerteView {
   /** Which job raised it: `RAPPEL_VEILLE_INJOIGNABLE`, `RELANCE_INJOIGNABLE`, `ALERTE_ECHANGE`. */
   type: string;
