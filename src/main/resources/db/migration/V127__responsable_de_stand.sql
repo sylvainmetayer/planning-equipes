@@ -1,4 +1,4 @@
--- Le responsable de stand ouvre ses routes (issue #295, ADR 0076).
+-- Le responsable de stand ouvre ses routes (issue #295, ADR 0077).
 --
 -- Ce qu'il voit est le plan PUBLIÉ des stands de son périmètre. Deux réglages
 -- décident s'il y lit des noms ou seulement des effectifs :

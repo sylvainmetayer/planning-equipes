@@ -102,10 +102,11 @@ scénario versionné de `src/main/resources/scenarios/`.
 >>>>>>> 8eb963b1 (docs(adr): numéroter 0069 la décision Keycloak, et V115 sa migration)
 >>>>>>> 57192585 (fix(ci): renuméroter ADR 0071 et V117/V118, corriger les alertes)
 <<<<<<< HEAD
-=======
-| [0076](0076-keycloak-obligatoire-comptes-nominatifs.md) | Keycloak obligatoire pour l'administration, l'espace animateur et MCP ; le compte embarqué devient une porte de secours fermée ; un compte par personne ; les droits fins (par édition, datés) dans l'application | Accepté · socle implémenté |
->>>>>>> e12f96e5 (chore: aligner la PR sur main après le second rebase)
 >>>>>>> 4c284d48 (chore: aligner la PR sur main après le second rebase)
+=======
+| [0077](0077-keycloak-obligatoire-comptes-nominatifs.md) | Keycloak obligatoire pour l'administration, l'espace animateur et MCP ; le compte embarqué devient une porte de secours fermée ; un compte par personne ; les droits fins (par édition, datés) dans l'application | Accepté · socle implémenté |
+>>>>>>> 27968536 (chore: aligner la PR sur main après le rebase)
+>>>>>>> 87e69034 (chore: aligner la PR sur main après le rebase)
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,

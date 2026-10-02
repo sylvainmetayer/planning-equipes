@@ -73,7 +73,7 @@ class RealmPlanningStructuralTest {
      * Every role an HTTP policy names has to exist, or the policy guards a door
      * nobody can open: in the realm, or among the delegated roles the
      * application grants itself from its rights ({@code RoleHabilitation},
-     * ADR 0076) — never in the realm, since a realm role is neither per
+     * ADR 0077) — never in the realm, since a realm role is neither per
      * edition nor dated.
      */
     @Test

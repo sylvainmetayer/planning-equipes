@@ -240,7 +240,7 @@ complètes. Cinq points sont connus et se consignent :
   « purge automatique : non », mais « purge manuelle, à date fixe, tracée au
   journal du §5 » ;
 - **une deuxième base porte des données personnelles : Keycloak**, obligatoire
-  depuis l'[ADR 0076](decisions/0076-keycloak-obligatoire-comptes-nominatifs.md).
+  depuis l'[ADR 0077](decisions/0077-keycloak-obligatoire-comptes-nominatifs.md).
   Le realm détient le prénom, le nom et l'adresse e-mail de chaque personne qui
   a un compte (administrateurs, animateurs), son second facteur et l'historique
   de ses connexions — les **événements** du realm (connexions, échecs, et

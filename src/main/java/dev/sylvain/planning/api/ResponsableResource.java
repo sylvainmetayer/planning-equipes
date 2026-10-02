@@ -15,7 +15,7 @@ import jakarta.ws.rs.core.MediaType;
 import java.util.List;
 
 /**
- * The responsable de stand's reads (issue #295, ADR 0076) — reads only: no
+ * The responsable de stand's reads (issue #295, ADR 0077) — reads only: no
  * method here writes, and {@code ResponsableProjectionStructurelleTest}
  * refuses one.
  *
