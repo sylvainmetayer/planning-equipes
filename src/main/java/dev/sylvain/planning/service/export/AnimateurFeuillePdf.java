@@ -235,11 +235,10 @@ public class AnimateurFeuillePdf implements DocumentAnimateur {
             cell.setBackgroundColor(theme.highlight());
         }
 
-        List<PdfTheme.Barre> barres = new ArrayList<>();
-        for (AnimateurPlanningView.Vacation vacation : jour.vacations()) {
-            barres.add(new PdfTheme.Barre(
-                    vacation.debutMinutes(), vacation.finMinutes(), vacation.couleur(), null, false));
-        }
+        List<PdfTheme.Barre> barres = jour.vacations().stream()
+                .map(vacation -> new PdfTheme.Barre(
+                        vacation.debutMinutes(), vacation.finMinutes(), vacation.couleur(), null, false))
+                .toList();
         // The mini timeline is a table of its own inside the box: laid out by
         // the engine, under the date line, rather than drawn at a distance
         // from the top of the cell that any longer date would push into.

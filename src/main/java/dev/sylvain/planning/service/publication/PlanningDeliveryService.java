@@ -101,13 +101,13 @@ public class PlanningDeliveryService {
             send(planning, animateur);
         } catch (RuntimeException e) {
             Log.errorf(e, "Failed to mail the planning of animateur %s", animateur.getId());
-            record(animateur.getId(), version, StatutEnvoi.ECHEC, EnvoiPlanningRepository.CauseEchec.of(e));
+            recordResend(animateur.getId(), version, StatutEnvoi.ECHEC, EnvoiPlanningRepository.CauseEchec.of(e));
             // The route's own journal line records the request; this one says
             // it failed, as a failed publication mail does — by id.
             journal.recordAdminFailure("PUBLICATION_ECHEC", animateur.getId());
             return new DeliveryReport(0, List.of(), List.of("Échec de l'envoi à " + animateur.getEmail()));
         }
-        record(animateur.getId(), version, StatutEnvoi.ENVOYE, null);
+        recordResend(animateur.getId(), version, StatutEnvoi.ENVOYE, null);
         return new DeliveryReport(1, List.of(), List.of());
     }
 
@@ -115,9 +115,9 @@ public class PlanningDeliveryService {
      * Writes the resend to the delivery ledger, so the Diffuser table shows
      * « envoyé » where it showed « échec » — the whole point of resending.
      */
-    private void record(
+    private void recordResend(
             String animateurId, Long version, StatutEnvoi statut, EnvoiPlanningRepository.CauseEchec cause) {
-        envois.record(List.of(new EnvoiPlanningRepository.Envoi(
+        envois.recordAll(List.of(new EnvoiPlanningRepository.Envoi(
                 animateurId, version, EnvoiPlanningRepository.NatureEnvoi.RENVOI, statut, cause, Instant.now())));
     }
 

@@ -40,6 +40,12 @@ public class NotificationWriter {
     /** Template value: the name of the edition the mail is about. */
     private static final String KEY_EDITION = "edition";
 
+    // Template values: the seat, the reason, the first name and the espace link.
+    private static final String KEY_POSTE = "poste";
+    private static final String KEY_MOTIF = "motif";
+    private static final String KEY_PRENOM = "prenom";
+    private static final String KEY_LIEN_ESPACE = "lienEspace";
+
     /**
      * « samedi 11 juillet » — the same way a planning is read aloud.
      *
@@ -124,11 +130,16 @@ public class NotificationWriter {
                 "mail/empechement-signale",
                 sujet,
                 MailTemplates.values(
-                        "nom", n.animateurNomComplet(),
-                        "jour", JOUR.format(n.jour()),
-                        "poste", n.poste(),
-                        "motif", n.motif(),
-                        "lien", liens.jourScreen().orElse(null))));
+                        "nom",
+                        n.animateurNomComplet(),
+                        "jour",
+                        JOUR.format(n.jour()),
+                        KEY_POSTE,
+                        n.poste(),
+                        KEY_MOTIF,
+                        n.motif(),
+                        "lien",
+                        liens.jourScreen().orElse(null))));
     }
 
     /** The one who reported an absence hears it was filed, and that their planning was left as it was. */
@@ -141,10 +152,14 @@ public class NotificationWriter {
                 "mail/signalement-classe",
                 productName.subject("votre signalement a été classé"),
                 MailTemplates.values(
-                        "prenom", blankToNull(n.prenom()),
-                        "jour", JOUR.format(n.jour()),
-                        "poste", n.poste(),
-                        "lienEspace", n.espaceLink())));
+                        KEY_PRENOM,
+                        blankToNull(n.prenom()),
+                        "jour",
+                        JOUR.format(n.jour()),
+                        KEY_POSTE,
+                        n.poste(),
+                        KEY_LIEN_ESPACE,
+                        n.espaceLink())));
     }
 
     /** The one who reported an absence hears it was recorded: they are no longer expected there. */
@@ -157,10 +172,14 @@ public class NotificationWriter {
                 "mail/signalement-accepte",
                 productName.subject("votre absence est prise en compte"),
                 MailTemplates.values(
-                        "prenom", blankToNull(n.prenom()),
-                        "jour", JOUR.format(n.jour()),
-                        "poste", n.poste(),
-                        "lienEspace", n.espaceLink())));
+                        KEY_PRENOM,
+                        blankToNull(n.prenom()),
+                        "jour",
+                        JOUR.format(n.jour()),
+                        KEY_POSTE,
+                        n.poste(),
+                        KEY_LIEN_ESPACE,
+                        n.espaceLink())));
     }
 
     /**
@@ -176,9 +195,12 @@ public class NotificationWriter {
                 "mail/covoiturage-valide",
                 productName.subject("votre arrivée groupée est validée"),
                 MailTemplates.values(
-                        "prenom", blankToNull(n.prenom()),
-                        "coequipiers", String.join(", ", n.teammates()),
-                        "lienEspace", n.espaceLink())));
+                        KEY_PRENOM,
+                        blankToNull(n.prenom()),
+                        "coequipiers",
+                        String.join(", ", n.teammates()),
+                        KEY_LIEN_ESPACE,
+                        n.espaceLink())));
     }
 
     /** The one who asked hears it was set aside, and why when the admin said. */
@@ -191,9 +213,9 @@ public class NotificationWriter {
                 "mail/covoiturage-ecarte",
                 productName.subject("votre demande de covoiturage n'a pas été retenue"),
                 MailTemplates.values(
-                        "prenom", blankToNull(n.prenom()),
-                        "motif", blankToNull(n.reason()),
-                        "lienEspace", n.espaceLink())));
+                        KEY_PRENOM, blankToNull(n.prenom()),
+                        KEY_MOTIF, blankToNull(n.reason()),
+                        KEY_LIEN_ESPACE, n.espaceLink())));
     }
 
     /**
@@ -210,11 +232,16 @@ public class NotificationWriter {
                 "mail/covoiturage-annule",
                 productName.subject("votre arrivée groupée est annulée"),
                 MailTemplates.values(
-                        "prenom", blankToNull(n.prenom()),
-                        "coequipiers", String.join(", ", n.teammates()),
-                        "motif", blankToNull(n.reason()),
-                        "collecteOuverte", n.collectionOpen(),
-                        "lienEspace", n.espaceLink())));
+                        KEY_PRENOM,
+                        blankToNull(n.prenom()),
+                        "coequipiers",
+                        String.join(", ", n.teammates()),
+                        KEY_MOTIF,
+                        blankToNull(n.reason()),
+                        "collecteOuverte",
+                        n.collectionOpen(),
+                        KEY_LIEN_ESPACE,
+                        n.espaceLink())));
     }
 
     /**
@@ -232,10 +259,14 @@ public class NotificationWriter {
                 "mail/rappel-veille",
                 sujet,
                 MailTemplates.values(
-                        "prenom", blankToNull(n.prenom()),
-                        "jour", JOUR.format(n.date()),
-                        "postes", n.postes(),
-                        "lienEspace", n.lienEspace())));
+                        KEY_PRENOM,
+                        blankToNull(n.prenom()),
+                        "jour",
+                        JOUR.format(n.date()),
+                        "postes",
+                        n.postes(),
+                        KEY_LIEN_ESPACE,
+                        n.lienEspace())));
     }
 
     /**

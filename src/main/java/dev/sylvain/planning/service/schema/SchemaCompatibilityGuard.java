@@ -145,7 +145,7 @@ public class SchemaCompatibilityGuard {
     void recordAdmitted() {
         Admission admission = admitted;
         if (admission != null) {
-            record(admission.migration());
+            recordVersion(admission.migration());
         }
     }
 
@@ -191,7 +191,7 @@ public class SchemaCompatibilityGuard {
      * Never fails the boot: an instance that cannot write one line of
      * traceability is still an instance that works.
      */
-    private void record(MigrationVersion migration) {
+    private void recordVersion(MigrationVersion migration) {
         String latest = migration == null ? null : migration.getVersion();
         try {
             if (versions.recordStart(binaryVersion, latest, clock.instant())) {

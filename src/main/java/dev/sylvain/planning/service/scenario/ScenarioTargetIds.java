@@ -8,6 +8,7 @@ import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,7 @@ class ScenarioTargetIds {
 
     /** A view of the current edition, read now: call it inside the edition the import writes into. */
     ScenarioIdRemap.Edition of() {
-        Map<IdGenerator.Kind, Map<String, String>> codes = new HashMap<>();
+        Map<IdGenerator.Kind, Map<String, String>> codes = new EnumMap<>(IdGenerator.Kind.class);
         codes.put(IdGenerator.Kind.STAND, codesOf(referenceDataService.listStands()));
         codes.put(IdGenerator.Kind.EMPLACEMENT, emplacementCodes(referenceDataService.listEmplacements()));
         Map<String, String> typologies = new HashMap<>();

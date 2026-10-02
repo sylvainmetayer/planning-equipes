@@ -4,6 +4,7 @@ import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.ConstraintCatalog.ConstraintDefinition;
 import dev.sylvain.planning.solver.ConstraintCatalog.Lever;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -14,6 +15,7 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * What to do about a blocking problem — the playbook between « this timeslot
@@ -59,6 +61,12 @@ public final class BlockerPlaybook {
 
     /** Query parameter naming the tab of the rules screen a rule sits on. */
     private static final String PARAM_ONGLET = "onglet";
+
+    /** Query parameter naming the animateurs an action opens its screen on. */
+    private static final String PARAM_ANIMATEUR = "animateur";
+
+    /** Value of the {@code axe} parameter that reads a screen person by person. */
+    private static final String AXE_PERSONNE = "personne";
 
     /**
      * What a sentence says when it speaks of a rule's weight — the organiser's
@@ -374,10 +382,8 @@ public final class BlockerPlaybook {
      */
     private static List<BiFunction<ConstraintDefinition, Context, ActionType>> templatesOf(
             ConstraintDefinition definition, Integer weight) {
-        List<BiFunction<ConstraintDefinition, Context, ActionType>> templates = new ArrayList<>();
-        for (Lever lever : definition.levers()) {
-            templates.add(BY_LEVER.get(lever));
-        }
+        List<BiFunction<ConstraintDefinition, Context, ActionType>> templates =
+                definition.levers().stream().map(BY_LEVER::get).collect(Collectors.toCollection(ArrayList::new));
         // Map.of refuses a null key even on get(): a definition missing its
         // category finds no line rather than throwing.
         if (templates.isEmpty() && definition.categorie() != null) {
@@ -393,7 +399,13 @@ public final class BlockerPlaybook {
     /** Every action the playbook can produce, bare — what the route test reads. */
     public static List<ActionType> everyAction() {
         Context full = new Context(
-                1L, LocalDate.of(2026, 7, 1), List.of("S1"), List.of("T1"), List.of("C1"), List.of("A1"), false);
+                1L,
+                LocalDate.of(2026, Month.JULY, 1),
+                List.of("S1"),
+                List.of("T1"),
+                List.of("C1"),
+                List.of("A1"),
+                false);
         List<ActionType> actions = new ArrayList<>();
         for (String type : BY_CAUSE.keySet()) {
             actions.addAll(forCause(type, full));
@@ -425,7 +437,7 @@ public final class BlockerPlaybook {
             params.put("creneau", String.valueOf(context.creneauId()));
             putStand(params, context);
             if (context.animateurIds().size() == 1) {
-                params.put("animateur", context.animateurIds().getFirst());
+                params.put(PARAM_ANIMATEUR, context.animateurIds().getFirst());
                 return new ActionType(
                         CODE_BENCH,
                         "Qui peut remplacer ?",
@@ -480,8 +492,8 @@ public final class BlockerPlaybook {
                 // « Par personne » axis (issue #713).
                 ROUTE_DAY,
                 context.date() == null
-                        ? Map.of("axe", "personne")
-                        : Map.of("axe", "personne", "date", context.date().toString()));
+                        ? Map.of("axe", AXE_PERSONNE)
+                        : Map.of("axe", AXE_PERSONNE, "date", context.date().toString()));
     }
 
     private static ActionType editAdjustmentAction(Context context, String explanation) {
@@ -529,8 +541,8 @@ public final class BlockerPlaybook {
                         + " s'il n'a plus lieu d'être.",
                 ROUTE_LOCKS,
                 context.animateurIds().isEmpty()
-                        ? Map.of("onglet", TAB_LOCKS)
-                        : Map.of("onglet", TAB_LOCKS, "animateur", String.join(",", context.animateurIds())));
+                        ? Map.of(PARAM_ONGLET, TAB_LOCKS)
+                        : Map.of(PARAM_ONGLET, TAB_LOCKS, PARAM_ANIMATEUR, String.join(",", context.animateurIds())));
     }
 
     private static ActionType repairAction(Context context) {
@@ -610,7 +622,7 @@ public final class BlockerPlaybook {
                 "Voir la charge par personne",
                 "Qui travaille le plus, et de combien : c'est là qu'on choisit qui alléger.",
                 ROUTE_DAY,
-                Map.of("axe", "personne"));
+                Map.of("axe", AXE_PERSONNE));
     }
 
     private static ActionType lockAction(Context context) {
@@ -620,8 +632,8 @@ public final class BlockerPlaybook {
                 "Un verrou garde une personne, un stand ou une journée tels quels au prochain calcul.",
                 ROUTE_LOCKS,
                 context.animateurIds().isEmpty()
-                        ? Map.of("onglet", TAB_LOCKS)
-                        : Map.of("onglet", TAB_LOCKS, "animateur", String.join(",", context.animateurIds())));
+                        ? Map.of(PARAM_ONGLET, TAB_LOCKS)
+                        : Map.of(PARAM_ONGLET, TAB_LOCKS, PARAM_ANIMATEUR, String.join(",", context.animateurIds())));
     }
 
     /** {@code onglet} and {@code regle}: the rule's own line, on the tab of its level. */

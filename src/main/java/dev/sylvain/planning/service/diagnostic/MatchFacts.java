@@ -37,8 +37,9 @@ public record MatchFacts(List<Object> facts) {
      * itself, and is its own single fact.</p>
      */
     public static MatchFacts of(ConstraintJustification justification) {
-        return justification instanceof DefaultConstraintJustification defaultJustification
-                ? new MatchFacts(defaultJustification.getFacts())
-                : new MatchFacts(List.of(justification));
+        return new MatchFacts(
+                justification instanceof DefaultConstraintJustification defaultJustification
+                        ? defaultJustification.getFacts()
+                        : List.of(justification));
     }
 }

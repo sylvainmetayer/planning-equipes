@@ -33,7 +33,7 @@ public class PlanDosageRepository {
     }
 
     /** Stamps the persisted plan with {@code dosage}; {@code null} says « unknown ». */
-    public void record(Dosage dosage) {
+    public void stamp(Dosage dosage) {
         String json;
         try {
             json = dosage == null ? null : objectMapper.writeValueAsString(dosage);

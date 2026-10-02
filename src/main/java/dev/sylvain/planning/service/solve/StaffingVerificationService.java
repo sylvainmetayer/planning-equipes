@@ -26,6 +26,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Month;
+import java.time.ZoneId;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -283,6 +284,28 @@ public class StaffingVerificationService {
     }
 
     /**
+     * The time a solve of the edition gets: the question « does the floor
+     * hold » is asked against the plan a real solve would find, and a check
+     * given less fails where that solve succeeds. A duration asked for
+     * explicitly must fall within the instance's bounds.
+     */
+    private long budgetSeconds(Long dureeSecondes) {
+        SolverBudgetBounds bounds = referenceDataService.getSolverBudgetBounds();
+        Integer dureeEdition = referenceDataService.getParametresSolveur().dureeResolutionSecondes();
+        long plafond = bounds.defaultSecondsLimit();
+        if (dureeSecondes != null) {
+            plafond = dureeSecondes;
+        } else if (dureeEdition != null) {
+            plafond = dureeEdition;
+        }
+        if (dureeSecondes != null && (plafond < DUREE_MIN_SECONDES || plafond > bounds.maxSecondsLimit())) {
+            throw new BusinessError.Invalid("La durée de la vérification doit être comprise entre " + DUREE_MIN_SECONDES
+                    + " et " + bounds.maxSecondsLimit() + " secondes : " + plafond + ".");
+        }
+        return plafond;
+    }
+
+    /**
      * Starts a check of the current edition and returns at once, the solve
      * running in the background.
      *
@@ -316,21 +339,7 @@ public class StaffingVerificationService {
             throw new BusinessError.Invalid(
                     "L'effectif à vérifier doit être compris entre 1 et " + EFFECTIF_MAX + " : " + taille + ".");
         }
-        // The time a solve of the edition gets: the question « does the
-        // floor hold » is asked against the plan a real solve would find, and
-        // a check given less fails where that solve succeeds.
-        SolverBudgetBounds bounds = referenceDataService.getSolverBudgetBounds();
-        Integer dureeEdition = referenceDataService.getParametresSolveur().dureeResolutionSecondes();
-        long plafond = bounds.defaultSecondsLimit();
-        if (dureeSecondes != null) {
-            plafond = dureeSecondes;
-        } else if (dureeEdition != null) {
-            plafond = dureeEdition;
-        }
-        if (dureeSecondes != null && (plafond < DUREE_MIN_SECONDES || plafond > bounds.maxSecondsLimit())) {
-            throw new BusinessError.Invalid("La durée de la vérification doit être comprise entre " + DUREE_MIN_SECONDES
-                    + " et " + bounds.maxSecondsLimit() + " secondes : " + plafond + ".");
-        }
+        long plafond = budgetSeconds(dureeSecondes);
         if (!enCours.compareAndSet(false, true)) {
             throw new BusinessError.Conflict(
                     "Une vérification du besoin est déjà en cours : attendez qu'elle se termine avant d'en lancer une autre.");
@@ -469,19 +478,12 @@ public class StaffingVerificationService {
                             throw new YieldedBeforeStart();
                         }
                     });
-            if (solved == null || yielded.get()) {
-                outcome = started.failed(
-                        "La vérification a été interrompue : une résolution a démarré, elle passe avant.",
-                        Instant.now());
-            } else {
-                int empty = (int) solved.getPostes().stream()
-                        .filter(poste -> poste.getAnimateur() == null)
-                        .count();
-                long hard = solved.getScore() == null ? 0 : solved.getScore().hardScore();
-                List<String> rules = hard < 0 ? brokenHardRules(solved) : List.of();
-                outcome = started.finished(hard == 0 && empty == 0, empty, hard, rules);
-            }
-        } catch (YieldedBeforeStart e) {
+            outcome = solved == null || yielded.get()
+                    ? started.failed(
+                            "La vérification a été interrompue : une résolution a démarré, elle passe avant.",
+                            Instant.now())
+                    : finished(started, solved);
+        } catch (YieldedBeforeStart _) {
             outcome = started.failed(
                     "La vérification a été interrompue : une résolution a démarré, elle passe avant.", Instant.now());
         } catch (RuntimeException e) {
@@ -507,6 +509,16 @@ public class StaffingVerificationService {
             enCours.set(false);
             jobStream.publish();
         }
+    }
+
+    /** The verdict on the best plan: feasible when no seat is empty and no hard rule is broken. */
+    private StaffingVerification finished(StaffingVerification started, PlanningEvenement solved) {
+        int empty = (int) solved.getPostes().stream()
+                .filter(poste -> poste.getAnimateur() == null)
+                .count();
+        long hard = solved.getScore() == null ? 0 : solved.getScore().hardScore();
+        List<String> rules = hard < 0 ? brokenHardRules(solved) : List.of();
+        return started.finished(hard == 0 && empty == 0, empty, hard, rules);
     }
 
     /**
@@ -545,7 +557,8 @@ public class StaffingVerificationService {
                 ninja = typologie.id();
             }
         }
-        LocalDate naissanceMineurs = (premierJour == null ? LocalDate.now() : premierJour).minusYears(AGE_MINEURS);
+        LocalDate naissanceMineurs =
+                (premierJour == null ? LocalDate.now(ZoneId.systemDefault()) : premierJour).minusYears(AGE_MINEURS);
         List<Animateur> team = new ArrayList<>(majeurs + mineurs);
         for (int index = 1; index <= majeurs + mineurs; index++) {
             String id = "verification-" + index;

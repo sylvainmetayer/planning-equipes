@@ -212,45 +212,74 @@ public final class SeatSplit {
                             PlanningPersistenceService.Siege::heureDebutEffective,
                             Comparator.nullsFirst(Comparator.naturalOrder())))
                     .toList();
-            Map<String, PosteAffectation> parAncienId = new HashMap<>();
-            for (int rang = 0; rang < Math.min(origines.size(), generes.size()); rang++) {
-                PlanningPersistenceService.Siege siege = origines.get(rang);
-                PosteAffectation poste = generes.get(rang);
-                poste.setHeureDebutEffective(siege.heureDebutEffective());
-                poste.setHeureFinEffective(siege.heureFinEffective());
-                poste.setAnimateur(siege.animateurId() == null ? null : animateursById.get(siege.animateurId()));
-                if (isNarrowed(siege)) {
-                    ids.remove(poste.getId());
-                    poste.setId(uniqueId(suiteId(poste.getId(), siege.heureDebutEffective()), ids));
-                    ids.add(poste.getId());
-                }
-                freezeIfPast(poste, horizon);
-                parAncienId.put(siege.posteId(), poste);
-            }
+            Map<String, PosteAffectation> parAncienId = restoreOrigins(origines, generes, animateursById, ids, horizon);
             int insertion = postes.indexOf(generes.getLast()) + 1;
-            List<PosteAffectation> ajouts = new ArrayList<>();
-            for (PlanningPersistenceService.Siege siege : suites) {
-                PosteAffectation origine = parAncienId.get(siege.suiteDe());
-                if (origine == null) {
-                    continue;
-                }
-                PosteAffectation suite = new PosteAffectation(
-                        uniqueId(suiteId(origine.getId(), siege.heureDebutEffective()), ids),
-                        origine.getStand(),
-                        origine.getCreneau());
-                suite.setHeureDebutEffective(siege.heureDebutEffective());
-                suite.setHeureFinEffective(siege.heureFinEffective());
-                suite.setSuiteDe(origine.getId());
-                suite.setAnimateur(siege.animateurId() == null ? null : animateursById.get(siege.animateurId()));
-                freezeIfPast(suite, horizon);
-                ids.add(suite.getId());
-                parAncienId.put(siege.posteId(), suite);
-                ajouts.add(suite);
-            }
+            List<PosteAffectation> ajouts = restoreContinuations(suites, parAncienId, animateursById, ids, horizon);
             postes.addAll(insertion, ajouts);
             ajoutes += ajouts.size();
         }
         return ajoutes;
+    }
+
+    /**
+     * Lays the persisted originals of one cell, in order, over the seats the
+     * build generated for it; returns those seats by their persisted id.
+     */
+    private static Map<String, PosteAffectation> restoreOrigins(
+            List<PlanningPersistenceService.Siege> origines,
+            List<PosteAffectation> generes,
+            Map<String, Animateur> animateursById,
+            Set<String> ids,
+            PastHorizon horizon) {
+        Map<String, PosteAffectation> parAncienId = new HashMap<>();
+        for (int rang = 0; rang < Math.min(origines.size(), generes.size()); rang++) {
+            PlanningPersistenceService.Siege siege = origines.get(rang);
+            PosteAffectation poste = generes.get(rang);
+            poste.setHeureDebutEffective(siege.heureDebutEffective());
+            poste.setHeureFinEffective(siege.heureFinEffective());
+            poste.setAnimateur(siege.animateurId() == null ? null : animateursById.get(siege.animateurId()));
+            if (isNarrowed(siege)) {
+                ids.remove(poste.getId());
+                poste.setId(uniqueId(suiteId(poste.getId(), siege.heureDebutEffective()), ids));
+                ids.add(poste.getId());
+            }
+            freezeIfPast(poste, horizon);
+            parAncienId.put(siege.posteId(), poste);
+        }
+        return parAncienId;
+    }
+
+    /**
+     * The continuations of one cell, rebuilt after their origin's new id;
+     * each is recorded in {@code parAncienId} too, so a continuation of a
+     * continuation finds its origin.
+     */
+    private static List<PosteAffectation> restoreContinuations(
+            List<PlanningPersistenceService.Siege> suites,
+            Map<String, PosteAffectation> parAncienId,
+            Map<String, Animateur> animateursById,
+            Set<String> ids,
+            PastHorizon horizon) {
+        List<PosteAffectation> ajouts = new ArrayList<>();
+        for (PlanningPersistenceService.Siege siege : suites) {
+            PosteAffectation origine = parAncienId.get(siege.suiteDe());
+            if (origine == null) {
+                continue;
+            }
+            PosteAffectation suite = new PosteAffectation(
+                    uniqueId(suiteId(origine.getId(), siege.heureDebutEffective()), ids),
+                    origine.getStand(),
+                    origine.getCreneau());
+            suite.setHeureDebutEffective(siege.heureDebutEffective());
+            suite.setHeureFinEffective(siege.heureFinEffective());
+            suite.setSuiteDe(origine.getId());
+            suite.setAnimateur(siege.animateurId() == null ? null : animateursById.get(siege.animateurId()));
+            freezeIfPast(suite, horizon);
+            ids.add(suite.getId());
+            parAncienId.put(siege.posteId(), suite);
+            ajouts.add(suite);
+        }
+        return ajouts;
     }
 
     private static void freezeIfPast(PosteAffectation poste, PastHorizon horizon) {

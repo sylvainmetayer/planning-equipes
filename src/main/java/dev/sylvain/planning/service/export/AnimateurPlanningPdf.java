@@ -5,7 +5,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.io.ByteArrayOutputStream;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -243,11 +242,10 @@ public class AnimateurPlanningPdf implements DocumentAnimateur {
     }
 
     private PdfPCell ligneJour(AnimateurPlanningView.Jour jour, int debut, int fin, int pas) {
-        List<PdfTheme.Barre> barres = new ArrayList<>();
-        for (AnimateurPlanningView.Vacation vacation : jour.vacations()) {
-            barres.add(new PdfTheme.Barre(
-                    vacation.debutMinutes(), vacation.finMinutes(), vacation.couleur(), vacation.standNom(), false));
-        }
+        List<PdfTheme.Barre> barres = jour.vacations().stream()
+                .map(vacation -> new PdfTheme.Barre(
+                        vacation.debutMinutes(), vacation.finMinutes(), vacation.couleur(), vacation.standNom(), false))
+                .toList();
         PdfPCell cell = new PdfPCell();
         cell.setBorder(Rectangle.NO_BORDER);
         cell.setFixedHeight(11.5f);
@@ -704,10 +702,8 @@ public class AnimateurPlanningPdf implements DocumentAnimateur {
             Paragraph nom = new Paragraph(lieu.nom(), theme.standFont());
             nom.setSpacingAfter(1f);
             cell.addElement(nom);
-            List<String> dates = new ArrayList<>();
-            for (LocalDate date : lieu.dates()) {
-                dates.add(AnimateurPlanningView.jourCourt(date));
-            }
+            List<String> dates =
+                    lieu.dates().stream().map(AnimateurPlanningView::jourCourt).toList();
             cell.addElement(new Paragraph(
                     lieu.dates().size()
                             + (lieu.dates().size() > 1 ? " jours · " : " jour · ")

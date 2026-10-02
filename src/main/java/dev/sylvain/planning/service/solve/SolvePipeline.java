@@ -308,7 +308,7 @@ public class SolvePipeline {
      */
     private void recordDosage(Dosage dosage) {
         try {
-            planDosage.record(dosage);
+            planDosage.stamp(dosage);
         } catch (RuntimeException e) {
             LOG.warn("The dosage of the persisted plan could not be recorded; the solve result is unaffected", e);
         }
@@ -471,7 +471,7 @@ public class SolvePipeline {
         }
         Set<LocalDate> figes = new HashSet<>();
         parJour.forEach((jour, passe) -> {
-            if (passe) {
+            if (Boolean.TRUE.equals(passe)) {
                 figes.add(jour);
             }
         });

@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -153,20 +154,10 @@ public final class LayerCalendar {
             }
             ConsigneEdition consigne = consigneParDate.get(date);
             Set<Long> ajoutes = consigne == null ? Set.of() : Set.copyOf(consigne.creneauxAjoutes());
-            List<LayerTimeslot> vacations = new ArrayList<>();
-            int lendemain = 0;
-            for (Creneau creneau : duJour) {
-                int[] bornes = interval(creneau.getHeureDebut(), creneau.getHeureFin());
-                lendemain = Math.max(lendemain, bornes[1] - MINUTES_PAR_JOUR);
-                vacations.add(new LayerTimeslot(
-                        creneau.getId(),
-                        creneau.getHeureDebut(),
-                        creneau.getHeureFin(),
-                        bornes[0],
-                        bornes[1],
-                        creneau.isCouverturePause(),
-                        creneau.getId() != null && ajoutes.contains(creneau.getId())));
-            }
+            List<LayerTimeslot> vacations = timeslots(duJour, ajoutes);
+            int lendemain = vacations.stream()
+                    .mapToInt(vacation -> vacation.finMinutes() - MINUTES_PAR_JOUR)
+                    .reduce(0, Math::max);
             lendemains.put(date, lendemain);
             jours.add(new LayerDay(
                     date,
@@ -180,17 +171,38 @@ public final class LayerCalendar {
         for (Stand stand : effectifs) {
             effectifsParId.put(stand.getId(), stand);
         }
-        List<LayerRow> lignes = new ArrayList<>();
-        for (Stand nominal : nominaux) {
-            Stand effectif = effectifsParId.getOrDefault(nominal.getId(), nominal);
-            List<LayerCell> cellules = new ArrayList<>();
-            for (LayerDay jour : jours) {
-                cellules.add(cell(
-                        nominal, effectif, jour.date(), lendemains.get(jour.date()), consigneParDate.get(jour.date())));
-            }
-            lignes.add(new LayerRow(nominal.getId(), nominal.getNom(), nominal.getEffectifMin(), cellules));
-        }
+        List<LayerRow> lignes = nominaux.stream()
+                .map(nominal -> {
+                    Stand effectif = effectifsParId.getOrDefault(nominal.getId(), nominal);
+                    List<LayerCell> cellules = jours.stream()
+                            .map(jour -> cell(
+                                    nominal,
+                                    effectif,
+                                    jour.date(),
+                                    lendemains.get(jour.date()),
+                                    consigneParDate.get(jour.date())))
+                            .toList();
+                    return new LayerRow(nominal.getId(), nominal.getNom(), nominal.getEffectifMin(), cellules);
+                })
+                .toList();
         return new OpeningLayers(jours, lignes);
+    }
+
+    /** The day's timeslots, each with its bounds in minutes and whether a consigne added it. */
+    private static List<LayerTimeslot> timeslots(List<Creneau> duJour, Set<Long> ajoutes) {
+        return duJour.stream()
+                .map(creneau -> {
+                    int[] bornes = interval(creneau.getHeureDebut(), creneau.getHeureFin());
+                    return new LayerTimeslot(
+                            creneau.getId(),
+                            creneau.getHeureDebut(),
+                            creneau.getHeureFin(),
+                            bornes[0],
+                            bornes[1],
+                            creneau.isCouverturePause(),
+                            creneau.getId() != null && ajoutes.contains(creneau.getId()));
+                })
+                .toList();
     }
 
     private static ConsigneLayer consigneLayer(ConsigneEdition consigne) {
@@ -255,11 +267,10 @@ public final class LayerCalendar {
      * meeting at midnight at the same headcount are one.
      */
     static List<LayerWindow> windows(Stand stand, LocalDate date, int lendemain) {
-        List<LayerWindow> fenetres = new ArrayList<>();
-        for (ConsigneResolver.Segment segment : ConsigneResolver.journeeNominale(stand, date)) {
-            fenetres.add(new LayerWindow(segment.bornes()[0], segment.bornes()[1], headcount(stand, segment)));
-        }
-        fenetres.sort(Comparator.comparingInt(LayerWindow::debutMinutes));
+        List<LayerWindow> fenetres = ConsigneResolver.journeeNominale(stand, date).stream()
+                .map(segment -> new LayerWindow(segment.bornes()[0], segment.bornes()[1], headcount(stand, segment)))
+                .sorted(Comparator.comparingInt(LayerWindow::debutMinutes))
+                .collect(Collectors.toCollection(ArrayList::new));
         if (lendemain > 0) {
             for (ConsigneResolver.Segment segment : ConsigneResolver.journeeNominale(stand, date.plusDays(1))) {
                 int debut = segment.bornes()[0];

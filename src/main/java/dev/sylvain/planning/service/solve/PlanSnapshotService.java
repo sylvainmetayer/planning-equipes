@@ -3,7 +3,6 @@ package dev.sylvain.planning.service.solve;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.analyse.PlanningKpiService;
@@ -901,12 +900,10 @@ public class PlanSnapshotService {
 
     /** The consignes governing the edition now, as a snapshot will remember them. */
     private List<ConsigneSnapshot> consignesCourantes() {
-        List<ConsigneSnapshot> consignes = new ArrayList<>();
-        for (ConsigneEdition consigne : consigneRepository.list()) {
-            consignes.add(new ConsigneSnapshot(
-                    consigne.date(), consigne.fermetureDebut(), consigne.fermetureFin(), consigne.motif()));
-        }
-        return consignes;
+        return consigneRepository.list().stream()
+                .map(consigne -> new ConsigneSnapshot(
+                        consigne.date(), consigne.fermetureDebut(), consigne.fermetureFin(), consigne.motif()))
+                .toList();
     }
 
     private String writeConsignes(List<ConsigneSnapshot> consignes) {

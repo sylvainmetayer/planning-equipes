@@ -37,6 +37,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import javax.sql.DataSource;
 
 /**
@@ -52,6 +53,17 @@ import javax.sql.DataSource;
  */
 @ApplicationScoped
 public class PlanningPersistenceService {
+
+    /**
+     * Seats one animateur. Not prepareScoped: the SET clause claims
+     * placeholder 1, so the edition_id predicate is bound explicitly.
+     */
+    private static final String SET_ANIMATEUR_SQL =
+            "UPDATE poste_affectation SET animateur_id = ? WHERE edition_id = ? AND id = ?";
+
+    private static final String COL_STAND_ID = "stand_id";
+    private static final String COL_CRENEAU_ID = "creneau_id";
+    private static final String COL_ANIMATEUR_ID = "animateur_id";
 
     private final DataSource dataSource;
 
@@ -513,8 +525,7 @@ public class PlanningPersistenceService {
         return scope.writeAndReturn("Failed to reassign the poste", connection -> {
                     // Not prepareScoped: the SET clause claims placeholder 1, so the
                     // edition_id predicate is bound explicitly here.
-                    try (PreparedStatement ps = connection.prepareStatement(
-                            "UPDATE poste_affectation SET animateur_id = ? WHERE edition_id = ? AND id = ?")) {
+                    try (PreparedStatement ps = connection.prepareStatement(SET_ANIMATEUR_SQL)) {
                         ps.setString(1, animateurId);
                         ps.setString(2, editionId());
                         ps.setString(3, posteId);
@@ -566,8 +577,7 @@ public class PlanningPersistenceService {
     public void reaffecterPostes(Map<String, String> animateurParPoste) {
         scope.write("Failed to move the seats", connection -> {
             // Not prepareScoped: the SET clause claims placeholder 1.
-            try (PreparedStatement ps = connection.prepareStatement(
-                    "UPDATE poste_affectation SET animateur_id = ? WHERE edition_id = ? AND id = ?")) {
+            try (PreparedStatement ps = connection.prepareStatement(SET_ANIMATEUR_SQL)) {
                 ps.setString(2, editionId());
                 for (Map.Entry<String, String> entree : animateurParPoste.entrySet()) {
                     ps.setString(1, entree.getValue());
@@ -651,6 +661,31 @@ public class PlanningPersistenceService {
             Map<String, String> expectedHolders,
             Supplier<? extends RuntimeException> refusal)
             throws SQLException {
+        applyScissions(connection, scissions, refusal);
+        // Not prepareScoped either: the SET clause claims placeholders 1 and 2.
+        try (PreparedStatement retrecir = connection.prepareStatement("""
+                UPDATE poste_affectation SET id = ?, heure_debut_effective = ?
+                WHERE edition_id = ? AND id = ?
+                AND heure_debut_effective IS NOT DISTINCT FROM ?
+                AND animateur_id IS NULL""")) {
+            for (Narrowing narrowing : narrowings) {
+                retrecir.setString(1, narrowing.newId());
+                retrecir.setObject(2, narrowing.at());
+                retrecir.setString(3, editionId());
+                retrecir.setString(4, narrowing.posteId());
+                retrecir.setObject(5, narrowing.expectedStart(), Types.TIME);
+                if (retrecir.executeUpdate() == 0) {
+                    throw refusal.get();
+                }
+            }
+        }
+        reassign(connection, animateurParPoste, expectedHolders, refusal);
+    }
+
+    /** Shortens each split seat and inserts its continuation, refusing when either no longer matches. */
+    private void applyScissions(
+            Connection connection, List<Scission> scissions, Supplier<? extends RuntimeException> refusal)
+            throws SQLException {
         // Not prepareScoped: the SET clause claims placeholder 1. IS NOT
         // DISTINCT FROM lets a null before-image mean « the timeslot's
         // end » and « nobody ».
@@ -693,25 +728,16 @@ public class PlanningPersistenceService {
                 }
             }
         }
-        // Not prepareScoped either: the SET clause claims placeholders 1 and 2.
-        try (PreparedStatement retrecir = connection.prepareStatement("""
-                UPDATE poste_affectation SET id = ?, heure_debut_effective = ?
-                WHERE edition_id = ? AND id = ?
-                AND heure_debut_effective IS NOT DISTINCT FROM ?
-                AND animateur_id IS NULL""")) {
-            for (Narrowing narrowing : narrowings) {
-                retrecir.setString(1, narrowing.newId());
-                retrecir.setObject(2, narrowing.at());
-                retrecir.setString(3, editionId());
-                retrecir.setString(4, narrowing.posteId());
-                retrecir.setObject(5, narrowing.expectedStart(), Types.TIME);
-                if (retrecir.executeUpdate() == 0) {
-                    throw refusal.get();
-                }
-            }
-        }
-        try (PreparedStatement libre = connection.prepareStatement(
-                        "UPDATE poste_affectation SET animateur_id = ? WHERE edition_id = ? AND id = ?");
+    }
+
+    /** Seats each animateur, on the expected before-image when there is one. */
+    private void reassign(
+            Connection connection,
+            Map<String, String> animateurParPoste,
+            Map<String, String> expectedHolders,
+            Supplier<? extends RuntimeException> refusal)
+            throws SQLException {
+        try (PreparedStatement libre = connection.prepareStatement(SET_ANIMATEUR_SQL);
                 PreparedStatement conditionnel = connection.prepareStatement("""
                         UPDATE poste_affectation SET animateur_id = ?
                         WHERE edition_id = ? AND id = ? AND animateur_id IS NOT DISTINCT FROM ?""")) {
@@ -742,12 +768,10 @@ public class PlanningPersistenceService {
      */
     public Map<String, List<Siege>> loadSplitCells() {
         List<Siege> sieges = readSieges();
-        Set<String> scindees = new LinkedHashSet<>();
-        for (Siege siege : sieges) {
-            if (siege.suiteDe() != null || SeatSplit.isNarrowed(siege)) {
-                scindees.add(standCreneauKey(siege.standId(), siege.creneauId()));
-            }
-        }
+        Set<String> scindees = sieges.stream()
+                .filter(siege -> siege.suiteDe() != null || SeatSplit.isNarrowed(siege))
+                .map(siege -> standCreneauKey(siege.standId(), siege.creneauId()))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
         Map<String, List<Siege>> parCellule = new LinkedHashMap<>();
         if (scindees.isEmpty()) {
             return parCellule;
@@ -881,9 +905,9 @@ public class PlanningPersistenceService {
             while (rs.next()) {
                 parStandCreneau
                         .computeIfAbsent(
-                                standCreneauKey(rs.getString("stand_id"), rs.getLong("creneau_id")),
+                                standCreneauKey(rs.getString(COL_STAND_ID), rs.getLong(COL_CRENEAU_ID)),
                                 key -> new ArrayList<>())
-                        .add(rs.getString("animateur_id"));
+                        .add(rs.getString(COL_ANIMATEUR_ID));
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to load persisted assignments", e);
@@ -912,8 +936,8 @@ public class PlanningPersistenceService {
                 PreparedStatement ps = scope.prepareScoped(connection, sql);
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                String key = standCreneauKey(rs.getString("stand_id"), rs.getLong("creneau_id"));
-                holders.computeIfAbsent(key, k -> new ArrayList<>()).add(rs.getString("animateur_id"));
+                String key = standCreneauKey(rs.getString(COL_STAND_ID), rs.getLong(COL_CRENEAU_ID));
+                holders.computeIfAbsent(key, k -> new ArrayList<>()).add(rs.getString(COL_ANIMATEUR_ID));
                 LocalDate date = rs.getObject("date_creneau", LocalDate.class);
                 if (date != null) {
                     dates.put(key, date);
@@ -946,7 +970,7 @@ public class PlanningPersistenceService {
             while (rs.next()) {
                 LocalDate date = rs.getObject("date_creneau", LocalDate.class);
                 if (date != null) {
-                    parJour.computeIfAbsent(date, d -> new LinkedHashSet<>()).add(rs.getString("animateur_id"));
+                    parJour.computeIfAbsent(date, d -> new LinkedHashSet<>()).add(rs.getString(COL_ANIMATEUR_ID));
                 }
             }
         } catch (SQLException e) {
@@ -1188,18 +1212,29 @@ public class PlanningPersistenceService {
             evenement.setFenetresRepas(fenetresRepas);
             return evenement;
         }
-    }
 
-    /**
-     * The créneau a seat stood on, rebuilt from the seat itself when the
-     * référentiel no longer holds it.
-     *
-     * <p>{@code jour} is left at 0 here and assigned by the caller, over the
-     * whole grid at once: the number means nothing on its own.</p>
-     */
-    private static Creneau creneauDisparu(Siege siege) {
-        VacationSnapshot vacation = siege.vacation();
-        return new Creneau(siege.creneauId(), 0, vacation.date(), vacation.heureDebut(), vacation.heureFin());
+        /**
+         * The créneau a seat stood on, rebuilt from the seat itself when the
+         * référentiel no longer holds it.
+         *
+         * <p>{@code jour} is left at 0 here and assigned by the caller, over the
+         * whole grid at once: the number means nothing on its own.</p>
+         */
+        private static Creneau creneauDisparu(Siege siege) {
+            VacationSnapshot vacation = siege.vacation();
+            return new Creneau(siege.creneauId(), 0, vacation.date(), vacation.heureDebut(), vacation.heureFin());
+        }
+
+        private static <T, K> Map<K, T> indexById(List<T> items, Function<T, K> idFn) {
+            Map<K, T> byId = new HashMap<>();
+            for (T item : items) {
+                K id = idFn.apply(item);
+                if (id != null) {
+                    byId.put(id, item);
+                }
+            }
+            return byId;
+        }
     }
 
     private List<Siege> readSieges() {
@@ -1215,9 +1250,9 @@ public class PlanningPersistenceService {
             while (rs.next()) {
                 sieges.add(new Siege(
                         rs.getString("id"),
-                        rs.getString("stand_id"),
-                        rs.getLong("creneau_id"),
-                        rs.getString("animateur_id"),
+                        rs.getString(COL_STAND_ID),
+                        rs.getLong(COL_CRENEAU_ID),
+                        rs.getString(COL_ANIMATEUR_ID),
                         rs.getObject("heure_debut_effective", LocalTime.class),
                         rs.getObject("heure_fin_effective", LocalTime.class),
                         null,
@@ -1227,17 +1262,6 @@ public class PlanningPersistenceService {
             throw new IllegalStateException("Failed to load persisted planning", e);
         }
         return sieges;
-    }
-
-    private static <T, K> Map<K, T> indexById(List<T> items, Function<T, K> idFn) {
-        Map<K, T> byId = new HashMap<>();
-        for (T item : items) {
-            K id = idFn.apply(item);
-            if (id != null) {
-                byId.put(id, item);
-            }
-        }
-        return byId;
     }
 
     private <T, K> List<T> dedupById(List<T> items, Function<T, K> idFn) {

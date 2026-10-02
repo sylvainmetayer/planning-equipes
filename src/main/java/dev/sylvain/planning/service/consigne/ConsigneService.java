@@ -41,6 +41,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -209,16 +210,15 @@ public class ConsigneService {
                 fermees += Math.max(0, Math.min(fenetre[1], bande[1]) - Math.max(fenetre[0], bande[0]));
             }
             int rouvertes = Math.max(0, minutes(postesApres) - (minutes(avant) - fermees));
-            Set<String> concernes = new HashSet<>();
-            for (PosteAffectation poste : persiste.getPostes()) {
-                if (poste.getAnimateur() != null
-                        && poste.getCreneau() != null
-                        && date.equals(poste.getCreneau().getDate())) {
-                    concernes.add(poste.getAnimateur().getId());
-                }
-            }
+            int concernes = (int) persiste.getPostes().stream()
+                    .filter(poste -> poste.getAnimateur() != null
+                            && poste.getCreneau() != null
+                            && date.equals(poste.getCreneau().getDate()))
+                    .map(poste -> poste.getAnimateur().getId())
+                    .distinct()
+                    .count();
             indicateurs.add(new Indicateur(
-                    date, consigne.motif(), avant.size(), postesApres.size(), fermees, rouvertes, concernes.size()));
+                    date, consigne.motif(), avant.size(), postesApres.size(), fermees, rouvertes, concernes));
         }
         return indicateurs;
     }
@@ -324,12 +324,11 @@ public class ConsigneService {
                         .add(ouverture);
             }
         });
-        List<LigneStandConsigne> lignes = new ArrayList<>();
-        for (Stand stand : stands) {
-            lignes.add(ligne(stand, date, duJour, bande, actuelles.getOrDefault(stand.getId(), List.of())));
-        }
-        lignes.sort(Comparator.comparing(LigneStandConsigne::standNom, String.CASE_INSENSITIVE_ORDER)
-                .thenComparing(LigneStandConsigne::standId));
+        List<LigneStandConsigne> lignes = stands.stream()
+                .map(stand -> ligne(stand, date, duJour, bande, actuelles.getOrDefault(stand.getId(), List.of())))
+                .sorted(Comparator.comparing(LigneStandConsigne::standNom, String.CASE_INSENSITIVE_ORDER)
+                        .thenComparing(LigneStandConsigne::standId))
+                .toList();
         return new Preselection(date, duJour.size(), lignes);
     }
 
@@ -389,23 +388,22 @@ public class ConsigneService {
             if (dates == null || dates.isEmpty()) {
                 throw new BusinessError.Invalid("Aucune date : une consigne s'applique à au moins un jour");
             }
-            List<ConsigneEdition> consignes = new ArrayList<>();
-            for (LocalDate date : new LinkedHashSet<>(dates)) {
-                consignes.add(new ConsigneEdition(
-                                date,
-                                fermetureDebut,
-                                fermetureFin,
-                                motif == null ? null : motif.strip(),
-                                prereglage == null || prereglage.isBlank() ? null : prereglage.strip(),
-                                fenetres,
-                                ouvertures,
-                                List.of(),
-                                null,
-                                null,
-                                repas != null && repas.surcharge() ? repas : null)
-                        .normalised());
-            }
-            return consignes;
+            return dates.stream()
+                    .distinct()
+                    .map(date -> new ConsigneEdition(
+                                    date,
+                                    fermetureDebut,
+                                    fermetureFin,
+                                    motif == null ? null : motif.strip(),
+                                    prereglage == null || prereglage.isBlank() ? null : prereglage.strip(),
+                                    fenetres,
+                                    ouvertures,
+                                    List.of(),
+                                    null,
+                                    null,
+                                    repas != null && repas.surcharge() ? repas : null)
+                            .normalised())
+                    .toList();
         }
     }
 
@@ -490,11 +488,9 @@ public class ConsigneService {
         List<ConsigneEdition> consignes = demande.versConsignes();
         validate(consignes);
         Contexte contexte = contexte();
-        List<ApercuJour> apercu = new ArrayList<>();
-        for (ConsigneEdition demandee : consignes) {
-            apercu.add(apercuJour(demandee, contexte));
-        }
-        return apercu;
+        return consignes.stream()
+                .map(demandee -> apercuJour(demandee, contexte))
+                .toList();
     }
 
     /** What the reads below share, read once per request. */
@@ -508,10 +504,8 @@ public class ConsigneService {
             PlanningEvenement persiste) {}
 
     private Contexte contexte() {
-        Set<LocalDate> joursValides = new HashSet<>();
-        for (ValidationJournee validation : validations.list()) {
-            joursValides.add(validation.jour());
-        }
+        Set<LocalDate> joursValides =
+                validations.list().stream().map(ValidationJournee::jour).collect(Collectors.toSet());
         return new Contexte(
                 referenceDataService.listCreneaux(),
                 referenceDataService.listAnimateurs(),
@@ -656,16 +650,14 @@ public class ConsigneService {
 
     /** How many animateurs the persisted plan seats inside the band on {@code date}. */
     private static int animateursInBand(PlanningEvenement persiste, LocalDate date, int[] bande) {
-        Set<String> dansLaBande = new HashSet<>();
-        for (PosteAffectation poste : persiste.getPostes()) {
-            if (poste.getAnimateur() != null
-                    && poste.getCreneau() != null
-                    && date.equals(poste.getCreneau().getDate())
-                    && chevauche(poste.heureDebutEffectif(), poste.heureFinEffectif(), bande)) {
-                dansLaBande.add(poste.getAnimateur().getId());
-            }
-        }
-        return dansLaBande.size();
+        return (int) persiste.getPostes().stream()
+                .filter(poste -> poste.getAnimateur() != null
+                        && poste.getCreneau() != null
+                        && date.equals(poste.getCreneau().getDate())
+                        && chevauche(poste.heureDebutEffectif(), poste.heureFinEffectif(), bande))
+                .map(poste -> poste.getAnimateur().getId())
+                .distinct()
+                .count();
     }
 
     /* ------------------------------ the grid plan ------------------------------ */
@@ -686,10 +678,8 @@ public class ConsigneService {
      */
     static Plan planifier(ConsigneEdition consigne, List<Creneau> duJour, List<Creneau> nominale) {
         int[] bande = ConsigneResolver.minutes(consigne.fermetureDebut(), consigne.fermetureFin());
-        List<int[]> couverts = new ArrayList<>();
-        for (Creneau creneau : nominale) {
-            couverts.add(bornes(creneau));
-        }
+        List<int[]> couverts =
+                nominale.stream().map(ConsigneService::bornes).collect(Collectors.toCollection(ArrayList::new));
         List<int[]> manques = new ArrayList<>();
         List<Ouverture> tri = new ArrayList<>(consigne.ouvertures());
         tri.sort(Comparator.comparing(Ouverture::debut));
@@ -838,16 +828,15 @@ public class ConsigneService {
                     .sorted(Comparator.comparing(Creneau::getHeureDebut))
                     .map(ConsigneService::ref)
                     .toList();
-            Set<String> assis = new HashSet<>();
-            for (PosteAffectation poste : contexte.persiste().getPostes()) {
-                if (poste.getAnimateur() != null
-                        && poste.getCreneau() != null
-                        && ajoutes.contains(poste.getCreneau().getId())) {
-                    assis.add(poste.getAnimateur().getId());
-                }
-            }
+            int assis = (int) contexte.persiste().getPostes().stream()
+                    .filter(poste -> poste.getAnimateur() != null
+                            && poste.getCreneau() != null
+                            && ajoutes.contains(poste.getCreneau().getId()))
+                    .map(poste -> poste.getAnimateur().getId())
+                    .distinct()
+                    .count();
             apercu.add(
-                    new ApercuLevee(date, true, retires, contexte.joursValides().contains(date), assis.size()));
+                    new ApercuLevee(date, true, retires, contexte.joursValides().contains(date), assis));
         }
         return apercu;
     }
