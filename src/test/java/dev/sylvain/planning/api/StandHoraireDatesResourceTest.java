@@ -45,7 +45,7 @@ class StandHoraireDatesResourceTest {
         String source = createEdition("Horaires longs à dupliquer");
         String stand = createStandWithDatesRule(source);
 
-        String copie = given().header(HEADER, source)
+        String copy = given().header(HEADER, source)
                 .contentType("application/json")
                 .body("{\"nom\":\"Copie horaires longs\"}")
                 .when()
@@ -55,7 +55,7 @@ class StandHoraireDatesResourceTest {
                 .extract()
                 .path("id");
 
-        assertThat(readDates(copie, stand)).containsExactlyElementsOf(DATES);
+        assertThat(readDates(copy, stand)).containsExactlyElementsOf(DATES);
     }
 
     @Test
@@ -86,9 +86,9 @@ class StandHoraireDatesResourceTest {
         assertThat(readDates(edition, stand)).containsExactlyElementsOf(DATES);
     }
 
-    private static String createEdition(String nom) {
+    private static String createEdition(String name) {
         return given().contentType("application/json")
-                .body("{\"nom\":\"" + nom + "\"}")
+                .body("{\"nom\":\"" + name + "\"}")
                 .when()
                 .post("/api/editions")
                 .then()

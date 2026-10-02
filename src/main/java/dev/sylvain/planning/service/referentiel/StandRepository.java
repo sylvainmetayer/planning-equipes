@@ -26,14 +26,12 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.sql.DataSource;
 
@@ -186,7 +184,7 @@ public class StandRepository {
                 horaire.setId(rs.getLong("id"));
                 horaire.setMode(ModeHoraire.valueOf(rs.getString("mode")));
                 horaire.setJours(TypeJoursHoraire.valueOf(rs.getString("type_jours")));
-                horaire.setJoursSemaine(splitCsv(rs.getString("jours_semaine"), DayOfWeek::valueOf));
+                horaire.setJoursSemaine(readWeekdays(rs.getString("jours_semaine")));
                 horaire.setDateDebut(rs.getObject("date_debut", LocalDate.class));
                 horaire.setDateFin(rs.getObject("date_fin", LocalDate.class));
                 horaire.setDates(readDates(rs.getArray("dates")));
@@ -220,57 +218,53 @@ public class StandRepository {
     /**
      * Reads back the {@code date[]} column (V122), selected as {@code text[]}
      * so no element goes through the JVM's time zone; an empty set when it is
-     * {@code NULL}.
+     * {@code NULL}. Its CHECK keeps out what {@link LocalDate#parse} would choke
+     * on: NULL elements, infinity, years outside 1..9999.
      */
     private static Set<LocalDate> readDates(Array array) throws SQLException {
         if (array == null) {
             return Set.of();
         }
         try {
-            Set<LocalDate> dates = new LinkedHashSet<>();
-            for (Object date : (Object[]) array.getArray()) {
-                dates.add(LocalDate.parse((String) date));
-            }
-            return dates;
+            return Arrays.stream((Object[]) array.getArray())
+                    .map(date -> LocalDate.parse((String) date))
+                    .collect(Collectors.toSet());
         } finally {
             array.free();
         }
     }
 
     /**
-     * Writes a set of dates as the {@code date[]} {@link #readDates} reads, or
+     * Writes a rule's dates as the {@code date[]} {@link #readDates} reads, or
      * {@code null} when empty. Bound as ISO text: the driver's encoding of
      * {@code java.sql.Date} goes through the JVM's time zone, ISO text does not.
      */
-    private static Array dateArray(Connection connection, Collection<LocalDate> dates) throws SQLException {
+    private static Array dateArray(Connection connection, Set<LocalDate> dates) throws SQLException {
         if (dates == null || dates.isEmpty()) {
             return null;
         }
         return connection.createArrayOf(
-                "date", dates.stream().sorted().map(LocalDate::toString).toArray(String[]::new));
+                "date", dates.stream().map(LocalDate::toString).toArray(String[]::new));
     }
 
-    /** Reads back the comma-separated weekdays column, which seven names at most keep in V37's text form. */
-    private static <T> Set<T> splitCsv(String csv, Function<String, T> parse) {
-        if (csv == null || csv.isBlank()) {
+    /** Reads back the weekdays column, comma-separated names: seven at most, so V37's text form holds them. */
+    private static Set<DayOfWeek> readWeekdays(String names) {
+        if (names == null || names.isBlank()) {
             return Set.of();
         }
-        Set<T> valeurs = new LinkedHashSet<>();
-        for (String morceau : csv.split(",")) {
-            String valeur = morceau.trim();
-            if (!valeur.isEmpty()) {
-                valeurs.add(parse.apply(valeur));
-            }
-        }
-        return valeurs;
+        return Arrays.stream(names.split(","))
+                .map(String::trim)
+                .filter(name -> !name.isEmpty())
+                .map(DayOfWeek::valueOf)
+                .collect(Collectors.toSet());
     }
 
-    /** Writes a set back as the comma-separated form {@link #splitCsv} reads, or {@code null} when empty. */
-    private static String joindreCsv(Collection<?> valeurs) {
-        if (valeurs == null || valeurs.isEmpty()) {
+    /** Writes weekdays back as the comma-separated form {@link #readWeekdays} reads, or {@code null} when none. */
+    private static String joinWeekdays(Set<DayOfWeek> weekdays) {
+        if (weekdays == null || weekdays.isEmpty()) {
             return null;
         }
-        return valeurs.stream().map(String::valueOf).collect(Collectors.joining(","));
+        return weekdays.stream().map(DayOfWeek::name).collect(Collectors.joining(","));
     }
 
     /** One stand, or {@code null} — what a write needs to compare against, instead of the whole referential. */
@@ -508,7 +502,7 @@ public class StandRepository {
                 ins.setString(2, stand.getId());
                 ins.setString(3, horaire.getMode().name());
                 ins.setString(4, horaire.getJours().name());
-                ins.setString(5, joindreCsv(horaire.getJoursSemaine()));
+                ins.setString(5, joinWeekdays(horaire.getJoursSemaine()));
                 ins.setObject(6, horaire.getDateDebut());
                 ins.setObject(7, horaire.getDateFin());
                 ins.setArray(8, dateArray(connection, horaire.getDates()));

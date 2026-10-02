@@ -50,6 +50,16 @@ C'est la seule opération **globale à l'instance** : une sauvegarde de la base,
 toutes éditions comprises. L'import rejoue le script en une transaction et
 n'accepte que `INSERT` / `DELETE` / `TRUNCATE` sur les tables métier.
 
+**Un dump se rejoue sur la version qui l'a produit.** Le script nomme les
+colonnes et écrit les valeurs telles que le schéma les rangeait au moment de
+l'export, sans conversion : une migration qui renomme une colonne ou en change
+le type le rend illisible pour les versions suivantes, et l'import le refuse
+alors en entier. C'est le cas de tout dump antérieur au renommage de
+`edition.defaut` (V118), et de tout dump antérieur à V122 qui porte une règle
+d'horaire « dates précises », rangées depuis dans un tableau de dates. Pour
+garder un jeu de données au-delà d'une montée de version, c'est l'export de
+scénario YAML qui voyage.
+
 Les consignes d'édition en font partie — `consigne_edition`,
 `consigne_edition_fenetre`, `consigne_edition_ouverture`,
 `consigne_edition_creneau` — ainsi que leurs préréglages

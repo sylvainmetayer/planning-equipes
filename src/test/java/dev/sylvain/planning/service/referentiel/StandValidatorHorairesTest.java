@@ -10,6 +10,7 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.service.BusinessError;
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +35,23 @@ class StandValidatorHorairesTest {
 
     private static HoraireStand everyDay(ModeHoraire mode, int debut, int fin, Integer effectif) {
         return HoraireStand.everyDay(mode, new FenetreHoraire(LocalTime.of(debut, 0), LocalTime.of(fin, 0), effectif));
+    }
+
+    /** A date[] element read back as ISO text: a year outside 1..9999 is refused by name, not by a 500. */
+    @Test
+    void aDatesRuleOutsideYearsOneToNineThousandNineHundredNinetyNineIsRefused() {
+        for (LocalDate date : List.of(LocalDate.of(0, 1, 1), LocalDate.of(10_000, 1, 1))) {
+            HoraireStand horaire = new HoraireStand(
+                    null,
+                    ModeHoraire.OUVERTURE,
+                    TypeJoursHoraire.DATES,
+                    List.of(new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(18, 0))));
+            horaire.setDates(Set.of(date));
+
+            assertThatThrownBy(() -> StandValidator.checkSchedule(stand(horaire)))
+                    .isInstanceOf(BusinessError.Invalid.class)
+                    .hasMessageContaining("années 1 à 9999");
+        }
     }
 
     @Test
