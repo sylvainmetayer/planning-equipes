@@ -90,6 +90,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       # Java sert dans les deux cas — c'est lui qui lance le jar. Le cache
       # Maven, seulement quand ce job package : sinon il ne lirait rien.
@@ -193,7 +195,11 @@ jobs:
           E2E_BASE_URL: http://localhost:8080
           E2E_MAILPIT_URL: http://mailpit:8025
           E2E_ADMIN_PASSWORD: e2e-admin-Kd9nT4wB
-        run: npm run e2e -- ${{ inputs.playwright-args }}
+          # Through the environment, never interpolated into the script.
+          PLAYWRIGHT_ARGS: ${{ inputs.playwright-args }}
+        # Unquoted on purpose: the selection is several words (`--grep @lourd`).
+        # shellcheck disable=SC2086
+        run: npm run e2e -- $PLAYWRIGHT_ARGS
 
       # Ce qu'un échec a sous les yeux, lisible dans le journal du job sans
       # télécharger l'artefact : la photographie de la page que Playwright
@@ -201,11 +207,12 @@ jobs:
       - name: Print the failure context
         if: failure()
         run: |
-          for contexte in $(find src/main/webui/test-results -name error-context.md 2>/dev/null); do
-            echo "::group::$contexte"
-            head -n 250 "$contexte"
-            echo "::endgroup::"
-          done
+          find src/main/webui/test-results -name error-context.md 2>/dev/null \
+            | while IFS= read -r contexte; do
+                echo "::group::$contexte"
+                head -n 250 "$contexte"
+                echo "::endgroup::"
+              done
           if [ -f app.log ]; then
             echo "::group::app.log — ERROR/WARN"
             grep -nE "ERROR|WARN|Exception" app.log | tail -n 200 || true

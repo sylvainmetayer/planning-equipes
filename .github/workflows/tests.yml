@@ -87,6 +87,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Java
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
@@ -244,6 +246,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
 
       - name: Decide whether anything a browser sees has changed
@@ -329,6 +332,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           # Historique complet : le cliquet linguistique compare la branche à sa
           # base, et le clone superficiel par défaut ne connaît pas `origin/main`.
           fetch-depth: 0
@@ -347,7 +351,9 @@ jobs:
       - name: Check the commit messages of this branch
         if: github.event_name == 'pull_request'
         working-directory: .
-        run: bash .github/scripts/check-commits.sh "origin/${{ github.base_ref }}"
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: bash .github/scripts/check-commits.sh "origin/$BASE_REF"
 
       # Same job, same reason: the SHA a reformatting had on its branch is not
       # the one main received, and `git blame` ignores an unknown one silently.
@@ -401,7 +407,9 @@ jobs:
       # changé sans que l'anglais bouge est signalé. Un cliquet, comme la
       # politique linguistique : il porte sur ce que la branche réécrit.
       - name: Check that a rewritten French source moved its English too
-        run: npm run i18n-check-modifies -- "origin/${{ github.base_ref || 'main' }}"
+        env:
+          BASE_REF: ${{ github.base_ref || 'main' }}
+        run: npm run i18n-check-modifies -- "origin/$BASE_REF"
 
       # `models.ts` est écrit à la main et rien ne le confrontait au serveur :
       # six types avaient dérivé, le serveur envoyant des champs que le front
@@ -483,7 +491,9 @@ jobs:
       # Les lignes et non les fichiers : une PR qui renomme dans 130 fichiers ne
       # doit pas devoir traduire au passage ce qu'elle n'a pas écrit.
       - name: Check the language policy on the lines this branch writes
-        run: npm run language-policy-modifies -- "origin/${{ github.base_ref || 'main' }}"
+        env:
+          BASE_REF: ${{ github.base_ref || 'main' }}
+        run: npm run language-policy-modifies -- "origin/$BASE_REF"
 
       # The production build was only ever exercised by the `test` job, through
       # Quinoa (`./mvnw verify`): a broken template therefore failed in the
@@ -517,6 +527,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           # Full history: SonarCloud blames each line to tell new code apart.
           fetch-depth: 0
 

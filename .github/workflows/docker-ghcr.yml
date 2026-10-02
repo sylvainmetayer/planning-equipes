@@ -61,6 +61,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           # The Dockerfile copies this `.git` into the build, where
           # generate-news.js reads it to write the « Nouveautés » screen. At
           # the default depth of 1 that screen would list a single commit —
@@ -108,7 +109,15 @@ jobs:
       # des étapes). Clé sur `pom.xml` : un bump repart du cache précédent et
       # n'ajoute que ce qui a changé ; une clé déjà en cache n'est ni extraite
       # ni réécrite.
+      #
+      # Jamais pour une release : un cache GitHub s'écrit depuis n'importe quel
+      # job du dépôt, PR comprises, et une image de version construite sur un
+      # `.m2` ou des couches empoisonnées signerait ce qu'on y a glissé
+      # (zizmor, `cache-poisoning`). Un tag repart donc de zéro — couches
+      # comprises, voir `no-cache` plus bas — au prix de quelques minutes sur un
+      # build qui n'arrive qu'à chaque version.
       - name: Restore the Maven repository of the image build
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         id: m2-cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -117,6 +126,7 @@ jobs:
           restore-keys: docker-m2-${{ runner.os }}-
 
       - name: Hand the Maven repository to the BuildKit cache mount
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         uses: reproducible-containers/buildkit-cache-dance@5422eac04292c961a382e0f584ea0f03ad9da723 # v3.4.0
         with:
           cache-map: |
@@ -179,7 +189,10 @@ jobs:
           push: true
           tags: ${{ steps.meta-sha.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
+          # A release reads no cache (see the Maven repository step above) but
+          # still writes one: the next build of main starts from it.
+          no-cache: ${{ startsWith(github.ref, 'refs/tags/') }}
+          cache-from: ${{ !startsWith(github.ref, 'refs/tags/') && 'type=gha' || '' }}
           cache-to: type=gha,mode=max
 
       # The artefact that will be deployed, pulled by digest, started with the
@@ -354,13 +367,16 @@ jobs:
       # since this step exits 0.
       - name: Point :latest at the newest stable version
         if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          REPOSITORY: ${{ github.repository }}
+          DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           git fetch --tags --force --prune --prune-tags --quiet origin
           newest="$(git tag --list | { grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true; } | sort -V | tail -n 1)"
           if [ "$GITHUB_REF_NAME" = "$newest" ]; then
             docker buildx imagetools create \
-              --tag "ghcr.io/${{ github.repository }}:latest" \
-              "ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}"
+              --tag "ghcr.io/$REPOSITORY:latest" \
+              "ghcr.io/$REPOSITORY@$DIGEST"
           else
             echo "::notice::$GITHUB_REF_NAME n'est pas le tag le plus récent ($newest) : :latest ne bouge pas"
           fi
