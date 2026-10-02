@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -495,6 +496,27 @@ class ReferentielMcpToolsTest {
                     .stand();
             assertThat(sansEffectif.ouvertures().get(1).effectif()).isNull();
             assertThat(sansEffectif.fermetures()).isEmpty();
+        } finally {
+            standTools.deleteStand(stand, "E1");
+        }
+    }
+
+    /** A DATES rule used to stop at 46 dates, the 47th overflowing its column (V122). */
+    @Test
+    void aDatesRuleOfOneHundredAndTwentyDatesIsWrittenOverMcp() {
+        String stand = standTools
+                .createStand("Village", null, List.of("STRATEGIE"), 1, 4, false, false, null, null, "E1")
+                .stand()
+                .id();
+        List<String> dates = IntStream.range(0, 120)
+                .mapToObj(i -> LocalDate.of(2026, 5, 1).plusDays(2L * i).toString())
+                .toList();
+        try {
+            standTools.addStandHoraire(stand, "OUVERTURE", "10:00-18:00", "DATES", null, null, null, dates, null, "E1");
+
+            assertThat(standTools.getStand(stand, "E1").horaires().getFirst().dates())
+                    .extracting(LocalDate::toString)
+                    .containsExactlyElementsOf(dates);
         } finally {
             standTools.deleteStand(stand, "E1");
         }

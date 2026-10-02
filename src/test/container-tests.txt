@@ -108,6 +108,7 @@ dev/sylvain/planning/api/SpaCacheControlTest.java
 dev/sylvain/planning/api/StaffingResourceTest.java
 dev/sylvain/planning/api/StaleWriteResourceTest.java
 dev/sylvain/planning/api/StandGrilleImportResourceTest.java
+dev/sylvain/planning/api/StandHoraireDatesResourceTest.java
 dev/sylvain/planning/api/ValidationJourneeResourceTest.java
 dev/sylvain/planning/api/VerrouillageResourceTest.java
 dev/sylvain/planning/api/WalkingTimeResourceTest.java
@@ -157,6 +158,7 @@ dev/sylvain/planning/service/referentiel/ReferenceDataServiceStandTest.java
 dev/sylvain/planning/service/referentiel/ReferenceDataServiceSuppressionTest.java
 dev/sylvain/planning/service/referentiel/ReferentielCsvExportServiceTest.java
 dev/sylvain/planning/service/referentiel/ReferentielCsvImportServiceTest.java
+dev/sylvain/planning/service/referentiel/StandHoraireDatesMigrationTest.java
 dev/sylvain/planning/service/scenario/ScenarioLadderImportTest.java
 dev/sylvain/planning/service/schema/SchemaCompatibilityGuardTest.java
 dev/sylvain/planning/service/solve/PlanSnapshotFraicheurTest.java
