@@ -41,7 +41,7 @@ function mount(
   } = {},
 ) {
   const storage = options.storage === undefined ? memoryStorage() : options.storage;
-  const ask = vi.fn(async () => options.confirmed ?? true);
+  const ask = vi.fn(() => Promise.resolve(options.confirmed ?? true));
   const close = vi.fn();
   const ref = fakeDialogRef(close);
   const locked = signal(options.locked ?? false);
@@ -90,6 +90,13 @@ function storageWith(draft: unknown, modifieLe = '2026-07-01T08:00:00Z') {
   const storage = memoryStorage();
   writeDraft(storage, KEY, draft, modifieLe);
   return storage;
+}
+
+/** The real service, its `notify` spied on: what the function hands it is the subject. */
+function spiedNotifications() {
+  const notifications = TestBed.inject(NotificationService);
+  const notify = vi.spyOn(notifications, 'notify').mockImplementation(() => undefined);
+  return { notifications, notify };
 }
 
 describe('FormDraft', () => {
@@ -405,13 +412,6 @@ describe('FormDraft', () => {
   });
 
   describe('orphan drafts', () => {
-    /** The real service, its `notify` spied on: what the function hands it is the subject. */
-    function spiedNotifications() {
-      const notifications = TestBed.inject(NotificationService);
-      const notify = vi.spyOn(notifications, 'notify').mockImplementation(() => undefined);
-      return { notifications, notify };
-    }
-
     it('erases the draft of a record deleted meanwhile and says so, by its id', () => {
       const storage = memoryStorage();
       writeDraft(storage, draftKey('animateur', 'a7'), {}, null);

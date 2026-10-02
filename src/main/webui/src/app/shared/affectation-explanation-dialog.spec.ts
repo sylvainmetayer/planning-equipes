@@ -143,9 +143,9 @@ function mount(
       {
         provide: AffectationExplanationService,
         useValue: {
-          explique: vi.fn(async () => explication()),
-          suggererReparations: vi.fn(async () => suggestions()),
-          applyRepair: vi.fn(async () => undefined),
+          explique: vi.fn(() => Promise.resolve(explication())),
+          suggererReparations: vi.fn(() => Promise.resolve(suggestions())),
+          applyRepair: vi.fn(() => Promise.resolve(undefined)),
           ...service,
         },
       },
@@ -224,7 +224,7 @@ describe('AffectationExplanationDialog', () => {
 
   it('renders the score the server returned, not a hard-coded one', async () => {
     const { fixture } = mount({
-      explique: vi.fn(async () => explication({ score: score(-7, -1, -12) })),
+      explique: vi.fn(() => Promise.resolve(explication({ score: score(-7, -1, -12) }))),
     });
     await fixture.whenStable();
 
@@ -234,16 +234,18 @@ describe('AffectationExplanationDialog', () => {
 
   it('lists each violated constraint with its level badge and its per-match details', async () => {
     const { fixture } = mount({
-      explique: vi.fn(async () =>
-        explication({
-          contraintesViolees: [
-            impact('reposQuotidien', {
-              niveau: 'HARD' as NiveauContrainte,
-              description: 'Repos quotidien de 11 h',
-              details: ['Camille Durand le 2026-07-14', 'Camille Durand le 2026-07-15'],
-            }),
-          ],
-        }),
+      explique: vi.fn(() =>
+        Promise.resolve(
+          explication({
+            contraintesViolees: [
+              impact('reposQuotidien', {
+                niveau: 'HARD' as NiveauContrainte,
+                description: 'Repos quotidien de 11 h',
+                details: ['Camille Durand le 2026-07-14', 'Camille Durand le 2026-07-15'],
+              }),
+            ],
+          }),
+        ),
       ),
     });
     await fixture.whenStable();
@@ -262,7 +264,9 @@ describe('AffectationExplanationDialog', () => {
 
   it('falls back to the constraint name when the server sends no description', async () => {
     const { fixture } = mount({
-      explique: vi.fn(async () => explication({ contraintesViolees: [impact('mineurApres22h')] })),
+      explique: vi.fn(() =>
+        Promise.resolve(explication({ contraintesViolees: [impact('mineurApres22h')] })),
+      ),
     });
     await fixture.whenStable();
 
@@ -279,8 +283,10 @@ describe('AffectationExplanationDialog', () => {
 
   it('counts the respected constraints from the list the server sent', async () => {
     const { fixture } = mount({
-      explique: vi.fn(async () =>
-        explication({ contraintesRespectees: [impact('c1'), impact('c2'), impact('c3')] }),
+      explique: vi.fn(() =>
+        Promise.resolve(
+          explication({ contraintesRespectees: [impact('c1'), impact('c2'), impact('c3')] }),
+        ),
       ),
     });
     await fixture.whenStable();
@@ -292,9 +298,7 @@ describe('AffectationExplanationDialog', () => {
 
   it('shows the failure instead of an empty dialog when the explanation cannot be loaded', async () => {
     const { fixture } = mount({
-      explique: vi.fn(async () => {
-        throw new Error('poste introuvable');
-      }),
+      explique: vi.fn(() => Promise.reject(new Error('poste introuvable'))),
     });
     await fixture.whenStable();
 
@@ -318,7 +322,7 @@ describe('AffectationExplanationDialog', () => {
 
   describe('assistant de réparation (issue #71)', () => {
     it('searches nothing until asked: the endpoint costs one analysis per candidate', async () => {
-      const suggererReparations = vi.fn(async () => suggestions());
+      const suggererReparations = vi.fn(() => Promise.resolve(suggestions()));
       const { fixture } = mount({ suggererReparations });
       await fixture.whenStable();
 
@@ -328,16 +332,18 @@ describe('AffectationExplanationDialog', () => {
 
     it('lists the viable replacements with the constraints each one settles', async () => {
       const { fixture } = mount({
-        suggererReparations: vi.fn(async () =>
-          suggestions({
-            suggestions: [
-              suggestion('a2', {
-                violationsResolues: [
-                  impact('pasDeChevauchementHoraire', { description: 'Pas de chevauchement' }),
-                ],
-              }),
-            ],
-          }),
+        suggererReparations: vi.fn(() =>
+          Promise.resolve(
+            suggestions({
+              suggestions: [
+                suggestion('a2', {
+                  violationsResolues: [
+                    impact('pasDeChevauchementHoraire', { description: 'Pas de chevauchement' }),
+                  ],
+                }),
+              ],
+            }),
+          ),
         ),
       });
       await fixture.whenStable();
@@ -349,7 +355,7 @@ describe('AffectationExplanationDialog', () => {
 
     it('says so plainly when no candidate can take the seat without breaking a hard rule', async () => {
       const { fixture } = mount({
-        suggererReparations: vi.fn(async () => suggestions({ suggestions: [] })),
+        suggererReparations: vi.fn(() => Promise.resolve(suggestions({ suggestions: [] }))),
       });
       await fixture.whenStable();
       await clickButton(fixture, 'Chercher des remplaçants viables');
@@ -364,13 +370,15 @@ describe('AffectationExplanationDialog', () => {
      */
     it('warns that a truncated search is not an exhaustive answer', async () => {
       const { fixture } = mount({
-        suggererReparations: vi.fn(async () =>
-          suggestions({
-            candidatsEligibles: 137,
-            depuis: 0,
-            candidatsEvalues: 20,
-            suggestions: [suggestion('a2')],
-          }),
+        suggererReparations: vi.fn(() =>
+          Promise.resolve(
+            suggestions({
+              candidatsEligibles: 137,
+              depuis: 0,
+              candidatsEvalues: 20,
+              suggestions: [suggestion('a2')],
+            }),
+          ),
         ),
       });
       await fixture.whenStable();
@@ -381,13 +389,15 @@ describe('AffectationExplanationDialog', () => {
 
     it('stays silent about truncation when the whole eligible pool was evaluated', async () => {
       const { fixture } = mount({
-        suggererReparations: vi.fn(async () =>
-          suggestions({
-            candidatsEligibles: 2,
-            depuis: 0,
-            candidatsEvalues: 2,
-            suggestions: [suggestion('a2')],
-          }),
+        suggererReparations: vi.fn(() =>
+          Promise.resolve(
+            suggestions({
+              candidatsEligibles: 2,
+              depuis: 0,
+              candidatsEvalues: 2,
+              suggestions: [suggestion('a2')],
+            }),
+          ),
         ),
       });
       await fixture.whenStable();
@@ -397,9 +407,11 @@ describe('AffectationExplanationDialog', () => {
     });
 
     it('applies a suggestion and closes with what changed, so the calendar can reload', async () => {
-      const applyRepair = vi.fn(async () => undefined);
+      const applyRepair = vi.fn(() => Promise.resolve(undefined));
       const { fixture, close } = mount({
-        suggererReparations: vi.fn(async () => suggestions({ suggestions: [suggestion('a2')] })),
+        suggererReparations: vi.fn(() =>
+          Promise.resolve(suggestions({ suggestions: [suggestion('a2')] })),
+        ),
         applyRepair,
       });
       await fixture.whenStable();
@@ -412,10 +424,10 @@ describe('AffectationExplanationDialog', () => {
 
     it('keeps the dialog open and shows why when applying is refused', async () => {
       const { fixture, close } = mount({
-        suggererReparations: vi.fn(async () => suggestions({ suggestions: [suggestion('a2')] })),
-        applyRepair: vi.fn(async () => {
-          throw new Error('Ce poste est verrouillé');
-        }),
+        suggererReparations: vi.fn(() =>
+          Promise.resolve(suggestions({ suggestions: [suggestion('a2')] })),
+        ),
+        applyRepair: vi.fn(() => Promise.reject(new Error('Ce poste est verrouillé'))),
       });
       await fixture.whenStable();
       await clickButton(fixture, 'Chercher des remplaçants viables');
@@ -427,9 +439,7 @@ describe('AffectationExplanationDialog', () => {
 
     it('reports a failed search without wiping the explanation already on screen', async () => {
       const { fixture } = mount({
-        suggererReparations: vi.fn(async () => {
-          throw new Error('recherche impossible');
-        }),
+        suggererReparations: vi.fn(() => Promise.reject(new Error('recherche impossible'))),
       });
       await fixture.whenStable();
       await clickButton(fixture, 'Chercher des remplaçants viables');

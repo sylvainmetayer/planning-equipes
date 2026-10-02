@@ -168,14 +168,16 @@ test('une contradiction déjà en base est signalée avant toute résolution', a
   await page.context().close();
 });
 
-test('l’ancienne vue réseau mène à la liste filtrée sur la personne', async ({ browser }) => {
+test('the former network view leads to the list filtered on the person', async ({ browser }) => {
   await idCree(await admin.post('/api/contraintes-ad-hoc', { data: indisponibilite() }));
 
   const page = await pageAdmin(browser, admin);
   // Issue #719: the network is gone, its `?personne=` narrows the list instead.
   // « Ajustements » is the page's default tab, which the URL does not spell out.
   await page.goto(`/ad-hoc-constraints?vue=reseau&personne=${SEED.demandeur}`);
-  await expect(page).toHaveURL(new RegExp(`/consignes-solveur\\?personne=${SEED.demandeur}$`));
+  await expect(page).toHaveURL(
+    new RegExp(String.raw`/consignes-solveur\?personne=${SEED.demandeur}$`),
+  );
   await expect(page.locator('#contenu')).toContainText(RAISON_INDISPO);
   await expect(page.locator('svg.reseau-paires')).toHaveCount(0);
   await page.context().close();

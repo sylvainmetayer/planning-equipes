@@ -23,7 +23,9 @@ function monter(
   typologie: TypologieItem | null,
   options: { editingLocked?: boolean; saveOk?: boolean } = {},
 ) {
-  const crud = fakeOf<ReferenceCrudService>({ save: async () => options.saveOk ?? true });
+  const crud = fakeOf<ReferenceCrudService>({
+    save: () => Promise.resolve(options.saveOk ?? true),
+  });
   const close = vi.fn();
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({

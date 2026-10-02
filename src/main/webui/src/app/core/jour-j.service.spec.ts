@@ -5,9 +5,9 @@ import { ApiService } from './api.service';
 import { JourJService } from './jour-j.service';
 
 class FakeApi {
-  get = vi.fn(async (_url: string) => ({}));
-  post = vi.fn(async (_url: string, _body: unknown) => ({}));
-  delete = vi.fn(async (_url: string) => undefined);
+  get = vi.fn((_url: string) => Promise.resolve({}));
+  post = vi.fn((_url: string, _body: unknown) => Promise.resolve({}));
+  delete = vi.fn((_url: string) => Promise.resolve(undefined));
 }
 
 describe('JourJService', () => {

@@ -122,25 +122,25 @@ describe('ReglesPage', () => {
     contraintes: ConstraintView[] = [PLACES, HEBDO, CHARGE],
   ): Promise<void> {
     constraintsApi = {
-      catalogue: vi.fn(async () => catalogue(contraintes)),
-      legalParameters: vi.fn(async () => ({ ...LEGAUX })),
-      qualityParameters: vi.fn(async () => ({ joursConsecutifsMax: 8 })),
-      saveLegalParameters: vi.fn(async (legaux: ParametresLegaux) => legaux),
-      saveQualityParameters: vi.fn(async (qualite: unknown) => qualite),
-      setActive: vi.fn(async () => ({ actif: false })),
-      setWeight: vi.fn(async (_name: string, poids: number) => ({ poids })),
-      history: vi.fn(async () => ({ changes: [], resolutions: [] })),
+      catalogue: vi.fn(() => Promise.resolve(catalogue(contraintes))),
+      legalParameters: vi.fn(() => Promise.resolve({ ...LEGAUX })),
+      qualityParameters: vi.fn(() => Promise.resolve({ joursConsecutifsMax: 8 })),
+      saveLegalParameters: vi.fn((legaux: ParametresLegaux) => Promise.resolve(legaux)),
+      saveQualityParameters: vi.fn((qualite: unknown) => Promise.resolve(qualite)),
+      setActive: vi.fn(() => Promise.resolve({ actif: false })),
+      setWeight: vi.fn((_name: string, poids: number) => Promise.resolve({ poids })),
+      history: vi.fn(() => Promise.resolve({ changes: [], resolutions: [] })),
       diagnose: vi.fn(),
     };
-    allowsDisabling = vi.fn(async () => false);
-    ask = vi.fn(async () => true);
+    allowsDisabling = vi.fn(() => Promise.resolve(false));
+    ask = vi.fn(() => Promise.resolve(true));
     const queryParams = new BehaviorSubject<ParamMap>(convertToParamMap(params));
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
+        { provide: ApiService, useValue: { get: vi.fn(() => Promise.resolve([])) } },
         { provide: ConstraintsApi, useValue: constraintsApi },
         { provide: LegalDisableConfirmService, useValue: { allowsDisabling } },
         { provide: ConfirmService, useValue: { ask } },
@@ -160,12 +160,12 @@ describe('ReglesPage', () => {
         },
         {
           provide: PlanningResolutionStore,
-          useValue: { reload: vi.fn(async () => undefined), resolution: () => null },
+          useValue: { reload: vi.fn(() => Promise.resolve(undefined)), resolution: () => null },
         },
         {
           provide: SolverSettingsService,
           useValue: {
-            refresh: vi.fn(async () => undefined),
+            refresh: vi.fn(() => Promise.resolve(undefined)),
             bounds: signal(null),
             dureeResolutionSecondes: signal(null),
             plateauSecondes: signal(null),
@@ -174,7 +174,10 @@ describe('ReglesPage', () => {
             effectivePlateauSeconds: () => 300,
           },
         },
-        { provide: AdminApi, useValue: { mailConfig: vi.fn(async () => ({ adminEmail: null })) } },
+        {
+          provide: AdminApi,
+          useValue: { mailConfig: vi.fn(() => Promise.resolve({ adminEmail: null })) },
+        },
         { provide: EditionStore, useValue: { courant: () => ({ id: 'E1' }) } },
         {
           provide: ActivatedRoute,

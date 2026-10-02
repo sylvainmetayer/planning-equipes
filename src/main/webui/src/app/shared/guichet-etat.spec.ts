@@ -26,11 +26,13 @@ async function mountCollection(serverDate: ReturnType<typeof signal<string>>) {
       {
         provide: DisponibilitesApi,
         useValue: {
-          configuration: vi.fn(async () => ({
-            collecteOuverte: true,
-            debut: '2026-07-01',
-            fin: '2026-07-10',
-          })),
+          configuration: vi.fn(() =>
+            Promise.resolve({
+              collecteOuverte: true,
+              debut: '2026-07-01',
+              fin: '2026-07-10',
+            }),
+          ),
         },
       },
       { provide: EchangesApi, useValue: {} },

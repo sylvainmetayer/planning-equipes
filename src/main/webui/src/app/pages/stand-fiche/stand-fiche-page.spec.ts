@@ -96,56 +96,57 @@ describe('StandFichePage', () => {
       typologies: signal([{ id: 'T1', label: 'Enfance', ninja: false }]),
       emplacements: signal([]),
       creneaux: signal([]),
-      reload: async () => undefined,
+      reload: () => Promise.resolve(undefined),
     });
     standsApi = fakeOf<StandsApi>({
-      openings: async () => ({
-        jours: [],
-        stands: [
-          {
-            standId: 'S2',
-            nom: 'Stand 2',
-            effectifMin: 2,
-            jours: [],
-            minutesOuvertes: 0,
-            postes: 56,
-            modifieLe: null,
-          },
-        ],
-        standsJamaisOuverts: 0,
-        postesTotal: 56,
-        anomalies: [
-          {
-            type: 'FENETRE_SANS_EFFET',
-            standId: 'S2',
-            standNom: 'Stand 2',
-            date: '2026-07-12',
-            message: 'Fenêtre 07:00-08:00 hors de tout créneau',
-          },
-        ],
-      }),
+      openings: () =>
+        Promise.resolve({
+          jours: [],
+          stands: [
+            {
+              standId: 'S2',
+              nom: 'Stand 2',
+              effectifMin: 2,
+              jours: [],
+              minutesOuvertes: 0,
+              postes: 56,
+              modifieLe: null,
+            },
+          ],
+          standsJamaisOuverts: 0,
+          postesTotal: 56,
+          anomalies: [
+            {
+              type: 'FENETRE_SANS_EFFET',
+              standId: 'S2',
+              standNom: 'Stand 2',
+              date: '2026-07-12',
+              message: 'Fenêtre 07:00-08:00 hors de tout créneau',
+            },
+          ],
+        }),
     });
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
+        { provide: ApiService, useValue: { get: vi.fn(() => Promise.resolve([])) } },
         provideFake(StandsApi, standsApi),
-        { provide: JourneesTypesApi, useValue: { etat: vi.fn(async () => null) } },
+        { provide: JourneesTypesApi, useValue: { etat: vi.fn(() => Promise.resolve(null)) } },
         {
           provide: PlanningStateService,
-          useValue: { set: vi.fn(), loadForDisplay: vi.fn(async () => PLAN) },
+          useValue: { set: vi.fn(), loadForDisplay: vi.fn(() => Promise.resolve(PLAN)) },
         },
         {
           provide: ProblemesStore,
           useValue: {
-            reloadFeasibility: vi.fn(async () => undefined),
+            reloadFeasibility: vi.fn(() => Promise.resolve(undefined)),
             causeParStandId: () => new Map(),
           },
         },
         provideFake(ReferenceDataStore, store),
         { provide: SolverJobService, useValue: { editingLocked: signal(false) } },
-        { provide: ConfirmService, useValue: { ask: vi.fn(async () => true) } },
+        { provide: ConfirmService, useValue: { ask: vi.fn(() => Promise.resolve(true)) } },
         { provide: MatDialog, useValue: dialog },
         {
           provide: Location,

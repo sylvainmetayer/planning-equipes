@@ -13,16 +13,20 @@ const INSTANCE = {
 };
 
 class FakeApi {
-  get = vi.fn(async (): Promise<SolverSettingsView> => ({
-    dureeResolutionSecondes: null,
-    plateauSecondes: null,
-    mailFinResolution: false,
-    instance: INSTANCE,
-  }));
-  put = vi.fn(async (_url: string, body: ParametresSolveur): Promise<SolverSettingsView> => ({
-    ...body,
-    instance: INSTANCE,
-  }));
+  get = vi.fn((): Promise<SolverSettingsView> =>
+    Promise.resolve({
+      dureeResolutionSecondes: null,
+      plateauSecondes: null,
+      mailFinResolution: false,
+      instance: INSTANCE,
+    }),
+  );
+  put = vi.fn((_url: string, body: ParametresSolveur): Promise<SolverSettingsView> =>
+    Promise.resolve({
+      ...body,
+      instance: INSTANCE,
+    }),
+  );
 }
 
 function configure(api: FakeApi): SolverSettingsService {
@@ -49,12 +53,14 @@ describe('SolverSettingsService', () => {
   });
 
   it('refresh() loads the value persisted server-side', async () => {
-    api.get = vi.fn(async () => ({
-      dureeResolutionSecondes: 240,
-      plateauSecondes: 60,
-      mailFinResolution: true,
-      instance: INSTANCE,
-    }));
+    api.get = vi.fn(() =>
+      Promise.resolve({
+        dureeResolutionSecondes: 240,
+        plateauSecondes: 60,
+        mailFinResolution: true,
+        instance: INSTANCE,
+      }),
+    );
     const service = configure(api);
     await service.refresh();
     expect(api.get).toHaveBeenCalledWith('/api/parametres-solveur');
@@ -73,9 +79,7 @@ describe('SolverSettingsService', () => {
   });
 
   it('refresh() propagates a fetch failure to the caller', async () => {
-    api.get = vi.fn(async () => {
-      throw new Error('boom');
-    });
+    api.get = vi.fn(() => Promise.reject(new Error('boom')));
     const service = configure(api);
     await expect(service.refresh()).rejects.toThrow('boom');
   });

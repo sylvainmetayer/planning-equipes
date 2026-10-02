@@ -34,12 +34,12 @@ test.afterAll(async () => {
 });
 
 /** Index of the row holding the focus, read from the DOM rather than guessed. */
-async function ligneFocalisee(page: Page): Promise<string | null> {
+function ligneFocalisee(page: Page): Promise<string | null> {
   return page.evaluate(() => document.activeElement?.closest('tr')?.dataset['rowIndex'] ?? null);
 }
 
 /** Accessible name of whatever holds the focus, for a readable failure. */
-async function elementFocalise(page: Page): Promise<string> {
+function elementFocalise(page: Page): Promise<string> {
   return page.evaluate(() => {
     const element = document.activeElement as HTMLElement | null;
     if (!element) {
@@ -371,7 +371,7 @@ test.describe('navigation clavier des tables de référence', () => {
     // days move with the calendar: a literal date names none of them, and the
     // page then falls back to the first day, which writes no `date=`.
     await page.keyboard.press('Enter');
-    await expect(page).toHaveURL(new RegExp(`/journee\\?date=${SEED.jourSuivant}`));
+    await expect(page).toHaveURL(new RegExp(String.raw`/journee\?date=${SEED.jourSuivant}`));
     await page.context().close();
   });
 });

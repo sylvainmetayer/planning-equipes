@@ -91,17 +91,23 @@ const ENTRIES: KpiHistoriqueEntry[] = [
   { id: 1, editionId: 'E1', editionNom: null, kpi: kpi(), creeLe: '2026-08-03T10:00:00Z' },
 ];
 
+function checkbox(ligne: HTMLElement): HTMLInputElement | null {
+  return ligne.querySelector('input[type="checkbox"]');
+}
+
 describe('VersionsPage', () => {
   let fixture: ComponentFixture<VersionsPage>;
   const editingLocked = signal(false);
-  const planningApi = { comparableSnapshots: vi.fn(async (): Promise<PlanSnapshot[]> => []) };
+  const planningApi = {
+    comparableSnapshots: vi.fn((): Promise<PlanSnapshot[]> => Promise.resolve([])),
+  };
   const snapshots = signal<PlanSnapshot[]>([]);
   const store = {
     snapshots,
     chargement: signal(false),
-    reload: vi.fn(async () => undefined),
+    reload: vi.fn(() => Promise.resolve(undefined)),
     capturer: vi.fn(),
-    supprimer: vi.fn(async () => undefined),
+    supprimer: vi.fn(() => Promise.resolve(undefined)),
     restaurer: vi.fn(),
   };
 
@@ -115,13 +121,13 @@ describe('VersionsPage', () => {
         { provide: PlanSnapshotStore, useValue: store },
         {
           provide: AnalysesApi,
-          useValue: { kpiHistory: vi.fn(async () => ENTRIES), deleteKpiEntry: vi.fn() },
+          useValue: { kpiHistory: vi.fn(() => Promise.resolve(ENTRIES)), deleteKpiEntry: vi.fn() },
         },
         { provide: PlanningApi, useValue: planningApi },
         { provide: EditionStore, useValue: { courant: () => ({ id: 'E1' }) } },
         { provide: SolverJobService, useValue: { editingLocked } },
         { provide: PlanningResolutionStore, useValue: { reload: vi.fn() } },
-        { provide: ConfirmService, useValue: { ask: vi.fn(async () => true) } },
+        { provide: ConfirmService, useValue: { ask: vi.fn(() => Promise.resolve(true)) } },
         { provide: MatDialog, useValue: {} },
         {
           provide: RealiseApi,
@@ -148,10 +154,6 @@ describe('VersionsPage', () => {
 
   function lignes(): HTMLElement[] {
     return Array.from(racine().querySelectorAll('tbody tr'));
-  }
-
-  function checkbox(ligne: HTMLElement): HTMLInputElement | null {
-    return ligne.querySelector('input[type="checkbox"]');
   }
 
   beforeEach(() => {

@@ -15,22 +15,34 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { StandCreationDialog } from './stand-creation-dialog';
 
+/** A stand of three on every window, where the first step said one: a grid to write. */
+function filled(): StandCreationDialog {
+  const dialog = TestBed.createComponent(StandCreationDialog).componentInstance;
+  dialog['nom'].set('Loup-Garou');
+  dialog['typologies'].set(['T1']);
+  dialog['windows'].set([{ key: '10:00-12:00', label: '10:00–12:00', open: true, effectif: 3 }]);
+  dialog['weekdays'].set([{ day: 6, open: true }]);
+  return dialog;
+}
+
 describe('StandCreationDialog', () => {
   const store = {
     typologies: signal([{ id: 'T1', label: 'Enfance' }]),
     emplacements: signal([]),
     stands: signal([]),
-    save: vi.fn(async () => ({ id: 'S9' })),
-    reload: vi.fn(async () => undefined),
+    save: vi.fn(() => Promise.resolve({ id: 'S9' })),
+    reload: vi.fn(() => Promise.resolve(undefined)),
   };
   const standsApi = {
-    openings: vi.fn(async () => ({
-      jours: [],
-      stands: [],
-      standsJamaisOuverts: 0,
-      postesTotal: 0,
-      anomalies: [],
-    })),
+    openings: vi.fn(() =>
+      Promise.resolve({
+        jours: [],
+        stands: [],
+        standsJamaisOuverts: 0,
+        postesTotal: 0,
+        anomalies: [],
+      }),
+    ),
     saveOpeningsGrid: vi.fn(),
   };
   const crud = { reportError: vi.fn() };
@@ -42,7 +54,7 @@ describe('StandCreationDialog', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
+        { provide: ApiService, useValue: { get: vi.fn(() => Promise.resolve([])) } },
         { provide: ReferenceDataStore, useValue: store },
         { provide: StandsApi, useValue: standsApi },
         { provide: ReferenceCrudService, useValue: crud },
@@ -53,16 +65,6 @@ describe('StandCreationDialog', () => {
       ],
     });
   });
-
-  /** A stand of three on every window, where the first step said one: a grid to write. */
-  function filled(): StandCreationDialog {
-    const dialog = TestBed.createComponent(StandCreationDialog).componentInstance;
-    dialog['nom'].set('Loup-Garou');
-    dialog['typologies'].set(['T1']);
-    dialog['windows'].set([{ key: '10:00-12:00', label: '10:00–12:00', open: true, effectif: 3 }]);
-    dialog['weekdays'].set([{ day: 6, open: true }]);
-    return dialog;
-  }
 
   it('keeps the stand when its hours fail, and a retry sends the hours alone', async () => {
     standsApi.saveOpeningsGrid.mockRejectedValueOnce(new Error('grille refusée'));

@@ -178,10 +178,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
 ];
 
 /** True when a loaded stylesheet has a rule naming `.${classe}` — the route's chunk brought its CSS. */
-async function feuilleChargee(
-  page: import('@playwright/test').Page,
-  classe: string,
-): Promise<boolean> {
+function feuilleChargee(page: import('@playwright/test').Page, classe: string): Promise<boolean> {
   return page.evaluate((selecteur) => {
     return Array.from(document.styleSheets).some((feuille) => {
       try {

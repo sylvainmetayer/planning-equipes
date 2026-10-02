@@ -6,25 +6,25 @@ import { describe, expect, it, vi } from 'vitest';
 import { ImportButton } from './import-button';
 import { ImportDialog, importTitle } from './import-dialog';
 
-describe('ImportButton', () => {
-  function monter(imported: boolean) {
-    const closed = new Subject<boolean | undefined>();
-    const open = vi.fn(() => ({
-      componentInstance: { imported: signal(imported) },
-      afterClosed: () => closed.asObservable(),
-    }));
-    TestBed.resetTestingModule();
-    TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), { provide: MatDialog, useValue: { open } }],
-    });
-    const fixture = TestBed.createComponent(ImportButton);
-    fixture.componentRef.setInput('card', 'animateurs');
-    fixture.detectChanges();
-    const emitted = vi.fn();
-    fixture.componentInstance.imported.subscribe(emitted);
-    return { fixture, open, closed, emitted };
-  }
+function monter(imported: boolean) {
+  const closed = new Subject<boolean | undefined>();
+  const open = vi.fn(() => ({
+    componentInstance: { imported: signal(imported) },
+    afterClosed: () => closed.asObservable(),
+  }));
+  TestBed.resetTestingModule();
+  TestBed.configureTestingModule({
+    providers: [provideZonelessChangeDetection(), { provide: MatDialog, useValue: { open } }],
+  });
+  const fixture = TestBed.createComponent(ImportButton);
+  fixture.componentRef.setInput('card', 'animateurs');
+  fixture.detectChanges();
+  const emitted = vi.fn();
+  fixture.componentInstance.imported.subscribe(emitted);
+  return { fixture, open, closed, emitted };
+}
 
+describe('ImportButton', () => {
   /** The screen stays put: the card opens over it, never a navigation to Fichiers. */
   it("opens the referential's import card in a dialog", () => {
     const { fixture, open } = monter(false);

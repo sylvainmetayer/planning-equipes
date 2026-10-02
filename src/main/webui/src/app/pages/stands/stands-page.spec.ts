@@ -59,22 +59,24 @@ async function arriveWith(edit: string): Promise<void> {
 describe('StandsPage', () => {
   let referenceData: ReferenceDataStore;
   const crud = {
-    reload: vi.fn(async () => undefined),
-    remove: vi.fn(async () => true),
-    removeMany: vi.fn(async () => 0),
+    reload: vi.fn(() => Promise.resolve(undefined)),
+    remove: vi.fn(() => Promise.resolve(true)),
+    removeMany: vi.fn(() => Promise.resolve(0)),
     reportError: vi.fn(),
     warningsOf: vi.fn(() => []),
   };
   const api = { get: vi.fn() };
   const standsApi = {
     compactSchedules: vi.fn(),
-    openings: vi.fn(async () => ({
-      jours: [],
-      stands: [],
-      standsJamaisOuverts: 0,
-      postesTotal: 0,
-      anomalies: [],
-    })),
+    openings: vi.fn(() =>
+      Promise.resolve({
+        jours: [],
+        stands: [],
+        standsJamaisOuverts: 0,
+        postesTotal: 0,
+        anomalies: [],
+      }),
+    ),
   };
   const confirm = { ask: vi.fn() };
   const notifications = { notify: vi.fn() };
@@ -116,7 +118,7 @@ describe('StandsPage', () => {
         {
           provide: ProblemesStore,
           useValue: {
-            reloadFeasibility: vi.fn(async () => undefined),
+            reloadFeasibility: vi.fn(() => Promise.resolve(undefined)),
             causeParStandId: () => new Map(),
           },
         },
@@ -495,13 +497,13 @@ describe('StandsPage table', () => {
   const causeParStandId = signal(new Map<string, CauseInfaisabilite>());
   const editingLocked = signal(false);
   /** The preview of a paste, refused: what it would have shown is all a spec needs. */
-  const previewConfirm = vi.fn(async (_plan: PastePlan<Stand>) => false);
+  const previewConfirm = vi.fn((_plan: PastePlan<Stand>) => Promise.resolve(false));
   /** What `GET /api/editions/courant/gel` answers; nothing frozen unless a test says so. */
   let gel: EtatGel[] = [];
   const crud = {
-    reload: vi.fn(async () => undefined),
-    remove: vi.fn(async () => true),
-    removeMany: vi.fn(async () => 0),
+    reload: vi.fn(() => Promise.resolve(undefined)),
+    remove: vi.fn(() => Promise.resolve(true)),
+    removeMany: vi.fn(() => Promise.resolve(0)),
     reportError: vi.fn(),
     warningsOf: vi.fn(() => []),
   };
@@ -570,35 +572,41 @@ describe('StandsPage table', () => {
         {
           provide: ApiService,
           useValue: {
-            get: vi.fn(async (url: string) => (url === '/api/editions/courant/gel' ? gel : [])),
+            get: vi.fn((url: string) =>
+              Promise.resolve(url === '/api/editions/courant/gel' ? gel : []),
+            ),
           },
         },
         {
           provide: StandsApi,
           useValue: {
-            compactSchedules: vi.fn(async () => ({
-              standsCompactes: 0,
-              fenetresAvant: 0,
-              fenetresApres: 0,
-            })),
-            openings: vi.fn(async () => ({
-              jours: [],
-              stands: [],
-              standsJamaisOuverts: 0,
-              postesTotal: 0,
-              anomalies: [],
-            })),
+            compactSchedules: vi.fn(() =>
+              Promise.resolve({
+                standsCompactes: 0,
+                fenetresAvant: 0,
+                fenetresApres: 0,
+              }),
+            ),
+            openings: vi.fn(() =>
+              Promise.resolve({
+                jours: [],
+                stands: [],
+                standsJamaisOuverts: 0,
+                postesTotal: 0,
+                anomalies: [],
+              }),
+            ),
           },
         },
         { provide: ReferenceCrudService, useValue: crud },
         { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked } },
         { provide: MatDialog, useValue: dialog },
-        { provide: ConfirmService, useValue: { ask: vi.fn(async () => false) } },
+        { provide: ConfirmService, useValue: { ask: vi.fn(() => Promise.resolve(false)) } },
         { provide: NotificationService, useValue: { notify: vi.fn() } },
         { provide: PastePreviewService, useValue: { confirm: previewConfirm } },
         {
           provide: ProblemesStore,
-          useValue: { reloadFeasibility: vi.fn(async () => undefined), causeParStandId },
+          useValue: { reloadFeasibility: vi.fn(() => Promise.resolve(undefined)), causeParStandId },
         },
       ],
     });

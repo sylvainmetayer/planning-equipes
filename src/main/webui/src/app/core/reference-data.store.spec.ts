@@ -6,12 +6,12 @@ import { ReferenceDataStore } from './reference-data.store';
 
 /** Answers every collection with an empty list, so `reload()` succeeds. */
 class FakeApi {
-  get = vi.fn(async (url: string) => (url.endsWith('/volumetrie') ? {} : []));
+  get = vi.fn((url: string) => Promise.resolve(url.endsWith('/volumetrie') ? {} : []));
   // Typed `unknown`: two resources answer `{ <entite>, avertissements }` and
   // the others the bare entity, which is exactly what `save` has to tell apart.
-  post = vi.fn(async (): Promise<unknown> => undefined);
-  put = vi.fn(async (): Promise<unknown> => undefined);
-  delete = vi.fn(async () => undefined);
+  post = vi.fn((): Promise<unknown> => Promise.resolve(undefined));
+  put = vi.fn((): Promise<unknown> => Promise.resolve(undefined));
+  delete = vi.fn(() => Promise.resolve(undefined));
 }
 
 describe('ReferenceDataStore bulk operations', () => {

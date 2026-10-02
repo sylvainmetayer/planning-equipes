@@ -14,7 +14,7 @@ function planning(): PlanningEvenement {
 }
 
 class FakeApi {
-  post = vi.fn(async (_url: string, _body: unknown) => ({}));
+  post = vi.fn((_url: string, _body: unknown) => Promise.resolve({}));
 }
 
 describe('AffectationExplanationService', () => {

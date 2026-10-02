@@ -65,6 +65,68 @@ function snapshotOf(
   return Object.assign(new ActivatedRouteSnapshot(), { queryParams, fragment });
 }
 
+function harness(paths: string[]): Promise<RouterTestingHarness> {
+  TestBed.configureTestingModule({
+    providers: [
+      provideZonelessChangeDetection(),
+      provideRouter(
+        routes
+          .flatMap((route) => route.children ?? [])
+          .filter((route) => paths.includes(route.path ?? ''))
+          .map((route) => ({
+            ...route,
+            loadComponent: undefined,
+            canDeactivate: undefined,
+            // A redirect keeps its target and takes no component.
+            component: route.redirectTo ? undefined : PageVide,
+          })),
+      ),
+    ],
+  });
+  return RouterTestingHarness.create();
+}
+
+async function naviguer(url: string): Promise<string> {
+  TestBed.configureTestingModule({
+    providers: [
+      provideZonelessChangeDetection(),
+      provideRouter(
+        routes
+          .flatMap((route) => route.children ?? [])
+          .filter((route) => ['debug', 'fichiers', 'parametres'].includes(route.path ?? ''))
+          .map((route) => ({ ...route, loadComponent: undefined, component: PageVide })),
+      ),
+    ],
+  });
+  const router = await RouterTestingHarness.create();
+  await router.navigateByUrl(url);
+  return TestBed.inject(Router).url;
+}
+
+function constraintsTarget(queryParams: Record<string, string>, fragment: string | null): string {
+  return redirectConstraintsToRegles(snapshotOf(queryParams, fragment)) as string;
+}
+
+function kpiTarget(queryParams: Record<string, string>): string {
+  return redirectKpiToVersions(snapshotOf(queryParams)) as string;
+}
+
+function garde(queryParams: Record<string, string>): string | boolean {
+  TestBed.resetTestingModule();
+  TestBed.configureTestingModule({
+    providers: [provideZonelessChangeDetection(), provideRouter([])],
+  });
+  const resultat = TestBed.runInInjectionContext(() =>
+    parametresOngletsDeplaces(
+      { queryParamMap: convertToParamMap(queryParams) } as ActivatedRouteSnapshot,
+      {} as RouterStateSnapshot,
+    ),
+  );
+  return typeof resultat === 'boolean'
+    ? resultat
+    : TestBed.inject(Router).serializeUrl(resultat as UrlTree);
+}
+
 /**
  * Les titres de route étaient des chaînes en dur, moitié françaises moitié
  * anglaises, qu'aucun contrôle ne voyait : `check-i18n` ne lit que ce qui passe
@@ -349,27 +411,6 @@ describe('app.routes', () => {
 
   /** Addresses a guard sends elsewhere, followed through the router. */
   describe('les adresses que la page ne sert plus', () => {
-    async function harness(paths: string[]): Promise<RouterTestingHarness> {
-      TestBed.configureTestingModule({
-        providers: [
-          provideZonelessChangeDetection(),
-          provideRouter(
-            routes
-              .flatMap((route) => route.children ?? [])
-              .filter((route) => paths.includes(route.path ?? ''))
-              .map((route) => ({
-                ...route,
-                loadComponent: undefined,
-                canDeactivate: undefined,
-                // A redirect keeps its target and takes no component.
-                component: route.redirectTo ? undefined : PageVide,
-              })),
-          ),
-        ],
-      });
-      return RouterTestingHarness.create();
-    }
-
     // The snack bar's « Voir la fiche » names `/stands?edit=` while the table is on screen.
     it('opens the fiche of a stand named by `?edit=` from the Stands page itself', async () => {
       const router = await harness(['stands', 'stands/:id']);
@@ -389,23 +430,6 @@ describe('app.routes', () => {
 
   /** The two tabs of Débogage that moved to Fichiers: a guard, since `/debug` itself still answers. */
   describe('les onglets du Débogage partis vers Fichiers', () => {
-    async function naviguer(url: string): Promise<string> {
-      TestBed.configureTestingModule({
-        providers: [
-          provideZonelessChangeDetection(),
-          provideRouter(
-            routes
-              .flatMap((route) => route.children ?? [])
-              .filter((route) => ['debug', 'fichiers', 'parametres'].includes(route.path ?? ''))
-              .map((route) => ({ ...route, loadComponent: undefined, component: PageVide })),
-          ),
-        ],
-      });
-      const harness = await RouterTestingHarness.create();
-      await harness.navigateByUrl(url);
-      return TestBed.inject(Router).url;
-    }
-
     it('envoie les scénarios livrés vers les exemples', async () => {
       expect(await naviguer('/debug?onglet=donnees')).toBe(
         '/fichiers?onglet=importer&cible=exemples',
@@ -464,51 +488,31 @@ describe('app.routes', () => {
 
   /** `/constraints` became « Règles du planning » (issue #720). */
   describe("l'ancienne adresse des contraintes", () => {
-    function target(queryParams: Record<string, string>, fragment: string | null): string {
-      return redirectConstraintsToRegles(snapshotOf(queryParams, fragment)) as string;
-    }
-
-    it('garde la règle demandée, que la page ouvre sur son onglet', () => {
-      expect(target({ regle: 'equilibrerCharge' }, null)).toBe('/regles?regle=equilibrerCharge');
+    it('keeps the requested rule, which the page opens on its tab', () => {
+      expect(constraintsTarget({ regle: 'equilibrerCharge' }, null)).toBe(
+        '/regles?regle=equilibrerCharge',
+      );
     });
 
-    it("fait de l'ancre d'une règle la règle à ouvrir, et oublie celle d'une catégorie", () => {
-      expect(target({}, 'coupureRepasObligatoire')).toBe('/regles?regle=coupureRepasObligatoire');
-      expect(target({}, 'categorie-legal-mineurs')).toBe('/regles');
+    it('turns the anchor of a rule into the rule to open, and forgets the anchor of a category', () => {
+      expect(constraintsTarget({}, 'coupureRepasObligatoire')).toBe(
+        '/regles?regle=coupureRepasObligatoire',
+      );
+      expect(constraintsTarget({}, 'categorie-legal-mineurs')).toBe('/regles');
     });
   });
 
   /** The Autopsie became « Versions du plan » (issue #702): its every-edition view survives. */
   describe("l'ancienne adresse de l'Autopsie", () => {
-    function target(queryParams: Record<string, string>): string {
-      return redirectKpiToVersions(snapshotOf(queryParams)) as string;
-    }
-
-    it('garde la vue de toutes les éditions, et elle seule', () => {
-      expect(target({ edition: '*' })).toBe('/versions?editions=toutes');
-      expect(target({ edition: 'E1', rang: '2' })).toBe('/versions');
-      expect(target({})).toBe('/versions');
+    it('keeps the every-edition view, and that one alone', () => {
+      expect(kpiTarget({ edition: '*' })).toBe('/versions?editions=toutes');
+      expect(kpiTarget({ edition: 'E1', rang: '2' })).toBe('/versions');
+      expect(kpiTarget({})).toBe('/versions');
     });
   });
 
   /** Two tabs of Paramètres left the page (issue #720): the guard sends their bookmarks on. */
   describe('les onglets déplacés des paramètres', () => {
-    function garde(queryParams: Record<string, string>): string | boolean {
-      TestBed.resetTestingModule();
-      TestBed.configureTestingModule({
-        providers: [provideZonelessChangeDetection(), provideRouter([])],
-      });
-      const resultat = TestBed.runInInjectionContext(() =>
-        parametresOngletsDeplaces(
-          { queryParamMap: convertToParamMap(queryParams) } as ActivatedRouteSnapshot,
-          {} as RouterStateSnapshot,
-        ),
-      );
-      return typeof resultat === 'boolean'
-        ? resultat
-        : TestBed.inject(Router).serializeUrl(resultat as UrlTree);
-    }
-
     it('envoie les paramètres légaux vers l’onglet Légal des règles', () => {
       expect(garde({ onglet: 'legaux', x: '1' })).toBe('/regles?x=1&onglet=legal');
     });

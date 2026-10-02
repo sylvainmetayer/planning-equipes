@@ -86,7 +86,7 @@ function mount(viewState: () => Params) {
   const router = TestBed.inject(Router);
   const location = TestBed.inject(Location);
   if (!(location instanceof SpyLocation)) {
-    throw new Error('provideLocationMocks() no longer provides a SpyLocation');
+    throw new TypeError('provideLocationMocks() no longer provides a SpyLocation');
   }
   const navigations: string[] = [];
   router.events.subscribe((event) => {
