@@ -140,11 +140,11 @@
               @if (envoi.enEchec) {
                 <!-- The signal of a failed send: lifted by any edit of this fiche,
                      the address corrected or the person reached otherwise. -->
-                <span class="fiche-envoi-echec" role="status">
+                <output class="fiche-envoi-echec">
                   <mat-icon inline aria-hidden="true">warning</mat-icon>
                   {{ lastDeliveryLabel(envoi) }}.
                   <ng-container i18n="@@fiche.envoi.echecAide">Corrigez l'adresse ou prévenez cette personne autrement : la prochaine modification de la fiche lève ce signal.</ng-container>
-                </span>
+                </output>
               }
             }
           </dd>
@@ -368,11 +368,11 @@
               </tbody>
             </table>
             <div class="fiche-radar">
-              <div class="fiche-radar-options" role="group" aria-label="Axes ajoutés au radar" i18n-aria-label="@@equite.radar.options">
+              <fieldset class="fiche-radar-options" aria-label="Axes ajoutés au radar" i18n-aria-label="@@equite.radar.options">
                 @for (axe of optionalAxes; track axe) {
                   <mat-checkbox [checked]="radarAxes().includes(axe)" (change)="toggleAxis(axe, $event.checked)">{{ libelleColonne(axe) }}</mat-checkbox>
                 }
-              </div>
+              </fieldset>
               <mat-form-field appearance="outline" class="fiche-comparer">
                 <mat-label i18n="@@equite.radar.compare.label">Comparer avec…</mat-label>
                 <mat-select [value]="comparedId() || null" (valueChange)="compareWith($event)">

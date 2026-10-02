@@ -200,7 +200,7 @@
             <p class="espace-demande-commentaire">{{ demande.commentaireAdmin }}</p>
           }
           @if (followUpDone()[demande.id]; as fait) {
-            <p class="echanges-suite-faite" role="status">{{ fait }}</p>
+            <output class="echanges-suite-faite status-paragraph">{{ fait }}</output>
           }
           @if (offersFollowUps(demande)) {
             <div class="echanges-actions">

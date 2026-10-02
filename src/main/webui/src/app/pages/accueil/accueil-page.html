@@ -25,7 +25,7 @@
       <p class="empty-hint accueil-erreur" role="alert">{{ erreur() }}</p>
     }
     @if (consignesAVenir().length > 0) {
-      <div class="accueil-consignes" role="status">
+      <output class="accueil-consignes">
         <mat-icon>gavel</mat-icon>
         <div>
           <p class="accueil-consignes-titre" i18n="@@accueil.consignes.titre">Journées sous consigne</p>
@@ -36,7 +36,7 @@
           </ul>
           <a routerLink="/consignes-solveur" [queryParams]="{ onglet: 'consignes' }" i18n="@@accueil.consignes.lien">Voir les consignes</a>
         </div>
-      </div>
+      </output>
     }
     @if (phase() === 'APRES' && etatEdition()?.evenement?.termine) {
       <div class="accueil-archive" data-bloc="archive">

@@ -22,10 +22,10 @@
     </mat-form-field>
   </div>
   @if (refusLabel()) {
-    <p class="form-warning" role="status">{{ refusLabel() }}</p>
+    <output class="form-warning status-paragraph">{{ refusLabel() }}</output>
   }
   @if (inconnusLabel()) {
-    <p class="form-warning" role="status" data-test="comparaison-inconnus">{{ inconnusLabel() }}</p>
+    <output class="form-warning status-paragraph" data-test="comparaison-inconnus">{{ inconnusLabel() }}</output>
   }
 
   @if (comparaison().stands.length > 0) {

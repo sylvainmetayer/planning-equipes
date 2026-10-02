@@ -79,8 +79,8 @@
         <li class="echanges-stats-tuile">
           <span class="echanges-stats-libelle">{{ tile.label }}</span>
           @if (tile.median) {
-            <span class="echanges-stats-valeur" tabindex="0" [matTooltip]="tile.mean ?? ''"
-                  i18n="@@echanges.stats.delai.mediane">{{ tile.median }} en médiane</span>
+            <button type="button" class="echanges-stats-valeur echanges-stats-moyenne" [matTooltip]="tile.mean ?? ''"
+                    i18n="@@echanges.stats.delai.mediane">{{ tile.median }} en médiane</button>
             <span class="echanges-stats-detail" i18n="@@echanges.stats.delai.centile">9 sur 10 en moins de {{ tile.tail }}</span>
             <a class="echanges-stats-detail" routerLink="/echanges" [queryParams]="tile.link"
                i18n="@@echanges.stats.delai.mesurees">sur {{ tile.delay.mesurees }} demande(s)</a>
@@ -100,7 +100,7 @@
     <h3 i18n="@@echanges.stats.parJourCreation">Par jour de création</h3>
     <div class="echanges-stats-histogramme">
       <svg [attr.viewBox]="'0 0 ' + width() + ' ' + histogramHeight" [attr.width]="width()" [attr.height]="histogramHeight"
-           role="group" aria-label="Demandes par jour de création" i18n-aria-label="@@echanges.stats.histogramme.label">
+           aria-label="Demandes par jour de création" i18n-aria-label="@@echanges.stats.histogramme.label">
         <line class="echanges-stats-axe" x1="0" [attr.y1]="histogramHeight" [attr.x2]="width()" [attr.y2]="histogramHeight" />
         @for (bar of bars(); track bar.day) {
           @if (bar.count > 0) {

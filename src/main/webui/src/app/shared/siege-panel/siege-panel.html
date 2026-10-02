@@ -165,7 +165,7 @@
     }
 
     @if (outcome(); as done) {
-      <section class="siege-panel-outcome" role="status">
+      <output class="siege-panel-outcome">
         <p><mat-icon inline aria-hidden="true">check_circle</mat-icon> {{ done.message }}</p>
         @if (done.warning) {
           <p class="siege-panel-warning"><mat-icon inline aria-hidden="true">warning</mat-icon> {{ done.warning }}</p>
@@ -189,7 +189,7 @@
             </button>
           }
         }
-      </section>
+      </output>
     }
   } @else {
     <p class="siege-panel-muted" i18n="@@siege.introuvable">Ce siège n'est plus dans le planning affiché.</p>

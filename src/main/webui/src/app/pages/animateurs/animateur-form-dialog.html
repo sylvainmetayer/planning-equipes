@@ -149,13 +149,13 @@
     <h3 i18n="@@animateurs.indispo.title">Jours d'indisponibilité</h3>
   </div>
   @if (frise().length > 0) {
-    <div class="indispo-frise" role="group" i18n-aria-label="@@animateurs.indispo.frise" aria-label="Jours de l'édition : cliquez un jour pour le marquer absent">
+    <fieldset class="indispo-frise" i18n-aria-label="@@animateurs.indispo.frise" aria-label="Jours de l'édition : cliquez un jour pour le marquer absent">
       @for (jour of frise(); track jour.date) {
         <button type="button" class="indispo-jour" [class.indispo-jour-absent]="jour.absent"
                 [attr.aria-pressed]="jour.absent" [attr.aria-label]="jourLabel(jour)" [disabled]="editingLocked()"
                 (click)="toggleDay(jour.date)">{{ jour.libelle }}</button>
       }
-    </div>
+    </fieldset>
   }
   <div class="competence-row indispo-plage">
     <mat-form-field appearance="outline">
@@ -172,7 +172,7 @@
     </button>
   </div>
   @if (rangeResult(); as result) {
-    <p class="empty-hint" role="status">{{ result }}</p>
+    <output class="empty-hint status-paragraph">{{ result }}</output>
   }
   @if (daysOutsideEdition().length) {
     <p class="empty-hint" i18n="@@animateurs.indispo.horsEdition">Hors des jours de l'édition :</p>
