@@ -602,9 +602,23 @@
              the `sonar` job of the Tests workflow sends the XML report to
              SonarCloud, and main also publishes target/site/jacoco as an
              artifact (7 days). Locally: ./mvnw test -Pcoverage, then open
-             target/site/jacoco/index.html. -->
+             target/site/jacoco/index.html.
+             The agent alone cannot measure a @QuarkusTest: Quarkus rewrites
+             the bytecode of the beans it loads, so the classes that ran no
+             longer match target/classes and every bean reads as uncovered.
+             quarkus-jacoco instruments those classes itself; the agent skips
+             the QuarkusClassLoader and both append to the same file. Test
+             scope, in this profile only: the packaged application is the
+             same with or without it. -->
         <profile>
             <id>coverage</id>
+            <dependencies>
+                <dependency>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-jacoco</artifactId>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
             <build>
                 <plugins>
                     <plugin>
@@ -617,6 +631,11 @@
                                 <goals>
                                     <goal>prepare-agent</goal>
                                 </goals>
+                                <configuration>
+                                    <exclClassLoaders>*QuarkusClassLoader</exclClassLoaders>
+                                    <destFile>${project.build.directory}/jacoco-quarkus.exec</destFile>
+                                    <append>true</append>
+                                </configuration>
                             </execution>
                             <execution>
                                 <id>report</id>
@@ -624,6 +643,9 @@
                                 <goals>
                                     <goal>report</goal>
                                 </goals>
+                                <configuration>
+                                    <dataFile>${project.build.directory}/jacoco-quarkus.exec</dataFile>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>

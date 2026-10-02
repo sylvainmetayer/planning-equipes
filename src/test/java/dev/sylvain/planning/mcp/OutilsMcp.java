@@ -6,6 +6,7 @@ import io.quarkiverse.mcp.server.Tool;
 import java.io.File;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,16 +24,14 @@ final class OutilsMcp {
     private OutilsMcp() {}
 
     static List<Method> all() throws URISyntaxException {
-        File dossier = new File(OutilsMcp.class
-                        .getProtectionDomain()
-                        .getCodeSource()
-                        .getLocation()
-                        .toURI())
-                .getParentFile() // target/test-classes -> target
-                .toPath()
-                .resolve("classes")
-                .resolve(OutilsMcp.class.getPackageName().replace('.', '/'))
-                .toFile();
+        // Anchored on a production class of the package, read through the
+        // launcher's class loader: under a @QuarkusTest with quarkus-jacoco
+        // (-Pcoverage), this class is defined from instrumented bytes and
+        // carries no code source to start from.
+        URL anchor = ClassLoader.getSystemClassLoader()
+                .getResource(EditionArg.class.getName().replace('.', '/') + ".class");
+        assertThat(anchor).as("EditionArg.class sur le classpath").isNotNull();
+        File dossier = new File(anchor.toURI()).getParentFile();
         assertThat(dossier).as("classes compilées du package mcp").isDirectory();
 
         List<Method> outils = new ArrayList<>();
