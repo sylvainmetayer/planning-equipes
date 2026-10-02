@@ -223,10 +223,12 @@ class FrozenPastAcceptanceTest {
                 .post("/api/postes/" + siegeAVenir + "/deplacement?cible=" + siegePasse)
                 .then()
                 .statusCode(400);
-        // Thursday is still the operator's: scored, not refused.
+        // Thursday is still the operator's: scored, not refused — by someone
+        // who does not already hold that seat, which would be refused first.
         given().header("X-Edition-Id", "E1")
                 .when()
-                .post("/api/postes/" + siegeAVenir + "/deplacement/simulation?animateur=" + firstHolderOn(J1))
+                .post("/api/postes/" + siegeAVenir + "/deplacement/simulation?animateur="
+                        + firstHolderOn(J1, holderOf(siegeAVenir)))
                 .then()
                 .statusCode(200);
     }
