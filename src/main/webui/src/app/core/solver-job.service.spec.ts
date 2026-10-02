@@ -40,24 +40,26 @@ class FakeApi {
   /** Next answer of a submit: a JobView to return, or an error to throw. */
   postResult: JobView | HttpErrorResponse | null = null;
 
-  getResponse = vi.fn(async () => this.activeResponses.shift() ?? { status: 204, body: null });
-  get = vi.fn(async (url: string) => {
+  getResponse = vi.fn(() =>
+    Promise.resolve(this.activeResponses.shift() ?? { status: 204, body: null }),
+  );
+  get = vi.fn((url: string) => {
     if (url === '/api/jobs/file') {
-      return this.file;
+      return Promise.resolve(this.file);
     }
     const id = url.replace('/api/jobs/', '');
     if (!(id in this.jobsById)) {
-      throw new Error(`Unexpected GET ${url}`);
+      return Promise.reject(new Error(`Unexpected GET ${url}`));
     }
-    return this.jobsById[id];
+    return Promise.resolve(this.jobsById[id]);
   });
-  postPreservingHttpError = vi.fn(async (_url: string, _payload?: unknown) => {
+  postPreservingHttpError = vi.fn((_url: string, _payload?: unknown) => {
     if (this.postResult instanceof HttpErrorResponse) {
-      throw this.postResult;
+      return Promise.reject(this.postResult);
     }
-    return this.postResult;
+    return Promise.resolve(this.postResult);
   });
-  delete = vi.fn(async () => undefined);
+  delete = vi.fn(() => Promise.resolve(undefined));
 }
 
 /** What a finished solve reports when a test does not care about its payload. */
@@ -70,7 +72,7 @@ function conflict(view: JobView): HttpErrorResponse {
 
 /** Answers "a job is running" for as many polls as a test needs. */
 function alwaysRunning(api: FakeApi, view: JobView = job()): void {
-  api.getResponse = vi.fn(async () => ({ status: 200, body: view }));
+  api.getResponse = vi.fn(() => Promise.resolve({ status: 200, body: view }));
 }
 
 describe('SolverJobService', () => {
@@ -354,7 +356,7 @@ describe('SolverJobService', () => {
     // The service is root-provided: a shell destroyed by an expired session
     // stops it, and the clock a running job started must not outlive that.
     it('stops the clock when the loop is stopped, even with a job still running', async () => {
-      api.getResponse = vi.fn(async () => ({ status: 200, body: job() }));
+      api.getResponse = vi.fn(() => Promise.resolve({ status: 200, body: job() }));
       service.start();
       await vi.advanceTimersByTimeAsync(0);
       await vi.advanceTimersByTimeAsync(1000);
@@ -389,7 +391,7 @@ describe('SolverJobService', () => {
 
   describe('polling loop', () => {
     it('stops querying the server once the loop is stopped', async () => {
-      api.getResponse = vi.fn(async () => ({ status: 204, body: null }));
+      api.getResponse = vi.fn(() => Promise.resolve({ status: 204, body: null }));
       service.start();
       await vi.advanceTimersByTimeAsync(0);
       const afterStart = api.getResponse.mock.calls.length;
@@ -401,7 +403,7 @@ describe('SolverJobService', () => {
     });
 
     it('can be restarted after a stop, as a new shell would', async () => {
-      api.getResponse = vi.fn(async () => ({ status: 204, body: null }));
+      api.getResponse = vi.fn(() => Promise.resolve({ status: 204, body: null }));
       service.start();
       await vi.advanceTimersByTimeAsync(0);
       service.stop();
@@ -425,7 +427,7 @@ describe('SolverJobService', () => {
     });
 
     it('backs off to one poll every thirty seconds while the solver is idle', async () => {
-      api.getResponse = vi.fn(async () => ({ status: 204, body: null }));
+      api.getResponse = vi.fn(() => Promise.resolve({ status: 204, body: null }));
       service.start();
       await vi.advanceTimersByTimeAsync(0);
       const afterStart = api.getResponse.mock.calls.length;
@@ -443,7 +445,9 @@ describe('SolverJobService', () => {
         { status: 200, body: job() },
       ];
       const responses = api.activeResponses;
-      api.getResponse = vi.fn(async () => responses.shift() ?? { status: 200, body: job() });
+      api.getResponse = vi.fn(() =>
+        Promise.resolve(responses.shift() ?? { status: 200, body: job() }),
+      );
       service.start();
       await vi.advanceTimersByTimeAsync(0);
 
@@ -475,8 +479,8 @@ describe('SolverJobService', () => {
         { status: 200, body: job({ id: 'job-1' }) },
         { status: 200, body: job({ id: 'job-2' }) },
       ];
-      api.getResponse = vi.fn(
-        async () => responses.shift() ?? { status: 200, body: job({ id: 'job-2' }) },
+      api.getResponse = vi.fn(() =>
+        Promise.resolve(responses.shift() ?? { status: 200, body: job({ id: 'job-2' }) }),
       );
       api.jobsById['job-1'] = job({ id: 'job-1', status: 'COMPLETED' });
       service.start();

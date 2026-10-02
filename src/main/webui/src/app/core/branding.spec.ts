@@ -21,7 +21,7 @@ function stubCssSupports(supported: boolean): void {
 function stubFetchResponse(body: unknown, ok = true): void {
   vi.stubGlobal(
     'fetch',
-    vi.fn().mockResolvedValue({ ok, status: ok ? 200 : 500, json: async () => body }),
+    vi.fn().mockResolvedValue({ ok, status: ok ? 200 : 500, json: () => Promise.resolve(body) }),
   );
 }
 

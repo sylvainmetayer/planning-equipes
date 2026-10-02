@@ -56,12 +56,16 @@ function animateur(
   };
 }
 
+async function withQuery(query: string): Promise<void> {
+  await TestBed.inject(Router).navigateByUrl('/?' + query);
+}
+
 describe('TypologiesPage', () => {
   let referenceData: ReferenceDataStore;
   const crud = {
-    reload: vi.fn(async () => undefined),
-    save: vi.fn(async () => true),
-    removeMany: vi.fn(async () => 0),
+    reload: vi.fn(() => Promise.resolve(undefined)),
+    save: vi.fn(() => Promise.resolve(true)),
+    removeMany: vi.fn(() => Promise.resolve(0)),
     warningsOf: vi.fn(() => []),
   };
 
@@ -131,16 +135,27 @@ describe('TypologiesPage table', () => {
   let fixture: ComponentFixture<TypologiesPage>;
   let dialog: { open: ReturnType<typeof vi.fn> };
   const crud = {
-    reload: vi.fn(async () => undefined),
-    remove: vi.fn(async (..._args: unknown[]) => true),
-    removeMany: vi.fn(async () => 0),
-    save: vi.fn(async (..._args: unknown[]) => true),
-    saveMany: vi.fn(async (..._args: unknown[]) => 1),
+    reload: vi.fn(() => Promise.resolve(undefined)),
+    remove: vi.fn((..._args: unknown[]) => Promise.resolve(true)),
+    removeMany: vi.fn(() => Promise.resolve(0)),
+    save: vi.fn((..._args: unknown[]) => Promise.resolve(true)),
+    saveMany: vi.fn((..._args: unknown[]) => Promise.resolve(1)),
     warningsOf: vi.fn((): string[] => []),
   };
   const editingLocked = signal(false);
   /** What `GET /api/editions/courant/gel` answers; nothing frozen unless a test says so. */
   let gel: EtatGel[] = [];
+
+  function seedUsage(): void {
+    seedStore(referenceData, 'stands', [
+      stand('S1', 'Stand 1', ['echecs', 'cartes']),
+      stand('S2', 'Stand 2', ['des']),
+    ]);
+    seedStore(referenceData, 'animateurs', [
+      animateur('A1', { cartes: 'REFERENT', des: 'AUTONOME' }, ['echecs']),
+      animateur('A2', { des: 'DEBUTANT' }, ['echecs']),
+    ]);
+  }
 
   async function rendre(typologies: TypologieItem[]): Promise<void> {
     seedStore(referenceData, 'typologies', typologies);
@@ -175,7 +190,9 @@ describe('TypologiesPage table', () => {
         {
           provide: ApiService,
           useValue: {
-            get: vi.fn(async (url: string) => (url === '/api/editions/courant/gel' ? gel : [])),
+            get: vi.fn((url: string) =>
+              Promise.resolve(url === '/api/editions/courant/gel' ? gel : []),
+            ),
           },
         },
         { provide: ReferenceCrudService, useValue: crud },
@@ -426,21 +443,6 @@ describe('TypologiesPage table', () => {
       { id: 'des', label: 'Dés' },
       { id: 'vide', label: 'Vide' },
     ];
-
-    function seedUsage(): void {
-      seedStore(referenceData, 'stands', [
-        stand('S1', 'Stand 1', ['echecs', 'cartes']),
-        stand('S2', 'Stand 2', ['des']),
-      ]);
-      seedStore(referenceData, 'animateurs', [
-        animateur('A1', { cartes: 'REFERENT', des: 'AUTONOME' }, ['echecs']),
-        animateur('A2', { des: 'DEBUTANT' }, ['echecs']),
-      ]);
-    }
-
-    async function withQuery(query: string): Promise<void> {
-      await TestBed.inject(Router).navigateByUrl('/?' + query);
-    }
 
     it('counts the competent, the wishes and the stands, and badges what needs acting upon', async () => {
       seedUsage();

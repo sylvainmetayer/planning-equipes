@@ -12,13 +12,11 @@ interface View {
 
 class FakeApi {
   view: View = { dateDuJour: null, modifiable: true };
-  get = vi.fn(async (_url: string) => this.view);
-  put = vi.fn(
-    async (_url: string, body: { dateDuJour: string | null; heureDuJour: string | null }) => {
-      this.view = { ...this.view, dateDuJour: body.dateDuJour, heureDuJour: body.heureDuJour };
-      return this.view;
-    },
-  );
+  get = vi.fn((_url: string) => Promise.resolve(this.view));
+  put = vi.fn((_url: string, body: { dateDuJour: string | null; heureDuJour: string | null }) => {
+    this.view = { ...this.view, dateDuJour: body.dateDuJour, heureDuJour: body.heureDuJour };
+    return Promise.resolve(this.view);
+  });
 }
 
 describe('DateMockService', () => {
@@ -101,11 +99,9 @@ describe('DateMockService', () => {
     expect(service.modifiable()).toBe(false);
   });
 
-  it('stays on the safe reading when the server cannot be reached', async () => {
+  it('stays on the safe reading when the server cannot be reached', () => {
     api = new FakeApi();
-    api.get = vi.fn(async () => {
-      throw new Error('injoignable');
-    });
+    api.get = vi.fn(() => Promise.reject(new Error('injoignable')));
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [

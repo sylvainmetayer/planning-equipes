@@ -84,7 +84,7 @@ function taper(champ: HTMLInputElement, valeur: string): void {
 }
 
 function mount(donnee: Stand | null, options: { editingLocked?: boolean; stands?: Stand[] } = {}) {
-  const crud = fakeOf<ReferenceCrudService>({ save: async () => true });
+  const crud = fakeOf<ReferenceCrudService>({ save: () => Promise.resolve(true) });
   const close = vi.fn();
   TestBed.configureTestingModule({
     providers: [
@@ -873,7 +873,7 @@ describe('StandFormDialog', () => {
   it('keeps the dialog open when the save is refused', async () => {
     TestBed.resetTestingModule();
     const close = vi.fn();
-    const crud = fakeOf<ReferenceCrudService>({ save: async () => false });
+    const crud = fakeOf<ReferenceCrudService>({ save: () => Promise.resolve(false) });
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),

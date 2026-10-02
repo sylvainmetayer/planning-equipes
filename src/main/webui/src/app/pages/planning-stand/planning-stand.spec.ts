@@ -137,8 +137,10 @@ describe('Par stand', () => {
     for (let s = 0; s < 65; s++) {
       const theStand = stand(`S${String(s).padStart(2, '0')}`);
       for (const creneau of jours) {
-        postes.push(siege(`${s}-${creneau.id}-a`, theStand, creneau, ALICE));
-        postes.push(siege(`${s}-${creneau.id}-b`, theStand, creneau, null));
+        postes.push(
+          siege(`${s}-${creneau.id}-a`, theStand, creneau, ALICE),
+          siege(`${s}-${creneau.id}-b`, theStand, creneau, null),
+        );
       }
     }
     const debut = performance.now();

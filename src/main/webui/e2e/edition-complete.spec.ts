@@ -163,7 +163,7 @@ function cellule(page: Page, stand: string, jour: string, colonne: string) {
   return page.getByLabel(`${stand} · ${jj}/${mois} ${colonne}`);
 }
 
-test('une édition saisie de bout en bout, résolue, et relue dans la grille des horaires', async ({
+test('an edition entered end to end, solved, and read back in the opening hours grid', async ({
   browser,
 }) => {
   test.slow();
@@ -350,7 +350,7 @@ test('une édition saisie de bout en bout, résolue, et relue dans la grille des
   await page.goto('/competences');
   await page.getByLabel('Filtrer par nom').fill('Journee');
   await page.getByLabel('Filtrer par nom').press('ArrowDown');
-  for (let row = 0; row < ANIMATEURS.length; row++) {
+  for (const _animateur of ANIMATEURS) {
     await page.keyboard.press('2');
     await page.keyboard.press('Enter');
   }
@@ -394,7 +394,7 @@ test('une édition saisie de bout en bout, résolue, et relue dans la grille des
   // Le plan calculé, l'ancienne vue Journée des ouvertures mène au planning du
   // jour. Le deuxième : l'adresse de la Journée tait le premier, son jour par défaut.
   await page.goto(`/ouvertures?vue=journee&date=${JOUR2}`);
-  await expect(page).toHaveURL(new RegExp(`/journee\\?date=${JOUR2}`));
+  await expect(page).toHaveURL(new RegExp(String.raw`/journee\?date=${JOUR2}`));
 
   await page.evaluate(() => localStorage.removeItem('planning-equipes.editionId'));
   await page.context().close();

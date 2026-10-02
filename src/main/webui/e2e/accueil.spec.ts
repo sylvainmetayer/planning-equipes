@@ -35,7 +35,7 @@ const LIGNES = [
   'foire',
 ];
 
-test("la page d'accueil liste les douze étapes du cycle", async ({ browser }) => {
+test('the home page lists the twelve steps of the cycle', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/');
 
@@ -57,7 +57,7 @@ test("la page d'accueil liste les douze étapes du cycle", async ({ browser }) =
     '/parametres?onglet=edition#gel-referentiel',
   );
   // Never the raw score: the reading is in sentences.
-  await expect(page.locator('#contenu')).not.toContainText(/-?\d+hard\//);
+  await expect(page.locator('#contenu')).not.toContainText(/\dhard\//);
   await expect(page.locator('.accueil-bilan')).toContainText('à faire');
   await page.context().close();
 });

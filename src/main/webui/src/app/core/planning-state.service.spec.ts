@@ -41,11 +41,11 @@ function animateur(id: string): Animateur {
 /** Fake ApiService routing GETs by URL. */
 class FakeApi {
   responses: Record<string, unknown> = {};
-  get = vi.fn(async (url: string) => {
+  get = vi.fn((url: string) => {
     if (!(url in this.responses)) {
-      throw new Error(`Unexpected GET ${url}`);
+      return Promise.reject(new Error(`Unexpected GET ${url}`));
     }
-    return this.responses[url];
+    return Promise.resolve(this.responses[url]);
   });
 }
 

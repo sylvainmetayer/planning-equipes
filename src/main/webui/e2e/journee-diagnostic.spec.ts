@@ -62,7 +62,7 @@ test('la journée change de rendu sans relire le planning, et garde le jour choi
   await page.context().close();
 });
 
-test('les adresses des anciens écrans mènent au bon rendu, paramètres compris', async ({
+test('the addresses of former screens lead to the right rendering, parameters included', async ({
   browser,
 }) => {
   const page = await pageAdmin(browser, admin);
@@ -84,7 +84,7 @@ test('les adresses des anciens écrans mènent au bon rendu, paramètres compris
   // The three screens the Planning page absorbed (issue #712).
   // The first day of the edition is the page's default: it writes no `date=`.
   await page.goto(`/calendar?date=${SEED.jour}&stand=${SEED.standDemandeur}`);
-  await expect(page).toHaveURL(new RegExp(`/journee\\?.*stand=${SEED.standDemandeur}`));
+  await expect(page).toHaveURL(new RegExp(String.raw`/journee\?.*stand=${SEED.standDemandeur}`));
 
   await page.goto('/intendance');
   await expect(page).toHaveURL(/\/journee\?.*vue=pauses/);

@@ -206,20 +206,20 @@ describe('ProblemesPage — « Que faire ? »', () => {
   /** What `/api/feasibility` answers; a test may swap it before re-creating the page. */
   let feasibility: FeasibilityReport = FEASIBILITY;
   const api = {
-    get: vi.fn(async (url: string) => {
+    get: vi.fn((url: string) => {
       if (url === '/api/feasibility') {
-        return feasibility;
+        return Promise.resolve(feasibility);
       }
       if (url === '/api/pauses') {
-        return PAUSES;
+        return Promise.resolve(PAUSES);
       }
       if (['/api/stands', '/api/animateurs', '/api/creneaux'].includes(url)) {
-        return [];
+        return Promise.resolve([]);
       }
       if (url === '/api/planning/volumetrie') {
-        return {};
+        return Promise.resolve({});
       }
-      return CONSTRAINTS;
+      return Promise.resolve(CONSTRAINTS);
     }),
     getResponse: vi.fn(),
     getDansEdition: vi.fn(),
@@ -233,15 +233,17 @@ describe('ProblemesPage — « Que faire ? »', () => {
     downloadGet: vi.fn(),
   };
   const placement = {
-    choose: vi.fn(async () => ({ animateurId: 'a1', keep: true })),
-    place: vi.fn(async () => ({
-      message: 'Alice Martin est placé(e) sur ce siège, et y restera au prochain calcul.',
-      warning: null,
-      lockError: '',
-    })),
+    choose: vi.fn(() => Promise.resolve({ animateurId: 'a1', keep: true })),
+    place: vi.fn(() =>
+      Promise.resolve({
+        message: 'Alice Martin est placé(e) sur ce siège, et y restera au prochain calcul.',
+        warning: null,
+        lockError: '',
+      }),
+    ),
   };
   const planningState = {
-    loadForDisplay: vi.fn(async () => PLAN),
+    loadForDisplay: vi.fn(() => Promise.resolve(PLAN)),
     set: vi.fn(),
   };
 

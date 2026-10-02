@@ -5,7 +5,7 @@ import { ReferenceUsageService, phraseUsages } from './reference-usage.service';
 
 class FakeApi {
   reponse: unknown = { affectations: 0, contraintesAdHoc: 0, verrouillages: 0 };
-  get = vi.fn(async (_url: string) => this.reponse);
+  get = vi.fn((_url: string) => Promise.resolve(this.reponse));
 }
 
 describe('ReferenceUsageService', () => {

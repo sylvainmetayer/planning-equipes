@@ -31,31 +31,32 @@ const VIEWPORT = { width: 1024, height: 900 };
  * happen is a hint's line running into the box below. Empty when every hint
  * keeps to its own row.
  */
-async function hintsOverFields(dialog: Locator): Promise<string[]> {
+function hintsOverFields(dialog: Locator): Promise<string[]> {
   return dialog.evaluate((root) => {
     const visible = (rect: DOMRect) => rect.width > 0 && rect.height > 0;
     // One pixel of slack for subpixel layout: touching is not overlapping.
     const crosses = (a: DOMRect, b: DOMRect) =>
       a.left + 1 < b.right && b.left + 1 < a.right && a.top + 1 < b.bottom && b.top + 1 < a.bottom;
     const fields = Array.from(root.querySelectorAll('mat-form-field'));
-    const overlaps: string[] = [];
-    for (const field of fields) {
-      for (const hint of Array.from(field.querySelectorAll('mat-hint'))) {
+    // The other fields whose box the hint of `field` runs into.
+    const fieldsCrossed = (field: Element, hintBox: DOMRect) =>
+      fields.filter((other) => {
+        const box = other === field ? null : other.querySelector('.mat-mdc-text-field-wrapper');
+        const otherBox = box?.getBoundingClientRect();
+        return otherBox !== undefined && visible(otherBox) && crosses(hintBox, otherBox);
+      });
+    return fields.flatMap((field) =>
+      Array.from(field.querySelectorAll('mat-hint')).flatMap((hint) => {
         const hintBox = hint.getBoundingClientRect();
         if (!visible(hintBox)) {
-          continue;
+          return [];
         }
-        for (const other of fields) {
-          const box = other === field ? null : other.querySelector('.mat-mdc-text-field-wrapper');
-          const otherBox = box?.getBoundingClientRect();
-          if (otherBox && visible(otherBox) && crosses(hintBox, otherBox)) {
-            const label = other.querySelector('mat-label')?.textContent?.trim();
-            overlaps.push(`« ${hint.textContent?.trim()} » / « ${label} »`);
-          }
-        }
-      }
-    }
-    return overlaps;
+        return fieldsCrossed(field, hintBox).map((other) => {
+          const label = other.querySelector('mat-label')?.textContent?.trim();
+          return `« ${hint.textContent?.trim()} » / « ${label} »`;
+        });
+      }),
+    );
   });
 }
 

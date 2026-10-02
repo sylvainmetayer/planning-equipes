@@ -53,7 +53,7 @@ const CRENEAUX: Creneau[] = [
 
 function monter(depuis: string | null = null) {
   const close = vi.fn();
-  const changesSince = vi.fn(async () => ({ total: 0, parEntite: [], dernieres: [] }));
+  const changesSince = vi.fn(() => Promise.resolve({ total: 0, parEntite: [], dernieres: [] }));
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [

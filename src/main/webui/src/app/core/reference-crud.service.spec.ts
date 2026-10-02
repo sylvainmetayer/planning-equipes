@@ -11,22 +11,28 @@ import { ReferenceUsageService } from './reference-usage.service';
 import { ConfirmData, ConfirmService } from '../shared/confirm-dialog';
 
 class FakeStore {
-  reload = vi.fn(async () => undefined);
-  save = vi.fn(async (_resource: string, _payload: unknown, _editingId: unknown) => ({
-    id: null as string | number | null,
-    avertissements: [] as Avertissement[],
-  }));
-  remove = vi.fn(async (_resource: string, _id: unknown) => undefined);
-  removeMany = vi.fn(async (_resource: string, ids: readonly (string | number)[]) => ({
-    succes: [...ids],
-    echecs: [] as { id: string | number; message: string }[],
-    avertissements: [] as Avertissement[],
-  }));
-  saveMany = vi.fn(async (_resource: string, payloads: readonly { id: string | number }[]) => ({
-    succes: payloads.map((payload) => payload.id),
-    echecs: [] as { id: string | number; message: string }[],
-    avertissements: [] as Avertissement[],
-  }));
+  reload = vi.fn(() => Promise.resolve(undefined));
+  save = vi.fn((_resource: string, _payload: unknown, _editingId: unknown) =>
+    Promise.resolve({
+      id: null as string | number | null,
+      avertissements: [] as Avertissement[],
+    }),
+  );
+  remove = vi.fn((_resource: string, _id: unknown) => Promise.resolve(undefined));
+  removeMany = vi.fn((_resource: string, ids: readonly (string | number)[]) =>
+    Promise.resolve({
+      succes: [...ids],
+      echecs: [] as { id: string | number; message: string }[],
+      avertissements: [] as Avertissement[],
+    }),
+  );
+  saveMany = vi.fn((_resource: string, payloads: readonly { id: string | number }[]) =>
+    Promise.resolve({
+      succes: payloads.map((payload) => payload.id),
+      echecs: [] as { id: string | number; message: string }[],
+      avertissements: [] as Avertissement[],
+    }),
+  );
 }
 
 class FakeNotifications {
@@ -37,8 +43,8 @@ class FakeConfirm {
   reponse = true;
   /** `null` is the dismissal (Escape, backdrop): neither confirm nor cancel. */
   reponseTroisEtats: boolean | null = null;
-  ask = vi.fn(async (_options: ConfirmData) => this.reponse);
-  askThreeWay = vi.fn(async (_options: ConfirmData) => this.reponseTroisEtats);
+  ask = vi.fn((_options: ConfirmData) => Promise.resolve(this.reponse));
+  askThreeWay = vi.fn((_options: ConfirmData) => Promise.resolve(this.reponseTroisEtats));
 
   /** The data of the nth dialog opened, for the assertions on its detail. */
   demande(index = 0): ConfirmData {
@@ -52,12 +58,14 @@ class FakeConfirm {
 }
 
 class FakeResolution {
-  reload = vi.fn(async () => undefined);
+  reload = vi.fn(() => Promise.resolve(undefined));
 }
 
 class FakeUsages {
   phrase = '';
-  describe = vi.fn(async (_resource: string, _ids: readonly (string | number)[]) => this.phrase);
+  describe = vi.fn((_resource: string, _ids: readonly (string | number)[]) =>
+    Promise.resolve(this.phrase),
+  );
 }
 
 describe('ReferenceCrudService', () => {

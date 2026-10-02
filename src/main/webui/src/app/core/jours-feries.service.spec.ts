@@ -14,10 +14,12 @@ describe('JoursFeriesService', () => {
   });
 
   it('reads each year the dates fall in once, and names the holidays', async () => {
-    api.get.mockImplementation(async (url: string) =>
-      url.includes('debut=2026')
-        ? [{ date: '2026-07-14', label: 'Fête nationale' }]
-        : [{ date: '2027-01-01', label: "Jour de l'an" }],
+    api.get.mockImplementation((url: string) =>
+      Promise.resolve(
+        url.includes('debut=2026')
+          ? [{ date: '2026-07-14', label: 'Fête nationale' }]
+          : [{ date: '2027-01-01', label: "Jour de l'an" }],
+      ),
     );
 
     await service.load(['2026-07-13', '2026-07-14', '2027-01-01', null, '2026-0']);

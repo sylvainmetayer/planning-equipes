@@ -73,17 +73,20 @@ function mount() {
           creneaux: signal(CRENEAUX),
           animateurs,
           stands: signal([]),
-          reload: async () => undefined,
+          reload: () => Promise.resolve(undefined),
         }),
       ),
       provideFake(
         VerrouillageStore,
-        fakeOf<VerrouillageStore>({ verrouillages, reload: async () => undefined }),
+        fakeOf<VerrouillageStore>({ verrouillages, reload: () => Promise.resolve(undefined) }),
       ),
       { provide: SolverJobService, useValue: { editingLocked: signal(false) } },
       { provide: NotificationService, useValue: { notify: vi.fn() } },
-      { provide: ConfirmService, useValue: { ask: vi.fn(async () => true) } },
-      { provide: PlanningStateService, useValue: { loadForDisplay: vi.fn(async () => null) } },
+      { provide: ConfirmService, useValue: { ask: vi.fn(() => Promise.resolve(true)) } },
+      {
+        provide: PlanningStateService,
+        useValue: { loadForDisplay: vi.fn(() => Promise.resolve(null)) },
+      },
     ],
   });
   return { fixture: TestBed.createComponent(VerrouillagesPage), animateurs, verrouillages };
@@ -188,12 +191,12 @@ describe('VerrouillagesPage impact and list', () => {
   ): Promise<void> {
     editingLocked.set(false);
     notify = vi.fn();
-    confirm = fakeOf<ConfirmService>({ ask: async () => true });
+    confirm = fakeOf<ConfirmService>({ ask: () => Promise.resolve(true) });
     verrous = fakeOf<VerrouillageStore>({
       verrouillages: signal(verrouillages),
-      reload: async () => undefined,
-      create: async () => [],
-      remove: async () => undefined,
+      reload: () => Promise.resolve(undefined),
+      create: () => Promise.resolve([]),
+      remove: () => Promise.resolve(undefined),
     });
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -206,7 +209,7 @@ describe('VerrouillagesPage impact and list', () => {
             creneaux: signal(CRENEAUX),
             animateurs: signal(ANIMATEURS),
             stands: signal(STANDS),
-            reload: vi.fn(async () => undefined),
+            reload: vi.fn(() => Promise.resolve(undefined)),
           },
         },
         provideFake(VerrouillageStore, verrous),
@@ -215,7 +218,7 @@ describe('VerrouillagesPage impact and list', () => {
         provideFake(ConfirmService, confirm),
         {
           provide: PlanningStateService,
-          useValue: { loadForDisplay: vi.fn(async () => evenement) },
+          useValue: { loadForDisplay: vi.fn(() => Promise.resolve(evenement)) },
         },
       ],
     });

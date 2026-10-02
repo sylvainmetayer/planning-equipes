@@ -134,13 +134,13 @@ describe('BenchDialog', () => {
   }
 
   it('asks the server about the very seat it was opened on', async () => {
-    await open(async () => bench());
+    await open(() => Promise.resolve(bench()));
 
     expect(analysesApi.bench).toHaveBeenCalledExactlyOnceWith(5, 'tir', 'P1');
   });
 
   it('lists who can take the seat first, and folds those a hard rule keeps out', async () => {
-    const root = await open(async () => bench());
+    const root = await open(() => Promise.resolve(bench()));
 
     const names = Array.from(root.querySelectorAll('.bench-line strong')).map((node) =>
       node.textContent?.trim(),
@@ -156,7 +156,7 @@ describe('BenchDialog', () => {
   });
 
   it('names the rules by their short label, never by their Java name', async () => {
-    const root = await open(async () => bench());
+    const root = await open(() => Promise.resolve(bench()));
     Array.from(root.querySelectorAll<HTMLButtonElement>('button'))
       .find((button) => button.textContent?.includes('autres'))!
       .click();
@@ -171,7 +171,7 @@ describe('BenchDialog', () => {
   });
 
   it('offers « Placer » on the available lines only, and closes with the choice kept', async () => {
-    const root = await open(async () => bench());
+    const root = await open(() => Promise.resolve(bench()));
 
     const place = root.querySelectorAll<HTMLButtonElement>('.bench-place');
     expect(place).toHaveLength(1);
@@ -181,7 +181,7 @@ describe('BenchDialog', () => {
   });
 
   it('closes without the lock when « la garder au prochain calcul » is unticked', async () => {
-    const root = await open(async () => bench());
+    const root = await open(() => Promise.resolve(bench()));
 
     root.querySelector<HTMLInputElement>('mat-checkbox input')!.click();
     await fixture.whenStable();
@@ -191,15 +191,13 @@ describe('BenchDialog', () => {
   });
 
   it('shows the refusal of the server rather than an empty list', async () => {
-    const root = await open(async () => {
-      throw new Error('Créneau inconnu.');
-    });
+    const root = await open(() => Promise.reject(new Error('Créneau inconnu.')));
 
     await vi.waitFor(() => expect(root.textContent).toContain('Créneau inconnu.'));
   });
 
   it('says why there is nobody to list, as an answer and not an error', async () => {
-    const root = await open(async () => bench({ statut: 'NO_PLAN', animateurs: [] }));
+    const root = await open(() => Promise.resolve(bench({ statut: 'NO_PLAN', animateurs: [] })));
 
     expect(root.textContent).toContain('Aucun planning enregistré');
     expect(root.querySelector('.bench-place')).toBeNull();
@@ -219,14 +217,14 @@ describe('BenchDialog', () => {
         raison: null,
       },
     ]);
-    const root = await open(async () => bench());
+    const root = await open(() => Promise.resolve(bench()));
 
     expect(root.querySelector('.bench-place')).toBeNull();
     expect(root.querySelector('.bench-blocked')?.textContent).toContain('Verrouillé');
   });
 
   it('places nobody on a timeslot already started, and says so once', async () => {
-    const root = await open(async () => bench({ seatStarted: true }));
+    const root = await open(() => Promise.resolve(bench({ seatStarted: true })));
 
     expect(root.querySelector('.bench-place')).toBeNull();
     expect(root.querySelector('mat-checkbox')).toBeNull();
@@ -235,7 +233,7 @@ describe('BenchDialog', () => {
 
   // A held seat: the bench answers « qui pourrait le remplacer ? », read-only.
   it('reads the bench of a held seat without placing anybody', async () => {
-    const root = await open(async () => bench({ animateurCibleId: 'a2' }), false);
+    const root = await open(() => Promise.resolve(bench({ animateurCibleId: 'a2' })), false);
 
     expect(root.textContent).toContain('Ce siège est tenu par Bruno X');
     expect(root.querySelector('.bench-place')).toBeNull();

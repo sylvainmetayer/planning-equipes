@@ -116,9 +116,11 @@ function ligne(overrides: Partial<LigneMetrique> = {}): LigneMetrique {
 
 /** The catalogue the dosage list reads its rule labels from. */
 const constraintsApi = {
-  catalogue: vi.fn(async () => ({
-    contraintes: [{ name: 'souhaitsIncompatibles', libelleCourt: 'Souhaits respectés' }],
-  })),
+  catalogue: vi.fn(() =>
+    Promise.resolve({
+      contraintes: [{ name: 'souhaitsIncompatibles', libelleCourt: 'Souhaits respectés' }],
+    }),
+  ),
 };
 
 describe('ComparaisonPanel', () => {
@@ -175,12 +177,12 @@ describe('ComparaisonPanel', () => {
   });
 
   /** Like `open`, without waiting for the comparison to land. */
-  async function openWithoutWaiting(base: string, variante: string): Promise<ComparaisonPanel> {
+  function openWithoutWaiting(base: string, variante: string): Promise<ComparaisonPanel> {
     fixture = TestBed.createComponent(ComparaisonPanel);
     fixture.componentRef.setInput('base', base);
     fixture.componentRef.setInput('variante', variante);
     fixture.detectChanges();
-    return fixture.componentInstance;
+    return Promise.resolve(fixture.componentInstance);
   }
 
   it('compares again when another pair is ticked, and drops the previous table first', async () => {
@@ -258,11 +260,11 @@ describe('ComparaisonPanel rendering', () => {
 
   async function rendre(resultat: ComparaisonSnapshots | Error): Promise<void> {
     const planningApi = {
-      compareSnapshots: vi.fn(async () => {
+      compareSnapshots: vi.fn(() => {
         if (resultat instanceof Error) {
-          throw resultat;
+          return Promise.reject(resultat);
         }
-        return resultat;
+        return Promise.resolve(resultat);
       }),
     };
     TestBed.resetTestingModule();

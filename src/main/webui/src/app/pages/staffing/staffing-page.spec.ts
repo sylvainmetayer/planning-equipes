@@ -177,7 +177,7 @@ describe('StaffingPage', () => {
     staffing: vi.fn(),
     // The « avant » margin column and the « À former » section, read beside the need.
     margin: vi.fn(),
-    trainingPlan: vi.fn(async () => null),
+    trainingPlan: vi.fn(() => Promise.resolve(null)),
     exportTrainingPlan: vi.fn(),
     // The check by a solve: none run yet unless a test says otherwise.
     staffingVerification: vi.fn(),

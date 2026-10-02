@@ -20,7 +20,7 @@ describe('UpdateCheckService', () => {
   function repond(body: unknown, ok = true): ReturnType<typeof vi.fn> {
     const fetchMock = vi
       .fn()
-      .mockResolvedValue({ ok, status: ok ? 200 : 403, json: async () => body });
+      .mockResolvedValue({ ok, status: ok ? 200 : 403, json: () => Promise.resolve(body) });
     vi.stubGlobal('fetch', fetchMock);
     return fetchMock;
   }

@@ -189,7 +189,7 @@ test.describe('glisser-déposer', () => {
       await expect.poll(async () => (await occupants())['SOLV-DD-S1']).toBe(avant['SOLV-DD-S2']);
       expect((await occupants())['SOLV-DD-S2']).toBe(avant['SOLV-DD-S1']);
       // The screen re-read the plan: the names swapped on it too.
-      await expect(ligneUn).toContainText(await nomDe(avant['SOLV-DD-S2']!));
+      await expect(ligneUn).toContainText(nomDe(avant['SOLV-DD-S2']!));
     } finally {
       await page.context().close();
     }
@@ -383,6 +383,6 @@ async function ouvrirLaJournee(page: Page, vue: 'calendrier' | 'rail'): Promise<
   await expect(page.locator('.cdk-overlay-backdrop')).toHaveCount(0);
 }
 
-async function nomDe(animateurId: string): Promise<string> {
+function nomDe(animateurId: string): string {
   return ANIMATEURS.find((animateur) => animateur.id === animateurId)!.prenom;
 }

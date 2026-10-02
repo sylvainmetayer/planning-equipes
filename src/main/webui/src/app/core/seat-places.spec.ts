@@ -92,7 +92,7 @@ describe('seat places (ADR 0066)', () => {
   });
 
   it('reads the minutes of each part on its own window', () => {
-    expect(SEATS.map(seatMinutes)).toEqual([20, 160, 180, 160]);
+    expect(SEATS.map((poste) => seatMinutes(poste))).toEqual([20, 160, 180, 160]);
     // Without the server's figure, the window says the same.
     expect(
       SEATS.map((poste) => seatMinutes({ ...poste, dureeEffectiveMinutes: undefined })),

@@ -170,6 +170,10 @@ describe('coverageLevel', () => {
   });
 });
 
+function tree(node: HoursNode): (string | null)[] {
+  return node.children.flatMap((group) => group.children.map((child) => child.standId));
+}
+
 describe('aggregateHours', () => {
   const tir = stand('Tir', PLACE, ['AMB']);
   const dixit = stand('Dixit', PLACE, ['STRAT', 'AMB']);
@@ -234,37 +238,35 @@ describe('aggregateHours', () => {
     const none = aggregateHours(input({ postes, stands, emplacementId: NO_EMPLACEMENT }));
     expect(tree(none)).toEqual(['Errant']);
   });
-
-  function tree(root: HoursNode): (string | null)[] {
-    return root.children.flatMap((group) => group.children.map((leaf) => leaf.standId));
-  }
 });
 
+function leaf(id: string, minutes: number): HoursNode {
+  return {
+    id: `s:${id}`,
+    label: id,
+    kind: 'stand',
+    standId: id,
+    requiredMinutes: minutes,
+    filledMinutes: minutes,
+    standCount: 1,
+    children: [],
+  };
+}
+
+function root(children: HoursNode[]): HoursNode {
+  return {
+    id: 'root',
+    label: 'root',
+    kind: 'root',
+    standId: null,
+    requiredMinutes: children.reduce((sum, child) => sum + child.requiredMinutes, 0),
+    filledMinutes: 0,
+    standCount: children.length,
+    children,
+  };
+}
+
 describe('withOthers', () => {
-  function leaf(id: string, minutes: number): HoursNode {
-    return {
-      id: `s:${id}`,
-      label: id,
-      kind: 'stand',
-      standId: id,
-      requiredMinutes: minutes,
-      filledMinutes: minutes,
-      standCount: 1,
-      children: [],
-    };
-  }
-  function root(children: HoursNode[]): HoursNode {
-    return {
-      id: 'root',
-      label: 'root',
-      kind: 'root',
-      standId: null,
-      requiredMinutes: children.reduce((sum, child) => sum + child.requiredMinutes, 0),
-      filledMinutes: 0,
-      standCount: children.length,
-      children,
-    };
-  }
   const label = (count: number) => `Autres (${count} stands)`;
 
   it('gathers the slivers under « Autres » when one stand weighs more than half', () => {
