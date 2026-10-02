@@ -201,7 +201,9 @@ class FrozenPastAcceptanceTest {
         freezeClock(J3, "13:30");
         String siegePasse = firstSeatOn(J1);
         String siegeAVenir = firstSeatOn(J4);
-        String remplacant = firstHolderOn(J4);
+        // Whoever already holds the past seat would be refused for that
+        // reason first — the solve decides who sits where, so pick around it.
+        String remplacant = firstHolderOn(J4, holderOf(siegePasse));
 
         given().header("X-Edition-Id", "E1")
                 .when()
@@ -633,15 +635,33 @@ class FrozenPastAcceptanceTest {
         return String.valueOf(effective != null ? effective : creneauOf(poste).get("heureFin"));
     }
 
-    @SuppressWarnings("unchecked")
     private static String firstHolderOn(String date) {
+        return firstHolderOn(date, null);
+    }
+
+    /** The first animateur seated on {@code date} other than {@code excluded}. */
+    @SuppressWarnings("unchecked")
+    private static String firstHolderOn(String date, String excluded) {
         for (Map<String, Object> poste : affectationsPersistees()) {
             Map<String, Object> animateur = (Map<String, Object>) poste.get("animateur");
-            if (animateur != null && date.equals(String.valueOf(creneauOf(poste).get("date")))) {
+            if (animateur != null
+                    && date.equals(String.valueOf(creneauOf(poste).get("date")))
+                    && !String.valueOf(animateur.get("id")).equals(excluded)) {
                 return String.valueOf(animateur.get("id"));
             }
         }
-        throw new AssertionError("Nobody seated on " + date);
+        throw new AssertionError("Nobody else seated on " + date);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static String holderOf(String posteId) {
+        for (Map<String, Object> poste : affectationsPersistees()) {
+            Map<String, Object> animateur = (Map<String, Object>) poste.get("animateur");
+            if (animateur != null && posteId.equals(String.valueOf(poste.get("id")))) {
+                return String.valueOf(animateur.get("id"));
+            }
+        }
+        throw new AssertionError("Nobody holds " + posteId);
     }
 
     private static List<Map<String, Object>> affectationsPersistees() {
