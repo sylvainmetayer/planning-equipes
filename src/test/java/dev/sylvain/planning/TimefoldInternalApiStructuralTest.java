@@ -52,6 +52,9 @@ class TimefoldInternalApiStructuralTest {
     private static final Map<String, String> DEPENDANTS_DOCUMENTES = Map.of(
             "dev/sylvain/planning/service/diagnostic/ScoreDirectorConstraintDiagnosticService.java",
             "ConstraintDiagnosticServiceContractTest compares it with Timefold's analyze() oracle",
+            "dev/sylvain/planning/solver/DaySwapMoveIteratorFactory.java",
+            "compile error on MoveIteratorFactory / ScoreDirector; DaySwapMoveIteratorFactoryTest, "
+                    + "and -Pscenario-tests for a move the solver stops drawing",
             "dev/sylvain/planning/solver/EligibleAnimateurMoveFilter.java",
             "compile error on the SelectionFilter / SelectorBased*Move types; -Pscenario-tests for a filter bypassed",
             "dev/sylvain/planning/solver/HoleNeighbourPosteFilter.java",
