@@ -99,11 +99,13 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0080](0080-un-solveur-exact-pour-la-seule-verification-du-besoin-etude.md) | Un solveur exact (CP-SAT) pour la seule vérification du besoin : ce que chaque règle dure devient, les deux qui ne se traduisent pas sans une approximation plus stricte, le protocole du banc ; aucune dépendance dans l'application quoi qu'il en sorte | **Proposé** · étude · voisine de 0071 et 0079 |
 | [0081](0081-le-plateau-se-juge-sur-son-gain-de-medium-a-l-echelle-du-plan.md) | Le plateau se juge sur le medium gagné pendant la fenêtre, seuil proportionnel au nombre de sièges ; fenêtre par défaut 180 s, budget inchangé ; les rendements décroissants de Timefold, mesurés, sont écartés | Accepté · prolonge 0051, complète 0079 |
 >>>>>>> 34f7fdda (feat(auth)!: Keycloak obligatoire, comptes nominatifs et habilitations)
-<<<<<<< HEAD
 >>>>>>> 8eb963b1 (docs(adr): numéroter 0069 la décision Keycloak, et V115 sa migration)
 >>>>>>> 57192585 (fix(ci): renuméroter ADR 0071 et V117/V118, corriger les alertes)
+<<<<<<< HEAD
 =======
->>>>>>> 79e0d9d4 (chore: aligner la PR sur main après le rebase)
+| [0076](0076-keycloak-obligatoire-comptes-nominatifs.md) | Keycloak obligatoire pour l'administration, l'espace animateur et MCP ; le compte embarqué devient une porte de secours fermée ; un compte par personne ; les droits fins (par édition, datés) dans l'application | Accepté · socle implémenté |
+>>>>>>> e12f96e5 (chore: aligner la PR sur main après le second rebase)
+>>>>>>> 4c284d48 (chore: aligner la PR sur main après le second rebase)
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,

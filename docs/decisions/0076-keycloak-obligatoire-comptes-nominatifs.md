@@ -1,10 +1,10 @@
-# 0075 — Keycloak obligatoire, un compte par personne, les droits fins dans l'application
+# 0076 — Keycloak obligatoire, un compte par personne, les droits fins dans l'application
 
 - **Statut** : accepté, implémenté (socle)
 - **Date** : septembre 2026
 - **Portée** : authentification (administration, espace animateur, MCP), autorisation, schéma (`compte`, `habilitation`, `habilitation_stand`), exploitation (Keycloak, Terraform, Ansible)
 - **Issues** : #294 (comptes nominatifs), #295 (responsable de stand) ; reprend le chantier des PR #565 et #587 du dépôt privé
-- **Numérotation** : cette décision a d'abord porté le numéro 0069, puis 0070 et 0071, que `main` a pris entre-temps (la relecture, le réalisé figé, le besoin en animateurs). Ses migrations, `V122` et `V123`, ont suivi la même course : elles n'avaient jamais été publiées, leur numéro et leur commentaire ont donc changé avec elles.
+- **Numérotation** : cette décision a d'abord porté le numéro 0069, puis 0070, 0071 et 0075, que `main` a pris entre-temps (la relecture, le réalisé figé, le besoin en animateurs, le quota de calcul). Ses migrations, `V124` et `V125`, ont suivi la même course : elles n'avaient jamais été publiées, leur numéro et leur commentaire ont donc changé avec elles.
 
 ## Contexte
 
