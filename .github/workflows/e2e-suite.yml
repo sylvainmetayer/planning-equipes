@@ -122,42 +122,25 @@ jobs:
       # L'image est celle du dépôt, pas l'officielle : docker/keycloak/Dockerfile
       # y ajoute l'authentificateur « code par e-mail » et le thème, et c'est
       # elle que la production déploie. La construire ici prouve qu'elle
-      # démarre. Le cache GitHub Actions rend l'extension Maven presque
-      # gratuite d'une exécution à l'autre.
-      - name: Set up Docker Buildx
-        if: inputs.authentification != 'secours'
-        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
-
+      # démarre. `docker build` et non build-push-action avec son cache GitHub :
+      # un job qui écrit dans un cache partagé et qui lance du code de la PR
+      # est un cache empoisonnable (zizmor), et celui-ci ne publie rien.
+      #
       # Les images de base (quay.io, Docker Hub) se tirent pendant la
       # construction, et un registre qui hoquette faisait tomber toute la
       # suite sur une erreur réseau. D'où une seconde tentative, trente
       # secondes plus tard, plutôt qu'un échec rouge sans rapport avec le code.
       - name: Build the Keycloak image (extension and theme)
-        id: keycloak-image
         if: inputs.authentification != 'secours'
-        continue-on-error: true
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
-        with:
-          context: .
-          file: docker/keycloak/Dockerfile
-          load: true
-          tags: planning-equipes-keycloak:ci
-          cache-from: type=gha,scope=keycloak
-          cache-to: type=gha,mode=max,scope=keycloak
-
-      - name: Wait before retrying the Keycloak image
-        if: inputs.authentification != 'secours' && steps.keycloak-image.outcome == 'failure'
-        run: sleep 30
-
-      - name: Build the Keycloak image (second attempt)
-        if: inputs.authentification != 'secours' && steps.keycloak-image.outcome == 'failure'
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
-        with:
-          context: .
-          file: docker/keycloak/Dockerfile
-          load: true
-          tags: planning-equipes-keycloak:ci
-          cache-from: type=gha,scope=keycloak
+        run: |
+          for attempt in 1 2; do
+            if docker build --file docker/keycloak/Dockerfile --tag planning-equipes-keycloak:ci .; then
+              exit 0
+            fi
+            echo "La construction de l'image Keycloak a échoué (essai ${attempt}/2)."
+            sleep 30
+          done
+          exit 1
 
       # Store embarqué de `start-dev` : aucune base à côté, la pile étant
       # jetable. Sur le réseau des services, sous le nom `keycloak`, pour que
@@ -165,9 +148,11 @@ jobs:
       # port publié sert l'hôte, où tournent l'application et le navigateur.
       - name: Start Keycloak with the planning realm
         if: inputs.authentification != 'secours'
+        env:
+          SERVICES_NETWORK: ${{ job.services.postgres.network }}
         run: |
           docker run -d --name keycloak \
-            --network "${{ job.services.postgres.network }}" --network-alias keycloak \
+            --network "$SERVICES_NETWORK" --network-alias keycloak \
             -p 8081:8081 \
             -e KC_BOOTSTRAP_ADMIN_USERNAME=admin \
             -e KC_BOOTSTRAP_ADMIN_PASSWORD=e2e-keycloak-Wq2fT7xM \
