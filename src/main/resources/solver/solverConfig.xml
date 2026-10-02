@@ -272,6 +272,39 @@
         Les deux selecteurs cibles sur les postes non pourvus ne sont pas
         repris ici : arrive a ce stade il n'y en a plus, ils ne produiraient
         aucun mouvement.
+
+        Mouvements pillar (un bloc d'un animateur sur une journee) : mesures
+        et ecartes, Timefold 2.7.0. Protocole : phase 1 jouee une fois par
+        scenario (graine 0), puis cette phase seule depuis ce meme plan
+        faisable, 90 s, graines 0/1/2, runs sequentiels. Variante essayee :
+        pillarChangeMoveSelector, sous-piliers SEQUENCE de 2 a 3 postes tries
+        par date puis heure, filtre n'acceptant qu'un bloc d'une seule date
+        dont chaque poste est eligible pour l'animateur qui le recoit, poids
+        0.5 a cote du change et du swap. Medium atteint, graines 0/1/2 :
+
+            scenario     sans pillar                avec pillar
+            complet      -30 805/-30 945/-30 770    -31 165/-31 185/-31 155
+            continu      -31 685/-31 695/-31 650    -31 885/-31 940/-31 960
+            canicule     -22 215/-22 275/-22 310    -22 700/-22 835/-22 870
+            hivernal     -33 770/-33 815/-33 840    -33 975/-34 085/-33 985
+            gamme-20     -38 020/-38 115/-38 135    -37 860/-37 705/-37 915
+            gamme-22     -34 570/-34 675/-34 710    -35 280/-35 215/-35 150
+            gamme-23     -39 445/-39 475/-39 505    -37 415/-37 620/-37 670
+            gamme-24     -43 740/-43 655/-43 645    -44 080/-43 925/-44 005
+            gamme-25     -26 315/-26 375/-26 365    -26 420/-26 485/-26 515
+
+        Sept scenarios sur neuf perdent du medium a chaque graine, dont les
+        deux fixtures reelles ; gamme-20 en gagne 160 a 410 mais perd 1 700 a
+        4 700 de soft ; seul gamme-23 (souhaits, ad hoc) gagne nettement,
+        +1 800 a +2 000. Ailleurs le soft ne bouge dans aucun sens constant.
+        Vitesse : 0,3 a 6 % d'evaluations par seconde en moins (3 470 contre
+        3 310/s sur complet, 4 880 contre 4 690/s sur canicule). Un animateur
+        tient le plus souvent un seul poste par jour (canicule : 1 382
+        journees a un poste, 306 a deux), si bien que le filtre ecarte 66 a
+        92 % des blocs tires. Le pillarSwapMoveSelector, blocs a la meme date,
+        est pire : sur canicule il n'accepte que 0,03 % des paires tirees et
+        divise la vitesse par neuf (4 620 contre 535/s, 60 s, graine 0).
+        Aucun gain net et constant : non retenu.
     -->
     <localSearch>
         <unionMoveSelector>
