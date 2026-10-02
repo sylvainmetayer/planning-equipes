@@ -10,6 +10,7 @@ import jakarta.inject.Inject;
 import jakarta.interceptor.Interceptor;
 import java.time.Clock;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
@@ -90,7 +91,7 @@ public class SchemaCompatibilityGuard {
     private final Clock clock;
 
     /** What {@link #check} let through, for {@link #recordAtStartup} once every other check has passed. */
-    private volatile Admission admitted;
+    private final AtomicReference<Admission> admitted = new AtomicReference<>();
 
     /** @param migration what {@link SchemaCompatibility#recordedMigration} says to write down */
     private record Admission(MigrationVersion migration) {}
@@ -133,17 +134,17 @@ public class SchemaCompatibilityGuard {
      * @throws IllegalStateException when the database is ahead and {@code allowAhead} is off
      */
     SchemaCompatibility.Outcome check(boolean allowAhead) {
-        admitted = null;
+        admitted.set(null);
         SchemaCompatibility.Verdict verdict =
                 SchemaCompatibility.assess(flyway.info().all());
         SchemaCompatibility.Outcome outcome = enforce(verdict, allowAhead, binaryVersion, versions, "démarrage forcé");
-        admitted = new Admission(SchemaCompatibility.recordedMigration(verdict, outcome));
+        admitted.set(new Admission(SchemaCompatibility.recordedMigration(verdict, outcome)));
         return outcome;
     }
 
     /** Writes down the version {@link #check} last let through; nothing after a refusal. */
     void recordAdmitted() {
-        Admission admission = admitted;
+        Admission admission = admitted.get();
         if (admission != null) {
             recordVersion(admission.migration());
         }

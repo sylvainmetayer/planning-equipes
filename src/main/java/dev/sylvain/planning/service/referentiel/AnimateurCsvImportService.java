@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.DeclarationDisponibilite;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.StatutDeclaration;
 import dev.sylvain.planning.service.BusinessError;
@@ -806,7 +807,7 @@ public class AnimateurCsvImportService {
     private Set<String> pendingDeclarations() {
         return declarationRepository.list().stream()
                 .filter(declaration -> declaration.getStatut() == StatutDeclaration.EN_ATTENTE)
-                .map(declaration -> declaration.getAnimateurId())
+                .map(DeclarationDisponibilite::getAnimateurId)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 

@@ -9,13 +9,14 @@ import dev.sylvain.planning.service.JdbcEditionScope;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -126,13 +127,12 @@ public class SignalementAbsenceRepository {
      * @throws BusinessError.Conflict when the same person already has an open
      *         report on the same object — the unique index says so
      */
-    public long insert(
-            String animateurId, Portee portee, java.time.LocalDate jour, Long creneauId, String standId, Motif motif) {
+    public long insert(String animateurId, Portee portee, LocalDate jour, Long creneauId, String standId, Motif motif) {
         Long id = scope.writeAndReturn("Failed to record an absence report", connection -> {
             try (PreparedStatement ps = scope.prepareScoped(connection, INSERT)) {
                 ps.setString(2, animateurId);
                 ps.setString(3, portee.name());
-                ps.setDate(4, Date.valueOf(jour));
+                ps.setObject(4, jour);
                 ps.setObject(5, creneauId, Types.BIGINT);
                 ps.setString(6, standId);
                 ps.setString(7, motif == null ? null : motif.name());
@@ -166,7 +166,7 @@ public class SignalementAbsenceRepository {
                 UPDATE signalement_absence SET statut = ?, traite_le = ?
                 WHERE edition_id = ? AND id = ? AND statut = 'SIGNALE'""")) {
             ps.setString(1, statut.name());
-            ps.setTimestamp(2, Timestamp.from(le));
+            ps.setObject(2, le.atOffset(ZoneOffset.UTC));
             ps.setString(3, scope.editionId());
             ps.setLong(4, id);
             return ps.executeUpdate() > 0;
@@ -180,17 +180,17 @@ public class SignalementAbsenceRepository {
                 long creneauId = rs.getLong("creneau_id");
                 Long creneau = rs.wasNull() ? null : creneauId;
                 String motif = rs.getString("motif");
-                Timestamp traiteLe = rs.getTimestamp("traite_le");
+                OffsetDateTime traiteLe = rs.getObject("traite_le", OffsetDateTime.class);
                 signalements.add(new SignalementAbsence(
                         rs.getLong("id"),
                         rs.getString("animateur_id"),
                         Portee.valueOf(rs.getString("portee")),
-                        rs.getDate("jour").toLocalDate(),
+                        rs.getObject("jour", LocalDate.class),
                         creneau,
                         rs.getString("stand_id"),
                         motif == null ? null : Motif.valueOf(motif),
                         Statut.valueOf(rs.getString("statut")),
-                        rs.getTimestamp("signale_le").toInstant(),
+                        rs.getObject("signale_le", OffsetDateTime.class).toInstant(),
                         traiteLe == null ? null : traiteLe.toInstant()));
             }
         }

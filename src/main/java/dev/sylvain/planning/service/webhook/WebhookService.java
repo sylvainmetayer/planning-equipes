@@ -263,7 +263,7 @@ public class WebhookService {
         String secret = null;
         String url = before.url();
         String encrypted = before.encryptedSecret();
-        String chatId = before.chatId();
+        String chatId;
         boolean destinationChanged = false;
         switch (format) {
             case GENERIC -> {

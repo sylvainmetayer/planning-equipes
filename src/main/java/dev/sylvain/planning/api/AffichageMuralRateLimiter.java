@@ -18,6 +18,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
@@ -78,7 +79,7 @@ public class AffichageMuralRateLimiter {
     /** Hashes of the tokens last answered {@code 200}, with when. */
     private final Map<String, Instant> validTokens = new ConcurrentHashMap<>();
 
-    private volatile TrustedProxies trustedProxies = TrustedProxies.NONE;
+    private final AtomicReference<TrustedProxies> trustedProxies = new AtomicReference<>(TrustedProxies.NONE);
 
     @Inject
     public AffichageMuralRateLimiter(
@@ -92,7 +93,7 @@ public class AffichageMuralRateLimiter {
     }
 
     public void register(@Observes Filters filters) {
-        trustedProxies = TrustedProxies.of(loginConfig.proxysFiables().orElse(List.of()));
+        trustedProxies.set(TrustedProxies.of(loginConfig.proxysFiables().orElse(List.of())));
         filters.register(this::apply, PRIORITY);
     }
 
@@ -102,7 +103,7 @@ public class AffichageMuralRateLimiter {
             context.next();
             return;
         }
-        String address = ClientAddress.of(context, trustedProxies);
+        String address = ClientAddress.of(context, trustedProxies.get());
         String tokenHash = AffichageMuralService.hash(path.substring(muralPath.length()));
         boolean known = validTokens.containsKey(tokenHash);
 

@@ -32,6 +32,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
@@ -929,13 +930,13 @@ public class SolverJobService {
         private volatile JobStatus status = JobStatus.PENDING;
         private volatile Instant startedAt;
         private volatile Instant finishedAt;
-        private volatile Object result;
+        private final AtomicReference<Object> result = new AtomicReference<>();
         private volatile String error;
         private volatile boolean cancelRequested;
         /** A cancel or a shutdown asked the solver to stop; honoured by {@link #attachSolver} if it is not built yet. */
         private volatile boolean stopRequested;
 
-        private volatile Solver<PlanningEvenement> solver;
+        private final AtomicReference<Solver<PlanningEvenement>> solver = new AtomicReference<>();
 
         /** A new job, under a fresh random id. */
         private SolverJob(
@@ -993,7 +994,7 @@ public class SolverJobService {
         }
 
         private void markCompleted(Object value) {
-            result = value;
+            result.set(value);
             finishedAt = Instant.now();
             status = JobStatus.COMPLETED;
         }
@@ -1029,13 +1030,13 @@ public class SolverJobService {
          */
         private void markInterrompu(String message, Object value) {
             error = message;
-            result = value;
+            result.set(value);
             finishedAt = Instant.now();
             status = JobStatus.INTERROMPU;
         }
 
         private void markCancelled(Object value) {
-            result = value;
+            result.set(value);
             finishedAt = Instant.now();
             status = JobStatus.CANCELLED;
         }
@@ -1047,7 +1048,7 @@ public class SolverJobService {
          * between {@link #requestCancel()} and this call).
          */
         void attachSolver(Solver<PlanningEvenement> solver) {
-            this.solver = solver;
+            this.solver.set(solver);
             if (stopRequested) {
                 solver.terminateEarly();
             }
@@ -1066,7 +1067,7 @@ public class SolverJobService {
          */
         private void stopSolver() {
             stopRequested = true;
-            Solver<PlanningEvenement> currentSolver = solver;
+            Solver<PlanningEvenement> currentSolver = solver.get();
             if (currentSolver != null) {
                 currentSolver.terminateEarly();
             }
@@ -1170,7 +1171,7 @@ public class SolverJobService {
         }
 
         public Object getResult() {
-            return result;
+            return result.get();
         }
 
         public String getError() {

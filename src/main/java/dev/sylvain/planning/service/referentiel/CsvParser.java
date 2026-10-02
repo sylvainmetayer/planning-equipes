@@ -50,7 +50,7 @@ public final class CsvParser {
 
         /** True when every cell is blank — a spacer line, not data. */
         public boolean blank() {
-            return values.stream().allMatch(value -> value.isBlank());
+            return values.stream().allMatch(String::isBlank);
         }
     }
 

@@ -311,7 +311,7 @@ public class FeasibilityAnalyzer {
         List<CauseInfaisabilite> causes = new ArrayList<>();
         for (Creneau creneau : creneaux) {
             List<Stand> standsOuverts =
-                    stands.stream().filter(stand -> creneau.isStandOpen(stand)).toList();
+                    stands.stream().filter(creneau::isStandOpen).toList();
             int demande =
                     standsOuverts.stream().mapToInt(creneau::siegesSimultanes).sum();
             long capacite = capacite(animateurs, standsOuverts, creneau, demande, encadrementMineursActif);

@@ -61,8 +61,6 @@ public class PlanSnapshotService {
 
     private final JdbcEditionScope scope;
 
-    private final PlanningPersistenceService persistenceService;
-
     private final ConstraintAnalysisStore analysisStore;
 
     private final PlanningKpiService kpiService;
@@ -86,7 +84,6 @@ public class PlanSnapshotService {
                     int automatiquesConservees,
             DataSource dataSource,
             JdbcEditionScope scope,
-            PlanningPersistenceService persistenceService,
             ConstraintAnalysisStore analysisStore,
             PlanningKpiService kpiService,
             ConsigneRepository consigneRepository,
@@ -95,7 +92,6 @@ public class PlanSnapshotService {
         this.automatiquesConservees = automatiquesConservees;
         this.dataSource = dataSource;
         this.scope = scope;
-        this.persistenceService = persistenceService;
         this.analysisStore = analysisStore;
         this.kpiService = kpiService;
         this.consigneRepository = consigneRepository;

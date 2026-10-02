@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -223,7 +224,7 @@ public final class TensionAnalyzer {
 
         CelluleTension pire = jours.stream()
                 .map(JourTension::pireCellule)
-                .filter(cellule -> cellule != null)
+                .filter(Objects::nonNull)
                 .min(ORDRE_PIRE)
                 .orElse(null);
         int critiques = (int) jours.stream()

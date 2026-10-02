@@ -9,7 +9,6 @@ import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.StatutDeclaration;
-import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityReport;
@@ -106,8 +105,6 @@ public class EtatEditionService {
 
     private final EditionService editionService;
 
-    private final EditionContext editionContext;
-
     private final ReferenceDataService referenceDataService;
 
     private final DeclarationDisponibiliteService declarationService;
@@ -159,7 +156,6 @@ public class EtatEditionService {
     @Inject
     public EtatEditionService(
             EditionService editionService,
-            EditionContext editionContext,
             ReferenceDataService referenceDataService,
             DeclarationDisponibiliteService declarationService,
             StaffingService staffingService,
@@ -181,7 +177,6 @@ public class EtatEditionService {
             JournalNotificationsRepository journalNotifications,
             BackupService backupService) {
         this.editionService = editionService;
-        this.editionContext = editionContext;
         this.referenceDataService = referenceDataService;
         this.declarationService = declarationService;
         this.staffingService = staffingService;

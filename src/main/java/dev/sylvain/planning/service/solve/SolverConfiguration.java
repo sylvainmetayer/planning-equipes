@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import org.eclipse.microprofile.config.Config;
 
 /**
@@ -51,7 +52,7 @@ final class SolverConfiguration {
     private final SolutionManager<PlanningEvenement, HardMediumSoftScore> solutionManager;
 
     /** The factory of an edition held to a hard run of days, at the default budget; built on first use. */
-    private volatile SolverFactory<PlanningEvenement> hardRunCapSolverFactory;
+    private final AtomicReference<SolverFactory<PlanningEvenement>> hardRunCapSolverFactory = new AtomicReference<>();
 
     private final ConstraintDiagnosticService constraintDiagnosticService;
     private final ReferenceData referenceDataService;
@@ -357,10 +358,10 @@ final class SolverConfiguration {
             return resolveSolverFactory(budget);
         }
         if (!large && isDefault(budget)) {
-            SolverFactory<PlanningEvenement> cached = hardRunCapSolverFactory;
+            SolverFactory<PlanningEvenement> cached = hardRunCapSolverFactory.get();
             if (cached == null) {
                 cached = adaptedSolverFactory(budget, problem);
-                hardRunCapSolverFactory = cached;
+                hardRunCapSolverFactory.set(cached);
             }
             return cached;
         }

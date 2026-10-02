@@ -1,7 +1,6 @@
 package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.ConcurrentModificationGuard;
 import dev.sylvain.planning.service.IdGenerator;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
@@ -36,8 +35,6 @@ public class TypologieService implements TypologieLibelles {
 
     private final ReferenceDataChangeTracker changeTracker;
 
-    private final ConcurrentModificationGuard staleWrites;
-
     private final IdGenerator ids;
 
     private final JdbcEditionScope scope;
@@ -48,13 +45,11 @@ public class TypologieService implements TypologieLibelles {
     public TypologieService(
             TypologieRepository repository,
             ReferenceDataChangeTracker changeTracker,
-            ConcurrentModificationGuard staleWrites,
             IdGenerator ids,
             JdbcEditionScope scope,
             GelReferentielService gel) {
         this.repository = repository;
         this.changeTracker = changeTracker;
-        this.staleWrites = staleWrites;
         this.ids = ids;
         this.scope = scope;
         this.gel = gel;

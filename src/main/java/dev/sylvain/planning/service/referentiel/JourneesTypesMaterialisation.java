@@ -11,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /**
  * How a calendar of day templates becomes créneaux, and how créneaux become
@@ -153,16 +154,16 @@ public final class JourneesTypesMaterialisation {
         Map<String, Long> rangParSignature = new LinkedHashMap<>();
         List<Affectation> calendrier = new ArrayList<>();
         for (Map.Entry<LocalDate, List<Creneau>> jour : parDate.entrySet()) {
-            List<VacationType> vacations = new ArrayList<>();
-            Map<String, Boolean> vus = new LinkedHashMap<>();
-            List<Creneau> tries = new ArrayList<>(jour.getValue());
-            tries.sort(Comparator.comparing(Creneau::getHeureDebut).thenComparing(Creneau::getHeureFin));
-            for (Creneau creneau : tries) {
-                if (vus.putIfAbsent(keyOf(creneau), Boolean.TRUE) == null) {
-                    vacations.add(new VacationType(
-                            creneau.getHeureDebut(), creneau.getHeureFin(), creneau.isCouverturePause()));
-                }
-            }
+            // One shift per distinct key, the first in time order.
+            List<VacationType> vacations = new ArrayList<>(jour.getValue().stream()
+                    .sorted(Comparator.comparing(Creneau::getHeureDebut).thenComparing(Creneau::getHeureFin))
+                    .collect(Collectors.toMap(
+                            JourneesTypesMaterialisation::keyOf,
+                            creneau -> new VacationType(
+                                    creneau.getHeureDebut(), creneau.getHeureFin(), creneau.isCouverturePause()),
+                            (first, ignored) -> first,
+                            LinkedHashMap::new))
+                    .values());
             JourneeType candidat = new JourneeType(null, null, vacations);
             String signature = candidat.signature();
             JourneeType journeeType = parSignature.get(signature);

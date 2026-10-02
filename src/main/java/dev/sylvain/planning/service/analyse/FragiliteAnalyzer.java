@@ -12,12 +12,12 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -530,10 +530,7 @@ public class FragiliteAnalyzer {
     /** Ninjas free that day who are not already counted as specialists. */
     private static List<Animateur> reinforcements(
             List<Animateur> animateurs, SeatGroup groupe, List<Animateur> specialistes) {
-        Set<String> deja = new HashSet<>();
-        for (Animateur specialiste : specialistes) {
-            deja.add(specialiste.getId());
-        }
+        Set<String> deja = specialistes.stream().map(Animateur::getId).collect(Collectors.toSet());
         return animateurs.stream()
                 .filter(Animateur::isNinja)
                 .filter(animateur -> !deja.contains(animateur.getId()))
