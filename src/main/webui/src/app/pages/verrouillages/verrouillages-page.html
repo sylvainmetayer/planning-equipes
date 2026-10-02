@@ -114,8 +114,27 @@
     </mat-card-content>
   }
   <mat-card-content class="table-wrapper">
-    <table mat-table [dataSource]="rows()">
+    @if (selection.hasSelection()) {
+      <app-bulk-actions-bar [count]="selection.count()" [disabled]="editingLocked() || bulkRunning()"
+                            [filtre]="onlyAnimateurs().length > 0" [editable]="false"
+                            removeLabel="Déverrouiller la sélection" i18n-removeLabel="@@verrouillages.bulk.unlockSelection"
+                            removeIcon="lock_open"
+                            (remove)="unlockSelection()" (clear)="selection.clear()" />
+    }
+    <table mat-table [dataSource]="rows()" [trackBy]="trackById">
       <caption class="visually-hidden" i18n="@@verrouillages.table.caption">Verrouillages du planning : périmètre, état, période et actions</caption>
+      <ng-container matColumnDef="select">
+        <th mat-header-cell scope="col" *matHeaderCellDef>
+          <mat-checkbox i18n-aria-label="@@bulk.selectAll" aria-label="Tout sélectionner"
+                        [checked]="selection.allSelected()" [indeterminate]="selection.partiallySelected()"
+                        (change)="selection.toggleAll()"></mat-checkbox>
+        </th>
+        <td mat-cell *matCellDef="let row">
+          <mat-checkbox i18n-aria-label="@@bulk.selectRow" aria-label="Sélectionner la ligne"
+                        [checked]="selection.isSelected(row.id)"
+                        (change)="selection.toggle(row.id)"></mat-checkbox>
+        </td>
+      </ng-container>
       <ng-container matColumnDef="type">
         <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@verrouillages.field.type">Type</th>
         <td mat-cell *matCellDef="let row">
@@ -163,7 +182,12 @@
         </td>
       </ng-container>
       <tr mat-header-row *matHeaderRowDef="columns"></tr>
-      <tr mat-row *matRowDef="let row; columns: columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns; let i = index"
+          [attr.data-row-index]="i"
+          [tabindex]="navigation.isCurrent(i) ? 0 : -1"
+          [class.row-selected]="selection.isSelected(row.id)"
+          (focus)="navigation.onFocus(i)"
+          (keydown)="navigation.onKeydown($event, i)"></tr>
     </table>
     @if (rows().length === 0) {
       @if (onlyAnimateurs().length > 0 && totalCount() > 0) {

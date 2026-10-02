@@ -7,7 +7,8 @@
       <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
     <app-table-filter [(value)]="personne" [matches]="rows().length" [total]="store.contraintes().length"
-                      label="Personne" i18n-label="@@adHoc.filter.personne" />
+                      label="Personne" i18n-label="@@adHoc.filter.personne"
+                      (enterTable)="navigation.focusCurrent()" />
     <span class="calendar-meta" #pageTitle tabindex="-1" i18n="@@adHoc.count">{{ store.contraintes().length }} ajustement(s)</span>
   </mat-card-actions>
   @if (onlyIds().length > 0) {
@@ -19,8 +20,37 @@
     </mat-card-content>
   }
   <mat-card-content class="table-wrapper">
-    <table mat-table [dataSource]="rows()">
+    @if (selection.hasSelection()) {
+      <app-bulk-actions-bar [count]="selection.count()" [disabled]="editingLocked() || bulkRunning()"
+                            [filtre]="!!personne() || onlyIds().length > 0" [editable]="false"
+                            (remove)="removeSelection()" (clear)="selection.clear()" />
+    }
+    <table mat-table [dataSource]="rows()" [trackBy]="trackById">
       <caption class="visually-hidden" i18n="@@adHoc.table.caption">Ajustements manuels actifs : type, animateurs concernés, raison et actions</caption>
+      <ng-container matColumnDef="select">
+        <th mat-header-cell scope="col" *matHeaderCellDef>
+          <mat-checkbox i18n-aria-label="@@bulk.selectAll" aria-label="Tout sélectionner"
+                        [checked]="selection.allSelected()" [indeterminate]="selection.partiallySelected()"
+                        [disabled]="nothingSelectable()"
+                        (change)="selection.toggleAll()"></mat-checkbox>
+        </th>
+        <td mat-cell *matCellDef="let contrainte">
+          @if (contrainte.issueDeCovoiturage) {
+            <!-- Cancelled from Disponibilités > Covoiturage, never in a batch
+                 from here. A disabled control shows no tooltip: the wrapper
+                 carries it, and the label says why to a screen reader. -->
+            <span i18n-matTooltip="@@adHoc.covoiturage.tooltip"
+                  matTooltip="Arrivée groupée issue d'une demande de covoiturage : elle se gère depuis Disponibilités > Covoiturage, qui prévient le groupe.">
+              <mat-checkbox i18n-aria-label="@@adHoc.covoiturage.selectDisabled"
+                            aria-label="Sélectionner la ligne (géré depuis Disponibilités > Covoiturage)" disabled></mat-checkbox>
+            </span>
+          } @else {
+            <mat-checkbox i18n-aria-label="@@bulk.selectRow" aria-label="Sélectionner la ligne"
+                          [checked]="selection.isSelected(contrainte.id)"
+                          (change)="selection.toggle(contrainte.id)"></mat-checkbox>
+          }
+        </td>
+      </ng-container>
       <ng-container matColumnDef="id">
         <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@common.id">Id</th>
         <td mat-cell *matCellDef="let contrainte">
@@ -79,7 +109,12 @@
         </td>
       </ng-container>
       <tr mat-header-row *matHeaderRowDef="columns"></tr>
-      <tr mat-row *matRowDef="let row; columns: columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns; let i = index"
+          [attr.data-row-index]="i"
+          [tabindex]="navigation.isCurrent(i) ? 0 : -1"
+          [class.row-selected]="selection.isSelected(row.id)"
+          (focus)="navigation.onFocus(i)"
+          (keydown)="onRowKeydown($event, i, row)"></tr>
     </table>
     @if (store.contraintes().length === 0) {
       <p class="empty-hint" i18n="@@adHoc.empty">Aucun ajustement manuel pour le moment.</p>

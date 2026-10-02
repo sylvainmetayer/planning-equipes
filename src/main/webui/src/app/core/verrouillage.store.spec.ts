@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiService } from './api.service';
+import { ApiService, SessionExpireeError } from './api.service';
 import { VerrouillageStore } from './verrouillage.store';
 import type { TypeVerrouillage, VerrouillagePlanning } from './models';
 
@@ -31,7 +31,7 @@ class FakeApi {
     return Promise.resolve(this.responses[url]);
   });
   post = vi.fn(() => Promise.resolve({}));
-  delete = vi.fn(() => Promise.resolve(undefined));
+  delete = vi.fn((_url: string) => Promise.resolve(undefined));
 }
 
 describe('VerrouillageStore', () => {
@@ -97,5 +97,47 @@ describe('VerrouillageStore', () => {
     api.get.mockRejectedValueOnce(new Error('réseau'));
 
     await expect(store.create({ type: 'JOUR', jour: '2026-07-08' })).resolves.toHaveLength(1);
+  });
+
+  it('lifts every lock of a batch, keeps going past a refusal, and reads the list once', async () => {
+    api.responses['/api/verrouillages'] = [];
+    api.delete
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('Une résolution est en cours.'))
+      .mockResolvedValueOnce(undefined);
+
+    const result = await store.removeMany(['V1', 'V2', 'V3']);
+
+    expect(api.delete.mock.calls.map(([url]) => url)).toEqual([
+      '/api/verrouillages/V1',
+      '/api/verrouillages/V2',
+      '/api/verrouillages/V3',
+    ]);
+    expect(result.succes).toEqual(['V1', 'V3']);
+    expect(result.echecs).toEqual([
+      { id: 'V2', message: 'Une résolution est en cours.', concurrente: false },
+    ]);
+    expect(api.get).toHaveBeenCalledTimes(1);
+  });
+
+  it('stops a batch at an expired session instead of sending the rest', async () => {
+    api.responses['/api/verrouillages'] = [];
+    api.delete
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new SessionExpireeError())
+      .mockResolvedValueOnce(undefined);
+
+    await expect(store.removeMany(['V1', 'V2', 'V3'])).rejects.toBeInstanceOf(SessionExpireeError);
+
+    expect(api.delete.mock.calls.map(([url]) => url)).toEqual([
+      '/api/verrouillages/V1',
+      '/api/verrouillages/V2',
+    ]);
+  });
+
+  it('answers what a batch did even when the re-read fails', async () => {
+    api.get.mockRejectedValueOnce(new Error('réseau'));
+
+    await expect(store.removeMany(['V1'])).resolves.toMatchObject({ succes: ['V1'] });
   });
 });

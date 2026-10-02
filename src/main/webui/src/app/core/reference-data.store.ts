@@ -2,7 +2,7 @@
 // them after a bulk change (sample load, CSV import, SQL dump replay).
 
 import { Injectable, inject, signal } from '@angular/core';
-import { ApiError, ApiService } from './api.service';
+import { ApiError, ApiService, SessionExpireeError } from './api.service';
 import {
   Animateur,
   Avertissement,
@@ -238,23 +238,43 @@ export class ReferenceDataStore {
     ids: readonly (string | number)[],
     action: (id: string | number) => Promise<unknown>,
   ): Promise<BulkResult> {
-    const result: BulkResult = { succes: [], echecs: [], avertissements: [] };
-    for (const id of ids) {
-      try {
-        const avertissements = avertissementsDe(await action(id));
-        result.avertissements.push(...avertissements);
-        result.avertissementsParId ??= new Map();
-        result.avertissementsParId.set(id, avertissements);
-        result.succes.push(id);
-      } catch (error) {
-        result.echecs.push({
-          id,
-          message: errorMessage(error),
-          concurrente: error instanceof ApiError && error.modificationConcurrente,
-        });
-      }
-    }
+    const result = await runBulkSequentially(ids, action);
     await this.reload(this.familiesFor(resource));
     return result;
   }
+}
+
+/**
+ * Runs `action` on each id, one request after the other, and collects what
+ * went through and what was refused — never stopping on a refusal of one
+ * row. An expired session is not a refusal of that row but of every one
+ * after it: the loop stops there and rethrows, rather than sending the rest
+ * of the batch to collect as many 401s while the interceptor redirects to
+ * the login page. Shared by the stores whose API has no bulk endpoint: the
+ * referential here, the planning locks in `VerrouillageStore`.
+ */
+export async function runBulkSequentially<T extends string | number>(
+  ids: readonly T[],
+  action: (id: T) => Promise<unknown>,
+): Promise<BulkResult> {
+  const result: BulkResult = { succes: [], echecs: [], avertissements: [] };
+  for (const id of ids) {
+    try {
+      const avertissements = avertissementsDe(await action(id));
+      result.avertissements.push(...avertissements);
+      result.avertissementsParId ??= new Map();
+      result.avertissementsParId.set(id, avertissements);
+      result.succes.push(id);
+    } catch (error) {
+      if (error instanceof SessionExpireeError) {
+        throw error;
+      }
+      result.echecs.push({
+        id,
+        message: errorMessage(error),
+        concurrente: error instanceof ApiError && error.modificationConcurrente,
+      });
+    }
+  }
+  return result;
 }

@@ -11,6 +11,7 @@ import {
   VerrouillagePlanning,
   WrittenVerrouillage,
 } from './models';
+import { BulkResult, runBulkSequentially } from './reference-data.store';
 
 @Injectable({ providedIn: 'root' })
 export class VerrouillageStore {
@@ -45,6 +46,23 @@ export class VerrouillageStore {
   async remove(id: string): Promise<void> {
     await this.api.delete(`/api/verrouillages/${encodeURIComponent(id)}`);
     await this.reload();
+  }
+
+  /**
+   * Lifts several locks — one DELETE per lock, the API having no bulk route —
+   * then reads the list once. A refused lock (a solve holding the edition)
+   * does not stop the others; the result says which went and which stayed.
+   * An expired session stops the batch and rejects with its
+   * `SessionExpireeError` (see {@link runBulkSequentially}).
+   */
+  async removeMany(ids: readonly string[]): Promise<BulkResult> {
+    const result = await runBulkSequentially(ids, (id) =>
+      this.api.delete(`/api/verrouillages/${encodeURIComponent(id)}`),
+    );
+    // The locks are lifted: a failed re-read costs the padlocks until the
+    // next one, and must not read as a refusal of the whole batch.
+    await this.reload().catch(() => undefined);
+    return result;
   }
 
   estJourVerrouille(jour: string | null | undefined): boolean {

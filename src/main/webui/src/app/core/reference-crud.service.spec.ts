@@ -5,7 +5,7 @@ import { ApiError, SessionExpireeError } from './api.service';
 import { Avertissement } from './models';
 import { NotificationService } from './notification.service';
 import { PlanningResolutionStore } from './planning-resolution.store';
-import { ReferenceCrudService } from './reference-crud.service';
+import { ReferenceCrudService, bulkNotifications } from './reference-crud.service';
 import { ReferenceDataStore } from './reference-data.store';
 import { ReferenceUsageService } from './reference-usage.service';
 import { ConfirmData, ConfirmService } from '../shared/confirm-dialog';
@@ -593,6 +593,41 @@ describe('ReferenceCrudService', () => {
           message: expect.stringContaining('encore référencé'),
         }),
       );
+    });
+  });
+
+  describe('bulkNotifications', () => {
+    const success = (count: number) => `Suppression de ${count} stands effectuée.`;
+    const failure = (count: number) => `${count} stands n'ont pas pu être supprimés.`;
+
+    it('says what went through ahead of what a running solve refused', () => {
+      const [report, ...rest] = bulkNotifications(
+        {
+          succes: ['S1', 'S2'],
+          echecs: [{ id: 'S3', message: 'Une résolution est en cours.' }],
+          avertissements: [],
+        },
+        success,
+        failure,
+      );
+
+      expect(rest).toEqual([]);
+      expect(report.variant).toBe('error');
+      expect(report.title).toBe("1 stands n'ont pas pu être supprimés.");
+      expect(report.message).toBe(
+        'Suppression de 2 stands effectuée. S3 : Une résolution est en cours.',
+      );
+    });
+
+    it('names a refused row as the caller asks, and says nothing went through when nothing did', () => {
+      const [report] = bulkNotifications(
+        { succes: [], echecs: [{ id: 'V7', message: 'refusé' }], avertissements: [] },
+        success,
+        failure,
+        (id) => `Journée ${String(id)}`,
+      );
+
+      expect(report.message).toBe('Journée V7 : refusé');
     });
   });
 

@@ -124,7 +124,7 @@ test('un identifiant inconnu est refusé plutôt que créé', async () => {
   expect(inconnu.status()).toBe(400);
 });
 
-test('une contradiction déjà en base est signalée avant toute résolution', async ({ browser }) => {
+test('flags a contradiction already in the database before any solve', async ({ browser }) => {
   // Straight into the database: every write refuses this pair now, so this is
   // the only way to reproduce an edition that recorded it earlier.
   const insertion = await admin.post('/api/database/import', {
@@ -155,12 +155,15 @@ test('une contradiction déjà en base est signalée avant toute résolution', a
 
   // And the rows themselves are badged, on the screen that owns them.
   await page.goto('/consignes-solveur');
-  // Anchored on the Id column, not a substring of the row's accessible name:
+  // Anchored on the Id cell, not a substring of the row's accessible name:
   // since issue #39 the badge is exposed to assistive tech, and its name is the
   // contradiction sentence — which names *both* exceptions. A bare
   // `new RegExp(FORCEE)` therefore matches the INDISPO row too, and would match
-  // `E2E-ADHOC-FORCEE-2` as well; `(?!\S)` closes both.
-  const ligneForcee = page.getByRole('row', { name: new RegExp(String.raw`^${FORCEE}(?!\S)`) });
+  // `E2E-ADHOC-FORCEE-2` as well; `(?!\S)` closes both. The cell, not the row:
+  // the row's name now opens on its selection checkbox.
+  const ligneForcee = page.getByRole('row').filter({
+    has: page.getByRole('cell', { name: new RegExp(String.raw`^${FORCEE}(?!\S)`) }),
+  });
   await expect(ligneForcee).toHaveCount(1);
   await expect(ligneForcee.getByText('warning')).toBeVisible();
   // The badge says what it means, rather than only showing a tooltip on hover.
