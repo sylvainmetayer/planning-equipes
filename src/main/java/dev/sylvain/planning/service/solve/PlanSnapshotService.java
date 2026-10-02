@@ -723,8 +723,10 @@ public class PlanSnapshotService {
  VALUES (?, ?, ?, ?, ?, ?, ?, ?)""";
             try (PreparedStatement ps = scope.prepareScoped(connection, insert)) {
                 for (AffectationSnapshot affectation : detail.affectations()) {
-                    ps.setString(8, affectation.suiteDe());
-                    ps.setString(2, affectation.posteId());
+                    // A snapshot taken before the ids were padded would put
+                    // back a plan the next re-seed reads out of order.
+                    ps.setString(8, ProblemBuilder.paddedSeatId(affectation.suiteDe()));
+                    ps.setString(2, ProblemBuilder.paddedSeatId(affectation.posteId()));
                     ps.setString(3, affectation.standId());
                     ps.setLong(4, Long.parseLong(affectation.creneauId()));
                     ps.setString(5, affectation.animateurId());

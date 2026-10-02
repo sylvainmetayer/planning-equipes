@@ -44,7 +44,7 @@ public final class SeatSplit {
 
     private static final DateTimeFormatter SUFFIXE = DateTimeFormatter.ofPattern("HHmm");
 
-    /** Between an id and the minute it was cut or narrowed at: {@code poste-17~0920}. */
+    /** Between an id and the minute it was cut or narrowed at: {@code poste-000017~0920}. */
     private static final String SEPARATEUR = "~";
 
     private SeatSplit() {}
@@ -138,7 +138,7 @@ public final class SeatSplit {
      * Moves the start of an empty seat to {@code at}, the row kept: the
      * minutes before were held by nobody, and the seat no longer covers them
      * — no empty fragment is left behind to count as a seat « non pourvu ».
-     * Its id takes the minute ({@code poste-17~0920}) and it names no origin:
+     * Its id takes the minute ({@code poste-000017~0920}) and it names no origin:
      * that pair is what {@link #isNarrowed} recognises, so that a rebuild
      * replays the narrowed window instead of folding the replacement back
      * onto the whole timeslot.
@@ -155,7 +155,7 @@ public final class SeatSplit {
                 && siege.posteId().contains(SEPARATEUR);
     }
 
-    /** {@code poste-17~0920}: the origin's id and the minute of the split — never a generated id. */
+    /** {@code poste-000017~0920}: the origin's id and the minute of the split — never a generated id. */
     static String suiteId(String origine, LocalTime at) {
         return origine + SEPARATEUR + SUFFIXE.format(at);
     }

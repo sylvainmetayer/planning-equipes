@@ -887,10 +887,18 @@ public class PlanningPersistenceService {
      *
      * <p>Deliberately keyed on stand × créneau rather than on the poste id:
      * {@code ProblemBuilder.buildPostes} renumbers its seats
-     * ({@code poste-0}, {@code poste-1}, …) on every build, so adding a single
-     * stand shifts every subsequent id. Seats of the same stand and créneau are
-     * interchangeable anyway, so re-seeding them positionally restores the same
-     * plan without depending on ids surviving a reference-data change.</p>
+     * ({@code poste-000000}, {@code poste-000001}, …) on every build, so adding
+     * a single stand shifts every subsequent id. Seats of the same stand and
+     * créneau are interchangeable anyway, so re-seeding them positionally
+     * restores the same plan without depending on ids surviving a
+     * reference-data change.</p>
+     *
+     * <p><b>« Interchangeable » holds only as far as the order does.</b> A
+     * partially closed stand gives the seats of one timeslot different
+     * effective windows, so the rank inside a group decides the hours somebody
+     * comes back on — which is why the build zero-pads the counter in the id
+     * ({@code ProblemBuilder.seatId}): this {@code ORDER BY id} on a
+     * {@code VARCHAR} then returns the seats in the order they were built.</p>
      */
     public Map<String, List<String>> loadAnimateursByStandCreneau() {
         Map<String, List<String>> parStandCreneau = new LinkedHashMap<>();

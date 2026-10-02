@@ -43,6 +43,38 @@ class PlanningServicePosteGenerationTest {
                 .allSatisfy(poste -> assertThat(poste.getHeureDebutEffective()).isNull());
     }
 
+    /**
+     * The persisted plan is read back with {@code ORDER BY id} on a
+     * {@code VARCHAR} column and re-seeded by rank: a seat id that does not
+     * sort the way it was generated puts people back on a neighbouring seat —
+     * another effective window, on a day that may be locked. Twelve seats on
+     * one stand × timeslot cross the first digit boundary.
+     */
+    @Test
+    void seatIdsSortInTheOrderTheyWereGenerated() {
+        Stand standDeDouze = new Stand("STAND-D", "D", Set.of(), 12, 12, false);
+
+        List<PosteAffectation> postes =
+                ProblemBuilder.buildPostes(List.of(standDeDouze, standA), List.of(creneauOuvert));
+
+        assertThat(postes).hasSize(13);
+        assertThat(postes)
+                .extracting(PosteAffectation::getId)
+                .startsWith("poste-000000")
+                .endsWith("poste-000012")
+                .isSortedAccordingTo(java.util.Comparator.naturalOrder());
+    }
+
+    @Test
+    void aSeatIdPersistedBeforeThePaddingIsPaddedTheSameWay() {
+        assertThat(ProblemBuilder.paddedSeatId("poste-0")).isEqualTo("poste-000000");
+        assertThat(ProblemBuilder.paddedSeatId("poste-17")).isEqualTo("poste-000017");
+        assertThat(ProblemBuilder.paddedSeatId("poste-17~0920-2")).isEqualTo("poste-000017~0920-2");
+        assertThat(ProblemBuilder.paddedSeatId("poste-000017~0920")).isEqualTo("poste-000017~0920");
+        assertThat(ProblemBuilder.paddedSeatId("poste-effwin")).isEqualTo("poste-effwin");
+        assertThat(ProblemBuilder.paddedSeatId(null)).isNull();
+    }
+
     @Test
     void standFermeIntegralementNeGenereAucunPoste() {
         Stand standFerme = new Stand("STAND-B", "B", Set.of(), 1, 1, false);

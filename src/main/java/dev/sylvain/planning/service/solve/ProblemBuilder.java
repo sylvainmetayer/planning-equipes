@@ -18,9 +18,12 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Builds the problem a solve runs on, out of the edition's reference data:
@@ -37,6 +40,9 @@ import java.util.function.Supplier;
  * container.</p>
  */
 public final class ProblemBuilder {
+
+    /** A generated seat id persisted before the padding: {@code poste-17}, {@code poste-17~0920}. */
+    private static final Pattern LEGACY_SEAT_ID = Pattern.compile("^poste-(\\d{1,5})(?!\\d)(.*)$", Pattern.DOTALL);
 
     private final ReferenceData referenceDataService;
 
@@ -68,8 +74,10 @@ public final class ProblemBuilder {
 
     /**
      * Builds a fresh problem from the persisted reference data: one
-     * {@link PosteAffectation} per required seat ({@code stand.effectifMax}) on
-     * every stand × timeslot, all seats unassigned. This mirrors the client-side
+     * {@link PosteAffectation} per required seat on every stand × timeslot ×
+     * open segment, counted from the segment's own effectif (see
+     * {@link #buildPostes} — never {@code stand.effectifMax}, which is a
+     * ceiling), all seats unassigned. This mirrors the client-side
      * builder so a solve can be launched by sending only a request to the
      * server — the (potentially huge) planning is built here and never travels
      * to the browser and back, which is what makes very large scenarios
@@ -720,7 +728,7 @@ public final class ProblemBuilder {
             // analyses count exactly what is generated here.
             int seats = creneau.siegesSegment(segment.effectif());
             for (int seat = 0; seat < seats; seat++) {
-                PosteAffectation poste = new PosteAffectation("poste-" + postes.size(), stand, creneau);
+                PosteAffectation poste = new PosteAffectation(seatId(postes.size()), stand, creneau);
                 if (!creneauEntierOuvert) {
                     poste.setHeureDebutEffective(shift(creneau.getHeureDebut(), segment.debutMinutes()));
                     poste.setHeureFinEffective(shift(creneau.getHeureDebut(), segment.finMinutes()));
@@ -728,6 +736,44 @@ public final class ProblemBuilder {
                 postes.add(poste);
             }
         }
+    }
+
+    /**
+     * Seat id, <b>zero-padded so it sorts the way it was generated</b>. The
+     * column is a {@code VARCHAR} read back with {@code ORDER BY id}, and the
+     * plain {@code "poste-" + counter} form sorted {@code poste-10} before
+     * {@code poste-2}: whenever the seats of one stand × timeslot straddled a
+     * digit boundary, {@link PlanningPersistenceService#loadAnimateursByStandCreneau}
+     * handed their holders back in an order the build never used, and the
+     * positional re-seed sat people on a neighbouring seat. Harmless while
+     * those seats were interchangeable; not once a partially closed stand
+     * gives them different effective windows — the person then came back
+     * with other hours, and a locked day announced a change nobody made.
+     *
+     * <p>Six digits carry a million seats, far above the largest extreme
+     * scenario. The plan in place is rewritten by every solve, but a plan
+     * persisted before this form — and every snapshot taken of one — still
+     * carries the short ids: {@code V123} pads the plan in place, and a
+     * restore pads what a snapshot puts back ({@link #paddedSeatId}).</p>
+     */
+    static String seatId(int counter) {
+        return String.format(Locale.ROOT, "poste-%06d", counter);
+    }
+
+    /**
+     * {@code id} with its counter padded as {@link #seatId} writes it —
+     * {@code poste-17~0920} becomes {@code poste-000017~0920}, the minute of a
+     * split kept — and any other id as it is. What a restore applies to a
+     * snapshot taken before the padding, so the plan it puts back sorts the
+     * way the build numbered it; the same rewrite {@code V123} made to the
+     * plan in place.
+     */
+    static String paddedSeatId(String id) {
+        if (id == null) {
+            return null;
+        }
+        Matcher legacy = LEGACY_SEAT_ID.matcher(id);
+        return legacy.matches() ? seatId(Integer.parseInt(legacy.group(1))) + legacy.group(2) : id;
     }
 
     /** {@code heureDebut} shifted forward by {@code minutes}, wrapping past midnight. */

@@ -6,6 +6,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.FenetreRepas;
+import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -17,7 +18,9 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 
@@ -38,6 +41,9 @@ class PlanningPersistenceServiceTest {
 
     @Inject
     EditionContext editionContext;
+
+    @Inject
+    PlanSnapshotService snapshotService;
 
     @Test
     void solvedPlanningIsPersistedToDatabase() {
@@ -234,5 +240,105 @@ class PlanningPersistenceServiceTest {
         } finally {
             editionService.delete(edition);
         }
+    }
+
+    /**
+     * The seats of one stand × timeslot are read back with {@code ORDER BY id}
+     * on a {@code VARCHAR} and re-seeded by rank. Twelve seats on a stand
+     * closed in the middle of the timeslot — six before the closure, six after
+     * — cross the digit boundary at the tenth: with the plain
+     * {@code poste-<n>} id, {@code poste-10} and {@code poste-11} came back
+     * third and fourth, and their holders were re-seeded onto the morning
+     * window. Each animateur must come back on the seat, hence the hours, the
+     * plan gave them.
+     */
+    @Test
+    void reseedingAPartiallyClosedStandAcrossADigitBoundaryKeepsEveryWindow() {
+        withTwelveSeatCell("Édition palier", (cell, animateurs) -> {
+            List<PosteAffectation> postes = ProblemBuilder.buildPostes(List.of(cell.stand()), List.of(cell.creneau()));
+            assertThat(postes).hasSize(12);
+            for (int rang = 0; rang < postes.size(); rang++) {
+                postes.get(rang).setAnimateur(animateurs.get(rang));
+            }
+            persistenceService.persist(new PlanningEvenement(cell.creneau().getDate(), animateurs, postes));
+
+            assertReseededInPlace(cell, animateurs);
+        });
+    }
+
+    /**
+     * A snapshot taken before the ids were padded carries {@code poste-10}:
+     * restored as it is, the plan it puts back would be read out of order by
+     * the next re-seed. The restore pads the ids it writes, so the
+     * re-seed keeps every window.
+     */
+    @Test
+    void restoringASnapshotOfUnpaddedSeatIdsKeepsTheirGenerationOrder() {
+        withTwelveSeatCell("Édition instantané", (cell, animateurs) -> {
+            List<PosteAffectation> postes = ProblemBuilder.buildPostes(List.of(cell.stand()), List.of(cell.creneau()));
+            for (int rang = 0; rang < postes.size(); rang++) {
+                postes.get(rang).setId("poste-" + rang);
+                postes.get(rang).setAnimateur(animateurs.get(rang));
+            }
+            postes.get(11).setSuiteDe("poste-10");
+            persistenceService.persist(new PlanningEvenement(cell.creneau().getDate(), animateurs, postes));
+            long instantane =
+                    snapshotService.capture("Avant le bourrage", false).id();
+            persistenceService.persist(new PlanningEvenement(cell.creneau().getDate(), animateurs, List.of()));
+
+            assertThat(snapshotService.restaurer(instantane, true).restaure()).isTrue();
+
+            assertThat(persistenceService.loadPersistedPlanning().getPostes())
+                    .filteredOn(poste -> poste.getSuiteDe() != null)
+                    .extracting(PosteAffectation::getId, PosteAffectation::getSuiteDe)
+                    .containsExactly(org.assertj.core.groups.Tuple.tuple("poste-000011", "poste-000010"));
+            assertReseededInPlace(cell, animateurs);
+        });
+    }
+
+    private record Cell(Stand stand, Creneau creneau) {}
+
+    private interface CellTest {
+        void run(Cell cell, List<Animateur> animateurs);
+    }
+
+    /** A stand of six, closed 11:00-13:00 on a 09:00-15:00 timeslot, and twelve animateurs, in their own edition. */
+    private void withTwelveSeatCell(String nom, CellTest test) {
+        String edition =
+                editionService.create(new Edition(null, nom, false, null)).getId();
+        try {
+            editionContext.executeIn(edition, () -> {
+                referenceDataService.createTypologie(
+                        new TypologieItem(null, "STRATEGIE", "Stratégie", false, null, null, null));
+                Stand stand = referenceDataService.createStand(
+                        new Stand(null, "Stand fermé à midi", Set.of("STRATEGIE"), 6, 6, false));
+                stand.setIndisponibilites(List.of(new IndisponibiliteStand(
+                        null, LocalDate.of(2026, 7, 17), LocalTime.of(11, 0), LocalTime.of(13, 0), "Midi")));
+                Creneau creneau = referenceDataService.createCreneau(
+                        new Creneau(null, 1, LocalDate.of(2026, 7, 17), LocalTime.of(9, 0), LocalTime.of(15, 0)));
+                List<Animateur> animateurs = new ArrayList<>();
+                for (int rang = 0; rang < 12; rang++) {
+                    animateurs.add(referenceDataService.createAnimateur(
+                            new Animateur(null, "Prenom" + rang, "Nom", LocalDate.of(1990, 1, 1), false)));
+                }
+                test.run(new Cell(stand, creneau), animateurs);
+            });
+        } finally {
+            editionService.delete(edition);
+        }
+    }
+
+    /** Re-seeds a fresh build from the persisted plan: everybody back on their own rank, with its window. */
+    private void assertReseededInPlace(Cell cell, List<Animateur> animateurs) {
+        Map<String, List<String>> persiste = persistenceService.loadAnimateursByStandCreneau();
+        List<PosteAffectation> reconstruits =
+                ProblemBuilder.buildPostes(List.of(cell.stand()), List.of(cell.creneau()));
+        ProblemBuilder.reamorcerDepuisAffectations(reconstruits, animateurs, persiste, List.of());
+
+        assertThat(reconstruits).extracting(PosteAffectation::getAnimateur).containsExactlyElementsOf(animateurs);
+        assertThat(reconstruits.subList(0, 6))
+                .allSatisfy(poste -> assertThat(poste.getHeureFinEffective()).isEqualTo(LocalTime.of(11, 0)));
+        assertThat(reconstruits.subList(6, 12))
+                .allSatisfy(poste -> assertThat(poste.getHeureDebutEffective()).isEqualTo(LocalTime.of(13, 0)));
     }
 }
