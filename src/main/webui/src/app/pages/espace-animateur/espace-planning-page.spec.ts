@@ -89,7 +89,7 @@ function pause(overrides: Partial<PauseAnimateurView> = {}): PauseAnimateurView 
 describe('EspacePlanningPage — « Emporter mon planning »', () => {
   const espaceView = signal<EspaceAnimateurView | null>(view());
   const espaceJeton = signal<string | null>('jeton-1');
-  const regenererAbonnement = vi.fn(() => Promise.resolve(undefined));
+  const regenerateSubscription = vi.fn(() => Promise.resolve(undefined));
   let fixture: ComponentFixture<EspacePlanningPage>;
   let writeText: ReturnType<typeof vi.fn>;
 
@@ -114,7 +114,7 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
           useValue: {
             view: espaceView,
             jeton: espaceJeton,
-            regenererAbonnement,
+            regenererAbonnement: regenerateSubscription,
             confirmerPlanning: vi.fn(() => Promise.resolve(undefined)),
           },
         },
@@ -189,7 +189,7 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
     vi.setSystemTime(new Date(2026, 8, 1, 12, 0));
     espaceView.set(view());
     espaceJeton.set('jeton-1');
-    regenererAbonnement.mockClear();
+    regenerateSubscription.mockClear();
   });
 
   afterEach(() => {

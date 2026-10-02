@@ -158,7 +158,7 @@ export class EspaceAnimateurService {
   }
 
   /** A colleague's seats, for the « créneau souhaité en échange » picker of a directed exchange. */
-  postesCollegue(collegueId: string): Promise<PosteAnimateurView[]> {
+  colleagueSeats(collegueId: string): Promise<PosteAnimateurView[]> {
     return this.api.get<PosteAnimateurView[]>(
       `/api/espace-animateur/${this.jeton()}/collegues/${encodeURIComponent(collegueId)}/postes`,
     );
