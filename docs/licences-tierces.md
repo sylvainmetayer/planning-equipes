@@ -62,12 +62,12 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `com.aayushatharva.brotli4j:service` | 1.23.0 | Apache-2.0 |
 | `com.cronutils:cron-utils` | 9.2.1 | Apache-2.0 |
 | `com.fasterxml.jackson.core:jackson-annotations` | 2.22 | Apache-2.0 |
-| `com.fasterxml.jackson.core:jackson-core` | 2.22.2 | Apache-2.0 |
-| `com.fasterxml.jackson.core:jackson-databind` | 2.22.2 | Apache-2.0 |
-| `com.fasterxml.jackson.dataformat:jackson-dataformat-yaml` | 2.22.2 | Apache-2.0 |
-| `com.fasterxml.jackson.datatype:jackson-datatype-jdk8` | 2.22.2 | Apache-2.0 |
-| `com.fasterxml.jackson.datatype:jackson-datatype-jsr310` | 2.22.2 | Apache-2.0 |
-| `com.fasterxml.jackson.module:jackson-module-parameter-names` | 2.22.2 | Apache-2.0 |
+| `com.fasterxml.jackson.core:jackson-core` | 2.22.3 | Apache-2.0 |
+| `com.fasterxml.jackson.core:jackson-databind` | 2.22.3 | Apache-2.0 |
+| `com.fasterxml.jackson.dataformat:jackson-dataformat-yaml` | 2.22.3 | Apache-2.0 |
+| `com.fasterxml.jackson.datatype:jackson-datatype-jdk8` | 2.22.3 | Apache-2.0 |
+| `com.fasterxml.jackson.datatype:jackson-datatype-jsr310` | 2.22.3 | Apache-2.0 |
+| `com.fasterxml.jackson.module:jackson-module-parameter-names` | 2.22.3 | Apache-2.0 |
 | `com.fasterxml:classmate` | 1.7.1 | Apache-2.0 |
 | `com.github.librepdf:openpdf` | 3.0.5 | LGPL-2.1 ou MPL-2.0 |
 | `com.github.victools:jsonschema-generator` | 4.38.0 | Apache-2.0 |

@@ -32,11 +32,15 @@
         <timefold.solver.version>2.6.0</timefold.solver.version>
         <quinoa.version>2.9.0</quinoa.version>
         <sentry.version>8.58.0</sentry.version>
-        <!-- Kept aligned with the jackson-databind version Flyway pulls in
-             transitively (see quarkus-flyway), so the YAML/JSR-310 modules
-             used by the scenario DTOs (dev.sylvain.planning.scenario) stay
-             on the same Jackson release as the rest of the classpath. -->
-        <jackson-yaml.version>2.22.2</jackson-yaml.version>
+        <!-- Jackson for the whole classpath, through jackson-bom imported
+             ahead of the Quarkus BOM below: Quarkus 3.39.5 manages 2.22.2,
+             whose jackson-core and jackson-databind carry four HIGH CVEs
+             fixed in 2.22.3 (the image scan of docker-ghcr.yml refuses
+             them). Drop the import, and this property with it, once the
+             Quarkus BOM manages a fixed release itself. The YAML/JSR-310
+             modules of the scenario DTOs use it too, so every Jackson module
+             stays on one release. -->
+        <jackson.version>2.22.3</jackson.version>
         <jsonschema-generator.version>4.38.0</jsonschema-generator.version>
         <mcp-server.version>2.0.1</mcp-server.version>
         <!-- The MIT build of PlantUML: renders docs/diagrammes/ (profile
@@ -82,6 +86,14 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- First: the first import that manages an artifact wins. -->
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>${quarkus.platform.group-id}</groupId>
                 <artifactId>${quarkus.platform.artifact-id}</artifactId>
@@ -221,12 +233,12 @@
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
-            <version>${jackson-yaml.version}</version>
+            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>${jackson-yaml.version}</version>
+            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>com.github.victools</groupId>
