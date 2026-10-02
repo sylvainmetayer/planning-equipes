@@ -10,7 +10,8 @@ name: Sécurité
 # publient AUSSI un SARIF dans l'onglet Security — l'historique, l'annotation
 # sur la ligne de la PR, et un faux positif écarté avec sa raison. Le SARIF
 # s'ajoute à la barrière, il ne la remplace pas. L'analyse de flux de CodeQL,
-# que Semgrep OSS ne fait pas d'un fichier à l'autre, vit dans `codeql.yml`.
+# que Semgrep OSS ne fait pas d'un fichier à l'autre, est la configuration
+# « par défaut » activée dans les réglages du dépôt, sans workflow ici.
 #
 # Le rendez-vous hebdomadaire compte autant que le déclenchement sur PR : une
 # CVE publiée demain touche un `pom.xml` qui n'a pas bougé — et une image déjà
@@ -123,7 +124,8 @@ jobs:
   #
   # Les licences refusées sont celles qui ne sont pas libres au sens de l'OSI
   # — elles interdisent un usage (commercial, en service) que l'AGPL accorde à
-  # quiconque déploie l'image. L'inventaire complet reste
+  # quiconque déploie l'image. Des identifiants SPDX seulement : l'action
+  # refuse tout le reste (« Commons Clause » n'en a pas). L'inventaire complet reste
   # docs/licences-tierces.md ; ce contrôle n'en est que la garde à l'entrée.
   revue-dependances:
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
@@ -144,7 +146,7 @@ jobs:
         with:
           fail-on-severity: high
           fail-on-scopes: runtime, development
-          deny-licenses: SSPL-1.0, BUSL-1.1, Elastic-2.0, CC-BY-NC-4.0, CC-BY-NC-SA-4.0, CC-BY-NC-ND-4.0, Commons-Clause
+          deny-licenses: SSPL-1.0, BUSL-1.1, Elastic-2.0, CC-BY-NC-4.0, CC-BY-NC-SA-4.0, CC-BY-NC-ND-4.0
           show-patched-versions: true
 
   code:

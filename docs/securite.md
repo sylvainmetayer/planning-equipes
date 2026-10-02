@@ -712,7 +712,7 @@ dépôt étant public, cet onglet ne coûte rien.
 | actionlint, zizmor | `securite.yml`, job `workflows` | Validité des workflows ; leur sécurité : injection de template, identifiants laissés par le checkout, cache empoisonnable, permissions | `.github/zizmor.yml`, chaque règle avec sa raison |
 | hadolint | `securite.yml`, job `workflows` | Le `Dockerfile` et le shell de ses `RUN` | `# hadolint ignore=…` sur la ligne, raison au-dessus |
 | Trivy, image | `docker-ghcr.yml` avant signature ; `securite.yml`, job `image`, chaque semaine | Paquets système de l'image : couche Ubuntu, JRE, `postgresql-client` | `.trivyignore` |
-| CodeQL | `codeql.yml` | Flux de données d'une classe à l'autre (Java, TypeScript, workflows) | dans l'onglet *Security* |
+| CodeQL | configuration « par défaut » des réglages du dépôt | Flux de données d'une classe à l'autre (Java, TypeScript, Python, workflows) | dans l'onglet *Security* |
 | OpenSSF Scorecard | `scorecard.yml` | Pratiques de la chaîne d'approvisionnement du dépôt, note publique (badge du README) | dans l'onglet *Security* |
 | OWASP ZAP *baseline* | `tests.yml`, job `dast` | L'application démarrée vue sans compte : en-têtes, cookies, erreurs | `.github/zap-baseline.tsv` |
 | GitGuardian | application GitHub | Secrets poussés | `.gitguardian.yaml` |
@@ -736,9 +736,10 @@ Deux protections sont des **réglages du dépôt**, pas des fichiers, et se
 vérifient dans *Settings → Advanced Security* : le *secret scanning* avec la
 *push protection* — qui refuse le `git push` porteur d'un secret, là où
 GitGuardian ne le voit qu'une fois poussé — et le graphe de dépendances, que
-lit la revue des dépendances. La configuration « par défaut » de CodeQL doit
-y rester **désactivée** : GitHub refuse les résultats de `codeql.yml` quand
-elle est active.
+lit la revue des dépendances. CodeQL aussi y vit, en configuration « par
+défaut » : GitHub choisit les langages et lance l'analyse sur chaque PR, sans
+workflow dans le dépôt. Un workflow CodeQL « avancé » ne peut pas coexister
+avec elle — GitHub en refuse les résultats.
 
 ## Analyse statique : les suppressions et leur justification
 

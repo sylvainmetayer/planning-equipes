@@ -940,7 +940,7 @@ points qui ne s'y voient pas :
 - **une poussée coûte une cinquantaine de minutes de runner**, quel que soit
   son contenu : Tests (≈ 13 + 3, plus ≈ 8 pour son job `e2e` et quelques-unes
   pour l'analyse dynamique `dast`), scénarios (≈ 8 dès que la PR a touché le
-  solveur), Sécurité et CodeQL (quelques minutes chacun, en parallèle). D'où trois
+  solveur), Sécurité (quelques minutes, ses jobs en parallèle). D'où trois
   filtres : `tests.yml` ignore une poussée qui ne touche que `docs/` et le
   Markdown (moins les fichiers qu'un test relit ou que le job compare à son
   build, réinclus nommément), et son job `e2e` y ajoute ces fichiers-là — un
@@ -1033,7 +1033,7 @@ points qui ne s'y voient pas :
   HIGH ou CRITICAL dans ses paquets système l'arrête sous son seul tag
   `sha-…`. Une version (`v*`) est construite sans cache, couches et `.m2`
   compris — voir [`securite.md`](securite.md) § Analyses automatiques, qui
-  liste aussi tout ce que `securite.yml`, `codeql.yml`, `scorecard.yml` et le
+  liste aussi tout ce que `securite.yml`, `scorecard.yml`, CodeQL et le
   job `dast` de `tests.yml` vérifient ;
 - **les analyses publient dans l'onglet *Security*** (SARIF) en plus d'échouer
   dans le log : Trivy, Semgrep, zizmor, CodeQL et Scorecard. Un workflow
