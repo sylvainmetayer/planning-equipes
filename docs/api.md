@@ -1482,6 +1482,15 @@ version envoyée remplace la précédente au lieu de coexister avec elle. C'est
 d'ailleurs la seule façon de modifier une exception — l'API n'expose que `POST`
 et `DELETE`.
 
+Tout, sauf son **auteur**. `creeParUtilisateurId` est posé par le serveur à la
+création — le compte de la requête (`admin`, `mcp`), ou le geste serveur qui
+l'écrit (`jour-j`, `collecte`) : un rôle, jamais une personne — et aucune
+écriture ne le change ensuite. Le champ est en lecture seule : la valeur qu'un
+client envoie est ignorée, à la création comme à la modification. L'écran en
+envoyait une, la constante `ui`, qui écrasait l'auteur réel à chaque
+modification. Un import de scénario crée ses ajustements au nom du compte qui
+importe ; une duplication d'édition et un dump SQL recopient l'auteur tel quel.
+
 ## Explicabilité
 
 « Pourquoi lui ? » cible un seul poste d'un planning **déjà résolu et jamais
@@ -1743,8 +1752,10 @@ la moindre écriture. Deux refus possibles, tous deux en **400** :
   l'heure, et invite à lever le verrou d'abord.
 
 Chaque exception écrite porte sa trace — `raison`, `creeParUtilisateurId` (le
-compte admin de la session, `jour-j` à défaut) et `creeLe` — et se retrouve
-telle quelle sur la page « Ajustements manuels » le lendemain.
+compte admin de la session, `jour-j` à défaut ; celui qui l'a écrite la
+première fois quand l'absence est marquée à nouveau sur le même créneau) et
+`creeLe` — et se retrouve telle quelle sur la page « Ajustements manuels » le
+lendemain.
 
 Annuler une absence **ne rend pas les sièges** : qui tient un siège est une
 décision, et supposer que l'occupant précédent doit le récupérer effacerait en

@@ -182,7 +182,7 @@ public class ContrainteAdHocRepository {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (edition_id, id)
                 DO UPDATE SET type = EXCLUDED.type, creneau_id = EXCLUDED.creneau_id,
-                stand_id = EXCLUDED.stand_id, raison = EXCLUDED.raison, cree_par = EXCLUDED.cree_par,
+                stand_id = EXCLUDED.stand_id, raison = EXCLUDED.raison,
                 cree_le = EXCLUDED.cree_le, creneau_date = EXCLUDED.creneau_date,
                 creneau_heure_debut = EXCLUDED.creneau_heure_debut,
                 creneau_heure_fin = EXCLUDED.creneau_heure_fin, modifie_le = now()
@@ -190,14 +190,21 @@ public class ContrainteAdHocRepository {
                 AND (CAST(? AS timestamptz) IS NULL
                      OR date_trunc('milliseconds', contrainte_ad_hoc.modifie_le)
                         = date_trunc('milliseconds', CAST(? AS timestamptz)))
-                RETURNING modifie_le""")) {
+                RETURNING modifie_le, cree_par""")) {
             bindContrainte(ps, contrainte);
             WriteStamp.bindPrecondition(ps, 12, !failIfPresent, contrainte.getModifieLe());
-            Instant ecrit = WriteStamp.writtenOrRefused(ps);
-            if (ecrit == null) {
-                refuse(failIfPresent, "contrainte_ad_hoc", contrainte.getId());
+            // cree_par is left out of the update on purpose: the author is
+            // whoever created the row, and an edit — whoever makes it, and
+            // whatever it carries — reads it back rather than replacing it.
+            try (ResultSet ecrit = ps.executeQuery()) {
+                if (ecrit.next()) {
+                    contrainte.setModifieLe(
+                            ecrit.getObject("modifie_le", OffsetDateTime.class).toInstant());
+                    contrainte.setCreeParUtilisateurId(ecrit.getString("cree_par"));
+                } else {
+                    refuse(failIfPresent, "contrainte_ad_hoc", contrainte.getId());
+                }
             }
-            contrainte.setModifieLe(ecrit);
         }
         try (PreparedStatement del = scope.prepareScoped(
                 connection, "DELETE FROM contrainte_animateur WHERE edition_id = ? AND contrainte_id = ?")) {

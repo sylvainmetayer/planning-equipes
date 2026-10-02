@@ -7,6 +7,7 @@ import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.IdGenerator;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
+import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.referentiel.ContrainteAdHocContradictions.Contradiction;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -39,16 +40,21 @@ public class ContrainteAdHocService {
 
     private final IdGenerator ids;
 
+    /** The account of the request, the author of an ajustement it creates — as the history names it. */
+    private final JournalActionService journal;
+
     @Inject
     public ContrainteAdHocService(
             ContrainteAdHocRepository repository,
             CreneauService creneauService,
             ReferenceDataChangeTracker changeTracker,
-            IdGenerator ids) {
+            IdGenerator ids,
+            JournalActionService journal) {
         this.repository = repository;
         this.creneauService = creneauService;
         this.changeTracker = changeTracker;
         this.ids = ids;
+        this.journal = journal;
     }
 
     public List<ContrainteAdHoc> list() {
@@ -76,6 +82,7 @@ public class ContrainteAdHocService {
         checkShape(contrainte);
         refuseContradiction(contrainte);
         nameVacation(contrainte);
+        stampAuthor(contrainte);
         if (contrainte.getCreeLe() == null) {
             contrainte.setCreeLe(Instant.now());
         }
@@ -128,6 +135,7 @@ public class ContrainteAdHocService {
         }
         for (ContrainteAdHoc contrainte : contraintes) {
             nameVacation(contrainte);
+            stampAuthor(contrainte);
             if (contrainte.getCreeLe() == null) {
                 contrainte.setCreeLe(Instant.now());
             }
@@ -135,6 +143,20 @@ public class ContrainteAdHocService {
         }
         changeTracker.markModified();
         return contraintes;
+    }
+
+    /**
+     * The author an ajustement is created under, when the server code that
+     * builds it did not name one ({@code jour-j}, {@code collecte}, {@code mcp}):
+     * the account of the request, as the history writes it — {@code admin},
+     * never a person. What a client sent is never read: the field is
+     * read-only on the wire. Only a creation keeps it: an edit leaves the
+     * stored author as it is, and reads it back ({@code upsertContrainte}).
+     */
+    private void stampAuthor(ContrainteAdHoc contrainte) {
+        if (contrainte.getCreeParUtilisateurId() == null) {
+            contrainte.setCreeParUtilisateurId(journal.nomAdmin());
+        }
     }
 
     /** A blank id is a creation; any other must designate an ajustement of this edition. */

@@ -140,7 +140,7 @@ export class AdHocConstraintFormDialog {
       creneau: draft.creneauId !== '' ? { id: draft.creneauId } : null,
       stand: draft.standId ? { id: draft.standId } : null,
       raison: draft.raison.trim(),
-      creeParUtilisateurId: 'ui',
+      // No author: the server records the account that creates it, and keeps it.
       modifieLe: draft.modifieLe,
     };
     // Always POST (create-or-overwrite): the backend has no PUT for this resource.

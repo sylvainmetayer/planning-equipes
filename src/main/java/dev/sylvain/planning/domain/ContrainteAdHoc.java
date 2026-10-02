@@ -1,5 +1,6 @@
 package dev.sylvain.planning.domain;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +28,18 @@ public class ContrainteAdHoc {
     private Creneau creneau;
     private Stand stand;
     private String raison;
+
+    /**
+     * Who created the ajustement: the account of the request that wrote it
+     * first ({@code admin}, {@code mcp}) or the server gesture that did
+     * ({@code jour-j}, {@code collecte}) — a role, never a person. Set by the
+     * server at creation and kept by every later write; {@code READ_ONLY}
+     * because a client used to send its own (the constant {@code ui}), which
+     * then overwrote the real author on each edit.
+     */
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String creeParUtilisateurId;
+
     private Instant creeLe;
 
     /**
