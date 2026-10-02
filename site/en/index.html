@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Planning Équipes — schedule your teams in minutes, not weekends</title>
+<meta name="description" content="Staff scheduling software for festivals and events. Your rota is ready in minutes and complies with the French Labour Code, under-18s included.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1d2024" media="(prefers-color-scheme: dark)">
+<link rel="alternate" hreflang="fr" href="../">
+<link rel="alternate" hreflang="en" href="./">
+<link rel="alternate" hreflang="x-default" href="../">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<a class="skip" href="#content">Skip to content</a>
+
+<header class="top">
+  <div class="wrap top__in">
+    <a class="logo" href="./" aria-label="Planning Équipes, home">
+      <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <rect class="lg-box" width="32" height="32" rx="8"/>
+        <rect class="lg-hot" x="7" y="8" width="18" height="4" rx="2"/>
+        <rect class="lg-bar" x="7" y="14" width="10" height="4" rx="2"/>
+        <rect class="lg-bar" x="7" y="20" width="15" height="4" rx="2"/>
+      </svg>
+      <span lang="fr">Planning Équipes</span>
+    </a>
+    <nav aria-label="Sections">
+      <ul>
+        <li><a href="#the-day">On the day</a></li>
+        <li><a href="#legal">The law</a></li>
+        <li><a href="#staff">Staff</a></li>
+        <li><a href="#together">Pricing</a></li>
+        <li><a href="#questions">Questions</a></li>
+        <li><a class="lang" href="../" hreflang="fr" lang="fr"><span aria-hidden="true">FR</span><span class="vh">Version française</span></a></li>
+        <li><a class="nav-cta" href="#demo"><span class="cta-l">Try the demo</span><span class="cta-s">Demo</span></a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="content">
+
+  <section class="hero" aria-labelledby="title">
+    <div class="wrap">
+      <div class="hero__say">
+        <div>
+          <p class="kicker">Staff scheduling for festivals and events</p>
+          <h1 id="title">Schedule your teams in minutes, <em>not weekends.</em></h1>
+        </div>
+        <div>
+          <p class="lede">You enter the stands, the shifts and who is available. The software builds the rota and checks the French Labour Code, including the rules for under-18s, every time something changes.</p>
+          <p class="acts">
+            <a class="btn btn--primary" href="https://exemple-planning.sylvain.dev">Try the demo</a>
+            <a class="btn btn--quiet" href="#the-day">See the event day</a>
+          </p>
+          <p class="hero__creds">Username <code>admin</code>, password <code>demo</code> · fictional data</p>
+        </div>
+      </div>
+
+      <figure class="tt">
+        <div class="tt__scroll" role="region" aria-labelledby="tt-cap" tabindex="0">
+          <table>
+            <caption id="tt-cap"><b>Combelune Festival</b> · Saturday 11 July · <span class="p--lea">Léa</span> highlighted</caption>
+            <thead>
+              <tr><th scope="col">Stand</th><th scope="col">Morning <small>10:00–14:00</small></th><th scope="col">Afternoon <small>14:00–18:00</small></th><th scope="col">Evening <small>18:00–23:00</small></th></tr>
+            </thead>
+            <tbody>
+              <tr class="c0"><th scope="row">Welcome desk<small>Market square</small></th>
+                <td><div class="bar"><span class="p--lea">Léa</span> <span>Malik</span> <span class="ref"><span class="vh">refused: </span>Tom<a href="#note-1" aria-label="reason 1">1</a></span></div></td>
+                <td><div class="bar"><span>Inès</span> <span>Sacha</span></div></td>
+                <td><div class="bar"><span>Noé</span> <span>Céleste</span></div></td></tr>
+              <tr class="c3"><th scope="row">Games library<small>Village hall</small></th>
+                <td><div class="bar"><span>Jade</span> <span>Hugo</span></div></td>
+                <td><div class="bar"><span>Elio</span> <span>Lina</span></div></td>
+                <td><div class="bar"><span>Rayan</span> <span>Nils</span> <span class="ref"><span class="vh">refused: </span>Jade<a href="#note-2" aria-label="reason 2">2</a></span></div></td></tr>
+              <tr class="c1"><th scope="row">Big games<small>Mill park</small></th>
+                <td><div class="bar"><span>Yanis</span> <span>Zoé</span></div></td>
+                <td><div class="bar"><span>Basile</span> <span>Iris</span></div></td>
+                <td><div class="bar"><span class="p--lea">Léa</span> <span>Malik</span></div></td></tr>
+              <tr class="c6"><th scope="row">Wooden games<small>Mill park</small></th>
+                <td><div class="bar"><span>Lou</span> <span>Paul</span></div></td>
+                <td><div class="bar"><span>Tom</span> <span>Chloé</span></div></td>
+                <td><div class="bar"><span>Yanis</span> <span>Zoé</span></div></td></tr>
+              <tr class="c4"><th scope="row">Escape box<small>School yard</small></th>
+                <td><div class="bar"><span>Noé</span> <span>Céleste</span></div></td>
+                <td><div class="bar"><span>Mila</span> <span>Anouk</span> <span class="ref"><span class="vh">refused: </span>Hugo<a href="#note-3" aria-label="reason 3">3</a></span></div></td>
+                <td><div class="bar"><span>Lou</span> <span>Paul</span></div></td></tr>
+              <tr class="c2"><th scope="row">Little ones' corner<small>School yard</small></th>
+                <td><div class="bar"><span>Ambre</span> <span>Rayan</span></div></td>
+                <td><div class="bar"><span>Timothée</span> <span>Suzanne</span></div></td>
+                <td><div class="bar"><span>Gaspard</span> <span>Maëlle</span> <span class="ref"><span class="vh">refused: </span>Iris<a href="#note-4" aria-label="reason 4">4</a></span></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <ol class="notes" aria-label="Shifts refused by the rules">
+          <li id="note-1"><span class="n" aria-hidden="true">1</span><span><b>Tom</b> needs 11 hours' rest after his Friday evening. <a href="#art-4">art.&nbsp;L3131-1</a></span></li>
+          <li id="note-2"><span class="n" aria-hidden="true">2</span><span><b>Jade, 16</b>: no shift after 22:00. <a href="#art-8">art.&nbsp;L3163-1</a></span></li>
+          <li id="note-3"><span class="n" aria-hidden="true">3</span><span><b>Hugo</b> already has 48 hours this week. <a href="#art-2">art.&nbsp;L3121-20</a></span></li>
+          <li id="note-4"><span class="n" aria-hidden="true">4</span><span><b>Iris, 17</b>: 8 hours a day at most. <a href="#art-6">art.&nbsp;L3162-1</a></span></li>
+        </ol>
+        <figcaption class="vh">Rota of a fictional festival. Four assignments are refused, and each refusal cites its article.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="alt" id="the-day" aria-labelledby="day-t">
+    <div class="wrap jj">
+      <div class="head jj__head">
+        <p class="kicker">On the day</p>
+        <h2 id="day-t">On the day, one screen is enough.</h2>
+      </div>
+
+      <div class="scr" aria-hidden="true">
+        <div class="scr__bar"><span><i></i><i></i><i></i></span><span>Today · Combelune Festival</span></div>
+        <div class="scr__in">
+          <div class="scr__h">
+            <div><b>Today</b><span>Sunday 12 July · 16:45 (server time)</span></div>
+            <span class="zone tvbtn"><svg class="ico" viewBox="0 0 24 24" focusable="false"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8.5 21h7M12 17v4"/></svg>Show on the TV<span class="call">5</span></span>
+          </div>
+          <div class="zone cons"><svg class="ico" viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg><span><b>Today's closure</b> · every stand shut 14:00–17:00 — heatwave</span><span class="call">1</span></div>
+          <div class="zone cnt"><span>6 stands open</span><span class="hot">1 absent</span><span class="hot">1 new empty seat</span><span>2 swaps to decide</span><span>3 people to notify</span><b class="call">2</b></div>
+          <div class="pan">
+            <div class="zone box"><b>Reported absences</b>
+              <div class="row"><span>Malik B.<small>Big games · 18:00–23:00</small></span><span class="act">Replace</span></div>
+              <div class="row"><span>Lina D.<small>all day · Monday</small></span><span class="act act--q">File</span></div>
+              <span class="call">3</span></div>
+            <div class="zone box"><b>Who can hold this seat?</b>
+              <div class="row"><span>Gaspard<small>free tonight · skilled</small></span><span class="act">Assign</span></div>
+              <div class="row"><span>Suzanne<small>free since 14:00</small></span><span class="act">Assign</span></div>
+              <div class="row"><span class="ko">3 ruled out by a hard rule</span></div>
+              <span class="call">4</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="jj__leg">
+        <ol class="legend" aria-label="What the Today screen shows">
+          <li><span class="n" aria-hidden="true">1</span><p>The <b>heatwave order</b> closes every stand in the afternoon, without rebuilding the grid.</p></li>
+          <li><span class="n" aria-hidden="true">2</span><p><b>Today's numbers</b>, with absences, empty seats and pending swaps.</p></li>
+          <li><span class="n" aria-hidden="true">3</span><p>A team member says <b>from their phone</b> that they can't make it.</p></li>
+          <li><span class="n" aria-hidden="true">4</span><p><b>Suggested replacements</b> already meet every rule.</p></li>
+          <li><span class="n" aria-hidden="true">5</span><p><b>The control-room TV</b> refreshes every minute.</p></li>
+        </ol>
+        <p class="fine">The morning weather alert and the 22:00 reminders go out on their own.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="legal" aria-labelledby="legal-t">
+    <div class="wrap q__in">
+      <div class="q__say c0">
+        <span class="n" aria-hidden="true">1</span>
+        <h2 id="legal-t">Is the rota legal?</h2>
+        <p><b>Yes.</b> The solver applies ten articles of the French Labour Code and cannot break them. When it refuses an assignment, it cites the article.</p>
+      </div>
+      <div class="rules">
+        <ul class="chips chips--rules" aria-label="French Labour Code articles">
+          <li id="art-1">Daily hours <cite>L3121-18</cite></li>
+          <li id="art-2">Weekly hours <cite>L3121-20</cite></li>
+          <li id="art-3">Breaks <cite>L3121-16</cite></li>
+          <li id="art-4">Daily rest <cite>L3131-1</cite></li>
+          <li id="art-5">Weekly rest <cite>L3132-2</cite></li>
+          <li id="art-6">Under-18s: hours <cite>L3162-1</cite></li>
+          <li id="art-7">Under-18s: breaks <cite>L3162-3</cite></li>
+          <li id="art-8">Under-18s: nights <cite>L3163-1</cite></li>
+          <li id="art-9">Under-18s: rest <cite>L3164-2</cite></li>
+          <li id="art-10">Under-18s: public holidays <cite>L3164-6</cite></li>
+        </ul>
+        <p class="fine"><a href="https://github.com/sylvainmetayer/planning-equipes/blob/main/docs/contraintes.md">Read the rules in the code</a> (in French) · The software helps you decide. The organisation that publishes the rota remains the employer.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" id="staff" aria-labelledby="staff-t">
+    <div class="wrap q__in">
+      <div class="q__say c1">
+        <span class="n" aria-hidden="true">2</span>
+        <h2 id="staff-t">What about your staff?</h2>
+        <p>Everyone gets a link and a code by e-mail and sees their schedule on their phone. <b>Nothing to install.</b></p>
+        <ul class="chips" aria-label="For your staff">
+          <li>Mobile page</li>
+          <li>PDF + QR code</li>
+          <li>Calendar subscription</li>
+          <li>Self-service swaps</li>
+          <li>“I have read it and I will be there”</li>
+        </ul>
+      </div>
+      <div class="phones" aria-hidden="true">
+        <div class="phone">
+          <div class="phone__top"><span>Combelune Festival</span><span>Léa M.</span></div>
+          <div class="pcard c0"><b>Welcome desk</b><small>Market square · Sat 10:00–14:00 · with Malik</small></div>
+          <div class="pcard c1"><b>Big games</b><small>Mill park · Sat 18:00–23:00</small></div>
+          <div class="pbtn pbtn--on">I have read it and I will be there</div>
+        </div>
+        <div class="phone">
+          <div class="phone__top"><span>Swaps</span><span>Sun 12</span></div>
+          <div class="pcard c3"><b>Who can replace me?</b><small>Games library · Sun 10:00–14:00</small></div>
+          <div class="pcard c7"><b>Sacha accepts</b><small>waiting for the organisers</small></div>
+          <div class="pfoot"><svg class="qr" viewBox="0 0 21 21" shape-rendering="crispEdges" focusable="false"><rect class="qr__bg" width="21" height="21"/><path class="qr__fg" d="M0 0h7v7H0zM14 0h7v7h-7zM0 14h7v7H0z"/><path class="qr__bg" d="M1 1h5v5H1zM15 1h5v5h-5zM1 15h5v5H1z"/><path class="qr__fg" d="M2 2h3v3H2zM16 2h3v3h-3zM2 16h3v3H2zM8 0h1v2H8zM10 1h2v1h-2zM9 3h2v2H9zM8 6h1v1H8zM12 4h1v3h-1zM0 8h2v1H0zM3 8h3v1H3zM8 8h3v2H8zM13 8h2v1h-2zM17 8h4v1h-4zM1 10h2v2H1zM5 10h1v3H5zM10 11h2v1h-2zM14 10h3v2h-3zM19 10h2v2h-2zM8 13h2v2H8zM12 13h1v3h-1zM15 13h2v1h-2zM18 14h3v1h-3zM9 17h3v1H9zM14 16h2v3h-2zM17 17h2v2h-2zM8 19h2v2H8zM12 19h1v2h-1zM19 19h2v2h-2z"/></svg><span>PDF sheet · its QR code opens the personal page</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tools" aria-labelledby="tools-t">
+    <div class="wrap q__in">
+      <div class="q__say c5">
+        <span class="n" aria-hidden="true">3</span>
+        <h2 id="tools-t">And our tools?</h2>
+        <p>Updates (rota published, swaps to approve) arrive <b>in your team's chat</b>. Your AI assistant can also run the app, without ever seeing a name or a date of birth.</p>
+        <ul class="chips tools" aria-label="Connected tools">
+          <li class="c0"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5.5h16v10H9l-5 4z"/></svg>Slack</li>
+          <li class="c3"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5.5h16v10H9l-5 4z"/></svg>Discord</li>
+          <li class="c5"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5.5h16v10H9l-5 4z"/></svg>Telegram</li>
+          <li class="c6"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/><path d="M18.5 16v4M16.5 18h4"/></svg>Your AI assistant</li>
+        </ul>
+      </div>
+      <div class="convo" aria-hidden="true">
+        <div>
+          <div class="convo__top"><span>#festival</span><span>22:00</span></div>
+          <div class="post"><b>Rota published — version 5</b><small>12 people notified</small></div>
+          <div class="post"><b>Swaps waiting — 2</b><small>to decide before tomorrow</small></div>
+        </div>
+        <div>
+          <div class="convo__top"><span>AI assistant</span><span>Combelune</span></div>
+          <p class="bub bub--me">Which stands rely on a single skilled person on Saturday evening?</p>
+          <p class="bub bub--ai">Two: the Games library and the Escape box. Shall I simulate a swap for each?</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" id="together" aria-labelledby="together-t">
+    <div class="wrap together">
+      <div class="head">
+        <p class="kicker">Support and pricing</p>
+        <h2 id="together-t">How we work together</h2>
+      </div>
+      <ol class="steps">
+        <li class="c0">
+          <div class="steps__h"><span class="n" aria-hidden="true">1</span><h3>We look at your data</h3></div>
+          <dl class="who">
+            <div><dt>You</dt><dd>send your current files, your stands, your in-house rules.</dd></div>
+            <div><dt>We</dt><dd>tell you whether the tool fits. If it doesn't, we say so.</dd></div>
+          </dl>
+        </li>
+        <li class="c1">
+          <div class="steps__h"><span class="n" aria-hidden="true">2</span><h3>We install and configure</h3></div>
+          <dl class="who">
+            <div><dt>We</dt><dd>set up your instance, configure your rules and import your teams.</dd></div>
+            <div><dt>You</dt><dd>have nothing to host or administer.</dd></div>
+          </dl>
+        </li>
+        <li class="c6">
+          <div class="steps__h"><span class="n" aria-hidden="true">3</span><h3>We stay within reach during the event</h3></div>
+          <dl class="who">
+            <div><dt>You</dt><dd>schedule, publish and run the event day.</dd></div>
+            <div><dt>We</dt><dd>answer quickly, especially on days when the rota keeps changing.</dd></div>
+          </dl>
+        </li>
+      </ol>
+      <div class="price" id="contact">
+        <p><b>The price depends on the size of your event.</b> Tell us how many people and how many days, and we'll send you a figure.</p>
+        <p class="acts"><a class="btn btn--primary mail" href="mailto:planning@sylvain.dev">planning@sylvain.dev</a></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="questions" aria-labelledby="faq-t">
+    <div class="wrap faq">
+      <h2 id="faq-t">Questions we get asked</h2>
+      <div>
+        <details>
+          <summary>What if the solver finds no solution?</summary>
+          <p>It shows which rule is blocking, on which shifts and for whom. Usually someone is just missing on a Saturday evening. The staffing check flags it before the first run.</p>
+        </details>
+        <details>
+          <summary>What happens to our staff's data?</summary>
+          <p>It stays with you, and we only ask for what scheduling needs. The date of birth is only used to know who is under 18 on the day of a shift. The AI assistant never sees it, and team chats only get numbers, never names.</p>
+        </details>
+        <details>
+          <summary>Do we need someone technical?</summary>
+          <p>Not if we host it for you. Everything happens in the browser, in English or French, and your staff install nothing.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" id="demo" aria-labelledby="demo-t">
+    <div class="wrap">
+      <div class="demo__in">
+        <div>
+          <p class="kicker">Public demo · fictional data</p>
+          <h2 id="demo-t">Replay a festival day, nothing to install.</h2>
+          <p>Its clock is stopped mid-festival, so the Today screen and the control-room TV have something to show.</p>
+          <p class="acts"><a class="btn btn--primary" href="https://exemple-planning.sylvain.dev">Open the demo</a></p>
+        </div>
+        <div class="demo__card">
+          <dl class="creds">
+            <div><dt>Address</dt><dd><a href="https://exemple-planning.sylvain.dev"><code>exemple-planning.sylvain.dev</code></a></dd></div>
+            <div><dt>Username</dt><dd><code>admin</code></dd></div>
+            <div><dt>Password</dt><dd><code>demo</code></dd></div>
+            <div><dt>E-mails</dt><dd>the ones the app sends, readable at <a href="https://exemple-planning.sylvain.dev/mail"><code>/mail</code></a></dd></div>
+          </dl>
+          <ul class="conds" aria-label="Demo conditions">
+            <li>Reset every night</li>
+            <li>Solver capped at 60&nbsp;s</li>
+            <li>12 solves per hour</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot__in">
+    <p><b lang="fr">Planning Équipes</b> — free software under the <abbr title="GNU Affero General Public License, version 3">AGPL-3.0</abbr> licence, which you can host yourself. <a href="https://github.com/sylvainmetayer/planning-equipes">Source code</a></p>
+    <p>The Combelune Festival, its venues and its people are fictional.</p>
+  </div>
+</footer>
+
+</body>
+</html>
