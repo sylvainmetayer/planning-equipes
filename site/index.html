@@ -3,460 +3,326 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Planning Équipes — le planning de vos animateurs, dans les règles</title>
-<meta name="description" content="Logiciel libre de planification d'équipes pour festivals et accueils collectifs de mineurs : construit les plannings, respecte le Code du travail et le cadre applicable aux mineurs.">
+<title>Planning Équipes — planifiez vos équipes en minutes, pas en week-ends</title>
+<meta name="description" content="Logiciel de planification d'équipes pour festivals et événements. Le planning de vos animateurs est prêt en quelques minutes et respecte le Code du travail, mineurs compris.">
 <meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#1f4b7a">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1d2024" media="(prefers-color-scheme: dark)">
+<link rel="alternate" hreflang="fr" href="./">
+<link rel="alternate" hreflang="en" href="en/">
+<link rel="alternate" hreflang="x-default" href="./">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<!--
-  PLACEHOLDERS À TRAITER AVANT MISE EN LIGNE.
-  Un seul bloc reste provisoire : le lien de la démonstration publique, marqué
-  data-todo et signalé par un liseré ocre en relecture. Retirer l'attribut une
-  fois l'URL réelle en place. Le reste de la page est factuel et vérifiable
-  dans le code de l'application.
-
-  Les illustrations sont des SVG dessinés à la main, pas des captures : aucune
-  donnée d'exploitation d'un client ne transite par cette page. La marque se
-  limite à un logotype typographique et à un favicon géométriques, faits ici ;
-  le logo d'un client n'a rien à y faire.
--->
-
 <a class="skip" href="#contenu">Aller au contenu</a>
 
-<div class="topbar">
-  <div class="wrap topbar__in">
-    <a class="mark" href="#" aria-label="Planning Équipes, accueil">
-      <svg class="mark__glyph" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-        <rect width="32" height="32" rx="7"/>
-        <rect class="mark__bar" x="7"  y="8"  width="18" height="4" rx="2"/>
-        <rect class="mark__bar mark__bar--dim" x="7" y="14" width="10" height="4" rx="2"/>
-        <rect class="mark__bar mark__bar--mid" x="7" y="20" width="15" height="4" rx="2"/>
+<header class="top">
+  <div class="wrap top__in">
+    <a class="logo" href="./" aria-label="Planning Équipes, accueil">
+      <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <rect class="lg-box" width="32" height="32" rx="8"/>
+        <rect class="lg-hot" x="7" y="8" width="18" height="4" rx="2"/>
+        <rect class="lg-bar" x="7" y="14" width="10" height="4" rx="2"/>
+        <rect class="lg-bar" x="7" y="20" width="15" height="4" rx="2"/>
       </svg>
-      <span class="mark__name">Planning <b>Équipes</b></span>
+      <span>Planning Équipes</span>
     </a>
-    <nav class="nav" aria-label="Sections">
-      <a href="#fonctions">Ce qu'il fait</a>
-      <a href="#conformite">Conformité</a>
-      <a href="#libre">Logiciel libre</a>
-      <a href="#questions">Questions</a>
-      <a class="nav__cta" href="#contact">Nous écrire</a>
+    <nav aria-label="Sections">
+      <ul>
+        <li><a href="#jour-j">Le jour J</a></li>
+        <li><a href="#legal">La loi</a></li>
+        <li><a href="#animateurs">Animateurs</a></li>
+        <li><a href="#ensemble">Tarif</a></li>
+        <li><a href="#questions">Questions</a></li>
+        <li><a class="lang" href="en/" hreflang="en" lang="en"><span aria-hidden="true">EN</span><span class="vh">English version</span></a></li>
+        <li><a class="nav-cta" href="#demo"><span class="cta-l">Essayer la démo</span><span class="cta-s">Démo</span></a></li>
+      </ul>
     </nav>
   </div>
-</div>
-
-<header class="hero">
-  <div class="wrap hero__in">
-    <div class="hero__say">
-      <p class="eyebrow">Planification d'équipes pour festivals et accueils collectifs</p>
-      <h1>Le planning de vos animateurs,<br>construit dans les règles</h1>
-      <p class="lede">
-        Vous affectez des dizaines de personnes à des dizaines de postes, sur plusieurs
-        jours, avec des disponibilités qui changent et un cadre légal à respecter.
-        Aujourd'hui, ça se passe dans un tableur.
-      </p>
-      <p class="actions">
-        <a class="btn btn--primary" href="#demo" data-todo="lien démo publique">Voir une démonstration</a>
-        <a class="btn" href="#contact">Nous écrire</a>
-      </p>
-    </div>
-
-    <figure class="hero__art" aria-hidden="true">
-      <svg class="art art--grid" viewBox="0 0 480 300" focusable="false">
-        <rect class="il-panel" x="0.5" y="0.5" width="479" height="299" rx="10"/>
-        <!-- bandeau des jours -->
-        <line class="il-rule" x1="0" y1="46" x2="480" y2="46"/>
-        <line class="il-rule" x1="108" y1="0" x2="108" y2="300"/>
-        <rect class="il-chip" x="24" y="18" width="58" height="10" rx="5"/>
-        <g class="il-chip">
-          <rect x="130" y="18" width="36" height="10" rx="5"/>
-          <rect x="200" y="18" width="36" height="10" rx="5"/>
-          <rect x="270" y="18" width="36" height="10" rx="5"/>
-          <rect x="340" y="18" width="36" height="10" rx="5"/>
-          <rect x="410" y="18" width="36" height="10" rx="5"/>
-        </g>
-        <!-- lignes de stands -->
-        <g class="il-rule">
-          <line x1="0" y1="98" x2="480" y2="98"/>
-          <line x1="0" y1="150" x2="480" y2="150"/>
-          <line x1="0" y1="202" x2="480" y2="202"/>
-          <line x1="0" y1="254" x2="480" y2="254"/>
-        </g>
-        <g class="il-chip il-chip--dim">
-          <rect x="24" y="67"  width="66" height="9" rx="4.5"/>
-          <rect x="24" y="119" width="52" height="9" rx="4.5"/>
-          <rect x="24" y="171" width="70" height="9" rx="4.5"/>
-          <rect x="24" y="223" width="44" height="9" rx="4.5"/>
-          <rect x="24" y="275" width="60" height="9" rx="4.5"/>
-        </g>
-        <!-- affectations -->
-        <g class="il-block">
-          <rect x="124" y="60"  width="126" height="26" rx="6"/>
-          <rect x="268" y="60"  width="82"  height="26" rx="6"/>
-          <rect x="130" y="112" width="70"  height="26" rx="6"/>
-          <rect x="286" y="112" width="146" height="26" rx="6"/>
-          <rect x="124" y="164" width="94"  height="26" rx="6"/>
-          <rect x="338" y="164" width="94"  height="26" rx="6"/>
-          <rect x="194" y="216" width="118" height="26" rx="6"/>
-          <rect x="124" y="268" width="62"  height="26" rx="6"/>
-          <rect x="340" y="268" width="92"  height="26" rx="6"/>
-        </g>
-        <g class="il-block il-block--alt">
-          <rect x="360" y="60"  width="72"  height="26" rx="6"/>
-          <rect x="210" y="112" width="66"  height="26" rx="6"/>
-          <rect x="228" y="164" width="100" height="26" rx="6"/>
-          <rect x="124" y="216" width="60"  height="26" rx="6"/>
-          <rect x="322" y="216" width="110" height="26" rx="6"/>
-          <rect x="196" y="268" width="134" height="26" rx="6"/>
-        </g>
-      </svg>
-    </figure>
-  </div>
-
-  <ul class="facts wrap" aria-label="En bref">
-    <li><b>Code du travail</b> et convention ÉCLAT (IDCC&nbsp;1518) écrits dans le calcul</li>
-    <li><b>Mineurs</b> encadrés par des règles que le solveur ne peut pas enfreindre</li>
-    <li><b>Courriel, PDF, calendrier</b> : chacun reçoit le sien</li>
-    <li><b>AGPL-3.0</b> : auditable, hébergeable chez vous</li>
-  </ul>
 </header>
 
 <main id="contenu">
 
-  <section class="section">
-    <div class="wrap prose">
-      <h2>Le tableur finit toujours par lâcher</h2>
-      <p>
-        Il tient tant que rien ne bouge. Puis quelqu'un se désiste, un stand ouvre plus tôt,
-        un mineur ne peut pas fermer — et il faut tout reprendre à la main, sans jamais
-        être certain de n'avoir rien cassé ailleurs.
-      </p>
-      <p class="pull">
-        Le calcul du planning n'est pas le vrai problème. Le vrai problème, c'est de
-        garantir qu'après la trentième retouche, aucune règle n'est violée.
-      </p>
+  <section class="hero" aria-labelledby="titre">
+    <div class="wrap">
+      <div class="hero__say">
+        <div>
+          <p class="kicker">Planification d'équipes pour festivals et événements</p>
+          <h1 id="titre">Planifiez vos équipes en minutes, <em>pas&nbsp;en week-ends.</em></h1>
+        </div>
+        <div>
+          <p class="lede">Vous saisissez les stands, les créneaux et les disponibilités. Le logiciel construit le planning et vérifie le Code du travail, mineurs compris, à chaque modification.</p>
+          <p class="acts">
+            <a class="btn btn--primary" href="https://exemple-planning.sylvain.dev">Essayer la démo</a>
+            <a class="btn btn--quiet" href="#jour-j">Voir le jour J</a>
+          </p>
+          <p class="hero__creds">Identifiant <code>admin</code>, mot de passe <code>demo</code> · données fictives</p>
+        </div>
+      </div>
+
+      <figure class="tt">
+        <div class="tt__scroll" role="region" aria-labelledby="tt-cap" tabindex="0">
+          <table>
+            <caption id="tt-cap"><b>Festival de Combelune</b> · samedi 11 juillet · <span class="p--lea">Léa</span> en surbrillance</caption>
+            <thead>
+              <tr><th scope="col">Stand</th><th scope="col">Matinée <small>10–14&nbsp;h</small></th><th scope="col">Après-midi <small>14–18&nbsp;h</small></th><th scope="col">Soirée <small>18–23&nbsp;h</small></th></tr>
+            </thead>
+            <tbody>
+              <tr class="c0"><th scope="row">Accueil<small>Place de la Halle</small></th>
+                <td><div class="bar"><span class="p--lea">Léa</span> <span>Malik</span> <span class="ref"><span class="vh">refusé&nbsp;: </span>Tom<a href="#note-1" aria-label="raison 1">1</a></span></div></td>
+                <td><div class="bar"><span>Inès</span> <span>Sacha</span></div></td>
+                <td><div class="bar"><span>Noé</span> <span>Céleste</span></div></td></tr>
+              <tr class="c3"><th scope="row">Ludothèque<small>Salle des fêtes</small></th>
+                <td><div class="bar"><span>Jade</span> <span>Hugo</span></div></td>
+                <td><div class="bar"><span>Elio</span> <span>Lina</span></div></td>
+                <td><div class="bar"><span>Rayan</span> <span>Nils</span> <span class="ref"><span class="vh">refusé&nbsp;: </span>Jade<a href="#note-2" aria-label="raison 2">2</a></span></div></td></tr>
+              <tr class="c1"><th scope="row">Grands jeux<small>Parc du Moulin</small></th>
+                <td><div class="bar"><span>Yanis</span> <span>Zoé</span></div></td>
+                <td><div class="bar"><span>Basile</span> <span>Iris</span></div></td>
+                <td><div class="bar"><span class="p--lea">Léa</span> <span>Malik</span></div></td></tr>
+              <tr class="c6"><th scope="row">Jeux en bois<small>Parc du Moulin</small></th>
+                <td><div class="bar"><span>Lou</span> <span>Paul</span></div></td>
+                <td><div class="bar"><span>Tom</span> <span>Chloé</span></div></td>
+                <td><div class="bar"><span>Yanis</span> <span>Zoé</span></div></td></tr>
+              <tr class="c4"><th scope="row">Escape box<small>Cour de l'école</small></th>
+                <td><div class="bar"><span>Noé</span> <span>Céleste</span></div></td>
+                <td><div class="bar"><span>Mila</span> <span>Anouk</span> <span class="ref"><span class="vh">refusé&nbsp;: </span>Hugo<a href="#note-3" aria-label="raison 3">3</a></span></div></td>
+                <td><div class="bar"><span>Lou</span> <span>Paul</span></div></td></tr>
+              <tr class="c2"><th scope="row">Coin des petits<small>Cour de l'école</small></th>
+                <td><div class="bar"><span>Ambre</span> <span>Rayan</span></div></td>
+                <td><div class="bar"><span>Timothée</span> <span>Suzanne</span></div></td>
+                <td><div class="bar"><span>Gaspard</span> <span>Maëlle</span> <span class="ref"><span class="vh">refusé&nbsp;: </span>Iris<a href="#note-4" aria-label="raison 4">4</a></span></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <ol class="notes" aria-label="Postes refusés par les règles">
+          <li id="note-1"><span class="n" aria-hidden="true">1</span><span><b>Tom</b>&nbsp;: 11&nbsp;h de repos après sa soirée de vendredi. <a href="#art-4">art.&nbsp;L3131-1</a></span></li>
+          <li id="note-2"><span class="n" aria-hidden="true">2</span><span><b>Jade, 16&nbsp;ans</b>&nbsp;: aucun poste après 22&nbsp;h. <a href="#art-8">art.&nbsp;L3163-1</a></span></li>
+          <li id="note-3"><span class="n" aria-hidden="true">3</span><span><b>Hugo</b>&nbsp;: déjà 48&nbsp;h cette semaine. <a href="#art-2">art.&nbsp;L3121-20</a></span></li>
+          <li id="note-4"><span class="n" aria-hidden="true">4</span><span><b>Iris, 17&nbsp;ans</b>&nbsp;: 8&nbsp;h par jour au plus. <a href="#art-6">art.&nbsp;L3162-1</a></span></li>
+        </ol>
+        <figcaption class="vh">Grille d'un festival fictif. Quatre affectations y sont refusées, et chaque refus cite son article.</figcaption>
+      </figure>
     </div>
   </section>
 
-  <section class="section section--tint" id="fonctions">
-    <div class="wrap">
-      <h2>Ce que fait le logiciel</h2>
-      <p class="sub">Quatre choses, et il les fait entièrement.</p>
-      <div class="grid">
-        <article class="card">
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <rect x="3" y="4.5" width="18" height="15" rx="2.5"/>
-            <line x1="3" y1="9.5" x2="21" y2="9.5"/>
-            <line x1="9" y1="9.5" x2="9" y2="19.5"/>
-            <line x1="15" y1="9.5" x2="15" y2="19.5"/>
-          </svg>
-          <h3>Il construit le planning</h3>
-          <p>
-            À partir de vos postes, de vos créneaux et des disponibilités de chacun, il
-            propose une affectation complète — et vous dit ce qui l'empêche quand c'est
-            impossible, plutôt que de rendre un résultat approximatif.
-          </p>
-        </article>
-        <article class="card">
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="M12 3.2 19.2 6v5.4c0 4.2-2.9 7.6-7.2 9.4-4.3-1.8-7.2-5.2-7.2-9.4V6Z"/>
-            <path d="M8.8 12.1l2.2 2.2 4.2-4.4"/>
-          </svg>
-          <h3>Il refuse l'illégal</h3>
-          <p>
-            Durées maximales, repos quotidien et hebdomadaire, travail de nuit, jours
-            fériés, encadrement des mineurs : ces règles ne sont pas des conseils, ce sont
-            des contraintes que le calcul ne peut pas enfreindre.
-          </p>
-        </article>
-        <article class="card">
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <circle cx="12" cy="12" r="8.6"/>
-            <path d="M9.6 9.4a2.5 2.5 0 1 1 3.3 2.4c-.6.2-.9.7-.9 1.3v.6"/>
-            <line x1="12" y1="16.6" x2="12" y2="16.7"/>
-          </svg>
-          <h3>Il explique ses choix</h3>
-          <p>
-            Pour chaque affectation, vous pouvez demander pourquoi cette personne, et
-            simuler un échange avant de le décider. Vous gardez la main : l'outil propose,
-            vous tranchez.
-          </p>
-        </article>
-        <article class="card">
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <rect x="3" y="5.5" width="18" height="13" rx="2.5"/>
-            <path d="M3.6 7 12 13l8.4-6"/>
-          </svg>
-          <h3>Il diffuse et absorbe les changements</h3>
-          <p>
-            Chaque animateur reçoit son planning par courriel, en PDF et au format
-            calendrier. Depuis son espace personnel, il consulte ses créneaux et propose
-            des échanges, que vous validez ou refusez.
-          </p>
-        </article>
+  <section class="alt" id="jour-j" aria-labelledby="j-titre">
+    <div class="wrap jj">
+      <div class="head jj__head">
+        <p class="kicker">Le jour J</p>
+        <h2 id="j-titre">Le jour J, un seul écran suffit.</h2>
+      </div>
+
+      <div class="scr" aria-hidden="true">
+        <div class="scr__bar"><span><i></i><i></i><i></i></span><span>Aujourd'hui · Festival de Combelune</span></div>
+        <div class="scr__in">
+          <div class="scr__h">
+            <div><b>Aujourd'hui</b><span>dimanche 12 juillet · 16&nbsp;h&nbsp;45 (heure du serveur)</span></div>
+            <span class="zone tvbtn"><svg class="ico" viewBox="0 0 24 24" focusable="false"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8.5 21h7M12 17v4"/></svg>Afficher sur la TV<span class="call">5</span></span>
+          </div>
+          <div class="zone cons"><svg class="ico" viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg><span><b>Consigne du jour</b> · tous les stands fermés de 14&nbsp;h à 17&nbsp;h — canicule</span><span class="call">1</span></div>
+          <div class="zone cnt"><span>6 stands ouverts</span><span class="hot">1 absent</span><span class="hot">1 place vide nouvelle</span><span>2 échanges à arbitrer</span><span>3 personnes à prévenir</span><b class="call">2</b></div>
+          <div class="pan">
+            <div class="zone box"><b>Empêchements signalés</b>
+              <div class="row"><span>Malik B.<small>Grands jeux · 18–23&nbsp;h</small></span><span class="act">Remplacer</span></div>
+              <div class="row"><span>Lina D.<small>toute la journée · lundi</small></span><span class="act act--q">Classer</span></div>
+              <span class="call">3</span></div>
+            <div class="zone box"><b>Qui peut tenir ce siège&nbsp;?</b>
+              <div class="row"><span>Gaspard<small>libre ce soir · compétent</small></span><span class="act">Affecter</span></div>
+              <div class="row"><span>Suzanne<small>libre depuis 14&nbsp;h</small></span><span class="act">Affecter</span></div>
+              <div class="row"><span class="ko">3 écartés par une règle dure</span></div>
+              <span class="call">4</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="jj__leg">
+        <ol class="legend" aria-label="Ce que montre l'écran Aujourd'hui">
+          <li><span class="n" aria-hidden="true">1</span><p>La <b>consigne canicule</b> ferme tous les stands l'après-midi, sans refaire la grille.</p></li>
+          <li><span class="n" aria-hidden="true">2</span><p><b>Les chiffres du jour</b>, avec les absents, les places vides et les échanges en attente.</p></li>
+          <li><span class="n" aria-hidden="true">3</span><p>Un animateur prévient <b>depuis son téléphone</b> qu'il ne viendra pas.</p></li>
+          <li><span class="n" aria-hidden="true">4</span><p><b>Les remplaçants proposés</b> respectent déjà toutes les règles.</p></li>
+          <li><span class="n" aria-hidden="true">5</span><p><b>La télé de la salle de contrôle</b> se met à jour toutes les minutes.</p></li>
+        </ol>
+        <p class="fine">L'alerte météo du matin et les rappels de 22&nbsp;h partent tout seuls.</p>
       </div>
     </div>
   </section>
 
-  <section class="section section--accent" id="conformite">
-    <div class="wrap split">
-      <div class="split__say">
-        <h2>La conformité n'est pas une case à cocher</h2>
-        <p>
-          Les règles du Code du travail et de la convention collective de l'animation
-          (ÉCLAT, IDCC&nbsp;1518) sont écrites dans le logiciel, article par article, et
-          vérifiées à chaque calcul. Les dispositions propres aux jeunes travailleurs y
-          tiennent une place à part : ce sont elles qu'un planning fait à la main enfreint
-          le plus facilement.
-        </p>
-        <ul class="chips">
-          <li>Durée quotidienne maximale</li>
-          <li>Repos entre deux journées</li>
-          <li>Repos hebdomadaire</li>
-          <li>Travail de nuit</li>
-          <li>Pause obligatoire</li>
-          <li>Jours fériés</li>
-          <li>Seuils propres aux moins de 18 ans</li>
-          <li>Encadrement des mineurs</li>
+  <section id="legal" aria-labelledby="legal-t">
+    <div class="wrap q__in">
+      <div class="q__say c0">
+        <span class="n" aria-hidden="true">1</span>
+        <h2 id="legal-t">Le planning est-il légal&nbsp;?</h2>
+        <p><b>Oui.</b> Le calcul applique dix articles du Code du travail et ne peut pas les enfreindre. Quand il refuse une affectation, il cite l'article.</p>
+      </div>
+      <div class="rules">
+        <ul class="chips chips--rules" aria-label="Articles du Code du travail">
+          <li id="art-1">Durée quotidienne <cite>L3121-18</cite></li>
+          <li id="art-2">Durée hebdomadaire <cite>L3121-20</cite></li>
+          <li id="art-3">Pause <cite>L3121-16</cite></li>
+          <li id="art-4">Repos quotidien <cite>L3131-1</cite></li>
+          <li id="art-5">Repos hebdomadaire <cite>L3132-2</cite></li>
+          <li id="art-6">Mineurs&nbsp;: durée <cite>L3162-1</cite></li>
+          <li id="art-7">Mineurs&nbsp;: pause <cite>L3162-3</cite></li>
+          <li id="art-8">Mineurs&nbsp;: nuit <cite>L3163-1</cite></li>
+          <li id="art-9">Mineurs&nbsp;: repos <cite>L3164-2</cite></li>
+          <li id="art-10">Mineurs&nbsp;: fériés <cite>L3164-6</cite></li>
         </ul>
-        <p class="fine">
-          Le logiciel est une aide à la décision, pas une validation juridique.
-          L'organisation qui l'utilise reste l'employeur, et demeure responsable du planning
-          qu'elle diffuse.
-        </p>
-      </div>
-
-      <figure class="split__art" aria-hidden="true">
-        <svg class="art art--rule" viewBox="0 0 360 250" focusable="false">
-          <rect class="il-panel" x="0.5" y="0.5" width="359" height="249" rx="10"/>
-          <g class="il-chip il-chip--dim">
-            <rect x="22" y="30" width="74" height="9" rx="4.5"/>
-            <rect x="22" y="94" width="58" height="9" rx="4.5"/>
-            <rect x="22" y="158" width="82" height="9" rx="4.5"/>
-          </g>
-          <g class="il-rule">
-            <line x1="0" y1="66" x2="360" y2="66"/>
-            <line x1="0" y1="130" x2="360" y2="130"/>
-            <line x1="0" y1="194" x2="360" y2="194"/>
-            <line x1="118" y1="0" x2="118" y2="250"/>
-          </g>
-          <g class="il-block">
-            <rect x="134" y="22" width="96" height="24" rx="6"/>
-            <rect x="244" y="22" width="86" height="24" rx="6"/>
-            <rect x="134" y="150" width="120" height="24" rx="6"/>
-          </g>
-          <!-- créneau refusé : la règle a mordu -->
-          <rect class="il-block--refuse" x="134" y="86" width="128" height="24" rx="6"/>
-          <g class="il-refuse-mark">
-            <circle cx="286" cy="98" r="9.5"/>
-            <line x1="279.5" y1="104.5" x2="292.5" y2="91.5"/>
-          </g>
-          <g class="il-verdict">
-            <rect x="134" y="212" width="196" height="22" rx="11"/>
-          </g>
-          <g class="il-verdict-mark">
-            <path d="M146 223.5l4.6 4.6 8.4-9"/>
-          </g>
-          <g class="il-chip il-chip--verdict">
-            <rect x="168" y="218.5" width="120" height="9" rx="4.5"/>
-          </g>
-        </svg>
-        <figcaption class="art__cap">Un créneau que la règle interdit n'est pas proposé, puis corrigé : il n'existe jamais.</figcaption>
-      </figure>
-    </div>
-  </section>
-
-  <section class="section" id="demo">
-    <div class="wrap split split--rev">
-      <div class="split__say">
-        <h2>Voir avant de décider</h2>
-        <p data-todo="remplacer par le lien réel">
-          Une démonstration publique, chargée de données fictives et remise à zéro chaque
-          nuit, permet de manipuler l'outil sans rien installer : charger un scénario,
-          lancer le calcul, déplacer une affectation et regarder ce que ça casse.
-        </p>
-        <p class="actions">
-          <a class="btn btn--primary" href="#contact" data-todo="URL de la démo">Ouvrir la démonstration</a>
-        </p>
-      </div>
-
-      <figure class="split__art" aria-hidden="true">
-        <svg class="art art--browser" viewBox="0 0 380 250" focusable="false">
-          <rect class="il-panel" x="0.5" y="0.5" width="379" height="249" rx="10"/>
-          <path class="il-rule" d="M0 36 H380"/>
-          <g class="il-dot">
-            <circle cx="20" cy="18.5" r="4"/>
-            <circle cx="34" cy="18.5" r="4"/>
-            <circle cx="48" cy="18.5" r="4"/>
-          </g>
-          <rect class="il-chip il-chip--dim" x="66" y="13" width="200" height="11" rx="5.5"/>
-          <!-- menu latéral -->
-          <rect class="il-aside" x="0" y="36" width="86" height="214"/>
-          <g class="il-chip il-chip--dim">
-            <rect x="14" y="56" width="54" height="8" rx="4"/>
-            <rect x="14" y="76" width="44" height="8" rx="4"/>
-            <rect x="14" y="96" width="58" height="8" rx="4"/>
-            <rect x="14" y="116" width="38" height="8" rx="4"/>
-          </g>
-          <rect class="il-chip" x="14" y="136" width="50" height="8" rx="4"/>
-          <!-- courbe de score -->
-          <path class="il-curve" d="M104 196 C 140 190, 158 150, 190 140 S 250 126, 274 96 S 330 78, 362 70"/>
-          <g class="il-rule">
-            <line x1="104" y1="212" x2="362" y2="212"/>
-          </g>
-          <g class="il-block">
-            <rect x="104" y="56" width="76" height="20" rx="6"/>
-            <rect x="190" y="56" width="52" height="20" rx="6"/>
-          </g>
-          <g class="il-block il-block--alt">
-            <rect x="252" y="56" width="64" height="20" rx="6"/>
-          </g>
-          <g class="il-chip il-chip--dim">
-            <rect x="104" y="226" width="60" height="8" rx="4"/>
-            <rect x="176" y="226" width="46" height="8" rx="4"/>
-            <rect x="234" y="226" width="72" height="8" rx="4"/>
-          </g>
-        </svg>
-        <figcaption class="art__cap">Illustration : la démonstration tourne sur des données fictives.</figcaption>
-      </figure>
-    </div>
-  </section>
-
-  <section class="section section--tint" id="libre">
-    <div class="wrap">
-      <h2>Logiciel libre, et ça change quelque chose</h2>
-      <p class="sub">
-        Le code est publié sous licence AGPL-3.0. Ce n'est pas une coquetterie
-        d'ingénieur : c'est ce qui vous garantit de ne pas être coincé.
-      </p>
-      <div class="grid grid--three">
-        <article class="card card--plain">
-          <h3>Vous pouvez vérifier</h3>
-          <p>
-            Les règles légales appliquées à votre planning sont lisibles dans le code, pas
-            enfermées dans une boîte noire. Votre juriste peut les relire.
-          </p>
-        </article>
-        <article class="card card--plain">
-          <h3>Vous pouvez l'héberger</h3>
-          <p>
-            Nous l'exploitons pour vous si vous le souhaitez. Sinon, l'application se
-            déploie chez vous, sur votre serveur, avec vos sauvegardes.
-          </p>
-        </article>
-        <article class="card card--plain">
-          <h3>Vous pouvez partir</h3>
-          <p>
-            Vos données s'exportent, le code reste disponible, et quelqu'un d'autre peut
-            reprendre la maintenance. Notre seul moyen de vous garder est de bien faire
-            le travail.
-          </p>
-        </article>
+        <p class="fine"><a href="https://github.com/sylvainmetayer/planning-equipes/blob/main/docs/contraintes.md">Lire le code des règles</a> · Le logiciel aide à décider. L'organisation qui publie le planning reste l'employeur.</p>
       </div>
     </div>
   </section>
 
-  <section class="section">
-    <div class="wrap prose">
-      <h2>Comment ça se passe</h2>
+  <section class="alt" id="animateurs" aria-labelledby="animateurs-t">
+    <div class="wrap q__in">
+      <div class="q__say c1">
+        <span class="n" aria-hidden="true">2</span>
+        <h2 id="animateurs-t">Et pour les animateurs&nbsp;?</h2>
+        <p>Chacun reçoit un lien et un code par e-mail, et retrouve son planning sur son téléphone. <b>Rien à installer.</b></p>
+        <ul class="chips" aria-label="Côté animateurs">
+          <li>Espace mobile</li>
+          <li>PDF + QR code</li>
+          <li>Abonnement agenda</li>
+          <li>Échanges en libre-service</li>
+          <li>«&nbsp;J'ai lu et je serai là&nbsp;»</li>
+        </ul>
+      </div>
+      <div class="phones" aria-hidden="true">
+        <div class="phone">
+          <div class="phone__top"><span>Festival de Combelune</span><span>Léa M.</span></div>
+          <div class="pcard c0"><b>Accueil</b><small>Place de la Halle · sam. 10–14&nbsp;h · avec Malik</small></div>
+          <div class="pcard c1"><b>Grands jeux</b><small>Parc du Moulin · sam. 18–23&nbsp;h</small></div>
+          <div class="pbtn pbtn--on">J'ai lu et je serai là</div>
+        </div>
+        <div class="phone">
+          <div class="phone__top"><span>Échanges</span><span>dim. 12</span></div>
+          <div class="pcard c3"><b>Qui peut me remplacer&nbsp;?</b><small>Ludothèque · dim. 10–14&nbsp;h</small></div>
+          <div class="pcard c7"><b>Sacha accepte</b><small>en attente de l'organisation</small></div>
+          <div class="pfoot"><svg class="qr" viewBox="0 0 21 21" shape-rendering="crispEdges" focusable="false"><rect class="qr__bg" width="21" height="21"/><path class="qr__fg" d="M0 0h7v7H0zM14 0h7v7h-7zM0 14h7v7H0z"/><path class="qr__bg" d="M1 1h5v5H1zM15 1h5v5h-5zM1 15h5v5H1z"/><path class="qr__fg" d="M2 2h3v3H2zM16 2h3v3h-3zM2 16h3v3H2zM8 0h1v2H8zM10 1h2v1h-2zM9 3h2v2H9zM8 6h1v1H8zM12 4h1v3h-1zM0 8h2v1H0zM3 8h3v1H3zM8 8h3v2H8zM13 8h2v1h-2zM17 8h4v1h-4zM1 10h2v2H1zM5 10h1v3H5zM10 11h2v1h-2zM14 10h3v2h-3zM19 10h2v2h-2zM8 13h2v2H8zM12 13h1v3h-1zM15 13h2v1h-2zM18 14h3v1h-3zM9 17h3v1H9zM14 16h2v3h-2zM17 17h2v2h-2zM8 19h2v2H8zM12 19h1v2h-1zM19 19h2v2h-2z"/></svg><span>Feuille PDF · son QR code ouvre l'espace</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="outils" aria-labelledby="outils-t">
+    <div class="wrap q__in">
+      <div class="q__say c5">
+        <span class="n" aria-hidden="true">3</span>
+        <h2 id="outils-t">Et nos outils&nbsp;?</h2>
+        <p>Les annonces (planning publié, échanges à valider) arrivent <b>dans la messagerie de votre équipe</b>. Votre assistant IA peut aussi piloter l'application, sans jamais voir un nom ni une date de naissance.</p>
+        <ul class="chips tools" aria-label="Outils reliés">
+          <li class="c0"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5.5h16v10H9l-5 4z"/></svg>Slack</li>
+          <li class="c3"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5.5h16v10H9l-5 4z"/></svg>Discord</li>
+          <li class="c5"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5.5h16v10H9l-5 4z"/></svg>Telegram</li>
+          <li class="c6"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/><path d="M18.5 16v4M16.5 18h4"/></svg>Votre assistant IA</li>
+        </ul>
+      </div>
+      <div class="convo" aria-hidden="true">
+        <div>
+          <div class="convo__top"><span>#festival</span><span>22:00</span></div>
+          <div class="post"><b>Planning publié — version 5</b><small>12 personnes prévenues</small></div>
+          <div class="post"><b>Échanges en attente — 2</b><small>à arbitrer avant demain</small></div>
+        </div>
+        <div>
+          <div class="convo__top"><span>Assistant IA</span><span>Combelune</span></div>
+          <p class="bub bub--me">Quels stands reposent sur une seule personne compétente samedi soir&nbsp;?</p>
+          <p class="bub bub--ai">Deux&nbsp;: la Ludothèque et l'Escape box. Je simule un échange pour chacun&nbsp;?</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" id="ensemble" aria-labelledby="ensemble-t">
+    <div class="wrap together">
+      <div class="head">
+        <p class="kicker">Accompagnement et tarif</p>
+        <h2 id="ensemble-t">Comment on travaille ensemble</h2>
+      </div>
       <ol class="steps">
-        <li>
-          <strong>On regarde vos données.</strong> Vos fichiers actuels, vos postes, vos
-          contraintes propres. C'est là qu'on voit si l'outil convient à votre
-          organisation — et on vous le dit franchement si ce n'est pas le cas.
+        <li class="c0">
+          <div class="steps__h"><span class="n" aria-hidden="true">1</span><h3>On regarde vos données</h3></div>
+          <dl class="who">
+            <div><dt>Vous</dt><dd>envoyez vos fichiers actuels, vos stands, vos règles maison.</dd></div>
+            <div><dt>Nous</dt><dd>vous disons si l'outil vous convient. Et s'il ne convient pas, on vous le dit aussi.</dd></div>
+          </dl>
         </li>
-        <li>
-          <strong>On installe et on paramètre.</strong> Votre instance, vos règles, vos
-          équipes importées. Vous n'avez rien à héberger ni à administrer.
+        <li class="c1">
+          <div class="steps__h"><span class="n" aria-hidden="true">2</span><h3>On installe et on paramètre</h3></div>
+          <dl class="who">
+            <div><dt>Nous</dt><dd>installons votre instance, paramétrons vos règles et importons vos équipes.</dd></div>
+            <div><dt>Vous</dt><dd>n'avez rien à héberger ni à administrer.</dd></div>
+          </dl>
         </li>
-        <li>
-          <strong>Vous l'utilisez, on reste joignable.</strong> Particulièrement pendant
-          la période qui compte, celle où le planning bouge tous les jours.
+        <li class="c6">
+          <div class="steps__h"><span class="n" aria-hidden="true">3</span><h3>On reste joignable pendant l'événement</h3></div>
+          <dl class="who">
+            <div><dt>Vous</dt><dd>planifiez, publiez et gérez le jour&nbsp;J.</dd></div>
+            <div><dt>Nous</dt><dd>répondons vite, surtout les jours où le planning bouge.</dd></div>
+          </dl>
         </li>
       </ol>
-      <p class="fine">
-        Le coût dépend de la taille de votre organisation et de ce que vous nous confiez
-        — mise en place, hébergement, support. Écrivez-nous, on vous répond par un chiffre.
-      </p>
+      <div class="price" id="contact">
+        <p><b>Le tarif dépend de la taille de votre événement.</b> Dites-nous combien de personnes et combien de jours, et on vous envoie un chiffre.</p>
+        <p class="acts"><a class="btn btn--primary mail" href="mailto:planning@sylvain.dev">planning@sylvain.dev</a></p>
+      </div>
     </div>
   </section>
 
-  <section class="section section--tint" id="questions">
-    <div class="wrap prose">
-      <h2>Questions qu'on nous pose</h2>
-      <div class="faq">
+  <section id="questions" aria-labelledby="faq-t">
+    <div class="wrap faq">
+      <h2 id="faq-t">Les questions qu'on nous pose</h2>
+      <div>
         <details>
-          <summary>Et si le calcul ne trouve aucune solution ?</summary>
-          <p>
-            Il vous dit laquelle de vos règles bloque, et sur quels créneaux. C'est
-            l'information utile : neuf fois sur dix, le planning est impossible parce
-            qu'il manque quelqu'un un samedi soir, pas parce que l'outil a échoué.
-          </p>
+          <summary>Et si le calcul ne trouve aucune solution&nbsp;?</summary>
+          <p>Il indique la règle qui bloque, sur quels créneaux et pour qui. En général, il manque juste quelqu'un un samedi soir. Le diagnostic des effectifs le signale avant même le premier calcul.</p>
         </details>
         <details>
-          <summary>Qui est responsable du planning diffusé ?</summary>
-          <p>
-            Vous. Le logiciel est une aide à la décision : il refuse ce qui est
-            illégal et explique ses choix, mais l'employeur reste l'organisation qui
-            publie le planning.
-          </p>
+          <summary>Que deviennent les données de nos animateurs&nbsp;?</summary>
+          <p>Elles restent chez vous, et on ne demande que ce dont le planning a besoin. La date de naissance sert uniquement à savoir qui est mineur le jour du créneau. L'assistant IA ne la voit jamais, et les messageries ne reçoivent que des chiffres, pas de noms.</p>
         </details>
         <details>
-          <summary>Que deviennent les données de nos animateurs ?</summary>
-          <p>
-            Elles restent dans votre instance : identité, disponibilités, affectations, et
-            rien de plus que ce que la planification exige. Les données des mineurs sont
-            traitées avec les précautions que leur statut impose.
-          </p>
-        </details>
-        <details>
-          <summary>Faut-il un informaticien chez nous ?</summary>
-          <p>
-            Non, si nous hébergeons. L'application se pilote depuis un navigateur, et
-            les animateurs n'ont rien à installer : ils reçoivent un courriel et un
-            fichier calendrier.
-          </p>
-        </details>
-        <details>
-          <summary>Nos règles ne sont pas tout à fait les vôtres. Et alors ?</summary>
-          <p>
-            Le cadre légal est commun, mais vos usages ne le sont pas : on paramètre vos
-            propres contraintes, et on vous dit avant de commencer si l'une d'elles ne
-            rentre pas dans l'outil.
-          </p>
+          <summary>Faut-il un informaticien chez nous&nbsp;?</summary>
+          <p>Non, si on héberge pour vous. Tout se fait dans le navigateur, en français ou en anglais, et les animateurs n'installent rien.</p>
         </details>
       </div>
     </div>
   </section>
 
-  <section class="section section--cta" id="contact">
-    <div class="wrap prose">
-      <h2>Parlons de votre organisation</h2>
-      <p>
-        Dites-nous combien de personnes vous planifiez, sur combien de jours, et comment
-        vous faites aujourd'hui. La réponse vous dira si l'outil a un intérêt pour vous.
-      </p>
-      <p class="actions">
-        <a class="btn btn--primary btn--big" href="mailto:planning@sylvain.dev">planning@sylvain.dev</a>
-      </p>
+  <section class="alt" id="demo" aria-labelledby="demo-t">
+    <div class="wrap">
+      <div class="demo__in">
+        <div>
+          <p class="kicker">Démonstration publique · données fictives</p>
+          <h2 id="demo-t">Rejouez une journée de festival, sans rien installer.</h2>
+          <p>L'horloge y est arrêtée en plein festival, pour que l'écran Aujourd'hui et la télé de la salle de contrôle aient quelque chose à montrer.</p>
+          <p class="acts"><a class="btn btn--primary" href="https://exemple-planning.sylvain.dev">Ouvrir la démonstration</a></p>
+        </div>
+        <div class="demo__card">
+          <dl class="creds">
+            <div><dt>Adresse</dt><dd><a href="https://exemple-planning.sylvain.dev"><code>exemple-planning.sylvain.dev</code></a></dd></div>
+            <div><dt>Identifiant</dt><dd><code>admin</code></dd></div>
+            <div><dt>Mot de passe</dt><dd><code>demo</code></dd></div>
+            <div><dt>Courriels</dt><dd>ceux qu'envoie l'application, lisibles sur <a href="https://exemple-planning.sylvain.dev/mail"><code>/mail</code></a></dd></div>
+          </dl>
+          <ul class="conds" aria-label="Conditions de la démonstration">
+            <li>Remise à zéro chaque nuit</li>
+            <li>Calcul plafonné à 60&nbsp;s</li>
+            <li>12 calculs par heure</li>
+          </ul>
+        </div>
+      </div>
     </div>
   </section>
 
 </main>
 
-<footer class="footer">
-  <div class="wrap footer__in">
-    <p class="footer__mark">
-      <span class="mark__name">Planning <b>Équipes</b></span>
-    </p>
-    <p>
-      Logiciel libre sous licence <abbr title="GNU Affero General Public License v3">AGPL-3.0</abbr> —
-      <a href="https://github.com/sylvainmetayer/planning-equipes">code source</a>.
-      Vous pouvez l'auditer, l'héberger vous-même, ou le faire reprendre par quelqu'un d'autre.
-    </p>
+<footer class="foot">
+  <div class="wrap foot__in">
+    <p><b>Planning Équipes</b> — logiciel libre sous licence <abbr title="GNU Affero General Public License, version 3">AGPL-3.0</abbr>, hébergeable chez vous. <a href="https://github.com/sylvainmetayer/planning-equipes">Code source</a></p>
+    <p>Le Festival de Combelune, ses lieux et ses prénoms sont fictifs.</p>
   </div>
 </footer>
 
