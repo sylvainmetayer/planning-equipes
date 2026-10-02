@@ -169,13 +169,15 @@ class AnimateurResourceTest {
      */
     @Test
     void withoutProvisioningThereIsNoInvitationToSend() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/animateurs/invitations")
                 .then()
                 .statusCode(200)
                 .body("actif", equalTo(false))
                 .body("enAttente", equalTo(0));
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{}")
                 .when()
                 .post("/api/animateurs/invitations")

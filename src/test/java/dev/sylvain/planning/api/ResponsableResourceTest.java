@@ -108,24 +108,31 @@ class ResponsableResourceTest {
 
     @Test
     void sansDroitDeResponsableLaRouteEstFermeeAdministrateurCompris() {
-        given().header("Authorization", porteur(email, "user"))
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur(email, "user"))
                 .when()
                 .get("/api/responsable/editions")
                 .then()
                 .statusCode(403);
-        given().header("Authorization", porteur("responsable-admin@example.org", "user", "admin"))
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur("responsable-admin@example.org", "user", "admin"))
                 .when()
                 .get("/api/responsable/editions")
                 .then()
                 .statusCode(403);
-        given().when().get("/api/responsable/editions").then().statusCode(401);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/responsable/editions")
+                .then()
+                .statusCode(401);
     }
 
     @Test
     void leResponsableVoitSesEditions() {
         grant(null);
 
-        given().header("Authorization", porteur(email, "user"))
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur(email, "user"))
                 .when()
                 .get("/api/responsable/editions")
                 .then()
@@ -133,7 +140,8 @@ class ResponsableResourceTest {
                 .body("size()", equalTo(1))
                 .body("[0].editionId", equalTo(edition))
                 .body("[0].active", equalTo(true));
-        given().header("Authorization", porteur(email, "user"))
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur(email, "user"))
                 .when()
                 .get("/api/auth/me")
                 .then()
@@ -151,7 +159,8 @@ class ResponsableResourceTest {
         Compte autre = comptes.create("responsable-cache-" + UUID.randomUUID() + "@example.org", null);
         comptes.deactivate(autre.id());
 
-        given().header("Authorization", porteur(email, "user"))
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur(email, "user"))
                 .when()
                 .get("/api/responsable/editions")
                 .then()
@@ -163,7 +172,8 @@ class ResponsableResourceTest {
     void avantLaPublicationLeStandNAAucuneVacation() {
         grant(null);
 
-        given().header("Authorization", porteur(email, "user"))
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur(email, "user"))
                 .when()
                 .get("/api/responsable/editions/" + edition)
                 .then()
@@ -180,7 +190,8 @@ class ResponsableResourceTest {
         grant(null);
         publication.publier();
 
-        String vue = given().header("Authorization", porteur(email, "user"))
+        String vue = given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur(email, "user"))
                 .when()
                 .get("/api/responsable/editions/" + edition)
                 .then()
@@ -205,7 +216,8 @@ class ResponsableResourceTest {
      */
     @Test
     void nominatifLeResponsableLitLesNomsEtRienDePlus() {
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"nominatif\":true}")
                 .when()
                 .put("/api/parametres-responsables")
@@ -221,7 +233,8 @@ class ResponsableResourceTest {
         referenceData.updateAnimateur("RESP-A", alice);
         publication.publier();
 
-        String vue = given().header("Authorization", porteur(email, "user"))
+        String vue = given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur(email, "user"))
                 .when()
                 .get("/api/responsable/editions/" + edition)
                 .then()
@@ -255,14 +268,16 @@ class ResponsableResourceTest {
         grant(true);
         publication.publier();
 
-        given().header("Authorization", porteur(email, "user"))
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur(email, "user"))
                 .when()
                 .get("/api/responsable/editions/" + edition)
                 .then()
                 .body("stands[0].nominatif", equalTo(true))
                 .body("stands[0].vacations[0].personnes[0].prenom", equalTo("Alice"));
 
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"nominatif\":true}")
                 .when()
                 .put("/api/parametres-responsables")
@@ -279,7 +294,8 @@ class ResponsableResourceTest {
                 false,
                 "test");
 
-        given().header("Authorization", porteur(autre, "user"))
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur(autre, "user"))
                 .when()
                 .get("/api/responsable/editions/" + edition)
                 .then()
@@ -304,7 +320,8 @@ class ResponsableResourceTest {
         assertThat(horsPerimetre).isEqualTo(inexistant).isEqualTo(autreEdition);
         assertThat(horsPerimetre).doesNotContain("RESP-S2", "Billetterie");
 
-        given().header("Authorization", porteur(email, "user"))
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur(email, "user"))
                 .when()
                 .get("/api/responsable/editions/" + edition + "?stand=RESP-S1")
                 .then()
@@ -316,7 +333,8 @@ class ResponsableResourceTest {
     void unDroitExpireNOuvrePlusRien() {
         Compte avec = grant(null);
         publication.publier();
-        given().header("Authorization", porteur(email, "user"))
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur(email, "user"))
                 .when()
                 .get("/api/responsable/editions/" + edition)
                 .then()
@@ -328,7 +346,8 @@ class ResponsableResourceTest {
         Compte autre = comptes.create("responsable-cache-" + UUID.randomUUID() + "@example.org", null);
         comptes.deactivate(autre.id());
 
-        given().header("Authorization", porteur(email, "user"))
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur(email, "user"))
                 .when()
                 .get("/api/responsable/editions/" + edition)
                 .then()
@@ -340,7 +359,8 @@ class ResponsableResourceTest {
         Compte avec = grant(null);
         comptes.withdraw(compte.id(), avec.habilitations().getFirst().id());
 
-        given().header("Authorization", porteur(email, "user"))
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur(email, "user"))
                 .when()
                 .get("/api/responsable/editions")
                 .then()
@@ -352,7 +372,8 @@ class ResponsableResourceTest {
         grant(null);
         comptes.deactivate(compte.id());
 
-        given().header("Authorization", porteur(email, "user"))
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur(email, "user"))
                 .when()
                 .get("/api/responsable/editions")
                 .then()
@@ -361,23 +382,30 @@ class ResponsableResourceTest {
 
     @Test
     void leReglageDEditionSeLitEtSEcrit() {
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .get("/api/parametres-responsables")
                 .then()
                 .statusCode(200)
                 .body("nominatif", equalTo(false));
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"nominatif\":true}")
                 .when()
                 .put("/api/parametres-responsables")
                 .then()
                 .statusCode(200)
                 .body("nominatif", equalTo(true));
-        given().when().get("/api/parametres-responsables").then().body("nominatif", equalTo(true));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/parametres-responsables")
+                .then()
+                .body("nominatif", equalTo(true));
     }
 
     private String refus(String chemin) {
-        return given().header("Authorization", porteur(email, "user"))
+        return given().header("X-Edition-Id", "E1")
+                .header("Authorization", porteur(email, "user"))
                 .when()
                 .get(chemin)
                 .then()

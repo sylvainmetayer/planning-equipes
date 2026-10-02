@@ -24,17 +24,24 @@ class CompteResourceTest {
     void unCompteSeCreeSeDesactiveEtSeReactive() {
         String id = create("compte-cycle");
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/comptes/" + id + "/desactivation")
                 .then()
                 .statusCode(200)
                 .body("desactiveLe", notNullValue());
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .post("/api/comptes/" + id + "/reactivation")
                 .then()
                 .statusCode(200)
                 .body("desactiveLe", nullValue());
-        given().when().get("/api/comptes").then().statusCode(200).body("id", hasItem(id));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/comptes")
+                .then()
+                .statusCode(200)
+                .body("id", hasItem(id));
     }
 
     /**
@@ -45,21 +52,28 @@ class CompteResourceTest {
     @Test
     void sansProvisioningLeRoleAdminSeDonneDansLaConsole() {
         String email = unique("compte-admin");
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"email\":\"" + email + "\",\"nom\":\"Nouvel admin\"}")
                 .when()
                 .post("/api/comptes/administrateurs")
                 .then()
                 .statusCode(409)
                 .body("message", containsString("console Keycloak"));
-        given().when().get("/api/comptes").then().statusCode(200).body("email", not(hasItem(email)));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/comptes")
+                .then()
+                .statusCode(200)
+                .body("email", not(hasItem(email)));
     }
 
     @Test
     void uneAdresseNeSertQuUneFoisQuelleQueSoitSaCasse() {
         String email = unique("compte-unique");
         createWith(email);
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"email\":\"" + email.toUpperCase(java.util.Locale.ROOT) + "\"}")
                 .when()
                 .post("/api/comptes")
@@ -70,7 +84,8 @@ class CompteResourceTest {
     @Test
     void uneHabilitationSAccordePuisSeRetireSansDisparaitre() {
         String id = create("compte-rh");
-        String habilitation = given().contentType(ContentType.JSON)
+        String habilitation = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"role\":\"RH\"}")
                 .when()
                 .post("/api/comptes/" + id + "/habilitations")
@@ -80,13 +95,15 @@ class CompteResourceTest {
                 .extract()
                 .path("habilitations[0].id");
 
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .delete("/api/comptes/" + id + "/habilitations/" + habilitation)
                 .then()
                 .statusCode(200)
                 .body("habilitations[0].retireeLe", notNullValue());
         // Withdrawn once: a second withdrawal has nothing left to withdraw.
-        given().when()
+        given().header("X-Edition-Id", "E1")
+                .when()
                 .delete("/api/comptes/" + id + "/habilitations/" + habilitation)
                 .then()
                 .statusCode(404);
@@ -95,14 +112,16 @@ class CompteResourceTest {
     @Test
     void unResponsableDeStandExigeUneEditionEtDesStands() {
         String id = create("compte-responsable");
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"role\":\"RESPONSABLE_STAND\"}")
                 .when()
                 .post("/api/comptes/" + id + "/habilitations")
                 .then()
                 .statusCode(400)
                 .body("message", containsString("responsable de stand"));
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"role\":\"RH\",\"standIds\":[\"S1\"]}")
                 .when()
                 .post("/api/comptes/" + id + "/habilitations")
@@ -114,9 +133,14 @@ class CompteResourceTest {
     @Test
     void unStandInconnuDeLEditionEstRefuseEnLeNommant() {
         String id = create("compte-stand-inconnu");
-        String edition =
-                given().when().get("/api/editions/courant").then().extract().path("id");
-        given().contentType(ContentType.JSON)
+        String edition = given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/editions/courant")
+                .then()
+                .extract()
+                .path("id");
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"role\":\"RESPONSABLE_STAND\",\"editionId\":\"" + edition
                         + "\",\"expireLe\":\"2099-01-01T00:00:00Z\",\"standIds\":[\"stand-qui-n-existe-pas\"]}")
                 .when()
@@ -134,16 +158,22 @@ class CompteResourceTest {
     @Test
     void unResponsableDeStandExpireEtSeulIlPorteUneSurchargeNominative() {
         String id = create("compte-responsable-sans-fin");
-        String edition =
-                given().when().get("/api/editions/courant").then().extract().path("id");
-        given().contentType(ContentType.JSON)
+        String edition = given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/editions/courant")
+                .then()
+                .extract()
+                .path("id");
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"role\":\"RESPONSABLE_STAND\",\"editionId\":\"" + edition + "\",\"standIds\":[\"S1\"]}")
                 .when()
                 .post("/api/comptes/" + id + "/habilitations")
                 .then()
                 .statusCode(400)
                 .body("message", containsString("date de fin"));
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"role\":\"RH\",\"nominatif\":true}")
                 .when()
                 .post("/api/comptes/" + id + "/habilitations")
@@ -154,7 +184,8 @@ class CompteResourceTest {
     @Test
     void uneExpirationDejaPasseeEstRefusee() {
         String id = create("compte-expire");
-        given().contentType(ContentType.JSON)
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"role\":\"RH\",\"expireLe\":\"2000-01-01T00:00:00Z\"}")
                 .when()
                 .post("/api/comptes/" + id + "/habilitations")
@@ -164,7 +195,11 @@ class CompteResourceTest {
 
     @Test
     void unCompteInconnuRepond404() {
-        given().when().post("/api/comptes/inconnu/desactivation").then().statusCode(404);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/comptes/inconnu/desactivation")
+                .then()
+                .statusCode(404);
     }
 
     /** A fresh address per call: the accounts are never deleted, and the suite may run twice on one base. */
@@ -177,7 +212,8 @@ class CompteResourceTest {
     }
 
     private static String createWith(String email) {
-        return given().contentType(ContentType.JSON)
+        return given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
                 .body("{\"email\":\"" + email + "\",\"nom\":\"Test\"}")
                 .when()
                 .post("/api/comptes")
