@@ -49,6 +49,17 @@ describe('solveInputLines', () => {
     });
   });
 
+  /** The history then shows the very lines the server counted. */
+  it('opens the changes since the solve, as the server counted them', () => {
+    expect(solveInputLines(inputs())[5]).toMatchObject({
+      route: '/historique',
+      queryParams: { depuis: '2026-08-01T10:00:00Z', nature: 'donnees' },
+    });
+    expect(
+      solveInputLines(inputs({ changesSinceSolve: 0, solvedAt: null }))[5].queryParams,
+    ).toEqual({});
+  });
+
   it('names no date when no consigne is laid', () => {
     expect(solveInputLines(inputs({ consignes: [] }))[2].text).toBe('0 consigne');
   });

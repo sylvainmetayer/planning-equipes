@@ -1072,11 +1072,21 @@ par les méthodes que le gel garde.
 ## Historique des actions
 
 `GET /api/historique?limite=200` — ce qui a été fait dans l'édition courante,
-du plus récent au plus ancien, plafonné à 500 lignes. `nature=exports` ne
-rend que les fichiers sortis de l'application, **choisis par la base** : la
-recherche porte sur toute la rétention, et non sur la dernière page toutes
-actions confondues — un export enfoui sous deux cents modifications plus
-récentes est retrouvé. `GET /api/historique/actions` rend l'inventaire des
+du plus récent au plus ancien, par pages de 500 lignes au plus. `nature=exports`
+ne rend que les fichiers sortis de l'application, `nature=donnees` que les
+modifications qu'un calcul recevrait, **choisies par la base** : la recherche
+porte sur toute la rétention, et non sur la dernière page toutes actions
+confondues — un export enfoui sous deux cents modifications plus récentes est
+retrouvé. `depuis` et `jusqua` (deux instants ISO-8601) bornent une période,
+**`depuis` exclu et `jusqua` inclus** : c'est la lecture de
+`/api/historique/changements`, si bien que `nature=donnees&depuis=<fin de la
+résolution>` rend exactement les lignes que l'écran Solveur a comptées
+(abouties seulement — une écriture refusée n'a rien changé). Une période n'est
+pas plafonnée : la page suivante se demande par **curseur**, `avant=<id de la
+dernière ligne affichée>`, et l'écran sait qu'il y en a une en demandant une
+ligne de plus qu'il n'en montre. Un curseur dont la ligne a disparu rend une
+page vide plutôt qu'un refus : seule la purge de nuit retire une ligne, et elle
+emporte avec elle toutes les plus anciennes. `GET /api/historique/actions` rend l'inventaire des
 actions que l'application sait décrire, pour que l'écran propose un filtre
 qu'il n'a pas inventé ; son drapeau `export` est la classification que ce
 paramètre applique, tenue par `CatalogueActions` et non devinée d'après

@@ -447,6 +447,180 @@ class HistoriqueResourceTest {
         }
     }
 
+    /**
+     * A period is selected by the server, bounds as {@code /changements}
+     * reads them: « depuis » exclusive, « jusqua » inclusive — and nothing
+     * outside them comes back, whatever the page size.
+     */
+    @Test
+    void aPeriodKeepsOnlyTheLinesBetweenItsBounds() {
+        String avantA = Instant.now().toString();
+        String a = createAnimateur("PeriodeA");
+        String apresA = Instant.now().toString();
+        String b = createAnimateur("PeriodeB");
+        String apresB = Instant.now().toString();
+        String c = createAnimateur("PeriodeC");
+
+        List<String> entites = given().header("X-Edition-Id", "E1")
+                .queryParam("depuis", apresA)
+                .queryParam("jusqua", apresB)
+                .when()
+                .get("/api/historique")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("entiteId", String.class);
+        assertThat(entites).contains(b).doesNotContain(a, c);
+
+        List<String> depuisA = given().header("X-Edition-Id", "E1")
+                .queryParam("depuis", avantA)
+                .when()
+                .get("/api/historique")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("entiteId", String.class);
+        assertThat(depuisA).as("sans fin, jusqu'à maintenant").contains(a, b, c);
+
+        deleteAnimateurs(a, b, c);
+    }
+
+    /**
+     * The solver screen's « N modifications depuis la dernière résolution »
+     * opens {@code nature=donnees&depuis=<the solve>}: the list must hold
+     * exactly the lines the count counted — no refusal, no export, no read.
+     */
+    @Test
+    void theDataChangesSinceAMomentAreExactlyTheLinesTheCountCounts() {
+        String depuis = Instant.now().toString();
+        String a = createAnimateur("DonneesA");
+        String b = createAnimateur("DonneesB");
+        // A refused write and an export: lines of the history, changes of nothing.
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
+                .body("""
+                        {"id":"DONNEES-INCONNU","prenom":"X","nom":"Y","dateNaissance":"1990-01-01"}""")
+                .when()
+                .put("/api/animateurs/DONNEES-INCONNU")
+                .then()
+                .statusCode(404);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/reference-data/export-csv?stands=true")
+                .then()
+                .statusCode(200);
+
+        int total = given().header("X-Edition-Id", "E1")
+                .queryParam("depuis", depuis)
+                .when()
+                .get("/api/historique/changements")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("total");
+        List<Map<String, Object>> lignes = given().header("X-Edition-Id", "E1")
+                .queryParam("depuis", depuis)
+                .queryParam("nature", "donnees")
+                .when()
+                .get("/api/historique")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("$");
+
+        assertThat(total).isGreaterThanOrEqualTo(2);
+        assertThat(lignes)
+                .hasSize(total)
+                .allSatisfy(ligne -> assertThat(ligne).containsEntry("resultat", "SUCCES"))
+                .noneSatisfy(ligne -> assertThat(ligne.get("entiteId")).isEqualTo("DONNEES-INCONNU"))
+                .noneSatisfy(ligne -> assertThat(ligne.get("action")).isEqualTo("EXPORT_REFERENTIELS"));
+        assertThat(lignes).extracting(ligne -> ligne.get("entiteId")).contains(a, b);
+
+        deleteAnimateurs(a, b);
+    }
+
+    /**
+     * Paged by a keyset cursor: the next page starts after the last id shown,
+     * the pages never overlap, and together they are the whole period.
+     */
+    @Test
+    void thePagesFollowOneAnotherByCursorWithoutOverlap() {
+        String depuis = Instant.now().toString();
+        String a = createAnimateur("PageA");
+        String b = createAnimateur("PageB");
+        String c = createAnimateur("PageC");
+
+        List<Integer> tout = idsOfPage(depuis, null, 500);
+        List<Integer> premiere = idsOfPage(depuis, null, 2);
+        List<Integer> seconde = idsOfPage(depuis, premiere.get(1), 500);
+
+        assertThat(tout).hasSizeGreaterThanOrEqualTo(3);
+        assertThat(premiere).containsExactlyElementsOf(tout.subList(0, 2));
+        assertThat(seconde).containsExactlyElementsOf(tout.subList(2, tout.size()));
+        // A cursor naming no line of the edition — one the purge took — ends the list.
+        assertThat(idsOfPage(depuis, Integer.MAX_VALUE, 500)).isEmpty();
+
+        deleteAnimateurs(a, b, c);
+    }
+
+    @Test
+    void aPeriodThatEndsBeforeItStartsOrCannotBeReadIsRefused() {
+        given().header("X-Edition-Id", "E1")
+                .queryParam("depuis", "2026-09-02T10:00:00Z")
+                .queryParam("jusqua", "2026-09-01T10:00:00Z")
+                .when()
+                .get("/api/historique")
+                .then()
+                .statusCode(400);
+        given().header("X-Edition-Id", "E1")
+                .queryParam("jusqua", "demain")
+                .when()
+                .get("/api/historique")
+                .then()
+                .statusCode(400);
+    }
+
+    private static List<Integer> idsOfPage(String depuis, Integer avant, int limite) {
+        var requete = given().header("X-Edition-Id", "E1")
+                .queryParam("depuis", depuis)
+                .queryParam("limite", limite);
+        if (avant != null) {
+            requete = requete.queryParam("avant", avant);
+        }
+        return requete.when()
+                .get("/api/historique")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("id", Integer.class);
+    }
+
+    private static String createAnimateur(String nom) {
+        return given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
+                .body("{\"prenom\":\"Histo\",\"nom\":\"" + nom + "\",\"dateNaissance\":\"1990-01-01\"}")
+                .when()
+                .post("/api/animateurs")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("animateur.id");
+    }
+
+    private static void deleteAnimateurs(String... ids) {
+        for (String id : ids) {
+            given().header("X-Edition-Id", "E1")
+                    .when()
+                    .delete("/api/animateurs/" + id)
+                    .then()
+                    .statusCode(204);
+        }
+    }
+
     @Test
     void anUnknownNatureIsRefused() {
         given().header("X-Edition-Id", "E1")

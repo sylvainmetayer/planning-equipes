@@ -70,7 +70,24 @@
           matTooltip="Les fichiers sortis de l'application : exports de l'administration et téléchargements depuis l'espace animateur."
           >Exports</mat-button-toggle
         >
+        <mat-button-toggle
+          value="DONNEES"
+          i18n="@@historique.filter.donnees"
+          i18n-matTooltip="@@historique.filter.donneesTooltip"
+          matTooltip="Les modifications que le prochain calcul verra : référentiels, ajustements, verrouillages, règles."
+          >Données</mat-button-toggle
+        >
       </mat-button-toggle-group>
+
+      <mat-form-field appearance="outline" class="historique-periode">
+        <mat-label i18n="@@historique.filter.depuis">Depuis</mat-label>
+        <input matInput type="datetime-local" [ngModel]="depuisLocal()" (ngModelChange)="changeDepuis($event)" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="historique-periode">
+        <mat-label i18n="@@historique.filter.jusqua">Jusqu'à</mat-label>
+        <input matInput type="datetime-local" [ngModel]="jusquaLocal()" (ngModelChange)="changeJusqua($event)" />
+      </mat-form-field>
 
       @if (viewChanged()) {
         <button matButton type="button" (click)="reinitialiser()">
@@ -140,6 +157,15 @@
           </li>
         }
       </ul>
+    }
+
+    @if (suivant() !== null) {
+      <div class="historique-suite">
+        <button matButton type="button" (click)="loadMore()" [disabled]="chargement()">
+          <mat-icon>expand_more</mat-icon>
+          <ng-container i18n="@@historique.chargerPlus">Charger plus</ng-container>
+        </button>
+      </div>
     }
   </mat-card-content>
 </mat-card>

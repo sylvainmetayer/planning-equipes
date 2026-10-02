@@ -6,7 +6,9 @@ import jakarta.inject.Inject;
 import java.sql.Array;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,21 +33,34 @@ public class JournalActionRepository {
 
     private static final String SQL_VARCHAR = "varchar";
 
-    private static final String SELECT_RECENT = """
+    /**
+     * One page of the history, every filter optional: a {@code null} bound or
+     * selection is no filter at all, so one literal statement serves every
+     * combination the screen asks for — an {@code IN} list or a {@code WHERE}
+     * assembled by hand would be SQL the isolation scan cannot read.
+     *
+     * <p>The period is {@code ]since ; until]}: « since » is exclusive, as
+     * {@link #countSince} reads it, so a page asked « since the last solve »
+     * holds exactly the lines that count reported. The cursor is the
+     * {@code (survenu_le, id)} pair of the last line already shown, in the
+     * order the page is read in.</p>
+     */
+    private static final String SELECT_PAGE = """
             SELECT id, survenu_le, acteur, acteur_id, action, entite, entite_id,
             champs, resultat, statut
             FROM journal_action
             WHERE edition_id = ?
+            AND (?::varchar[] IS NULL OR action = ANY(?::varchar[]))
+            AND (NOT ?::boolean OR resultat = 'SUCCES')
+            AND survenu_le > COALESCE(?::timestamptz, '-infinity')
+            AND survenu_le <= COALESCE(?::timestamptz, 'infinity')
+            AND (survenu_le, id) < (COALESCE(?::timestamptz, 'infinity'), COALESCE(?::bigint, 9223372036854775807))
             ORDER BY survenu_le DESC, id DESC
             LIMIT ?""";
 
-    private static final String SELECT_RECENT_AMONG = """
-            SELECT id, survenu_le, acteur, acteur_id, action, entite, entite_id,
-            champs, resultat, statut
-            FROM journal_action
-            WHERE edition_id = ? AND action = ANY(?)
-            ORDER BY survenu_le DESC, id DESC
-            LIMIT ?""";
+    /** Where the line a cursor names sits in time; nothing when it has aged out. */
+    private static final String SELECT_CURSOR = """
+            SELECT survenu_le FROM journal_action WHERE edition_id = ? AND id = ?""";
 
     private static final String SELECT_SINCE = """
             SELECT id, survenu_le, acteur, acteur_id, action, entite, entite_id,
@@ -83,7 +98,7 @@ public class JournalActionRepository {
                 ps.setString(8, entree.champs().isEmpty() ? null : String.join(",", entree.champs()));
                 ps.setString(9, entree.resultat().name());
                 if (entree.statut() == null) {
-                    ps.setNull(10, java.sql.Types.INTEGER);
+                    ps.setNull(10, Types.INTEGER);
                 } else {
                     ps.setInt(10, entree.statut());
                 }
@@ -94,10 +109,54 @@ public class JournalActionRepository {
 
     /** The most recent lines of the current edition, newest first. */
     public List<EntreeJournal> list(int limite) {
+        return page(HistoryFilter.ALL, null, limite);
+    }
+
+    /**
+     * One page of the lines {@code filter} keeps, newest first, starting just
+     * after the line {@code before} — a keyset cursor, so a page is as cheap
+     * at the end of the retention as at its start, and a line written while
+     * the reader pages is never shown twice.
+     *
+     * <p>A cursor naming no line of this edition answers an empty page rather
+     * than a refusal: the line it named can only have left through the
+     * nightly purge, which drops by date — so everything older went with it,
+     * and « nothing more » is the exact answer.</p>
+     */
+    public List<EntreeJournal> page(HistoryFilter filter, Long before, int limite) {
+        if (filter.codes() != null && filter.codes().isEmpty()) {
+            return List.of();
+        }
         int plafond = Math.clamp(limite, 1, LIMITE_MAX);
         return scope.read("Failed to read the history", connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(connection, SELECT_RECENT)) {
-                ps.setInt(2, plafond);
+            Timestamp cursor = null;
+            if (before != null) {
+                try (PreparedStatement ps = scope.prepareScoped(connection, SELECT_CURSOR)) {
+                    ps.setLong(2, before);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (!rs.next()) {
+                            return List.of();
+                        }
+                        cursor = rs.getTimestamp("survenu_le");
+                    }
+                }
+            }
+            Array codes = filter.codes() == null
+                    ? null
+                    : connection.createArrayOf(SQL_VARCHAR, filter.codes().toArray());
+            try (PreparedStatement ps = scope.prepareScoped(connection, SELECT_PAGE)) {
+                setArray(ps, 2, codes);
+                setArray(ps, 3, codes);
+                ps.setBoolean(4, filter.successOnly());
+                setInstant(ps, 5, filter.since());
+                setInstant(ps, 6, filter.until());
+                ps.setTimestamp(7, cursor);
+                if (cursor == null) {
+                    ps.setNull(8, Types.BIGINT);
+                } else {
+                    ps.setLong(8, before);
+                }
+                ps.setInt(9, plafond);
                 try (ResultSet rs = ps.executeQuery()) {
                     List<EntreeJournal> entrees = new ArrayList<>();
                     while (rs.next()) {
@@ -109,30 +168,20 @@ public class JournalActionRepository {
         });
     }
 
-    /**
-     * The most recent lines of the current edition whose action is one of
-     * {@code codes}, newest first — a family selected in the database, so it
-     * is searched over the whole retention and not over the last page.
-     */
-    public List<EntreeJournal> listAmong(Collection<String> codes, int limite) {
-        if (codes.isEmpty()) {
-            return List.of();
+    private static void setArray(PreparedStatement ps, int index, Array value) throws SQLException {
+        if (value == null) {
+            ps.setNull(index, Types.ARRAY);
+        } else {
+            ps.setArray(index, value);
         }
-        int plafond = Math.clamp(limite, 1, LIMITE_MAX);
-        return scope.read("Failed to read the history", connection -> {
-            Array bound = connection.createArrayOf(SQL_VARCHAR, codes.toArray());
-            try (PreparedStatement ps = scope.prepareScoped(connection, SELECT_RECENT_AMONG)) {
-                ps.setArray(2, bound);
-                ps.setInt(3, plafond);
-                try (ResultSet rs = ps.executeQuery()) {
-                    List<EntreeJournal> entrees = new ArrayList<>();
-                    while (rs.next()) {
-                        entrees.add(read(rs));
-                    }
-                    return entrees;
-                }
-            }
-        });
+    }
+
+    private static void setInstant(PreparedStatement ps, int index, Instant value) throws SQLException {
+        if (value == null) {
+            ps.setNull(index, Types.TIMESTAMP_WITH_TIMEZONE);
+        } else {
+            ps.setTimestamp(index, Timestamp.from(value));
+        }
     }
 
     /**
@@ -221,7 +270,7 @@ public class JournalActionRepository {
         });
     }
 
-    private static EntreeJournal read(ResultSet rs) throws java.sql.SQLException {
+    private static EntreeJournal read(ResultSet rs) throws SQLException {
         String champs = rs.getString("champs");
         int statut = rs.getInt("statut");
         return new EntreeJournal(

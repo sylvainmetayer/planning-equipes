@@ -6,6 +6,7 @@ import dev.sylvain.planning.service.journal.ActionJournalisee;
 import dev.sylvain.planning.service.journal.CatalogueActions;
 import dev.sylvain.planning.service.journal.EntreeJournal;
 import dev.sylvain.planning.service.journal.JournalActionService;
+import dev.sylvain.planning.service.journal.JournalActionService.HistoryNature;
 import dev.sylvain.planning.service.journal.ReferenceDataChanges;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.StaffingVerificationService;
@@ -45,8 +46,14 @@ public class HistoriqueResource {
     /** How many recent lines the summary shows: enough to recognise what happened, not a page of history. */
     private static final int RECENT_LINES = 5;
 
-    /** The one value of {@code nature}: the actions the catalogue flags as exports. */
+    /** The value of {@code nature} keeping the actions the catalogue flags as exports. */
     static final String NATURE_EXPORTS = "exports";
+
+    /**
+     * The value of {@code nature} keeping the changes a solve would be given —
+     * what « N modifications depuis la dernière résolution » counts.
+     */
+    static final String NATURE_DONNEES = "donnees";
 
     private final JournalActionService journal;
 
@@ -65,28 +72,36 @@ public class HistoriqueResource {
     }
 
     /**
-     * The edition's most recent lines, newest first.
+     * One page of the edition's history, newest first.
      *
+     * <p>Paged by a keyset cursor: the next page is asked with
+     * {@code avant=<id of the last line shown>}, and a client knows there is
+     * one by asking a line more than it shows. A period is not capped either —
+     * every line of it is reached page after page.</p>
+     *
+     * @param limite how many lines, 200 when absent, 500 at most
      * @param nature {@code exports} keeps only the files that left the
-     *               application, selected in the database — so the whole
-     *               retention is searched, not the last page of every kind;
-     *               absent, every action. Anything else is refused rather
-     *               than read as « all »: a filter silently dropped would
-     *               answer a question nobody asked.
+     *               application, {@code donnees} only the changes a solve
+     *               would be given (successes, as the solver screen counts
+     *               them) — selected in the database, so the whole retention
+     *               is searched, not the last page of every kind; absent,
+     *               every action. Anything else is refused rather than read
+     *               as « all »: a filter silently dropped would answer a
+     *               question nobody asked.
+     * @param depuis exclusive lower bound, ISO-8601 — the very instant
+     *               {@code /changements} counts from
+     * @param jusqua inclusive upper bound, ISO-8601
+     * @param avant  the id of the last line already shown
      */
     @GET
     public List<EntreeHistoriqueView> list(
             @QueryParam("limite") Integer limite,
-            @QueryParam("nature") @Schema(enumeration = {NATURE_EXPORTS}) String nature) {
-        List<EntreeJournal> entrees;
-        if (nature == null || nature.isBlank()) {
-            entrees = journal.list(limite);
-        } else if (NATURE_EXPORTS.equals(nature)) {
-            entrees = journal.listExports(limite);
-        } else {
-            throw new BusinessError.Invalid(
-                    "Nature d'action inconnue : « " + nature + " » (attendu « " + NATURE_EXPORTS + " »).");
-        }
+            @QueryParam("nature") @Schema(enumeration = {NATURE_EXPORTS, NATURE_DONNEES}) String nature,
+            @QueryParam("depuis") String depuis,
+            @QueryParam("jusqua") String jusqua,
+            @QueryParam("avant") Long avant) {
+        List<EntreeJournal> entrees = journal.page(
+                nature(nature), optionalInstant(depuis, "depuis"), optionalInstant(jusqua, "jusqua"), avant, limite);
         Map<String, String> noms = referenceData.listAnimateurs().stream()
                 .collect(Collectors.toMap(Animateur::getId, Animateur::nomAffiche, (a, b) -> a));
         Map<Long, StaffingVerification> checks = verifications.findAll(entrees.stream()
@@ -94,6 +109,19 @@ public class HistoriqueResource {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet()));
         return entrees.stream().map(entree -> view(entree, noms::get, checks)).toList();
+    }
+
+    private static HistoryNature nature(String nature) {
+        if (nature == null || nature.isBlank()) {
+            return HistoryNature.ALL;
+        }
+        return switch (nature) {
+            case NATURE_EXPORTS -> HistoryNature.EXPORTS;
+            case NATURE_DONNEES -> HistoryNature.DATA_CHANGES;
+            default ->
+                throw new BusinessError.Invalid("Nature d'action inconnue : « " + nature + " » (attendu « "
+                        + NATURE_EXPORTS + " » ou « " + NATURE_DONNEES + " »).");
+        };
     }
 
     /**
@@ -144,10 +172,19 @@ public class HistoriqueResource {
         if (depuis == null || depuis.isBlank()) {
             throw new BusinessError.Invalid("Le moment « depuis » est obligatoire (attendu une date ISO-8601).");
         }
+        return optionalInstant(depuis, "depuis");
+    }
+
+    /** {@code null} when absent; refused when present and unreadable, never read as « no bound ». */
+    private static Instant optionalInstant(String valeur, String nom) {
+        if (valeur == null || valeur.isBlank()) {
+            return null;
+        }
         try {
-            return Instant.parse(depuis);
+            return Instant.parse(valeur);
         } catch (DateTimeParseException e) {
-            throw new BusinessError.Invalid("Moment illisible : « " + depuis + " » (attendu une date ISO-8601).", e);
+            throw new BusinessError.Invalid(
+                    "Moment « " + nom + " » illisible : « " + valeur + " » (attendu une date ISO-8601).", e);
         }
     }
 

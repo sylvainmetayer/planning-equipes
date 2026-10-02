@@ -171,17 +171,46 @@ public class JournalActionService {
 
     /** The edition's most recent actions, newest first. */
     public List<EntreeJournal> list(Integer limite) {
-        return repository.list(limite == null ? LIMITE_DEFAUT : limite);
+        return page(HistoryNature.ALL, null, null, null, limite);
+    }
+
+    /** Which family of actions a read of the history keeps. */
+    public enum HistoryNature {
+        /** Every action. */
+        ALL,
+        /**
+         * Every action the catalogue flags as a file leaving the application:
+         * « qui a sorti la liste, et quand ? » must not depend on how many
+         * edits happened since.
+         */
+        EXPORTS,
+        /**
+         * The changes a solve would be given — exactly what
+         * {@link #changesSince} counts, successes only: the solver screen's
+         * « N modifications depuis la dernière résolution » opens this
+         * selection, and must find its N lines there.
+         */
+        DATA_CHANGES
     }
 
     /**
-     * The edition's most recent exports, newest first — every action the
-     * catalogue flags as a file leaving the application. Selected by the
-     * database over the whole retention: « qui a sorti la liste, et quand ? »
-     * must not depend on how many edits happened since.
+     * One page of the edition's history, newest first: the lines of
+     * {@code nature} in {@code ]since ; until]}, after the line
+     * {@code before} when the reader is paging. Every bound is optional, and
+     * selected by the database over the whole retention — no implicit cap on
+     * a period: a reader goes further by passing the last id shown.
      */
-    public List<EntreeJournal> listExports(Integer limite) {
-        return repository.listAmong(CatalogueActions.exportCodes(), limite == null ? LIMITE_DEFAUT : limite);
+    public List<EntreeJournal> page(HistoryNature nature, Instant since, Instant until, Long before, Integer limite) {
+        if (since != null && until != null && until.isBefore(since)) {
+            throw new BusinessError.Invalid("La fin de la période (" + until + ") précède son début (" + since + ").");
+        }
+        HistoryFilter filter =
+                switch (nature) {
+                    case ALL -> new HistoryFilter(null, false, since, until);
+                    case EXPORTS -> new HistoryFilter(CatalogueActions.exportCodes(), false, since, until);
+                    case DATA_CHANGES -> new HistoryFilter(CatalogueActions.codesChangingData(), true, since, until);
+                };
+        return repository.page(filter, before, limite == null ? LIMITE_DEFAUT : limite);
     }
 
     /**

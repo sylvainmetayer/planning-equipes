@@ -19,6 +19,7 @@ import dev.sylvain.planning.service.analyse.RealisedVsPlanned.RealisedCell;
 import dev.sylvain.planning.service.analyse.RealisedVsPlanned.RealisedDay;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.journal.EntreeJournal;
+import dev.sylvain.planning.service.journal.HistoryFilter;
 import dev.sylvain.planning.service.journal.JournalActionRepository;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
@@ -255,7 +256,7 @@ class RealisedVsPlannedServiceTest {
         for (String personne : List.of("RV-A", "RV-B", "RV-C", "Alice", "Bruno", "Chloé", "Martin")) {
             assertThat(csv).doesNotContain(personne);
         }
-        assertThat(journal.listAmong(List.of("EXPORT_REALISE"), 10))
+        assertThat(journal.page(new HistoryFilter(List.of("EXPORT_REALISE"), false, null, null), null, 10))
                 .extracting(EntreeJournal::action)
                 .contains("EXPORT_REALISE");
     }
