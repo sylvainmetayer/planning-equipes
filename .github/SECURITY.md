@@ -9,9 +9,18 @@ si l'option est active sur le dépôt.
 Merci d'inclure ce qui permet de reproduire : version affichée en bas de la page
 *Débogage*, étapes, effet obtenu, et l'effet attendu.
 
-Le projet est maintenu par une seule personne, sur son temps libre : comptez
-quelques jours pour une première réponse. Vous serez tenu informé du
-traitement, et crédité si vous le souhaitez.
+Le projet est maintenu par une seule personne, sur son temps libre. Les
+délais visés pour une vulnérabilité signalée :
+
+| Étape | Délai |
+| --- | --- |
+| Accusé de réception | 7 jours |
+| Première évaluation (confirmée ou non, gravité) | 14 jours |
+| Correctif publié sur `main` | 90 jours au plus, bien moins pour une faille grave |
+| Divulgation publique (*coordinated disclosure*) | à la publication du correctif, par un avis de sécurité GitHub, ou au bout de 90 jours en accord avec vous |
+
+Vous serez tenu informé du traitement, et crédité dans l'avis si vous le
+souhaitez.
 
 ## Ce qui nous intéresse particulièrement
 
