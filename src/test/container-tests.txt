@@ -153,13 +153,10 @@ dev/sylvain/planning/service/backup/BackupServiceTest.java
 dev/sylvain/planning/service/backup/BackupWithoutAlertRecipientTest.java
 dev/sylvain/planning/service/edition/EditionDuplicationStructurelleTest.java
 dev/sylvain/planning/service/export/DatabaseDumpCoverageTest.java
+dev/sylvain/planning/service/keycloak/KeycloakUserProvisioningFlowTest.java
 dev/sylvain/planning/service/notification/AlerteEchangeJobTest.java
 dev/sylvain/planning/service/notification/NotificationsPlanifieesTest.java
-<<<<<<< HEAD
 dev/sylvain/planning/service/notification/RelanceCollecteJobTest.java
-=======
-dev/sylvain/planning/service/keycloak/KeycloakUserProvisioningFlowTest.java
->>>>>>> 2cc14a07 (test(keycloak): inventorier le test de provisionnement)
 dev/sylvain/planning/service/referentiel/AnimateurCsvExempleTest.java
 dev/sylvain/planning/service/referentiel/AnimateurCsvImportServiceTest.java
 dev/sylvain/planning/service/referentiel/CreneauCsvImportServiceTest.java
