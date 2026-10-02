@@ -828,6 +828,52 @@ animateurs remis à `null`) hors du serveur de dev, une configuration à la fois
 — deux solveurs concurrents se partagent cache et bande passante mémoire et la
 comparaison ne veut plus rien dire.
 
+#### Seconde phase : échanger des journées
+
+Plusieurs règles medium comptent par personne et par jour — stands premium,
+typologies, emplacements. Pour qu'une journée change de mains, un mouvement à
+un siège doit d'abord dégrader le score. La seconde phase tire donc aussi, à
+poids 2 face au *change* et au *swap*, un **échange de journées**
+(`DaySwapMoveIteratorFactory`) : les postes d'un animateur à une date passent à
+un collègue qui travaille ce jour-là, et les siens à lui, en un seul mouvement.
+Chacun garde son nombre de jours, sa semaine et sa série de jours ; seul ce
+qu'il fait ce jour-là change.
+
+Le couple est **choisi**, pas tiré puis filtré : un bloc (animateur, date) parmi
+ceux qui existent, puis le premier collègue du même jour à qui chaque poste peut
+aller dans les deux sens (`EligibleAnimateurMoveFilter.isEligible`). C'est ce qui
+distingue ce mouvement des *pillar moves* de Timefold, mesurés et écartés
+juste avant : le `pillarSwapMoveSelector` tirait deux blocs au hasard et le
+filtre en rejetait 99,97 %, divisant la vitesse par neuf ; le
+`pillarChangeMoveSelector` perdait du medium sur sept scénarios sur neuf.
+
+Mesure : phase 1 jouée une fois par scénario (graine 0), puis la seconde phase
+seule depuis ce même plan faisable, 90 s, graines 0, 1 et 2, runs séquentiels.
+Medium atteint (moyenne des trois graines ; le gain est de même sens à chaque
+graine) et évaluations par seconde :
+
+| Scénario | Sans échange | Avec échange | Gain medium | Évaluations/s |
+| --- | --- | --- | --- | --- |
+| `scenario-complet` | -30 753 | -23 845 | +6 908 | 3 665 → 2 539 |
+| `scenario-continu` | -31 627 | -29 658 | +1 968 | 3 952 → 3 028 |
+| `festival-realiste-canicule` | -22 020 | -19 197 | +2 823 | 5 469 → 4 852 |
+| `festival-hivernal` | -33 750 | -30 103 | +3 647 | 4 065 → 3 406 |
+| `gamme-20` | -37 885 | -33 553 | +4 332 | 3 470 → 2 554 |
+| `gamme-22` | -34 355 | -32 178 | +2 177 | 5 101 → 4 069 |
+| `gamme-23` | -37 960 | -31 683 | +6 277 | 4 567 → 3 553 |
+| `gamme-24` | -43 172 | -41 467 | +1 705 | 4 675 → 3 977 |
+| `gamme-25` | -26 187 | -25 083 | +1 103 | 4 382 → 3 584 |
+
+Le soft progresse sur canicule et continu, recule sur `gamme-20` (-4 700 à
+-6 250), `gamme-23` et `gamme-24`, varie ailleurs : il est classé sous le medium.
+Le poids a été choisi sur canicule et `gamme-22` à 60 s : 0,25 / 0,5 / 1 / 2 / 4
+donnent -21 650 / -20 795 / -20 470 / -19 965 / -19 870 et -34 455 / -34 085 /
+-33 610 / -33 350 / -33 200. Au-delà de 2 le gain tient dans l'écart entre
+graines, alors que *change* et *swap* n'ont plus qu'un tiers des tirages. La
+variante « donner sa journée à un collègue libre ce jour-là » ne gagnait rien.
+Les chiffres par graine sont dans le commentaire de la seconde phase de
+`solverConfig.xml`.
+
 ### Coût des contraintes : joiners indexés plutôt que `filtering`
 
 La vitesse de résolution est dominée par le nombre de tuples que les

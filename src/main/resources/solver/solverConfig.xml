@@ -149,8 +149,17 @@
                 NOT screen its candidates, so a ruin move scores 3 to 10 seats
                 against every animateur. That is the whole reason phase 1 drops
                 from ~6 800 to ~30 move evaluations per second here, and it is
-                worth re-checking on a Timefold bump — 2.5 exposes no knob for
-                it.
+                worth re-checking on a Timefold bump. Checked again on 2.7.0
+                (timefold-solver-core-2.7.0-sources.jar, Maven Central): still
+                no knob. RuinRecreateMoveSelectorConfig takes an entitySelector,
+                a variableName and the ruined counts and percentages, nothing
+                for the recreate side; RuinRecreateMoveSelectorFactory hands
+                RuinRecreateConstructionHeuristicPhaseBuilder a bare
+                QueuedEntityPlacerConfig with the default entity selector, whose
+                values are never filtered. 2.6 to 2.7 only passes the enclosing
+                phase's environment mode to that nested heuristic. The one lever
+                Timefold would honour there is an entity-dependent value range
+                on PosteAffectation — a model change, not a configuration one.
             -->
             <ruinRecreateMoveSelector>
                 <fixedProbabilityWeight>1.0</fixedProbabilityWeight>
@@ -263,6 +272,72 @@
         Les deux selecteurs cibles sur les postes non pourvus ne sont pas
         repris ici : arrive a ce stade il n'y en a plus, ils ne produiraient
         aucun mouvement.
+
+        Mouvements pillar (un bloc d'un animateur sur une journee) : mesures
+        et ecartes, Timefold 2.7.0. Protocole : phase 1 jouee une fois par
+        scenario (graine 0), puis cette phase seule depuis ce meme plan
+        faisable, 90 s, graines 0/1/2, runs sequentiels. Variante essayee :
+        pillarChangeMoveSelector, sous-piliers SEQUENCE de 2 a 3 postes tries
+        par date puis heure, filtre n'acceptant qu'un bloc d'une seule date
+        dont chaque poste est eligible pour l'animateur qui le recoit, poids
+        0.5 a cote du change et du swap. Medium atteint, graines 0/1/2 :
+
+            scenario     sans pillar                avec pillar
+            complet      -30 805/-30 945/-30 770    -31 165/-31 185/-31 155
+            continu      -31 685/-31 695/-31 650    -31 885/-31 940/-31 960
+            canicule     -22 215/-22 275/-22 310    -22 700/-22 835/-22 870
+            hivernal     -33 770/-33 815/-33 840    -33 975/-34 085/-33 985
+            gamme-20     -38 020/-38 115/-38 135    -37 860/-37 705/-37 915
+            gamme-22     -34 570/-34 675/-34 710    -35 280/-35 215/-35 150
+            gamme-23     -39 445/-39 475/-39 505    -37 415/-37 620/-37 670
+            gamme-24     -43 740/-43 655/-43 645    -44 080/-43 925/-44 005
+            gamme-25     -26 315/-26 375/-26 365    -26 420/-26 485/-26 515
+
+        Sept scenarios sur neuf perdent du medium a chaque graine, dont les
+        deux fixtures reelles ; gamme-20 en gagne 160 a 410 mais perd 1 700 a
+        4 700 de soft ; seul gamme-23 (souhaits, ad hoc) gagne nettement,
+        +1 800 a +2 000. Ailleurs le soft ne bouge dans aucun sens constant.
+        Vitesse : 0,3 a 6 % d'evaluations par seconde en moins (3 470 contre
+        3 310/s sur complet, 4 880 contre 4 690/s sur canicule). Un animateur
+        tient le plus souvent un seul poste par jour (canicule : 1 382
+        journees a un poste, 306 a deux), si bien que le filtre ecarte 66 a
+        92 % des blocs tires. Le pillarSwapMoveSelector, blocs a la meme date,
+        est pire : sur canicule il n'accepte que 0,03 % des paires tirees et
+        divise la vitesse par neuf (4 620 contre 535/s, 60 s, graine 0).
+        Aucun gain net et constant : non retenu.
+
+        L'echange de journees (DaySwapMoveIteratorFactory) fait ce que le
+        pillar swap ne pouvait pas : il choisit d'abord un bloc (animateur,
+        date) parmi ceux qui existent, puis un collegue du meme jour eligible
+        dans les deux sens, au lieu de tirer deux blocs au hasard et d'en
+        filtrer 99,97 %. Il garde le nombre de jours de chacun, sa semaine et
+        sa serie de jours : seul ce que chacun fait ce jour-la change. Meme
+        protocole que ci-dessus, medium atteint, graines 0/1/2 :
+
+            scenario     sans echange               avec echange (poids 2)
+            complet      -30 700/-30 875/-30 685    -23 795/-23 790/-23 950
+            continu      -31 645/-31 665/-31 570    -29 715/-29 580/-29 680
+            canicule     -21 965/-21 975/-22 120    -19 165/-19 215/-19 210
+            hivernal     -33 685/-33 770/-33 795    -30 010/-30 120/-30 180
+            gamme-20     -37 940/-37 855/-37 860    -33 525/-33 810/-33 325
+            gamme-22     -34 315/-34 330/-34 420    -32 275/-32 125/-32 135
+            gamme-23     -38 555/-38 180/-37 145    -32 475/-31 325/-31 250
+            gamme-24     -43 350/-43 015/-43 150    -41 545/-41 400/-41 455
+            gamme-25     -26 150/-26 220/-26 190    -25 005/-25 100/-25 145
+
+        Gain a chaque graine de chaque scenario, de +1 045 (gamme-25) a
+        +7 085 (complet). Le soft progresse sur canicule et continu, recule
+        sur gamme-20 (-4 700 a -6 250), gamme-23 et gamme-24, varie ailleurs :
+        il est classe sous le medium. Prix : 11 a 31 % d'evaluations par
+        seconde en moins (5 470 contre 4 850/s sur canicule), et la moitie
+        des tirages seulement pour change et swap. Sur canicule, 1 086 des 1 414 pas de la graine 0 sont des
+        echanges. Poids : sur canicule et gamme-22 a 60 s (graine 0), 0,25 /
+        0,5 / 1 / 2 / 4 donnent -21 650 / -20 795 / -20 470 / -19 965 /
+        -19 870 et -34 455 / -34 085 / -33 610 / -33 350 / -33 200 ; 4 ne
+        gagne plus que 95 et 150 sur 2, dans l'ecart entre graines, et ne
+        laisse qu'un tiers des tirages a change et swap. La variante
+        « donner sa journee a un collegue libre ce jour-la » ne gagnait rien
+        (-23 135 contre -23 170, -35 320 contre -35 390) : non retenue.
     -->
     <localSearch>
         <unionMoveSelector>
@@ -274,6 +349,15 @@
                 <filterClass>dev.sylvain.planning.solver.EligibleAnimateurMoveFilter$SwapMoveFilter</filterClass>
                 <fixedProbabilityWeight>1.0</fixedProbabilityWeight>
             </swapMoveSelector>
+            <!--
+                Echange de journees (DaySwapMoveIteratorFactory) : les postes
+                d'un animateur a une date passent a un collegue qui travaille
+                ce jour-la, et les siens a lui. Poids 2 : mesure ci-dessus.
+            -->
+            <moveIteratorFactory>
+                <fixedProbabilityWeight>2.0</fixedProbabilityWeight>
+                <moveIteratorFactoryClass>dev.sylvain.planning.solver.DaySwapMoveIteratorFactory</moveIteratorFactoryClass>
+            </moveIteratorFactory>
         </unionMoveSelector>
         <acceptor>
             <lateAcceptanceSize>400</lateAcceptanceSize>
