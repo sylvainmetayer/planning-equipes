@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 import org.jboss.logging.Logger;
 
 /**
- * Named accounts and what they may do (issues #294, #295, ADR 0076).
+ * Named accounts and what they may do (issues #294, #295, ADR 0077).
  *
  * <p>Keycloak says who is calling; this service remembers the person
  * ({@code compte}, created on their first sign-in or in advance by an
