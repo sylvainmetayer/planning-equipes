@@ -4,6 +4,7 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.ProductName;
+import dev.sylvain.planning.service.schema.SchemaCompatibility;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.sql.Connection;
@@ -16,10 +17,14 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.sql.DataSource;
+import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.MigrationVersion;
 
 /**
  * Exports and re-imports the whole business dataset as a plain SQL script, so a
@@ -273,6 +278,17 @@ public class DatabaseDumpService {
                     + table + "), 1), true)")
             .collect(Collectors.joining(", ", "SELECT ", ""));
 
+    /**
+     * The header line naming the schema a dump was taken at — the last
+     * migration applied to its database. Written by {@link #exportDump()},
+     * read back by {@link #importDump(String)}.
+     */
+    static final String SCHEMA_VERSION_HEADER = "-- Schema version: ";
+
+    /** {@link #SCHEMA_VERSION_HEADER} as read back: a {@code V} before the number is tolerated. */
+    private static final Pattern SCHEMA_VERSION_LINE =
+            Pattern.compile("^--\\s*Schema version:\\s*V?([0-9]+(?:\\.[0-9]+)*)\\s*$", Pattern.CASE_INSENSITIVE);
+
     private static final Pattern STATEMENT_PATTERN =
             Pattern.compile("^(insert\\s+into|delete\\s+from|truncate\\s+table|truncate)\\s+([a-z_][a-z0-9_]*)");
 
@@ -289,23 +305,37 @@ public class DatabaseDumpService {
     /** Named in the header of the dump, so a script found later says which instance produced it. */
     private final ProductName productName;
 
+    /** The migration history: the schema a dump is taken at, and the one it is replayed on. */
+    private final Flyway flyway;
+
     @Inject
     public DatabaseDumpService(
-            DataSource dataSource, JdbcEditionScope scope, EditionContext editionContext, ProductName productName) {
+            DataSource dataSource,
+            JdbcEditionScope scope,
+            EditionContext editionContext,
+            ProductName productName,
+            Flyway flyway) {
         this.dataSource = dataSource;
         this.scope = scope;
         this.editionContext = editionContext;
         this.productName = productName;
+        this.flyway = flyway;
     }
 
     /**
      * Builds a self-contained SQL script that wipes and repopulates every
-     * business table.
+     * business table. Its header names the schema it was taken at
+     * ({@link #SCHEMA_VERSION_HEADER}): a dump is a list of rows shaped by the
+     * migrations applied when it was taken, and a later migration that
+     * changes a column's type leaves it unable to replay.
      */
     public String exportDump() {
         StringBuilder sql = new StringBuilder();
         sql.append("-- ").append(productName.value()).append(" database dump\n");
         sql.append("-- Generated at ").append(Instant.now()).append('\n');
+        currentSchemaVersion()
+                .ifPresent(version ->
+                        sql.append(SCHEMA_VERSION_HEADER).append(version).append('\n'));
         sql.append("-- Replay with the \"Import SQL\" admin action.\n\n");
         try (Connection connection = dataSource.getConnection()) {
             for (int i = TABLES.size() - 1; i >= 0; i--) {
@@ -324,13 +354,15 @@ public class DatabaseDumpService {
     /**
      * Replays a dump previously produced by {@link #exportDump()} and returns
      * the number of executed statements. Any statement outside the allowed
-     * verbs/tables aborts the whole import.
+     * verbs/tables aborts the whole import, and so does a dump whose header
+     * names another schema than this database's ({@link #checkSchemaVersion}).
      */
     public int importDump(String script) {
         List<String> statements = splitStatements(script);
         if (statements.isEmpty()) {
             throw new BusinessError.Invalid("The SQL script does not contain any statement");
         }
+        checkSchemaVersion(script, currentSchemaVersion().orElse(null));
         statements.forEach(DatabaseDumpService::checkStatementIsAllowed);
         int executed = scope.writeAndReturn("Failed to import the database", connection -> {
             try (Statement statement = connection.createStatement()) {
@@ -354,6 +386,60 @@ public class DatabaseDumpService {
         // dataset that was just wiped, which no longer exists.
         editionContext.invaliderCache();
         return executed;
+    }
+
+    /**
+     * The last migration applied to this database — what its tables look
+     * like, whatever the binary ships ({@code ALLOW_SCHEMA_AHEAD}). Empty on
+     * a history Flyway has not written yet.
+     */
+    private Optional<String> currentSchemaVersion() {
+        MigrationVersion applied =
+                SchemaCompatibility.assess(flyway.info().all()).latestApplied();
+        return Optional.ofNullable(applied).map(MigrationVersion::getVersion);
+    }
+
+    /** The schema a dump's header names, read in its leading comment lines; empty when it names none. */
+    static Optional<String> schemaVersionOf(String script) {
+        for (String line : script.lines().toList()) {
+            String trimmed = line.strip();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            if (!trimmed.startsWith("--")) {
+                return Optional.empty();
+            }
+            Matcher version = SCHEMA_VERSION_LINE.matcher(trimmed);
+            if (version.matches()) {
+                return Optional.of(version.group(1));
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Refuses a dump taken at another schema than this database's. Its rows
+     * are shaped by the migrations applied when it was taken: replayed on
+     * another schema, an insert fails halfway on a column that changed type,
+     * or worse, lands a value the migration since rewrote. Compared as
+     * Flyway versions, so {@code 122} and {@code 122.0} are the same.
+     *
+     * <p>A script naming no schema is let through, as before: a dump exported
+     * before the header existed, or a few statements written by hand. Its
+     * replay is then the operator's call, and {@code docs/import-export.md}
+     * says how to check it first.</p>
+     */
+    static void checkSchemaVersion(String script, String current) {
+        Optional<String> dump = schemaVersionOf(script);
+        if (dump.isEmpty() || current == null) {
+            return;
+        }
+        if (!MigrationVersion.fromVersion(dump.get()).equals(MigrationVersion.fromVersion(current))) {
+            throw new BusinessError.Invalid("Ce dump a été exporté au schéma V" + dump.get()
+                    + " et cette base est au schéma V" + current + " : il ne se rejoue pas sur un autre schéma."
+                    + " Rejouez-le sur une instance au schéma V" + dump.get()
+                    + ", puis exportez-en un nouveau une fois cette instance mise à jour.");
+        }
     }
 
     /**

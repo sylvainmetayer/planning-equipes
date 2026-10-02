@@ -271,6 +271,38 @@ class DatabaseResourceTest {
                 .statusCode(200);
     }
 
+    /**
+     * The header names the schema the dump was taken at — the last migration
+     * applied, which on the suite's fresh database is the last one shipped —
+     * and a dump naming another schema is refused before anything is
+     * replayed: its rows are shaped by migrations this database no longer
+     * matches.
+     */
+    @Test
+    void theDumpNamesItsSchemaAndADumpOfAnotherSchemaIsRefused() throws java.io.IOException {
+        int derniere;
+        try (var migrations = java.nio.file.Files.list(java.nio.file.Path.of("src/main/resources/db/migration"))) {
+            derniere = migrations
+                    .map(file -> file.getFileName().toString())
+                    .filter(name -> name.matches("V\\d+__.*\\.sql"))
+                    .mapToInt(name -> Integer.parseInt(name.substring(1, name.indexOf("__"))))
+                    .max()
+                    .orElseThrow();
+        }
+        String dump = exportDump();
+        assertThat(dump.lines().limit(5)).contains("-- Schema version: " + derniere);
+
+        String ancien = dump.replace("-- Schema version: " + derniere, "-- Schema version: " + (derniere - 1));
+        sqlRequest(ancien)
+                .when()
+                .post("/api/database/import")
+                .then()
+                .statusCode(400)
+                .body("statements", equalTo(0))
+                .body("message", containsString("schéma V" + (derniere - 1)))
+                .body("message", containsString("schéma V" + derniere));
+    }
+
     @Test
     void importRejectsAnEmptyScript() {
         sqlRequest("-- nothing to replay\n")
