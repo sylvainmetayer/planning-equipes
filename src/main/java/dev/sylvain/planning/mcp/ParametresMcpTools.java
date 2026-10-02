@@ -20,6 +20,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 /**
  * MCP tools for the tuning knobs of {@code ReferenceDataResource}: legal
@@ -319,10 +320,8 @@ public class ParametresMcpTools {
         ParametresSolveur actuels = referenceDataService.getParametresSolveur();
         boolean defaut = Boolean.TRUE.equals(revenirAuDefaut);
         ParametresSolveur voulus = new ParametresSolveur(
-                defaut
-                        ? null
-                        : dureeResolutionSecondes != null ? dureeResolutionSecondes : actuels.dureeResolutionSecondes(),
-                defaut ? null : plateauSecondes != null ? plateauSecondes : actuels.plateauSecondes(),
+                defaut ? null : givenOr(dureeResolutionSecondes, actuels.dureeResolutionSecondes()),
+                defaut ? null : givenOr(plateauSecondes, actuels.plateauSecondes()),
                 actuels.mailFinResolution());
         return toView(
                 referenceDataService.updateParametresSolveur(voulus), referenceDataService.getSolverBudgetBounds());
@@ -481,19 +480,22 @@ public class ParametresMcpTools {
         return new SuppressionResult(id, true);
     }
 
+    /** The value the caller gave, or the current one when it gave none. */
+    private static Integer givenOr(Integer given, Integer current) {
+        return given != null ? given : current;
+    }
+
     private List<Animateur> animateurs(List<String> animateurIds) {
-        List<Animateur> animateurs = new ArrayList<>();
         if (animateurIds == null) {
-            return animateurs;
+            return new ArrayList<>();
         }
         List<Animateur> connus = referenceDataService.listAnimateurs();
-        for (String animateurId : animateurIds) {
-            animateurs.add(connus.stream()
-                    .filter(animateur -> animateur.getId().equals(animateurId))
-                    .findFirst()
-                    .orElseThrow(() -> new NoSuchElementException("Animateur introuvable : " + animateurId)));
-        }
-        return animateurs;
+        return animateurIds.stream()
+                .map(animateurId -> connus.stream()
+                        .filter(animateur -> animateur.getId().equals(animateurId))
+                        .findFirst()
+                        .orElseThrow(() -> new NoSuchElementException("Animateur introuvable : " + animateurId)))
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     static ParametresLegauxView toView(ParametresLegaux parametres) {

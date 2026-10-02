@@ -58,6 +58,23 @@ public final class ConstraintCatalog {
     /** The hard form of the run cap, shipped off (ADR 0045). */
     private static final String MAX_JOURS_CONSECUTIFS_DUR = "maxJoursConsecutifsTravaillesDur";
 
+    /* Names of the rules several tables of this class key on. */
+    private static final String POSTE_DOIT_ETRE_POURVU = "posteDoitEtrePourvu";
+    private static final String ANIMATEUR_DISPONIBLE = "animateurDisponible";
+    private static final String PLAFOND_CRENEAUX_PAR_TYPOLOGIE = "plafondCreneauxParTypologie";
+    private static final String STAND_COMPLEXE_AVEC_REFERENT = "standComplexeAvecReferent";
+    private static final String EQUILIBRER_CHARGE = "equilibrerCharge";
+    private static final String EXPERIENCE_REQUISE_POUR_STANDS_PREMIUM = "experienceRequisePourStandsPremium";
+    private static final String SOUHAITS_INCOMPATIBLES = "souhaitsIncompatibles";
+    private static final String APPRECIATION_INCOMPATIBLE = "appreciationIncompatible";
+    private static final String COUPURE_REPAS_OBLIGATOIRE = "coupureRepasObligatoire";
+    private static final String LIMITER_TYPOLOGIES_DISTINCTES_PAR_ANIMATEUR = "limiterTypologiesDistinctesParAnimateur";
+    private static final String STABILITE_DU_PLAN_PUBLIE = "stabiliteDuPlanPublie";
+    private static final String LIMITER_EMPLACEMENTS_PAR_JOUR = "limiterEmplacementsParJour";
+    private static final String ARRIVEE_GROUPEE = "arriveeGroupee";
+    private static final String TRAJET_INSUFFISANT_ENTRE_POSTES = "trajetInsuffisantEntrePostes";
+    private static final String MAX_JOURS_CONSECUTIFS_TRAVAILLES = "maxJoursConsecutifsTravailles";
+
     /**
      * The meal break, and the first « organisation rule » held hard. No article
      * of the Code du travail requires lunch — L3121-16 covers only the twenty
@@ -135,67 +152,67 @@ public final class ConstraintCatalog {
      */
     private static final Map<String, String> REMEDIATIONS = Map.ofEntries(
             Map.entry(
-                    "posteDoitEtrePourvu",
+                    POSTE_DOIT_ETRE_POURVU,
                     "Il manque du monde sur ces places : ajoutez des animateurs disponibles ce jour-là, "
                             + "réduisez l'effectif minimum du stand, ou fermez le créneau."),
             Map.entry(
-                    "animateurDisponible",
+                    ANIMATEUR_DISPONIBLE,
                     "Le plan pose quelqu'un un jour qu'il a déclaré indisponible : corrigez la fiche de "
                             + "l'animateur si la déclaration a changé, sinon laissez le solveur placer "
                             + "quelqu'un d'autre."),
             Map.entry(
-                    "plafondCreneauxParTypologie",
+                    PLAFOND_CRENEAUX_PAR_TYPOLOGIE,
                     "Le plafond de la typologie est atteint : montez-le sur l'écran Typologies, ou faites "
                             + "apprécier cette typologie par d'autres animateurs pour élargir le vivier."),
             Map.entry(
-                    "standComplexeAvecReferent",
+                    STAND_COMPLEXE_AVEC_REFERENT,
                     "Aucun animateur confirmé sur ces créneaux : montez le niveau d'un animateur sur la "
                             + "typologie du stand, ou retirez l'exigence de référent au stand."),
             Map.entry(
-                    "equilibrerCharge",
+                    EQUILIBRER_CHARGE,
                     "La charge est inégale : cherchez qui est très au-dessus sur l'écran Heures, et ouvrez "
                             + "des disponibilités ailleurs — ou baissez son importance si l'écart vous convient."),
             Map.entry(
-                    "experienceRequisePourStandsPremium",
+                    EXPERIENCE_REQUISE_POUR_STANDS_PREMIUM,
                     "Un stand premium est tenu sans animateur expérimenté : appréciez davantage "
                             + "d'animateurs sur sa typologie, ou retirez le drapeau premium au stand."),
             Map.entry(
-                    "souhaitsIncompatibles",
+                    SOUHAITS_INCOMPATIBLES,
                     "Les souhaits se contredisent ou sont hors d'atteinte : c'est une règle souple, "
                             + "regardez les souhaits concernés sur les fiches, ou baissez son importance."),
             Map.entry(
-                    "appreciationIncompatible",
+                    APPRECIATION_INCOMPATIBLE,
                     "Le plan place des animateurs sur des typologies qu'ils n'apprécient pas : complétez "
                             + "les appréciations, ou acceptez l'écart en baissant son importance."),
             Map.entry(
-                    "coupureRepasObligatoire",
+                    COUPURE_REPAS_OBLIGATOIRE,
                     "La journée ne laisse pas la place au repas : coupez la journée en deux vacations, "
                             + "élargissez la fenêtre repas sur sa ligne de Règles du planning, ou raccourcissez le "
                             + "créneau."),
             Map.entry(
-                    "limiterTypologiesDistinctesParAnimateur",
+                    LIMITER_TYPOLOGIES_DISTINCTES_PAR_ANIMATEUR,
                     "Trop de typologies différentes pour une même personne : relevez le plafond sur la ligne "
                             + "de la règle, dans Règles du planning, ou baissez son importance."),
             Map.entry(
-                    "stabiliteDuPlanPublie",
+                    STABILITE_DU_PLAN_PUBLIE,
                     "Le plan s'écarte de ce qui a été publié : chaque écart est une vacation à "
                             + "re-annoncer. Verrouillez ce qui doit tenir, ou montez l'importance de la règle."),
             Map.entry(
-                    "limiterEmplacementsParJour",
+                    LIMITER_EMPLACEMENTS_PAR_JOUR,
                     "Trop d'allers-retours entre emplacements dans la journée : relevez le plafond sur la "
                             + "ligne de la règle, dans Règles du planning, ou baissez son importance."),
             Map.entry(
-                    "arriveeGroupee",
+                    ARRIVEE_GROUPEE,
                     "Un groupe de covoiturage n'arrive ou ne repart pas ensemble : vérifiez que ses membres ont "
                             + "déclaré les mêmes jours d'indisponibilité, élargissez la tolérance sur la ligne de la "
                             + "règle, dans Règles du planning, ou montez son importance."),
             Map.entry(
-                    "trajetInsuffisantEntrePostes",
+                    TRAJET_INSUFFISANT_ENTRE_POSTES,
                     "Le battement ne laisse pas le temps de marcher d'un emplacement à l'autre : élargissez "
                             + "le battement ou rapprochez les stands — ou ajustez la vitesse de marche, le facteur "
                             + "de détour et la tolérance sur la ligne de la règle, dans Règles du planning."),
             Map.entry(
-                    "maxJoursConsecutifsTravailles",
+                    MAX_JOURS_CONSECUTIFS_TRAVAILLES,
                     "Trop de jours d'affilée : ouvrez des disponibilités sur d'autres personnes pour "
                             + "couvrir ces journées, relevez le plafond sur la ligne de la règle, ou baissez son "
                             + "importance si la série vous convient."),
@@ -290,30 +307,30 @@ public final class ConstraintCatalog {
      * their category, which for a legal rule is always « change the plan ».
      */
     private static final Map<String, List<Lever>> LEVERS = Map.ofEntries(
-            Map.entry("posteDoitEtrePourvu", List.of(Lever.SEAT, Lever.SKILL, Lever.STAFFING)),
-            Map.entry("animateurDisponible", List.of(Lever.ANIMATEUR_PROFILES, Lever.REPAIR)),
+            Map.entry(POSTE_DOIT_ETRE_POURVU, List.of(Lever.SEAT, Lever.SKILL, Lever.STAFFING)),
+            Map.entry(ANIMATEUR_DISPONIBLE, List.of(Lever.ANIMATEUR_PROFILES, Lever.REPAIR)),
             Map.entry("pasDeChevauchementHoraire", List.of(Lever.REPAIR)),
-            Map.entry("plafondCreneauxParTypologie", List.of(Lever.GAME_CATEGORY_CAP, Lever.SKILL)),
-            Map.entry("coupureRepasObligatoire", List.of(Lever.MEAL_WINDOW, Lever.SHIFT)),
+            Map.entry(PLAFOND_CRENEAUX_PAR_TYPOLOGIE, List.of(Lever.GAME_CATEGORY_CAP, Lever.SKILL)),
+            Map.entry(COUPURE_REPAS_OBLIGATOIRE, List.of(Lever.MEAL_WINDOW, Lever.SHIFT)),
             Map.entry(MAX_JOURS_CONSECUTIFS_DUR, List.of(Lever.SEAT, Lever.RULE)),
             Map.entry("coupureRepasPlacementPrefere", List.of(Lever.MEAL_WINDOW)),
             Map.entry("affiniteAdHoc", List.of(Lever.ADJUSTMENTS)),
-            Map.entry("arriveeGroupee", List.of(Lever.ADJUSTMENTS, Lever.THRESHOLD)),
-            Map.entry("standComplexeAvecReferent", List.of(Lever.SEAT, Lever.SKILL, Lever.STAND_PROFILE)),
-            Map.entry("equilibrerCharge", List.of(Lever.WORKLOAD, Lever.REPAIR)),
-            Map.entry("stabiliteDuPlanPublie", List.of(Lever.LOCK)),
+            Map.entry(ARRIVEE_GROUPEE, List.of(Lever.ADJUSTMENTS, Lever.THRESHOLD)),
+            Map.entry(STAND_COMPLEXE_AVEC_REFERENT, List.of(Lever.SEAT, Lever.SKILL, Lever.STAND_PROFILE)),
+            Map.entry(EQUILIBRER_CHARGE, List.of(Lever.WORKLOAD, Lever.REPAIR)),
+            Map.entry(STABILITE_DU_PLAN_PUBLIE, List.of(Lever.LOCK)),
             Map.entry("repartitionMineursParCreneau", List.of(Lever.SEAT, Lever.REPAIR)),
-            Map.entry("experienceRequisePourStandsPremium", List.of(Lever.SEAT, Lever.SKILL, Lever.STAND_PROFILE)),
+            Map.entry(EXPERIENCE_REQUISE_POUR_STANDS_PREMIUM, List.of(Lever.SEAT, Lever.SKILL, Lever.STAND_PROFILE)),
             Map.entry("eviterRoulementStandsPremium", List.of(Lever.REPAIR, Lever.STAND_PROFILE)),
             Map.entry("eviterChangementEmplacementEloigne", List.of(Lever.REPAIR)),
-            Map.entry("trajetInsuffisantEntrePostes", List.of(Lever.THRESHOLD, Lever.REPAIR)),
-            Map.entry("limiterEmplacementsParJour", List.of(Lever.CAP, Lever.REPAIR)),
+            Map.entry(TRAJET_INSUFFISANT_ENTRE_POSTES, List.of(Lever.THRESHOLD, Lever.REPAIR)),
+            Map.entry(LIMITER_EMPLACEMENTS_PAR_JOUR, List.of(Lever.CAP, Lever.REPAIR)),
             Map.entry("eviterEnchainementStandsEpuisants", List.of(Lever.REPAIR, Lever.STAND_PROFILE)),
             Map.entry("eviterFermeturePuisOuverture", List.of(Lever.THRESHOLD, Lever.REPAIR)),
-            Map.entry("appreciationIncompatible", List.of(Lever.SKILL, Lever.REPAIR)),
-            Map.entry("souhaitsIncompatibles", List.of(Lever.ANIMATEUR_PROFILES, Lever.REPAIR)),
-            Map.entry("limiterTypologiesDistinctesParAnimateur", List.of(Lever.CAP, Lever.REPAIR)),
-            Map.entry("maxJoursConsecutifsTravailles", List.of(Lever.CAP, Lever.REPAIR)),
+            Map.entry(APPRECIATION_INCOMPATIBLE, List.of(Lever.SKILL, Lever.REPAIR)),
+            Map.entry(SOUHAITS_INCOMPATIBLES, List.of(Lever.ANIMATEUR_PROFILES, Lever.REPAIR)),
+            Map.entry(LIMITER_TYPOLOGIES_DISTINCTES_PAR_ANIMATEUR, List.of(Lever.CAP, Lever.REPAIR)),
+            Map.entry(MAX_JOURS_CONSECUTIFS_TRAVAILLES, List.of(Lever.CAP, Lever.REPAIR)),
             Map.entry("favoriserMixiteDesNiveaux", List.of(Lever.SKILL, Lever.REPAIR)),
             Map.entry("equilibrerCreneauxPenibles", List.of(Lever.WORKLOAD, Lever.REPAIR)),
             Map.entry("preserverBufferPolyvalents", List.of(Lever.SKILL, Lever.REPAIR)));
@@ -394,13 +411,13 @@ public final class ConstraintCatalog {
 
     private static final List<ConstraintDefinition> DEFINITIONS = List.of(
             new ConstraintDefinition(
-                    "posteDoitEtrePourvu",
+                    POSTE_DOIT_ETRE_POURVU,
                     Niveau.HARD,
                     CATEGORIE_AFFECTATION,
                     "Chaque place ouverte sur un stand doit être pourvue par un animateur.",
                     "Places pourvues"),
             new ConstraintDefinition(
-                    "animateurDisponible",
+                    ANIMATEUR_DISPONIBLE,
                     Niveau.HARD,
                     CATEGORIE_AFFECTATION,
                     "Un animateur ne peut pas être affecté un jour qu'il a déclaré indisponible.",
@@ -414,7 +431,7 @@ public final class ConstraintCatalog {
                             + "sur le même créneau).",
                     "Pas deux postes en même temps"),
             new ConstraintDefinition(
-                    "plafondCreneauxParTypologie",
+                    PLAFOND_CRENEAUX_PAR_TYPOLOGIE,
                     Niveau.HARD,
                     CATEGORIE_AFFECTATION,
                     "Sur une typologie qui porte un plafond, un animateur ne tient pas plus que ce nombre de "
@@ -561,7 +578,7 @@ public final class ConstraintCatalog {
                             + "écart dur, toute pause déduite a bien été prise.",
                     "Pause des majeurs après 6 h"),
             new ConstraintDefinition(
-                    "coupureRepasObligatoire",
+                    COUPURE_REPAS_OBLIGATOIRE,
                     Niveau.HARD,
                     CATEGORIE_ORGANISATION_REPAS,
                     "Qui travaille de part et d'autre d'une fenêtre repas doit disposer, entièrement dans cette "
@@ -613,7 +630,7 @@ public final class ConstraintCatalog {
                             + "sans jamais la forcer.",
                     "Affinités entre animateurs"),
             new ConstraintDefinition(
-                    "arriveeGroupee",
+                    ARRIVEE_GROUPEE,
                     Niveau.SOFT,
                     CATEGORIE_AD_HOC,
                     "Groupe d'arrivée (covoiturage, 2 à 4 animateurs) : les membres travaillent les mêmes jours, "
@@ -639,19 +656,19 @@ public final class ConstraintCatalog {
                             + "après l'échange ne bouge plus, sans geler le reste de leur planning.",
                     "Échanges validés figés"),
             new ConstraintDefinition(
-                    "standComplexeAvecReferent",
+                    STAND_COMPLEXE_AVEC_REFERENT,
                     Niveau.MEDIUM,
                     CATEGORIE_QUALITE,
                     "Chaque stand devrait compter au moins un référent sur chaque créneau.",
                     "Un référent sur chaque stand"),
             new ConstraintDefinition(
-                    "equilibrerCharge",
+                    EQUILIBRER_CHARGE,
                     Niveau.MEDIUM,
                     CATEGORIE_QUALITE,
                     "La charge de travail doit être répartie équitablement entre les animateurs.",
                     "Équilibre de la charge"),
             new ConstraintDefinition(
-                    "stabiliteDuPlanPublie",
+                    STABILITE_DU_PLAN_PUBLIE,
                     Niveau.MEDIUM,
                     CATEGORIE_QUALITE,
                     "Une fois un planning publié, chaque personne déplacée d'un siège qu'elle tenait dans le plan "
@@ -666,7 +683,7 @@ public final class ConstraintCatalog {
                     "Sur un créneau, un stand ne devrait pas compter plus de mineurs que de majeurs.",
                     "Pas plus de mineurs que de majeurs"),
             new ConstraintDefinition(
-                    "experienceRequisePourStandsPremium",
+                    EXPERIENCE_REQUISE_POUR_STANDS_PREMIUM,
                     Niveau.MEDIUM,
                     CATEGORIE_QUALITE,
                     "Un stand premium ne devrait pas être tenu par un animateur débutant sur sa typologie.",
@@ -686,7 +703,7 @@ public final class ConstraintCatalog {
                             + "l'emplacement est éloigné (> 300 m à vol d'oiseau) de celui du créneau précédent.",
                     "Changements d'emplacement éloignés"),
             new ConstraintDefinition(
-                    "trajetInsuffisantEntrePostes",
+                    TRAJET_INSUFFISANT_ENTRE_POSTES,
                     Niveau.MEDIUM,
                     CATEGORIE_QUALITE,
                     "Entre deux postes d'un même animateur le même jour, séparés par un battement, sur deux "
@@ -697,7 +714,7 @@ public final class ConstraintCatalog {
                             + "jamais jugée par les deux règles.",
                     "Trajets trop courts entre deux postes"),
             new ConstraintDefinition(
-                    "limiterEmplacementsParJour",
+                    LIMITER_EMPLACEMENTS_PAR_JOUR,
                     Niveau.MEDIUM,
                     CATEGORIE_QUALITE,
                     "Sur une même journée, limiter le nombre d'emplacements distincts visités par un animateur "
@@ -723,20 +740,20 @@ public final class ConstraintCatalog {
                             + "quand la loi exige déjà autant (un mineur, 12 h ; avant 16 ans, 14 h).",
                     "Fermeture puis ouverture le lendemain"),
             new ConstraintDefinition(
-                    "appreciationIncompatible",
+                    APPRECIATION_INCOMPATIBLE,
                     Niveau.MEDIUM,
                     CATEGORIE_QUALITE,
                     "L'appréciation de l'administrateur ne couvre aucune typologie de jeu proposée par le stand.",
                     "Appréciations non couvertes"),
             new ConstraintDefinition(
-                    "souhaitsIncompatibles",
+                    SOUHAITS_INCOMPATIBLES,
                     Niveau.MEDIUM,
                     CATEGORIE_QUALITE,
                     "Aucune des typologies de jeu proposées par le stand ne figure dans les souhaits déclarés de "
                             + "l'animateur.",
                     "Souhaits non couverts"),
             new ConstraintDefinition(
-                    "limiterTypologiesDistinctesParAnimateur",
+                    LIMITER_TYPOLOGIES_DISTINCTES_PAR_ANIMATEUR,
                     Niveau.MEDIUM,
                     CATEGORIE_QUALITE,
                     "Un animateur devrait intervenir sur un petit nombre de typologies de jeu (plafond réglable, "
@@ -744,7 +761,7 @@ public final class ConstraintCatalog {
                             + "typologies le même après-midi et deux à une semaine d'écart comptent pareil.",
                     "Typologies par animateur"),
             new ConstraintDefinition(
-                    "maxJoursConsecutifsTravailles",
+                    MAX_JOURS_CONSECUTIFS_TRAVAILLES,
                     Niveau.MEDIUM,
                     CATEGORIE_QUALITE,
                     "Un animateur ne devrait pas travailler plus de jours consécutifs que le plafond réglé "

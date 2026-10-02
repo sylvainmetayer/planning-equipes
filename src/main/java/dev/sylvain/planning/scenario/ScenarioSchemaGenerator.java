@@ -38,7 +38,7 @@ public final class ScenarioSchemaGenerator {
 
     private ScenarioSchemaGenerator() {}
 
-    public static void main(String[] args) throws IOException {
+    public static void main() throws IOException {
         JsonNode schema = generate();
         Files.createDirectories(SCHEMA_PATH.getParent());
         String pretty = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(schema);

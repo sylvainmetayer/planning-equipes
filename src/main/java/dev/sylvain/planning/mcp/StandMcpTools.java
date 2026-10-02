@@ -278,17 +278,16 @@ public class StandMcpTools {
         }
         Set<String> connues =
                 new HashSet<>(referenceDataService.typologyIdsByKey().keySet());
-        List<TypologieItem> manquantes = new ArrayList<>();
-        for (String typologie : typologies) {
-            // A value shaped like a typologie id names one that does not
-            // exist: an error to report, not a code to create.
-            if (!IdGenerator.Kind.TYPOLOGIE.hasGeneratedShape(typologie) && connues.add(typologie)) {
+        return typologies.stream()
+                // A value shaped like a typologie id names one that does not
+                // exist: an error to report, not a code to create.
+                .filter(typologie -> !IdGenerator.Kind.TYPOLOGIE.hasGeneratedShape(typologie))
+                .filter(typologie -> !connues.contains(typologie))
+                .distinct()
                 // Cited by the stand under that value until it exists: see
                 // ReferenceDataService#writeStand, which swaps in the id.
-                manquantes.add(new TypologieItem(null, typologie, typologie, false, null, null, null));
-            }
-        }
-        return manquantes;
+                .map(typologie -> new TypologieItem(null, typologie, typologie, false, null, null, null))
+                .toList();
     }
 
     /**
@@ -982,11 +981,6 @@ public class StandMcpTools {
     }
 
     /**
-     * A typologie as the write tools answer it: the fields of {@code
-     * TypologieItem}, under the same keys, plus the warnings a write accepted
-     * during a solve carries — the service type cannot take them.
-     */
-    /**
      * A game category as {@code lister_typologies} returns it: the referential
      * row and what the Typologies screen counts beside it — how many hold it,
      * wish for it and propose it, and the resulting badge. Counts only, never a
@@ -1023,6 +1017,11 @@ public class StandMcpTools {
         }
     }
 
+    /**
+     * A typologie as the write tools answer it: the fields of {@code
+     * TypologieItem}, under the same keys, plus the warnings a write accepted
+     * during a solve carries — the service type cannot take them.
+     */
     public record TypologieView(
             String id,
             String code,
