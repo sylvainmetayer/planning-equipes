@@ -869,6 +869,24 @@ et `etat` — `ORPHELINE` (proposée par un stand, maîtrisée par personne),
 quoi se lit par id avec `lister_animateurs`. La définition est celle que
 `etat_edition` compte dans `referentiels.typologiesOrphelines`.
 
+## Le planning se lit aussi par typologie
+
+`analyser_typologies` rend la vue « par typologie » de la page Planning, sur le
+planning persisté et toute l'édition : pour chaque typologie — celles du
+référentiel, tenues ou non, et celles qu'un stand propose sans que le
+référentiel les déclare —, les heures et les postes tenus, les heures jour par
+jour (`heuresParJour`), et quatre listes de personnes : `affectes`,
+`competents`, `competentsJamaisAffectes` et `affectesSansCompetence`. Là où
+l'écran nomme chacun, triés par nom, l'outil ne rend que `nombre` et
+`animateurIds`, triés par id : un ordre alphabétique des noms en dirait encore
+quelque chose. La note libre de l'organisateur sur la typologie n'y figure pas
+non plus. Le calcul est celui de l'écran — le même service —, donc les mêmes
+chiffres pour la même édition. Un assistant y lit sans recalculer quelles
+typologies tournent quel jour et combien de compétents l'édition compte pour
+chacune ; les disponibilités du jour, elles, restent celles d'`analyser_marge`.
+Pour le besoin plutôt que pour le tenu, `analyser_effectifs` donne le goulot par
+typologie, et `plan_formation` qui former.
+
 ## La tension croise la marge et la fragilité
 
 `analyser_marge` prend un troisième `mode`, `tension` : la marge « apres »
