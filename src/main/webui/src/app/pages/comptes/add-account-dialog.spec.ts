@@ -12,7 +12,7 @@ import { fakeOf, provideFake } from '../../core/testing/fake';
 import { Compte } from '../../core/models';
 import { AddAccountData, AddAccountDialog } from './add-account-dialog';
 
-const CREE: Compte = {
+const CREATED: Compte = {
   id: 'c9',
   email: 'nouvelle@example.org',
   nom: null,
@@ -26,8 +26,8 @@ const CREE: Compte = {
 describe('AddAccountDialog', () => {
   const close = vi.fn();
   const comptesApi = fakeOf<ComptesApi>({
-    create: () => Promise.resolve(CREE),
-    inviteAdministrator: () => Promise.resolve(CREE),
+    create: () => Promise.resolve(CREATED),
+    inviteAdministrator: () => Promise.resolve(CREATED),
   });
 
   function monter(data?: AddAccountData) {
@@ -65,7 +65,7 @@ describe('AddAccountDialog', () => {
       email: 'nouvelle@example.org',
       nom: null,
     });
-    expect(close).toHaveBeenCalledExactlyOnceWith(CREE);
+    expect(close).toHaveBeenCalledExactlyOnceWith(CREATED);
   });
 
   it('sends the name when there is one', async () => {
