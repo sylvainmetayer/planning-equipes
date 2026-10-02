@@ -208,6 +208,20 @@ jobs:
         working-directory: src/main/webui
         run: ./node_modules/.bin/playwright install --with-deps chromium
 
+      # Les secrets des clients sont ceux du realm de développement que Keycloak
+      # vient d'importer : on les lit dans ce fichier plutôt que de les recopier
+      # ici, où ils dériveraient d'une rotation du realm et passeraient pour des
+      # identifiants en dur. Ils ne valent que pour cette pile jetable.
+      - name: Read the development client secrets of the realm
+        id: realm-secrets
+        if: inputs.authentification != 'secours'
+        run: |
+          realm=docker/keycloak/realm-planning.json
+          {
+            echo "app=$(jq -r '.clients[] | select(.clientId == "planning-app") | .secret' "$realm")"
+            echo "provisioning=$(jq -r '.clients[] | select(.clientId == "planning-provisioning") | .secret' "$realm")"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Start the application
         env:
           DB_URL: jdbc:postgresql://localhost:5432/festival
@@ -249,7 +263,7 @@ jobs:
           # des jetons cohérent. Secrets de développement du realm importé.
           OIDC_AUTH_SERVER_URL: http://localhost:8081/realms/planning
           OIDC_CLIENT_ID: planning-app
-          OIDC_CLIENT_SECRET: dev-planning-app-oJ4kQ2vT-8fW6nB3q
+          OIDC_CLIENT_SECRET: ${{ steps.realm-secrets.outputs.app }}
           # Le provisioning n'est allumé que sur la pile de production, dont la
           # suite l'éprouve. Sur la suite principale, les fiches s'amorcent par
           # import SQL, qui ne provisionne personne : e2e/keycloak.ts prépare
@@ -257,7 +271,7 @@ jobs:
           OIDC_PROVISIONING_ENABLED: ${{ inputs.authentification == 'keycloak' }}
           OIDC_PROVISIONING_SERVER_URL: http://localhost:8081
           OIDC_PROVISIONING_CLIENT_ID: planning-provisioning
-          OIDC_PROVISIONING_CLIENT_SECRET: dev-planning-provisioning-yH5mL8sK
+          OIDC_PROVISIONING_CLIENT_SECRET: ${{ steps.realm-secrets.outputs.provisioning }}
         run: |
           java -jar target/quarkus-app/quarkus-run.jar > app.log 2>&1 &
           echo $! > app.pid
