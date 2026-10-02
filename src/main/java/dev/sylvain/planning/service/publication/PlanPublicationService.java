@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.publication;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.DemandeEchange;
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.StatutDemandeEchange;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
@@ -847,7 +848,7 @@ public class PlanPublicationService {
         return referenceDataService.listStands().stream()
                 .filter(stand -> stand.getId().equals(standId))
                 .findFirst()
-                .map(stand -> stand.getNom())
+                .map(Stand::getNom)
                 .orElse(standId);
     }
 

@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
@@ -73,14 +74,14 @@ public class EditionContext {
      * application — so {@link #invaliderCache()} on those few writes is
      * enough.
      */
-    private volatile Set<String> idsConnus;
+    private final AtomicReference<Set<String>> idsConnus = new AtomicReference<>();
 
     /**
      * The active edition, cached like the ids. A holder rather than a bare
      * {@code Optional}: {@code null} means "not read yet", and an empty
      * holder "read, and none is active".
      */
-    private volatile ActiveCache activeId;
+    private final AtomicReference<ActiveCache> activeId = new AtomicReference<>();
 
     /**
      * Bumped by every {@link #invaliderCache()}: a load started before an
@@ -144,12 +145,12 @@ public class EditionContext {
      * events.
      */
     public Optional<String> activeEditionId() {
-        ActiveCache cache = activeId;
+        ActiveCache cache = activeId.get();
         if (cache == null) {
             long seen = generation.get();
             cache = new ActiveCache(editionRepository.activeEditionId());
             if (generation.get() == seen) {
-                activeId = cache;
+                activeId.set(cache);
             }
         }
         return cache.id();
@@ -207,8 +208,8 @@ public class EditionContext {
     /** Must be called whenever an edition is created, deleted, activated or deactivated. */
     public void invaliderCache() {
         generation.incrementAndGet();
-        idsConnus = null;
-        activeId = null;
+        idsConnus.set(null);
+        activeId.set(null);
     }
 
     /** The {@code X-Edition-Id} of the request being served, or {@code null}. */
@@ -229,14 +230,14 @@ public class EditionContext {
     }
 
     private Set<String> idsConnus() {
-        Set<String> cache = idsConnus;
+        Set<String> cache = idsConnus.get();
         if (cache == null) {
             long seen = generation.get();
             cache = editionRepository.listEditions().stream()
                     .map(Edition::getId)
                     .collect(Collectors.toUnmodifiableSet());
             if (generation.get() == seen) {
-                idsConnus = cache;
+                idsConnus.set(cache);
             }
         }
         return cache;

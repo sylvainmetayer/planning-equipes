@@ -94,7 +94,7 @@ public class SessionEspaceFilter implements ContainerRequestFilter {
             return false;
         }
         return remoteUser
-                .trustedEmail(nom -> contexte.getHeaderString(nom))
+                .trustedEmail(contexte::getHeaderString)
                 .filter(email -> email.equals(owner.email().trim().toLowerCase(Locale.ROOT)))
                 .isPresent();
     }

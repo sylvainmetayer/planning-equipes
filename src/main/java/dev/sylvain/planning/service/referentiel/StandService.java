@@ -4,7 +4,6 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.HoraireStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.ConcurrentModificationGuard;
 import dev.sylvain.planning.service.IdGenerator;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
@@ -39,8 +38,6 @@ public class StandService {
 
     private final ReferenceDataChangeTracker changeTracker;
 
-    private final ConcurrentModificationGuard staleWrites;
-
     private final SolverJobService solverJobs;
 
     private final ConsigneRepository consignes;
@@ -57,7 +54,6 @@ public class StandService {
             CreneauService creneaux,
             TypologieService typologies,
             ReferenceDataChangeTracker changeTracker,
-            ConcurrentModificationGuard staleWrites,
             SolverJobService solverJobs,
             ConsigneRepository consignes,
             IdGenerator ids,
@@ -67,7 +63,6 @@ public class StandService {
         this.creneaux = creneaux;
         this.typologies = typologies;
         this.changeTracker = changeTracker;
-        this.staleWrites = staleWrites;
         this.solverJobs = solverJobs;
         this.consignes = consignes;
         this.ids = ids;

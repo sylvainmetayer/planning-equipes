@@ -65,11 +65,7 @@ public final class HoraireElagage {
      * all load-bearing comes back untouched, and its line reports no change.
      */
     public static List<LigneElagage> elaguer(List<Stand> stands, List<Creneau> creneaux) {
-        List<LigneElagage> lignes = new ArrayList<>();
-        for (Stand stand : stands) {
-            lignes.add(elaguer(stand, creneaux));
-        }
-        return lignes;
+        return stands.stream().map(stand -> elaguer(stand, creneaux)).toList();
     }
 
     /**

@@ -49,18 +49,6 @@ public class PlanningService {
     /** The business-facing reading of a solved or persisted plan. */
     private final PlanningDiagnosticService diagnosticService;
 
-    /**
-     * Null in the plain (non-CDI) tests, which build this service with
-     * {@code new} and never exercise the locks: {@link ProblemBuilder#applyVerrouillages}
-     * guards on it. Constructor-injected like everything else, so the five
-     * collaborators built below receive the bean itself rather than a lambda
-     * reading a field CDI would only fill after this constructor ran.
-     */
-    private final PlanningPersistenceService planningPersistenceService;
-
-    /** The published plan, for {@code stabiliteDuPlanPublie}; null in a plain-Java harness like the persistence above. */
-    private final PlanSnapshotService snapshotService;
-
     /** The moment the past is judged against (ADR 0044); {@code null} from the supplier when the freeze is off. */
     private final Supplier<PastHorizon> horizon;
 
@@ -119,8 +107,11 @@ public class PlanningService {
         this.solverConfiguration = new SolverConfiguration(
                 secondsLimit, unimprovedSecondsLimit, maxEmplacementsParJour, referenceDataService, config);
         this.referenceDataService = referenceDataService;
-        this.planningPersistenceService = planningPersistenceService;
-        this.snapshotService = snapshotService;
+        // planningPersistenceService and snapshotService (the published plan,
+        // for stabiliteDuPlanPublie) are null in the plain (non-CDI) tests,
+        // which never exercise the locks: ProblemBuilder#applyVerrouillages
+        // guards on it. Constructor-injected, so the collaborators built below
+        // receive the bean itself rather than a field CDI would fill later.
         // Read at each build, never cached: a queued job builds its problem
         // when its turn comes, and a frozen date set meanwhile must be seen.
         this.horizon = passeFige && jourJClock != null ? () -> PastHorizon.of(jourJClock.dateTime()) : () -> null;
@@ -136,6 +127,8 @@ public class PlanningService {
                 solverConfiguration.diagnosticService(),
                 solverConfiguration.solutionManager(),
                 feasibilityAnalyzer,
+                // A lambda, not a method reference: the plain tests pass null,
+                // which a method reference would dereference right here.
                 () -> planningPersistenceService.loadPersistedPlanning(),
                 solveRunner::prepareProblem);
     }

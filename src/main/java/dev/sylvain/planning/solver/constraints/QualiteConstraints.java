@@ -284,7 +284,7 @@ public final class QualiteConstraints {
                 .groupBy(PosteAffectation::getStand, poste -> poste.getCreneau().getId(), ConstraintCollectors.count())
                 .map((stand, creneauId, sieges) -> new Equipage(stand, sieges.intValue()))
                 .groupBy(Equipage::stand, ConstraintCollectors.max(Equipage::sieges))
-                .map((stand, sieges) -> new Equipage(stand, sieges));
+                .map(Equipage::new);
     }
 
     /** A premium stand and the seats of its busiest créneau. */

@@ -21,14 +21,15 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -209,7 +210,7 @@ public class DemandeEchangeService {
                         AND id = ?
                         AND demandeur_id = ?
                         AND statut IN ('PROPOSEE', 'EN_ATTENTE_CIBLE')""")) {
-            ps.setTimestamp(1, Timestamp.from(Instant.now()));
+            ps.setObject(1, withOffset(Instant.now()));
             ps.setString(2, editionContext.editionIdCourant());
             ps.setString(3, demandeId);
             ps.setString(4, demandeurId);
@@ -265,7 +266,7 @@ public class DemandeEchangeService {
                         SET statut = ?, cible_decide_le = ?
                         WHERE edition_id = ? AND id = ? AND cible_id = ? AND statut = 'EN_ATTENTE_CIBLE'""")) {
             ps.setString(1, statut.name());
-            ps.setTimestamp(2, Timestamp.from(maintenant));
+            ps.setObject(2, wallClock(maintenant));
             ps.setString(3, editionContext.editionIdCourant());
             ps.setString(4, demandeId);
             ps.setString(5, cibleId);
@@ -347,8 +348,25 @@ public class DemandeEchangeService {
     }
 
     private static LocalDate date(ResultSet rs, String colonne) throws SQLException {
-        Date valeur = rs.getDate(colonne);
-        return valeur == null ? null : valeur.toLocalDate();
+        return rs.getObject(colonne, LocalDate.class);
+    }
+
+    /** A moment bound to a {@code timestamptz} column. */
+    private static OffsetDateTime withOffset(Instant moment) {
+        return moment == null ? null : moment.atOffset(ZoneOffset.UTC);
+    }
+
+    /**
+     * A moment bound to {@code cible_decide_le}, the one column of the table
+     * typed {@code timestamp} without zone: it holds the server's wall clock.
+     */
+    private static LocalDateTime wallClock(Instant moment) {
+        return moment == null ? null : LocalDateTime.ofInstant(moment, ZoneId.systemDefault());
+    }
+
+    private static Instant instant(ResultSet rs, String colonne) throws SQLException {
+        OffsetDateTime valeur = rs.getObject(colonne, OffsetDateTime.class);
+        return valeur == null ? null : valeur.toInstant();
     }
 
     /**
@@ -557,7 +575,7 @@ public class DemandeEchangeService {
                         WHERE edition_id = ? AND id = ? AND statut IN ('PROPOSEE', 'EN_ATTENTE_CIBLE')""")) {
             ps.setString(1, statut.name());
             ps.setString(2, commentaire == null || commentaire.isBlank() ? null : commentaire);
-            ps.setTimestamp(3, Timestamp.from(decideLe));
+            ps.setObject(3, withOffset(decideLe));
             ps.setString(4, editionContext.editionIdCourant());
             ps.setString(5, demande.getId());
             if (ps.executeUpdate() == 0) {
@@ -626,7 +644,7 @@ public class DemandeEchangeService {
                 PreparedStatement ps = connection.prepareStatement(
                         "UPDATE demande_echange SET communiquee_le = ? WHERE edition_id = ? AND id = ?")) {
             for (String demandeId : demandeIds) {
-                ps.setTimestamp(1, Timestamp.from(communiqueeLe));
+                ps.setObject(1, withOffset(communiqueeLe));
                 ps.setString(2, editionContext.editionIdCourant());
                 ps.setString(3, demandeId);
                 ps.addBatch();
@@ -680,9 +698,9 @@ public class DemandeEchangeService {
                             ? null
                             : String.join("\n", demande.getContraintesViolees()));
             ps.setString(13, demande.getCommentaireAdmin());
-            ps.setTimestamp(14, Timestamp.from(demande.getCreeLe()));
-            ps.setTimestamp(15, demande.getCibleDecideLe() == null ? null : Timestamp.from(demande.getCibleDecideLe()));
-            ps.setTimestamp(16, demande.getDecideLe() == null ? null : Timestamp.from(demande.getDecideLe()));
+            ps.setObject(14, withOffset(demande.getCreeLe()));
+            ps.setObject(15, wallClock(demande.getCibleDecideLe()));
+            ps.setObject(16, withOffset(demande.getDecideLe()));
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to store demande " + demande.getId(), e);
@@ -738,16 +756,15 @@ public class DemandeEchangeService {
         demande.setContraintesViolees(
                 violations == null || violations.isBlank() ? List.of() : List.of(violations.split("\n")));
         demande.setCommentaireAdmin(rs.getString("commentaire_admin"));
-        Timestamp creeLe = rs.getTimestamp("cree_le");
-        demande.setCreeLe(creeLe == null ? null : creeLe.toInstant());
-        Timestamp cibleDecideLe = rs.getTimestamp("cible_decide_le");
-        demande.setCibleDecideLe(cibleDecideLe == null ? null : cibleDecideLe.toInstant());
-        Timestamp decideLe = rs.getTimestamp("decide_le");
-        demande.setDecideLe(decideLe == null ? null : decideLe.toInstant());
-        Timestamp annuleLe = rs.getTimestamp("annule_le");
-        demande.setAnnuleLe(annuleLe == null ? null : annuleLe.toInstant());
-        Timestamp communiqueeLe = rs.getTimestamp("communiquee_le");
-        demande.setCommuniqueeLe(communiqueeLe == null ? null : communiqueeLe.toInstant());
+        demande.setCreeLe(instant(rs, "cree_le"));
+        LocalDateTime cibleDecideLe = rs.getObject("cible_decide_le", LocalDateTime.class);
+        demande.setCibleDecideLe(
+                cibleDecideLe == null
+                        ? null
+                        : cibleDecideLe.atZone(ZoneId.systemDefault()).toInstant());
+        demande.setDecideLe(instant(rs, "decide_le"));
+        demande.setAnnuleLe(instant(rs, "annule_le"));
+        demande.setCommuniqueeLe(instant(rs, "communiquee_le"));
         return demande;
     }
 }

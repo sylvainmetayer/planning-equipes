@@ -12,6 +12,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
@@ -99,10 +100,10 @@ public class AdminLoginLimiter {
      * believing it had declared its proxy, while the lock quietly counted every
      * visitor on the proxy's own single counter.
      */
-    private volatile TrustedProxies proxysFiables = TrustedProxies.NONE;
+    private final AtomicReference<TrustedProxies> proxysFiables = new AtomicReference<>(TrustedProxies.NONE);
 
     public void register(@Observes Filters filtres) {
-        proxysFiables = TrustedProxies.of(config.proxysFiables().orElse(List.of()));
+        proxysFiables.set(TrustedProxies.of(config.proxysFiables().orElse(List.of())));
         filtres.register(this::apply, PRIORITE);
     }
 
@@ -174,6 +175,6 @@ public class AdminLoginLimiter {
      * why reading it from the left made this very lock useless.
      */
     private String address(RoutingContext contexte) {
-        return ClientAddress.of(contexte, proxysFiables);
+        return ClientAddress.of(contexte, proxysFiables.get());
     }
 }

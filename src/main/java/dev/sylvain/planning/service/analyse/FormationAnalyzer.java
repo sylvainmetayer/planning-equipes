@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -193,7 +194,7 @@ public final class FormationAnalyzer {
             List<CompetenceRare> sesRares = rares.getOrDefault(typologie, List.of());
             List<LocalDate> joursTension = sesRares.stream()
                     .map(CompetenceRare::date)
-                    .filter(date -> date != null)
+                    .filter(Objects::nonNull)
                     .distinct()
                     .sorted(Comparator.naturalOrder())
                     .toList();
