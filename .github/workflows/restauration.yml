@@ -87,7 +87,7 @@ jobs:
           LEGAL_DEMO_INSTANCE=true
           # No Keycloak in this stack: a restore needs no sign-in. Keycloak
           # off, then, and the break-glass door open instead — the start
-          # refuses an instance with neither (ADR 0075). The compose file still
+          # refuses an instance with neither (ADR 0076). The compose file still
           # requires the realm's URL and secret; nothing contacts them.
           OIDC_ENABLED=false
           OIDC_PROVISIONING_ENABLED=false

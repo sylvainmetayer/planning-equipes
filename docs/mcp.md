@@ -11,7 +11,7 @@ reste dehors est énuméré en fin de document, avec sa raison.
 
 ## Authentification : OAuth2, ou clé API partagée
 
-Deux voies, et elles cohabitent ([ADR 0075](decisions/0075-keycloak-obligatoire-comptes-nominatifs.md)).
+Deux voies, et elles cohabitent ([ADR 0076](decisions/0076-keycloak-obligatoire-comptes-nominatifs.md)).
 
 **OAuth2** : `/mcp` est un *resource server* OAuth 2.1 au sens de la
 spécification MCP — défi `401` portant `WWW-Authenticate: Bearer
