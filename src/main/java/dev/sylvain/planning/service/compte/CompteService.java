@@ -276,11 +276,36 @@ public class CompteService {
                         .filter(s -> s != null && !s.isBlank())
                         .distinct()
                         .toList();
-        if (role == RoleHabilitation.RESPONSABLE_STAND && (edition == null || perimetre.isEmpty())) {
+        checkGrant(role, edition, perimetre, expireLe, nominatif);
+        repository.insertHabilitation(
+                compteId,
+                new Habilitation(
+                        newId(),
+                        role,
+                        edition,
+                        expireLe,
+                        perimetre,
+                        nominatif,
+                        Optional.ofNullable(creePar).orElse("?"),
+                        null,
+                        null));
+        cache.clear();
+        return required(compteId);
+    }
+
+    /**
+     * What a right may carry, by role: a stand manager needs an edition, stands
+     * that exist in it and an expiry; any other role takes neither stands nor a
+     * {@code nominatif} override; and an expiry already past opens nothing.
+     */
+    private void checkGrant(
+            RoleHabilitation role, String edition, List<String> perimetre, Instant expireLe, Boolean nominatif) {
+        boolean responsable = role == RoleHabilitation.RESPONSABLE_STAND;
+        if (responsable && (edition == null || perimetre.isEmpty())) {
             throw new BusinessError.Invalid(
                     "Un responsable de stand l'est dans une édition, pour au moins un de ses stands.");
         }
-        if (role == RoleHabilitation.RESPONSABLE_STAND && expireLe == null) {
+        if (responsable && expireLe == null) {
             throw new BusinessError.Invalid(
                     "Un droit de responsable de stand expire : donnez-lui une date de fin, après l'édition.");
         }
@@ -298,29 +323,15 @@ public class CompteService {
             throw new BusinessError.Invalid(
                     "Stand(s) inconnu(s) dans l'édition " + edition + " : " + String.join(", ", inconnus));
         }
-        if (role != RoleHabilitation.RESPONSABLE_STAND && !perimetre.isEmpty()) {
+        if (!responsable && !perimetre.isEmpty()) {
             throw new BusinessError.Invalid("Seul un responsable de stand a un périmètre de stands.");
         }
-        if (role != RoleHabilitation.RESPONSABLE_STAND && nominatif != null) {
+        if (!responsable && nominatif != null) {
             throw new BusinessError.Invalid("Seul un responsable de stand lit des noms ou des effectifs.");
         }
         if (expireLe != null && !expireLe.isAfter(Instant.now())) {
             throw new BusinessError.Invalid("La date d'expiration est déjà passée.");
         }
-        repository.insertHabilitation(
-                compteId,
-                new Habilitation(
-                        newId(),
-                        role,
-                        edition,
-                        expireLe,
-                        perimetre,
-                        nominatif,
-                        Optional.ofNullable(creePar).orElse("?"),
-                        null,
-                        null));
-        cache.clear();
-        return required(compteId);
     }
 
     public Compte withdraw(String compteId, String habilitationId) {

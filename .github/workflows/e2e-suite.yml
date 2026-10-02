@@ -202,10 +202,11 @@ jobs:
 
       # Le job ne tourne pas dans l'image Playwright : le navigateur et ses
       # bibliothèques système s'installent ici, à la version que fixe
-      # package-lock.json.
+      # package-lock.json. Le binaire local, pas `npx` : rien ne se télécharge
+      # hors de ce que le verrou a installé.
       - name: Install the browser
         working-directory: src/main/webui
-        run: npx playwright install --with-deps chromium
+        run: ./node_modules/.bin/playwright install --with-deps chromium
 
       - name: Start the application
         env:

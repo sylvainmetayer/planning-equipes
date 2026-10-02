@@ -159,7 +159,7 @@ class ToolchainPinsStructuralTest {
             assertThat(read(WORKFLOWS.resolve("e2e-suite.yml")))
                     .as(
                             "no workflow runs the Playwright image: the e2e job must install the browser of the locked package")
-                    .contains("npx playwright install");
+                    .containsPattern("(npx playwright|node_modules/\\.bin/playwright) install");
         }
         assertThat(ecarts)
                 .as("Playwright pins that disagree: bump @playwright/test and the e2e image together")
