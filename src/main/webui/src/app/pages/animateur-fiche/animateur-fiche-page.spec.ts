@@ -148,23 +148,26 @@ describe('AnimateurFichePage', () => {
     markDayOff: vi.fn(),
     cancelDayOff: vi.fn(),
     remind: vi.fn(),
-    confirmations: vi.fn(async () => []),
-    syntheseConfirmations: vi.fn(async () => ({ dernierePublicationLe: null })),
+    confirmations: vi.fn(() => Promise.resolve([])),
+    syntheseConfirmations: vi.fn(() => Promise.resolve({ dernierePublicationLe: null })),
   };
   const planningApi = {
-    sendToAnimateur: vi.fn(async () => ({})),
-    exportForAnimateur: vi.fn(async () => 'Téléchargement démarré.'),
+    sendToAnimateur: vi.fn(() => Promise.resolve({})),
+    exportForAnimateur: vi.fn(() => Promise.resolve('Téléchargement démarré.')),
     equityReport: vi.fn(),
   };
-  const verrous = { create: vi.fn(async () => []), remove: vi.fn(async () => undefined) };
-  const crud = fakeOf<ReferenceCrudService>({ save: async () => true });
-  const confirm = { ask: vi.fn(async () => true) };
+  const verrous = {
+    create: vi.fn(() => Promise.resolve([])),
+    remove: vi.fn(() => Promise.resolve(undefined)),
+  };
+  const crud = fakeOf<ReferenceCrudService>({ save: () => Promise.resolve(true) });
+  const confirm = { ask: vi.fn(() => Promise.resolve(true)) };
   const notify = vi.fn();
   const dialog = { open: vi.fn() };
   const planningState = {
     set: vi.fn(),
-    loadForDisplay: vi.fn(async () => ({ postes: [], animateurs: [] })),
-    require: vi.fn(async () => ({ postes: [] })),
+    loadForDisplay: vi.fn(() => Promise.resolve({ postes: [], animateurs: [] })),
+    require: vi.fn(() => Promise.resolve({ postes: [] })),
   };
   let fixture: ComponentFixture<AnimateurFichePage>;
   /** The id in the address: « précédent / suivant » moves it without building the page again. */
@@ -180,7 +183,7 @@ describe('AnimateurFichePage', () => {
         { provide: PostesApi, useValue: { place: vi.fn() } },
         {
           provide: ConstraintsApi,
-          useValue: { catalogue: vi.fn(async () => ({ contraintes: [] })) },
+          useValue: { catalogue: vi.fn(() => Promise.resolve({ contraintes: [] })) },
         },
         { provide: VerrouillageStore, useValue: verrous },
         provideFake(ReferenceCrudService, crud),
@@ -191,14 +194,14 @@ describe('AnimateurFichePage', () => {
         {
           provide: AnalysesApi,
           useValue: {
-            typologies: vi.fn(async () => []),
-            breaks: vi.fn(async () => null),
-            walks: vi.fn(async () => null),
+            typologies: vi.fn(() => Promise.resolve([])),
+            breaks: vi.fn(() => Promise.resolve(null)),
+            walks: vi.fn(() => Promise.resolve(null)),
           },
         },
         {
           provide: ConsignesStore,
-          useValue: { reload: vi.fn(async () => undefined), consigneOf: () => null },
+          useValue: { reload: vi.fn(() => Promise.resolve(undefined)), consigneOf: () => null },
         },
         { provide: Location, useValue: { path: () => '/animateurs/a1', replaceState: vi.fn() } },
         {
@@ -228,7 +231,7 @@ describe('AnimateurFichePage', () => {
             creneaux: signal([
               { id: 'c1', date: '2026-07-10', heureDebut: '10:00', heureFin: '12:00' },
             ]),
-            reload: vi.fn(async () => undefined),
+            reload: vi.fn(() => Promise.resolve(undefined)),
           },
         },
         { provide: SolverJobService, useValue: { editingLocked: signal(false) } },
@@ -384,14 +387,14 @@ describe('AnimateurFichePage', () => {
         animateur: { ...profile().animateur, joursIndisponibles: [] },
       }),
     );
-    api.markDayOff.mockImplementation(async () => {
+    api.markDayOff.mockImplementation(() => {
       api.profile.mockResolvedValue(
         profile({
           affectations: [],
           animateur: { ...profile().animateur, joursIndisponibles: ['2026-07-11'] },
         }),
       );
-      return {
+      return Promise.resolve({
         date: '2026-07-11',
         unavailable: true,
         startedSeatsKept: 0,
@@ -407,7 +410,7 @@ describe('AnimateurFichePage', () => {
             heureFin: '18:00:00',
           },
         ],
-      };
+      });
     });
     await render();
     const readsBefore = planningState.loadForDisplay.mock.calls.length;
@@ -439,14 +442,14 @@ describe('AnimateurFichePage', () => {
         animateur: { ...profile().animateur, joursIndisponibles: [] },
       }),
     );
-    api.markDayOff.mockImplementation(async () => {
+    api.markDayOff.mockImplementation(() => {
       api.profile.mockResolvedValue(
         profile({
           affectations: [locked],
           animateur: { ...profile().animateur, joursIndisponibles: ['2026-07-11'] },
         }),
       );
-      return {
+      return Promise.resolve({
         date: '2026-07-11',
         unavailable: true,
         startedSeatsKept: 0,
@@ -462,7 +465,7 @@ describe('AnimateurFichePage', () => {
             heureFin: '18:00:00',
           },
         ],
-      };
+      });
     });
     await render();
 

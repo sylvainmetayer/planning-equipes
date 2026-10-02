@@ -78,31 +78,35 @@ describe('JourneePage', () => {
   const loadForDisplay = vi.fn();
   const set = vi.fn();
   const analysesApi = {
-    typologies: vi.fn(async () => []),
-    breaks: vi.fn(async () => null),
-    emplacements: vi.fn(async () => []),
-    walks: vi.fn(async () => null),
-    groupedArrivals: vi.fn(async () => null),
-    intendance: vi.fn(async () => ({ pasMinutes: 60, journees: [], message: '' })),
+    typologies: vi.fn(() => Promise.resolve([])),
+    breaks: vi.fn(() => Promise.resolve(null)),
+    emplacements: vi.fn(() => Promise.resolve([])),
+    walks: vi.fn(() => Promise.resolve(null)),
+    groupedArrivals: vi.fn(() => Promise.resolve(null)),
+    intendance: vi.fn(() => Promise.resolve({ pasMinutes: 60, journees: [], message: '' })),
   };
   const planningApi = {
-    equityReport: vi.fn(async () => ({
-      heureDebutSoiree: '20:00:00',
-      semaines: [],
-      lignes: [],
-      syntheses: {},
-      colonnesSolveur: [],
-    })),
-    hoursReport: vi.fn(async () => ({
-      heureDebutSoiree: '20:00:00',
-      semaines: [],
-      animateurs: [],
-    })),
-    typologiesReport: vi.fn(async () => ({ typologies: [], jours: [] })),
+    equityReport: vi.fn(() =>
+      Promise.resolve({
+        heureDebutSoiree: '20:00:00',
+        semaines: [],
+        lignes: [],
+        syntheses: {},
+        colonnesSolveur: [],
+      }),
+    ),
+    hoursReport: vi.fn(() =>
+      Promise.resolve({
+        heureDebutSoiree: '20:00:00',
+        semaines: [],
+        animateurs: [],
+      }),
+    ),
+    typologiesReport: vi.fn(() => Promise.resolve({ typologies: [], jours: [] })),
   };
   const journeesApi = {
-    changements: vi.fn(
-      async (jour: string, reference: string | null): Promise<ChangementsJournee> => ({
+    changements: vi.fn((jour: string, reference: string | null): Promise<ChangementsJournee> =>
+      Promise.resolve({
         jour,
         reference: reference === 'resolution' ? 'RESOLUTION' : 'PUBLICATION',
         referenceDisponible: true,
@@ -164,7 +168,7 @@ describe('JourneePage', () => {
         {
           provide: ConsignesStore,
           useValue: {
-            reload: vi.fn(async () => undefined),
+            reload: vi.fn(() => Promise.resolve(undefined)),
             etat: () => null,
             consignes: () => [],
             aujourdhui: () => null,
@@ -177,8 +181,10 @@ describe('JourneePage', () => {
           provide: ApiService,
           useValue: {
             // Lists for the referentials the treemap reads, a volumetry for the rest.
-            get: vi.fn(async (url: string) =>
-              url === '/api/typologies' || url === '/api/stands' ? [] : { assignments: 2 },
+            get: vi.fn((url: string) =>
+              Promise.resolve(
+                url === '/api/typologies' || url === '/api/stands' ? [] : { assignments: 2 },
+              ),
             ),
           },
         },
@@ -193,18 +199,20 @@ describe('JourneePage', () => {
         {
           provide: PostesApi,
           useValue: {
-            explanation: vi.fn(async () => ({ contraintesViolees: [], contraintesRespectees: [] })),
+            explanation: vi.fn(() =>
+              Promise.resolve({ contraintesViolees: [], contraintesRespectees: [] }),
+            ),
           },
         },
         {
           provide: ConstraintsApi,
-          useValue: { catalogue: vi.fn(async () => ({ contraintes: [] })) },
+          useValue: { catalogue: vi.fn(() => Promise.resolve({ contraintes: [] })) },
         },
         {
           provide: VerrouillageStore,
           useValue: {
             verrouillages: () => [],
-            reload: vi.fn(async () => undefined),
+            reload: vi.fn(() => Promise.resolve(undefined)),
             estJourVerrouille: () => false,
             estStandVerrouille: () => false,
             estCreneauVerrouille: () => false,

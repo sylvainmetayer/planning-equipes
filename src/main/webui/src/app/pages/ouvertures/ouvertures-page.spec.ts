@@ -187,32 +187,33 @@ function mount(
   } = {},
 ) {
   const standsApi = fakeOf<StandsApi>({
-    openings: async () => options.rapport ?? rapport(),
-    saveOpeningsGrid: async () => ({
-      stands: [
-        {
-          standId: 'B',
-          regles: 1,
-          exceptions: 0,
-          effectifMin: 3,
-          effectifMax: 3,
-          compacte: true,
-          raison: '',
-        },
-      ],
-    }),
-    openingLayers: async () => layersOfReport(),
+    openings: () => Promise.resolve(options.rapport ?? rapport()),
+    saveOpeningsGrid: () =>
+      Promise.resolve({
+        stands: [
+          {
+            standId: 'B',
+            regles: 1,
+            exceptions: 0,
+            effectifMin: 3,
+            effectifMax: 3,
+            compacte: true,
+            raison: '',
+          },
+        ],
+      }),
+    openingLayers: () => Promise.resolve(layersOfReport()),
   });
-  const confirm = fakeOf<ConfirmService>({ ask: async () => options.confirme ?? true });
+  const confirm = fakeOf<ConfirmService>({ ask: () => Promise.resolve(options.confirme ?? true) });
   const location = fakeOf<Location>({ path: () => '/ouvertures', replaceState: () => undefined });
-  const etatJT = vi.fn(async () => {
+  const etatJT = vi.fn(() => {
     const etat = options.journeesTypes === undefined ? etatJourneesTypes() : options.journeesTypes;
     if (etat === null) {
-      throw new Error('pas de journées types');
+      return Promise.reject(new Error('pas de journées types'));
     }
-    return etat;
+    return Promise.resolve(etat);
   });
-  const reloadStore = vi.fn(async () => undefined);
+  const reloadStore = vi.fn(() => Promise.resolve(undefined));
   const notify = vi.fn();
   TestBed.resetTestingModule();
   const queryParamMap = convertToParamMap({
@@ -233,7 +234,7 @@ function mount(
       {
         provide: ConsignesStore,
         useValue: {
-          reload: vi.fn(async () => undefined),
+          reload: vi.fn(() => Promise.resolve(undefined)),
           etat: () => null,
           consignes: () => [],
           aujourdhui: () => null,
@@ -243,7 +244,7 @@ function mount(
         },
       },
       { provide: JourneesTypesApi, useValue: { etat: etatJT } },
-      { provide: EditionsApi, useValue: { gel: vi.fn(async () => options.gel ?? []) } },
+      { provide: EditionsApi, useValue: { gel: vi.fn(() => Promise.resolve(options.gel ?? [])) } },
       {
         provide: ReferenceDataStore,
         useValue: {

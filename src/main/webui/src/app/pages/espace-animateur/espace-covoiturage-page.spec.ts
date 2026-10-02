@@ -26,6 +26,25 @@ function view(overrides: Partial<CarpoolEspaceView> = {}): CarpoolEspaceView {
   };
 }
 
+/** The load is a plain promise, not a task the zoneless fixture waits for. */
+async function settle(fixture: ComponentFixture<EspaceCovoituragePage>): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve));
+  await fixture.whenStable();
+}
+
+function text(fixture: ComponentFixture<EspaceCovoituragePage>): string {
+  return (fixture.nativeElement as HTMLElement).textContent ?? '';
+}
+
+function button(
+  fixture: ComponentFixture<EspaceCovoituragePage>,
+  label: string,
+): HTMLButtonElement | undefined {
+  return [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')].find((candidate) =>
+    candidate.textContent?.includes(label),
+  );
+}
+
 describe('EspaceCovoituragePage', () => {
   let carpool: ReturnType<typeof signal<CarpoolEspaceView | null>>;
   let requestCarpool: ReturnType<typeof vi.fn>;
@@ -46,7 +65,7 @@ describe('EspaceCovoituragePage', () => {
             view: signal(
               dateDuJourFigee === null ? null : { dateDuJourFigee, heureDuJourFigee: null },
             ),
-            loadCarpool: vi.fn(async () => carpool.set(initial)),
+            loadCarpool: vi.fn(() => Promise.resolve(carpool.set(initial))),
             requestCarpool,
           },
         },
@@ -58,28 +77,9 @@ describe('EspaceCovoituragePage', () => {
     return fixture;
   }
 
-  /** The load is a plain promise, not a task the zoneless fixture waits for. */
-  async function settle(fixture: ComponentFixture<EspaceCovoituragePage>): Promise<void> {
-    await new Promise((resolve) => setTimeout(resolve));
-    await fixture.whenStable();
-  }
-
-  function text(fixture: ComponentFixture<EspaceCovoituragePage>): string {
-    return (fixture.nativeElement as HTMLElement).textContent ?? '';
-  }
-
-  function button(
-    fixture: ComponentFixture<EspaceCovoituragePage>,
-    label: string,
-  ): HTMLButtonElement | undefined {
-    return [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')].find(
-      (candidate) => candidate.textContent?.includes(label),
-    );
-  }
-
   beforeEach(() => {
-    requestCarpool = vi.fn(async () =>
-      carpool.set(view({ teammateIds: ['A2'], status: 'EN_ATTENTE' })),
+    requestCarpool = vi.fn(() =>
+      Promise.resolve(carpool.set(view({ teammateIds: ['A2'], status: 'EN_ATTENTE' }))),
     );
   });
 

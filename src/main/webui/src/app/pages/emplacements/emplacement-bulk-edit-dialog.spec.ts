@@ -27,7 +27,7 @@ function monter(
   options: { editingLocked?: boolean; saved?: number } = {},
 ) {
   const crud = fakeOf<ReferenceCrudService>({
-    saveMany: async () => options.saved ?? emplacements.length,
+    saveMany: () => Promise.resolve(options.saved ?? emplacements.length),
   });
   const close = vi.fn();
   TestBed.resetTestingModule();

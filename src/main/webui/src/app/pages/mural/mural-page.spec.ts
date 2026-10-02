@@ -128,8 +128,8 @@ describe('MuralPage', () => {
     vi.useFakeTimers({
       toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout', 'performance'],
     });
-    view = vi.fn(async () => VIEW);
-    preview = vi.fn(async () => VIEW);
+    view = vi.fn(() => Promise.resolve(VIEW));
+    preview = vi.fn(() => Promise.resolve(VIEW));
   });
 
   afterEach(() => {

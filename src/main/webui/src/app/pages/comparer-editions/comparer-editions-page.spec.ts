@@ -113,6 +113,17 @@ function fakeApi() {
   };
 }
 
+async function render(): Promise<ComponentFixture<ComparerEditionsPage>> {
+  const fixture = TestBed.createComponent(ComparerEditionsPage);
+  await fixture.whenStable();
+  fixture.detectChanges();
+  return fixture;
+}
+
+function text(fixture: ComponentFixture<ComparerEditionsPage>): string {
+  return (fixture.nativeElement as HTMLElement).textContent ?? '';
+}
+
 describe('ComparerEditionsPage', () => {
   let api: ReturnType<typeof fakeApi>;
   let store: EditionStore;
@@ -131,17 +142,6 @@ describe('ComparerEditionsPage', () => {
     seedStore(store, 'editions', [edition('E1', 'Année 2025'), edition('E2', 'Année 2026')]);
     seedStore(store, 'courant', edition('E2', 'Année 2026'));
   });
-
-  async function render(): Promise<ComponentFixture<ComparerEditionsPage>> {
-    const fixture = TestBed.createComponent(ComparerEditionsPage);
-    await fixture.whenStable();
-    fixture.detectChanges();
-    return fixture;
-  }
-
-  function text(fixture: ComponentFixture<ComparerEditionsPage>): string {
-    return (fixture.nativeElement as HTMLElement).textContent ?? '';
-  }
 
   it('compares the first other edition with the one this tab works in, and keeps the pair in the URL', async () => {
     const fixture = await render();

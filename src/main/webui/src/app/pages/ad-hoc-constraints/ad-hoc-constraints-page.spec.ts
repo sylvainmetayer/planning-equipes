@@ -51,9 +51,30 @@ async function mountList(contraintes: ContrainteAdHoc[], url = '/'): Promise<HTM
   return fixture.nativeElement as HTMLElement;
 }
 
+function groupedArrival(id: string, issueDeCovoiturage: boolean): ContrainteAdHoc {
+  return {
+    id,
+    type: 'ARRIVEE_GROUPEE',
+    animateursConcernes: [{ id: 'A1' }, { id: 'A2' }],
+    creneau: null,
+    stand: null,
+    raison: '',
+    issueDeCovoiturage,
+  };
+}
+
+function actionsOf(root: HTMLElement, id: string): HTMLElement {
+  return [...root.querySelectorAll<HTMLElement>('tr.mat-mdc-row')].find((ligne) =>
+    ligne.textContent?.includes(id),
+  )!;
+}
+
 describe('AdHocConstraintsPage', () => {
   let referenceData: ReferenceDataStore;
-  const crud = { reload: vi.fn(async () => undefined), remove: vi.fn(async () => true) };
+  const crud = {
+    reload: vi.fn(() => Promise.resolve(undefined)),
+    remove: vi.fn(() => Promise.resolve(true)),
+  };
   const dialog = { open: vi.fn(() => ({ afterClosed: () => of(undefined) })) };
   const editingLocked = signal(false);
 
@@ -74,7 +95,7 @@ describe('AdHocConstraintsPage', () => {
         {
           provide: ProblemesStore,
           useValue: {
-            reloadFeasibility: vi.fn(async () => undefined),
+            reloadFeasibility: vi.fn(() => Promise.resolve(undefined)),
             causeParContrainteAdHocId: signal(new Map()),
           },
         },
@@ -110,24 +131,6 @@ describe('AdHocConstraintsPage', () => {
   });
 
   describe('a grouped arrival from a carpool request', () => {
-    function groupedArrival(id: string, issueDeCovoiturage: boolean): ContrainteAdHoc {
-      return {
-        id,
-        type: 'ARRIVEE_GROUPEE',
-        animateursConcernes: [{ id: 'A1' }, { id: 'A2' }],
-        creneau: null,
-        stand: null,
-        raison: '',
-        issueDeCovoiturage,
-      };
-    }
-
-    function actionsOf(root: HTMLElement, id: string): HTMLElement {
-      return [...root.querySelectorAll<HTMLElement>('tr.mat-mdc-row')].find((ligne) =>
-        ligne.textContent?.includes(id),
-      )!;
-    }
-
     it('disables Modifier and Supprimer and links to the Covoiturage tab, a hand-made one not', async () => {
       seedStore(referenceData, 'contraintes', [
         groupedArrival('C1', true),
@@ -182,7 +185,7 @@ describe('AdHocConstraintsPage', () => {
       expect(page['onlyIds']()).toEqual([]);
     });
 
-    it('shows everything without the parameter', async () => {
+    it('shows everything without the parameter', () => {
       createPage([contrainte('AH1'), contrainte('AH2')]);
       const page = TestBed.createComponent(AdHocConstraintsPage).componentInstance;
 

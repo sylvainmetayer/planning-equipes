@@ -314,7 +314,7 @@ describe('CarteJourView', () => {
     first.focus();
     first.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
     await fixture.whenStable();
-    expect(document.activeElement?.getAttribute('data-colonne')).toBe('1');
+    expect((document.activeElement as HTMLElement | null)?.dataset['colonne']).toBe('1');
   });
 
   it('reads the whole event one column per day, and opens a day at its peak', async () => {

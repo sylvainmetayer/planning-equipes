@@ -125,7 +125,7 @@ function deferred<T>(): {
 
 describe('AccueilPage', () => {
   const editionsApi = { etat: vi.fn(), coherence: vi.fn() };
-  const analysesApi = { alerts: vi.fn(async () => []) };
+  const analysesApi = { alerts: vi.fn(() => Promise.resolve([])) };
   const jobs = {
     onResult: vi.fn<(type: string, handler: () => void) => () => void>(() => () => undefined),
   };
@@ -143,7 +143,7 @@ describe('AccueilPage', () => {
         {
           provide: ConsignesStore,
           useValue: {
-            reload: vi.fn(async () => undefined),
+            reload: vi.fn(() => Promise.resolve(undefined)),
             etat: () => null,
             consignes: () => [],
             aujourdhui: () => null,

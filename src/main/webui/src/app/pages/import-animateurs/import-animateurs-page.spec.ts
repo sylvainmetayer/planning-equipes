@@ -108,12 +108,12 @@ function reportWithDuplicates(): ImportCsvRapport {
 
 describe('ImportAnimateursPage', () => {
   const animateursApi = fakeOf<AnimateursApi>({
-    analyseCsvImport: async () => rapport(false),
-    applyCsvImport: async () => rapport(true),
-    downloadCsvExample: async () => 'Téléchargement démarré.',
+    analyseCsvImport: () => Promise.resolve(rapport(false)),
+    applyCsvImport: () => Promise.resolve(rapport(true)),
+    downloadCsvExample: () => Promise.resolve('Téléchargement démarré.'),
   });
-  const confirm = fakeOf<ConfirmService>({ ask: async () => true });
-  const store = fakeOf<ReferenceDataStore>({ reload: async () => undefined });
+  const confirm = fakeOf<ConfirmService>({ ask: () => Promise.resolve(true) });
+  const store = fakeOf<ReferenceDataStore>({ reload: () => Promise.resolve(undefined) });
   const notifications = fakeOf<NotificationService>({ notify: () => undefined });
   let page: ImportAnimateursPage;
   let fixture: ComponentFixture<ImportAnimateursPage>;
@@ -301,8 +301,8 @@ describe('ImportAnimateursPage', () => {
   }
 
   function shownLines(): string[] {
-    return Array.from(host().querySelectorAll('table.import-rapport tbody tr')).map(
-      (tr) => tr.getAttribute('data-ligne') ?? '',
+    return Array.from(host().querySelectorAll<HTMLElement>('table.import-rapport tbody tr')).map(
+      (tr) => tr.dataset['ligne'] ?? '',
     );
   }
 
@@ -368,7 +368,7 @@ describe('ImportAnimateursPage', () => {
 
     voir?.click();
 
-    expect(document.activeElement?.getAttribute('data-ligne')).toBe('4');
+    expect((document.activeElement as HTMLElement | null)?.dataset['ligne']).toBe('4');
   });
 
   it('repeats the number of flagged rows in the import confirmation', async () => {

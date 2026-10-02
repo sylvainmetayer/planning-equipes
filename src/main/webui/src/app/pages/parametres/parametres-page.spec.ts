@@ -63,7 +63,7 @@ function text(element: HTMLElement): string {
 /** A `File` jsdom can read: its own implementation has no `text()`. */
 function file(nom: string, contenu: string): File {
   const created = new File([contenu], nom);
-  Object.defineProperty(created, 'text', { value: async () => contenu });
+  Object.defineProperty(created, 'text', { value: () => Promise.resolve(contenu) });
   return created;
 }
 
@@ -120,36 +120,41 @@ describe('ParametresPage rendering', () => {
   ): Promise<void> {
     editingLocked.set(false);
     notify = vi.fn();
-    rename = vi.fn(async () => undefined);
-    saveSignalements = vi.fn(async (actifs: boolean) => ({ actifs }));
-    saveFoire = vi.fn(async (configuration: { foireOuverte: boolean }) => ({
-      ...configuration,
-      debut: null,
-      fin: null,
-      ouverteAujourdhui: configuration.foireOuverte,
-    }));
-    recopie = { demander: vi.fn(async () => true) };
-    instantane = { proposer: vi.fn(async () => undefined) };
-    api = { get: vi.fn(async () => []) };
+    rename = vi.fn(() => Promise.resolve(undefined));
+    saveSignalements = vi.fn((actifs: boolean) => Promise.resolve({ actifs }));
+    saveFoire = vi.fn((configuration: { foireOuverte: boolean }) =>
+      Promise.resolve({
+        ...configuration,
+        debut: null,
+        fin: null,
+        ouverteAujourdhui: configuration.foireOuverte,
+      }),
+    );
+    recopie = { demander: vi.fn(() => Promise.resolve(true)) };
+    instantane = { proposer: vi.fn(() => Promise.resolve(undefined)) };
+    api = { get: vi.fn(() => Promise.resolve([])) };
     adminApi = fakeOf<AdminApi>({
-      mailConfig: async () => ({
-        adminEmail: options.adminEmail === undefined ? 'admin@exemple.test' : options.adminEmail,
-      }),
-      backups: async () => options.sauvegarde ?? SAUVEGARDE,
-      setBackupsActive: async (active) => ({
-        ...(options.sauvegarde ?? SAUVEGARDE),
-        active,
-      }),
-      exportDatabase: async () => 'Téléchargement démarré.',
-      importDatabase: async () => ({ message: 'Base remplacée.' }),
-      notificationSettings: async () => ({
-        actives: false,
-        heureRappelVeille: '18:00:00',
-        delaiRelanceHeures: 72,
-        ancienneteEchangeJours: 3,
-      }),
-      organisationContact: async () => ({ telephone: '01 23 45 67 89', email: null }),
-      saveOrganisationContact: async (contact) => contact,
+      mailConfig: () =>
+        Promise.resolve({
+          adminEmail: options.adminEmail === undefined ? 'admin@exemple.test' : options.adminEmail,
+        }),
+      backups: () => Promise.resolve(options.sauvegarde ?? SAUVEGARDE),
+      setBackupsActive: (active) =>
+        Promise.resolve({
+          ...(options.sauvegarde ?? SAUVEGARDE),
+          active,
+        }),
+      exportDatabase: () => Promise.resolve('Téléchargement démarré.'),
+      importDatabase: () => Promise.resolve({ message: 'Base remplacée.' }),
+      notificationSettings: () =>
+        Promise.resolve({
+          actives: false,
+          heureRappelVeille: '18:00:00',
+          delaiRelanceHeures: 72,
+          ancienneteEchangeJours: 3,
+        }),
+      organisationContact: () => Promise.resolve({ telephone: '01 23 45 67 89', email: null }),
+      saveOrganisationContact: (contact) => Promise.resolve(contact),
     });
     weatherApi = fakeOf<WeatherApi>({
       settings: () => Promise.resolve(METEO),
@@ -183,42 +188,52 @@ describe('ParametresPage rendering', () => {
           provide: EditionStore,
           useValue: {
             courant: () => ({ id: 'E1', nom: 'Festival 2026' }),
-            reload: vi.fn(async () => undefined),
+            reload: vi.fn(() => Promise.resolve(undefined)),
           },
         },
         { provide: EditionsApi, useValue: { rename } },
         {
           provide: DisponibilitesApi,
           useValue: {
-            configuration: vi.fn(async () => ({ collecteOuverte: false, debut: null, fin: null })),
+            configuration: vi.fn(() =>
+              Promise.resolve({ collecteOuverte: false, debut: null, fin: null }),
+            ),
             saveConfiguration: vi.fn(),
           },
         },
         {
           provide: JourJService,
           useValue: {
-            configurationSignalements: vi.fn(async () => ({ actifs: true })),
+            configurationSignalements: vi.fn(() => Promise.resolve({ actifs: true })),
             configureSignalements: saveSignalements,
           },
         },
         {
           provide: EchangesApi,
           useValue: {
-            configuration: vi.fn(async () => ({
-              foireOuverte: false,
-              debut: null,
-              fin: null,
-              ouverteAujourdhui: false,
-            })),
+            configuration: vi.fn(() =>
+              Promise.resolve({
+                foireOuverte: false,
+                debut: null,
+                fin: null,
+                ouverteAujourdhui: false,
+              }),
+            ),
             saveConfiguration: saveFoire,
           },
         },
         {
           provide: ProblemesStore,
-          useValue: { report: () => null, reloadFeasibility: vi.fn(async () => undefined) },
+          useValue: {
+            report: () => null,
+            reloadFeasibility: vi.fn(() => Promise.resolve(undefined)),
+          },
         },
         { provide: PlanningStateService, useValue: { set: vi.fn() } },
-        { provide: PlanningResolutionStore, useValue: { reload: vi.fn(async () => undefined) } },
+        {
+          provide: PlanningResolutionStore,
+          useValue: { reload: vi.fn(() => Promise.resolve(undefined)) },
+        },
         {
           provide: SolverJobService,
           useValue: {
@@ -228,14 +243,17 @@ describe('ParametresPage rendering', () => {
           },
         },
         { provide: NotificationService, useValue: { notify } },
-        { provide: PlanSnapshotStore, useValue: { capturer: vi.fn(async () => undefined) } },
+        {
+          provide: PlanSnapshotStore,
+          useValue: { capturer: vi.fn(() => Promise.resolve(undefined)) },
+        },
         { provide: InstantaneAvantAction, useValue: instantane },
         { provide: ConfirmationRecopie, useValue: recopie },
         {
           provide: ScenarioImportService,
           useValue: {
-            importer: vi.fn(async () => ({ status: 'imported', result: null })),
-            rechargerApresImport: vi.fn(async () => undefined),
+            importer: vi.fn(() => Promise.resolve({ status: 'imported', result: null })),
+            rechargerApresImport: vi.fn(() => Promise.resolve(undefined)),
           },
         },
       ],

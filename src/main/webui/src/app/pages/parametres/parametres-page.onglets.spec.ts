@@ -54,76 +54,84 @@ describe('ParametresPage — onglets', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
-        { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
+        { provide: ApiService, useValue: { get: vi.fn(() => Promise.resolve([])) } },
         {
           provide: AdminApi,
           useValue: {
-            mailConfig: vi.fn(async () => ({ adminEmail: 'admin@exemple.test' })),
-            backups: vi.fn(async () => null),
+            mailConfig: vi.fn(() => Promise.resolve({ adminEmail: 'admin@exemple.test' })),
+            backups: vi.fn(() => Promise.resolve(null)),
             // The reminders card renders nothing until the server answered.
-            notificationSettings: vi.fn(async () => ({
-              actives: false,
-              heureRappelVeille: '18:00:00',
-              delaiRelanceHeures: 72,
-              ancienneteEchangeJours: 3,
-            })),
-            organisationContact: vi.fn(async () => ({ telephone: null, email: null })),
+            notificationSettings: vi.fn(() =>
+              Promise.resolve({
+                actives: false,
+                heureRappelVeille: '18:00:00',
+                delaiRelanceHeures: 72,
+                ancienneteEchangeJours: 3,
+              }),
+            ),
+            organisationContact: vi.fn(() => Promise.resolve({ telephone: null, email: null })),
           },
         },
         {
           provide: DisponibilitesApi,
           useValue: {
-            configuration: vi.fn(async () => ({ collecteOuverte: true, debut: null, fin: null })),
+            configuration: vi.fn(() =>
+              Promise.resolve({ collecteOuverte: true, debut: null, fin: null }),
+            ),
           },
         },
         {
           provide: JourJService,
-          useValue: { configurationSignalements: vi.fn(async () => ({ actifs: true })) },
+          useValue: { configurationSignalements: vi.fn(() => Promise.resolve({ actifs: true })) },
         },
         {
           provide: EchangesApi,
           useValue: {
-            configuration: vi.fn(async () => ({
-              foireOuverte: false,
-              debut: null,
-              fin: null,
-              ouverteAujourdhui: false,
-            })),
+            configuration: vi.fn(() =>
+              Promise.resolve({
+                foireOuverte: false,
+                debut: null,
+                fin: null,
+                ouverteAujourdhui: false,
+              }),
+            ),
           },
         },
-        { provide: AffichageMuralApi, useValue: { list: vi.fn(async () => []) } },
+        { provide: AffichageMuralApi, useValue: { list: vi.fn(() => Promise.resolve([])) } },
         {
           provide: WeatherApi,
           useValue: {
-            settings: vi.fn(async () => ({
-              settings: {
-                actif: false,
-                horizonJours: 5,
-                seuilTemperature: 33,
-                seuilRafales: 60,
-                orage: true,
-                prereglageChaleur: null,
-                prereglageVent: null,
-                prereglageOrage: null,
-                modifieLe: null,
-              },
-              state: {
-                outcome: null,
-                lastAttemptAt: null,
-                lastReadAt: null,
-                unreachableSince: null,
-                error: null,
-              },
-              serviceEnabled: true,
-              editionMayEmit: false,
-            })),
+            settings: vi.fn(() =>
+              Promise.resolve({
+                settings: {
+                  actif: false,
+                  horizonJours: 5,
+                  seuilTemperature: 33,
+                  seuilRafales: 60,
+                  orage: true,
+                  prereglageChaleur: null,
+                  prereglageVent: null,
+                  prereglageOrage: null,
+                  modifieLe: null,
+                },
+                state: {
+                  outcome: null,
+                  lastAttemptAt: null,
+                  lastReadAt: null,
+                  unreachableSince: null,
+                  error: null,
+                },
+                serviceEnabled: true,
+                editionMayEmit: false,
+              }),
+            ),
           },
         },
         {
           provide: ReferenceCrudService,
           useValue: {
-            reload: vi.fn(async () => undefined),
-            save: vi.fn(async () => true),
+            reload: vi.fn(() => Promise.resolve(undefined)),
+            save: vi.fn(() => Promise.resolve(true)),
             reportError: vi.fn(),
           },
         },
@@ -132,11 +140,14 @@ describe('ParametresPage — onglets', () => {
           provide: ProblemesStore,
           useValue: {
             report: () => INFAISABLE,
-            reloadFeasibility: vi.fn(async () => undefined),
+            reloadFeasibility: vi.fn(() => Promise.resolve(undefined)),
           },
         },
         { provide: PlanningStateService, useValue: { set: vi.fn() } },
-        { provide: PlanningResolutionStore, useValue: { reload: vi.fn(async () => undefined) } },
+        {
+          provide: PlanningResolutionStore,
+          useValue: { reload: vi.fn(() => Promise.resolve(undefined)) },
+        },
         {
           provide: SolverJobService,
           useValue: {
@@ -146,14 +157,23 @@ describe('ParametresPage — onglets', () => {
           },
         },
         { provide: NotificationService, useValue: { notify: vi.fn() } },
-        { provide: PlanSnapshotStore, useValue: { capturer: vi.fn(async () => undefined) } },
-        { provide: InstantaneAvantAction, useValue: { proposer: vi.fn(async () => undefined) } },
-        { provide: ConfirmationRecopie, useValue: { demander: vi.fn(async () => true) } },
+        {
+          provide: PlanSnapshotStore,
+          useValue: { capturer: vi.fn(() => Promise.resolve(undefined)) },
+        },
+        {
+          provide: InstantaneAvantAction,
+          useValue: { proposer: vi.fn(() => Promise.resolve(undefined)) },
+        },
+        {
+          provide: ConfirmationRecopie,
+          useValue: { demander: vi.fn(() => Promise.resolve(true)) },
+        },
         {
           provide: ScenarioImportService,
           useValue: {
-            importer: vi.fn(async () => ({ status: 'cancelled', result: null })),
-            rechargerApresImport: vi.fn(async () => undefined),
+            importer: vi.fn(() => Promise.resolve({ status: 'cancelled', result: null })),
+            rechargerApresImport: vi.fn(() => Promise.resolve(undefined)),
           },
         },
         {

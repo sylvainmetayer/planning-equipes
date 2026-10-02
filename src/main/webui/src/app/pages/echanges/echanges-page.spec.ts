@@ -198,8 +198,10 @@ async function setUp(queryParams: Record<string, string>) {
   const replaceState = vi.fn();
   const params = new BehaviorSubject<ParamMap>(convertToParamMap(queryParams));
   // The server narrows by creation period; these four stand for whatever it answered.
-  const list = vi.fn<EchangesApi['list']>(async () => [RECENTE, ANCIENNE, WITH_COLLEAGUE, DECIDEE]);
-  const statistics = vi.fn<EchangesApi['statistics']>(async () => NO_STATISTICS);
+  const list = vi.fn<EchangesApi['list']>(() =>
+    Promise.resolve([RECENTE, ANCIENNE, WITH_COLLEAGUE, DECIDEE]),
+  );
+  const statistics = vi.fn<EchangesApi['statistics']>(() => Promise.resolve(NO_STATISTICS));
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
@@ -209,12 +211,14 @@ async function setUp(queryParams: Record<string, string>) {
         useValue: {
           list,
           statistics,
-          configuration: vi.fn(async () => ({
-            foireOuverte: true,
-            ouverteAujourdhui: true,
-            debut: null,
-            fin: null,
-          })),
+          configuration: vi.fn(() =>
+            Promise.resolve({
+              foireOuverte: true,
+              ouverteAujourdhui: true,
+              debut: null,
+              fin: null,
+            }),
+          ),
         },
       },
       { provide: MatDialog, useValue: { open: vi.fn() } },
@@ -281,8 +285,8 @@ describe('EchangesPage narrowed by a figure of the statistics', () => {
     const root = fixture.nativeElement as HTMLElement;
     expect(list).toHaveBeenLastCalledWith('2026-06-01', '2026-06-30', null);
     expect(cards(root)).toEqual(['Demandeur decidee']);
-    const chips = Array.from(root.querySelectorAll('mat-chip')).map((chip) =>
-      chip.getAttribute('data-filtre'),
+    const chips = Array.from(root.querySelectorAll<HTMLElement>('mat-chip')).map(
+      (chip) => chip.dataset['filtre'],
     );
     expect(chips).toEqual(['periode', 'statuts', 'dirigees']);
   });

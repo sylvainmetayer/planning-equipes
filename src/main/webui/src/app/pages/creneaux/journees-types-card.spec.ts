@@ -66,7 +66,7 @@ describe('JourneesTypesCard', () => {
   };
   const dialog = { open: vi.fn(() => ({ afterClosed: () => of(null) })) };
   const notifications = { notify: vi.fn() };
-  const confirm = { ask: vi.fn(async () => true) };
+  const confirm = { ask: vi.fn(() => Promise.resolve(true)) };
   /** What `GET /api/editions/courant/gel` answers; nothing frozen unless a test says so. */
   let gel: EtatGel[] = [];
 
@@ -78,11 +78,13 @@ describe('JourneesTypesCard', () => {
     notifications.notify.mockClear();
     gel = [];
     api.etat.mockResolvedValue(ETAT);
-    api.setCalendrier.mockImplementation(async (calendrier) => ({
-      ...ETAT,
-      calendrier,
-      datesEnEcart: [],
-    }));
+    api.setCalendrier.mockImplementation((calendrier) =>
+      Promise.resolve({
+        ...ETAT,
+        calendrier,
+        datesEnEcart: [],
+      }),
+    );
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
@@ -93,7 +95,7 @@ describe('JourneesTypesCard', () => {
         { provide: MatDialog, useValue: dialog },
         { provide: ConfirmService, useValue: confirm },
         { provide: NotificationService, useValue: notifications },
-        { provide: EditionsApi, useValue: { gel: vi.fn(async () => gel) } },
+        { provide: EditionsApi, useValue: { gel: vi.fn(() => Promise.resolve(gel)) } },
       ],
     });
   });

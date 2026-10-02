@@ -111,7 +111,7 @@ async function mount(standIds: string[], referenceId: string | null = null, gel:
       { provide: ConsignesStore, useValue: { consigneOf: () => null } },
       { provide: SolverJobService, useValue: { editingLocked: signal(false) } },
       { provide: MatDialog, useValue: { open } },
-      { provide: EditionsApi, useValue: { gel: vi.fn(async () => gel) } },
+      { provide: EditionsApi, useValue: { gel: vi.fn(() => Promise.resolve(gel)) } },
     ],
   });
   const fixture = TestBed.createComponent(OpeningsComparisonView);

@@ -25,7 +25,7 @@ function monter(mentions: MentionsLegales) {
     providers: [
       provideZonelessChangeDetection(),
       provideRouter([]),
-      { provide: ApiService, useValue: { get: vi.fn(async () => mentions) } },
+      { provide: ApiService, useValue: { get: vi.fn(() => Promise.resolve(mentions)) } },
     ],
   });
   return TestBed.createComponent(PolitiqueConfidentialitePage);

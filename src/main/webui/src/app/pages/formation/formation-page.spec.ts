@@ -61,8 +61,8 @@ async function rendre(plan: PlanFormation): Promise<{
   api: { trainingPlan: ReturnType<typeof vi.fn>; exportTrainingPlan: ReturnType<typeof vi.fn> };
 }> {
   const api = {
-    trainingPlan: vi.fn(async () => plan),
-    exportTrainingPlan: vi.fn(async () => 'plan-formation.csv téléchargé'),
+    trainingPlan: vi.fn(() => Promise.resolve(plan)),
+    exportTrainingPlan: vi.fn(() => Promise.resolve('plan-formation.csv téléchargé')),
   };
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({

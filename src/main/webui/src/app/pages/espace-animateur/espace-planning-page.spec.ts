@@ -89,17 +89,17 @@ function pause(overrides: Partial<PauseAnimateurView> = {}): PauseAnimateurView 
 describe('EspacePlanningPage — « Emporter mon planning »', () => {
   const espaceView = signal<EspaceAnimateurView | null>(view());
   const espaceJeton = signal<string | null>('jeton-1');
-  const regenererAbonnement = vi.fn(async () => undefined);
+  const regenererAbonnement = vi.fn(() => Promise.resolve(undefined));
   let fixture: ComponentFixture<EspacePlanningPage>;
   let writeText: ReturnType<typeof vi.fn>;
 
   function clipboard(resultat: 'accepte' | 'refuse'): void {
-    writeText = vi.fn(async () => {
-      if (resultat === 'refuse') {
-        // What Chrome throws when the document no longer has focus.
-        throw new DOMException('Document is not focused.', 'NotAllowedError');
-      }
-    });
+    writeText = vi.fn(() =>
+      resultat === 'refuse'
+        ? // What Chrome throws when the document no longer has focus.
+          Promise.reject(new DOMException('Document is not focused.', 'NotAllowedError'))
+        : Promise.resolve(),
+    );
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
   }
 
@@ -115,7 +115,7 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
             view: espaceView,
             jeton: espaceJeton,
             regenererAbonnement,
-            confirmerPlanning: vi.fn(async () => undefined),
+            confirmerPlanning: vi.fn(() => Promise.resolve(undefined)),
           },
         },
       ],
@@ -412,8 +412,8 @@ describe("EspacePlanningPage — la page pendant l'événement", () => {
           useValue: {
             view: espaceView,
             jeton: signal<string | null>('jeton-1'),
-            regenererAbonnement: vi.fn(async () => undefined),
-            confirmerPlanning: vi.fn(async () => undefined),
+            regenererAbonnement: vi.fn(() => Promise.resolve(undefined)),
+            confirmerPlanning: vi.fn(() => Promise.resolve(undefined)),
           },
         },
       ],

@@ -76,13 +76,13 @@ function rapport(applied: boolean): ImportGrilleRapport {
 
 describe('ImportGrilleStandsPage', () => {
   const standsApi = fakeOf<StandsApi>({
-    analyseGridImport: async () => rapport(false),
-    applyGridImport: async () => rapport(true),
-    downloadGridExample: async () => 'ok',
+    analyseGridImport: () => Promise.resolve(rapport(false)),
+    applyGridImport: () => Promise.resolve(rapport(true)),
+    downloadGridExample: () => Promise.resolve('ok'),
   });
-  const confirm = { ask: vi.fn(async () => true) };
+  const confirm = { ask: vi.fn(() => Promise.resolve(true)) };
   const store = {
-    reload: vi.fn(async () => undefined),
+    reload: vi.fn(() => Promise.resolve(undefined)),
     stands: signal([{ id: 'S7', nom: 'Bourse aux jeux' } as Stand]),
   };
   const notifications = { notify: vi.fn() };

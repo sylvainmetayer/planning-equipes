@@ -88,14 +88,14 @@ describe('ImportReferentielCard', () => {
 
   beforeEach(() => {
     api = fakeOf<ImportsApi>({
-      analyse: async () => rapport(),
-      importer: async () => rapport(),
-      telechargerExemple: async () => '',
+      analyse: () => Promise.resolve(rapport()),
+      importer: () => Promise.resolve(rapport()),
+      telechargerExemple: () => Promise.resolve(''),
     });
-    confirm = fakeOf<ConfirmService>({ ask: async () => true });
+    confirm = fakeOf<ConfirmService>({ ask: () => Promise.resolve(true) });
     notifications = fakeOf<NotificationService>({ notify: () => undefined });
     store = fakeOf<ReferenceDataStore>({
-      reload: async () => undefined,
+      reload: () => Promise.resolve(undefined),
       typologies: signal([]),
       emplacements: signal([]),
       stands: signal([

@@ -111,7 +111,7 @@ describe('CarteJourMap', () => {
 
     const tailles = Array.from(
       fixture.nativeElement.querySelectorAll('.carte-jour-pastille') as NodeListOf<HTMLElement>,
-    ).map((pastille) => parseInt(pastille.style.width, 10));
+    ).map((pastille) => Number.parseInt(pastille.style.width, 10));
     expect(Math.max(...tailles)).toBe(56);
     expect(Math.min(...tailles)).toBeLessThan(56);
 

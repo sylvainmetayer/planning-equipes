@@ -23,7 +23,9 @@ function monter(
   creneau: Creneau | null,
   options: { editingLocked?: boolean; saveOk?: boolean } = {},
 ) {
-  const crud = fakeOf<ReferenceCrudService>({ save: async () => options.saveOk ?? true });
+  const crud = fakeOf<ReferenceCrudService>({
+    save: () => Promise.resolve(options.saveOk ?? true),
+  });
   const close = vi.fn();
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
@@ -37,7 +39,7 @@ function monter(
       {
         provide: JoursFeriesService,
         useValue: {
-          load: vi.fn(async () => undefined),
+          load: vi.fn(() => Promise.resolve(undefined)),
           label: (date: string) => (date === '2026-07-14' ? 'Fête nationale' : null),
         },
       },

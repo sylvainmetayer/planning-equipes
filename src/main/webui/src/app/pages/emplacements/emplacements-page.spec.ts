@@ -37,11 +37,11 @@ function emplacement(id: string, overrides: Partial<Emplacement> = {}): Emplacem
 describe('EmplacementsPage', () => {
   let referenceData: ReferenceDataStore;
   const crud = fakeOf<ReferenceCrudService>({
-    reload: async () => true,
-    remove: async () => true,
-    removeMany: async () => 0,
+    reload: () => Promise.resolve(true),
+    remove: () => Promise.resolve(true),
+    removeMany: () => Promise.resolve(0),
     warningsOf: () => [],
-    save: async () => true,
+    save: () => Promise.resolve(true),
   });
   const dialog = { open: vi.fn(() => ({ afterClosed: () => ({ subscribe: vi.fn() }) })) };
 
@@ -366,9 +366,9 @@ describe('EmplacementsPage table', () => {
   let fixture: ComponentFixture<EmplacementsPage>;
   let dialog: { open: ReturnType<typeof vi.fn> };
   const crud = {
-    reload: vi.fn(async () => undefined),
-    remove: vi.fn(async () => true),
-    removeMany: vi.fn(async () => 0),
+    reload: vi.fn(() => Promise.resolve(undefined)),
+    remove: vi.fn(() => Promise.resolve(true)),
+    removeMany: vi.fn(() => Promise.resolve(0)),
     warningsOf: vi.fn(() => []),
   };
   const editingLocked = signal(false);
@@ -406,7 +406,9 @@ describe('EmplacementsPage table', () => {
         {
           provide: ApiService,
           useValue: {
-            get: vi.fn(async (url: string) => (url === '/api/editions/courant/gel' ? gel : [])),
+            get: vi.fn((url: string) =>
+              Promise.resolve(url === '/api/editions/courant/gel' ? gel : []),
+            ),
           },
         },
         provideRouter([]),

@@ -40,8 +40,8 @@ function rapport(partial: Partial<RapportFragilite> = {}): RapportFragilite {
 
 /** What « Verrouiller » writes through; its creations are read back by the gestures' tests. */
 const verrous = fakeOf<VerrouillageStore>({
-  create: async () => [],
-  reload: async () => undefined,
+  create: () => Promise.resolve([]),
+  reload: () => Promise.resolve(undefined),
   estAnimateurVerrouille: () => false,
 });
 
@@ -59,7 +59,7 @@ function referentiel(
       useValue: {
         typologies: signal(typologies as TypologieItem[]),
         stands: signal(stands as Stand[]),
-        reload: vi.fn(async () => undefined),
+        reload: vi.fn(() => Promise.resolve(undefined)),
       },
     },
     provideFake(VerrouillageStore, verrous),
@@ -119,7 +119,7 @@ describe('FragilitePage loading', () => {
    * navigation parsed, here nothing at all. Reading it, the tab came back
    * empty and then wrote its defaults over the URL, losing the search twice.
    */
-  it('restores its filters from the address bar, not from the frozen router snapshot', async () => {
+  it('restores its filters from the address bar, not from the frozen router snapshot', () => {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
@@ -358,6 +358,14 @@ describe('FragilitePage typologie names', () => {
  * stand in on the seat they would leave hardest to fill, train somebody on
  * the game categories of their stands.
  */
+async function render(): Promise<HTMLElement> {
+  await TestBed.inject(Router).navigateByUrl('/');
+  const fixture = TestBed.createComponent(FragilitePage);
+  await fixture.whenStable();
+  fixture.detectChanges();
+  return fixture.nativeElement as HTMLElement;
+}
+
 describe('FragilitePage gestures', () => {
   const analysesApi = { fragility: vi.fn() };
   const poste = {
@@ -392,14 +400,6 @@ describe('FragilitePage gestures', () => {
       rapport({ animateurs: [animateur({ postes: [poste] })], animateursIrremplacables: 1 }),
     );
   });
-
-  async function render(): Promise<HTMLElement> {
-    await TestBed.inject(Router).navigateByUrl('/');
-    const fixture = TestBed.createComponent(FragilitePage);
-    await fixture.whenStable();
-    fixture.detectChanges();
-    return fixture.nativeElement as HTMLElement;
-  }
 
   it('opens the Siège panel on the seat nobody could take over, and the competences to train', async () => {
     const root = await render();

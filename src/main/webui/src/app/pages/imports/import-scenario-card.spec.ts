@@ -16,7 +16,7 @@ import { ImportScenarioCard } from './import-scenario-card';
 /** A `File` jsdom can read: its own implementation has no `text()`. */
 function file(nom: string, contenu: string): File {
   const created = new File([contenu], nom);
-  Object.defineProperty(created, 'text', { value: async () => contenu });
+  Object.defineProperty(created, 'text', { value: () => Promise.resolve(contenu) });
   return created;
 }
 
@@ -27,6 +27,12 @@ const FROZEN_STATES: EtatGel[] = [
   { famille: 'TYPOLOGIES_EMPLACEMENTS', libelle: 'Typologies', fige: false, figeLe: null },
   { famille: 'COMPETENCES', libelle: 'Compétences', fige: false, figeLe: null },
 ];
+
+function importButton(racine: HTMLElement): HTMLButtonElement {
+  return Array.from(racine.querySelectorAll('button')).find((each) =>
+    each.textContent!.includes('Importer un fichier'),
+  ) as HTMLButtonElement;
+}
 
 describe('ImportScenarioCard', () => {
   const scenarioImport = { importer: vi.fn(), recapitulatif: vi.fn() };
@@ -123,12 +129,6 @@ describe('ImportScenarioCard', () => {
     ) as HTMLButtonElement;
     expect(bouton.disabled).toBe(true);
   });
-
-  function importButton(racine: HTMLElement): HTMLButtonElement {
-    return Array.from(racine.querySelectorAll('button')).find((each) =>
-      each.textContent!.includes('Importer un fichier'),
-    ) as HTMLButtonElement;
-  }
 
   // The server refuses a scenario into a frozen edition, but the file may name
   // another one: a warning, never a closed door.

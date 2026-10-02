@@ -88,8 +88,8 @@ describe('EspacePlanningPage — les trois onglets', () => {
           useValue: {
             view: espaceView,
             jeton: signal<string | null>('jeton-1'),
-            regenererAbonnement: vi.fn(async () => undefined),
-            confirmerPlanning: vi.fn(async () => undefined),
+            regenererAbonnement: vi.fn(() => Promise.resolve(undefined)),
+            confirmerPlanning: vi.fn(() => Promise.resolve(undefined)),
           },
         },
         {
