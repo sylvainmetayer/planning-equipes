@@ -355,8 +355,12 @@ jobs:
         working-directory: .
         run: bash .github/scripts/check-blame-ignore-revs.sh
 
+      # No lifecycle script runs: a compromised dependency would otherwise
+      # execute at install, with this job's token. The five packages that
+      # declare one (esbuild, lmdb, msgpackr-extract, @parcel/watcher,
+      # fsevents) ship prebuilt binaries their scripts only verify or rebuild.
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       # The conventions of this frontend (OnPush everywhere, function-based
       # input()/output(), @for with a track, no `any`) held by discipline alone
