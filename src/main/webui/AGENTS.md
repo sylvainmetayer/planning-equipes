@@ -446,7 +446,12 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   side by side, one foldable panel per family, each line saying what matched it
   and opening its fiche in the edition holding it through `EditionStore.openIn`,
   which switches the browser's edition),
-  `/historique` (« Historique des actions »),
+  `/historique` (« Historique des actions » — the nature
+  (`?nature=exports|donnees`) and the period (`?depuis=&jusqua=`, instants,
+  `depuis` exclusive as the server counts) asked of the server, the other
+  filters applied to the lines loaded, « Charger plus » asking the next page by
+  the cursor of the last line shown; the Solveur's « N modification(s) depuis
+  la dernière résolution » lands on `?nature=donnees&depuis=<the solve>`),
   `/nouveautes` (« Nouveautés » — what the running version brought, read from
   the repository's commit subjects collected at build time by
   `scripts/generate-news.js` into a gitignored `news-data.ts`, and sorted

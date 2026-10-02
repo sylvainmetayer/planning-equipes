@@ -1,11 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { EntreeHistorique } from '../../core/models';
 import {
+  PAGE_HISTORIQUE,
+  cutPage,
+  endInstantFromLocalInput,
   entitesPresentes,
   exportCodes,
   filter,
+  historyQuery,
+  instantFromLocalInput,
   journeeLocale,
+  localInputValue,
   readActorFilter,
+  readInstant,
   readNatureFilter,
   readOutcomeFilter,
   natureQuery,
@@ -178,22 +185,111 @@ describe('parJournee', () => {
   });
 });
 
-describe('lecture des filtres depuis l’URL', () => {
-  it('retombe sur le défaut pour une valeur inconnue', () => {
+describe('reading the filters off the URL', () => {
+  it('falls back to the default on an unknown value', () => {
     expect(readActorFilter('ASSISTANT')).toBe('ASSISTANT');
     expect(readActorFilter('inventé')).toBe('TOUS');
     expect(readActorFilter(null)).toBe('TOUS');
     expect(readOutcomeFilter('REFUS')).toBe('REFUS');
     expect(readOutcomeFilter('peut-être')).toBe('TOUS');
-    expect(readNatureFilter('EXPORTS')).toBe('EXPORTS');
-    expect(readNatureFilter('exports')).toBe('TOUTES');
     expect(readNatureFilter(null)).toBe('TOUTES');
+    expect(readNatureFilter('toutes')).toBe('TOUTES');
+  });
+
+  /** The server's word, as the Solveur writes it, and the older uppercase of a bookmark. */
+  it('reads the nature in either case', () => {
+    expect(readNatureFilter('exports')).toBe('EXPORTS');
+    expect(readNatureFilter('EXPORTS')).toBe('EXPORTS');
+    expect(readNatureFilter('donnees')).toBe('DONNEES');
+  });
+
+  it('keeps a bound of the period verbatim, and drops one it cannot read', () => {
+    expect(readInstant('2026-09-12T10:00:00.123456Z')).toBe('2026-09-12T10:00:00.123456Z');
+    expect(readInstant('hier')).toBe('');
+    expect(readInstant(null)).toBe('');
+  });
+
+  /** `Instant.parse` wants the seconds: an address without them is completed, not refused. */
+  it('adds the seconds a bound lacks, and nothing else', () => {
+    expect(readInstant('2026-09-12T10:00Z')).toBe('2026-09-12T10:00:00Z');
+    expect(readInstant('2026-09-12T10:00+02:00')).toBe('2026-09-12T10:00:00+02:00');
+    expect(readInstant('2026-09-12T10:00:05.5Z')).toBe('2026-09-12T10:00:05.5Z');
+    expect(readInstant('2026-09-12T10:00.5Z')).toBe('');
+    expect(readInstant('2026-13-12T10:00:00Z')).toBe('');
   });
 });
 
-describe('the Exports filter', () => {
+describe('the period fields', () => {
+  it('show an instant on the reader’s clock, to the minute, and read it back', () => {
+    const local = '2026-09-12T08:30';
+    const instant = instantFromLocalInput(local);
+
+    expect(instant).toBe(new Date(local).toISOString());
+    expect(localInputValue(instant)).toBe(local);
+  });
+
+  it('say nothing for no bound, and read an unfinished field as none', () => {
+    expect(localInputValue('')).toBe('');
+    expect(instantFromLocalInput('')).toBe('');
+    expect(instantFromLocalInput('2026-09-')).toBe('');
+    expect(endInstantFromLocalInput('')).toBe('');
+    expect(endInstantFromLocalInput('2026-09-')).toBe('');
+  });
+
+  /** The server reads « jusqu'à » inclusive: 14:32 must keep the line of 14:32:40. */
+  it('read « jusqu’à » as the end of the minute typed, to the microsecond', () => {
+    const fin = endInstantFromLocalInput('2026-09-12T14:32');
+    const debut = new Date('2026-09-12T14:32').getTime();
+
+    expect(fin).toBe(new Date(debut + 59_999).toISOString().replace('Z', '999Z'));
+    expect(fin).toMatch(/:59\.999999Z$/);
+    expect(localInputValue(fin)).toBe('2026-09-12T14:32');
+    expect(endInstantFromLocalInput('2026-09-12T14:32:40')).toMatch(/:40\.999999Z$/);
+  });
+
+  /** Six digits of fraction are not a form `Date.parse` is bound to accept: they are cut first. */
+  it('show an instant written to the microsecond', () => {
+    const instant = '2026-09-12T10:00:59.999999Z';
+    const date = new Date('2026-09-12T10:00:59.999Z');
+    const deux = (valeur: number) => `${valeur}`.padStart(2, '0');
+
+    expect(localInputValue(instant)).toBe(
+      `${date.getFullYear()}-${deux(date.getMonth() + 1)}-${deux(date.getDate())}` +
+        `T${deux(date.getHours())}:${deux(date.getMinutes())}`,
+    );
+    expect(localInputValue('hier')).toBe('');
+  });
+});
+
+describe('the pages of the history', () => {
+  it('asks one line more than a page, with the server-side filters', () => {
+    expect(historyQuery('DONNEES', '2026-09-12T10:00:00Z', '', 42)).toEqual({
+      nature: 'donnees',
+      depuis: '2026-09-12T10:00:00Z',
+      jusqua: null,
+      avant: 42,
+      limite: PAGE_HISTORIQUE + 1,
+    });
+  });
+
+  it('knows a next page by the extra line, and cuts it off', () => {
+    const lignes = Array.from({ length: PAGE_HISTORIQUE + 1 }, (_, i) => entree({ id: 500 - i }));
+
+    const page = cutPage(lignes);
+
+    expect(page.entrees).toHaveLength(PAGE_HISTORIQUE);
+    expect(page.suivant).toBe(500 - (PAGE_HISTORIQUE - 1));
+    expect(cutPage(lignes.slice(0, PAGE_HISTORIQUE))).toEqual({
+      entrees: lignes.slice(0, PAGE_HISTORIQUE),
+      suivant: null,
+    });
+  });
+});
+
+describe('the nature filter', () => {
   it('is a question put to the server, never a filter over the loaded page', () => {
     expect(natureQuery('EXPORTS')).toBe('exports');
+    expect(natureQuery('DONNEES')).toBe('donnees');
     expect(natureQuery('TOUTES')).toBeNull();
   });
 

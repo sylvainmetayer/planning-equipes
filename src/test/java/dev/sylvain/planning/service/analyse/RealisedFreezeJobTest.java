@@ -15,6 +15,7 @@ import dev.sylvain.planning.service.analyse.RealisedVsPlanned.RealisedCell;
 import dev.sylvain.planning.service.edition.EditionRepository;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.espace.JourJClock;
+import dev.sylvain.planning.service.journal.HistoryFilter;
 import dev.sylvain.planning.service.journal.JournalActionRepository;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
 import dev.sylvain.planning.service.publication.PlanPublieService;
@@ -162,7 +163,8 @@ class RealisedFreezeJobTest {
         persistence.persist(RealisedVsPlannedServiceTest.planOn("RVJ-", Set.of("STRATEGIE"), 970_340_000L, JOUR1));
         publishAt(AVANT_EVENEMENT);
         String edition = editionContext.editionIdCourant();
-        int journalAvant = journal.listAmong(List.of("REALISE_FIGE"), 1000).size();
+        int journalAvant = journal.page(new HistoryFilter(List.of("REALISE_FIGE"), false, null, null), null, 1000)
+                .size();
 
         job.run(JOUR3.atTime(11, 0));
         assertThat(rows(edition)).as("the last timeslot runs until 12:00").isEmpty();
@@ -174,7 +176,8 @@ class RealisedFreezeJobTest {
 
         assertThat(premiere).hasSize(2).anyMatch(row -> row.startsWith("|")).anyMatch(row -> !row.startsWith("|"));
         assertThat(rows(edition)).isEqualTo(premiere);
-        assertThat(journal.listAmong(List.of("REALISE_FIGE"), 1000)).hasSize(journalAvant + 1);
+        assertThat(journal.page(new HistoryFilter(List.of("REALISE_FIGE"), false, null, null), null, 1000))
+                .hasSize(journalAvant + 1);
     }
 
     @Test

@@ -11,6 +11,18 @@
   margin-bottom: 0.75rem;
 }
 
+/* Wide enough for a date and a time, on the reader's clock. */
+.historique-periode {
+  width: 14rem;
+}
+
+/* « Charger plus » under the last line: the next page of the same filters. */
+.historique-suite {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
 .historique-jour {
   font: var(--mat-sys-title-small);
   color: var(--mat-sys-on-surface-variant);

@@ -4,6 +4,7 @@
 
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
+import { dropEmpty } from './drop-empty';
 import {
   AlerteView,
   BancDeTouche,
@@ -26,6 +27,18 @@ import {
   DemandeVerification,
   TypologieItem,
 } from '../models';
+
+/**
+ * The query of one page of the history: the server-side filters, and the
+ * cursor — the id of the last line already shown — when it is a next page.
+ */
+export interface HistoryQuery {
+  nature: 'exports' | 'donnees' | null;
+  depuis: string | null;
+  jusqua: string | null;
+  avant: number | null;
+  limite: number;
+}
 
 @Injectable({ providedIn: 'root' })
 export class AnalysesApi {
@@ -134,13 +147,21 @@ export class AnalysesApi {
   }
 
   /**
-   * The edition's most recent actions. `exports` asks the server for the
-   * files that left the application only — selected in the database, so over
-   * the whole retention rather than over the last page of every kind.
+   * One page of the edition's history, newest first. `nature`, the period
+   * (`depuis` exclusive, `jusqua` inclusive) and the cursor `avant` — the id
+   * of the last line shown — are applied by the server, over the whole
+   * retention rather than over the last page of every kind.
    */
-  actionHistory(nature: 'exports' | null = null): Promise<EntreeHistorique[]> {
-    const query = nature ? `?nature=${nature}` : '';
-    return this.api.get<EntreeHistorique[]>(`/api/historique${query}`);
+  actionHistory(query: HistoryQuery): Promise<EntreeHistorique[]> {
+    const params = new URLSearchParams({
+      nature: query.nature ?? '',
+      depuis: query.depuis ?? '',
+      jusqua: query.jusqua ?? '',
+      avant: query.avant === null ? '' : `${query.avant}`,
+      limite: `${query.limite}`,
+    });
+    dropEmpty(params);
+    return this.api.get<EntreeHistorique[]>(`/api/historique?${params}`);
   }
 
   /** The inventory of actions, with the server's classification of each. */

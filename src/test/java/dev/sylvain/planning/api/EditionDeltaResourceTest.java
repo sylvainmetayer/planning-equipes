@@ -4,6 +4,7 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sylvain.planning.service.edition.EditionService;
+import dev.sylvain.planning.service.journal.HistoryFilter;
 import dev.sylvain.planning.service.journal.JournalActionRepository;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.path.json.JsonPath;
@@ -202,7 +203,7 @@ class EditionDeltaResourceTest {
                 .doesNotContain("Bob")
                 .doesNotContain("bob.delta")
                 .doesNotContain("1991");
-        assertThat(journal.listAmong(List.of("EXPORT_DELTA_EDITIONS"), 10))
+        assertThat(journal.page(new HistoryFilter(List.of("EXPORT_DELTA_EDITIONS"), false, null, null), null, 10))
                 .extracting(entree -> entree.action())
                 .contains("EXPORT_DELTA_EDITIONS");
     }

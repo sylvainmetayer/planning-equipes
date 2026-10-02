@@ -96,7 +96,10 @@ export function solveInputLines(inputs: SolveInputs): SolveInputLine[] {
       count: inputs.changesSinceSolve,
       text: $localize`:@@solver.entrees.modifications:${inputs.changesSinceSolve}:count: modification(s) depuis la dernière résolution`,
       route: '/historique',
-      queryParams: {},
+      // The very selection the server counted: the changes a solve is given,
+      // after the instant the plan was written — the history then shows
+      // exactly these lines.
+      queryParams: inputs.solvedAt ? { depuis: inputs.solvedAt, nature: 'donnees' } : {},
       warning: false,
     },
   ];

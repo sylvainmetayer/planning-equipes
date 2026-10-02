@@ -38,7 +38,7 @@ import { StatusMessage } from '../../shared/status-message';
       @if (bilan.total > 0) {
         <p class="calendar-meta data-stale-detail">
           <span i18n="@@solver.changements.resume">Depuis : {{ resume() }}.</span>
-          <a routerLink="/historique" i18n="@@solver.changements.lien">Voir l'historique</a>
+          <a routerLink="/historique" [queryParams]="{ depuis: depuis(), nature: 'donnees' }" i18n="@@solver.changements.lien">Voir l'historique</a>
         </p>
         <ul class="data-stale-liste">
           @for (entree of bilan.dernieres; track entree.id) {

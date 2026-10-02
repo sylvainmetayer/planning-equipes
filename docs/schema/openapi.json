@@ -14364,6 +14364,25 @@
     "/api/historique" : {
       "get" : {
         "parameters" : [ {
+          "name" : "avant",
+          "in" : "query",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }, {
+          "name" : "depuis",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "jusqua",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
           "name" : "limite",
           "in" : "query",
           "schema" : {
@@ -14375,7 +14394,7 @@
           "in" : "query",
           "schema" : {
             "type" : "string",
-            "enum" : [ "exports" ]
+            "enum" : [ "exports", "donnees" ]
           }
         } ],
         "responses" : {
