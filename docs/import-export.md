@@ -70,6 +70,33 @@ porte aussi, dans ses deux sections `prereglagesConsigne` et `consignes`
 (voir [plus bas](#consignes-et-préréglages)) — ses stands restent décrits
 nominalement, la consigne est une couche à part.
 
+### Un dump se rejoue sur le schéma où il a été pris
+
+Un dump est une liste de lignes taillées par les migrations appliquées au
+moment de l'export : une migration qui change le type d'une colonne suffit à ce
+qu'il ne se rejoue plus ailleurs. Son en-tête nomme donc le schéma de la base
+qui l'a produit — la dernière migration appliquée :
+
+```sql
+-- Planning Équipes database dump
+-- Generated at 2026-10-02T08:00:00Z
+-- Schema version: 122
+-- Replay with the "Import SQL" admin action.
+```
+
+Avant de le rejouer, comparer cette ligne au schéma de l'instance cible
+(`head -5 mon-dump.sql` d'un côté ; de l'autre, la page **Débogage**, qui
+liste la dernière migration appliquée par chaque version, ou en SQL
+`SELECT version FROM flyway_schema_history WHERE success AND version IS NOT NULL ORDER BY installed_rank DESC LIMIT 1`).
+L'import **refuse** en `400`, avant d'écrire quoi que ce soit, un dump dont
+l'en-tête nomme un autre schéma que celui de la base : le message donne les
+deux versions. On le rejoue alors sur une instance au schéma du dump, puis on
+met cette instance à jour et on en exporte un nouveau.
+
+Un script **sans** cette ligne — un dump exporté avant qu'elle existe, ou
+quelques instructions écrites à la main — est rejoué comme avant, sans
+vérification : c'est à l'opérateur de s'assurer qu'il date du même schéma.
+
 L'export cloisonné par édition existe sous une autre forme : l'export de
 scénario YAML.
 
