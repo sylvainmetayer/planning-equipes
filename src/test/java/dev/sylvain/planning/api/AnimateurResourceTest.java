@@ -162,4 +162,26 @@ class AnimateurResourceTest {
                 .statusCode(200)
                 .body("find { it.id == '" + createdId + "' }.telephone", equalTo("06 12 34 56 78"));
     }
+
+    /**
+     * Without provisioning the screen shows no invitation button, and pressing
+     * « send » anyway is refused rather than answered « nothing to send ».
+     */
+    @Test
+    void withoutProvisioningThereIsNoInvitationToSend() {
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/animateurs/invitations")
+                .then()
+                .statusCode(200)
+                .body("actif", equalTo(false))
+                .body("enAttente", equalTo(0));
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
+                .body("{}")
+                .when()
+                .post("/api/animateurs/invitations")
+                .then()
+                .statusCode(409);
+    }
 }

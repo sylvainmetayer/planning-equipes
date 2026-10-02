@@ -42,12 +42,11 @@ import { MOT_DE_PASSE_ADMIN } from './support';
  *
  * <h2>La base n'est pas le seul état partagé</h2>
  *
- * Le serveur de mail non plus ne s'efface pas tout seul. `dernierCodeMailpit`
- * attend « plus de zéro message » puis prend le plus récent : une boîte qui
- * porte encore les courriels de la passe précédente satisfait la condition
- * immédiatement, avec un code **périmé**, et l'ouverture de l'espace animateur
- * échoue. C'est ce qui rendait `espace-animateur.spec.ts` instable, sur `main`
- * comme ici. La boîte est donc vidée avec la base.
+ * Le serveur de mail non plus ne s'efface pas tout seul. Les specs qui
+ * comptent les courriels d'une adresse (`nombreDeMails`) liraient sinon ceux
+ * de la passe précédente — c'est ce qui rendait l'espace animateur instable du
+ * temps où il s'ouvrait par un code reçu par e-mail. La boîte est donc vidée
+ * avec la base.
  *
  * <p>Reste que la référence est un dump en clair de la base visée, écrit sous
  * `node_modules/.cache/`. Sur une pile jetable il ne contient que les données
@@ -100,16 +99,30 @@ const estDeTest = (ligne: string) =>
 
 async function contexte(baseURL: string): Promise<APIRequestContext> {
   const requeteur = await request.newContext({ baseURL });
-  await requeteur.post('/j_security_check', {
+  const connexion = await requeteur.post('/j_security_check', {
     form: { j_username: 'admin', j_password: MOT_DE_PASSE_ADMIN },
     maxRedirects: 0,
   });
+  if (connexion.status() >= 400) {
+    throw new Error(
+      `La connexion par le compte de secours a répondu ${connexion.status()} : ` +
+        `${await connexion.text()}\nLa pile e2e doit ouvrir la porte (ADMIN_SECOURS_ENABLED=true).`,
+    );
+  }
   return requeteur;
 }
 
 async function exporter(requeteur: APIRequestContext): Promise<string> {
   const reponse = await requeteur.get('/api/database/export');
-  expect(reponse.ok(), `l'export de la base a répondu ${reponse.status()}`).toBe(true);
+  if (!reponse.ok()) {
+    // Qui le serveur croit servir : sans cela, un 401 ou un 403 ici ne dit pas
+    // si la connexion a échoué ou si elle a ouvert une session sans le rôle.
+    const session = await requeteur.get('/api/auth/me');
+    expect(
+      reponse.ok(),
+      `l'export de la base a répondu ${reponse.status()} ; session : ${await session.text()}`,
+    ).toBe(true);
+  }
   return reponse.text();
 }
 

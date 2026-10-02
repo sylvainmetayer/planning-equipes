@@ -7,12 +7,25 @@ import { ApiService } from '../api.service';
 import {
   ApplicationVersion,
   ContactOrganisation,
+  Deconnexion,
   EtatSauvegarde,
   ImportSummary,
   MentionsLegales,
   ParametresNotifications,
+  ParametresResponsables,
   StatutSession,
 } from '../models';
+
+/**
+ * Keycloak's account page (password, passkey, second factor), with `retour`
+ * — a path of this application — as the way back: the server hands it to the
+ * console, which shows « Retour à Planning Équipes » to it. A plain function
+ * rather than a method: it reads nothing, and the two shells call it while
+ * they render.
+ */
+export function accountUrl(retour: string): string {
+  return `/api/auth/oidc/compte?retour=${encodeURIComponent(retour)}`;
+}
 
 @Injectable({ providedIn: 'root' })
 export class AdminApi {
@@ -88,7 +101,34 @@ export class AdminApi {
     return this.api.put<ContactOrganisation>('/api/parametres-contact', contact);
   }
 
+  /** Whether this edition's responsables de stand read names or head counts. */
+  responsablesSettings(): Promise<ParametresResponsables> {
+    return this.api.get<ParametresResponsables>('/api/parametres-responsables');
+  }
+
+  saveResponsablesSettings(parametres: ParametresResponsables): Promise<ParametresResponsables> {
+    return this.api.put<ParametresResponsables>('/api/parametres-responsables', parametres);
+  }
+
   /* -------------------------------- session ------------------------------- */
+
+  /**
+   * Where to send the browser to sign in with Keycloak.
+   *
+   * <p>A URL and not a call, which is the whole point: the backend is a
+   * confidential client, it runs the code flow itself and keeps the tokens
+   * server-side. The frontend hands the visitor to that door — a full-page
+   * navigation, never an XHR — and learns afterwards, through `/api/auth/me`,
+   * who came back. No OIDC library, no token in the browser.</p>
+   *
+   * @param retour path of this application to land on once signed in. It is
+   *   re-checked server-side (an open redirect is refused and lands on `/`):
+   *   a login route is exactly the one an open redirect would be worth
+   *   attacking, so neither side takes the other's word for it.
+   */
+  oidcLoginUrl(retour: string): string {
+    return `/api/auth/oidc/login?redirect=${encodeURIComponent(retour)}`;
+  }
 
   /**
    * Who the session belongs to, read after a login rather than guessed from
@@ -99,7 +139,12 @@ export class AdminApi {
     return this.api.getPreservingHttpError<StatutSession>('/api/auth/me');
   }
 
-  logout(): Promise<unknown> {
-    return this.api.post('/api/auth/logout', null);
+  /**
+   * Drops the local session and says whether an identity provider session
+   * remains to be ended. Under Keycloak it does: dropping our own cookie alone
+   * would leave the IdP ready to sign the visitor straight back in.
+   */
+  logout(): Promise<Deconnexion> {
+    return this.api.post<Deconnexion>('/api/auth/logout', null);
   }
 }

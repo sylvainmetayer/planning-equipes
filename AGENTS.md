@@ -298,7 +298,7 @@ Single Quarkus service, no separate solver microservice. Package root:
   outward MCP tool that is neither guarded nor argued.
 - **Mails follow two opposite failure policies, and the split is structural.**
   `MailService` holds only what an admin explicitly asks for (an animateur's
-  planning, an espace access code, the Débogage test mail): the mail *is* the
+  planning, a disponibilités invitation, the Débogage test mail): the mail *is* the
   operation, so a failure **propagates** and the caller reports who could not
   be reached. Everything best-effort — échange notifications, end-of-solve —
   goes through `service/notification/`: business code fires a `Notification`
@@ -379,14 +379,27 @@ Single Quarkus service, no separate solver microservice. Package root:
   the order its sections are applied in lives in `ScenarioImportService`, and
   `ReferenceDataResource` is left turning the outcome into a body. The endpoint
   list is the published OpenAPI.
-- HTTP security (issue #165): everything under `/api` requires the admin form
-  login (single `admin` account from config) **except**
-  `/api/espace-animateur/*` (its URL token is the credential and resolves the
-  edition by itself), `/api/abonnements/*`, `/api/mural/*`, `/api/auth/*` and
-  `/api/config`; `/mcp` keeps its own API-key mechanism.
+- HTTP security (issue #165, ADR 0077, `docs/keycloak.md`): **Keycloak is
+  mandatory in production** (`OIDC_ENABLED`, two OIDC tenants: `web-app` for
+  browsers, `mcp` service tenant for `/mcp` bearer tokens). Everything under
+  `/api` requires the realm role **`admin`** (policy `role-admin`, deny by
+  default — `PolitiquesHttpStructuralTest` pins every `permit` exception)
+  **except** `/api/espace-animateur/*` (URL token + a Keycloak session with
+  role `animateur` whose *verified* e-mail is the fiche's — `SessionEspaceFilter`),
+  `/api/abonnements/*`, `/api/mural/*`, the session routes and `/api/config`; `/mcp` takes the
+  API key or a token with audience `planning-mcp` and role `mcp`. The realm
+  role `user` opens nothing, ever. The embedded `admin` account and its form
+  login are a **break-glass door**, closed unless `ADMIN_SECOURS_ENABLED=true`
+  (`FormLoginSecours` answers 409; `CompteIdentityAugmentor` strips a leftover
+  form session). Per-person accounts and per-edition, expiring rights live in
+  the app (`service/compte/`, tables `compte`, `habilitation`,
+  `habilitation_stand`); deactivating an account strips every role, realm
+  ones included. The delegated roles (`rh`, `responsable-stand`) open no
+  route yet. `%test` runs with OIDC on against an in-memory OIDC server
+  (`OidcTestServer`, hybrid mode, tokens from `OidcJetons`).
   **`/api/abonnements/{token}/planning.ics` is the one route a URL alone
   opens** (issue #324): a calendar client subscribed to a feed carries no
-  cookie and cannot answer a challenge, so the espace's e-mail-code session is
+  cookie and cannot answer a challenge, so the espace's Keycloak session is
   out of reach there. It therefore uses a **second, separate token**
   (`animateur.abonnement_token`, rotated from the espace itself) and lives
   under a prefix of its own — that prefix is what an access proxy excepts from
@@ -400,14 +413,10 @@ Single Quarkus service, no separate solver microservice. Package root:
   stored hashed in `lien_affichage_mural`, created and revoked by the admin,
   good for that one read of one edition. The same two rules hold — the prefix
   names that route alone, and `AffichageMuralSecurityTest` asserts the token
-  opens nothing else. An **opt-in** header mode (`planning.auth.remote-user.*`,
-  off by default) lets an access proxy assert an already-authenticated
-  address: `admin-email` gets the admin role, any other recognised address is
-  an animateur whose espace opens without the e-mail code. It refuses to boot
-  without a shared secret — a header is a claim, not a proof. Hardening for an
+  opens nothing else. Hardening for an
   Internet-facing deployment — browser security headers
   (`SecurityHeadersFilter`), HTTP limits, the four rate limiters
-  (`AdminLoginLimiter` on `/j_security_check`, which also writes the
+  (`AdminLoginLimiter` on the break-glass `/j_security_check`, which also writes the
   instance's admin login journal — logins, failures, lockouts, never what was
   typed, ADR 0076 —,
   `CodeRequestLimiter` on the espace access codes, `McpRateLimiter` on the
@@ -419,8 +428,9 @@ Single Quarkus service, no separate solver microservice. Package root:
   stack and what is left to the reverse proxy — lives in `docs/securite.md`;
   a change to any of them belongs there. The `%test`
   profile opens the API (`permit`) so
-  functional tests skip the session; `AuthentificationAdminTest` restores and
-  covers the real policy.
+  functional tests skip the session; `AuthentificationAdminTest` (break-glass
+  form) and `RolesKeycloakTest` (realm roles, accounts, rights) restore and
+  cover the real policy.
 - `mcp/` — MCP tools (`@Tool`) exposing the same capabilities to an AI
   assistant, delegating to the services above — **to the services, never to a
   resource**: MCP and REST are two callers of the same rules, and a tool that

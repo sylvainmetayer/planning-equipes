@@ -8,6 +8,7 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteRepository;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService;
+import dev.sylvain.planning.service.keycloak.KeycloakUserProvisioning;
 import dev.sylvain.planning.service.solve.RefusedWhileSolving;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -27,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -198,6 +200,10 @@ public class AnimateurCsvImportService {
 
     private final GelReferentielService gel;
 
+    /** No-op unless the Keycloak provisioning is on. */
+    @Inject
+    KeycloakUserProvisioning comptes;
+
     @Inject
     public AnimateurCsvImportService(
             AnimateurRepository animateurs,
@@ -272,8 +278,25 @@ public class AnimateurCsvImportService {
         if (gel.isFrozen(ReferentialFamily.COMPETENCES) && movesCompetences(analysis.toWrite())) {
             gel.refuseIfFrozen(ReferentialFamily.COMPETENCES);
         }
+        List<Animateur> avant = animateurs.listAnimateurs();
+        Set<String> supprimes = Set.copyOf(analysis.toDelete());
         animateurs.importAnimateurs(analysis.toWrite(), analysis.toDelete());
         changeTracker.markModified();
+        // The accounts, without a single mail: the organiser reviews the list,
+        // then sends the invitations in one gesture (docs/keycloak.md). An
+        // address the edition did not have reopens an account closed when the
+        // person's last fiche went.
+        List<Animateur> apres = animateurs.listAnimateurs();
+        Set<String> nouvelles =
+                new HashSet<>(KeycloakUserProvisioning.byAddress(apres).keySet());
+        nouvelles.removeAll(KeycloakUserProvisioning.byAddress(avant).keySet());
+        comptes.provisionMissing(apres, nouvelles);
+        // A replacement deletes fiches, and closes the accounts no fiche of
+        // any edition carries any more — what deleting them one by one does.
+        comptes.disableAccounts(avant.stream()
+                .filter(fiche -> supprimes.contains(fiche.getId()))
+                .map(Animateur::getEmail)
+                .toList());
         // A created fiche has its id only now, drawn by the write: the report
         // names it, so the operator can find who was just added.
         List<AnimateurCsvImportReport.ImportedRow> rows = analysis.outcomes().stream()
@@ -860,7 +883,7 @@ public class AnimateurCsvImportService {
                 + "personnes de " + usage.contraintesAdHoc() + " contrainte(s) ad hoc. La "
                 + "suppression emporte aussi, définitivement, ce qu'elles ont saisi : déclaration "
                 + "de disponibilités, accusé de réception du planning publié, échanges de la foire "
-                + "au planning, code d'accès à l'espace animateur, compétences et souhaits.";
+                + "au planning, compétences et souhaits.";
     }
 
     /** The lookups a row is resolved by, built once for the whole file. */
