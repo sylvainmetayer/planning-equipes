@@ -138,12 +138,11 @@ jobs:
       # (skipITs defaults to true in the pom). PostgreSQL is provided by
       # Quarkus dev services (Docker is preinstalled on GitHub runners), so no
       # service container is required here.
-      # -Pcoverage attaches the JaCoCo agent, on main only. Nothing consumes
-      # the result but a person hunting for a gap, and that person reads the
-      # report of main, not of a branch; instrumenting every pull request
-      # cost the instrumentation and the artifact for nobody.
+      # -Pcoverage attaches the JaCoCo agent on every run: the `sonar` job
+      # below reads its report, and on a pull request that is what measures
+      # the coverage of the new code.
       - name: Run tests
-        run: ./mvnw -B --no-transfer-progress verify -DskipITs=false ${{ github.event_name == 'push' && '-Pcoverage' || '' }}
+        run: ./mvnw -B --no-transfer-progress verify -DskipITs=false -Pcoverage
 
       # L'application que `verify` vient de packager — Quinoa compris, profil
       # de production : `-Pcoverage` n'attache l'agent JaCoCo qu'aux JVM de
@@ -202,6 +201,20 @@ jobs:
             target/failsafe-reports/**
           if-no-files-found: ignore
           retention-days: 7
+
+      # What the `sonar` job needs from this one: the compiled classes, which
+      # the Java analysis reads, and the JaCoCo report.
+      - name: Upload the classes and coverage for the Sonar job
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sonar-backend
+          path: |
+            target/classes/**
+            target/test-classes/**
+            target/site/jacoco/jacoco.xml
+          if-no-files-found: ignore
+          retention-days: 1
 
       - name: Upload the backend coverage report
         if: always() && github.event_name == 'push'
@@ -483,3 +496,71 @@ jobs:
           path: src/main/webui/coverage/**
           if-no-files-found: ignore
           retention-days: 7
+
+  # SonarCloud analysis, once both suites have produced their coverage. It
+  # replaces SonarCloud's automatic analysis, which could read neither the
+  # coverage nor the exclusions of sonar-project.properties. It runs even when
+  # a suite failed: the findings stay worth reading, and the coverage of the
+  # run is partial rather than absent.
+  sonar:
+    needs: [test, frontend]
+    # Même garde de fork que le job `test` : une PR externe n'a pas le jeton.
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Full history: SonarCloud blames each line to tell new code apart.
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      # The Java analysis resolves types through the dependencies; without
+      # them a good part of its rules stay silent.
+      - name: Resolve the Java dependencies for the analysis
+        run: |
+          ./mvnw -B --no-transfer-progress -q dependency:build-classpath \
+            -Dmdep.includeScope=test -Dmdep.outputFile=target/sonar-libraries.txt
+          # Maven separates the entries with ':', the scanner reads a comma list.
+          echo "SONAR_JAVA_LIBRARIES=$(tr ':' ',' < target/sonar-libraries.txt)" >> "$GITHUB_ENV"
+
+      - name: Download the backend classes and coverage
+        # A suite that failed early may have left nothing: analyse without.
+        continue-on-error: true
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: sonar-backend
+          path: target
+
+      - name: Download the frontend coverage
+        # A suite that failed early may have left nothing: analyse without.
+        continue-on-error: true
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: coverage-frontend
+          path: src/main/webui/coverage
+
+      # Vitest writes the source paths relative to src/main/webui; the scanner
+      # resolves them from the repository root.
+      - name: Point the frontend coverage at the repository root
+        run: |
+          if [ -d src/main/webui/coverage ]; then
+            find src/main/webui/coverage -name lcov.info \
+              -exec sed -i -E 's#^SF:(src/|\./src/)#SF:src/main/webui/src/#' {} +
+          fi
+
+      - name: SonarCloud analysis
+        uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8.3.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.java.libraries=${{ env.SONAR_JAVA_LIBRARIES }}

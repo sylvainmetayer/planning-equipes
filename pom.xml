@@ -598,10 +598,10 @@
                 </plugins>
             </build>
         </profile>
-        <!-- Measures test coverage with JaCoCo. CI activates it and publishes
-             target/site/jacoco as an artifact (7 days), so the report is there
-             when someone wants it; nothing consumes it — no threshold, no
-             external service. Locally: ./mvnw test -Pcoverage, then open
+        <!-- Measures test coverage with JaCoCo. CI activates it on every run:
+             the `sonar` job of the Tests workflow sends the XML report to
+             SonarCloud, and main also publishes target/site/jacoco as an
+             artifact (7 days). Locally: ./mvnw test -Pcoverage, then open
              target/site/jacoco/index.html. -->
         <profile>
             <id>coverage</id>
