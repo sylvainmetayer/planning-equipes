@@ -155,12 +155,17 @@ class DaySwapMoveIteratorFactoryTest {
     }
 
     @Test
-    void neverSwapsTwoDaysOfTheSameSeats() {
+    void stillSwapsTwoDaysOfTheSameSeats() {
+        // Neutral for the score, and kept on purpose: turning them down was
+        // measured, and cost medium (see the class javadoc).
         PosteAffectation xMorning = seat("xm", montage, mondayMorning, x);
         PosteAffectation yMorning = seat("ym", montage, mondayMorning, y);
         PlanningEvenement plan = new PlanningEvenement(MONDAY, List.of(x, y), List.of(xMorning, yMorning));
 
-        assertThat(iterator(plan, 1).hasNext()).isFalse();
+        assertThat(draws(plan, 5))
+                .hasSize(5)
+                .allSatisfy(move -> assertThat(assignments(move))
+                        .containsExactlyInAnyOrderEntriesOf(Map.of(xMorning, y, yMorning, x)));
     }
 
     @Test
