@@ -273,16 +273,16 @@
         repris ici : arrive a ce stade il n'y en a plus, ils ne produiraient
         aucun mouvement.
 
-        Mouvements pillar (un bloc d'un animateur sur une journee) : mesures
-        et ecartes, Timefold 2.7.0. Protocole : phase 1 jouee une fois par
-        scenario (graine 0), puis cette phase seule depuis ce meme plan
-        faisable, 90 s, graines 0/1/2, runs sequentiels. Variante essayee :
-        pillarChangeMoveSelector, sous-piliers SEQUENCE de 2 a 3 postes tries
-        par date puis heure, filtre n'acceptant qu'un bloc d'une seule date
-        dont chaque poste est eligible pour l'animateur qui le recoit, poids
-        0.5 a cote du change et du swap. Medium atteint, graines 0/1/2 :
+        Pillar moves (one animateur's block of a day): measured and dropped,
+        Timefold 2.7.0. Protocol: phase 1 played once per scenario (seed 0),
+        then this phase alone from that same feasible plan, 90 s, seeds
+        0/1/2, sequential runs. Variant tried: pillarChangeMoveSelector,
+        SEQUENCE sub-pillars of 2 to 3 seats sorted by date then hour, a
+        filter accepting only a block of one date whose every seat is
+        eligible for the animateur receiving it, weight 0.5 next to change
+        and swap. Medium reached, seeds 0/1/2:
 
-            scenario     sans pillar                avec pillar
+            scenario     without pillar             with pillar
             complet      -30 805/-30 945/-30 770    -31 165/-31 185/-31 155
             continu      -31 685/-31 695/-31 650    -31 885/-31 940/-31 960
             canicule     -22 215/-22 275/-22 310    -22 700/-22 835/-22 870
@@ -293,18 +293,18 @@
             gamme-24     -43 740/-43 655/-43 645    -44 080/-43 925/-44 005
             gamme-25     -26 315/-26 375/-26 365    -26 420/-26 485/-26 515
 
-        Sept scenarios sur neuf perdent du medium a chaque graine, dont les
-        deux fixtures reelles ; gamme-20 en gagne 160 a 410 mais perd 1 700 a
-        4 700 de soft ; seul gamme-23 (souhaits, ad hoc) gagne nettement,
-        +1 800 a +2 000. Ailleurs le soft ne bouge dans aucun sens constant.
-        Vitesse : 0,3 a 6 % d'evaluations par seconde en moins (3 470 contre
-        3 310/s sur complet, 4 880 contre 4 690/s sur canicule). Un animateur
-        tient le plus souvent un seul poste par jour (canicule : 1 382
-        journees a un poste, 306 a deux), si bien que le filtre ecarte 66 a
-        92 % des blocs tires. Le pillarSwapMoveSelector, blocs a la meme date,
-        est pire : sur canicule il n'accepte que 0,03 % des paires tirees et
-        divise la vitesse par neuf (4 620 contre 535/s, 60 s, graine 0).
-        Aucun gain net et constant : non retenu.
+        Seven scenarios out of nine lose medium at every seed, both real
+        fixtures among them; gamme-20 gains 160 to 410 but loses 1 700 to
+        4 700 soft; only gamme-23 (wishes, ad hoc) gains clearly, +1 800 to
+        +2 000. Elsewhere soft moves in no consistent direction. Speed: 0.3
+        to 6 % fewer evaluations per second (3 470 against 3 310/s on
+        complet, 4 880 against 4 690/s on canicule). An animateur most often
+        holds a single seat a day (canicule: 1 382 one-seat days, 306
+        two-seat ones), so the filter rejects 66 to 92 % of the blocks drawn.
+        The pillarSwapMoveSelector, blocks of the same date, is worse: on
+        canicule it accepts only 0.03 % of the pairs drawn and divides the
+        speed by nine (4 620 against 535/s, 60 s, seed 0). No net and
+        consistent gain: not kept.
 
         L'echange de journees (DaySwapMoveIteratorFactory) fait ce que le
         pillar swap ne pouvait pas : il choisit d'abord un bloc (animateur,
@@ -350,9 +350,9 @@
                 <fixedProbabilityWeight>1.0</fixedProbabilityWeight>
             </swapMoveSelector>
             <!--
-                Echange de journees (DaySwapMoveIteratorFactory) : les postes
-                d'un animateur a une date passent a un collegue qui travaille
-                ce jour-la, et les siens a lui. Poids 2 : mesure ci-dessus.
+                Day swap (DaySwapMoveIteratorFactory): an animateur's seats of
+                a date go to a colleague working that day, and theirs to them.
+                Weight 2: measured above.
             -->
             <moveIteratorFactory>
                 <fixedProbabilityWeight>2.0</fixedProbabilityWeight>

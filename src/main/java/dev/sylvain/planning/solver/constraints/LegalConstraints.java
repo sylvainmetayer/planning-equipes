@@ -860,8 +860,13 @@ public final class LegalConstraints {
                 stretch -> PlafondsLegauxMajeurs.onPostBreakMinutes(stretch, parametres.dureePauseMinutes(false)));
     }
 
-    /** Effective working minutes of a minor's day, see {@link #effectiveWorkMinutes}. */
-    private static int effectiveWorkMineurMinutes(List<PosteAffectation> postes, ParametresLegaux parametres) {
+    /**
+     * Effective working minutes of a minor's day, see {@link #effectiveWorkMinutes}.
+     * Public for {@code DaySwapMoveIteratorFactory}, which refuses to build a
+     * swap this rule would certainly charge, and must measure the day exactly
+     * as the rule does to never be stricter than it.
+     */
+    public static int effectiveWorkMineurMinutes(List<PosteAffectation> postes, ParametresLegaux parametres) {
         return effectiveWorkMinutes(
                 postes,
                 parametres.dureePauseMinutes(true),

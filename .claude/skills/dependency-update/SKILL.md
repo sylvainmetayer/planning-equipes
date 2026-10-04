@@ -46,9 +46,9 @@ Both commands, not one:
 ./mvnw test -Pscenario-tests
 ```
 
-The five files that depend on `ai.timefold.solver.core.impl` (listed by
+The six files that depend on `ai.timefold.solver.core.impl` (listed by
 `TimefoldInternalApiStructuralTest`) are covered by a compile error for the
-filters and the move factory and by the contract test for the diagnostic
+filters and the two move factories and by the contract test for the diagnostic
 (`ConstraintDiagnosticServiceContractTest` — read its result, not the build's:
 on a Community 2.x build it reports itself skipped), but a filter that still
 compiles and is no longer asked only shows in the scenarios. The scenario run
