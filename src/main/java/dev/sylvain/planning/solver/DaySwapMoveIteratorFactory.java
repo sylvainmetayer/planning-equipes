@@ -200,30 +200,39 @@ public final class DaySwapMoveIteratorFactory
 
         /** A swap for a block drawn at random; {@code null} when {@link #DRAWS} draws found none. */
         Move<PlanningEvenement> nextMove() {
-            List<PosteAffectation> movable = layout.movable;
-            if (movable.isEmpty()) {
+            if (layout.movable.isEmpty()) {
                 return null;
             }
             for (int i = 0; i < DRAWS; i++) {
-                PosteAffectation seat = movable.get(random.nextInt(movable.size()));
-                Animateur animateur = seat.getAnimateur();
-                if (animateur == null) {
-                    continue;
-                }
-                LocalDate date = seat.getCreneau().getDate();
-                Map<Animateur, List<PosteAffectation>> day = blocksOn(date);
-                List<PosteAffectation> block = day.get(animateur);
-                // A seat drawn lands on a block in proportion to its seats:
-                // keeping it one time in its size makes every block equally likely.
-                if (random.nextInt(block.size()) != 0) {
-                    continue;
-                }
-                Move<PlanningEvenement> move = swapWithColleague(animateur, date, block, day);
+                Move<PlanningEvenement> move = draw();
                 if (move != null) {
                     return move;
                 }
             }
             return null;
+        }
+
+        /**
+         * One draw: a movable seat, the block of its holder that date, and a
+         * colleague to trade with; {@code null} when the seat is empty, the
+         * block is turned down, or nobody can trade.
+         */
+        private Move<PlanningEvenement> draw() {
+            List<PosteAffectation> movable = layout.movable;
+            PosteAffectation seat = movable.get(random.nextInt(movable.size()));
+            Animateur animateur = seat.getAnimateur();
+            if (animateur == null) {
+                return null;
+            }
+            LocalDate date = seat.getCreneau().getDate();
+            Map<Animateur, List<PosteAffectation>> day = blocksOn(date);
+            List<PosteAffectation> block = day.get(animateur);
+            // A seat drawn lands on a block in proportion to its seats:
+            // keeping it one time in its size makes every block equally likely.
+            if (random.nextInt(block.size()) != 0) {
+                return null;
+            }
+            return swapWithColleague(animateur, date, block, day);
         }
 
         /** The movable seats of a date, per holder, in plan order. */
