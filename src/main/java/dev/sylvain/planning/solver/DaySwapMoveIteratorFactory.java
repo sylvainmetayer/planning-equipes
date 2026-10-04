@@ -55,7 +55,7 @@ import java.util.random.RandomGenerator;
  * same, though the score cannot tell the plan changed. Turning them down was
  * measured, and cost medium: on festival-hivernal, -30 852 against -30 293
  * (90 s, seeds 0/1/2). Late acceptance takes such a neutral move as a step,
- * and that step still advances its window.</p>
+ * and that step still advances its window (ADR 0078).</p>
  *
  * <p>The block is drawn uniformly among the (animateur, date) blocks of
  * movable seats, and its partner uniformly among the colleagues of that date

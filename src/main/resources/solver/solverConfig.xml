@@ -306,38 +306,45 @@
         speed by nine (4 620 against 535/s, 60 s, seed 0). No net and
         consistent gain: not kept.
 
-        L'echange de journees (DaySwapMoveIteratorFactory) fait ce que le
-        pillar swap ne pouvait pas : il choisit d'abord un bloc (animateur,
-        date) parmi ceux qui existent, puis un collegue du meme jour eligible
-        dans les deux sens, au lieu de tirer deux blocs au hasard et d'en
-        filtrer 99,97 %. Il garde le nombre de jours de chacun, sa semaine et
-        sa serie de jours : seul ce que chacun fait ce jour-la change. Meme
-        protocole que ci-dessus, medium atteint, graines 0/1/2 :
+        The day swap (DaySwapMoveIteratorFactory) does what the pillar swap
+        could not: it first draws one (animateur, date) block among those
+        that exist, then a colleague of the same day who can trade both ways,
+        instead of drawing two blocks at random and filtering 99.97 % of
+        them out. Each keeps the dates they work, so the day count, the week
+        and the run of days stay as they were; the hours of the day, the
+        week's total and the rest around it change, and the score judges
+        them. Same protocol as above (fresh baseline runs, same starts),
+        medium reached, seeds 0/1/2:
 
-            scenario     sans echange               avec echange (poids 2)
-            complet      -30 700/-30 875/-30 685    -23 795/-23 790/-23 950
-            continu      -31 645/-31 665/-31 570    -29 715/-29 580/-29 680
-            canicule     -21 965/-21 975/-22 120    -19 165/-19 215/-19 210
-            hivernal     -33 685/-33 770/-33 795    -30 010/-30 120/-30 180
-            gamme-20     -37 940/-37 855/-37 860    -33 525/-33 810/-33 325
-            gamme-22     -34 315/-34 330/-34 420    -32 275/-32 125/-32 135
-            gamme-23     -38 555/-38 180/-37 145    -32 475/-31 325/-31 250
-            gamme-24     -43 350/-43 015/-43 150    -41 545/-41 400/-41 455
-            gamme-25     -26 150/-26 220/-26 190    -25 005/-25 100/-25 145
+            scenario     without day swap           with day swap (weight 2)
+            complet      -30 630/-30 875/-30 705    -24 035/-23 740/-23 690
+            continu      -31 540/-31 615/-31 375    -29 750/-29 705/-29 780
+            canicule     -21 695/-21 900/-22 020    -19 105/-19 305/-19 190
+            hivernal     -33 610/-33 695/-33 800    -30 190/-30 305/-30 350
+            gamme-20     -38 150/-38 125/-38 215    -33 890/-33 700/-33 860
+            gamme-22     -34 535/-34 360/-34 335    -32 370/-32 275/-32 225
+            gamme-23     -38 295/-38 025/-38 460    -32 620/-32 605/-32 535
+            gamme-24     -43 530/-43 350/-43 395    -41 895/-41 855/-41 930
+            gamme-25     -26 235/-26 350/-26 270    -25 270/-25 255/-25 220
 
-        Gain a chaque graine de chaque scenario, de +1 045 (gamme-25) a
-        +7 085 (complet). Le soft progresse sur canicule et continu, recule
-        sur gamme-20 (-4 700 a -6 250), gamme-23 et gamme-24, varie ailleurs :
-        il est classe sous le medium. Prix : 11 a 31 % d'evaluations par
-        seconde en moins (5 470 contre 4 850/s sur canicule), et la moitie
-        des tirages seulement pour change et swap. Sur canicule, 1 086 des 1 414 pas de la graine 0 sont des
-        echanges. Poids : sur canicule et gamme-22 a 60 s (graine 0), 0,25 /
-        0,5 / 1 / 2 / 4 donnent -21 650 / -20 795 / -20 470 / -19 965 /
-        -19 870 et -34 455 / -34 085 / -33 610 / -33 350 / -33 200 ; 4 ne
-        gagne plus que 95 et 150 sur 2, dans l'ecart entre graines, et ne
-        laisse qu'un tiers des tirages a change et swap. La variante
-        « donner sa journee a un collegue libre ce jour-la » ne gagnait rien
-        (-23 135 contre -23 170, -35 320 contre -35 390) : non retenue.
+        A gain at every seed of every scenario, from +965 (gamme-25) to
+        +7 135 (complet). Soft improves on canicule, continu and gamme-22,
+        drops on gamme-20 (-5 275 to -6 470), gamme-23, gamme-24 and
+        gamme-25, and varies elsewhere: it ranks below medium. Price: 14 to
+        32 % fewer evaluations per second (5 825 against 4 820/s on canicule,
+        3 706 against 2 530/s on complet), and only half of the draws left
+        to change and swap. On canicule, 1 055 of the 1 431 steps of seed 0
+        are day swaps. Weight, chosen on the first version of the move, on
+        canicule and gamme-22 at 60 s (seed 0): 0.25 / 0.5 / 1 / 2 / 4 give
+        -21 650 / -20 795 / -20 470 / -19 965 / -19 870 and -34 455 /
+        -34 085 / -33 610 / -33 350 / -33 200; 4 only gains 95 and 150 over
+        2, within the spread between seeds, and leaves a third of the draws
+        to change and swap. The variant "give one's day to a colleague free
+        that day" gained nothing (-23 135 against -23 170, -35 320 against
+        -35 390): not kept. Neither did turning down a swap of two days made
+        of the same seats, neutral for the score: -30 852 against -30 293 on
+        hivernal (seeds 0/1/2), late acceptance takes such a move as a step
+        (ADR 0078).
     -->
     <localSearch>
         <unionMoveSelector>

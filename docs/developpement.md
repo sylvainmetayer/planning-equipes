@@ -836,15 +836,28 @@ un siège doit d'abord dégrader le score. La seconde phase tire donc aussi, à
 poids 2 face au *change* et au *swap*, un **échange de journées**
 (`DaySwapMoveIteratorFactory`) : les postes d'un animateur à une date passent à
 un collègue qui travaille ce jour-là, et les siens à lui, en un seul mouvement.
-Chacun garde son nombre de jours, sa semaine et sa série de jours ; seul ce
-qu'il fait ce jour-là change.
+Chacun garde les dates qu'il travaille, donc son nombre de jours, sa semaine et
+sa série de jours ; les heures de la journée, le total de la semaine et le
+repos autour changent, et c'est le score qui en juge.
 
-Le couple est **choisi**, pas tiré puis filtré : un bloc (animateur, date) parmi
-ceux qui existent, puis le premier collègue du même jour à qui chaque poste peut
-aller dans les deux sens (`EligibleAnimateurMoveFilter.isEligible`). C'est ce qui
-distingue ce mouvement des *pillar moves* de Timefold, mesurés et écartés
-juste avant : le `pillarSwapMoveSelector` tirait deux blocs au hasard et le
-filtre en rejetait 99,97 %, divisant la vitesse par neuf ; le
+Le couple est **choisi**, pas tiré puis filtré : un bloc (animateur, date) tiré
+uniformément parmi ceux qui existent, puis un collègue du même jour tiré
+uniformément parmi ceux qui peuvent échanger. Un échange n'est construit que si
+le score ne le refuserait pas d'emblée :
+
+| Vérification | Pourquoi |
+| --- | --- |
+| Chaque poste va à un animateur éligible (`EligibleAnimateurMoveFilter.isEligible`) | indisponibilité, règles des mineurs propres au couple poste–animateur |
+| Aucun poste reçu ne chevauche un poste figé que son receveur garde ce jour-là | le passé et les verrouillages ne changent pas de mains, mais ils occupent leur heure |
+| La journée d'un mineur, postes reçus compris, reste sous le plafond de `dureeQuotidienneMaxMineur` | mesurée comme la règle la mesure, et seulement quand elle est active |
+
+Deux journées faites des mêmes postes (stand, créneau, horaires) s'échangent
+quand même, bien que le score ne voie rien changer : les refuser a été mesuré
+et coûte du medium (-30 852 contre -30 293 sur `festival-hivernal`) — voir
+[ADR 0078](decisions/0078-echange-de-journees-plutot-que-mouvements-pillar.md).
+C'est ce qui distingue ce mouvement des *pillar moves* de Timefold, mesurés et
+écartés juste avant : le `pillarSwapMoveSelector` tirait deux blocs au hasard et
+le filtre en rejetait 99,97 %, divisant la vitesse par neuf ; le
 `pillarChangeMoveSelector` perdait du medium sur sept scénarios sur neuf.
 
 Mesure : phase 1 jouée une fois par scénario (graine 0), puis la seconde phase
@@ -854,20 +867,21 @@ graine) et évaluations par seconde :
 
 | Scénario | Sans échange | Avec échange | Gain medium | Évaluations/s |
 | --- | --- | --- | --- | --- |
-| `scenario-complet` | -30 753 | -23 845 | +6 908 | 3 665 → 2 539 |
-| `scenario-continu` | -31 627 | -29 658 | +1 968 | 3 952 → 3 028 |
-| `festival-realiste-canicule` | -22 020 | -19 197 | +2 823 | 5 469 → 4 852 |
-| `festival-hivernal` | -33 750 | -30 103 | +3 647 | 4 065 → 3 406 |
-| `gamme-20` | -37 885 | -33 553 | +4 332 | 3 470 → 2 554 |
-| `gamme-22` | -34 355 | -32 178 | +2 177 | 5 101 → 4 069 |
-| `gamme-23` | -37 960 | -31 683 | +6 277 | 4 567 → 3 553 |
-| `gamme-24` | -43 172 | -41 467 | +1 705 | 4 675 → 3 977 |
-| `gamme-25` | -26 187 | -25 083 | +1 103 | 4 382 → 3 584 |
+| `scenario-complet` | -30 737 | -23 822 | +6 915 | 3 706 → 2 530 |
+| `scenario-continu` | -31 510 | -29 745 | +1 765 | 4 433 → 3 035 |
+| `festival-realiste-canicule` | -21 872 | -19 200 | +2 672 | 5 825 → 4 820 |
+| `festival-hivernal` | -33 702 | -30 282 | +3 420 | 4 202 → 3 166 |
+| `gamme-20` | -38 163 | -33 817 | +4 347 | 3 035 → 2 266 |
+| `gamme-22` | -34 410 | -32 290 | +2 120 | 4 990 → 3 966 |
+| `gamme-23` | -38 260 | -32 587 | +5 673 | 4 425 → 3 250 |
+| `gamme-24` | -43 425 | -41 893 | +1 532 | 4 085 → 3 496 |
+| `gamme-25` | -26 285 | -25 248 | +1 037 | 3 776 → 3 127 |
 
-Le soft progresse sur canicule et continu, recule sur `gamme-20` (-4 700 à
--6 250), `gamme-23` et `gamme-24`, varie ailleurs : il est classé sous le medium.
-Le poids a été choisi sur canicule et `gamme-22` à 60 s : 0,25 / 0,5 / 1 / 2 / 4
-donnent -21 650 / -20 795 / -20 470 / -19 965 / -19 870 et -34 455 / -34 085 /
+Le soft progresse sur canicule, continu et `gamme-22`, recule sur `gamme-20`
+(-5 275 à -6 470), `gamme-23`, `gamme-24` et `gamme-25`, varie ailleurs : il
+est classé sous le medium. Le poids a été choisi sur la première version du
+mouvement, sur canicule et `gamme-22` à 60 s : 0,25 / 0,5 / 1 / 2 / 4 donnent
+-21 650 / -20 795 / -20 470 / -19 965 / -19 870 et -34 455 / -34 085 /
 -33 610 / -33 350 / -33 200. Au-delà de 2 le gain tient dans l'écart entre
 graines, alors que *change* et *swap* n'ont plus qu'un tiers des tirages. La
 variante « donner sa journée à un collègue libre ce jour-là » ne gagnait rien.
