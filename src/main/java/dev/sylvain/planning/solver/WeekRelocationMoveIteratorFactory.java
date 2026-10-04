@@ -1,9 +1,10 @@
 package dev.sylvain.planning.solver;
 
+import static dev.sylvain.planning.solver.MoveFactorySupport.ANIMATEUR;
+import static dev.sylvain.planning.solver.MoveFactorySupport.overlapsAny;
+
 import ai.timefold.solver.core.impl.heuristic.selector.move.factory.MoveIteratorFactory;
 import ai.timefold.solver.core.impl.score.director.ScoreDirector;
-import ai.timefold.solver.core.preview.api.domain.metamodel.PlanningSolutionMetaModel;
-import ai.timefold.solver.core.preview.api.domain.metamodel.PlanningVariableMetaModel;
 import ai.timefold.solver.core.preview.api.move.Move;
 import ai.timefold.solver.core.preview.api.move.builtin.Moves;
 import dev.sylvain.planning.domain.Animateur;
@@ -87,39 +88,16 @@ public final class WeekRelocationMoveIteratorFactory
     private static final int CONSOLIDATION_TRIES = 50;
     /** The hard form of the run rule, the only one the move reads (ADR 0045). */
     private static final String HARD_RUN_RULE = "maxJoursConsecutifsTravaillesDur";
-    /** How many moves the original-order iterator yields: bounded, since the neighbourhood is combinatorial. */
-    private static final int ORIGINAL_MOVES = 1_000;
-
-    private static final PlanningVariableMetaModel<PlanningEvenement, PosteAffectation, Animateur> ANIMATEUR =
-            PlanningSolutionMetaModel.of(PlanningEvenement.class, PosteAffectation.class)
-                    .genuineEntity(PosteAffectation.class)
-                    .basicVariable("animateur", Animateur.class);
 
     @Override
     public long getSize(ScoreDirector<PlanningEvenement> scoreDirector) {
-        PlanningEvenement solution = scoreDirector.getWorkingSolution();
-        return (long) solution.getPostes().size()
-                * Math.max(1, solution.getAnimateurs().size());
+        return MoveFactorySupport.sizeBound(scoreDirector.getWorkingSolution());
     }
 
     @Override
     public Iterator<Move<PlanningEvenement>> createOriginalMoveIterator(
             ScoreDirector<PlanningEvenement> scoreDirector) {
-        Iterator<Move<PlanningEvenement>> random = createRandomMoveIterator(scoreDirector, new java.util.Random(0));
-        return new Iterator<>() {
-            private int yielded;
-
-            @Override
-            public boolean hasNext() {
-                return yielded < ORIGINAL_MOVES;
-            }
-
-            @Override
-            public Move<PlanningEvenement> next() {
-                yielded++;
-                return random.next();
-            }
-        };
+        return MoveFactorySupport.bounded(createRandomMoveIterator(scoreDirector, new java.util.Random(0)));
     }
 
     @Override
@@ -537,19 +515,6 @@ public final class WeekRelocationMoveIteratorFactory
             return !overlapsAny(seat, day);
         }
 
-        private static boolean overlapsAny(PosteAffectation seat, List<PosteAffectation> others) {
-            int debut = minutes(seat.heureDebutEffectif());
-            int fin = debut + seat.getDureeEffectiveMinutes();
-            for (PosteAffectation other : others) {
-                int otherDebut = minutes(other.heureDebutEffectif());
-                int otherFin = otherDebut + other.getDureeEffectiveMinutes();
-                if (debut < otherFin && otherDebut < fin) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
         private Move<PlanningEvenement> plainChange(RandomGenerator random) {
             PosteAffectation poste = movable.get(random.nextInt(movable.size()));
             List<Animateur> animateurs = solution.getAnimateurs();
@@ -619,10 +584,6 @@ public final class WeekRelocationMoveIteratorFactory
         private static boolean sameWeek(LocalDate a, LocalDate b) {
             return a.get(IsoFields.WEEK_BASED_YEAR) == b.get(IsoFields.WEEK_BASED_YEAR)
                     && a.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR) == b.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
-        }
-
-        private static int minutes(java.time.LocalTime time) {
-            return time == null ? 0 : time.toSecondOfDay() / 60;
         }
     }
 }

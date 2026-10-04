@@ -361,10 +361,11 @@ Single Quarkus service, no separate solver microservice. Package root:
   change. See `docs/decisions/0013-diagnostic-par-le-score-director.md`.
   The three move filters
   (`EligibleAnimateurMoveFilter`, `HoleNeighbourPosteFilter`,
-  `UnassignedPosteFilter`) and the move factory
-  (`WeekRelocationMoveIteratorFactory`) depend on `core.impl` too — the
-  filter and factory SPIs only exist there, the moves themselves are the
-  public preview API — with a different net: a bump that reshapes the types
+  `UnassignedPosteFilter`) and the two move factories
+  (`WeekRelocationMoveIteratorFactory`, `DaySwapMoveIteratorFactory`) depend
+  on `core.impl` too — the filter and factory SPIs only exist there, the
+  moves themselves are the public preview API, and what the factories share
+  (`MoveFactorySupport`) stays on it — with a different net: a bump that reshapes the types
   does not compile, and one that silently stops asking them shows up in
   `-Pscenario-tests` as a solve that no longer converges.
   `TimefoldInternalApiStructuralTest` keeps the inventory: a new file

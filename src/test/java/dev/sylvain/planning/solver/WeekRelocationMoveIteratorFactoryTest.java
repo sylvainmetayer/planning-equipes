@@ -1,8 +1,8 @@
 package dev.sylvain.planning.solver;
 
+import static dev.sylvain.planning.solver.MoveFactoryTestSupport.director;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import ai.timefold.solver.core.impl.score.director.ScoreDirector;
 import ai.timefold.solver.core.preview.api.move.Move;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ConstraintToggle;
@@ -11,7 +11,6 @@ import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import java.lang.reflect.Proxy;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -253,17 +252,5 @@ class WeekRelocationMoveIteratorFactoryTest {
         PosteAffectation poste = new PosteAffectation(id, stand, creneau);
         poste.setAnimateur(animateur);
         return poste;
-    }
-
-    /** The only call the factory makes on the director: the working solution. */
-    @SuppressWarnings("unchecked")
-    private static ScoreDirector<PlanningEvenement> director(PlanningEvenement solution) {
-        return (ScoreDirector<PlanningEvenement>) Proxy.newProxyInstance(
-                ScoreDirector.class.getClassLoader(), new Class<?>[] {ScoreDirector.class}, (proxy, method, args) -> {
-                    if (method.getName().equals("getWorkingSolution")) {
-                        return solution;
-                    }
-                    throw new UnsupportedOperationException(method.getName());
-                });
     }
 }
