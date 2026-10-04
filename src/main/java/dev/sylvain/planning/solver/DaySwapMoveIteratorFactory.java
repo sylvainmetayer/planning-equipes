@@ -13,10 +13,8 @@ import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlafondsLegauxMineurs;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.solver.constraints.LegalConstraints;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -50,14 +48,18 @@ import java.util.random.RandomGenerator;
  * <li>no seat overlaps a pinned seat its receiver keeps that day — the frozen
  * past and the locks are never handed over, but they occupy their hour;</li>
  * <li>a minor's day, with the seats received, stays under the daily cap
- * {@code dureeQuotidienneMaxMineur} applies, measured as it measures it;</li>
- * <li>the two days differ: two blocks of the same seats (stand, timeslot,
- * hours) would swap nothing.</li>
+ * {@code dureeQuotidienneMaxMineur} applies, measured as it measures it.</li>
  * </ul>
+ *
+ * <p>Two blocks of the same seats (stand, timeslot, hours) are swapped all the
+ * same, though the score cannot tell the plan changed. Turning them down was
+ * measured, and cost medium: on festival-hivernal, -30 852 against -30 293
+ * (90 s, seeds 0/1/2). Late acceptance takes such a neutral move as a step,
+ * and that step still advances its window.</p>
  *
  * <p>The block is drawn uniformly among the (animateur, date) blocks of
  * movable seats, and its partner uniformly among the colleagues of that date
- * the four rules above let through. The move itself is Timefold's pillar swap,
+ * the three rules above let through. The move itself is Timefold's pillar swap,
  * one value per side.</p>
  *
  * <p>{@code MoveIteratorFactory} lives in {@code core.impl}; the moves it
@@ -267,7 +269,7 @@ public final class DaySwapMoveIteratorFactory
                     continue;
                 }
                 List<PosteAffectation> theirs = day.get(colleague);
-                if (!sameSeats(block, theirs) && canTake(colleague, date, block) && canTake(animateur, date, theirs)) {
+                if (canTake(colleague, date, block) && canTake(animateur, date, theirs)) {
                     return Moves.pillarSwap(ANIMATEUR, Sample.wrap(block), Sample.wrap(theirs));
                 }
             }
@@ -300,31 +302,6 @@ public final class DaySwapMoveIteratorFactory
             dayAfter.addAll(kept);
             int cap = PlafondsLegauxMineurs.dureeQuotidienneMaxMinutes(animateur.isUnder16On(date));
             return LegalConstraints.effectiveWorkMineurMinutes(dayAfter, layout.parametresLegaux) <= cap;
-        }
-
-        /** The same seats on both sides — stand, timeslot and hours — so the swap would change nothing. */
-        private static boolean sameSeats(List<PosteAffectation> left, List<PosteAffectation> right) {
-            if (left.size() != right.size()) {
-                return false;
-            }
-            Map<SeatContent, Integer> count = new HashMap<>();
-            for (PosteAffectation seat : left) {
-                count.merge(SeatContent.of(seat), 1, Integer::sum);
-            }
-            for (PosteAffectation seat : right) {
-                if (count.merge(SeatContent.of(seat), -1, Integer::sum) < 0) {
-                    return false;
-                }
-            }
-            return true;
-        }
-    }
-
-    /** What a seat is, as far as the rules can tell two seats apart. */
-    private record SeatContent(Stand stand, Creneau creneau, LocalTime start, LocalTime end) {
-        static SeatContent of(PosteAffectation seat) {
-            return new SeatContent(
-                    seat.getStand(), seat.getCreneau(), seat.heureDebutEffectif(), seat.heureFinEffectif());
         }
     }
 }
