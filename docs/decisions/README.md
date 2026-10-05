@@ -103,10 +103,11 @@ scénario versionné de `src/main/resources/scenarios/`.
 >>>>>>> 57192585 (fix(ci): renuméroter ADR 0071 et V117/V118, corriger les alertes)
 <<<<<<< HEAD
 >>>>>>> 4c284d48 (chore: aligner la PR sur main après le second rebase)
+>>>>>>> 87e69034 (chore: aligner la PR sur main après le rebase)
 =======
 | [0077](0077-keycloak-obligatoire-comptes-nominatifs.md) | Keycloak obligatoire pour l'administration, l'espace animateur et MCP ; le compte embarqué devient une porte de secours fermée ; un compte par personne ; les droits fins (par édition, datés) dans l'application | Accepté · socle implémenté |
->>>>>>> 27968536 (chore: aligner la PR sur main après le rebase)
->>>>>>> 87e69034 (chore: aligner la PR sur main après le rebase)
+| [0078](0078-echange-de-journees-plutot-que-mouvements-pillar.md) | La seconde recherche locale échange des journées entières entre deux animateurs du même jour, couple choisi plutôt que tiré ; les *pillar moves* de Timefold, mesurés, sont écartés, et l'échange de deux journées identiques est gardé | Accepté · complète 0049 |
+>>>>>>> 048de039 (chore: retirer les marqueurs de conflit du README des ADR)
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,
