@@ -30,7 +30,7 @@
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.version>3.40.1</quarkus.platform.version>
         <timefold.solver.version>2.7.0</timefold.solver.version>
-        <quinoa.version>2.9.1</quinoa.version>
+        <quinoa.version>2.9.2</quinoa.version>
         <sentry.version>8.59.0</sentry.version>
         <!-- Jackson for the whole classpath, through jackson-bom imported
              ahead of the Quarkus BOM below: Quarkus 3.39.5 managed 2.22.2,
