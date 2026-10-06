@@ -204,7 +204,7 @@ jobs:
       - name: Scanner les sources
         env:
           # renovate: datasource=docker depName=semgrep/semgrep
-          SEMGREP_IMAGE: semgrep/semgrep:1.178.0
+          SEMGREP_IMAGE: semgrep/semgrep:1.179.0
         run: |
           mkdir -p "$RUNNER_TEMP/semgrep"
           docker run --rm \
