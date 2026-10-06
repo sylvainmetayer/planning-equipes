@@ -28,16 +28,17 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.39.5</quarkus.platform.version>
+        <quarkus.platform.version>3.40.1</quarkus.platform.version>
         <timefold.solver.version>2.7.0</timefold.solver.version>
         <quinoa.version>2.9.1</quinoa.version>
         <sentry.version>8.59.0</sentry.version>
         <!-- Jackson for the whole classpath, through jackson-bom imported
-             ahead of the Quarkus BOM below: Quarkus 3.39.5 manages 2.22.2,
+             ahead of the Quarkus BOM below: Quarkus 3.39.5 managed 2.22.2,
              whose jackson-core and jackson-databind carry four HIGH CVEs
              fixed in 2.22.3 (the image scan of docker-ghcr.yml refuses
-             them). Drop the import, and this property with it, once the
-             Quarkus BOM manages a fixed release itself. The YAML/JSR-310
+             them), and 3.40.1 manages 2.21.7, behind this release. Drop the
+             import, and this property with it, once the Quarkus BOM manages
+             2.22.3 or later itself. The YAML/JSR-310
              modules of the scenario DTOs use it too, so every Jackson module
              stays on one release. -->
         <jackson.version>2.22.3</jackson.version>
