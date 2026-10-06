@@ -168,6 +168,12 @@ l'inclure au bundle initial le faisait payer à tous les visiteurs, y compris
 sur `/animateur/:jeton`, page publique souvent consultée depuis un téléphone,
 et y compris sur un déploiement sans DSN.
 
+**La collecte du SDK est fixée explicitement** (`dataCollection`). Depuis la
+version 11, laisser l'option vide fait joindre aux erreurs l'utilisateur, les
+cookies, les en-têtes et les corps HTTP ; la configuration reprend la base
+restrictive de la version 10 : ni utilisateur, ni cookie, ni corps, en-têtes
+et paramètres d'URL filtrés.
+
 ## Variables
 
 | Variable | Défaut | Usage |
