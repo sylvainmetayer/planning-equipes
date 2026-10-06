@@ -102,6 +102,17 @@ describe('initObservability', () => {
     expect(options.beforeBreadcrumb).toBeTypeOf('function');
   });
 
+  it('keeps user info, cookies and bodies out of the reports, as SDK v10 did by default', async () => {
+    await initObservability({ ...CONFIG, cloudflareWebAnalyticsToken: '' });
+
+    const { dataCollection } = sentry.init.mock.calls[0][0];
+    expect(dataCollection.userInfo).toBe(false);
+    expect(dataCollection.cookies).toBe(false);
+    expect(dataCollection.httpBodies).toEqual([]);
+    expect(dataCollection.httpHeaders.request.deny).toContain('-ip');
+    expect(dataCollection.urlQueryParams.deny).toContain('-ip');
+  });
+
   it('masks the espace animateur token in what the SDK is about to send', async () => {
     await initObservability({ ...CONFIG, cloudflareWebAnalyticsToken: '' });
 

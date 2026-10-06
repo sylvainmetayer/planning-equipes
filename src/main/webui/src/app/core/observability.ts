@@ -99,6 +99,9 @@ function isTokenPage(): boolean {
   );
 }
 
+/** The header and query keys Sentry SDK v10 scrubbed by default. */
+const SCRUBBED_KEYS = ['forwarded', '-ip', 'remote-', 'via', '-user'];
+
 /**
  * No-ops on whichever half of `config` is blank (dsn / token unset
  * server-side), and returns the providers the app must be bootstrapped with —
@@ -124,6 +127,19 @@ export async function initObservability(config: AppConfig): Promise<Provider[]> 
       // calls as breadcrumbs — both carry the espace or wall token here.
       beforeSend: (event) => maskTokensEverywhere(event),
       beforeBreadcrumb: (breadcrumb) => maskTokensEverywhere(breadcrumb),
+      // SDK v11 collects user info, cookies, headers and bodies when this is
+      // left unset; v10 did not. Pin the v10 baseline: an error report needs
+      // none of them, and the session cookie must never leave.
+      dataCollection: {
+        userInfo: false,
+        cookies: false,
+        httpHeaders: {
+          request: { deny: SCRUBBED_KEYS },
+          response: { deny: SCRUBBED_KEYS },
+        },
+        httpBodies: [],
+        urlQueryParams: { deny: SCRUBBED_KEYS },
+      },
     });
     providers.push({ provide: ErrorHandler, useValue: Sentry.createErrorHandler() });
   }
