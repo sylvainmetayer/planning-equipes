@@ -2,6 +2,8 @@ package dev.sylvain.planning.service.solve;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
+import ai.timefold.solver.core.config.solver.SolverConfig;
 import ai.timefold.solver.core.config.solver.termination.TerminationCompositionStyle;
 import ai.timefold.solver.core.config.solver.termination.TerminationConfig;
 import dev.sylvain.planning.domain.ParametresQualite;
@@ -32,6 +34,40 @@ class SolverConfigurationBudgetTest {
             assertThat(plateau.getUnimprovedSecondsSpentLimit()).isEqualTo(120L);
             assertThat(plateau.getTerminationCompositionStyle()).isEqualTo(TerminationCompositionStyle.AND);
         });
+    }
+
+    /**
+     * The deployment's gain threshold, when set, turns the strict plateau into
+     * « less than this many medium points over the window »: Timefold's
+     * score-difference threshold on the medium level alone, soft left free.
+     */
+    @Test
+    void aPlateauGainJudgesTheWindowOnItsMediumPoints() {
+        SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
+
+        SolverConfiguration.applyTermination(solverConfig, 900L, 120L, 50L);
+
+        assertThat(solverConfig.getTerminationConfig().getTerminationConfigList())
+                .singleElement()
+                .satisfies(plateau -> {
+                    assertThat(plateau.getBestScoreFeasible()).isTrue();
+                    assertThat(plateau.getUnimprovedSecondsSpentLimit()).isEqualTo(120L);
+                    assertThat(HardMediumSoftScore.parseScore(plateau.getUnimprovedScoreDifferenceThreshold()))
+                            .isEqualTo(HardMediumSoftScore.of(0, 50, Long.MIN_VALUE));
+                });
+    }
+
+    /** Zero — the shipped default until measured otherwise — keeps the strict plateau: no threshold at all. */
+    @Test
+    void aZeroGainKeepsTheStrictPlateau() {
+        SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
+
+        SolverConfiguration.applyTermination(solverConfig, 900L, 120L, 0L);
+
+        assertThat(solverConfig.getTerminationConfig().getTerminationConfigList())
+                .singleElement()
+                .extracting(TerminationConfig::getUnimprovedScoreDifferenceThreshold)
+                .isNull();
     }
 
     @Test

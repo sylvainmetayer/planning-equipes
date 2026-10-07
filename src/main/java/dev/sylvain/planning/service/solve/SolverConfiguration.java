@@ -58,6 +58,13 @@ final class SolverConfiguration {
     private final Long defaultUnimprovedSecondsLimit;
 
     /**
+     * The medium gain under which a plateau counts as such: see
+     * {@link #PLATEAU_GAIN_PROPERTY}. {@code 0} is the strict plateau — not a
+     * single point in the whole window.
+     */
+    private final long plateauGainMedium;
+
+    /**
      * The deployment-wide weight of every constraint, read once from
      * {@code application.properties}. An edition may override any of them
      * (table {@code ponderation_contrainte}); see
@@ -82,10 +89,11 @@ final class SolverConfiguration {
             Integer maxEmplacementsParJour,
             ReferenceData referenceDataService,
             Config config) {
+        this.plateauGainMedium = readPlateauGainMedium(config);
         SolverConfig solverConfig = SolverConfig.createFromXmlResource(SOLVER_CONFIG_XML);
         solverConfig.setScoreDirectorFactoryConfig(
                 new ScoreDirectorFactoryConfig().withConstraintProviderClass(PlanningConstraintProvider.class));
-        applyTermination(solverConfig, secondsLimit, unimprovedSecondsLimit);
+        applyTermination(solverConfig, secondsLimit, unimprovedSecondsLimit, plateauGainMedium);
         this.solverFactory = SolverFactory.create(solverConfig);
         this.solutionManager = SolutionManager.create(this.solverFactory);
         this.constraintDiagnosticService =
@@ -307,9 +315,29 @@ final class SolverConfiguration {
     }
 
     /**
+     * The deployment property naming the medium gain a plateau window must
+     * reach for the solve to go on: {@code planning.solver.plateau-gain-medium}.
+     * The strict plateau — not a single point of improvement for the whole
+     * window — almost never happened on a real edition: the second phase keeps
+     * finding one medium point every few minutes to the end of the budget, so
+     * the bailout never fired and every solve ran its fifteen minutes. Under a
+     * gain, the window is judged on what it brought: fewer points than this
+     * over the whole window, and the solve stops. Measured on the recorded
+     * curves, see {@code docs/decisions} and {@code docs/developpement.md}.
+     */
+    static final String PLATEAU_GAIN_PROPERTY = "planning.solver.plateau-gain-medium";
+
+    static long readPlateauGainMedium(Config config) {
+        return Math.max(
+                0, config.getOptionalValue(PLATEAU_GAIN_PROPERTY, Long.class).orElse(0L));
+    }
+
+    /**
      * Two ways for a solve to end, whichever comes first: the time budget is
-     * exhausted, or the planning is <b>already feasible</b> and has stopped
-     * improving for {@code unimprovedSecondsLimit}.
+     * exhausted, or the planning is <b>already feasible</b> and has gained
+     * less than {@code plateauGainMedium} medium points over the last
+     * {@code unimprovedSecondsLimit} seconds — not a single point when the
+     * gain is zero.
      *
      * <p>The second half is deliberately gated on feasibility
      * ({@link TerminationConfig#withBestScoreFeasible}, AND-ed with the plateau
@@ -321,20 +349,35 @@ final class SolverConfiguration {
      * time that was being spent polishing medium/soft score on an already
      * workable planning, never time spent reaching hard-feasibility.</p>
      *
+     * <p>The gain is Timefold's {@code unimprovedScoreDifferenceThreshold}: a
+     * best-score improvement only pushes the plateau back when it is at least
+     * that much better than a best score reached within the window — so a
+     * trickle of single points no longer keeps a solve alive. The threshold
+     * reads the medium level alone: hard is zero once feasible, and soft, the
+     * level that yields to the other two by construction, is left free to go
+     * either way ({@link Long#MIN_VALUE} on that level).</p>
+     *
      * <p>{@code unimprovedSecondsLimit <= 0} disables the plateau branch and
      * leaves the plain time budget.</p>
      */
-    private static void applyTermination(SolverConfig solverConfig, Long secondsLimit, Long unimprovedSecondsLimit) {
+    static void applyTermination(
+            SolverConfig solverConfig, Long secondsLimit, Long unimprovedSecondsLimit, long plateauGainMedium) {
         if (solverConfig.getTerminationConfig() == null) {
             solverConfig.setTerminationConfig(new TerminationConfig());
         }
         TerminationConfig termination = solverConfig.getTerminationConfig();
         termination.setSecondsSpentLimit(secondsLimit);
         if (unimprovedSecondsLimit != null && unimprovedSecondsLimit > 0) {
-            termination.setTerminationConfigList(List.of(new TerminationConfig()
+            TerminationConfig plateau = new TerminationConfig()
                     .withBestScoreFeasible(true)
                     .withUnimprovedSecondsSpentLimit(unimprovedSecondsLimit)
-                    .withTerminationCompositionStyle(TerminationCompositionStyle.AND)));
+                    .withTerminationCompositionStyle(TerminationCompositionStyle.AND);
+            if (plateauGainMedium > 0) {
+                plateau.setUnimprovedScoreDifferenceThreshold(
+                        HardMediumSoftScore.of(0, plateauGainMedium, Long.MIN_VALUE)
+                                .toString());
+            }
+            termination.setTerminationConfigList(List.of(plateau));
         }
     }
 
@@ -365,7 +408,7 @@ final class SolverConfiguration {
         SolverConfig solverConfig = SolverConfig.createFromXmlResource(SOLVER_CONFIG_XML);
         solverConfig.setScoreDirectorFactoryConfig(
                 new ScoreDirectorFactoryConfig().withConstraintProviderClass(PlanningConstraintProvider.class));
-        applyTermination(solverConfig, secondsOf(budget), plateauOf(budget));
+        applyTermination(solverConfig, secondsOf(budget), plateauOf(budget), plateauGainMedium);
         return solverConfig;
     }
 
