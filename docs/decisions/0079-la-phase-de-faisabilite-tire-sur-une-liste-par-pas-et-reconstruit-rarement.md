@@ -58,6 +58,7 @@ défaut — donc le *ruin and recreate* à poids 1 avant cette décision.
 | --- | --- | --- | --- |
 | édition réelle de seize jours (4 057 sièges ; non versionnée) | 0 dur à 138 s, 1 177 évaluations/s | **76 s**, 3 092 évaluations/s | 64 s |
 | `festival-hivernal` (3 438 sièges) | 0 dur à 142 s, 956 évaluations/s | 77 s, 1 069 évaluations/s | **42 s** |
+| la même édition, règle dure des six jours allumée | 0 dur à 229 s | — | **208 s** (avec le partage des flux de contraintes) |
 | `scenario-complet`, `gamme-22`, `gamme-25` | faisables dès la construction | inchangés | inchangés |
 
 Le premier plan faisable est un peu moins bon en medium sur `festival-hivernal`
