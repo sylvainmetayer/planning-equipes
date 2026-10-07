@@ -15,7 +15,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { McpApi } from '../../core/api/mcp-api';
-import { PromptMcp, StatutMcp } from '../../core/models';
+import { ApiError } from '../../core/api.service';
+import { CleMcp, PromptMcp, StatutMcp } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { StatusMessage } from '../../shared/status-message';
 import { NewWindowLink } from '../../shared/new-window-link';
@@ -35,8 +36,10 @@ import { NewWindowLink } from '../../shared/new-window-link';
  * later.
  *
  * Revealing the key — and, if configured server-side, the Pangolin access
- * token id/token alongside it — costs a second admin-password check on top
- * of the session. All three live in component signals and nowhere else — no
+ * token id/token alongside it — costs a second check on top of the session:
+ * the admin password under the break-glass form session, a Keycloak sign-in
+ * less than five minutes old otherwise (`revelationParReconnexion`), where
+ * there is no shared password to type. All three live in component signals and nowhere else — no
  * store, no session storage — so leaving the page destroys them and coming
  * back asks again. A two-minute timer clears them in place for the case the
  * page is left open on screen; copying restarts that timer, since copying is
@@ -176,12 +179,7 @@ export class McpPage implements OnInit, OnDestroy {
     this.enCours.set(true);
     this.erreur.set('');
     try {
-      const reponse = await this.mcpApi.regenerateKey(this.motDePasse());
-      this.cle.set(reponse.cle);
-      this.pangolinAccessTokenId.set(reponse.pangolinAccessTokenId ?? '');
-      this.pangolinAccessToken.set(reponse.pangolinAccessToken ?? '');
-      this.formulaireOuvert.set(false);
-      this.armerEffacement();
+      this.showKey(await this.mcpApi.regenerateKey(this.motDePasse()));
     } catch {
       // Deliberately one message for every failure mode: telling a wrong
       // password from a rate-limited one would help exactly the person this
@@ -193,6 +191,38 @@ export class McpPage implements OnInit, OnDestroy {
       this.enCours.set(false);
       this.motDePasse.set('');
     }
+  }
+
+  /**
+   * Keycloak session: no password to confirm, the server checks how recent
+   * the sign-in is. A 401 means too old — the page then says how to refresh
+   * it, since signing in again on top of a live session changes nothing.
+   */
+  protected async revealAfterRecentSignIn(): Promise<void> {
+    if (this.enCours()) {
+      return;
+    }
+    this.enCours.set(true);
+    this.erreur.set('');
+    try {
+      this.showKey(await this.mcpApi.revealKeyAfterRecentSignIn());
+    } catch (error) {
+      this.erreur.set(
+        error instanceof ApiError && error.status === 401
+          ? $localize`:@@mcp.cle.reconnexion:Déconnectez-vous puis reconnectez-vous : révéler la clé exige une connexion de moins de 5 minutes.`
+          : $localize`:@@mcp.cle.indisponible:La clé n'a pas pu être affichée. Réessayez dans quelques minutes.`,
+      );
+    } finally {
+      this.enCours.set(false);
+    }
+  }
+
+  private showKey(reponse: CleMcp): void {
+    this.cle.set(reponse.cle);
+    this.pangolinAccessTokenId.set(reponse.pangolinAccessTokenId ?? '');
+    this.pangolinAccessToken.set(reponse.pangolinAccessToken ?? '');
+    this.formulaireOuvert.set(false);
+    this.armerEffacement();
   }
 
   protected oublierCle(): void {

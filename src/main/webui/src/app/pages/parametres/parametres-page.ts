@@ -37,6 +37,7 @@ import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
 import { OutputPanel } from '../../shared/output-panel';
 import { AffichageMuralLinks } from './affichage-mural-links';
 import { ContactOrganisationCard } from './contact-organisation-card';
+import { ResponsablesCard } from './responsables-card';
 import { GuichetsCard } from './guichets-card';
 import { ParametresNotificationsPanel } from './parametres-notifications';
 import { ParametresMeteoPanel } from './parametres-meteo';
@@ -85,6 +86,7 @@ export const REPLACE_KEYWORD = 'REMPLACER';
   imports: [
     AffichageMuralLinks,
     ContactOrganisationCard,
+    ResponsablesCard,
     GuichetsCard,
     SingleKeyShortcutsToggle,
     DatePipe,

@@ -228,7 +228,7 @@ une obligation qu'on ne tiendra pas.
 ## 7. Les limites à consigner telles quelles
 
 Le registre demande de **décrire** les mesures, pas de prétendre qu'elles sont
-complètes. Quatre points sont connus et se consignent :
+complètes. Cinq points sont connus et se consignent :
 
 - **aucune purge automatique n'existe** : la durée annoncée est tenue à la main,
   à date fixe (`exploitation.md` §6). C'est l'écart le plus exposant, parce
@@ -239,6 +239,32 @@ complètes. Quatre points sont connus et se consignent :
   instances tournent en parallèle. Ce qui se consigne au registre n'est donc pas
   « purge automatique : non », mais « purge manuelle, à date fixe, tracée au
   journal du §5 » ;
+- **une deuxième base porte des données personnelles : Keycloak**, obligatoire
+  depuis l'[ADR 0077](decisions/0077-keycloak-obligatoire-comptes-nominatifs.md).
+  Le realm détient le prénom, le nom et l'adresse e-mail de chaque personne qui
+  a un compte (administrateurs, animateurs), son second facteur et l'historique
+  de ses connexions — les **événements** du realm (connexions, échecs, et
+  modifications d'administration avec l'objet modifié : adresse IP, adresse
+  e-mail, horodatage), **conservés 7 jours** puis purgés par Keycloak
+  (`eventsExpiration` et `adminEventsExpiration`, `events_expiration_seconds`
+  en Terraform) ; l'application garde de son côté la table `compte`
+  (adresse, nom, dernière connexion, désactivation) et les habilitations. Trois
+  conséquences, à écrire telles quelles : le realm **sort du périmètre des
+  sauvegardes** du §5 comme de la purge du §6, et `compte` / `habilitation` ne
+  voyagent pas dans les dumps ; l'hébergeur du fournisseur d'identité est un
+  **destinataire** au sens de l'art. 30, à nommer ; une demande d'effacement
+  porte sur deux systèmes. Un compte n'est jamais supprimé par l'application,
+  seulement désactivé : l'effacement effectif est un geste d'administration (du
+  realm, et de la ligne `compte`), à documenter dans la procédure d'exercice des
+  droits. Le **responsable de stand** (#295) est une **catégorie de
+  destinataires** à consigner au registre (#220) : un bénévole qui lit, pour
+  les seuls stands de son périmètre, le planning publié — des effectifs par
+  défaut, les prénoms et noms des animateurs (mineurs compris) quand
+  l'organisation l'allume, jamais leurs coordonnées ni leur date de naissance.
+  Son droit **expire** obligatoirement (proposé : fin de l'édition + 30 jours).
+  N'étant lié par aucun contrat de travail, il signe un **engagement de
+  confidentialité** avant l'ouverture de son accès — un livrable documentaire,
+  pas du code. Le rôle RH (#294) ajoutera la sienne à son ouverture ;
 - **les jetons d'accès voyagent dans le chemin de l'URL** : ils atterrissent
   tels quels dans les journaux d'accès du reverse proxy, qui doivent donc être
   purgés ou écrits sans ces chemins (`securite.md`, dernière section) ;

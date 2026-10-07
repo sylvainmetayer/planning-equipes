@@ -20,6 +20,34 @@
   margin-top: 1rem;
 }
 
+/* Keycloak first; the break-glass card below it, set apart by a rule. */
+.login-oidc-intro {
+  margin: 1rem 0 0.75rem;
+}
+
+.login-secours {
+  margin-top: 1rem;
+}
+
+.login-oidc-intro ~ .login-secours {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+}
+
+.login-secours-titre {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font: var(--mat-sys-title-small);
+}
+
+.login-secours-aide {
+  margin: 0.25rem 0 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
 .login-echec {
   display: flex;
   align-items: center;

@@ -70,8 +70,8 @@ import org.jboss.logging.Logger;
  * {@code SentryInitializer}, which runs at {@code PLATFORM_BEFORE} so that the
  * warning has somewhere to go. The record is a second observer, at
  * {@code PLATFORM_AFTER}: past every other boot check — {@code DefaultSecrets},
- * {@code RequiredMentionsLegales}, the backup and solve budget bounds, the
- * remote-user configuration, all at the default priority — so that a boot one
+ * {@code RequiredMentionsLegales}, the backup and solve budget bounds and the
+ * authentication configuration, all at the default priority — so that a boot one
  * of them refuses is not written down as a version that opened the database.
  * An observer that throws ends the event, and this one is then never called.</p>
  */

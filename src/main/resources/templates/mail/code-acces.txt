@@ -1,5 +1,0 @@
-Bonjour{#if prenom} {prenom}{/if},
-
-Voici votre code d'accès à votre espace animateur : {code}
-
-Il est valable 10 minutes. Si vous n'êtes pas à l'origine de cette demande, ignorez simplement ce message.

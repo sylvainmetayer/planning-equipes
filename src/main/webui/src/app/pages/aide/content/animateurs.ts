@@ -18,7 +18,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.foire.intro:Chaque animateur a un espace personnel, ouvert par un lien qui lui est propre. Il n'y a pas de compte à créer, mais un code envoyé à l'adresse e-mail de sa fiche lui est demandé une fois par appareil : comme le planning se télécharge depuis l'espace, un minimum d'authentification s'impose. Un animateur sans adresse ne peut pas y entrer, pensez à l'ajouter.`,
+          text: $localize`:@@aide.foire.intro:Chaque animateur a un espace personnel, désigné par un lien qui lui est propre et ouvert par son compte : il se connecte avec l'adresse e-mail de sa fiche, qui doit porter le rôle « animateur ». Le lien seul n'ouvre rien, le compte seul non plus. Un animateur sans adresse ne peut pas y entrer, pensez à l'ajouter.`,
         },
         {
           kind: 'paragraph',

@@ -27,8 +27,16 @@ export class McpApi {
     return this.api.get<PromptMcp[]>('/api/mcp/prompts');
   }
 
-  /** A fresh key, against the administrator's password: the old one stops working at once. */
+  /** The key, against the administrator's password (break-glass form session). */
   regenerateKey(motDePasse: string): Promise<CleMcp> {
     return this.api.post<CleMcp>('/api/mcp/cle', { motDePasse });
+  }
+
+  /**
+   * The key, against a recent Keycloak sign-in instead of a password: the
+   * server answers 401 when the sign-in is more than five minutes old.
+   */
+  revealKeyAfterRecentSignIn(): Promise<CleMcp> {
+    return this.api.post<CleMcp>('/api/mcp/cle', {});
   }
 }

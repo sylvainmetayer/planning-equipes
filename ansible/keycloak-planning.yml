@@ -1,0 +1,209 @@
+---
+# Les PERSONNES du realm Keycloak d'une instance Planning Équipes, et rien
+# d'autre : les comptes du personnel (administrateurs nominatifs, comptes MCP
+# interactifs), leurs rôles de realm, et l'invitation qui leur fait choisir
+# leur mot de passe.
+#
+#   ansible-galaxy collection install -r ansible/requirements.yml
+#   cp ansible/group_vars/all.example.yml ansible/group_vars/all.yml   # puis remplir
+#   cp ansible/inventory.example.yml ansible/inventory.yml
+#   ansible-playbook -i ansible/inventory.yml ansible/keycloak-planning.yml
+#
+# Le REALM n'est pas décrit ici : rôles, clients, flow de connexion, thème et
+# relais SMTP sont à terraform/keycloak/, qui s'applique AVANT ce playbook. Ce
+# playbook vérifie seulement que le realm existe, et refuse de continuer
+# sinon. Deux outils pour deux choses, parce qu'elles n'ont pas le même cycle :
+#   - Terraform supprime ce qui sort de sa description. Pour un rôle ou un
+#     client, c'est ce qu'on veut ; pour une personne, ce serait détruire son
+#     compte, son historique et son second facteur.
+#   - L'invitation est une ACTION, pas un état : rien en Terraform n'envoie le
+#     mail « définissez votre mot de passe ».
+#
+# Idempotent : le rejouer ne crée rien de neuf, ne réinitialise aucun mot de
+# passe et ne renvoie aucune invitation.
+#
+# Ce qu'il ne fait JAMAIS, volontairement :
+#   - SUPPRIMER un compte. Une personne qui part est DÉSACTIVÉE (`actif:
+#     false`) : ses sessions ne se renouvellent plus, et son compte reste
+#     attribuable dans les journaux.
+#   - poser un mot de passe. Chaque personne reçoit une invitation et choisit
+#     le sien ; un mot de passe qu'un playbook connaît est un mot de passe que
+#     le dépôt, le journal d'exécution et la console CI connaissent aussi.
+#   - créer les comptes des ANIMATEURS. Ils appartiennent à l'application, qui
+#     les crée avec leur fiche (OIDC_PROVISIONING_ENABLED) : les décrire aussi
+#     ici ferait s'affronter deux propriétaires sur les mêmes comptes.
+#
+# À lire avant de le lancer : docs/keycloak.md § Les personnes, par Ansible.
+- name: Tenir les comptes du personnel du realm Planning Équipes
+  hosts: all
+  gather_facts: false
+
+  vars:
+    # Les seuls rôles que ce playbook accorde ou retire. `user` n'y est pas :
+    # c'est le rôle ordinaire du realm, il n'ouvre rien et n'a donc rien à
+    # faire dans une liste de privilèges. Le rôle animateur n'y est pas non
+    # plus : c'est l'application qui l'accorde, avec la fiche.
+    keycloak_roles_personnel:
+      - admin
+      - mcp
+
+  # Les identifiants d'administration une seule fois, pour tous les modules de
+  # la collection : ils forment un groupe d'action.
+  module_defaults:
+    group/middleware_automation.keycloak.keycloak:
+      auth_keycloak_url: "{{ keycloak_url }}"
+      auth_realm: master
+      auth_client_id: admin-cli
+      auth_username: "{{ keycloak_admin_user }}"
+      auth_password: "{{ keycloak_admin_password }}"
+      validate_certs: true
+
+  tasks:
+    # ------------------------------------------------------------ pré-vols --
+    # Le rôle ordinaire n'ouvre rien, et ce n'est pas qu'une intention : le
+    # refuser ici empêche qu'une ligne mal recopiée en fasse un privilège, ce
+    # qui ne changerait rien pour la personne visée et donnerait une fausse
+    # idée de ce qu'elle peut faire. RealmPlanningStructuralTest tient la même
+    # règle côté application.
+    - name: Refuser le rôle ordinaire comme privilège
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - "'user' not in (item.roles | default([]))"
+          - "'user' not in (item.roles_retires | default([]))"
+        fail_msg: >-
+          {{ item.email | default('?') }} : « user » n'est pas un privilège.
+          C'est le rôle que Keycloak accorde à tout le monde et qui n'ouvre
+          rien ; le lister ici ne donnerait aucun accès et laisserait croire
+          le contraire.
+      loop: "{{ keycloak_personnes }}"
+      loop_control:
+        label: "{{ item.email | default('?') }}"
+
+    - name: Refuser tout autre rôle que ceux du personnel
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - item.email | default('', true) | length > 0
+          - (item.roles | default([])) | difference(keycloak_roles_personnel) | length == 0
+          - (item.roles_retires | default([])) | difference(keycloak_roles_personnel) | length == 0
+          - (item.roles | default([])) | intersect(item.roles_retires | default([])) | length == 0
+        fail_msg: >-
+          {{ item.email | default('(adresse manquante)') }} : chaque personne a
+          une adresse, et ses rôles sont pris parmi
+          {{ keycloak_roles_personnel | join(', ') }} — jamais le même dans
+          `roles` et `roles_retires`. Le rôle
+          « {{ keycloak_role_animateur }} » est accordé par l'application avec
+          la fiche, pas par ce playbook.
+      loop: "{{ keycloak_personnes }}"
+      loop_control:
+        label: "{{ item.email | default('?') }}"
+
+    # Le realm est l'affaire de Terraform. S'il manque, c'est que l'apply n'a
+    # pas eu lieu — ou que keycloak_url vise la mauvaise instance : dans les
+    # deux cas, créer des comptes ne ferait qu'ajouter à la confusion.
+    - name: Le realm existe (décrit par terraform/keycloak/)
+      ansible.builtin.uri:
+        url: "{{ keycloak_url }}/realms/{{ keycloak_realm }}/.well-known/openid-configuration"
+        method: GET
+        status_code: 200
+        validate_certs: true
+      register: keycloak_realm_decouverte
+      failed_when: false
+
+    - name: Refuser de continuer sans realm
+      ansible.builtin.assert:
+        quiet: true
+        that: keycloak_realm_decouverte.status | default(0) == 200
+        fail_msg: >-
+          Le realm « {{ keycloak_realm }} » ne répond pas sur {{ keycloak_url }}
+          (statut {{ keycloak_realm_decouverte.status | default('?') }}).
+          Appliquez d'abord terraform/keycloak/ : ce playbook ne décrit que
+          les personnes, pas le realm.
+
+    # ------------------------------------------------------------ personnes --
+    # `email_verified` n'est pas passé, et c'est délibéré. À la création,
+    # Keycloak le laisse à false, et c'est l'invitation qui le vérifie — le
+    # marquer vérifié ici donnerait l'accès à l'adresse où une faute de frappe
+    # s'est glissée. Et le passer à chaque exécution REMETTRAIT à false
+    # l'adresse de quelqu'un qui l'a déjà confirmée.
+    - name: Les comptes du personnel existent, actifs ou désactivés
+      middleware_automation.keycloak.keycloak_user:
+        realm: "{{ keycloak_realm }}"
+        username: "{{ item.email }}"
+        email: "{{ item.email }}"
+        first_name: "{{ item.prenom | default(omit) }}"
+        last_name: "{{ item.nom | default(omit) }}"
+        # Désactiver, jamais supprimer : `state: absent` n'apparaît nulle part
+        # dans ce playbook.
+        enabled: "{{ item.actif | default(true) | bool }}"
+        state: present
+      register: keycloak_comptes
+      loop: "{{ keycloak_personnes }}"
+      loop_control:
+        label: "{{ item.email }}{{ '' if item.actif | default(true) | bool else ' (désactivé)' }}"
+
+    # Sans client_id, le mapping porte sur un rôle de REALM — c'est
+    # précisément ceux que l'application lit dans realm_access.roles.
+    - name: Les rôles accordés sont posés
+      middleware_automation.keycloak.keycloak_user_rolemapping:
+        realm: "{{ keycloak_realm }}"
+        target_username: "{{ item.0.email }}"
+        roles:
+          - name: "{{ item.1 }}"
+        state: present
+      loop: "{{ keycloak_personnes | subelements('roles', skip_missing=True) }}"
+      loop_control:
+        label: "{{ item.0.email }} ← {{ item.1 }}"
+
+    # Retirer un rôle n'est pas supprimer une personne : quelqu'un qui cesse
+    # d'administrer garde son compte, et perd ce qu'il ouvrait.
+    - name: Les rôles retirés sont ôtés
+      middleware_automation.keycloak.keycloak_user_rolemapping:
+        realm: "{{ keycloak_realm }}"
+        target_username: "{{ item.0.email }}"
+        roles:
+          - name: "{{ item.1 }}"
+        state: absent
+      loop: "{{ keycloak_personnes | subelements('roles_retires', skip_missing=True) }}"
+      loop_control:
+        label: "{{ item.0.email }} ✕ {{ item.1 }}"
+
+    # ----------------------------------------------------------- invitations --
+    # « Définissez votre mot de passe, puis confirmez votre adresse. » Le second
+    # facteur n'est pas demandé ici : le flow du realm l'impose de lui-même à
+    # la première connexion d'un porteur du rôle admin, ce qui vaut mieux
+    # qu'une action requise qu'un administrateur pourrait retirer.
+    #
+    # Envoyée aux seuls comptes que CETTE exécution vient de créer (aucune
+    # représentation « existing » avant la tâche) : le module envoie un mail à
+    # chaque appel, et rejouer le playbook relancerait sinon tout le monde. Une
+    # invitation perdue se renvoie depuis la console, ou par
+    # `-e keycloak_reinviter=prenom.nom@exemple.org`.
+    - name: Envoyer l'invitation aux comptes créés à l'instant
+      middleware_automation.keycloak.keycloak_user_execute_actions_email:
+        realm: "{{ keycloak_realm }}"
+        username: "{{ item.item.email }}"
+        actions:
+          - UPDATE_PASSWORD
+          - VERIFY_EMAIL
+        client_id: "{{ planning_app_client_id }}"
+        redirect_uri: "{{ planning_public_url }}/login"
+      loop: "{{ keycloak_comptes.results | default([]) }}"
+      loop_control:
+        label: "{{ item.item.email | default('?') }}"
+      when:
+        - keycloak_envoyer_invitations | bool
+        - item.item.actif | default(true) | bool
+        - >-
+          (item.changed | default(false) and (item.existing | default({}, true)) | length == 0)
+          or item.item.email == (keycloak_reinviter | default(''))
+
+    # ------------------------------------------------------------- rapport --
+    - name: Ce qui a été tenu
+      ansible.builtin.debug:
+        msg:
+          - "Realm « {{ keycloak_realm }} » sur {{ keycloak_url }} : {{ keycloak_personnes | length }} personne(s) du personnel."
+          - "Désactivées : {{ keycloak_personnes | selectattr('actif', 'defined') | rejectattr('actif') | map(attribute='email') | join(', ') or 'aucune' }}"
+          - "Un administrateur sans TOTP en configure un à sa première connexion : le flow l'exige."
+          - "Recette : docs/keycloak.md § Recette après déploiement."

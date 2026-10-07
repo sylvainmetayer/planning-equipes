@@ -188,6 +188,7 @@ class GelReferentielStructuralTest {
             Map.entry("AnimateurService#delete(String)", "the people's data stay open, the roster with them"),
             Map.entry("AnimateurService#regenerateToken(String)", "a credential, not the referential"),
             Map.entry("AnimateurService#regenerateAbonnementToken(String)", "same"),
+            Map.entry("AnimateurService#sendInvitations()", "Keycloak accounts and mails, not the referential"),
             Map.entry(
                     "ReferenceDataService#createContrainteAdHoc(ContrainteAdHoc)",
                     "the ad hoc adjustments stay open: they are the late phase's own gesture"),
@@ -207,6 +208,7 @@ class GelReferentielStructuralTest {
             Map.entry("ReferenceDataService#updateParametresNotifications(ParametresNotifications)", "same"),
             Map.entry("ReferenceDataService#updateParametresQualite(ParametresQualite)", "same"),
             Map.entry("ReferenceDataService#updateContactOrganisation(ContactOrganisation)", "same"),
+            Map.entry("ReferenceDataService#updateParametresResponsables(ParametresResponsables)", "same"),
             Map.entry("ReferenceDataService#setContrainteActive(String,boolean,WeightChangeOrigin)", "same"),
             Map.entry("ReferenceDataService#setConstraintWeight(String,Integer,WeightChangeOrigin)", "same"),
             Map.entry(
