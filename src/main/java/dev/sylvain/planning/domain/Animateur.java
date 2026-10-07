@@ -2,7 +2,6 @@ package dev.sylvain.planning.domain;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.Period;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -94,9 +93,7 @@ public class Animateur {
      * {@link #dateNaissance}, never stored.
      */
     public boolean isMineurOn(LocalDate dateReference) {
-        return dateReference != null
-                && dateNaissance != null
-                && Period.between(dateNaissance, dateReference).getYears() < 18;
+        return hasNotTurned(18, dateReference);
     }
 
     /**
@@ -119,9 +116,18 @@ public class Animateur {
      * {@link #dateNaissance}, never stored.</p>
      */
     public boolean isUnder16On(LocalDate dateReference) {
-        return dateReference != null
-                && dateNaissance != null
-                && Period.between(dateNaissance, dateReference).getYears() < 16;
+        return hasNotTurned(16, dateReference);
+    }
+
+    /**
+     * Whether the animateur has not yet had their {@code years}th birthday on
+     * {@code dateReference}: the day they turn that age counts as reached.
+     * Written against the birthday rather than through a {@code Period} —
+     * the move filters ask it of every candidate the solver draws, millions
+     * of times a solve, and the period showed in the allocation profile.
+     */
+    private boolean hasNotTurned(int years, LocalDate dateReference) {
+        return dateReference != null && dateNaissance != null && dateReference.isBefore(dateNaissance.plusYears(years));
     }
 
     public boolean isMajeurOn(LocalDate dateReference) {
@@ -317,6 +323,9 @@ public class Animateur {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        // Not Objects.hash(id): that allocates a varargs array on every call,
+        // and the engine hashes an animateur at every move, in every group
+        // keyed by them.
+        return id == null ? 0 : id.hashCode();
     }
 }

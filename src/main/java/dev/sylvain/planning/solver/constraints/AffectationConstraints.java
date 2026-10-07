@@ -24,11 +24,16 @@ import java.time.LocalDateTime;
 public final class AffectationConstraints {
 
     public Constraint[] define(ConstraintFactory constraintFactory) {
+        return define(constraintFactory, new SeatStreams(constraintFactory));
+    }
+
+    /** The same rules over the seat streams shared with the other families (see {@link SeatStreams}). */
+    public Constraint[] define(ConstraintFactory constraintFactory, SeatStreams seats) {
         return new Constraint[] {
             posteDoitEtrePourvu(constraintFactory),
-            animateurDisponible(constraintFactory),
-            pasDeChevauchementHoraire(constraintFactory),
-            plafondCreneauxParTypologie(constraintFactory)
+            animateurDisponible(seats),
+            pasDeChevauchementHoraire(seats),
+            plafondCreneauxParTypologie(seats)
         };
     }
 
@@ -58,30 +63,33 @@ public final class AffectationConstraints {
      * carrying a {@link QuotaTypologie} are joined, so an edition that caps
      * nothing pays nothing.</p>
      */
-    private Constraint plafondCreneauxParTypologie(ConstraintFactory constraintFactory) {
+    private Constraint plafondCreneauxParTypologie(SeatStreams seats) {
         return ConstraintToggleSupport.actif(
-                        constraintFactory.forEach(PosteAffectation.class), "plafondCreneauxParTypologie")
-                .filter(poste -> poste.getAnimateur() != null && poste.getStand() != null)
-                .flatten(poste -> poste.getStand().getTypologiesProposees())
-                // Counted, not reproached (ADR 0044): the past seats stay in
-                // the count, and the cap is charged only while the animateur
-                // still holds a seat of that typologie ahead of now — folded
-                // into the group, next to the count.
-                .groupBy(
-                        (poste, typologie) -> poste.getAnimateur(),
-                        (poste, typologie) -> typologie,
-                        PastSeats.withAhead(ConstraintCollectors.countBi()))
-                .join(
-                        QuotaTypologie.class,
-                        Joiners.equal((animateur, typologie, tenue) -> typologie, QuotaTypologie::getTypologie))
-                .filter((animateur, typologie, tenue, plafond) ->
-                        tenue.ahead() > 0 && tenue.value() > plafond.getMaxCreneaux())
-                // Reshaped before penalising so the écart reads as a sentence:
-                // who, which typologie and its cap, how many they hold.
-                .map(
-                        (animateur, typologie, tenue, plafond) -> animateur,
-                        (animateur, typologie, tenue, plafond) -> plafond,
-                        (animateur, typologie, tenue, plafond) -> tenue.value())
+                        seats.held()
+                                .filter(poste -> poste.getStand() != null)
+                                .flatten(poste -> poste.getStand().getTypologiesProposees())
+                                // Counted, not reproached (ADR 0044): the past seats stay in
+                                // the count, and the cap is charged only while the animateur
+                                // still holds a seat of that typologie ahead of now — folded
+                                // into the group, next to the count.
+                                .groupBy(
+                                        (poste, typologie) -> poste.getAnimateur(),
+                                        (poste, typologie) -> typologie,
+                                        PastSeats.withAhead(ConstraintCollectors.countBi()))
+                                .join(
+                                        QuotaTypologie.class,
+                                        Joiners.equal(
+                                                (animateur, typologie, tenue) -> typologie,
+                                                QuotaTypologie::getTypologie))
+                                .filter((animateur, typologie, tenue, plafond) ->
+                                        tenue.ahead() > 0 && tenue.value() > plafond.getMaxCreneaux())
+                                // Reshaped before penalising so the écart reads as a sentence:
+                                // who, which typologie and its cap, how many they hold.
+                                .map(
+                                        (animateur, typologie, tenue, plafond) -> animateur,
+                                        (animateur, typologie, tenue, plafond) -> plafond,
+                                        (animateur, typologie, tenue, plafond) -> tenue.value()),
+                        "plafondCreneauxParTypologie")
                 .penalize(HardMediumSoftScore.ONE_HARD, (animateur, plafond, tenus) -> tenus - plafond.getMaxCreneaux())
                 .asConstraint("plafondCreneauxParTypologie");
     }
@@ -98,16 +106,17 @@ public final class AffectationConstraints {
                 .asConstraint("posteDoitEtrePourvu");
     }
 
-    private Constraint animateurDisponible(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class), "animateurDisponible")
-                .filter(poste -> {
-                    Animateur animateur = poste.getAnimateur();
-                    return animateur != null
-                            && PastSeats.reproachable(poste)
-                            && poste.getCreneau() != null
-                            && poste.getCreneau().getDate() != null
-                            && animateur.isIndisponibleOn(poste.getCreneau().getDate());
-                })
+    private Constraint animateurDisponible(SeatStreams seats) {
+        return ConstraintToggleSupport.actif(
+                        seats.held().filter(poste -> {
+                            Animateur animateur = poste.getAnimateur();
+                            return PastSeats.reproachable(poste)
+                                    && poste.getCreneau() != null
+                                    && poste.getCreneau().getDate() != null
+                                    && animateur.isIndisponibleOn(
+                                            poste.getCreneau().getDate());
+                        }),
+                        "animateurDisponible")
                 .penalize(HardMediumSoftScore.ONE_HARD, poste -> ExclusionEligibilite.FORFAIT)
                 .asConstraint("animateurDisponible");
     }
@@ -137,16 +146,20 @@ public final class AffectationConstraints {
      * dereference {@code creneau}. {@code Joiners.overlapping} is
      * interval-indexed, not a pairwise scan with a Java predicate.</p>
      */
-    private Constraint pasDeChevauchementHoraire(ConstraintFactory constraintFactory) {
+    private Constraint pasDeChevauchementHoraire(SeatStreams seats) {
         return ConstraintToggleSupport.actif(
-                        constraintFactory.forEach(PosteAffectation.class), "pasDeChevauchementHoraire")
-                .filter(AffectationConstraints::creneauHoraireConnu)
-                .join(
-                        PosteAffectation.class,
-                        Joiners.equal(PosteAffectation::getAnimateur),
-                        Joiners.lessThan(PosteAffectation::getId),
-                        Joiners.overlapping(AffectationConstraints::debutCreneau, AffectationConstraints::finCreneau))
-                .filter((posteA, posteB) -> creneauHoraireConnu(posteB) && PastSeats.reproachable(posteA, posteB))
+                        seats.held()
+                                .filter(AffectationConstraints::creneauHoraireConnu)
+                                .join(
+                                        PosteAffectation.class,
+                                        Joiners.equal(PosteAffectation::getAnimateur),
+                                        Joiners.lessThan(PosteAffectation::getId),
+                                        Joiners.overlapping(
+                                                AffectationConstraints::debutCreneau,
+                                                AffectationConstraints::finCreneau))
+                                .filter((posteA, posteB) ->
+                                        creneauHoraireConnu(posteB) && PastSeats.reproachable(posteA, posteB)),
+                        "pasDeChevauchementHoraire")
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("pasDeChevauchementHoraire");
     }
