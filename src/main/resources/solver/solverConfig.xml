@@ -110,11 +110,28 @@
                 (fixedProbabilityWeight), so filling an empty seat directly, or by
                 displacing someone already scheduled elsewhere at a different
                 slot, is tried constantly instead of by chance.
+
+                cacheType STEP on their entity selectors, and on the ruin one
+                below: a filtered selector drawn at random is a just-in-time
+                filter — Timefold draws entities until one passes, and when
+                none can (every seat filled, the plan still infeasible on an
+                over-assignment, which is the ordinary state of this phase)
+                it draws entityCount x 10 times before giving up, at every
+                step, for each of the three selectors. Profiled at a fifth of
+                the phase's CPU (RandomSupport.boundedNextInt alone 9 %).
+                Cached per step, the filter runs once over the seats and the
+                draw is over the short list — empty, the selector says so at
+                once. Same seed, feasibility phase alone, this machine:
+                scenario (hard run of days) 138 s -> 76 s, festival-hivernal
+                142 s -> 77 s; 1 177 -> 3 092 and 956 -> 1 069 evaluations
+                per second.
             -->
             <changeMoveSelector>
                 <filterClass>dev.sylvain.planning.solver.EligibleAnimateurMoveFilter$ChangeMoveFilter</filterClass>
                 <fixedProbabilityWeight>1.0</fixedProbabilityWeight>
                 <entitySelector>
+                    <cacheType>STEP</cacheType>
+                    <selectionOrder>RANDOM</selectionOrder>
                     <filterClass>dev.sylvain.planning.solver.UnassignedPosteFilter</filterClass>
                 </entitySelector>
             </changeMoveSelector>
@@ -122,6 +139,8 @@
                 <filterClass>dev.sylvain.planning.solver.EligibleAnimateurMoveFilter$SwapMoveFilter</filterClass>
                 <fixedProbabilityWeight>1.0</fixedProbabilityWeight>
                 <entitySelector>
+                    <cacheType>STEP</cacheType>
+                    <selectionOrder>RANDOM</selectionOrder>
                     <filterClass>dev.sylvain.planning.solver.UnassignedPosteFilter</filterClass>
                 </entitySelector>
             </swapMoveSelector>
@@ -166,6 +185,8 @@
                 <minimumRuinedCount>3</minimumRuinedCount>
                 <maximumRuinedCount>10</maximumRuinedCount>
                 <entitySelector>
+                    <cacheType>STEP</cacheType>
+                    <selectionOrder>RANDOM</selectionOrder>
                     <filterClass>dev.sylvain.planning.solver.HoleNeighbourPosteFilter</filterClass>
                 </entitySelector>
             </ruinRecreateMoveSelector>
