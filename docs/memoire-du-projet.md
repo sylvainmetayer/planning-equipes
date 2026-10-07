@@ -276,6 +276,40 @@ le temps par N, et multiplierait une empreinte d'environ 450 Mo par solveur.
 C'est le plafond de performance du déploiement, et aucune optimisation de
 contrainte ne le contourne.
 
+Mesuré malgré tout, octobre 2026, sur `festival-hivernal` à 300 s par graine
+(banc `SolverBenchTest -Dbench.seed`) : trois graines seules donnent
+−27 290, −27 795 et −27 005 de medium — un écart de 2,9 % entre graines ; deux
+solveurs lancés en même temps sur la machine de développement (8 cœurs)
+perdent chacun environ 1 % (−27 480 et −27 545). Mais **un seul solveur sur
+900 s atteint −25 495**, 6 % de mieux que le meilleur des trois graines de
+300 s : à budget de temps mur égal, la longueur de la recherche vaut plus que
+la diversité des départs. Sur l'hôte de production, 2 Go pour l'application,
+la question ne se pose même pas. Non adopté ; le moyen de gagner du temps est
+ailleurs (§2.k).
+
+### k. Ce qui a vraiment réduit le temps, et ce qui ne l'a pas réduit
+
+Octobre 2026, même protocole (graine fixe, runs séquentiels, banc de
+`docs/developpement.md` § *Le banc du solveur*) :
+
+- **Le tirage des entités**, pas leur évaluation : un cinquième du CPU de la
+  phase de faisabilité partait dans les 40 000 tirages qu'un sélecteur filtré
+  fait avant d'abandonner quand rien ne passe. Cache par pas : faisabilité de
+  142 s à 77 s sur `festival-hivernal` ([0079](decisions/0079-la-phase-de-faisabilite-tire-sur-une-liste-par-pas-et-reconstruit-rarement.md)).
+- **Le *ruin and recreate*** à 150 ms l'évaluation, déjà rare sous la règle
+  dure (§2 et [0049](decisions/0049-la-regle-dure-des-jours-d-affilee-se-cherche-par-jours-entiers.md)),
+  rendu rare partout : 77 s → 42 s.
+- **Un nœud par agrégation** des sièges, partagé entre règles au lieu d'un par
+  règle (`SeatStreams`) : +15 % de calculs par seconde à trajectoire
+  identique, +24 % sur la construction.
+- **Le plateau strict ne s'est jamais déclenché** sur une édition réelle, et
+  les rendements décroissants de Timefold ne lisent que le soft : c'est un gain
+  minimal de medium par siège et par fenêtre qui arrête le calcul entre cinq et
+  neuf minutes pour 2,6 à 4,1 % de medium
+  ([0081](decisions/0081-le-plateau-se-juge-sur-son-gain-de-medium-a-l-echelle-du-plan.md)).
+- **Ce qui ne l'a pas réduit** : l'arithmétique des règles elles-mêmes (15 %
+  du profil, déjà sur des tableaux primitifs) et le parallélisme (§2.j).
+
 ---
 
 ## 3. D'où viennent les 43 contraintes
