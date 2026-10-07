@@ -1030,7 +1030,7 @@ describe('SolverPage', () => {
       confirm.ask.mockResolvedValueOnce(true);
       const page = createPage();
 
-      await page['onArreterEtGarder']();
+      await page['onStopAndKeep']();
 
       expect(confirm.ask).toHaveBeenCalledWith(
         expect.objectContaining({ title: 'Arrêter et garder ce plan' }),
@@ -1046,7 +1046,7 @@ describe('SolverPage', () => {
       const page = createPage();
       const before = jobs.cancel.mock.calls.length;
 
-      await page['onArreterEtGarder']();
+      await page['onStopAndKeep']();
 
       expect(jobs.cancel.mock.calls.length).toBe(before);
     });
