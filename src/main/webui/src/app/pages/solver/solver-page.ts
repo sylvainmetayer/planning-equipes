@@ -778,7 +778,7 @@ export class SolverPage implements OnInit {
    * the job analyses and stores it — worded for a plan already feasible, where
    * what is given up is quality, not seats.
    */
-  protected async onArreterEtGarder(): Promise<void> {
+  protected async onStopAndKeep(): Promise<void> {
     const job = this.jobs.activeJob();
     if (!job || this.arretEnCours()) {
       return;

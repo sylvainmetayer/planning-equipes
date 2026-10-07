@@ -73,7 +73,7 @@
       <div class="solver-faisable">
         <mat-icon aria-hidden="true">check_circle</mat-icon>
         <p class="solver-faisable-phrase">{{ planFaisableDepuis() }}</p>
-        <button matButton="filled" type="button" [disabled]="arretEnCours()" (click)="onArreterEtGarder()">
+        <button matButton="filled" type="button" [disabled]="arretEnCours()" (click)="onStopAndKeep()">
           <mat-icon>done_all</mat-icon>
           <ng-container i18n="@@solver.faisable.arreter">Arrêter et garder ce plan</ng-container>
         </button>
