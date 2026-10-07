@@ -2,13 +2,10 @@ package dev.sylvain.planning.solver.constraints;
 
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
-import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
-import ai.timefold.solver.core.api.score.stream.Joiners;
 import dev.sylvain.planning.domain.CoupureRepas;
 import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.ParametresLegaux;
-import dev.sylvain.planning.domain.PosteAffectation;
 
 /**
  * The meal break: whoever works either side of a meal window gets one, and
@@ -53,9 +50,12 @@ import dev.sylvain.planning.domain.PosteAffectation;
 public final class RepasConstraints {
 
     public Constraint[] define(ConstraintFactory constraintFactory) {
-        return new Constraint[] {
-            coupureRepasObligatoire(constraintFactory), coupureRepasPlacementPrefere(constraintFactory)
-        };
+        return define(constraintFactory, new SeatStreams(constraintFactory));
+    }
+
+    /** The same rules over the seat streams shared with the other families (see {@link SeatStreams}). */
+    public Constraint[] define(ConstraintFactory constraintFactory, SeatStreams seats) {
+        return new Constraint[] {coupureRepasObligatoire(seats), coupureRepasPlacementPrefere(seats)};
     }
 
     /**
@@ -78,21 +78,15 @@ public final class RepasConstraints {
      * re-cut the grid, or to switch this rule off from the Contraintes screen.
      * See {@code docs/contraintes.md}.</p>
      */
-    private Constraint coupureRepasObligatoire(ConstraintFactory constraintFactory) {
+    private Constraint coupureRepasObligatoire(SeatStreams seats) {
         return ConstraintToggleSupport.actif(
-                        constraintFactory.forEach(PosteAffectation.class), "coupureRepasObligatoire")
-                .filter(RepasConstraints::exploitable)
-                .groupBy(
-                        PosteAffectation::getAnimateur,
-                        poste -> poste.getCreneau().getDate(),
-                        ConstraintCollectors.toList())
-                .join(
-                        FenetreRepas.class,
-                        Joiners.filtering((animateur, date, postes, fenetre) -> fenetre.appliesTo(date)))
-                // A day entirely worked is not charged for the break it
-                // missed (ADR 0044); a day still under way is.
-                .filter((animateur, date, postes, fenetre) -> PastSeats.reproachable(postes)
-                        && CoupureRepas.of(postes, fenetre).manquante())
+                        seats.daysWithMeals()
+                                // A day entirely worked is not charged for the
+                                // break it missed (ADR 0044); a day still under
+                                // way is.
+                                .filter((animateur, date, postes, fenetre) -> PastSeats.reproachable(postes)
+                                        && CoupureRepas.of(postes, fenetre).manquante()),
+                        "coupureRepasObligatoire")
                 .penalize(
                         HardMediumSoftScore.ONE_HARD,
                         (animateur, date, postes, fenetre) ->
@@ -126,31 +120,16 @@ public final class RepasConstraints {
      * noon », it is a day where the person picks, and
      * {@link CoupureRepas#avanceMinutes()} reads what they could pick.</p>
      */
-    private Constraint coupureRepasPlacementPrefere(ConstraintFactory constraintFactory) {
+    private Constraint coupureRepasPlacementPrefere(SeatStreams seats) {
         return ConstraintToggleSupport.actif(
-                        constraintFactory.forEach(PosteAffectation.class), "coupureRepasPlacementPrefere")
-                .filter(RepasConstraints::exploitable)
-                .groupBy(
-                        PosteAffectation::getAnimateur,
-                        poste -> poste.getCreneau().getDate(),
-                        ConstraintCollectors.toList())
-                .join(
-                        FenetreRepas.class,
-                        Joiners.filtering((animateur, date, postes, fenetre) -> fenetre.appliesTo(date)))
-                .filter((animateur, date, postes, fenetre) -> PastSeats.reproachable(postes)
-                        && CoupureRepas.of(postes, fenetre).preferredSlotGapMinutes() > 0)
+                        seats.daysWithMeals()
+                                .filter((animateur, date, postes, fenetre) -> PastSeats.reproachable(postes)
+                                        && CoupureRepas.of(postes, fenetre).preferredSlotGapMinutes() > 0),
+                        "coupureRepasPlacementPrefere")
                 .penalize(
                         HardMediumSoftScore.ONE_SOFT,
                         (animateur, date, postes, fenetre) ->
                                 CoupureRepas.of(postes, fenetre).preferredSlotGapMinutes())
                 .asConstraint("coupureRepasPlacementPrefere");
-    }
-
-    /** A seat someone holds, on a dated créneau whose hours are known. */
-    private static boolean exploitable(PosteAffectation poste) {
-        return poste.getAnimateur() != null
-                && poste.getCreneau() != null
-                && poste.getCreneau().getDate() != null
-                && poste.heureDebutEffectif() != null;
     }
 }

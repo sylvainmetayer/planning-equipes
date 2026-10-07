@@ -9,6 +9,7 @@ import dev.sylvain.planning.solver.constraints.LegalConstraints;
 import dev.sylvain.planning.solver.constraints.PreferenceConstraints;
 import dev.sylvain.planning.solver.constraints.QualiteConstraints;
 import dev.sylvain.planning.solver.constraints.RepasConstraints;
+import dev.sylvain.planning.solver.constraints.SeatStreams;
 import dev.sylvain.planning.solver.constraints.VerrouillageConstraints;
 import java.util.stream.Stream;
 
@@ -29,14 +30,18 @@ public class PlanningConstraintProvider implements ConstraintProvider {
 
     @Override
     public Constraint[] defineConstraints(ConstraintFactory constraintFactory) {
+        // One set of seat streams for every family: the engine then keeps one
+        // node per grouping of the seats, whatever the number of rules reading
+        // it (see SeatStreams).
+        SeatStreams seats = new SeatStreams(constraintFactory);
         return Stream.of(
-                        new AffectationConstraints().define(constraintFactory),
-                        new LegalConstraints().define(constraintFactory),
-                        new AdHocConstraints().define(constraintFactory),
+                        new AffectationConstraints().define(constraintFactory, seats),
+                        new LegalConstraints().define(constraintFactory, seats),
+                        new AdHocConstraints().define(constraintFactory, seats),
                         new VerrouillageConstraints().define(constraintFactory),
-                        new RepasConstraints().define(constraintFactory),
-                        new QualiteConstraints().define(constraintFactory),
-                        new PreferenceConstraints().define(constraintFactory))
+                        new RepasConstraints().define(constraintFactory, seats),
+                        new QualiteConstraints().define(constraintFactory, seats),
+                        new PreferenceConstraints().define(constraintFactory, seats))
                 .flatMap(Stream::of)
                 .toArray(Constraint[]::new);
     }

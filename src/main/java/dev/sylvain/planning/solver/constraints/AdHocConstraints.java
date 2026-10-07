@@ -39,12 +39,17 @@ public final class AdHocConstraints {
     static final int FORFAIT_JOUR_SANS_COEQUIPIER_MINUTES = 120;
 
     public Constraint[] define(ConstraintFactory constraintFactory) {
+        return define(constraintFactory, new SeatStreams(constraintFactory));
+    }
+
+    /** The same rules, the grouped arrival reading the days shared with the other families (see {@link SeatStreams}). */
+    public Constraint[] define(ConstraintFactory constraintFactory, SeatStreams seats) {
         return new Constraint[] {
             indisponibiliteForcee(constraintFactory),
             incompatibiliteAdHoc(constraintFactory),
             affectationForcee(constraintFactory),
             affiniteAdHoc(constraintFactory),
-            arriveeGroupee(constraintFactory)
+            arriveeGroupee(constraintFactory, seats)
         };
     }
 
@@ -71,7 +76,7 @@ public final class AdHocConstraints {
      * match, so the diagnostic attributes the cost to the exception that
      * asked for it.</p>
      */
-    private Constraint arriveeGroupee(ConstraintFactory constraintFactory) {
+    private Constraint arriveeGroupee(ConstraintFactory constraintFactory, SeatStreams seats) {
         BiConstraintStream<ContrainteAdHoc, MemberPair> paires = ConstraintToggleSupport.actif(
                         constraintFactory.forEach(ContrainteAdHoc.class), "arriveeGroupee")
                 .filter(AdHocConstraints::isGroupedArrival)
@@ -81,10 +86,10 @@ public final class AdHocConstraints {
         BiConstraintStream<ContrainteAdHoc, PairGap> decales = paires.filter(
                         (contrainte, paire) -> paire.first().compareTo(paire.second()) < 0)
                 .join(
-                        QualiteConstraints.journees(constraintFactory),
+                        QualiteConstraints.journees(seats),
                         Joiners.equal((contrainte, paire) -> paire.first(), AdHocConstraints::journeeAnimateurId))
                 .join(
-                        QualiteConstraints.journees(constraintFactory),
+                        QualiteConstraints.journees(seats),
                         Joiners.equal(
                                 (contrainte, paire, journeePremier) -> paire.second(),
                                 AdHocConstraints::journeeAnimateurId),
@@ -102,11 +107,11 @@ public final class AdHocConstraints {
                                 journeePremier.date(),
                                 misalignment(paire, journeePremier, journeeSecond)));
         BiConstraintStream<ContrainteAdHoc, PairGap> seuls = paires.join(
-                        QualiteConstraints.journees(constraintFactory),
+                        QualiteConstraints.journees(seats),
                         Joiners.equal((contrainte, paire) -> paire.first(), AdHocConstraints::journeeAnimateurId))
                 .filter((contrainte, paire, journee) -> journee.reproachable())
                 .ifNotExists(
-                        QualiteConstraints.journees(constraintFactory),
+                        QualiteConstraints.journees(seats),
                         Joiners.equal(
                                 (contrainte, paire, journee) -> paire.second(), AdHocConstraints::journeeAnimateurId),
                         Joiners.equal((contrainte, paire, journee) -> journee.jour(), QualiteConstraints.Journee::jour))
