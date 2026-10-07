@@ -159,9 +159,13 @@ describe('SolverPage', () => {
   /** Handlers the page registers per job type, so the tests can push a result. */
   const handlers = new Map<string, ((result: unknown) => void)[]>();
 
+  /** How long the running plan has been feasible, null while it is not (issue #764). */
+  const feasibleSince = signal<number | null>(null);
+
   const jobs = {
     activeJob,
     solverBusy: () => solverBusy(),
+    feasibleSinceSeconds: () => feasibleSince(),
     editingLocked: () => editingLocked(),
     verification: () => verification(),
     file: () => [],
@@ -170,6 +174,7 @@ describe('SolverPage', () => {
     activeJobDescription: vi.fn(() => 'Une résolution est en cours (autre navigateur).'),
     estimatedEndMs: () => null,
     remainingSeconds: () => null,
+    cancel: vi.fn(() => Promise.resolve()),
     listJobs: vi.fn(),
     submitSolveFromReferenceData: vi.fn(() => Promise.resolve({})),
     onResult: vi.fn((type: string, handler: (result: unknown) => void) => {
@@ -984,6 +989,66 @@ describe('SolverPage', () => {
 
       expect(confirm.ask).not.toHaveBeenCalled();
       expect(jobs.submitSolveFromReferenceData).toHaveBeenCalled();
+    });
+  });
+
+  describe('the first feasible plan (issue #764)', () => {
+    // The plan is usable minutes before the run ends; the page says so while
+    // the solve goes on, and offers to keep that plan rather than wait.
+    it('says nothing while the running plan is not feasible yet', () => {
+      solverBusy.set(true);
+      activeJob.set(tracked());
+      feasibleSince.set(null);
+      const page = createPage();
+
+      expect(page['planFaisableDepuis']()).toBe('');
+    });
+
+    it('announces how long the plan has been feasible, while the solve runs', () => {
+      solverBusy.set(true);
+      activeJob.set(tracked({ feasibleAtSeconds: 42 }));
+      feasibleSince.set(75);
+      const page = createPage();
+
+      expect(page['planFaisableDepuis']()).toContain('Plan faisable depuis');
+      expect(page['planFaisableDepuis']()).toContain('1m 15s');
+    });
+
+    it('falls silent once the solve is over', () => {
+      solverBusy.set(false);
+      activeJob.set(null);
+      feasibleSince.set(75);
+      const page = createPage();
+
+      expect(page['planFaisableDepuis']()).toBe('');
+    });
+
+    it('« Arrêter et garder ce plan » stops the job once confirmed', async () => {
+      solverBusy.set(true);
+      activeJob.set(tracked({ feasibleAtSeconds: 42 }));
+      feasibleSince.set(75);
+      confirm.ask.mockResolvedValueOnce(true);
+      const page = createPage();
+
+      await page['onArreterEtGarder']();
+
+      expect(confirm.ask).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Arrêter et garder ce plan' }),
+      );
+      expect(jobs.cancel).toHaveBeenCalledWith('j1');
+    });
+
+    it('« Arrêter et garder ce plan » does nothing when the stop is declined', async () => {
+      solverBusy.set(true);
+      activeJob.set(tracked({ feasibleAtSeconds: 42 }));
+      feasibleSince.set(75);
+      confirm.ask.mockResolvedValueOnce(false);
+      const page = createPage();
+      const before = jobs.cancel.mock.calls.length;
+
+      await page['onArreterEtGarder']();
+
+      expect(jobs.cancel.mock.calls.length).toBe(before);
     });
   });
 

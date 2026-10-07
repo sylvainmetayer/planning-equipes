@@ -455,7 +455,10 @@ argumente) :
 
 `RESOLUTION_EN_COURS` veut dire : **enregistré**, mais la résolution en cours a
 lu le référentiel et le plan à son démarrage et ne verra pas cette écriture ;
-relancer un calcul une fois celui-ci terminé (`statut_solveur` nomme le job).
+relancer un calcul une fois celui-ci terminé (`statut_solveur` nomme le job,
+et porte `feasibleAtSeconds` : les secondes écoulées quand son plan est devenu
+faisable, `null` tant qu'il ne l'est pas — un assistant peut donc proposer
+d'arrêter là, `arreter_solveur` gardant le meilleur plan atteint).
 C'est un code, comme les autres avertissements de ce serveur : pas de phrase.
 Sur `ajouter_validation_journee`, il dit en plus que la validation peut ne pas
 survivre : l'atterrissage retire la relecture des journées que le calcul a

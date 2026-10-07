@@ -292,6 +292,21 @@ export class SolverPage implements OnInit {
   /** Completion time of the most recent finished solve job, if any has ever run. */
   protected readonly lastRunAt = signal<string | null>(null);
 
+  /**
+   * « Plan faisable depuis … » (issue #764): the first usable plan is often
+   * reached minutes before the run ends, and the rest is polishing nobody
+   * saw the point of waiting for. Said in one sentence while the solve runs,
+   * with the duration ticking; empty until the plan is feasible, so a run
+   * still filling seats announces nothing.
+   */
+  protected readonly planFaisableDepuis = computed(() => {
+    const depuis = this.jobs.feasibleSinceSeconds();
+    if (depuis === null || !this.solverBusy()) {
+      return '';
+    }
+    return $localize`:@@solver.faisable.depuis:Plan faisable depuis ${formatDuration(depuis)}:duree: : le calcul améliore maintenant la qualité (équité, souhaits, continuité).`;
+  });
+
   protected readonly resolution = inject(PlanningResolutionStore);
   /** When the persisted plan was solved: what « Corriger » shows the changes since. */
   private readonly solvedAt = computed(() => this.resolution.resolution()?.resoluLe ?? '');
@@ -743,6 +758,35 @@ export class SolverPage implements OnInit {
       message: $localize`:@@solver.arreterConfirm:Arrêter ${job.label}:jobLabel: en cours ? Le résultat partiel sera tout de même analysé et enregistré.`,
       confirmLabel: $localize`:@@solver.arreter:Arrêter le solveur`,
       danger: true,
+    });
+    if (!confirme) {
+      return;
+    }
+    this.arretEnCours.set(true);
+    try {
+      await this.jobs.cancel(job.id);
+    } catch (error) {
+      this.output.set(errorPrefix(error));
+    } finally {
+      this.arretEnCours.set(false);
+    }
+  }
+
+  /**
+   * « Arrêter et garder ce plan » (issue #764): the same stop as
+   * {@link onArreterSolveur} — the solver keeps the best plan it reached, and
+   * the job analyses and stores it — worded for a plan already feasible, where
+   * what is given up is quality, not seats.
+   */
+  protected async onArreterEtGarder(): Promise<void> {
+    const job = this.jobs.activeJob();
+    if (!job || this.arretEnCours()) {
+      return;
+    }
+    const confirme = await this.confirm.ask({
+      title: $localize`:@@solver.faisable.arreter:Arrêter et garder ce plan`,
+      message: $localize`:@@solver.faisable.arreterConfirm:Arrêter le calcul maintenant ? Le plan faisable atteint sera analysé et enregistré ; seule sa qualité restait à améliorer.`,
+      confirmLabel: $localize`:@@solver.faisable.arreter:Arrêter et garder ce plan`,
     });
     if (!confirme) {
       return;

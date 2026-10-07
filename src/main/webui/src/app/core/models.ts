@@ -1923,6 +1923,12 @@ export interface JobView {
   startedAt: string | null;
   finishedAt: string | null;
   elapsedSeconds: number;
+  /**
+   * Seconds into the run at which the best plan first became feasible — usable,
+   * every hard rule held — or null until it does. From there the solver only
+   * improves quality, and stopping keeps that plan.
+   */
+  feasibleAtSeconds?: number | null;
   error: string | null;
   result: unknown;
 }
@@ -1963,6 +1969,12 @@ export interface ScoreTrace {
   dureeMs: number;
   /** True once the run is over, whichever way it ended. */
   termine: boolean;
+  /**
+   * How far into the run the best plan first became feasible, or null until it
+   * does: the mark where the plan became usable, read on the announcements
+   * rather than on the sampled points.
+   */
+  faisableAMs?: number | null;
   points: ScorePoint[];
 }
 
