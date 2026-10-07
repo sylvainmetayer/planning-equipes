@@ -58,15 +58,26 @@ class TerminationReplayTest {
     /** Stops at a fixed time, for the reading « what a shorter budget would have kept ». */
     private static final long[] FIXED_STOPS = {300, 450, 600};
 
+    /** The per-seat gains tried over the per-seat windows, the shipped one among them (ADR 0081). */
+    private static final double[] PER_SEAT_GAINS = {0.12, 0.25, 0.5};
+
+    private static final long[] PER_SEAT_WINDOWS = {120, 180, 300};
+
     @Test
     void replay() throws IOException {
         String curves = System.getProperty("replay.curve");
         assumeTrue(curves != null && !curves.isBlank(), "-Dreplay.curve names the curve(s) to replay");
+        // The seats of each curve's problem, in the same order, for the
+        // per-seat rules; absent, those rows are skipped.
+        String seatsProperty = System.getProperty("replay.seats", "");
+        String[] seats = seatsProperty.isBlank() ? new String[0] : seatsProperty.split(",");
         StringBuilder report = new StringBuilder();
-        for (String file : curves.split(",")) {
-            Path path = Path.of(file.trim());
+        String[] files = curves.split(",");
+        for (int i = 0; i < files.length; i++) {
+            Path path = Path.of(files[i].trim());
             List<SolverBenchTest.Sample> curve = read(path);
-            report.append(replay(path.getFileName().toString(), curve));
+            int seatCount = i < seats.length ? Integer.parseInt(seats[i].trim()) : 0;
+            report.append(replay(path.getFileName().toString(), curve, seatCount));
         }
         System.out.println(report);
         String out = System.getProperty("replay.out");
@@ -93,6 +104,10 @@ class TerminationReplayTest {
     }
 
     static String replay(String name, List<SolverBenchTest.Sample> curve) {
+        return replay(name, curve, 0);
+    }
+
+    static String replay(String name, List<SolverBenchTest.Sample> curve, int seats) {
         long end = curve.get(curve.size() - 1).millis();
         HardMediumSoftScore finalScore = curve.get(curve.size() - 1).score();
         long feasibleAt = feasibleAt(curve);
@@ -124,6 +139,20 @@ class TerminationReplayTest {
                         stopDiminishedReturns(curve, feasibleAt, window * 1000L, ratio, end),
                         curve,
                         end);
+            }
+        }
+        if (seats > 0) {
+            for (long window : PER_SEAT_WINDOWS) {
+                for (double perSeat : PER_SEAT_GAINS) {
+                    long minimum = Math.round(seats * perSeat);
+                    row(
+                            table,
+                            String.format(
+                                    Locale.ROOT, "medium gain < %s a seat (%d) over %d s", perSeat, minimum, window),
+                            stopGain(curve, feasibleAt, window * 1000L, minimum, end),
+                            curve,
+                            end);
+                }
             }
         }
         for (long window : GAIN_WINDOWS) {

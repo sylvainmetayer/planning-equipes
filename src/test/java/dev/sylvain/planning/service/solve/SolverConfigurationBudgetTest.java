@@ -7,7 +7,11 @@ import ai.timefold.solver.core.config.solver.SolverConfig;
 import ai.timefold.solver.core.config.solver.termination.TerminationCompositionStyle;
 import ai.timefold.solver.core.config.solver.termination.TerminationConfig;
 import dev.sylvain.planning.domain.ParametresQualite;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.EmptyReferenceData;
+import java.util.List;
+import java.util.stream.IntStream;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
 
@@ -57,7 +61,61 @@ class SolverConfigurationBudgetTest {
                 });
     }
 
-    /** Zero — the shipped default until measured otherwise — keeps the strict plateau: no threshold at all. */
+    /**
+     * The gain is sized on the problem: the deployment's per-seat value times
+     * the seats being solved (ADR 0081) — 0.25 a seat, so 1 014 medium points
+     * for 4 057 seats. The test profile pins the property to zero (its
+     * scenarios must stop where they always did), so the value is given here
+     * under the profile's own prefix, which outranks the file.
+     */
+    @Test
+    void thePlateauGainFollowsTheSeatsOfTheProblem() {
+        String profiled = "%test." + SolverConfiguration.PLATEAU_GAIN_PROPERTY;
+        System.setProperty(profiled, "0.25");
+        try {
+            SolverConfiguration sized = new SolverConfiguration(
+                    900L,
+                    180L,
+                    ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
+                    new EmptyReferenceData(),
+                    ConfigProvider.getConfig());
+            PlanningEvenement problem = new PlanningEvenement(
+                    null,
+                    List.of(),
+                    IntStream.range(0, 4057)
+                            .mapToObj(i -> new PosteAffectation("p" + i, null, null))
+                            .toList());
+
+            assertThat(sized.plateauGainMedium(problem)).isEqualTo(1014L);
+            assertThat(sized.plateauGainMedium(null)).isZero();
+            TerminationConfig plateau = sized.solverConfigFor(SolveBudget.DEFAULT, problem)
+                    .getTerminationConfig()
+                    .getTerminationConfigList()
+                    .get(0);
+            assertThat(plateau.getUnimprovedSecondsSpentLimit()).isEqualTo(180L);
+            assertThat(HardMediumSoftScore.parseScore(plateau.getUnimprovedScoreDifferenceThreshold()))
+                    .isEqualTo(HardMediumSoftScore.of(0, 1014, Long.MIN_VALUE));
+            // Without a problem to size it on, the plateau stays strict.
+            assertThat(sized.solverConfigFor(SolveBudget.DEFAULT)
+                            .getTerminationConfig()
+                            .getTerminationConfigList()
+                            .get(0)
+                            .getUnimprovedScoreDifferenceThreshold())
+                    .isNull();
+        } finally {
+            System.clearProperty(profiled);
+        }
+    }
+
+    /** Since ADR 0081 a problem gets a factory of its own: its seats size the plateau's gain. */
+    @Test
+    void aProblemGetsItsOwnFactory() {
+        PlanningEvenement problem = new PlanningEvenement(null, List.of(), List.of());
+        assertThat(configuration.resolveSolverFactory(SolveBudget.DEFAULT, problem))
+                .isNotSameAs(configuration.resolveSolverFactory(SolveBudget.DEFAULT));
+    }
+
+    /** Zero keeps the strict plateau: no threshold at all. */
     @Test
     void aZeroGainKeepsTheStrictPlateau() {
         SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");

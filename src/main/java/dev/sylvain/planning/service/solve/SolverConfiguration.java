@@ -62,7 +62,7 @@ final class SolverConfiguration {
      * {@link #PLATEAU_GAIN_PROPERTY}. {@code 0} is the strict plateau — not a
      * single point in the whole window.
      */
-    private final long plateauGainMedium;
+    private final double plateauGainMediumPerSeat;
 
     /**
      * The deployment-wide weight of every constraint, read once from
@@ -89,11 +89,13 @@ final class SolverConfiguration {
             Integer maxEmplacementsParJour,
             ReferenceData referenceDataService,
             Config config) {
-        this.plateauGainMedium = readPlateauGainMedium(config);
+        this.plateauGainMediumPerSeat = readPlateauGainMediumPerSeat(config);
         SolverConfig solverConfig = SolverConfig.createFromXmlResource(SOLVER_CONFIG_XML);
         solverConfig.setScoreDirectorFactoryConfig(
                 new ScoreDirectorFactoryConfig().withConstraintProviderClass(PlanningConstraintProvider.class));
-        applyTermination(solverConfig, secondsLimit, unimprovedSecondsLimit, plateauGainMedium);
+        // No problem, hence no seat count: the shared factory serves the
+        // solution manager and the diagnostic, under the strict plateau.
+        applyTermination(solverConfig, secondsLimit, unimprovedSecondsLimit, 0L);
         this.solverFactory = SolverFactory.create(solverConfig);
         this.solutionManager = SolutionManager.create(this.solverFactory);
         this.constraintDiagnosticService =
@@ -316,20 +318,31 @@ final class SolverConfiguration {
 
     /**
      * The deployment property naming the medium gain a plateau window must
-     * reach for the solve to go on: {@code planning.solver.plateau-gain-medium}.
-     * The strict plateau — not a single point of improvement for the whole
-     * window — almost never happened on a real edition: the second phase keeps
-     * finding one medium point every few minutes to the end of the budget, so
-     * the bailout never fired and every solve ran its fifteen minutes. Under a
-     * gain, the window is judged on what it brought: fewer points than this
-     * over the whole window, and the solve stops. Measured on the recorded
-     * curves, see {@code docs/decisions} and {@code docs/developpement.md}.
+     * reach for the solve to go on, <b>per seat</b> of the problem:
+     * {@code planning.solver.plateau-gain-medium-per-seat}. The strict plateau
+     * — not a single point of improvement for the whole window — never
+     * happened on a real edition: the second phase keeps finding medium points
+     * to the end of the budget, so the bailout never fired and every solve ran
+     * its fifteen minutes. Under a gain, the window is judged on what it
+     * brought: fewer points than this over the whole window, and the solve
+     * stops. Per seat, because the medium of a plan grows with its seats
+     * (7 to 9 points a seat on the grids measured) and a flat threshold fair
+     * to 4 000 seats is twice as demanding on 2 000. Measured on the recorded
+     * curves: ADR 0081, and {@code docs/developpement.md}.
      */
-    static final String PLATEAU_GAIN_PROPERTY = "planning.solver.plateau-gain-medium";
+    static final String PLATEAU_GAIN_PROPERTY = "planning.solver.plateau-gain-medium-per-seat";
 
-    static long readPlateauGainMedium(Config config) {
+    static double readPlateauGainMediumPerSeat(Config config) {
         return Math.max(
-                0, config.getOptionalValue(PLATEAU_GAIN_PROPERTY, Long.class).orElse(0L));
+                0, config.getOptionalValue(PLATEAU_GAIN_PROPERTY, Double.class).orElse(0.0));
+    }
+
+    /** The medium gain the plateau window of {@code problem} must reach: its seats times the per-seat property. */
+    long plateauGainMedium(PlanningEvenement problem) {
+        if (problem == null || problem.getPostes() == null) {
+            return 0L;
+        }
+        return Math.round(problem.getPostes().size() * plateauGainMediumPerSeat);
     }
 
     /**
@@ -382,34 +395,34 @@ final class SolverConfiguration {
     }
 
     /**
-     * {@link #resolveSolverFactory(SolveBudget)}, for one problem: a problem large
-     * enough for {@link LargeProblemConstruction} gets a factory of its own,
-     * built from the same XML adapted by {@link #adaptToProblem} and with the
-     * same termination as the shared one would have had.
+     * The factory one problem is solved with: the XML of
+     * {@link #solverConfigFor(SolveBudget, PlanningEvenement)}, adapted to the
+     * problem by {@link #adaptToProblem}. Built per solve since ADR 0081: the
+     * plateau's gain depends on the problem's seats, so no factory serves two
+     * problems — a factory costs a configuration read, not a solve.
      */
     SolverFactory<PlanningEvenement> resolveSolverFactory(SolveBudget budget, PlanningEvenement problem) {
-        if (!LargeProblemConstruction.applies(problem)) {
-            return resolveSolverFactory(budget);
-        }
-        return adaptedSolverFactory(budget, problem);
-    }
-
-    private SolverFactory<PlanningEvenement> adaptedSolverFactory(SolveBudget budget, PlanningEvenement problem) {
-        SolverConfig solverConfig = solverConfigFor(budget);
+        SolverConfig solverConfig = solverConfigFor(budget, problem);
         adaptToProblem(solverConfig, problem);
         return SolverFactory.create(solverConfig);
     }
 
     /**
-     * The XML with the termination {@code budget} resolves to — the one place
-     * a budget becomes a {@link TerminationConfig}, read by the tests as well.
+     * The XML with the termination {@code budget} resolves to for
+     * {@code problem} — the one place a budget becomes a
+     * {@link TerminationConfig}, read by the tests as well.
      */
-    SolverConfig solverConfigFor(SolveBudget budget) {
+    SolverConfig solverConfigFor(SolveBudget budget, PlanningEvenement problem) {
         SolverConfig solverConfig = SolverConfig.createFromXmlResource(SOLVER_CONFIG_XML);
         solverConfig.setScoreDirectorFactoryConfig(
                 new ScoreDirectorFactoryConfig().withConstraintProviderClass(PlanningConstraintProvider.class));
-        applyTermination(solverConfig, secondsOf(budget), plateauOf(budget), plateauGainMedium);
+        applyTermination(solverConfig, secondsOf(budget), plateauOf(budget), plateauGainMedium(problem));
         return solverConfig;
+    }
+
+    /** {@link #solverConfigFor(SolveBudget, PlanningEvenement)} with no problem to size the gain on: the strict plateau. */
+    SolverConfig solverConfigFor(SolveBudget budget) {
+        return solverConfigFor(budget, null);
     }
 
     /**
@@ -421,7 +434,7 @@ final class SolverConfiguration {
      */
     SolverFactory<PlanningEvenement> feasibilityStageFactory(
             PlanningEvenement problem, SolveBudget budget, long millis) {
-        SolverConfig solverConfig = solverConfigFor(budget);
+        SolverConfig solverConfig = solverConfigFor(budget, problem);
         solverConfig.setTerminationConfig(
                 new TerminationConfig().withMillisecondsSpentLimit(millis).withBestScoreFeasible(true));
         adaptToProblem(solverConfig, problem);
@@ -434,7 +447,7 @@ final class SolverConfiguration {
      * solve would have had.
      */
     SolverFactory<PlanningEvenement> polishingStageFactory(PlanningEvenement problem, SolveBudget budget, long millis) {
-        SolverConfig solverConfig = solverConfigFor(budget);
+        SolverConfig solverConfig = solverConfigFor(budget, problem);
         TerminationConfig termination = solverConfig.getTerminationConfig();
         termination.setSecondsSpentLimit(null);
         termination.setMillisecondsSpentLimit(millis);

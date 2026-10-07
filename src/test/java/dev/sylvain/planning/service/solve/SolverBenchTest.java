@@ -116,7 +116,7 @@ class SolverBenchTest {
         }
         FrozenPast.pin(problem.getPostes());
 
-        SolverConfig solverConfig = configuration.solverConfigFor(new SolveBudget(seconds, plateau, null));
+        SolverConfig solverConfig = configuration.solverConfigFor(new SolveBudget(seconds, plateau, null), problem);
         if (calculations != null) {
             solverConfig.setTerminationConfig(new TerminationConfig().withScoreCalculationCountLimit(calculations));
         } else if (stopWhenFeasible) {
