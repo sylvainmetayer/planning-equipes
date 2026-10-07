@@ -392,14 +392,13 @@ public final class QualiteConstraints {
      * either. A pair whose two seats are past is history (ADR 0044).</p>
      */
     private Constraint trajetInsuffisantEntrePostes(SeatStreams seats) {
+        // Filtered before the join, not after: the joiners evaluate debut() on
+        // the right side, which a seat without hours cannot answer. One stream
+        // object on both sides, so the engine keeps one filter node.
+        UniConstraintStream<PosteAffectation> located = seats.held().filter(QualiteConstraints::locatedWithKnownHours);
         return ConstraintToggleSupport.actif(
-                        seats.held()
-                                .filter(QualiteConstraints::locatedWithKnownHours)
-                                .join(
-                                        // Filtered before the join, not after: the joiners
-                                        // evaluate debut() on the right side, which a seat
-                                        // without hours cannot answer.
-                                        seats.held().filter(QualiteConstraints::locatedWithKnownHours),
+                        located.join(
+                                        located,
                                         Joiners.equal(PosteAffectation::getAnimateur),
                                         Joiners.equal(
                                                 poste -> poste.getCreneau().getJour()),
@@ -642,12 +641,11 @@ public final class QualiteConstraints {
      * on the following date — see {@link LegalConstraints#fin}.
      */
     static UniConstraintStream<Journee> journees(SeatStreams seats) {
-        // One node for the four rules of two families that read it.
-        return seats.derived("journees", () -> seats.days().map((animateur, date, jour) -> journee(animateur, jour)));
+        return seats.journees();
     }
 
     /** A day's seats folded to its two ends — the first start, the last end — and whether one is still ahead. */
-    private static Journee journee(Animateur animateur, List<PosteAffectation> jour) {
+    static Journee journee(Animateur animateur, List<PosteAffectation> jour) {
         LocalDateTime debut = null;
         LocalDateTime fin = null;
         boolean reproachable = false;

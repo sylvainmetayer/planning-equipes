@@ -686,6 +686,20 @@ Un scénario dit les deux directions : `contraintes.desactivees` pour ce qu'il
 éteint, `contraintes.activees` pour ce qu'il allume alors que le catalogue le
 livre éteint. Une règle qu'il ne cite nulle part revient au défaut du catalogue.
 
+### Qui est présent sur une ligne stand × créneau
+
+Trois règles lisent **qui tient un stand à une heure** — un référent présent
+(`standComplexeAvecReferent`), pas plus de mineurs que de majeurs
+(`repartitionMineursParCreneau`), un débutant à côté du référent
+(`favoriserMixiteDesNiveaux`). Toutes trois lisent la même ligne, les places
+**encore tenues** sur le reste du créneau : la place d'origine d'une place
+scindée dans la journée ([0066](decisions/0066-le-passe-est-fige-a-la-minute.md))
+s'est arrêtée là où sa suite commence, et celui qui est parti à 9 h 20 n'est ni
+référent ni majeur ni débutant pour l'après-midi. Les deux premières le
+lisaient déjà ainsi ; la troisième comptait encore le partant, et s'y est
+alignée quand les trois ont été branchées sur la même ligne (`SeatStreams`).
+Hors scission — tout plan avant le jour J — rien ne change.
+
 > **Une contrainte oubliée par `ConstraintToggleSupport.actif` affiche un
 > interrupteur sans effet**, sans que rien ne le signale. `ConstraintToggleTest`
 > couvre une contrainte représentative par famille : le même jeu de données doit

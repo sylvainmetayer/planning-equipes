@@ -14,10 +14,7 @@ import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Supplier;
 
 /**
  * The streams every rule reads the seats through, built <b>once</b> per
@@ -77,7 +74,7 @@ public final class SeatStreams {
     private QuadConstraintStream<Animateur, LocalDate, List<PosteAffectation>, FenetreRepas> daysWithMeals;
     private BiConstraintStream<Animateur, List<PosteAffectation>> perAnimateur;
     private TriConstraintStream<Stand, Creneau, List<PosteAffectation>> lines;
-    private final Map<String, Object> derived = new HashMap<>();
+    private UniConstraintStream<QualiteConstraints.Journee> journees;
 
     public SeatStreams(ConstraintFactory factory) {
         this.factory = factory;
@@ -179,15 +176,16 @@ public final class SeatStreams {
     }
 
     /**
-     * A stream derived from the ones above by a family, built once under
-     * {@code key} and handed to every rule that asks for it — the same sharing
-     * as the streams of this class, for a shape only one family knows (the
-     * day folded to its two ends, {@code QualiteConstraints.journees}, read by
-     * four rules of two families).
+     * One tuple per animateur and day worked, folded to its two ends — the
+     * first start, the last end — and whether a seat of it is still ahead:
+     * what {@code eviterFermeturePuisOuverture} and the grouped arrival of the
+     * ad hoc family read, four rules of two families on one node.
      */
-    @SuppressWarnings("unchecked")
-    <T> T derived(String key, Supplier<T> build) {
-        return (T) derived.computeIfAbsent(key, k -> build.get());
+    UniConstraintStream<QualiteConstraints.Journee> journees() {
+        if (journees == null) {
+            journees = days().map((animateur, date, jour) -> QualiteConstraints.journee(animateur, jour));
+        }
+        return journees;
     }
 
     /** The day number of a day's seats — one per date, see {@code Creneau.assignerJours}. */
