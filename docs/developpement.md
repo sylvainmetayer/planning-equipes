@@ -487,6 +487,48 @@ Côté tests, `ScenariosLivres` est la seule lecture de ce dossier :
   d'`extreme-09` pèserait à elle seule plus que tout le corpus actuel) ;
 - `noms(prefixe)` — la gamme ou les extrêmes, pour leurs contrôles de catalogue.
 
+### Le banc du solveur
+
+Deux classes de `service/solve`, taguées `scenario-lent`, servent à **mesurer**
+une résolution plutôt qu'à la valider ; elles ne font rien sans leurs
+propriétés système, donc `./mvnw test -Pscenario-tests` les ignore.
+
+- `SolverBenchTest` résout un scénario sous la recherche de production et
+  écrit la courbe de son meilleur score : un fichier de
+  `src/main/resources/scenarios/` par son nom, ou n'importe quel YAML par son
+  chemin absolu — une édition exportée depuis l'application se mesure donc
+  sans être versionnée. Le résultat s'ajoute en une ligne Markdown à
+  `target/bench/results.md` (construction, instant de faisabilité, score
+  final, score à 60 s, 120 s, 180 s, 300 s…) et la courbe complète en CSV.
+
+  ```bash
+  ./mvnw test -Pscenario-tests -Dtest=SolverBenchTest \
+      -Dbench.scenario=festival-hivernal.yaml -Dbench.label=avant
+  ```
+
+  Les options : `bench.seconds` et `bench.plateau` (le budget et l'arrêt sur
+  plateau, 900 et 300 par défaut), `bench.stopWhenFeasible=true` (la phase de
+  faisabilité seule, ce que `solveUntilFeasible` joue), `bench.calculations=N`
+  (arrêt après N calculs de score : deux configurations qui cherchent de la
+  même façon finissent alors sur le **même plan**, quelle que soit leur
+  vitesse — c'est ainsi qu'une réécriture de contrainte prouve qu'elle n'a
+  changé que le coût), `bench.drWindow` / `bench.drRatio` (une terminaison
+  par rendements décroissants à la place du plateau), `bench.seed`, et
+  `bench.jfr=<fichier>` qui enregistre le solve seul au Java Flight Recorder
+  (réglage `profile`), à lire avec `jfr print --events jdk.ExecutionSample`.
+- `TerminationReplayTest` rejoue des règles d'arrêt sur une courbe
+  enregistrée (`-Dreplay.curve=<csv>`) : le plateau à plusieurs durées, les
+  rendements décroissants de Timefold à plusieurs fenêtres et ratios, un gain
+  minimal de medium sur une fenêtre. Une règle qui ne lit que le meilleur
+  score au fil du temps s'arrête en un point de la courbe, et le score qu'elle
+  aurait gardé est la valeur de la courbe à cet instant : une résolution de
+  quinze minutes par scénario répond pour toutes les variantes, en minutes
+  gagnées contre medium et soft abandonnés.
+
+Les mesures publiées dans `solverConfig.xml` et les décisions du solveur
+viennent de là ; les graines étant fixées, deux runs d'une même
+configuration tracent la même courbe, aux secondes près.
+
 ### La gamme de scénarios
 
 Les trente fichiers `gamme-…` de `src/main/resources/scenarios/` sont des
@@ -680,7 +722,8 @@ E2E_VIDEO=retain-on-failure npm run e2e   # ou 'on' ; .webm dans test-results/<t
 | Propriété | Défaut | Rôle |
 | --- | --- | --- |
 | `planning.solver.seconds-limit` | `900` (`3` en `%test`) | Budget de résolution |
-| `planning.solver.unimproved-seconds-limit` | `300` (`2` en `%test`), `0` = désactivé | Arrêt sur plateau, **conditionné à la faisabilité** |
+| `planning.solver.unimproved-seconds-limit` | `300` (`2` en `%test`), `0` = désactivé | Arrêt sur plateau, **conditionné à la faisabilité** : la fenêtre, que chaque édition règle |
+| `planning.solver.plateau-gain-medium` | `0` | Ce que la fenêtre doit gagner en medium pour que le calcul continue ; `0` est le plateau strict (pas un point) |
 | `planning.solver.seconds-limit-max` | `3600` (`SOLVER_SECONDS_LIMIT_MAX`) | Plafond de ce qu'une édition règle ou qu'un lancement demande ; démarrage refusé s'il est sous `seconds-limit` |
 | `planning.solver.unimproved-seconds-limit-max` | celui de la durée (`SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX`) | Plafond du plateau d'une édition |
 | `planning.solver.max-solves-per-hour` | `0` = aucune limite (`SOLVER_MAX_SOLVES_PER_HOUR`) | Quota de l'instance sur 60 minutes glissantes, compté au lancement par `SolverQuota` — voir [`0075`](decisions/0075-quota-de-calcul-de-l-instance-dans-l-application.md) |
@@ -954,6 +997,46 @@ d'entrée avec un `filter` **avant** de joindre, et ne garder `Joiners.filtering
 que pour ce qui n'est pas indexable (ici : le calcul de distance haversine et
 la comparaison de périmètre des contraintes ad hoc). La métrique à regarder est
 le *move evaluation speed* du log solveur, pas le temps écoulé.
+
+#### Un nœud par agrégation, partagé entre les règles
+
+Bavet, le moteur des *constraint streams*, construit un nœud par **objet** de
+flux et le partage entre les contraintes qui lisent le même objet. Il ne
+fusionne pas deux flux qui se ressemblent : deux `groupBy` aux mêmes clés sont
+deux nœuds, chacun entretenant sa liste à chaque mouvement. Écrites règle par
+règle, les familles entretenaient onze fois « les sièges de l'animateur ce
+jour-là », et une quarantaine de copies de la tête
+`forEach(PosteAffectation)` ; un profil d'une résolution réelle plaçait les
+nœuds de groupe et les files de propagation devant l'arithmétique de toutes
+les règles réunies.
+
+`solver/constraints/SeatStreams` construit ces flux **une fois** par
+fournisseur et les prête à chaque famille : les sièges tenus, les sièges
+datés, les sièges par animateur et par jour (avec les paramètres légaux ou les
+fenêtres repas en face), par animateur, par ligne stand × créneau. Deux règles
+de forme voisine se branchent sur le même objet — les deux formes des jours
+d'affilée lisent exactement le même flux — et le gardien d'activation
+(`ConstraintToggleSupport.actif`) est posé en **queue** de flux, sur les
+écarts, plus jamais en tête : en tête il était un nœud de plus sur chaque
+siège et rendait la tête impartageable.
+
+Mesuré sur une grille réelle de 4 057 sièges, même graine, arrêt après
+800 000 calculs de score (`SolverBenchTest -Dbench.calculations`) — les deux
+versions suivent la **même trajectoire** pas pour pas et finissent sur le même
+plan, ce qui est la preuve que seul le coût a changé :
+
+| Phase | Avant | Après |
+| --- | --- | --- |
+| Heuristique de construction | 36,9 s — 16 973 évaluations/s | 29,6 s — 21 113 évaluations/s |
+| Recherche locale, faisabilité | 4 739 évaluations/s | 4 879 évaluations/s |
+| Recherche locale, polissage | 3 875 évaluations/s | 4 309 évaluations/s |
+| **Total des 800 000 calculs** | **75,5 s** | **65,9 s** |
+
+Les tests unitaires d'une famille (`ConstraintVerifier`) continuent d'appeler
+`define(factory)` : chaque famille se construit alors ses propres flux, et
+le partage entre familles n'a lieu que dans `PlanningConstraintProvider`. Une
+nouvelle règle qui lit les sièges part d'un flux de `SeatStreams` ; une
+agrégation qu'aucun flux n'offre encore s'y ajoute plutôt que dans la règle.
 
 ### Mode d'environnement et parallélisme
 

@@ -41,6 +41,18 @@ close.
 Add the same tag to any future test in this weight class instead of letting
 it slow down the default loop.
 
+Two more `scenario-lent` classes in `service/solve` **measure** rather than
+validate, and run only with their system properties: `SolverBenchTest`
+(`-Dbench.scenario=<name or absolute path>`, one full solve of the production
+search with its best-score curve written to `target/bench/`;
+`-Dbench.stopWhenFeasible=true` for the feasibility phase alone,
+`-Dbench.calculations=N` for a fixed number of score calculations, the
+equality check of a constraint rewrite; `-Dbench.jfr=<file>` for a Flight
+Recorder profile of the solve) and `TerminationReplayTest`
+(`-Dreplay.curve=<csv>`, which replays the termination rules on a recorded
+curve). Every solver tuning committed with figures was measured with them —
+see *Le banc du solveur* in `docs/developpement.md`.
+
 The **scenario ladder** — the thirty `gamme-…` files of
 `src/main/resources/scenarios/`,
 from one day and two stands to a month and 150 stands, the last five never

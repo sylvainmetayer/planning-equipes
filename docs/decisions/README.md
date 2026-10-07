@@ -96,6 +96,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0076](0076-journal-des-connexions-admin-par-instance.md) | Les connexions administrateur, leurs échecs et les verrouillages du form login vont dans un journal de l'instance, sans édition, horodatage et adresse seulement — jamais ce qui a été saisi ; rétention de l'historique, hors du dump SQL | Accepté |
 | [0078](0078-echange-de-journees-plutot-que-mouvements-pillar.md) | La seconde recherche locale échange des journées entières entre deux animateurs du même jour, couple choisi plutôt que tiré ; les *pillar moves* de Timefold, mesurés, sont écartés, et l'échange de deux journées identiques est gardé | Accepté · complète 0049 |
 | [0079](0079-la-phase-de-faisabilite-tire-sur-une-liste-par-pas-et-reconstruit-rarement.md) | La phase de faisabilité tire ses sièges filtrés sur une liste mise en cache par pas, et joue le *ruin and recreate* à poids 0,02 pour toute édition ; `HardRunCapSearch` disparaît | Accepté · révise 0049, complète 0025 et 0067 |
+| [0080](0080-un-solveur-exact-pour-la-seule-verification-du-besoin-etude.md) | Un solveur exact (CP-SAT) pour la seule vérification du besoin : ce que chaque règle dure devient, les deux qui ne se traduisent pas sans une approximation plus stricte, le protocole du banc ; aucune dépendance dans l'application quoi qu'il en sorte | **Proposé** · étude · voisine de 0071 et 0079 |
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,
