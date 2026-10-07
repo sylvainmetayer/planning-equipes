@@ -66,6 +66,18 @@
                         i18n-aria-label="@@solver.progress.label" aria-label="Progression de la résolution" />
     </mat-card-content>
   }
+  @if (planFaisableDepuis()) {
+    <mat-card-content>
+      <div class="solver-faisable" role="status" aria-live="polite">
+        <mat-icon aria-hidden="true">check_circle</mat-icon>
+        <p class="solver-faisable-phrase">{{ planFaisableDepuis() }}</p>
+        <button matButton="filled" type="button" [disabled]="arretEnCours()" (click)="onArreterEtGarder()">
+          <mat-icon>done_all</mat-icon>
+          <ng-container i18n="@@solver.faisable.arreter">Arrêter et garder ce plan</ng-container>
+        </button>
+      </div>
+    </mat-card-content>
+  }
   @if (estimatedEnd()) {
     <mat-card-content>
       <p class="calendar-meta" aria-live="polite" i18n="@@solver.estimatedEnd">

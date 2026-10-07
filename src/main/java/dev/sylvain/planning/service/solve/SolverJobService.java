@@ -972,6 +972,14 @@ public class SolverJobService {
         /** A cancel or a shutdown asked the solver to stop; honoured by {@link #attachSolver} if it is not built yet. */
         private volatile boolean stopRequested;
 
+        /**
+         * Seconds into the run at which the best plan first became feasible
+         * (zero hard); {@code null} until then. The first thing the screen
+         * tells the organiser while the solve goes on: from here the plan is
+         * usable, and what follows is quality.
+         */
+        private volatile Long feasibleAtSeconds;
+
         private final AtomicReference<Solver<PlanningEvenement>> solver = new AtomicReference<>();
 
         /** A new job, under a fresh random id. */
@@ -1155,6 +1163,26 @@ public class SolverJobService {
         /** The feasible-plateau bailout the job runs under, {@code 0} for none; {@code null} on a legacy row. */
         public Long getPlateauSeconds() {
             return budget.plateauSeconds();
+        }
+
+        /** Seconds into the run at which the best plan first became feasible; {@code null} until it does. */
+        public Long getFeasibleAtSeconds() {
+            return feasibleAtSeconds;
+        }
+
+        /**
+         * Records the first feasible best plan, at {@code seconds} into the
+         * run. Kept the first time only: feasibility, once reached, is never
+         * lost — Timefold keeps the best plan — so a later call says nothing new.
+         *
+         * @return whether this call was the one that recorded it
+         */
+        boolean markFeasible(long seconds) {
+            if (feasibleAtSeconds != null) {
+                return false;
+            }
+            feasibleAtSeconds = seconds;
+            return true;
         }
 
         /** Why the budget is not what the edition stored — a ceiling lowered since — or {@code null}. */

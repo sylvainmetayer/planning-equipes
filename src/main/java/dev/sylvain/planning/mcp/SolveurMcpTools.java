@@ -383,6 +383,7 @@ public class SolveurMcpTools {
                 job.getStartedAt(),
                 job.getFinishedAt(),
                 job.getElapsedSeconds(),
+                job.getFeasibleAtSeconds(),
                 job.getError(),
                 avertissement(job.getBudgetWarning(), job.getResult()),
                 job.getEditionId(),
@@ -440,6 +441,8 @@ public class SolveurMcpTools {
             Instant startedAt,
             Instant finishedAt,
             long elapsedSeconds,
+            /** Seconds into the run at which the best plan first became feasible; null until it does. */
+            Long feasibleAtSeconds,
             String error,
             String avertissement,
             String editionId,

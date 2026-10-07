@@ -135,7 +135,7 @@ class SolverMetricsTest {
     /** A solve that throws what no business rule throws — a bug, the case the counter is for. */
     static class FailingTasks extends SolverJobTasks {
         FailingTasks() {
-            super(null, null, null);
+            super(null, null, null, null);
         }
 
         @Override

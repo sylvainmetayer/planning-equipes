@@ -123,6 +123,13 @@ export interface TrackedJob {
    */
   cappedFromSecondsLimit?: number | null;
   cappedFromPlateauSeconds?: number | null;
+  /**
+   * Seconds into the run at which the best plan first became feasible, or null
+   * until it does — the one field of a tracked job that changes while it runs,
+   * so {@link SolverJobService} refreshes it instead of leaving the job as it
+   * was adopted.
+   */
+  feasibleAtSeconds?: number | null;
 }
 
 /**
@@ -250,6 +257,21 @@ export class SolverJobService {
   readonly remainingSeconds = computed(() => {
     const end = this.estimatedEndMs();
     return end === null ? null : Math.max(0, Math.round((end - this.now()) / 1000));
+  });
+
+  /**
+   * How long the running job's best plan has been feasible, in seconds, or
+   * null while it is not yet — or while nothing runs. What the Solveur page
+   * announces as « plan faisable depuis » (issue #764): the plan is usable
+   * from that moment, and stopping keeps it.
+   */
+  readonly feasibleSinceSeconds = computed(() => {
+    const job = this.activeJob();
+    if (!job || job.feasibleAtSeconds == null) {
+      return null;
+    }
+    const since = job.startedAtMs + job.feasibleAtSeconds * 1000;
+    return Math.max(0, Math.round((this.now() - since) / 1000));
   });
 
   readonly activeJobDescription = computed(() => {
@@ -713,8 +735,11 @@ export class SolverJobService {
   private adopt(job: JobView, mine: boolean): void {
     const tracked = this.activeJob();
     if (tracked?.id === job.id) {
-      if (mine && !tracked.mine) {
-        this._activeJob.set({ ...tracked, mine: true });
+      const feasibleAtSeconds = job.feasibleAtSeconds ?? null;
+      if ((mine && !tracked.mine) || feasibleAtSeconds !== (tracked.feasibleAtSeconds ?? null)) {
+        // The feasibility instant is the one thing a running job learns
+        // after it was adopted; the rest of the entry stays as it was.
+        this._activeJob.set({ ...tracked, mine: tracked.mine || mine, feasibleAtSeconds });
       }
       return;
     }
@@ -735,6 +760,7 @@ export class SolverJobService {
         job.cappedFromSecondsLimit == null ? null : Number(job.cappedFromSecondsLimit),
       cappedFromPlateauSeconds:
         job.cappedFromPlateauSeconds == null ? null : Number(job.cappedFromPlateauSeconds),
+      feasibleAtSeconds: job.feasibleAtSeconds == null ? null : Number(job.feasibleAtSeconds),
     };
     this._activeJob.set(entry);
     // A submit() adopts its job without waiting for the next poll: start the

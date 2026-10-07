@@ -53,6 +53,7 @@ export function applyScoreDelta(
     intervalleMs: delta.intervalleMs,
     dureeMs: delta.dureeMs,
     termine: delta.termine,
+    faisableAMs: delta.faisableAMs ?? null,
     points,
   };
 }

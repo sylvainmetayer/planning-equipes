@@ -78,6 +78,28 @@ app-solve-recap > .mat-mdc-card-content:last-child {
   color: var(--mat-sys-on-surface-variant);
 }
 
+/* « Plan faisable depuis … » while the solve runs (issue #764). */
+.solver-faisable {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+.solver-faisable > mat-icon {
+  color: var(--app-positive);
+}
+
+.solver-faisable-phrase {
+  flex: 1 1 18rem;
+  margin: 0;
+  font: var(--mat-sys-body-medium);
+}
+
 /* The volumetry, folded under its title. */
 .solver-volumetry-details {
   padding: 0.75rem 1rem;

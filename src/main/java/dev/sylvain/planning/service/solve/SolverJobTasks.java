@@ -9,6 +9,8 @@ import dev.sylvain.planning.service.solve.SolverJobService.ResultatSolveIncremen
 import dev.sylvain.planning.service.solve.SolverJobService.SolverJob;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -39,11 +41,18 @@ public class SolverJobTasks {
 
     private final SolverScoreTrace scoreTrace;
 
+    private final JobStreamBroadcaster jobStream;
+
     @Inject
-    public SolverJobTasks(SolvePipeline pipeline, PlanningService planningService, SolverScoreTrace scoreTrace) {
+    public SolverJobTasks(
+            SolvePipeline pipeline,
+            PlanningService planningService,
+            SolverScoreTrace scoreTrace,
+            JobStreamBroadcaster jobStream) {
         this.pipeline = pipeline;
         this.planningService = planningService;
         this.scoreTrace = scoreTrace;
+        this.jobStream = jobStream;
     }
 
     /** A one-off solve of a problem that came in the request body — never replayable, the body is not stored. */
@@ -143,6 +152,18 @@ public class SolverJobTasks {
             solver.addEventListener(event -> {
                 if (job.isStopRequested() && !solver.isTerminateEarly()) {
                     solver.terminateEarly();
+                }
+                // The first feasible best plan is the moment the organiser is
+                // told the plan is usable; measured on the job's own clock, so
+                // the two stages of a two-stage solve read as one run, and
+                // announced at once rather than at the next poll.
+                if (event.isNewBestSolutionInitialized()
+                        && event.getNewBestScore() != null
+                        && event.getNewBestScore().isFeasible()
+                        && job.getStartedAt() != null
+                        && job.markFeasible(Duration.between(job.getStartedAt(), Instant.now())
+                                .toSeconds())) {
+                    jobStream.publish();
                 }
             });
             if (job.isCancelRequested()) {

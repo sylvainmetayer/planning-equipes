@@ -329,6 +329,7 @@ public class SolverJobResource {
                 trace.intervalleMs(),
                 trace.dureeMs(),
                 trace.termine(),
+                trace.faisableAMs(),
                 List.copyOf(nouveaux))));
     }
 
@@ -351,7 +352,7 @@ public class SolverJobResource {
         cursor.envoyes = 0;
         cursor.amorce = true;
         cursor.termine = false;
-        return List.of(scoreEvent(new ScoreDelta(null, null, GENERATION_ABSENTE, 0, 0, 0, false, List.of())));
+        return List.of(scoreEvent(new ScoreDelta(null, null, GENERATION_ABSENTE, 0, 0, 0, false, null, List.of())));
     }
 
     private OutboundSseEvent scoreEvent(ScoreDelta delta) {
@@ -473,6 +474,9 @@ public class SolverJobResource {
      *                     edge, which the points alone cannot give since
      *                     Timefold only announces strict improvements
      * @param termine      whether the run is over and the curve final
+     * @param faisableAMs  how far into the run the best plan first became
+     *                     feasible, or {@code null} until it does: the mark the
+     *                     chart draws where the plan became usable
      */
     public record ScoreDelta(
             String jobId,
@@ -482,6 +486,7 @@ public class SolverJobResource {
             long intervalleMs,
             long dureeMs,
             boolean termine,
+            Long faisableAMs,
             List<SolverScoreTrace.Point> points) {}
 
     public record JobView(
@@ -517,6 +522,13 @@ public class SolverJobResource {
             Instant startedAt,
             Instant finishedAt,
             long elapsedSeconds,
+            /**
+             * Seconds into the run at which the best plan first became
+             * feasible — usable, every hard rule held — or null until it does.
+             * What the screen's « plan faisable depuis » reads; from there the
+             * solver only improves quality, and stopping keeps that plan.
+             */
+            Long feasibleAtSeconds,
             String error,
             Object result) {
 
@@ -550,6 +562,7 @@ public class SolverJobResource {
                     job.getStartedAt(),
                     job.getFinishedAt(),
                     job.getElapsedSeconds(),
+                    job.getFeasibleAtSeconds(),
                     job.getError(),
                     result);
         }
