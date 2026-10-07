@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.solve;
 
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.Solver;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.solve.SolverJobService.JobType;
@@ -13,7 +14,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
 
 /**
  * What a solver job <em>does</em> once the queue hands it the solver: the
@@ -135,11 +135,40 @@ public class SolverJobTasks {
                 resolution.feasibilityFirst());
     }
 
-    private Consumer<Solver<PlanningEvenement>> onSolverReady(SolverJob job) {
+    private SolveListener onSolverReady(SolverJob job) {
         // A solve may hand over two solvers, one per stage (FeasibilityFirstSolve):
         // the job holds the latest, the curve goes on from the first.
         AtomicBoolean followed = new AtomicBoolean();
-        return solver -> {
+        return new SolveListener() {
+            @Override
+            public void startingScore(HardMediumSoftScore score) {
+                if (score.isFeasible()) {
+                    markFeasible(job);
+                }
+            }
+
+            @Override
+            public void accept(Solver<PlanningEvenement> solver) {
+                handOver(job, solver, followed);
+            }
+        };
+    }
+
+    /**
+     * Records the first feasible plan of {@code job}, on the job's own clock —
+     * so the two stages of a two-stage solve read as one run — and announces
+     * it at once rather than at the next poll.
+     */
+    private void markFeasible(SolverJob job) {
+        if (job.getStartedAt() != null
+                && job.markFeasible(
+                        Duration.between(job.getStartedAt(), Instant.now()).toSeconds())) {
+            jobStream.publish();
+        }
+    }
+
+    private void handOver(SolverJob job, Solver<PlanningEvenement> solver, AtomicBoolean followed) {
+        {
             // Holding it first: attachSolver honours a cancel that arrived
             // while the problem was being built, by terminating the solver
             // before it ever starts.
@@ -154,16 +183,11 @@ public class SolverJobTasks {
                     solver.terminateEarly();
                 }
                 // The first feasible best plan is the moment the organiser is
-                // told the plan is usable; measured on the job's own clock, so
-                // the two stages of a two-stage solve read as one run, and
-                // announced at once rather than at the next poll.
+                // told the plan is usable.
                 if (event.isNewBestSolutionInitialized()
                         && event.getNewBestScore() != null
-                        && event.getNewBestScore().isFeasible()
-                        && job.getStartedAt() != null
-                        && job.markFeasible(Duration.between(job.getStartedAt(), Instant.now())
-                                .toSeconds())) {
-                    jobStream.publish();
+                        && event.getNewBestScore().isFeasible()) {
+                    markFeasible(job);
                 }
             });
             if (job.isCancelRequested()) {
@@ -178,6 +202,6 @@ public class SolverJobTasks {
             } else {
                 scoreTrace.followNext(job.getId(), solver);
             }
-        };
+        }
     }
 }

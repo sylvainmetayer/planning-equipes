@@ -8,16 +8,17 @@
 
 ## Contexte
 
-Un profil d'une résolution réelle (édition de seize jours, 4 057 sièges,
-153 animateurs, jouée sous les règles par défaut) a montré que la phase de
-faisabilité passait un cinquième de son temps **à tirer des entités**, pas à
-les évaluer : `RandomSupport.boundedNextInt` seul pesait 9 % des échantillons,
-les filtres d'entités 7 %, l'itérateur de filtrage *just in time* 3 %.
+Un profil au Java Flight Recorder d'une résolution (`SolverBenchTest
+-Dbench.jfr`) a montré que la phase de faisabilité passait une part notable de
+son temps **à tirer des entités**, pas à les évaluer : le tirage aléatoire
+borné de la JDK était la première méthode du profil, devant tout calcul de
+score, suivi des filtres d'entités et de l'itérateur de filtrage *just in
+time* de Timefold.
 
 La cause est la façon dont Timefold applique un filtre à un sélecteur
 d'entités tiré au hasard : il tire des entités jusqu'à en trouver une que le
 filtre accepte, et quand aucune ne passe il tire `entityCount × 10` fois
-(40 570 ici) avant d'abandonner. Or la phase de faisabilité porte trois
+(34 380 sur les 3 438 sièges de `festival-hivernal`) avant d'abandonner. Or la phase de faisabilité porte trois
 sélecteurs de ce type — deux restreints aux sièges vides
 (`UnassignedPosteFilter`), un restreint aux voisins d'un trou
 (`HoleNeighbourPosteFilter`) — et son état ordinaire est « tous les sièges
@@ -50,20 +51,20 @@ medium pendant cette phase ; le *change* et le *swap* les parcourent eux-mêmes.
 
 ## Mesures
 
-Même graine, phase de faisabilité seule (`solveUntilFeasible`), cette machine
-(8 cœurs), runs séquentiels, les deux grilles jouées sous les règles par
-défaut — donc le *ruin and recreate* à poids 1 avant cette décision.
+Même graine, phase de faisabilité seule (`SolverBenchTest
+-Dbench.stopWhenFeasible=true`), runs séquentiels sur une machine à huit
+cœurs, règles par défaut — donc le *ruin and recreate* à poids 1 avant cette
+décision.
 
 | Scénario | Avant | Sélecteurs en cache | + reconstruction rare |
 | --- | --- | --- | --- |
-| édition réelle de seize jours (4 057 sièges ; non versionnée) | 0 dur à 138 s, 1 177 évaluations/s | **76 s**, 3 092 évaluations/s | 64 s |
-| `festival-hivernal` (3 438 sièges) | 0 dur à 142 s, 956 évaluations/s | 77 s, 1 069 évaluations/s | **42 s** |
-| la même édition, règle dure des six jours allumée | 0 dur à 229 s | — | **208 s** (avec le partage des flux de contraintes) |
+| `festival-hivernal` (3 438 sièges) | 0 dur à 142 s, 956 évaluations/s | 77 s, 1 069 évaluations/s | **42 s**, plus de 3 000 évaluations/s |
+| `festival-realiste-canicule` (1 994 sièges) | faisable en 13 s | inchangé | inchangé |
 | `scenario-complet`, `gamme-22`, `gamme-25` | faisables dès la construction | inchangés | inchangés |
 
-Le premier plan faisable est un peu moins bon en medium sur `festival-hivernal`
-(−37 220 contre −36 485) : la seconde phase part de là et le rattrape ; c'est
-le temps jusqu'à l'utilisable qui compte ici.
+Le premier plan faisable est un peu moins bon en medium sur
+`festival-hivernal` (−37 220 contre −36 485) : la seconde phase part de là et
+le rattrape ; c'est le temps jusqu'à l'utilisable qui compte ici.
 
 ## Alternatives écartées
 

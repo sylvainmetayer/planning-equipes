@@ -642,7 +642,8 @@ public final class QualiteConstraints {
      * on the following date — see {@link LegalConstraints#fin}.
      */
     static UniConstraintStream<Journee> journees(SeatStreams seats) {
-        return seats.days().map((animateur, date, jour) -> journee(animateur, jour));
+        // One node for the four rules of two families that read it.
+        return seats.derived("journees", () -> seats.days().map((animateur, date, jour) -> journee(animateur, jour)));
     }
 
     /** A day's seats folded to its two ends — the first start, the last end — and whether one is still ahead. */

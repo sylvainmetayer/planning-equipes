@@ -1,6 +1,6 @@
 # 0068 — Sous la règle dure des jours d'affilée, la construction suit le calendrier
 
-- **Statut** : accepté, implémenté
+- **Statut** : accepté, implémenté ; `HardRunCapSearch`, qu'il cite comme condition, est retiré par [0079](0079-la-phase-de-faisabilite-tire-sur-une-liste-par-pas-et-reconstruit-rarement.md) — la condition reste `WeekRelocationMoveIteratorFactory.hardRunCap`
 - **Date** : septembre 2026
 - **Portée** : solveur (ordre de l'heuristique de construction)
 - **Prolonge** : [0049](0049-la-regle-dure-des-jours-d-affilee-se-cherche-par-jours-entiers.md)
@@ -57,8 +57,8 @@ gagne de façon stable.
 ## Décision
 
 **(E).** Quand `maxJoursConsecutifsTravaillesDur` est allumée pour l'édition
-(la condition lue par `WeekRelocationMoveIteratorFactory.hardRunCap`), la
-construction place les
+(la condition de `HardRunCapSearch`, lue par
+`WeekRelocationMoveIteratorFactory.hardRunCap`), la construction place les
 sièges **par date croissante**, puis par rareté à l'intérieur d'un même jour.
 Les séries se construisent dans l'ordre où la règle les compte : un jour déjà
 long bloque le suivant, pas le précédent. Les sièges que la construction

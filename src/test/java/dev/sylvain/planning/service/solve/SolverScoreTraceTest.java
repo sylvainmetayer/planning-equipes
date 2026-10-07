@@ -84,33 +84,6 @@ class SolverScoreTraceTest {
         assertThat(points()).extracting(Point::hard).containsExactly(-40L, 0L);
     }
 
-    /**
-     * The instant the plan became feasible is read on the announcements, not
-     * on the sampled points: an improvement collapsed into its second's window
-     * still marks it, exactly where it happened, and the mark survives the
-     * second stage of a two-stage solve on the same clock.
-     */
-    @Test
-    void theFirstFeasibleBestIsMarkedWhereItHappened() {
-        trace.start("job-1", "edition-1");
-        assertThat(trace.snapshot().faisableAMs()).isNull();
-
-        trace.recordEvent("job-1", event(0, -40, -10, -1000));
-        trace.recordEvent("job-1", event(300, -1, -8, -900));
-        trace.recordEvent("job-1", event(700, 0, -8, -900));
-        trace.recordEvent("job-1", event(5000, 0, -6, -800));
-
-        assertThat(trace.snapshot().faisableAMs()).isEqualTo(700L);
-
-        // A new run starts from nothing again.
-        trace.start("job-2", "edition-1");
-        assertThat(trace.snapshot().faisableAMs()).isNull();
-        trace.recordEvent("job-2", event(0, -3, 0, 0));
-        trace.nextStage("job-2");
-        trace.recordEvent("job-2", event(1000, 0, 0, 0), 4000);
-        assertThat(trace.snapshot().faisableAMs()).isEqualTo(5000L);
-    }
-
     @Test
     void aSolutionNotInitializedYetIsNotPlotted() {
         trace.start("job-1", "edition-1");

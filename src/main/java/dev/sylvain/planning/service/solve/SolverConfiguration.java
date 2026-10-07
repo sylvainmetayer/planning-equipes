@@ -337,12 +337,21 @@ final class SolverConfiguration {
                 0, config.getOptionalValue(PLATEAU_GAIN_PROPERTY, Double.class).orElse(0.0));
     }
 
-    /** The medium gain the plateau window of {@code problem} must reach: its seats times the per-seat property. */
+    /**
+     * The medium gain the plateau window of {@code problem} must reach: its
+     * <b>movable</b> seats times the per-seat property. A pinned seat — the
+     * frozen past (ADR 0044), a lock — is one the search cannot improve, and
+     * counting it asked a re-solve on the tenth day of an event for a gain only
+     * the whole plan could give: it stopped after its first window.
+     */
     long plateauGainMedium(PlanningEvenement problem) {
         if (problem == null || problem.getPostes() == null) {
             return 0L;
         }
-        return Math.round(problem.getPostes().size() * plateauGainMediumPerSeat);
+        long movable = problem.getPostes().stream()
+                .filter(poste -> !poste.isVerrouille())
+                .count();
+        return Math.round(movable * plateauGainMediumPerSeat);
     }
 
     /**
@@ -434,7 +443,8 @@ final class SolverConfiguration {
      */
     SolverFactory<PlanningEvenement> feasibilityStageFactory(
             PlanningEvenement problem, SolveBudget budget, long millis) {
-        SolverConfig solverConfig = solverConfigFor(budget, problem);
+        // The termination is replaced below: no plateau to size.
+        SolverConfig solverConfig = solverConfigFor(budget);
         solverConfig.setTerminationConfig(
                 new TerminationConfig().withMillisecondsSpentLimit(millis).withBestScoreFeasible(true));
         adaptToProblem(solverConfig, problem);
@@ -478,11 +488,6 @@ final class SolverConfiguration {
         return defaultUnimprovedSecondsLimit == null ? 0L : Math.max(0, defaultUnimprovedSecondsLimit);
     }
 
-    /** Whether {@code budget} is the one the shared factory was built with. */
-    private boolean isDefault(SolveBudget budget) {
-        return secondsOf(budget) == defaultSecondsLimit && plateauOf(budget) == defaultPlateauSeconds();
-    }
-
     /**
      * Every adaptation of {@code solverConfig.xml} to one problem, in one place:
      * the production solve and {@code SolveRunner.solveUntilFeasible} — what the
@@ -493,12 +498,5 @@ final class SolverConfiguration {
         if (LargeProblemConstruction.applies(problem)) {
             LargeProblemConstruction.adapt(solverConfig);
         }
-    }
-
-    SolverFactory<PlanningEvenement> resolveSolverFactory(SolveBudget budget) {
-        if (isDefault(budget)) {
-            return solverFactory;
-        }
-        return SolverFactory.create(solverConfigFor(budget));
     }
 }
