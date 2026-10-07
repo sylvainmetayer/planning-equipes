@@ -1829,7 +1829,7 @@
   "solverBudget.title": "Compute budget",
   "solverBudget.ceiling": "At most {$max} per solve on this instance, set by the operator.",
   "solverBudget.duration.label": "Maximum duration",
-  "solverBudget.plateau.label": "Stop without improvement for",
+  "solverBudget.plateau.label": "Stop without enough progress for",
   "solverBudget.plateau.hint": "0 = never. Only counts once the planning is feasible.",
   "solverBudget.plateau.unit": "Plateau unit",
   "solverBudget.defaults": "Instance default: {$duree}, plateau {$plateau}.",
