@@ -51,9 +51,12 @@ class TerminationReplayTest {
     private static final double[] DR_RATIOS = {0.0001, 0.01, 0.05, 0.1, 0.2};
 
     /** Minimum medium gain over a window (seconds): stop when the window gained less. */
-    private static final long[] GAIN_WINDOWS = {60, 120, 180};
+    private static final long[] GAIN_WINDOWS = {60, 120, 180, 300};
 
-    private static final long[] GAIN_MINIMUMS = {5, 25, 100};
+    private static final long[] GAIN_MINIMUMS = {25, 100, 250, 500, 1000};
+
+    /** Stops at a fixed time, for the reading « what a shorter budget would have kept ». */
+    private static final long[] FIXED_STOPS = {300, 450, 600};
 
     @Test
     void replay() throws IOException {
@@ -106,6 +109,9 @@ class TerminationReplayTest {
         if (feasibleAt < 0) {
             table.append("| (never feasible: no rule acts) | | | | | |\n\n");
             return table.toString();
+        }
+        for (long fixed : FIXED_STOPS) {
+            row(table, "budget " + fixed + " s", Math.min(end, fixed * 1000L), curve, end);
         }
         for (long plateau : PLATEAUS) {
             row(table, "plateau " + plateau + " s", stopPlateau(curve, feasibleAt, plateau * 1000L, end), curve, end);

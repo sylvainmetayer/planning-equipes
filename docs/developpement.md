@@ -722,8 +722,8 @@ E2E_VIDEO=retain-on-failure npm run e2e   # ou 'on' ; .webm dans test-results/<t
 | Propriété | Défaut | Rôle |
 | --- | --- | --- |
 | `planning.solver.seconds-limit` | `900` (`3` en `%test`) | Budget de résolution |
-| `planning.solver.unimproved-seconds-limit` | `300` (`2` en `%test`), `0` = désactivé | Arrêt sur plateau, **conditionné à la faisabilité** : la fenêtre, que chaque édition règle |
-| `planning.solver.plateau-gain-medium` | `0` | Ce que la fenêtre doit gagner en medium pour que le calcul continue ; `0` est le plateau strict (pas un point) |
+| `planning.solver.unimproved-seconds-limit` | `180` (`2` en `%test`), `0` = désactivé | Arrêt sur plateau, **conditionné à la faisabilité** : la fenêtre, que chaque édition règle |
+| `planning.solver.plateau-gain-medium-per-seat` | `0.25` (`0` en `%test`) | Ce que la fenêtre doit gagner en medium, par siège du problème, pour que le calcul continue ; `0` est le plateau strict (pas un point), qui ne se déclenchait jamais — voir [`0081`](decisions/0081-le-plateau-se-juge-sur-son-gain-de-medium-a-l-echelle-du-plan.md) |
 | `planning.solver.seconds-limit-max` | `3600` (`SOLVER_SECONDS_LIMIT_MAX`) | Plafond de ce qu'une édition règle ou qu'un lancement demande ; démarrage refusé s'il est sous `seconds-limit` |
 | `planning.solver.unimproved-seconds-limit-max` | celui de la durée (`SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX`) | Plafond du plateau d'une édition |
 | `planning.solver.max-solves-per-hour` | `0` = aucune limite (`SOLVER_MAX_SOLVES_PER_HOUR`) | Quota de l'instance sur 60 minutes glissantes, compté au lancement par `SolverQuota` — voir [`0075`](decisions/0075-quota-de-calcul-de-l-instance-dans-l-application.md) |
@@ -734,9 +734,15 @@ E2E_VIDEO=retain-on-failure npm run e2e   # ou 'on' ; .webm dans test-results/<t
 
 **L'arrêt anticipé est un `AND`** entre `bestScoreFeasible` et la limite de
 plateau : une résolution s'arrête quand le budget est épuisé, **ou** quand le
-planning est déjà faisable et n'a plus progressé. Sans la condition de
-faisabilité, le solveur abandonnait sur un plateau de score **dur** — exactement
-le cas où il a besoin du reste de son budget.
+planning est déjà faisable et n'a pas gagné, sur la fenêtre, `0,25 × sièges`
+points de medium (`unimprovedScoreDifferenceThreshold` de Timefold, soft
+laissé libre). Sans la condition de faisabilité, le solveur abandonnait sur un
+plateau de score **dur** — exactement le cas où il a besoin du reste de son
+budget. Sans le gain — le plateau strict d'avant —, il ne s'arrêtait jamais
+sur une édition réelle : la seconde phase trouve toujours un point de medium
+de temps en temps. Les rendements décroissants de Timefold, mesurés, ne lisent
+que le soft et ne se déclenchent pas non plus ; le détail et les courbes sont
+dans [`0081`](decisions/0081-le-plateau-se-juge-sur-son-gain-de-medium-a-l-echelle-du-plan.md).
 
 ### La construction échantillonnée des très gros problèmes
 

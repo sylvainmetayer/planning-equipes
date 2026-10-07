@@ -27,7 +27,7 @@
       </div>
       <div class="calendar-toolbar">
         <mat-form-field subscriptSizing="dynamic" appearance="outline" class="solver-duration">
-          <mat-label i18n="@@solverBudget.plateau.label">Arrêt sans amélioration depuis</mat-label>
+          <mat-label i18n="@@solverBudget.plateau.label">Arrêt faute de progrès suffisant depuis</mat-label>
           <input matInput type="number" min="0" [step]="plateauStep()" name="solverPlateauValue"
                  [disabled]="loading() || saving()"
                  [ngModel]="plateauDraft()" (ngModelChange)="onPlateauDraftChange($event)" />
