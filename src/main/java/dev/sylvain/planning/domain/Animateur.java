@@ -127,7 +127,17 @@ public class Animateur {
      * of times a solve, and the period showed in the allocation profile.
      */
     private boolean hasNotTurned(int years, LocalDate dateReference) {
-        return dateReference != null && dateNaissance != null && dateReference.isBefore(dateNaissance.plusYears(years));
+        if (dateReference == null || dateNaissance == null) {
+            return false;
+        }
+        LocalDate birthday = dateNaissance.plusYears(years);
+        if (birthday.getDayOfMonth() != dateNaissance.getDayOfMonth()) {
+            // Born on 29 February: plusYears clamps to the 28th, where
+            // Period.between — the reading every screen relies on — counts the
+            // birthday on 1 March. Same answer, no Period allocated.
+            birthday = birthday.plusDays(1);
+        }
+        return dateReference.isBefore(birthday);
     }
 
     public boolean isMajeurOn(LocalDate dateReference) {
