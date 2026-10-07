@@ -9,7 +9,7 @@
 ## Contexte
 
 Un profil d'une résolution réelle (édition de seize jours, 4 057 sièges,
-153 animateurs, règle dure des six jours allumée) a montré que la phase de
+153 animateurs, jouée sous les règles par défaut) a montré que la phase de
 faisabilité passait un cinquième de son temps **à tirer des entités**, pas à
 les évaluer : `RandomSupport.boundedNextInt` seul pesait 9 % des échantillons,
 les filtres d'entités 7 %, l'itérateur de filtrage *just in time* 3 %.
@@ -51,13 +51,12 @@ medium pendant cette phase ; le *change* et le *swap* les parcourent eux-mêmes.
 ## Mesures
 
 Même graine, phase de faisabilité seule (`solveUntilFeasible`), cette machine
-(8 cœurs), runs séquentiels. L'édition de seize jours tient la règle dure des
-six jours ; `festival-hivernal` ne la tient pas et jouait donc le *ruin and
-recreate* à poids 1.
+(8 cœurs), runs séquentiels, les deux grilles jouées sous les règles par
+défaut — donc le *ruin and recreate* à poids 1 avant cette décision.
 
 | Scénario | Avant | Sélecteurs en cache | + reconstruction rare |
 | --- | --- | --- | --- |
-| édition de seize jours (4 057 sièges, règle dure) | 0 dur à 138 s, 1 177 évaluations/s | **76 s**, 3 092 évaluations/s | déjà à 0,02 (0049) |
+| édition réelle de seize jours (4 057 sièges ; non versionnée) | 0 dur à 138 s, 1 177 évaluations/s | **76 s**, 3 092 évaluations/s | 64 s |
 | `festival-hivernal` (3 438 sièges) | 0 dur à 142 s, 956 évaluations/s | 77 s, 1 069 évaluations/s | **42 s** |
 | `scenario-complet`, `gamme-22`, `gamme-25` | faisables dès la construction | inchangés | inchangés |
 

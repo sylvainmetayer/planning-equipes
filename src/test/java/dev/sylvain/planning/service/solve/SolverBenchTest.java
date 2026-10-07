@@ -10,8 +10,10 @@ import ai.timefold.solver.core.config.solver.SolverConfig;
 import ai.timefold.solver.core.config.solver.termination.DiminishedReturnsTerminationConfig;
 import ai.timefold.solver.core.config.solver.termination.TerminationCompositionStyle;
 import ai.timefold.solver.core.config.solver.termination.TerminationConfig;
+import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.scenario.dto.ScenarioDto;
 import dev.sylvain.planning.service.EmptyReferenceData;
 import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
 import java.io.IOException;
@@ -53,6 +55,9 @@ import org.junit.jupiter.api.Test;
  *       the same way then end on the same plan, whatever their speed, which is
  *       how a rewrite of a constraint is shown to change the cost and nothing
  *       else;</li>
+ *   <li>{@code bench.seed} — the random seed, in place of the one
+ *       {@code solverConfig.xml} pins: what the comparison of seeds of the
+ *       parallel-solves experiment draws on;</li>
  *   <li>{@code bench.label} — a word naming the run in the results;</li>
  *   <li>{@code bench.out} — the Markdown file the result line is appended
  *       to, {@code target/bench/results.md} by default;</li>
@@ -101,8 +106,14 @@ class SolverBenchTest {
                 referenceData,
                 ConfigProvider.getConfig());
         SolveRunner runner = new SolveRunner(configuration, referenceData, null);
-        PlanningEvenement problem = load(scenario, referenceData);
+        Loaded loaded = load(scenario, referenceData);
+        PlanningEvenement problem = loaded.problem();
         runner.prepareProblem(problem);
+        if (loaded.qualite() != null) {
+            // Laid on after the preparation, which always writes the edition's
+            // thresholds: here the file's are the edition's.
+            problem.setParametresQualite(List.of(loaded.qualite()));
+        }
         FrozenPast.pin(problem.getPostes());
 
         SolverConfig solverConfig = configuration.solverConfigFor(new SolveBudget(seconds, plateau, null));
@@ -120,6 +131,10 @@ class SolverBenchTest {
                                     .withSlidingWindowSeconds(drWindow)
                                     .withMinimumImprovementRatio(drRatio))
                             .withTerminationCompositionStyle(TerminationCompositionStyle.AND))));
+        }
+        Long seed = Long.getLong("bench.seed");
+        if (seed != null) {
+            solverConfig.setRandomSeed(seed);
         }
         SolverConfiguration.adaptToProblem(solverConfig, problem);
         Solver<PlanningEvenement> solver =
@@ -157,17 +172,32 @@ class SolverBenchTest {
         writeCurve(curve, samples, totalMillis);
     }
 
-    private static PlanningEvenement load(String scenario, EmptyReferenceData referenceData) throws IOException {
+    /**
+     * The problem a file describes, <b>as the application would solve it</b>:
+     * the toggles its {@code contraintes:} section flips and the quality
+     * thresholds it pins are applied, which {@code buildExample} leaves to the
+     * import — a bench that ignored them measured the grid under the default
+     * rules, not under the edition's.
+     */
+    private static Loaded load(String scenario, EmptyReferenceData referenceData) throws IOException {
         Path path = Path.of(scenario);
-        if (path.isAbsolute() && Files.isRegularFile(path)) {
-            String yaml = Files.readString(path, StandardCharsets.UTF_8);
-            return ScenarioYamlReader.buildFromScenarioText(yaml, referenceData::getParametresLegaux)
-                    .planning();
-        }
-        return ScenarioYamlReader.buildPlanning(
-                ScenarioYamlReader.readScenario(ScenarioYamlReader.scenarioPath(scenario)),
-                referenceData::getParametresLegaux);
+        ScenarioDto dto = path.isAbsolute() && Files.isRegularFile(path)
+                ? ScenarioYamlReader.parseScenarioText(Files.readString(path, StandardCharsets.UTF_8))
+                : ScenarioYamlReader.readScenario(ScenarioYamlReader.scenarioPath(scenario));
+        ScenarioYamlReader.ScenarioImporte imported =
+                ScenarioYamlReader.fromDto(dto, referenceData::getParametresLegaux);
+        PlanningEvenement problem = imported.planning();
+        imported.sections().contraintes().ifPresent(contraintes -> {
+            List<ConstraintToggle> toggles = new ArrayList<>();
+            contraintes.desactivees().forEach(nom -> toggles.add(new ConstraintToggle(nom, false)));
+            contraintes.activees().forEach(nom -> toggles.add(new ConstraintToggle(nom, true)));
+            problem.setConstraintsDesactivees(toggles);
+        });
+        return new Loaded(problem, imported.sections().parametresQualite().orElse(null));
     }
+
+    /** A problem and the quality thresholds its file pins, laid on after the server-side preparation. */
+    private record Loaded(PlanningEvenement problem, ParametresQualite qualite) {}
 
     private static void record(
             BestSolutionChangedEvent<PlanningEvenement> event, List<Sample> samples, long[] firstInitialized) {

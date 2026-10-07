@@ -122,9 +122,9 @@
                 Cached per step, the filter runs once over the seats and the
                 draw is over the short list — empty, the selector says so at
                 once. Same seed, feasibility phase alone, this machine:
-                scenario (hard run of days) 138 s -> 76 s, festival-hivernal
-                142 s -> 77 s; 1 177 -> 3 092 and 956 -> 1 069 evaluations
-                per second.
+                a real sixteen-day grid of 4 057 seats 138 s -> 76 s,
+                festival-hivernal 142 s -> 77 s; 1 177 -> 3 092 and 956 ->
+                1 069 evaluations per second.
             -->
             <changeMoveSelector>
                 <filterClass>dev.sylvain.planning.solver.EligibleAnimateurMoveFilter$ChangeMoveFilter</filterClass>
