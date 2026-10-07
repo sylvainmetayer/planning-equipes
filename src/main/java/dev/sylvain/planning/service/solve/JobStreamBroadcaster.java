@@ -33,8 +33,14 @@ public class JobStreamBroadcaster {
      * Signals a transition. Called at the end of the state changes of
      * {@link SolverJobService}, never in the middle of one: a subscriber reads
      * the state back synchronously, and must not see a half-applied hand-over.
+     *
+     * <p>Synchronized: the solver thread announces the first feasible plan
+     * (outside the service monitor) while a request thread may be announcing a
+     * submit, and a {@link BroadcastProcessor} must not see two {@code onNext}
+     * at once. Nothing reached from {@code onNext} takes the service monitor —
+     * the stream reads the state on a worker thread — so the lock is a leaf.</p>
      */
-    public void publish() {
+    public synchronized void publish() {
         changes.onNext(version.incrementAndGet());
     }
 

@@ -107,12 +107,32 @@ class SolverConfigurationBudgetTest {
         }
     }
 
-    /** Since ADR 0081 a problem gets a factory of its own: its seats size the plateau's gain. */
+    /**
+     * Only the seats the search can move size the gain: the frozen past and
+     * the locks are pinned, and a re-solve late in the event would otherwise
+     * be asked a gain only the whole plan could give.
+     */
     @Test
-    void aProblemGetsItsOwnFactory() {
-        PlanningEvenement problem = new PlanningEvenement(null, List.of(), List.of());
-        assertThat(configuration.resolveSolverFactory(SolveBudget.DEFAULT, problem))
-                .isNotSameAs(configuration.resolveSolverFactory(SolveBudget.DEFAULT));
+    void pinnedSeatsDoNotSizeThePlateauGain() {
+        String profiled = "%test." + SolverConfiguration.PLATEAU_GAIN_PROPERTY;
+        System.setProperty(profiled, "0.25");
+        try {
+            SolverConfiguration sized = new SolverConfiguration(
+                    900L,
+                    180L,
+                    ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
+                    new EmptyReferenceData(),
+                    ConfigProvider.getConfig());
+            List<PosteAffectation> postes = IntStream.range(0, 4000)
+                    .mapToObj(i -> new PosteAffectation("p" + i, null, null))
+                    .toList();
+            postes.subList(0, 2400).forEach(poste -> poste.setVerrouille(true));
+
+            assertThat(sized.plateauGainMedium(new PlanningEvenement(null, List.of(), postes)))
+                    .isEqualTo(400L);
+        } finally {
+            System.clearProperty(profiled);
+        }
     }
 
     /** Zero keeps the strict plateau: no threshold at all. */
@@ -162,13 +182,5 @@ class SolverConfigurationBudgetTest {
 
         assertThat(termination.getSecondsSpentLimit()).isEqualTo(60L);
         assertThat(termination.getTerminationConfigList()).isNullOrEmpty();
-    }
-
-    @Test
-    void theSharedFactoryServesOnlyTheDefaultBudget() {
-        assertThat(configuration.resolveSolverFactory(new SolveBudget(900L, 300L, null)))
-                .isSameAs(configuration.resolveSolverFactory(SolveBudget.DEFAULT));
-        assertThat(configuration.resolveSolverFactory(new SolveBudget(900L, 60L, null)))
-                .isNotSameAs(configuration.resolveSolverFactory(SolveBudget.DEFAULT));
     }
 }

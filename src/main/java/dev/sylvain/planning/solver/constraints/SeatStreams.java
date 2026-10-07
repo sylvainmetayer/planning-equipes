@@ -14,7 +14,10 @@ import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * The streams every rule reads the seats through, built <b>once</b> per
@@ -40,9 +43,27 @@ import java.util.List;
  * <p>Each family's {@code define(factory)} builds a {@code SeatStreams} of its
  * own when called alone — the per-constraint unit tests do that — and
  * {@code PlanningConstraintProvider} hands one instance to all of them, which
- * is where the sharing across families happens. Nothing here changes what a
- * rule counts: a rule reads the same seats, grouped the same way, and the
- * score of a plan is the same to the point.</p>
+ * is where the sharing across families happens.</p>
+ *
+ * <p><b>What the sharing changed, and what it did not.</b> On a plan whose
+ * seats all carry a stand, a dated timeslot and its hours — every plan the
+ * application builds — the rules count exactly what they counted, and a solve
+ * follows the same trajectory move for move (measured, see
+ * {@code docs/developpement.md}). Two readings moved on purpose:</p>
+ * <ul>
+ *   <li>{@code favoriserMixiteDesNiveaux} reads the line through
+ *       {@link #stillHeld()}, as {@code standComplexeAvecReferent} and
+ *       {@code repartitionMineursParCreneau} already did: the origin of a seat
+ *       split on the day (ADR 0066) is no longer counted as present for the
+ *       rest of the timeslot. A referent who left at 09:20 is no referent for
+ *       the afternoon.</li>
+ *   <li>A seat missing its stand, its date or its start hour — data the
+ *       application never builds — is left out of every rule reading
+ *       {@link #timed()}, where a few rules used to keep it with fewer
+ *       guards (the meal break read the effective start, the run of days
+ *       needed a timeslot only). Such a seat has no place in time to measure,
+ *       and was already left out by the legal caps.</li>
+ * </ul>
  */
 public final class SeatStreams {
 
@@ -56,6 +77,7 @@ public final class SeatStreams {
     private QuadConstraintStream<Animateur, LocalDate, List<PosteAffectation>, FenetreRepas> daysWithMeals;
     private BiConstraintStream<Animateur, List<PosteAffectation>> perAnimateur;
     private TriConstraintStream<Stand, Creneau, List<PosteAffectation>> lines;
+    private final Map<String, Object> derived = new HashMap<>();
 
     public SeatStreams(ConstraintFactory factory) {
         this.factory = factory;
@@ -154,6 +176,18 @@ public final class SeatStreams {
                     .groupBy(PosteAffectation::getStand, PosteAffectation::getCreneau, ConstraintCollectors.toList());
         }
         return lines;
+    }
+
+    /**
+     * A stream derived from the ones above by a family, built once under
+     * {@code key} and handed to every rule that asks for it — the same sharing
+     * as the streams of this class, for a shape only one family knows (the
+     * day folded to its two ends, {@code QualiteConstraints.journees}, read by
+     * four rules of two families).
+     */
+    @SuppressWarnings("unchecked")
+    <T> T derived(String key, Supplier<T> build) {
+        return (T) derived.computeIfAbsent(key, k -> build.get());
     }
 
     /** The day number of a day's seats — one per date, see {@code Creneau.assignerJours}. */

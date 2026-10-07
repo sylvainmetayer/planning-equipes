@@ -1,6 +1,6 @@
 # 0049 — La règle dure des jours d'affilée se cherche par jours entiers
 
-- **Statut** : accepté, implémenté ; le cas d'un plan publié est prolongé par [0067](0067-la-faisabilite-avant-la-stabilite-apres-publication.md), l'ordre de construction par [0068](0068-sous-la-regle-dure-la-construction-suit-le-calendrier.md) ; le point 4 est révisé par [0079](0079-la-phase-de-faisabilite-tire-sur-une-liste-par-pas-et-reconstruit-rarement.md), qui étend le poids 0,02 à toute édition
+- **Statut** : accepté, implémenté ; le cas d'un plan publié est prolongé par [0067](0067-la-faisabilite-avant-la-stabilite-apres-publication.md), l'ordre de construction par [0068](0068-sous-la-regle-dure-la-construction-suit-le-calendrier.md) ; le point 4 est révisé par [0079](0079-la-phase-de-faisabilite-tire-sur-une-liste-par-pas-et-reconstruit-rarement.md), qui étend le poids 0,02 à toute édition et retire `HardRunCapSearch`
 - **Date** : septembre 2026
 - **Portée** : solveur (phase de faisabilité, mouvement de relocalisation à travers la semaine)
 - **Prolonge** : [0045](0045-le-niveau-de-la-regle-des-jours-d-affilee.md)
@@ -100,8 +100,7 @@ pour l'édition. Le seuil lu est `joursConsecutifsMax`, celui de la règle.
 4. **Le *ruin and recreate* de la phase de faisabilité devient rare** :
    poids 0,02 contre 1 pour chacun des autres sélecteurs
    (`HardRunCapSearch`, appliqué à la résolution comme
-   `LargeProblemConstruction` ; depuis [0079](0079-la-phase-de-faisabilite-tire-sur-une-liste-par-pas-et-reconstruit-rarement.md),
-   c'est le poids de `solverConfig.xml` pour toute édition). Il reste tiré, pour les chaînes à l'heure du
+   `LargeProblemConstruction`). Il reste tiré, pour les chaînes à l'heure du
    trou qu'il est seul à trouver ; le temps va aux chaînes par jours entiers.
    Le retirer tout à fait atteignait la faisabilité plus vite encore sur
    l'édition mesurée ; 0,02 garde le mouvement de 0025 à portée.
@@ -159,5 +158,5 @@ dans le budget.
   faisabilité propre à cette règle ; l'analyse de faisabilité existante ne la
   connaît pas.
 - `WeekRelocationMoveIteratorFactoryTest` tient les trois formes du mouvement
-  sous la règle et le simple remplissage d'origine sans elle ; le poids est
-  celui de `solverConfig.xml` depuis [0079](0079-la-phase-de-faisabilite-tire-sur-une-liste-par-pas-et-reconstruit-rarement.md).
+  sous la règle et le simple remplissage d'origine sans elle ; `HardRunCapSearchTest`
+  la condition et le poids.

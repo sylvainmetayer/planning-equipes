@@ -1969,12 +1969,6 @@ export interface ScoreTrace {
   dureeMs: number;
   /** True once the run is over, whichever way it ended. */
   termine: boolean;
-  /**
-   * How far into the run the best plan first became feasible, or null until it
-   * does: the mark where the plan became usable, read on the announcements
-   * rather than on the sampled points.
-   */
-  faisableAMs?: number | null;
   points: ScorePoint[];
 }
 

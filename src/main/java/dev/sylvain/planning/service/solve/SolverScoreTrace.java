@@ -97,11 +97,6 @@ public class SolverScoreTrace {
      *                    edge, which the points cannot give (see above); frozen
      *                    once the run is over
      * @param termine     whether the run is over: the curve stops here
-     * @param faisableAMs how far into the run the best plan first became
-     *                    feasible — zero hard, every seat filled and every
-     *                    hard rule held — or {@code null} until it does. Read
-     *                    on the announcements, not on the sampled points, so
-     *                    it is exact where the curve is approximate
      */
     public record Trace(
             String jobId,
@@ -110,7 +105,6 @@ public class SolverScoreTrace {
             long intervalleMs,
             long dureeMs,
             boolean termine,
-            Long faisableAMs,
             List<Point> points) {}
 
     private final List<Point> points = new ArrayList<>();
@@ -125,8 +119,6 @@ public class SolverScoreTrace {
     private long dureeFinaleMs;
     /** Latest best announced, recorded or not: what {@link #finish} flushes. */
     private Point dernier;
-    /** The instant of the first feasible best, on the curve's clock; {@code null} until reached. */
-    private Long faisableAMs;
 
     private long dernierAjoutMs;
 
@@ -179,7 +171,6 @@ public class SolverScoreTrace {
         this.debut = Instant.now();
         this.dureeFinaleMs = 0;
         this.dernier = null;
-        this.faisableAMs = null;
         this.dernierAjoutMs = Long.MIN_VALUE;
         this.generation++;
     }
@@ -204,9 +195,6 @@ public class SolverScoreTrace {
         Point point = new Point(
                 offsetMs + event.getTimeMillisSpent(), score.hardScore(), score.mediumScore(), score.softScore());
         dernier = point;
-        if (faisableAMs == null && score.isFeasible()) {
-            faisableAMs = point.tempsMs();
-        }
         if (points.isEmpty() || point.tempsMs() - dernierAjoutMs >= intervalleMs) {
             append(point);
         }
@@ -236,8 +224,7 @@ public class SolverScoreTrace {
         if (jobId == null) {
             return null;
         }
-        return new Trace(
-                jobId, editionId, generation, intervalleMs, dureeMs(), termine, faisableAMs, List.copyOf(points));
+        return new Trace(jobId, editionId, generation, intervalleMs, dureeMs(), termine, List.copyOf(points));
     }
 
     /**

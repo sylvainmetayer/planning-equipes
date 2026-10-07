@@ -108,6 +108,7 @@ final class SolveRunner {
             PlanningEvenement problem, SolveBudget budget, Consumer<Solver<PlanningEvenement>> onSolverReady) {
         prepareProblem(problem);
         FrozenPast.pin(problem.getPostes());
+        tellStartingScore(problem, onSolverReady);
         if (FeasibilityFirstSolve.applies(problem)) {
             return solveFeasibilityFirst(problem, budget, onSolverReady);
         }
@@ -117,6 +118,23 @@ final class SolveRunner {
             onSolverReady.accept(solver);
         }
         return new Solved(solver.solve(problem), null);
+    }
+
+    /**
+     * Scores a starting plan whose every seat is already held, and hands the
+     * score to a {@link SolveListener} — the one case Timefold announces
+     * nothing for until the plan improves (see there). A plan with an empty
+     * seat cannot be feasible, so it costs nothing to skip; one full score
+     * calculation otherwise, under the weights the problem was prepared with.
+     */
+    private void tellStartingScore(PlanningEvenement problem, Consumer<Solver<PlanningEvenement>> onSolverReady) {
+        if (!(onSolverReady instanceof SolveListener listener)
+                || problem.getPostes() == null
+                || problem.getPostes().isEmpty()
+                || problem.getPostes().stream().anyMatch(poste -> poste.getAnimateur() == null)) {
+            return;
+        }
+        listener.startingScore(configuration.solutionManager().update(problem));
     }
 
     /** A solved plan, and the report of its two stages when it had two; {@code null} otherwise. */

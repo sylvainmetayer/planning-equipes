@@ -372,7 +372,7 @@ export class SolverPage implements OnInit {
       void this.validations.reload();
       this.solvesLanded.update((count) => count + 1);
       void this.loadLastRun();
-      void this.chargerPointDeDepart();
+      void this.loadStartingPoint();
       // The solve rewrote both problem sources server-side (fresh feasibility
       // input and a new constraint analysis): re-read them for the summary.
       void this.problemes.reload();
@@ -405,7 +405,7 @@ export class SolverPage implements OnInit {
   ngOnInit(): void {
     void this.loadLastRun();
     void this.loadLastPublication();
-    void this.chargerPointDeDepart();
+    void this.loadStartingPoint();
   }
 
   /** Shared with the Contraintes screen: see `ProblemesStore.alerteReglesLegales`. */
@@ -750,26 +750,15 @@ export class SolverPage implements OnInit {
    */
   protected async onArreterSolveur(): Promise<void> {
     const job = this.jobs.activeJob();
-    if (!job || this.arretEnCours()) {
+    if (!job) {
       return;
     }
-    const confirme = await this.confirm.ask({
+    await this.stopJob({
       title: $localize`:@@solver.arreter:Arrêter le solveur`,
       message: $localize`:@@solver.arreterConfirm:Arrêter ${job.label}:jobLabel: en cours ? Le résultat partiel sera tout de même analysé et enregistré.`,
       confirmLabel: $localize`:@@solver.arreter:Arrêter le solveur`,
       danger: true,
     });
-    if (!confirme) {
-      return;
-    }
-    this.arretEnCours.set(true);
-    try {
-      await this.jobs.cancel(job.id);
-    } catch (error) {
-      this.output.set(errorPrefix(error));
-    } finally {
-      this.arretEnCours.set(false);
-    }
   }
 
   /**
@@ -779,16 +768,20 @@ export class SolverPage implements OnInit {
    * what is given up is quality, not seats.
    */
   protected async onStopAndKeep(): Promise<void> {
-    const job = this.jobs.activeJob();
-    if (!job || this.arretEnCours()) {
-      return;
-    }
-    const confirme = await this.confirm.ask({
+    await this.stopJob({
       title: $localize`:@@solver.faisable.arreter:Arrêter et garder ce plan`,
       message: $localize`:@@solver.faisable.arreterConfirm:Arrêter le calcul maintenant ? Le plan faisable atteint sera analysé et enregistré ; seule sa qualité restait à améliorer.`,
       confirmLabel: $localize`:@@solver.faisable.arreter:Arrêter et garder ce plan`,
     });
-    if (!confirme) {
+  }
+
+  /** The one stop flow both buttons share: ask, then cancel the running job, reporting a refusal. */
+  private async stopJob(dialog: Parameters<ConfirmService['ask']>[0]): Promise<void> {
+    const job = this.jobs.activeJob();
+    if (!job || this.arretEnCours()) {
+      return;
+    }
+    if (!(await this.confirm.ask(dialog))) {
       return;
     }
     this.arretEnCours.set(true);
@@ -802,7 +795,7 @@ export class SolverPage implements OnInit {
   }
 
   /** Best-effort like {@link loadLastRun}: without it the line under the buttons simply stays empty. */
-  private async chargerPointDeDepart(): Promise<void> {
+  private async loadStartingPoint(): Promise<void> {
     try {
       const statut: { assignments?: number } = await this.planningApi.persistedCount();
       this.affectationsEnregistrees.set(

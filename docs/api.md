@@ -459,26 +459,24 @@ Conséquence sur le flux : **une résolution en cours émet un événement à ch
 tick, même sans nouveau point** — c'est `dureeMs` qui bouge. L'événement est
 alors minuscule (`points: []`). Une courbe terminée, elle, se tait.
 
-### L'instant de faisabilité voyage deux fois
+### L'instant de faisabilité
 
 Le premier plan **faisable** — zéro dur — arrive souvent bien avant la fin du
 calcul, et c'est l'information que l'organisateur attend : à partir de là le
-planning est utilisable, le reste est de la qualité. Il est donc exposé deux
-fois, pour deux lecteurs :
+planning est utilisable, le reste est de la qualité. Le job le porte en
+`feasibleAtSeconds` (`JobView`, `statut_solveur` en MCP) : les secondes écoulées
+depuis le début du job, `null` tant que le plan ne l'est pas. C'est ce que lit
+le bandeau « Plan faisable depuis … » de la page Solveur, dont « Arrêter et
+garder ce plan » n'est que l'arrêt ordinaire du job — le solveur garde toujours
+le meilleur plan atteint. Un `state` est poussé sur le flux à cet instant, pour
+que le bandeau apparaisse sans attendre le poll suivant.
 
-- `faisableAMs` sur la courbe (`score` du flux et `GET /api/jobs/score`) :
-  l'instant exact, lu sur les annonces de Timefold et non sur les points
-  échantillonnés, pour marquer la courbe là où le plan est devenu faisable ;
-- `feasibleAtSeconds` sur le job (`JobView`, `statut_solveur` en MCP) : les
-  secondes écoulées depuis le début du job, `null` tant que le plan ne l'est
-  pas. C'est ce que lit le bandeau « Plan faisable depuis … » de la page
-  Solveur, dont « Arrêter et garder ce plan » n'est que l'arrêt ordinaire du
-  job — le solveur garde toujours le meilleur plan atteint. Une résolution
-  qui *part* d'un plan faisable (réamorcée, incrémentale) l'est dès ses
-  premières secondes, et le bandeau le dit tel quel.
-
-Un `state` est poussé sur le flux à cet instant, comme à chaque transition du
-job, pour que le bandeau apparaisse sans attendre le poll suivant.
+**Un plan de départ déjà faisable est signalé dès le départ.** Timefold
+n'annonce une meilleure solution que lorsqu'elle *change* : une résolution
+réamorcée ou incrémentale qui part d'un plan à zéro dur ne dirait rien avant sa
+première amélioration, ou jamais. Le plan de départ complet est donc noté une
+fois avant que le solveur démarre (`SolveListener`), et le job est faisable
+dès ses premières secondes.
 
 ### Deux bornes d'échantillonnage
 
