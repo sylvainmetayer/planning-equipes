@@ -95,6 +95,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0075](0075-quota-de-calcul-de-l-instance-dans-l-application.md) | Le nombre de calculs se borne dans l'application, pour toute l'instance : quota sur 60 minutes glissantes compté au lancement (file, solve synchrone, vérification du besoin, MCP compris) et file plafonnée, refus en `409` qui dit quand revenir, compteur en mémoire ; pas de limite au reverse proxy ni de `429` | Accepté · prolonge 0051 |
 | [0076](0076-journal-des-connexions-admin-par-instance.md) | Les connexions administrateur, leurs échecs et les verrouillages du form login vont dans un journal de l'instance, sans édition, horodatage et adresse seulement — jamais ce qui a été saisi ; rétention de l'historique, hors du dump SQL | Accepté |
 | [0078](0078-echange-de-journees-plutot-que-mouvements-pillar.md) | La seconde recherche locale échange des journées entières entre deux animateurs du même jour, couple choisi plutôt que tiré ; les *pillar moves* de Timefold, mesurés, sont écartés, et l'échange de deux journées identiques est gardé | Accepté · complète 0049 |
+| [0079](0079-la-phase-de-faisabilite-tire-sur-une-liste-par-pas-et-reconstruit-rarement.md) | La phase de faisabilité tire ses sièges filtrés sur une liste mise en cache par pas, et joue le *ruin and recreate* à poids 0,02 pour toute édition ; `HardRunCapSearch` disparaît | Accepté · révise 0049, complète 0025 et 0067 |
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,

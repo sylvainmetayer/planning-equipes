@@ -180,8 +180,24 @@
                 Timefold would honour there is an entity-dependent value range
                 on PosteAffectation — a model change, not a configuration one.
             -->
+            <!--
+                Weight 0.02, not 1.0: every evaluation of this move runs a
+                construction heuristic over 3 to 10 seats x every animateur —
+                about 150 ms against 0.3 ms for any other move — so drawn one
+                time in six it took nearly all of the phase (ADR 0049 measured
+                it at 29 evaluations a second). The editions holding the run
+                of days hard already ran it at this weight (HardRunCapSearch,
+                ADR 0049); measured on festival-hivernal, which does not hold
+                it and used to reach feasibility in 142 s: 77 s with the
+                step-cached selectors above, 42 s once this move is rare too,
+                at 1 069 against 3 000+ evaluations a second. The hour-level
+                chain of ADR 0025 stays reachable, about once in 250 draws,
+                and a solve after publication no longer needs it to be
+                frequent: the stability rule is suspended until feasibility
+                (ADR 0067), so change and swap walk that chain themselves.
+            -->
             <ruinRecreateMoveSelector>
-                <fixedProbabilityWeight>1.0</fixedProbabilityWeight>
+                <fixedProbabilityWeight>0.02</fixedProbabilityWeight>
                 <minimumRuinedCount>3</minimumRuinedCount>
                 <maximumRuinedCount>10</maximumRuinedCount>
                 <entitySelector>

@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 import org.eclipse.microprofile.config.Config;
 
 /**
@@ -50,9 +49,6 @@ final class SolverConfiguration {
      * {@link ConstraintDiagnosticService}.
      */
     private final SolutionManager<PlanningEvenement, HardMediumSoftScore> solutionManager;
-
-    /** The factory of an edition held to a hard run of days, at the default budget; built on first use. */
-    private final AtomicReference<SolverFactory<PlanningEvenement>> hardRunCapSolverFactory = new AtomicReference<>();
 
     private final ConstraintDiagnosticService constraintDiagnosticService;
     private final ReferenceData referenceDataService;
@@ -344,26 +340,13 @@ final class SolverConfiguration {
 
     /**
      * {@link #resolveSolverFactory(SolveBudget)}, for one problem: a problem large
-     * enough for {@link LargeProblemConstruction}, or held to a hard run of days
-     * ({@link HardRunCapSearch}), gets a factory of its own, built from the same
-     * XML adapted by {@link #adaptToProblem} and with the same termination as the
-     * shared one would have had. The hard-run factory at the default budget
-     * depends on nothing else about the problem, so it is built once and kept,
-     * like the shared one: an edition that holds the rule solves again and again.
+     * enough for {@link LargeProblemConstruction} gets a factory of its own,
+     * built from the same XML adapted by {@link #adaptToProblem} and with the
+     * same termination as the shared one would have had.
      */
     SolverFactory<PlanningEvenement> resolveSolverFactory(SolveBudget budget, PlanningEvenement problem) {
-        boolean large = LargeProblemConstruction.applies(problem);
-        boolean hardRunCap = HardRunCapSearch.applies(problem);
-        if (!large && !hardRunCap) {
+        if (!LargeProblemConstruction.applies(problem)) {
             return resolveSolverFactory(budget);
-        }
-        if (!large && isDefault(budget)) {
-            SolverFactory<PlanningEvenement> cached = hardRunCapSolverFactory.get();
-            if (cached == null) {
-                cached = adaptedSolverFactory(budget, problem);
-                hardRunCapSolverFactory.set(cached);
-            }
-            return cached;
         }
         return adaptedSolverFactory(budget, problem);
     }
@@ -453,9 +436,6 @@ final class SolverConfiguration {
     static void adaptToProblem(SolverConfig solverConfig, PlanningEvenement problem) {
         if (LargeProblemConstruction.applies(problem)) {
             LargeProblemConstruction.adapt(solverConfig);
-        }
-        if (HardRunCapSearch.applies(problem)) {
-            HardRunCapSearch.adapt(solverConfig);
         }
     }
 

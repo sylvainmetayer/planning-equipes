@@ -57,8 +57,8 @@ gagne de façon stable.
 ## Décision
 
 **(E).** Quand `maxJoursConsecutifsTravaillesDur` est allumée pour l'édition
-(la condition de `HardRunCapSearch`, lue par
-`WeekRelocationMoveIteratorFactory.hardRunCap`), la construction place les
+(la condition lue par `WeekRelocationMoveIteratorFactory.hardRunCap`), la
+construction place les
 sièges **par date croissante**, puis par rareté à l'intérieur d'un même jour.
 Les séries se construisent dans l'ordre où la règle les compte : un jour déjà
 long bloque le suivant, pas le précédent. Les sièges que la construction
