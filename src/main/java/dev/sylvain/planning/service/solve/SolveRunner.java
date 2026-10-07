@@ -121,17 +121,18 @@ final class SolveRunner {
     }
 
     /**
-     * Scores a starting plan whose every seat is already held, and hands the
-     * score to a {@link SolveListener} — the one case Timefold announces
-     * nothing for until the plan improves (see there). A plan with an empty
-     * seat cannot be feasible, so it costs nothing to skip; one full score
-     * calculation otherwise, under the weights the problem was prepared with.
+     * Scores the starting plan once and hands the score to a
+     * {@link SolveListener} — the one case Timefold announces nothing for
+     * until the plan improves (see there). Every starting plan is scored, holes
+     * included: an empty seat is not always a breach — a past hole is history
+     * ({@code posteDoitEtrePourvu}, ADR 0044) — and the score, not a shortcut,
+     * says whether the plan is feasible. One full score calculation, under the
+     * weights the problem was prepared with, in front of a solve of minutes.
      */
     private void tellStartingScore(PlanningEvenement problem, Consumer<Solver<PlanningEvenement>> onSolverReady) {
         if (!(onSolverReady instanceof SolveListener listener)
                 || problem.getPostes() == null
-                || problem.getPostes().isEmpty()
-                || problem.getPostes().stream().anyMatch(poste -> poste.getAnimateur() == null)) {
+                || problem.getPostes().isEmpty()) {
             return;
         }
         listener.startingScore(configuration.solutionManager().update(problem));

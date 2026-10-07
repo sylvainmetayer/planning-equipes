@@ -168,40 +168,38 @@ public class SolverJobTasks {
     }
 
     private void handOver(SolverJob job, Solver<PlanningEvenement> solver, AtomicBoolean followed) {
-        {
-            // Holding it first: attachSolver honours a cancel that arrived
-            // while the problem was being built, by terminating the solver
-            // before it ever starts.
-            job.attachSolver(solver);
-            // Timefold clears a stop requested before solve() started — a
-            // cancel that raced the hand-over, or one that reached the second
-            // stage of a two-stage solve before it began. Asked again at each
-            // new best, the job's own flag, which nothing clears, has the last
-            // word.
-            solver.addEventListener(event -> {
-                if (job.isStopRequested() && !solver.isTerminateEarly()) {
-                    solver.terminateEarly();
-                }
-                // The first feasible best plan is the moment the organiser is
-                // told the plan is usable.
-                if (event.isNewBestSolutionInitialized()
-                        && event.getNewBestScore() != null
-                        && event.getNewBestScore().isFeasible()) {
-                    markFeasible(job);
-                }
-            });
-            if (job.isCancelRequested()) {
-                // And then there is nothing to follow. Starting a trace anyway
-                // would clear the previous run's curve and replace it with an
-                // empty one — the screen would announce "no solution yet" for a
-                // solve that finished minutes ago.
-                return;
+        // Holding it first: attachSolver honours a cancel that arrived
+        // while the problem was being built, by terminating the solver
+        // before it ever starts.
+        job.attachSolver(solver);
+        // Timefold clears a stop requested before solve() started — a
+        // cancel that raced the hand-over, or one that reached the second
+        // stage of a two-stage solve before it began. Asked again at each
+        // new best, the job's own flag, which nothing clears, has the last
+        // word.
+        solver.addEventListener(event -> {
+            if (job.isStopRequested() && !solver.isTerminateEarly()) {
+                solver.terminateEarly();
             }
-            if (followed.compareAndSet(false, true)) {
-                scoreTrace.follow(job.getId(), job.getEditionId(), solver);
-            } else {
-                scoreTrace.followNext(job.getId(), solver);
+            // The first feasible best plan is the moment the organiser is
+            // told the plan is usable.
+            if (event.isNewBestSolutionInitialized()
+                    && event.getNewBestScore() != null
+                    && event.getNewBestScore().isFeasible()) {
+                markFeasible(job);
             }
+        });
+        if (job.isCancelRequested()) {
+            // And then there is nothing to follow. Starting a trace anyway
+            // would clear the previous run's curve and replace it with an
+            // empty one — the screen would announce "no solution yet" for a
+            // solve that finished minutes ago.
+            return;
+        }
+        if (followed.compareAndSet(false, true)) {
+            scoreTrace.follow(job.getId(), job.getEditionId(), solver);
+        } else {
+            scoreTrace.followNext(job.getId(), solver);
         }
     }
 }

@@ -976,7 +976,9 @@ public class SolverJobService {
          * Seconds into the run at which the best plan first became feasible
          * (zero hard); {@code null} until then. The first thing the screen
          * tells the organiser while the solve goes on: from here the plan is
-         * usable, and what follows is quality.
+         * usable, and what follows is quality. Not persisted, like the
+         * result: the row of a job stores the intention to replay, never what
+         * the run produced, and a restart forgets both together.
          */
         private volatile Long feasibleAtSeconds;
 
