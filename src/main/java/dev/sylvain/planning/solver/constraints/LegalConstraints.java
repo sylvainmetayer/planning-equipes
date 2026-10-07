@@ -1131,16 +1131,13 @@ public final class LegalConstraints {
      * of seven days at each move; grouping by day first means a move re-measures
      * one day and re-adds seven numbers.</p>
      *
-     * <p>Built once per constraint rather than shared between them:
-     * {@code ConstraintToggleSupport.actif} differs rule by rule, so the
-     * upstream stream is not the same object — three extra group nodes on
-     * groups of a dozen seats. Measured against the same run without them, on
-     * the same machine, same seed: {@code gamme-25} 14 303 against 15 175 move
-     * evaluations per second (−5.7 %), {@code extreme-02} 24 988 against
-     * 25 985 (−3.8 %), {@code festival-hivernal} 5 313 against 5 540
-     * (−4.1 %). The first two end on the same score after the same number of
-     * steps, the third reaches zero hard either way. A few percent, for a
-     * weekly cap that stops contradicting the daily one.</p>
+     * <p>Shared between them, and with every other rule about a day, through
+     * {@link SeatStreams#daysWithLegal()}: it used to be built once per rule,
+     * because the toggle sat at the head of each stream and kept the heads
+     * apart — three extra group nodes measured at 4 to 6 % of the move
+     * evaluation speed. The toggle now sits at the tail, and the bracket (the
+     * age regime of the animateur on that date) is read on the day's tuple
+     * rather than on each seat, so every rule reads one and the same list.</p>
      *
      * <p>A seat whose créneau carries no date is dropped, as
      * {@link #dureeHebdomadaireMaxDeuxSemaines} already did: a day is the

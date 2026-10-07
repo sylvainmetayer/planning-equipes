@@ -68,7 +68,9 @@
   }
   @if (planFaisableDepuis()) {
     <mat-card-content>
-      <div class="solver-faisable" role="status" aria-live="polite">
+      <!-- No live region: the duration ticks every second, and a screen
+           reader would read it every second. The stop button is the news. -->
+      <div class="solver-faisable">
         <mat-icon aria-hidden="true">check_circle</mat-icon>
         <p class="solver-faisable-phrase">{{ planFaisableDepuis() }}</p>
         <button matButton="filled" type="button" [disabled]="arretEnCours()" (click)="onArreterEtGarder()">
