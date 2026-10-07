@@ -671,10 +671,14 @@ l'épingler : la table ne porte que les décisions que quelqu'un a prises, comme
 une pondération remise à son défaut.
 
 L'état est injecté comme fait de planification et consulté par
-`ConstraintToggleSupport.actif(...)` **juste après le `forEach` initial, sur le
-flux le plus étroit possible** : une contrainte pilotée par `ContrainteAdHoc`
-branche le toggle sur les quelques faits ad hoc, pas sur les milliers de postes.
-C'est là, et pas seulement dans le service, que le défaut du catalogue est lu —
+`ConstraintToggleSupport.actif(...)` **en queue de flux, sur les écarts**, juste
+avant la pénalité : les écarts d'une règle se comptent en dizaines là où ses
+sièges se comptent en milliers, et un gardien posé en tête de flux rendait la
+tête impartageable entre règles (voir `SeatStreams` et
+[`developpement.md`](developpement.md#un-nœud-par-agrégation-partagé-entre-les-règles)).
+Une contrainte pilotée par `ContrainteAdHoc` garde son gardien sur les quelques
+faits ad hoc. C'est là, et pas seulement dans le service, que le défaut du
+catalogue est lu —
 un harnais Java qui construit son propre problème obtient donc exactement ce
 qu'obtient une édition à laquelle personne n'a touché.
 
@@ -1732,7 +1736,9 @@ ci-dessus ; ceci est la liste, complète par construction.
 
 ## Ajouter une contrainte
 
-1. Implémenter dans la classe de famille, en enrobant le stream initial de
+1. Implémenter dans la classe de famille, à partir d'un flux de `SeatStreams`
+   (les sièges tenus, par jour, par animateur, par ligne stand × créneau) et en
+   enrobant le flux **final** — les écarts, juste avant `penalize` — de
    `ConstraintToggleSupport.actif(...)`.
 2. L'enregistrer dans `PlanningConstraintProvider.defineConstraints`.
 3. Ajouter sa description métier dans `ConstraintCatalog` — niveau, catégorie,
