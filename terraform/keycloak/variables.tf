@@ -174,6 +174,17 @@ variable "client_mcp_public_redirect_uris" {
   EOT
   type        = list(string)
   default     = ["http://127.0.0.1/*", "http://localhost/*"]
+
+  # Ce client ne demande aucun secret : l'URI de retour est tout ce qui dit où
+  # part le code. Une boucle locale, ou une URI https dont l'hôte est écrit en
+  # entier — jamais un joker seul, jamais de http vers un hôte distant.
+  validation {
+    condition = alltrue([
+      for uri in var.client_mcp_public_redirect_uris :
+      can(regex("^(https://[A-Za-z0-9.-]+(:[0-9]+)?/|http://(127\\.0\\.0\\.1|localhost|\\[::1\\])(:[0-9]+)?/)", uri))
+    ])
+    error_message = "client_mcp_public_redirect_uris : une boucle locale (http://127.0.0.1/…, http://localhost/…) ou une URI https à l'hôte complet, suivie d'un chemin."
+  }
 }
 
 # -------------------------------------------------------------------- durées --

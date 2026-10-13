@@ -84,7 +84,7 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
 
     @Override
     public Uni<SecurityIdentity> authenticate(RoutingContext context, IdentityProviderManager identityProviderManager) {
-        if (!context.request().path().startsWith("/mcp")) {
+        if (!isMcpTransport(context.normalizedPath())) {
             return Uni.createFrom().nullItem();
         }
         if (config.apiKey().isEmpty()
@@ -148,9 +148,9 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
      */
     @Override
     public Uni<ChallengeData> getChallenge(RoutingContext context) {
-        String path = context.request().path();
+        String path = context.normalizedPath();
         boolean cedeLaMain = oidcTenantEnabled && path.startsWith(CHEMIN_CONNEXION_OIDC)
-                || oidcMcpTenantEnabled && path.startsWith("/mcp");
+                || oidcMcpTenantEnabled && isMcpTransport(path);
         return cedeLaMain ? Uni.createFrom().nullItem() : Uni.createFrom().item(new ChallengeData(401));
     }
 
@@ -164,6 +164,20 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
      * {@code /mcp} (see {@link #authenticate}), and the form mechanism keeps
      * handling its cookie and {@code /j_security_check}.
      */
+    /**
+     * The transport and nothing that merely starts like it: the path the
+     * permission check reads — normalized, dot segments resolved — compared
+     * exactly or as a parent, the way {@code McpTenantResolver} and
+     * {@code McpRateLimiter} do. The raw path with a bare {@code startsWith}
+     * would let the key authenticate {@code /mcp/../api/…} or a future
+     * {@code /mcp-console}: harmless today, the identity carrying {@code mcp}
+     * and nothing else, but one {@code authenticated} route away from
+     * opening it.
+     */
+    static boolean isMcpTransport(String path) {
+        return path != null && (path.equals("/mcp") || path.startsWith("/mcp/"));
+    }
+
     @Override
     public int getPriority() {
         return 2000;
