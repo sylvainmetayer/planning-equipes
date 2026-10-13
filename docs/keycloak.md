@@ -460,7 +460,7 @@ détail côté application est dans [`mcp.md`](mcp.md).
 | --- | --- | --- |
 | `planning-mcp` | Personne : c'est la **ressource**, l'audience que `/mcp` exige | Aucun |
 | `planning-mcp-client` | Un assistant qui tourne sans humain ; rôle `mcp` sur son compte de service | `client_credentials` |
-| `planning-mcp-public` | Un client MCP de bureau qui ouvre un navigateur ; la personne doit porter `mcp` | Code + PKCE, boucle locale |
+| `planning-mcp-public` | Un client MCP de bureau qui ouvre un navigateur ; la personne doit porter `mcp` | Code + PKCE, boucle locale ou URI https à l'hôte complet, écran de consentement |
 
 ```bash
 # Client automatisé, realm de développement
@@ -770,4 +770,10 @@ reste à la charge de la CI et de la première mise en production.
 - **Le realm de développement ouvre l'enregistrement dynamique de clients**
   (pour les clients MCP qui l'exigent) ; la production le garde fermé tant que
   `dynamic_client_registration` n'est pas allumé en Terraform, avec une liste
-  d'hôtes de confiance.
+  d'hôtes de confiance. Des deux côtés, un client enregistré ainsi passe par
+  l'écran de consentement (politique « Consent Required »), comme
+  `planning-mcp-public` : sans secret, c'est le seul écran qui dise quel client
+  reçoit le code. La connexion authentifie la personne, elle ne nomme pas le
+  client ; un lien forgé avec un `client_id` public et une URI de retour qu'un
+  éditeur partage entre ses clients remettrait sinon les jetons d'une personne
+  déjà connectée à qui a ouvert le flux, PKCE compris (RFC 9700, § 4.10).

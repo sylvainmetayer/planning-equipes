@@ -249,6 +249,24 @@ class RealmPlanningStructuralTest {
                         .asText())
                 .as("a public client without PKCE hands its code to whoever intercepts it")
                 .isEqualTo("S256");
+        assertThat(interactive.path("consentRequired").asBoolean())
+                .as("without a secret, the consent screen is what names the client that gets the code")
+                .isTrue();
+    }
+
+    /**
+     * The development realm leaves dynamic client registration open — a client
+     * registered by anyone still goes through the consent screen, or nothing
+     * ties the person's agreement to the client that receives their code.
+     */
+    @Test
+    void aClientRegisteredDynamicallyAsksForConsent() {
+        List<String> anonymous = stream(realm.path("components")
+                        .path("org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy"))
+                .filter(policy -> "anonymous".equals(policy.path("subType").asText()))
+                .map(policy -> policy.path("providerId").asText())
+                .toList();
+        assertThat(anonymous).contains("consent-required");
     }
 
     /**

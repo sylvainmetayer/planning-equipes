@@ -261,6 +261,15 @@ resource "keycloak_openid_client" "mcp_public" {
 
   valid_redirect_uris        = var.client_mcp_public_redirect_uris
   pkce_code_challenge_method = "S256"
+
+  # Le seul écran qui dise quel client demande l'accès. Celui de la connexion
+  # authentifie la personne ; il ne dit ni quel client MCP réclame le code, ni
+  # où ce code part. Sans lui, un lien forgé avec ce client_id — public, il
+  # circule dans chaque redirection — et une URI de retour partagée par un
+  # éditeur remettrait les jetons d'une personne déjà connectée à qui a lancé
+  # le flux : PKCE ne protège pas un flux que l'attaquant a lui-même ouvert
+  # (RFC 9700, § 4.10).
+  consent_required = true
 }
 
 resource "keycloak_openid_client" "provisioning" {
@@ -773,4 +782,18 @@ resource "keycloak_realm_client_registration_policy" "trusted_hosts" {
     "host-sending-registration-request-must-match" = "true"
     "client-uris-must-match"                       = "true"
   }
+}
+
+# Un client enregistré par le DCR passe par l'écran de consentement, quoi qu'il
+# déclare : rien ne lie sinon l'accord de la personne au client qui recevra son
+# code. Keycloak pose cette politique par défaut à la création d'un realm ; la
+# déclarer ici la garde même sur un realm qui l'aurait perdue.
+resource "keycloak_realm_client_registration_policy" "consent_required" {
+  count = var.dynamic_client_registration ? 1 : 0
+
+  realm_id    = keycloak_realm.planning.id
+  name        = "Consent Required"
+  provider_id = "consent-required"
+  sub_type    = "anonymous"
+  config      = {}
 }

@@ -260,6 +260,31 @@ class TerraformKeycloakStructuralTest {
                 .isEqualTo("true");
     }
 
+    /**
+     * Who receives the code is said on a consent screen, and nowhere else.
+     *
+     * <p>The interactive MCP client has no secret, and its {@code client_id}
+     * travels in every redirect: a forged link with it, a redirect URI an
+     * editor shares between its customers, and a person already signed in
+     * would hand that person's tokens to whoever opened the flow — PKCE
+     * included, since the attacker holds the verifier (RFC 9700, § 4.10). The
+     * consent screen is the one place that names the client before the code
+     * leaves. Same for a client registered dynamically, and the redirect URIs
+     * stay a loopback or a fully named https host.</p>
+     */
+    @Test
+    void anMcpClientWithoutASecretAsksForConsent() {
+        assertThat(attribute("keycloak_openid_client.mcp_public", "consent_required"))
+                .isEqualTo("true");
+        assertThat(attribute("keycloak_realm_client_registration_policy.consent_required", "provider_id"))
+                .isEqualTo("\"consent-required\"");
+        assertThat(attribute("keycloak_realm_client_registration_policy.consent_required", "sub_type"))
+                .isEqualTo("\"anonymous\"");
+        assertThat(KeycloakConfigFiles.read(Path.of("terraform/keycloak/variables.tf")))
+                .as("the redirect URIs of the interactive client are validated")
+                .contains("for uri in var.client_mcp_public_redirect_uris");
+    }
+
     /** The client ids the application defaults to are the ones Terraform creates by default. */
     @Test
     void theClientsAreTheOnesTheApplicationNames() {
