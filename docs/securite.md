@@ -777,7 +777,10 @@ Le scan de l'image dans `docker-ghcr.yml` **barre la publication** : une image
 qui porte une CVE corrigeable HIGH ou CRITICAL ne reçoit ni signature, ni
 `:main`, ni numéro de version — elle reste sous son seul `sha-…`, pour le
 diagnostic. Le cas ordinaire se règle en reconstruisant : l'image de base
-`eclipse-temurin` est republiée quand Ubuntu corrige. Une version de release
+`eclipse-temurin` est republiée quand Ubuntu corrige. Ce qui ne vient d'aucun
+paquet n'en profite pas : `pebble`, binaire Go que l'image de base installe à
+côté d'`apt` et que l'application ne lance jamais, est retiré par le
+`Dockerfile` plutôt qu'attendu. Une version de release
 est construite **sans aucun cache** (couches et `.m2`) : un cache GitHub peut
 s'écrire depuis d'autres jobs du dépôt, et une version signée ne doit rien en
 hériter.
