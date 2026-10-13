@@ -40,6 +40,12 @@ RUN apt-get update \
     && apt-get purge -y curl gnupg \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/* \
+# `pebble`, le gestionnaire de services de Canonical, arrive avec l'image de
+# base hors de tout paquet : ni `apt` ni la reconstruction ne le mettent à jour,
+# et son binaire Go embarque une bibliothèque standard que le scan Trivy trouve
+# vulnérable. L'application ne le lance jamais (le point d'entrée est `java`) :
+# il est retiré plutôt qu'attendu d'une republication de l'image de base.
+    && rm -rf /usr/bin/pebble /var/lib/pebble \
 # En dehors du répertoire de sauvegarde, l'application n'écrit rien sur le
 # disque, et n'ouvre qu'un port non privilégié : elle n'a aucune raison de
 # tourner en root, où la moindre exécution de code arbitraire s'exercerait sur
