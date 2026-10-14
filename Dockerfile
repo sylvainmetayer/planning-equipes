@@ -1,4 +1,4 @@
-FROM maven:3.10-eclipse-temurin-25@sha256:721fefa7187746ff892b2a178eb4cac3292f89a80f76ef25c04da655f88619b8 AS build
+FROM maven:3.10-eclipse-temurin-25@sha256:0396dcd8cd0d46a0d2026449b714b2a5bbe53cce030975b5a41f8ffa3f5f0525 AS build
 # Les paquets apt ne sont pas épinglés à une version (hadolint DL3008) : les
 # dépôts Debian/Ubuntu et PGDG retirent les anciennes, un build épinglé
 # casserait au premier correctif de sécurité, et Renovate ne sait pas les
