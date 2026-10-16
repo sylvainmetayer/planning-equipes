@@ -1,7 +1,7 @@
 # Serveur MCP
 
-`POST /mcp` (streamable HTTP) et `GET /mcp/sse` (rétrocompatibilité), fournis
-par `quarkus-mcp-server-http`. **La liste des outils est celle que le serveur
+`POST /mcp` (streamable HTTP), fourni par `quarkus-mcp-server-http` ; le
+transport HTTP+SSE historique est fermé (voir « Révision 2026-07-28 »). **La liste des outils est celle que le serveur
 annonce lui-même** — le code du paquet `mcp` en est la source. Ce document porte
 les règles qui ne s'y lisent pas.
 
@@ -147,6 +147,10 @@ Deux pièges :
   fermé, cohérent avec la clé. Ce n'est pas un moyen d'exiger la simple présence
   d'un en-tête.
 
+Le proxy doit aussi **retransmettre les en-têtes `Mcp-*`** : depuis la révision
+2026-07-28, `Mcp-Method` et `Mcp-Name` sont obligatoires sur chaque `POST`, et
+un intermédiaire qui les retire rend le serveur muet pour les clients récents.
+
 Côté client, préférer l'en-tête dédié à `Authorization: Bearer` : **un proxy
 d'accès consomme fréquemment `Authorization` pour son propre compte**, et la clé
 n'arriverait jamais à l'application.
@@ -156,6 +160,30 @@ La page MCP de l'interface détecte le proxy via l'en-tête de réponse
 personnalisés » ne modifie que la requête vers le backend, pas la réponse au
 navigateur. `PangolinHeaderFilter` renvoie donc sur la réponse tout `X-Pangolin`
 reçu sur la requête : il suffit de le déclarer côté proxy.
+
+## Révision 2026-07-28 : un transport sans état
+
+La révision 2026-07-28 de la spécification retire du transport HTTP l'en-tête
+`Mcp-Session-Id`, la poignée de main `initialize` et le flux `GET` : la version
+et les capacités du client voyagent dans `_meta` à chaque requête, et
+`server/discover` annonce celles du serveur. `quarkus-mcp-server` 2.0.2 la
+parle, sans réglage, à côté des révisions antérieures — un client négocie la
+sienne à chaque requête.
+
+Ce serveur n'avait rien à défaire : aucun outil ne s'appuie sur la connexion ou
+la session MCP. L'état vit en base, et l'édition se désigne argument par
+argument (plus bas). Un `405` sur `GET /mcp` est le comportement attendu d'un
+client récent, pas une panne.
+
+- **Le transport HTTP+SSE historique** (`GET /mcp/sse`, `POST
+  /mcp/messages/{id}`), que la bibliothèque enregistre encore, est **fermé**
+  par une permission `deny` (`application.properties`) : la révision le
+  déprécie, et il ne serait qu'une seconde porte vers les mêmes outils.
+- **Roots, Sampling et Logging**, dépréciés avec elle, ne sont pas utilisés.
+- **L'enregistrement des clients OAuth** n'est pas l'affaire du transport : il
+  vit dans la base de Keycloak, partagée entre ses instances. Le passage du DCR
+  aux *Client ID Metadata Documents* (CIMD) se décide côté realm
+  ([`keycloak.md`](keycloak.md#cimd)).
 
 ## Se connecter depuis une offre gratuite
 

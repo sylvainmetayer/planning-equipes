@@ -67,6 +67,27 @@ class McpApiKeyAuthenticationMechanismTest {
     }
 
     /**
+     * The historical HTTP+SSE transport stays closed, the right key included:
+     * deprecated by the MCP revision 2026-07-28, it would be a second door to
+     * the same tools.
+     */
+    @Test
+    void leTransportSseHistoriqueEstFerme() {
+        given().header("X-MCP-Api-Key", "test-mcp-key")
+                .when()
+                .get("/mcp/sse")
+                .then()
+                .statusCode(403);
+        given().header("X-MCP-Api-Key", "test-mcp-key")
+                .contentType("application/json")
+                .body("{}")
+                .when()
+                .post("/mcp/messages/abc")
+                .then()
+                .statusCode(403);
+    }
+
+    /**
      * The transport, and nothing that merely starts like it: the key is
      * matched on the path the permission check reads, normalized, exactly or
      * as a parent.

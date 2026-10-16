@@ -475,6 +475,30 @@ une connexion de **moins de cinq minutes** (`auth_time` du jeton) plutôt que la
 ressaisie d'un mot de passe que l'application ne connaît plus : au-delà,
 l'écran renvoie se reconnecter.
 
+### CIMD
+
+La révision MCP 2026-07-28 déprécie l'enregistrement dynamique de clients (DCR,
+RFC 7591) au profit des *Client ID Metadata Documents* (CIMD) : le `client_id`
+est une URL https qui pointe vers un document JSON décrivant le client, et le
+serveur d'autorisation va le lire au moment de l'autorisation. La fenêtre de
+dépréciation est de douze mois.
+
+Rien n'est activé ici, et c'est un choix :
+
+- **Keycloak 26.7.5 sait le faire, en fonctionnalité expérimentale** (`cimd`) :
+  une image construite avec `--features=cimd`, puis une politique client qui
+  associe la condition `client-id-uri` à l'exécuteur
+  `client-id-metadata-document`, avec la liste des **domaines de confiance** —
+  vide, elle refuse tout `client_id` en forme d'URL. Le schéma `http` ne s'y
+  autorise que pour le développement.
+- **Les documents récupérés sont persistés** par le fournisseur `persistent-cimd`
+  dans la base de Keycloak, comme les autres clients : rien sur le disque
+  d'une instance.
+- **En attendant**, un client MCP se connecte par `planning-mcp-public`
+  (pré-déclaré, PKCE, consentement) ou par le DCR facultatif. Keycloak accepte
+  le champ `application_type` que la révision impose aux clients qui passent
+  encore par le DCR.
+
 ## Ce que chaque côté doit déclarer — les pièges déjà payés
 
 Chacun de ces points a coûté une exécution de CI ou une session de débogage, et
