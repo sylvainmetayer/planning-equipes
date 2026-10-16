@@ -5,6 +5,7 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.IdGenerator;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.TokenOwner;
+import dev.sylvain.planning.service.keycloak.KeycloakUserProvisioning;
 import dev.sylvain.planning.service.solve.RefusedWhileSolving;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -13,10 +14,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+import org.jboss.logging.Logger;
 
 /** CRUD of the animateur referential, plus the espace access token they are reached by. */
 @ApplicationScoped
 public class AnimateurService {
+
+    private static final Logger LOG = Logger.getLogger(AnimateurService.class);
 
     private final AnimateurRepository repository;
 
@@ -42,6 +46,10 @@ public class AnimateurService {
         this.gel = gel;
     }
 
+    /** No-op unless the Keycloak provisioning is on. */
+    @Inject
+    KeycloakUserProvisioning comptes;
+
     public List<Animateur> list() {
         return repository.listAnimateurs();
     }
@@ -50,11 +58,23 @@ public class AnimateurService {
      * Creates the fiche under an id the application draws (ADR 0050): an id
      * the caller sent is overwritten. Never one derived from the name — the
      * id is the one thing about an animateur that leaves over MCP.
+     *
+     * <p>With the Keycloak provisioning on, it also creates the account that
+     * opens the espace. The fiche is written <b>first</b>: a save the
+     * referential refuses must not leave a live account and a sent invitation
+     * behind. A realm that refuses the account then takes the fiche back out,
+     * so no fiche is left whose owner could never sign in.</p>
      */
     public Animateur create(Animateur animateur) {
         validate(animateur);
         animateur.setId(ids.next(IdGenerator.Kind.ANIMATEUR));
         repository.saveAnimateur(animateur, true);
+        try {
+            comptes.synchroniser(animateur, true);
+        } catch (BusinessError.Conflict e) {
+            repository.deleteAnimateur(animateur.getId());
+            throw e;
+        }
         changeTracker.markModified();
         return animateur;
     }
@@ -106,9 +126,44 @@ public class AnimateurService {
         validate(animateur);
         gel.refuseIfFrozen(
                 ReferentialFamily.COMPETENCES, () -> GelReferentielService.changesCompetences(avant.get(), animateur));
+        String ancienneAdresse = comptes.actif() ? repository.emailOf(id) : null;
         repository.saveAnimateur(animateur, false);
         changeTracker.markModified();
+        boolean adresseChangee = !sameAddress(ancienneAdresse, animateur.getEmail());
+        // After the save, so a stale read (#362) refused above provisions
+        // nothing. The address the fiche left is retired like a deleted
+        // fiche's: kept only while another fiche still carries it.
+        //
+        // A realm that refuses does not fail the save, which is committed:
+        // answering 409 « réessayez » would send the organiser back with the
+        // version they read, which the stale-write check then refuses. The
+        // account left missing counts as « à inviter », and the invitation
+        // button of the Animateurs screen creates it.
+        try {
+            comptes.synchroniser(animateur, adresseChangee);
+        } catch (BusinessError.Conflict e) {
+            LOG.warnf("Fiche %s saved without its Keycloak account", id);
+        }
+        if (adresseChangee) {
+            comptes.retirer(ancienneAdresse);
+        }
         return animateur;
+    }
+
+    /**
+     * Whose owner, in this edition, was never invited to their Keycloak
+     * account — the count behind the « Envoyer les invitations » button.
+     */
+    public KeycloakUserProvisioning.EtatInvitations getInvitationStatus() {
+        return comptes.invitationStatus(repository.listAnimateurs());
+    }
+
+    /**
+     * Sends the invitations an import held back, for this edition's fiches
+     * (see {@link KeycloakUserProvisioning#inviteAwaiting}).
+     */
+    public KeycloakUserProvisioning.BilanComptes sendInvitations() {
+        return comptes.inviteAwaiting(repository.listAnimateurs());
     }
 
     /**
@@ -119,11 +174,26 @@ public class AnimateurService {
      * from the referential as it stood at its start, and persisting its result
      * would re-insert the animateur — personal data coming back on its own,
      * minutes later. See {@link SolverJobService#refuseIfSolving}.</p>
+     *
+     * <p>With the Keycloak provisioning on, the account is disabled rather
+     * than deleted, and only once no edition still expects the person — see
+     * {@link KeycloakUserProvisioning}. A failure there does not fail the
+     * delete: an account with no fiche opens nothing.</p>
      */
     @RefusedWhileSolving
     public void delete(String id) {
+        // Read before the delete, used after it: the account is disabled only
+        // once no fiche of ANY edition carries the address.
+        String email = comptes.actif() ? repository.emailOf(id) : null;
         repository.deleteAnimateur(id);
         changeTracker.markModified();
+        comptes.retirer(email);
+    }
+
+    private static boolean sameAddress(String avant, String apres) {
+        String a = avant == null ? "" : avant.trim();
+        String b = apres == null ? "" : apres.trim();
+        return a.equalsIgnoreCase(b);
     }
 
     /** The fiche as stored — the before-image a freeze compares an edit against. */

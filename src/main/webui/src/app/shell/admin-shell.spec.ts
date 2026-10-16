@@ -175,7 +175,8 @@ describe('AdminShell', () => {
       onResultByType.set(type, handler);
       return unregisterResult;
     });
-    adminApi.logout.mockResolvedValue(undefined);
+    // The break-glass answer: no identity provider session left to end.
+    adminApi.logout.mockResolvedValue({ urlDeconnexion: null });
     api.get.mockResolvedValue({});
     draftLocal = memoryStorage({ 'planning-equipes.editionId': 'ed-1' });
     draftSession = memoryStorage();
@@ -887,6 +888,22 @@ describe('AdminShell', () => {
     });
   });
 
+  describe('the account link', () => {
+    // Keycloak owns the credentials: the toolbar leads to its account page,
+    // where the password, the passkeys and the second factor are set — and
+    // back to the application's home, through the console's own link.
+    it('leads to the Keycloak account page under Keycloak', () => {
+      createShell();
+
+      const lien = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>(
+        'a[href="/api/auth/oidc/compte?retour=%2F"]',
+      );
+      expect(lien?.getAttribute('aria-label')).toBe(
+        'Mon compte : mot de passe, passkey, double authentification',
+      );
+    });
+  });
+
   describe('logging out', () => {
     // A reload rather than a router navigation: it also resets every store the
     // shell preloaded, so nothing keeps polling behind the login page.
@@ -899,6 +916,21 @@ describe('AdminShell', () => {
 
       expect(adminApi.logout).toHaveBeenCalledOnce();
       expect(assign).toHaveBeenCalledExactlyOnceWith('/login');
+      vi.restoreAllMocks();
+    });
+
+    // Under Keycloak, dropping our own cookie is half a logout: the identity
+    // provider would sign the visitor straight back in on the next click. The
+    // server names the route that ends its session, and that is where we go.
+    it('follows the identity provider logout when the server names one', async () => {
+      const assign = vi.fn();
+      vi.spyOn(window, 'location', 'get').mockReturnValue({ ...window.location, assign });
+      adminApi.logout.mockResolvedValue({ urlDeconnexion: '/api/auth/oidc/logout' });
+      const shell = createShell();
+
+      await shell['logout']();
+
+      expect(assign).toHaveBeenCalledExactlyOnceWith('/api/auth/oidc/logout');
       vi.restoreAllMocks();
     });
 

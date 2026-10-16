@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.scenario;
 
+import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PrereglageConsigne;
 import dev.sylvain.planning.scenario.dto.EditionCibleDto;
@@ -9,6 +10,7 @@ import dev.sylvain.planning.service.consigne.ConsigneRepository;
 import dev.sylvain.planning.service.consigne.ConsigneService;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.journal.JournalActionService;
+import dev.sylvain.planning.service.keycloak.KeycloakUserProvisioning;
 import dev.sylvain.planning.service.referentiel.GelReferentielService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.WeightChangeOrigin;
@@ -17,9 +19,11 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -60,6 +64,10 @@ public class ScenarioImportService {
 
     /** The account of the request: the author of the ajustements an import creates. */
     private final JournalActionService journal;
+
+    /** No-op unless the Keycloak provisioning is on. */
+    @Inject
+    KeycloakUserProvisioning comptes;
 
     @Inject
     public ScenarioImportService(
@@ -131,11 +139,23 @@ public class ScenarioImportService {
             sections.parametresLegaux().ifPresent(referenceDataService::updateParametresLegaux);
             sections.parametresQualite().ifPresent(referenceDataService::updateParametresQualite);
             sections.parametresSolveur().ifPresent(referenceDataService::importParametresSolveur);
+            // Read before the write: only an address the file brings into the
+            // edition is expected anew. One the edition already carried keeps
+            // an account an administrator may have closed on purpose.
+            Set<String> dejaPresentes = KeycloakUserProvisioning.byAddress(referenceDataService.listAnimateurs())
+                    .keySet();
             referenceDataService.importFromPlanning(importe.planning());
             applyTypologies(sections);
             applyJourneesTypes(sections);
             applyContraintes(sections);
             applyConsignes(sections);
+            // Inside the target edition, once its fiches are written: their
+            // accounts, and no mail — the invitations wait for the organiser.
+            List<Animateur> importes = referenceDataService.listAnimateurs();
+            Set<String> nouvelles =
+                    new HashSet<>(KeycloakUserProvisioning.byAddress(importes).keySet());
+            nouvelles.removeAll(dejaPresentes);
+            comptes.provisionMissing(importes, nouvelles);
         });
     }
 

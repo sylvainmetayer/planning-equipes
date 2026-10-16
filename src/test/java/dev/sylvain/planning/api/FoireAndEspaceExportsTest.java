@@ -73,9 +73,10 @@ class FoireAndEspaceExportsTest {
         PlansPublies.publier(publication);
         mailbox.clear();
         RestAssured.requestSpecification = null;
-        String session = EspaceSessions.open(mailbox, tokenOf("FOIRE-A"), "foire-alice@example.org");
-        RestAssured.requestSpecification =
-                new RequestSpecBuilder().addCookie("planning-espace", session).build();
+        String session = EspaceSessions.open("foire-alice@example.org");
+        RestAssured.requestSpecification = new RequestSpecBuilder()
+                .addHeader(EspaceSessions.EN_TETE, session)
+                .build();
     }
 
     private void donnerEmail(String animateurId, String email) {

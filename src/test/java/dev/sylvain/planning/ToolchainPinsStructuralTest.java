@@ -34,13 +34,15 @@ import org.junit.jupiter.api.Test;
  * {@code renovate.json} on that line, since no manager reads a
  * {@code .properties} on its own.</p>
  *
- * <p>Playwright is the one pin that must agree to the patch: the e2e job runs
- * in the {@code mcr.microsoft.com/playwright} image, which carries the browsers
+ * <p>Playwright is the one pin that must agree to the patch: a workflow
+ * running in the {@code mcr.microsoft.com/playwright} image gets the browsers
  * of exactly one release, and a {@code @playwright/test} of another release
  * looks for a build the image does not have. Renovate grouping kept the two
  * together until a rule order or a release-age gap let one move alone; this
  * test is what makes that drift fail in the {@code test} job rather than as a
- * missing browser in the e2e one.</p>
+ * missing browser in the e2e one. The e2e job now runs on the host (it starts
+ * Keycloak with {@code docker run}) and installs the browser of the locked
+ * package itself, which cannot drift; the test then holds it to that.</p>
  */
 class ToolchainPinsStructuralTest {
 
@@ -153,9 +155,12 @@ class ToolchainPinsStructuralTest {
             }
         });
 
-        assertThat(images)
-                .as("no workflow runs the Playwright image — the pin moved, update this test")
-                .isNotEmpty();
+        if (images.isEmpty()) {
+            assertThat(read(WORKFLOWS.resolve("e2e-suite.yml")))
+                    .as(
+                            "no workflow runs the Playwright image: the e2e job must install the browser of the locked package")
+                    .containsPattern("(npx playwright|node_modules/\\.bin/playwright) install");
+        }
         assertThat(ecarts)
                 .as("Playwright pins that disagree: bump @playwright/test and the e2e image together")
                 .isEmpty();

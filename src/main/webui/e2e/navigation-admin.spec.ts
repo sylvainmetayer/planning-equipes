@@ -128,6 +128,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
     sheet: 'carte-jour-curseur',
   },
   { path: '/historique', sheet: 'historique-controles' },
+  { path: '/comptes', marker: 'Comptes et droits', sheet: 'comptes-notes' },
   { path: '/journee?vue=pauses', sheet: 'pauses-message' },
   // The meal intendance, under the breaks since the Planning page absorbed it.
   {

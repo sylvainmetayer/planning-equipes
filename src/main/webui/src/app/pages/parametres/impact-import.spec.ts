@@ -25,7 +25,7 @@ describe('messageImpactImport', () => {
     expect(message).toContain('instantané sera enregistré automatiquement');
     expect(message).toContain("3 demande(s) d'échange (dont 2 en attente)");
     // What a deleted animateur takes away with them.
-    expect(message).toContain("demandes d'échange, sessions et codes d'accès");
+    expect(message).toContain("avec leurs demandes d'échange.");
   });
 
   it('reste utile sans planning résolu ni demandes : pas de lignes vides', () => {

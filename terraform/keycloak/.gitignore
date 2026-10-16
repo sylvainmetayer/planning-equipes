@@ -1,0 +1,16 @@
+# L'état porte en clair les secrets des clients : il n'a rien à faire dans un
+# dépôt, pas même chiffré. Pour un vrai déploiement, un backend distant.
+.terraform/
+*.tfstate
+*.tfstate.*
+# Les valeurs d'un déploiement réel. Seul terraform.tfvars.example est versionné.
+terraform.tfvars
+*.auto.tfvars
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+# .terraform.lock.hcl n'est PAS ignoré : c'est lui qui épingle le fournisseur
+# à une version et à des empreintes précises. Le premier `terraform init` le
+# crée ; il se versionne, comme un package-lock.json.

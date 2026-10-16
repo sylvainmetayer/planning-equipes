@@ -163,10 +163,10 @@ class AbonnementIcsTest {
     void rotatingTheTokenRevokesTheOldUrlAndLeavesTheEspaceTokenAlone() {
         String ancien = abonnementToken();
         String espaceAvant = accessToken();
-        String session = EspaceSessions.open(mailbox, espaceAvant, EMAIL);
+        String session = EspaceSessions.open(EMAIL);
 
         String nouveau = given().header("X-Edition-Id", "E1")
-                .cookie("planning-espace", session)
+                .header(EspaceSessions.EN_TETE, session)
                 .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + espaceAvant + "/abonnement")
@@ -222,12 +222,6 @@ class AbonnementIcsTest {
         given().header("X-Edition-Id", "E1")
                 .when()
                 .get("/api/espace-animateur/" + token + "/planning.pdf")
-                .then()
-                .statusCode(404);
-        given().header("X-Edition-Id", "E1")
-                .contentType(ContentType.JSON)
-                .when()
-                .post("/api/espace-animateur/" + token + "/code")
                 .then()
                 .statusCode(404);
         // And the calendar route itself is read-only: there is no write to find.

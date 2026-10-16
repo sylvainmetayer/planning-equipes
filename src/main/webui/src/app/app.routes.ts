@@ -453,6 +453,12 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/parametres/parametres-page').then((m) => m.ParametresPage),
   },
   {
+    // Named accounts and their delegated rights (ADR 0077); the credentials stay Keycloak's.
+    path: 'comptes',
+    title: () => $localize`:@@route.comptes:Comptes et droits`,
+    loadComponent: () => import('./pages/comptes/comptes-page').then((m) => m.ComptesPage),
+  },
+  {
     path: 'historique',
     title: () => $localize`:@@route.historique:Historique des actions`,
     loadComponent: () => import('./pages/historique/historique-page').then((m) => m.HistoriquePage),
@@ -747,6 +753,24 @@ export const routes: Routes = [
           import('./pages/espace-animateur/espace-aide-page').then((m) => m.EspaceAidePage),
       },
     ],
+  },
+  {
+    // The responsable de stand (issue #295): outside both shells, opened by a
+    // Keycloak session alone — the right is the account's, not a fiche's, so
+    // no link token. `/api/responsable/*` is what decides what it reads.
+    path: 'responsable',
+    title: () => $localize`:@@route.responsable:Responsable de stand`,
+    loadComponent: () =>
+      import('./pages/responsable/responsable-page').then((m) => m.ResponsablePage),
+  },
+  {
+    // One stand's day on an A4 sheet, to tape on the stand.
+    path: 'responsable/affichette',
+    title: () => $localize`:@@route.responsableAffichette:Affichette du stand`,
+    loadComponent: () =>
+      import('./pages/responsable/responsable-affichette-page').then(
+        (m) => m.ResponsableAffichettePage,
+      ),
   },
   {
     // The control room's television (ADR 0053): outside both shells, no

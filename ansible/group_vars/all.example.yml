@@ -1,0 +1,76 @@
+# Variables du playbook `keycloak-planning.yml` — les PERSONNES du realm.
+#
+# Copiez ce fichier en `ansible/group_vars/all.yml` (ignoré par git) et
+# remplissez-le. Tout ce qui est marqué « SECRET » doit passer par
+# ansible-vault :
+#
+#   ansible-vault encrypt_string 'la-valeur' --name 'keycloak_admin_password'
+#
+# La valeur « changez-moi » ci-dessous est une chaîne ordinaire pour que ce
+# fichier d'exemple reste chargeable tel quel ; dans votre `all.yml`, elle doit
+# être remplacée par la sortie d'`encrypt_string`.
+#
+# Le realm lui-même (rôles, clients, flow, SMTP) n'est pas réglé ici : c'est
+# terraform/keycloak/, appliqué avant ce playbook.
+
+# ---------------------------------------------------------------------------
+# L'instance Keycloak
+# ---------------------------------------------------------------------------
+# L'URL PUBLIQUE, celle que Terraform a visée (`keycloak_url`).
+keycloak_url: https://sso.exemple.org
+
+# Compte d'administration du realm « master ». Un compte de service dédié vaut
+# mieux qu'un compte humain : il n'a pas de second facteur à contourner.
+keycloak_admin_user: ansible-personnes
+# SECRET — remplacer par un blob ansible-vault (voir l'en-tête).
+keycloak_admin_password: changez-moi
+
+keycloak_realm: planning
+
+# Le rôle que l'APPLICATION accorde aux animateurs (OIDC_ANIMATEUR_ROLE). Ce
+# playbook ne l'accorde jamais ; il n'est lu que pour le nommer dans ses
+# messages de refus.
+keycloak_role_animateur: animateur
+
+# ---------------------------------------------------------------------------
+# L'application — pour le lien de l'invitation
+# ---------------------------------------------------------------------------
+planning_public_url: https://planning.exemple.org
+planning_app_client_id: planning-app
+
+# ---------------------------------------------------------------------------
+# Les personnes
+# ---------------------------------------------------------------------------
+# Comptes NOMINATIFS du personnel. C'est le point de tout l'exercice :
+# remplacer un compte « admin » partagé par des comptes qu'on peut révoquer un
+# par un et attribuer dans un journal.
+#
+#   email          obligatoire — c'est aussi l'identifiant de connexion
+#   prenom, nom    facultatifs
+#   roles          pris parmi admin et mcp. JAMAIS « user » (le playbook le
+#                  refuse : il n'ouvre rien) ni le rôle animateur (accordé
+#                  par l'application avec la fiche)
+#   roles_retires  rôles à ôter, mêmes règles — quelqu'un qui cesse
+#                  d'administrer garde son compte et perd ce qu'il ouvrait
+#   actif          false pour DÉSACTIVER le compte d'une personne qui part.
+#                  Aucun compte n'est jamais supprimé : retirer une ligne de
+#                  cette liste ne fait rien, le compte reste tel quel
+#
+# Aucun mot de passe n'est posé ici, et c'est délibéré : chaque personne reçoit
+# une invitation par mail et choisit le sien. Le second facteur est imposé aux
+# porteurs du rôle admin par le flow du realm dès leur première connexion.
+keycloak_personnes:
+  - email: prenom.nom@exemple.org
+    prenom: Prénom
+    nom: Nom
+    roles:
+      - admin
+  # - email: ancienne.admin@exemple.org
+  #   roles: []
+  #   roles_retires: [admin]
+  #   actif: false
+
+# Envoyer l'invitation (« définissez votre mot de passe ») aux comptes créés
+# par cette exécution. À couper pour un essai, ou tant que le relais SMTP du
+# realm n'est pas réglé.
+keycloak_envoyer_invitations: true

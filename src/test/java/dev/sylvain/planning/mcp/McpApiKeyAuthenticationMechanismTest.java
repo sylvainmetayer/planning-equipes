@@ -1,9 +1,17 @@
 package dev.sylvain.planning.mcp;
 
 import static io.restassured.RestAssured.given;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.not;
 
+import io.quarkus.test.common.http.TestHTTPResource;
 import io.quarkus.test.junit.QuarkusTest;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -16,6 +24,9 @@ import org.junit.jupiter.api.Test;
  */
 @QuarkusTest
 class McpApiKeyAuthenticationMechanismTest {
+
+    @TestHTTPResource("/")
+    URL racine;
 
     @Test
     void refuseSansEnTeteApiKey() {
@@ -53,5 +64,73 @@ class McpApiKeyAuthenticationMechanismTest {
                 .post("/mcp")
                 .then()
                 .statusCode(not(401));
+    }
+
+    /**
+     * The historical HTTP+SSE transport stays closed, the right key included:
+     * deprecated by the MCP revision 2026-07-28, it would be a second door to
+     * the same tools.
+     */
+    @Test
+    void leTransportSseHistoriqueEstFerme() {
+        given().header("X-MCP-Api-Key", "test-mcp-key")
+                .when()
+                .get("/mcp/sse")
+                .then()
+                .statusCode(403);
+        given().header("X-MCP-Api-Key", "test-mcp-key")
+                .contentType("application/json")
+                .body("{}")
+                .when()
+                .post("/mcp/messages/abc")
+                .then()
+                .statusCode(403);
+    }
+
+    /**
+     * The transport, and nothing that merely starts like it: the key is
+     * matched on the path the permission check reads, normalized, exactly or
+     * as a parent.
+     */
+    @Test
+    void laCleNeVautQueSurLeTransport() {
+        assertThat(McpApiKeyAuthenticationMechanism.isMcpTransport("/mcp")).isTrue();
+        assertThat(McpApiKeyAuthenticationMechanism.isMcpTransport("/mcp/")).isTrue();
+        assertThat(McpApiKeyAuthenticationMechanism.isMcpTransport("/mcp/sse")).isTrue();
+        assertThat(McpApiKeyAuthenticationMechanism.isMcpTransport("/mcpx")).isFalse();
+        assertThat(McpApiKeyAuthenticationMechanism.isMcpTransport("/mcp-console"))
+                .isFalse();
+        assertThat(McpApiKeyAuthenticationMechanism.isMcpTransport("/mcp..%2f..%2fapi"))
+                .isFalse();
+        assertThat(McpApiKeyAuthenticationMechanism.isMcpTransport("/api/mcp/cle"))
+                .isFalse();
+        assertThat(McpApiKeyAuthenticationMechanism.isMcpTransport(null)).isFalse();
+    }
+
+    /**
+     * {@code /mcp/../api/auth/me} is routed to {@code /api/auth/me}: the key
+     * must not authenticate it. Sent over a bare socket, since an HTTP client
+     * would resolve the dot segment before the request leaves.
+     */
+    @Test
+    void laCleNOuvrePasUnCheminQuiRemonteDuTransport() throws IOException {
+        String reponse = brut("GET /mcp/../api/auth/me HTTP/1.1\r\n"
+                + "Host: " + racine.getHost() + "\r\n"
+                + "X-Edition-Id: E1\r\n"
+                + "X-MCP-Api-Key: test-mcp-key\r\n"
+                + "Connection: close\r\n\r\n");
+
+        assertThat(reponse).startsWith("HTTP/1.1 200").contains("\"authentifie\":false");
+    }
+
+    private String brut(String requete) throws IOException {
+        try (Socket socket = new Socket(racine.getHost(), racine.getPort())) {
+            socket.setSoTimeout(10_000);
+            OutputStream sortie = socket.getOutputStream();
+            sortie.write(requete.getBytes(StandardCharsets.US_ASCII));
+            sortie.flush();
+            InputStream entree = socket.getInputStream();
+            return new String(entree.readAllBytes(), StandardCharsets.UTF_8);
+        }
     }
 }

@@ -5,6 +5,12 @@ on:
       - main
     tags:
       - 'v*'
+  # The image of a pull request, on demand: the `publier-image` label (then
+  # every push to the PR while it stays) publishes `pr-<number>` — see the job's
+  # `if`. Never from a fork: its token cannot write the registry, and its code
+  # must not be signed by this repository's identity.
+  pull_request:
+    types: [labeled, synchronize, reopened]
   workflow_dispatch:
 
 # Read-only by default; the job below holds the write scopes it needs.
@@ -21,6 +27,13 @@ jobs:
     # particular machine, and running it on a GitHub runner is what makes the
     # provenance verifiable once the repository is public. Every workflow runs
     # there now; this one always did.
+    # Pull requests publish only when labelled `publier-image`, and only from
+    # this repository. A `labeled` event for another label rebuilds nothing.
+    if: >-
+      github.event_name != 'pull_request'
+      || (github.event.pull_request.head.repo.full_name == github.repository
+          && contains(github.event.pull_request.labels.*.name, 'publier-image')
+          && (github.event.action != 'labeled' || github.event.label.name == 'publier-image'))
     runs-on: ubuntu-latest
     # `id-token` and `attestations` are what lets this job sign, and publish
     # to the repository's attestation store, the provenance and the SBOM of the
@@ -74,6 +87,11 @@ jobs:
           # search rather than admit the history is unreadable. The full
           # history also carries the tags the screen groups releases by.
           fetch-depth: 0
+          # A pull request's own head, not the merge commit GitHub makes by
+          # default: the image is the branch under review, and the version it
+          # reports is that commit's short SHA. Empty on any other event, where
+          # the checkout keeps its default.
+          ref: ${{ github.event.pull_request.head.sha }}
 
       # Two things have to hold before anything is built, and both fail the
       # job rather than publish something misleading.
@@ -156,6 +174,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=ref,event=branch
+            type=ref,event=pr
           # The default `latest=auto` moves `:latest` on EVERY tag push — so
           # publishing a 1.2.4 patch after 1.3.0 is out would silently point
           # `:latest` back at the old line. It is set explicitly instead, by
@@ -215,6 +234,10 @@ jobs:
           db_secret="$(openssl rand -hex 16)"
           admin_password="$(openssl rand -hex 16)"
           session_key="$(openssl rand -hex 16)"
+          # No Keycloak on the runner: the image starts with it off and the
+          # break-glass door open, as restauration.yml does — production refuses
+          # an instance with neither (ADR 0077). Nothing contacts the realm.
+          oidc_secret="$(openssl rand -hex 32)"
           docker run -d --name smoke --network host \
             -e DB_URL=jdbc:postgresql://localhost:5432/festival \
             -e DB_USER=festival -e DB_PASSWORD="$db_secret" \
@@ -224,6 +247,10 @@ jobs:
             -e MAIL_MOCK=false -e MAIL_HOST=localhost -e MAIL_PORT=1025 \
             -e MAIL_FROM=smoke@localhost -e MAIL_START_TLS=DISABLED \
             -e LEGAL_DEMO_INSTANCE=true \
+            -e OIDC_ENABLED=false -e OIDC_PROVISIONING_ENABLED=false \
+            -e ADMIN_SECOURS_ENABLED=true \
+            -e OIDC_AUTH_SERVER_URL=http://localhost:8081/realms/planning \
+            -e OIDC_CLIENT_SECRET="$oidc_secret" \
             -e BACKUP_DIR=/backup -e BACKUP_RETENTION=3 \
             "$IMAGE"
 

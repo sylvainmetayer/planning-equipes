@@ -96,10 +96,10 @@ class SignalementAbsenceFlowTest {
         PlansPublies.publier(publication);
         token = fiche("SIG-A").getAccessToken();
         mailbox.clear();
-        String session = EspaceSessions.open(mailbox, token, EMAIL_ALICE);
-        mailbox.clear();
-        RestAssured.requestSpecification =
-                new RequestSpecBuilder().addCookie("planning-espace", session).build();
+        String session = EspaceSessions.open(EMAIL_ALICE);
+        RestAssured.requestSpecification = new RequestSpecBuilder()
+                .addHeader(EspaceSessions.EN_TETE, session)
+                .build();
     }
 
     @AfterEach
