@@ -8,6 +8,6 @@ import { formatHeure } from '../core/time-of-day';
 @Pipe({ name: 'hhmm' })
 export class HhmmPipe implements PipeTransform {
   transform(time: string | null | undefined): string {
-    return time ? formatHeure(time) : '';
+    return formatHeure(time);
   }
 }

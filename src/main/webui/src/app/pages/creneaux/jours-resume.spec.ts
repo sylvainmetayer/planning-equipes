@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Creneau } from '../../core/models';
-import { dayMonth, holidayDays, summarizeVacationsByDay } from './jours-resume';
+import { libelleJour } from '../../core/horaire-stand';
+import { holidayDays, summarizeVacationsByDay } from './jours-resume';
 
 function creneau(overrides: Partial<Creneau> & { id: number }): Creneau {
   return {
@@ -42,6 +43,6 @@ describe('summarizeVacationsByDay', () => {
     );
 
     expect(summary.map((jour) => jour.ferie)).toEqual([null, 'Fête nationale']);
-    expect(holidayDays(summary).map((jour) => dayMonth(jour.date))).toEqual(['14/07']);
+    expect(holidayDays(summary).map((jour) => libelleJour(jour.date))).toEqual(['14/07']);
   });
 });

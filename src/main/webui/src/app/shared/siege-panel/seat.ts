@@ -11,6 +11,7 @@ import {
   TypeVerrouillage,
   VerrouillagePlanning,
 } from '../../core/models';
+import { formatHeure } from '../../core/time-of-day';
 
 /**
  * What names a seat. A cell of the calendar or a block of the rail names it
@@ -28,16 +29,11 @@ export type SeatRequest =
       animateurId?: string | null;
     };
 
-/** `HH:mm`, whatever precision the API sent. */
-export function shortTime(value: string | null | undefined): string {
-  return (value ?? '').slice(0, 5);
-}
-
 /** The hours the seat is actually held: its own window when a partial closure narrowed it. */
 export function seatHours(poste: PosteAffectation): { start: string; end: string } {
   return {
-    start: shortTime(poste.heureDebutEffective ?? poste.creneau?.heureDebut),
-    end: shortTime(poste.heureFinEffective ?? poste.creneau?.heureFin),
+    start: formatHeure(poste.heureDebutEffective ?? poste.creneau?.heureDebut),
+    end: formatHeure(poste.heureFinEffective ?? poste.creneau?.heureFin),
   };
 }
 
@@ -89,8 +85,8 @@ export function resolveSeat(
       }
       const { start, end } = seatHours(poste);
       return (
-        start === shortTime(request.heureDebut) &&
-        (!request.heureFin || end === shortTime(request.heureFin))
+        start === formatHeure(request.heureDebut) &&
+        (!request.heureFin || end === formatHeure(request.heureFin))
       );
     }),
     request.animateurId,

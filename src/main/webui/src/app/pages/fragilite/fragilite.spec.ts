@@ -4,9 +4,7 @@ import {
   classeSeverite,
   filtrerAnimateurs,
   filtrerCompetences,
-  heure,
   iconeSeverite,
-  libelleJour,
   lireFiltre,
   readView,
   synthese,
@@ -185,12 +183,5 @@ describe('rendu d’une sévérité', () => {
     expect(
       new Set([iconeSeverite('CRITIQUE'), iconeSeverite('ELEVEE'), iconeSeverite('MODEREE')]).size,
     ).toBe(3);
-  });
-});
-
-describe('libellés courts', () => {
-  it('raccourcit la date et l’heure', () => {
-    expect(libelleJour('2026-07-08')).toBe('08/07');
-    expect(heure('10:00:00')).toBe('10:00');
   });
 });

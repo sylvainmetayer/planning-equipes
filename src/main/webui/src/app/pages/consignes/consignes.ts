@@ -124,15 +124,10 @@ export interface ConsigneForm {
   repas: RepasSaisie;
 }
 
-/** `HH:mm:ss` or `HH:mm` → `HH:mm`; `null` (until midnight) → empty. */
-export function heureSaisie(heure: string | null): string {
-  return heure ? heure.slice(0, 5) : '';
-}
-
 export function fenetresSaisies(fenetres: readonly FenetreConsigne[]): FenetreSaisie[] {
   return fenetres.map((fenetre) => ({
-    debut: heureSaisie(fenetre.debut),
-    fin: heureSaisie(fenetre.fin),
+    debut: formatHeure(fenetre.debut),
+    fin: formatHeure(fenetre.fin),
     effectif: '',
   }));
 }
@@ -140,8 +135,8 @@ export function fenetresSaisies(fenetres: readonly FenetreConsigne[]): FenetreSa
 /** A stand's openings read into its windows, each keeping the headcount typed on it. */
 export function ouverturesSaisies(ouvertures: readonly OuvertureConsigne[]): FenetreSaisie[] {
   return ouvertures.map((ouverture) => ({
-    debut: heureSaisie(ouverture.debut),
-    fin: heureSaisie(ouverture.fin),
+    debut: formatHeure(ouverture.debut),
+    fin: formatHeure(ouverture.fin),
     effectif: ouverture.effectif === null ? '' : String(ouverture.effectif),
   }));
 }
@@ -186,10 +181,10 @@ export function repasSaisie(repas: RepasConsigne | null): RepasSaisie {
     return repasVide();
   }
   return {
-    midiDebut: heureSaisie(repas.midiDebut),
-    midiFin: heureSaisie(repas.midiFin),
-    soirDebut: heureSaisie(repas.soirDebut),
-    soirFin: heureSaisie(repas.soirFin),
+    midiDebut: formatHeure(repas.midiDebut),
+    midiFin: formatHeure(repas.midiFin),
+    soirDebut: formatHeure(repas.soirDebut),
+    soirFin: formatHeure(repas.soirFin),
     coupureMinutes: repas.coupureMinutes === null ? '' : String(repas.coupureMinutes),
     justification: repas.justification,
   };

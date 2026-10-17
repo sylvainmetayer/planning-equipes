@@ -28,7 +28,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { StandsApi } from '../../core/api/stands-api';
 import { ConsignesStore } from '../../core/consignes.store';
 import { bandeLabel } from '../../core/consigne-wording';
-import { isInformationalAnomaly } from '../../core/horaire-stand';
+import { isInformationalAnomaly, libelleJour } from '../../core/horaire-stand';
 import {
   AccesGrille,
   RecopieGrille,
@@ -1038,7 +1038,7 @@ export class OuverturesPage implements OnInit {
     const detail = (this.segments().get(key(standId, colonneId)) ?? [])
       .map(
         (segment) =>
-          `${this.heure(segment.heureDebut)}-${this.heure(segment.heureFin)} : ${segment.effectif}`,
+          `${formatHeure(segment.heureDebut)}-${formatHeure(segment.heureFin)} : ${segment.effectif}`,
       )
       .join(', ');
     return $localize`:@@ouvertures.saisie.partielle:Cette case porte plusieurs valeurs (${detail}:segments:). Enregistrée telle quelle, elle les garde ; modifiée, la valeur tapée s'applique à tout le créneau.`;
@@ -1558,13 +1558,5 @@ export class OuverturesPage implements OnInit {
   }
 
   /** `2026-07-08` → `08/07`, short enough for a dozen columns. */
-  protected libelleJour(date: string): string {
-    const [, mois, jour] = date.split('-');
-    return `${jour}/${mois}`;
-  }
-
-  /** `09:00:00` → `09:00`. */
-  protected heure(valeur: string): string {
-    return valeur.length > 5 ? valeur.slice(0, 5) : valeur;
-  }
+  protected readonly libelleJour = libelleJour;
 }

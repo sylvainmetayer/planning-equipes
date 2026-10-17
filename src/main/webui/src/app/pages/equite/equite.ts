@@ -180,11 +180,6 @@ export function libelleSolveur(contrainte: ColonneSolveur | undefined): string {
     : $localize`:@@equite.solveur.desactivee:Colonne mesurée par le solveur, mais la règle ${contrainte.contrainte}:contrainte: est désactivée`;
 }
 
-/** `HH:MM:SS` from the server, shown as `HH:MM`. */
-export function heureCourte(heure: string | null | undefined): string {
-  return heure ? heure.slice(0, 5) : '';
-}
-
 /* --------------------------- The « fiche » view ---------------------------- */
 
 /**

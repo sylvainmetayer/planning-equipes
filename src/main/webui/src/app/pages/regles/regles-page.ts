@@ -386,9 +386,7 @@ export class ReglesPage implements OnInit {
     return articlesOf(rule.description);
   }
 
-  protected niveauLabel(niveau: NiveauContrainte): string {
-    return niveauLabel(niveau);
-  }
+  protected readonly niveauLabel = niveauLabel;
 
   protected libelle(rule: ConstraintView): string {
     return rule.libelleCourt || rule.categorie;

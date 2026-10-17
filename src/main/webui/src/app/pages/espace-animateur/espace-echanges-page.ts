@@ -33,6 +33,8 @@ import {
 import { errorMessage } from '../../core/error-message';
 import { ApiError } from '../../core/api.service';
 import { EspaceContact } from './espace-contact';
+import { HhmmPipe } from '../../shared/hhmm-pipe';
+import { formatHeure } from '../../core/time-of-day';
 import { OptionSelection, SelectionRecherche } from '../../shared/selection-recherche';
 
 interface DemandeRow extends DemandeEchangeView {
@@ -73,6 +75,7 @@ interface DemandeRow extends DemandeEchangeView {
     MatProgressSpinnerModule,
     MatSelectModule,
     LegalText,
+    HhmmPipe,
   ],
   templateUrl: './espace-echanges-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -117,11 +120,6 @@ export class EspaceEchangesPage {
 
   /** The colleague picked, as the search holds it: one id at most. */
   protected readonly chosenTarget = computed(() => (this.cibleId() ? [this.cibleId()] : []));
-
-  /** `18:00:00` → `18:00`: the server sends whole times, a phone reads hours. */
-  protected heure(valeur: string | null | undefined): string {
-    return valeur ? valeur.slice(0, 5) : '';
-  }
 
   protected readonly formulaireComplet = computed(() =>
     brouillonComplet(this.posteChoisi(), this.cibleId()),
@@ -301,11 +299,11 @@ export class EspaceEchangesPage {
         creneauCibleId: posteCible?.creneauId ?? null,
         standCibleId: posteCible?.standId ?? null,
         creneauLabel:
-          `${poste.date ?? ''} ${this.heure(poste.heureDebut)}–${this.heure(poste.heureFin)}`.trim(),
+          `${poste.date ?? ''} ${formatHeure(poste.heureDebut)}–${formatHeure(poste.heureFin)}`.trim(),
         standNom: poste.standNom,
         cibleNom: target?.nomComplet ?? this.cibleId(),
         creneauCibleLabel: posteCible
-          ? `${posteCible.date ?? ''} ${this.heure(posteCible.heureDebut)}–${this.heure(posteCible.heureFin)} · ${posteCible.standNom}`.trim()
+          ? `${posteCible.date ?? ''} ${formatHeure(posteCible.heureDebut)}–${formatHeure(posteCible.heureFin)} · ${posteCible.standNom}`.trim()
           : null,
       }),
     );

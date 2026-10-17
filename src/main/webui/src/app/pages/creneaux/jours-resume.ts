@@ -53,9 +53,3 @@ export function summarizeVacationsByDay(
 export function holidayDays(resume: readonly JourResume[]): JourResume[] {
   return resume.filter((jour) => jour.ferie !== null);
 }
-
-/** `2026-07-14` → `14/07`, the short form a list of dates reads in. */
-export function dayMonth(date: string): string {
-  const [, mois, jour] = date.split('-');
-  return `${jour}/${mois}`;
-}

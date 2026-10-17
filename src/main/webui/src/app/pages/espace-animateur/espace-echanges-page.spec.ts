@@ -469,13 +469,6 @@ describe('EspaceEchangesPage', () => {
       expect(page['chosenTarget']()).toEqual(['bob']);
     });
 
-    it('reads hours without their seconds', () => {
-      const page = createPage();
-
-      expect(page['heure']('18:00:00')).toBe('18:00');
-      expect(page['heure'](null)).toBe('');
-    });
-
     it('falls back to the colleague id when the view does not name them', () => {
       espaceView.set(view({ collegues: [] }));
       const page = createPage();

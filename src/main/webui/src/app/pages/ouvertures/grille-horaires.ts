@@ -18,7 +18,7 @@
 // whole schedule.
 
 import { AccesGrille, blockRows } from '../../core/grille-saisie';
-import { formatHeure } from '../../core/time-of-day';
+import { formatHeure, minutesOfDay } from '../../core/time-of-day';
 import {
   CelluleCreneauOuverture,
   RapportOuvertures,
@@ -217,10 +217,6 @@ export function minutesBetween(heureDebut: string, heureFin: string): number {
   const debut = minutesOfDay(heureDebut);
   const fin = minutesOfDay(heureFin);
   return fin > debut ? fin - debut : fin + 24 * 60 - debut;
-}
-
-function minutesOfDay(heure: string): number {
-  return Number(heure.slice(0, 2)) * 60 + Number(heure.slice(3, 5));
 }
 
 export function key(standId: string, colonneId: string): string {

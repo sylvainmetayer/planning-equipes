@@ -1,4 +1,4 @@
-import { libelleNiveau } from '../../core/niveau-competence';
+import { COMPETENCE_LEVELS, libelleNiveau } from '../../core/niveau-competence';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -14,7 +14,7 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 import { GelNotice } from '../../shared/gel-notice';
-import { Animateur, NiveauCompetence } from '../../core/models';
+import { Animateur } from '../../core/models';
 import {
   AnimateurBulkPatch,
   ModeEntree,
@@ -22,8 +22,6 @@ import {
   patchAnimateurEstVide,
   patchAnimateurVide,
 } from './animateur-bulk-edit';
-
-const NIVEAUX: NiveauCompetence[] = ['DEBUTANT', 'AUTONOME', 'REFERENT'];
 
 export interface AnimateurBulkEditData {
   animateurs: Animateur[];
@@ -54,7 +52,7 @@ export interface AnimateurBulkEditData {
 export class AnimateurBulkEditDialog {
   protected readonly libelleNiveau = libelleNiveau;
 
-  protected readonly niveaux = NIVEAUX;
+  protected readonly niveaux = COMPETENCE_LEVELS;
   protected readonly store = inject(ReferenceDataStore);
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */

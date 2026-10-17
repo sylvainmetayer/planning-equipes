@@ -309,8 +309,6 @@ export function syntheseDuJour(rapport: RapportPauses | null, date: string | nul
 }
 
 /** The relays of a break, spelled out for a cell; empty when nobody. */
-export { formatHeure as heure } from '../../core/time-of-day';
-
 export function libelleRelais(pause: Pick<PauseDueView, 'relais'>): string {
   return pause.relais.map((relais) => relais.nomComplet).join(', ');
 }

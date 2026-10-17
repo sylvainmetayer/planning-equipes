@@ -23,10 +23,10 @@
   <output class="espace-maintenant-poste espace-entete-maintenant status-paragraph">
     @if (maintenant.enCours; as poste) {
       <mat-icon inline>play_circle</mat-icon>
-      <span i18n="@@espace.planning.maintenantEnCours">En ce moment : {{ poste.standNom }}, {{ heure(poste.heureDebut) }}–{{ heure(poste.heureFin) }}</span>
+      <span i18n="@@espace.planning.maintenantEnCours">En ce moment : {{ poste.standNom }}, {{ poste.heureDebut | hhmm }}–{{ poste.heureFin | hhmm }}</span>
     } @else if (maintenant.prochain; as poste) {
       <mat-icon inline>schedule</mat-icon>
-      <span i18n="@@espace.planning.maintenantProchain">Prochain poste : {{ poste.standNom }}, {{ poste.date | date: 'EEEE d MMMM' }} à {{ heure(poste.heureDebut) }}</span>
+      <span i18n="@@espace.planning.maintenantProchain">Prochain poste : {{ poste.standNom }}, {{ poste.date | date: 'EEEE d MMMM' }} à {{ poste.heureDebut | hhmm }}</span>
     } @else if (maintenant.reposAujourdhui) {
       <mat-icon inline>self_improvement</mat-icon>
       <span i18n="@@espace.planning.maintenantRepos">Repos aujourd'hui — aucune affectation.</span>
@@ -311,7 +311,7 @@
                     [class.espace-poste-carte-passee]="isPosteTermine(poste)">
             <mat-card-content>
               <p class="espace-poste-entete">
-                <span class="espace-poste-horaire">{{ heure(poste.heureDebut) }} &rarr; {{ heure(poste.heureFin) }}</span>
+                <span class="espace-poste-horaire">{{ poste.heureDebut | hhmm }} &rarr; {{ poste.heureFin | hhmm }}</span>
                 @if (isPosteOngoing(poste)) {
                   <span class="espace-poste-badge espace-poste-badge-encours" i18n="@@espace.planning.badgeEnCours">En cours</span>
                 } @else if (isPosteTermine(poste)) {

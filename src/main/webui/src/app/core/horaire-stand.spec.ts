@@ -12,6 +12,7 @@ import {
   horaireVide,
   jourSemaineDe,
   joursEdition,
+  libelleJour,
   normaliseHour,
   priorites,
   parseFenetres,
@@ -671,5 +672,13 @@ describe('joursEdition', () => {
       { date: '2026-07-09', fin: '24:00' },
       { date: '2026-07-10', fin: '02:00' },
     ]);
+  });
+});
+
+describe('libelleJour', () => {
+  it('shows a value that is not a date as it came instead of throwing', () => {
+    expect(libelleJour('2026-07-08')).toBe('08/07');
+    expect(libelleJour('')).toBe('');
+    expect(libelleJour('bientôt')).toBe('bientôt');
   });
 });

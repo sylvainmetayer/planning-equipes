@@ -2,24 +2,7 @@
 // read on screen. The ranking itself is the server's (`FormationAnalyzer`),
 // shown as it comes.
 
-import { NiveauCompetence, TypologieAFormer } from '../../core/models';
-
-export function libelleNiveau(niveau: NiveauCompetence): string {
-  switch (niveau) {
-    case 'DEBUTANT':
-      return $localize`:@@formation.niveau.debutant:Débutant`;
-    case 'AUTONOME':
-      return $localize`:@@formation.niveau.autonome:Autonome`;
-    case 'REFERENT':
-      return $localize`:@@formation.niveau.referent:Référent`;
-  }
-}
-
-/** `2026-07-10` → `10/07`, the way the fragility tab writes a day. */
-export function libelleJour(date: string): string {
-  const [, mois, jour] = date.split('-');
-  return `${jour}/${mois}`;
-}
+import { TypologieAFormer } from '../../core/models';
 
 /**
  * The shortage in one line, from the two reports it is read from: the Besoin

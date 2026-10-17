@@ -4,12 +4,16 @@
 // split as `stand-bulk-edit.ts`.
 
 import { DetailRow } from '../../shared/detail-dialog';
-import { decrireFenetre, resumerHoraires } from '../../core/horaire-stand';
+import {
+  decrireFenetre,
+  libelleJour,
+  libelleJourSemaine,
+  resumerHoraires,
+} from '../../core/horaire-stand';
 import {
   AnomalieOuverture,
   HoraireStand,
   IndisponibiliteStand,
-  JourSemaine,
   OuvertureStand,
   Stand,
 } from '../../core/models';
@@ -52,13 +56,13 @@ export function anomalyLabel(anomalie: AnomalieOuverture): string {
       return $localize`:@@detail.stand.anomalie.regleMasquee:Règle sans effet`;
     case 'FENETRES_CHEVAUCHANTES':
       if (anomalie.date) {
-        const jour = jourCourt(anomalie.date);
+        const jour = libelleJour(anomalie.date);
         return $localize`:@@detail.stand.anomalie.fenetresChevauchantesLe:Fenêtres qui se recouvrent, ${jour}:jour:`;
       }
       return $localize`:@@detail.stand.anomalie.fenetresChevauchantes:Fenêtres qui se recouvrent`;
     default:
       return anomalie.date
-        ? jourCourt(anomalie.date)
+        ? libelleJour(anomalie.date)
         : $localize`:@@detail.stand.anomalie.edition:Toute l'édition`;
   }
 }
@@ -89,7 +93,7 @@ export function describeDays(horaire: HoraireStand): string {
     case 'PLAGE':
       return $localize`:@@detail.stand.plage:du ${horaire.dateDebut ?? '?'}:debut: au ${horaire.dateFin ?? '?'}:fin:`;
     case 'DATES':
-      return (horaire.dates ?? []).map(jourCourt).join(', ');
+      return (horaire.dates ?? []).map(libelleJour).join(', ');
     default:
       return $localize`:@@stands.horaires.jours.tous:Tous les jours`;
   }
@@ -113,29 +117,4 @@ export function describeException(
       : $localize`:@@detail.stand.fermetureDatee:Fermeture du ${exception.date}:date:`,
     value: exception.motif ? `${fenetre} — ${exception.motif}` : fenetre,
   };
-}
-
-/** `08/07` rather than `2026-07-08`: a rule can list a dozen dates on one line. */
-function jourCourt(date: string): string {
-  const [, mois, jour] = date.split('-');
-  return jour && mois ? `${jour}/${mois}` : date;
-}
-
-function libelleJourSemaine(jour: JourSemaine): string {
-  switch (jour) {
-    case 'MONDAY':
-      return $localize`:@@common.weekday.monday:Lundi`;
-    case 'TUESDAY':
-      return $localize`:@@common.weekday.tuesday:Mardi`;
-    case 'WEDNESDAY':
-      return $localize`:@@common.weekday.wednesday:Mercredi`;
-    case 'THURSDAY':
-      return $localize`:@@common.weekday.thursday:Jeudi`;
-    case 'FRIDAY':
-      return $localize`:@@common.weekday.friday:Vendredi`;
-    case 'SATURDAY':
-      return $localize`:@@common.weekday.saturday:Samedi`;
-    default:
-      return $localize`:@@common.weekday.sunday:Dimanche`;
-  }
 }

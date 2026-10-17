@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { TypologieAFormer } from '../../core/models';
-import { libelleJour, libelleNiveau, resumeDeficit } from './formation';
+import { resumeDeficit } from './formation';
 
 function ligne(patch: Partial<TypologieAFormer>): TypologieAFormer {
   return {
@@ -19,15 +19,6 @@ function ligne(patch: Partial<TypologieAFormer>): TypologieAFormer {
 }
 
 describe('formation', () => {
-  it('names the two levels a candidate can hold', () => {
-    expect(libelleNiveau('DEBUTANT')).toBe('Débutant');
-    expect(libelleNiveau('AUTONOME')).toBe('Autonome');
-  });
-
-  it('writes a day the way the fragility tab does', () => {
-    expect(libelleJour('2026-07-10')).toBe('10/07');
-  });
-
   it('sums the shortage up from both reports, leaving the zeros out', () => {
     expect(resumeDeficit(ligne({ manque: 2 }))).toBe('manque 2 animateur(s) au besoin');
     expect(resumeDeficit(ligne({ competencesRares: 3, postesIrremplacables: 1 }))).toBe(
