@@ -21,12 +21,11 @@ import {
   viewChild,
 } from '@angular/core';
 import * as L from 'leaflet';
-import { ajouterTuilesOsm } from '../../shared/leaflet-base';
+import { ajouterTuilesOsm, CENTRE_FRANCE } from '../../shared/leaflet-base';
 import { MarqueurJour, comptePastille, siegesPastille } from './carte-jour';
 import { taillePastille } from './charge-emplacement';
 
 /** France, when the day holds no located emplacement at all. */
-const CENTRE_DEFAUT: L.LatLngTuple = [46.6, 2.5];
 const ZOOM_DEFAUT = 5;
 /** Cap of the automatic framing: one emplacement alone must not zoom to the rooftops. */
 const ZOOM_MAX_CADRAGE = 17;
@@ -92,7 +91,7 @@ export class CarteJourMap implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    this.map = L.map(this.hote().nativeElement, { center: CENTRE_DEFAUT, zoom: ZOOM_DEFAUT });
+    this.map = L.map(this.hote().nativeElement, { center: CENTRE_FRANCE, zoom: ZOOM_DEFAUT });
     ajouterTuilesOsm(this.map);
     // The card the map lives in is laid out after this hook on the first pass;
     // without this Leaflet keeps the size it measured on an empty container and
@@ -231,7 +230,7 @@ export class CarteJourMap implements AfterViewInit, OnDestroy {
       return;
     }
     if (marqueurs.length === 0) {
-      this.map.setView(CENTRE_DEFAUT, ZOOM_DEFAUT);
+      this.map.setView(CENTRE_FRANCE, ZOOM_DEFAUT);
       return;
     }
     const bornes = L.latLngBounds(

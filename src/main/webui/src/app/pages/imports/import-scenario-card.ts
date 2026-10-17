@@ -16,6 +16,7 @@ import { ScenarioImportService } from '../../core/scenario-import.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { GelEditionNotice } from '../../shared/gel-edition-notice';
 import { OutputPanel } from '../../shared/output-panel';
+import { takeFile } from '../../core/take-file';
 
 /**
  * « Scénario » : the one import card that is not a referential.
@@ -89,12 +90,4 @@ export class ImportScenarioCard {
       this.importing.set(false);
     }
   }
-}
-
-// Reads the picked file and clears the input so the same file can be picked twice.
-function takeFile(event: Event): File | null {
-  const input = event.target as HTMLInputElement;
-  const file = input.files?.[0] ?? null;
-  input.value = '';
-  return file;
 }

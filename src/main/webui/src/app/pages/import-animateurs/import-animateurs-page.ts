@@ -44,6 +44,7 @@ import {
   flaggedRows,
   withColonne,
 } from './import-animateurs';
+import { takeFile } from '../../core/take-file';
 
 /**
  * Importing a roster from a spreadsheet export: pick the file, say which
@@ -269,9 +270,7 @@ export class ImportAnimateursPage {
   }
 
   protected async onFichierChoisi(event: Event): Promise<void> {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0] ?? null;
-    input.value = '';
+    const file = takeFile(event);
     if (!file) {
       return;
     }

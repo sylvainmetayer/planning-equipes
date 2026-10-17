@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { SignalementView } from '../../core/models';
+import { motifLabel } from '../../core/signalement-wording';
 import {
   dayReported,
-  motifLabel,
   objectLabel,
   reportsOfDay,
   seatReported,

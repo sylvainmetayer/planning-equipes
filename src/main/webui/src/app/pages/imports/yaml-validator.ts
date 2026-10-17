@@ -15,6 +15,7 @@ import { PlanningApi } from '../../core/api/planning-api';
 import { ScenarioValidationResult } from '../../core/models';
 import { errorPrefix } from '../../core/error-message';
 import { StatusMessage } from '../../shared/status-message';
+import { takeFile } from '../../core/take-file';
 
 /**
  * « Vérifier un fichier sans l'importer »: uploads a scenario YAML file to
@@ -71,12 +72,4 @@ export class YamlValidator {
       this.validating.set(false);
     }
   }
-}
-
-// Reads the picked file and clears the input so the same file can be picked twice.
-function takeFile(event: Event): File | null {
-  const input = event.target as HTMLInputElement;
-  const file = input.files?.[0] ?? null;
-  input.value = '';
-  return file;
 }

@@ -111,6 +111,7 @@ import { AnimateurTimeline, exportFilename } from './animateur-timeline';
 import { EquiteRadar } from './equite-radar';
 import { OPTIONAL_AXES, readOptionalAxes } from './radar';
 import { copyEspaceLink } from '../../core/clipboard';
+import { espaceUrl } from '../../core/app-links';
 
 /** The levels the inline editor offers, « aucune » included. */
 const NIVEAUX: readonly (NiveauCompetence | null)[] = [null, 'DEBUTANT', 'AUTONOME', 'REFERENT'];
@@ -279,7 +280,7 @@ export class AnimateurFichePage implements OnInit {
   });
   protected readonly espaceLink = computed(() => {
     const token = this.profile()?.animateur.accessToken;
-    return token ? `${globalThis.location?.origin ?? ''}/animateur/${token}` : null;
+    return token ? espaceUrl(globalThis.location?.origin ?? '', token) : null;
   });
   /** The whole planning locked on this person, the lock « Libérer tout » lifts. */
   protected readonly wholeLock = computed<VerrouillagePlanning | null>(

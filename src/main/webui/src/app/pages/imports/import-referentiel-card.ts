@@ -31,6 +31,7 @@ import { CollageTableur } from './collage-tableur';
 import { PASTE_FILE_NAME } from './collage';
 import { importedRowIds } from './imported-rows';
 import { IMPORTED_IDS_PARAM } from '../../core/imported-rows';
+import { takeFile } from '../../core/take-file';
 
 /**
  * The referential screen a file of this target fills: where « Voir les lignes
@@ -227,9 +228,7 @@ export class ImportReferentielCard {
   }
 
   protected async onFichierChoisi(event: Event): Promise<void> {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0] ?? null;
-    input.value = '';
+    const file = takeFile(event);
     if (!file) {
       return;
     }

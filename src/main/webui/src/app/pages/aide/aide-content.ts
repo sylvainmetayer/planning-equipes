@@ -21,9 +21,6 @@ import { buildReferenceDataSections } from './content/reference-data';
 import { buildSolverSections } from './content/solver';
 import { buildToolsAndContactSections } from './content/tools-and-contact';
 
-export type { HelpBlock, HelpDefinition } from '../../shared/help-blocks';
-export type { HelpLink, HelpSection } from './help-section';
-
 /**
  * Built lazily (never at module scope): `$localize` only resolves once
  * `main.ts` has loaded the translation catalog, which happens after this

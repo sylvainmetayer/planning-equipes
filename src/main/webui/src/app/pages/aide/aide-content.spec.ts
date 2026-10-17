@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Routes } from '@angular/router';
-import { HelpSection, buildHelpSections, filterHelpSections } from './aide-content';
+import { buildHelpSections, filterHelpSections } from './aide-content';
+import { HelpSection } from './help-section';
 import { helpBlockText } from '../../shared/help-blocks';
 import { buildRaccourcisNavigation } from '../../core/keyboard-shortcuts';
 import { routes } from '../../app.routes';

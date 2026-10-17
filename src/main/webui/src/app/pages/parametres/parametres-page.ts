@@ -48,6 +48,7 @@ import { GelReferentielCard } from '../../shared/gel-referentiel-card';
 import { HorlogeSimuleeCard } from './horloge-simulee-card';
 import { WebhooksCard } from './webhooks-card';
 import { TODAY_ANCHOR } from '../../core/date-mock.service';
+import { takeFile } from '../../core/take-file';
 
 /**
  * Typed back before a SQL dump is replayed. Left untranslated on purpose: a
@@ -318,12 +319,4 @@ export class ParametresPage implements OnInit {
       this.transferBusy.set(false);
     }
   }
-}
-
-// Reads the picked file and clears the input so the same file can be picked twice.
-function takeFile(event: Event): File | null {
-  const input = event.target as HTMLInputElement;
-  const file = input.files?.[0] ?? null;
-  input.value = '';
-  return file;
 }

@@ -26,6 +26,7 @@ import { qrPath } from '../../core/qr-path';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { copyToClipboard } from '../../core/clipboard';
+import { muralUrl } from '../../core/app-links';
 
 /**
  * How often the list is read again while the tab is on screen: a television
@@ -142,13 +143,8 @@ export class AffichageMuralLinks implements OnInit {
         fullNames: this.fullNames,
         emplacements: this.emplacements,
       });
-      const url = `${window.location.origin}/mural/${encodeURIComponent(created.token)}`;
-      let qr: QrCodeView | null = null;
-      try {
-        qr = await this.api.qrCode(url);
-      } catch {
-        // The address alone still does the job; the code is a convenience.
-      }
+      const url = muralUrl(window.location.origin, created.token);
+      const qr = await this.api.qrCode(url);
       this.created.set({ url, libelle: created.link.libelle, qr });
       this.libelle = '';
       this.fullNames = false;
