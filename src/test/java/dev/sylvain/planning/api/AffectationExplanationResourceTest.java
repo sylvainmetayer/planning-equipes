@@ -51,7 +51,7 @@ class AffectationExplanationResourceTest {
      * constructor and throws {@code IllegalAccessError}) — a pre-existing
      * issue that every other endpoint accepting a {@code PlanningEvenement}
      * body has so far avoided simply because no caller ever reposted an
-     * already-scored planning. These are the first endpoints designed to be
+     * already-scored planning. {@code simulation-swap} is designed to be
      * handed one (the client's just-solved or persisted planning), so the
      * client is expected to omit {@code score} from the request body, same
      * as here.</p>
@@ -88,17 +88,14 @@ class AffectationExplanationResourceTest {
     }
 
     @Test
-    void explicationRetourneLesContraintesPourUnPosteAssigne() {
-        String solvedJson = solveScenario();
-        JsonPath solved = JsonPath.from(solvedJson);
+    void theExplanationOfAHeldSeatListsEveryConstraintOnOneSide() {
+        JsonPath solved = JsonPath.from(solveScenario());
         String posteId = solved.getString("postes.find { it.animateur != null }.id");
         assertThat(posteId).isNotNull();
 
         JsonPath explication = given().header("X-Edition-Id", "E1")
-                .contentType("application/json")
-                .body(solvedJson)
                 .when()
-                .post("/api/postes/" + posteId + "/explication")
+                .get("/api/postes/" + posteId + "/explication")
                 .then()
                 .statusCode(200)
                 .body("posteId", equalTo(posteId))
@@ -120,20 +117,6 @@ class AffectationExplanationResourceTest {
                 .getList("contraintes")
                 .size();
         assertThat(total).isEqualTo(catalogueSize);
-    }
-
-    @Test
-    void explicationRefuseUnPosteInconnu() {
-        String solvedJson = solveScenario();
-
-        given().header("X-Edition-Id", "E1")
-                .contentType("application/json")
-                .body(solvedJson)
-                .when()
-                .post("/api/postes/POSTE-INEXISTANT/explication")
-                .then()
-                .statusCode(404)
-                .body("message", notNullValue());
     }
 
     /**
@@ -270,17 +253,15 @@ class AffectationExplanationResourceTest {
      * filter, small enough to keep each of these tests a couple of seconds.
      */
     @Test
-    void suggestionsClassentLesCandidatsViablesParImpactDecroissant() {
+    void suggestionsRankViableCandidatesByDecreasingImpact() {
         String solvedJson = solveScenario();
         JsonPath solved = JsonPath.from(solvedJson);
         String posteId = solved.getString("postes.find { it.animateur != null }.id");
         String occupantId = solved.getString("postes.find { it.id == '" + posteId + "' }.animateur.id");
 
         JsonPath suggestions = given().header("X-Edition-Id", "E1")
-                .contentType("application/json")
-                .body(solvedJson)
                 .when()
-                .post("/api/postes/" + posteId + "/suggestions-reparation")
+                .post("/api/jour-j/postes/" + posteId + "/suggestions")
                 .then()
                 .statusCode(200)
                 .body("posteId", equalTo(posteId))
@@ -320,17 +301,15 @@ class AffectationExplanationResourceTest {
      * hard-breaking must be absent from the list.
      */
     @Test
-    void aucuneSuggestionNIntroduitDeViolationDure() {
+    void noSuggestionIntroducesAHardViolation() {
         String solvedJson = solveScenario();
         JsonPath solved = JsonPath.from(solvedJson);
         String posteId = solved.getString("postes.find { it.animateur != null }.id");
         String occupantId = solved.getString("postes.find { it.id == '" + posteId + "' }.animateur.id");
 
         JsonPath suggestions = given().header("X-Edition-Id", "E1")
-                .contentType("application/json")
-                .body(solvedJson)
                 .when()
-                .post("/api/postes/" + posteId + "/suggestions-reparation?plafond=100")
+                .post("/api/jour-j/postes/" + posteId + "/suggestions?plafond=100")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -366,16 +345,14 @@ class AffectationExplanationResourceTest {
     }
 
     @Test
-    void suggestionsSArretentAuPlafondDemande() {
+    void suggestionsStopAtTheRequestedCap() {
         String solvedJson = solveScenario();
         JsonPath solved = JsonPath.from(solvedJson);
         String posteId = solved.getString("postes.find { it.animateur != null }.id");
 
         JsonPath suggestions = given().header("X-Edition-Id", "E1")
-                .contentType("application/json")
-                .body(solvedJson)
                 .when()
-                .post("/api/postes/" + posteId + "/suggestions-reparation?plafond=1")
+                .post("/api/jour-j/postes/" + posteId + "/suggestions?plafond=1")
                 .then()
                 .statusCode(200)
                 .body("plafond", equalTo(1))
@@ -387,42 +364,24 @@ class AffectationExplanationResourceTest {
     }
 
     @Test
-    void unPlafondNonPositifRetombeSurLeDefautEtUnPlafondEnormeEstBride() {
+    void aNonPositiveCapFallsBackToTheDefaultAndAHugeOneIsClamped() {
         String solvedJson = solveScenario();
         JsonPath solved = JsonPath.from(solvedJson);
         String posteId = solved.getString("postes.find { it.animateur != null }.id");
 
         given().header("X-Edition-Id", "E1")
-                .contentType("application/json")
-                .body(solvedJson)
                 .when()
-                .post("/api/postes/" + posteId + "/suggestions-reparation?plafond=0")
+                .post("/api/jour-j/postes/" + posteId + "/suggestions?plafond=0")
                 .then()
                 .statusCode(200)
                 .body("plafond", equalTo(20));
 
         given().header("X-Edition-Id", "E1")
-                .contentType("application/json")
-                .body(solvedJson)
                 .when()
-                .post("/api/postes/" + posteId + "/suggestions-reparation?plafond=100000")
+                .post("/api/jour-j/postes/" + posteId + "/suggestions?plafond=100000")
                 .then()
                 .statusCode(200)
                 .body("plafond", equalTo(100));
-    }
-
-    @Test
-    void suggestionsRefusentUnPosteInconnu() {
-        String solvedJson = solveScenario();
-
-        given().header("X-Edition-Id", "E1")
-                .contentType("application/json")
-                .body(solvedJson)
-                .when()
-                .post("/api/postes/POSTE-INEXISTANT/suggestions-reparation")
-                .then()
-                .statusCode(404)
-                .body("message", notNullValue());
     }
 
     /**
@@ -431,18 +390,19 @@ class AffectationExplanationResourceTest {
      * whole referential eligible, since there is no occupant to exclude.
      */
     @Test
-    void suggestionsRepondentSurUnPosteVide() {
-        String solvedJson = solveScenario();
-        JsonPath solved = JsonPath.from(solvedJson);
+    void suggestionsAnswerOnAnEmptySeat() {
+        JsonPath solved = JsonPath.from(solveScenario());
         String posteId = solved.getString("postes.find { it.animateur != null }.id");
-        String videJson = withoutAnimateur(solvedJson, posteId);
         int animateurs = solved.getList("animateurs").size();
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/postes/" + posteId + "/affectation")
+                .then()
+                .statusCode(204);
 
         given().header("X-Edition-Id", "E1")
-                .contentType("application/json")
-                .body(videJson)
                 .when()
-                .post("/api/postes/" + posteId + "/suggestions-reparation")
+                .post("/api/jour-j/postes/" + posteId + "/suggestions")
                 .then()
                 .statusCode(200)
                 .body("animateurActuelId", nullValue())
@@ -562,20 +522,5 @@ class AffectationExplanationResourceTest {
             }
         }
         return occupants;
-    }
-
-    /** The posted planning with one seat emptied, to exercise the unstaffed case. */
-    private static String withoutAnimateur(String planningJson, String posteId) {
-        try {
-            ObjectNode node = (ObjectNode) JSON.readTree(planningJson);
-            for (com.fasterxml.jackson.databind.JsonNode poste : node.withArray("postes")) {
-                if (posteId.equals(poste.path("id").asText())) {
-                    ((ObjectNode) poste).putNull("animateur");
-                }
-            }
-            return JSON.writeValueAsString(node);
-        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

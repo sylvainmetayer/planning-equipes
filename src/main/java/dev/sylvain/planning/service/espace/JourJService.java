@@ -286,11 +286,8 @@ public class JourJService {
      * Repair suggestions for one seat, read from the <b>persisted</b> plan
      * rather than from a plan the caller uploads.
      *
-     * <p>The assistant of issue #71 is reached over
-     * {@code POST /api/postes/{id}/suggestions-reparation}, which takes the
-     * whole planning as its request body — reasonable for a desktop screen that
-     * already holds it, a megabyte per seat on the phone this one runs on. Same
-     * service call, same bounded cost, one identifier on the wire.</p>
+     * <p>One identifier on the wire, not the whole planning: this screen runs
+     * on a phone.</p>
      *
      * <p>Prepared like the write that follows it: a plan read back from the
      * database carries seats and no rules, and a suggestion scored without them

@@ -765,9 +765,7 @@ public final class CatalogueActions {
     }
 
     static {
-        untracked("AffectationExplanationResource#explain", "explique une affectation, n'écrit rien");
         untracked("AffectationExplanationResource#simulateSwap", SIMULATION);
-        untracked("AffectationExplanationResource#suggererReparations", "suggestions, n'écrit rien");
         untracked("AffectationExplanationResource#simulateDeplacement", SIMULATION);
         untracked("AnimateurResource#analyseCsvAnimateurs", ANALYSE_FICHIER);
         untracked("StandResource#analyseGrille", ANALYSE_FICHIER);
