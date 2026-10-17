@@ -504,16 +504,6 @@
   white-space: nowrap;
 }
 
-/* The row at the top of the screen: actions, nothing else. Not a card —
-   the padding and the filled background of `.espace-agenda` would cost some
-   thirty pixels, and on a 667 px screen those pixels are the day. */
-.espace-agenda-rangee {
-  margin: 0 0 0.4rem;
-  padding: 0;
-  background: none;
-  gap: 0.4rem;
-}
-
 /* The detail at the foot: read once, never again. */
 .espace-agenda-detail {
   margin-top: 1rem;

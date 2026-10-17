@@ -295,30 +295,10 @@ app-espace-animateur-shell {
 }
 
 /*
- * The « now » marker (#535): the head block, above everything else. This is
- * the only page of the product read DURING the event, and the question asked
- * standing, on a phone, is « where am I going, now », not « what is my
- * schedule for the week ».
- *
- * It borrows the primary colour through a Material surface token, never an
- * invented one: it is the one block that has to be seen before the cards.
+ * The « now » marker (#535). This is the only page of the product read DURING
+ * the event, and the question asked standing, on a phone, is « where am I
+ * going, now », not « what is my schedule for the week ».
  */
-.espace-maintenant {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  margin: 0 0 1rem;
-  padding: 0.75rem 1rem;
-  border-radius: 0.75rem;
-  background: var(--mat-sys-primary-container);
-  color: var(--mat-sys-on-primary-container);
-}
-
-.espace-maintenant-titre {
-  margin: 0;
-  font: var(--mat-sys-title-medium);
-}
-
 .espace-maintenant-poste {
   display: flex;
   align-items: baseline;
@@ -328,7 +308,6 @@ app-espace-animateur-shell {
   font: var(--mat-sys-title-small);
 }
 
-.espace-maintenant-lieu,
 .espace-maintenant-pause {
   display: flex;
   align-items: baseline;
@@ -337,7 +316,6 @@ app-espace-animateur-shell {
   margin: 0;
 }
 
-.espace-maintenant-lieu a,
 .espace-maintenant-pause a {
   color: inherit;
 }
@@ -433,48 +411,6 @@ app-espace-animateur-shell {
   background: var(--mat-sys-surface-container-low);
 }
 
-.espace-agenda-titre {
-  margin: 0;
-  font: var(--mat-sys-title-medium);
-}
-
-/*
- * Sur un téléphone, chaque action prend toute la largeur : la cible de frappe
- * couvre la ligne et le libellé ne se tronque pas. Le contenu reste aligné à
- * gauche, comme une liste d'actions et non trois liens flottants.
- */
-/*
- * On a phone, two columns: the abonnement and the ICS take a whole row, the
- * two PDF layouts share one — they are one choice, and a fourth row pushed
- * the first day of the planning off the screen, which is what the reader came
- * for.
- */
-.espace-agenda-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-self: stretch;
-  gap: 0.5rem;
-}
-
-.espace-agenda-actions > .espace-agenda-large {
-  grid-column: 1 / -1;
-  justify-content: flex-start;
-}
-
-@media (min-width: 40rem) {
-  .espace-agenda-actions {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-self: auto;
-  }
-
-  .espace-agenda-actions a,
-  .espace-agenda-actions > .espace-agenda-large {
-    justify-content: center;
-  }
-}
-
 .espace-agenda-aide {
   margin: 0;
   color: var(--mat-sys-on-surface-variant);
@@ -482,40 +418,6 @@ app-espace-animateur-shell {
 }
 
 /* ---------- Planning cards ---------- */
-
-.espace-jour mat-card-title {
-  text-transform: capitalize;
-}
-
-/*
- * Elapsed days (#535): folded behind a single button, and set back once
- * unfolded — reachable, but visibly behind. Today's card is the only marked
- * one.
- */
-.espace-jours-passes {
-  margin: 0 0 0.5rem;
-}
-
-.espace-jour-passe {
-  opacity: 0.75;
-}
-
-.espace-jour-aujourdhui {
-  border-color: var(--mat-sys-primary);
-}
-
-.espace-jour-aujourdhui mat-card-subtitle {
-  color: var(--mat-sys-primary);
-}
-
-.espace-postes {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
 
 /* A rest day's card body: quiet, clearly not a shift. */
 .espace-repos {
@@ -544,19 +446,6 @@ app-espace-animateur-shell {
   color: var(--mat-sys-error);
 }
 
-/*
- * Une affectation se lit d'abord sur un téléphone : l'horaire en tête, le
- * stand en dessous, les coéquipiers à la ligne. En rangée, la troisième
- * information passait à la ligne toute seule et le bloc devenait illisible dès
- * qu'un nom de stand était long.
- */
-.espace-poste {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  padding-block: 0.35rem;
-}
-
 .espace-poste-horaire {
   font-variant-numeric: tabular-nums;
   color: var(--mat-sys-on-surface-variant);
@@ -581,14 +470,6 @@ app-espace-animateur-shell {
 }
 
 @media (min-width: 40rem) {
-  .espace-poste {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.75rem;
-    padding-block: 0;
-  }
-
   .espace-poste-horaire {
     min-width: 7.5rem;
   }

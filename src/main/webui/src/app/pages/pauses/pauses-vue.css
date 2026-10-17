@@ -23,14 +23,6 @@
   margin-bottom: 0.75rem;
 }
 
-.pauses-jour {
-  min-width: 14rem;
-}
-
-.pauses-recherche {
-  flex: 1 1 16rem;
-}
-
 .pauses-synthese {
   display: flex;
   flex-wrap: wrap;

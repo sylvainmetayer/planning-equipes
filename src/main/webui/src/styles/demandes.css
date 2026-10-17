@@ -1,8 +1,7 @@
 /* A demande d'échange or a declared availability, as the animateur and the administrator both see it: status, motive, comment, the foire. Attached to the espace shell and to the two admin screens that read the same requests. */
 
 /* Demande faite sur un autre groupe que le planning courant. */
-.espace-demande-horsgroupe,
-.echanges-hors-groupe {
+.espace-demande-horsgroupe {
   display: flex;
   align-items: baseline;
   gap: 0.4rem;

@@ -7,18 +7,12 @@
    application. The OpenStreetMap tiles underneath deliberately stay light:
    they are content, not chrome. */
 
-.carte-jour-toolbar,
 .carte-jour-curseur {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem;
   margin-bottom: 0.75rem;
-}
-
-.carte-jour-select {
-  width: 16rem;
-  max-width: 100%;
 }
 
 .carte-jour-slider {

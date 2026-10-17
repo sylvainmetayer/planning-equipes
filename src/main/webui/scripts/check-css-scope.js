@@ -21,7 +21,12 @@
  *      that page (or outside another page that attaches the same file);
  *   3. every stylesheet under `src/` is reached — imported by `styles.css` or
  *      named by a `styleUrl` — since a sheet nobody loads takes its classes
- *      out of the first two rules along with the screen's styling.
+ *      out of the first two rules along with the screen's styling;
+ *   4. every class a stylesheet defines is used somewhere — a template, a
+ *      string literal of the app's TypeScript, `index.html` — or built from a
+ *      prefix one of them writes (`'etat-' + etat`, `etat-{{ e }}`,
+ *      `` `etat-${e}` ``): a rule nothing renders is dead weight the next
+ *      reader has to prove dead again.
  *
  * Static `class="…"`, `[class.x]`, the literals of `[class]="…"` and the
  * `[ngClass]` object keys are read from the templates; the string literals
@@ -116,10 +121,13 @@ function addBoundClassLiterals(template, used) {
   }
 }
 
-/** Class names a template uses: static attributes, `[class.x]`, the literals of `[class]="…"`, `[ngClass]` keys. */
+/** Class names a template uses: static attributes, `[class.x]`, the literals of `[class]="…"`, `[ngClass]` keys, `routerLinkActive`. */
 function classesUsed(template) {
   const used = new Set();
   addStaticClasses(template, used);
+  for (const m of template.matchAll(/(?<![[\w])routerLinkActive="([^"]*)"/g)) {
+    for (const c of m[1].split(/\s+/)) if (c) used.add(c);
+  }
   for (const m of template.matchAll(/\[class\.([\w-]+)\]/g)) used.add(m[1]);
   addBoundClassLiterals(template, used);
   for (const m of template.matchAll(/\[ngClass\]="\{([^}]*)\}"/g)) {
@@ -493,6 +501,47 @@ function buildContext(byFile, globalClasses, sheetClasses) {
   };
 }
 
+// Rule 4's exceptions: classes no template or literal of the app names, each
+// kept for the reason it carries.
+const KEPT_UNUSED = new Map([
+  [
+    'espace-demande-horsgroupe',
+    "e2e/navigation-admin.spec.ts s'en sert pour prouver que la feuille de /echanges est chargée",
+  ],
+]);
+
+/** Prefixes a template or a literal glues a value onto: `etat-{{`, `etat-${`, `'etat-' +`. */
+function dynamicPrefixes(text) {
+  return [...text.matchAll(/([a-zA-Z][\w-]*-)(?:\{\{|\$\{|['"`]\s*\+)/g)].map((m) => m[1]);
+}
+
+/** Rule 4: the classes some stylesheet defines and nothing uses. */
+function checkUnused(byFile, allDefined, failures) {
+  const used = new Set();
+  for (const c of byFile.values()) for (const k of c.used) used.add(k);
+  const sources = walk(ROOT, []).filter(
+    (f) => (f.endsWith('.ts') && !f.endsWith('.spec.ts')) || f.endsWith('.html'),
+  );
+  const prefixes = new Set();
+  for (const f of sources) {
+    const text = readFileSync(f, 'utf8');
+    // A TypeScript file's HTML strings (`<span class="…">${n}</span>`) hold a
+    // `/`, which `tokensInCode` skips: their `class="…"` is read as a template's.
+    for (const k of classesUsed(text)) used.add(k);
+    if (f.endsWith('.ts')) for (const k of tokensInCode(text, allDefined)) used.add(k);
+    for (const p of dynamicPrefixes(text)) prefixes.add(p);
+  }
+  const prefixList = [...prefixes];
+  for (const c of [...allDefined].filter(isOurs)) {
+    if (used.has(c) || KEPT_UNUSED.has(c) || prefixList.some((p) => c.startsWith(p))) continue;
+    failures.push(`.${c} est définie mais utilisée nulle part : retirer la règle`);
+  }
+  for (const c of KEPT_UNUSED.keys()) {
+    if (used.has(c) || !allDefined.has(c))
+      failures.push(`.${c} n'a plus à figurer dans KEPT_UNUSED : retirer l'exception`);
+  }
+}
+
 function main() {
   const byFile = components();
   const { reached, globalClasses, allDefined, sheetClasses } = definedClasses(byFile);
@@ -510,14 +559,15 @@ function main() {
   checkPageScopes(ctx, failures);
   checkEmulatedLeaks(ctx, failures);
   checkSheetLeaks(ctx, failures);
+  checkUnused(byFile, allDefined, failures);
   failures.push(...orphans);
   if (failures.length) {
-    console.error('check-css-scope : ' + failures.length + ' classe(s) hors de portée :');
+    console.error('check-css-scope : ' + failures.length + ' classe(s) en défaut :');
     for (const f of [...new Set(failures)].sort(byCodeUnit)) console.error('  ' + f);
     process.exit(1);
   }
   console.log(
-    `check-css-scope : ${byFile.size} composants, ${pages(byFile).length} routes, ${ctx.usersOfSheet.size} feuilles de route — chaque classe utilisée est définie là où l'écran la charge.`,
+    `check-css-scope : ${byFile.size} composants, ${pages(byFile).length} routes, ${ctx.usersOfSheet.size} feuilles de route — chaque classe utilisée est définie là où l'écran la charge, et chaque classe définie sert.`,
   );
 }
 

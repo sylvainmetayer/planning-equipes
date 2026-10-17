@@ -351,12 +351,6 @@ tr.mat-mdc-row.row-selected {
   color: var(--mat-sys-on-surface-variant);
 }
 
-.calendar-empty {
-  font: var(--mat-sys-body-medium);
-  color: var(--mat-sys-on-surface-variant);
-  padding: 1rem 0;
-}
-
 .staffing-stat {
   display: block;
   text-align: center;

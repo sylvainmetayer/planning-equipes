@@ -11,12 +11,6 @@
   margin-bottom: 0.5rem;
 }
 
-.rail-jour-select {
-  width: 18rem;
-  max-width: 100%;
-  margin-bottom: -1.25rem;
-}
-
 .rail-compteurs {
   margin: 0.25rem 0 0.5rem;
   font: var(--mat-sys-body-medium);
