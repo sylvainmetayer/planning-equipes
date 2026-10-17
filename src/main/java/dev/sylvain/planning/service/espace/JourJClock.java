@@ -208,11 +208,6 @@ public class JourJClock {
         });
     }
 
-    /** Whether a developer has frozen the date on this server. */
-    public boolean isMocked() {
-        return mockedDate() != null;
-    }
-
     /**
      * Freezes the date — and, when {@code heure} is given, the time of day — or
      * hands both back to the machine when {@code date} is {@code null}.

@@ -200,13 +200,6 @@ public class EnvoiPlanningRepository {
         return b.envoyeLe() != null && (a.envoyeLe() == null || b.envoyeLe().isAfter(a.envoyeLe())) ? b : a;
     }
 
-    /** How many people's latest delivery failed — the home screen's « pas à jour ». */
-    public int countLatestFailures() {
-        return (int) latestByAnimateur().values().stream()
-                .filter(envoi -> envoi.statut() == StatutEnvoi.ECHEC)
-                .count();
-    }
-
     private static Envoi read(ResultSet rs) throws SQLException {
         long snapshotId = rs.getLong("snapshot_id");
         Long snapshot = rs.wasNull() ? null : snapshotId;

@@ -765,27 +765,9 @@ export function estJournalisable(avertissement: Avertissement): boolean {
   return !AVERTISSEMENTS_HORS_JOURNAL.has(avertissement.type);
 }
 
-/** Body of `POST`/`PUT /api/animateurs`: the fiche as written, and its warnings. */
-export interface WrittenAnimateur {
-  animateur: Animateur;
-  avertissements: Avertissement[];
-}
-
-/** Body of `POST`/`PUT /api/creneaux` — same shape, same reason. */
-export interface WrittenCreneau {
-  creneau: Creneau;
-  avertissements: Avertissement[];
-}
-
 /** Body of `POST /api/verrouillages` — the lock as written, and what it froze that already breaks a rule. */
 export interface WrittenVerrouillage {
   verrouillage: VerrouillagePlanning;
-  avertissements: Avertissement[];
-}
-
-/** Body of `POST`/`PUT /api/stands` — the schedule's warnings ride along. */
-export interface WrittenStand {
-  stand: Stand;
   avertissements: Avertissement[];
 }
 
@@ -1881,12 +1863,6 @@ export const DUREE_HEBDOMADAIRE_MAX_HEURES = 48;
 
 /** Ordre public ceiling for minors, in hours (Code du travail art. L3162-1). */
 export const DUREE_HEBDOMADAIRE_MAX_MINEUR_HEURES = 35;
-
-/** Ordre public floor for an adult's break, in minutes (Code du travail art. L3121-16). */
-export const DUREE_PAUSE_MIN_MINUTES = 20;
-
-/** Ordre public floor for a minor's break, in minutes (Code du travail art. L3162-3). */
-export const DUREE_PAUSE_MINEUR_MIN_MINUTES = 30;
 
 export type JobType = 'SOLVE' | 'SOLVE_INCREMENTAL';
 /**
@@ -5464,10 +5440,6 @@ export interface AffichageMuralLinkRequest {
 export interface CreatedAffichageMuralLink {
   link: AffichageMuralLink;
   token: string;
-}
-
-export interface QrCodeRequest {
-  link: string;
 }
 
 /** A QR code as `size` rows of `size` characters, `'1'` for a dark module. */

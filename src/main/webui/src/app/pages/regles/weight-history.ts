@@ -4,7 +4,6 @@
 // vertical markers. Pure, so both are unit tested without rendering; there is
 // no charting dependency (see src/main/webui/AGENTS.md).
 
-import { dosageKey } from '../../core/dosage';
 import { compareCodeUnits } from '../../core/string-order';
 import { ConstraintHistory, ResolutionUnderDosage, WeightChange } from '../../core/models';
 
@@ -174,20 +173,6 @@ export function historyChart(items: HistoryItem[], width = 480, height = 120): H
     markers,
     maxViolations,
   };
-}
-
-/** How many distinct weightings the solves of the list ran under — a known dosage each. */
-export function distinctDosages(items: HistoryItem[]): number {
-  const keys = new Set<string>();
-  for (const item of items) {
-    if (item.kind === 'resolution') {
-      const key = dosageKey(item.resolution.dosage);
-      if (key !== null) {
-        keys.add(key);
-      }
-    }
-  }
-  return keys.size;
 }
 
 function sortedWeights(record: Record<string, number> | undefined): [string, number][] {

@@ -32,9 +32,4 @@ public enum WebhookFormat {
      * named by {@code chatId}, and the secret is the bot token.
      */
     TELEGRAM;
-
-    /** Whether the address an admin types is itself the secret, stored encrypted and masked on read. */
-    public boolean addressIsSecret() {
-        return this == SLACK || this == DISCORD || this == MATRIX;
-    }
 }
