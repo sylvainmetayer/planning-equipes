@@ -15,10 +15,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { RouterLink } from '@angular/router';
 import { JourneesApi, ReferenceChangementsParam } from '../../core/api/journees-api';
-import { heureCourte } from '../../core/horaire-stand';
 import { intlLocale } from '../../core/locale';
 import { ChangementSiege, TypeChangementSiege } from '../../core/models';
 import { errorText, retainedValue } from '../../core/resource-state';
+import { formatHeure } from '../../core/time-of-day';
 import {
   ChangementsReading,
   animateurIdsOnStand,
@@ -189,11 +189,11 @@ export class ChangementsView {
 
   /** « 14:00 – 18:00 », or « 14:00 – 20:00 → 18:00 – 20:00 » on a seat kept on other hours. */
   protected hours(ligne: ChangementSiege): string {
-    const now = `${heureCourte(ligne.heureDebut)} – ${heureCourte(ligne.heureFin)}`;
+    const now = `${formatHeure(ligne.heureDebut)} – ${formatHeure(ligne.heureFin)}`;
     if (ligne.type !== 'HORAIRES' || !ligne.heureDebutAvant || !ligne.heureFinAvant) {
       return now;
     }
-    return `${heureCourte(ligne.heureDebutAvant)} – ${heureCourte(ligne.heureFinAvant)} → ${now}`;
+    return `${formatHeure(ligne.heureDebutAvant)} – ${formatHeure(ligne.heureFinAvant)} → ${now}`;
   }
 
   protected typeLabel(type: TypeChangementSiege): string {

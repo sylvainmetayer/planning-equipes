@@ -9,6 +9,7 @@
 
 import { parseDateKey, toDateKey } from './date-utils';
 import { intlLocale } from './locale';
+import { formatHeure } from './time-of-day';
 import {
   FenetreHoraire,
   HoraireStand,
@@ -159,21 +160,16 @@ export function effectifFenetreInvalide(
   );
 }
 
-/** `09:00:00` → `09:00`; leaves anything already short alone. */
-export function heureCourte(heure: string): string {
-  return heure.length > 5 ? heure.slice(0, 5) : heure;
-}
-
 /**
  * `10:00 → 12:00`, or `14:00 → fermeture` for an open-ended window — followed
  * by ` ×3` when the window names its own effectif, so a preview never hides
  * that the seats differ from the stand's minimum.
  */
 export function decrireFenetre(fenetre: FenetreHoraire, libelleFermeture: string): string {
-  const fin = fenetre.heureFin ? heureCourte(fenetre.heureFin) : libelleFermeture;
+  const fin = fenetre.heureFin ? formatHeure(fenetre.heureFin) : libelleFermeture;
   const effectif =
     fenetre.effectif !== null && fenetre.effectif !== undefined ? ` ×${fenetre.effectif}` : '';
-  return `${heureCourte(fenetre.heureDebut)} → ${fin}${effectif}`;
+  return `${formatHeure(fenetre.heureDebut)} → ${fin}${effectif}`;
 }
 
 /**
@@ -680,8 +676,8 @@ export function formaterFenetres(fenetres: readonly FenetreHoraire[]): string {
   return fenetres
     .filter((fenetre) => !!fenetre.heureDebut)
     .map((fenetre) => {
-      const debut = heureCourte(fenetre.heureDebut);
-      const fin = fenetre.heureFin ? heureCourte(fenetre.heureFin) : '';
+      const debut = formatHeure(fenetre.heureDebut);
+      const fin = fenetre.heureFin ? formatHeure(fenetre.heureFin) : '';
       const effectif =
         fenetre.effectif !== null && fenetre.effectif !== undefined ? `@${fenetre.effectif}` : '';
       return `${debut}-${fin}${effectif}`;
@@ -842,9 +838,12 @@ export function libelleJourSemaine(jour: JourSemaine): string {
 /**
  * Day label of the preview strip: `08/07` in French, `07/08` in English —
  * short enough for a dozen cells in a row, in the order the reader expects.
+ * A value that is not a `yyyy-MM-dd` date is shown as it came rather than
+ * thrown on by `Intl`.
  */
 export function libelleJour(date: string): string {
-  return new Intl.DateTimeFormat(intlLocale(), { day: '2-digit', month: '2-digit' }).format(
-    parseDateKey(date),
-  );
+  const jour = parseDateKey(date);
+  return Number.isNaN(jour.getTime())
+    ? date
+    : new Intl.DateTimeFormat(intlLocale(), { day: '2-digit', month: '2-digit' }).format(jour);
 }

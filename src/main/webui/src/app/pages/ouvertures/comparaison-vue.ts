@@ -22,6 +22,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ConsignesStore } from '../../core/consignes.store';
 import { injectGelReferentiel } from '../../core/gel-referentiel.store';
+import { libelleJour } from '../../core/horaire-stand';
 import { RapportOuvertures } from '../../core/models';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -197,11 +198,6 @@ export class OpeningsComparisonView {
 
   /* ------------------------------- reading ------------------------------- */
 
-  protected libelleJour(date: string): string {
-    const [, mois, jour] = date.split('-');
-    return `${jour}/${mois}`;
-  }
-
   protected consigneOf(date: string): string {
     return this.consignes.consigneOf(date)
       ? $localize`:@@ouvertures.comparer.sousConsigne:sous consigne`
@@ -227,7 +223,7 @@ export class OpeningsComparisonView {
 
   protected captionJour(jour: number, date: string): string {
     const consigne = this.consigneOf(date);
-    const libelle = this.libelleJour(date);
+    const libelle = libelleJour(date);
     return consigne
       ? $localize`:@@ouvertures.comparer.caption.consigne:J${jour}:jour: — ${libelle}:date: (${consigne}:consigne:)`
       : $localize`:@@ouvertures.comparer.caption:J${jour}:jour: — ${libelle}:date:`;

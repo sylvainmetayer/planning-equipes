@@ -15,7 +15,6 @@ import {
   dejaDeService,
   dayHeader,
   mergeSuggestions,
-  heure,
   heureDe,
   libelleCreneau,
   nextBatch,
@@ -103,10 +102,8 @@ function suggestions(overrides: Partial<SuggestionsReparation> = {}): Suggestion
   };
 }
 
-describe('heure / plage', () => {
+describe('plage', () => {
   it('trims the seconds the server sends', () => {
-    expect(heure('09:05:00')).toBe('09:05');
-    expect(heure(null)).toBe('');
     expect(plage('14:00:00', '18:00:00')).toBe('14:00 – 18:00');
   });
 

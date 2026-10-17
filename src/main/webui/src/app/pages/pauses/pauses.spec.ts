@@ -3,7 +3,6 @@ import { JourneeAnimateurPauses, PauseDueView, RapportPauses } from '../../core/
 import {
   coupuresRepasJournee,
   groupesDuJour,
-  heure,
   joursDuRapport,
   libelleRelais,
   minutesManquantes,
@@ -56,15 +55,6 @@ function rapport(
     ...overrides,
   };
 }
-
-describe('heure', () => {
-  it('shortens a server time and leaves a short one alone', () => {
-    expect(heure('19:00:00')).toBe('19:00');
-    expect(heure('19:00')).toBe('19:00');
-    // Same helper as every other view: the server always sends a time here.
-    expect(heure('')).toBe('');
-  });
-});
 
 describe('joursDuRapport', () => {
   it('lists each day once, chronologically, with its number', () => {

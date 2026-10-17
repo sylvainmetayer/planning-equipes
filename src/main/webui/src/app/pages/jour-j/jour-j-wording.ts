@@ -15,11 +15,7 @@ import type {
   SuggestionReparation,
   SuggestionsReparation,
 } from '../../core/models';
-
-/** `09:00:00` → `09:00`. The server sends whole `LocalTime`s; the aisle reads hours. */
-export function heure(brut: string | null | undefined): string {
-  return brut ? brut.slice(0, 5) : '';
-}
+import { formatHeure } from '../../core/time-of-day';
 
 /**
  * `2026-07-09T01:00:00` → `01:00`. The reference moment is a full instant, since
@@ -27,12 +23,12 @@ export function heure(brut: string | null | undefined): string {
  * operator needs off it is the time of day.
  */
 export function heureDe(instant: string | null | undefined): string {
-  return instant ? heure(instant.split('T')[1]) : '';
+  return instant ? formatHeure(instant.split('T')[1]) : '';
 }
 
 /** `14:00 – 18:00`, the one label every row of this screen is anchored on. */
 export function plage(debut: string | null | undefined, fin: string | null | undefined): string {
-  return `${heure(debut)} – ${heure(fin)}`;
+  return `${formatHeure(debut)} – ${formatHeure(fin)}`;
 }
 
 /**

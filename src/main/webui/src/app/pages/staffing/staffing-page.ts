@@ -37,11 +37,11 @@ import {
   TypologieStaffing,
 } from '../../core/models';
 import { errorMessage } from '../../core/error-message';
+import { libelleJour as jourCourt } from '../../core/horaire-stand';
 import { errorText, retainedValue } from '../../core/resource-state';
 import { consumeQueryParam } from '../../core/view-query-params';
 import { StatusMessage } from '../../shared/status-message';
 import { FormationPage } from '../formation/formation-page';
-import { libelleJour as jourCourt } from '../formation/formation';
 import { libelleTranche, NiveauMarge, niveauMarge, signe } from '../marge/marge';
 import { MarginBeforeGrid } from '../marge/margin-before-grid';
 import { teamLabel } from './verification';

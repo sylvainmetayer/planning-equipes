@@ -120,16 +120,6 @@ export function synthese(rapport: RapportFragilite): SyntheseFragilite {
   };
 }
 
-/** `2026-07-08` → `08/07`, and `10:00:00` → `10:00`. */
-export function libelleJour(date: string): string {
-  const [, mois, jour] = date.split('-');
-  return `${jour}/${mois}`;
-}
-
-export function heure(valeur: string): string {
-  return valeur.slice(0, 5);
-}
-
 /** Where a person's fragility is acted upon: a screen and its query params, ready for a `routerLink`. */
 export interface LienFragilite {
   route: string;

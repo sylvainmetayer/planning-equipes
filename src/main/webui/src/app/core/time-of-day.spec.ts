@@ -1,11 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import { endMinutesOfDay, formatDuration, formatHourTick, minutesOfDay } from './time-of-day';
+import {
+  endMinutesOfDay,
+  formatDuration,
+  formatHeure,
+  formatHourTick,
+  minutesOfDay,
+} from './time-of-day';
 
 describe('minutesOfDay', () => {
   it('counts the minutes since midnight', () => {
     expect(minutesOfDay('00:00')).toBe(0);
     expect(minutesOfDay('09:30')).toBe(570);
     expect(minutesOfDay('23:59')).toBe(1439);
+  });
+});
+
+describe('formatHeure', () => {
+  it('drops the seconds the server sends, and is empty for a missing time', () => {
+    expect(formatHeure('19:00:00')).toBe('19:00');
+    expect(formatHeure('19:00')).toBe('19:00');
+    expect(formatHeure('')).toBe('');
+    expect(formatHeure(null)).toBe('');
+    expect(formatHeure(undefined)).toBe('');
   });
 });
 

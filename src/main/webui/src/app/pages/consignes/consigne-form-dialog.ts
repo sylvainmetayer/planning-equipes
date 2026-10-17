@@ -21,6 +21,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ConsignesApi } from '../../core/api/consignes-api';
 import { bandeLabel, fenetreLabel, libelleDate } from '../../core/consigne-wording';
 import { normaliseHour } from '../../core/horaire-stand';
+import { formatHeure } from '../../core/time-of-day';
 import {
   ApercuConsigneJour,
   ConsigneEdition,
@@ -51,7 +52,6 @@ import {
   fenetresSaisies,
   filterStands,
   formVide,
-  heureSaisie,
   mergePreselection,
   parseFenetresSaisie,
   followDefaultWindows,
@@ -151,10 +151,10 @@ export class ConsigneFormDialog {
     ),
   );
   protected readonly fermetureDebut = signal(
-    heureSaisie(this.data.consigne?.fermetureDebut ?? formVide().fermetureDebut),
+    formatHeure(this.data.consigne?.fermetureDebut ?? formVide().fermetureDebut),
   );
   protected readonly fermetureFin = signal(
-    this.data.consigne ? heureSaisie(this.data.consigne.fermetureFin) : formVide().fermetureFin,
+    this.data.consigne ? formatHeure(this.data.consigne.fermetureFin) : formVide().fermetureFin,
   );
   protected readonly motif = signal(this.data.consigne?.motif ?? '');
   protected readonly prereglage = signal<string | null>(this.data.consigne?.prereglage ?? null);
@@ -329,8 +329,8 @@ export class ConsigneFormDialog {
     if (!prereglage) {
       return;
     }
-    this.fermetureDebut.set(heureSaisie(prereglage.fermetureDebut));
-    this.fermetureFin.set(heureSaisie(prereglage.fermetureFin));
+    this.fermetureDebut.set(formatHeure(prereglage.fermetureDebut));
+    this.fermetureFin.set(formatHeure(prereglage.fermetureFin));
     this.motif.set(prereglage.motif);
     this.remplacerFenetres(fenetresSaisies(prereglage.fenetres));
     this.repas.set(repasSaisie(prereglage.repas));

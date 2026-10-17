@@ -13,10 +13,12 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { RouterLink } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { errorPrefix } from '../../core/error-message';
+import { libelleJour } from '../../core/horaire-stand';
+import { libelleNiveau } from '../../core/niveau-competence';
 import { errorText, retainedValue } from '../../core/resource-state';
 import { OutputPanel } from '../../shared/output-panel';
 import { StatusMessage } from '../../shared/status-message';
-import { libelleJour, libelleNiveau, resumeDeficit } from './formation';
+import { resumeDeficit } from './formation';
 
 /**
  * « À former » : who to train, typologie by typologie — the foot of the

@@ -12,7 +12,6 @@ import {
   isWeek,
   filterRows,
   formatColonne,
-  heureCourte,
   indicateursFiche,
   libelleColonne,
   libelleSolveur,
@@ -177,13 +176,6 @@ describe('filterRows', () => {
     expect(filterRows([ALICE, BRUNO], 'emile')).toEqual([ALICE]);
     expect(filterRows([ALICE, BRUNO], 'e2e-b')).toEqual([BRUNO]);
     expect(filterRows([ALICE, BRUNO], 'personne')).toEqual([]);
-  });
-});
-
-describe('heureCourte', () => {
-  it('drops the seconds the server writes, and stays empty without a report', () => {
-    expect(heureCourte('20:00:00')).toBe('20:00');
-    expect(heureCourte(undefined)).toBe('');
   });
 });
 

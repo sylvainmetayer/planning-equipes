@@ -8,13 +8,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CreneauxApi } from '../../core/api/creneaux-api';
+import { libelleJour } from '../../core/horaire-stand';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { labelsOf, standNames } from '../../core/reference-labels';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { DerivationRequest, RapportDerivation } from '../../core/models';
-import { dayMonth, holidayDays, summarizeVacationsByDay } from './jours-resume';
+import { holidayDays, summarizeVacationsByDay } from './jours-resume';
 import { JoursFeriesService } from '../../core/jours-feries.service';
 import { PastilleFerie } from '../../shared/pastille-ferie';
 import { bilanGrille, grilleBloquee, gridAnomalyIcon, trierAnomalies } from './grille-creneaux';
@@ -108,7 +109,7 @@ export class CreneauDerivationDialog {
   });
   /** « 14/07, 15/08 »: the dates of the preview that fall on a public holiday. */
   protected readonly datesFeriees = computed(() =>
-    holidayDays(this.resume()).map((jour) => dayMonth(jour.date)),
+    holidayDays(this.resume()).map((jour) => libelleJour(jour.date)),
   );
   protected readonly bilan = computed(() => {
     const apercu = this.apercu();

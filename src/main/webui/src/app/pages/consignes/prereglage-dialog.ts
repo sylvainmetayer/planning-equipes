@@ -7,6 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { ConsignesApi } from '../../core/api/consignes-api';
 import { normaliseHour } from '../../core/horaire-stand';
+import { formatHeure } from '../../core/time-of-day';
 import { PrereglageConsigne } from '../../core/models';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -16,7 +17,6 @@ import {
   fenetresDemandees,
   fenetresSaisies,
   formatFenetresSaisie,
-  heureSaisie,
   parseFenetresSaisie,
   repasDemande,
   repasSaisie,
@@ -57,10 +57,10 @@ export class PrereglageDialog {
   protected readonly editingId = this.data.prereglage?.id ?? null;
   protected readonly nom = signal(this.data.prereglage?.nom ?? '');
   protected readonly fermetureDebut = signal(
-    heureSaisie(this.data.prereglage?.fermetureDebut ?? '12:00'),
+    formatHeure(this.data.prereglage?.fermetureDebut ?? '12:00'),
   );
   protected readonly fermetureFin = signal(
-    this.data.prereglage ? heureSaisie(this.data.prereglage.fermetureFin) : '18:00',
+    this.data.prereglage ? formatHeure(this.data.prereglage.fermetureFin) : '18:00',
   );
   protected readonly motif = signal(this.data.prereglage?.motif ?? '');
   protected readonly ligne = signal(

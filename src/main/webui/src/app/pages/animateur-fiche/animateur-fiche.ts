@@ -14,6 +14,7 @@ import {
   TypeContrainteAdHoc,
   TypologieItem,
 } from '../../core/models';
+import { formatHeure } from '../../core/time-of-day';
 
 /** Wording of a legal regime, age included. */
 export function regimeLabel(regime: LegalRegime): string {
@@ -110,19 +111,6 @@ export function competenceRows(
     .sort((left, right) => left.label.localeCompare(right.label));
 }
 
-export function niveauLabel(niveau: NiveauCompetence | null): string {
-  switch (niveau) {
-    case 'DEBUTANT':
-      return $localize`:@@competences.niveau.debutant:Débutant`;
-    case 'AUTONOME':
-      return $localize`:@@competences.niveau.autonome:Autonome`;
-    case 'REFERENT':
-      return $localize`:@@competences.niveau.referent:Référent`;
-    default:
-      return $localize`:@@competences.niveau.aucun:Aucune appréciation`;
-  }
-}
-
 export function adjustmentTypeLabel(type: TypeContrainteAdHoc): string {
   switch (type) {
     case 'INDISPONIBILITE_FORCEE':
@@ -146,7 +134,7 @@ export function adjustmentScope(ajustement: ProfileAdjustment): string {
   }
   if (ajustement.date) {
     parts.push(
-      `${ajustement.date} ${shortTime(ajustement.heureDebut)}→${shortTime(ajustement.heureFin)}`,
+      `${ajustement.date} ${formatHeure(ajustement.heureDebut)}→${formatHeure(ajustement.heureFin)}`,
     );
   }
   return parts.length > 0
@@ -163,11 +151,6 @@ export function confirmationLabel(statut: StatutConfirmation): string {
     case 'RELANCE':
       return $localize`:@@animateurs.confirmation.relance:Relancé`;
   }
-}
-
-/** `10:00:00` → `10:00`; nothing for nothing. */
-export function shortTime(value: string | null | undefined): string {
-  return value ? value.slice(0, 5) : '';
 }
 
 /** How many seats are still ahead, the ones already started being listed dimmed. */
@@ -219,7 +202,7 @@ export function seatLabel(seat: {
   heureFin: string | null;
 }): string {
   const stand = seat.standNom || seat.standId || '';
-  return `${stand} ${shortTime(seat.heureDebut)}–${shortTime(seat.heureFin)}`.trim();
+  return `${stand} ${formatHeure(seat.heureDebut)}–${formatHeure(seat.heureFin)}`.trim();
 }
 
 /** One line of the inline competence editor: the level, and the wish. */

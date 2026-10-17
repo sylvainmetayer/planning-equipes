@@ -69,6 +69,8 @@ import { OngletEspace, readOngletEspace } from './espace-onglets';
 import { StatusMessage } from '../../shared/status-message';
 import { NewWindowLink } from '../../shared/new-window-link';
 import { EspaceContact } from './espace-contact';
+import { HhmmPipe } from '../../shared/hhmm-pipe';
+import { formatHeure } from '../../core/time-of-day';
 
 /**
  * The animateur's own planning (issue #165): their seats from the last
@@ -106,6 +108,7 @@ import { EspaceContact } from './espace-contact';
     MatTooltipModule,
     RouterLink,
     EspaceContact,
+    HhmmPipe,
   ],
   templateUrl: './espace-planning-page.html',
   styleUrl: './espace-planning-page.css',
@@ -177,7 +180,7 @@ export class EspacePlanningPage {
       .map((candidat) => ({
         creneauId: candidat.creneauId,
         standId: candidat.standId,
-        libelle: `${candidat.standNom}, ${this.heure(candidat.heureDebut)}–${this.heure(candidat.heureFin)}`,
+        libelle: `${candidat.standNom}, ${formatHeure(candidat.heureDebut)}–${formatHeure(candidat.heureFin)}`,
       }));
     const data: SignalementDialogData = {
       date: jour.date,
@@ -730,10 +733,6 @@ export class EspacePlanningPage {
    */
   protected equipeNombreuse(poste: { coequipiers: string[] }): boolean {
     return poste.coequipiers.length > EQUIPE_NOMBREUSE;
-  }
-
-  protected heure(valeur: string | null): string {
-    return valeur ? valeur.slice(0, 5) : '';
   }
 
   /** `https://www.openstreetmap.org/…` when the stand's emplacement is geocoded (issue #534). */

@@ -12,8 +12,8 @@ import { CreneauxApi } from '../../core/api/creneaux-api';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { JourSemaine, RapportGrille, RapportRecurrence, RegleRecurrence } from '../../core/models';
-import { libelleJourSemaine } from '../../core/horaire-stand';
-import { dayMonth, holidayDays, summarizeVacationsByDay } from './jours-resume';
+import { libelleJour, libelleJourSemaine } from '../../core/horaire-stand';
+import { holidayDays, summarizeVacationsByDay } from './jours-resume';
 import { JoursFeriesService } from '../../core/jours-feries.service';
 import { PastilleFerie } from '../../shared/pastille-ferie';
 import {
@@ -111,7 +111,7 @@ export class CreneauSerieDialog {
   });
   /** « 14/07, 15/08 »: the dates of the preview that fall on a public holiday. */
   protected readonly datesFeriees = computed(() =>
-    holidayDays(this.resume()).map((jour) => dayMonth(jour.date)),
+    holidayDays(this.resume()).map((jour) => libelleJour(jour.date)),
   );
   protected readonly anomalies = computed(() => {
     const apercu = this.apercu();

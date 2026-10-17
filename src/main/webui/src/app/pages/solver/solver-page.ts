@@ -17,6 +17,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { PlanningApi } from '../../core/api/planning-api';
+import { libelleJour } from '../../core/horaire-stand';
 import { intlLocale } from '../../core/locale';
 import {
   CauseInfaisabilite,
@@ -619,8 +620,8 @@ export class SolverPage implements OnInit {
       const jours = gardees
         .map((lecture) =>
           lecture.motif === 'PASSE'
-            ? $localize`:@@solver.aFroid.confirm.gardee.passee:${jourCourt(lecture.jour)}:jour: (déjà travaillée)`
-            : $localize`:@@solver.aFroid.confirm.gardee.verrouillee:${jourCourt(lecture.jour)}:jour: (verrouillée)`,
+            ? $localize`:@@solver.aFroid.confirm.gardee.passee:${libelleJour(lecture.jour)}:jour: (déjà travaillée)`
+            : $localize`:@@solver.aFroid.confirm.gardee.verrouillee:${libelleJour(lecture.jour)}:jour: (verrouillée)`,
         )
         .join(', ');
       phrase +=
@@ -852,13 +853,4 @@ export class SolverPage implements OnInit {
     // notification (it must run whether or not this page is mounted); this
     // only updates the on-page state.
   }
-}
-
-/** « 08/07 » for `2026-07-08`, read as a local date: `new Date('2026-07-08')` is midnight UTC, a day early west of it. */
-function jourCourt(jour: string): string {
-  const [annee, mois, quantieme] = jour.split('-').map(Number);
-  return new Date(annee, mois - 1, quantieme).toLocaleDateString(intlLocale(), {
-    day: '2-digit',
-    month: '2-digit',
-  });
 }

@@ -10,6 +10,7 @@
 // animateur's appreciations in full, exactly as the fiche form does.
 
 import { AccesGrille } from '../../core/grille-saisie';
+import { COMPETENCE_LEVELS } from '../../core/niveau-competence';
 import { correspondAuFiltre, normaliserPourFiltre } from '../../core/text-filter';
 import { Animateur, NiveauCompetence, SaisieAnimateurCompetences } from '../../core/models';
 
@@ -21,9 +22,6 @@ export interface CompetenceAddress {
 
 /** `animateurId` → `typologieId` → level, `null` for no appreciation. */
 export type CellulesCompetences = Map<string, Map<string, NiveauCompetence | null>>;
-
-/** The levels in the order of the keys 1, 2, 3 — and of a click cycling through them. */
-export const NIVEAUX: readonly NiveauCompetence[] = ['DEBUTANT', 'AUTONOME', 'REFERENT'];
 
 export function cellKey(animateurId: string, typologieId: string): string {
   return `${animateurId}#${typologieId}`;
@@ -124,7 +122,7 @@ export function saisie(
 
 /**
  * What a key means in a cell: `0`, Backspace and Delete clear it, `1` to `3`
- * set the level in the order of {@link NIVEAUX}; anything else is not a
+ * set the level in the order of {@link COMPETENCE_LEVELS}; anything else is not a
  * value, and `undefined` says so.
  */
 export function levelForKey(key: string): NiveauCompetence | null | undefined {
@@ -132,16 +130,16 @@ export function levelForKey(key: string): NiveauCompetence | null | undefined {
     return null;
   }
   const index = ['1', '2', '3'].indexOf(key);
-  return index < 0 ? undefined : NIVEAUX[index];
+  return index < 0 ? undefined : COMPETENCE_LEVELS[index];
 }
 
 /** A click cycles through the levels: empty, beginner, autonomous, referent, then empty again. */
 export function nextLevel(current: NiveauCompetence | null): NiveauCompetence | null {
   if (current === null) {
-    return NIVEAUX[0];
+    return COMPETENCE_LEVELS[0];
   }
-  const index = NIVEAUX.indexOf(current);
-  return index < 0 || index === NIVEAUX.length - 1 ? null : NIVEAUX[index + 1];
+  const index = COMPETENCE_LEVELS.indexOf(current);
+  return index < 0 || index === COMPETENCE_LEVELS.length - 1 ? null : COMPETENCE_LEVELS[index + 1];
 }
 
 /**

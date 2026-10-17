@@ -13,13 +13,13 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RapportPauses } from '../../core/models';
+import { formatHeure } from '../../core/time-of-day';
 import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
 import { IntendanceJour } from '../intendance/intendance-jour';
 import {
   coupuresRepasJournee,
   GroupeStand,
   groupesDuJour,
-  heure,
   JourPauses,
   joursDuRapport,
   libelleRelais,
@@ -143,7 +143,7 @@ export class PausesView {
     () => this.withoutRelaisOnly() || this.coupuresManquantesSeulement(),
   );
 
-  protected readonly heure = heure;
+  protected readonly heure = formatHeure;
   protected readonly libelleRelais = libelleRelais;
 
   reinitialiser(): void {

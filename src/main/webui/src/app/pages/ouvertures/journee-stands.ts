@@ -4,7 +4,7 @@
 // the grid's panel takes from it what a cell cannot show, a window declared
 // at an hour no timeslot covers — and the `minutesDe` `rendu-grille.ts` measures a cell with.
 
-import { formatHourTick } from '../../core/time-of-day';
+import { formatHeure, formatHourTick } from '../../core/time-of-day';
 import {
   AnomalieOuverture,
   CelluleJourOuverture,
@@ -112,8 +112,8 @@ export function buildJourneeStands(
   const span = (heureDebut: string, heureFin: string, label: string): SpanJournee => {
     const [d, f] = intervalle(heureDebut, heureFin);
     return {
-      heureDebut: court(heureDebut),
-      heureFin: court(heureFin),
+      heureDebut: formatHeure(heureDebut),
+      heureFin: formatHeure(heureFin),
       offsetPercent: percent(d),
       widthPercent: ((f - d) / amplitude) * 100,
       label,
@@ -128,7 +128,7 @@ export function buildJourneeStands(
     ...span(
       colonne.heureDebut,
       colonne.heureFin,
-      `${court(colonne.heureDebut)}–${court(colonne.heureFin)}`,
+      `${formatHeure(colonne.heureDebut)}–${formatHeure(colonne.heureFin)}`,
     ),
     id: colonne.id,
     couverturePause: colonne.couverturePause,
@@ -144,13 +144,13 @@ export function buildJourneeStands(
       // Built without `span`: the window is placed from the bounds computed
       // when it was read, and an open-ended one has no end to format.
       const dehors = (horsGrille.get(ligne.standId) ?? []).map(([d, f, heureDebut, heureFin]) => {
-        const fin = heureFin === null ? OUVERTE : court(heureFin);
+        const fin = heureFin === null ? OUVERTE : formatHeure(heureFin);
         return {
-          heureDebut: court(heureDebut),
+          heureDebut: formatHeure(heureDebut),
           heureFin: fin,
           offsetPercent: percent(d),
           widthPercent: ((f - d) / amplitude) * 100,
-          label: `${nom} · ${court(heureDebut)}–${fin}`,
+          label: `${nom} · ${formatHeure(heureDebut)}–${fin}`,
         };
       });
       return {
@@ -170,10 +170,6 @@ export function buildJourneeStands(
 /** Width of one hour as a `background-size`, so the gridlines are one repeating background. */
 export function pasHoraire(vue: JourneeStandsVue): string {
   return `${100 / ((vue.finMinutes - vue.debutMinutes) / 60)}% 100%`;
-}
-
-function court(heure: string): string {
-  return heure.length > 5 ? heure.slice(0, 5) : heure;
 }
 
 /** `creneauId@tranche` → is the column a meal relay. */
@@ -202,7 +198,7 @@ function blocsDe(
         ...span(
           segment.heureDebut,
           segment.heureFin,
-          `${court(segment.heureDebut)}–${court(segment.heureFin)} · ${segment.effectif}`,
+          `${formatHeure(segment.heureDebut)}–${formatHeure(segment.heureFin)} · ${segment.effectif}`,
         ),
         effectif: segment.effectif,
         couverturePause,

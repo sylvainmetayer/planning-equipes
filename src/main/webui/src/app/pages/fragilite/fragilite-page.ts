@@ -20,9 +20,11 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { errorPrefix } from '../../core/error-message';
+import { libelleJour } from '../../core/horaire-stand';
 import { AnimateurFragilite, CompetenceRare, SeveriteFragilite } from '../../core/models';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { errorText, retainedValue } from '../../core/resource-state';
+import { formatHeure } from '../../core/time-of-day';
 import { SolverJobService } from '../../core/solver-job.service';
 import { typologieLabels } from '../../core/typologie-colors';
 import { VerrouillageStore } from '../../core/verrouillage.store';
@@ -36,9 +38,7 @@ import {
   FiltreFragilite,
   filtrerAnimateurs,
   filtrerCompetences,
-  heure,
   iconeSeverite,
-  libelleJour,
   LienFragilite,
   lireFiltre,
   readView,
@@ -203,7 +203,7 @@ export class FragilitePage {
   protected readonly classeSeverite = classeSeverite;
   protected readonly iconeSeverite = iconeSeverite;
   protected readonly libelleJour = libelleJour;
-  protected readonly heure = heure;
+  protected readonly heure = formatHeure;
 
   /** Four rows of « Verrouiller » alone would be indistinguishable: the button names whom. */
   protected lockLabel(ligne: AnimateurFragilite): string {

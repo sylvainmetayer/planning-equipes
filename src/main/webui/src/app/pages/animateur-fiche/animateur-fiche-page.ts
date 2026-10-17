@@ -82,6 +82,8 @@ import { resumeRelance } from '../animateurs/relance-resume';
 import { lastDeliveryLabel } from '../animateurs/mail-delivery';
 import { injectAppConfig } from '../../core/app-config';
 import { intlLocale } from '../../core/locale';
+import { libelleNiveau } from '../../core/niveau-competence';
+import { formatHeure } from '../../core/time-of-day';
 import { formatColonne, indicateursFiche, libelleColonne } from '../equite/equite';
 import {
   CompetenceDraft,
@@ -98,13 +100,11 @@ import {
   confirmationLabel,
   daysOffOutsideEvent,
   initialSections,
-  niveauLabel,
   readSection,
   regimeChanges,
   regimeLabel,
   seatLabel,
   seatsOnDay,
-  shortTime,
   upcomingCount,
 } from './animateur-fiche';
 import { AnimateurTimeline, exportFilename } from './animateur-timeline';
@@ -428,14 +428,14 @@ export class AnimateurFichePage implements OnInit {
   protected readonly busy = signal<string | null>(null);
 
   protected readonly regimeLabel = regimeLabel;
-  protected readonly niveauLabel = niveauLabel;
+  protected readonly niveauLabel = libelleNiveau;
   protected readonly formatColonne = formatColonne;
   protected readonly libelleColonne = libelleColonne;
   protected readonly adjustmentTypeLabel = adjustmentTypeLabel;
   protected readonly adjustmentScope = adjustmentScope;
   protected readonly confirmationLabel = confirmationLabel;
   protected readonly statutDemandeLabel = statutDemandeLabel;
-  protected readonly shortTime = shortTime;
+  protected readonly shortTime = formatHeure;
 
   /** The last mail sent to this person, in words — « parti », « simulé », or the failure and why. */
   protected lastDeliveryLabel(envoi: LastMailDelivery): string {

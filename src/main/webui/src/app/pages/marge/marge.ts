@@ -7,6 +7,7 @@
 
 import { CelluleMarge, JourMarge, ModeMarge, RapportMarge } from '../../core/models';
 import { compareCodeUnits } from '../../core/string-order';
+import { formatHeure } from '../../core/time-of-day';
 
 /**
  * The divergent scale. Five steps and not three: a cell at −1 and a cell at −6
@@ -60,13 +61,8 @@ export interface SyntheseMarge {
   date: string;
 }
 
-/** Hours arrive as `HH:mm:ss` from the API; the seconds are always zero and never read. */
-export function heure(valeur: string): string {
-  return valeur.length > 5 ? valeur.slice(0, 5) : valeur;
-}
-
 export function libelleTranche(debut: string, fin: string): string {
-  return `${heure(debut)}-${heure(fin)}`;
+  return `${formatHeure(debut)}-${formatHeure(fin)}`;
 }
 
 export function niveauMarge(marge: number): NiveauMarge {
@@ -89,7 +85,7 @@ export function signe(marge: number): string {
 
 /** The column a timeslot falls in: its start hour, whatever its end. */
 export function columnKey(debut: string): string {
-  return heure(debut);
+  return formatHeure(debut);
 }
 
 /**
@@ -107,7 +103,7 @@ export function normalizeColumns(
   for (const tranche of tranches) {
     const key = columnKey(tranche.debut);
     const ends = fins.get(key) ?? new Set<string>();
-    ends.add(heure(tranche.fin));
+    ends.add(formatHeure(tranche.fin));
     fins.set(key, ends);
   }
   // Midnight as an end is the end of the day, after every other hour.
