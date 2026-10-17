@@ -88,6 +88,7 @@ import {
 import { resumeRelance } from './relance-resume';
 import { typologieLabel, typologieLabels } from '../../core/typologie-colors';
 import { ImportButton } from '../../shared/import-button';
+import { copyEspaceLink } from '../../core/clipboard';
 
 /**
  * Animateurs CRUD. Minor/adult status is never stored: it is derived from the
@@ -395,20 +396,7 @@ export class AnimateursPage implements OnInit {
       return;
     }
     const lien = `${window.location.origin}/animateur/${animateur.accessToken}`;
-    try {
-      await navigator.clipboard.writeText(lien);
-      this.notifications.notify({
-        title: $localize`:@@animateurs.lienCopie:Lien de l'espace animateur copié.`,
-        variant: 'success',
-        timeout: 4000,
-      });
-    } catch {
-      this.notifications.notify({
-        title: $localize`:@@animateurs.lienCopieEchec:Impossible de copier le lien`,
-        message: lien,
-        variant: 'warning',
-      });
-    }
+    await copyEspaceLink(this.notifications, lien);
   }
 
   /** Rotates the espace access token: the link on already-distributed PDFs stops working. */

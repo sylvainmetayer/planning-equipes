@@ -3,6 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { NotificationService } from '../core/notification.service';
+import { copyToClipboard } from '../core/clipboard';
 
 /**
  * Monospaced result panel shared by the action pages (Fichiers, Débogage,
@@ -50,18 +51,14 @@ export class OutputPanel {
   private readonly notifications = inject(NotificationService);
 
   protected async copy(): Promise<void> {
-    try {
-      await navigator.clipboard.writeText(this.text());
+    const copied = await copyToClipboard(this.notifications, this.text(), null, {
+      title: $localize`:@@output.copyFailed:Copie impossible`,
+      message: $localize`:@@output.copyFailedMessage:Le navigateur a refusé l'accès au presse-papiers. Sélectionnez le texte et copiez-le à la main.`,
+      variant: 'error',
+    });
+    if (copied) {
       this.copie.set(true);
       setTimeout(() => this.copie.set(false), 2000);
-    } catch {
-      // Clipboard access can be refused (permissions, insecure context); saying
-      // so beats a button that silently does nothing.
-      this.notifications.notify({
-        title: $localize`:@@output.copyFailed:Copie impossible`,
-        message: $localize`:@@output.copyFailedMessage:Le navigateur a refusé l'accès au presse-papiers. Sélectionnez le texte et copiez-le à la main.`,
-        variant: 'error',
-      });
     }
   }
 }

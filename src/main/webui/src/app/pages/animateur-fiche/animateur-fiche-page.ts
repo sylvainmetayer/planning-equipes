@@ -110,6 +110,7 @@ import {
 import { AnimateurTimeline, exportFilename } from './animateur-timeline';
 import { EquiteRadar } from './equite-radar';
 import { OPTIONAL_AXES, readOptionalAxes } from './radar';
+import { copyEspaceLink } from '../../core/clipboard';
 
 /** The levels the inline editor offers, « aucune » included. */
 const NIVEAUX: readonly (NiveauCompetence | null)[] = [null, 'DEBUTANT', 'AUTONOME', 'REFERENT'];
@@ -546,20 +547,7 @@ export class AnimateurFichePage implements OnInit {
     if (!lien) {
       return;
     }
-    try {
-      await navigator.clipboard.writeText(lien);
-      this.notifications.notify({
-        title: $localize`:@@animateurs.lienCopie:Lien de l'espace animateur copié.`,
-        variant: 'success',
-        timeout: 4000,
-      });
-    } catch {
-      this.notifications.notify({
-        title: $localize`:@@animateurs.lienCopieEchec:Impossible de copier le lien`,
-        message: lien,
-        variant: 'warning',
-      });
-    }
+    await copyEspaceLink(this.notifications, lien);
   }
 
   /**
