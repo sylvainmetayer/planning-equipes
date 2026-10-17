@@ -765,9 +765,27 @@ export function estJournalisable(avertissement: Avertissement): boolean {
   return !AVERTISSEMENTS_HORS_JOURNAL.has(avertissement.type);
 }
 
+/** Body of `POST`/`PUT /api/animateurs`: the fiche as written, and its warnings. */
+export interface WrittenAnimateur {
+  animateur: Animateur;
+  avertissements: Avertissement[];
+}
+
+/** Body of `POST`/`PUT /api/creneaux` — same shape, same reason. */
+export interface WrittenCreneau {
+  creneau: Creneau;
+  avertissements: Avertissement[];
+}
+
 /** Body of `POST /api/verrouillages` — the lock as written, and what it froze that already breaks a rule. */
 export interface WrittenVerrouillage {
   verrouillage: VerrouillagePlanning;
+  avertissements: Avertissement[];
+}
+
+/** Body of `POST`/`PUT /api/stands` — the schedule's warnings ride along. */
+export interface WrittenStand {
+  stand: Stand;
   avertissements: Avertissement[];
 }
 
@@ -1324,7 +1342,7 @@ export interface ContributionAdHoc {
 
 /**
  * One constraint's impact on a single poste, from `/api/postes/{id}/explication`
- * or `/api/postes/{id}/suggestions-reparation` — either a violation it is party to,
+ * or `/api/jour-j/postes/{id}/suggestions` — either a violation it is party to,
  * or an entry meaning it has no match involving that poste. "Respectée" only
  * means no violation was found for this poste, not that the constraint is
  * even applicable to it — never present it as a positive endorsement.
@@ -1365,7 +1383,7 @@ export interface SuggestionReparation {
 }
 
 /**
- * `/api/postes/{posteId}/suggestions-reparation`: viable replacements for one
+ * `/api/jour-j/postes/{posteId}/suggestions`: viable replacements for one
  * poste, best impact first, nothing persisted.
  *
  * The search is bounded — `candidatsEvalues` of the `candidatsEligibles` were
@@ -5440,6 +5458,10 @@ export interface AffichageMuralLinkRequest {
 export interface CreatedAffichageMuralLink {
   link: AffichageMuralLink;
   token: string;
+}
+
+export interface QrCodeRequest {
+  link: string;
 }
 
 /** A QR code as `size` rows of `size` characters, `'1'` for a dark module. */
