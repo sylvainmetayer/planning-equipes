@@ -1,41 +1,13 @@
-// Per-assignment explainability ("Pourquoi lui ?"): calls the /api/postes/*
-// endpoints with the currently displayed (already solved) planning, so the
-// server can explain one poste without re-solving anything.
+// The seat writes of the day views and the repair assistant: moving a seat
+// and handing it to someone, through the /api/postes/* endpoints.
 
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from './api.service';
-import {
-  AffectationExplanation,
-  DeplacementSimulation,
-  PlanningEvenement,
-  SuggestionsReparation,
-} from './models';
+import { DeplacementSimulation } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class AffectationExplanationService {
   private readonly api = inject(ApiService);
-
-  explique(planning: PlanningEvenement, posteId: string): Promise<AffectationExplanation> {
-    return this.api.post<AffectationExplanation>(
-      `/api/postes/${encodeURIComponent(posteId)}/explication`,
-      withoutScore(planning),
-    );
-  }
-
-  /**
-   * Repair assistant (issue #71): the server enumerates the eligible
-   * animateurs itself and returns the viable ones, best impact first. Bounded
-   * server-side — the answer says how many candidates it actually evaluated.
-   */
-  suggererReparations(
-    planning: PlanningEvenement,
-    posteId: string,
-  ): Promise<SuggestionsReparation> {
-    return this.api.post<SuggestionsReparation>(
-      `/api/postes/${encodeURIComponent(posteId)}/suggestions-reparation`,
-      withoutScore(planning),
-    );
-  }
 
   /**
    * A seat dropped somewhere else (issue #308): on another seat, or on a
@@ -90,16 +62,4 @@ export class AffectationExplanationService {
       null,
     );
   }
-}
-
-/**
- * The server crashes deserializing a `PlanningEvenement` whose `score` is
- * populated (Quarkus's build-time Jackson codegen for Timefold's
- * `HardMediumSoftScore` calls its private no-arg constructor) — see
- * `AffectationExplanationResourceTest`. `score` is solver-computed output the
- * server never needs back, so it is simply omitted from the request body.
- */
-function withoutScore(planning: PlanningEvenement): Omit<PlanningEvenement, 'score'> {
-  const { score, ...rest } = planning;
-  return rest;
 }
