@@ -5,7 +5,6 @@ import dev.sylvain.planning.service.solve.DeplacementService;
 import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.AffectationExplanation;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.DeplacementSimulation;
-import dev.sylvain.planning.service.solve.PlanningWhatIf.SuggestionsReparation;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.SwapSimulation;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -19,16 +18,17 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 /**
- * Per-assignment explainability ("Pourquoi lui ?"): given an already-solved
- * {@link PlanningEvenement} (as posted by the client — never re-solved here),
- * explains why a specific {@code PosteAffectation} is scored the way it is,
- * and lets the caller simulate handing that same poste to a different
- * animateur to see the score impact before actually changing anything.
+ * Per-assignment explainability ("Pourquoi lui ?"): explains why a specific
+ * {@code PosteAffectation} of the persisted plan is scored the way it is, and
+ * lets the caller simulate handing a poste of an already-solved
+ * {@link PlanningEvenement} (as posted by the client — never re-solved here)
+ * to a different animateur to see the score impact before changing anything.
  *
- * <p>Also hosts the repair assistant of issue #71 — the search for viable
- * candidates, and the one write that applies the chosen one to the persisted
- * plan. Same {@code /postes} path, so the two live in the same resource
- * rather than in two classes JAX-RS would refuse to map.</p>
+ * <p>Also hosts the write of the repair assistant of issue #71, which applies
+ * the chosen candidate to the persisted plan — the search itself is
+ * {@code POST /api/jour-j/postes/{posteId}/suggestions}. Same {@code /postes}
+ * path, so the two live in the same resource rather than in two classes
+ * JAX-RS would refuse to map.</p>
  */
 @Path("/postes")
 @Produces(MediaType.APPLICATION_JSON)
@@ -47,22 +47,10 @@ public class AffectationExplanationResource {
 
     /**
      * Constraint matches (violated and not) involving the given poste in the
-     * posted planning. The planning must already be solved/persisted — this
-     * never triggers a solve.
-     */
-    @POST
-    @Path("/{posteId}/explication")
-    public Response explain(@PathParam("posteId") String posteId, PlanningEvenement planning) {
-        AffectationExplanation explication = planningService.explainAffectation(planning, posteId);
-        return Response.ok(explication).build();
-    }
-
-    /**
-     * The same explanation on the <b>persisted</b> plan, prepared server-side
-     * under this edition's rules — the constraints switched off, the weights,
-     * the quotas — which a plan posted by a screen does not carry. What the
-     * Siège panel's « Pourquoi lui ? » reads. Takes no body; 409 while nothing
-     * has been solved yet.
+     * <b>persisted</b> plan, prepared server-side under this edition's rules —
+     * the constraints switched off, the weights, the quotas. What the Siège
+     * panel's « Pourquoi lui ? » reads. Takes no body, never triggers a solve;
+     * 409 while nothing has been solved yet.
      */
     @GET
     @Path("/{posteId}/explication")
@@ -83,25 +71,6 @@ public class AffectationExplanationResource {
             PlanningEvenement planning) {
         SwapSimulation simulation = planningService.simulateSwap(planning, posteId, animateurId);
         return Response.ok(simulation).build();
-    }
-
-    /**
-     * Repair suggestions for one poste (issue #71): the assistant that
-     * <em>looks for</em> candidates, where {@code simulation-swap} only scores
-     * the one it is given. Nothing is persisted, and the cost is bounded —
-     * {@code plafond} caps how many candidates are simulated, {@code depuis}
-     * says from which rank of the eligible list, and the answer reports both
-     * how many were eligible and how many were actually evaluated.
-     */
-    @POST
-    @Path("/{posteId}/suggestions-reparation")
-    public Response suggererReparations(
-            @PathParam("posteId") String posteId,
-            @QueryParam("plafond") Integer plafond,
-            @QueryParam("depuis") Integer depuis,
-            PlanningEvenement planning) {
-        SuggestionsReparation suggestions = planningService.suggererReparations(planning, posteId, plafond, depuis);
-        return Response.ok(suggestions).build();
     }
 
     /**

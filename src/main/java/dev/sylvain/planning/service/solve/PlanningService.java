@@ -319,11 +319,6 @@ public class PlanningService {
     /** @see PlanningWhatIf#SUGGESTIONS_PLAFOND_MAX */
     public static final int SUGGESTIONS_PLAFOND_MAX = PlanningWhatIf.SUGGESTIONS_PLAFOND_MAX;
 
-    /** @see PlanningWhatIf#explainAffectation */
-    public PlanningWhatIf.AffectationExplanation explainAffectation(PlanningEvenement solved, String posteId) {
-        return whatIf.explainAffectation(solved, posteId);
-    }
-
     /** @see PlanningWhatIf#persistedExplainAffectation */
     public PlanningWhatIf.AffectationExplanation persistedExplainAffectation(String posteId) {
         return whatIf.persistedExplainAffectation(posteId);
@@ -339,12 +334,6 @@ public class PlanningService {
     public PlanningWhatIf.SuggestionsReparation suggererReparations(
             PlanningEvenement solved, String posteId, Integer plafondDemande) {
         return whatIf.suggererReparations(solved, posteId, plafondDemande);
-    }
-
-    /** @see PlanningWhatIf#suggererReparations */
-    public PlanningWhatIf.SuggestionsReparation suggererReparations(
-            PlanningEvenement solved, String posteId, Integer plafondDemande, Integer depuis) {
-        return whatIf.suggererReparations(solved, posteId, plafondDemande, depuis);
     }
 
     /** @see PlanningWhatIf#creneauAvailability */

@@ -16995,41 +16995,6 @@
         },
         "summary" : "Explain Persisted",
         "tags" : [ "Affectation Explanation Resource" ]
-      },
-      "post" : {
-        "parameters" : [ {
-          "name" : "posteId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/PlanningEvenement"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : { }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request"
-          }
-        },
-        "summary" : "Explain",
-        "tags" : [ "Affectation Explanation Resource" ]
       }
     },
     "/api/postes/{posteId}/placement" : {
@@ -17104,57 +17069,6 @@
           }
         },
         "summary" : "Simulate Swap",
-        "tags" : [ "Affectation Explanation Resource" ]
-      }
-    },
-    "/api/postes/{posteId}/suggestions-reparation" : {
-      "post" : {
-        "parameters" : [ {
-          "name" : "posteId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "depuis",
-          "in" : "query",
-          "schema" : {
-            "type" : "integer",
-            "format" : "int32"
-          }
-        }, {
-          "name" : "plafond",
-          "in" : "query",
-          "schema" : {
-            "type" : "integer",
-            "format" : "int32"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/PlanningEvenement"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : { }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request"
-          }
-        },
-        "summary" : "Suggerer Reparations",
         "tags" : [ "Affectation Explanation Resource" ]
       }
     },

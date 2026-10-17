@@ -1528,14 +1528,13 @@ importe ; une duplication d'édition et un dump SQL recopient l'auteur tel quel.
 
 ## Explicabilité
 
-« Pourquoi lui ? » cible un seul poste d'un planning **déjà résolu et jamais
-re-résolu** : celui qu'on envoie (`POST /api/postes/{id}/explication`, que
-plus aucun écran n'appelle), ou le planning enregistré (`GET` sur le même chemin, sans
-corps). Le second est **préparé côté serveur** comme une résolution le prépare
-— contraintes désactivées, poids et quotas de l'édition — ; c'est ce que lisent
-le panneau du siège et l'outil MCP `expliquer_affectation`. Un plan envoyé ne
-porte pas ces règles : expliqué nu, il reprochait au titulaire une contrainte
-que l'organisateur avait éteinte.
+« Pourquoi lui ? » (`GET /api/postes/{id}/explication`, sans corps) cible un
+seul poste du planning enregistré, **déjà résolu et jamais re-résolu**. Ce
+planning est **préparé côté serveur** comme une résolution le prépare —
+contraintes désactivées, poids et quotas de l'édition — ; c'est ce que lisent
+le panneau du siège et l'outil MCP `expliquer_affectation`. Un plan envoyé par
+l'écran ne porterait pas ces règles : expliqué nu, il reprocherait au
+titulaire une contrainte que l'organisateur a éteinte.
 
 « Respectée » signifie seulement qu'aucun écart n'a été trouvé pour ce
 poste précis, **pas que la contrainte s'applique à lui** : l'IHM ne doit pas la
@@ -1635,7 +1634,7 @@ d'en retirer.
 
 | Endpoint | Effet |
 | --- | --- |
-| `POST /api/postes/{id}/suggestions-reparation?plafond=N` | Cherche les remplaçants viables. Ne persiste rien. |
+| `POST /api/jour-j/postes/{id}/suggestions?plafond=N` | Cherche les remplaçants viables sur le plan enregistré. Ne persiste rien. |
 | `POST /api/postes/{id}/affectation?animateurId=X&occupant=Y` | Applique un remplacement au plan enregistré — `animateurId` absent, vide le siège. Écrit. |
 
 Là où `simulation-swap` note le candidat qu'on lui donne, l'assistant
@@ -1718,13 +1717,12 @@ sont les briques ci-dessus, appelées dans l'ordre du geste.
 | `GET /api/jour-j?date=&maintenant=` | L'écran complet : créneaux restants, animateurs de service, places vides — chacune `nouveau` (le plan publié avait quelqu'un dessus) ou connue, `resteDuCreneau` pour la suite d'un siège scindé —, absences du jour, signalements, rang du jour, stands ouverts, alertes de l'affichage mural (le même calcul, sur la journée en cours seulement), `aPrevenir` (les destinataires de la prochaine publication, différés compris — ceux que compte Diffuser —, cibles de « Prévenir les N personnes ») et échanges à arbitrer ; l'effectif nommé porte le téléphone de la fiche. Ne lit que. |
 | `POST /api/jour-j/absences?date=&maintenant=` | `{ "animateurId": "A1", "raison": "…" }` — une `INDISPONIBILITE_FORCEE` par créneau restant, et les sièges tenus sur ces créneaux vidés. Écrit. |
 | `DELETE /api/jour-j/absences/{animateurId}?date=&creneauId=` | Annule l'absence : un créneau si `creneauId` est donné, toute la journée sinon. |
-| `POST /api/jour-j/postes/{posteId}/suggestions?plafond=N` | L'assistant de réparation ci-dessus, sur le **plan enregistré** au lieu d'un plan envoyé dans le corps. |
+| `POST /api/jour-j/postes/{posteId}/suggestions?plafond=N` | L'assistant de réparation ci-dessus, sur le **plan enregistré**. |
 
-« Remplacer » du panneau du siège passe aussi par ce point plutôt que par
-`/suggestions-reparation` : le plan enregistré y est préparé comme l'écriture
-qui suit le lira (contraintes désactivées, poids, quotas de l'édition), alors
-qu'un plan envoyé par l'écran est noté nu et propose des candidats que
-l'écriture refuse ensuite.
+« Remplacer » du panneau du siège passe aussi par ce point : le plan
+enregistré y est préparé comme l'écriture qui suit le lira (contraintes
+désactivées, poids, quotas de l'édition), si bien que l'assistant ne propose
+pas de candidat que l'écriture refuserait ensuite.
 
 ### Une journée commence à son premier créneau
 

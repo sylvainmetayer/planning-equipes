@@ -461,7 +461,7 @@ class JournalCoverageStructurelleTest {
     void everyExclusionCarriesARealReason() {
         assertThat(CatalogueActions.actions()).isNotEmpty();
         for (String cle : List.of(
-                "AffectationExplanationResource#explain",
+                "AffectationExplanationResource#simulateSwap",
                 "CreneauResource#previewRecurrence",
                 "StandResource#analyseGrille")) {
             assertThat(CatalogueActions.untrackedReason(cle))
