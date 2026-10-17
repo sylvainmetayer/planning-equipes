@@ -399,25 +399,6 @@ public final class ScenarioYamlReader {
     }
 
     /**
-     * A bundled scenario, whole: its planning and its optional sections, from
-     * a single read. The named-file counterpart of
-     * {@link #buildFromScenarioText}, so the two import paths differ
-     * only in where the bytes come from.
-     */
-    public static ScenarioImporte loadScenario(
-            String scenarioName, Supplier<ParametresLegaux> parametresLegauxParDefaut) {
-        Objects.requireNonNull(parametresLegauxParDefaut, PARAMETRES_LEGAUX_PAR_DEFAUT);
-        try {
-            ScenarioDto scenario = readScenario(scenarioPath(scenarioName));
-            return new ScenarioImporte(
-                    ScenarioDomainMapper.planning(scenario, parametresLegauxParDefaut),
-                    ScenarioDomainMapper.sections(scenario));
-        } catch (IOException e) {
-            throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
-        }
-    }
-
-    /**
      * Optional {@code edition:} section of an uploaded scenario text — the
      * pre-import step the UI uses to NAME the target edition in its
      * confirmation dialog, before anything is written. The whole file is bound

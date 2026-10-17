@@ -301,11 +301,6 @@ public class PlanningService {
         return ScenarioYamlReader.loadScenarioSections(scenarioName);
     }
 
-    /** @see ScenarioYamlReader#loadScenario */
-    public ScenarioYamlReader.ScenarioImporte loadScenario(String scenarioName) {
-        return ScenarioYamlReader.loadScenario(scenarioName, referenceDataService::getParametresLegaux);
-    }
-
     /** @see ScenarioYamlReader#loadEditionScenarioText */
     public Optional<dev.sylvain.planning.scenario.dto.EditionCibleDto> loadEditionScenarioText(String yamlContent) {
         return ScenarioYamlReader.loadEditionScenarioText(yamlContent);
