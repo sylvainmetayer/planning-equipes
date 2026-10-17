@@ -9,7 +9,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
 import { APP_CONFIG } from '../../core/app-config';
-import { AffectationExplanationService } from '../../core/affectation-explanation.service';
+import { PostesApi } from '../../core/api/postes-api';
 import { NotificationService } from '../../core/notification.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import {
@@ -107,7 +107,7 @@ describe('RailJourView', () => {
         provideRouter([]),
         { provide: SolverJobService, useValue: { editingLocked: () => false } },
         { provide: NotificationService, useValue: { notify: vi.fn() } },
-        { provide: AffectationExplanationService, useValue: { deplacer: vi.fn() } },
+        { provide: PostesApi, useValue: { move: vi.fn() } },
         { provide: APP_CONFIG, useValue: { dragDropEnabled } },
       ],
     });

@@ -9,7 +9,6 @@ import { MatDialog } from '@angular/material/dialog';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AffectationExplanationService } from '../../core/affectation-explanation.service';
 import { ConstraintsApi } from '../../core/api/constraints-api';
 import { PostesApi } from '../../core/api/postes-api';
 import { JourJService } from '../../core/jour-j.service';
@@ -76,11 +75,7 @@ describe('SeatPanel', () => {
   let fixture: ComponentFixture<SeatPanel>;
   const locks = signal<VerrouillagePlanning[]>([]);
   const editingLocked = signal(false);
-  const explanations = {
-    applyRepair: vi.fn(),
-    deplacer: vi.fn(),
-  };
-  const postesApi = { place: vi.fn(), explanation: vi.fn() };
+  const postesApi = { place: vi.fn(), explanation: vi.fn(), applyRepair: vi.fn(), move: vi.fn() };
   const jourJ = { suggestions: vi.fn(), marquerAbsent: vi.fn() };
   const verrous = fakeOf<VerrouillageStore>({
     verrouillages: locks,
@@ -111,7 +106,6 @@ describe('SeatPanel', () => {
     locks.set([]);
     editingLocked.set(false);
     for (const mock of [
-      ...Object.values(explanations),
       ...Object.values(postesApi),
       verrous.create,
       verrous.remove,
@@ -150,7 +144,6 @@ describe('SeatPanel', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        { provide: AffectationExplanationService, useValue: explanations },
         { provide: PostesApi, useValue: postesApi },
         {
           provide: ConstraintsApi,
@@ -220,7 +213,7 @@ describe('SeatPanel', () => {
   // reads the application's configuration.
   it('moves through the dialog of the day views, then asks to repair the hole it left', async () => {
     dialog.open.mockReturnValue({ afterClosed: () => of({ source: null, target: 'P2' }) });
-    explanations.deplacer.mockResolvedValue({
+    postesApi.move.mockResolvedValue({
       posteSourceId: 'P1',
       posteCibleId: 'P2',
       animateurSourceId: 'a1',
@@ -237,7 +230,7 @@ describe('SeatPanel', () => {
 
     button(root, 'Déplacer vers').click();
     await vi.waitFor(() =>
-      expect(explanations.deplacer).toHaveBeenCalledWith('P1', { posteId: 'P2' }, 'a1'),
+      expect(postesApi.move).toHaveBeenCalledWith('P1', { posteId: 'P2' }, 'a1'),
     );
     await fixture.whenStable();
 
@@ -247,12 +240,12 @@ describe('SeatPanel', () => {
   });
 
   it('frees the seat of the person shown once confirmed, keeps them off it, and « Corriger le reste » starts an incremental solve', async () => {
-    explanations.applyRepair.mockResolvedValue(undefined);
+    postesApi.applyRepair.mockResolvedValue(undefined);
     const root = await mount('P1');
 
     button(root, 'Libérer').click();
     // The holder shown travels as the precondition: somebody else there by now is a 409.
-    await vi.waitFor(() => expect(explanations.applyRepair).toHaveBeenCalledWith('P1', null, 'a1'));
+    await vi.waitFor(() => expect(postesApi.applyRepair).toHaveBeenCalledWith('P1', null, 'a1'));
     // Ticked by default: the lock an accepted échange lays on whoever it frees.
     await vi.waitFor(() =>
       expect(verrous.create).toHaveBeenCalledWith({
@@ -276,19 +269,19 @@ describe('SeatPanel', () => {
   });
 
   it('frees without a lock when the box was unticked, and not at all when cancelled', async () => {
-    explanations.applyRepair.mockResolvedValue(undefined);
+    postesApi.applyRepair.mockResolvedValue(undefined);
     confirm.askWithOption.mockResolvedValueOnce({ checked: false });
     const root = await mount('P1');
 
     button(root, 'Libérer').click();
-    await vi.waitFor(() => expect(explanations.applyRepair).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(postesApi.applyRepair).toHaveBeenCalledTimes(1));
     await fixture.whenStable();
     expect(verrous.create).not.toHaveBeenCalled();
 
     confirm.askWithOption.mockResolvedValueOnce(null);
     button(root, 'Libérer').click();
     await fixture.whenStable();
-    expect(explanations.applyRepair).toHaveBeenCalledTimes(1);
+    expect(postesApi.applyRepair).toHaveBeenCalledTimes(1);
   });
 
   // #711 review: the search reads the persisted plan prepared server-side,
@@ -313,7 +306,7 @@ describe('SeatPanel', () => {
         },
       ],
     });
-    explanations.applyRepair.mockResolvedValue(undefined);
+    postesApi.applyRepair.mockResolvedValue(undefined);
     const root = await mount('P1');
 
     button(root, 'Remplacer').click();
@@ -323,7 +316,7 @@ describe('SeatPanel', () => {
       .querySelector<HTMLButtonElement>('button[aria-label="Mettre Bruno Petit sur ce siège"]')!
       .click();
 
-    await vi.waitFor(() => expect(explanations.applyRepair).toHaveBeenCalledWith('P1', 'b1', 'a1'));
+    await vi.waitFor(() => expect(postesApi.applyRepair).toHaveBeenCalledWith('P1', 'b1', 'a1'));
   });
 
   it('says what the server wants read about a lock it laid', async () => {

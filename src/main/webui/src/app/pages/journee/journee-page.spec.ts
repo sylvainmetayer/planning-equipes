@@ -8,7 +8,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, ParamMap, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AffectationExplanationService } from '../../core/affectation-explanation.service';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { ConstraintsApi } from '../../core/api/constraints-api';
 import { JourneesApi } from '../../core/api/journees-api';
@@ -194,14 +193,9 @@ describe('JourneePage', () => {
         { provide: SolverJobService, useValue: { editingLocked: () => false } },
         { provide: NotificationService, useValue: { notify: vi.fn() } },
         {
-          provide: AffectationExplanationService,
-          useValue: {
-            deplacer: vi.fn(),
-          },
-        },
-        {
           provide: PostesApi,
           useValue: {
+            move: vi.fn(),
             explanation: vi.fn(() =>
               Promise.resolve({ contraintesViolees: [], contraintesRespectees: [] }),
             ),

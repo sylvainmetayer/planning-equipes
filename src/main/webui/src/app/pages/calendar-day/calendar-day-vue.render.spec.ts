@@ -13,7 +13,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { APP_CONFIG } from '../../core/app-config';
-import { AffectationExplanationService } from '../../core/affectation-explanation.service';
+import { PostesApi } from '../../core/api/postes-api';
 import { NotificationService } from '../../core/notification.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ApiService } from '../../core/api.service';
@@ -98,7 +98,7 @@ function mount(options: Options = {}) {
       { provide: ApiService, useValue: { get } },
       { provide: SolverJobService, useValue: { editingLocked: () => false } },
       { provide: NotificationService, useValue: { notify: vi.fn() } },
-      { provide: AffectationExplanationService, useValue: { deplacer: vi.fn() } },
+      { provide: PostesApi, useValue: { move: vi.fn() } },
 
       {
         provide: VerrouillageStore,
@@ -632,9 +632,7 @@ describe('CalendarDayView rendering', () => {
     it('moves through the same call as a drop', async () => {
       const { fixture, open } = mount({ planning: plan, dragDropEnabled: true });
       open.mockReturnValueOnce({ afterClosed: () => of<unknown>({ source: null, target: 'P3' }) });
-      const move = TestBed.inject(AffectationExplanationService).deplacer as ReturnType<
-        typeof vi.fn
-      >;
+      const move = TestBed.inject(PostesApi).move as ReturnType<typeof vi.fn>;
       move.mockResolvedValue({
         animateurSourceId: 'a1',
         animateurCibleId: null,

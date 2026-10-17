@@ -25,7 +25,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { injectAppConfig } from '../../core/app-config';
-import { AffectationExplanationService } from '../../core/affectation-explanation.service';
+import { PostesApi } from '../../core/api/postes-api';
 import { errorMessage } from '../../core/error-message';
 import { NotificationService } from '../../core/notification.service';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -246,7 +246,7 @@ export class CalendarDayView {
   protected readonly verrous = inject(VerrouillageStore);
 
   private readonly dialog = inject(MatDialog);
-  private readonly explications = inject(AffectationExplanationService);
+  private readonly postesApi = inject(PostesApi);
   private readonly notifications = inject(NotificationService);
   /** A drop is a write to the plan: locked, like every other, while a solve is rewriting it. */
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
@@ -423,7 +423,7 @@ export class CalendarDayView {
     occupant: string | null,
   ): Promise<void> {
     try {
-      const simulation = await this.explications.deplacer(
+      const simulation = await this.postesApi.move(
         posteSourceId,
         { posteId: posteCibleId },
         occupant,
