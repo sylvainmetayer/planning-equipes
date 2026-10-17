@@ -244,9 +244,7 @@ export class ScenarioImportService {
     }
     const nom = result.editionNom ?? result.editionId;
     const courante = this.editions.courant()?.nom ?? '';
-    const destination = result.editionCreee
-      ? $localize`:@@parametres.recap.editionCreee:Édition « ${nom}:edition: » créée : les données du scénario y ont été importées.`
-      : $localize`:@@parametres.recap.editionExistante:Données du scénario importées dans l'édition existante « ${nom}:edition: ».`;
+    const destination = destinationSentence(result, nom);
     const basculer = await this.confirm.ask({
       title: $localize`:@@parametres.recap.titre:Import dans une édition désignée par le fichier`,
       message:
@@ -273,9 +271,7 @@ export class ScenarioImportService {
       return fallback;
     }
     const nom = result.editionNom ?? result.editionId;
-    const destination = result.editionCreee
-      ? $localize`:@@parametres.recap.editionCreee:Édition « ${nom}:edition: » créée : les données du scénario y ont été importées.`
-      : $localize`:@@parametres.recap.editionExistante:Données du scénario importées dans l'édition existante « ${nom}:edition: ».`;
+    const destination = destinationSentence(result, nom);
     const courante = this.editions.courant();
     const ailleurs =
       courante && courante.id !== result.editionId
@@ -284,4 +280,11 @@ export class ScenarioImportService {
         : '';
     return destination + ailleurs;
   }
+}
+
+/** Where the import landed: an edition created for it, or an existing one. */
+function destinationSentence(result: ImportScenarioResult, nom: string): string {
+  return result.editionCreee
+    ? $localize`:@@parametres.recap.editionCreee:Édition « ${nom}:edition: » créée : les données du scénario y ont été importées.`
+    : $localize`:@@parametres.recap.editionExistante:Données du scénario importées dans l'édition existante « ${nom}:edition: ».`;
 }

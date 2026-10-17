@@ -17,9 +17,8 @@ import {
 } from '@angular/core';
 import * as L from 'leaflet';
 // Also installs the default marker icon paths, by importing it.
-import { ajouterTuilesOsm } from './leaflet-base';
+import { ajouterTuilesOsm, CENTRE_FRANCE } from './leaflet-base';
 
-const DEFAULT_CENTER: L.LatLngTuple = [46.6, 2.5]; // France, when no point is set yet.
 const DEFAULT_ZOOM = 5;
 const POINT_ZOOM = 13;
 
@@ -85,7 +84,7 @@ export class MapPicker implements AfterViewInit, OnDestroy {
   ngAfterViewInit(): void {
     const position = this.currentPosition();
     this.map = L.map(this.mapHost().nativeElement).setView(
-      position ?? DEFAULT_CENTER,
+      position ?? CENTRE_FRANCE,
       position ? POINT_ZOOM : DEFAULT_ZOOM,
     );
     ajouterTuilesOsm(this.map);

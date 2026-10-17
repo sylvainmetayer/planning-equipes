@@ -4,7 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatRadioModule } from '@angular/material/radio';
 import { MotifSignalement, NouveauSignalement } from '../../core/models';
-import { motifLabel } from './espace-signalements';
+import { motifLabel } from '../../core/signalement-wording';
 
 /** A seat of the day that can still be reported: not over yet. */
 export interface PosteSignalable {

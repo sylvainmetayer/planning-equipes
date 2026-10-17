@@ -4,8 +4,6 @@
 
 import { SignalementView, StatutSignalement } from '../../core/models';
 
-export { motifLabel } from '../../core/signalement-wording';
-
 /** My reports of one day, withdrawn ones left out: what the day card says. */
 export function reportsOfDay(
   signalements: readonly SignalementView[],

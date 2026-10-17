@@ -7,6 +7,7 @@ import { errorMessage } from '../../core/error-message';
 import { QrCodeView } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { qrPath } from '../../core/qr-path';
+import { muralUrl } from '../../core/app-links';
 
 /** A link created from Aujourd'hui: the one moment its address can be shown. */
 interface LienTv {
@@ -68,13 +69,8 @@ export class AujourdhuiTv {
         fullNames: false,
         emplacements: [],
       });
-      const url = `${window.location.origin}/mural/${encodeURIComponent(created.token)}`;
-      let qr: QrCodeView | null = null;
-      try {
-        qr = await this.api.qrCode(url);
-      } catch {
-        // The address alone still does the job; the code is a convenience.
-      }
+      const url = muralUrl(window.location.origin, created.token);
+      const qr = await this.api.qrCode(url);
       this.lien.set({ url, qr, chemin: qr ? qrPath(qr) : '' });
       this.existingCount.update((nombre) => (nombre ?? 0) + 1);
     } catch (error) {

@@ -9,6 +9,7 @@ import {
   AffichageMuralLinkRequest,
   AffichageMuralView,
   CreatedAffichageMuralLink,
+  QrCodeRequest,
   QrCodeView,
 } from '../models';
 
@@ -28,8 +29,14 @@ export class AffichageMuralApi {
     return this.api.delete(`/api/affichage-mural/${id}`);
   }
 
-  qrCode(link: string): Promise<QrCodeView> {
-    return this.api.post<QrCodeView>('/api/affichage-mural/qr-code', { link });
+  /** The QR code of a link, or null when it could not be drawn: the address alone still does the job. */
+  async qrCode(link: string): Promise<QrCodeView | null> {
+    const request: QrCodeRequest = { link };
+    try {
+      return await this.api.post<QrCodeView>('/api/affichage-mural/qr-code', request);
+    } catch {
+      return null;
+    }
   }
 
   /**

@@ -23,6 +23,9 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'leaflet-images/marker-shadow.png',
 });
 
+/** Where a map opens with no point to show: France. */
+export const CENTRE_FRANCE: L.LatLngTuple = [46.6, 2.5];
+
 const TUILES_OSM = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
 /**

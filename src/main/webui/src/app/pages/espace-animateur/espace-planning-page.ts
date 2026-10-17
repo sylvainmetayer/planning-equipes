@@ -40,12 +40,12 @@ import {
 } from './espace-signalement-dialog';
 import {
   dayReported,
-  motifLabel,
   objectLabel,
   reportsOfDay,
   seatReported,
   statutLabel,
 } from './espace-signalements';
+import { motifLabel } from '../../core/signalement-wording';
 import {
   aujourdhuiLocal,
   JourPlanning,

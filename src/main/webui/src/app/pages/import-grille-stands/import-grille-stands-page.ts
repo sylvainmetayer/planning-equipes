@@ -31,6 +31,7 @@ import {
   ImportGrilleLigne,
   ImportGrilleRapport,
 } from '../../core/models';
+import { takeFile } from '../../core/take-file';
 
 /**
  * Importing the stand matrix — one row per stand, one column per (date,
@@ -146,9 +147,7 @@ export class ImportGrilleStandsPage {
   }
 
   protected async onFichierChoisi(event: Event): Promise<void> {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0] ?? null;
-    input.value = '';
+    const file = takeFile(event);
     if (!file) {
       return;
     }

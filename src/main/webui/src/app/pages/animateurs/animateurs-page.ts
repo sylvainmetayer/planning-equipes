@@ -89,6 +89,7 @@ import { resumeRelance } from './relance-resume';
 import { typologieLabel, typologieLabels } from '../../core/typologie-colors';
 import { ImportButton } from '../../shared/import-button';
 import { copyEspaceLink } from '../../core/clipboard';
+import { espaceUrl } from '../../core/app-links';
 
 /**
  * Animateurs CRUD. Minor/adult status is never stored: it is derived from the
@@ -395,7 +396,7 @@ export class AnimateursPage implements OnInit {
     if (!animateur.accessToken) {
       return;
     }
-    const lien = `${window.location.origin}/animateur/${animateur.accessToken}`;
+    const lien = espaceUrl(window.location.origin, animateur.accessToken);
     await copyEspaceLink(this.notifications, lien);
   }
 
