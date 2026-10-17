@@ -270,7 +270,7 @@ public class PlanningHoursService {
         }
         csv.append(";total;dimanche;jours feries;dont dimanches feries;nuit paie (apres 22h)\n");
         for (HeuresAnimateur ligne : rapport.animateurs()) {
-            csv.append(echapper(ligne.nom()));
+            csv.append(CsvFormulaGuard.cell(ligne.nom()));
             for (String semaine : rapport.semaines()) {
                 csv.append(';').append(formater(ligne.heuresParSemaine().getOrDefault(semaine, 0.0)));
             }
@@ -301,21 +301,6 @@ public class PlanningHoursService {
      */
     private String formater(double heures) {
         return String.format(Locale.ROOT, "%.2f", heures).replace('.', ',');
-    }
-
-    /**
-     * A text cell, behind a quote first when a spreadsheet would run it as a
-     * formula ({@link CsvFormulaGuard}); never called on a number.
-     */
-    private String echapper(String valeur) {
-        if (valeur == null) {
-            return "";
-        }
-        String cellule = CsvFormulaGuard.neutralise(valeur);
-        if (cellule.contains(";") || cellule.contains("\"") || cellule.contains("\n")) {
-            return "\"" + cellule.replace("\"", "\"\"") + "\"";
-        }
-        return cellule;
     }
 
     /**

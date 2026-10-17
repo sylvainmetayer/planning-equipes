@@ -384,14 +384,6 @@ public class AnimateurRepository {
         }
     }
 
-    /** The write's own precondition said no: a taken id on a creation, a stale read otherwise. */
-    private void refuse(boolean failIfPresent, String table, String id) {
-        if (failIfPresent) {
-            staleWrites.refuseDuplicate(table, id);
-        }
-        staleWrites.refuseStale(table, id);
-    }
-
     void upsertAnimateur(Connection connection, Animateur animateur) throws SQLException {
         upsertAnimateur(connection, animateur, false);
     }
@@ -444,7 +436,7 @@ public class AnimateurRepository {
             WriteStamp.bindPrecondition(ps, 9, !failIfPresent, animateur.getModifieLe());
             Instant ecrit = WriteStamp.writtenOrRefused(ps);
             if (ecrit == null) {
-                refuse(failIfPresent, "animateur", animateur.getId());
+                staleWrites.refuse(failIfPresent, "animateur", animateur.getId());
             }
             animateur.setModifieLe(ecrit);
         }

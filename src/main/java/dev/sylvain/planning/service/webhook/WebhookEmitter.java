@@ -2,7 +2,6 @@ package dev.sylvain.planning.service.webhook;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.sylvain.planning.config.ConfigWebhooks;
-import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.edition.EditionRepository;
@@ -250,11 +249,7 @@ public class WebhookEmitter {
         } catch (IllegalStateException | BusinessError.EditionRefused e) {
             return Optional.empty();
         }
-        String name = editionRepository.listEditions().stream()
-                .filter(edition -> edition.getId().equals(id))
-                .map(Edition::getNom)
-                .findFirst()
-                .orElse(id);
+        String name = editionRepository.nameOf(id);
         return Optional.of(new WebhookMessage.EditionRef(id, name));
     }
 

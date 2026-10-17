@@ -3,7 +3,6 @@ package dev.sylvain.planning.service.weather;
 import dev.sylvain.planning.config.ConfigMeteo;
 import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.ParametresMeteo;
 import dev.sylvain.planning.domain.PrereglageConsigne;
@@ -780,11 +779,7 @@ public class WeatherAlertService {
 
     private String editionName() {
         String id = editionContext.editionIdCourant();
-        return editionRepository.listEditions().stream()
-                .filter(edition -> edition.getId().equals(id))
-                .map(Edition::getNom)
-                .findFirst()
-                .orElse(id);
+        return editionRepository.nameOf(id);
     }
 
     private ZoneId zoneId() {

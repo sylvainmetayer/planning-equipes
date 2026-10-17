@@ -201,14 +201,9 @@ public class PosteAffectation {
         if (heureDebutEffectif() == null || other.heureDebutEffectif() == null) {
             return true;
         }
-        int start = minutesAfter(origin, heureDebutEffectif());
-        int otherStart = minutesAfter(origin, other.heureDebutEffectif());
+        int start = MinutesOfDay.minutesAfter(origin, heureDebutEffectif());
+        int otherStart = MinutesOfDay.minutesAfter(origin, other.heureDebutEffectif());
         return start < otherStart + other.getDureeEffectiveMinutes() && otherStart < start + getDureeEffectiveMinutes();
-    }
-
-    private static int minutesAfter(LocalTime origin, LocalTime time) {
-        int minutes = (time.toSecondOfDay() - origin.toSecondOfDay()) / 60;
-        return minutes < 0 ? minutes + 24 * 60 : minutes;
     }
 
     /**

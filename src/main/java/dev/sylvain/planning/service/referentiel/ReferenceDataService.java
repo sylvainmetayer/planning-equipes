@@ -150,6 +150,11 @@ public class ReferenceDataService implements ReferenceData {
         return animateurs.list();
     }
 
+    /** One animateur of the current edition, as {@link #listAnimateurs()} holds it. */
+    public Optional<Animateur> findAnimateur(String id) {
+        return animateurs.find(id);
+    }
+
     public Animateur createAnimateur(Animateur animateur) {
         return animateurs.create(animateur);
     }
@@ -189,10 +194,7 @@ public class ReferenceDataService implements ReferenceData {
      * warnings already read.</p>
      */
     public WrittenAnimateur writeAnimateur(String id, Animateur animateur) {
-        Animateur avant = animateurs.list().stream()
-                .filter(candidat -> Objects.equals(candidat.getId(), id))
-                .findFirst()
-                .orElse(null);
+        Animateur avant = animateurs.find(id).orElse(null);
         Animateur ecrit = animateurs.update(id, animateur, avant);
         currentAction.champsModifies(ChampsModifies.surAnimateur(avant, ecrit));
         return new WrittenAnimateur(ecrit, coherence.onAnimateur(avant, ecrit));
@@ -216,6 +218,11 @@ public class ReferenceDataService implements ReferenceData {
     @Override
     public List<Stand> listSolvedStands() {
         return stands.listSolved();
+    }
+
+    /** One stand of the current edition, as {@link #listStands()} holds it. */
+    public Optional<Stand> findStand(String id) {
+        return Optional.ofNullable(stands.find(id));
     }
 
     @Override

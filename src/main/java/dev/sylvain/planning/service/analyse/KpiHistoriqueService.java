@@ -1,7 +1,6 @@
 package dev.sylvain.planning.service.analyse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.analyse.PlanningKpiService.PlanningKpi;
 import dev.sylvain.planning.service.edition.EditionRepository;
@@ -92,11 +91,7 @@ public class KpiHistoriqueService {
 
     void recordKpi(PlanningKpi kpi) {
         String editionId = editionContext.editionIdCourant();
-        String editionNom = editionRepository.listEditions().stream()
-                .filter(edition -> editionId.equals(edition.getId()))
-                .map(Edition::getNom)
-                .findFirst()
-                .orElse(editionId);
+        String editionNom = editionRepository.nameOf(editionId);
         String sql = """
  INSERT INTO kpi_historique (edition_id, edition_nom, kpi, cree_le)
  VALUES (?, ?, ?::jsonb, ?)""";

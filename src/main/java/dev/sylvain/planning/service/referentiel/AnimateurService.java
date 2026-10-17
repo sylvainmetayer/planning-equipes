@@ -12,6 +12,8 @@ import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /** CRUD of the animateur referential, plus the espace access token they are reached by. */
@@ -81,7 +83,7 @@ public class AnimateurService {
      */
     @RefusedWhileSolving
     public Animateur update(String id, Animateur animateur) {
-        return update(id, animateur, () -> stored(id));
+        return update(id, animateur, () -> find(id).orElse(null));
     }
 
     /**
@@ -126,12 +128,11 @@ public class AnimateurService {
         changeTracker.markModified();
     }
 
-    /** The fiche as stored — the before-image a freeze compares an edit against. */
-    private Animateur stored(String id) {
+    /** The fiche as stored — also the before-image a freeze compares an edit against. */
+    public Optional<Animateur> find(String id) {
         return repository.listAnimateurs().stream()
-                .filter(candidat -> id.equals(candidat.getId()))
-                .findFirst()
-                .orElse(null);
+                .filter(candidat -> Objects.equals(candidat.getId(), id))
+                .findFirst();
     }
 
     /**

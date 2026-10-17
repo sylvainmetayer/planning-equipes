@@ -103,14 +103,6 @@ public class EmplacementRepository {
         scope.delete("DELETE FROM emplacement WHERE edition_id = ? AND id = ?", id);
     }
 
-    /** The write's own precondition said no: a taken id on a creation, a stale read otherwise. */
-    private void refuse(boolean failIfPresent, String table, String id) {
-        if (failIfPresent) {
-            staleWrites.refuseDuplicate(table, id);
-        }
-        staleWrites.refuseStale(table, id);
-    }
-
     void upsertEmplacementTx(Connection connection, Emplacement emplacement) throws SQLException {
         upsertEmplacementTx(connection, emplacement, false);
     }
@@ -136,7 +128,7 @@ public class EmplacementRepository {
             WriteStamp.bindPrecondition(ps, 7, !failIfPresent, emplacement.getModifieLe());
             Instant ecrit = WriteStamp.writtenOrRefused(ps);
             if (ecrit == null) {
-                refuse(failIfPresent, "emplacement", emplacement.getId());
+                staleWrites.refuse(failIfPresent, "emplacement", emplacement.getId());
             }
             emplacement.setModifieLe(ecrit);
         }

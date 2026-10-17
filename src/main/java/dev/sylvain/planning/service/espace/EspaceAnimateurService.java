@@ -611,8 +611,7 @@ public class EspaceAnimateurService {
         if (!verdict.autorise()) {
             throw new TooManyColleagueLookups(verdict.secondsBeforeNextTry());
         }
-        boolean connu = referenceDataService.listAnimateurs().stream()
-                .anyMatch(candidat -> candidat.getId().equals(collegueId));
+        boolean connu = referenceDataService.findAnimateur(collegueId).isPresent();
         if (!connu) {
             throw new BusinessError.NotFound("Animateur inconnu : " + collegueId);
         }
@@ -829,9 +828,8 @@ public class EspaceAnimateurService {
             List<DeclarationView> historique) {}
 
     public DeclarationEspaceView buildDeclarationView(String animateurId) {
-        Animateur animateur = referenceDataService.listAnimateurs().stream()
-                .filter(candidat -> candidat.getId().equals(animateurId))
-                .findFirst()
+        Animateur animateur = referenceDataService
+                .findAnimateur(animateurId)
                 .orElseThrow(() -> new BusinessError.Invalid("Animateur inconnu : " + animateurId));
         Map<String, String> labels = typologieService.labelsById();
         List<TypologieChoixView> typologies = labels.entrySet().stream()

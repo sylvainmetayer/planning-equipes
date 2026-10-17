@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeSet;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -65,8 +64,8 @@ public final class ForcedAssignmentOnDayOff {
         if (contraintes == null || contraintes.isEmpty()) {
             return List.of();
         }
-        Map<String, Animateur> animateursParId = index(animateurs, Animateur::getId);
-        Map<String, Stand> standsParId = index(stands, Stand::getId);
+        Map<String, Animateur> animateursParId = ForcedAssignmentScope.index(animateurs, Animateur::getId);
+        Map<String, Stand> standsParId = ForcedAssignmentScope.index(stands, Stand::getId);
         List<Conflit> conflits = new ArrayList<>();
         for (ContrainteAdHoc contrainte : contraintes) {
             detect(contrainte, animateursParId, standsParId, creneaux, horizon).ifPresent(conflits::add);
@@ -86,15 +85,11 @@ public final class ForcedAssignmentOnDayOff {
                 || contrainte.getAnimateursConcernes().isEmpty()) {
             return Optional.empty();
         }
-        List<Animateur> nommes = new ArrayList<>();
-        for (Animateur reference : contrainte.getAnimateursConcernes()) {
-            Animateur animateur = reference == null ? null : animateursParId.get(reference.getId());
-            if (animateur == null) {
-                // Somebody the referential does not know: nothing to compare with.
-                return Optional.empty();
-            }
-            nommes.add(animateur);
+        Optional<List<Animateur>> connus = ForcedAssignmentScope.namedAnimateurs(contrainte, animateursParId);
+        if (connus.isEmpty()) {
+            return Optional.empty();
         }
+        List<Animateur> nommes = connus.get();
         TreeSet<LocalDate> perimetre = dates(contrainte, standsParId, creneaux == null ? List.of() : creneaux);
         // A scope entirely behind us is history, not a hole to fill:
         // `affectationForcee` does not charge it either (ADR 0044).
@@ -127,13 +122,5 @@ public final class ForcedAssignmentOnDayOff {
                 .filter(creneau -> creneau.getDate() != null && (stand == null || creneau.isStandOpen(stand)))
                 .map(Creneau::getDate)
                 .collect(Collectors.toCollection(TreeSet::new));
-    }
-
-    private static <T> Map<String, T> index(List<T> elements, Function<T, String> id) {
-        return elements == null
-                ? Map.of()
-                : elements.stream()
-                        .filter(element -> id.apply(element) != null)
-                        .collect(Collectors.toMap(id, Function.identity(), (premier, doublon) -> premier));
     }
 }

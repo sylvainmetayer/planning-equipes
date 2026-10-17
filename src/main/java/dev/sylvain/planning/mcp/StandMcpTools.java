@@ -830,9 +830,8 @@ public class StandMcpTools {
     /* -------------------------------- Views -------------------------------- */
 
     private Stand findStand(String id) {
-        return referenceDataService.listStands().stream()
-                .filter(stand -> stand.getId().equals(id))
-                .findFirst()
+        return referenceDataService
+                .findStand(id)
                 .orElseThrow(() -> new NoSuchElementException("Stand introuvable : " + id));
     }
 

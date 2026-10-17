@@ -160,14 +160,6 @@ public class ContrainteAdHocRepository {
         scope.delete("DELETE FROM contrainte_ad_hoc WHERE edition_id = ? AND id = ?", id);
     }
 
-    /** The write's own precondition said no: a taken id on a creation, a stale read otherwise. */
-    private void refuse(boolean failIfPresent, String table, String id) {
-        if (failIfPresent) {
-            staleWrites.refuseDuplicate(table, id);
-        }
-        staleWrites.refuseStale(table, id);
-    }
-
     void upsertContrainte(Connection connection, ContrainteAdHoc contrainte) throws SQLException {
         upsertContrainte(connection, contrainte, false);
     }
@@ -202,7 +194,7 @@ public class ContrainteAdHocRepository {
                             ecrit.getObject("modifie_le", OffsetDateTime.class).toInstant());
                     contrainte.setCreeParUtilisateurId(ecrit.getString("cree_par"));
                 } else {
-                    refuse(failIfPresent, "contrainte_ad_hoc", contrainte.getId());
+                    staleWrites.refuse(failIfPresent, "contrainte_ad_hoc", contrainte.getId());
                 }
             }
         }

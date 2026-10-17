@@ -31,6 +31,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.sql.DataSource;
@@ -270,7 +271,7 @@ public class StandRepository {
     /** One stand, or {@code null} — what a write needs to compare against, instead of the whole referential. */
     public Stand findStand(String id) {
         return listStands().stream()
-                .filter(stand -> id.equals(stand.getId()))
+                .filter(stand -> Objects.equals(stand.getId(), id))
                 .findFirst()
                 .orElse(null);
     }
@@ -296,14 +297,6 @@ public class StandRepository {
 
     public boolean standExists(String id) {
         return scope.exists("stand", id);
-    }
-
-    /** The write's own precondition said no: a taken id on a creation, a stale read otherwise. */
-    private void refuse(boolean failIfPresent, String table, String id) {
-        if (failIfPresent) {
-            staleWrites.refuseDuplicate(table, id);
-        }
-        staleWrites.refuseStale(table, id);
     }
 
     /**
@@ -408,7 +401,7 @@ public class StandRepository {
             WriteStamp.bindPrecondition(ps, 11, !failIfPresent, stand.getModifieLe());
             Instant ecrit = WriteStamp.writtenOrRefused(ps);
             if (ecrit == null) {
-                refuse(failIfPresent, "stand", stand.getId());
+                staleWrites.refuse(failIfPresent, "stand", stand.getId());
             }
             stand.setModifieLe(ecrit);
         }

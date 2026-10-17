@@ -334,30 +334,26 @@ public class SignalementAbsenceService {
     }
 
     private void fireOutcome(SignalementAbsence signalement, boolean accepted) {
-        referenceDataService.listAnimateurs().stream()
-                .filter(animateur -> animateur.getId().equals(signalement.animateurId()))
-                .findFirst()
-                .ifPresent(animateur -> {
-                    String poste = seatLabel(signalement);
-                    String lien =
-                            links.espaceAnimateur(animateur.getAccessToken()).orElse(null);
-                    notifications.fire(
-                            accepted
-                                    ? new Notification.AbsenceReportAccepted(
-                                            animateur.getId(),
-                                            animateur.getEmail(),
-                                            animateur.getPrenom(),
-                                            signalement.jour(),
-                                            poste,
-                                            lien)
-                                    : new Notification.AbsenceReportFiled(
-                                            animateur.getId(),
-                                            animateur.getEmail(),
-                                            animateur.getPrenom(),
-                                            signalement.jour(),
-                                            poste,
-                                            lien));
-                });
+        referenceDataService.findAnimateur(signalement.animateurId()).ifPresent(animateur -> {
+            String poste = seatLabel(signalement);
+            String lien = links.espaceAnimateur(animateur.getAccessToken()).orElse(null);
+            notifications.fire(
+                    accepted
+                            ? new Notification.AbsenceReportAccepted(
+                                    animateur.getId(),
+                                    animateur.getEmail(),
+                                    animateur.getPrenom(),
+                                    signalement.jour(),
+                                    poste,
+                                    lien)
+                            : new Notification.AbsenceReportFiled(
+                                    animateur.getId(),
+                                    animateur.getEmail(),
+                                    animateur.getPrenom(),
+                                    signalement.jour(),
+                                    poste,
+                                    lien));
+        });
     }
 
     /** « Stand 07 09:00-12:00 » for a seat, {@code null} for a whole day. */
@@ -432,9 +428,8 @@ public class SignalementAbsenceService {
     }
 
     private String nomComplet(String animateurId) {
-        return referenceDataService.listAnimateurs().stream()
-                .filter(animateur -> animateur.getId().equals(animateurId))
-                .findFirst()
+        return referenceDataService
+                .findAnimateur(animateurId)
                 .map(Animateur::nomAffiche)
                 .orElse(animateurId);
     }

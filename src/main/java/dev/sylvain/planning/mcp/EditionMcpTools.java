@@ -390,9 +390,8 @@ public class EditionMcpTools {
     }
 
     private Edition find(String id) {
-        return editionService.listEditions().stream()
-                .filter(edition -> edition.getId().equals(id))
-                .findFirst()
+        return editionService
+                .find(id)
                 .orElseThrow(() -> new IllegalStateException("Édition introuvable après écriture : " + id));
     }
 

@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.export;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.MinutesOfDay;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.SeatPlaces;
@@ -286,9 +287,8 @@ public class GlobalPlanningPdf {
             if (ligne.debut() == null || ligne.fin() == null) {
                 return 0;
             }
-            int debut = ligne.debut().toSecondOfDay() / 60;
-            int fin = ligne.fin().toSecondOfDay() / 60;
-            return fin > debut ? fin - debut : 24 * 60 - debut + fin;
+            int[] interval = MinutesOfDay.interval(ligne.debut(), ligne.fin());
+            return interval[1] - interval[0];
         }
 
         static String lieu(Stand stand) {

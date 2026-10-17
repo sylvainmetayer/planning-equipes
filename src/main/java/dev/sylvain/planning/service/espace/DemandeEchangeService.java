@@ -280,9 +280,8 @@ public class DemandeEchangeService {
     }
 
     private String emailOf(String animateurId) {
-        return referenceDataService.listAnimateurs().stream()
-                .filter(animateur -> animateur.getId().equals(animateurId))
-                .findFirst()
+        return referenceDataService
+                .findAnimateur(animateurId)
                 .map(Animateur::getEmail)
                 .orElse(null);
     }
@@ -598,9 +597,8 @@ public class DemandeEchangeService {
     }
 
     private String nomComplet(String animateurId) {
-        return referenceDataService.listAnimateurs().stream()
-                .filter(animateur -> animateur.getId().equals(animateurId))
-                .findFirst()
+        return referenceDataService
+                .findAnimateur(animateurId)
                 .map(Animateur::nomAffiche)
                 .orElse(animateurId);
     }

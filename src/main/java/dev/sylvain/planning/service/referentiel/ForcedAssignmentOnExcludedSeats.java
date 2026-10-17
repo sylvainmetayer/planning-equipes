@@ -127,7 +127,7 @@ public final class ForcedAssignmentOnExcludedSeats {
                 .isPresent()) {
             return Optional.empty();
         }
-        Optional<List<Animateur>> connus = namedAnimateurs(contrainte, animateursParId);
+        Optional<List<Animateur>> connus = ForcedAssignmentScope.namedAnimateurs(contrainte, animateursParId);
         if (connus.isEmpty()) {
             return Optional.empty();
         }
@@ -155,21 +155,6 @@ public final class ForcedAssignmentOnExcludedSeats {
             return Optional.empty();
         }
         return Optional.of(new Conflit(contrainte, List.copyOf(cassees), List.copyOf(dates)));
-    }
-
-    /** The animateurs the exception names, or nothing when one of them is unknown to the referential. */
-    private static Optional<List<Animateur>> namedAnimateurs(
-            ContrainteAdHoc contrainte, Map<String, Animateur> animateursParId) {
-        List<Animateur> nommes = new ArrayList<>();
-        for (Animateur reference : contrainte.getAnimateursConcernes()) {
-            Animateur animateur = reference == null ? null : animateursParId.get(reference.getId());
-            if (animateur == null) {
-                // Somebody the referential does not know: nothing to compare with.
-                return Optional.empty();
-            }
-            nommes.add(animateur);
-        }
-        return Optional.of(nommes);
     }
 
     /**

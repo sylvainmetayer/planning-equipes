@@ -55,6 +55,11 @@ public class EditionService {
         return repository.listEditions();
     }
 
+    /** One edition, by its id. */
+    public Optional<Edition> find(String id) {
+        return repository.find(id);
+    }
+
     /**
      * The edition the caller is working in, as resolved from its
      * {@code X-Edition-Id} header — refused when it names none or one that no
@@ -62,10 +67,7 @@ public class EditionService {
      */
     public Edition editionCourante() {
         String id = editionContext.editionIdCourant();
-        return listEditions().stream()
-                .filter(edition -> edition.getId().equals(id))
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("Current edition not found: " + id));
+        return find(id).orElseThrow(() -> new IllegalStateException("Current edition not found: " + id));
     }
 
     public Edition create(Edition edition) {
@@ -73,14 +75,11 @@ public class EditionService {
     }
 
     public Edition renommer(String id, Edition edition) {
-        requireExisting(id);
+        repository.requireExisting(id);
         String nom = requireName(edition.getNom());
         repository.save(new Edition(id, nom, false, null));
         // Read back rather than echoed: the answer must say whether it is active.
-        return listEditions().stream()
-                .filter(e -> e.getId().equals(id))
-                .findFirst()
-                .orElseThrow();
+        return find(id).orElseThrow();
     }
 
     /**
@@ -100,7 +99,7 @@ public class EditionService {
      * the organiser activates it.</p>
      */
     public Edition duplicate(String sourceId, Edition target, boolean avecAnimateurs) {
-        requireExisting(sourceId);
+        repository.requireExisting(sourceId);
         // createEmpty, not create: the copy brings the source's own timeslot
         // groups over, and seeding a 'DEFAUT' one first would collide with it.
         Edition cree = createEmpty(target);
@@ -144,7 +143,7 @@ public class EditionService {
      * running.</p>
      */
     public void delete(String id) {
-        requireExisting(id);
+        repository.requireExisting(id);
         List<Edition> editions = listEditions();
         if (editions.size() <= 1) {
             throw new BusinessError.Invalid("Impossible de supprimer la dernière édition");
@@ -263,12 +262,6 @@ public class EditionService {
             return editionContext.editionIdCourant();
         } catch (BusinessError.EditionRefused _) {
             return null;
-        }
-    }
-
-    private void requireExisting(String id) {
-        if (!repository.exists(id)) {
-            throw new BusinessError.NotFound("Édition inconnue : " + id);
         }
     }
 

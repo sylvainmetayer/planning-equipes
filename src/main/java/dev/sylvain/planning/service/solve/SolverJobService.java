@@ -1,7 +1,6 @@
 package dev.sylvain.planning.service.solve;
 
 import ai.timefold.solver.core.api.solver.Solver;
-import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
@@ -452,11 +451,7 @@ public class SolverJobService {
      * to. Falls back to the id if the edition vanishes mid-lookup.
      */
     private String nomEdition(String editionId) {
-        return editionRepository.listEditions().stream()
-                .filter(edition -> edition.getId().equals(editionId))
-                .map(Edition::getNom)
-                .findFirst()
-                .orElse(editionId);
+        return editionRepository.nameOf(editionId);
     }
 
     private void run(SolverJob job, SolverJobTasks.JobTask task) {

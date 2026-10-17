@@ -42,6 +42,22 @@ public final class CsvFormulaGuard {
         return "'" + value;
     }
 
+    /**
+     * A text cell of a {@code ;}-separated export: {@code null} written empty,
+     * {@link #neutralise}d, then quoted when it holds a separator, a quote or a
+     * line break. Never called on a number.
+     */
+    public static String cell(String value) {
+        if (value == null) {
+            return "";
+        }
+        String cell = neutralise(value);
+        if (cell.contains(";") || cell.contains("\"") || cell.contains("\n")) {
+            return "\"" + cell.replace("\"", "\"\"") + "\"";
+        }
+        return cell;
+    }
+
     /** One leading quote taken off when {@link #neutralise} put it there; anything else unchanged. */
     public static String restore(String value) {
         return value != null && GUARDED.matcher(value).find() ? value.substring(1) : value;

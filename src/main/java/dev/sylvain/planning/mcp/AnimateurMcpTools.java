@@ -197,9 +197,8 @@ public class AnimateurMcpTools {
     }
 
     private Animateur find(String id) {
-        return referenceDataService.listAnimateurs().stream()
-                .filter(animateur -> animateur.getId().equals(id))
-                .findFirst()
+        return referenceDataService
+                .findAnimateur(id)
                 .orElseThrow(() -> new NoSuchElementException("Animateur introuvable : " + id));
     }
 
