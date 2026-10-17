@@ -5,6 +5,7 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.HoraireStand;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.JoursFeries;
+import dev.sylvain.planning.domain.MinutesOfDay;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
@@ -301,8 +302,6 @@ public final class LayerCalendar {
 
     /** {@code [debut, fin]} in minutes from the start day's midnight; an end at or before the start crosses it. */
     private static int[] interval(LocalTime debut, LocalTime fin) {
-        int d = debut.toSecondOfDay() / 60;
-        int f = fin.toSecondOfDay() / 60;
-        return new int[] {d, f > d ? f : f + MINUTES_PAR_JOUR};
+        return MinutesOfDay.interval(debut, fin);
     }
 }

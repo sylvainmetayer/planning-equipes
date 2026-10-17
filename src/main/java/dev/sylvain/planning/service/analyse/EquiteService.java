@@ -333,7 +333,7 @@ public class EquiteService {
                         PLUS_LONGUE_SERIE))
                 .append('\n');
         for (LigneEquite ligne : rapport.lignes()) {
-            csv.append(escape(ligne.nom())).append(';').append(decimal(ligne.heuresTotal()));
+            csv.append(CsvFormulaGuard.cell(ligne.nom())).append(';').append(decimal(ligne.heuresTotal()));
             for (String semaine : rapport.semaines()) {
                 csv.append(';').append(decimal(ligne.heuresParSemaine().getOrDefault(semaine, 0.0)));
             }
@@ -370,21 +370,6 @@ public class EquiteService {
 
     private static String decimal(double valeur) {
         return String.format(Locale.ROOT, "%.2f", valeur).replace('.', ',');
-    }
-
-    /**
-     * A text cell, behind a quote first when a spreadsheet would run it as a
-     * formula ({@link CsvFormulaGuard}); never called on a number.
-     */
-    private static String escape(String valeur) {
-        if (valeur == null) {
-            return "";
-        }
-        String cellule = CsvFormulaGuard.neutralise(valeur);
-        if (cellule.contains(";") || cellule.contains("\"") || cellule.contains("\n")) {
-            return "\"" + cellule.replace("\"", "\"\"") + "\"";
-        }
-        return cellule;
     }
 
     /* ---------------------------- Per-poste rules --------------------------- */

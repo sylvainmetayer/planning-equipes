@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.analyse;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.JoursFeries;
+import dev.sylvain.planning.domain.MinutesOfDay;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -638,9 +639,7 @@ public final class OuvertureStandsAnalyzer {
     }
 
     private static int[] intervalle(LocalTime heureDebut, LocalTime heureFin) {
-        int debut = heureDebut.toSecondOfDay() / 60;
-        int fin = heureFin.toSecondOfDay() / 60;
-        return new int[] {debut, fin > debut ? fin : fin + 24 * 60};
+        return MinutesOfDay.interval(heureDebut, heureFin);
     }
 
     /** Merges overlapping or touching minute intervals, sorted. */

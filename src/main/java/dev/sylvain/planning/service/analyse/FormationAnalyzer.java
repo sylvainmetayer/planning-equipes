@@ -320,7 +320,7 @@ public final class FormationAnalyzer {
         for (TypologieAFormer ligne : plan.typologies()) {
             String deficit = String.join(
                     ";",
-                    escape(ligne.label()),
+                    CsvFormulaGuard.cell(ligne.label()),
                     String.valueOf(ligne.manque()),
                     String.valueOf(ligne.competencesRares()),
                     String.valueOf(ligne.groupesSansSpecialiste()),
@@ -333,7 +333,7 @@ public final class FormationAnalyzer {
             for (CandidatFormation candidat : ligne.candidats()) {
                 csv.append(deficit)
                         .append(';')
-                        .append(escape(candidat.nom()))
+                        .append(CsvFormulaGuard.cell(candidat.nom()))
                         .append(';')
                         .append(candidat.niveau())
                         .append(';')
@@ -344,20 +344,5 @@ public final class FormationAnalyzer {
             }
         }
         return csv.toString();
-    }
-
-    /**
-     * A text cell, behind a quote first when a spreadsheet would run it as a
-     * formula ({@link CsvFormulaGuard}); never called on a number.
-     */
-    private static String escape(String valeur) {
-        if (valeur == null) {
-            return "";
-        }
-        String cellule = CsvFormulaGuard.neutralise(valeur);
-        if (cellule.contains(";") || cellule.contains("\"") || cellule.contains("\n")) {
-            return "\"" + cellule.replace("\"", "\"\"") + "\"";
-        }
-        return cellule;
     }
 }

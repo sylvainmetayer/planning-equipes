@@ -9,6 +9,7 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.Sha256;
 import dev.sylvain.planning.service.analyse.PauseAnalyzer;
 import dev.sylvain.planning.service.analyse.PauseAnalyzer.RapportPauses;
 import dev.sylvain.planning.service.consigne.ConsigneService;
@@ -20,15 +21,11 @@ import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.HexFormat;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -138,7 +135,7 @@ public class AffichageMuralService {
         random.nextBytes(raw);
         String token = Base64.getUrlEncoder().withoutPadding().encodeToString(raw);
         AffichageMuralLink link =
-                repository.insert(libelle, Boolean.TRUE.equals(request.fullNames()), emplacements, hash(token));
+                repository.insert(libelle, Boolean.TRUE.equals(request.fullNames()), emplacements, Sha256.hex(token));
         return new CreatedAffichageMuralLink(link, token);
     }
 
@@ -208,7 +205,7 @@ public class AffichageMuralService {
      *                               answer must not tell them apart (ADR 0072)
      */
     public AffichageMuralView view(String token) {
-        ResolvedLink link = token == null || token.isBlank() ? null : repository.resolve(hash(token));
+        ResolvedLink link = token == null || token.isBlank() ? null : repository.resolve(Sha256.hex(token));
         if (link == null || !editionContext.isActive(link.editionId())) {
             throw new BusinessError.NotFound("Lien inconnu, révoqué, ou édition terminée");
         }
@@ -366,15 +363,5 @@ public class AffichageMuralService {
             kept.add(id);
         }
         return List.copyOf(kept);
-    }
-
-    /** The SHA-256 of a token, in hex: what the database stores, and what the rate limiter remembers. */
-    public static String hash(String token) {
-        try {
-            return HexFormat.of()
-                    .formatHex(MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8)));
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 unavailable", e);
-        }
     }
 }

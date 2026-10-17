@@ -1,12 +1,15 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -68,6 +71,21 @@ final class ForcedAssignmentScope {
                         .filter(creneau::isStandOpen)
                         .map(stand -> new PosteAffectation(
                                 "portee-" + stand.getId() + "-" + creneau.getId(), stand, creneau)));
+    }
+
+    /** The animateurs the exception names, or nothing when one of them is unknown to the referential. */
+    static Optional<List<Animateur>> namedAnimateurs(
+            ContrainteAdHoc contrainte, Map<String, Animateur> animateursParId) {
+        List<Animateur> nommes = new ArrayList<>();
+        for (Animateur reference : contrainte.getAnimateursConcernes()) {
+            Animateur animateur = reference == null ? null : animateursParId.get(reference.getId());
+            if (animateur == null) {
+                // Somebody the referential does not know: nothing to compare with.
+                return Optional.empty();
+            }
+            nommes.add(animateur);
+        }
+        return Optional.of(nommes);
     }
 
     /** The ids a scope check resolves its references against; entries without an id are dropped. */

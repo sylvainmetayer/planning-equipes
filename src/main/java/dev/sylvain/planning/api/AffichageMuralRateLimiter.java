@@ -5,8 +5,8 @@ import dev.sylvain.planning.config.ConfigAffichageMural;
 import dev.sylvain.planning.config.TrustedProxies;
 import dev.sylvain.planning.service.FailureLockout;
 import dev.sylvain.planning.service.RateLimitVerdict;
+import dev.sylvain.planning.service.Sha256;
 import dev.sylvain.planning.service.SlidingWindowCounter;
-import dev.sylvain.planning.service.mural.AffichageMuralService;
 import io.quarkus.vertx.http.runtime.filters.Filters;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -104,7 +104,7 @@ public class AffichageMuralRateLimiter {
             return;
         }
         String address = ClientAddress.of(context, trustedProxies.get());
-        String tokenHash = AffichageMuralService.hash(path.substring(muralPath.length()));
+        String tokenHash = Sha256.hex(path.substring(muralPath.length()));
         boolean known = validTokens.containsKey(tokenHash);
 
         if (!known && config.maxRefused() > 0) {

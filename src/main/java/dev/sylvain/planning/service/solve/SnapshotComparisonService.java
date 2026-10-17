@@ -1,6 +1,5 @@
 package dev.sylvain.planning.service.solve;
 
-import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.analyse.PlanningKpiService;
 import dev.sylvain.planning.service.analyse.PlanningKpiService.PlanningKpi;
@@ -224,11 +223,7 @@ public class SnapshotComparisonService {
     }
 
     private String nomEdition(String editionId) {
-        return editionRepository.listEditions().stream()
-                .filter(edition -> edition.getId().equals(editionId))
-                .map(Edition::getNom)
-                .findFirst()
-                .orElse(editionId);
+        return editionRepository.nameOf(editionId);
     }
 
     /**

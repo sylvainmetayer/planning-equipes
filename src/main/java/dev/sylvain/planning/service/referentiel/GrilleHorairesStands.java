@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.MinutesOfDay;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.BusinessError;
@@ -360,8 +361,6 @@ public final class GrilleHorairesStands {
 
     /** A créneau's end in minutes since its day's midnight; {@code 00:00} counts as 24:00. */
     private static int finMinutes(Creneau creneau) {
-        int debut = creneau.getHeureDebut().toSecondOfDay() / 60;
-        int fin = creneau.getHeureFin().toSecondOfDay() / 60;
-        return fin > debut ? fin : fin + 24 * 60;
+        return MinutesOfDay.interval(creneau.getHeureDebut(), creneau.getHeureFin())[1];
     }
 }

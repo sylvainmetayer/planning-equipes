@@ -4,7 +4,6 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.BusinessError;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -185,22 +184,12 @@ public final class FrozenPast {
             List<Animateur> animateurs,
             Map<String, List<String>> animateursPersistes,
             PastHorizon horizon) {
-        Map<String, Animateur> animateursById = new HashMap<>();
-        for (Animateur animateur : animateurs) {
-            animateursById.put(animateur.getId(), animateur);
-        }
-        Map<String, Integer> prochainePlace = new HashMap<>();
+        Map<String, Animateur> animateursById = SeatHolders.byId(animateurs);
         int passes = 0;
-        for (PosteAffectation poste : postes) {
-            if (poste.getStand() == null || poste.getCreneau() == null) {
-                continue;
-            }
-            String key = PlanningPersistenceService.standCreneauKey(
-                    poste.getStand().getId(), poste.getCreneau().getId());
-            List<String> tenants = animateursPersistes.getOrDefault(key, List.of());
-            int place = prochainePlace.merge(key, 1, Integer::sum) - 1;
+        for (SeatHolders.Place seat : SeatHolders.places(postes, animateursPersistes)) {
+            PosteAffectation poste = seat.poste();
             if (isPast(poste, horizon)) {
-                markPast(poste, place < tenants.size() ? tenants.get(place) : null, animateursById);
+                markPast(poste, seat.holderId(), animateursById);
                 passes++;
             }
         }

@@ -378,9 +378,8 @@ public class DeclarationDisponibiliteService {
      */
     public DeclarationAppliquee apply(String id) {
         DeclarationDisponibilite declaration = pendingOrFail(id);
-        Animateur animateur = referenceDataService.listAnimateurs().stream()
-                .filter(candidat -> candidat.getId().equals(declaration.getAnimateurId()))
-                .findFirst()
+        Animateur animateur = referenceDataService
+                .findAnimateur(declaration.getAnimateurId())
                 .orElseThrow(() -> new BusinessError.Invalid(
                         "L'animateur de cette déclaration n'existe plus : " + declaration.getAnimateurId()));
         // Fails loudly when a game category was dropped between the submission
@@ -509,9 +508,8 @@ public class DeclarationDisponibiliteService {
 
     /** Display name of an animateur, falling back to their id when the fiche is gone. */
     String nomComplet(String animateurId) {
-        return referenceDataService.listAnimateurs().stream()
-                .filter(candidat -> candidat.getId().equals(animateurId))
-                .findFirst()
+        return referenceDataService
+                .findAnimateur(animateurId)
                 .map(Animateur::nomAffiche)
                 .orElse(animateurId);
     }

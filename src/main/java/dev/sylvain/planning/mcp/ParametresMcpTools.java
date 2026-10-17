@@ -440,9 +440,8 @@ public class ParametresMcpTools {
                     .orElseThrow(() -> new NoSuchElementException("Créneau introuvable : " + creneauId)));
         }
         if (standId != null) {
-            contrainte.setStand(referenceDataService.listStands().stream()
-                    .filter(stand -> stand.getId().equals(standId))
-                    .findFirst()
+            contrainte.setStand(referenceDataService
+                    .findStand(standId)
                     .orElseThrow(() -> new NoSuchElementException("Stand introuvable : " + standId)));
         }
         contrainte.setRaison(raison);

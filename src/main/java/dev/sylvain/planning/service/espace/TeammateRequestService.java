@@ -435,9 +435,8 @@ public class TeammateRequestService {
         if (repository.decide(id, StatutDemandeCoequipier.ECARTEE, null, Timestamp.from(Instant.now()), motif) == 0) {
             throw new BusinessError.Conflict("Cette demande a déjà été traitée");
         }
-        referenceDataService.listAnimateurs().stream()
-                .filter(animateur -> animateur.getId().equals(demande.animateurId()))
-                .findFirst()
+        referenceDataService
+                .findAnimateur(demande.animateurId())
                 .ifPresent(animateur -> notifications.fire(new Notification.CarpoolSetAside(
                         animateur.getId(),
                         animateur.getEmail(),

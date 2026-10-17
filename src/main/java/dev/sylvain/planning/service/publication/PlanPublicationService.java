@@ -742,10 +742,7 @@ public class PlanPublicationService {
     }
 
     private Animateur animateur(String animateurId) {
-        return referenceDataService.listAnimateurs().stream()
-                .filter(candidat -> candidat.getId().equals(animateurId))
-                .findFirst()
-                .orElse(null);
+        return referenceDataService.findAnimateur(animateurId).orElse(null);
     }
 
     /**
@@ -845,11 +842,7 @@ public class PlanPublicationService {
     }
 
     private String nomStand(String standId) {
-        return referenceDataService.listStands().stream()
-                .filter(stand -> stand.getId().equals(standId))
-                .findFirst()
-                .map(Stand::getNom)
-                .orElse(standId);
+        return referenceDataService.findStand(standId).map(Stand::getNom).orElse(standId);
     }
 
     /* --------------------------------- CSV --------------------------------- */
@@ -871,11 +864,11 @@ public class PlanPublicationService {
                 new StringBuilder("animateurId;nomAffiche;email;premiereDiffusion;reporte;ajouts;retraits;deplacements;"
                         + "mineur;confirmation;changements;demandes\n");
         for (DestinatairePublication destinataire : apercu.destinataires()) {
-            csv.append(escape(destinataire.animateurId()))
+            csv.append(CsvFormulaGuard.cell(destinataire.animateurId()))
                     .append(';')
-                    .append(escape(destinataire.nomAffiche()))
+                    .append(CsvFormulaGuard.cell(destinataire.nomAffiche()))
                     .append(';')
-                    .append(escape(destinataire.email()))
+                    .append(CsvFormulaGuard.cell(destinataire.email()))
                     .append(';')
                     .append(destinataire.premiereDiffusion())
                     .append(';')
@@ -889,28 +882,13 @@ public class PlanPublicationService {
                     .append(';')
                     .append(destinataire.mineur())
                     .append(';')
-                    .append(escape(destinataire.confirmation()))
+                    .append(CsvFormulaGuard.cell(destinataire.confirmation()))
                     .append(';')
-                    .append(escape(String.join(" | ", destinataire.changements())))
+                    .append(CsvFormulaGuard.cell(String.join(" | ", destinataire.changements())))
                     .append(';')
-                    .append(escape(String.join(" | ", destinataire.demandes())))
+                    .append(CsvFormulaGuard.cell(String.join(" | ", destinataire.demandes())))
                     .append('\n');
         }
         return csv.toString();
-    }
-
-    /**
-     * A text cell, behind a quote first when a spreadsheet would run it as a
-     * formula ({@link CsvFormulaGuard}); never called on a number.
-     */
-    private static String escape(String valeur) {
-        if (valeur == null) {
-            return "";
-        }
-        String cellule = CsvFormulaGuard.neutralise(valeur);
-        if (cellule.contains(";") || cellule.contains("\"") || cellule.contains("\n")) {
-            return "\"" + cellule.replace("\"", "\"\"") + "\"";
-        }
-        return cellule;
     }
 }

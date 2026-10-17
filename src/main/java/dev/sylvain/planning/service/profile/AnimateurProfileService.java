@@ -103,9 +103,8 @@ public class AnimateurProfileService {
 
     /** The fiche of {@code animateurId}; {@code 404} when the edition holds nobody by that id. */
     public AnimateurProfile profile(String animateurId) {
-        Animateur animateur = referenceDataService.listAnimateurs().stream()
-                .filter(candidat -> candidat.getId().equals(animateurId))
-                .findFirst()
+        Animateur animateur = referenceDataService
+                .findAnimateur(animateurId)
                 .orElseThrow(() -> new BusinessError.NotFound("Animateur inconnu : " + animateurId));
 
         JoursEvenement jours = JoursEvenement.of(referenceDataService.listCreneaux());

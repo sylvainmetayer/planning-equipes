@@ -38,4 +38,16 @@ class CsvFormulaGuardTest {
         assertThat(CsvFormulaGuard.restore("'texte")).isEqualTo("'texte");
         assertThat(CsvFormulaGuard.restore("'-3")).isEqualTo("-3");
     }
+
+    @Test
+    void cellWritesNullEmptyGuardsFormulasAndQuotesSeparators() {
+        assertThat(CsvFormulaGuard.cell(null)).isEmpty();
+        assertThat(CsvFormulaGuard.cell("Stand deux")).isEqualTo("Stand deux");
+        assertThat(CsvFormulaGuard.cell("-3")).isEqualTo("-3");
+        assertThat(CsvFormulaGuard.cell("=1+1")).isEqualTo("'=1+1");
+        assertThat(CsvFormulaGuard.cell("a;b")).isEqualTo("\"a;b\"");
+        assertThat(CsvFormulaGuard.cell("dit \"oui\"")).isEqualTo("\"dit \"\"oui\"\"\"");
+        assertThat(CsvFormulaGuard.cell("ligne\nsuivante")).isEqualTo("\"ligne\nsuivante\"");
+        assertThat(CsvFormulaGuard.cell("=a;b")).isEqualTo("\"'=a;b\"");
+    }
 }

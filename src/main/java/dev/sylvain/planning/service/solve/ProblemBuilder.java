@@ -16,7 +16,6 @@ import dev.sylvain.planning.solver.constraints.AdHocConstraints;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -317,28 +316,18 @@ public final class ProblemBuilder {
             List<Animateur> animateurs,
             Map<String, List<String>> animateursPersistes,
             List<ContrainteAdHoc> contraintesAdHoc) {
-        Map<String, Animateur> animateursById = new HashMap<>();
-        for (Animateur animateur : animateurs) {
-            animateursById.put(animateur.getId(), animateur);
-        }
+        Map<String, Animateur> animateursById = SeatHolders.byId(animateurs);
         List<ContrainteAdHoc> indisponibilitesForcees = contraintesAdHoc == null
                 ? List.of()
                 : contraintesAdHoc.stream()
                         .filter(contrainte -> contrainte.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE)
                         .toList();
-        Map<String, Integer> prochainePlace = new HashMap<>();
         int reamorces = 0;
         int liberes = 0;
-        for (PosteAffectation poste : postes) {
-            if (poste.getStand() == null || poste.getCreneau() == null) {
-                continue;
-            }
-            String key = PlanningPersistenceService.standCreneauKey(
-                    poste.getStand().getId(), poste.getCreneau().getId());
-            List<String> tenants = animateursPersistes.getOrDefault(key, List.of());
-            int place = prochainePlace.merge(key, 1, Integer::sum) - 1;
-            if (!poste.isVerrouille() && place < tenants.size()) {
-                Animateur tenant = animateursById.get(tenants.get(place));
+        for (SeatHolders.Place seat : SeatHolders.places(postes, animateursPersistes)) {
+            PosteAffectation poste = seat.poste();
+            if (!poste.isVerrouille() && seat.held()) {
+                Animateur tenant = animateursById.get(seat.holderId());
                 poste.setAnimateur(tenant);
                 if (tenant == null
                         || indisponible(tenant, poste)
@@ -466,10 +455,7 @@ public final class ProblemBuilder {
             ReplanificationScope scope,
             List<ContrainteAdHoc> contraintesAdHoc,
             PastHorizon horizon) {
-        Map<String, Animateur> animateursById = new HashMap<>();
-        for (Animateur animateur : animateurs) {
-            animateursById.put(animateur.getId(), animateur);
-        }
+        Map<String, Animateur> animateursById = SeatHolders.byId(animateurs);
         // Filtered once: the loop below runs on thousands of seats, and this
         // list is normally empty.
         List<ContrainteAdHoc> indisponibilitesForcees = contraintesAdHoc == null
@@ -477,21 +463,14 @@ public final class ProblemBuilder {
                 : contraintesAdHoc.stream()
                         .filter(contrainte -> contrainte.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE)
                         .toList();
-        Map<String, Integer> prochainePlace = new HashMap<>();
         int figes = 0;
         int liberes = 0;
         int liberesManuellement = 0;
         int nouveaux = 0;
         int passes = 0;
-        for (PosteAffectation poste : postes) {
-            if (poste.getStand() == null || poste.getCreneau() == null) {
-                continue;
-            }
-            String key = PlanningPersistenceService.standCreneauKey(
-                    poste.getStand().getId(), poste.getCreneau().getId());
-            List<String> tenants = animateursPersistes.getOrDefault(key, List.of());
-            int place = prochainePlace.merge(key, 1, Integer::sum) - 1;
-            String tenantId = place < tenants.size() ? tenants.get(place) : null;
+        for (SeatHolders.Place seat : SeatHolders.places(postes, animateursPersistes)) {
+            PosteAffectation poste = seat.poste();
+            String tenantId = seat.holderId();
             Animateur tenant = tenantId == null ? null : animateursById.get(tenantId);
             switch (freezeOrRelease(poste, tenantId, tenant, scope, indisponibilitesForcees, horizon)) {
                 case PAST -> passes++;
@@ -635,21 +614,11 @@ public final class ProblemBuilder {
         if (seed.isEmpty()) {
             return;
         }
-        Map<String, Animateur> animateursById = new HashMap<>();
-        for (Animateur animateur : animateurs) {
-            animateursById.put(animateur.getId(), animateur);
-        }
-        Map<String, Integer> prochaineePlace = new HashMap<>();
-        for (PosteAffectation poste : postes) {
-            if (poste.getStand() == null || poste.getCreneau() == null) {
-                continue;
-            }
-            String key = PlanningPersistenceService.standCreneauKey(
-                    poste.getStand().getId(), poste.getCreneau().getId());
-            List<String> tenants = seed.getOrDefault(key, List.of());
-            int place = prochaineePlace.merge(key, 1, Integer::sum) - 1;
-            if (place < tenants.size()) {
-                poste.setAnimateur(animateursById.get(tenants.get(place)));
+        Map<String, Animateur> animateursById = SeatHolders.byId(animateurs);
+        for (SeatHolders.Place seat : SeatHolders.places(postes, seed)) {
+            PosteAffectation poste = seat.poste();
+            if (seat.held()) {
+                poste.setAnimateur(animateursById.get(seat.holderId()));
             }
             if (poste.getAnimateur() != null) {
                 boolean gele = verrouillages.stream().anyMatch(verrouillage -> verrouillage.couvre(poste));

@@ -644,7 +644,8 @@ public final class ScoreReading {
         return rules;
     }
 
-    private static HardMediumSoftScore parse(String score) {
+    /** The score a plan was stored with, {@code null} when blank or unreadable. */
+    public static HardMediumSoftScore parse(String score) {
         if (score == null || score.isBlank()) {
             return null;
         }

@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.solve;
 
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
+import dev.sylvain.planning.service.analyse.ScoreReading;
 
 /**
  * The plan a solve replaced, and whether replacing it made things worse
@@ -55,8 +56,8 @@ public record PreviousPlan(long snapshotId, String score, boolean degraded) {
      * raise a false alarm about a solve that may well have improved things.
      */
     static boolean isDegraded(String before, String after) {
-        HardMediumSoftScore scoreBefore = parse(before);
-        HardMediumSoftScore scoreAfter = parse(after);
+        HardMediumSoftScore scoreBefore = ScoreReading.parse(before);
+        HardMediumSoftScore scoreAfter = ScoreReading.parse(after);
         if (scoreBefore == null || scoreAfter == null) {
             return false;
         }
@@ -70,22 +71,11 @@ public record PreviousPlan(long snapshotId, String score, boolean degraded) {
      * so it answers {@code false} — the plan in place stands.
      */
     static boolean isImproved(String before, String after) {
-        HardMediumSoftScore scoreBefore = parse(before);
-        HardMediumSoftScore scoreAfter = parse(after);
+        HardMediumSoftScore scoreBefore = ScoreReading.parse(before);
+        HardMediumSoftScore scoreAfter = ScoreReading.parse(after);
         if (scoreBefore == null || scoreAfter == null) {
             return false;
         }
         return scoreAfter.compareTo(scoreBefore) > 0;
-    }
-
-    private static HardMediumSoftScore parse(String score) {
-        if (score == null || score.isBlank()) {
-            return null;
-        }
-        try {
-            return HardMediumSoftScore.parseScore(score);
-        } catch (IllegalArgumentException _) {
-            return null;
-        }
     }
 }

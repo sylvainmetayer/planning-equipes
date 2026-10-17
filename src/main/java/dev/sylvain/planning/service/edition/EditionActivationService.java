@@ -108,9 +108,9 @@ public class EditionActivationService {
             int liensMuraux) {}
 
     public ActivationPreview preview(String id) {
-        requireExisting(id);
+        repository.requireExisting(id);
         Optional<String> sortanteId = editionContext.activeEditionId().filter(active -> !active.equals(id));
-        Edition sortante = sortanteId.flatMap(this::find).orElse(null);
+        Edition sortante = sortanteId.flatMap(repository::find).orElse(null);
         Set<String> concernees = sortanteId.map(s -> Set.of(s, id)).orElse(Set.of(id));
         int jobs = (int) solverJobs.fileAttente().stream()
                 .filter(job -> concernees.contains(job.getEditionId()))
@@ -142,10 +142,10 @@ public class EditionActivationService {
      * the incoming edition.
      */
     public Edition activate(String id) {
-        requireExisting(id);
+        repository.requireExisting(id);
         if (editionContext.isActive(id)) {
             // Idempotent, as the MCP tool declares itself: nothing to switch.
-            return find(id).orElseThrow();
+            return repository.find(id).orElseThrow();
         }
         Set<String> concernees = editionContext
                 .activeEditionId()
@@ -161,12 +161,12 @@ public class EditionActivationService {
                 });
         repository.activate(id);
         editionContext.invaliderCache();
-        return find(id).orElseThrow();
+        return repository.find(id).orElseThrow();
     }
 
     /** Leaves no edition active — the state between two events, where nothing reaches outside. */
     public void deactivate(String id) {
-        requireExisting(id);
+        repository.requireExisting(id);
         if (!editionContext.isActive(id)) {
             return;
         }
@@ -239,17 +239,5 @@ public class EditionActivationService {
         }
         return Optional.of(
                 bornes.first().isAfter(today) ? SituationKind.INACTIVE_IMMINENTE : SituationKind.INACTIVE_EN_COURS);
-    }
-
-    private Optional<Edition> find(String id) {
-        return repository.listEditions().stream()
-                .filter(edition -> edition.getId().equals(id))
-                .findFirst();
-    }
-
-    private void requireExisting(String id) {
-        if (!repository.exists(id)) {
-            throw new BusinessError.NotFound("Édition inconnue : " + id);
-        }
     }
 }

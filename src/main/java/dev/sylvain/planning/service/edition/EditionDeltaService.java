@@ -92,9 +92,8 @@ public class EditionDeltaService {
     }
 
     private DeltaSide side(String id) {
-        return editionService.listEditions().stream()
-                .filter(edition -> edition.getId().equals(id))
-                .findFirst()
+        return editionService
+                .find(id)
                 .map(edition -> new DeltaSide(edition.getId(), name(edition)))
                 .orElseThrow(() -> new BusinessError.NotFound("Édition introuvable : " + id));
     }

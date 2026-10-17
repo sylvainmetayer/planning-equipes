@@ -54,20 +54,12 @@ public class ConcurrentModificationGuard {
      * to convince them that somebody really did write after them.</p>
      */
     public void refuseStale(String table, String id) {
-        throw new BusinessError.Stale(
-                sujet(table) + " a été modifié" + accord(table)
-                        + " par une autre session après son ouverture ici. Rechargez pour voir ce qui a changé, "
-                        + "ou enregistrez à nouveau pour écraser cette modification.",
-                scope.lastWriteOf(table, id));
+        throw new BusinessError.Stale(staleMessage(table), scope.lastWriteOf(table, id));
     }
 
     /** Same, for a table whose id is database-generated ({@code creneau}). */
     public void refuseStale(String table, long id) {
-        throw new BusinessError.Stale(
-                sujet(table) + " a été modifié" + accord(table)
-                        + " par une autre session après son ouverture ici. Rechargez pour voir ce qui a changé, "
-                        + "ou enregistrez à nouveau pour écraser cette modification.",
-                scope.lastWriteOf(table, id));
+        throw new BusinessError.Stale(staleMessage(table), scope.lastWriteOf(table, id));
     }
 
     /**
@@ -79,6 +71,20 @@ public class ConcurrentModificationGuard {
     public void refuseDuplicate(String table, String id) {
         throw new BusinessError.Conflict("L'identifiant « " + id + " » est déjà pris dans cette édition. "
                 + "Choisissez-en un autre, ou ouvrez la fiche existante pour la modifier.");
+    }
+
+    /** The write's own precondition said no: a taken id on a creation, a stale read otherwise. */
+    public void refuse(boolean failIfPresent, String table, String id) {
+        if (failIfPresent) {
+            refuseDuplicate(table, id);
+        }
+        refuseStale(table, id);
+    }
+
+    private static String staleMessage(String table) {
+        return sujet(table) + " a été modifié" + accord(table)
+                + " par une autre session après son ouverture ici. Rechargez pour voir ce qui a changé, "
+                + "ou enregistrez à nouveau pour écraser cette modification.";
     }
 
     private static String sujet(String table) {

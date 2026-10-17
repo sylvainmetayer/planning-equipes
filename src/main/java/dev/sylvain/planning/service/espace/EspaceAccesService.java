@@ -5,13 +5,13 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.RateLimitVerdict;
+import dev.sylvain.planning.service.Sha256;
 import dev.sylvain.planning.service.publication.MailService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -21,7 +21,6 @@ import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
-import java.util.HexFormat;
 import javax.sql.DataSource;
 
 /**
@@ -126,7 +125,7 @@ public class EspaceAccesService {
                         DO UPDATE SET code_hash = EXCLUDED.code_hash, expire_le = EXCLUDED.expire_le,
                         tentatives_restantes = EXCLUDED.tentatives_restantes""")) {
             ps.setString(2, animateurId);
-            ps.setString(3, hacher(code + animateur.getAccessToken()));
+            ps.setString(3, Sha256.hex(code + animateur.getAccessToken()));
             ps.setTimestamp(4, Timestamp.from(Instant.now().plus(VALIDITE_CODE)));
             ps.setInt(5, TENTATIVES_MAX);
             ps.executeUpdate();
@@ -156,7 +155,7 @@ public class EspaceAccesService {
                 PreparedStatement ps = scope.prepareScoped(connection, """
                         INSERT INTO espace_session (edition_id, session_hash, animateur_id, expire_le)
                         VALUES (?, ?, ?, ?)""")) {
-            ps.setString(2, hacher(session));
+            ps.setString(2, Sha256.hex(session));
             ps.setString(3, animateurId);
             ps.setTimestamp(4, Timestamp.from(Instant.now().plus(VALIDITE_SESSION)));
             ps.executeUpdate();
@@ -185,7 +184,7 @@ public class EspaceAccesService {
                         SELECT animateur_id, expire_le
                         FROM espace_session
                         WHERE edition_id = ? AND session_hash = ?""")) {
-            ps.setString(2, hacher(cookieValue));
+            ps.setString(2, Sha256.hex(cookieValue));
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next()
                         && animateurId.equals(rs.getString("animateur_id"))
@@ -213,7 +212,7 @@ public class EspaceAccesService {
                 }
                 if (!MessageDigest.isEqual(
                         rs.getString("code_hash").getBytes(StandardCharsets.UTF_8),
-                        hacher(code.trim() + token).getBytes(StandardCharsets.UTF_8))) {
+                        Sha256.hex(code.trim() + token).getBytes(StandardCharsets.UTF_8))) {
                     throw new BusinessError.Invalid("Code incorrect.");
                 }
             }
@@ -234,9 +233,8 @@ public class EspaceAccesService {
     }
 
     private Animateur requiredAnimateur(String animateurId) {
-        return referenceDataService.listAnimateurs().stream()
-                .filter(candidat -> candidat.getId().equals(animateurId))
-                .findFirst()
+        return referenceDataService
+                .findAnimateur(animateurId)
                 .orElseThrow(() -> new BusinessError.Invalid("Animateur inconnu : " + animateurId));
     }
 
@@ -247,15 +245,6 @@ public class EspaceAccesService {
             return "•••";
         }
         return email.charAt(0) + "•••" + email.substring(arobase);
-    }
-
-    private static String hacher(String valeur) {
-        try {
-            return HexFormat.of()
-                    .formatHex(MessageDigest.getInstance("SHA-256").digest(valeur.getBytes(StandardCharsets.UTF_8)));
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 unavailable", e);
-        }
     }
 
     /** The rate is counted per animateur AND per edition, like the rest of the espace. */

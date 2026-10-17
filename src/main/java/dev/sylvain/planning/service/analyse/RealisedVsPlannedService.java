@@ -118,11 +118,8 @@ public class RealisedVsPlannedService {
      * reference, answers an empty detail saying so rather than an error.
      */
     public CellDetail detail(LocalDate day, String standId) {
-        String standNom = referenceDataService.listStands().stream()
-                .filter(stand -> stand.getId().equals(standId))
-                .map(Stand::getNom)
-                .findFirst()
-                .orElse(standId);
+        String standNom =
+                referenceDataService.findStand(standId).map(Stand::getNom).orElse(standId);
         Realised realised = source.read();
         DayReference reference =
                 dayReferences(clock.dateTime(), realised.plan(), publications(), planPublieService.snapshotPlans())

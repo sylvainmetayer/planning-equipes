@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.analyse;
 
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.MinutesOfDay;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -747,14 +748,8 @@ public final class RealisedVsPlannedAnalyzer {
         if (debutA == null || finA == null || debutB == null || finB == null) {
             return false;
         }
-        return minutesAfter(debutA, debutB) < minutes(debutA, finA)
-                || minutesAfter(debutB, debutA) < minutes(debutB, finB);
-    }
-
-    /** Minutes from {@code origin} to the next {@code time}, the same day or the next. */
-    private static int minutesAfter(LocalTime origin, LocalTime time) {
-        int minutes = (time.toSecondOfDay() - origin.toSecondOfDay()) / 60;
-        return minutes < 0 ? minutes + MINUTES_PER_DAY : minutes;
+        return MinutesOfDay.minutesAfter(debutA, debutB) < minutes(debutA, finA)
+                || MinutesOfDay.minutesAfter(debutB, debutA) < minutes(debutB, finB);
     }
 
     /**
@@ -843,7 +838,7 @@ public final class RealisedVsPlannedAnalyzer {
             GapCounts counts = cell.counts();
             csv.append(cell.date())
                     .append(';')
-                    .append(escape(cell.standNom()))
+                    .append(CsvFormulaGuard.cell(cell.standNom()))
                     .append(';')
                     .append(counts.publishedSeats())
                     .append(';')
@@ -873,17 +868,5 @@ public final class RealisedVsPlannedAnalyzer {
 
     private static String hours(int minutes) {
         return String.format(Locale.ROOT, "%.2f", minutes / 60.0).replace('.', ',');
-    }
-
-    /** A text cell, behind a quote first when a spreadsheet would run it as a formula. */
-    private static String escape(String valeur) {
-        if (valeur == null) {
-            return "";
-        }
-        String cellule = CsvFormulaGuard.neutralise(valeur);
-        if (cellule.contains(";") || cellule.contains("\"") || cellule.contains("\n")) {
-            return "\"" + cellule.replace("\"", "\"\"") + "\"";
-        }
-        return cellule;
     }
 }

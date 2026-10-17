@@ -8,7 +8,6 @@ import ai.timefold.solver.core.api.score.stream.Joiners;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.QuotaTypologie;
-import java.time.LocalDateTime;
 
 /**
  * Core assignment hard constraints: every mandatory seat must be filled by an
@@ -149,46 +148,16 @@ public final class AffectationConstraints {
     private Constraint pasDeChevauchementHoraire(SeatStreams seats) {
         return ConstraintToggleSupport.actif(
                         seats.held()
-                                .filter(AffectationConstraints::creneauHoraireConnu)
+                                .filter(LegalConstraints::horaireConnu)
                                 .join(
                                         PosteAffectation.class,
                                         Joiners.equal(PosteAffectation::getAnimateur),
                                         Joiners.lessThan(PosteAffectation::getId),
-                                        Joiners.overlapping(
-                                                AffectationConstraints::debutCreneau,
-                                                AffectationConstraints::finCreneau))
-                                .filter((posteA, posteB) ->
-                                        creneauHoraireConnu(posteB) && PastSeats.reproachable(posteA, posteB)),
+                                        Joiners.overlapping(LegalConstraints::debut, LegalConstraints::fin))
+                                .filter((posteA, posteB) -> LegalConstraints.horaireConnu(posteB)
+                                        && PastSeats.reproachable(posteA, posteB)),
                         "pasDeChevauchementHoraire")
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("pasDeChevauchementHoraire");
-    }
-
-    private static boolean creneauHoraireConnu(PosteAffectation poste) {
-        return poste.getCreneau() != null
-                && poste.getCreneau().getDate() != null
-                && poste.getCreneau().getHeureDebut() != null;
-    }
-
-    /**
-     * Start instant of the time this poste actually covers — narrowed by
-     * {@link PosteAffectation#getHeureDebutEffective()} when the stand is only
-     * partially closed on this créneau, so two postes whose effective windows
-     * don't actually overlap (e.g. different stands, a closure sitting between
-     * them) are correctly not flagged here — see
-     * {@code Creneau#segmentsOuvertsMinutes}.
-     */
-    private static LocalDateTime debutCreneau(PosteAffectation poste) {
-        return LocalDateTime.of(poste.getCreneau().getDate(), poste.heureDebutEffectif());
-    }
-
-    /**
-     * End instant of the effective window, derived from
-     * {@link PosteAffectation#getDureeEffectiveMinutes()} so a window crossing
-     * midnight (20:00 → 00:00) ends the next calendar day rather than before
-     * it started.
-     */
-    private static LocalDateTime finCreneau(PosteAffectation poste) {
-        return debutCreneau(poste).plusMinutes(poste.getDureeEffectiveMinutes());
     }
 }

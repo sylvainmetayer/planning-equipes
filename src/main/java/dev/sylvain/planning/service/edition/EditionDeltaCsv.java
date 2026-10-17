@@ -124,19 +124,7 @@ public final class EditionDeltaCsv {
     }
 
     private static void row(StringBuilder csv, String... cells) {
-        csv.append(Arrays.stream(cells).map(EditionDeltaCsv::escape).collect(Collectors.joining(";")))
+        csv.append(Arrays.stream(cells).map(CsvFormulaGuard::cell).collect(Collectors.joining(";")))
                 .append('\n');
-    }
-
-    /** A text cell, behind a quote first when a spreadsheet would run it as a formula. */
-    private static String escape(String value) {
-        if (value == null) {
-            return "";
-        }
-        String cell = CsvFormulaGuard.neutralise(value);
-        if (cell.contains(";") || cell.contains("\"") || cell.contains("\n")) {
-            return "\"" + cell.replace("\"", "\"\"") + "\"";
-        }
-        return cell;
     }
 }

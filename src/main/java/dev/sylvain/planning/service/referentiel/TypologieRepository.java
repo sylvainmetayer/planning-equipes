@@ -168,14 +168,6 @@ public class TypologieRepository {
         }
     }
 
-    /** The write's own precondition said no: a taken id on a creation, a stale read otherwise. */
-    private void refuse(boolean failIfPresent, String table, String id) {
-        if (failIfPresent) {
-            staleWrites.refuseDuplicate(table, id);
-        }
-        staleWrites.refuseStale(table, id);
-    }
-
     private TypologieItem upsertTypologie(Connection connection, TypologieItem typologie, boolean failIfPresent)
             throws SQLException {
         try (PreparedStatement ps = scope.prepareScoped(connection, """
@@ -199,7 +191,7 @@ public class TypologieRepository {
             WriteStamp.bindPrecondition(ps, 8, !failIfPresent, typologie.modifieLe());
             Instant ecrit = WriteStamp.writtenOrRefused(ps);
             if (ecrit == null) {
-                refuse(failIfPresent, TABLE, typologie.id());
+                staleWrites.refuse(failIfPresent, TABLE, typologie.id());
             }
             return typologie.stamped(ecrit);
         }

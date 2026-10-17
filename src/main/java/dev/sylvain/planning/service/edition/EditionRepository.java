@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.edition;
 
 import dev.sylvain.planning.domain.Edition;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -12,6 +13,7 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import javax.sql.DataSource;
@@ -164,6 +166,25 @@ public class EditionRepository {
             throw new IllegalStateException("Failed to list editions", e);
         }
         return editions;
+    }
+
+    /** One edition of {@link #listEditions()}, by its id. */
+    public Optional<Edition> find(String id) {
+        return listEditions().stream()
+                .filter(edition -> Objects.equals(edition.getId(), id))
+                .findFirst();
+    }
+
+    /** The edition's name, its id when it has none or no longer exists. */
+    public String nameOf(String id) {
+        return find(id).map(Edition::getNom).orElse(id);
+    }
+
+    /** Refuses an id that names no edition, in {@code 404}. */
+    void requireExisting(String id) {
+        if (!exists(id)) {
+            throw new BusinessError.NotFound("Édition inconnue : " + id);
+        }
     }
 
     public boolean exists(String id) {
