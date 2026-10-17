@@ -33,7 +33,7 @@ import { cibleDepot, moveTargets, resumeDeplacement } from '../../shared/deplace
 import { openMoveDialog } from '../../shared/deplacement-dialog';
 import { VerrouillageStore } from '../../core/verrouillage.store';
 import { Creneau, PlanningEvenement, PosteAffectation, Stand } from '../../core/models';
-import { aUneAppreciationPour } from '../../shared/affectation-explanation-dialog';
+import { aUneAppreciationPour } from '../../shared/affectation-explanation-rules';
 import { correspondAuFiltre } from '../../core/text-filter';
 import { formatHeure } from '../../core/time-of-day';
 

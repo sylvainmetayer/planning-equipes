@@ -1,10 +1,10 @@
-// The rules behind the "Pourquoi lui ?" popup, kept out of the dialog so they
-// are unit tested without rendering — the same convention `stand-draft.ts`
+// The rules behind "Pourquoi lui ?" and « Remplacer », kept out of the seat
+// panel so they are unit tested without rendering — the same convention `stand-draft.ts`
 // already follows for the stand form next door (AGENTS.md).
 //
 // Everything here is a pure function of what the server answered: whether a
 // delta is an improvement, whether the search was truncated, which suggestions
-// to show and under whose name. The dialog holds the signals; this file holds
+// to show and under whose name. The panel holds the signals; this file holds
 // what they mean.
 
 import {
@@ -51,7 +51,7 @@ export function meilleuresSuggestions(
   return (suggestions?.suggestions ?? []).slice(0, max);
 }
 
-/** How many suggestions the dialog lists: past a handful, the operator scrolls instead of choosing. */
+/** How many suggestions the panel lists: past a handful, the operator scrolls instead of choosing. */
 export const MAX_SUGGESTIONS_AFFICHEES = 5;
 
 /**
