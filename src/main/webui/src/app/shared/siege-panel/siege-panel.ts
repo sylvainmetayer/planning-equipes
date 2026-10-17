@@ -29,7 +29,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { AffectationExplanationService } from '../../core/affectation-explanation.service';
 import { ConstraintsApi } from '../../core/api/constraints-api';
 import { PostesApi } from '../../core/api/postes-api';
 import { errorPrefix } from '../../core/error-message';
@@ -104,7 +103,6 @@ export class SeatPanel {
   /** A gesture rewrote the persisted plan: the page re-reads it. */
   readonly planChanged = output<void>();
 
-  private readonly explanations = inject(AffectationExplanationService);
   private readonly jourJ = inject(JourJService);
   private readonly postesApi = inject(PostesApi);
   private readonly placement = inject(SeatPlacement);
@@ -308,7 +306,7 @@ export class SeatPanel {
     const holderId = seat.animateur?.id ?? null;
     await this.write('replace', async () => {
       // The person shown: somebody else holding the seat by now is a 409.
-      await this.explanations.applyRepair(seat.id, suggestion.animateurId, holderId);
+      await this.postesApi.applyRepair(seat.id, suggestion.animateurId, holderId);
       this.suggestions.set(null);
       return {
         message: $localize`:@@siege.remplacer.fait:${nom}:nom: prend ce siège.`,
@@ -348,11 +346,7 @@ export class SeatPanel {
     }
     const holderId = seat.animateur.id;
     await this.write('move', async () => {
-      const simulation = await this.explanations.deplacer(
-        seat.id,
-        { posteId: choice.target },
-        holderId,
-      );
+      const simulation = await this.postesApi.move(seat.id, { posteId: choice.target }, holderId);
       const summary = resumeDeplacement(simulation, (id) => this.name(id));
       return {
         message: summary.title,
@@ -392,7 +386,7 @@ export class SeatPanel {
       return;
     }
     await this.write('free', async () => {
-      await this.explanations.applyRepair(seat.id, null, holderId);
+      await this.postesApi.applyRepair(seat.id, null, holderId);
       let message = $localize`:@@siege.liberer.fait:Siège libéré.`;
       let warning: string | null = null;
       if (answer.checked) {

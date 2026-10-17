@@ -26,7 +26,7 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { injectAppConfig } from '../../core/app-config';
-import { AffectationExplanationService } from '../../core/affectation-explanation.service';
+import { PostesApi } from '../../core/api/postes-api';
 import { errorMessage } from '../../core/error-message';
 import { NotificationService } from '../../core/notification.service';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -247,7 +247,7 @@ export class RailJourView {
 
   /* ----------------------------- Glisser-déposer (#308) ----------------------------- */
 
-  private readonly explications = inject(AffectationExplanationService);
+  private readonly postesApi = inject(PostesApi);
   private readonly notifications = inject(NotificationService);
   /** A drop is a write to the plan: locked, like every other, while a solve is rewriting it. */
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
@@ -285,7 +285,7 @@ export class RailJourView {
     try {
       // The line the block was dragged from is who this view believes holds
       // the seat: the server refuses (409) if somebody else does now.
-      const simulation = await this.explications.deplacer(
+      const simulation = await this.postesApi.move(
         bloc.posteId,
         { animateurId: receveurId },
         porteur.animateurId,

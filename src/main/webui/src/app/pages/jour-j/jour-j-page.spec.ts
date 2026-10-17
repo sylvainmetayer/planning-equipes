@@ -14,7 +14,7 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AffectationExplanationService } from '../../core/affectation-explanation.service';
+import { PostesApi } from '../../core/api/postes-api';
 import { AffichageMuralApi } from '../../core/api/affichage-mural-api';
 import { JourJService } from '../../core/jour-j.service';
 import { NotificationService } from '../../core/notification.service';
@@ -151,7 +151,7 @@ describe('JourJPage', () => {
         provideZonelessChangeDetection(),
         provideRouter([]),
         { provide: JourJService, useValue: jourJ },
-        { provide: AffectationExplanationService, useValue: reparations },
+        { provide: PostesApi, useValue: reparations },
         { provide: NotificationService, useValue: { notify } },
         { provide: SolverJobService, useValue: { editingLocked: signal(false) } },
         { provide: ConfirmService, useValue: { ask: vi.fn(() => Promise.resolve(true)) } },

@@ -6,7 +6,7 @@
 // it — one identifier on the wire, the same bounded cost.
 //
 // Applying a replacement deliberately reuses the assistant's existing write
-// (`AffectationExplanationService.applyRepair`), which is the surgical
+// (`PostesApi.applyRepair`), which is the surgical
 // UPDATE that starts no solve. There is no second write path.
 
 import { Injectable, inject } from '@angular/core';
