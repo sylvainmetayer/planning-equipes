@@ -25,8 +25,8 @@
  *   node scripts/check-headings.js
  */
 const { readFileSync, existsSync } = require('node:fs');
-const { readdirSync, statSync } = require('node:fs');
 const { join, relative, dirname } = require('node:path');
+const { sourceFiles } = require('./source-files');
 const { byCodeUnit } = require('./code-unit-order');
 
 const APP = join(__dirname, '..', 'src', 'app');
@@ -42,16 +42,6 @@ const ROUTES = join(APP, 'app.routes.ts');
 const EXCEPTIONS_ASSUMEES = {};
 
 /** Every `.html` and `.ts` under `app/`, for the `mat-card-title` sweep. */
-function walk(dir, out) {
-  for (const name of readdirSync(dir)) {
-    const path = join(dir, name);
-    if (statSync(path).isDirectory()) walk(path, out);
-    else if ((name.endsWith('.html') || name.endsWith('.ts')) && !name.endsWith('.spec.ts'))
-      out.push(path);
-  }
-  return out;
-}
-
 /**
  * The components `app.routes.ts` loads, by their module path. A shell is left
  * out: it wraps the screens rather than being one.
@@ -123,7 +113,7 @@ for (const cheminModule of composantsRoutes()) {
   else if (compte > 1) tropDeH1.push(`${vue.nom} (${compte})`);
 }
 
-for (const file of walk(APP, []).sort()) {
+for (const file of sourceFiles(APP, ['.html', '.ts'])) {
   const source = readFileSync(file, 'utf8');
   for (const match of source.matchAll(/<mat-card-title[\s>]/g)) {
     elements.push(`${relative(APP, file)}:${source.slice(0, match.index).split('\n').length}`);

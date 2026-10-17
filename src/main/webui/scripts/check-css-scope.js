@@ -37,22 +37,14 @@
  *
  *   node scripts/check-css-scope.js
  */
-const { readdirSync, readFileSync, statSync, existsSync } = require('node:fs');
+const { readdirSync, readFileSync, existsSync } = require('node:fs');
 const { join, dirname, relative, resolve } = require('node:path');
+const { sourceFiles } = require('./source-files');
 const { byCodeUnit } = require('./code-unit-order');
 
 const ROOT = join(__dirname, '..', 'src');
 const APP = join(ROOT, 'app');
 const OWN_PREFIXES = ['mat-', 'mdc-', 'cdk-', 'material-icons', 'ng-', 'leaflet-'];
-
-function walk(dir, out) {
-  for (const name of readdirSync(dir)) {
-    const path = join(dir, name);
-    if (statSync(path).isDirectory()) walk(path, out);
-    else out.push(path);
-  }
-  return out;
-}
 
 const stripComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, ' ');
 
@@ -212,7 +204,7 @@ function importsOf(ts, dir) {
 /** Every component: its template, its stylesheets, the app files it imports. */
 function components() {
   const byFile = new Map();
-  for (const file of walk(APP, []).filter((f) => f.endsWith('.ts') && !f.endsWith('.spec.ts'))) {
+  for (const file of sourceFiles(APP, ['.ts'])) {
     const ts = readFileSync(file, 'utf8');
     if (!/@Component\(/.test(ts)) continue;
     const dir = dirname(file);
@@ -519,9 +511,7 @@ function dynamicPrefixes(text) {
 function checkUnused(byFile, allDefined, failures) {
   const used = new Set();
   for (const c of byFile.values()) for (const k of c.used) used.add(k);
-  const sources = walk(ROOT, []).filter(
-    (f) => (f.endsWith('.ts') && !f.endsWith('.spec.ts')) || f.endsWith('.html'),
-  );
+  const sources = sourceFiles(ROOT, ['.ts', '.html']);
   const prefixes = new Set();
   for (const f of sources) {
     const text = readFileSync(f, 'utf8');
@@ -549,8 +539,8 @@ function main() {
   // `styleUrl` was dropped leaves the screen unstyled and its classes out of
   // `allDefined` at the same time — rules 1 and 2 go blind exactly when they
   // should shout, since a class nobody defines is never "out of scope".
-  const orphans = walk(ROOT, [])
-    .filter((f) => f.endsWith('.css') && !reached.has(f))
+  const orphans = sourceFiles(ROOT, ['.css'])
+    .filter((f) => !reached.has(f))
     .map((f) => `${relative(ROOT, f)} is loaded by nothing: neither styles.css nor a styleUrl`);
   recordUsedClasses(byFile, allDefined);
 

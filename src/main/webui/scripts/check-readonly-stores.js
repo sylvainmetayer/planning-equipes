@@ -16,8 +16,9 @@
  *
  *   node scripts/check-readonly-stores.js
  */
-const { readdirSync, readFileSync, statSync } = require('node:fs');
+const { readFileSync } = require('node:fs');
 const { join, relative } = require('node:path');
+const { sourceFiles } = require('./source-files');
 
 const CORE = join(__dirname, '..', 'src', 'app', 'core');
 /**
@@ -43,19 +44,10 @@ const PRIVATE_SIGNAL =
   /^ {2}private readonly _(\w+)(?:\s*:\s*WritableSignal<[^;=]*>)?\s*=\s*(?:signal|linkedSignal)[<(]/gm;
 
 /** Every .ts of core/ and its sub-folders: core/api/ holds eleven @Injectable classes, the likeliest home of a cache. */
-function walk(dir, out) {
-  for (const name of readdirSync(dir)) {
-    const path = join(dir, name);
-    if (statSync(path).isDirectory()) walk(path, out);
-    else if (name.endsWith('.ts') && !name.endsWith('.spec.ts')) out.push(path);
-  }
-  return out;
-}
-
 const offenders = [];
 const unpaired = [];
 let stores = 0;
-for (const file of walk(CORE, []).sort()) {
+for (const file of sourceFiles(CORE, ['.ts'])) {
   const name = relative(CORE, file);
   const source = readFileSync(file, 'utf8');
   // Stores and services only: a base component keeps its own page state.

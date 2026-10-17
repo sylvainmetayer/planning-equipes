@@ -23,8 +23,9 @@
  *
  *   node scripts/check-status-messages.js
  */
-const { readdirSync, readFileSync, statSync } = require('node:fs');
+const { readFileSync } = require('node:fs');
 const { join, relative } = require('node:path');
+const { sourceFiles } = require('./source-files');
 
 const SOURCES = join(__dirname, '..', 'src');
 
@@ -106,20 +107,10 @@ const EXCEPTIONS_ASSUMEES = {
     "note (role=\"note\") rendue avec l'écran : elle dit l'état de l'édition avant le geste, pas le résultat d'une action",
 };
 
-function walk(dir, out) {
-  for (const name of readdirSync(dir)) {
-    const path = join(dir, name);
-    if (statSync(path).isDirectory()) walk(path, out);
-    else if ((name.endsWith('.html') || name.endsWith('.ts')) && !name.endsWith('.spec.ts'))
-      out.push(path);
-  }
-  return out;
-}
-
 const muets = [];
 const exceptionsMortes = new Set(Object.keys(EXCEPTIONS_ASSUMEES));
 let annonces = 0;
-for (const file of walk(join(SOURCES, 'app'), []).sort()) {
+for (const file of sourceFiles(join(SOURCES, 'app'), ['.html', '.ts'])) {
   const name = relative(SOURCES, file);
   const source = readFileSync(file, 'utf8');
   annonces += (source.match(/<app-status-message\b/g) ?? []).length;

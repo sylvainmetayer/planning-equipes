@@ -733,13 +733,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   it is the subject (an accessible name, an NG01352). A cast that silences
   the compiler in a spec — `as unknown as`, `as any`, `as never`, one debt
   under three spellings, none of them held by eslint in a spec — is the debt
-  this replaces: `scripts/check-unknown-casts.js`
-  (`npm run unknown-casts-check`, run in CI) holds its count per spec against
-  `scripts/unknown-casts-baseline.json`, which can only go down — a spec below
-  its line fails until `npm run unknown-casts-check -- --update` lowers it,
-  and `--update` never raises the total — one line may rise within an
-  unchanged total, the casts of a spec renamed or moved. The count is now
-  zero and the baseline empty: a spec that writes a cast fails CI.
+  this replaces, and it is paid off: `scripts/check-unknown-casts.js`
+  (`npm run unknown-casts-check`, run in CI) fails on any of the three in a
+  spec, comments included.
 - End-to-end tests are Playwright specs in `src/main/webui/e2e` (`npm run
   e2e`): the issue #165 security perimeter (auth wall, espace animateur
   boundary, full échange flow with refusal and cancellation), a smoke sweep of

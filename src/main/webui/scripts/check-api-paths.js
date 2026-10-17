@@ -24,22 +24,22 @@
  *   node scripts/check-api-paths.js          # check
  *   node scripts/check-api-paths.js --list   # print the current offenders, to refresh the list
  */
-const { readdirSync, readFileSync, statSync } = require('node:fs');
-const { join, relative } = require('node:path');
+const { readFileSync } = require('node:fs');
+const { join, relative, sep } = require('node:path');
 const { byCodeUnit } = require('./code-unit-order');
+const { sourceFiles } = require('./source-files');
 
 const ROOT = join(__dirname, '..', 'src', 'app');
 const SCANNED = ['pages', 'shell', 'shared', 'core'];
 const EXCEPTIONS = join(__dirname, 'api-paths-exceptions.json');
 /** `core/api/` owns the paths; these three own the prefix (base URL, login redirect, edition header). */
-const EXEMPT = new Set(
-  [
-    'core/api',
-    'core/api.service.ts',
-    'core/auth.interceptor.ts',
-    'core/edition.interceptor.ts',
-  ].map((p) => join(ROOT, p)),
-);
+const EXEMPT = [
+  'core/api',
+  'core/api.service.ts',
+  'core/auth.interceptor.ts',
+  'core/edition.interceptor.ts',
+].map((p) => join(ROOT, p));
+const exempt = (file) => EXEMPT.some((p) => file === p || file.startsWith(p + sep));
 
 /**
  * A string starting with /api, quoted or after a `${…}` in a template — a
@@ -48,21 +48,6 @@ const EXEMPT = new Set(
  * moved nothing and passed.
  */
 const LITERAL = /(['"`]|\})\/api\b/;
-
-function walk(dir, out) {
-  for (const name of readdirSync(dir)) {
-    const path = join(dir, name);
-    if (EXEMPT.has(path)) {
-      continue;
-    }
-    if (statSync(path).isDirectory()) {
-      walk(path, out);
-    } else if (name.endsWith('.ts') && !name.endsWith('.spec.ts')) {
-      out.push(path);
-    }
-  }
-  return out;
-}
 
 function literalsIn(file) {
   return readFileSync(file, 'utf8')
@@ -79,7 +64,7 @@ function literalsIn(file) {
 
 const offenders = new Map();
 for (const dir of SCANNED) {
-  for (const file of walk(join(ROOT, dir), [])) {
+  for (const file of sourceFiles(join(ROOT, dir), ['.ts']).filter((f) => !exempt(f))) {
     const hits = literalsIn(file);
     if (hits.length > 0) {
       offenders.set(relative(ROOT, file).replaceAll('\\', '/'), hits);

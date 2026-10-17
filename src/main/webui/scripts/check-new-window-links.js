@@ -18,22 +18,13 @@
  *
  *   node scripts/check-new-window-links.js
  */
-const { existsSync, readdirSync, readFileSync, statSync } = require('node:fs');
+const { existsSync, readFileSync } = require('node:fs');
 const { join, relative } = require('node:path');
+const { sourceFiles } = require('./source-files');
 
 const APP = join(__dirname, '..', 'src', 'app');
 const LIEN = /<a\b((?:"[^"]*"|'[^']*'|[^>"'])*)>/g;
 const NOUVELLE_FENETRE = /\btarget\s*=\s*"_blank"/;
-
-function walk(dir, out) {
-  for (const name of readdirSync(dir)) {
-    const path = join(dir, name);
-    if (statSync(path).isDirectory()) walk(path, out);
-    else if ((name.endsWith('.html') || name.endsWith('.ts')) && !name.endsWith('.spec.ts'))
-      out.push(path);
-  }
-  return out;
-}
 
 /** The component source a template belongs to: itself for an inline one. */
 function composantDe(file) {
@@ -45,7 +36,7 @@ function composantDe(file) {
 const sansDirective = new Set();
 const libellesMuets = [];
 let liens = 0;
-for (const file of walk(APP, []).sort()) {
+for (const file of sourceFiles(APP, ['.html', '.ts'])) {
   if (file.endsWith('new-window-link.ts')) continue;
   const source = readFileSync(file, 'utf8');
   for (const match of source.matchAll(LIEN)) {

@@ -15,27 +15,18 @@
  *
  *   node scripts/check-table-headers.js
  */
-const { readdirSync, readFileSync, statSync } = require('node:fs');
+const { readFileSync } = require('node:fs');
 const { join, relative } = require('node:path');
+const { sourceFiles } = require('./source-files');
 
 const APP = join(__dirname, '..', 'src', 'app');
 /** Opening `<th>` tags, multi-line ones included; quoted values skipped whole. */
 const TH = /<th\b((?:"[^"]*"|'[^']*'|[^>"'])*)>/g;
 const SCOPE = /\bscope\s*=|\[attr\.scope\]/;
 
-function walk(dir, out) {
-  for (const name of readdirSync(dir)) {
-    const path = join(dir, name);
-    if (statSync(path).isDirectory()) walk(path, out);
-    else if ((name.endsWith('.html') || name.endsWith('.ts')) && !name.endsWith('.spec.ts'))
-      out.push(path);
-  }
-  return out;
-}
-
 const sansScope = [];
 let entetes = 0;
-for (const file of walk(APP, []).sort()) {
+for (const file of sourceFiles(APP, ['.html', '.ts'])) {
   const source = readFileSync(file, 'utf8');
   for (const match of source.matchAll(TH)) {
     entetes++;
