@@ -384,24 +384,15 @@ renommée ou un argument changé ne compile plus, là où un
 lit `page['membre']`, vérifié par le compilateur. Le rendu Material n'est
 testé que là où il est le sujet (un libellé accessible, une erreur NG01352).
 
-`npm run unknown-casts-check` (job `frontend`) tient le compte des casts qui
-font taire le compilateur — `as unknown as`, `as any` et `as never`, une seule
-dette sous trois graphies, qu'aucune règle eslint ne tient dans une spec
-(`no-explicit-any` y est coupé) — de chaque spec contre
-`scripts/unknown-casts-baseline.json` :
-une spec au-dessus de sa ligne échoue, une spec en dessous aussi, pour que la
-référence soit abaissée — `npm run unknown-casts-check -- --update`, qui
-réécrit la baseline et refuse d'en relever le total. Une ligne peut monter
-seule tant que le total ne monte pas : une spec renommée ou déplacée, un test
-passé d'une spec à l'autre emporte ses casts, et l'ancien chemin se retrouve
-sous sa ligne quand le nouveau la dépasse — les casts ont changé de fichier,
-ils ne se sont pas multipliés. La vérification refuse ce déplacement tant que
-`--update` ne l'a pas enregistré, si bien qu'il passe toujours par un commit
-de la baseline. Le compte ne peut que baisser : 221 `as unknown as` à la mise
-en place du cliquet, 177 après la première réduction (les quatre specs qui en
-portaient le plus), 186 une fois comptés les 9 `as never` qu'il ne voyait pas
-(aucun `as any`), puis **zéro** : la baseline est vide, et une spec qui écrit
-un de ces transtypages fait échouer la CI. Les fixtures que ces transtypages
+`npm run unknown-casts-check` (job `frontend`) refuse toute spec qui porte un
+des casts qui font taire le compilateur — `as unknown as`, `as any` et
+`as never`, une seule dette sous trois graphies, qu'aucune règle eslint ne
+tient dans une spec (`no-explicit-any` y est coupé) — cherchés dans tout le
+texte de la spec, commentaires compris. Un cliquet les a ramenés à zéro :
+221 `as unknown as` à sa mise en place, 177 après la première réduction (les
+quatre specs qui en portaient le plus), 186 une fois comptés les 9 `as never`
+qu'il ne voyait pas (aucun `as any`), puis **zéro** ; sa baseline et son mode
+`--update` sont partis avec le dernier cast. Les fixtures que ces transtypages
 masquaient (des types d'avertissement et un niveau de compétence qui
 n'existaient plus) ont été corrigées en chemin.
 

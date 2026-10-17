@@ -9,7 +9,7 @@
 // implementation of its own signature and comes back as the Vitest mock of
 // that signature, so `fake.save.mock.calls[0]` is the method's parameter
 // tuple, and a signal stays the signal it was. `scripts/check-unknown-casts.js`
-// holds the count of casts the specs still carry, file by file.
+// refuses any cast left in a spec.
 
 import { isSignal, Provider, ProviderToken, Signal } from '@angular/core';
 import { Mock, vi } from 'vitest';

@@ -22,8 +22,9 @@
  *
  *   node scripts/check-icon-labels.js
  */
-const { readdirSync, readFileSync, statSync } = require('node:fs');
+const { readFileSync } = require('node:fs');
 const { join, relative } = require('node:path');
+const { sourceFiles } = require('./source-files');
 
 const SOURCES = join(__dirname, '..', 'src');
 /**
@@ -57,21 +58,11 @@ const STATIC_ARIA_HIDDEN = /\baria-hidden\s*=\s*"(true|false)"/;
 const EXCEPTIONS_ASSUMEES = {};
 
 /** Every template of the application: the `.html` files and the inline templates of the `.ts`. */
-function walk(dir, out) {
-  for (const name of readdirSync(dir)) {
-    const path = join(dir, name);
-    if (statSync(path).isDirectory()) walk(path, out);
-    else if ((name.endsWith('.html') || name.endsWith('.ts')) && !name.endsWith('.spec.ts'))
-      out.push(path);
-  }
-  return out;
-}
-
 const offenders = [];
 const sansNom = [];
 const exceptionsMortes = new Set(Object.keys(EXCEPTIONS_ASSUMEES));
 let informatives = 0;
-for (const file of walk(SOURCES, []).sort()) {
+for (const file of sourceFiles(SOURCES, ['.html', '.ts'])) {
   const name = relative(SOURCES, file);
   const source = readFileSync(file, 'utf8');
   for (const match of source.matchAll(ICON)) {
