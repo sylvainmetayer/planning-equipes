@@ -1461,7 +1461,9 @@ fichier voyage avec le chunk de la route au lieu de peser sur le bundle
 initial. Une classe que plusieurs pages utilisent va dans `pages.css` ;
 `npm run css-scope-check` refuse une page qui utilise une classe que seule
 une autre route charge (les tests unitaires n'ont pas de CSS, personne
-d'autre ne le verrait).
+d'autre ne le verrait), et une classe définie qu'aucun gabarit ni littéral
+TypeScript n'emploie : une règle morte se retire avec le gabarit qui la
+portait.
 
 ## Formatage
 

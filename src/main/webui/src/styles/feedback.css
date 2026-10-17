@@ -16,15 +16,8 @@
   --mat-snack-bar-button-color: var(--mat-sys-tertiary);
 }
 
-/* Flags text describing data that no longer matches the active groupe de
-   créneaux (e.g. the group a past solve ran for). */
-.groupe-mismatch {
-  color: var(--mat-sys-error);
-  font-weight: 600;
-}
-
 /* A solve that scored lower than the plan it replaced (issue #274). As loud as
-   .groupe-mismatch: nothing else on the page says the run was a step back, and
+   an error: nothing else on the page says the run was a step back, and
    the snapshot that can undo it expires after a few solves. */
 .plan-degrade {
   color: var(--mat-sys-error);

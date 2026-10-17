@@ -678,7 +678,8 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   A class used by several pages goes to `pages.css`, never to one page's file:
   `scripts/check-css-scope.js` (`npm run css-scope-check`, run in CI) refuses
   a page that uses a class only another route loads — the unit tests render
-  without CSS and would never see it. Don't restyle what a Material component
+  without CSS and would never see it — and a class no template or TypeScript
+  literal uses: drop a rule with the markup it styled. Don't restyle what a Material component
   already themes.
 - **A screen answers, it does not explain** (issue #417): a subtitle is one
   sentence, a `mat-hint` twelve words at most, nothing repeats what the table

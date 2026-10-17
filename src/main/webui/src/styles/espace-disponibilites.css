@@ -148,13 +148,6 @@
 
 /* ---------- Admin: the "Disponibilités" screen ---------- */
 
-.dispo-admin-fenetre {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem;
-}
-
 .dispo-admin-declaration {
   margin-bottom: 1rem;
 }
