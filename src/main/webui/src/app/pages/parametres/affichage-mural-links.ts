@@ -25,6 +25,7 @@ import { NotificationService } from '../../core/notification.service';
 import { qrPath } from '../../core/qr-path';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { copyToClipboard } from '../../core/clipboard';
 
 /**
  * How often the list is read again while the tab is on screen: a television
@@ -161,19 +162,19 @@ export class AffichageMuralLinks implements OnInit {
   }
 
   protected async copy(url: string): Promise<void> {
-    try {
-      await navigator.clipboard.writeText(url);
-      this.notifications.notify({
+    await copyToClipboard(
+      this.notifications,
+      url,
+      {
         title: $localize`:@@parametres.mural.copie:Adresse copiée.`,
         variant: 'success',
         timeout: 3000,
-      });
-    } catch {
-      this.notifications.notify({
+      },
+      {
         title: $localize`:@@parametres.mural.copieImpossible:Copie impossible : sélectionnez l'adresse à la main.`,
         variant: 'warning',
-      });
-    }
+      },
+    );
   }
 
   protected async revoquer(lien: AffichageMuralLink): Promise<void> {

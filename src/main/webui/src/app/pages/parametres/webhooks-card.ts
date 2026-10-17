@@ -19,6 +19,7 @@ import { ConfirmService } from '../../shared/confirm-dialog';
 import { WebhookFormData, WebhookFormDialog } from './webhook-form-dialog';
 import { WebhookLivraisonsData, WebhookLivraisonsDialog } from './webhook-livraisons-dialog';
 import { eventLabel, formatLabel, statusLabel } from './webhooks';
+import { copyToClipboard } from '../../core/clipboard';
 
 /** A secret just generated: the one moment it can be copied. */
 interface ShownSecret {
@@ -180,19 +181,19 @@ export class WebhooksCard implements OnInit {
   }
 
   protected async copy(secret: string): Promise<void> {
-    try {
-      await navigator.clipboard.writeText(secret);
-      this.notifications.notify({
+    await copyToClipboard(
+      this.notifications,
+      secret,
+      {
         title: $localize`:@@parametres.webhooks.copie:Secret copié.`,
         variant: 'success',
         timeout: 3000,
-      });
-    } catch {
-      this.notifications.notify({
+      },
+      {
         title: $localize`:@@parametres.mural.copieImpossible:Copie impossible : sélectionnez l'adresse à la main.`,
         variant: 'warning',
-      });
-    }
+      },
+    );
   }
 
   private async load(): Promise<void> {

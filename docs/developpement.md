@@ -134,7 +134,10 @@ id sans traduction (l'écran s'affiche **en français** pour un anglophone,
 `$localize` retombe sur la source sans rien dire), une clé orpheline
 (généralement la moitié oubliée d'un renommage), des placeholders divergents
 (casse **à l'affichage**, en anglais seulement — ni le build ni les tests ne la
-voient), et un libellé cité qui ne correspond à rien à l'écran.
+voient), et un libellé cité qui ne correspond à rien à l'écran. Il refuse
+aussi un même id posé sur deux textes français différents : l'extracteur n'en
+garde qu'un, le catalogue anglais n'a qu'une chaîne, et l'un des deux endroits
+affiche l'autre en anglais.
 
 Le troisième écart est le plus sournois : un placeholder renommé côté anglais
 fait voir le jeton littéral au lieu de la valeur, sur ce seul écran, dans cette

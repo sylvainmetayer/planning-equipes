@@ -19,6 +19,7 @@ import { PromptMcp, StatutMcp } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { StatusMessage } from '../../shared/status-message';
 import { NewWindowLink } from '../../shared/new-window-link';
+import { copyToClipboard } from '../../core/clipboard';
 
 /**
  * How to plug an AI assistant into the application's MCP server (see
@@ -209,14 +210,22 @@ export class McpPage implements OnInit, OnDestroy {
   }
 
   protected async copy(text: string): Promise<void> {
-    await navigator.clipboard.writeText(text);
-    if (this.cle()) {
+    const copied = await copyToClipboard(
+      this.notifications,
+      text,
+      {
+        title: $localize`:@@mcp.copie:Copié dans le presse-papiers.`,
+        variant: 'success',
+        timeout: 3000,
+      },
+      {
+        title: $localize`:@@output.copyFailed:Copie impossible`,
+        message: $localize`:@@output.copyFailedMessage:Le navigateur a refusé l'accès au presse-papiers. Sélectionnez le texte et copiez-le à la main.`,
+        variant: 'error',
+      },
+    );
+    if (copied && this.cle()) {
       this.armerEffacement();
     }
-    this.notifications.notify({
-      title: $localize`:@@mcp.copie:Copié dans le presse-papiers.`,
-      variant: 'success',
-      timeout: 3000,
-    });
   }
 }

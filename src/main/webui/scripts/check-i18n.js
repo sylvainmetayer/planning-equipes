@@ -29,6 +29,10 @@
 //                -> a screen that explains instead of answering: the prose
 //                   that the pass of issue #417 removed comes back one hint
 //                   at a time unless something refuses it.
+//   homonyme     one id carries two French texts in two places
+//                -> the extractor keeps one and only warns; the English
+//                   catalogue holds a single string, so one of the two
+//                   places reads as the other in English
 //   périmé       the French source was rewritten under the same id and the
 //                English string was not touched (`--modifies` only)
 //                -> the English screen still says the previous version, and
@@ -42,7 +46,7 @@
 // reports the ids whose French changed while the English did not — a ratchet
 // on what the branch rewrites, not a barrier on the whole catalogue.
 
-const { execFileSync } = require('node:child_process');
+const { execFileSync, spawnSync } = require('node:child_process');
 const { existsSync, mkdtempSync, readFileSync, rmSync, symlinkSync } = require('node:fs');
 const { tmpdir } = require('node:os');
 const { join, relative } = require('node:path');
@@ -58,20 +62,48 @@ function placeholders(message) {
   return (message.match(PLACEHOLDER) ?? []).sort();
 }
 
-function extraire(webui = WEBUI) {
+/**
+ * The ids the extractor saw with two different texts, from its « Duplicate
+ * messages with id » warnings — whitespace aside, which the templates vary.
+ */
+function homonymes(avertissements) {
+  const textes = new Map();
+  let id = null;
+  for (const ligne of avertissements.split('\n')) {
+    const entete = /Duplicate messages with id "([^"]+)"/.exec(ligne);
+    if (entete) {
+      id = entete[1];
+      textes.set(id, new Set());
+      continue;
+    }
+    const occurrence = /^\s+- "(.*)" : /.exec(ligne);
+    if (id !== null && occurrence) {
+      textes.get(id).add(occurrence[1].replace(/\s+/g, ' ').trim());
+    } else if (ligne.trim() !== '') {
+      id = null;
+    }
+  }
+  return new Map([...textes].filter(([, variantes]) => variantes.size > 1));
+}
+
+function extraire(webui = WEBUI, conflits = new Map()) {
   const sortie = mkdtempSync(join(tmpdir(), 'planning-i18n-'));
   try {
     // The workspace's own Angular CLI, run by this very Node: nothing is
     // looked up on the PATH.
     const ng = require.resolve('@angular/cli/bin/ng.js', { paths: [webui] });
-    execFileSync(
+    const extraction = spawnSync(
       process.execPath,
       [ng, 'extract-i18n', '--format=json', `--output-path=${sortie}`],
-      {
-        cwd: webui,
-        stdio: ['ignore', 'ignore', 'inherit'],
-      },
+      { cwd: webui, stdio: ['ignore', 'ignore', 'pipe'], encoding: 'utf8' },
     );
+    process.stderr.write(extraction.stderr ?? '');
+    if (extraction.status !== 0) {
+      throw new Error(`ng extract-i18n a échoué (code ${extraction.status}).`);
+    }
+    for (const [id, variantes] of homonymes(extraction.stderr ?? '')) {
+      conflits.set(id, variantes);
+    }
     return JSON.parse(readFileSync(join(sortie, 'messages.json'), 'utf8')).translations;
   } finally {
     rmSync(sortie, { recursive: true, force: true });
@@ -243,7 +275,8 @@ function libellesDivergents(source, anglais) {
   return rapport;
 }
 
-const source = extraire();
+const homonymesSource = new Map();
+const source = extraire(WEBUI, homonymesSource);
 const anglais = JSON.parse(readFileSync(CATALOGUE, 'utf8'));
 const base = baseDemandee();
 const perimes = base === null ? [] : traductionsPerimees(source, anglais, etatDeLaBase(base));
@@ -263,6 +296,7 @@ if (
   divergents.length === 0 &&
   libelles.size === 0 &&
   longs.length === 0 &&
+  homonymesSource.size === 0 &&
   perimes.length === 0
 ) {
   const cliquet = base === null ? '' : `, aucune traduction périmée par rapport à ${base}`;
@@ -315,6 +349,15 @@ if (longs.length > 0) {
     longs,
     (id) =>
       `      ${source[id].replace(/\s+/g, ' ').trim().length} caractères : ${JSON.stringify(source[id].replace(/\s+/g, ' ').trim().slice(0, 90))}…`,
+  );
+}
+
+if (homonymesSource.size > 0) {
+  lister(
+    'Un même id pour deux textes — en anglais, un des deux endroits affiche l’autre : donner son propre id à chacun',
+    [...homonymesSource.keys()],
+    (id) =>
+      [...homonymesSource.get(id)].map((texte) => `      ${JSON.stringify(texte)}`).join('\n'),
   );
 }
 
