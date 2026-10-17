@@ -1,29 +1,12 @@
 // Reading a Dosage — the weighting a solve ran under — the same way wherever
-// one is shown: the comparison of « Versions du plan » (a banner when two
-// plans differ) and the weight history of « Règles du planning ». Pure, so it is unit tested without rendering.
+// one is shown: the comparison of « Versions du plan » and the weight history
+// of « Règles du planning ». Pure, so it is unit tested without rendering.
 
 import { Dosage } from './models';
 import { compareCodeUnits } from './string-order';
 
-/**
- * A canonical text for a dosage, equal for two solves under the same effective
- * weighting and different otherwise; `null` for an unknown one — an older row
- * — which equals nothing, not even another unknown.
- */
-export function dosageKey(dosage: Dosage | null | undefined): string | null {
-  if (!dosage) {
-    return null;
-  }
-  return JSON.stringify([
-    sortedEntries(dosage.weights),
-    sortedEntries(dosage.instanceWeights),
-    [...(dosage.disabled ?? [])].sort(compareCodeUnits),
-    [...(dosage.enabled ?? [])].sort(compareCodeUnits),
-  ]);
-}
-
 /** How many rules the edition moved away from a default: reweighted, switched off, switched on. */
-export function dosageCount(dosage: Dosage): number {
+function dosageCount(dosage: Dosage): number {
   return (
     Object.keys(dosage.weights ?? {}).length +
     (dosage.disabled ?? []).length +

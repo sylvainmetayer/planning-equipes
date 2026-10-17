@@ -77,7 +77,6 @@ describe('SeatPanel', () => {
   const locks = signal<VerrouillagePlanning[]>([]);
   const editingLocked = signal(false);
   const explanations = {
-    suggererReparations: vi.fn(),
     applyRepair: vi.fn(),
     deplacer: vi.fn(),
   };
@@ -320,7 +319,6 @@ describe('SeatPanel', () => {
     button(root, 'Remplacer').click();
     await vi.waitFor(() => expect(jourJ.suggestions).toHaveBeenCalledWith('P1'));
     await fixture.whenStable();
-    expect(explanations.suggererReparations).not.toHaveBeenCalled();
     root
       .querySelector<HTMLButtonElement>('button[aria-label="Mettre Bruno Petit sur ce siège"]')!
       .click();

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dosageDifferences, dosageKey, dosageLines, dosageSummary } from './dosage';
+import { dosageDifferences, dosageLines, dosageSummary } from './dosage';
 import { Dosage } from './models';
 
 const NONE: Dosage = {
@@ -22,23 +22,8 @@ describe('dosage', () => {
     expect(dosageSummary(null)).toBe('inconnu');
   });
 
-  it('keys equal weightings alike, whatever the order they came in', () => {
-    const reordered: Dosage = {
-      ...RETUNED,
-      weights: { appreciationIncompatible: 3, souhaitsIncompatibles: 5 },
-    };
-    expect(dosageKey(reordered)).toBe(dosageKey(RETUNED));
-    expect(dosageKey(NONE)).not.toBe(dosageKey(RETUNED));
-  });
-
-  it('never matches an unknown dosage, not even another unknown', () => {
-    expect(dosageKey(null)).toBeNull();
-    expect(dosageKey(undefined)).toBeNull();
-  });
-
-  it('tells the instance changing apart from the edition retuning', () => {
+  it('says default when only the instance weights moved', () => {
     const instanceMoved: Dosage = { ...NONE, instanceWeights: { stabiliteDuPlanPublie: 8 } };
-    expect(dosageKey(instanceMoved)).not.toBe(dosageKey(NONE));
     expect(dosageSummary(instanceMoved)).toBe('défaut');
   });
 

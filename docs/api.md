@@ -1529,8 +1529,8 @@ importe ; une duplication d'édition et un dump SQL recopient l'auteur tel quel.
 ## Explicabilité
 
 « Pourquoi lui ? » cible un seul poste d'un planning **déjà résolu et jamais
-re-résolu** : celui qu'on envoie (`POST /api/postes/{id}/explication`, le
-calendrier du mois), ou le planning enregistré (`GET` sur le même chemin, sans
+re-résolu** : celui qu'on envoie (`POST /api/postes/{id}/explication`, que
+plus aucun écran n'appelle), ou le planning enregistré (`GET` sur le même chemin, sans
 corps). Le second est **préparé côté serveur** comme une résolution le prépare
 — contraintes désactivées, poids et quotas de l'édition — ; c'est ce que lisent
 le panneau du siège et l'outil MCP `expliquer_affectation`. Un plan envoyé ne

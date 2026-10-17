@@ -1,12 +1,9 @@
 // The event-day screen (issue #297): mark somebody absent, look for a
 // replacement, hand the seat over.
 //
-// Every call here names identifiers only. The repair assistant's own endpoint
-// (`/api/postes/{id}/suggestions-reparation`) takes the whole planning as its
-// body, which is fine for a desktop page that already holds it and wrong for
-// this one: it runs on a phone in an aisle. `/api/jour-j/...` reads the
-// persisted plan server-side instead — same service call underneath, same
-// bounded cost, one identifier on the wire.
+// Every call here names identifiers only: it runs on a phone in an aisle, so
+// `/api/jour-j/...` reads the persisted plan server-side rather than receiving
+// it — one identifier on the wire, the same bounded cost.
 //
 // Applying a replacement deliberately reuses the assistant's existing write
 // (`AffectationExplanationService.applyRepair`), which is the surgical
