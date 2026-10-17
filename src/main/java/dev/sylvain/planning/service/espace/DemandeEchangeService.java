@@ -655,11 +655,6 @@ public class DemandeEchangeService {
         }
     }
 
-    /** « 2026-07-11 14:00–18:00 » — the créneau of a demande, spelled out. */
-    public String libelleCreneauDemande(DemandeEchange demande) {
-        return libelleCreneau(demande);
-    }
-
     /* --------------------------------- SQL --------------------------------- */
 
     private static final String COLONNES = "id, demandeur_id, cible_id, creneau_id, stand_id, "

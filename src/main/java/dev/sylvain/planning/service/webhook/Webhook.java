@@ -27,8 +27,4 @@ public record Webhook(
     public Webhook {
         events = events == null ? List.of() : List.copyOf(events);
     }
-
-    public boolean subscribesTo(WebhookEvent event) {
-        return events.contains(event);
-    }
 }
