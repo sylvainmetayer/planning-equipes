@@ -504,11 +504,15 @@ const KEPT_UNUSED = new Map([
 
 /** Prefixes a template or a literal glues a value onto: `etat-{{`, `etat-${`, `'etat-' +`. */
 function dynamicPrefixes(text) {
-  return [...text.matchAll(/([a-zA-Z][\w-]*-)(?:\{\{|\$\{|['"`]\s*\+)/g)].map((m) => m[1]);
+  // The run is matched whole and kept only when it ends in `-`: a `-` inside
+  // the class pattern itself would make the engine backtrack.
+  return [...text.matchAll(/([a-zA-Z][\w-]*)(?:\{\{|\$\{|['"`]\s*\+)/g)]
+    .map((m) => m[1])
+    .filter((run) => run.endsWith('-'));
 }
 
-/** Rule 4: the classes some stylesheet defines and nothing uses. */
-function checkUnused(byFile, allDefined, failures) {
+/** What the app uses: the classes it names, and the prefixes it glues a value onto. */
+function usage(byFile, allDefined) {
   const used = new Set();
   for (const c of byFile.values()) for (const k of c.used) used.add(k);
   const sources = sourceFiles(ROOT, ['.ts', '.html']);
@@ -521,7 +525,12 @@ function checkUnused(byFile, allDefined, failures) {
     if (f.endsWith('.ts')) for (const k of tokensInCode(text, allDefined)) used.add(k);
     for (const p of dynamicPrefixes(text)) prefixes.add(p);
   }
-  const prefixList = [...prefixes];
+  return { used, prefixList: [...prefixes] };
+}
+
+/** Rule 4: the classes some stylesheet defines and nothing uses. */
+function checkUnused(byFile, allDefined, failures) {
+  const { used, prefixList } = usage(byFile, allDefined);
   for (const c of [...allDefined].filter(isOurs)) {
     if (used.has(c) || KEPT_UNUSED.has(c) || prefixList.some((p) => c.startsWith(p))) continue;
     failures.push(`.${c} est définie mais utilisée nulle part : retirer la règle`);
