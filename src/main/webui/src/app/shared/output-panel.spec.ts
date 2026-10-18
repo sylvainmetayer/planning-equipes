@@ -49,4 +49,22 @@ describe('OutputPanel', () => {
     expect(pre.getAttribute('role')).toBe('log');
     expect(pre.getAttribute('aria-live')).toBe('polite');
   });
+
+  it('copies the text and says so on the button, or reports a refused clipboard', async () => {
+    const writeText = vi.fn(() => Promise.resolve());
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+    fixture.componentRef.setInput('text', 'Score 0hard');
+    await fixture.whenStable();
+
+    (fixture.nativeElement.querySelector('button') as HTMLButtonElement).click();
+    await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith('Score 0hard'));
+    await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('button').textContent).toContain('Copié');
+
+    writeText.mockRejectedValueOnce(new Error('denied'));
+    const notify = TestBed.inject(NotificationService).notify as ReturnType<typeof vi.fn>;
+    (fixture.nativeElement.querySelector('button') as HTMLButtonElement).click();
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledOnce());
+    expect(notify.mock.calls[0][0].variant).toBe('error');
+  });
 });
