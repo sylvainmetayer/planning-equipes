@@ -504,11 +504,12 @@ const KEPT_UNUSED = new Map([
 
 /** Prefixes a template or a literal glues a value onto: `etat-{{`, `etat-${`, `'etat-' +`. */
 function dynamicPrefixes(text) {
-  // The run is matched whole and kept only when it ends in `-`: a `-` inside
-  // the class pattern itself would make the engine backtrack.
-  return [...text.matchAll(/([a-zA-Z][\w-]*)(?:\{\{|\$\{|['"`]\s*\+)/g)]
-    .map((m) => m[1])
-    .filter((run) => run.endsWith('-'));
+  // Each run of class characters is read once, from its start: a pattern free
+  // to start anywhere inside a run would rescan it from every position. The
+  // prefix is the run from its first letter, kept when it ends in `-`.
+  return [...text.matchAll(/(?<![\w-])[\w-]+(?=\{\{|\$\{|['"`]\s*\+)/g)]
+    .map((m) => m[0].replace(/^[^a-zA-Z]+/, ''))
+    .filter((run) => run.length > 1 && run.endsWith('-'));
 }
 
 /** What the app uses: the classes it names, and the prefixes it glues a value onto. */
