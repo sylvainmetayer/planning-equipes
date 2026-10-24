@@ -1,4 +1,4 @@
-FROM maven:3.10-eclipse-temurin-25@sha256:721fefa7187746ff892b2a178eb4cac3292f89a80f76ef25c04da655f88619b8 AS build
+FROM maven:3.10-eclipse-temurin-25@sha256:9b5f82b7166db6112eb123ba310a9e010ec3fe95022ac0728f491121563dfbab AS build
 # Les paquets apt ne sont pas épinglés à une version (hadolint DL3008) : les
 # dépôts Debian/Ubuntu et PGDG retirent les anciennes, un build épinglé
 # casserait au premier correctif de sécurité, et Renovate ne sait pas les
@@ -19,7 +19,7 @@ RUN --mount=type=cache,target=/root/.m2 \
     REVISION="$(git describe --tags --exact-match HEAD 2>/dev/null || git rev-parse --short HEAD)" && \
     mvn -q -DskipTests -Drevision="${REVISION#v}" package
 
-FROM eclipse-temurin:25-jre@sha256:fcd7fd7b387f94bb2ac461478a7436ad8e349924c374ea8313919624dceae636
+FROM eclipse-temurin:25-jre@sha256:dbb43d81099eec91e0800226ed2296d03146ee7857165b95112372ad0d67e87f
 WORKDIR /app
 # pg_dump pour la sauvegarde automatique de nuit (BACKUP_DIR). Le client vient
 # du dépôt PGDG et non de celui d'Ubuntu, qui n'offre que la version 16 : un
