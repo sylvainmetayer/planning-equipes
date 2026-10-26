@@ -55,7 +55,7 @@
              refusée au démarrage. -->
         <it.admin.password>it-admin-Hs3vQ9zR</it.admin.password>
         <surefire-plugin.version>3.6.0</surefire-plugin.version>
-        <spotless-plugin.version>3.10.3</spotless-plugin.version>
+        <spotless-plugin.version>3.10.4</spotless-plugin.version>
         <palantir-java-format.version>2.98.0</palantir-java-format.version>
         <license-plugin.version>2.7.1</license-plugin.version>
         <!-- Full-scale scenario regression tests (@Tag("scenario-lent"):
@@ -680,7 +680,7 @@
                     <plugin>
                         <groupId>org.pitest</groupId>
                         <artifactId>pitest-maven</artifactId>
-                        <version>1.30.0</version>
+                        <version>1.30.1</version>
                         <dependencies>
                             <dependency>
                                 <groupId>org.pitest</groupId>
