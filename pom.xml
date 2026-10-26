@@ -48,7 +48,7 @@
              generate-diagrams) and lets DiagramsStructuralTest decode the
              source each SVG embeds. Test scope, so it stays out of the image
              and of docs/licences-tierces.md. -->
-        <plantuml.version>1.2026.8</plantuml.version>
+        <plantuml.version>1.2026.9</plantuml.version>
         <skipITs>true</skipITs>
         <!-- Mot de passe admin des tests d'intégration : ils lancent
              l'application packagée en %prod, où la valeur d'exemple est
