@@ -213,13 +213,16 @@
                 [class.espace-bande-jour-aujourdhui]="puce.aujourdhui"
                 [class.espace-bande-jour-repos]="puce.repos"
                 [attr.aria-pressed]="puce.date === jourAffiche()?.date"
-                [attr.aria-label]="libellePuce(puce)"
                 (click)="choisirJour(puce.date)">
-          <span class="espace-bande-date">{{ puce.date | date: 'EEE d' }}</span>
+          <!-- The full sentence is the button's text rather than an aria-label:
+               a label that leaves out the abbreviated day on screen fails
+               label-content-name-mismatch (WCAG 2.5.3). -->
+          <span class="visually-hidden">{{ libellePuce(puce) }}</span>
+          <span class="espace-bande-date" aria-hidden="true">{{ puce.date | date: 'EEE d' }}</span>
           @if (puce.repos) {
-            <span class="espace-bande-heures" i18n="@@espace.planning.bandeRepos">repos</span>
+            <span class="espace-bande-heures" aria-hidden="true" i18n="@@espace.planning.bandeRepos">repos</span>
           } @else {
-            <span class="espace-bande-heures" i18n="@@espace.planning.bandeHeures">{{ puce.heures }} h</span>
+            <span class="espace-bande-heures" aria-hidden="true" i18n="@@espace.planning.bandeHeures">{{ puce.heures }} h</span>
           }
           @if (puce.consigne) {
             <span class="espace-bande-consigne" aria-hidden="true">&bull;</span>
@@ -467,10 +470,10 @@
                 [class.espace-frise-semaine]="ligne.debutDeSemaine"
                 [class.espace-frise-aujourdhui]="ligne.aujourdhui">
               <button type="button" class="espace-frise-bouton"
-                      [attr.aria-label]="libelleLigneFrise(ligne)"
                       (click)="openDay(ligne.date)">
-                <span class="espace-frise-date">{{ ligne.date | date: 'EEE d' }}</span>
-                <span class="espace-frise-piste">
+                <span class="visually-hidden">{{ libelleLigneFrise(ligne) }}</span>
+                <span class="espace-frise-date" aria-hidden="true">{{ ligne.date | date: 'EEE d' }}</span>
+                <span class="espace-frise-piste" aria-hidden="true">
                   @for (barre of ligne.barres; track barre.standNom + barre.heureDebut) {
                     <span class="espace-frise-barre" [class]="couleurTypologie(barre.typologieId)"
                           [style.left.%]="barre.gauchePct" [style.width.%]="barre.largeurPct"></span>
@@ -479,7 +482,7 @@
                     <span class="espace-frise-repos" i18n="@@espace.planning.friseRepos">repos</span>
                   }
                 </span>
-                <span class="espace-frise-total">
+                <span class="espace-frise-total" aria-hidden="true">
                   @if (!ligne.repos) {
                     <ng-container i18n="@@espace.planning.friseHeures">{{ ligne.heures }} h</ng-container>
                   }

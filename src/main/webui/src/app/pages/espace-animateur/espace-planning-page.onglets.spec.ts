@@ -172,8 +172,8 @@ describe('EspacePlanningPage — les trois onglets', () => {
     expect(bande()[3].classList).toContain('espace-bande-jour-repos');
     expect(bande()[1].classList).toContain('espace-bande-jour-aujourdhui');
     expect(bande()[1].classList).toContain('espace-bande-jour-actif');
-    expect(bande()[0].getAttribute('aria-label')).toMatch(/2 h$/);
-    expect(bande()[3].getAttribute('aria-label')).toMatch(/repos$/);
+    expect(bande()[0].querySelector('.visually-hidden')?.textContent?.trim()).toMatch(/2 h$/);
+    expect(bande()[3].querySelector('.visually-hidden')?.textContent?.trim()).toMatch(/repos$/);
   });
 
   it('marque les jours sous consigne, dans la bande comme dans la frise', async () => {
