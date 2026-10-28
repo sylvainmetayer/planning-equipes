@@ -399,6 +399,10 @@ final class SolverConfiguration {
                         HardMediumSoftScore.of(0, plateauGainMedium, Long.MIN_VALUE)
                                 .toString());
             }
+            // Solver-level, and still judged from feasibility: the empty
+            // construction heuristic solverConfig.xml runs between the two
+            // local searches sends no best solution, and Timefold restarts
+            // the window after such a phase (ADR 0082).
             termination.setTerminationConfigList(List.of(plateau));
         }
     }

@@ -3,13 +3,21 @@ package dev.sylvain.planning.service.solve;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
+import ai.timefold.solver.core.api.solver.SolverFactory;
+import ai.timefold.solver.core.config.constructionheuristic.ConstructionHeuristicPhaseConfig;
+import ai.timefold.solver.core.config.localsearch.LocalSearchPhaseConfig;
+import ai.timefold.solver.core.config.phase.PhaseConfig;
+import ai.timefold.solver.core.config.score.director.ScoreDirectorFactoryConfig;
 import ai.timefold.solver.core.config.solver.SolverConfig;
 import ai.timefold.solver.core.config.solver.termination.TerminationCompositionStyle;
 import ai.timefold.solver.core.config.solver.termination.TerminationConfig;
+import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.EmptyReferenceData;
+import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
+import dev.sylvain.planning.solver.PlanningConstraintProvider;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -182,5 +190,44 @@ class SolverConfigurationBudgetTest {
 
         assertThat(termination.getSecondsSpentLimit()).isEqualTo(60L);
         assertThat(termination.getTerminationConfigList()).isNullOrEmpty();
+    }
+
+    /**
+     * What restarts the plateau window at feasibility (ADR 0082): a phase
+     * sending no best solution, right before the polishing local search.
+     * Timefold restarts its unimproved-time window when such a phase ends;
+     * without it the window, judged on a medium gain, reached back into the
+     * feasibility phase and could end the solve the moment it became feasible.
+     */
+    @Test
+    void anEmptyConstructionPhaseSitsBeforeThePolishingSearch() {
+        List<PhaseConfig> phases =
+                SolverConfig.createFromXmlResource("solver/solverConfig.xml").getPhaseConfigList();
+
+        assertThat(phases.getLast()).isInstanceOf(LocalSearchPhaseConfig.class);
+        assertThat(phases.get(phases.size() - 2)).isInstanceOf(ConstructionHeuristicPhaseConfig.class);
+    }
+
+    /**
+     * A real solve under a gain threshold, the polishing phase improving: what
+     * the end-to-end tests caught when the threshold sat on the phase itself,
+     * where Timefold never initialises it and the first improvement throws.
+     */
+    @Test
+    void aSolveUnderAPlateauGainRunsThroughThePolishingPhase() throws Exception {
+        SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
+        solverConfig.setScoreDirectorFactoryConfig(
+                new ScoreDirectorFactoryConfig().withConstraintProviderClass(PlanningConstraintProvider.class));
+        SolverConfiguration.applyTermination(solverConfig, 5L, 1L, 1L);
+        PlanningEvenement problem = ScenarioYamlReader.buildPlanning(
+                ScenarioYamlReader.readScenario(
+                        ScenarioYamlReader.scenarioPath("gamme-13-7j-12stands-30animateurs-premium-epuisants.yaml")),
+                ParametresLegaux::new);
+
+        PlanningEvenement solved = SolverFactory.<PlanningEvenement>create(solverConfig)
+                .buildSolver()
+                .solve(problem);
+
+        assertThat(solved.getScore().hardScore()).isZero();
     }
 }

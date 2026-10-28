@@ -5,6 +5,7 @@
 - **Portée** : solveur (terminaison), propriétés de déploiement
 - **Prolonge** : [0051](0051-budget-de-calcul-par-edition-sous-plafond-d-exploitant.md) (le budget par édition : la durée et la fenêtre de plateau gardent leur sens)
 - **Complète** : [0079](0079-la-phase-de-faisabilite-tire-sur-une-liste-par-pas-et-reconstruit-rarement.md)
+- **Complétée par** : [0082](0082-la-fenetre-de-plateau-part-de-la-faisabilite.md) (une phase vide avant l'optimisation remet la fenêtre à zéro : sans elle, la fenêtre remontait dans la phase de faisabilité)
 
 ## Contexte
 

@@ -55,6 +55,8 @@ class TimefoldInternalApiStructuralTest {
             "dev/sylvain/planning/solver/DaySwapMoveIteratorFactory.java",
             "compile error on MoveIteratorFactory / ScoreDirector; DaySwapMoveIteratorFactoryTest, "
                     + "and -Pscenario-tests for a move the solver stops drawing",
+            "dev/sylvain/planning/solver/DoubleBookedPosteFilter.java",
+            "compile error on SelectionFilter; DoubleBookedPosteFilterTest and -Pscenario-tests for a filter bypassed",
             "dev/sylvain/planning/solver/EligibleAnimateurMoveFilter.java",
             "compile error on the SelectionFilter / SelectorBased*Move types; -Pscenario-tests for a filter bypassed",
             "dev/sylvain/planning/solver/HoleNeighbourPosteFilter.java",
