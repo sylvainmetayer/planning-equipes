@@ -737,6 +737,11 @@ sur une édition réelle : la seconde phase trouve toujours un point de medium
 de temps en temps. Les rendements décroissants de Timefold, mesurés, ne lisent
 que le soft et ne se déclenchent pas non plus ; le détail et les courbes sont
 dans [`0081`](decisions/0081-le-plateau-se-juge-sur-son-gain-de-medium-a-l-echelle-du-plan.md).
+Une heuristique de construction **vide** sépare les deux recherches locales :
+elle ne fait aucun pas, mais Timefold remet la fenêtre de plateau à zéro à sa
+fin, si bien que la fenêtre part de la faisabilité. Sans elle, la fenêtre
+remontait dans la phase de faisabilité, et un hôte lent finissait la
+résolution dès 0hard, sans optimisation — voir [`0082`](decisions/0082-la-fenetre-de-plateau-part-de-la-faisabilite.md).
 
 ### La construction échantillonnée des très gros problèmes
 

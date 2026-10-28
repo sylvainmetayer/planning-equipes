@@ -49,7 +49,9 @@
         selector (change + swap) keeps a healthy move diversity so the search
         can trade an "unavailable" assignment for an available animateur
         rather than stalling. Termination (seconds / unimproved-seconds) is
-        injected programmatically by PlanningService.
+        injected programmatically by SolverConfiguration.applyTermination, on
+        the solver; the empty construction heuristic between the two local
+        searches restarts the plateau window at feasibility (ADR 0082).
 
         FIRST_FIT_DECREASING (not FIRST_FIT): postes are processed hardest
         first, via PosteAffectationDifficultyComparatorFactory which ranks
@@ -142,6 +144,35 @@
                     <cacheType>STEP</cacheType>
                     <selectionOrder>RANDOM</selectionOrder>
                     <filterClass>dev.sylvain.planning.solver.UnassignedPosteFilter</filterClass>
+                </entitySelector>
+            </swapMoveSelector>
+            <!--
+                The same two, aimed at the double bookings: once every seat is
+                filled, the last hard points are most often one animateur on
+                two seats at once, and uniform change and swap drew one of
+                those two seats out of 4 057 about once in two thousand moves —
+                a whole fifteen-minute budget at -2hard on a two-core host.
+                The swap draws both of its sides among these seats (Timefold
+                copies the entity selector to the second side): it trades
+                between two animateurs who are each double-booked. Kept as
+                measured (ADR 0082).
+            -->
+            <changeMoveSelector>
+                <filterClass>dev.sylvain.planning.solver.EligibleAnimateurMoveFilter$ChangeMoveFilter</filterClass>
+                <fixedProbabilityWeight>1.0</fixedProbabilityWeight>
+                <entitySelector>
+                    <cacheType>STEP</cacheType>
+                    <selectionOrder>RANDOM</selectionOrder>
+                    <filterClass>dev.sylvain.planning.solver.DoubleBookedPosteFilter</filterClass>
+                </entitySelector>
+            </changeMoveSelector>
+            <swapMoveSelector>
+                <filterClass>dev.sylvain.planning.solver.EligibleAnimateurMoveFilter$SwapMoveFilter</filterClass>
+                <fixedProbabilityWeight>1.0</fixedProbabilityWeight>
+                <entitySelector>
+                    <cacheType>STEP</cacheType>
+                    <selectionOrder>RANDOM</selectionOrder>
+                    <filterClass>dev.sylvain.planning.solver.DoubleBookedPosteFilter</filterClass>
                 </entitySelector>
             </swapMoveSelector>
             <!--
@@ -277,6 +308,17 @@
             <acceptedCountLimit>1</acceptedCountLimit>
         </forager>
     </localSearch>
+
+    <!--
+        Empty on purpose: every seat is filled once the plan is feasible, so
+        it takes no step. It is here for the plateau (ADR 0082): a phase that
+        sends no best solution restarts Timefold's unimproved-time window when
+        it ends. Without it the window, judged on a medium gain, reached back
+        into the feasibility phase, and a slow host ended the solve the moment
+        it became feasible. On the phase itself the gain termination is never
+        initialised (no solvingStarted) and throws on the first improvement.
+    -->
+    <constructionHeuristic/>
 
     <!--
         Seconde phase : le planning est faisable, il reste a le rendre bon.
