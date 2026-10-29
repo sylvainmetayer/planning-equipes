@@ -43,7 +43,7 @@
              stays on one release. -->
         <jackson.version>2.22.4</jackson.version>
         <jsonschema-generator.version>4.38.0</jsonschema-generator.version>
-        <mcp-server.version>2.0.2</mcp-server.version>
+        <mcp-server.version>2.0.3</mcp-server.version>
         <!-- The MIT build of PlantUML: renders docs/diagrammes/ (profile
              generate-diagrams) and lets DiagramsStructuralTest decode the
              source each SVG embeds. Test scope, so it stays out of the image
