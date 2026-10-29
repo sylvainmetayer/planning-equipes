@@ -56,7 +56,7 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 
 | Dépendance | Version | Licence |
 | --- | --- | --- |
-| `ai.timefold.solver:timefold-solver-core` | 2.7.0 | Apache-2.0 |
+| `ai.timefold.solver:timefold-solver-core` | 2.7.1 | Apache-2.0 |
 | `com.aayushatharva.brotli4j:brotli4j` | 1.23.0 | Apache-2.0 |
 | `com.aayushatharva.brotli4j:native-linux-x86_64` | 1.23.0 | Apache-2.0 |
 | `com.aayushatharva.brotli4j:service` | 1.23.0 | Apache-2.0 |
@@ -109,7 +109,7 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `io.quarkiverse.mcp:quarkus-mcp-server-core` | 2.0.3 | Apache-2.0 |
 | `io.quarkiverse.mcp:quarkus-mcp-server-http` | 2.0.3 | Apache-2.0 |
 | `io.quarkiverse.mcp:quarkus-mcp-server-sse-client` | 2.0.3 | Apache-2.0 |
-| `io.quarkiverse.quinoa:quarkus-quinoa` | 2.9.2 | Apache-2.0 |
+| `io.quarkiverse.quinoa:quarkus-quinoa` | 2.9.3 | Apache-2.0 |
 | `io.quarkus.arc:arc` | 3.40.1.1 | Apache-2.0 |
 | `io.quarkus.gizmo:gizmo2` | 2.1.1 | Apache-2.0 |
 | `io.quarkus.qute:qute-core` | 3.40.1.1 | Apache-2.0 |
@@ -295,14 +295,14 @@ coûterait une notice manquante.
 
 | Paquet | Version | Licence |
 | --- | --- | --- |
-| `@angular/cdk` | 22.2.3 | MIT |
+| `@angular/cdk` | 22.2.4 | MIT |
 | `@angular/common` | 22.2.3 | MIT |
 | `@angular/compiler-cli` | 22.2.3 | MIT |
 | `@angular/compiler` | 22.2.3 | MIT |
 | `@angular/core` | 22.2.3 | MIT |
 | `@angular/forms` | 22.2.3 | MIT |
 | `@angular/localize` | 22.2.3 | MIT |
-| `@angular/material` | 22.2.3 | MIT |
+| `@angular/material` | 22.2.4 | MIT |
 | `@angular/platform-browser` | 22.2.3 | MIT |
 | `@angular/router` | 22.2.3 | MIT |
 | `@babel/code-frame` | 8.0.6 | MIT |
