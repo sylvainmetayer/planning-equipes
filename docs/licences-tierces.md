@@ -109,7 +109,7 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `io.quarkiverse.mcp:quarkus-mcp-server-core` | 2.0.3 | Apache-2.0 |
 | `io.quarkiverse.mcp:quarkus-mcp-server-http` | 2.0.3 | Apache-2.0 |
 | `io.quarkiverse.mcp:quarkus-mcp-server-sse-client` | 2.0.3 | Apache-2.0 |
-| `io.quarkiverse.quinoa:quarkus-quinoa` | 2.9.2 | Apache-2.0 |
+| `io.quarkiverse.quinoa:quarkus-quinoa` | 2.9.3 | Apache-2.0 |
 | `io.quarkus.arc:arc` | 3.40.1.1 | Apache-2.0 |
 | `io.quarkus.gizmo:gizmo2` | 2.1.1 | Apache-2.0 |
 | `io.quarkus.qute:qute-core` | 3.40.1.1 | Apache-2.0 |
@@ -169,7 +169,7 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `io.quarkus:quarkus-vertx-http` | 3.40.1.1 | Apache-2.0 |
 | `io.quarkus:quarkus-vertx-latebound-mdc-provider` | 3.40.1.1 | Apache-2.0 |
 | `io.quarkus:quarkus-virtual-threads` | 3.40.1.1 | Apache-2.0 |
-| `io.sentry:sentry` | 8.59.0 | MIT |
+| `io.sentry:sentry` | 8.61.1 | MIT |
 | `io.smallrye.certs:smallrye-private-key-pem-parser` | 0.9.4 | Apache-2.0 |
 | `io.smallrye.classfile:jdk-classfile-backport` | 26 | GPL-2.0-with-classpath-exception |
 | `io.smallrye.common:smallrye-common-annotation` | 2.19.0 | Apache-2.0 |
@@ -295,14 +295,14 @@ coûterait une notice manquante.
 
 | Paquet | Version | Licence |
 | --- | --- | --- |
-| `@angular/cdk` | 22.2.3 | MIT |
+| `@angular/cdk` | 22.2.4 | MIT |
 | `@angular/common` | 22.2.3 | MIT |
 | `@angular/compiler-cli` | 22.2.3 | MIT |
 | `@angular/compiler` | 22.2.3 | MIT |
 | `@angular/core` | 22.2.3 | MIT |
 | `@angular/forms` | 22.2.3 | MIT |
 | `@angular/localize` | 22.2.3 | MIT |
-| `@angular/material` | 22.2.3 | MIT |
+| `@angular/material` | 22.2.4 | MIT |
 | `@angular/platform-browser` | 22.2.3 | MIT |
 | `@angular/router` | 22.2.3 | MIT |
 | `@babel/code-frame` | 8.0.6 | MIT |
