@@ -12,7 +12,7 @@ micro-service, pas de serveur Node en production.
 | Frontend | Angular 22 standalone, signals, zoneless, servi par Quinoa |
 | Exports | OpenPDF, encodage QR par zxing-core, génération ICS maison — toujours côté serveur |
 | MCP | `quarkus-mcp-server-http` ([`mcp.md`](mcp.md)) |
-| Toolchain | `mise.toml` : Temurin 25, Maven 3.9.9, Node 24 |
+| Toolchain | `mise.toml` : Temurin 25, Maven 3.9.9, Node 26 |
 
 L'arborescence et le rôle de chaque classe se lisent dans le code. Ce document
 porte les invariants qui ne s'y voient pas.
