@@ -2,7 +2,7 @@
 
 ## Démarrer
 
-`mise install` (Java 25, Maven 3.9.9, Node 26) et un runtime de conteneurs pour
+`mise install` (Java 25, Maven 3.9.9, Node 24) et un runtime de conteneurs pour
 PostgreSQL et les dev services. Node n'est requis que pour travailler
 directement sur le frontend : Quinoa télécharge le sien au build.
 
