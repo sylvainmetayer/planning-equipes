@@ -27,8 +27,13 @@ WORKDIR /app
 # de production est un PostgreSQL 18. Cette version-là est donc à faire évoluer
 # en même temps que l'image `postgres:` de docker-compose.prod.yml. Pas de
 # version de paquet épinglée : voir l'étape de construction plus haut.
-# hadolint ignore=DL3008
+# `apt-get upgrade` d'abord : un correctif de sécurité Ubuntu publié après
+# l'image de base (libbrotli1 et sa CVE HIGH, octobre 2026) bloquait le scan
+# Trivy jusqu'à ce que l'image de base soit republiée. Chaque construction
+# prend désormais les correctifs du jour.
+# hadolint ignore=DL3008,DL3005
 RUN apt-get update \
+    && apt-get upgrade -y --no-install-recommends \
     && apt-get install -y --no-install-recommends ca-certificates curl gnupg \
     && install -d /usr/share/postgresql-common/pgdg \
     && curl -fsSL --proto '=https' --tlsv1.2 https://www.postgresql.org/media/keys/ACCC4CF8.asc \
