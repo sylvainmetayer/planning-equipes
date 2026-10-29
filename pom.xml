@@ -41,7 +41,7 @@
              2.22.3 or later itself. The YAML/JSR-310
              modules of the scenario DTOs use it too, so every Jackson module
              stays on one release. -->
-        <jackson.version>2.22.3</jackson.version>
+        <jackson.version>2.22.4</jackson.version>
         <jsonschema-generator.version>4.38.0</jsonschema-generator.version>
         <mcp-server.version>2.0.2</mcp-server.version>
         <!-- The MIT build of PlantUML: renders docs/diagrammes/ (profile
