@@ -20,3 +20,13 @@ rules:
   cache-poisoning:
     ignore:
       - docker-ghcr.yml
+
+  # claude.yml répond à une mention `@claude` dans un commentaire : sans
+  # `issue_comment`, pas d'assistant. Le job ne part que pour un auteur
+  # OWNER, MEMBER ou COLLABORATOR (sa condition `if`), ne tient que des
+  # permissions en lecture (plus l'OIDC de l'action) et ne récupère que la
+  # branche par défaut, jamais le code d'une PR. Signalé depuis zizmor 1.31.1 ;
+  # exception limitée à ce fichier.
+  dangerous-triggers:
+    ignore:
+      - claude.yml
