@@ -1,0 +1,44 @@
+<!doctype html>
+<!-- Source of site/og-fr.png and site/og-en.png (1200x630 social preview).
+     Regenerate: see "Image de partage" in site/README.md. #en selects English. -->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    display: grid; grid-template-columns: 260px 1fr; align-items: center; gap: 64px;
+    box-sizing: border-box; padding: 0 96px;
+    background: #005cbb; color: #fff;
+    font: 400 32px/1.3 system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  svg { width: 260px; height: 260px; }
+  .name { margin: 0 0 20px; font-size: 34px; font-weight: 600; color: #f6e7bf; }
+  h1 { margin: 0 0 28px; font-size: 64px; line-height: 1.1; font-weight: 700; }
+  p { margin: 0; color: #d7e3ff; }
+  [lang="en"] { display: none; }
+  body.en [lang="fr"] { display: none; }
+  body.en [lang="en"] { display: block; }
+</style>
+</head>
+<body>
+<svg viewBox="0 0 32 32" aria-hidden="true">
+  <rect width="32" height="32" rx="8" fill="#ffffff" fill-opacity=".12"/>
+  <rect x="7" y="8" width="18" height="4" rx="2" fill="#f6e7bf"/>
+  <rect x="7" y="14" width="10" height="4" rx="2" fill="#ffffff"/>
+  <rect x="7" y="20" width="15" height="4" rx="2" fill="#ffffff"/>
+</svg>
+<div>
+  <p class="name">Planning Équipes</p>
+  <div lang="fr">
+    <h1>Planifiez vos équipes en minutes, pas en week-ends.</h1>
+    <p>Festivals et événements · Code du travail vérifié, mineurs compris</p>
+  </div>
+  <div lang="en">
+    <h1>Schedule your teams in minutes, not weekends.</h1>
+    <p>Festivals and events · French Labour Code checked, under-18s included</p>
+  </div>
+</div>
+<script>if (location.hash === '#en') document.body.className = 'en';</script>
+</body>
+</html>
