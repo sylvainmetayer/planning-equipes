@@ -8,9 +8,10 @@
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1d2024" media="(prefers-color-scheme: dark)">
-<link rel="alternate" hreflang="fr" href="../">
-<link rel="alternate" hreflang="en" href="./">
-<link rel="alternate" hreflang="x-default" href="../">
+<link rel="canonical" href="https://planning.sylvain.dev/en/">
+<link rel="alternate" hreflang="fr" href="https://planning.sylvain.dev/">
+<link rel="alternate" hreflang="en" href="https://planning.sylvain.dev/en/">
+<link rel="alternate" hreflang="x-default" href="https://planning.sylvain.dev/">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="../style.css">
 </head>
@@ -171,7 +172,7 @@
           <li id="art-9">Under-18s: rest <cite>L3164-2</cite></li>
           <li id="art-10">Under-18s: public holidays <cite>L3164-6</cite></li>
         </ul>
-        <p class="fine"><a href="https://github.com/sylvainmetayer/planning-equipes/blob/main/docs/contraintes.md">Read the rules in the code</a> (in French) · The software helps you decide. The organisation that publishes the rota remains the employer.</p>
+        <p class="fine"><a href="https://www.legifrance.gouv.fr/codes/texte_lc/LEGITEXT000006072050/" hreflang="fr">The French Labour Code on Légifrance</a> (in French) · <a href="https://github.com/sylvainmetayer/planning-equipes/blob/main/docs/contraintes.md" hreflang="fr">Read the rules in the code</a> (in French) · The software helps you decide. The organisation that publishes the rota remains the employer.</p>
       </div>
     </div>
   </section>
@@ -184,7 +185,7 @@
         <p>Everyone gets a link and a code by e-mail and sees their schedule on their phone. <b>Nothing to install.</b></p>
         <ul class="chips" aria-label="For your staff">
           <li>Mobile page</li>
-          <li>PDF + QR code</li>
+          <li><abbr title="Portable Document Format">PDF</abbr> + QR code</li>
           <li>Calendar subscription</li>
           <li>Self-service swaps</li>
           <li>“I have read it and I will be there”</li>
@@ -212,7 +213,7 @@
       <div class="q__say c5">
         <span class="n" aria-hidden="true">3</span>
         <h2 id="tools-t">And our tools?</h2>
-        <p>Updates (rota published, swaps to approve) arrive <b>in your team's chat</b>. Your AI assistant can also run the app, without ever seeing a name or a date of birth.</p>
+        <p>Updates (rota published, swaps to approve) arrive <b>in your team's chat</b>. Your <abbr title="artificial intelligence">AI</abbr> assistant can also run the app, without ever seeing a name or a date of birth.</p>
         <ul class="chips tools" aria-label="Connected tools">
           <li class="c0"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5.5h16v10H9l-5 4z"/></svg>Slack</li>
           <li class="c3"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5.5h16v10H9l-5 4z"/></svg>Discord</li>
@@ -266,7 +267,7 @@
       </ol>
       <div class="price" id="contact">
         <p><b>The price depends on the size of your event.</b> Tell us how many people and how many days, and we'll send you a figure.</p>
-        <p class="acts"><a class="btn btn--primary mail" href="mailto:planning@sylvain.dev">planning@sylvain.dev</a></p>
+        <p class="acts"><a class="btn btn--primary mail" href="mailto:planning@sylvain.dev">Email planning@sylvain.dev</a></p>
       </div>
     </div>
   </section>
@@ -323,8 +324,16 @@
   <div class="wrap foot__in">
     <p><b lang="fr">Planning Équipes</b> — free software under the <abbr title="GNU Affero General Public License, version 3">AGPL-3.0</abbr> licence, which you can host yourself. <a href="https://github.com/sylvainmetayer/planning-equipes">Source code</a></p>
     <p>The Combelune Festival, its venues and its people are fictional.</p>
+    <p>Published by Sylvain Métayer · text, illustrations and code under the same licence · hosted on Cloudflare Pages · audience measured by Cloudflare Web Analytics, without cookies.</p>
+    <ul class="foot__links" aria-label="About this site">
+      <li><a href="https://www.sylvain.dev/en/legal/">Legal notice and privacy</a></li>
+      <li><a href="https://github.com/sylvainmetayer/planning-equipes/releases">What's new</a></li>
+      <li><a href="https://github.com/sylvainmetayer/planning-equipes/issues">Report a problem</a></li>
+    </ul>
   </div>
 </footer>
 
+<!-- Cloudflare Web Analytics: no cookie. Token: `tofu output -raw web_analytics_token` in homelab, same value in both pages -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "A_REMPLACER_PAR_LE_JETON"}'></script>
 </body>
 </html>

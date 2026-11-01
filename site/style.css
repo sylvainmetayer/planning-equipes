@@ -20,6 +20,7 @@
   --pc: #d7e3ff;
   --onpc: #001b3f;
   --link: #005cbb;
+  --visited: #6a3d9a;
   --focus: #005cbb;
   --ok: #1b6c2c;
   --ko: #ba1a1a;
@@ -59,6 +60,7 @@
     --pc: #00458f;
     --onpc: #d7e3ff;
     --link: #abc7ff;
+    --visited: #d7b8ff;
     --focus: #abc7ff;
     --ok: #8fd893;
     --ko: #ffb4ab;
@@ -99,6 +101,11 @@ body {
 }
 svg { display: block; }
 a { color: var(--link); text-underline-offset: 3px; }
+/* plain text links only: buttons, nav and chips keep their own colours */
+a:where(:not([class])):visited { color: var(--visited); }
+/* links leaving the site carry an arrow; the empty alt keeps screen readers quiet */
+a[href^="http"]::after { content: "\2197" / ""; margin-left: .15em; font-size: .85em; }
+abbr[title] { text-decoration: none; cursor: help; }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; border-radius: 4px; }
 [id] { scroll-margin-top: 5rem; }
 h1, h2, h3 { margin: 0; text-wrap: balance; }
@@ -234,7 +241,7 @@ section + section { border-top: 1px solid var(--line); }
     linear-gradient(-45deg, transparent 42%, currentColor 42% 58%, transparent 58%);
 }
 .notes a, .chips--rules cite { white-space: nowrap; }
-.ref a { color: inherit; font-size: .7rem; font-weight: 700; }
+.ref a { display: inline-grid; place-items: center; min-width: 24px; min-height: 24px; color: inherit; font-size: .7rem; font-weight: 700; }
 .notes {
   display: grid; gap: .3rem 1.2rem; margin-top: .7rem; padding-top: .7rem; border-top: 1px solid var(--line);
   font-size: .82rem; color: var(--muted);
@@ -405,3 +412,20 @@ details p { padding: 0 0 .8rem; color: var(--muted); font-size: .93rem; }
 .foot { padding-block: 1.6rem 3rem; border-top: 1px solid var(--line); background: var(--surface); color: var(--muted); font-size: .85rem; }
 .foot__in { display: grid; gap: .3rem; }
 .foot b { color: var(--text); }
+.foot__links { display: flex; flex-wrap: wrap; gap: .2rem 1.2rem; }
+.foot__links a { display: inline-block; padding-block: .2rem; }
+
+/* ---------- 404 ---------- */
+
+.lost { display: grid; gap: .8rem; }
+.lost + .lost, .lost .lost { margin-top: 1.6rem; }
+
+/* ---------- print ---------- */
+
+@media print {
+  .skip, .top nav { display: none; }
+  body { background: #fff; color: #000; }
+  .tt__scroll { overflow: visible; }
+  a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .8em; }
+  section { break-inside: avoid-page; }
+}
