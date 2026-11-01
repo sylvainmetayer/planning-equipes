@@ -46,7 +46,8 @@
   --c7t: #33373d;
 }
 
-@media (prefers-color-scheme: dark) {
+/* screen only: a dark-mode visitor still prints dark text on white paper */
+@media screen and (prefers-color-scheme: dark) {
   :root {
     --bg: #111318;
     --surface: #1d2024;
@@ -103,8 +104,8 @@ svg { display: block; }
 a { color: var(--link); text-underline-offset: 3px; }
 /* plain text links only: buttons, nav and chips keep their own colours */
 a:where(:not([class])):visited { color: var(--visited); }
-/* links leaving the site carry an arrow; the empty alt keeps screen readers quiet */
-a[href^="http"]::after { content: "\2197" / ""; margin-left: .15em; font-size: .85em; }
+/* links leaving the site carry an arrow; the empty alt keeps screen readers quiet where supported */
+a[href^="http"]::after { content: "\2197"; content: "\2197" / ""; margin-left: .15em; font-size: .85em; }
 abbr[title] { text-decoration: none; cursor: help; }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; border-radius: 4px; }
 [id] { scroll-margin-top: 5rem; }

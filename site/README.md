@@ -18,8 +18,8 @@ Pour la relire, ouvrez `index.html` dans un navigateur — il n'y a rien à
 installer. Le sélecteur de langue pointe sur des dossiers (`en/`, `../`) :
 servi par n'importe quel serveur, il ouvre l'autre page ; ouvert en `file://`,
 il montre le contenu du dossier. Les liens internes des deux pages sont
-relatifs ; seuls `canonical`, `hreflang`, `robots.txt` et `sitemap.xml`
-nomment `https://planning.sylvain.dev`, et `404.html`, servie à toute
+relatifs ; seuls `canonical`, `hreflang`, Open Graph, le JSON-LD,
+`robots.txt` et `sitemap.xml` nomment `https://planning.sylvain.dev`, et `404.html`, servie à toute
 profondeur, appelle ses ressources par la racine (`/style.css`).
 
 Pour relire comme en production, en-têtes et page 404 compris :

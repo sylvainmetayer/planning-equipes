@@ -1,6 +1,6 @@
-# En-têtes servis par Cloudflare Pages (ignoré ailleurs).
-# CSP : la page n'a ni script ni style à elle en ligne ; seul le beacon
-# Cloudflare Web Analytics vient d'ailleurs, et il envoie ses mesures à
+# Headers served by Cloudflare Pages (ignored elsewhere).
+# CSP: the page has no inline script or style of its own; only the Cloudflare
+# Web Analytics beacon comes from elsewhere, and it reports to
 # cloudflareinsights.com.
 /*
   Content-Security-Policy: default-src 'none'; style-src 'self'; img-src 'self'; script-src https://static.cloudflareinsights.com; connect-src https://cloudflareinsights.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
@@ -9,9 +9,9 @@
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   X-XSS-Protection: 1; mode=block
-  Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
 
-# Fichiers internes au dépôt, publiés avec le dossier : pas à indexer.
+# Repository files published along with the folder: not to be indexed.
 /README.md
   X-Robots-Tag: noindex
 /wrangler.toml
