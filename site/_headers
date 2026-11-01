@@ -1,0 +1,18 @@
+# En-têtes servis par Cloudflare Pages (ignoré ailleurs).
+# CSP : la page n'a ni script ni style à elle en ligne ; seul le beacon
+# Cloudflare Web Analytics vient d'ailleurs, et il envoie ses mesures à
+# cloudflareinsights.com.
+/*
+  Content-Security-Policy: default-src 'none'; style-src 'self'; img-src 'self'; script-src https://static.cloudflareinsights.com; connect-src https://cloudflareinsights.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Strict-Transport-Security: max-age=63072000; includeSubDomains
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  X-XSS-Protection: 1; mode=block
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
+
+# Fichiers internes au dépôt, publiés avec le dossier : pas à indexer.
+/README.md
+  X-Robots-Tag: noindex
+/wrangler.toml
+  X-Robots-Tag: noindex

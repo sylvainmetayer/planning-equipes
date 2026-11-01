@@ -70,3 +70,4 @@ assets/
 
 # Added by ggshield
 .cache_ggshield
+site/.wrangler/

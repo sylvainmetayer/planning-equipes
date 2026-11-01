@@ -1,0 +1,5 @@
+# Cloudflare Pages lit ce fichier depuis le dossier racine du projet (site/) ;
+# le projet, son domaine et le jeton Web Analytics sont décrits dans homelab.
+name = "planning-equipes"
+pages_build_output_dir = "."
+compatibility_date = "2026-10-01"
