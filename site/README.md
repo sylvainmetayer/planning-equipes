@@ -8,12 +8,24 @@ Une page statique en deux langues, sans dépendance ni build :
 | `en/index.html` | la même page en anglais |
 | `style.css` | la feuille de style, partagée par les deux |
 | `favicon.svg` | l'icône d'onglet, reprise dans l'en-tête des deux pages |
+| `404.html` | la page d'erreur, bilingue, servie par Cloudflare Pages avec le statut 404 |
+| `_headers` | les en-têtes HTTP (CSP, HSTS…), lus par Cloudflare Pages |
+| `wrangler.toml` | la configuration du projet Cloudflare Pages (`pages_build_output_dir = "."`) |
+| `robots.txt`, `sitemap.xml` | les instructions aux robots et la liste des deux pages |
 
 Pour la relire, ouvrez `index.html` dans un navigateur — il n'y a rien à
 installer. Le sélecteur de langue pointe sur des dossiers (`en/`, `../`) :
-servi par GitHub Pages ou par n'importe quel serveur, même sous un
-sous-chemin, il ouvre l'autre page ; ouvert en `file://`, il montre le contenu
-du dossier. Tous les liens internes sont relatifs.
+servi par n'importe quel serveur, il ouvre l'autre page ; ouvert en `file://`,
+il montre le contenu du dossier. Les liens internes des deux pages sont
+relatifs ; seuls `canonical`, `hreflang`, `robots.txt` et `sitemap.xml`
+nomment `https://planning.sylvain.dev`, et `404.html`, servie à toute
+profondeur, appelle ses ressources par la racine (`/style.css`).
+
+Pour relire comme en production, en-têtes et page 404 compris :
+
+```bash
+npx -y wrangler@4 pages dev site --port 8788
+```
 
 ## Le parti pris
 
@@ -33,9 +45,11 @@ du dossier. Tous les liens internes sont relatifs.
 
 ## Ce que la page s'interdit
 
-- **Aucune dépendance, aucune requête externe** : pas de police distante (les
-  piles ne nomment que des polices système), pas de script — la page n'en a
-  aucun et n'en a pas besoin —, pas de CDN, pas de traqueur.
+- **Aucune dépendance, une seule requête externe** : pas de police distante
+  (les piles ne nomment que des polices système), pas de script à elle, pas de
+  CDN. La seule exception est le beacon Cloudflare Web Analytics, sans cookie
+  ni identifiant persistant, que la CSP de `_headers` est seule à autoriser ;
+  le pied de page le dit. L'application, elle, n'en a pas et n'en aura pas.
 - **Aucune capture d'écran** de l'application : une capture exposerait des
   données d'exploitation. Les écrans sont redessinés en HTML et en SVG inline,
   qui suivent le thème clair ou sombre du visiteur (`prefers-color-scheme`).
@@ -87,6 +101,33 @@ des deux pages.
 
 ## Publication
 
-`.github/workflows/pages.yml` publie ce dossier sur GitHub Pages, en
-déclenchement **manuel** : on publie quand on le décide, pas à chaque commit.
-Pages se règle avec « Source: GitHub Actions » dans les réglages du dépôt.
+La page est servie par **Cloudflare Pages** sur `planning.sylvain.dev`, comme
+ref.sylvain.dev et www.sylvain.dev ; le projet, son domaine et le site Web
+Analytics sont décrits dans le dépôt homelab. Le projet Pages est relié au
+dépôt par l'application GitHub de Cloudflare, avec le dossier racine `site`,
+**aucune commande de build** et la sortie `.` (relue dans `wrangler.toml`) ; ses
+chemins surveillés se limitent à `site/**`, pour qu'un commit de l'application
+ne redéploie rien. Chaque merge sur `main` qui touche `site/` publie ; une PR
+reçoit un déploiement d'aperçu, que Pages sert en `noindex`.
+
+Le jeton du beacon est écrit en dur dans `index.html` et `en/index.html` (il
+n'y a pas de build pour l'injecter) : la valeur est celle de
+`tofu output -raw web_analytics_token` côté homelab, la même dans les deux pages.
+
+## Qualité (Opquast)
+
+La page suit le référentiel Opquast « Qualité numérique » (v5). Ce qui en
+découle et qu'il faut garder : un pied de page qui nomme l'éditeur, la licence,
+l'hébergeur et la mesure d'audience, et qui mène aux mentions légales et à la
+politique de confidentialité de sylvain.dev, aux nouveautés (les releases) et
+aux issues ; les liens visités et les liens sortants (flèche ↗) qui se
+distinguent ; une abréviation expliquée à sa première occurrence (`<abbr
+title>`) ; des renvois d'au moins 24 px ; une feuille d'impression ; les
+en-têtes de sécurité de `_headers` ; `404.html`, `robots.txt` et
+`sitemap.xml`.
+
+Écarts assumés : la feuille de style n'est pas minifiée (règle 229 : pas de
+build, et la compression de Cloudflare fait l'essentiel) ; la langue n'est pas
+choisie d'après `Accept-Language` (règle 135 : il faudrait une Function, le
+sélecteur et `hreflang` suffisent) ; une page unique n'a pas de plan du site
+(règle 171) ; l'en-tête `server: cloudflare` ne se retire pas (règle 213).

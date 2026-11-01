@@ -8,9 +8,10 @@
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1d2024" media="(prefers-color-scheme: dark)">
-<link rel="alternate" hreflang="fr" href="./">
-<link rel="alternate" hreflang="en" href="en/">
-<link rel="alternate" hreflang="x-default" href="./">
+<link rel="canonical" href="https://planning.sylvain.dev/">
+<link rel="alternate" hreflang="fr" href="https://planning.sylvain.dev/">
+<link rel="alternate" hreflang="en" href="https://planning.sylvain.dev/en/">
+<link rel="alternate" hreflang="x-default" href="https://planning.sylvain.dev/">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -171,7 +172,7 @@
           <li id="art-9">Mineurs&nbsp;: repos <cite>L3164-2</cite></li>
           <li id="art-10">Mineurs&nbsp;: fériés <cite>L3164-6</cite></li>
         </ul>
-        <p class="fine"><a href="https://github.com/sylvainmetayer/planning-equipes/blob/main/docs/contraintes.md">Lire le code des règles</a> · Le logiciel aide à décider. L'organisation qui publie le planning reste l'employeur.</p>
+        <p class="fine"><a href="https://www.legifrance.gouv.fr/codes/texte_lc/LEGITEXT000006072050/">Le Code du travail sur Légifrance</a> · <a href="https://github.com/sylvainmetayer/planning-equipes/blob/main/docs/contraintes.md">Lire le code des règles</a> · Le logiciel aide à décider. L'organisation qui publie le planning reste l'employeur.</p>
       </div>
     </div>
   </section>
@@ -184,7 +185,7 @@
         <p>Chacun reçoit un lien et un code par e-mail, et retrouve son planning sur son téléphone. <b>Rien à installer.</b></p>
         <ul class="chips" aria-label="Côté animateurs">
           <li>Espace mobile</li>
-          <li>PDF + QR code</li>
+          <li><abbr title="Portable Document Format">PDF</abbr> + QR code</li>
           <li>Abonnement agenda</li>
           <li>Échanges en libre-service</li>
           <li>«&nbsp;J'ai lu et je serai là&nbsp;»</li>
@@ -212,7 +213,7 @@
       <div class="q__say c5">
         <span class="n" aria-hidden="true">3</span>
         <h2 id="outils-t">Et nos outils&nbsp;?</h2>
-        <p>Les annonces (planning publié, échanges à valider) arrivent <b>dans la messagerie de votre équipe</b>. Votre assistant IA peut aussi piloter l'application, sans jamais voir un nom ni une date de naissance.</p>
+        <p>Les annonces (planning publié, échanges à valider) arrivent <b>dans la messagerie de votre équipe</b>. Votre assistant <abbr title="intelligence artificielle">IA</abbr> peut aussi piloter l'application, sans jamais voir un nom ni une date de naissance.</p>
         <ul class="chips tools" aria-label="Outils reliés">
           <li class="c0"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5.5h16v10H9l-5 4z"/></svg>Slack</li>
           <li class="c3"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5.5h16v10H9l-5 4z"/></svg>Discord</li>
@@ -266,7 +267,7 @@
       </ol>
       <div class="price" id="contact">
         <p><b>Le tarif dépend de la taille de votre événement.</b> Dites-nous combien de personnes et combien de jours, et on vous envoie un chiffre.</p>
-        <p class="acts"><a class="btn btn--primary mail" href="mailto:planning@sylvain.dev">planning@sylvain.dev</a></p>
+        <p class="acts"><a class="btn btn--primary mail" href="mailto:planning@sylvain.dev">Écrire à planning@sylvain.dev</a></p>
       </div>
     </div>
   </section>
@@ -323,8 +324,16 @@
   <div class="wrap foot__in">
     <p><b>Planning Équipes</b> — logiciel libre sous licence <abbr title="GNU Affero General Public License, version 3">AGPL-3.0</abbr>, hébergeable chez vous. <a href="https://github.com/sylvainmetayer/planning-equipes">Code source</a></p>
     <p>Le Festival de Combelune, ses lieux et ses prénoms sont fictifs.</p>
+    <p>Édité par Sylvain Métayer · textes, illustrations et code sous la même licence · hébergé par Cloudflare Pages · mesure d'audience Cloudflare Web Analytics, sans cookie.</p>
+    <ul class="foot__links" aria-label="Informations sur le site">
+      <li><a href="https://www.sylvain.dev/mentions-legales/">Mentions légales et confidentialité</a></li>
+      <li><a href="https://github.com/sylvainmetayer/planning-equipes/releases">Nouveautés</a></li>
+      <li><a href="https://github.com/sylvainmetayer/planning-equipes/issues">Signaler un problème</a></li>
+    </ul>
   </div>
 </footer>
 
+<!-- Cloudflare Web Analytics: no cookie. Token: `tofu output -raw web_analytics_token` in homelab, same value in both pages -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "A_REMPLACER_PAR_LE_JETON"}'></script>
 </body>
 </html>
