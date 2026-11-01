@@ -12,6 +12,7 @@ Une page statique en deux langues, sans dépendance ni build :
 | `_headers` | les en-têtes HTTP (CSP, HSTS…), lus par Cloudflare Pages |
 | `wrangler.toml` | la configuration du projet Cloudflare Pages (`pages_build_output_dir = "."`) |
 | `robots.txt`, `sitemap.xml` | les instructions aux robots et la liste des deux pages |
+| `og-fr.png`, `og-en.png` | l'image d'aperçu des réseaux sociaux (1200×630), une par langue |
 
 Pour la relire, ouvrez `index.html` dans un navigateur — il n'y a rien à
 installer. Le sélecteur de langue pointe sur des dossiers (`en/`, `../`) :
@@ -113,6 +114,35 @@ reçoit un déploiement d'aperçu, que Pages sert en `noindex`.
 Le jeton du beacon est écrit en dur dans `index.html` et `en/index.html` (il
 n'y a pas de build pour l'injecter) : la valeur est celle de
 `tofu output -raw web_analytics_token` côté homelab, la même dans les deux pages.
+
+## Référencement
+
+- **Titre et description** : le `<title>` commence par ce qu'on cherche (« logiciel
+  de planning d'équipes pour festivals ») et finit par le nom ; le slogan reste
+  dans le `<h1>` et dans `og:title`. Moins de 65 caractères pour le titre, de
+  160 pour la description, sinon le moteur les coupe.
+- **Aperçus** : Open Graph et `twitter:card`, avec une image par langue.
+  `og:description` reprend la `meta description` mot pour mot.
+- **Données structurées** : un bloc JSON-LD par page (`Person`,
+  `SoftwareApplication`, `FAQPage`), que la CSP n'a pas à autoriser puisqu'il
+  ne s'exécute pas. Les questions et réponses de `FAQPage` sont celles des
+  `<details>` **au mot près** : une réponse qui change dans la page change là
+  aussi. Pas d'`offers` : le tarif est sur devis.
+- **Langues** : `canonical` sur soi-même, `hreflang` croisés, et `sitemap.xml`
+  qui les répète.
+
+### Image de partage
+
+Elle est faite à partir de `scripts/vitrine-og.html` (même logo, même palette)
+et se régénère depuis la racine du dépôt :
+
+```bash
+for l in fr en; do chromium-browser --headless=new --hide-scrollbars \
+  --force-device-scale-factor=1 --window-size=1200,630 \
+  --screenshot=site/og-$l.png "file://$PWD/scripts/vitrine-og.html#$l"; done
+```
+
+Le slogan de l'image suit celui du `<h1>` ; changer l'un, c'est régénérer l'autre.
 
 ## Qualité (Opquast)
 
