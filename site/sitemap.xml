@@ -4,10 +4,12 @@
     <loc>https://planning.sylvain.dev/</loc>
     <xhtml:link rel="alternate" hreflang="fr" href="https://planning.sylvain.dev/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://planning.sylvain.dev/en/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://planning.sylvain.dev/"/>
   </url>
   <url>
     <loc>https://planning.sylvain.dev/en/</loc>
     <xhtml:link rel="alternate" hreflang="fr" href="https://planning.sylvain.dev/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://planning.sylvain.dev/en/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://planning.sylvain.dev/"/>
   </url>
 </urlset>
