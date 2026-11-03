@@ -58,7 +58,7 @@ jobs:
           --health-cmd "pg_isready -U festival -d festival"
           --health-interval 5s --health-timeout 5s --health-retries 12
       mailpit:
-        image: axllent/mailpit:v1.31
+        image: axllent/mailpit:v1.32
         ports:
           - 1025:1025
 
@@ -141,7 +141,7 @@ jobs:
           skip-extraction: ${{ steps.m2-cache.outputs.cache-hit }}
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
