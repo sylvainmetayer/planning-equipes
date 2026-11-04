@@ -123,7 +123,7 @@
         <li><a href="#ensemble">Tarif</a></li>
         <li><a href="#questions">Questions</a></li>
         <li><a class="lang" href="en/" hreflang="en" lang="en"><span aria-hidden="true">EN</span><span class="vh">English version</span></a></li>
-        <li><a class="nav-cta" href="#demo"><span class="cta-l">Essayer la démo</span><span class="cta-s">Démo</span></a></li>
+        <li><a class="nav-cta" href="#images"><span class="cta-l">Voir en images</span><span class="cta-s">Images</span></a></li>
       </ul>
     </nav>
   </div>
@@ -141,10 +141,9 @@
         <div>
           <p class="lede">Vous saisissez les stands, les créneaux et les disponibilités. Le logiciel construit le planning et vérifie le Code du travail, mineurs compris, à chaque modification.</p>
           <p class="acts">
-            <a class="btn btn--primary" href="https://exemple-planning.sylvain.dev">Essayer la démo</a>
+            <a class="btn btn--primary" href="#images">Voir l'application</a>
             <a class="btn btn--quiet" href="#jour-j">Voir le jour J</a>
           </p>
-          <p class="hero__creds">Identifiant <code>admin</code>, mot de passe <code>demo</code> · données fictives</p>
         </div>
       </div>
 
@@ -377,28 +376,51 @@
     </div>
   </section>
 
-  <section class="alt" id="demo" aria-labelledby="demo-t">
-    <div class="wrap">
-      <div class="demo__in">
-        <div>
-          <p class="kicker">Démonstration publique · données fictives</p>
-          <h2 id="demo-t">Rejouez une journée de festival, sans rien installer.</h2>
-          <p>L'horloge y est arrêtée en plein festival, pour que l'écran Aujourd'hui et la télé de la salle de contrôle aient quelque chose à montrer.</p>
-          <p class="acts"><a class="btn btn--primary" href="https://exemple-planning.sylvain.dev">Ouvrir la démonstration</a></p>
-        </div>
-        <div class="demo__card">
-          <dl class="creds">
-            <div><dt>Adresse</dt><dd><a href="https://exemple-planning.sylvain.dev"><code>exemple-planning.sylvain.dev</code></a></dd></div>
-            <div><dt>Identifiant</dt><dd><code>admin</code></dd></div>
-            <div><dt>Mot de passe</dt><dd><code>demo</code></dd></div>
-            <div><dt>Courriels</dt><dd>ceux qu'envoie l'application, lisibles sur <a href="https://exemple-planning.sylvain.dev/mail"><code>/mail</code></a></dd></div>
-          </dl>
-          <ul class="conds" aria-label="Conditions de la démonstration">
-            <li>Remise à zéro chaque nuit</li>
-            <li>Calcul plafonné à 60&nbsp;s</li>
-            <li>12 calculs par heure</li>
-          </ul>
-        </div>
+  <section class="alt" id="images" aria-labelledby="images-t">
+    <div class="wrap shots">
+      <div class="head">
+        <p class="kicker">L'application en images · données fictives</p>
+        <h2 id="images-t">Ce que vous verrez à l'écran.</h2>
+        <p class="lede">Trois parcours sans le son, puis les écrans un par un. L'horloge y est arrêtée en plein festival, d'où l'heure affichée en rouge.</p>
+      </div>
+      <div class="shots__films">
+          <figure class="shots__film">
+            <video controls preload="none" playsinline width="1280" height="800" poster="images/fr/film-calcul.webp" aria-label="Le calcul">
+              <source src="videos/fr/calcul.mp4" type="video/mp4">
+              <a href="videos/fr/calcul.mp4">Télécharger la vidéo</a>
+            </video>
+            <figcaption><b>Le calcul</b> En une minute, il repart de zéro, annonce dès qu'un plan respecte les règles impératives, puis l'améliore. Le passage d'attente est accéléré.</figcaption>
+          </figure>
+          <figure class="shots__film">
+            <video controls preload="none" playsinline width="1280" height="800" poster="images/fr/film-jourj.webp" aria-label="Une absence le jour J">
+              <source src="videos/fr/jourj.mp4" type="video/mp4">
+              <a href="videos/fr/jourj.mp4">Télécharger la vidéo</a>
+            </video>
+            <figcaption><b>Une absence le jour J</b> On cherche la personne, on la déclare absente, la place vide apparaît et l'application propose qui peut la tenir. Il reste à prévenir les personnes concernées.</figcaption>
+          </figure>
+          <figure class="shots__film shots__film--phone">
+            <video controls preload="none" playsinline width="412" height="800" poster="images/fr/film-espace.webp" aria-label="Côté animateur">
+              <source src="videos/fr/espace.mp4" type="video/mp4">
+              <a href="videos/fr/espace.mp4">Télécharger la vidéo</a>
+            </video>
+            <figcaption><b>Côté animateur</b> Un code reçu par e-mail ouvre l'espace sur le téléphone. On confirme son planning, on le parcourt, on retrouve ses coéquipiers et ses échanges.</figcaption>
+          </figure>
+      </div>
+      <h3>Les écrans, un par un</h3>
+      <ul class="shots__grid" aria-label="Captures d'écran, chacune mène à l'image en grand">
+          <li><a class="shots__link" href="images/fr/accueil.webp"><img src="images/fr/accueil.webp" width="1440" height="900" loading="lazy" alt="État de l'édition : ce qu'il reste à faire aujourd'hui, étape par étape."></a><p><b>État de l'édition</b></p></li>
+          <li><a class="shots__link" href="images/fr/planning.webp"><img src="images/fr/planning.webp" width="1440" height="900" loading="lazy" alt="Planning par jour : qui tient quel stand, créneau par créneau."></a><p><b>Planning par jour</b></p></li>
+          <li><a class="shots__link" href="images/fr/rail.webp"><img src="images/fr/rail.webp" width="1440" height="900" loading="lazy" alt="Vue rail : la journée de chacun sur un axe horaire."></a><p><b>Vue rail</b></p></li>
+          <li><a class="shots__link" href="images/fr/personne.webp"><img src="images/fr/personne.webp" width="1440" height="900" loading="lazy" alt="Planning par personne : la semaine de chaque animateur, heures et soirées comprises."></a><p><b>Planning par personne</b></p></li>
+          <li><a class="shots__link" href="images/fr/horaires.webp"><img src="images/fr/horaires.webp" width="1440" height="900" loading="lazy" alt="Horaires des stands : l'effectif de chaque stand, jour par jour."></a><p><b>Horaires des stands</b></p></li>
+          <li><a class="shots__link" href="images/fr/regles.webp"><img src="images/fr/regles.webp" width="1440" height="900" loading="lazy" alt="Règles du planning : chaque règle légale, son article et son réglage."></a><p><b>Règles du planning</b></p></li>
+          <li><a class="shots__link" href="images/fr/diagnostic.webp"><img src="images/fr/diagnostic.webp" width="1440" height="900" loading="lazy" alt="Diagnostic : ce qui bloque, ce qui manque et ce qui est fragile, avec quoi faire."></a><p><b>Diagnostic</b></p></li>
+          <li><a class="shots__link" href="images/fr/diffuser.webp"><img src="images/fr/diffuser.webp" width="1440" height="900" loading="lazy" alt="Diffuser : qui a reçu quelle version, et qui a confirmé."></a><p><b>Diffuser</b></p></li>
+          <li><a class="shots__link" href="images/fr/mural.webp"><img src="images/fr/mural.webp" width="1600" height="900" loading="lazy" alt="Affichage TV : la salle de contrôle voit qui tient quel stand en ce moment."></a><p><b>Affichage TV</b></p></li>
+      </ul>
+      <div class="price">
+        <p><b>Vous voulez la voir sur vos propres données&nbsp;?</b></p>
+        <p class="acts"><a class="btn btn--primary mail" href="mailto:planning@sylvain.dev">Écrire à planning@sylvain.dev</a></p>
       </div>
     </div>
   </section>
