@@ -102,8 +102,9 @@ prises à 1440×900 (1600×900 pour la TV), les vidéos à 1280×800 (412×800 p
 téléphone), puis encodées en WebP et en MP4 H.264 sans piste son. La grille affiche des
 vignettes (`images/<langue>/vignettes/`, 800 px de large,
 `magick x.webp -resize 800x -quality 72 -define webp:method=6 vignettes/x.webp`) ;
-une vidéo qui change met à jour sa durée dans la légende, son poids dans le lien et
-son `VideoObject`. Une capture
+une vidéo qui change met à jour sa durée dans la légende, son poids dans le lien,
+son `VideoObject` et sa transcription dépliable, qui décrit ce qu'on voit, langue par
+langue : les deux séries ne montrent pas les mêmes personnes. Une capture
 d'interface qui change ne se met pas à jour toute seule : c'est le prix de cette
 section, à payer quand un écran montré change franchement.
 
@@ -181,4 +182,7 @@ en-têtes de sécurité de `_headers` ; `404.html`, `robots.txt` et
 build, et la compression de Cloudflare fait l'essentiel) ; la langue n'est pas
 choisie d'après `Accept-Language` (règle 135 : il faudrait une Function, le
 sélecteur et `hreflang` suffisent) ; une page unique n'a pas de plan du site
-(règle 171) ; l'en-tête `server: cloudflare` ne se retire pas (règle 213).
+(règle 171) ; l'en-tête `server: cloudflare` ne se retire pas (règle 213) ; les vidéos n'ont pas de
+sous-titres, elles sont muettes et transcrites (règle 122) ;
+`www.planning.sylvain.dev` n'existe pas, personne ne préfixe un sous-domaine
+(règle 218).
