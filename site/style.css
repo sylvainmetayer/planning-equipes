@@ -400,6 +400,8 @@ details p { padding: 0 0 .8rem; color: var(--muted); font-size: .93rem; }
 .shots__film--phone { max-width: 16rem; }
 .shots__film figcaption { color: var(--muted); font-size: .88rem; }
 .shots__film figcaption b { display: block; color: var(--text); font-weight: 600; }
+.shots__film summary { font-size: .88rem; }
+.shots__film ol { display: grid; gap: .35rem; margin: 0; padding: 0 0 .8rem 1.2rem; list-style: decimal; color: var(--muted); font-size: .88rem; }
 .shots__grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr)); }
 .shots__grid li { display: grid; align-content: start; gap: .35rem; min-width: 0; }
 .shots__grid img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 10px; }
@@ -428,4 +430,6 @@ details p { padding: 0 0 .8rem; color: var(--muted); font-size: .93rem; }
   .tt__scroll { overflow: visible; }
   a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .8em; }
   section { break-inside: avoid-page; }
+  /* A folded answer would not print at all. */
+  details::details-content { display: block; content-visibility: visible; }
 }

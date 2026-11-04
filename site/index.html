@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Logiciel de planning d'équipes pour festivals — Planning Équipes</title>
-<meta name="description" content="Logiciel de planification d'équipes pour festivals et événements : un planning prêt en minutes, conforme au Code du travail, mineurs compris.">
+<meta name="description" content="Logiciel de planning pour festivals et événements : animateurs et bénévoles planifiés en minutes, Code du travail vérifié, mineurs compris.">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1d2024" media="(prefers-color-scheme: dark)">
@@ -15,7 +15,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Planning Équipes">
 <meta property="og:title" content="Planning Équipes — planifiez vos équipes en minutes, pas en week-ends">
-<meta property="og:description" content="Logiciel de planification d'équipes pour festivals et événements : un planning prêt en minutes, conforme au Code du travail, mineurs compris.">
+<meta property="og:description" content="Logiciel de planning pour festivals et événements : animateurs et bénévoles planifiés en minutes, Code du travail vérifié, mineurs compris.">
 <meta property="og:url" content="https://planning.sylvain.dev/">
 <meta property="og:locale" content="fr_FR">
 <meta property="og:locale:alternate" content="en_GB">
@@ -39,11 +39,38 @@
    ]
   },
   {
+   "@type": "WebSite",
+   "@id": "https://planning.sylvain.dev/#site",
+   "name": "Planning Équipes",
+   "url": "https://planning.sylvain.dev/",
+   "inLanguage": [
+    "fr",
+    "en"
+   ],
+   "publisher": {
+    "@id": "https://www.sylvain.dev/#me"
+   }
+  },
+  {
+   "@type": "WebPage",
+   "@id": "https://planning.sylvain.dev/#page",
+   "url": "https://planning.sylvain.dev/",
+   "name": "Logiciel de planning d'équipes pour festivals — Planning Équipes",
+   "inLanguage": "fr",
+   "isPartOf": {
+    "@id": "https://planning.sylvain.dev/#site"
+   },
+   "about": {
+    "@id": "https://planning.sylvain.dev/#app"
+   },
+   "dateModified": "2026-11-04"
+  },
+  {
    "@type": "SoftwareApplication",
    "@id": "https://planning.sylvain.dev/#app",
    "name": "Planning Équipes",
    "url": "https://planning.sylvain.dev/",
-   "description": "Logiciel de planification d'équipes pour festivals et événements : un planning prêt en minutes, conforme au Code du travail, mineurs compris.",
+   "description": "Logiciel de planning pour festivals et événements : animateurs et bénévoles planifiés en minutes, Code du travail vérifié, mineurs compris.",
    "applicationCategory": "BusinessApplication",
    "applicationSubCategory": "Planification d’équipes",
    "operatingSystem": "Web",
@@ -91,8 +118,57 @@
       "@type": "Answer",
       "text": "Non, si on héberge pour vous. Tout se fait dans le navigateur, en français ou en anglais, et les animateurs n'installent rien."
      }
+    },
+    {
+     "@type": "Question",
+     "name": "Comment sont gérés les animateurs mineurs ?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "L'âge se déduit de la date de naissance, à la date de chaque créneau. Durée, pauses, travail de nuit, repos et jours fériés suivent alors les articles propres aux mineurs, et un poste interdit est refusé."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Peut-on planifier des bénévoles ?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Oui. Le tableur de bénévoles s'importe tel quel, et le calcul les planifie comme les autres animateurs, avec les mêmes règles."
+     }
     }
    ]
+  },
+  {
+   "@type": "VideoObject",
+   "@id": "https://planning.sylvain.dev/#video-calcul",
+   "name": "Le calcul",
+   "description": "En une minute, il repart de zéro, annonce dès qu'un plan respecte les règles impératives, puis l'améliore. Le passage d'attente est accéléré.",
+   "inLanguage": "fr",
+   "thumbnailUrl": "https://planning.sylvain.dev/images/fr/film-calcul.webp",
+   "contentUrl": "https://planning.sylvain.dev/videos/fr/calcul.mp4",
+   "uploadDate": "2026-11-04",
+   "duration": "PT24S"
+  },
+  {
+   "@type": "VideoObject",
+   "@id": "https://planning.sylvain.dev/#video-jourj",
+   "name": "Une absence le jour J",
+   "description": "On cherche la personne, on la déclare absente, la place vide apparaît et l'application propose qui peut la tenir. Il reste à prévenir les personnes concernées.",
+   "inLanguage": "fr",
+   "thumbnailUrl": "https://planning.sylvain.dev/images/fr/film-jourj.webp",
+   "contentUrl": "https://planning.sylvain.dev/videos/fr/jourj.mp4",
+   "uploadDate": "2026-11-04",
+   "duration": "PT26S"
+  },
+  {
+   "@type": "VideoObject",
+   "@id": "https://planning.sylvain.dev/#video-espace",
+   "name": "Côté animateur",
+   "description": "Un code reçu par e-mail ouvre l'espace sur le téléphone. On confirme son planning, on le parcourt, on retrouve ses coéquipiers et ses échanges.",
+   "inLanguage": "fr",
+   "thumbnailUrl": "https://planning.sylvain.dev/images/fr/film-espace.webp",
+   "contentUrl": "https://planning.sylvain.dev/videos/fr/espace.mp4",
+   "uploadDate": "2026-11-04",
+   "duration": "PT22S"
   }
  ]
 }
@@ -139,7 +215,7 @@
           <h1 id="titre">Planifiez vos équipes en minutes, <em>pas&nbsp;en week-ends.</em></h1>
         </div>
         <div>
-          <p class="lede">Vous saisissez les stands, les créneaux et les disponibilités. Le logiciel construit le planning et vérifie le Code du travail, mineurs compris, à chaque modification.</p>
+          <p class="lede">Vous saisissez les stands, les créneaux et les disponibilités de vos animateurs et bénévoles. Le logiciel construit le planning et vérifie le Code du travail, mineurs compris, à chaque modification.</p>
           <p class="acts">
             <a class="btn btn--primary" href="#images">Voir l'application</a>
             <a class="btn btn--quiet" href="#jour-j">Voir le jour J</a>
@@ -240,7 +316,7 @@
     <div class="wrap q__in">
       <div class="q__say c0">
         <span class="n" aria-hidden="true">1</span>
-        <h2 id="legal-t">Le planning est-il légal&nbsp;?</h2>
+        <h2 id="legal-t">Le planning respecte-t-il le Code du travail&nbsp;?</h2>
         <p><b>Oui.</b> Le calcul applique dix articles du Code du travail et ne peut pas les enfreindre. Quand il refuse une affectation, il cite l'article.</p>
       </div>
       <div class="rules">
@@ -265,7 +341,7 @@
     <div class="wrap q__in">
       <div class="q__say c1">
         <span class="n" aria-hidden="true">2</span>
-        <h2 id="animateurs-t">Et pour les animateurs&nbsp;?</h2>
+        <h2 id="animateurs-t">Et pour les animateurs et les bénévoles&nbsp;?</h2>
         <p>Chacun reçoit un lien et un code par e-mail, et retrouve son planning sur son téléphone. <b>Rien à installer.</b></p>
         <ul class="chips" aria-label="Côté animateurs">
           <li>Espace mobile</li>
@@ -372,6 +448,14 @@
           <summary>Faut-il un informaticien chez nous&nbsp;?</summary>
           <p>Non, si on héberge pour vous. Tout se fait dans le navigateur, en français ou en anglais, et les animateurs n'installent rien.</p>
         </details>
+        <details>
+          <summary>Comment sont gérés les animateurs mineurs&nbsp;?</summary>
+          <p>L'âge se déduit de la date de naissance, à la date de chaque créneau. Durée, pauses, travail de nuit, repos et jours fériés suivent alors les articles propres aux mineurs, et un poste interdit est refusé.</p>
+        </details>
+        <details>
+          <summary>Peut-on planifier des bénévoles&nbsp;?</summary>
+          <p>Oui. Le tableur de bénévoles s'importe tel quel, et le calcul les planifie comme les autres animateurs, avec les mêmes règles.</p>
+        </details>
       </div>
     </div>
   </section>
@@ -380,43 +464,73 @@
     <div class="wrap shots">
       <div class="head">
         <p class="kicker">L'application en images · données fictives</p>
-        <h2 id="images-t">Ce que vous verrez à l'écran.</h2>
+        <h2 id="images-t">Le logiciel en images&nbsp;: ce que vous verrez à l'écran.</h2>
         <p class="lede">Trois parcours sans le son, puis les écrans un par un. L'horloge y est arrêtée en plein festival, d'où l'heure affichée en rouge.</p>
       </div>
       <div class="shots__films">
           <figure class="shots__film">
             <video controls preload="none" playsinline width="1280" height="800" poster="images/fr/film-calcul.webp" aria-label="Le calcul">
               <source src="videos/fr/calcul.mp4" type="video/mp4">
-              <a href="videos/fr/calcul.mp4">Télécharger la vidéo</a>
+              <a href="videos/fr/calcul.mp4">Télécharger la vidéo (MP4, 547 ko)</a>
             </video>
-            <figcaption><b>Le calcul</b> En une minute, il repart de zéro, annonce dès qu'un plan respecte les règles impératives, puis l'améliore. Le passage d'attente est accéléré.</figcaption>
+            <figcaption><b>Le calcul · 24 s</b> En une minute, il repart de zéro, annonce dès qu'un plan respecte les règles impératives, puis l'améliore. Le passage d'attente est accéléré.</figcaption>
+            <details>
+              <summary>Transcription (vidéo sans son)</summary>
+              <ol>
+                <li>L'écran Solveur résume ce dont le calcul tiendra compte : verrouillages, ajustements, consignes, déclarations de disponibilité non traitées et règles désactivées.</li>
+                <li>On choisit « Recommencer de zéro » et on confirme : le plan enregistré ne servira pas de point de départ.</li>
+                <li>La barre de progression avance. Un message annonce qu'un plan faisable existe et que le calcul améliore maintenant la qualité (équité, souhaits, continuité). Un bouton permet d'arrêter et de garder ce plan.</li>
+                <li>Le résultat indique que le planning respecte toutes les règles impératives.</li>
+                <li>Le planning par jour s'ouvre : chaque stand, chaque créneau et les noms affectés.</li>
+              </ol>
+            </details>
           </figure>
           <figure class="shots__film">
             <video controls preload="none" playsinline width="1280" height="800" poster="images/fr/film-jourj.webp" aria-label="Une absence le jour J">
               <source src="videos/fr/jourj.mp4" type="video/mp4">
-              <a href="videos/fr/jourj.mp4">Télécharger la vidéo</a>
+              <a href="videos/fr/jourj.mp4">Télécharger la vidéo (MP4, 392 ko)</a>
             </video>
-            <figcaption><b>Une absence le jour J</b> On cherche la personne, on la déclare absente, la place vide apparaît et l'application propose qui peut la tenir. Il reste à prévenir les personnes concernées.</figcaption>
+            <figcaption><b>Une absence le jour J · 26 s</b> On cherche la personne, on la déclare absente, la place vide apparaît et l'application propose qui peut la tenir. Il reste à prévenir les personnes concernées.</figcaption>
+            <details>
+              <summary>Transcription (vidéo sans son)</summary>
+              <ol>
+                <li>L'écran Aujourd'hui, le 10 août 2027 à 15 h : 25 stands ouverts, une vacation restante, aucun absent.</li>
+                <li>On cherche Chloé Deschamps, on signale son absence avec la raison « Malade », puis on la confirme pour la suite de la journée.</li>
+                <li>Les compteurs passent à 1 absent, 1 place vide nouvelle et 1 personne à prévenir. La place vide apparaît, Stand contes 6 de 15 h à 18 h, avec les candidats éligibles.</li>
+                <li>On choisit « Remplacer sur le reste du créneau ». Un message confirme que Martin Boyer prend ce poste.</li>
+                <li>Il ne reste aucune place vide nouvelle, et un bouton propose « Prévenir les 2 personnes ».</li>
+              </ol>
+            </details>
           </figure>
           <figure class="shots__film shots__film--phone">
             <video controls preload="none" playsinline width="412" height="800" poster="images/fr/film-espace.webp" aria-label="Côté animateur">
               <source src="videos/fr/espace.mp4" type="video/mp4">
-              <a href="videos/fr/espace.mp4">Télécharger la vidéo</a>
+              <a href="videos/fr/espace.mp4">Télécharger la vidéo (MP4, 178 ko)</a>
             </video>
-            <figcaption><b>Côté animateur</b> Un code reçu par e-mail ouvre l'espace sur le téléphone. On confirme son planning, on le parcourt, on retrouve ses coéquipiers et ses échanges.</figcaption>
+            <figcaption><b>Côté animateur · 22 s</b> Un code reçu par e-mail ouvre l'espace sur le téléphone. On confirme son planning, on le parcourt, on retrouve ses coéquipiers et ses échanges.</figcaption>
+            <details>
+              <summary>Transcription (vidéo sans son)</summary>
+              <ol>
+                <li>Sur le téléphone, l'écran « Accès à votre espace » : un code est envoyé par e-mail, valable 10 minutes. On le saisit, puis on choisit « Ouvrir mon espace ».</li>
+                <li>« Mon planning » annonce le prochain poste. On appuie sur « J'ai lu et je serai là », et la présence confirmée s'affiche avec sa date.</li>
+                <li>La vue Aperçu, « Tout mon planning », totalise les heures, les créneaux, les stands et les jours, puis détaille chaque journée.</li>
+                <li>La vue Coéquipiers, « Suis-je avec quelqu'un ? », liste les personnes et les créneaux partagés.</li>
+                <li>L'onglet « Mes échanges » permet de proposer un échange : créneau concerné, personne et motif.</li>
+              </ol>
+            </details>
           </figure>
       </div>
       <h3>Les écrans, un par un</h3>
       <ul class="shots__grid" aria-label="Captures d'écran, chacune mène à l'image en grand">
-          <li><a class="shots__link" href="images/fr/accueil.webp"><img src="images/fr/accueil.webp" width="1440" height="900" loading="lazy" alt="État de l'édition : ce qu'il reste à faire aujourd'hui, étape par étape."></a><p><b>État de l'édition</b></p></li>
-          <li><a class="shots__link" href="images/fr/planning.webp"><img src="images/fr/planning.webp" width="1440" height="900" loading="lazy" alt="Planning par jour : qui tient quel stand, créneau par créneau."></a><p><b>Planning par jour</b></p></li>
-          <li><a class="shots__link" href="images/fr/rail.webp"><img src="images/fr/rail.webp" width="1440" height="900" loading="lazy" alt="Vue rail : la journée de chacun sur un axe horaire."></a><p><b>Vue rail</b></p></li>
-          <li><a class="shots__link" href="images/fr/personne.webp"><img src="images/fr/personne.webp" width="1440" height="900" loading="lazy" alt="Planning par personne : la semaine de chaque animateur, heures et soirées comprises."></a><p><b>Planning par personne</b></p></li>
-          <li><a class="shots__link" href="images/fr/horaires.webp"><img src="images/fr/horaires.webp" width="1440" height="900" loading="lazy" alt="Horaires des stands : l'effectif de chaque stand, jour par jour."></a><p><b>Horaires des stands</b></p></li>
-          <li><a class="shots__link" href="images/fr/regles.webp"><img src="images/fr/regles.webp" width="1440" height="900" loading="lazy" alt="Règles du planning : chaque règle légale, son article et son réglage."></a><p><b>Règles du planning</b></p></li>
-          <li><a class="shots__link" href="images/fr/diagnostic.webp"><img src="images/fr/diagnostic.webp" width="1440" height="900" loading="lazy" alt="Diagnostic : ce qui bloque, ce qui manque et ce qui est fragile, avec quoi faire."></a><p><b>Diagnostic</b></p></li>
-          <li><a class="shots__link" href="images/fr/diffuser.webp"><img src="images/fr/diffuser.webp" width="1440" height="900" loading="lazy" alt="Diffuser : qui a reçu quelle version, et qui a confirmé."></a><p><b>Diffuser</b></p></li>
-          <li><a class="shots__link" href="images/fr/mural.webp"><img src="images/fr/mural.webp" width="1600" height="900" loading="lazy" alt="Affichage TV : la salle de contrôle voit qui tient quel stand en ce moment."></a><p><b>Affichage TV</b></p></li>
+          <li><a class="shots__link" href="images/fr/accueil.webp"><img src="images/fr/vignettes/accueil.webp" width="800" height="500" loading="lazy" decoding="async" alt="État de l'édition : ce qu'il reste à faire aujourd'hui, étape par étape."></a><p><b>État de l'édition</b></p></li>
+          <li><a class="shots__link" href="images/fr/planning.webp"><img src="images/fr/vignettes/planning.webp" width="800" height="500" loading="lazy" decoding="async" alt="Planning par jour : qui tient quel stand, créneau par créneau."></a><p><b>Planning par jour</b></p></li>
+          <li><a class="shots__link" href="images/fr/rail.webp"><img src="images/fr/vignettes/rail.webp" width="800" height="500" loading="lazy" decoding="async" alt="Vue rail : la journée de chacun sur un axe horaire."></a><p><b>Vue rail</b></p></li>
+          <li><a class="shots__link" href="images/fr/personne.webp"><img src="images/fr/vignettes/personne.webp" width="800" height="500" loading="lazy" decoding="async" alt="Planning par personne : la semaine de chaque animateur, heures et soirées comprises."></a><p><b>Planning par personne</b></p></li>
+          <li><a class="shots__link" href="images/fr/horaires.webp"><img src="images/fr/vignettes/horaires.webp" width="800" height="500" loading="lazy" decoding="async" alt="Horaires des stands : l'effectif de chaque stand, jour par jour."></a><p><b>Horaires des stands</b></p></li>
+          <li><a class="shots__link" href="images/fr/regles.webp"><img src="images/fr/vignettes/regles.webp" width="800" height="500" loading="lazy" decoding="async" alt="Règles du planning : chaque règle légale, son article et son réglage."></a><p><b>Règles du planning</b></p></li>
+          <li><a class="shots__link" href="images/fr/diagnostic.webp"><img src="images/fr/vignettes/diagnostic.webp" width="800" height="500" loading="lazy" decoding="async" alt="Diagnostic : ce qui bloque, ce qui manque et ce qui est fragile, avec quoi faire."></a><p><b>Diagnostic</b></p></li>
+          <li><a class="shots__link" href="images/fr/diffuser.webp"><img src="images/fr/vignettes/diffuser.webp" width="800" height="500" loading="lazy" decoding="async" alt="Diffuser : qui a reçu quelle version, et qui a confirmé."></a><p><b>Diffuser</b></p></li>
+          <li><a class="shots__link" href="images/fr/mural.webp"><img src="images/fr/vignettes/mural.webp" width="800" height="450" loading="lazy" decoding="async" alt="Affichage TV : la salle de contrôle voit qui tient quel stand en ce moment."></a><p><b>Affichage TV</b></p></li>
       </ul>
       <div class="price">
         <p><b>Vous voulez la voir sur vos propres données&nbsp;?</b></p>
