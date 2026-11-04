@@ -41,7 +41,7 @@ npx -y wrangler@4 pages dev site --port 8788
   ouvre la page ; vient ensuite l'écran **Aujourd'hui**, dessiné et annoté de
   cinq renvois d'une ligne — c'est la pièce centrale ; puis les questions
   qu'un organisateur se pose (légal ? animateurs ? nos outils ?), chacune en
-  une phrase et un visuel ; la façon de travailler ensemble, trois questions
+  une phrase et un visuel ; la façon de travailler ensemble, cinq questions
   pliées, et l'application en images. Une section qui s'allonge est une section à
   couper.
 
@@ -99,7 +99,11 @@ résolu et publié, l'édition renommée « Festival de Combelune 2027 », puis
 l'horloge simulée (`HORLOGE_SIMULEE_AUTORISEE=true`) figée au 10 août 2027 à
 15 h. Un Mailpit reçoit le code d'accès de l'espace animateur. Les captures sont
 prises à 1440×900 (1600×900 pour la TV), les vidéos à 1280×800 (412×800 pour le
-téléphone), puis encodées en WebP et en MP4 H.264 sans piste son. Une capture
+téléphone), puis encodées en WebP et en MP4 H.264 sans piste son. La grille affiche des
+vignettes (`images/<langue>/vignettes/`, 800 px de large,
+`magick x.webp -resize 800x -quality 72 -define webp:method=6 vignettes/x.webp`) ;
+une vidéo qui change met à jour sa durée dans la légende, son poids dans le lien et
+son `VideoObject`. Une capture
 d'interface qui change ne se met pas à jour toute seule : c'est le prix de cette
 section, à payer quand un écran montré change franchement.
 
@@ -133,11 +137,16 @@ n'y a pas de build pour l'injecter) : la valeur est celle de
   160 pour la description, sinon le moteur les coupe.
 - **Aperçus** : Open Graph et `twitter:card`, avec une image par langue.
   `og:description` reprend la `meta description` mot pour mot.
-- **Données structurées** : un bloc JSON-LD par page (`Person`,
-  `SoftwareApplication`, `FAQPage`), que la CSP n'a pas à autoriser puisqu'il
+- **Données structurées** : un bloc JSON-LD par page (`Person`, `WebSite`,
+  `WebPage`, `SoftwareApplication`, `FAQPage`, `VideoObject`), que la CSP n'a pas à autoriser puisqu'il
   ne s'exécute pas. Les questions et réponses de `FAQPage` sont celles des
   `<details>` **au mot près** : une réponse qui change dans la page change là
   aussi. Pas d'`offers` : le tarif est sur devis.
+- **Recherches visées** : festivals et événements, conformité au Code du travail
+  et mineurs, bénévoles. Le calcul ne distingue pas un bénévole d'un autre
+  animateur : la page ne dit rien de plus sur leur statut.
+- **Date** : `dateModified` du `WebPage` et `lastmod` de `sitemap.xml` s'écrivent à
+  la main, à changer avec le contenu.
 - **Langues** : `canonical` sur soi-même, `hreflang` croisés, et `sitemap.xml`
   qui les répète.
 
@@ -162,7 +171,9 @@ l'hébergeur et la mesure d'audience, et qui mène aux mentions légales et à l
 politique de confidentialité de sylvain.dev, aux nouveautés (les releases) et
 aux issues ; les liens visités et les liens sortants (flèche ↗) qui se
 distinguent ; une abréviation expliquée à sa première occurrence (`<abbr
-title>`) ; des renvois d'au moins 24 px ; une feuille d'impression ; les
+title>`) ; des renvois d'au moins 24 px ; une feuille d'impression, qui déplie la FAQ ; la durée des vidéos, le format et le
+poids de leur lien de téléchargement ; des vignettes qui ne sont pas des images
+redimensionnées par le navigateur ; les
 en-têtes de sécurité de `_headers` ; `404.html`, `robots.txt` et
 `sitemap.xml`.
 

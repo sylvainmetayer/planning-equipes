@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Staff scheduling software for festivals — Planning Équipes</title>
-<meta name="description" content="Staff scheduling software for festivals and events. Your rota is ready in minutes and complies with the French Labour Code, under-18s included.">
+<meta name="description" content="Staff scheduling software for festivals and events: staff and volunteers scheduled in minutes, French Labour Code checked, under-18s included.">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1d2024" media="(prefers-color-scheme: dark)">
@@ -15,7 +15,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Planning Équipes">
 <meta property="og:title" content="Planning Équipes — schedule your teams in minutes, not weekends">
-<meta property="og:description" content="Staff scheduling software for festivals and events. Your rota is ready in minutes and complies with the French Labour Code, under-18s included.">
+<meta property="og:description" content="Staff scheduling software for festivals and events: staff and volunteers scheduled in minutes, French Labour Code checked, under-18s included.">
 <meta property="og:url" content="https://planning.sylvain.dev/en/">
 <meta property="og:locale" content="en_GB">
 <meta property="og:locale:alternate" content="fr_FR">
@@ -39,11 +39,38 @@
    ]
   },
   {
+   "@type": "WebSite",
+   "@id": "https://planning.sylvain.dev/#site",
+   "name": "Planning Équipes",
+   "url": "https://planning.sylvain.dev/",
+   "inLanguage": [
+    "fr",
+    "en"
+   ],
+   "publisher": {
+    "@id": "https://www.sylvain.dev/#me"
+   }
+  },
+  {
+   "@type": "WebPage",
+   "@id": "https://planning.sylvain.dev/en/#page",
+   "url": "https://planning.sylvain.dev/en/",
+   "name": "Staff scheduling software for festivals — Planning Équipes",
+   "inLanguage": "en",
+   "isPartOf": {
+    "@id": "https://planning.sylvain.dev/#site"
+   },
+   "about": {
+    "@id": "https://planning.sylvain.dev/#app"
+   },
+   "dateModified": "2026-11-04"
+  },
+  {
    "@type": "SoftwareApplication",
    "@id": "https://planning.sylvain.dev/en/#app",
    "name": "Planning Équipes",
    "url": "https://planning.sylvain.dev/en/",
-   "description": "Staff scheduling software for festivals and events. Your rota is ready in minutes and complies with the French Labour Code, under-18s included.",
+   "description": "Staff scheduling software for festivals and events: staff and volunteers scheduled in minutes, French Labour Code checked, under-18s included.",
    "applicationCategory": "BusinessApplication",
    "applicationSubCategory": "Staff scheduling",
    "operatingSystem": "Web",
@@ -91,8 +118,57 @@
       "@type": "Answer",
       "text": "Not if we host it for you. Everything happens in the browser, in English or French, and your staff install nothing."
      }
+    },
+    {
+     "@type": "Question",
+     "name": "How are under-18 staff handled?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Age is worked out from the date of birth, on the date of each shift. Working hours, breaks, night work, rest and public holidays then follow the articles specific to under-18s, and a shift they may not work is refused."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Can we schedule volunteers?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Yes. Your volunteer spreadsheet imports as it is, and the solver schedules volunteers like your other staff, under the same rules."
+     }
     }
    ]
+  },
+  {
+   "@type": "VideoObject",
+   "@id": "https://planning.sylvain.dev/en/#video-calcul",
+   "name": "The calculation",
+   "description": "In one minute it starts from nothing, says as soon as a plan meets the mandatory rules, then improves it. The wait is sped up.",
+   "inLanguage": "en",
+   "thumbnailUrl": "https://planning.sylvain.dev/images/en/film-calcul.webp",
+   "contentUrl": "https://planning.sylvain.dev/videos/en/calcul.mp4",
+   "uploadDate": "2026-11-04",
+   "duration": "PT24S"
+  },
+  {
+   "@type": "VideoObject",
+   "@id": "https://planning.sylvain.dev/en/#video-jourj",
+   "name": "An absence on the day",
+   "description": "You find the person and mark them absent, the empty seat appears, and the application proposes who can hold it. All that is left is to notify those affected.",
+   "inLanguage": "en",
+   "thumbnailUrl": "https://planning.sylvain.dev/images/en/film-jourj.webp",
+   "contentUrl": "https://planning.sylvain.dev/videos/en/jourj.mp4",
+   "uploadDate": "2026-11-04",
+   "duration": "PT25S"
+  },
+  {
+   "@type": "VideoObject",
+   "@id": "https://planning.sylvain.dev/en/#video-espace",
+   "name": "The staff side",
+   "description": "A code received by email opens their space on the phone. They confirm their schedule, browse it, and find their teammates and swaps.",
+   "inLanguage": "en",
+   "thumbnailUrl": "https://planning.sylvain.dev/images/en/film-espace.webp",
+   "contentUrl": "https://planning.sylvain.dev/videos/en/espace.mp4",
+   "uploadDate": "2026-11-04",
+   "duration": "PT22S"
   }
  ]
 }
@@ -139,7 +215,7 @@
           <h1 id="title">Schedule your teams in minutes, <em>not weekends.</em></h1>
         </div>
         <div>
-          <p class="lede">You enter the stands, the shifts and who is available. The software builds the rota and checks the French Labour Code, including the rules for under-18s, every time something changes.</p>
+          <p class="lede">You enter the stands, the shifts and when your staff and volunteers are available. The software builds the rota and checks the French Labour Code, including the rules for under-18s, every time something changes.</p>
           <p class="acts">
             <a class="btn btn--primary" href="#images">See the application</a>
             <a class="btn btn--quiet" href="#the-day">See the event day</a>
@@ -240,7 +316,7 @@
     <div class="wrap q__in">
       <div class="q__say c0">
         <span class="n" aria-hidden="true">1</span>
-        <h2 id="legal-t">Is the rota legal?</h2>
+        <h2 id="legal-t">Does the rota comply with the French Labour Code?</h2>
         <p><b>Yes.</b> The solver applies ten articles of the French Labour Code and cannot break them. When it refuses an assignment, it cites the article.</p>
       </div>
       <div class="rules">
@@ -265,7 +341,7 @@
     <div class="wrap q__in">
       <div class="q__say c1">
         <span class="n" aria-hidden="true">2</span>
-        <h2 id="staff-t">What about your staff?</h2>
+        <h2 id="staff-t">What about your staff and volunteers?</h2>
         <p>Everyone gets a link and a code by e-mail and sees their schedule on their phone. <b>Nothing to install.</b></p>
         <ul class="chips" aria-label="For your staff">
           <li>Mobile page</li>
@@ -372,6 +448,14 @@
           <summary>Do we need someone technical?</summary>
           <p>Not if we host it for you. Everything happens in the browser, in English or French, and your staff install nothing.</p>
         </details>
+        <details>
+          <summary>How are under-18 staff handled?</summary>
+          <p>Age is worked out from the date of birth, on the date of each shift. Working hours, breaks, night work, rest and public holidays then follow the articles specific to under-18s, and a shift they may not work is refused.</p>
+        </details>
+        <details>
+          <summary>Can we schedule volunteers?</summary>
+          <p>Yes. Your volunteer spreadsheet imports as it is, and the solver schedules volunteers like your other staff, under the same rules.</p>
+        </details>
       </div>
     </div>
   </section>
@@ -380,43 +464,43 @@
     <div class="wrap shots">
       <div class="head">
         <p class="kicker">The application on screen · fictional data</p>
-        <h2 id="images-t">What you will see on screen.</h2>
+        <h2 id="images-t">The software on screen: what you will see.</h2>
         <p class="lede">Three silent walkthroughs, then the screens one by one. The clock is stopped mid-festival, which is why the time shows in red.</p>
       </div>
       <div class="shots__films">
           <figure class="shots__film">
             <video controls preload="none" playsinline width="1280" height="800" poster="../images/en/film-calcul.webp" aria-label="The calculation">
               <source src="../videos/en/calcul.mp4" type="video/mp4">
-              <a href="../videos/en/calcul.mp4">Download the video</a>
+              <a href="../videos/en/calcul.mp4">Download the video (MP4, 595 kB)</a>
             </video>
-            <figcaption><b>The calculation</b> In one minute it starts from nothing, says as soon as a plan meets the mandatory rules, then improves it. The wait is sped up.</figcaption>
+            <figcaption><b>The calculation · 24 s</b> In one minute it starts from nothing, says as soon as a plan meets the mandatory rules, then improves it. The wait is sped up.</figcaption>
           </figure>
           <figure class="shots__film">
             <video controls preload="none" playsinline width="1280" height="800" poster="../images/en/film-jourj.webp" aria-label="An absence on the day">
               <source src="../videos/en/jourj.mp4" type="video/mp4">
-              <a href="../videos/en/jourj.mp4">Download the video</a>
+              <a href="../videos/en/jourj.mp4">Download the video (MP4, 382 kB)</a>
             </video>
-            <figcaption><b>An absence on the day</b> You find the person and mark them absent, the empty seat appears, and the application proposes who can hold it. All that is left is to notify those affected.</figcaption>
+            <figcaption><b>An absence on the day · 25 s</b> You find the person and mark them absent, the empty seat appears, and the application proposes who can hold it. All that is left is to notify those affected.</figcaption>
           </figure>
           <figure class="shots__film shots__film--phone">
             <video controls preload="none" playsinline width="412" height="800" poster="../images/en/film-espace.webp" aria-label="The staff side">
               <source src="../videos/en/espace.mp4" type="video/mp4">
-              <a href="../videos/en/espace.mp4">Download the video</a>
+              <a href="../videos/en/espace.mp4">Download the video (MP4, 192 kB)</a>
             </video>
-            <figcaption><b>The staff side</b> A code received by email opens their space on the phone. They confirm their schedule, browse it, and find their teammates and swaps.</figcaption>
+            <figcaption><b>The staff side · 22 s</b> A code received by email opens their space on the phone. They confirm their schedule, browse it, and find their teammates and swaps.</figcaption>
           </figure>
       </div>
       <h3>The screens, one by one</h3>
       <ul class="shots__grid" aria-label="Screenshots, each one links to the full-size image">
-          <li><a class="shots__link" href="../images/en/accueil.webp"><img src="../images/en/accueil.webp" width="1440" height="900" loading="lazy" alt="Edition status: what is left to do today, step by step."></a><p><b>Edition status</b></p></li>
-          <li><a class="shots__link" href="../images/en/planning.webp"><img src="../images/en/planning.webp" width="1440" height="900" loading="lazy" alt="Schedule by day: who holds which stand, timeslot by timeslot."></a><p><b>Schedule by day</b></p></li>
-          <li><a class="shots__link" href="../images/en/rail.webp"><img src="../images/en/rail.webp" width="1440" height="900" loading="lazy" alt="Rail view: each person's day on a time axis."></a><p><b>Rail view</b></p></li>
-          <li><a class="shots__link" href="../images/en/personne.webp"><img src="../images/en/personne.webp" width="1440" height="900" loading="lazy" alt="Schedule by person: each staff member's week, hours and evenings included."></a><p><b>Schedule by person</b></p></li>
-          <li><a class="shots__link" href="../images/en/horaires.webp"><img src="../images/en/horaires.webp" width="1440" height="900" loading="lazy" alt="Stand opening hours: the staffing of each stand, day by day."></a><p><b>Stand opening hours</b></p></li>
-          <li><a class="shots__link" href="../images/en/regles.webp"><img src="../images/en/regles.webp" width="1440" height="900" loading="lazy" alt="Schedule rules: each legal rule, its article and its setting."></a><p><b>Schedule rules</b></p></li>
-          <li><a class="shots__link" href="../images/en/diagnostic.webp"><img src="../images/en/diagnostic.webp" width="1440" height="900" loading="lazy" alt="Diagnostic: what blocks, what is missing and what is fragile, with what to do about it."></a><p><b>Diagnostic</b></p></li>
-          <li><a class="shots__link" href="../images/en/diffuser.webp"><img src="../images/en/diffuser.webp" width="1440" height="900" loading="lazy" alt="Send out: who received which version, and who confirmed."></a><p><b>Send out</b></p></li>
-          <li><a class="shots__link" href="../images/en/mural.webp"><img src="../images/en/mural.webp" width="1600" height="900" loading="lazy" alt="TV display: the control room sees who holds which stand right now."></a><p><b>TV display</b></p></li>
+          <li><a class="shots__link" href="../images/en/accueil.webp"><img src="../images/en/vignettes/accueil.webp" width="800" height="500" loading="lazy" decoding="async" alt="Edition status: what is left to do today, step by step."></a><p><b>Edition status</b></p></li>
+          <li><a class="shots__link" href="../images/en/planning.webp"><img src="../images/en/vignettes/planning.webp" width="800" height="500" loading="lazy" decoding="async" alt="Schedule by day: who holds which stand, timeslot by timeslot."></a><p><b>Schedule by day</b></p></li>
+          <li><a class="shots__link" href="../images/en/rail.webp"><img src="../images/en/vignettes/rail.webp" width="800" height="500" loading="lazy" decoding="async" alt="Rail view: each person's day on a time axis."></a><p><b>Rail view</b></p></li>
+          <li><a class="shots__link" href="../images/en/personne.webp"><img src="../images/en/vignettes/personne.webp" width="800" height="500" loading="lazy" decoding="async" alt="Schedule by person: each staff member's week, hours and evenings included."></a><p><b>Schedule by person</b></p></li>
+          <li><a class="shots__link" href="../images/en/horaires.webp"><img src="../images/en/vignettes/horaires.webp" width="800" height="500" loading="lazy" decoding="async" alt="Stand opening hours: the staffing of each stand, day by day."></a><p><b>Stand opening hours</b></p></li>
+          <li><a class="shots__link" href="../images/en/regles.webp"><img src="../images/en/vignettes/regles.webp" width="800" height="500" loading="lazy" decoding="async" alt="Schedule rules: each legal rule, its article and its setting."></a><p><b>Schedule rules</b></p></li>
+          <li><a class="shots__link" href="../images/en/diagnostic.webp"><img src="../images/en/vignettes/diagnostic.webp" width="800" height="500" loading="lazy" decoding="async" alt="Diagnostic: what blocks, what is missing and what is fragile, with what to do about it."></a><p><b>Diagnostic</b></p></li>
+          <li><a class="shots__link" href="../images/en/diffuser.webp"><img src="../images/en/vignettes/diffuser.webp" width="800" height="500" loading="lazy" decoding="async" alt="Send out: who received which version, and who confirmed."></a><p><b>Send out</b></p></li>
+          <li><a class="shots__link" href="../images/en/mural.webp"><img src="../images/en/vignettes/mural.webp" width="800" height="450" loading="lazy" decoding="async" alt="TV display: the control room sees who holds which stand right now."></a><p><b>TV display</b></p></li>
       </ul>
       <div class="price">
         <p><b>Want to see it on your own data?</b></p>

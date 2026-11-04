@@ -428,4 +428,6 @@ details p { padding: 0 0 .8rem; color: var(--muted); font-size: .93rem; }
   .tt__scroll { overflow: visible; }
   a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .8em; }
   section { break-inside: avoid-page; }
+  /* A folded answer would not print at all. */
+  details::details-content { display: block; content-visibility: visible; }
 }

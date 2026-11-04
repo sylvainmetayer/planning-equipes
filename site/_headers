@@ -11,6 +11,13 @@
   X-XSS-Protection: 1; mode=block
   Permissions-Policy: camera=(), microphone=(), geolocation=()
 
+# Captures and videos weigh the most and rarely change; no hash in their names,
+# so a replaced one can stay stale for a day.
+/images/*
+  Cache-Control: public, max-age=86400
+/videos/*
+  Cache-Control: public, max-age=86400
+
 # Repository files published along with the folder: not to be indexed.
 /README.md
   X-Robots-Tag: noindex
