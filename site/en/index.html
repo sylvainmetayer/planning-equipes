@@ -123,7 +123,7 @@
         <li><a href="#together">Pricing</a></li>
         <li><a href="#questions">Questions</a></li>
         <li><a class="lang" href="../" hreflang="fr" lang="fr"><span aria-hidden="true">FR</span><span class="vh">Version française</span></a></li>
-        <li><a class="nav-cta" href="#demo"><span class="cta-l">Try the demo</span><span class="cta-s">Demo</span></a></li>
+        <li><a class="nav-cta" href="#images"><span class="cta-l">See it on screen</span><span class="cta-s">Screens</span></a></li>
       </ul>
     </nav>
   </div>
@@ -141,10 +141,9 @@
         <div>
           <p class="lede">You enter the stands, the shifts and who is available. The software builds the rota and checks the French Labour Code, including the rules for under-18s, every time something changes.</p>
           <p class="acts">
-            <a class="btn btn--primary" href="https://exemple-planning.sylvain.dev">Try the demo</a>
+            <a class="btn btn--primary" href="#images">See the application</a>
             <a class="btn btn--quiet" href="#the-day">See the event day</a>
           </p>
-          <p class="hero__creds">Username <code>admin</code>, password <code>demo</code> · fictional data</p>
         </div>
       </div>
 
@@ -377,28 +376,51 @@
     </div>
   </section>
 
-  <section class="alt" id="demo" aria-labelledby="demo-t">
-    <div class="wrap">
-      <div class="demo__in">
-        <div>
-          <p class="kicker">Public demo · fictional data</p>
-          <h2 id="demo-t">Replay a festival day, nothing to install.</h2>
-          <p>Its clock is stopped mid-festival, so the Today screen and the control-room TV have something to show.</p>
-          <p class="acts"><a class="btn btn--primary" href="https://exemple-planning.sylvain.dev">Open the demo</a></p>
-        </div>
-        <div class="demo__card">
-          <dl class="creds">
-            <div><dt>Address</dt><dd><a href="https://exemple-planning.sylvain.dev"><code>exemple-planning.sylvain.dev</code></a></dd></div>
-            <div><dt>Username</dt><dd><code>admin</code></dd></div>
-            <div><dt>Password</dt><dd><code>demo</code></dd></div>
-            <div><dt>E-mails</dt><dd>the ones the app sends, readable at <a href="https://exemple-planning.sylvain.dev/mail"><code>/mail</code></a></dd></div>
-          </dl>
-          <ul class="conds" aria-label="Demo conditions">
-            <li>Reset every night</li>
-            <li>Solver capped at 60&nbsp;s</li>
-            <li>12 solves per hour</li>
-          </ul>
-        </div>
+  <section class="alt" id="images" aria-labelledby="images-t">
+    <div class="wrap shots">
+      <div class="head">
+        <p class="kicker">The application on screen · fictional data</p>
+        <h2 id="images-t">What you will see on screen.</h2>
+        <p class="lede">Three silent walkthroughs, then the screens one by one. The clock is stopped mid-festival, which is why the time shows in red.</p>
+      </div>
+      <div class="shots__films">
+          <figure class="shots__film">
+            <video controls preload="none" playsinline width="1280" height="800" poster="../images/en/film-calcul.webp" aria-label="The calculation">
+              <source src="../videos/en/calcul.mp4" type="video/mp4">
+              <a href="../videos/en/calcul.mp4">Download the video</a>
+            </video>
+            <figcaption><b>The calculation</b> In one minute it starts from nothing, says as soon as a plan meets the mandatory rules, then improves it. The wait is sped up.</figcaption>
+          </figure>
+          <figure class="shots__film">
+            <video controls preload="none" playsinline width="1280" height="800" poster="../images/en/film-jourj.webp" aria-label="An absence on the day">
+              <source src="../videos/en/jourj.mp4" type="video/mp4">
+              <a href="../videos/en/jourj.mp4">Download the video</a>
+            </video>
+            <figcaption><b>An absence on the day</b> You find the person and mark them absent, the empty seat appears, and the application proposes who can hold it. All that is left is to notify those affected.</figcaption>
+          </figure>
+          <figure class="shots__film shots__film--phone">
+            <video controls preload="none" playsinline width="412" height="800" poster="../images/en/film-espace.webp" aria-label="The staff side">
+              <source src="../videos/en/espace.mp4" type="video/mp4">
+              <a href="../videos/en/espace.mp4">Download the video</a>
+            </video>
+            <figcaption><b>The staff side</b> A code received by email opens their space on the phone. They confirm their schedule, browse it, and find their teammates and swaps.</figcaption>
+          </figure>
+      </div>
+      <h3>The screens, one by one</h3>
+      <ul class="shots__grid" aria-label="Screenshots, each one links to the full-size image">
+          <li><a class="shots__link" href="../images/en/accueil.webp"><img src="../images/en/accueil.webp" width="1440" height="900" loading="lazy" alt="Edition status: what is left to do today, step by step."></a><p><b>Edition status</b></p></li>
+          <li><a class="shots__link" href="../images/en/planning.webp"><img src="../images/en/planning.webp" width="1440" height="900" loading="lazy" alt="Schedule by day: who holds which stand, timeslot by timeslot."></a><p><b>Schedule by day</b></p></li>
+          <li><a class="shots__link" href="../images/en/rail.webp"><img src="../images/en/rail.webp" width="1440" height="900" loading="lazy" alt="Rail view: each person's day on a time axis."></a><p><b>Rail view</b></p></li>
+          <li><a class="shots__link" href="../images/en/personne.webp"><img src="../images/en/personne.webp" width="1440" height="900" loading="lazy" alt="Schedule by person: each staff member's week, hours and evenings included."></a><p><b>Schedule by person</b></p></li>
+          <li><a class="shots__link" href="../images/en/horaires.webp"><img src="../images/en/horaires.webp" width="1440" height="900" loading="lazy" alt="Stand opening hours: the staffing of each stand, day by day."></a><p><b>Stand opening hours</b></p></li>
+          <li><a class="shots__link" href="../images/en/regles.webp"><img src="../images/en/regles.webp" width="1440" height="900" loading="lazy" alt="Schedule rules: each legal rule, its article and its setting."></a><p><b>Schedule rules</b></p></li>
+          <li><a class="shots__link" href="../images/en/diagnostic.webp"><img src="../images/en/diagnostic.webp" width="1440" height="900" loading="lazy" alt="Diagnostic: what blocks, what is missing and what is fragile, with what to do about it."></a><p><b>Diagnostic</b></p></li>
+          <li><a class="shots__link" href="../images/en/diffuser.webp"><img src="../images/en/diffuser.webp" width="1440" height="900" loading="lazy" alt="Send out: who received which version, and who confirmed."></a><p><b>Send out</b></p></li>
+          <li><a class="shots__link" href="../images/en/mural.webp"><img src="../images/en/mural.webp" width="1600" height="900" loading="lazy" alt="TV display: the control room sees who holds which stand right now."></a><p><b>TV display</b></p></li>
+      </ul>
+      <div class="price">
+        <p><b>Want to see it on your own data?</b></p>
+        <p class="acts"><a class="btn btn--primary mail" href="mailto:planning@sylvain.dev">Write to planning@sylvain.dev</a></p>
       </div>
     </div>
   </section>

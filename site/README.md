@@ -13,6 +13,7 @@ Une page statique en deux langues, sans dépendance ni build :
 | `wrangler.toml` | la configuration du projet Cloudflare Pages (`pages_build_output_dir = "."`) |
 | `robots.txt`, `sitemap.xml` | les instructions aux robots et la liste des deux pages |
 | `og-fr.png`, `og-en.png` | l'image d'aperçu des réseaux sociaux (1200×630), une par langue |
+| `images/{fr,en}/`, `videos/{fr,en}/` | les captures et les vidéos de l'application, une série par langue |
 
 Pour la relire, ouvrez `index.html` dans un navigateur — il n'y a rien à
 installer. Le sélecteur de langue pointe sur des dossiers (`en/`, `../`) :
@@ -33,15 +34,15 @@ npx -y wrangler@4 pages dev site --port 8788
 - **Dans le prolongement de l'application.** La palette est celle de l'appli :
   le bleu azur de son thème Material, et les huit teintes des typologies de jeu
   (`src/main/webui/src/styles/typologie-colors.css`), en aplat pastel avec
-  leur encre lisible, redéfinies pour le thème sombre. Un prospect qui ouvre
-  la démonstration reconnaît ce qu'il vient de voir. Les couleurs ne sont
+  leur encre lisible, redéfinies pour le thème sombre. Un prospect qui passe
+  des illustrations aux captures reconnaît ce qu'il vient de voir. Les couleurs ne sont
   écrites qu'une fois, en variables sur `:root`.
 - **Courte, et menée par les questions.** La grille d'un samedi à Combelune
   ouvre la page ; vient ensuite l'écran **Aujourd'hui**, dessiné et annoté de
   cinq renvois d'une ligne — c'est la pièce centrale ; puis les questions
   qu'un organisateur se pose (légal ? animateurs ? nos outils ?), chacune en
   une phrase et un visuel ; la façon de travailler ensemble, trois questions
-  pliées, et la démonstration. Une section qui s'allonge est une section à
+  pliées, et l'application en images. Une section qui s'allonge est une section à
   couper.
 
 ## Ce que la page s'interdit
@@ -51,9 +52,11 @@ npx -y wrangler@4 pages dev site --port 8788
   CDN. La seule exception est le beacon Cloudflare Web Analytics, sans cookie
   ni identifiant persistant, que la CSP de `_headers` est seule à autoriser ;
   le pied de page le dit. L'application, elle, n'en a pas et n'en aura pas.
-- **Aucune capture d'écran** de l'application : une capture exposerait des
-  données d'exploitation. Les écrans sont redessinés en HTML et en SVG inline,
-  qui suivent le thème clair ou sombre du visiteur (`prefers-color-scheme`).
+- **Aucune capture qui ne soit pas fictive.** Les illustrations du haut de page
+  restent redessinées en HTML et en SVG inline, qui suivent le thème du visiteur.
+  Les captures de la section « En images » viennent de données inventées, et
+  rien d'autre n'y entre : pas de données d'exploitation, pas de page de mentions
+  légales d'une instance, pas de carte (son fond montre un lieu réel).
 - **Aucun logo ni nom de client.** L'exemple qui court sur toute la page est
   le **Festival de Combelune**, une commune inventée, avec des lieux et des
   prénoms inventés. Ne jamais le remplacer par un festival réel, même pour
@@ -82,16 +85,23 @@ Code, art. L3131-1 ». Les deux pages se déclarent l'une l'autre
 (`<link rel="alternate" hreflang>`) et appellent `style.css` et `favicon.svg`,
 la page anglaise par `../`.
 
-## La démonstration
+## Les captures et les vidéos
 
-L'adresse de l'instance de démonstration et ses identifiants sont donnés en
-clair, à trois endroits de chaque page : le bouton de la barre du haut (qui
-mène au bloc d'accès), le bouton et la ligne d'identifiants du haut de page,
-et le bloc d'accès complet en bas. Ce bloc dit tout : l'adresse, `admin` /
-`demo`, les courriels de l'application lisibles sur `/mail`, des données
-fictives remises à zéro chaque nuit, une horloge arrêtée sur un jour de
-festival, un calcul plafonné à 60 secondes et à 12 par heure. Si l'un de ces
-faits change, ce sont les deux pages qu'il faut mettre à jour.
+La vitrine ne renvoie plus vers une instance de démonstration : la section
+« En images » montre trois parcours filmés, sans le son, et neuf écrans. Chaque
+langue a sa série, tournée avec l'interface dans cette langue ; les noms de
+stands restent en français, ce sont des données. Une vidéo n'a pas de lecture
+automatique, et sa légende dit ce qu'elle montre.
+
+Pour les retourner : l'image Docker de la version voulue, le scénario
+`gamme-16-14j-25stands-72animateurs-mineurs-ferie-nocturnes.yaml` importé,
+résolu et publié, l'édition renommée « Festival de Combelune 2027 », puis
+l'horloge simulée (`HORLOGE_SIMULEE_AUTORISEE=true`) figée au 10 août 2027 à
+15 h. Un Mailpit reçoit le code d'accès de l'espace animateur. Les captures sont
+prises à 1440×900 (1600×900 pour la TV), les vidéos à 1280×800 (412×800 pour le
+téléphone), puis encodées en WebP et en MP4 H.264 sans piste son. Une capture
+d'interface qui change ne se met pas à jour toute seule : c'est le prix de cette
+section, à payer quand un écran montré change franchement.
 
 ## Marque
 
