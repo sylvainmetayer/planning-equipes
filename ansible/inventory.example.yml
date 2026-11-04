@@ -1,0 +1,11 @@
+# Inventaire d'exemple. Copiez-le en `inventory.yml` (ignoré par git) et
+# ajustez.
+#
+# Le playbook ne se connecte PAS en SSH à Keycloak : il parle à son API
+# d'administration par HTTPS. `localhost` est donc le bon hôte — la machine
+# qui lance Ansible — et `keycloak_url` désigne l'instance à configurer.
+all:
+  hosts:
+    localhost:
+      ansible_connection: local
+      ansible_python_interpreter: "{{ ansible_playbook_python }}"

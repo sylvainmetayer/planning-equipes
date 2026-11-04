@@ -319,6 +319,7 @@ jobs:
       # pile compris ; un runner lent a de la marge, un blocage n'en a pas.
       timeout-minutes: 25
       app-artifact: quarkus-app
+      authentification: keycloak-secours
 
   # Un regard de l'extérieur sur l'application démarrée : OWASP ZAP en mode
   # *baseline* parcourt ce qu'un visiteur sans compte atteint et lit chaque
@@ -380,6 +381,9 @@ jobs:
 
       # Le profil de production, comme un déploiement : c'est lui que ZAP doit
       # voir. Les secrets sont générés ici, aucun n'est écrit dans ce fichier.
+      # Pas de Keycloak sur le runner : l'application démarre avec lui éteint
+      # et la porte de secours ouverte, comme le smoke test de docker-ghcr.yml —
+      # la production refuse une instance qui n'a ni l'un ni l'autre (ADR 0077).
       - name: Start the application
         env:
           DB_URL: jdbc:postgresql://localhost:5432/festival
@@ -387,9 +391,14 @@ jobs:
           LEGAL_DEMO_INSTANCE: 'true'
           MAIL_MOCK: 'true'
           PUBLIC_URL: http://localhost:8080
+          OIDC_ENABLED: 'false'
+          OIDC_PROVISIONING_ENABLED: 'false'
+          ADMIN_SECOURS_ENABLED: 'true'
+          OIDC_AUTH_SERVER_URL: http://localhost:8081/realms/planning
         run: |
           DB_PASSWORD="$(openssl rand -hex 16)" \
           ADMIN_PASSWORD="$(openssl rand -hex 16)" \
+          OIDC_CLIENT_SECRET="$(openssl rand -hex 32)" \
           QUARKUS_HTTP_AUTH_SESSION_ENCRYPTION_KEY="$(openssl rand -hex 16)" \
             java -jar target/quarkus-app/quarkus-run.jar > app.log 2>&1 &
           for _ in $(seq 1 60); do

@@ -5,15 +5,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 
+import dev.sylvain.planning.OidcJetons;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.compte.CompteService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
-import io.quarkus.mailer.Mail;
-import io.quarkus.mailer.MockMailbox;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
@@ -24,17 +24,16 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Passwordless authentication of the espace animateur: the link is no longer
- * enough, a code sent to the address on the record opens a lasting session.
- * Exercised end to end — the code is read from the mock mailbox, the way an
- * animateur would read it from their own.
+ * The espace animateur behind Keycloak (ADR 0077): the link alone is not
+ * enough, a Keycloak session carrying the {@code animateur} role and the
+ * <b>verified</b> address of the fiche the link designates opens it. The
+ * tokens are signed by the in-memory OIDC server, so the guard under test is
+ * the production one.
  */
 @QuarkusTest
 class EspaceAccesTest {
@@ -50,14 +49,13 @@ class EspaceAccesTest {
     ReferenceDataService referenceData;
 
     @Inject
-    MockMailbox mailbox;
+    CompteService comptes;
 
     @Inject
     DataSource dataSource;
 
     @BeforeEach
     void seed() {
-        mailbox.clear();
         Animateur alice = new Animateur("ACCES-A", "Alice", "Martin", LocalDate.of(1990, 1, 1), false);
         Animateur bruno = new Animateur("ACCES-B", "Bruno", "Petit", LocalDate.of(1992, 2, 2), false);
         Stand stand = new Stand("ACCES-S1", "Stand accès", Set.of(), 1, 1, false);
@@ -67,6 +65,16 @@ class EspaceAccesTest {
         persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno), List.of(poste)));
         donnerEmail("ACCES-A", EMAIL_ALICE);
         donnerEmail("ACCES-B", null);
+        // The account outlives clearDatabase(), bound to the subject of
+        // whichever run signed it in first. Detached the way an administrator
+        // would (deactivate, reactivate), so every test starts from a sign-in
+        // that may bind it.
+        comptes.list().stream()
+                .filter(compte -> compte.email().equals(EMAIL_ALICE))
+                .forEach(compte -> {
+                    comptes.deactivate(compte.id());
+                    comptes.reactivate(compte.id());
+                });
     }
 
     /** The whole espace — downloads included — answers 401 without a session. */
@@ -78,7 +86,7 @@ class EspaceAccesTest {
                 .get("/api/espace-animateur/" + token)
                 .then()
                 .statusCode(401)
-                .body("message", containsString("code d'accès"));
+                .body("message", containsString("connectez-vous"));
         given().header("X-Edition-Id", "E1")
                 .when()
                 .get("/api/espace-animateur/" + token + "/demandes")
@@ -103,31 +111,44 @@ class EspaceAccesTest {
     }
 
     @Test
-    void leCodeRecuParEmailOuvreUneSessionDurable() {
+    void laSessionKeycloakOuvreLEspaceDeSaPropreFiche() {
         String token = tokenOf("ACCES-A");
-        String session = EspaceSessions.open(mailbox, token, EMAIL_ALICE);
+        String session = EspaceSessions.open(EMAIL_ALICE);
 
         given().header("X-Edition-Id", "E1")
-                .cookie("planning-espace", session)
+                .header(EspaceSessions.EN_TETE, session)
                 .when()
                 .get("/api/espace-animateur/" + token)
                 .then()
                 .statusCode(200)
                 .body("animateurId", equalTo("ACCES-A"));
         given().header("X-Edition-Id", "E1")
-                .cookie("planning-espace", session)
+                .header(EspaceSessions.EN_TETE, session)
                 .when()
                 .get("/api/espace-animateur/" + token + "/planning.pdf")
                 .then()
                 .statusCode(200);
     }
 
-    /** The session is bound to ONE animateur: it does not open a colleague's espace. */
+    /** The realm may spell the address differently: the comparison ignores case and blanks. */
+    @Test
+    void laCasseDeLAdresseNeComptePas() {
+        given().header(EspaceSessions.EN_TETE, EspaceSessions.open("Acces-Alice@Example.org"))
+                .when()
+                .get("/api/espace-animateur/" + tokenOf("ACCES-A"))
+                .then()
+                .statusCode(200);
+    }
+
+    /**
+     * The case the address match exists for: a colleague's link, picked up
+     * from a printed planning, opened by someone who <em>is</em> correctly
+     * signed in. Authentication is not authorisation.
+     */
     @Test
     void laSessionDUnAnimateurNOuvrePasLEspaceDUnAutre() {
-        String session = EspaceSessions.open(mailbox, tokenOf("ACCES-A"), EMAIL_ALICE);
         given().header("X-Edition-Id", "E1")
-                .cookie("planning-espace", session)
+                .header(EspaceSessions.EN_TETE, EspaceSessions.open(EMAIL_ALICE))
                 .when()
                 .get("/api/espace-animateur/" + tokenOf("ACCES-B"))
                 .then()
@@ -135,90 +156,86 @@ class EspaceAccesTest {
     }
 
     /**
-     * The session cookie is worth 30 days: on an HTTPS visit it must carry
-     * {@code Secure}, otherwise it would also leave in clear on an
-     * {@code http://} request to the same host. Behind a proxy terminating TLS
-     * the origin sees plain http: {@code X-Forwarded-Proto} is what tells the
-     * scheme of the real visit.
+     * An address the identity provider never confirmed is an address anyone
+     * able to create an account could have typed. The role IS carried and the
+     * address IS the fiche's: only {@code email_verified: false} is wrong.
      */
     @Test
-    void leCookieDeSessionPorteSecureQuandLaVisiteEstEnHttps() {
-        String token = tokenOf("ACCES-A");
-        String setCookie = given().header("X-Edition-Id", "E1")
-                .contentType(ContentType.JSON)
-                .header("X-Forwarded-Proto", "https")
-                .body("{\"code\":\"" + codeEnvoye(token) + "\"}")
+    void uneAdresseNonVerifieeNOuvreRien() {
+        String jeton = OidcJetons.jeton("imposteur", List.of("user", "animateur"), "planning-app", EMAIL_ALICE, false);
+        given().header(EspaceSessions.EN_TETE, "Bearer " + jeton)
                 .when()
-                .post("/api/espace-animateur/" + token + "/session")
+                .get("/api/espace-animateur/" + tokenOf("ACCES-A"))
                 .then()
-                .statusCode(204)
-                .extract()
-                .header("Set-Cookie");
-        assertThat(setCookie).contains("HttpOnly").contains("SameSite=Strict").contains("Secure");
+                .statusCode(401);
     }
 
-    /** On the local http stack the flag is absent — otherwise the browser would drop the cookie. */
+    /**
+     * {@code user} is the role Keycloak hands every account: being signed in is
+     * not being an animateur, so the next role added to the realm arrives with
+     * no access rather than with this one.
+     */
     @Test
-    void leCookieDeSessionResteUtilisableSurUneVisiteEnClair() {
-        String token = tokenOf("ACCES-A");
-        String setCookie = given().header("X-Edition-Id", "E1")
-                .contentType(ContentType.JSON)
-                .body("{\"code\":\"" + codeEnvoye(token) + "\"}")
+    void leRoleOrdinaireUserNOuvrePasLEspace() {
+        String jeton = OidcJetons.jeton(EMAIL_ALICE, List.of("user"), "planning-app", EMAIL_ALICE, true);
+        given().header(EspaceSessions.EN_TETE, "Bearer " + jeton)
                 .when()
-                .post("/api/espace-animateur/" + token + "/session")
+                .get("/api/espace-animateur/" + tokenOf("ACCES-A"))
                 .then()
-                .statusCode(204)
-                .extract()
-                .header("Set-Cookie");
-        assertThat(setCookie).doesNotContain("Secure");
+                .statusCode(401);
     }
 
+    /** Deactivating the account in the application closes the espace, whatever the realm says. */
     @Test
-    void sansAdresseEmailAucunCodeNEstPossible() {
+    void unCompteDesactiveNOuvrePlusLEspace() {
+        String token = tokenOf("ACCES-A");
+        String session = EspaceSessions.open(EMAIL_ALICE);
         given().header("X-Edition-Id", "E1")
-                .contentType(ContentType.JSON)
+                .header(EspaceSessions.EN_TETE, session)
                 .when()
-                .post("/api/espace-animateur/" + tokenOf("ACCES-B") + "/code")
+                .get("/api/espace-animateur/" + token)
                 .then()
-                .statusCode(400)
-                .body("message", containsString("Aucune adresse e-mail"));
+                .statusCode(200);
+        String compteId = comptes.list().stream()
+                .filter(compte -> compte.email().equals(EMAIL_ALICE))
+                .findFirst()
+                .orElseThrow()
+                .id();
+        comptes.deactivate(compteId);
+        try {
+            given().header(EspaceSessions.EN_TETE, session)
+                    .when()
+                    .get("/api/espace-animateur/" + token)
+                    .then()
+                    .statusCode(401);
+        } finally {
+            comptes.reactivate(compteId);
+        }
     }
 
+    /** The code routes are gone with the code: nothing is left to ask for one. */
     @Test
-    void unMauvaisCodeEpuiseSesTentativesPuisExigeUnNouveauCode() {
+    void lesRoutesDuCodeEMailNExistentPlus() {
         String token = tokenOf("ACCES-A");
         given().header("X-Edition-Id", "E1")
                 .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + token + "/code")
                 .then()
-                .statusCode(200)
-                .body("emailMasque", equalTo("a•••@example.org"));
-
-        for (int tentative = 0; tentative < 5; tentative++) {
-            given().header("X-Edition-Id", "E1")
-                    .contentType(ContentType.JSON)
-                    .body("{\"code\":\"000000\"}")
-                    .when()
-                    .post("/api/espace-animateur/" + token + "/session")
-                    .then()
-                    .statusCode(400)
-                    .body("message", containsString("Code incorrect"));
-        }
+                .statusCode(404);
         given().header("X-Edition-Id", "E1")
                 .contentType(ContentType.JSON)
-                .body("{\"code\":\"000000\"}")
+                .body("{\"code\":\"123456\"}")
                 .when()
                 .post("/api/espace-animateur/" + token + "/session")
                 .then()
-                .statusCode(400)
-                .body("message", containsString("nouveau code"));
+                .statusCode(404);
     }
 
     /**
-     * A download refused for want of the e-mail code writes nothing: it is a
-     * free read anyone holding — or guessing at — a link can repeat, and a
-     * line per attempt would hand the table to them.
+     * A download refused for want of a session writes nothing: it is a free
+     * read anyone holding — or guessing at — a link can repeat, and a line per
+     * attempt would hand the table to them.
      */
     @Test
     void aDownloadRefusedWithoutSessionWritesNothing() throws Exception {
@@ -234,15 +251,15 @@ class EspaceAccesTest {
         assertThat(journalLines("TELECHARGEMENT_ESPACE_PDF")).isEmpty();
     }
 
-    /** Behind a live session the download is the animateur's own, and says so. */
+    /** Behind the Keycloak session the download is the animateur's own, and says so. */
     @Test
-    void aDownloadWithAValidSessionIsRecordedUnderTheAnimateur() throws Exception {
+    void aDownloadWithAKeycloakSessionIsRecordedUnderTheAnimateur() throws Exception {
         String token = tokenOf("ACCES-A");
-        String session = EspaceSessions.open(mailbox, token, EMAIL_ALICE);
+        String session = EspaceSessions.open(EMAIL_ALICE);
         clearJournal("TELECHARGEMENT_ESPACE_PDF");
 
         given().header("X-Edition-Id", "E1")
-                .cookie("planning-espace", session)
+                .header(EspaceSessions.EN_TETE, session)
                 .when()
                 .get("/api/espace-animateur/" + token + "/planning.pdf")
                 .then()
@@ -253,62 +270,12 @@ class EspaceAccesTest {
                 .isEqualTo(new JournalLine("ANIMATEUR", "ACCES-A", "ACCES-A", 200));
     }
 
-    /**
-     * Holding the link is not proof of being its animateur, whatever status
-     * the refusal carries: a wrong code is a 400, not a 401, and is filed as
-     * ANONYME all the same — the animateur named as the target only.
-     */
-    @Test
-    void aWrongCodeIsNotPinnedOnTheAnimateur() throws Exception {
-        String token = tokenOf("ACCES-A");
-        given().header("X-Edition-Id", "E1")
-                .contentType(ContentType.JSON)
-                .when()
-                .post("/api/espace-animateur/" + token + "/code")
-                .then()
-                .statusCode(200);
-        clearJournal("SESSION_ESPACE_OUVERTE");
-
-        given().header("X-Edition-Id", "E1")
-                .contentType(ContentType.JSON)
-                .body("{\"code\":\"000000\"}")
-                .when()
-                .post("/api/espace-animateur/" + token + "/session")
-                .then()
-                .statusCode(400);
-
-        assertThat(journalLines("SESSION_ESPACE_OUVERTE"))
-                .singleElement()
-                .isEqualTo(new JournalLine("ANONYME", null, "ACCES-A", 400));
-    }
-
-    /** The right code is the proof: the session it opens is the animateur's act. */
-    @Test
-    void theRightCodeOpensASessionUnderTheAnimateur() throws Exception {
-        clearJournal("SESSION_ESPACE_OUVERTE");
-        EspaceSessions.open(mailbox, tokenOf("ACCES-A"), EMAIL_ALICE);
-
-        assertThat(journalLines("SESSION_ESPACE_OUVERTE"))
-                .singleElement()
-                .isEqualTo(new JournalLine("ANIMATEUR", "ACCES-A", "ACCES-A", 204));
-    }
-
-    /**
-     * Asking for a code proves nothing — anybody with the link can — and a
-     * write refused without a session neither: both are ANONYME.
-     */
+    /** Holding the link proves nothing: a write refused without a session is ANONYME. */
     @Test
     void withoutASessionNobodyIsNamed() throws Exception {
         String token = tokenOf("ACCES-A");
-        clearJournal("CODE_ESPACE_DEMANDE");
         clearJournal("PLANNING_CONFIRME");
 
-        given().header("X-Edition-Id", "E1")
-                .contentType(ContentType.JSON)
-                .when()
-                .post("/api/espace-animateur/" + token + "/code")
-                .then()
-                .statusCode(200);
         given().header("X-Edition-Id", "E1")
                 .contentType(ContentType.JSON)
                 .when()
@@ -316,9 +283,6 @@ class EspaceAccesTest {
                 .then()
                 .statusCode(401);
 
-        assertThat(journalLines("CODE_ESPACE_DEMANDE"))
-                .singleElement()
-                .isEqualTo(new JournalLine("ANONYME", null, "ACCES-A", 200));
         assertThat(journalLines("PLANNING_CONFIRME"))
                 .singleElement()
                 .isEqualTo(new JournalLine("ANONYME", null, "ACCES-A", 401));
@@ -352,48 +316,6 @@ class EspaceAccesTest {
                 return lignes;
             }
         }
-    }
-
-    @Test
-    void unCodeExpireEstRefuse() throws Exception {
-        String token = tokenOf("ACCES-A");
-        given().header("X-Edition-Id", "E1")
-                .contentType(ContentType.JSON)
-                .when()
-                .post("/api/espace-animateur/" + token + "/code")
-                .then()
-                .statusCode(200);
-        try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps =
-                        connection.prepareStatement("UPDATE espace_acces SET expire_le = now() - interval '1 minute' "
-                                + "WHERE animateur_id = 'ACCES-A'")) {
-            ps.executeUpdate();
-        }
-        // Whatever the code was, an expired one must be refused unread.
-        given().header("X-Edition-Id", "E1")
-                .contentType(ContentType.JSON)
-                .body("{\"code\":\"123456\"}")
-                .when()
-                .post("/api/espace-animateur/" + token + "/session")
-                .then()
-                .statusCode(400)
-                .body("message", containsString("nouveau code"));
-    }
-
-    /** Asks for a code and reads it back from the mock mailbox, as the animateur would. */
-    private String codeEnvoye(String token) {
-        given().header("X-Edition-Id", "E1")
-                .contentType(ContentType.JSON)
-                .when()
-                .post("/api/espace-animateur/" + token + "/code")
-                .then()
-                .statusCode(200);
-        List<Mail> mails = mailbox.getMailsSentTo(EMAIL_ALICE);
-        assertThat(mails).isNotEmpty();
-        Matcher matcher = Pattern.compile("\\b(\\d{6})\\b")
-                .matcher(mails.get(mails.size() - 1).getText());
-        assertThat(matcher.find()).isTrue();
-        return matcher.group(1);
     }
 
     private void donnerEmail(String animateurId, String email) {

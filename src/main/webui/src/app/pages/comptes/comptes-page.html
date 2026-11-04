@@ -1,0 +1,192 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h1 mat-card-title i18n="@@comptes.title">Comptes et droits ({{ total() }})</h1>
+    <mat-card-subtitle i18n="@@comptes.subtitle">Qui peut se connecter, et quels droits délégués lui sont accordés, dans quelle édition.</mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <ul class="comptes-notes">
+      <li>
+        <mat-icon aria-hidden="true">info_outline</mat-icon>
+        <span i18n="@@comptes.note.denyByDefault">Les rôles délégués n'ouvrent encore aucun écran : tout leur est refusé par défaut, en attendant les travaux à venir (#294, #295).</span>
+      </li>
+      <li>
+        <mat-icon aria-hidden="true">vpn_key</mat-icon>
+        <span i18n="@@comptes.note.keycloak">Le rôle admin, les mots de passe et la double authentification se gèrent dans Keycloak (voir docs/keycloak.md).</span>
+      </li>
+    </ul>
+  </mat-card-content>
+  <mat-card-actions class="card-actions">
+    <button matButton="filled" type="button" [disabled]="busy()" (click)="openAdd()">
+      <mat-icon>person_add</mat-icon>
+      <ng-container i18n="@@comptes.add.open">Ajouter un compte</ng-container>
+    </button>
+    <button matButton="tonal" type="button" [disabled]="busy()" (click)="openInviteAdmin()">
+      <mat-icon>admin_panel_settings</mat-icon>
+      <ng-container i18n="@@comptes.admin.open">Inviter un administrateur</ng-container>
+    </button>
+    <button matButton type="button" [disabled]="loading()" (click)="reload()">
+      <mat-icon>refresh</mat-icon>
+      <ng-container i18n="@@common.refresh">Actualiser</ng-container>
+    </button>
+    <a matButton routerLink="/aide" fragment="comptes-et-droits">
+      <mat-icon>help_outline</mat-icon>
+      <ng-container i18n="@@comptes.helpLink">Comptes et droits dans l'aide</ng-container>
+    </a>
+    <app-table-filter [(value)]="filter" [matches]="rows().length" [total]="total()"
+                      i18n-placeholder="@@comptes.filter.placeholder" placeholder="Adresse, nom, rôle, édition…"
+                      (enterTable)="navigation.focusCurrent()" />
+  </mat-card-actions>
+  <mat-card-content class="table-wrapper">
+    <app-status-message [text]="loadError()" tone="error" />
+    <table mat-table [dataSource]="rows()">
+      <caption class="visually-hidden" i18n="@@comptes.table.caption">Comptes nominatifs : adresse, nom, dernière connexion, état, droits en vigueur et actions</caption>
+      <ng-container matColumnDef="email">
+        <th mat-header-cell *matHeaderCellDef scope="col" i18n="@@comptes.column.email">Adresse</th>
+        <td mat-cell *matCellDef="let row">
+          {{ row.compte.email }}
+          @if (row.own) {
+            <span class="comptes-badge" i18n="@@comptes.own">vous</span>
+          }
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="nom">
+        <th mat-header-cell *matHeaderCellDef scope="col" i18n="@@comptes.column.nom">Nom</th>
+        <td mat-cell *matCellDef="let row">{{ row.compte.nom ?? '' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="derniereConnexion">
+        <th mat-header-cell *matHeaderCellDef scope="col" i18n="@@comptes.column.lastSignIn">Dernière connexion</th>
+        <td mat-cell *matCellDef="let row">
+          @if (row.compte.derniereConnexionLe) {
+            {{ row.compte.derniereConnexionLe | date: 'short' }}
+          } @else {
+            <span class="comptes-muted" i18n="@@comptes.neverSignedIn">Jamais</span>
+          }
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="etat">
+        <th mat-header-cell *matHeaderCellDef scope="col" i18n="@@comptes.column.state">État</th>
+        <td mat-cell *matCellDef="let row">
+          @if (row.compte.desactiveLe) {
+            <span class="comptes-state-inactive" i18n="@@comptes.state.inactive">Désactivé le {{ row.compte.desactiveLe | date: 'short' }}</span>
+          } @else {
+            <span i18n="@@comptes.state.active">Actif</span>
+          }
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="droits">
+        <th mat-header-cell *matHeaderCellDef scope="col" i18n="@@comptes.column.rights">Droits en vigueur</th>
+        <td mat-cell *matCellDef="let row">{{ row.summary }}</td>
+      </ng-container>
+      <ng-container matColumnDef="actions" stickyEnd>
+        <th mat-header-cell *matHeaderCellDef scope="col" i18n-aria-label="@@common.actions" aria-label="Actions"></th>
+        <td mat-cell *matCellDef="let row" class="row-actions">
+          <button matIconButton type="button"
+                  i18n-matTooltip="@@comptes.action.rights" matTooltip="Voir et accorder les droits"
+                  i18n-aria-label="@@comptes.action.rights" aria-label="Voir et accorder les droits"
+                  (click)="showRights(row.compte)">
+            <mat-icon>manage_accounts</mat-icon>
+          </button>
+          @if (row.compte.desactiveLe) {
+            <button matIconButton type="button" [disabled]="busy()"
+                    i18n-matTooltip="@@comptes.action.reactivate" matTooltip="Réactiver le compte"
+                    i18n-aria-label="@@comptes.action.reactivate" aria-label="Réactiver le compte"
+                    (click)="reactivate(row.compte)">
+              <mat-icon>how_to_reg</mat-icon>
+            </button>
+          } @else {
+            <button matIconButton type="button" class="danger-action" [disabled]="busy()"
+                    i18n-matTooltip="@@comptes.action.deactivate" matTooltip="Désactiver le compte"
+                    i18n-aria-label="@@comptes.action.deactivate" aria-label="Désactiver le compte"
+                    (click)="deactivate(row.compte)">
+              <mat-icon>person_off</mat-icon>
+            </button>
+          }
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns; let i = index"
+          [attr.data-row-index]="i"
+          [tabindex]="navigation.isCurrent(i) ? 0 : -1"
+          [class.row-selected]="row.compte.id === selectedId()"
+          [class.comptes-row-inactive]="!!row.compte.desactiveLe"
+          (focus)="navigation.onFocus(i)"
+          (keydown)="navigation.onKeydown($event, i)"></tr>
+    </table>
+    @if (loading() && total() === 0) {
+      <p class="empty-hint" i18n="@@comptes.loading">Chargement des comptes…</p>
+    } @else if (total() === 0 && !loadError()) {
+      <p class="empty-hint" i18n="@@comptes.empty">Aucun compte : ils apparaissent à la première connexion Keycloak.</p>
+    } @else if (total() > 0 && rows().length === 0) {
+      <p class="empty-hint" i18n="@@filter.noMatch">Aucune ligne ne correspond au filtre.</p>
+    }
+  </mat-card-content>
+</mat-card>
+
+@if (selected(); as compte) {
+  <mat-card appearance="outlined" class="page-card comptes-rights">
+    <mat-card-header>
+      <h2 mat-card-title #panelHeading tabindex="-1" i18n="@@comptes.rights.title">Droits de {{ compte.email }}</h2>
+      @if (compte.desactiveLe) {
+        <mat-card-subtitle i18n="@@comptes.rights.inactive">Compte désactivé : aucun de ces droits n'ouvre quoi que ce soit.</mat-card-subtitle>
+      } @else if (selectedIsOwn()) {
+        <mat-card-subtitle i18n="@@comptes.rights.own">C'est votre propre compte.</mat-card-subtitle>
+      }
+    </mat-card-header>
+    <mat-card-actions class="card-actions">
+      <button matButton="filled" type="button" [disabled]="busy()" (click)="openGrant(compte)">
+        <mat-icon>add_moderator</mat-icon>
+        <ng-container i18n="@@comptes.grant.open">Accorder un droit</ng-container>
+      </button>
+      <button matButton type="button" (click)="closeRights()">
+        <mat-icon>close</mat-icon>
+        <ng-container i18n="@@comptes.rights.close">Fermer</ng-container>
+      </button>
+    </mat-card-actions>
+    <mat-card-content>
+      @if (rightRows().length === 0) {
+        <p class="empty-hint" i18n="@@comptes.rights.empty">Aucun droit accordé à ce compte.</p>
+      } @else {
+        <ul class="comptes-rights-list">
+          @for (right of rightRows(); track right.habilitation.id) {
+            <li class="comptes-right" [class.comptes-right-ended]="right.state !== 'active'">
+              <div class="comptes-right-main">
+                <strong>{{ right.role }}</strong>
+                <span>{{ right.edition }}</span>
+                @if (right.stands) {
+                  <span class="comptes-right-stands">
+                    <ng-container i18n="@@comptes.rights.stands">Stands : {{ right.stands }}</ng-container>
+                  </span>
+                }
+              </div>
+              <div class="comptes-right-meta">
+                @switch (right.state) {
+                  @case ('withdrawn') {
+                    <span i18n="@@comptes.rights.withdrawn">Retiré le {{ right.habilitation.retireeLe | date: 'short' }}</span>
+                  }
+                  @case ('expired') {
+                    <span i18n="@@comptes.rights.expired">Expiré le {{ right.habilitation.expireLe | date: 'short' }}</span>
+                  }
+                  @default {
+                    @if (right.habilitation.expireLe) {
+                      <span i18n="@@comptes.rights.expires">En vigueur jusqu'au {{ right.habilitation.expireLe | date: 'short' }}</span>
+                    } @else {
+                      <span i18n="@@comptes.rights.noExpiry">En vigueur, sans date de fin</span>
+                    }
+                  }
+                }
+                <span i18n="@@comptes.rights.grantedBy">Accordé par {{ right.habilitation.creePar }} le {{ right.habilitation.creeLe | date: 'short' }}</span>
+              </div>
+              @if (right.state !== 'withdrawn') {
+                <button matButton type="button" class="danger-action" [disabled]="busy()"
+                        (click)="withdraw(compte, right)">
+                  <mat-icon>remove_moderator</mat-icon>
+                  <ng-container i18n="@@comptes.withdraw.open">Retirer</ng-container>
+                </button>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </mat-card-content>
+  </mat-card>
+}

@@ -59,7 +59,7 @@ public class MailMetrics {
      * Sends a mail meant for nobody in the referential — the admin's — and
      * counts the outcome.
      *
-     * @param template the template id ({@code mail/code-acces}) the mail was
+     * @param template the template id ({@code mail/planning-publie}) the mail was
      *                 rendered from
      */
     public void send(Mailer mailer, String template, Mail mail) {

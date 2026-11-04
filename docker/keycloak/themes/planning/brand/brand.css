@@ -1,0 +1,18 @@
+/*
+ * brand.css — le fichier du client, vide dans le dépôt.
+ *
+ * Ce dossier brand/ est REMPLACÉ en production par un montage de volume
+ * (docs/keycloak.md § Le thème). Ce qui s'y écrit vaut après planning.css :
+ * un client peut y redéfinir n'importe quelle variable ou règle du thème.
+ *
+ * La couleur d'accent n'a pas besoin de ce fichier : KEYCLOAK_BRAND_ACCENT la
+ * pose pour la connexion et pour les e-mails, et l'emporte sur ce fichier.
+ * Ce qui reste ici, c'est ce qu'une variable ne peut pas dire — une police,
+ * un fond de carte, une taille de logo :
+ *
+ *   :root {
+ *       --keycloak-logo-height: 96px;
+ *       --keycloak-logo-width: 360px;
+ *       --keycloak-bg-logo-url: url('background.jpg');
+ *   }
+ */

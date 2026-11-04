@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
  * key no longer opens anything either.
  *
  * <p>Three things matter as much as the ceiling itself, and each has its step
- * below: a request carrying <b>no</b> key counts for nothing, a request that
+ * below: a request carrying <b>no</b> key, or an OAuth token, counts for nothing, a request that
  * <b>authenticates</b> clears the run, and the ceiling is reached by the
  * failure <em>after</em> it, not by the one that reaches the count.</p>
  *
@@ -51,6 +51,18 @@ class McpKeyLockoutTest {
         // it out for that would punish the one case that is not an attack.
         for (int i = 0; i < CEILING * 2; i++) {
             given().header("X-Edition-Id", "E1").when().post("/mcp").then().statusCode(401);
+        }
+
+        // An OAuth access token is no guess at the key: a client whose token
+        // expired, or that sends requests in parallel, must not lock its
+        // address out of the shared key.
+        for (int i = 0; i < CEILING * 2; i++) {
+            given().header("X-Edition-Id", "E1")
+                    .header("Authorization", "Bearer eyJhbGciOiJub25lIn0.eyJzdWIiOiJ4In0.signature")
+                    .when()
+                    .post("/mcp")
+                    .then()
+                    .statusCode(401);
         }
 
         given().header("X-Edition-Id", "E1")

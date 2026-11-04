@@ -45,3 +45,47 @@ secret:
     # en %prod le temps du `verify`.
     - name: "@QuarkusIntegrationTest, compte admin (#405)"
       match: 997b8be165f243b507927a428df87164d46bf28280d077684dfcd31d3f174101
+
+    # Identifiants de développement introduits par l'intégration Keycloak.
+    # Même nature que les cinq ci-dessus : realm de développement importé par
+    # docker-compose, et invites d'un fichier d'exemple que l'on recopie avant
+    # de le remplir. Aucun ne protège quoi que ce soit d'accessible.
+    #
+    # Ils sont écrits en clair, là où les cinq précédents sont des empreintes :
+    # ggshield accepte les deux formes, et l'empreinte d'une occurrence ne
+    # s'obtient que depuis le tableau de bord GitGuardian. Une valeur nommée
+    # ici est ignorée partout, y compris dans ce fichier.
+    #
+    # À ne pas confondre avec le contrôle « GitGuardian Security Checks » de la
+    # pull request : l'application GitHub ne lit pas ce fichier, elle ne se tait
+    # que si l'incident est résolu depuis le tableau de bord. Ce qui suit vaut
+    # pour ggshield — scan local et hook de pre-commit.
+
+    # docker-compose.yml — Keycloak de développement local, surchargeables par
+    # ${KEYCLOAK_ADMIN_PASSWORD} et ${KEYCLOAK_DB_PASSWORD}. La base de
+    # Keycloak n'est pas publiée hors du réseau compose.
+    - name: "compose de développement, console Keycloak"
+      match: dev-keycloak-Wq2fT7xM
+    - name: "compose de développement, base de Keycloak"
+      match: dev-kcdb-Hs9jR4zN
+
+    # docker/keycloak/realm-planning.json (et les défauts %dev /
+    # docker-compose.yml qui doivent lui être identiques) — secrets des clients
+    # et comptes de démonstration du realm de développement, importé par
+    # start-dev seul. Terraform, qui décrit le realm de production, ne porte
+    # aucun secret : ils passent par TF_VAR_*.
+    - name: "realm de développement, client planning-app"
+      match: dev-planning-app-oJ4kQ2vT-8fW6nB3q
+    - name: "realm de développement, client MCP automatisé"
+      match: dev-planning-mcp-rB7nX3wD
+    - name: "realm de développement, compte de provisioning"
+      match: dev-planning-provisioning-yH5mL8sK
+    - name: "realm de développement, animateurs de démonstration"
+      match: dev-animateur-Pn3vK9tR
+    - name: "realm de développement, graine TOTP de l'administrateur de démonstration"
+      match: planningequipesotp01
+
+    # ansible/group_vars/all.example.yml — fichier d'exemple : cette valeur est
+    # l'invite à remplacer, pas un secret.
+    - name: "exemple Ansible, invite à remplacer"
+      match: changez-moi

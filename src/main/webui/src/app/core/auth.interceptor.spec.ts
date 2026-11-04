@@ -52,11 +52,24 @@ describe('authInterceptor', () => {
     expect(router.navigateByUrl).toHaveBeenCalledWith('/login');
   });
 
+  // 403: signed in, but without the admin role — an animateur's Keycloak
+  // session following a bookmark into the administration.
+  it('renvoie aussi vers /login sur un 403, que seul un rôle manquant produit', async () => {
+    await expect(firstValueFrom(interceptWithError('/api/animateurs', 403))).rejects.toMatchObject({
+      status: 403,
+    });
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/login');
+  });
+
   it('laisse tranquilles les routes publiques par conception', async () => {
     await expect(
       firstValueFrom(interceptWithError('/api/espace-animateur/jeton-1', 401)),
     ).rejects.toMatchObject({ status: 401 });
     await expect(firstValueFrom(interceptWithError('/api/auth/me', 401))).rejects.toMatchObject({
+      status: 401,
+    });
+    // A refused re-authentication, not a lost session: the page words it.
+    await expect(firstValueFrom(interceptWithError('/api/mcp/cle', 401))).rejects.toMatchObject({
       status: 401,
     });
     expect(router.navigateByUrl).not.toHaveBeenCalled();
