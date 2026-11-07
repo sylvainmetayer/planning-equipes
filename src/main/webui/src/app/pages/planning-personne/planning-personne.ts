@@ -8,6 +8,7 @@
 
 import { intlLocale } from '../../core/locale';
 import {
+  AMPLITUDE_ELEVEE_HEURES,
   DUREE_HEBDOMADAIRE_MAX_HEURES,
   DUREE_HEBDOMADAIRE_MAX_MINEUR_HEURES,
   HeuresAnimateur,
@@ -76,6 +77,9 @@ export const MEDIAN_GAP = 'ecartMediane';
 /** The two payroll counters the Heures report adds to the Équité ones. */
 export const HEURES_DIMANCHE = 'heuresDimanche';
 export const NUIT_PAIE = 'heuresNuit';
+/** The longest opening span of a day, and how many days pass the flag threshold. */
+export const AMPLITUDE_MAX = 'amplitudeMaxHeures';
+export const JOURS_AMPLITUDE = 'joursAmplitudeElevee';
 
 /**
  * The summary columns the Heures report fills rather than the Équité one: the
@@ -93,6 +97,8 @@ const HOURS_REPORT_COLUMNS: ReadonlySet<string> = new Set([
   'heuresJourFerie',
   HEURES_DIMANCHE,
   NUIT_PAIE,
+  AMPLITUDE_MAX,
+  JOURS_AMPLITUDE,
 ]);
 
 /** Whether a summary column is read from the Heures report: see {@link HOURS_REPORT_COLUMNS}; the weeks too. */
@@ -116,6 +122,8 @@ export function summaryKeys(heures: HeuresRapport | null): string[] {
     ferie,
     HEURES_DIMANCHE,
     NUIT_PAIE,
+    AMPLITUDE_MAX,
+    JOURS_AMPLITUDE,
     ...reste,
   ];
 }
@@ -129,6 +137,10 @@ export function libelleSynthese(cle: string): string {
       return $localize`:@@planningPersonne.col.dimanche:Dimanche`;
     case NUIT_PAIE:
       return $localize`:@@planningPersonne.col.nuitPaie:Nuit (paie)`;
+    case AMPLITUDE_MAX:
+      return $localize`:@@planningPersonne.col.amplitudeMax:Amplitude max`;
+    case JOURS_AMPLITUDE:
+      return $localize`:@@planningPersonne.col.joursAmplitude:Jours en amplitude élevée`;
     case 'postesPenibles':
       return $localize`:@@planningPersonne.col.exigeants:Postes exigeants`;
     default:
@@ -145,6 +157,12 @@ function titreSynthese(cle: string, equite: RapportEquite | null): string {
       return $localize`:@@planningPersonne.col.dimanche.titre:Heures un dimanche, pour la paie`;
     case NUIT_PAIE:
       return $localize`:@@planningPersonne.col.nuitPaie.titre:Heures après 22 h, pour la paie : une borne fixe, qui n'est pas la soirée`;
+    case AMPLITUDE_MAX:
+      return $localize`:@@planningPersonne.col.amplitudeMax.titre:Plus longue amplitude d'une journée, du premier début à la dernière fin, pauses comprises`;
+    case JOURS_AMPLITUDE: {
+      const seuil = AMPLITUDE_ELEVEE_HEURES;
+      return $localize`:@@planningPersonne.col.joursAmplitude.titre:Journées dont l'amplitude dépasse ${seuil}:seuil: h`;
+    }
     case 'heuresSoiree': {
       const heure = (equite?.heureDebutSoiree ?? '').slice(0, 5);
       return $localize`:@@planningPersonne.col.soiree.titre:Heures après ${heure}:heure:, le début de soirée réglé dans Règles du planning`;
@@ -193,6 +211,10 @@ function hoursValue(
       return heures.heuresDimanche;
     case NUIT_PAIE:
       return heures.heuresNuit;
+    case AMPLITUDE_MAX:
+      return heures.amplitudeMaxHeures;
+    case JOURS_AMPLITUDE:
+      return heures.joursAmplitudeElevee;
     default:
       return heures.heuresParSemaine[cle] ?? 0;
   }
@@ -230,7 +252,10 @@ function formatValue(cle: string, amount: number | null): string {
     const signe = amount > 0.05 ? '+' : '';
     return `${signe}${amount.toLocaleString(locale, { maximumFractionDigits: 1 })}`;
   }
-  const format = cle === HEURES_DIMANCHE || cle === NUIT_PAIE ? 'heures' : formatColonne(cle);
+  const format =
+    cle === HEURES_DIMANCHE || cle === NUIT_PAIE || cle === AMPLITUDE_MAX
+      ? 'heures'
+      : formatColonne(cle);
   switch (format) {
     case 'heures':
       return amount.toLocaleString(locale, { maximumFractionDigits: 1 });
@@ -515,6 +540,22 @@ function footerTotals(
   return totals;
 }
 
+/** An opening span past the threshold, or a count of such days, flagged like a week to check. */
+function amplitudeValue(cle: string, amount: number | null): ValeurSynthese {
+  const text = formatValue(cle, amount);
+  const flagged =
+    cle === AMPLITUDE_MAX ? (amount ?? 0) > AMPLITUDE_ELEVEE_HEURES : (amount ?? 0) > 0;
+  if (!flagged) {
+    return { texte: text };
+  }
+  const seuil = AMPLITUDE_ELEVEE_HEURES;
+  return {
+    texte: text,
+    classe: 'planning-personne-verifier',
+    titre: $localize`:@@planningPersonne.amplitude.elevee:Amplitude au-delà de ${seuil}:seuil: h sur au moins une journée`,
+  };
+}
+
 /** One person's summary columns, the median gap colouring the hours. */
 function syntheseOf(
   keys: readonly string[],
@@ -526,10 +567,12 @@ function syntheseOf(
     const amount = valeurs[key] ?? null;
     synthese[key] = isWeek(key)
       ? weekValue(key, amount)
-      : {
-          texte: formatValue(key, amount),
-          classe: key === MEDIAN_GAP || key === 'heuresTotal' ? gap : '',
-        };
+      : key === AMPLITUDE_MAX || key === JOURS_AMPLITUDE
+        ? amplitudeValue(key, amount)
+        : {
+            texte: formatValue(key, amount),
+            classe: key === MEDIAN_GAP || key === 'heuresTotal' ? gap : '',
+          };
   }
   return synthese;
 }

@@ -1898,6 +1898,12 @@ export const DUREE_HEBDOMADAIRE_MAX_HEURES = 48;
 /** Ordre public ceiling for minors, in hours (Code du travail art. L3162-1). */
 export const DUREE_HEBDOMADAIRE_MAX_MINEUR_HEURES = 35;
 
+/**
+ * A day whose opening span passes this is flagged — display only, no rule reads it.
+ * Same value as `PlanningHoursService.SEUIL_AMPLITUDE_MINUTES` on the server (12 h).
+ */
+export const AMPLITUDE_ELEVEE_HEURES = 12;
+
 export type JobType = 'SOLVE' | 'SOLVE_INCREMENTAL';
 /**
  * `QUEUED` waits for the solver without holding it; `PENDING` already holds it.
@@ -2340,6 +2346,10 @@ export interface HeuresAnimateur {
   heuresNuit: number;
   /** Hours past the edition's one settable start of the evening — the Équité report's figure for the same person. */
   heuresSoiree: number;
+  /** The longest opening span of a day (first start to last end, gaps included), in hours. */
+  amplitudeMaxHeures: number;
+  /** Days whose opening span passes {@link AMPLITUDE_ELEVEE_HEURES}. */
+  joursAmplitudeElevee: number;
 }
 
 export interface HeuresRapport {
@@ -3710,6 +3720,9 @@ export interface InvitationReport {
   echecs: string[];
 }
 
+/** Who « Envoyer les liens » writes to: nobody already invited this edition, or everybody who has not declared. */
+export type DestinatairesInvitation = 'NOT_YET_INVITED' | 'NOT_YET_DECLARED';
+
 /** `/api/disponibilites/configuration`: the collection window, closed by default. */
 export interface ConfigurationCollecte {
   collecteOuverte: boolean;
@@ -3720,9 +3733,6 @@ export interface ConfigurationCollecte {
   /** Request only: mail every animateur their espace link now. Never echoed back. */
   prevenirAnimateurs?: boolean;
   /** Response only: `null` when no invitation was asked for. */
-/** Who « Envoyer les liens » writes to: nobody already invited this edition, or everybody who has not declared. */
-export type DestinatairesInvitation = 'NOT_YET_INVITED' | 'NOT_YET_DECLARED';
-
   invitation?: InvitationReport | null;
   /** Response only: switch on and today in the window by the server's clock — what « Envoyer les liens » needs. */
   ouverteAujourdhui?: boolean;

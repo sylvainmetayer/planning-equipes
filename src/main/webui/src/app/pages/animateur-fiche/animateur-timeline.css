@@ -22,6 +22,13 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
+/* Past the display threshold: an icon and words, not a colour alone. */
+.timeline-amplitude-elevee {
+  margin-left: 0.5rem;
+  font: var(--mat-sys-label-medium);
+  color: var(--mat-sys-error);
+}
+
 /* A shift of the list: its hours and its stand, one link to the Journée. */
 .timeline-block-link {
   color: inherit;

@@ -850,7 +850,7 @@ rend que des ids. L'heure de début de soirée se lit et se règle par
 ## Les heures se lisent sur le plan qu'on nomme
 
 `heures_travaillees` rend, par animateur désigné par id, les heures par semaine
-ISO et le total, calculées côté serveur comme l'écran les lit : sur le **plan
+ISO et le total, l'amplitude journalière maximale (en heures) et le nombre de journées au-delà de 12 h (un affichage, aucune règle), calculés côté serveur comme l'écran les lit : sur le **plan
 enregistré** par défaut (`source=persiste`), ou sur la **publication en
 vigueur** — ce que les animateurs ont reçu — avec `source=publie`. La réponse
 dit quel plan elle a lu (`source`) et sa date (`planDate` : la publication, ou
