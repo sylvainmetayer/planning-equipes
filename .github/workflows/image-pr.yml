@@ -1,0 +1,83 @@
+# Construit l'image d'une PR, sans la publier ni la démarrer.
+#
+# Les jobs de tests.yml désactivent Quinoa (`%test.quarkus.quinoa.enabled=false`) :
+# ils ne passent jamais par l'installation npm avec le Node que Quinoa télécharge.
+# Seul le build de l'image le fait, et il ne tournait qu'après la fusion. Une
+# montée de Node pouvait donc passer verte en PR, puis casser l'image de `main`.
+#
+# Ce workflow ne tourne que sur ce qui peut casser cette étape : le Dockerfile
+# et son .dockerignore, la configuration de build Angular,
+# les manifestes npm, l'outillage (`mise.toml`) et `application.properties`, qui
+# porte la version de Node de Quinoa.
+name: Image (PR)
+
+on:
+  pull_request:
+    paths:
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'mise.toml'
+      - 'pom.xml'
+      - 'src/main/webui/package.json'
+      - 'src/main/webui/package-lock.json'
+      - 'src/main/webui/angular.json'
+      - 'src/main/webui/tsconfig*.json'
+      - 'src/main/resources/application.properties'
+      - '.github/workflows/image-pr.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Keyed on the branch, not on `github.ref`: a `pull_request` run sees
+# `refs/pull/N/merge`, the run a Renovate workflow dispatches sees the branch,
+# and the two must cancel each other.
+concurrency:
+  group: image-pr-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # Le Dockerfile lit l'historique pour la version et les Nouveautés.
+          fetch-depth: 0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      # The Maven repository the publish workflow keeps, read and never saved:
+      # `cache-from: type=gha` carries layers, not BuildKit cache mounts, and a
+      # `pom.xml` bump would otherwise download all of `.m2` again.
+      - name: Restore the Maven repository of the image build
+        id: m2-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: m2-cache
+          key: docker-m2-${{ runner.os }}-${{ hashFiles('pom.xml') }}
+          restore-keys: docker-m2-${{ runner.os }}-
+
+      - name: Hand the Maven repository to the BuildKit cache mount
+        uses: reproducible-containers/buildkit-cache-dance@5422eac04292c961a382e0f584ea0f03ad9da723 # v3.4.0
+        with:
+          cache-map: |
+            {
+              "m2-cache": "/root/.m2"
+            }
+          skip-extraction: true
+
+      # Lit le cache de couches du workflow de publication, sans jamais l'écrire :
+      # une PR ne doit pas pouvoir garnir le cache que lit le build de `main`.
+      - name: Build the application image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: false
+          cache-from: type=gha
