@@ -210,6 +210,8 @@ export class AnimateursPage implements OnInit {
   protected readonly mineurs = signal(false);
   /** `?manager=1`: only the managers. */
   protected readonly managers = signal(false);
+  /** `?telephone=aucun`: only the fiches with no phone number. */
+  protected readonly withoutPhone = signal(false);
 
   /** The edition's first day, from its timeslots: the day a minor is a minor on; today when there is none. */
   private readonly firstDay = computed(() =>
@@ -243,6 +245,12 @@ export class AnimateursPage implements OnInit {
     }
     if (this.managers()) {
       chips.push({ key: 'manager', label: $localize`:@@animateurs.chip.managers:Managers` });
+    }
+    if (this.withoutPhone()) {
+      chips.push({
+        key: 'telephone',
+        label: $localize`:@@animateurs.chip.sansTelephone:Sans téléphone`,
+      });
     }
     if (this.accuses() === 'jamais') {
       chips.push({
@@ -290,6 +298,7 @@ export class AnimateursPage implements OnInit {
     souhait: this.souhait(),
     mineurs: this.mineurs(),
     managers: this.managers(),
+    withoutPhone: this.withoutPhone(),
   }));
   /** The query params a link to a fiche carries, so its « précédent / suivant » walks this very list. */
   protected readonly ficheParams = computed(() => rosterLinkParams(this.view()));
@@ -462,6 +471,7 @@ export class AnimateursPage implements OnInit {
     this.souhait.set(view.souhait);
     this.mineurs.set(view.mineurs);
     this.managers.set(view.managers);
+    this.withoutPhone.set(view.withoutPhone);
     this.importedIds.set(
       readImportedIds(this.route.snapshot.queryParamMap.get(IMPORTED_IDS_PARAM)),
     );
@@ -657,6 +667,9 @@ export class AnimateursPage implements OnInit {
       case 'manager':
         this.managers.set(false);
         break;
+      case 'telephone':
+        this.withoutPhone.set(false);
+        break;
       case 'ids':
         this.importedIds.set(null);
         break;
@@ -677,6 +690,7 @@ export class AnimateursPage implements OnInit {
     this.souhait.set('');
     this.mineurs.set(false);
     this.managers.set(false);
+    this.withoutPhone.set(false);
     this.accuses.set('tous');
     this.silenceJours.set(SILENCE_JOURS_DEFAUT);
     this.neverReminded.set(false);

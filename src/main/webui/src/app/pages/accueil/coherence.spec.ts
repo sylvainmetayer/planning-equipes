@@ -51,6 +51,14 @@ describe('coherenceLink', () => {
     ).toBe('/creneaux');
   });
 
+  it('leads the phone counting line to the filtered list', () => {
+    expect(
+      coherenceLink(
+        issue({ famille: 'ANIMATEURS', objet: 'EDITION', code: 'ANIMATEURS_SANS_TELEPHONE' }),
+      ),
+    ).toMatchObject({ route: '/animateurs', queryParams: { telephone: 'aucun' } });
+  });
+
   it('only ever links to a route the application declares', () => {
     const declared = new Set(
       allRoutes(routes)

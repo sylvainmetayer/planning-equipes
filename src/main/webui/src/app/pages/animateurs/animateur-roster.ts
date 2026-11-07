@@ -43,6 +43,8 @@ export interface RosterView {
   mineurs: boolean;
   /** Only the managers. */
   managers: boolean;
+  /** Only the fiches with no phone number (`?telephone=aucun`). */
+  withoutPhone: boolean;
 }
 
 /** The whole referential, in the order the store holds it. */
@@ -56,6 +58,7 @@ export const WHOLE_ROSTER: RosterView = {
   souhait: '',
   mineurs: false,
   managers: false,
+  withoutPhone: false,
 };
 
 /** Reads the list's view from its query params; anything unreadable is the default. */
@@ -75,6 +78,7 @@ export function readRosterView(params: ParamMap): RosterView {
     souhait: params.get('souhait')?.trim() ?? '',
     mineurs: params.get('mineurs') === '1',
     managers: params.get('manager') === '1',
+    withoutPhone: params.get('telephone') === 'aucun',
   };
 }
 
@@ -91,6 +95,7 @@ export function rosterViewParams(view: RosterView): Params {
     souhait: optionalParam(view.souhait),
     mineurs: view.mineurs ? '1' : null,
     manager: view.managers ? '1' : null,
+    telephone: view.withoutPhone ? 'aucun' : null,
   };
 }
 
@@ -170,6 +175,7 @@ export function filterRoster(
       (view.souhait === '' || (animateur.souhaits ?? []).includes(view.souhait)) &&
       (!view.mineurs || majorite(animateur, context.firstDay) === 'mineur') &&
       (!view.managers || animateur.manager) &&
+      (!view.withoutPhone || !animateur.telephone?.trim()) &&
       correspondAuFiltre(view.filtre, [
         animateur.id,
         animateur.prenom,

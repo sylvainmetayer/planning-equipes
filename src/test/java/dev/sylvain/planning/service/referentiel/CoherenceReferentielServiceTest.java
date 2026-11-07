@@ -69,11 +69,14 @@ class CoherenceReferentielServiceTest {
     private static Animateur adulte(String id, LocalDate... joursOff) {
         Animateur animateur = new Animateur(id, "Prénom", "Nom", LocalDate.of(1990, 1, 1), false);
         animateur.setJoursIndisponibles(Set.of(joursOff));
+        animateur.setTelephone("0600000000");
         return animateur;
     }
 
     private static Animateur mineur(String id) {
-        return new Animateur(id, "Prénom", "Nom", SAMEDI.minusYears(15), false);
+        Animateur animateur = new Animateur(id, "Prénom", "Nom", SAMEDI.minusYears(15), false);
+        animateur.setTelephone("0600000000");
+        return animateur;
     }
 
     private static ContrainteAdHoc forced(String id, Animateur... animateurs) {
@@ -133,7 +136,8 @@ class CoherenceReferentielServiceTest {
                 withStaffing
                         ? new StaffingAnalyzer()
                                 .analyze(ProblemBuilder.buildPostes(stands, creneaux), animateurs, List.of(), 2100, 660)
-                        : null));
+                        : null,
+                Set::of));
     }
 
     private static CoherenceReport build(List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux) {
