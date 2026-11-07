@@ -26,6 +26,9 @@
       <section class="timeline-day" [attr.aria-labelledby]="'timeline-jour-' + day.jour">
         <h3 class="timeline-day-title" [id]="'timeline-jour-' + day.jour">
           {{ day.title }} <span class="timeline-day-amplitude">{{ day.amplitudeLabel }}</span>
+          @if (day.amplitudeElevee) {
+            <span class="timeline-amplitude-elevee"><mat-icon inline aria-hidden="true">warning</mat-icon> <ng-container i18n="@@timeline.amplitudeElevee">amplitude au-delà de {{ amplitudeSeuil }} h</ng-container></span>
+          }
         </h3>
         @if (consigneNote(day); as note) {
           <p class="timeline-consigne-note">

@@ -373,6 +373,14 @@ sans écart dur, toute pause déduite a bien été prise — c'est exactement ce
 | KPI (`PlanningKpiService`) | idem, sauf les instantanés anciens (voir plus bas) |
 | volumétrie (`ProblemScaleService`) | idem pour les sièges tenus ; un siège vide compte son amplitude |
 
+**L'amplitude journalière se voit, elle ne se borne pas.** Premier début à dernière
+fin d'une journée de travail, trous et pauses compris (un siège qui franchit minuit
+finit après 24 h), elle est affichée — maximum et nombre de journées au-delà de 12 h —
+dans la synthèse par personne, le CSV des heures, `heures_travaillees` et la timeline
+de la fiche. Le seuil (`PlanningHoursService.SEUIL_AMPLITUDE_MINUTES`, miroir de
+`AMPLITUDE_ELEVEE_HEURES` côté écran) est une constante, pas un réglage, et aucune
+contrainte ne le lit : borner l'amplitude attend l'avis d'un juriste.
+
 `EffectiveWork` est l'unique endroit où ce calcul vit. Une pause est due **par
 journée et par animateur** — une séquence ne traverse pas minuit —, donc tout
 lecteur hebdomadaire groupe par jour avant de sommer, jamais l'inverse.

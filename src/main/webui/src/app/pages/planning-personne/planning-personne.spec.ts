@@ -133,6 +133,8 @@ function ligneHeures(id: string, nom: string, total: number, heuresDimanche = 0)
     heuresDimancheFerie: 0,
     heuresNuit: 0,
     heuresSoiree: id === 'a' ? 2 : 0,
+    amplitudeMaxHeures: id === 'a' ? 14 : 4,
+    joursAmplitudeElevee: id === 'a' ? 1 : 0,
   };
 }
 
@@ -314,6 +316,17 @@ describe('Par personne', () => {
     expect(semaine('b').classe).toBe('planning-personne-verifier');
     expect(semaine('b').titre).toContain('applicable à un mineur');
     expect(semaine('c').classe).toBeUndefined();
+  });
+
+  it('flags an opening span past 12 h and the days that passed it, and nobody else', () => {
+    const { lignes } = tableau({ toutesColonnes: true });
+    const of = (id: string) => lignes.find((ligne) => ligne.animateurId === id)!.synthese;
+
+    expect(of('a')['amplitudeMaxHeures']!.texte).toBe('14');
+    expect(of('a')['amplitudeMaxHeures']!.classe).toBe('planning-personne-verifier');
+    expect(of('a')['joursAmplitudeElevee']!.classe).toBe('planning-personne-verifier');
+    expect(of('b')['amplitudeMaxHeures']!.classe).toBeUndefined();
+    expect(of('b')['joursAmplitudeElevee']!.classe).toBeUndefined();
   });
 
   it('adds up the hours of the people shown at the foot, and nothing that is not hours', () => {

@@ -107,6 +107,33 @@ public class PlanningHoursService {
 
     private static final int SECONDES_PAR_JOUR = 24 * 3600;
 
+    /**
+     * Above this opening span a day is flagged, on the Heures page, in the CSV and on
+     * the animateur's timeline (which holds the same number: keep them equal).
+     * Display only: no constraint reads it and no setting moves it.
+     */
+    public static final int SEUIL_AMPLITUDE_MINUTES = 12 * 60;
+
+    /**
+     * The opening span of one animateur-day: first start to last end of the
+     * seats held, pauses and gaps included, in minutes. A seat crossing
+     * midnight ends past 24:00 ({@code start + effective duration}), so
+     * 22:00-02:00 is four hours. Seats with no start time carry no span.
+     */
+    static int openingSpanMinutes(List<PosteAffectation> postesDuJour) {
+        int debut = Integer.MAX_VALUE;
+        int fin = Integer.MIN_VALUE;
+        for (PosteAffectation poste : postesDuJour) {
+            if (poste.heureDebutEffectif() == null) {
+                continue;
+            }
+            int start = poste.heureDebutEffectif().toSecondOfDay() / 60;
+            debut = Math.min(debut, start);
+            fin = Math.max(fin, start + poste.getDureeEffectiveMinutes());
+        }
+        return fin < debut ? 0 : fin - debut;
+    }
+
     /** The premium counters, in amplitude: Sunday, public holiday, both at once, and night. */
     private static final class Premiums {
         private final Map<String, Double> dimancheParAnimateur = new LinkedHashMap<>();
@@ -189,6 +216,23 @@ public class PlanningHoursService {
             });
         }
 
+        // Opening span per animateur-day: the longest, and how many days pass the threshold.
+        Map<String, Integer> amplitudeMax = new LinkedHashMap<>();
+        Map<String, Integer> joursAuDessus = new LinkedHashMap<>();
+        for (List<PosteAffectation> duJour : byDate(planning.getPostes()).values()) {
+            Map<String, List<PosteAffectation>> parAnimateur = new LinkedHashMap<>();
+            duJour.forEach(poste -> parAnimateur
+                    .computeIfAbsent(poste.getAnimateur().getId(), id -> new ArrayList<>())
+                    .add(poste));
+            parAnimateur.forEach((animateurId, postes) -> {
+                int amplitude = openingSpanMinutes(postes);
+                amplitudeMax.merge(animateurId, amplitude, Math::max);
+                if (amplitude > SEUIL_AMPLITUDE_MINUTES) {
+                    joursAuDessus.merge(animateurId, 1, Integer::sum);
+                }
+            });
+        }
+
         List<String> semainesTriees = new ArrayList<>(semaines);
         List<HeuresAnimateur> lignes = new ArrayList<>();
         for (Animateur animateur : planning.getAnimateurs()) {
@@ -203,7 +247,9 @@ public class PlanningHoursService {
                     ferieParAnimateur.getOrDefault(id, 0.0),
                     dimancheFerieParAnimateur.getOrDefault(id, 0.0),
                     nuitParAnimateur.getOrDefault(id, 0.0),
-                    soireeParAnimateur.getOrDefault(id, 0.0)));
+                    soireeParAnimateur.getOrDefault(id, 0.0),
+                    amplitudeMax.getOrDefault(id, 0) / 60.0,
+                    joursAuDessus.getOrDefault(id, 0)));
         }
         return new HeuresRapport(debutSoiree, semainesTriees, lignes);
     }
@@ -268,7 +314,8 @@ public class PlanningHoursService {
         for (String semaine : rapport.semaines()) {
             csv.append(';').append(semaine);
         }
-        csv.append(";total;dimanche;jours feries;dont dimanches feries;nuit paie (apres 22h)\n");
+        csv.append(
+                ";total;dimanche;jours feries;dont dimanches feries;nuit paie (apres 22h);amplitude max (h);jours au-dela du seuil d'amplitude\n");
         for (HeuresAnimateur ligne : rapport.animateurs()) {
             csv.append(CsvFormulaGuard.cell(ligne.nom()));
             for (String semaine : rapport.semaines()) {
@@ -284,6 +331,10 @@ public class PlanningHoursService {
                     .append(formater(ligne.heuresDimancheFerie()))
                     .append(';')
                     .append(formater(ligne.heuresNuit()))
+                    .append(';')
+                    .append(formater(ligne.amplitudeMaxHeures()))
+                    .append(';')
+                    .append(ligne.joursAmplitudeElevee())
                     .append('\n');
         }
         return csv.toString();
@@ -314,6 +365,9 @@ public class PlanningHoursService {
      * @param heuresSoiree        hours past the edition's settable start of the
      *                            evening, the very figure the Équité report
      *                            gives the same person
+     * @param amplitudeMaxHeures  the longest opening span of a day (first start to
+     *                            last end, gaps included), in hours
+     * @param joursAmplitudeElevee days whose span passes {@link #SEUIL_AMPLITUDE_MINUTES}
      */
     @Schema(
             requiredProperties = {
@@ -322,7 +376,9 @@ public class PlanningHoursService {
                 "heuresJourFerie",
                 "heuresDimancheFerie",
                 "heuresNuit",
-                "heuresSoiree"
+                "heuresSoiree",
+                "amplitudeMaxHeures",
+                "joursAmplitudeElevee"
             })
     public record HeuresAnimateur(
             String animateurId,
@@ -333,7 +389,9 @@ public class PlanningHoursService {
             double heuresJourFerie,
             double heuresDimancheFerie,
             double heuresNuit,
-            double heuresSoiree) {}
+            double heuresSoiree,
+            double amplitudeMaxHeures,
+            int joursAmplitudeElevee) {}
 
     /**
      * @param heureDebutSoiree the evening the {@code heuresSoiree} of every line

@@ -225,6 +225,40 @@ describe('buildAnimateurTimeline', () => {
     expect(days[0].blocks[0]).toMatchObject({ widthPercent: 100 });
   });
 
+  it('flags a day whose opening span passes 12 h, gaps included, and not one at exactly 12 h', () => {
+    const day = (heureDebut: string, heureFin: string, id: number) =>
+      poste({
+        id: `p${id}`,
+        creneau: creneau({ id, jour: 1, heureDebut, heureFin }),
+        stand: stand('S1'),
+        animateur: animateur('A'),
+      });
+
+    const long = buildAnimateurTimeline([day('10:00', '12:00', 1), day('20:00', '00:00', 2)], 'A');
+    const exact = buildAnimateurTimeline([day('08:00', '12:00', 3), day('16:00', '20:00', 4)], 'A');
+
+    expect(long[0].amplitudeElevee).toBe(true);
+    expect(exact[0].amplitudeElevee).toBe(false);
+  });
+
+  it('measures a vacation crossing midnight past 24:00, as the server does', () => {
+    const days = buildAnimateurTimeline(
+      [
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1, jour: 1, heureDebut: '08:00', heureFin: '02:00' }),
+          stand: stand('S1'),
+          animateur: animateur('A'),
+        }),
+      ],
+      'A',
+    );
+
+    // 08:00 to 02:00 the next morning: eighteen hours.
+    expect(days[0].amplitudeMinutes).toBe(18 * 60);
+    expect(days[0].amplitudeElevee).toBe(true);
+  });
+
   it('prefers heureDebutEffective/heureFinEffective over the créneau window (issue #60 partial closures)', () => {
     const days = buildAnimateurTimeline(
       [

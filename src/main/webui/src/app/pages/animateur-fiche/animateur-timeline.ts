@@ -28,9 +28,10 @@ import {
 } from '../../core/pauses-index';
 import { indexWalks, WalkSegment, walkSegments, walksOf } from '../../core/walks-index';
 import { bandeLabel } from '../../core/consigne-wording';
-import { endMinutesOfDay, formatDuration, formatHeure, minutesOfDay } from '../../core/time-of-day';
+import { formatDuration, formatHeure, minutesOfDay } from '../../core/time-of-day';
 import { PlanningStateService } from '../../core/planning-state.service';
 import {
+  AMPLITUDE_ELEVEE_HEURES,
   PlanningEvenement,
   PosteAffectation,
   TypologieItem,
@@ -111,6 +112,8 @@ export interface TimelineDay {
   amplitudeDebut: string;
   amplitudeFin: string;
   amplitudeLabel: string;
+  /** The opening span passes the display threshold (12 h): flagged, never forbidden. */
+  amplitudeElevee: boolean;
   blocks: TimelineBlock[];
   gaps: TimelineGap[];
 }
@@ -153,6 +156,7 @@ export class AnimateurTimeline {
    */
   readonly version = input(0);
 
+  protected readonly amplitudeSeuil = AMPLITUDE_ELEVEE_HEURES;
   protected readonly loading = signal(false);
   protected readonly error = signal('');
   protected readonly planning = signal<PlanningEvenement | null>(null);
@@ -439,6 +443,16 @@ function equipesParLigneDeStand(
   return equipes;
 }
 
+/**
+ * End of a seat on the day's axis: its start plus its length, so a seat
+ * crossing midnight (22:00 to 02:00) ends past 24:00 and `00:00` is 24:00 —
+ * the server's `PlanningHoursService.openingSpanMinutes` does the same.
+ */
+function spanEndMinutes(heureDebut: string, heureFin: string): number {
+  const start = minutesOfDay(heureDebut);
+  return start + ((minutesOfDay(heureFin) - start + 1440) % 1440 || 1440);
+}
+
 function buildTimelineDay(
   jour: number,
   date: string | null,
@@ -463,7 +477,7 @@ function buildTimelineDay(
         heureDebut,
         heureFin,
         startMinutes: minutesOfDay(heureDebut),
-        endMinutes: endMinutesOfDay(heureFin),
+        endMinutes: spanEndMinutes(heureDebut, heureFin),
       };
     })
     .sort((left, right) => left.startMinutes - right.startMinutes);
@@ -513,6 +527,7 @@ function buildTimelineDay(
     amplitudeMinutes: range,
     amplitudeDebut,
     amplitudeFin,
+    amplitudeElevee: amplitudeFinMinutes - amplitudeDebutMinutes > AMPLITUDE_ELEVEE_HEURES * 60,
     amplitudeLabel: $localize`:@@timeline.amplitude:${amplitudeDebut}:debut: – ${amplitudeFin}:fin: (${formatDuration(amplitudeFinMinutes - amplitudeDebutMinutes)}:duree:)`,
     blocks,
     gaps,

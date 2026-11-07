@@ -299,10 +299,12 @@ public class PlanningMcpTools {
 
     @Tool(
             name = "heures_travaillees",
-            description = "Heures travaillées par animateur, par semaine ISO et au total, lues côté serveur : sur le "
-                    + "dernier planning persisté par défaut (source « persiste »), ou sur la publication en vigueur, ce "
-                    + "que les animateurs ont reçu (source « publie »), refusée tant que rien n'a été publié. La réponse "
-                    + "dit quel plan elle a lu et sa date. Les animateurs sont désignés par id seul.",
+            description =
+                    "Heures travaillées par animateur, par semaine ISO et au total, avec l'amplitude journalière maximale et le "
+                            + "nombre de jours au-delà de 12 h (affichage, aucune règle), lues côté serveur : sur le "
+                            + "dernier planning persisté par défaut (source « persiste »), ou sur la publication en vigueur, ce "
+                            + "que les animateurs ont reçu (source « publie »), refusée tant que rien n'a été publié. La réponse "
+                            + "dit quel plan elle a lu et sa date. Les animateurs sont désignés par id seul.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -581,7 +583,12 @@ public class PlanningMcpTools {
     }
 
     private static HeuresAnimateurView toView(HeuresAnimateur ligne) {
-        return new HeuresAnimateurView(ligne.animateurId(), ligne.heuresParSemaine(), ligne.total());
+        return new HeuresAnimateurView(
+                ligne.animateurId(),
+                ligne.heuresParSemaine(),
+                ligne.total(),
+                ligne.amplitudeMaxHeures(),
+                ligne.joursAmplitudeElevee());
     }
 
     static EquiteView toView(RapportEquite rapport) {
@@ -669,7 +676,12 @@ public class PlanningMcpTools {
     public record HeuresView(
             String source, Instant planDate, List<String> semaines, List<HeuresAnimateurView> animateurs) {}
 
-    public record HeuresAnimateurView(String animateurId, Map<String, Double> heuresParSemaine, double total) {}
+    public record HeuresAnimateurView(
+            String animateurId,
+            Map<String, Double> heuresParSemaine,
+            double total,
+            double amplitudeMaxHeures,
+            int joursAmplitudeElevee) {}
 
     /** The equity table, the same shape as the REST one minus the names. */
     public record EquiteView(

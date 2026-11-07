@@ -91,8 +91,8 @@ class PlanningHoursServiceTest {
         // Comma, not dot: a French spreadsheet reads « 4.00 » as text, and the
         // column an organiser wants to sum then sums to zero.
         assertThat(csv).isEqualTo("""
-                        animateur;2026-W33;total;dimanche;jours feries;dont dimanches feries;nuit paie (apres 22h)
-                        Ada Lovelace;4,00;4,00;0,00;0,00;0,00;0,00
+                        animateur;2026-W33;total;dimanche;jours feries;dont dimanches feries;nuit paie (apres 22h);amplitude max (h);jours au-dela du seuil d'amplitude
+                        Ada Lovelace;4,00;4,00;0,00;0,00;0,00;0,00;4,00;0
                         """);
     }
 
@@ -231,17 +231,59 @@ class PlanningHoursServiceTest {
         String csv = service.generateCsv(rapport);
 
         assertThat(csv.lines().findFirst().orElseThrow())
-                .endsWith(";total;dimanche;jours feries;dont dimanches feries;nuit paie (apres 22h)");
-        assertThat(csv).contains("Ada Lovelace;3,00;3,00;3,00;0,00;0,00;1,00");
+                .endsWith(";nuit paie (apres 22h);amplitude max (h);jours au-dela du seuil d'amplitude");
+        assertThat(csv).contains("Ada Lovelace;3,00;3,00;3,00;0,00;0,00;1,00;3,00;0");
     }
 
     /** A name a spreadsheet would run goes out behind a quote; a negative number stays a number. */
     @Test
     void csvQuotesAFormulaNameButLeavesANegativeNumberAlone() {
-        HeuresAnimateur ligne = new HeuresAnimateur("A-1", "=1+1", Map.of("2026-W33", -1.5), -1.5, 0, 0, 0, 0, 0);
+        HeuresAnimateur ligne = new HeuresAnimateur("A-1", "=1+1", Map.of("2026-W33", -1.5), -1.5, 0, 0, 0, 0, 0, 0, 0);
 
         String csv = service.generateCsv(new HeuresRapport(LocalTime.of(20, 0), List.of("2026-W33"), List.of(ligne)));
 
-        assertThat(csv).endsWith("\n'=1+1;-1,50;-1,50;0,00;0,00;0,00;0,00\n");
+        assertThat(csv).endsWith("\n'=1+1;-1,50;-1,50;0,00;0,00;0,00;0,00;0,00;0\n");
+    }
+
+    @Test
+    void openingSpanRunsFromFirstStartToLastEndGapsIncluded() {
+        Stand stand = new Stand("STAND-1", "Stand", java.util.Set.of(), 1, 2, false);
+        Animateur ada = new Animateur("A-ADA", "Ada", "Lovelace", LocalDate.of(1990, 1, 1), false);
+        LocalDate day = LocalDate.of(2026, 8, 14);
+
+        // One slot: its own length.
+        assertThat(PlanningHoursService.openingSpanMinutes(List.of(poste(stand, ada, day, 10, 12, 1L))))
+                .isEqualTo(120);
+        // Two slots with a gap: 10-12 and 20-24 span fourteen hours.
+        assertThat(PlanningHoursService.openingSpanMinutes(
+                        List.of(poste(stand, ada, day, 10, 12, 2L), poste(stand, ada, day, 20, 0, 3L))))
+                .isEqualTo(14 * 60)
+                .isGreaterThan(PlanningHoursService.SEUIL_AMPLITUDE_MINUTES);
+        // A seat crossing midnight ends past 24:00.
+        assertThat(PlanningHoursService.openingSpanMinutes(List.of(poste(stand, ada, day, 22, 2, 4L))))
+                .isEqualTo(240);
+    }
+
+    @Test
+    void reportCountsDaysAboveTheThreshold() {
+        Stand stand = new Stand("STAND-1", "Stand", java.util.Set.of(), 1, 2, false);
+        Animateur ada = new Animateur("A-ADA", "Ada", "Lovelace", LocalDate.of(1990, 1, 1), false);
+        PosteAffectation long1 = poste(stand, ada, LocalDate.of(2026, 8, 14), 10, 12, 1L);
+        PosteAffectation long2 = poste(stand, ada, LocalDate.of(2026, 8, 14), 20, 0, 2L);
+        PosteAffectation shortDay = poste(stand, ada, LocalDate.of(2026, 8, 15), 10, 12, 3L);
+        PlanningEvenement planning =
+                new PlanningEvenement(LocalDate.of(2026, 8, 14), List.of(ada), List.of(long1, long2, shortDay));
+
+        HeuresRapport rapport = service.compute(planning);
+
+        assertThat(rapport.animateurs().get(0).amplitudeMaxHeures()).isEqualTo(14.0);
+        assertThat(rapport.animateurs().get(0).joursAmplitudeElevee()).isEqualTo(1);
+    }
+
+    private static PosteAffectation poste(Stand stand, Animateur animateur, LocalDate day, int from, int to, long id) {
+        Creneau creneau = new Creneau(id, 1, day, LocalTime.of(from, 0), LocalTime.of(to, 0));
+        PosteAffectation poste = new PosteAffectation("P" + id, stand, creneau);
+        poste.setAnimateur(animateur);
+        return poste;
     }
 }
