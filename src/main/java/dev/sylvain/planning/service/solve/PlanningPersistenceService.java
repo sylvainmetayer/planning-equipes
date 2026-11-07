@@ -232,7 +232,8 @@ public class PlanningPersistenceService {
  INSERT INTO creneau (edition_id, id, date_creneau, heure_debut, heure_fin)
  VALUES (?, ?, ?, ?, ?)
  ON CONFLICT (id)
- DO UPDATE SET date_creneau = EXCLUDED.date_creneau, heure_debut = EXCLUDED.heure_debut, heure_fin = EXCLUDED.heure_fin""";
+ DO UPDATE SET date_creneau = EXCLUDED.date_creneau, heure_debut = EXCLUDED.heure_debut, heure_fin = EXCLUDED.heure_fin
+ WHERE creneau.edition_id = EXCLUDED.edition_id""";
         try (PreparedStatement ps = scope.prepareScoped(connection, upsertCreneau)) {
             for (Creneau creneau : dedupById(creneaux, Creneau::getId)) {
                 ps.setLong(2, creneau.getId());
@@ -241,7 +242,14 @@ public class PlanningPersistenceService {
                 ps.setObject(5, creneau.getHeureFin());
                 ps.addBatch();
             }
-            ps.executeBatch();
+            // The id is global: a conflict on another edition's timeslot updates
+            // nothing (the WHERE above), which must stop the landing, not pass.
+            // Exactly 1 per row: a driver answering SUCCESS_NO_INFO (-2) fails loudly too.
+            for (int count : ps.executeBatch()) {
+                if (count != 1) {
+                    throw new IllegalStateException("A timeslot id of the plan belongs to another edition");
+                }
+            }
         }
 
         String upsertAnimateur = """

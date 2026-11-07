@@ -1041,6 +1041,25 @@ peut donc pas desserrer un seuil de qualité en l'envoyant dans son payload.
   liste ordonnée.
 - Les contraintes ad hoc prescriptives restent **dures** ; seules l'affinité et
   l'arrivée groupée sont souples, par conception.
+- **La base tient le cloisonnement des créneaux.** `creneau` garde sa clé
+  primaire `(id)` (les identifiants publiés ne bougent pas) et porte une clé
+  unique `(edition_id, id)` : les sept clés qui le visent sont composites, et
+  un siège ne peut pas viser le créneau d'une autre édition. Celles qui
+  peuvent survivre à lui (verrou, exception ad hoc) font `ON DELETE SET NULL
+  (creneau_id)` : sans liste de colonnes, le `SET NULL` viderait aussi
+  `edition_id`. L'atterrissage d'une résolution n'écrase jamais le créneau
+  d'une autre édition : un conflit d'identifiant l'arrête.
+- **Une référence à un autre objet porte sa clé.** La cible d'un échange dirigé
+  (créneau, stand) s'en va avec ce qu'elle vise, comme le créneau et le stand
+  de la demande ; la continuation d'un siège coupé, la contrainte qu'une
+  déclaration de coéquipier a créée, le plan notifié d'un animateur et
+  l'instantané d'avant résolution se vident (`SET NULL`) quand leur cible
+  disparaît. Les trois dernières sont différées, parce qu'un plan ou un dump
+  s'écrit d'un bloc. Le `CASCADE` de la cible d'un échange est un choix
+  assumé, cohérent avec `creneau_id` et `stand_id` de la même table : il
+  renverse la note d'inventaire d'origine (« l'échange survit au stand
+  supprimé »), car une demande dont la cible n'existe plus n'a plus de sens.
+- Les horodatages sont tous en `timestamptz`.
 - Un créneau reste toujours l'unité de travail réellement assignable — jamais
   une amplitude d'ouverture brute.
 - L'espace animateur ne montre jamais le planning de travail : ce qu'une
