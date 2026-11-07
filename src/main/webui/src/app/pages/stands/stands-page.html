@@ -159,6 +159,9 @@
             <a routerLink="/stands" [queryParams]="{ onglet: 'lieux', q: lieu.nom || lieu.id }">{{ emplacementLabel(stand) }}</a>
           } @else {
             —
+            @if (suggestions().get(stand.id); as suggestion) {
+              <span class="stand-suggestion" [matTooltip]="suggestion.raison" tabindex="0" i18n="@@stands.suggestion">suggéré : {{ suggestion.emplacementNom }}</span>
+            }
           }
         </td>
       </ng-container>

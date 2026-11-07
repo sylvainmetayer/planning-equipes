@@ -737,7 +737,23 @@ export type TypeAvertissement =
   | 'AFFECTATION_FORCEE_MOTIF_LEGAL'
   | 'AFFECTATION_FORCEE_SIEGE_VERROUILLE'
   | 'ARRIVEE_GROUPEE_JOURS_DIVERGENTS'
-  | 'VERROUILLAGE_SUR_VIOLATION_DURE';
+  | 'VERROUILLAGE_SUR_VIOLATION_DURE'
+  | 'STAND_SANS_EMPLACEMENT';
+
+/** A stand left without an emplacement, and the one its neighbours agree on (`GET /api/stands/suggestions-emplacement`). */
+export interface SuggestionEmplacement {
+  standId: string;
+  emplacementId: string;
+  emplacementNom: string;
+  /** The reason, as the sentence shown next to the suggestion. */
+  raison: string;
+}
+
+/** The stands with no emplacement (empty on an edition that has none) and the suggestions among them. */
+export interface EmplacementsManquants {
+  standIds: string[];
+  suggestions: SuggestionEmplacement[];
+}
 
 export interface Avertissement {
   type: TypeAvertissement;

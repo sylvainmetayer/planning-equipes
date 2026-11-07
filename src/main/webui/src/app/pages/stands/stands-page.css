@@ -6,3 +6,12 @@
 .stand-couverture-incomplete {
   color: var(--mat-sys-error);
 }
+
+.stand-suggestion {
+  margin-inline-start: 0.5rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 1rem;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  font-size: 0.85em;
+}

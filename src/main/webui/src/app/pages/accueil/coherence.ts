@@ -153,12 +153,19 @@ export function familyCounts(comptage: FamilyCount): string {
  * names one.
  */
 export function coherenceLink(ligne: CoherenceIssue): LienEtat {
-  // The counting line leads to its screen already filtered.
+  // The two counting lines lead to their screen already filtered.
   if (ligne.code === 'ANIMATEURS_SANS_TELEPHONE') {
     return {
       route: '/animateurs',
       queryParams: { telephone: 'aucun' },
       libelle: $localize`:@@accueil.coherence.lien.sansTelephone:Fiches sans téléphone`,
+    };
+  }
+  if (ligne.code === 'STANDS_SANS_EMPLACEMENT') {
+    return {
+      route: '/stands',
+      queryParams: { emplacement: 'aucun' },
+      libelle: $localize`:@@accueil.coherence.lien.sansEmplacement:Stands sans emplacement`,
     };
   }
   const id = ligne.objetId;

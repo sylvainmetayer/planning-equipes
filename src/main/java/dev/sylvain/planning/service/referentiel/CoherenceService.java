@@ -11,6 +11,7 @@ import dev.sylvain.planning.service.solve.PlanningService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -38,6 +39,8 @@ public class CoherenceService {
     private final CreneauService creneaux;
 
     private final StandService stands;
+
+    private final EmplacementService emplacements;
 
     private final AnimateurService animateurs;
 
@@ -69,6 +72,7 @@ public class CoherenceService {
     public CoherenceService(
             CreneauService creneaux,
             StandService stands,
+            EmplacementService emplacements,
             AnimateurService animateurs,
             VerrouillageService verrouillages,
             Instance<PlanningPersistenceService> plan,
@@ -76,6 +80,7 @@ public class CoherenceService {
             Instance<PlanningService> planning) {
         this.creneaux = creneaux;
         this.stands = stands;
+        this.emplacements = emplacements;
         this.animateurs = animateurs;
         this.verrouillages = verrouillages;
         this.plan = plan;
@@ -205,9 +210,24 @@ public class CoherenceService {
         List<Creneau> edition = creneaux.list();
         HoraireStandResolver.apply(List.of(apres), edition);
         try {
-            return CoherenceAnalyzer.onStand(avant, apres, edition);
+            List<Avertissement> avertissements = new ArrayList<>(CoherenceAnalyzer.onStand(avant, apres, edition));
+            // Cheap conditions first: an unchanged stand costs no referential read (bulk edit, one PUT per row).
+            if (CoherenceAnalyzer.emplacementWarningPossible(avant, apres)) {
+                int emplacementsCount = emplacements.list().size();
+                if (emplacementsCount > 0) {
+                    avertissements.addAll(
+                            CoherenceAnalyzer.onStandEmplacement(avant, apres, stands.list(), emplacementsCount));
+                }
+            }
+            return List.copyOf(avertissements);
         } finally {
             apres.setFenetresEffectives(null, null);
         }
+    }
+
+    /** Which stands lack an emplacement and where their neighbours say they belong. */
+    public CoherenceAnalyzer.EmplacementsManquants findMissingEmplacements(List<Stand> edition) {
+        return CoherenceAnalyzer.missingEmplacements(
+                edition, emplacements.list().size());
     }
 }

@@ -28,6 +28,7 @@ class CoherenceTelephoneTest {
                 List.of(),
                 dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.analyze(stands, List.of()),
                 null,
+                new CoherenceAnalyzer.EmplacementsManquants(List.of(), List.of()),
                 () -> affectes);
     }
 

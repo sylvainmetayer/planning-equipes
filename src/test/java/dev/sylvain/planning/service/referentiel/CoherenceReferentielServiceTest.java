@@ -137,6 +137,7 @@ class CoherenceReferentielServiceTest {
                         ? new StaffingAnalyzer()
                                 .analyze(ProblemBuilder.buildPostes(stands, creneaux), animateurs, List.of(), 2100, 660)
                         : null,
+                new CoherenceAnalyzer.EmplacementsManquants(List.of(), List.of()),
                 Set::of));
     }
 
@@ -466,7 +467,9 @@ class CoherenceReferentielServiceTest {
                 TypeAvertissement.AFFECTATION_FORCEE_SIEGE_VERROUILLE,
                 // aCarWhoseMembersDeclaredDifferentDaysOffIsListed below.
                 TypeAvertissement.ARRIVEE_GROUPEE_JOURS_DIVERGENTS,
-                TypeAvertissement.VERROUILLAGE_SUR_VIOLATION_DURE);
+                TypeAvertissement.VERROUILLAGE_SUR_VIOLATION_DURE,
+                // As the STANDS_SANS_EMPLACEMENT count, tested in CoherenceEmplacementsTest.
+                TypeAvertissement.STAND_SANS_EMPLACEMENT);
 
         assertThat(couverts).containsExactlyInAnyOrder(TypeAvertissement.values());
     }

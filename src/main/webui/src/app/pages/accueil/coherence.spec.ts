@@ -51,12 +51,15 @@ describe('coherenceLink', () => {
     ).toBe('/creneaux');
   });
 
-  it('leads the phone counting line to the filtered list', () => {
+  it('leads the two counting lines to their screen already filtered', () => {
     expect(
       coherenceLink(
         issue({ famille: 'ANIMATEURS', objet: 'EDITION', code: 'ANIMATEURS_SANS_TELEPHONE' }),
       ),
     ).toMatchObject({ route: '/animateurs', queryParams: { telephone: 'aucun' } });
+    expect(
+      coherenceLink(issue({ objet: 'EDITION', code: 'STANDS_SANS_EMPLACEMENT' })),
+    ).toMatchObject({ route: '/stands', queryParams: { emplacement: 'aucun' } });
   });
 
   it('only ever links to a route the application declares', () => {
