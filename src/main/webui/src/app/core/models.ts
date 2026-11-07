@@ -3720,7 +3720,12 @@ export interface ConfigurationCollecte {
   /** Request only: mail every animateur their espace link now. Never echoed back. */
   prevenirAnimateurs?: boolean;
   /** Response only: `null` when no invitation was asked for. */
+/** Who « Envoyer les liens » writes to: nobody already invited this edition, or everybody who has not declared. */
+export type DestinatairesInvitation = 'NOT_YET_INVITED' | 'NOT_YET_DECLARED';
+
   invitation?: InvitationReport | null;
+  /** Response only: switch on and today in the window by the server's clock — what « Envoyer les liens » needs. */
+  ouverteAujourdhui?: boolean;
 }
 
 /** `/api/reference-data/impact-import`: what a scenario import would touch, for the confirmation dialog. */

@@ -6,8 +6,10 @@ import dev.sylvain.planning.domain.StatutDeclaration;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.RateLimitVerdict;
+import dev.sylvain.planning.service.edition.RequiresActiveEdition;
 import dev.sylvain.planning.service.edition.RequiresActiveEditionInterceptor;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteRepository.FenetreCollecte;
+import dev.sylvain.planning.service.mail.MailDeliveryRepository;
 import dev.sylvain.planning.service.notification.Notification;
 import dev.sylvain.planning.service.publication.MailService;
 import dev.sylvain.planning.service.referentiel.Avertissement;
@@ -30,6 +32,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -92,6 +95,8 @@ public class DeclarationDisponibiliteService {
 
     private final EditionContext editionContext;
 
+    private final MailDeliveryRepository deliveries;
+
     /**
      * Fired as a fact, never sent from here: the best-effort delivery policy
      * lives in {@code NotificationDispatcher}, so a broken SMTP server cannot
@@ -108,8 +113,10 @@ public class DeclarationDisponibiliteService {
             MailService mailService,
             ApplicationLinks liens,
             Event<Notification> notifications,
-            EditionContext editionContext) {
+            EditionContext editionContext,
+            MailDeliveryRepository deliveries) {
         this.editionContext = editionContext;
+        this.deliveries = deliveries;
         this.repository = repository;
         this.rateLimiter = rateLimiter;
         this.referenceDataService = referenceDataService;
@@ -249,11 +256,59 @@ public class DeclarationDisponibiliteService {
      * is per-animateur, never the whole batch.</p>
      */
     InvitationReport invite() {
+        return invite(Set.of());
+    }
+
+    /** Who {@link #sendLinks} writes to, besides the window being open. */
+    public enum InvitationRecipients {
+        /** Nobody who already received this edition's invitation. */
+        NOT_YET_INVITED,
+        /** Everybody who has not sent a declaration, invited or not. */
+        NOT_YET_DECLARED
+    }
+
+    /**
+     * Sends the espace links again while the window is open, without touching
+     * the window: the admin's answer to animateurs added after the opening, an
+     * address filled in late, or an opening done without the box ticked.
+     *
+     * <p>« This window » has no identity of its own — {@code parametres_collecte}
+     * is one row per edition and stores no opening date — so « already invited »
+     * is read from {@code envoi_mail} for the edition: a {@code ENVOYE}
+     * invitation, the same trace the automatic reminder reads. « Declared »
+     * means any declaration, whatever its statut. Same report and same
+     * per-person failure policy as the opening.</p>
+     *
+     * @throws BusinessError.Conflict when the window is not open today
+     * @throws BusinessError.Invalid  when no public URL is configured
+     */
+    @RequiresActiveEdition
+    public InvitationReport sendLinks(InvitationRecipients recipients) {
+        if (!isCollecteOuverte()) {
+            throw new BusinessError.Conflict(
+                    "La collecte des disponibilités n'est pas ouverte : ouvrez-la avant d'envoyer les liens");
+        }
+        if (!liens.disponible()) {
+            throw new BusinessError.Invalid(
+                    "Aucune URL publique n'est configurée : l'invitation ne peut pas porter de lien d'espace.");
+        }
+        Set<String> excluded = recipients == InvitationRecipients.NOT_YET_DECLARED
+                ? repository.list().stream()
+                        .map(DeclarationDisponibilite::getAnimateurId)
+                        .collect(Collectors.toSet())
+                : deliveries.animateursReached(MailService.AVAILABILITY_INVITATION);
+        return invite(excluded);
+    }
+
+    private InvitationReport invite(Set<String> excludedIds) {
         FenetreCollecte fenetre = repository.fenetre();
         int envoyes = 0;
         List<String> sansEmail = new ArrayList<>();
         List<String> echecs = new ArrayList<>();
         for (Animateur animateur : referenceDataService.listAnimateurs()) {
+            if (excludedIds.contains(animateur.getId())) {
+                continue;
+            }
             if (animateur.getEmail() == null || animateur.getEmail().isBlank()) {
                 sansEmail.add(animateur.nomAffiche());
             } else if (inviteOne(animateur, fenetre, echecs)) {

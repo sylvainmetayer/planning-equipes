@@ -2624,6 +2624,7 @@ commence dans deux semaines n'y revient pas.
 | `GET /api/disponibilites` | Toutes les déclarations de l'édition, les plus récentes d'abord |
 | `GET /api/disponibilites/configuration` | La fenêtre de collecte (fermée tant que rien n'a été décidé) |
 | `PUT /api/disponibilites/configuration` | Ouvre ou ferme ; `prevenirAnimateurs` déclenche **en plus** l'envoi des invitations |
+| `POST /api/disponibilites/invitations` | Renvoie les liens d'espace collecte ouverte (`409` sinon, ou édition inactive), sans toucher à la fenêtre ; `destinataires` : `NOT_YET_INVITED` (défaut) ou `NOT_YET_DECLARED`. Même compte rendu que l'ouverture |
 | `POST /api/disponibilites/{id}/application` | Applique la proposition **entière** sur la fiche, via `AnimateurService` — donc `dataStale` se déclenche |
 | `POST /api/disponibilites/{id}/refus` | Ne touche à rien ; le commentaire est lu par l'animateur dans son espace |
 
@@ -2654,6 +2655,13 @@ et se lit dans `invitation`, jamais levé : une adresse manquante va dans
 `sansEmail`, un jeton d'espace manquant dans `echecs` avec sa cause — dire
 « sans adresse » à qui en a une envoie l'opérateur corriger ce qui n'est pas
 cassé.
+
+**« Cette fenêtre » n'a pas d'identité.** `parametres_collecte` est une ligne par
+édition et ne garde aucune date d'ouverture : « déjà invité » se lit donc dans
+`envoi_mail` pour l'édition (gabarit `invitation-declaration`, envois **partis**
+seulement), comme le fait la relance automatique. Fermer puis rouvrir la collecte
+ne remet pas ce compte à zéro ; « tous ceux qui n'ont rien déclaré » (toute
+déclaration, quel que soit son statut) est le moyen de tout renvoyer.
 
 Les compétences ne se déclarent **pas** ici : une compétence auto-déclarée
 alimente des contraintes *dures*, et l'enjeu de validation n'est pas le même.

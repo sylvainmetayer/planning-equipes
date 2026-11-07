@@ -1895,6 +1895,9 @@
           },
           "invitation" : {
             "$ref" : "#/components/schemas/InvitationReport"
+          },
+          "ouverteAujourdhui" : {
+            "type" : "boolean"
           }
         }
       },
@@ -5547,6 +5550,10 @@
             "type" : "integer",
             "format" : "int32"
           },
+      "InvitationRecipients" : {
+        "type" : "string",
+        "enum" : [ "NOT_YET_INVITED", "NOT_YET_DECLARED" ]
+      },
           "sansEmail" : {
             "type" : "array",
             "items" : {
@@ -5569,6 +5576,14 @@
           },
           "id" : {
             "type" : "string"
+      "InvitationRequest" : {
+        "type" : "object",
+        "properties" : {
+          "destinataires" : {
+            "$ref" : "#/components/schemas/InvitationRecipients"
+          }
+        }
+      },
           },
           "type" : {
             "type" : "string"
@@ -12882,6 +12897,37 @@
           "required" : true,
           "schema" : {
             "type" : "string"
+    "/api/disponibilites/invitations" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/InvitationRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/InvitationReport"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Send Links",
+        "tags" : [ "Declaration Disponibilite Resource" ]
+      }
+    },
           }
         } ],
         "responses" : {

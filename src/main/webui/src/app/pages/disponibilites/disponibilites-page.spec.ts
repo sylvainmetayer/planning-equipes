@@ -64,19 +64,26 @@ describe('declarations-filter', () => {
   });
 });
 
-async function setUp(queryParams: Record<string, string>) {
+async function setUp(queryParams: Record<string, string>, confirmed = true) {
   const replaceState = vi.fn();
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
+      { provide: ConfirmService, useValue: { ask: vi.fn(() => Promise.resolve(confirmed)) } },
       {
         provide: DisponibilitesApi,
         useValue: {
           declarations: vi.fn(() => Promise.resolve([RECENTE, ANCIENNE, APPLIQUEE])),
           configuration: vi.fn(() =>
-            Promise.resolve({ collecteOuverte: true, debut: null, fin: null }),
+            Promise.resolve({
+              collecteOuverte: true,
+              ouverteAujourdhui: true,
+              debut: null,
+              fin: null,
+            }),
           ),
           carpools: vi.fn(() => Promise.resolve([])),
+          sendLinks: vi.fn(() => Promise.resolve({ envoyes: 2, sansEmail: [], echecs: [] })),
         },
       },
       { provide: MatDialog, useValue: { open: vi.fn() } },
@@ -128,6 +135,30 @@ describe('DisponibilitesPage « en attente »', () => {
     await fixture.whenStable();
     expect(replaceState).toHaveBeenLastCalledWith('/disponibilites?statut=en-attente');
     expect(root.textContent).not.toContain('Déjà traitées');
+  });
+
+  it('offers « Envoyer les liens » while the window is open, defaulting to the not yet invited', async () => {
+    const { fixture } = await setUp({});
+    await fixture.whenStable();
+    const root = fixture.nativeElement as HTMLElement;
+    const sendLinks = vi.mocked(TestBed.inject(DisponibilitesApi).sendLinks);
+
+    const bouton = Array.from(root.querySelectorAll('button')).find((each) =>
+      each.textContent?.includes('Envoyer les liens'),
+    )!;
+    bouton.click();
+    await fixture.whenStable();
+
+    expect(sendLinks).toHaveBeenCalledWith('NOT_YET_INVITED');
+  });
+
+  it('sends nothing when the confirmation is declined', async () => {
+    const { fixture } = await setUp({}, false);
+    const sendLinks = vi.mocked(TestBed.inject(DisponibilitesApi).sendLinks);
+    button(fixture, 'Envoyer les liens').click();
+    await fixture.whenStable();
+
+    expect(sendLinks).not.toHaveBeenCalled();
   });
 });
 
@@ -191,7 +222,9 @@ function decidedCarpool(
 describe('DisponibilitesPage during a solve', () => {
   const api = {
     declarations: vi.fn(() => Promise.resolve([DECLARATION])),
-    configuration: vi.fn(() => Promise.resolve({ collecteOuverte: true, debut: null, fin: null })),
+    configuration: vi.fn(() =>
+      Promise.resolve({ collecteOuverte: true, ouverteAujourdhui: true, debut: null, fin: null }),
+    ),
     carpools: vi.fn((): Promise<TeammateRequestView[]> => Promise.resolve([])),
     validateCarpool: vi.fn(() => Promise.resolve({ request: null, avertissements: [] })),
     setCarpoolAside: vi.fn(() => Promise.resolve(undefined)),

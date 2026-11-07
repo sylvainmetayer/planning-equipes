@@ -67,7 +67,7 @@ public class DeclarationDisponibiliteResource {
     @GET
     @Path("/configuration")
     public ConfigurationCollecte configuration() {
-        return ConfigurationCollecte.of(declarationService.fenetre(), null);
+        return ConfigurationCollecte.of(declarationService.fenetre(), null, declarationService.isCollecteOuverte());
     }
 
     /**
@@ -88,16 +88,35 @@ public class DeclarationDisponibiliteResource {
     @PUT
     @Path("/configuration")
     public ConfigurationCollecte configure(ConfigurationCollecte configuration) {
-        ConfigurationCollecte demandee =
-                configuration == null ? new ConfigurationCollecte(false, null, null, null, false, null) : configuration;
+        ConfigurationCollecte demandee = configuration == null
+                ? new ConfigurationCollecte(false, null, null, null, false, null, false)
+                : configuration;
         DeclarationDisponibiliteService.ConfigurationAppliquee appliquee = declarationService.configure(
                 demandee.collecteOuverte(),
                 demandee.debut(),
                 demandee.fin(),
                 demandee.relanceAutomatique(),
                 demandee.prevenirAnimateurs());
-        return ConfigurationCollecte.of(appliquee.fenetre(), appliquee.invitation());
+        return ConfigurationCollecte.of(
+                appliquee.fenetre(), appliquee.invitation(), declarationService.isCollecteOuverte());
     }
+
+    /**
+     * Sends the espace links again while the window is open, to the animateurs
+     * not yet invited (default) or not yet declared; the window is untouched.
+     * 409 when it is not open.
+     */
+    @POST
+    @Path("/invitations")
+    public InvitationReport sendLinks(InvitationRequest request) {
+        return declarationService.sendLinks(
+                request == null || request.destinataires() == null
+                        ? DeclarationDisponibiliteService.InvitationRecipients.NOT_YET_INVITED
+                        : request.destinataires());
+    }
+
+    /** Body of « Envoyer les liens »: who to write to. */
+    public record InvitationRequest(DeclarationDisponibiliteService.InvitationRecipients destinataires) {}
 
     /**
      * The collection window, plus the one-shot decision that rides with a
@@ -114,6 +133,10 @@ public class DeclarationDisponibiliteResource {
      * @param invitation         response only: who was reached, who has no
      *                           address, whose send failed; {@code null} when
      *                           no invitation was asked for
+     * @param ouverteAujourdhui response only: the switch is on and today (the
+     *                           server's clock, simulated or not) falls in the
+     *                           window — what {@code POST /invitations} checks,
+     *                           unlike the stored {@code collecteOuverte}
      */
     @Schema(requiredProperties = {"collecteOuverte", "prevenirAnimateurs"})
     public record ConfigurationCollecte(
@@ -122,11 +145,19 @@ public class DeclarationDisponibiliteResource {
             LocalDate fin,
             Boolean relanceAutomatique,
             boolean prevenirAnimateurs,
-            InvitationReport invitation) {
+            InvitationReport invitation,
+            boolean ouverteAujourdhui) {
 
-        static ConfigurationCollecte of(FenetreCollecte fenetre, InvitationReport invitation) {
+        static ConfigurationCollecte of(
+                FenetreCollecte fenetre, InvitationReport invitation, boolean ouverteAujourdhui) {
             return new ConfigurationCollecte(
-                    fenetre.ouverte(), fenetre.debut(), fenetre.fin(), fenetre.relanceAutomatique(), false, invitation);
+                    fenetre.ouverte(),
+                    fenetre.debut(),
+                    fenetre.fin(),
+                    fenetre.relanceAutomatique(),
+                    false,
+                    invitation,
+                    ouverteAujourdhui);
         }
     }
 

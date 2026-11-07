@@ -205,6 +205,14 @@
 }
 
 /* The two tabs of the admin screen: the declarations, the covoiturage requests. */
+.dispo-envoi-liens {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+}
+
 .dispo-onglets {
   margin: 1rem 0;
   flex-wrap: wrap;
