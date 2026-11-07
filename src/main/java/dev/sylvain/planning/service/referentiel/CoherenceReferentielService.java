@@ -13,6 +13,7 @@ import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.Constraint
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.TypologieStaffing;
 import dev.sylvain.planning.service.analyse.StaffingService;
+import dev.sylvain.planning.service.espace.JourJClock;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.solve.PlanningService;
@@ -22,6 +23,7 @@ import jakarta.inject.Inject;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -74,6 +76,8 @@ public class CoherenceReferentielService {
 
     private final Instance<PlanningService> planning;
 
+    private final JourJClock clock;
+
     @Inject
     public CoherenceReferentielService(
             ReferenceDataService referenceDataService,
@@ -81,13 +85,15 @@ public class CoherenceReferentielService {
             CoherenceService coherence,
             Instance<ConstraintAnalysisStore> analyses,
             Instance<PlanningPersistenceService> plan,
-            Instance<PlanningService> planning) {
+            Instance<PlanningService> planning,
+            JourJClock clock) {
         this.referenceDataService = referenceDataService;
         this.staffingService = staffingService;
         this.coherence = coherence;
         this.analyses = analyses;
         this.plan = plan;
         this.planning = planning;
+        this.clock = clock;
     }
 
     /** The families the checklist is grouped by, in reading order. */
@@ -169,6 +175,9 @@ public class CoherenceReferentielService {
      * @param placesTenues the seats of the persisted plan, read only when a lock and a
      *                     forced assignment both exist
      * @param horizon      the frozen past (ADR 0044), {@code null} when off
+     * @param animateursAssignedAhead the ids of the animateurs holding a seat on a day
+     *                     not yet past (JourJ's today included), from the persisted plan;
+     *                     read only when some fiche lacks a phone
      * @param diagnostics  the constraints of the latest analysis held in memory, empty
      *                     without one: the lock warning then has nothing to say
      */
@@ -184,7 +193,8 @@ public class CoherenceReferentielService {
             List<ConstraintDiagnostic> diagnostics,
             List<CreneauGridService.GridAnomaly> grille,
             RapportOuvertures ouvertures,
-            StaffingSummary staffing) {}
+            StaffingSummary staffing,
+            Supplier<Set<String>> animateursAssignedAhead) {}
 
     /** The checklist of the current edition, every source read now. */
     public CoherenceReport report() {
@@ -219,7 +229,22 @@ public class CoherenceReferentielService {
                 latestDiagnostics(),
                 referenceDataService.gridAnomalies(creneaux, verrouillages),
                 ouvertures,
-                staffing));
+                staffing,
+                this::animateursAssignedAhead));
+    }
+
+    private Set<String> animateursAssignedAhead() {
+        if (!plan.isResolvable()) {
+            return Set.of();
+        }
+        LocalDate today = clock.today();
+        Set<String> ids = new HashSet<>();
+        plan.get().loadEmployedByDay().forEach((date, animateurIds) -> {
+            if (!date.isBefore(today)) {
+                ids.addAll(animateurIds);
+            }
+        });
+        return ids;
     }
 
     private List<ConstraintDiagnostic> latestDiagnostics() {
@@ -248,6 +273,7 @@ public class CoherenceReferentielService {
                             CoherenceFamily.ANIMATEURS, avertissement, CoherenceSubject.ANIMATEUR, animateur.getId())));
         }
 
+        withoutPhone(sources, issues);
         adHoc(sources, issues);
         for (VerrouillagePlanning verrouillage : sources.verrouillages()) {
             CoherenceAnalyzer.onVerrouillage(verrouillage, sources.diagnostics(), sources.creneaux())
@@ -260,6 +286,37 @@ public class CoherenceReferentielService {
 
         capacity(sources, issues);
         return summarize(issues);
+    }
+
+    /** Code of the line counting the fiches with no phone number; the frontend links it to the filtered list. */
+    public static final String ANIMATEURS_SANS_TELEPHONE = "ANIMATEURS_SANS_TELEPHONE";
+
+    /**
+     * One line, a count: the phone is what the organisation dials the day
+     * somebody must be replaced, and the absence is otherwise found at that
+     * moment. To check when somebody without one still has a seat to come.
+     */
+    private static void withoutPhone(Sources sources, List<CoherenceIssue> issues) {
+        List<Animateur> lacking = sources.animateurs().stream()
+                .filter(animateur -> animateur.getTelephone() == null
+                        || animateur.getTelephone().isBlank())
+                .toList();
+        // Nobody has one: the organisation does not collect phones, so stay silent.
+        if (lacking.isEmpty() || lacking.size() == sources.animateurs().size()) {
+            return;
+        }
+        Set<String> ahead = sources.animateursAssignedAhead().get();
+        long assignedAhead = lacking.stream()
+                .filter(animateur -> ahead.contains(animateur.getId()))
+                .count();
+        issues.add(new CoherenceIssue(
+                CoherenceFamily.ANIMATEURS,
+                assignedAhead > 0 ? CoherenceSeverity.A_VERIFIER : CoherenceSeverity.INFORMATION,
+                ANIMATEURS_SANS_TELEPHONE,
+                lacking.size() + " fiche(s) sans téléphone, dont " + assignedAhead + " affectée(s) à une date à venir.",
+                CoherenceSubject.EDITION,
+                null,
+                null));
     }
 
     private static void standIssues(Sources sources, List<CoherenceIssue> issues) {

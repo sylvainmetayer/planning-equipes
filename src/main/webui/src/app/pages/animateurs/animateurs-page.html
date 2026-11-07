@@ -64,6 +64,10 @@
         <mat-icon>supervisor_account</mat-icon>
         <span i18n="@@animateurs.chip.managers">Managers</span>
       </button>
+      <button mat-menu-item type="button" (click)="withoutPhone.set(true)">
+        <mat-icon>phone_disabled</mat-icon>
+        <span i18n="@@animateurs.chip.sansTelephone">Sans téléphone</span>
+      </button>
     </mat-menu>
     <mat-menu #menuTypologies="matMenu">
       @for (typologie of store.typologies(); track typologie.id) {

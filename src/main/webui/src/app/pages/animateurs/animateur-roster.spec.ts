@@ -98,6 +98,17 @@ describe('animateur roster', () => {
     ]);
   });
 
+  it('keeps the fiches with no phone number, a view the URL carries', () => {
+    const roster = [
+      person('a1', 'Alice', { telephone: '0600000000' }),
+      person('a2', 'Bruno', { telephone: ' ' }),
+      person('a3', 'Chloé'),
+    ];
+    const view = readRosterView(convertToParamMap({ telephone: 'aucun' }));
+    expect(rosterLinkParams(view)).toEqual({ telephone: 'aucun' });
+    expect(rosterOrder(roster, view, context).map((each) => each.id)).toEqual(['a2', 'a3']);
+  });
+
   it('sorts on the seats of the plan, which it then needs, and on the age', () => {
     const roster = [person('a1', 'A'), person('a2', 'B', { dateNaissance: '2000-01-01' })];
     const bySeats = { ...WHOLE_ROSTER, sort: { active: 'postes', direction: 'desc' as const } };

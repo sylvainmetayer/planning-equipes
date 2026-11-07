@@ -153,6 +153,14 @@ export function familyCounts(comptage: FamilyCount): string {
  * names one.
  */
 export function coherenceLink(ligne: CoherenceIssue): LienEtat {
+  // The counting line leads to its screen already filtered.
+  if (ligne.code === 'ANIMATEURS_SANS_TELEPHONE') {
+    return {
+      route: '/animateurs',
+      queryParams: { telephone: 'aucun' },
+      libelle: $localize`:@@accueil.coherence.lien.sansTelephone:Fiches sans téléphone`,
+    };
+  }
   const id = ligne.objetId;
   switch (ligne.objet) {
     case 'STAND':
