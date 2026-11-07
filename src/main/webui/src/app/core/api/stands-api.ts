@@ -8,6 +8,7 @@ import {
   ImportGrilleDemande,
   ImportGrilleRapport,
   RapportCompactage,
+  EmplacementsManquants,
   RapportOuvertures,
   RapportSaisieGrille,
   SaisieStandGrille,
@@ -40,6 +41,11 @@ export class StandsApi {
 
   applyGridImport(demande: ImportGrilleDemande): Promise<ImportGrilleRapport> {
     return this.api.post<ImportGrilleRapport>('/api/stands/import-grille', demande);
+  }
+
+  /** The stands without an emplacement, with the one their neighbours suggest (never written). */
+  emplacementSuggestions(): Promise<EmplacementsManquants> {
+    return this.api.get<EmplacementsManquants>('/api/stands/suggestions-emplacement');
   }
 
   /** Every stand's openings on every day, as the grid screen shows them. */

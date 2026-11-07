@@ -175,6 +175,8 @@ public class CoherenceReferentielService {
      * @param placesTenues the seats of the persisted plan, read only when a lock and a
      *                     forced assignment both exist
      * @param horizon      the frozen past (ADR 0044), {@code null} when off
+     * @param missingEmplacements the stands without an emplacement, empty on an
+     *                     edition that has no emplacement at all
      * @param animateursAssignedAhead the ids of the animateurs holding a seat on a day
      *                     not yet past (JourJ's today included), from the persisted plan;
      *                     read only when some fiche lacks a phone
@@ -194,6 +196,7 @@ public class CoherenceReferentielService {
             List<CreneauGridService.GridAnomaly> grille,
             RapportOuvertures ouvertures,
             StaffingSummary staffing,
+            CoherenceAnalyzer.EmplacementsManquants missingEmplacements,
             Supplier<Set<String>> animateursAssignedAhead) {}
 
     /** The checklist of the current edition, every source read now. */
@@ -230,6 +233,7 @@ public class CoherenceReferentielService {
                 referenceDataService.gridAnomalies(creneaux, verrouillages),
                 ouvertures,
                 staffing,
+                coherence.findMissingEmplacements(stands),
                 this::animateursAssignedAhead));
     }
 
@@ -291,6 +295,9 @@ public class CoherenceReferentielService {
     /** Code of the line counting the fiches with no phone number; the frontend links it to the filtered list. */
     public static final String ANIMATEURS_SANS_TELEPHONE = "ANIMATEURS_SANS_TELEPHONE";
 
+    /** Code of the line counting the stands with no emplacement, on an edition that uses emplacements. */
+    public static final String STANDS_SANS_EMPLACEMENT = "STANDS_SANS_EMPLACEMENT";
+
     /**
      * One line, a count: the phone is what the organisation dials the day
      * somebody must be replaced, and the absence is otherwise found at that
@@ -320,6 +327,18 @@ public class CoherenceReferentielService {
     }
 
     private static void standIssues(Sources sources, List<CoherenceIssue> issues) {
+        CoherenceAnalyzer.EmplacementsManquants missing = sources.missingEmplacements();
+        if (!missing.standIds().isEmpty()) {
+            issues.add(new CoherenceIssue(
+                    CoherenceFamily.STANDS,
+                    CoherenceSeverity.A_VERIFIER,
+                    STANDS_SANS_EMPLACEMENT,
+                    missing.standIds().size() + " stand(s) sans emplacement, dont "
+                            + missing.suggestions().size() + " avec une suggestion.",
+                    CoherenceSubject.EDITION,
+                    null,
+                    null));
+        }
         for (Stand stand : sources.ownHoursStands()) {
             // The two other stand warnings are the opening report's own
             // anomalies, read below: see the class javadoc.

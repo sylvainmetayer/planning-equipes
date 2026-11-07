@@ -320,6 +320,11 @@ public class ReferenceDataService implements ReferenceData {
 
     /* ----------------------------- Emplacements ----------------------------- */
 
+    /** The stands without an emplacement and the one their neighbours suggest. */
+    public CoherenceAnalyzer.EmplacementsManquants findMissingEmplacements() {
+        return coherence.findMissingEmplacements(listStands());
+    }
+
     @Override
     public List<Emplacement> listEmplacements() {
         return emplacements.list();

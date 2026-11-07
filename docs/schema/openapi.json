@@ -3885,6 +3885,23 @@
           }
         }
       },
+      "EmplacementsManquants" : {
+        "type" : "object",
+        "properties" : {
+          "standIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "suggestions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SuggestionEmplacement"
+            }
+          }
+        }
+      },
       "EntreeAbsence" : {
         "required" : [ "annulable", "creneauId" ],
         "type" : "object",
@@ -9807,6 +9824,23 @@
           }
         }
       },
+      "SuggestionEmplacement" : {
+        "type" : "object",
+        "properties" : {
+          "standId" : {
+            "type" : "string"
+          },
+          "emplacementId" : {
+            "type" : "string"
+          },
+          "emplacementNom" : {
+            "type" : "string"
+          },
+          "raison" : {
+            "type" : "string"
+          }
+        }
+      },
       "SuggestionReparation" : {
         "type" : "object",
         "properties" : {
@@ -10021,7 +10055,7 @@
       },
       "TypeAvertissement" : {
         "type" : "string",
-        "enum" : [ "INDISPONIBILITE_HORS_EVENEMENT", "INDISPONIBILITE_JOUR_SANS_CRENEAU", "MINEUR_PENDANT_EVENEMENT", "CRENEAU_HORS_OUVERTURE_STANDS", "CRENEAU_DEBORDE_OUVERTURE_STANDS", "STAND_EXCEPTION_HORS_EVENEMENT", "STAND_FENETRE_SANS_EFFET", "STAND_JAMAIS_OUVERT", "AFFECTATION_FORCEE_JOUR_INDISPONIBLE", "AFFECTATION_FORCEE_MOTIF_LEGAL", "AFFECTATION_FORCEE_SIEGE_VERROUILLE", "ARRIVEE_GROUPEE_JOURS_DIVERGENTS", "VERROUILLAGE_SUR_VIOLATION_DURE" ]
+        "enum" : [ "INDISPONIBILITE_HORS_EVENEMENT", "INDISPONIBILITE_JOUR_SANS_CRENEAU", "MINEUR_PENDANT_EVENEMENT", "CRENEAU_HORS_OUVERTURE_STANDS", "CRENEAU_DEBORDE_OUVERTURE_STANDS", "STAND_EXCEPTION_HORS_EVENEMENT", "STAND_FENETRE_SANS_EFFET", "STAND_JAMAIS_OUVERT", "AFFECTATION_FORCEE_JOUR_INDISPONIBLE", "AFFECTATION_FORCEE_MOTIF_LEGAL", "AFFECTATION_FORCEE_SIEGE_VERROUILLE", "ARRIVEE_GROUPEE_JOURS_DIVERGENTS", "VERROUILLAGE_SUR_VIOLATION_DURE", "STAND_SANS_EMPLACEMENT" ]
       },
       "TypeCauseInfaisabilite" : {
         "type" : "string",
@@ -17752,6 +17786,24 @@
           }
         },
         "summary" : "Exemple Grille",
+        "tags" : [ "Stand Resource" ]
+      }
+    },
+    "/api/stands/suggestions-emplacement" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EmplacementsManquants"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Suggest Emplacements",
         "tags" : [ "Stand Resource" ]
       }
     },

@@ -30,6 +30,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -393,6 +395,135 @@ public final class CoherenceAnalyzer {
                             + "Le stand est enregistré."));
         }
         return List.copyOf(avertissements);
+    }
+
+    /**
+     * A stand without an emplacement and the one its neighbours agree on.
+     *
+     * @param standId        the stand left without an emplacement
+     * @param emplacementId  the emplacement a strict majority of its neighbours sit on
+     * @param emplacementNom its name, for the sentence
+     * @param raison         why, in words: « 4 stand(s) « Buvette … » sur 4 sont à X »
+     */
+    public record SuggestionEmplacement(String standId, String emplacementId, String emplacementNom, String raison) {}
+
+    /** The stands lacking an emplacement, and the suggestions among them (a suggestion implies the stand is listed). */
+    public record EmplacementsManquants(List<String> standIds, List<SuggestionEmplacement> suggestions) {}
+
+    private static final Pattern NAME_SUFFIX = Pattern.compile("^(.*\\S)\\s+(?:\\d+|\\p{L})$");
+
+    /** « Buvette 3 », « Buvette B » become « Buvette »; a name with no such suffix is its own root. */
+    static String nameRoot(String nom) {
+        String stripped = nom == null ? "" : nom.strip();
+        Matcher matcher = NAME_SUFFIX.matcher(stripped);
+        return matcher.matches() ? matcher.group(1) : stripped;
+    }
+
+    /**
+     * Which stands have no emplacement, and where their neighbours say they
+     * belong. Silent (empty) on an edition with no emplacement at all: it chose
+     * not to use them and the location rules are inert there.
+     *
+     * <p>Neighbours are the other stands sharing the name root; when the name
+     * has none, the ones proposing exactly the same typologies. A suggestion
+     * needs at least two neighbours with an emplacement and one emplacement
+     * held by strictly more than half of them. Heuristic, never written by
+     * itself.</p>
+     */
+    public static EmplacementsManquants missingEmplacements(List<Stand> stands, int emplacementsCount) {
+        if (emplacementsCount == 0) {
+            return new EmplacementsManquants(List.of(), List.of());
+        }
+        List<String> missing = new ArrayList<>();
+        List<SuggestionEmplacement> suggestions = new ArrayList<>();
+        for (Stand stand : stands) {
+            if (stand.getEmplacement() != null) {
+                continue;
+            }
+            missing.add(stand.getId());
+            suggestion(stand, stands).ifPresent(suggestions::add);
+        }
+        return new EmplacementsManquants(List.copyOf(missing), List.copyOf(suggestions));
+    }
+
+    /** The suggestion for one stand lacking an emplacement, against the edition's stands. */
+    static Optional<SuggestionEmplacement> suggestion(Stand stand, List<Stand> stands) {
+        String root = nameRoot(stand.getNom());
+        List<Stand> others = stands.stream()
+                .filter(other -> !Objects.equals(other.getId(), stand.getId()))
+                .toList();
+        List<Stand> byName = others.stream()
+                .filter(other -> nameRoot(other.getNom()).equalsIgnoreCase(root))
+                .toList();
+        boolean onName = !byName.isEmpty();
+        List<Stand> neighbours = onName
+                ? byName
+                : stand.getTypologiesProposees().isEmpty()
+                        ? List.of()
+                        : others.stream()
+                                .filter(other -> other.getTypologiesProposees().equals(stand.getTypologiesProposees()))
+                                .toList();
+        List<Stand> placed =
+                neighbours.stream().filter(v -> v.getEmplacement() != null).toList();
+        if (placed.size() < 2) {
+            return Optional.empty();
+        }
+        Map<String, Long> perEmplacement = placed.stream()
+                .collect(Collectors.groupingBy(v -> v.getEmplacement().getId(), Collectors.counting()));
+        Map.Entry<String, Long> top = perEmplacement.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .orElseThrow();
+        if (top.getValue() * 2 <= placed.size()) {
+            return Optional.empty();
+        }
+        String nom = placed.stream()
+                .map(Stand::getEmplacement)
+                .filter(e -> e.getId().equals(top.getKey()))
+                .findFirst()
+                .orElseThrow()
+                .getNom();
+        String who = onName ? "stand(s) « " + root + " … »" : "stand(s) de mêmes typologies";
+        return Optional.of(new SuggestionEmplacement(
+                stand.getId(),
+                top.getKey(),
+                nom,
+                top.getValue() + " " + who + " sur " + placed.size() + " sont à " + nom));
+    }
+
+    /**
+     * The cheap half of the write-time warning, needing no read: the stand is
+     * saved without an emplacement and this write changed something the
+     * suggestion reads. Lets the caller skip the referential reads otherwise.
+     */
+    static boolean emplacementWarningPossible(Stand avant, Stand apres) {
+        if (apres == null || apres.getEmplacement() != null) {
+            return false;
+        }
+        return avant == null
+                || avant.getEmplacement() != null
+                || !Objects.equals(avant.getNom(), apres.getNom())
+                || !Objects.equals(avant.getTypologiesProposees(), apres.getTypologiesProposees());
+    }
+
+    /**
+     * The write-time warning: the stand is saved with no emplacement while its
+     * neighbours agree on one. Only when this write changed something the
+     * suggestion reads (the emplacement, the name, the typologies): an
+     * untouched stand in a bulk edit says nothing.
+     *
+     * @param others the edition's stands as they stand now
+     */
+    public static List<Avertissement> onStandEmplacement(
+            Stand avant, Stand apres, List<Stand> others, int emplacementsCount) {
+        if (emplacementsCount == 0 || !emplacementWarningPossible(avant, apres)) {
+            return List.of();
+        }
+        return suggestion(apres, others).stream()
+                .map(suggestion -> new Avertissement(
+                        TypeAvertissement.STAND_SANS_EMPLACEMENT,
+                        STAND_PREFIX + standLabel(apres) + " n'a pas d'emplacement : " + suggestion.raison()
+                                + ". Rattacher celui-ci aussi ? Le stand est enregistré."))
+                .toList();
     }
 
     /**

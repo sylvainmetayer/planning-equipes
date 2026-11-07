@@ -26,7 +26,12 @@ import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceTablePage } from '../../core/reference-table-page';
-import { PlanningEvenement, RapportOuvertures, Stand } from '../../core/models';
+import {
+  PlanningEvenement,
+  RapportOuvertures,
+  Stand,
+  SuggestionEmplacement,
+} from '../../core/models';
 import { typologieLabels } from '../../core/typologie-colors';
 import { EmplacementsPage } from '../emplacements/emplacements-page';
 import { OngletStands, readOngletStands } from './stands-onglet';
@@ -61,6 +66,9 @@ import {
   standSortValue,
   typologieLabelsOf,
 } from './stand-order';
+
+/** `?emplacement=aucun`: the stands tied to no emplacement. */
+const NO_EMPLACEMENT = 'aucun';
 
 /** The columns of the table that sort, on what {@link standSortValue} reads. */
 const SORTED_COLUMNS = [
@@ -188,7 +196,9 @@ export class StandsPage extends ReferenceTablePage<Stand> implements OnInit {
     const emplacement = this.emplacementFilter();
     if (emplacement) {
       const nom =
-        this.store.emplacements().find((each) => each.id === emplacement)?.nom ?? emplacement;
+        emplacement === NO_EMPLACEMENT
+          ? $localize`:@@stands.chip.emplacement.aucun:aucun`
+          : (this.store.emplacements().find((each) => each.id === emplacement)?.nom ?? emplacement);
       chips.push({
         key: 'emplacement',
         label: $localize`:@@stands.chip.emplacement:Emplacement : ${nom}:emplacement:`,
@@ -213,6 +223,9 @@ export class StandsPage extends ReferenceTablePage<Stand> implements OnInit {
 
   /** The openings report: the « Ouvert » column. `null` until it is in, and then the column says nothing. */
   private readonly ouvertures = signal<RapportOuvertures | null>(null);
+
+  /** Suggested emplacement per stand without one; a failure only costs the pastille. */
+  protected readonly suggestions = signal<ReadonlyMap<string, SuggestionEmplacement>>(new Map());
   /** The persisted plan: the « Couverture » column; `null` when unreadable, and the column is left out. */
   private readonly planning = signal<PlanningEvenement | null>(null);
 
@@ -420,7 +433,10 @@ export class StandsPage extends ReferenceTablePage<Stand> implements OnInit {
     return lignes.filter(
       (stand) =>
         (!typologie || (stand.typologiesProposees ?? []).includes(typologie)) &&
-        (!emplacement || stand.emplacement?.id === emplacement),
+        (!emplacement ||
+          (emplacement === NO_EMPLACEMENT
+            ? !stand.emplacement
+            : stand.emplacement?.id === emplacement)),
     );
   }
 
@@ -451,8 +467,18 @@ export class StandsPage extends ReferenceTablePage<Stand> implements OnInit {
     }
   }
 
+  private async loadSuggestions(): Promise<void> {
+    try {
+      const manquants = await this.standsApi.emplacementSuggestions();
+      this.suggestions.set(new Map(manquants.suggestions.map((each) => [each.standId, each])));
+    } catch {
+      this.suggestions.set(new Map());
+    }
+  }
+
   /** Read again after a write: the « Ouvert » column follows the schedule that was just saved. */
   private async loadOpenings(): Promise<void> {
+    void this.loadSuggestions();
     try {
       this.ouvertures.set(await this.standsApi.openings());
     } catch {

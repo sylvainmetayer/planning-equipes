@@ -1,6 +1,7 @@
 package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.referentiel.CoherenceAnalyzer;
 import dev.sylvain.planning.service.referentiel.HoraireCompaction;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.ReferenceUsage;
@@ -49,6 +50,13 @@ public class StandResource {
     @GET
     public List<Stand> listStands() {
         return referenceDataService.listStands();
+    }
+
+    /** The stands without an emplacement, and where their neighbours say they belong (a suggestion, never written). */
+    @GET
+    @Path("/suggestions-emplacement")
+    public CoherenceAnalyzer.EmplacementsManquants suggestEmplacements() {
+        return referenceDataService.findMissingEmplacements();
     }
 
     /**

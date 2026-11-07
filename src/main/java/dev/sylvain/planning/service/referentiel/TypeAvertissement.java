@@ -95,5 +95,12 @@ public enum TypeAvertissement {
      * silently: a solve launched on it will report a hard score the operator
      * did not cause with this gesture.
      */
-    VERROUILLAGE_SUR_VIOLATION_DURE
+    VERROUILLAGE_SUR_VIOLATION_DURE,
+
+    /**
+     * The stand is saved with no emplacement while the stands next to it (same
+     * name root, else same typologies) agree on one. A suggestion, never an
+     * automatic write: the sentence carries its reason.
+     */
+    STAND_SANS_EMPLACEMENT
 }
