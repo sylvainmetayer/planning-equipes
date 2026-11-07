@@ -15,9 +15,12 @@ COPY .git ./.git
 # an exact `v*` tag becomes the version (v1.2.0 → 1.2.0), any other commit
 # keeps its short SHA so the startup line never claims a version that was
 # not released.
+# No `-q` here, unlike the dependency step: this one runs Quinoa's npm install
+# and the Angular build, and a quiet Maven swallows npm's own error output,
+# leaving only "Error in Quinoa while running package manager install command".
 RUN --mount=type=cache,target=/root/.m2 \
     REVISION="$(git describe --tags --exact-match HEAD 2>/dev/null || git rev-parse --short HEAD)" && \
-    mvn -q -DskipTests -Drevision="${REVISION#v}" package
+    mvn -B -ntp -DskipTests -Drevision="${REVISION#v}" package
 
 FROM eclipse-temurin:25-jre@sha256:78f1f183913482ef390c2722f46c3f0ce76ada341d69590e7c482ec943ee72d5
 WORKDIR /app

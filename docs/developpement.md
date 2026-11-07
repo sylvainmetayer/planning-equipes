@@ -1207,6 +1207,17 @@ points qui ne s'y voient pas :
   La garde qui empêche une PR de fork de déclencher ces workflows est
   **conservée** : elle tenait au socket Docker du runner auto-hébergé, et la
   lever relève de l'ouverture publique (#286), pas d'un changement de runner.
+- **`image-pr.yml` construit l'image d'une PR, sans la publier** : les jobs de
+  `tests.yml` désactivent Quinoa et ne passent jamais par son installation npm
+  avec le Node qu'il télécharge, si bien qu'une montée de Node pouvait passer
+  verte en PR puis casser l'image de `main`. Il ne part que sur le
+  `Dockerfile` et `.dockerignore`, `pom.xml`, `mise.toml`, les manifestes npm,
+  la configuration de build Angular et
+  `application.properties` (qui porte la version de Node de Quinoa), et les
+  trois workflows Renovate le relancent après leur propre commit — sans filtre
+  de chemins, `workflow_dispatch` n'en ayant pas. L'étape
+  `package` du `Dockerfile` n'est plus en `-q`, pour que la sortie d'npm reste
+  dans le log ;
 - **`restauration.yml` joue `scripts/restaurer.sh` pour de vrai** : pile de
   production montée avec l'image du commit, sauvegarde déposée dans le volume,
   base modifiée, restauration, vérification — plus le mode `--essai`, le

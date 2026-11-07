@@ -250,7 +250,7 @@ jobs:
             exit 0
           fi
 
-          for wf in tests.yml e2e-lourd.yml securite.yml scenario-tests.yml; do
+          for wf in tests.yml e2e-lourd.yml securite.yml scenario-tests.yml image-pr.yml; do
             for status in in_progress queued; do
               gh run list --workflow "$wf" --commit "$SUPERSEDED_SHA" --status "$status" \
                 --json databaseId --jq '.[].databaseId' \
@@ -259,7 +259,7 @@ jobs:
           done
 
           # Tests porte l'E2E ordinaire : relancer aussi e2e.yml la jouerait deux fois.
-          for wf in tests.yml securite.yml; do
+          for wf in tests.yml securite.yml image-pr.yml; do
             gh workflow run "$wf" --ref "$BRANCH"
           done
           if [ "$SOLVER_BUMP" = "true" ]; then
