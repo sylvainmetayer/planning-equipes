@@ -144,6 +144,7 @@ dev/sylvain/planning/observability/MetricsEndpointTest.java
 dev/sylvain/planning/service/ConcurrentModificationGuardTest.java
 dev/sylvain/planning/service/EditionContextFailClosedTest.java
 dev/sylvain/planning/service/IdColumnsInventoryStructuralTest.java
+dev/sylvain/planning/service/SchemaIntegrityTest.java
 dev/sylvain/planning/service/analyse/RealisedFreezeJobTest.java
 dev/sylvain/planning/service/analyse/RealisedVsPlannedServiceTest.java
 dev/sylvain/planning/service/backup/BackupServiceTest.java

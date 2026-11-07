@@ -26,7 +26,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -266,7 +265,7 @@ public class DemandeEchangeService {
                         SET statut = ?, cible_decide_le = ?
                         WHERE edition_id = ? AND id = ? AND cible_id = ? AND statut = 'EN_ATTENTE_CIBLE'""")) {
             ps.setString(1, statut.name());
-            ps.setObject(2, wallClock(maintenant));
+            ps.setObject(2, withOffset(maintenant));
             ps.setString(3, editionContext.editionIdCourant());
             ps.setString(4, demandeId);
             ps.setString(5, cibleId);
@@ -353,14 +352,6 @@ public class DemandeEchangeService {
     /** A moment bound to a {@code timestamptz} column. */
     private static OffsetDateTime withOffset(Instant moment) {
         return moment == null ? null : moment.atOffset(ZoneOffset.UTC);
-    }
-
-    /**
-     * A moment bound to {@code cible_decide_le}, the one column of the table
-     * typed {@code timestamp} without zone: it holds the server's wall clock.
-     */
-    private static LocalDateTime wallClock(Instant moment) {
-        return moment == null ? null : LocalDateTime.ofInstant(moment, ZoneId.systemDefault());
     }
 
     private static Instant instant(ResultSet rs, String colonne) throws SQLException {
@@ -692,7 +683,7 @@ public class DemandeEchangeService {
                             : String.join("\n", demande.getContraintesViolees()));
             ps.setString(13, demande.getCommentaireAdmin());
             ps.setObject(14, withOffset(demande.getCreeLe()));
-            ps.setObject(15, wallClock(demande.getCibleDecideLe()));
+            ps.setObject(15, withOffset(demande.getCibleDecideLe()));
             ps.setObject(16, withOffset(demande.getDecideLe()));
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -750,11 +741,7 @@ public class DemandeEchangeService {
                 violations == null || violations.isBlank() ? List.of() : List.of(violations.split("\n")));
         demande.setCommentaireAdmin(rs.getString("commentaire_admin"));
         demande.setCreeLe(instant(rs, "cree_le"));
-        LocalDateTime cibleDecideLe = rs.getObject("cible_decide_le", LocalDateTime.class);
-        demande.setCibleDecideLe(
-                cibleDecideLe == null
-                        ? null
-                        : cibleDecideLe.atZone(ZoneId.systemDefault()).toInstant());
+        demande.setCibleDecideLe(instant(rs, "cible_decide_le"));
         demande.setDecideLe(instant(rs, "decide_le"));
         demande.setAnnuleLe(instant(rs, "annule_le"));
         demande.setCommuniqueeLe(instant(rs, "communiquee_le"));
