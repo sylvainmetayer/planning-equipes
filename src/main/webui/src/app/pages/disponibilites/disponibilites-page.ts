@@ -19,7 +19,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { DisponibilitesApi } from '../../core/api/disponibilites-api';
 import { errorMessage } from '../../core/error-message';
-import { DeclarationAdminView, TeammateRequestView } from '../../core/models';
+import {
+  DeclarationAdminView,
+  DestinatairesInvitation,
+  TeammateRequestView,
+} from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
@@ -84,6 +88,11 @@ export class DisponibilitesPage implements OnInit {
   protected readonly chargement = signal(false);
   protected readonly declarations = signal<DeclarationAdminView[]>([]);
   protected readonly decisionEnCours = signal<string | null>(null);
+
+  /** « Envoyer les liens » is offered while the window is open (read with the page, re-read on reload). */
+  protected readonly openToday = signal(false);
+  protected readonly destinataires = signal<DestinatairesInvitation>('NOT_YET_INVITED');
+  protected readonly sending = signal(false);
 
   /**
    * « En attente seulement »: the declarations waiting for a decision — the
@@ -161,11 +170,64 @@ export class DisponibilitesPage implements OnInit {
       // The covoiturages are a tab of their own, read beside: without them
       // the declarations still read.
       void this.loadCarpools();
+      void this.loadWindowState();
       this.declarations.set(await this.disponibilitesApi.declarations());
     } catch (error) {
       this.report(error);
     } finally {
       this.chargement.set(false);
+    }
+  }
+
+  private async loadWindowState(): Promise<void> {
+    try {
+      // The server's verdict (its clock may be simulated), not the stored switch.
+      this.openToday.set((await this.disponibilitesApi.configuration()).ouverteAujourdhui ?? false);
+    } catch (error) {
+      this.openToday.set(false);
+      this.report(error);
+    }
+  }
+
+  /**
+   * Mails the espace links again, to the animateurs not yet invited or not yet
+   * declared. The server is the one to refuse (window closed, inactive
+   * edition); the report is the one the opening shows.
+   */
+  protected async sendLinks(): Promise<void> {
+    const everyone = this.destinataires() === 'NOT_YET_DECLARED';
+    const confirmed = await this.confirm.ask({
+      title: $localize`:@@dispo.liens.confirmTitre:Envoyer les liens d'espace ?`,
+      message: everyone
+        ? $localize`:@@dispo.liens.confirmTous:Un e-mail va être envoyé à tous ceux qui n'ont pas déclaré. Un e-mail envoyé ne peut pas être rappelé.`
+        : $localize`:@@dispo.liens.confirmNonInvites:Un e-mail va être envoyé à tous ceux qui ne sont pas encore invités. Un e-mail envoyé ne peut pas être rappelé.`,
+      confirmLabel: $localize`:@@dispo.liens.envoyer:Envoyer les liens`,
+    });
+    if (!confirmed) {
+      return;
+    }
+    this.sending.set(true);
+    try {
+      const report = await this.disponibilitesApi.sendLinks(this.destinataires());
+      this.notifications.notify({
+        title: $localize`:@@dispo.invitationNotif:${report.envoyes}:envoyes: invitation(s) envoyée(s).`,
+        message:
+          report.sansEmail.length + report.echecs.length === 0
+            ? undefined
+            : $localize`:@@dispo.invitationRestes:Sans adresse : ${report.sansEmail.join(', ')}:sansEmail:. Échecs : ${report.echecs.join(', ')}:echecs:.`,
+        // Names stay on screen only: the persisted log outlives the logout (docs/rgpd.md §7).
+        messageJournal:
+          report.sansEmail.length + report.echecs.length === 0
+            ? undefined
+            : $localize`:@@dispo.invitationRestesJournal:Sans adresse : ${report.sansEmail.length}:sansEmail:. Échecs : ${report.echecs.length}:echecs:.`,
+        variant: report.echecs.length > 0 ? 'error' : 'success',
+        timeout: 8000,
+      });
+    } catch (error) {
+      this.report(error);
+      void this.loadWindowState();
+    } finally {
+      this.sending.set(false);
     }
   }
 

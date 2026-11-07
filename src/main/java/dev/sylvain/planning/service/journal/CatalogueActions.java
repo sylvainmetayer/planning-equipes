@@ -160,6 +160,7 @@ public final class CatalogueActions {
     private static final String WEBHOOK_TESTE = "WEBHOOK_TESTE";
     private static final String WEBHOOK_LIVRAISON_RENVOYEE = "WEBHOOK_LIVRAISON_RENVOYEE";
     private static final String COLLECTE_CONFIGUREE = "COLLECTE_CONFIGUREE";
+    private static final String LIENS_COLLECTE_ENVOYES = "LIENS_COLLECTE_ENVOYES";
     private static final String DECLARATION_APPLIQUEE = "DECLARATION_APPLIQUEE";
     private static final String DECLARATION_REFUSEE = "DECLARATION_REFUSEE";
     private static final String COVOITURAGE_VALIDE = "COVOITURAGE_VALIDE";
@@ -409,6 +410,10 @@ public final class CatalogueActions {
 
         /* ---------- Availability, swaps, espace animateur ----------- */
         action(COLLECTE_CONFIGUREE, "Fenêtre de collecte des disponibilités configurée", Entite.DISPONIBILITE);
+        action(
+                LIENS_COLLECTE_ENVOYES,
+                "Liens d'espace envoyés pendant la collecte des disponibilités",
+                Entite.DISPONIBILITE);
         changesData(DECLARATION_APPLIQUEE, "Déclaration de disponibilités appliquée", Entite.DISPONIBILITE);
         action(DECLARATION_REFUSEE, "Déclaration de disponibilités refusée", Entite.DISPONIBILITE);
         changesData(COVOITURAGE_VALIDE, "Arrivée groupée validée", Entite.DISPONIBILITE);
@@ -610,6 +615,7 @@ public final class CatalogueActions {
         route("AuthResource#logout", DECONNEXION);
 
         route("DeclarationDisponibiliteResource#configure", COLLECTE_CONFIGUREE);
+        route("DeclarationDisponibiliteResource#sendLinks", LIENS_COLLECTE_ENVOYES);
         route("DeclarationDisponibiliteResource#apply", DECLARATION_APPLIQUEE);
         route("DeclarationDisponibiliteResource#refuse", DECLARATION_REFUSEE);
         route("DeclarationDisponibiliteResource#validateCarpool", COVOITURAGE_VALIDE);

@@ -10,9 +10,12 @@ import static org.hamcrest.Matchers.is;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
+import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
+import io.quarkus.arc.Arc;
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.MockMailbox;
 import io.quarkus.test.junit.QuarkusTest;
@@ -327,6 +330,66 @@ class DeclarationDisponibiliteFlowTest {
         assertThat(mailsTo("dec-alice@example.org"))
                 .anySatisfy(mail ->
                         assertThat(mail.getText()).contains("/animateur/").contains("/disponibilites"));
+    }
+
+    @Test
+    void sendLinksIsRefusedWhileTheWindowIsClosed() {
+        mailbox.clear();
+        postLinks("NOT_YET_INVITED").then().statusCode(409);
+        assertThat(mailsTo(EMAIL_ALICE)).isEmpty();
+    }
+
+    @Test
+    void sendLinksSkipsWhoWasAlreadyInvited() {
+        openWindow(null, null, false);
+
+        postLinks("NOT_YET_INVITED").then().statusCode(200).body("envoyes", greaterThanOrEqualTo(1));
+        assertThat(mailsTo(EMAIL_ALICE)).hasSize(1);
+
+        // Second press: Alice, reached by the first, is not written to again.
+        postLinks("NOT_YET_INVITED").then().statusCode(200);
+        assertThat(mailsTo(EMAIL_ALICE)).hasSize(1);
+    }
+
+    @Test
+    void sendLinksToTheUndeclaredWritesToInvitedAndUninvitedAlikeUntilTheyDeclare() {
+        openWindow(null, null, true);
+        mailbox.clear();
+
+        // Invited at the opening, nothing declared yet: still a recipient.
+        postLinks("NOT_YET_DECLARED").then().statusCode(200);
+        assertThat(mailsTo(EMAIL_ALICE)).hasSize(1);
+
+        declarer("[\"2026-07-10\"]", souhaits(typologieUn));
+        mailbox.clear();
+        postLinks("NOT_YET_DECLARED").then().statusCode(200);
+        assertThat(mailsTo(EMAIL_ALICE)).isEmpty();
+    }
+
+    @Test
+    void sendLinksIsRefusedFromAnInactiveEdition() {
+        EditionService editions = Arc.container().instance(EditionService.class).get();
+        String inactive = editions.create(new Edition(null, "Liens inactive", false, null))
+                .getId();
+        try {
+            given().header("X-Edition-Id", inactive)
+                    .contentType(ContentType.JSON)
+                    .body("{}")
+                    .when()
+                    .post("/api/disponibilites/invitations")
+                    .then()
+                    .statusCode(409);
+        } finally {
+            editions.delete(inactive);
+        }
+    }
+
+    private io.restassured.response.Response postLinks(String recipients) {
+        return given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
+                .body("{\"destinataires\":\"" + recipients + "\"}")
+                .when()
+                .post("/api/disponibilites/invitations");
     }
 
     @Test

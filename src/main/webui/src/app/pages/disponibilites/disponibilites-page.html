@@ -14,6 +14,20 @@
      Édition: this screen keeps one line of its state and closing it. -->
 <app-guichet-etat guichet="collecte" (changed)="reload()" />
 
+@if (openToday()) {
+  <div class="dispo-envoi-liens">
+    <mat-button-toggle-group [value]="destinataires()" (change)="destinataires.set($event.value)"
+                             aria-label="Destinataires des liens" i18n-aria-label="@@dispo.liens.destinataires">
+      <mat-button-toggle value="NOT_YET_INVITED" i18n="@@dispo.liens.nonInvites">Pas encore invités</mat-button-toggle>
+      <mat-button-toggle value="NOT_YET_DECLARED" i18n="@@dispo.liens.nonDeclares">Tous ceux qui n'ont pas déclaré</mat-button-toggle>
+    </mat-button-toggle-group>
+    <button matButton="filled" type="button" [disabled]="sending()" (click)="sendLinks()">
+      <mat-icon>forward_to_inbox</mat-icon>
+      <span i18n="@@dispo.liens.envoyer">Envoyer les liens</span>
+    </button>
+  </div>
+}
+
 @if (chargement()) {
   <mat-progress-bar mode="indeterminate" />
 }

@@ -6,6 +6,8 @@ import {
   CarpoolCancellation,
   ConfigurationCollecte,
   DeclarationAdminView,
+  DestinatairesInvitation,
+  InvitationReport,
   TeammateRequestView,
   ValidatedCarpool,
 } from '../models';
@@ -30,6 +32,11 @@ export class DisponibilitesApi {
     prevenirAnimateurs: boolean;
   }): Promise<ConfigurationCollecte> {
     return this.api.put<ConfigurationCollecte>('/api/disponibilites/configuration', configuration);
+  }
+
+  /** Sends the espace links again while the window is open, without changing the window. */
+  sendLinks(destinataires: DestinatairesInvitation): Promise<InvitationReport> {
+    return this.api.post<InvitationReport>('/api/disponibilites/invitations', { destinataires });
   }
 
   /** `application` or `refus` of one declaration, with the administrator's word; the type is the route's. */
