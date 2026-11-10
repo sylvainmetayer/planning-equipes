@@ -135,7 +135,7 @@ public class ScenarioMcpTools {
             description = "Vide entièrement UNE ÉDITION : stands, créneaux, animateurs, affectations et "
                     + "contraintes ad hoc de l'édition ciblée, les autres éditions n'y touchent pas. Opération "
                     + "destructive, à ne lancer que sur demande explicite : seul un administrateur peut la défaire, "
-                    + "en réimportant le scénario sauvegardé juste avant le vidage.",
+                    + "en restaurant la sauvegarde prise juste avant le vidage, référentiel et planning compris.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,

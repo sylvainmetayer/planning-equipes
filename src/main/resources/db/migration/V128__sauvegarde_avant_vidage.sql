@@ -6,13 +6,13 @@
 -- remet l'un et l'autre en un geste, sans toucher aux autres éditions comme le
 -- ferait la restauration du dump nocturne.
 --
--- Cinq sauvegardes au plus par édition (la borne des instantanés
--- automatiques) : les plus anciennes sont purgées après chaque vidage abouti —
--- dans la transaction d'une réinitialisation, à la fin d'un import réussi, à la
--- fin d'une restauration, qui épargne la sauvegarde restaurée et celle de
--- l'état qu'elle a remplacé. Le contenu porte les données personnelles des
--- animateurs : la table suit son édition en cascade, donc la purge annuelle
--- (rgpd.md §5), et ne part pas dans l'export SQL.
+-- Aucune purge automatique : une sauvegarde reste jusqu'à ce qu'un
+-- administrateur la supprime ou que son édition disparaisse (cascade, donc la
+-- purge annuelle, rgpd.md §5). Une ligne prise par une restauration nomme la
+-- sauvegarde restaurée et dit si la restauration a abouti : relancer une
+-- restauration échouée réutilise la ligne de sa première tentative, le vrai
+-- état d'avant. Le contenu porte les données personnelles des animateurs et ne
+-- part pas dans l'export SQL.
 
 CREATE TABLE sauvegarde_avant_vidage (
     edition_id  VARCHAR(64) NOT NULL REFERENCES edition (id) ON DELETE CASCADE,
@@ -21,9 +21,19 @@ CREATE TABLE sauvegarde_avant_vidage (
     cree_le     TIMESTAMPTZ NOT NULL DEFAULT now(),
     contenu     TEXT        NOT NULL,
     plan        JSONB       NOT NULL,
+    -- Une restauration : la sauvegarde restaurée, et si elle a abouti.
+    restaure_id          BIGINT,
+    restauration_aboutie BOOLEAN,
     PRIMARY KEY (edition_id, id),
+    CONSTRAINT sauvegarde_avant_vidage_restauree
+        FOREIGN KEY (edition_id, restaure_id) REFERENCES sauvegarde_avant_vidage (edition_id, id)
+        ON DELETE SET NULL (restaure_id),
+    CONSTRAINT sauvegarde_avant_vidage_restauration_decrite
+        CHECK ((origine = 'RESTORE') = (restauration_aboutie IS NOT NULL)),
     CONSTRAINT sauvegarde_avant_vidage_origine_connue CHECK (origine IN ('RESET', 'IMPORT', 'RESTORE'))
 );
 
 -- Sert la clé vers l'édition (ADR 0083) et la lecture « les plus récentes d'abord ».
 CREATE INDEX idx_sauvegarde_avant_vidage_recente ON sauvegarde_avant_vidage (edition_id, cree_le DESC, id DESC);
+CREATE INDEX idx_sauvegarde_avant_vidage_restauree
+    ON sauvegarde_avant_vidage (edition_id, restaure_id) WHERE restaure_id IS NOT NULL;

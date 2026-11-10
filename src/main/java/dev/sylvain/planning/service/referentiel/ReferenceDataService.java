@@ -777,17 +777,27 @@ public class ReferenceDataService implements ReferenceData {
     @RefusedWhileFrozen
     @RefusedWhileSolving
     public void importFromPlanning(PlanningEvenement planning) {
-        checkImportedStands(planning);
-        if (planning != null) {
-            // Refused before anything is written: a file may not install a
-            // combination of ad hoc exceptions the form itself refuses
-            // (issue #84). The créneaux come from the planning's own seats —
-            // the ones already persisted are about to be replaced.
-            contraintesAdHoc.checkNoContradiction(planning.getContraintesAdHoc(), creneauxOf(planning));
-        }
+        checkImportable(planning);
         imports.importFromPlanning(planning);
         recogniseJourneesTypesIfAny();
         changeTracker.markModified();
+    }
+
+    /**
+     * What {@link #importFromPlanning} refuses in a planning, checked on its
+     * own: the restore of a backup asks it before it writes anything (ADR
+     * 0084). It reads no id of the edition, so the planning may still carry
+     * the file's own — and a refusal then names them.
+     */
+    public void checkImportable(PlanningEvenement planning) {
+        checkImportedStands(planning);
+        if (planning != null) {
+            // A file may not install a combination of ad hoc exceptions the
+            // form itself refuses (issue #84). The créneaux come from the
+            // planning's own seats — the ones already persisted are about to
+            // be replaced.
+            contraintesAdHoc.checkNoContradiction(planning.getContraintesAdHoc(), creneauxOf(planning));
+        }
     }
 
     /** The distinct créneaux a planning's seats stand on, in encounter order. */

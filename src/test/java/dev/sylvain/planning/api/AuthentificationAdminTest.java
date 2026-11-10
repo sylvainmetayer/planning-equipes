@@ -148,7 +148,7 @@ class AuthentificationAdminTest {
 
     /**
      * The backups taken before a wipe carry every animateur's identity
-     * (ADR 0084): listing, downloading and restoring them all stay behind the
+     * (ADR 0084): listing, downloading, restoring and deleting them all stay behind the
      * admin session.
      */
     @Test
@@ -166,6 +166,11 @@ class AuthentificationAdminTest {
         given().header("X-Edition-Id", "E1")
                 .when()
                 .post("/api/planning/sauvegardes-avant-vidage/1/restauration")
+                .then()
+                .statusCode(401);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/planning/sauvegardes-avant-vidage/1")
                 .then()
                 .statusCode(401);
     }

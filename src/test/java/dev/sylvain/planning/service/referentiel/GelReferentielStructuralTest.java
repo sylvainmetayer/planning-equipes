@@ -166,6 +166,10 @@ class GelReferentielStructuralTest {
     /** Writes no freeze covers, each with its reason. */
     private static final Map<String, String> OPEN = Map.ofEntries(
             Map.entry(
+                    "ReferenceDataService#checkImportable(PlanningEvenement)",
+                    "reads a planning a file carries and writes nothing — the refusals of importFromPlanning, asked"
+                            + " ahead by the restore of a backup"),
+            Map.entry(
                     "CreneauService#create(Connection,Creneau)",
                     "the consigne's one grid write: consignes stay open under a freeze (ADR 0043), and"
                             + " consignesOnlyReachTheGridThroughTheirOwnDoor holds that nothing else calls it"),
