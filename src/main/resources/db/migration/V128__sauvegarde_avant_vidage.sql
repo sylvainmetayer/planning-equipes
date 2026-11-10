@@ -9,10 +9,11 @@
 -- Aucune purge automatique : une sauvegarde reste jusqu'à ce qu'un
 -- administrateur la supprime ou que son édition disparaisse (cascade, donc la
 -- purge annuelle, rgpd.md §5). Une ligne prise par une restauration nomme la
--- sauvegarde restaurée et dit si la restauration a abouti : relancer une
--- restauration échouée réutilise la ligne de sa première tentative, le vrai
--- état d'avant. Le contenu porte les données personnelles des animateurs et ne
--- part pas dans l'export SQL.
+-- sauvegarde restaurée et dit si la restauration a abouti, pour la liste et
+-- le message d'erreur seulement : une restauration sauvegarde toujours l'état
+-- qu'elle remplace. Supprimer la sauvegarde visée met cette référence à nul
+-- (ON DELETE SET NULL), sans cascade. Le contenu porte les données
+-- personnelles des animateurs et ne part pas dans l'export SQL.
 
 CREATE TABLE sauvegarde_avant_vidage (
     edition_id  VARCHAR(64) NOT NULL REFERENCES edition (id) ON DELETE CASCADE,

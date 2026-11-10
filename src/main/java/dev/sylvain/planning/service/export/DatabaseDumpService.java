@@ -222,11 +222,12 @@ public class DatabaseDumpService {
      *       since the dump deletes what it carries; like the webhooks, the
      *       state of this machine — another instance's logins and addresses
      *       would claim connections it never received.</li>
-     *   <li>{@code sauvegarde_avant_vidage} — the scenario saved before each
-     *       reset or import of an edition (ADR 0084), to undo that gesture
-     *       on this instance. It repeats what the dump already carries, every
-     *       animateur's identity included, up to five times per edition: the
-     *       file an admin downloads must not hold it again.</li>
+     *   <li>{@code sauvegarde_avant_vidage} — the scenario and plan saved
+     *       before each reset, import or restore of an edition (ADR 0084), to
+     *       undo that gesture on this instance. It repeats what the dump
+     *       already carries, every animateur's identity included, once per
+     *       wipe and with no purge: the file an admin downloads must not hold
+     *       it again.</li>
      * </ul>
      */
     static final List<String> DELIBERATELY_NOT_DUMPED = List.of(

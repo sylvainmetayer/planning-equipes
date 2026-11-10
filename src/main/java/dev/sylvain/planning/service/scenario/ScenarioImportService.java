@@ -147,9 +147,8 @@ public class ScenarioImportService {
             gel.refuseIfFrozen();
             // Before the first write, the parameters: the backup must hold the
             // edition as it was, and a failed one stops the import. It is
-            // refused, like the import, while a solve holds this edition; the
-            // bound is enforced only once the import went through, so an
-            // import refused further down evicts no earlier backup (ADR 0084).
+            // refused, like the import, while a solve holds this edition
+            // (ADR 0084).
             if (restore == null) {
                 wipeBackup.backUpBeforeImport();
             }
