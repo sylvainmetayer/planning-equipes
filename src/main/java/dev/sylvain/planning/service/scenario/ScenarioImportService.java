@@ -93,7 +93,7 @@ public class ScenarioImportService {
      * {@code src/main/resources/scenarios}, by name.
      */
     public ScenarioImportOutcome importBundled(String name) {
-        return importScenario(ScenarioYamlReader.readBundledScenario(name), null, null);
+        return importScenario(ScenarioYamlReader.readBundledScenario(name), null);
     }
 
     /**
@@ -103,13 +103,13 @@ public class ScenarioImportService {
      * document rather than importing part of it.
      */
     public ScenarioImportOutcome importYaml(String yamlContent) {
-        return importScenario(ScenarioYamlReader.parseScenarioText(yamlContent), yamlContent, null);
+        return importScenario(ScenarioYamlReader.parseScenarioText(yamlContent), null);
     }
 
     /**
      * The import of a backup being restored (ADR 0084), by the same path as
-     * any other: the restore has backed the edition up itself and purges once
-     * it is over, so this import does neither. And what an ordinary import
+     * any other: the restore has backed the edition up itself, so this import
+     * does not. And what an ordinary import
      * drops, because no seat ties it to the rest — a stand without a
      * timeslot, a timeslot without a stand — comes back here too, through the
      * usual creation: a backup brings back the whole edition it was taken of.
@@ -118,7 +118,7 @@ public class ScenarioImportService {
      */
     public List<String> importForRestore(String yamlContent) {
         List<String> nonRecrees = new ArrayList<>();
-        importScenario(ScenarioYamlReader.parseScenarioText(yamlContent), null, nonRecrees);
+        importScenario(ScenarioYamlReader.parseScenarioText(yamlContent), nonRecrees);
         return nonRecrees;
     }
 
@@ -135,14 +135,11 @@ public class ScenarioImportService {
      * call's.</p>
      */
     /**
-     * @param sourceText the file's text when the caller has it: the backups
-     *                   holding that very text are spared by the purge, so
-     *                   re-importing a downloaded backup cannot evict it
      * @param restore    {@code null} for an ordinary import; for the import
      *                   of a restore, where to say what could not be created
      *                   again
      */
-    private ScenarioImportOutcome importScenario(ScenarioDto scenario, String sourceText, List<String> restore) {
+    private ScenarioImportOutcome importScenario(ScenarioDto scenario, List<String> restore) {
         // Built once before anything is written, so that a file the mapper
         // refuses is refused before its edition: section is acted upon.
         ScenarioYamlReader.fromDto(scenario, referenceDataService::getParametresLegaux);
@@ -183,9 +180,6 @@ public class ScenarioImportService {
             applyJourneesTypes(sections);
             applyContraintes(sections);
             applyConsignes(sections);
-            if (restore == null) {
-                wipeBackup.enforceBound(sourceText);
-            }
         });
     }
 

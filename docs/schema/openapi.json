@@ -10887,6 +10887,13 @@
           },
           "creeLe" : {
             "$ref" : "#/components/schemas/Instant"
+          },
+          "restaureId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "restaurationAboutie" : {
+            "type" : "boolean"
           }
         }
       },
@@ -16815,6 +16822,29 @@
           }
         },
         "summary" : "Download Wipe Backup",
+        "tags" : [ "Planning Resource" ]
+      },
+      "delete" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          }
+        },
+        "summary" : "Delete Wipe Backup",
         "tags" : [ "Planning Resource" ]
       }
     },

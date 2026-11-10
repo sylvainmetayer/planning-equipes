@@ -12,6 +12,7 @@ import dev.sylvain.planning.service.solve.SolvePipeline;
 import dev.sylvain.planning.service.solve.WipeBackupService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -159,6 +160,19 @@ public class PlanningResource {
     @Consumes(MediaType.WILDCARD)
     public WipeBackupService.Restoration restoreWipeBackup(@PathParam("id") long id) {
         return wipeBackup.restore(id);
+    }
+
+    /**
+     * Deletes one backup of the edition: nothing deletes them otherwise but
+     * the deletion of the edition (ADR 0084), and erasing a person from the
+     * backups that carry them goes through here.
+     */
+    @DELETE
+    @Path("/planning/sauvegardes-avant-vidage/{id}")
+    @Consumes(MediaType.WILDCARD)
+    public Response deleteWipeBackup(@PathParam("id") long id) {
+        wipeBackup.delete(id);
+        return Response.noContent().build();
     }
 
     /** One of them, as a scenario file: what the restore re-imports, to read before restoring it. */

@@ -104,6 +104,7 @@ public final class CatalogueActions {
     private static final String JOB_SUPPRIME = "JOB_SUPPRIME";
     private static final String PLANNING_REINITIALISE = "PLANNING_REINITIALISE";
     private static final String PLANNING_RESTAURE_SAUVEGARDE = "PLANNING_RESTAURE_SAUVEGARDE";
+    private static final String SAUVEGARDE_VIDAGE_SUPPRIMEE = "SAUVEGARDE_VIDAGE_SUPPRIMEE";
     private static final String AFFECTATION_DEPLACEE = "AFFECTATION_DEPLACEE";
     private static final String AFFECTATION_POSEE = "AFFECTATION_POSEE";
     private static final String ABSENCE_ENREGISTREE = "ABSENCE_ENREGISTREE";
@@ -324,6 +325,7 @@ public final class CatalogueActions {
         changesData(PLANNING_REINITIALISE, "Données de référence effacées", Entite.PLANNING);
         // Its locks move what a solve is given, like any VERROU_POSE.
         changesData(PLANNING_RESTAURE_SAUVEGARDE, "Sauvegarde avant vidage restaurée", Entite.PLANNING);
+        action(SAUVEGARDE_VIDAGE_SUPPRIMEE, "Sauvegarde avant vidage supprimée", Entite.PLANNING);
         action(AFFECTATION_DEPLACEE, "Affectation déplacée à la main", Entite.PLANNING);
         action(AFFECTATION_POSEE, "Poste attribué à la main", Entite.PLANNING);
         action(ABSENCE_ENREGISTREE, "Absence déclarée en mode jour J", Entite.PLANNING);
@@ -548,6 +550,7 @@ public final class CatalogueActions {
         route("PlanningResource#solve", SOLVE_LANCE);
         route("PlanningResource#reset", PLANNING_REINITIALISE);
         route("PlanningResource#restoreWipeBackup", PLANNING_RESTAURE_SAUVEGARDE);
+        route("PlanningResource#deleteWipeBackup", SAUVEGARDE_VIDAGE_SUPPRIMEE);
         route("SolverJobResource#solveAsync", SOLVE_LANCE);
         route("SolverJobResource#solveFromReferenceData", SOLVE_LANCE);
         route("StaffingResource#verify", VERIFICATION_BESOIN_LANCEE);

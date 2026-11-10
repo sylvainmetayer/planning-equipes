@@ -166,26 +166,18 @@ class WipeBackupServiceTest {
         });
     }
 
-    /** Two scenarios imported in turn: each import backs the other one up, and only the last five stay. */
+    /** Nothing purges the backups: after N wipes, N backups, the oldest included. */
     @Test
-    void onlyTheMostRecentBackupsOfAnEditionAreKept() {
+    void everyWipeKeepsItsBackup() {
         inANewEdition(() -> {
             scenarioImportService.importBundled(SCENARIO);
-            for (int i = 0; i <= WipeBackupService.KEPT_PER_EDITION; i++) {
+            int vidages = 7;
+            for (int i = 0; i < vidages; i++) {
                 scenarioImportService.importBundled(i % 2 == 0 ? AUTRE_SCENARIO : SCENARIO);
             }
-            List<WipeBackup> backups = wipeBackup.list();
-            assertThat(backups).hasSize(WipeBackupService.KEPT_PER_EDITION);
-            long oldest = backups.getLast().id();
+            persistenceService.clearDatabase();
 
-            scenarioImportService.importBundled(AUTRE_SCENARIO);
-
-            assertThat(wipeBackup.list())
-                    .hasSize(WipeBackupService.KEPT_PER_EDITION)
-                    .extracting(WipeBackup::id)
-                    .doesNotContain(oldest)
-                    .first()
-                    .isNotIn(backups.stream().map(WipeBackup::id).toList());
+            assertThat(wipeBackup.list()).hasSize(vidages + 1);
         });
     }
 
@@ -209,7 +201,7 @@ class WipeBackupServiceTest {
     void anImportRefusedAfterItsBackupEvictsNothing() {
         inANewEdition(() -> {
             scenarioImportService.importBundled(SCENARIO);
-            for (int i = 0; i < WipeBackupService.KEPT_PER_EDITION; i++) {
+            for (int i = 0; i < 5; i++) {
                 scenarioImportService.importBundled(i % 2 == 0 ? AUTRE_SCENARIO : SCENARIO);
             }
             List<Long> avant = ids();
@@ -285,6 +277,7 @@ class WipeBackupServiceTest {
                     assertThat(wipeBackup.list()).isEmpty();
                     assertThatThrownBy(() -> wipeBackup.loadContent(id)).isInstanceOf(BusinessError.NotFound.class);
                     assertThatThrownBy(() -> wipeBackup.restore(id)).isInstanceOf(BusinessError.NotFound.class);
+                    assertThatThrownBy(() -> wipeBackup.delete(id)).isInstanceOf(BusinessError.NotFound.class);
                 });
                 given().header("X-Edition-Id", autre)
                         .get("/api/planning/sauvegardes-avant-vidage/" + id)
@@ -372,18 +365,18 @@ class WipeBackupServiceTest {
     }
 
     /**
-     * The oldest of five backups, restored — by the gesture, or by hand by
-     * re-importing its file: either way it is still there afterwards, and so
-     * is the state it replaced.
+     * The oldest of several backups, restored — by hand by re-importing its
+     * file, then by the gesture, twice: it is still there afterwards, and so
+     * is every state it replaced.
      */
     @Test
     void theOldestBackupSurvivesItsOwnRestore() {
         inANewEdition(() -> {
             scenarioImportService.importBundled(SCENARIO);
-            for (int i = 0; i < WipeBackupService.KEPT_PER_EDITION; i++) {
+            for (int i = 0; i < 5; i++) {
                 scenarioImportService.importBundled(i % 2 == 0 ? AUTRE_SCENARIO : SCENARIO);
             }
-            assertThat(wipeBackup.list()).hasSize(WipeBackupService.KEPT_PER_EDITION);
+            assertThat(wipeBackup.list()).hasSize(5);
             long oldest = wipeBackup.list().getLast().id();
 
             scenarioImportService.importYaml(wipeBackup.loadContent(oldest));
@@ -391,11 +384,8 @@ class WipeBackupServiceTest {
 
             Restoration restoration = wipeBackup.restore(oldest);
             assertThat(ids()).contains(oldest);
-            if (restoration.sauvegardeAvant() != null) {
-                assertThat(ids()).contains(restoration.sauvegardeAvant());
-            }
             Restoration encore = wipeBackup.restore(oldest);
-            assertThat(ids()).contains(oldest, encore.sauvegardeAvant());
+            assertThat(ids()).contains(oldest, restoration.sauvegardeAvant(), encore.sauvegardeAvant());
         });
     }
 
@@ -463,6 +453,100 @@ class WipeBackupServiceTest {
         });
     }
 
+    /**
+     * A restore that fails five times, then goes through: every failure names
+     * the same backup, the one taken before the first attempt — not the
+     * half-restored edition a retry starts from — and it is still there, and
+     * still brings back the state before, once the restore went through.
+     */
+    @Test
+    void retriesOfAFailedRestoreAllNameTheStateBeforeTheFirstAttempt() {
+        inANewEdition(() -> {
+            scenarioImportService.importBundled(SCENARIO);
+            seatEveryoneAndLock();
+            persistenceService.clearDatabase();
+            long backup = wipeBackup.list().getFirst().id();
+            scenarioImportService.importBundled(AUTRE_SCENARIO);
+            seatEveryoneAndLock();
+            List<String> stands = standNames();
+            List<String> plan = plan();
+            List<String> verrous = locks();
+            int lignes = wipeBackup.list().size();
+
+            List<String> messages = new java.util.ArrayList<>();
+            try {
+                sql("ALTER TABLE poste_affectation ADD CONSTRAINT test_refus CHECK (false) NOT VALID");
+                for (int i = 0; i < 5; i++) {
+                    try {
+                        wipeBackup.restore(backup);
+                    } catch (IllegalStateException e) {
+                        messages.add(e.getMessage());
+                    }
+                }
+            } finally {
+                sql("ALTER TABLE poste_affectation DROP CONSTRAINT test_refus");
+            }
+            WipeBackup premiere = wipeBackup.list().getFirst();
+            assertThat(premiere.origine()).isEqualTo(Trigger.RESTORE);
+            assertThat(premiere.restaureId()).isEqualTo(backup);
+            assertThat(premiere.restaurationAboutie()).isFalse();
+            assertThat(wipeBackup.list()).hasSize(lignes + 1);
+            assertThat(messages)
+                    .hasSize(5)
+                    .allSatisfy(message -> assertThat(message).contains("la sauvegarde " + premiere.id() + " :"));
+
+            Restoration restoration = wipeBackup.restore(backup);
+
+            assertThat(restoration.sauvegardeAvant()).isEqualTo(premiere.id());
+            assertThat(wipeBackup.list().getFirst().restaurationAboutie()).isTrue();
+            wipeBackup.restore(premiere.id());
+            assertThat(standNames()).isEqualTo(stands);
+            assertThat(plan()).isEqualTo(plan);
+            assertThat(locks()).isEqualTo(verrous);
+        });
+    }
+
+    /** Going back after a failed restore, as its error says, keeps the backup the restore was for. */
+    @Test
+    void goingBackAfterAFailedRestoreKeepsTheBackupItWasFor() {
+        inANewEdition(() -> {
+            scenarioImportService.importBundled(SCENARIO);
+            seatEveryoneAndLock();
+            for (int i = 0; i < 4; i++) {
+                scenarioImportService.importBundled(i % 2 == 0 ? AUTRE_SCENARIO : SCENARIO);
+            }
+            long oldest = wipeBackup.list().getLast().id();
+            try {
+                sql("ALTER TABLE poste_affectation ADD CONSTRAINT test_refus CHECK (false) NOT VALID");
+                assertThatThrownBy(() -> wipeBackup.restore(oldest)).isInstanceOf(RuntimeException.class);
+            } finally {
+                sql("ALTER TABLE poste_affectation DROP CONSTRAINT test_refus");
+            }
+            long avant = wipeBackup.list().getFirst().id();
+
+            wipeBackup.restore(avant);
+
+            assertThat(ids()).contains(oldest, avant);
+            wipeBackup.restore(oldest);
+            assertThat(ids()).contains(oldest, avant);
+        });
+    }
+
+    /** An admin deletes one backup of the edition, and none of another's. */
+    @Test
+    void anAdminDeletesABackupOfTheEditionOnly() {
+        inANewEdition(() -> {
+            scenarioImportService.importBundled(SCENARIO);
+            persistenceService.clearDatabase();
+            long id = wipeBackup.list().getFirst().id();
+
+            wipeBackup.delete(id);
+
+            assertThat(ids()).doesNotContain(id);
+            assertThatThrownBy(() -> wipeBackup.delete(id)).isInstanceOf(BusinessError.NotFound.class);
+        });
+    }
+
     /** A technical failure half way — the seats refused by the database — says the same, and stays a 500. */
     @Test
     void aTechnicalFailureHalfWayNamesItsStepAndTheBackupBefore() {
@@ -477,7 +561,7 @@ class WipeBackupServiceTest {
                 assertThatThrownBy(() -> wipeBackup.restore(backup))
                         .isInstanceOf(IllegalStateException.class)
                         .hasMessageContaining("« réapplication du planning »")
-                        .hasMessageContaining("restaurez-la pour revenir en arrière");
+                        .hasMessageContaining("L'état d'avant la première tentative est dans la sauvegarde");
             } finally {
                 sql("ALTER TABLE poste_affectation DROP CONSTRAINT test_refus");
             }
@@ -525,7 +609,7 @@ class WipeBackupServiceTest {
                 await().pollInSameThread()
                         .atMost(Duration.ofSeconds(30))
                         .until(() -> solverJobs.findActive().isPresent());
-                for (int i = 0; i < WipeBackupService.KEPT_PER_EDITION; i++) {
+                for (int i = 0; i < 5; i++) {
                     assertThatThrownBy(() -> scenarioImportService.importBundled(SCENARIO))
                             .isInstanceOf(SolverJobService.SolverBusyException.class);
                 }

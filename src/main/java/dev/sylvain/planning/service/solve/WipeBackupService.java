@@ -54,12 +54,14 @@ import java.util.stream.Collectors;
  * the automatique snapshot, which never fails a solve: a solve destroys nothing
  * a snapshot alone could bring back, a wipe destroys everything. Only an
  * edition holding nothing a wipe or an import would overwrite gets none.</p>
+ *
+ * <p>Nothing here deletes a backup on its own: they all stay until an admin
+ * deletes one ({@link #delete}) or their edition goes, by cascade. An
+ * automatic purge was tried, and every one of its sparing rules let a gesture
+ * evict the very backup it needed (ADR 0084).</p>
  */
 @ApplicationScoped
 public class WipeBackupService {
-
-    /** Same bound as the automatique snapshots: an afternoon of mistakes, not an archive. */
-    static final int KEPT_PER_EDITION = 5;
 
     /** What emptied the edition, as stored in {@code origine}. */
     public enum Trigger {
@@ -69,22 +71,28 @@ public class WipeBackupService {
         RESTORE
     }
 
-    /** One backup, without its content. */
-    public record WipeBackup(long id, Trigger origine, Instant creeLe) {}
+    /**
+     * One backup, without its content.
+     *
+     * @param restaureId          for a {@link Trigger#RESTORE}, the backup that restore put back
+     * @param restaurationAboutie for a {@link Trigger#RESTORE}, whether that restore went through: one that did not
+     *                            left a half-restored edition, and this backup is the state before its first attempt
+     */
+    public record WipeBackup(long id, Trigger origine, Instant creeLe, Long restaureId, Boolean restaurationAboutie) {}
 
     /**
      * What {@link #restore} put back, and what it could not, one sentence each,
      * naming ids only. Every seat counted was written; a lock whose target was
      * already frozen is counted apart, since nothing was written.
      *
-     * @param sauvegardeAvant  the backup holding the edition as it was before the restore — restoring it undoes
-     *                         this one — {@code null} when the edition was empty
+     * @param sauvegardeAvant  the backup holding the edition as it was before the restore — before its first
+     *                         attempt, when it is retried — restoring it undoes this one
      * @param referentielNonRestaure the stands and timeslots no seat tied to the rest that could not be created again
      * @param score            the score of the restored plan, locks included, {@code null} when it could not be
      *                         analysed
      */
     public record Restoration(
-            Long sauvegardeAvant,
+            long sauvegardeAvant,
             int affectationsRestaurees,
             List<String> affectationsNonRestaurees,
             int verrouillagesRestaures,
@@ -162,35 +170,22 @@ public class WipeBackupService {
      * own since the import spans several. Refused while a solve holds the
      * edition, like the import it precedes: the interceptor runs in the
      * edition the file targets, so a refused import writes no backup. What
-     * can still refuse it later (a contradiction, a stand check) leaves this
-     * backup behind but evicts nothing: the bound is only enforced once the
-     * import has gone through ({@link #enforceBound}).
+     * can still refuse it later leaves this backup behind, and evicts nothing.
      */
     @RefusedWhileSolving
     public void backUpBeforeImport() {
         scope.write("Failed to back the edition up before an import", connection -> insert(connection, Trigger.IMPORT));
     }
 
-    /**
-     * Drops the oldest backups beyond {@link #KEPT_PER_EDITION}, once an import
-     * has gone through — sparing those holding {@code sparedContent}, the
-     * file just imported: re-importing a downloaded backup by hand cannot
-     * evict that very backup.
-     */
-    public void enforceBound(String sparedContent) {
-        scope.write("Failed to purge the edition's backups", connection -> purge(connection, Set.of(), sparedContent));
-    }
-
     /** Backs the current edition up inside the caller's transaction, so the wipe and its backup land together. */
     void backUp(Connection connection, Trigger trigger) throws SQLException {
         insert(connection, trigger);
-        purge(connection, Set.of(), null);
     }
 
     /**
      * Writes the backup, unless the edition holds nothing a wipe or an import
      * would destroy or its latest backup is already this very state — a
-     * retried gesture must not push the useful backup out. An edition half
+     * retried gesture stores it once. An edition half
      * built (an imported team, no grid yet) is backed up all the same: the
      * scenario format reads an empty section back.
      *
@@ -202,18 +197,7 @@ public class WipeBackupService {
             return Optional.empty();
         }
         String yaml = planningService.scenarioYaml();
-        List<LockBackup> verrouillages = referenceDataService.listVerrouillages().stream()
-                .map(v -> new LockBackup(
-                        v.getType(),
-                        v.getAnimateurId(),
-                        v.getStandId(),
-                        v.getCreneauDate(),
-                        v.getCreneauHeureDebut(),
-                        v.getCreneauHeureFin(),
-                        v.getJour(),
-                        v.getRaison()))
-                .toList();
-        String plan = json(new PlanBackup(snapshots.loadPersistedAffectations(), verrouillages));
+        String plan = json(new PlanBackup(snapshots.loadPersistedAffectations(), locks()));
         try (PreparedStatement ps = scope.prepareScoped(connection, """
  SELECT s.id FROM sauvegarde_avant_vidage s
  WHERE s.edition_id = ? AND s.contenu = ? AND s.plan = ?::jsonb
@@ -259,23 +243,70 @@ public class WipeBackupService {
     }
 
     /**
-     * Keeps the {@link #KEPT_PER_EDITION} most recent backups, and those named
-     * in {@code spared} or holding {@code sparedContent} whatever their age.
+     * The backup holding the state a restore of {@code target} replaces. A
+     * retry after a failed restore of the same backup reuses the one its first
+     * attempt took, rather than backing up the half-restored edition the
+     * failure left: that one is what the error names, and it must stay the
+     * state before. Otherwise a new one, written whatever the edition holds,
+     * so that a retry can always tell.
      */
-    private void purge(Connection connection, Set<Long> spared, String sparedContent) throws SQLException {
-        List<Long> ids = new ArrayList<>(spared);
+    private long stateBeforeRestore(Connection connection, long target) throws SQLException {
         try (PreparedStatement ps = scope.prepareScoped(connection, """
- DELETE FROM sauvegarde_avant_vidage
- WHERE edition_id = ?
- AND id NOT IN (SELECT id FROM sauvegarde_avant_vidage WHERE edition_id = ?
- ORDER BY cree_le DESC, id DESC LIMIT ?)
- AND NOT (id = ANY (?))
- AND contenu IS DISTINCT FROM ?""")) {
-            ps.setString(2, scope.editionId());
-            ps.setInt(3, KEPT_PER_EDITION);
-            ps.setArray(4, connection.createArrayOf("bigint", ids.toArray()));
-            ps.setString(5, sparedContent);
-            ps.executeUpdate();
+ SELECT id, origine, restaure_id, restauration_aboutie FROM sauvegarde_avant_vidage
+ WHERE edition_id = ? ORDER BY cree_le DESC, id DESC LIMIT 1""");
+                ResultSet rs = ps.executeQuery()) {
+            if (rs.next()
+                    && Trigger.RESTORE.name().equals(rs.getString("origine"))
+                    && rs.getLong("restaure_id") == target
+                    && !rs.getBoolean("restauration_aboutie")) {
+                return rs.getLong("id");
+            }
+        }
+        String yaml = planningService.scenarioYaml();
+        String plan = json(new PlanBackup(snapshots.loadPersistedAffectations(), locks()));
+        try (PreparedStatement ps = scope.prepareScoped(connection, """
+ INSERT INTO sauvegarde_avant_vidage (edition_id, origine, contenu, plan, restaure_id, restauration_aboutie)
+ VALUES (?, ?, ?, ?::jsonb, ?, FALSE)
+ RETURNING id""")) {
+            ps.setString(2, Trigger.RESTORE.name());
+            ps.setString(3, yaml);
+            ps.setString(4, plan);
+            ps.setLong(5, target);
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getLong(1);
+            }
+        }
+    }
+
+    private List<LockBackup> locks() {
+        return referenceDataService.listVerrouillages().stream()
+                .map(v -> new LockBackup(
+                        v.getType(),
+                        v.getAnimateurId(),
+                        v.getStandId(),
+                        v.getCreneauDate(),
+                        v.getCreneauHeureDebut(),
+                        v.getCreneauHeureFin(),
+                        v.getJour(),
+                        v.getRaison()))
+                .toList();
+    }
+
+    /**
+     * Deletes one backup of the current edition — the admin's housekeeping,
+     * and the way to erase a person from the backups that still carry them.
+     */
+    public void delete(long id) {
+        int supprimees = scope.writeAndReturn("Failed to delete an edition's backup", connection -> {
+            try (PreparedStatement ps = scope.prepareScoped(
+                    connection, "DELETE FROM sauvegarde_avant_vidage WHERE edition_id = ? AND id = ?")) {
+                ps.setLong(2, id);
+                return ps.executeUpdate();
+            }
+        });
+        if (supprimees == 0) {
+            throw new BusinessError.NotFound("Sauvegarde " + id + " introuvable dans cette édition.");
         }
     }
 
@@ -284,14 +315,16 @@ public class WipeBackupService {
         return scope.read("Failed to list the edition's backups", connection -> {
             List<WipeBackup> backups = new ArrayList<>();
             try (PreparedStatement ps = scope.prepareScoped(connection, """
- SELECT id, origine, cree_le FROM sauvegarde_avant_vidage
+ SELECT id, origine, cree_le, restaure_id, restauration_aboutie FROM sauvegarde_avant_vidage
  WHERE edition_id = ? ORDER BY cree_le DESC, id DESC""");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     backups.add(new WipeBackup(
                             rs.getLong("id"),
                             Trigger.valueOf(rs.getString("origine")),
-                            rs.getTimestamp("cree_le").toInstant()));
+                            rs.getTimestamp("cree_le").toInstant(),
+                            rs.getObject("restaure_id", Long.class),
+                            rs.getObject("restauration_aboutie", Boolean.class)));
                 }
             }
             return backups;
@@ -309,23 +342,25 @@ public class WipeBackupService {
      * <ol>
      *   <li>the refusals, before anything is written: a solve holding the
      *       edition (the interceptor), a frozen family, a backup this edition
-     *       does not hold, a file the import would refuse;</li>
-     *   <li>the current state is backed up ({@link Trigger#RESTORE}), unless
-     *       the edition is empty — restoring that one undoes this restore;</li>
+     *       does not hold, a file the import would refuse — its stands and ad
+     *       hoc exceptions included;</li>
+     *   <li>the current state is backed up ({@link Trigger#RESTORE}) — or, on
+     *       a retry after a failed restore of the same backup, the one the
+     *       first attempt took is kept ({@link #stateBeforeRestore});
+     *       restoring it undoes this restore;</li>
      *   <li>the scenario is imported by the import itself, which also brings
      *       back the stands and timeslots no seat ties to the rest;</li>
      *   <li>the plan is put back on it, found by natural keys
      *       ({@link #match}); refused if a plan with seats finds none;</li>
-     *   <li>the locks, through the usual lock write;</li>
-     *   <li>only then the bound, sparing the restored backup and the one of
-     *       step 2.</li>
+     *   <li>the locks, through the usual lock write; the backup of step 2 is
+     *       then marked as belonging to a restore that went through.</li>
      * </ol>
      *
      * <p><b>Not atomic</b>: the repository has no transaction spanning several
      * services (ADR 0084, after the choice of A5). A failure after step 2
      * leaves the edition half restored and says at which step, with the id of
-     * the backup of step 2 — restoring it puts the edition back as it was, the
-     * technical ids apart. The restored referential gets new ids too: what
+     * the backup of step 2 — the state before the first attempt; restoring it
+     * puts the edition back as it was, the technical ids apart. The restored referential gets new ids too: what
      * named the old ones outside the backup (snapshots, day reviews, swap
      * requests, the journal) no longer finds them.</p>
      *
@@ -337,30 +372,33 @@ public class WipeBackupService {
     public Restoration restore(long id) {
         String yaml = loadContent(id);
         PlanBackup plan = readPlan(column(id, SELECT_PLAN));
-        ScenarioYamlReader.fromDto(
-                ScenarioYamlReader.parseScenarioText(yaml), referenceDataService::getParametresLegaux);
+        referenceDataService.checkImportable(ScenarioYamlReader.fromDto(
+                        ScenarioYamlReader.parseScenarioText(yaml), referenceDataService::getParametresLegaux)
+                .planning());
         gel.refuseIfFrozen();
 
-        Long avant = scope.writeAndReturn(
-                "Failed to back the edition up before a restore",
-                connection -> insert(connection, Trigger.RESTORE).orElse(null));
+        long avant = scope.writeAndReturn(
+                "Failed to back the edition up before a restore", connection -> stateBeforeRestore(connection, id));
         String etape = "import du scénario";
         try {
             List<String> referentielNonRestaure = scenarioImportService.importForRestore(yaml);
             etape = "réapplication du planning";
             ScenarioDto scenario = ScenarioYamlReader.parseScenarioText(yaml);
             Restoration restoration = reapply(id, plan, scenario, avant, referentielNonRestaure);
-            etape = "purge des anciennes sauvegardes";
-            Set<Long> epargnees = avant == null ? Set.of(id) : Set.of(id, avant);
-            scope.write("Failed to purge the edition's backups", connection -> purge(connection, epargnees, null));
+            etape = "fin de la restauration";
+            scope.write("Failed to mark a restore as gone through", connection -> {
+                try (PreparedStatement ps = scope.prepareScoped(connection, """
+ UPDATE sauvegarde_avant_vidage SET restauration_aboutie = TRUE WHERE edition_id = ? AND id = ?""")) {
+                    ps.setLong(2, avant);
+                    ps.executeUpdate();
+                }
+            });
             return restoration;
         } catch (RuntimeException e) {
             String message = "Restauration de la sauvegarde " + id + " interrompue à l'étape « " + etape + " » : "
                     + e.getMessage()
-                    + (avant == null
-                            ? " L'édition était vide avant la restauration."
-                            : " L'état d'avant est dans la sauvegarde " + avant
-                                    + " : restaurez-la pour revenir en arrière.");
+                    + " L'état d'avant la première tentative est dans la sauvegarde " + avant
+                    + " : restaurez-la pour revenir en arrière.";
             if (e instanceof BusinessError) {
                 throw new BusinessError.Conflict(message);
             }
@@ -369,7 +407,7 @@ public class WipeBackupService {
     }
 
     private Restoration reapply(
-            long id, PlanBackup plan, ScenarioDto scenario, Long avant, List<String> referentielNonRestaure) {
+            long id, PlanBackup plan, ScenarioDto scenario, long avant, List<String> referentielNonRestaure) {
         List<Stand> standsActuels = referenceDataService.listStands();
         List<Animateur> animateursActuels = referenceDataService.listAnimateurs();
         Map<String, String> stands = matchStands(scenario.stands(), standsActuels);
