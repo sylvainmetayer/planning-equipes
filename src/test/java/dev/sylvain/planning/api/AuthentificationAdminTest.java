@@ -165,7 +165,7 @@ class AuthentificationAdminTest {
                 .statusCode(401);
         given().header("X-Edition-Id", "E1")
                 .when()
-                .post("/api/planning/sauvegardes-avant-vidage/1/planning")
+                .post("/api/planning/sauvegardes-avant-vidage/1/restauration")
                 .then()
                 .statusCode(401);
     }

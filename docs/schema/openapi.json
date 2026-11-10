@@ -7215,44 +7215,6 @@
           }
         }
       },
-      "PlanRestoration" : {
-        "type" : "object",
-        "properties" : {
-          "affectationsRestaurees" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "affectationsNonRestaurees" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
-          "verrouillagesRestaures" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "verrouillagesDejaPresents" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "verrouillagesNonRestaures" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
-          "avertissements" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
-          "score" : {
-            "type" : "string"
-          }
-        }
-      },
       "PlanningEvenement" : {
         "type" : "object",
         "properties" : {
@@ -8969,6 +8931,54 @@
           }
         }
       },
+      "Restoration" : {
+        "type" : "object",
+        "properties" : {
+          "sauvegardeAvant" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "affectationsRestaurees" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "affectationsNonRestaurees" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "verrouillagesRestaures" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "verrouillagesDejaPresents" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "verrouillagesNonRestaures" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "referentielNonRestaure" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "avertissements" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "score" : {
+            "type" : "string"
+          }
+        }
+      },
       "ResultatLigne" : {
         "type" : "string",
         "enum" : [ "WRITTEN", "STALE", "REJECTED" ]
@@ -10116,7 +10126,7 @@
       },
       "Trigger" : {
         "type" : "string",
-        "enum" : [ "RESET", "IMPORT" ]
+        "enum" : [ "RESET", "IMPORT", "RESTORE" ]
       },
       "TypeAvertissement" : {
         "type" : "string",
@@ -16808,7 +16818,7 @@
         "tags" : [ "Planning Resource" ]
       }
     },
-    "/api/planning/sauvegardes-avant-vidage/{id}/planning" : {
+    "/api/planning/sauvegardes-avant-vidage/{id}/restauration" : {
       "post" : {
         "parameters" : [ {
           "name" : "id",
@@ -16825,13 +16835,13 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/PlanRestoration"
+                  "$ref" : "#/components/schemas/Restoration"
                 }
               }
             }
           }
         },
-        "summary" : "Restore Wipe Backup Plan",
+        "summary" : "Restore Wipe Backup",
         "tags" : [ "Planning Resource" ]
       }
     },

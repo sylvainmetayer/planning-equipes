@@ -328,7 +328,7 @@ class RefusedWhileSolvingStructuralTest {
                     "copies the edition into its backup, read by no solve, inside the transaction of"
                             + " clearDatabase, which is refused while solving before it opens"),
             Map.entry(
-                    "WipeBackupService#enforceBound()",
+                    "WipeBackupService#enforceBound(String)",
                     "drops old backups, read by no solve; runs at the end of an import already past its refusal"),
             Map.entry(
                     "DemandeEchangeService#submit(String,List)",

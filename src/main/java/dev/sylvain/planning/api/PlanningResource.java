@@ -150,17 +150,18 @@ public class PlanningResource {
     }
 
     /**
-     * Puts the plan of a backup — seats and locks — back on the edition, once
-     * its scenario has been re-imported; says what could not be (ADR 0084).
+     * Restores a backup in one gesture — the edition backed up first, the
+     * scenario re-imported, the plan and locks put back on it (ADR 0084).
+     * Not atomic: a failure says at which step, and which backup undoes it.
      */
     @POST
-    @Path("/planning/sauvegardes-avant-vidage/{id}/planning")
+    @Path("/planning/sauvegardes-avant-vidage/{id}/restauration")
     @Consumes(MediaType.WILDCARD)
-    public WipeBackupService.PlanRestoration restoreWipeBackupPlan(@PathParam("id") long id) {
-        return wipeBackup.restorePlan(id);
+    public WipeBackupService.Restoration restoreWipeBackup(@PathParam("id") long id) {
+        return wipeBackup.restore(id);
     }
 
-    /** One of them, as the file Fichiers › Importer reads back to undo the wipe. */
+    /** One of them, as a scenario file: what the restore re-imports, to read before restoring it. */
     @GET
     @Path("/planning/sauvegardes-avant-vidage/{id}")
     @Produces("application/x-yaml")

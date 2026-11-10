@@ -323,8 +323,7 @@ public final class CatalogueActions {
         action(VERIFICATION_BESOIN_LANCEE, "Vérification du besoin lancée", Entite.VERIFICATION_BESOIN);
         changesData(PLANNING_REINITIALISE, "Données de référence effacées", Entite.PLANNING);
         // Its locks move what a solve is given, like any VERROU_POSE.
-        changesData(
-                PLANNING_RESTAURE_SAUVEGARDE, "Planning restauré depuis une sauvegarde avant vidage", Entite.PLANNING);
+        changesData(PLANNING_RESTAURE_SAUVEGARDE, "Sauvegarde avant vidage restaurée", Entite.PLANNING);
         action(AFFECTATION_DEPLACEE, "Affectation déplacée à la main", Entite.PLANNING);
         action(AFFECTATION_POSEE, "Poste attribué à la main", Entite.PLANNING);
         action(ABSENCE_ENREGISTREE, "Absence déclarée en mode jour J", Entite.PLANNING);
@@ -548,7 +547,7 @@ public final class CatalogueActions {
 
         route("PlanningResource#solve", SOLVE_LANCE);
         route("PlanningResource#reset", PLANNING_REINITIALISE);
-        route("PlanningResource#restoreWipeBackupPlan", PLANNING_RESTAURE_SAUVEGARDE);
+        route("PlanningResource#restoreWipeBackup", PLANNING_RESTAURE_SAUVEGARDE);
         route("SolverJobResource#solveAsync", SOLVE_LANCE);
         route("SolverJobResource#solveFromReferenceData", SOLVE_LANCE);
         route("StaffingResource#verify", VERIFICATION_BESOIN_LANCEE);
