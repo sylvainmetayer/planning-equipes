@@ -38,8 +38,8 @@ import org.junit.jupiter.api.Test;
 
 /**
  * The backup taken before an edition is emptied (ADR 0084): it is there after
- * the wipe, it brings the edition back, it is bounded, and without it there is
- * no wipe. Each test works in an edition of its own, deleted afterwards.
+ * the wipe, it brings the edition back, nothing purges it, and without it there
+ * is no wipe. Each test works in an edition of its own, deleted afterwards.
  */
 @QuarkusTest
 class WipeBackupServiceTest {
@@ -454,55 +454,135 @@ class WipeBackupServiceTest {
     }
 
     /**
-     * A restore that fails five times, then goes through: every failure names
-     * the same backup, the one taken before the first attempt — not the
-     * half-restored edition a retry starts from — and it is still there, and
-     * still brings back the state before, once the restore went through.
+     * A restore that fails five times half way, then goes through: each
+     * attempt backs up the edition it replaces, the first one names that
+     * backup, every later one names it as the state of origin beside its own,
+     * and it still brings back the state before the whole series.
      */
     @Test
-    void retriesOfAFailedRestoreAllNameTheStateBeforeTheFirstAttempt() {
+    void retriesOfAFailedRestoreNameTheStateBeforeTheSeries() {
         inANewEdition(() -> {
-            scenarioImportService.importBundled(SCENARIO);
-            seatEveryoneAndLock();
-            persistenceService.clearDatabase();
-            long backup = wipeBackup.list().getFirst().id();
-            scenarioImportService.importBundled(AUTRE_SCENARIO);
-            seatEveryoneAndLock();
+            long backup = editionWithABackupAndAnotherState();
             List<String> stands = standNames();
             List<String> plan = plan();
             List<String> verrous = locks();
             int lignes = wipeBackup.list().size();
 
-            List<String> messages = new java.util.ArrayList<>();
-            try {
-                sql("ALTER TABLE poste_affectation ADD CONSTRAINT test_refus CHECK (false) NOT VALID");
-                for (int i = 0; i < 5; i++) {
-                    try {
-                        wipeBackup.restore(backup);
-                    } catch (IllegalStateException e) {
-                        messages.add(e.getMessage());
-                    }
-                }
-            } finally {
-                sql("ALTER TABLE poste_affectation DROP CONSTRAINT test_refus");
-            }
-            WipeBackup premiere = wipeBackup.list().getFirst();
-            assertThat(premiere.origine()).isEqualTo(Trigger.RESTORE);
-            assertThat(premiere.restaureId()).isEqualTo(backup);
-            assertThat(premiere.restaurationAboutie()).isFalse();
-            assertThat(wipeBackup.list()).hasSize(lignes + 1);
-            assertThat(messages)
-                    .hasSize(5)
-                    .allSatisfy(message -> assertThat(message).contains("la sauvegarde " + premiere.id() + " :"));
+            List<String> messages = failedRestores(backup, 5, "poste_affectation", "false");
+            List<WipeBackup> backups = wipeBackup.list();
+            WipeBackup premiere = backups.get(4);
+            assertThat(backups).hasSize(lignes + 5);
+            assertThat(backups.subList(0, 5)).allSatisfy(ligne -> {
+                assertThat(ligne.origine()).isEqualTo(Trigger.RESTORE);
+                assertThat(ligne.restaureId()).isEqualTo(backup);
+                assertThat(ligne.restaurationAboutie()).isFalse();
+            });
+            assertThat(messages.getFirst())
+                    .contains("dans la sauvegarde " + premiere.id() + " : restaurez-la")
+                    .doesNotContain("état d'origine");
+            assertThat(messages.subList(1, 5))
+                    .allSatisfy(message ->
+                            assertThat(message).contains("la sauvegarde " + premiere.id() + " : restaurez celle-ci"));
 
             Restoration restoration = wipeBackup.restore(backup);
 
-            assertThat(restoration.sauvegardeAvant()).isEqualTo(premiere.id());
+            assertThat(restoration.sauvegardeOrigine()).isEqualTo(premiere.id());
             assertThat(wipeBackup.list().getFirst().restaurationAboutie()).isTrue();
             wipeBackup.restore(premiere.id());
             assertThat(standNames()).isEqualTo(stands);
             assertThat(plan()).isEqualTo(plan);
             assertThat(locks()).isEqualTo(verrous);
+        });
+    }
+
+    /**
+     * Three failures that leave the edition as it was — the import refused on
+     * its first write — back the state up once: the retries find it already
+     * is the latest backup, and every message names that one.
+     */
+    @Test
+    void retriesThatChangedNothingStackNoIdenticalBackups() {
+        inANewEdition(() -> {
+            long backup = editionWithABackupAndAnotherState();
+            int lignes = wipeBackup.list().size();
+
+            List<String> messages = failedRestores(backup, 3, "parametres_legaux", "false");
+
+            long avant = wipeBackup.list().getFirst().id();
+            assertThat(wipeBackup.list()).hasSize(lignes + 1);
+            assertThat(messages)
+                    .hasSize(3)
+                    .allSatisfy(
+                            message -> assertThat(message).contains("dans la sauvegarde " + avant + " : restaurez-la"));
+        });
+    }
+
+    /**
+     * Work done by hand between two failed attempts is backed up by the next
+     * one, and its message names both: that state, and the one of origin.
+     */
+    @Test
+    void workBetweenTwoFailedAttemptsIsBackedUpAndBothAreNamed() {
+        inANewEdition(() -> {
+            long backup = editionWithABackupAndAnotherState();
+            failedRestores(backup, 1, "poste_affectation", "false");
+            long origine = wipeBackup.list().getFirst().id();
+            homonyme("a-la-main@exemple.org");
+
+            String message =
+                    failedRestores(backup, 1, "poste_affectation", "false").getFirst();
+
+            long recent = wipeBackup.list().getFirst().id();
+            assertThat(recent).isNotEqualTo(origine);
+            assertThat(wipeBackup.loadContent(recent)).contains("a-la-main@exemple.org");
+            assertThat(message)
+                    .contains("le plus récent, est dans la sauvegarde " + recent)
+                    .contains("la sauvegarde " + origine + " : restaurez celle-ci");
+        });
+    }
+
+    /**
+     * A restore relaunched after a failure, once the edition was worked on by
+     * hand, backs that work up before replacing it.
+     */
+    @Test
+    void aRestoreRelaunchedAfterManualWorkBacksThatWorkUp() {
+        inANewEdition(() -> {
+            long backup = editionWithABackupAndAnotherState();
+            failedRestores(backup, 1, "poste_affectation", "false");
+            homonyme("a-la-main@exemple.org");
+
+            Restoration restoration = wipeBackup.restore(backup);
+
+            assertThat(wipeBackup.loadContent(restoration.sauvegardeAvant())).contains("a-la-main@exemple.org");
+        });
+    }
+
+    /**
+     * A restore that went through but could not be noted as such is reported
+     * as gone through, with a warning; and the next restore of the same
+     * backup backs up what was done since, the mark deciding nothing.
+     */
+    @Test
+    void aRestoreNotNotedAsGoneThroughStillSucceedsAndDecidesNothing() {
+        inANewEdition(() -> {
+            long backup = editionWithABackupAndAnotherState();
+            Restoration restoration;
+            try {
+                sql("ALTER TABLE sauvegarde_avant_vidage ADD CONSTRAINT test_refus"
+                        + " CHECK (restauration_aboutie IS NOT TRUE) NOT VALID");
+                restoration = wipeBackup.restore(backup);
+            } finally {
+                sql("ALTER TABLE sauvegarde_avant_vidage DROP CONSTRAINT test_refus");
+            }
+            assertThat(restoration.avertissements())
+                    .anySatisfy(avertissement -> assertThat(avertissement).contains("La restauration a abouti"));
+            assertThat(wipeBackup.list().getFirst().restaurationAboutie()).isFalse();
+            homonyme("a-la-main@exemple.org");
+
+            Restoration encore = wipeBackup.restore(backup);
+
+            assertThat(wipeBackup.loadContent(encore.sauvegardeAvant())).contains("a-la-main@exemple.org");
         });
     }
 
@@ -561,7 +641,7 @@ class WipeBackupServiceTest {
                 assertThatThrownBy(() -> wipeBackup.restore(backup))
                         .isInstanceOf(IllegalStateException.class)
                         .hasMessageContaining("« réapplication du planning »")
-                        .hasMessageContaining("L'état d'avant la première tentative est dans la sauvegarde");
+                        .hasMessageContaining("L'état juste avant cette tentative est dans la sauvegarde");
             } finally {
                 sql("ALTER TABLE poste_affectation DROP CONSTRAINT test_refus");
             }
@@ -722,6 +802,39 @@ class WipeBackupServiceTest {
         Animateur animateur = new Animateur(id, prenom, nom, LocalDate.of(1990, 1, 1), false);
         animateur.setEmail(email);
         return animateur;
+    }
+
+    /**
+     * An edition seated and locked, reset — its backup returned — then
+     * imported over with another scenario, seated and locked too.
+     */
+    private long editionWithABackupAndAnotherState() {
+        scenarioImportService.importBundled(SCENARIO);
+        seatEveryoneAndLock();
+        persistenceService.clearDatabase();
+        long backup = wipeBackup.list().getFirst().id();
+        scenarioImportService.importBundled(AUTRE_SCENARIO);
+        seatEveryoneAndLock();
+        return backup;
+    }
+
+    /** {@code fois} restores of {@code backup}, each made to fail by a check refusing the rows of {@code table}. */
+    private List<String> failedRestores(long backup, int fois, String table, String check) {
+        List<String> messages = new java.util.ArrayList<>();
+        try {
+            sql("ALTER TABLE " + table + " ADD CONSTRAINT test_refus CHECK (" + check + ") NOT VALID");
+            for (int i = 0; i < fois; i++) {
+                try {
+                    wipeBackup.restore(backup);
+                } catch (RuntimeException e) {
+                    messages.add(e.getMessage());
+                }
+            }
+        } finally {
+            sql("ALTER TABLE " + table + " DROP CONSTRAINT test_refus");
+        }
+        assertThat(messages).hasSize(fois);
+        return messages;
     }
 
     private List<Long> ids() {

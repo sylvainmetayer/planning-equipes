@@ -8938,6 +8938,10 @@
             "type" : "integer",
             "format" : "int64"
           },
+          "sauvegardeOrigine" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
           "affectationsRestaurees" : {
             "type" : "integer",
             "format" : "int32"

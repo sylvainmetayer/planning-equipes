@@ -85,14 +85,18 @@ public class WipeBackupService {
      * naming ids only. Every seat counted was written; a lock whose target was
      * already frozen is counted apart, since nothing was written.
      *
-     * @param sauvegardeAvant  the backup holding the edition as it was before the restore — before its first
-     *                         attempt, when it is retried — restoring it undoes this one
+     * @param sauvegardeAvant  the backup holding the edition as it was right before this restore — restoring it
+     *                         undoes this one; {@code null} when the edition held nothing
+     * @param sauvegardeOrigine when this restore follows failed attempts of the same restore, one after the other,
+     *                         the backup taken before the first of them: the edition as it was before the whole
+     *                         series; {@code null} otherwise
      * @param referentielNonRestaure the stands and timeslots no seat tied to the rest that could not be created again
      * @param score            the score of the restored plan, locks included, {@code null} when it could not be
      *                         analysed
      */
     public record Restoration(
-            long sauvegardeAvant,
+            Long sauvegardeAvant,
+            Long sauvegardeOrigine,
             int affectationsRestaurees,
             List<String> affectationsNonRestaurees,
             int verrouillagesRestaures,
@@ -170,7 +174,7 @@ public class WipeBackupService {
      * own since the import spans several. Refused while a solve holds the
      * edition, like the import it precedes: the interceptor runs in the
      * edition the file targets, so a refused import writes no backup. What
-     * can still refuse it later leaves this backup behind, and evicts nothing.
+     * can still refuse it later leaves this backup behind.
      */
     @RefusedWhileSolving
     public void backUpBeforeImport() {
@@ -193,6 +197,15 @@ public class WipeBackupService {
      *         the latest one when it already did; empty for an empty edition
      */
     private Optional<Long> insert(Connection connection, Trigger trigger) throws SQLException {
+        return insert(connection, trigger, null);
+    }
+
+    /**
+     * {@link #insert(Connection, Trigger)}, for a restore: the row it writes
+     * names the backup restored, and starts as not gone through. Never reused
+     * for anything but information — the list, the error of a failed restore.
+     */
+    private Optional<Long> insert(Connection connection, Trigger trigger, Long restaureId) throws SQLException {
         if (!holdsAnything(connection)) {
             return Optional.empty();
         }
@@ -212,12 +225,14 @@ public class WipeBackupService {
             }
         }
         try (PreparedStatement ps = scope.prepareScoped(connection, """
- INSERT INTO sauvegarde_avant_vidage (edition_id, origine, contenu, plan)
- VALUES (?, ?, ?, ?::jsonb)
+ INSERT INTO sauvegarde_avant_vidage (edition_id, origine, contenu, plan, restaure_id, restauration_aboutie)
+ VALUES (?, ?, ?, ?::jsonb, ?, ?)
  RETURNING id""")) {
             ps.setString(2, trigger.name());
             ps.setString(3, yaml);
             ps.setString(4, plan);
+            ps.setObject(5, restaureId, java.sql.Types.BIGINT);
+            ps.setObject(6, restaureId == null ? null : Boolean.FALSE, java.sql.Types.BOOLEAN);
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
                 return Optional.of(rs.getLong(1));
@@ -243,40 +258,38 @@ public class WipeBackupService {
     }
 
     /**
-     * The backup holding the state a restore of {@code target} replaces. A
-     * retry after a failed restore of the same backup reuses the one its first
-     * attempt took, rather than backing up the half-restored edition the
-     * failure left: that one is what the error names, and it must stay the
-     * state before. Otherwise a new one, written whatever the edition holds,
-     * so that a retry can always tell.
+     * The backup taken before the first of the failed attempts at restoring
+     * {@code target} that {@code avant} closes: the rows of the restores of
+     * that backup that did not go through, one right after the other, read
+     * back from {@code avant}. Empty when {@code avant} is not such a row (a
+     * state already backed up, under another origin) or starts the series
+     * itself — and when anything else stands in between, since the series is
+     * then no longer certain.
      */
-    private long stateBeforeRestore(Connection connection, long target) throws SQLException {
-        try (PreparedStatement ps = scope.prepareScoped(connection, """
- SELECT id, origine, restaure_id, restauration_aboutie FROM sauvegarde_avant_vidage
- WHERE edition_id = ? ORDER BY cree_le DESC, id DESC LIMIT 1""");
-                ResultSet rs = ps.executeQuery()) {
-            if (rs.next()
-                    && Trigger.RESTORE.name().equals(rs.getString("origine"))
-                    && rs.getLong("restaure_id") == target
-                    && !rs.getBoolean("restauration_aboutie")) {
-                return rs.getLong("id");
+    private Optional<Long> firstOfFailedSeries(long avant, long target) {
+        List<WipeBackup> lignes = list();
+        int index = -1;
+        for (int i = 0; i < lignes.size(); i++) {
+            if (lignes.get(i).id() == avant) {
+                index = i;
             }
         }
-        String yaml = planningService.scenarioYaml();
-        String plan = json(new PlanBackup(snapshots.loadPersistedAffectations(), locks()));
-        try (PreparedStatement ps = scope.prepareScoped(connection, """
- INSERT INTO sauvegarde_avant_vidage (edition_id, origine, contenu, plan, restaure_id, restauration_aboutie)
- VALUES (?, ?, ?, ?::jsonb, ?, FALSE)
- RETURNING id""")) {
-            ps.setString(2, Trigger.RESTORE.name());
-            ps.setString(3, yaml);
-            ps.setString(4, plan);
-            ps.setLong(5, target);
-            try (ResultSet rs = ps.executeQuery()) {
-                rs.next();
-                return rs.getLong(1);
-            }
+        if (index < 0 || !failedRestoreOf(lignes.get(index), target)) {
+            return Optional.empty();
         }
+        int premiere = index;
+        while (premiere + 1 < lignes.size() && failedRestoreOf(lignes.get(premiere + 1), target)) {
+            premiere++;
+        }
+        return premiere == index
+                ? Optional.empty()
+                : Optional.of(lignes.get(premiere).id());
+    }
+
+    private static boolean failedRestoreOf(WipeBackup ligne, long target) {
+        return ligne.origine() == Trigger.RESTORE
+                && Long.valueOf(target).equals(ligne.restaureId())
+                && Boolean.FALSE.equals(ligne.restaurationAboutie());
     }
 
     private List<LockBackup> locks() {
@@ -344,23 +357,26 @@ public class WipeBackupService {
      *       edition (the interceptor), a frozen family, a backup this edition
      *       does not hold, a file the import would refuse — its stands and ad
      *       hoc exceptions included;</li>
-     *   <li>the current state is backed up ({@link Trigger#RESTORE}) — or, on
-     *       a retry after a failed restore of the same backup, the one the
-     *       first attempt took is kept ({@link #stateBeforeRestore});
-     *       restoring it undoes this restore;</li>
+     *   <li>the current state is backed up ({@link Trigger#RESTORE}), always
+     *       — unless the edition holds nothing, or its latest backup already is
+     *       this very state, which is then the one named; restoring it undoes
+     *       this restore;</li>
      *   <li>the scenario is imported by the import itself, which also brings
      *       back the stands and timeslots no seat ties to the rest;</li>
      *   <li>the plan is put back on it, found by natural keys
      *       ({@link #match}); refused if a plan with seats finds none;</li>
      *   <li>the locks, through the usual lock write; the backup of step 2 is
-     *       then marked as belonging to a restore that went through.</li>
+     *       then marked as belonging to a restore that went through — for the
+     *       list and the error message only: the mark decides nothing.</li>
      * </ol>
      *
      * <p><b>Not atomic</b>: the repository has no transaction spanning several
      * services (ADR 0084, after the choice of A5). A failure after step 2
      * leaves the edition half restored and says at which step, with the id of
-     * the backup of step 2 — the state before the first attempt; restoring it
-     * puts the edition back as it was, the technical ids apart. The restored referential gets new ids too: what
+     * the backup of step 2, the state right before this attempt — and, when
+     * this attempt closes a series of failed ones, the backup taken before the
+     * first of them ({@link #firstOfFailedSeries}). Restoring either puts the
+     * edition back as it was then, the technical ids apart. The restored referential gets new ids too: what
      * named the old ones outside the backup (snapshots, day reviews, swap
      * requests, the journal) no longer finds them.</p>
      *
@@ -377,37 +393,70 @@ public class WipeBackupService {
                 .planning());
         gel.refuseIfFrozen();
 
-        long avant = scope.writeAndReturn(
-                "Failed to back the edition up before a restore", connection -> stateBeforeRestore(connection, id));
+        Long avant = scope.writeAndReturn(
+                "Failed to back the edition up before a restore",
+                connection -> insert(connection, Trigger.RESTORE, id).orElse(null));
+        Optional<Long> origine = avant == null ? Optional.empty() : firstOfFailedSeries(avant, id);
         String etape = "import du scénario";
+        Restoration restoration;
         try {
             List<String> referentielNonRestaure = scenarioImportService.importForRestore(yaml);
             etape = "réapplication du planning";
             ScenarioDto scenario = ScenarioYamlReader.parseScenarioText(yaml);
-            Restoration restoration = reapply(id, plan, scenario, avant, referentielNonRestaure);
-            etape = "fin de la restauration";
-            scope.write("Failed to mark a restore as gone through", connection -> {
-                try (PreparedStatement ps = scope.prepareScoped(connection, """
- UPDATE sauvegarde_avant_vidage SET restauration_aboutie = TRUE WHERE edition_id = ? AND id = ?""")) {
-                    ps.setLong(2, avant);
-                    ps.executeUpdate();
-                }
-            });
-            return restoration;
+            restoration = reapply(id, plan, scenario, avant, origine.orElse(null), referentielNonRestaure);
         } catch (RuntimeException e) {
             String message = "Restauration de la sauvegarde " + id + " interrompue à l'étape « " + etape + " » : "
-                    + e.getMessage()
-                    + " L'état d'avant la première tentative est dans la sauvegarde " + avant
-                    + " : restaurez-la pour revenir en arrière.";
+                    + e.getMessage() + " " + recourse(avant, origine);
             if (e instanceof BusinessError) {
                 throw new BusinessError.Conflict(message);
             }
             throw new IllegalStateException(message, e);
         }
+        // The restore is complete: failing to note it is a warning, never a failed restore.
+        if (avant != null) {
+            try {
+                scope.write("Failed to mark a restore as gone through", connection -> {
+                    try (PreparedStatement ps = scope.prepareScoped(connection, """
+ UPDATE sauvegarde_avant_vidage SET restauration_aboutie = TRUE
+ WHERE edition_id = ? AND id = ? AND origine = 'RESTORE' AND restaure_id = ?""")) {
+                        ps.setLong(2, avant);
+                        ps.setLong(3, id);
+                        ps.executeUpdate();
+                    }
+                });
+            } catch (RuntimeException e) {
+                restoration
+                        .avertissements()
+                        .add("La restauration a abouti, mais son issue n'a pas pu être notée "
+                                + "dans la liste des sauvegardes : la sauvegarde " + avant
+                                + " y reste marquée « non aboutie ».");
+            }
+        }
+        return restoration;
+    }
+
+    /** What a failed restore says to go back: the state right before it, and the one before its series. */
+    private static String recourse(Long avant, Optional<Long> origine) {
+        if (avant == null) {
+            return "L'édition était vide juste avant cette tentative.";
+        }
+        if (origine.isEmpty()) {
+            return "L'état juste avant cette tentative est dans la sauvegarde " + avant
+                    + " : restaurez-la pour revenir en arrière ; la liste des sauvegardes donne les états plus anciens.";
+        }
+        return "L'état juste avant cette tentative, le plus récent, est dans la sauvegarde " + avant
+                + " ; l'état d'origine, d'avant la première des tentatives échouées de cette restauration, est dans "
+                + "la sauvegarde " + origine.get() + " : restaurez celle-ci pour revenir à l'état d'avant toute "
+                + "tentative, celle-là pour retrouver votre état le plus récent.";
     }
 
     private Restoration reapply(
-            long id, PlanBackup plan, ScenarioDto scenario, long avant, List<String> referentielNonRestaure) {
+            long id,
+            PlanBackup plan,
+            ScenarioDto scenario,
+            Long avant,
+            Long origine,
+            List<String> referentielNonRestaure) {
         List<Stand> standsActuels = referenceDataService.listStands();
         List<Animateur> animateursActuels = referenceDataService.listAnimateurs();
         Map<String, String> stands = matchStands(scenario.stands(), standsActuels);
@@ -532,6 +581,7 @@ public class WipeBackupService {
         ConstraintAnalysisStore.StoredAnalysis analysis = analysisStore.latest();
         return new Restoration(
                 avant,
+                origine,
                 assises,
                 nonRestaurees,
                 verrous,
