@@ -1227,7 +1227,9 @@ points qui ne s'y voient pas :
   pile, le `Dockerfile` et lui-même ;
 - **`docker-ghcr.yml` pousse l'image sous `sha-…`, la démarre (smoke test),
   la signe, puis publie `:main` à chaque fusion et `1.2.0`/`1.2` sur un
-  tag `vX.Y.Z`** ; `:latest` n'est jamais posé par `metadata-action`
+  tag `vX.Y.Z`** ; `:main` est aussi reconstruite sans cache chaque dimanche
+  et sur un lancement manuel, pour les correctifs Ubuntu
+  ([`securite.md`](securite.md) § Analyses automatiques) ; `:latest` n'est jamais posé par `metadata-action`
   (`latest=false`) mais par une étape dédiée, uniquement quand le tag poussé
   est le plus récent du dépôt. Le pourquoi — et toute la politique de
   release — est dans [`versioning.md`](versioning.md).

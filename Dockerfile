@@ -32,8 +32,9 @@ WORKDIR /app
 # version de paquet épinglée : voir l'étape de construction plus haut.
 # `apt-get upgrade` d'abord : un correctif de sécurité Ubuntu publié après
 # l'image de base (libbrotli1 et sa CVE HIGH, octobre 2026) bloquait le scan
-# Trivy jusqu'à ce que l'image de base soit republiée. Chaque construction
-# prend désormais les correctifs du jour.
+# Trivy jusqu'à ce que l'image de base soit republiée. Une construction sans
+# cache prend les correctifs du jour : une version, et `:main` chaque dimanche
+# (docker-ghcr.yml) ; ailleurs, la couche vient du cache.
 # hadolint ignore=DL3008,DL3005
 RUN apt-get update \
     && apt-get upgrade -y --no-install-recommends \

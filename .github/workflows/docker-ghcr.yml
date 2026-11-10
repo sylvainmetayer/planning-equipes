@@ -5,6 +5,12 @@ on:
       - main
     tags:
       - 'v*'
+  # The cached `apt-get upgrade` layer is only rebuilt when the base image
+  # digest changes, so `:main` would keep a fixed CVE until then. A weekly
+  # build without cache takes the Ubuntu fixes of the day; Sunday 3:00 UTC,
+  # a day ahead of the image scan of securite.yml (Monday 5:00).
+  schedule:
+    - cron: '0 3 * * 0'
   workflow_dispatch:
 
 # Read-only by default; the job below holds the write scopes it needs.
@@ -195,8 +201,10 @@ jobs:
           tags: ${{ steps.meta-sha.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           # A release reads no cache (see the Maven repository step above) but
-          # still writes one: the next build of main starts from it.
-          no-cache: ${{ startsWith(github.ref, 'refs/tags/') }}
+          # still writes one: the next build of main starts from it. The
+          # weekly build and a manual run skip the layer cache too (see
+          # `schedule`), and refill it for the pushes of the week.
+          no-cache: ${{ startsWith(github.ref, 'refs/tags/') || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
           cache-from: ${{ !startsWith(github.ref, 'refs/tags/') && 'type=gha' || '' }}
           cache-to: type=gha,mode=max
 
