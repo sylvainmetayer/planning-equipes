@@ -13,6 +13,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
+import dev.sylvain.planning.scenario.dto.AnimateurDto;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.edition.EditionService;
@@ -20,7 +21,7 @@ import dev.sylvain.planning.service.referentiel.GelReferentielService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.ReferentialFamily;
 import dev.sylvain.planning.service.scenario.ScenarioImportService;
-import dev.sylvain.planning.service.solve.WipeBackupService.PlanRestoration;
+import dev.sylvain.planning.service.solve.WipeBackupService.Restoration;
 import dev.sylvain.planning.service.solve.WipeBackupService.Trigger;
 import dev.sylvain.planning.service.solve.WipeBackupService.WipeBackup;
 import io.quarkus.test.junit.QuarkusTest;
@@ -31,6 +32,7 @@ import java.sql.Statement;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 
@@ -103,57 +105,63 @@ class WipeBackupServiceTest {
     }
 
     /**
-     * The whole way back: a plan with its locks, a reset, the scenario
-     * re-imported under new ids, the plan restored on it — the same seats and
-     * the same locks, compared on what does not move.
+     * The whole way back in one gesture: a plan with its locks, a reset, the
+     * backup restored — the same referential, seats and locks, compared on
+     * what does not move, nothing listed as missing.
      */
     @Test
-    void aResetPlanComesBackWithItsLocksAfterTheScenarioIsReimported() {
+    void aResetEditionComesBackWholeInOneGesture() {
         inANewEdition(() -> {
-            scenarioImportService.importBundled("scenario.yml");
+            scenarioImportService.importBundled(SCENARIO);
             seatEveryoneAndLock();
+            List<String> stands = standNames();
             List<String> plan = plan();
             List<String> verrous = locks();
 
             persistenceService.clearDatabase();
-            long backup = wipeBackup.list().get(0).id();
-            scenarioImportService.importYaml(wipeBackup.loadContent(backup));
-            PlanRestoration restoration = wipeBackup.restorePlan(backup);
+            long backup = wipeBackup.list().getFirst().id();
+            Restoration restoration = wipeBackup.restore(backup);
 
+            // The reset kept the edition's parameters: that state is backed up too.
+            assertThat(ids()).contains(backup, restoration.sauvegardeAvant());
             assertThat(restoration.affectationsNonRestaurees()).isEmpty();
             assertThat(restoration.verrouillagesNonRestaures()).isEmpty();
+            assertThat(restoration.referentielNonRestaure()).isEmpty();
             assertThat(restoration.verrouillagesRestaures()).isEqualTo(verrous.size());
             assertThat(restoration.affectationsRestaurees())
                     .isEqualTo(plan.stream().filter(seat -> !seat.endsWith("|")).count());
+            assertThat(standNames()).isEqualTo(stands);
             assertThat(plan()).isEqualTo(plan);
             assertThat(locks()).isEqualTo(verrous);
         });
     }
 
-    /** What cannot be found again is listed, and the rest comes back regardless. */
+    /**
+     * A backup whose plan names an animateur its scenario does not hold: the
+     * seats come back empty and the lock does not, each listed, and the rest
+     * comes back regardless.
+     */
     @Test
-    void aPlanWhoseAnimateurIsGoneComesBackWithoutThem() {
+    void whatCannotBeFoundAgainIsListedAndTheRestComesBack() {
         inANewEdition(() -> {
-            scenarioImportService.importBundled("scenario.yml");
+            scenarioImportService.importBundled(SCENARIO);
             Animateur parti = seatEveryoneAndLock();
             String nom = parti.getPrenom() + " " + parti.getNom();
             List<String> attendu = plan().stream()
                     .map(seat -> seat.endsWith("|" + nom) ? seat.substring(0, seat.length() - nom.length()) : seat)
                     .toList();
-
             persistenceService.clearDatabase();
-            long backup = wipeBackup.list().get(0).id();
-            scenarioImportService.importYaml(wipeBackup.loadContent(backup));
-            referenceDataService.listAnimateurs().stream()
-                    .filter(animateur -> (animateur.getPrenom() + " " + animateur.getNom()).equals(nom))
-                    .forEach(animateur -> referenceDataService.deleteAnimateur(animateur.getId()));
-            PlanRestoration restoration = wipeBackup.restorePlan(backup);
+            long backup = wipeBackup.list().getFirst().id();
+            sql("UPDATE sauvegarde_avant_vidage SET plan = replace(plan::text, '\"" + parti.getId()
+                    + "\"', '\"A999\"')::jsonb WHERE id = " + backup);
+
+            Restoration restoration = wipeBackup.restore(backup);
 
             assertThat(restoration.affectationsNonRestaurees())
                     .isNotEmpty()
-                    .allSatisfy(ligne -> assertThat(ligne).contains("animateur " + parti.getId() + " introuvable"));
+                    .allSatisfy(ligne -> assertThat(ligne).contains("animateur A999 introuvable"));
             assertThat(restoration.verrouillagesNonRestaures())
-                    .containsExactly("Verrou ANIMATEUR : animateur " + parti.getId() + " introuvable");
+                    .containsExactly("Verrou ANIMATEUR : animateur A999 introuvable");
             assertThat(plan()).isEqualTo(attendu);
         });
     }
@@ -219,22 +227,46 @@ class WipeBackupServiceTest {
         });
     }
 
-    /** An imported team without its grid yet is still backed up, and comes back. */
+    /** An imported team with its stands but no grid yet: backed up, and all of it comes back. */
     @Test
-    void aHalfBuiltEditionIsBackedUpBeforeItsReset() {
+    void standsWithoutAGridComeBack() {
         inANewEdition(() -> {
             scenarioImportService.importBundled(SCENARIO);
             referenceDataService.deleteCreneaux(referenceDataService.listCreneaux().stream()
                     .map(Creneau::getId)
                     .toList());
+            List<String> stands = standNames();
             List<String> animateurs = animateurNames();
+            assertThat(stands).isNotEmpty();
 
             persistenceService.clearDatabase();
             assertThat(referenceDataService.listAnimateurs()).isEmpty();
-            scenarioImportService.importYaml(
-                    wipeBackup.loadContent(wipeBackup.list().getFirst().id()));
+            Restoration restoration =
+                    wipeBackup.restore(wipeBackup.list().getFirst().id());
 
+            assertThat(restoration.referentielNonRestaure()).isEmpty();
+            assertThat(standNames()).isEqualTo(stands);
             assertThat(animateurNames()).isEqualTo(animateurs);
+            assertThat(referenceDataService.listCreneaux()).isEmpty();
+        });
+    }
+
+    /** A grid without stands yet: backed up, and the grid comes back. */
+    @Test
+    void aGridWithoutStandsComesBack() {
+        inANewEdition(() -> {
+            scenarioImportService.importBundled(SCENARIO);
+            int creneaux = referenceDataService.listCreneaux().size();
+            referenceDataService.listStands().forEach(stand -> referenceDataService.deleteStand(stand.getId()));
+            assertThat(referenceDataService.listStands()).isEmpty();
+
+            persistenceService.clearDatabase();
+            Restoration restoration =
+                    wipeBackup.restore(wipeBackup.list().getFirst().id());
+
+            assertThat(restoration.referentielNonRestaure()).isEmpty();
+            assertThat(referenceDataService.listCreneaux()).hasSize(creneaux);
+            assertThat(referenceDataService.listStands()).isEmpty();
         });
     }
 
@@ -252,14 +284,14 @@ class WipeBackupServiceTest {
                 editionContext.executeIn(autre, () -> {
                     assertThat(wipeBackup.list()).isEmpty();
                     assertThatThrownBy(() -> wipeBackup.loadContent(id)).isInstanceOf(BusinessError.NotFound.class);
-                    assertThatThrownBy(() -> wipeBackup.restorePlan(id)).isInstanceOf(BusinessError.NotFound.class);
+                    assertThatThrownBy(() -> wipeBackup.restore(id)).isInstanceOf(BusinessError.NotFound.class);
                 });
                 given().header("X-Edition-Id", autre)
                         .get("/api/planning/sauvegardes-avant-vidage/" + id)
                         .then()
                         .statusCode(404);
                 given().header("X-Edition-Id", autre)
-                        .post("/api/planning/sauvegardes-avant-vidage/" + id + "/planning")
+                        .post("/api/planning/sauvegardes-avant-vidage/" + id + "/restauration")
                         .then()
                         .statusCode(404);
             });
@@ -269,63 +301,193 @@ class WipeBackupServiceTest {
     }
 
     /**
-     * Two namesakes in the backup, one of them gone after the re-import: the
-     * name alone would hand their seats to the other one, so they come back
-     * empty — and the other one keeps exactly theirs.
+     * Two namesakes in the backup, one of them gone: the name alone would
+     * hand their seats to the other one, so it designates nobody.
      */
     @Test
     void aNamesakeNeverInheritsTheSeatsOfTheOther() {
+        AnimateurDto un = dto("A1", "Jean", "Dupont", "un@exemple.org");
+        AnimateurDto deux = dto("A2", "Jean", "Dupont", "deux@exemple.org");
+        Animateur restant = fiche("A7", "Jean", "Dupont", "deux@exemple.org");
+
+        assertThat(WipeBackupService.matchAnimateurs(List.of(un, deux), List.of(restant)))
+                .containsExactly(Map.entry("A2", "A7"));
+    }
+
+    /**
+     * The name never falls back onto a namesake whose e-mail is another one:
+     * that is somebody else, as the import's {@code samePerson} says.
+     */
+    @Test
+    void theNameNeverDesignatesANamesakeWithAnotherEmail() {
+        AnimateurDto parti = dto("A1", "Jean", "Dupont", "un@exemple.org");
+        Animateur autre = fiche("A9", "Jean", "Dupont", "autre@exemple.org");
+
+        assertThat(WipeBackupService.matchAnimateurs(List.of(parti), List.of(autre)))
+                .isEmpty();
+        assertThat(WipeBackupService.matchAnimateurs(List.of(parti), List.of(fiche("A9", " jean ", "DUPONT", null))))
+                .containsExactly(Map.entry("A1", "A9"));
+    }
+
+    /** A family's shared e-mail designates nobody, and the name then tells the two apart. */
+    @Test
+    void aSharedEmailFallsBackOnTheName() {
+        AnimateurDto paul = dto("A1", "Paul", "Martin", "famille@exemple.org");
+        AnimateurDto lea = dto("A2", "Léa", "Martin", "famille@exemple.org");
+
+        assertThat(WipeBackupService.matchAnimateurs(
+                        List.of(paul, lea),
+                        List.of(
+                                fiche("A5", "Paul", "Martin", "famille@exemple.org"),
+                                fiche("A6", "Léa", "Martin", "famille@exemple.org"))))
+                .containsOnly(Map.entry("A1", "A5"), Map.entry("A2", "A6"));
+    }
+
+    /**
+     * Restored twice: the second is a restore like any other — the state the
+     * first one left is backed up, nothing degrades, and the restored backup
+     * and the state before the first restore both stay.
+     */
+    @Test
+    void aSecondRestoreDegradesNothingAndKeepsTheUsefulBackups() {
         inANewEdition(() -> {
             scenarioImportService.importBundled(SCENARIO);
-            Animateur un = homonyme("un@exemple.org");
-            Animateur deux = homonyme("deux@exemple.org");
             seatEveryoneAndLock();
-            List<PosteAffectation> postes =
-                    persistenceService.loadPersistedPlanning().getPostes();
-            persistenceService.reaffecterPoste(postes.get(0).getId(), un.getId());
-            persistenceService.reaffecterPoste(postes.get(1).getId(), deux.getId());
-            long seatsOfDeux = seatsOf("deux@exemple.org");
-            assertThat(seatsOfDeux).isPositive();
-
+            List<String> plan = plan();
+            List<String> verrous = locks();
             persistenceService.clearDatabase();
             long backup = wipeBackup.list().getFirst().id();
-            scenarioImportService.importYaml(wipeBackup.loadContent(backup));
-            referenceDataService.listAnimateurs().stream()
-                    .filter(animateur -> "un@exemple.org".equals(animateur.getEmail()))
-                    .forEach(animateur -> referenceDataService.deleteAnimateur(animateur.getId()));
-            PlanRestoration restoration = wipeBackup.restorePlan(backup);
+            scenarioImportService.importBundled(AUTRE_SCENARIO);
 
-            assertThat(restoration.affectationsNonRestaurees())
-                    .isNotEmpty()
-                    .allSatisfy(ligne -> assertThat(ligne).contains("animateur " + un.getId() + " introuvable"));
-            assertThat(seatsOf("deux@exemple.org")).isEqualTo(seatsOfDeux);
-            assertThat(deux.getId()).isNotEqualTo(un.getId());
+            Restoration premiere = wipeBackup.restore(backup);
+            Restoration seconde = wipeBackup.restore(backup);
+
+            assertThat(premiere.sauvegardeAvant()).isNotNull();
+            assertThat(seconde.verrouillagesRestaures()).isEqualTo(verrous.size());
+            assertThat(seconde.affectationsNonRestaurees()).isEmpty();
+            assertThat(plan()).isEqualTo(plan);
+            assertThat(locks()).isEqualTo(verrous);
+            assertThat(ids()).contains(backup, premiere.sauvegardeAvant(), seconde.sauvegardeAvant());
         });
     }
 
-    /** Restoring twice writes the locks once, and says so. */
+    /**
+     * The oldest of five backups, restored — by the gesture, or by hand by
+     * re-importing its file: either way it is still there afterwards, and so
+     * is the state it replaced.
+     */
     @Test
-    void aSecondRestoreCountsItsLocksAsAlreadyThere() {
+    void theOldestBackupSurvivesItsOwnRestore() {
         inANewEdition(() -> {
             scenarioImportService.importBundled(SCENARIO);
-            seatEveryoneAndLock();
-            int verrous = locks().size();
-            persistenceService.clearDatabase();
-            long backup = wipeBackup.list().getFirst().id();
-            scenarioImportService.importYaml(wipeBackup.loadContent(backup));
-            assertThat(wipeBackup.restorePlan(backup).verrouillagesRestaures()).isEqualTo(verrous);
+            for (int i = 0; i < WipeBackupService.KEPT_PER_EDITION; i++) {
+                scenarioImportService.importBundled(i % 2 == 0 ? AUTRE_SCENARIO : SCENARIO);
+            }
+            assertThat(wipeBackup.list()).hasSize(WipeBackupService.KEPT_PER_EDITION);
+            long oldest = wipeBackup.list().getLast().id();
 
-            PlanRestoration second = wipeBackup.restorePlan(backup);
+            scenarioImportService.importYaml(wipeBackup.loadContent(oldest));
+            assertThat(ids()).contains(oldest);
 
-            assertThat(second.verrouillagesRestaures()).isZero();
-            assertThat(second.verrouillagesDejaPresents()).isEqualTo(verrous);
-            assertThat(locks()).hasSize(verrous);
+            Restoration restoration = wipeBackup.restore(oldest);
+            assertThat(ids()).contains(oldest);
+            if (restoration.sauvegardeAvant() != null) {
+                assertThat(ids()).contains(restoration.sauvegardeAvant());
+            }
+            Restoration encore = wipeBackup.restore(oldest);
+            assertThat(ids()).contains(oldest, encore.sauvegardeAvant());
         });
     }
 
-    /** A frozen edition refuses the re-import, and the refusal writes no backup. */
+    /**
+     * Restoring a backup over another edition's state replaces it, but never
+     * without recourse: the state it replaced is backed up first, and
+     * restoring that backup puts the plan back.
+     */
     @Test
-    void aFrozenEditionRefusesTheReimportWithoutABackup() {
+    void theStateARestoreReplacesComesBackByRestoringItsBackup() {
+        inANewEdition(() -> {
+            scenarioImportService.importBundled(AUTRE_SCENARIO);
+            seatEveryoneAndLock();
+            persistenceService.clearDatabase();
+            long backup = wipeBackup.list().getFirst().id();
+            scenarioImportService.importBundled(SCENARIO);
+            seatEveryoneAndLock();
+            List<String> stands = standNames();
+            List<String> plan = plan();
+            List<String> verrous = locks();
+
+            Restoration restoration = wipeBackup.restore(backup);
+            assertThat(plan()).isNotEqualTo(plan);
+            wipeBackup.restore(restoration.sauvegardeAvant());
+
+            assertThat(standNames()).isEqualTo(stands);
+            assertThat(plan()).isEqualTo(plan);
+            assertThat(locks()).isEqualTo(verrous);
+        });
+    }
+
+    /**
+     * A restore stopped half way — the plan finds no seat of the referential
+     * it re-imported — says at which step, names the backup of the state
+     * before, and restoring that backup brings the referential and the plan
+     * back, the ids apart. Both backups survive the failure.
+     */
+    @Test
+    void aRestoreStoppedHalfWayIsUndoneByTheBackupItNames() {
+        inANewEdition(() -> {
+            scenarioImportService.importBundled(AUTRE_SCENARIO);
+            seatEveryoneAndLock();
+            persistenceService.clearDatabase();
+            long backup = wipeBackup.list().getFirst().id();
+            sql("UPDATE sauvegarde_avant_vidage SET plan = replace(plan::text, '\"date\": \"20', '\"date\": \"19')"
+                    + "::jsonb WHERE id = " + backup);
+            scenarioImportService.importBundled(SCENARIO);
+            seatEveryoneAndLock();
+            List<String> stands = standNames();
+            List<String> plan = plan();
+            List<String> verrous = locks();
+
+            assertThatThrownBy(() -> wipeBackup.restore(backup))
+                    .isInstanceOf(BusinessError.Conflict.class)
+                    .hasMessageContaining("« réapplication du planning »")
+                    .hasMessageContaining("Aucun des");
+            long avant = wipeBackup.list().getFirst().id();
+            assertThat(ids()).contains(backup, avant);
+
+            wipeBackup.restore(avant);
+
+            assertThat(standNames()).isEqualTo(stands);
+            assertThat(plan()).isEqualTo(plan);
+            assertThat(locks()).isEqualTo(verrous);
+        });
+    }
+
+    /** A technical failure half way — the seats refused by the database — says the same, and stays a 500. */
+    @Test
+    void aTechnicalFailureHalfWayNamesItsStepAndTheBackupBefore() {
+        inANewEdition(() -> {
+            scenarioImportService.importBundled(SCENARIO);
+            seatEveryoneAndLock();
+            persistenceService.clearDatabase();
+            long backup = wipeBackup.list().getFirst().id();
+            scenarioImportService.importBundled(AUTRE_SCENARIO);
+            try {
+                sql("ALTER TABLE poste_affectation ADD CONSTRAINT test_refus CHECK (false) NOT VALID");
+                assertThatThrownBy(() -> wipeBackup.restore(backup))
+                        .isInstanceOf(IllegalStateException.class)
+                        .hasMessageContaining("« réapplication du planning »")
+                        .hasMessageContaining("restaurez-la pour revenir en arrière");
+            } finally {
+                sql("ALTER TABLE poste_affectation DROP CONSTRAINT test_refus");
+            }
+            assertThat(ids()).contains(backup).hasSizeGreaterThanOrEqualTo(2);
+        });
+    }
+
+    /** A frozen edition refuses the re-import and the restore, and neither writes a backup. */
+    @Test
+    void aFrozenEditionRefusesTheReimportAndTheRestoreWithoutABackup() {
         inANewEdition(() -> {
             scenarioImportService.importBundled(SCENARIO);
             persistenceService.clearDatabase();
@@ -337,6 +499,7 @@ class WipeBackupServiceTest {
                 assertThatThrownBy(() -> scenarioImportService.importBundled(AUTRE_SCENARIO))
                         .isInstanceOf(BusinessError.class);
                 assertThatThrownBy(persistenceService::clearDatabase).isInstanceOf(BusinessError.class);
+                assertThatThrownBy(() -> wipeBackup.restore(avant.getFirst())).isInstanceOf(BusinessError.class);
             } finally {
                 gel.lift(ReferentialFamily.STANDS);
             }
@@ -366,7 +529,7 @@ class WipeBackupServiceTest {
                     assertThatThrownBy(() -> scenarioImportService.importBundled(SCENARIO))
                             .isInstanceOf(SolverJobService.SolverBusyException.class);
                 }
-                assertThatThrownBy(() -> wipeBackup.restorePlan(avant.getFirst()))
+                assertThatThrownBy(() -> wipeBackup.restore(avant.getFirst()))
                         .isInstanceOf(SolverJobService.SolverBusyException.class);
             } finally {
                 solverJobs.cancel(job);
@@ -465,6 +628,16 @@ class WipeBackupServiceTest {
                         + "|" + v.getJour())
                 .sorted()
                 .toList();
+    }
+
+    private static AnimateurDto dto(String id, String prenom, String nom, String email) {
+        return new AnimateurDto(id, prenom, nom, LocalDate.of(1990, 1, 1), false, email, null, Map.of(), null, null);
+    }
+
+    private static Animateur fiche(String id, String prenom, String nom, String email) {
+        Animateur animateur = new Animateur(id, prenom, nom, LocalDate.of(1990, 1, 1), false);
+        animateur.setEmail(email);
+        return animateur;
     }
 
     private List<Long> ids() {

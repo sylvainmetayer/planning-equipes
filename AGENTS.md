@@ -165,9 +165,10 @@ Single Quarkus service, no separate solver microservice. Package root:
     away**; in memory, so the first read after a restart re-derives it from that
     plan instead of answering "never analysed"), `PlanningPersistenceService`,
     `PlanSnapshotService`, `SnapshotComparisonService`, `DeplacementService`,
-    `WipeBackupService` (the scenario and plan stored before a reset or an
-    import empties an edition, and the plan's restore by natural keys — ADR
-    0084),
+    `WipeBackupService` (the scenario and plan stored before a reset, an
+    import or a restore empties an edition, and the restore itself: one
+    ordered, non-atomic gesture through the import, the plan found again by
+    natural keys — ADR 0084),
     `StaffingVerificationService` (the staffing check: a made-up team solved
     until feasible on its own thread, outside the queue — it gives way to any
     solve that starts, on `SolveStarting`, and keeps every check in

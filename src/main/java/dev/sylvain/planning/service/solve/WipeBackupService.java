@@ -14,7 +14,9 @@ import dev.sylvain.planning.scenario.dto.StandDto;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.referentiel.Avertissement;
+import dev.sylvain.planning.service.referentiel.GelReferentielService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.scenario.ScenarioImportService;
 import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
 import dev.sylvain.planning.service.solve.PlanSnapshotService.AffectationSnapshot;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -34,22 +36,24 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 /**
  * The safety net under the two gestures that empty an edition — the reset and
  * the import of a scenario (ADR 0084): right before either writes, the
  * edition's own scenario export and its plan (seats and locks) are stored in
- * {@code sauvegarde_avant_vidage}. Re-importing the scenario puts the
- * referential back, {@link #restorePlan} the plan on top of it. The nightly
- * dump could only do so by rolling every other edition back with it.
+ * {@code sauvegarde_avant_vidage}, and {@link #restore} puts one back in a
+ * single gesture. The nightly dump could only do so by rolling every other
+ * edition back with it.
  *
  * <p>A backup that cannot be written <b>stops</b> the wipe — the opposite of
  * the automatique snapshot, which never fails a solve: a solve destroys nothing
- * a snapshot alone could bring back, a wipe destroys everything. An edition
- * with nothing to export is not an error: there is nothing to lose.</p>
+ * a snapshot alone could bring back, a wipe destroys everything. Only an
+ * edition holding nothing a wipe or an import would overwrite gets none.</p>
  */
 @ApplicationScoped
 public class WipeBackupService {
@@ -60,25 +64,33 @@ public class WipeBackupService {
     /** What emptied the edition, as stored in {@code origine}. */
     public enum Trigger {
         RESET,
-        IMPORT
+        IMPORT,
+        /** The state a restore replaced: restoring this one undoes the restore. */
+        RESTORE
     }
 
     /** One backup, without its content. */
     public record WipeBackup(long id, Trigger origine, Instant creeLe) {}
 
     /**
-     * What {@link #restorePlan} put back, and what it could not, one sentence
-     * each, naming ids only. Every seat counted was written; a lock whose
-     * target was already frozen is counted apart, since nothing was written.
+     * What {@link #restore} put back, and what it could not, one sentence each,
+     * naming ids only. Every seat counted was written; a lock whose target was
+     * already frozen is counted apart, since nothing was written.
      *
-     * @param score the score of the restored plan, hard part included, {@code null} when it could not be analysed
+     * @param sauvegardeAvant  the backup holding the edition as it was before the restore — restoring it undoes
+     *                         this one — {@code null} when the edition was empty
+     * @param referentielNonRestaure the stands and timeslots no seat tied to the rest that could not be created again
+     * @param score            the score of the restored plan, locks included, {@code null} when it could not be
+     *                         analysed
      */
-    public record PlanRestoration(
+    public record Restoration(
+            Long sauvegardeAvant,
             int affectationsRestaurees,
             List<String> affectationsNonRestaurees,
             int verrouillagesRestaures,
             int verrouillagesDejaPresents,
             List<String> verrouillagesNonRestaures,
+            List<String> referentielNonRestaure,
             List<String> avertissements,
             String score) {}
 
@@ -96,6 +108,19 @@ public class WipeBackupService {
             LocalDate jour,
             String raison) {}
 
+    /**
+     * Besides what a reset empties, what an import overwrites and the scenario
+     * carries: an edition holding only its parameters, weights or day
+     * templates still has something to lose.
+     */
+    private static final List<String> TABLES_ECRASEES = List.of(
+            "parametres_legaux",
+            "parametres_qualite",
+            "parametres_solveur",
+            "constraint_toggle",
+            "ponderation_contrainte",
+            "journee_type");
+
     private final JdbcEditionScope scope;
 
     private final PlanningService planningService;
@@ -108,6 +133,10 @@ public class WipeBackupService {
 
     private final ObjectMapper objectMapper;
 
+    private final ScenarioImportService scenarioImportService;
+
+    private final GelReferentielService gel;
+
     @Inject
     public WipeBackupService(
             JdbcEditionScope scope,
@@ -115,13 +144,17 @@ public class WipeBackupService {
             PlanSnapshotService snapshots,
             ReferenceDataService referenceDataService,
             ConstraintAnalysisStore analysisStore,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            ScenarioImportService scenarioImportService,
+            GelReferentielService gel) {
         this.scope = scope;
         this.planningService = planningService;
         this.snapshots = snapshots;
         this.referenceDataService = referenceDataService;
         this.analysisStore = analysisStore;
         this.objectMapper = objectMapper;
+        this.scenarioImportService = scenarioImportService;
+        this.gel = gel;
     }
 
     /**
@@ -131,34 +164,42 @@ public class WipeBackupService {
      * edition the file targets, so a refused import writes no backup. What
      * can still refuse it later (a contradiction, a stand check) leaves this
      * backup behind but evicts nothing: the bound is only enforced once the
-     * import has gone through ({@link #enforceBound()}).
+     * import has gone through ({@link #enforceBound}).
      */
     @RefusedWhileSolving
     public void backUpBeforeImport() {
         scope.write("Failed to back the edition up before an import", connection -> insert(connection, Trigger.IMPORT));
     }
 
-    /** Drops the oldest backups beyond {@link #KEPT_PER_EDITION}: called once the import has gone through. */
-    public void enforceBound() {
-        scope.write("Failed to purge the edition's backups", this::purge);
+    /**
+     * Drops the oldest backups beyond {@link #KEPT_PER_EDITION}, once an import
+     * has gone through — sparing those holding {@code sparedContent}, the
+     * file just imported: re-importing a downloaded backup by hand cannot
+     * evict that very backup.
+     */
+    public void enforceBound(String sparedContent) {
+        scope.write("Failed to purge the edition's backups", connection -> purge(connection, Set.of(), sparedContent));
     }
 
     /** Backs the current edition up inside the caller's transaction, so the wipe and its backup land together. */
     void backUp(Connection connection, Trigger trigger) throws SQLException {
         insert(connection, trigger);
-        purge(connection);
+        purge(connection, Set.of(), null);
     }
 
     /**
-     * Writes the backup, unless the edition holds nothing a wipe would destroy
-     * or its latest backup is already this very state — a retried gesture
-     * must not push the useful backup out. An edition half built (an imported
-     * team, no grid yet) is backed up all the same: the scenario format reads
-     * an empty section back.
+     * Writes the backup, unless the edition holds nothing a wipe or an import
+     * would destroy or its latest backup is already this very state — a
+     * retried gesture must not push the useful backup out. An edition half
+     * built (an imported team, no grid yet) is backed up all the same: the
+     * scenario format reads an empty section back.
+     *
+     * @return the backup now holding the current state — the one written, or
+     *         the latest one when it already did; empty for an empty edition
      */
-    private void insert(Connection connection, Trigger trigger) throws SQLException {
+    private Optional<Long> insert(Connection connection, Trigger trigger) throws SQLException {
         if (!holdsAnything(connection)) {
-            return;
+            return Optional.empty();
         }
         String yaml = planningService.scenarioYaml();
         List<LockBackup> verrouillages = referenceDataService.listVerrouillages().stream()
@@ -174,7 +215,7 @@ public class WipeBackupService {
                 .toList();
         String plan = json(new PlanBackup(snapshots.loadPersistedAffectations(), verrouillages));
         try (PreparedStatement ps = scope.prepareScoped(connection, """
- SELECT 1 FROM sauvegarde_avant_vidage s
+ SELECT s.id FROM sauvegarde_avant_vidage s
  WHERE s.edition_id = ? AND s.contenu = ? AND s.plan = ?::jsonb
  AND s.id = (SELECT d.id FROM sauvegarde_avant_vidage d WHERE d.edition_id = s.edition_id
  ORDER BY d.cree_le DESC, d.id DESC LIMIT 1)""")) {
@@ -182,43 +223,58 @@ public class WipeBackupService {
             ps.setString(3, plan);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return;
+                    return Optional.of(rs.getLong(1));
                 }
             }
         }
         try (PreparedStatement ps = scope.prepareScoped(connection, """
  INSERT INTO sauvegarde_avant_vidage (edition_id, origine, contenu, plan)
- VALUES (?, ?, ?, ?::jsonb)""")) {
+ VALUES (?, ?, ?, ?::jsonb)
+ RETURNING id""")) {
             ps.setString(2, trigger.name());
             ps.setString(3, yaml);
             ps.setString(4, plan);
-            ps.executeUpdate();
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return Optional.of(rs.getLong(1));
+            }
         }
     }
 
-    /** Whether any table a wipe empties holds a row of the current edition. */
+    /** Whether any table a wipe empties or an import overwrites holds a row of the current edition. */
     private boolean holdsAnything(Connection connection) throws SQLException {
-        for (String table : PlanningPersistenceService.TABLES_A_VIDER) {
-            // Table names come from that literal list, never from user input.
-            try (PreparedStatement ps = scope.prepareScoped(
-                            connection, "SELECT 1 FROM " + table + " WHERE edition_id = ? LIMIT 1");
-                    ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return true;
+        for (List<String> tables : List.of(PlanningPersistenceService.TABLES_A_VIDER, TABLES_ECRASEES)) {
+            for (String table : tables) {
+                // Table names come from those literal lists, never from user input.
+                try (PreparedStatement ps = scope.prepareScoped(
+                                connection, "SELECT 1 FROM " + table + " WHERE edition_id = ? LIMIT 1");
+                        ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        return true;
+                    }
                 }
             }
         }
         return false;
     }
 
-    private void purge(Connection connection) throws SQLException {
+    /**
+     * Keeps the {@link #KEPT_PER_EDITION} most recent backups, and those named
+     * in {@code spared} or holding {@code sparedContent} whatever their age.
+     */
+    private void purge(Connection connection, Set<Long> spared, String sparedContent) throws SQLException {
+        List<Long> ids = new ArrayList<>(spared);
         try (PreparedStatement ps = scope.prepareScoped(connection, """
  DELETE FROM sauvegarde_avant_vidage
  WHERE edition_id = ?
  AND id NOT IN (SELECT id FROM sauvegarde_avant_vidage WHERE edition_id = ?
- ORDER BY cree_le DESC, id DESC LIMIT ?)""")) {
+ ORDER BY cree_le DESC, id DESC LIMIT ?)
+ AND NOT (id = ANY (?))
+ AND contenu IS DISTINCT FROM ?""")) {
             ps.setString(2, scope.editionId());
             ps.setInt(3, KEPT_PER_EDITION);
+            ps.setArray(4, connection.createArrayOf("bigint", ids.toArray()));
+            ps.setString(5, sparedContent);
             ps.executeUpdate();
         }
     }
@@ -248,46 +304,76 @@ public class WipeBackupService {
     }
 
     /**
-     * Puts a backup's plan back on the referential its scenario was
-     * re-imported as: every seat and lock whose stand, timeslot and animateur
-     * are found again, the rest listed rather than guessed.
+     * Puts a backup back, in one gesture (ADR 0084). In this order:
      *
-     * <p>The ids of the backup are those of the edition before the wipe, and
-     * a re-import gives new ones; so each is found again by what does not
-     * move — a stand by its code, else its name; an animateur by e-mail, else
-     * by first and last name (the import's own rule); a timeslot by its date
-     * and hours. A key matching zero rows or several matches nothing. A seat
-     * whose animateur is not found comes back empty; one whose stand or
-     * timeslot is not found does not come back. The plan replaces the
-     * persisted one wholesale, like a snapshot restore; the locks are added
-     * through the usual lock write, its checks and its warnings.</p>
+     * <ol>
+     *   <li>the refusals, before anything is written: a solve holding the
+     *       edition (the interceptor), a frozen family, a backup this edition
+     *       does not hold, a file the import would refuse;</li>
+     *   <li>the current state is backed up ({@link Trigger#RESTORE}), unless
+     *       the edition is empty — restoring that one undoes this restore;</li>
+     *   <li>the scenario is imported by the import itself, which also brings
+     *       back the stands and timeslots no seat ties to the rest;</li>
+     *   <li>the plan is put back on it, found by natural keys
+     *       ({@link #match}); refused if a plan with seats finds none;</li>
+     *   <li>the locks, through the usual lock write;</li>
+     *   <li>only then the bound, sparing the restored backup and the one of
+     *       step 2.</li>
+     * </ol>
+     *
+     * <p><b>Not atomic</b>: the repository has no transaction spanning several
+     * services (ADR 0084, after the choice of A5). A failure after step 2
+     * leaves the edition half restored and says at which step, with the id of
+     * the backup of step 2 — restoring it puts the edition back as it was, the
+     * technical ids apart. The restored referential gets new ids too: what
+     * named the old ones outside the backup (snapshots, day reviews, swap
+     * requests, the journal) no longer finds them.</p>
      *
      * <p>Nothing here refuses a seat for breaking a hard rule — no seat write
      * of the application does; the score of the restored plan says whether
      * one does, and the lock warnings name the frozen seats concerned.</p>
      */
     @RefusedWhileSolving
-    public PlanRestoration restorePlan(long id) {
-        ScenarioDto scenario = ScenarioYamlReader.parseScenarioText(loadContent(id));
+    public Restoration restore(long id) {
+        String yaml = loadContent(id);
         PlanBackup plan = readPlan(column(id, SELECT_PLAN));
+        ScenarioYamlReader.fromDto(
+                ScenarioYamlReader.parseScenarioText(yaml), referenceDataService::getParametresLegaux);
+        gel.refuseIfFrozen();
+
+        Long avant = scope.writeAndReturn(
+                "Failed to back the edition up before a restore",
+                connection -> insert(connection, Trigger.RESTORE).orElse(null));
+        String etape = "import du scénario";
+        try {
+            List<String> referentielNonRestaure = scenarioImportService.importForRestore(yaml);
+            etape = "réapplication du planning";
+            ScenarioDto scenario = ScenarioYamlReader.parseScenarioText(yaml);
+            Restoration restoration = reapply(id, plan, scenario, avant, referentielNonRestaure);
+            etape = "purge des anciennes sauvegardes";
+            Set<Long> epargnees = avant == null ? Set.of(id) : Set.of(id, avant);
+            scope.write("Failed to purge the edition's backups", connection -> purge(connection, epargnees, null));
+            return restoration;
+        } catch (RuntimeException e) {
+            String message = "Restauration de la sauvegarde " + id + " interrompue à l'étape « " + etape + " » : "
+                    + e.getMessage()
+                    + (avant == null
+                            ? " L'édition était vide avant la restauration."
+                            : " L'état d'avant est dans la sauvegarde " + avant
+                                    + " : restaurez-la pour revenir en arrière.");
+            if (e instanceof BusinessError) {
+                throw new BusinessError.Conflict(message);
+            }
+            throw new IllegalStateException(message, e);
+        }
+    }
+
+    private Restoration reapply(
+            long id, PlanBackup plan, ScenarioDto scenario, Long avant, List<String> referentielNonRestaure) {
         List<Stand> standsActuels = referenceDataService.listStands();
         List<Animateur> animateursActuels = referenceDataService.listAnimateurs();
-        Map<String, String> stands = match(
-                scenario.stands(),
-                standsActuels,
-                StandDto::id,
-                Stand::getId,
-                new Key<>(StandDto::code, Stand::getCode),
-                new Key<>(StandDto::nom, Stand::getNom));
-        Map<String, String> animateurs = match(
-                scenario.animateurs(),
-                animateursActuels,
-                AnimateurDto::id,
-                Animateur::getId,
-                new Key<>(AnimateurDto::email, Animateur::getEmail),
-                new Key<>(
-                        dto -> dto.prenom() + "|" + dto.nom(),
-                        animateur -> animateur.getPrenom() + "|" + animateur.getNom()));
+        Map<String, String> stands = matchStands(scenario.stands(), standsActuels);
+        Map<String, String> animateurs = matchAnimateurs(scenario.animateurs(), animateursActuels);
         List<Creneau> grille = referenceDataService.listCreneaux();
 
         List<AffectationSnapshot> restaurees = new ArrayList<>();
@@ -324,6 +410,10 @@ public class WipeBackupService {
                     seat.heureDebutEffective(),
                     seat.heureFinEffective(),
                     seat.suiteDe()));
+        }
+        if (!plan.affectations().isEmpty() && restaurees.isEmpty()) {
+            throw new BusinessError.Conflict("Aucun des " + plan.affectations().size()
+                    + " sièges de la sauvegarde ne correspond au référentiel restauré.");
         }
         // A continuation whose first half did not come back continues nothing.
         Set<String> postes =
@@ -395,28 +485,77 @@ public class WipeBackupService {
                 verrousNonRestaures.add("Verrou " + lock.type() + " : " + refus.getMessage());
             }
         }
+        // Read once the locks are in: an animateur lock weighs in the score.
+        try {
+            analysisStore.refreshFromPersistedPlan();
+        } catch (RuntimeException _) {
+            // A missing analysis is a missing score, not a failed restore.
+        }
         ConstraintAnalysisStore.StoredAnalysis analysis = analysisStore.latest();
-        return new PlanRestoration(
+        return new Restoration(
+                avant,
                 assises,
                 nonRestaurees,
                 verrous,
                 dejaPresents,
                 verrousNonRestaures,
+                referentielNonRestaure,
                 avertissements,
                 analysis == null ? null : analysis.diagnostic().score());
     }
 
-    /** One key a backup row and an edition row are compared on: e-mail, name, code. */
-    private record Key<T, R>(Function<T, String> backup, Function<R, String> edition) {}
+    /** Each stand of the backup → the stand of the edition it is now: by code, else by name. */
+    static Map<String, String> matchStands(List<StandDto> backup, List<Stand> edition) {
+        return match(
+                backup,
+                edition,
+                StandDto::id,
+                Stand::getId,
+                new Key<>(StandDto::code, Stand::getCode, WipeBackupService::trimmed, null),
+                new Key<>(StandDto::nom, Stand::getNom, WipeBackupService::normalise, null));
+    }
+
+    /**
+     * Each animateur of the backup → the fiche of the edition they are now: by
+     * e-mail, else by first and last name — never a namesake whose e-mail is
+     * another one.
+     */
+    static Map<String, String> matchAnimateurs(List<AnimateurDto> backup, List<Animateur> edition) {
+        return match(
+                backup,
+                edition,
+                AnimateurDto::id,
+                Animateur::getId,
+                new Key<>(AnimateurDto::email, Animateur::getEmail, WipeBackupService::normalise, null),
+                new Key<>(
+                        dto -> fullName(dto.prenom(), dto.nom()),
+                        animateur -> fullName(animateur.getPrenom(), animateur.getNom()),
+                        WipeBackupService::normalise,
+                        WipeBackupService::samePersonByEmail));
+    }
+
+    /**
+     * One key a backup row and an edition row are compared on — e-mail, name,
+     * code — with the normalisation the import applies to it, and an optional
+     * test a candidate must pass on top of the key.
+     */
+    private record Key<T, R>(
+            Function<T, String> backup,
+            Function<R, String> edition,
+            UnaryOperator<String> normalise,
+            BiPredicate<T, R> compatible) {}
 
     /**
      * Each id of the backup → the row of the edition it designates now, under
-     * a prudent and injective rule. The keys are tried in order; a key that
-     * names several rows of the backup or of the edition is an ambiguity and
-     * stops there — no falling back on a weaker key, since two namesakes are
-     * exactly where that would hand one person's seats to the other. A key
-     * matching nothing falls back on the next. And a row two backup ids
-     * designate goes to neither. Missing from the map: not found.
+     * a prudent and injective rule. The keys are tried in order, and a key
+     * designates only when it names exactly one row of the backup and exactly
+     * one compatible row of the edition; otherwise — nothing, or an ambiguity
+     * such as a family's shared e-mail — the next key is tried. The last one,
+     * the name, is the weakest: ambiguous on either side it designates
+     * nothing, so two namesakes never inherit each other's seats, and the
+     * {@code compatible} test refuses a namesake whose e-mail is another one.
+     * A row two backup ids designate goes to neither. Missing from the map:
+     * not found.
      */
     @SafeVarargs
     private static <T, R> Map<String, String> match(
@@ -428,21 +567,21 @@ public class WipeBackupService {
         Map<String, String> cibles = new HashMap<>();
         for (T row : backup == null ? List.<T>of() : backup) {
             for (Key<T, R> key : keys) {
-                String value = normalise(key.backup().apply(row));
+                String value = key.normalise().apply(key.backup().apply(row));
                 if (value == null) {
                     continue;
                 }
                 long inBackup = backup.stream()
-                        .filter(other -> value.equals(normalise(key.backup().apply(other))))
+                        .filter(other ->
+                                value.equals(key.normalise().apply(key.backup().apply(other))))
                         .count();
                 List<R> inEdition = edition.stream()
                         .filter(candidate ->
-                                value.equals(normalise(key.edition().apply(candidate))))
+                                value.equals(key.normalise().apply(key.edition().apply(candidate))))
+                        .filter(candidate ->
+                                key.compatible() == null || key.compatible().test(row, candidate))
                         .toList();
-                if (inBackup > 1 || inEdition.size() > 1) {
-                    break;
-                }
-                if (inEdition.size() == 1) {
+                if (inBackup == 1 && inEdition.size() == 1) {
                     cibles.put(backupId.apply(row), editionId.apply(inEdition.getFirst()));
                     break;
                 }
@@ -454,9 +593,31 @@ public class WipeBackupService {
         return cibles;
     }
 
-    /** The import's own normalisation ({@code ScenarioIdRemap}): trimmed, lower case, blank as absent. */
+    /**
+     * The import's {@code samePerson}: a namesake is the same person unless
+     * both carry an e-mail and the two differ.
+     */
+    private static boolean samePersonByEmail(AnimateurDto dto, Animateur animateur) {
+        String fichier = normalise(dto.email());
+        String base = normalise(animateur.getEmail());
+        return fichier == null || base == null || fichier.equals(base);
+    }
+
+    /** The import's normalisation of e-mails and names ({@code ScenarioIdRemap}): trimmed, case ignored. */
     private static String normalise(String value) {
         return value == null || value.isBlank() ? null : value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    /** First and last name, each normalised as the import compares them. */
+    private static String fullName(String prenom, String nom) {
+        String p = normalise(prenom);
+        String n = normalise(nom);
+        return p == null || n == null ? null : p + "|" + n;
+    }
+
+    /** The import's normalisation of codes: trimmed, compared as written. */
+    private static String trimmed(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     private static Optional<Long> creneau(List<Creneau> grille, LocalDate date, LocalTime debut, LocalTime fin) {

@@ -2,8 +2,10 @@ package dev.sylvain.planning.service.scenario;
 
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PrereglageConsigne;
+import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.scenario.dto.EditionCibleDto;
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.consigne.ConsigneRepository;
 import dev.sylvain.planning.service.consigne.ConsigneService;
@@ -18,9 +20,11 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -89,7 +93,7 @@ public class ScenarioImportService {
      * {@code src/main/resources/scenarios}, by name.
      */
     public ScenarioImportOutcome importBundled(String name) {
-        return importScenario(ScenarioYamlReader.readBundledScenario(name));
+        return importScenario(ScenarioYamlReader.readBundledScenario(name), null, null);
     }
 
     /**
@@ -99,7 +103,23 @@ public class ScenarioImportService {
      * document rather than importing part of it.
      */
     public ScenarioImportOutcome importYaml(String yamlContent) {
-        return importScenario(ScenarioYamlReader.parseScenarioText(yamlContent));
+        return importScenario(ScenarioYamlReader.parseScenarioText(yamlContent), yamlContent, null);
+    }
+
+    /**
+     * The import of a backup being restored (ADR 0084), by the same path as
+     * any other: the restore has backed the edition up itself and purges once
+     * it is over, so this import does neither. And what an ordinary import
+     * drops, because no seat ties it to the rest — a stand without a
+     * timeslot, a timeslot without a stand — comes back here too, through the
+     * usual creation: a backup brings back the whole edition it was taken of.
+     *
+     * @return what of those could not be created again, one sentence each
+     */
+    public List<String> importForRestore(String yamlContent) {
+        List<String> nonRecrees = new ArrayList<>();
+        importScenario(ScenarioYamlReader.parseScenarioText(yamlContent), null, nonRecrees);
+        return nonRecrees;
     }
 
     /**
@@ -114,7 +134,15 @@ public class ScenarioImportService {
      * by an interceptor, since the file may name another edition than the
      * call's.</p>
      */
-    private ScenarioImportOutcome importScenario(ScenarioDto scenario) {
+    /**
+     * @param sourceText the file's text when the caller has it: the backups
+     *                   holding that very text are spared by the purge, so
+     *                   re-importing a downloaded backup cannot evict it
+     * @param restore    {@code null} for an ordinary import; for the import
+     *                   of a restore, where to say what could not be created
+     *                   again
+     */
+    private ScenarioImportOutcome importScenario(ScenarioDto scenario, String sourceText, List<String> restore) {
         // Built once before anything is written, so that a file the mapper
         // refuses is refused before its edition: section is acted upon.
         ScenarioYamlReader.fromDto(scenario, referenceDataService::getParametresLegaux);
@@ -125,11 +153,14 @@ public class ScenarioImportService {
             // refused, like the import, while a solve holds this edition; the
             // bound is enforced only once the import went through, so an
             // import refused further down evicts no earlier backup (ADR 0084).
-            wipeBackup.backUpBeforeImport();
+            if (restore == null) {
+                wipeBackup.backUpBeforeImport();
+            }
             // The ids of the file are its own; the ones of the edition are
             // decided here, inside it (ADR 0050).
-            ScenarioYamlReader.ScenarioImporte importe = ScenarioYamlReader.fromDto(
-                    ScenarioIdRemap.remap(scenario, identifiants.of()), referenceDataService::getParametresLegaux);
+            ScenarioDto remappe = ScenarioIdRemap.remap(scenario, identifiants.of());
+            ScenarioYamlReader.ScenarioImporte importe =
+                    ScenarioYamlReader.fromDto(remappe, referenceDataService::getParametresLegaux);
             ScenarioYamlReader.ScenarioSections sections = importe.sections();
             // A file names no author: the ajustements it creates are the
             // importer's, like any other creation.
@@ -144,11 +175,56 @@ public class ScenarioImportService {
             sections.parametresSolveur().ifPresent(referenceDataService::importParametresSolveur);
             referenceDataService.importFromPlanning(importe.planning());
             applyTypologies(sections);
+            if (restore != null) {
+                // After the typologies: an unseated stand may offer one no
+                // seated stand or animateur names, which only that section brings.
+                restore.addAll(recreateUnseated(remappe));
+            }
             applyJourneesTypes(sections);
             applyContraintes(sections);
             applyConsignes(sections);
-            wipeBackup.enforceBound();
+            if (restore == null) {
+                wipeBackup.enforceBound(sourceText);
+            }
         });
+    }
+
+    /**
+     * The stands and timeslots of the file the planning import dropped,
+     * created again through the usual creation — it draws a stand a new id,
+     * the database a timeslot's. A creation the referential refuses is
+     * reported, not forced.
+     */
+    private List<String> recreateUnseated(ScenarioDto remappe) {
+        ScenarioYamlReader.ReferenceScenario reference = ScenarioDomainMapper.reference(remappe);
+        List<String> nonRecrees = new ArrayList<>();
+        Set<String> grille = new HashSet<>();
+        referenceDataService.listCreneaux().forEach(creneau -> grille.add(vacation(creneau)));
+        for (Creneau creneau : reference.creneauxParId().values()) {
+            if (grille.add(vacation(creneau))) {
+                try {
+                    referenceDataService.createCreneau(creneau);
+                } catch (BusinessError refus) {
+                    nonRecrees.add("Créneau " + vacation(creneau) + " : " + refus.getMessage());
+                }
+            }
+        }
+        Set<String> stands = new HashSet<>();
+        referenceDataService.listStands().forEach(stand -> stands.add(stand.getId()));
+        for (Stand stand : reference.standsById().values()) {
+            if (!stands.contains(stand.getId())) {
+                try {
+                    referenceDataService.createStand(stand);
+                } catch (BusinessError refus) {
+                    nonRecrees.add("Stand " + stand.getId() + " : " + refus.getMessage());
+                }
+            }
+        }
+        return nonRecrees;
+    }
+
+    private static String vacation(Creneau creneau) {
+        return creneau.getDate() + " " + creneau.getHeureDebut() + "-" + creneau.getHeureFin();
     }
 
     /**
