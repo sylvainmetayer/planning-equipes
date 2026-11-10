@@ -1064,6 +1064,7 @@ quotidien.
 | Ce qui n'a pas d'outil | Pourquoi |
 | --- | --- |
 | Export de scénario YAML | Contient prénom, nom et date de naissance — il doit être réimportable |
+| Sauvegardes avant vidage (`/api/planning/sauvegardes-avant-vidage`) | Chacune est un export de scénario, pour la même raison. `reinitialiser_donnees` et les imports en écrivent une, mais seul un administrateur la télécharge, la réimporte et en restaure le planning ([ADR 0084](decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)) |
 | Dump SQL (export et import) | Toutes les données personnelles, et un fichier volumineux destiné à une sauvegarde, pas à une conversation |
 | Exports PDF / ICS / CSV | Binaires ou nominatifs, destinés au téléchargement depuis l'interface |
 | `/api/config` | Clés publiques destinées au navigateur : aucun intérêt pour un assistant |
