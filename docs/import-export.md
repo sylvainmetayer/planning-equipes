@@ -139,40 +139,53 @@ paramètres compris, tout comme `/debug?onglet=donnees` et `?onglet=yaml`.
 Avant d'écrire quoi que ce soit, l'import d'un scénario — comme « Vider cette
 édition », `reinitialiser_donnees` et la restauration elle-même — range
 l'export de scénario de l'édition visée et son planning (sièges et verrous)
-dans `sauvegarde_avant_vidage`, cinq au plus par édition
-([ADR 0084](decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)). Si
+dans `sauvegarde_avant_vidage`
+([ADR 0084](decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)).
+**Rien ne les purge** : elles restent jusqu'à la suppression de l'édition, ou
+jusqu'à ce qu'un administrateur en supprime une
+(`DELETE /api/planning/sauvegardes-avant-vidage/{id}`). Si
 cette sauvegarde échoue, rien n'est vidé. Une édition à moitié construite —
 une équipe sans grille, une grille sans stands — est sauvegardée comme les
 autres ; seule une édition qui ne contient rien (ni référentiel, ni planning,
 ni paramètres, poids ou journées types) n'en reçoit pas, et un état déjà
 sauvegardé en dernier ne l'est pas deux fois. Un import refusé pendant une
 résolution n'écrit rien ; un import refusé plus loin peut laisser sa
-sauvegarde, mais n'évince aucune des précédentes. Ces sauvegardes ne
+sauvegarde. Ces sauvegardes ne
 s'atteignent que **par l'API** : aucun écran ne les liste.
 
 Pour revenir en arrière, deux gestes, avec l'en-tête `X-Edition-Id` :
 
 1. lister les sauvegardes de l'édition, la plus récente d'abord :
-   `GET /api/planning/sauvegardes-avant-vidage` ; le fichier d'une sauvegarde se
-   lit avant de la restaurer par `GET /api/planning/sauvegardes-avant-vidage/{id}` ;
+   `GET /api/planning/sauvegardes-avant-vidage`. Chaque ligne dit son origine
+   (`RESET`, `IMPORT`, `RESTORE`) et sa date ; une ligne `RESTORE` dit aussi
+   quelle sauvegarde cette restauration visait (`restaureId`) et si elle a
+   abouti (`restaurationAboutie`) — une restauration non aboutie a laissé
+   l'édition à moitié restaurée, et sa ligne est l'état d'avant. Le fichier
+   d'une sauvegarde se lit par `GET /api/planning/sauvegardes-avant-vidage/{id}` ;
 2. la restaurer : `POST /api/planning/sauvegardes-avant-vidage/{id}/restauration`.
 
 La restauration fait, dans l'ordre : les refus (résolution en cours, famille
-gelée, fichier que l'import refuserait), **avant toute écriture** ; la
-sauvegarde de l'état actuel ; l'import du scénario par l'import habituel, qui
-recrée aussi les stands et créneaux qu'aucun siège ne relie ; le planning ; les
-verrous ; la purge des anciennes sauvegardes, qui épargne la sauvegarde
-restaurée et celle de l'état remplacé. La réponse donne `sauvegardeAvant`,
-l'identifiant de cette dernière : **la restaurer défait la restauration**.
+gelée, fichier que l'import refuserait — lecture, stands invalides, exceptions
+ad hoc contradictoires, nommées alors par les identifiants de la sauvegarde),
+**avant toute écriture** ; la sauvegarde de l'état
+actuel ; l'import du scénario par l'import habituel, qui recrée aussi les
+stands et créneaux qu'aucun siège ne relie ; le planning ; les verrous. La
+réponse donne `sauvegardeAvant`, l'identifiant de la sauvegarde de l'état
+remplacé : **la restaurer défait la restauration**. D'autres refus de l'import,
+plus rares (une consigne, une journée type que le fichier décrit mal), peuvent
+encore tomber après l'écriture des paramètres : la reprise ci-dessous
+s'applique alors.
 
 **L'opération n'est pas atomique** : le dépôt n'a pas de transaction qui
 enjambe l'import, fait de plusieurs services (voir l'ADR). Si elle échoue après
 la sauvegarde de l'état actuel, l'édition reste à moitié restaurée, et la
 réponse d'erreur dit à quelle étape elle s'est arrêtée et quelle sauvegarde
-porte l'état d'avant — `409` pour une erreur métier, `500` pour une panne,
-avec le même message au journal. **Reprise** : restaurer cette sauvegarde
-remet l'édition comme elle était ; on peut aussi relancer la restauration
-d'origine une fois la cause levée, sans rien dégrader ni évincer.
+porte l'état d'avant **la première tentative** — `409` pour une erreur
+métier, `500` pour une panne, avec le même message au journal. **Reprise** :
+restaurer cette sauvegarde remet l'édition comme elle était ; on peut aussi
+relancer la restauration d'origine une fois la cause levée. Une relance ne
+sauvegarde pas l'édition à moitié restaurée : elle reprend la sauvegarde de la
+première tentative, et c'est encore elle que nomme une nouvelle erreur.
 
 Le planning se retrouve sur ce qui ne change pas au réimport : un créneau par
 sa date et ses heures, un animateur par son adresse puis par ses prénom et nom,
@@ -201,8 +214,7 @@ les anciens.
 
 Réimporter soi-même le fichier d'une sauvegarde (Fichiers › Importer) reste
 possible mais n'est pas la procédure : cet import écarte les stands et
-créneaux sans siège et ne remet pas le planning. Il n'efface pas pour autant la
-sauvegarde dont il rejoue le fichier.
+créneaux sans siège et ne remet pas le planning.
 
 Rejouer un export SQL complet (carte *Import SQL*) efface toutes les
 sauvegardes avant vidage, de toutes les éditions : voir
