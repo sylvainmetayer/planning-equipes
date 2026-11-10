@@ -536,14 +536,17 @@ complètes. Quatre points sont connus et se consignent :
   sauvegarde range d'abord l'export de scénario de l'édition — nom, prénom,
   date de naissance, adresse et téléphone de chaque animateur compris — et son
   planning (sièges et verrous, par identifiants seulement). **Une copie par
-  vidage, conservée aussi longtemps que l'édition** : la seule purge est la
+  vidage — sauf quand l'état est exactement celui de la copie précédente —,
+  conservée aussi longtemps que l'édition** : la seule purge est la
   suppression de l'édition, en cascade sur `edition_id`, donc la purge annuelle
   du §5 ; la durée de conservation de ces copies est donc **celle de
   l'édition**, et elle se consigne telle quelle au registre. Un administrateur
   peut en supprimer une (`DELETE /api/planning/sauvegardes-avant-vidage/{id}`,
   journalisé). Elles ne partent ni dans l'export SQL ni par MCP ; seul un
   administrateur en liste, en télécharge, en restaure ou en supprime une, par
-  l'API, et chaque geste est journalisé. Ce qui ne les borne pas : une fiche
+  l'API ; le téléchargement, la restauration et la suppression sont
+  journalisés, la simple liste (dates et origines, aucune donnée de personne)
+  ne l'est pas. Ce qui ne les borne pas : une fiche
   supprimée reste dans les sauvegardes prises avant sa suppression, et
   restaurer l'une d'elles la fait revenir — d'où le point suivant ;
 - **l'effacement demandé par un animateur sur une édition encore active** n'a
