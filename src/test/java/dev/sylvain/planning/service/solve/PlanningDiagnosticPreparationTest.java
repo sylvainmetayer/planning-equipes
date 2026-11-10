@@ -105,7 +105,7 @@ class PlanningDiagnosticPreparationTest {
                 .withSources(mapConfigSource(
                         Map.of("planning.constraint-weights." + CONTRAINTE, String.valueOf(TELLTALE_WEIGHT))))
                 .build();
-        PlanningPersistenceService persistence = new PlanningPersistenceService(null, null, null, null) {
+        PlanningPersistenceService persistence = new PlanningPersistenceService(null, null, null, null, null) {
             @Override
             public PlanningEvenement loadPersistedPlanning() {
                 return planWithOneViolation();

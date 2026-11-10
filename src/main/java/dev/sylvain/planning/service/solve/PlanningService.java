@@ -244,13 +244,28 @@ public class PlanningService {
      * case the section exists for.</p>
      */
     public String exportScenarioYaml() {
+        return scenarioYaml(true);
+    }
+
+    /**
+     * {@link #exportScenarioYaml()} without its refusal: an edition missing
+     * its animateurs, stands or timeslots is written all the same, the format
+     * reads such a file back. What the backup taken before a wipe
+     * ({@link WipeBackupService}) needs — an edition half built is still
+     * something to lose.
+     */
+    String scenarioYaml() {
+        return scenarioYaml(false);
+    }
+
+    private String scenarioYaml(boolean refuseIncomplete) {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
         // Raw stands, so the file gets the recurring horaires as rules rather
         // than the few hundred dated windows they expand to — the resolution
         // still runs, because the seat list does depend on it.
         List<Stand> stands = referenceDataService.listStands();
         List<Creneau> creneaux = referenceDataService.listCreneaux();
-        if (animateurs.isEmpty() || stands.isEmpty() || creneaux.isEmpty()) {
+        if (refuseIncomplete && (animateurs.isEmpty() || stands.isEmpty() || creneaux.isEmpty())) {
             throw new IllegalStateException(
                     "Aucune donnée de référence à exporter. Créez des stands, des animateurs et des créneaux d'abord.");
         }

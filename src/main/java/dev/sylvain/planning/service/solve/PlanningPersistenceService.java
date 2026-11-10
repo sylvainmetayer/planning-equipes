@@ -73,16 +73,20 @@ public class PlanningPersistenceService {
 
     private final SolverJobService solverJobs;
 
+    private final WipeBackupService wipeBackup;
+
     @Inject
     public PlanningPersistenceService(
             DataSource dataSource,
             JdbcEditionScope scope,
             ReferenceDataService referenceDataService,
-            SolverJobService solverJobs) {
+            SolverJobService solverJobs,
+            WipeBackupService wipeBackup) {
         this.dataSource = dataSource;
         this.scope = scope;
         this.referenceDataService = referenceDataService;
         this.solverJobs = solverJobs;
+        this.wipeBackup = wipeBackup;
     }
 
     /**
@@ -150,15 +154,24 @@ public class PlanningPersistenceService {
      * stands, animateurs, timeslots and seats, but neither the locations, the
      * opening hours, the stands' game categories and dated openings nor the
      * ad hoc constraints — leaving the edition half-restored.</p>
+     *
+     * <p>The edition's scenario is backed up in the same transaction
+     * (ADR 0084): no backup, no wipe.</p>
      */
     @RefusedWhileFrozen
     @RefusedWhileSolving
     public void clearDatabase() {
-        scope.write("Failed to clear the database", this::clearPlanningTables);
+        scope.write("Failed to clear the database", connection -> {
+            wipeBackup.backUp(connection, WipeBackupService.Trigger.RESET);
+            clearPlanningTables(connection);
+        });
     }
 
-    /** Child-first order, so no {@code ON DELETE} cascade has to be relied on. */
-    private static final List<String> TABLES_A_VIDER = List.of(
+    /**
+     * Child-first order, so no {@code ON DELETE} cascade has to be relied on.
+     * Also what {@link WipeBackupService} reads to tell an empty edition.
+     */
+    static final List<String> TABLES_A_VIDER = List.of(
             "poste_affectation",
             "demande_echange",
             "planning_resolution",

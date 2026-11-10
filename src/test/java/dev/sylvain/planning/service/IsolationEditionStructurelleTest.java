@@ -130,7 +130,8 @@ class IsolationEditionStructurelleTest {
             "lien_affichage_mural",
             "lien_affichage_mural_emplacement",
             "parametres_meteo",
-            "meteo_etat");
+            "meteo_etat",
+            "sauvegarde_avant_vidage");
 
     /**
      * The tables the backend queries <b>outside</b> any edition, and why. An

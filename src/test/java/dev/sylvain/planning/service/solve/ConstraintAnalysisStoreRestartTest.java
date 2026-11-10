@@ -136,7 +136,7 @@ class ConstraintAnalysisStoreRestartTest {
     private static class PersistenceStub extends PlanningPersistenceService {
 
         PersistenceStub() {
-            super(null, null, null, null);
+            super(null, null, null, null, null);
         }
 
         private final AtomicInteger loads = new AtomicInteger();

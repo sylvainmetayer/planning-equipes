@@ -103,6 +103,7 @@ public final class CatalogueActions {
     private static final String SOLVE_ARRETE = "SOLVE_ARRETE";
     private static final String JOB_SUPPRIME = "JOB_SUPPRIME";
     private static final String PLANNING_REINITIALISE = "PLANNING_REINITIALISE";
+    private static final String PLANNING_RESTAURE_SAUVEGARDE = "PLANNING_RESTAURE_SAUVEGARDE";
     private static final String AFFECTATION_DEPLACEE = "AFFECTATION_DEPLACEE";
     private static final String AFFECTATION_POSEE = "AFFECTATION_POSEE";
     private static final String ABSENCE_ENREGISTREE = "ABSENCE_ENREGISTREE";
@@ -321,6 +322,9 @@ public final class CatalogueActions {
         // joins at read time.
         action(VERIFICATION_BESOIN_LANCEE, "Vérification du besoin lancée", Entite.VERIFICATION_BESOIN);
         changesData(PLANNING_REINITIALISE, "Données de référence effacées", Entite.PLANNING);
+        // Its locks move what a solve is given, like any VERROU_POSE.
+        changesData(
+                PLANNING_RESTAURE_SAUVEGARDE, "Planning restauré depuis une sauvegarde avant vidage", Entite.PLANNING);
         action(AFFECTATION_DEPLACEE, "Affectation déplacée à la main", Entite.PLANNING);
         action(AFFECTATION_POSEE, "Poste attribué à la main", Entite.PLANNING);
         action(ABSENCE_ENREGISTREE, "Absence déclarée en mode jour J", Entite.PLANNING);
@@ -544,6 +548,7 @@ public final class CatalogueActions {
 
         route("PlanningResource#solve", SOLVE_LANCE);
         route("PlanningResource#reset", PLANNING_REINITIALISE);
+        route("PlanningResource#restoreWipeBackupPlan", PLANNING_RESTAURE_SAUVEGARDE);
         route("SolverJobResource#solveAsync", SOLVE_LANCE);
         route("SolverJobResource#solveFromReferenceData", SOLVE_LANCE);
         route("StaffingResource#verify", VERIFICATION_BESOIN_LANCEE);
@@ -581,6 +586,8 @@ public final class CatalogueActions {
         route("PlanningExportResource#exportGlobalPdf", EXPORT_PDF_GLOBAL);
         route("ReferenceDataResource#exportCsv", EXPORT_REFERENTIELS);
         route("PlanningResource#exportScenario", EXPORT_SCENARIO);
+        // The scenario saved before a wipe (ADR 0084): the same file, from another moment.
+        route("PlanningResource#downloadWipeBackup", EXPORT_SCENARIO);
         route("EquiteResource#exportCsv", EXPORT_EQUITE);
         route("PublicationResource#exportCsv", EXPORT_RELECTURE);
         route("PauseResource#exportIntendance", EXPORT_INTENDANCE);

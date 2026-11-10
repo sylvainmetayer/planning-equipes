@@ -74,11 +74,15 @@ final class ScenarioDtoAssembler {
 
     static ScenarioDto assemble(ScenarioYamlWriter.ScenarioExport export) {
         List<Creneau> creneaux = export.creneaux();
+        // A grid-less edition has no start (its dates are derived from its
+        // timeslots); the reader requires one all the same, and nothing reads it
+        // without a timeslot. Only the backup before a wipe exports such an
+        // edition — the export of Fichiers refuses it (ADR 0084).
         LocalDate dateDebut = creneaux.stream()
                 .map(Creneau::getDate)
                 .filter(Objects::nonNull)
                 .min(LocalDate::compareTo)
-                .orElse(null);
+                .orElse(LocalDate.EPOCH);
 
         return new ScenarioDto(
                 null,

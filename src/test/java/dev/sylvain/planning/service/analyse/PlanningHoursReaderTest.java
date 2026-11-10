@@ -101,7 +101,7 @@ class PlanningHoursReaderTest {
         private int plansRead;
 
         Persisted(List<Instant> dates, List<PlanningEvenement> plans) {
-            super(null, null, null, null);
+            super(null, null, null, null, null);
             this.dates = dates.iterator();
             this.plans = plans.iterator();
         }
