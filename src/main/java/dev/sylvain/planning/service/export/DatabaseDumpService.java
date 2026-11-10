@@ -299,9 +299,13 @@ public class DatabaseDumpService {
      */
     static final String SCHEMA_VERSION_HEADER = "-- Schema version: ";
 
-    /** {@link #SCHEMA_VERSION_HEADER} as read back: a {@code V} before the number is tolerated. */
+    /**
+     * {@link #SCHEMA_VERSION_HEADER} as read back: a {@code V} before the number is tolerated. The repetition of
+     * the version's segments is possessive: a greedy group recursed once per segment, and an uploaded header line
+     * long enough exhausted the stack.
+     */
     private static final Pattern SCHEMA_VERSION_LINE =
-            Pattern.compile("^--\\s*Schema version:\\s*V?([0-9]+(?:\\.[0-9]+)*)\\s*$", Pattern.CASE_INSENSITIVE);
+            Pattern.compile("^--\\s*Schema version:\\s*V?([0-9]+(?:\\.[0-9]+)*+)\\s*$", Pattern.CASE_INSENSITIVE);
 
     private static final Pattern STATEMENT_PATTERN =
             Pattern.compile("^(insert\\s+into|delete\\s+from|truncate\\s+table|truncate)\\s+([a-z_][a-z0-9_]*)");
