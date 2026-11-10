@@ -267,7 +267,7 @@ public class PlanSnapshotService {
      * the very first solve is a no-op rather than an empty snapshot.
      */
     public SnapshotMeta capture(String libelle, boolean automatique) {
-        List<AffectationSnapshot> affectations = readPersistedAffectations();
+        List<AffectationSnapshot> affectations = loadPersistedAffectations();
         if (affectations.isEmpty()) {
             return null;
         }
@@ -287,7 +287,7 @@ public class PlanSnapshotService {
      * reads from, so it must not be in reach of the retention purge.</p>
      */
     public SnapshotMeta capturePubliee(String libelle) {
-        List<AffectationSnapshot> affectations = readPersistedAffectations();
+        List<AffectationSnapshot> affectations = loadPersistedAffectations();
         if (affectations.isEmpty()) {
             return null;
         }
@@ -712,7 +712,23 @@ public class PlanSnapshotService {
             return RestaurationResult.perime(
                     detail.meta().creeLe(), detail.meta().referenceModifieLe());
         }
-        scope.write("Failed to restore plan snapshot " + id, connection -> {
+        rewritePlan(
+                "Failed to restore plan snapshot " + id,
+                detail.affectations(),
+                writeDosage(detail.meta().kpi()));
+        return RestaurationResult.ok(detail.affectations().size());
+    }
+
+    /**
+     * Replaces the persisted plan with {@code affectations}, whose ids must all
+     * exist in the current edition — the write half of {@link #restaurer},
+     * shared with the restore of a backup taken before a wipe (ADR 0084).
+     *
+     * @param dosage the weights the plan was solved under, {@code null} when unknown
+     */
+    @RefusedWhileSolving
+    void rewritePlan(String failure, List<AffectationSnapshot> affectations, String dosage) {
+        scope.write(failure, connection -> {
             try (PreparedStatement ps =
                     scope.prepareScoped(connection, "DELETE FROM poste_affectation WHERE edition_id = ?")) {
                 ps.executeUpdate();
@@ -722,7 +738,7 @@ public class PlanSnapshotService {
  heure_debut_effective, heure_fin_effective, suite_de)
  VALUES (?, ?, ?, ?, ?, ?, ?, ?)""";
             try (PreparedStatement ps = scope.prepareScoped(connection, insert)) {
-                for (AffectationSnapshot affectation : detail.affectations()) {
+                for (AffectationSnapshot affectation : affectations) {
                     // A snapshot taken before the ids were padded would put
                     // back a plan the next re-seed reads out of order.
                     ps.setString(8, ProblemBuilder.paddedSeatId(affectation.suiteDe()));
@@ -746,7 +762,7 @@ public class PlanSnapshotService {
  DO UPDATE SET resolu_le = EXCLUDED.resolu_le, dosage = EXCLUDED.dosage""";
             try (PreparedStatement ps = scope.prepareScoped(connection, resolution)) {
                 ps.setTimestamp(2, Timestamp.from(Instant.now()));
-                ps.setString(3, writeDosage(detail.meta().kpi()));
+                ps.setString(3, dosage);
                 ps.executeUpdate();
             }
         });
@@ -759,7 +775,6 @@ public class PlanSnapshotService {
             // Deliberately swallowed: a missing analysis is an empty screen,
             // the restore itself succeeded.
         }
-        return RestaurationResult.ok(detail.affectations().size());
     }
 
     /* -------------------------------- Helpers ------------------------------ */
@@ -770,7 +785,7 @@ public class PlanSnapshotService {
      * deleted (issue #576), and the whole point of a denormalised content is to
      * survive the disappearance of what it names.
      */
-    private List<AffectationSnapshot> readPersistedAffectations() {
+    List<AffectationSnapshot> loadPersistedAffectations() {
         String sql = """
  SELECT pa.id, pa.stand_id, pa.creneau_id, pa.animateur_id,
  pa.heure_debut_effective, pa.heure_fin_effective, pa.suite_de,

@@ -7215,6 +7215,44 @@
           }
         }
       },
+      "PlanRestoration" : {
+        "type" : "object",
+        "properties" : {
+          "affectationsRestaurees" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "affectationsNonRestaurees" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "verrouillagesRestaures" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "verrouillagesDejaPresents" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "verrouillagesNonRestaures" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "avertissements" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "score" : {
+            "type" : "string"
+          }
+        }
+      },
       "PlanningEvenement" : {
         "type" : "object",
         "properties" : {
@@ -10076,6 +10114,10 @@
           }
         }
       },
+      "Trigger" : {
+        "type" : "string",
+        "enum" : [ "RESET", "IMPORT" ]
+      },
       "TypeAvertissement" : {
         "type" : "string",
         "enum" : [ "INDISPONIBILITE_HORS_EVENEMENT", "INDISPONIBILITE_JOUR_SANS_CRENEAU", "MINEUR_PENDANT_EVENEMENT", "CRENEAU_HORS_OUVERTURE_STANDS", "CRENEAU_DEBORDE_OUVERTURE_STANDS", "STAND_EXCEPTION_HORS_EVENEMENT", "STAND_FENETRE_SANS_EFFET", "STAND_JAMAIS_OUVERT", "AFFECTATION_FORCEE_JOUR_INDISPONIBLE", "AFFECTATION_FORCEE_MOTIF_LEGAL", "AFFECTATION_FORCEE_SIEGE_VERROUILLE", "ARRIVEE_GROUPEE_JOURS_DIVERGENTS", "VERROUILLAGE_SUR_VIOLATION_DURE", "STAND_SANS_EMPLACEMENT" ]
@@ -10822,6 +10864,21 @@
       "WeightChangeOrigin" : {
         "type" : "string",
         "enum" : [ "SCREEN", "ASSISTANT", "SCENARIO", "DUPLICATION" ]
+      },
+      "WipeBackup" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "origine" : {
+            "$ref" : "#/components/schemas/Trigger"
+          },
+          "creeLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          }
+        }
       },
       "WrittenAnimateur" : {
         "type" : "object",
@@ -16704,6 +16761,77 @@
           }
         },
         "summary" : "Sample",
+        "tags" : [ "Planning Resource" ]
+      }
+    },
+    "/api/planning/sauvegardes-avant-vidage" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/WipeBackup"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Wipe Backups",
+        "tags" : [ "Planning Resource" ]
+      }
+    },
+    "/api/planning/sauvegardes-avant-vidage/{id}" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/x-yaml" : { }
+            }
+          }
+        },
+        "summary" : "Download Wipe Backup",
+        "tags" : [ "Planning Resource" ]
+      }
+    },
+    "/api/planning/sauvegardes-avant-vidage/{id}/planning" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PlanRestoration"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Restore Wipe Backup Plan",
         "tags" : [ "Planning Resource" ]
       }
     },

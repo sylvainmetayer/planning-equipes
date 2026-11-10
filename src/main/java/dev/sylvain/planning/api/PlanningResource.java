@@ -9,11 +9,13 @@ import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.solve.ProblemScaleService;
 import dev.sylvain.planning.service.solve.SolvePipeline;
+import dev.sylvain.planning.service.solve.WipeBackupService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -47,6 +49,8 @@ public class PlanningResource {
 
     private final GroupedArrivalAnalyzer groupedArrivalAnalyzer;
 
+    private final WipeBackupService wipeBackup;
+
     @Inject
     public PlanningResource(
             SolvePipeline pipeline,
@@ -56,7 +60,8 @@ public class PlanningResource {
             ProblemScaleService problemScaleService,
             ReferenceDataService referenceDataService,
             WalkSequenceAnalyzer walkSequenceAnalyzer,
-            GroupedArrivalAnalyzer groupedArrivalAnalyzer) {
+            GroupedArrivalAnalyzer groupedArrivalAnalyzer,
+            WipeBackupService wipeBackup) {
         this.pipeline = pipeline;
         this.planningService = planningService;
         this.persistenceService = persistenceService;
@@ -65,6 +70,7 @@ public class PlanningResource {
         this.referenceDataService = referenceDataService;
         this.walkSequenceAnalyzer = walkSequenceAnalyzer;
         this.groupedArrivalAnalyzer = groupedArrivalAnalyzer;
+        this.wipeBackup = wipeBackup;
     }
 
     /**
@@ -135,6 +141,34 @@ public class PlanningResource {
 
     @Schema(requiredProperties = {"animateurs", "creneaux", "postes", "stands"})
     public record ResetSummary(int animateurs, int stands, int creneaux, int postes) {}
+
+    /** The scenarios saved before this edition was last emptied (ADR 0084), most recent first. */
+    @GET
+    @Path("/planning/sauvegardes-avant-vidage")
+    public List<WipeBackupService.WipeBackup> wipeBackups() {
+        return wipeBackup.list();
+    }
+
+    /**
+     * Puts the plan of a backup — seats and locks — back on the edition, once
+     * its scenario has been re-imported; says what could not be (ADR 0084).
+     */
+    @POST
+    @Path("/planning/sauvegardes-avant-vidage/{id}/planning")
+    @Consumes(MediaType.WILDCARD)
+    public WipeBackupService.PlanRestoration restoreWipeBackupPlan(@PathParam("id") long id) {
+        return wipeBackup.restorePlan(id);
+    }
+
+    /** One of them, as the file Fichiers › Importer reads back to undo the wipe. */
+    @GET
+    @Path("/planning/sauvegardes-avant-vidage/{id}")
+    @Produces("application/x-yaml")
+    public Response downloadWipeBackup(@PathParam("id") long id) {
+        return Response.ok(wipeBackup.loadContent(id))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"sauvegarde-" + id + ".yaml\"")
+                .build();
+    }
 
     /**
      * Read-only view of the last solved planning stored in the database.

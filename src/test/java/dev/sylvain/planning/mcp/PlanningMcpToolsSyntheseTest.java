@@ -33,7 +33,7 @@ class PlanningMcpToolsSyntheseTest {
     private static PlanningMcpTools tools(List<PosteAffectation> postes) {
         PlanningEvenement planning = new PlanningEvenement();
         planning.setPostes(postes);
-        PlanningPersistenceService persistenceService = new PlanningPersistenceService(null, null, null, null) {
+        PlanningPersistenceService persistenceService = new PlanningPersistenceService(null, null, null, null, null) {
             @Override
             public PlanningEvenement loadPersistedPlanning() {
                 return planning;

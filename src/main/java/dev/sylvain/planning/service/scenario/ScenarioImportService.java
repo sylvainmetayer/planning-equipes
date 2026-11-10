@@ -12,6 +12,7 @@ import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.referentiel.GelReferentielService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.WeightChangeOrigin;
+import dev.sylvain.planning.service.solve.WipeBackupService;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -61,6 +62,8 @@ public class ScenarioImportService {
     /** The account of the request: the author of the ajustements an import creates. */
     private final JournalActionService journal;
 
+    private final WipeBackupService wipeBackup;
+
     @Inject
     public ScenarioImportService(
             ReferenceDataService referenceDataService,
@@ -69,8 +72,10 @@ public class ScenarioImportService {
             ConsigneRepository consigneRepository,
             ScenarioTargetIds identifiants,
             GelReferentielService gel,
-            JournalActionService journal) {
+            JournalActionService journal,
+            WipeBackupService wipeBackup) {
         this.journal = journal;
+        this.wipeBackup = wipeBackup;
         this.referenceDataService = referenceDataService;
         this.editionService = editionService;
         this.editionContext = editionContext;
@@ -115,6 +120,12 @@ public class ScenarioImportService {
         ScenarioYamlReader.fromDto(scenario, referenceDataService::getParametresLegaux);
         return importIntoTarget(ScenarioYamlReader.edition(scenario), () -> {
             gel.refuseIfFrozen();
+            // Before the first write, the parameters: the backup must hold the
+            // edition as it was, and a failed one stops the import. It is
+            // refused, like the import, while a solve holds this edition; the
+            // bound is enforced only once the import went through, so an
+            // import refused further down evicts no earlier backup (ADR 0084).
+            wipeBackup.backUpBeforeImport();
             // The ids of the file are its own; the ones of the edition are
             // decided here, inside it (ADR 0050).
             ScenarioYamlReader.ScenarioImporte importe = ScenarioYamlReader.fromDto(
@@ -136,6 +147,7 @@ public class ScenarioImportService {
             applyJourneesTypes(sections);
             applyContraintes(sections);
             applyConsignes(sections);
+            wipeBackup.enforceBound();
         });
     }
 

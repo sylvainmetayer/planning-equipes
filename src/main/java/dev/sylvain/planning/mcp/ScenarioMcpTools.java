@@ -134,7 +134,8 @@ public class ScenarioMcpTools {
             name = "reinitialiser_donnees",
             description = "Vide entièrement UNE ÉDITION : stands, créneaux, animateurs, affectations et "
                     + "contraintes ad hoc de l'édition ciblée, les autres éditions n'y touchent pas. Opération "
-                    + "destructive et irréversible, à ne lancer que sur demande explicite.",
+                    + "destructive, à ne lancer que sur demande explicite : seul un administrateur peut la défaire, "
+                    + "en réimportant le scénario sauvegardé juste avant le vidage.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,

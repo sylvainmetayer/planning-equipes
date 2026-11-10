@@ -147,6 +147,30 @@ class AuthentificationAdminTest {
     }
 
     /**
+     * The backups taken before a wipe carry every animateur's identity
+     * (ADR 0084): listing, downloading and restoring them all stay behind the
+     * admin session.
+     */
+    @Test
+    void theBackupsBeforeAWipeRequireASession() {
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/planning/sauvegardes-avant-vidage")
+                .then()
+                .statusCode(401);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/planning/sauvegardes-avant-vidage/1")
+                .then()
+                .statusCode(401);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/sauvegardes-avant-vidage/1/planning")
+                .then()
+                .statusCode(401);
+    }
+
+    /**
      * The OpenAPI description and Swagger UI ship in production so the deployed
      * instance documents itself. Public, they would hand a map of every
      * endpoint and payload to anyone — and Swagger UI would offer to call them.

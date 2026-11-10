@@ -86,7 +86,7 @@ class PlanningMcpToolsHeuresTest {
 
     /** Alice holds the seat in the persisted plan; Bruno held it in the publication, when there is one. */
     private static PlanningMcpTools tools(boolean published) {
-        PlanningPersistenceService persistence = new PlanningPersistenceService(null, null, null, null) {
+        PlanningPersistenceService persistence = new PlanningPersistenceService(null, null, null, null, null) {
             @Override
             public PlanningResolution loadResolution() {
                 return new PlanningResolution(SOLVED_AT, null);
