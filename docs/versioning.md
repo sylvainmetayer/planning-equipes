@@ -226,7 +226,8 @@ pour la conserver, ou l'omettre pour la désactiver.
 
 ## 4. Déployer : un `vX.Y.Z`, jamais `:main` ni `:latest`
 
-Le workflow publie aussi une image `:main` à chaque fusion. C'est l'**image de
+Le workflow publie aussi une image `:main` à chaque fusion, et la reconstruit
+sans cache chaque dimanche pour les correctifs Ubuntu. C'est l'**image de
 recette** : elle sert à valider ce qui sortira, pas à tourner chez un client.
 
 Un déploiement de production référence une **version nommée** — `1.2.0` —

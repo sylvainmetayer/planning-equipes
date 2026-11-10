@@ -776,8 +776,14 @@ dépôt étant public, cet onglet ne coûte rien.
 Le scan de l'image dans `docker-ghcr.yml` **barre la publication** : une image
 qui porte une CVE corrigeable HIGH ou CRITICAL ne reçoit ni signature, ni
 `:main`, ni numéro de version — elle reste sous son seul `sha-…`, pour le
-diagnostic. Le cas ordinaire se règle en reconstruisant : l'image de base
-`eclipse-temurin` est republiée quand Ubuntu corrige. Ce qui ne vient d'aucun
+diagnostic. Le cas ordinaire se règle en reconstruisant : le `Dockerfile`
+applique les correctifs Ubuntu du jour (`apt-get upgrade`), mais cette couche
+reste en cache tant que l'image de base `eclipse-temurin` ne change pas.
+`docker-ghcr.yml` reconstruit donc `:main` **sans cache chaque dimanche**
+(3 h UTC, la veille du scan hebdomadaire), comme sur un lancement manuel.
+`:latest` et les versions n'en profitent pas — un tag de release n'est jamais
+reconstruit : une CVE corrigée après une version se règle par une version de
+correctif. Ce qui ne vient d'aucun
 paquet n'en profite pas : `pebble`, binaire Go que l'image de base installe à
 côté d'`apt` et que l'application ne lance jamais, est retiré par le
 `Dockerfile` plutôt qu'attendu. Une version de release
