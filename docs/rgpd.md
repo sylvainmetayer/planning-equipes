@@ -529,8 +529,22 @@ complètes. Quatre points sont connus et se consignent :
   24 h ; et un
   navigateur qui refuse les deux mécanismes de diffusion ne purge que l'onglet
   qui se déconnecte ;
+- **l'édition est recopiée avant chaque vidage** (`sauvegarde_avant_vidage`,
+  [décision 0084](decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)) :
+  une réinitialisation ou un import de scénario range d'abord l'export de
+  scénario de l'édition — nom, prénom, date de naissance, adresse et téléphone de chaque
+  animateur compris — et son planning (sièges et verrous, par identifiants
+  seulement : la colonne `plan` ne porte aucune donnée nouvelle), cinq au plus
+  par édition, les plus anciennes purgées à chaque nouvelle. La table n'a pas d'autre purge : elle disparaît avec son
+  édition, en cascade sur `edition_id`, donc à la purge annuelle du §5. Elle ne
+  part ni dans l'export SQL ni par MCP ; seul un administrateur en télécharge
+  une, journalisée comme un export de scénario. Ce qui ne la borne pas : une
+  fiche supprimée reste dans les sauvegardes prises avant sa suppression,
+  d'où le point suivant ;
 - **l'effacement demandé par un animateur sur une édition encore active** n'a
-  pas de procédure outillée : c'est une suppression manuelle de sa fiche. Une
+  pas de procédure outillée : c'est une suppression manuelle de sa fiche, **et
+  des sauvegardes avant vidage de son édition** (`DELETE FROM
+  sauvegarde_avant_vidage WHERE edition_id = '…'`), qui la portent encore. Une
   demande d'effacement ne se refuse pas au motif que l'événement n'est pas
   terminé, et automatiser la purge par édition échue ne le réglera pas — c'est
   une opération distincte ;

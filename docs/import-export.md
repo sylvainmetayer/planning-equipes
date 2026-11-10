@@ -134,6 +134,55 @@ paramètres compris, tout comme `/debug?onglet=donnees` et `?onglet=yaml`.
 
 <sub>Source : [`diagrammes/import-scenario.puml`](diagrammes/import-scenario.puml).</sub>
 
+### Revenir sur un import ou une réinitialisation
+
+Avant d'écrire quoi que ce soit, l'import d'un scénario — comme « Vider cette
+édition » et `reinitialiser_donnees` — range l'export de scénario de l'édition
+visée et son planning (sièges et verrous) dans `sauvegarde_avant_vidage`, cinq
+au plus par édition
+([ADR 0084](decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)). Si
+cette sauvegarde échoue, rien n'est vidé. Une édition à moitié construite —
+une équipe importée, pas encore de grille — est sauvegardée comme les autres ;
+seule une édition vide n'en reçoit pas, et un état déjà sauvegardé en dernier
+ne l'est pas deux fois. Un import refusé pendant une résolution n'écrit rien ;
+un import refusé plus loin peut laisser sa sauvegarde, mais n'évince aucune
+des précédentes. Ces sauvegardes ne s'atteignent que **par l'API** : aucun
+écran ne les liste. Pour revenir en arrière :
+
+1. lister les sauvegardes de l'édition, la plus récente d'abord :
+   `GET /api/planning/sauvegardes-avant-vidage` (en-tête `X-Edition-Id`) ;
+2. télécharger celle d'avant le geste :
+   `GET /api/planning/sauvegardes-avant-vidage/{id}` ;
+3. l'importer dans la même édition par **Fichiers**, Importer, carte Scénario
+   (ce nouvel import range à son tour l'état qu'il remplace : la sauvegarde
+   visée garde son identifiant) ;
+4. restaurer son planning : `POST /api/planning/sauvegardes-avant-vidage/{id}/planning`.
+   Le plan persisté est remplacé ; les verrous s'ajoutent à ceux de l'édition.
+
+Le planning se retrouve sur ce qui ne change pas au réimport : un créneau par
+sa date et ses heures, un animateur par son adresse puis par ses prénom et nom,
+un stand par son code puis par son nom — comparés comme l'import les compare
+(espaces retirés, sans casse). La correspondance est prudente : une clé qui
+désigne plusieurs lignes de la sauvegarde ou de l'édition ne désigne rien et
+interdit le repli sur la suivante (deux homonymes ne se départagent pas au nom),
+et une ligne que deux entrées de la sauvegarde désignent ne va à aucune. Mieux
+vaut un siège vide signalé qu'un siège donné à quelqu'un d'autre.
+
+La réponse compte les sièges pourvus, les verrous écrits et ceux qui étaient
+déjà posés (une seconde restauration n'en écrit aucun), et liste, par
+identifiants, ce qui n'a pas pu revenir — un siège dont l'animateur est
+introuvable revient vide, un siège dont le stand ou le créneau l'est ne revient
+pas ; elle donne aussi le score du plan restauré et les avertissements des
+verrous. Ni les validations de journée ni les demandes d'échange ne sont
+sauvegardées.
+
+Rejouer un export SQL complet (carte *Import SQL*) efface toutes les
+sauvegardes avant vidage, de toutes les éditions : voir
+[`exploitation.md`](exploitation.md) § Restaurer.
+
+Sans l'API, le scénario se lit en SQL :
+`SELECT contenu FROM sauvegarde_avant_vidage WHERE edition_id = '…' ORDER BY cree_le DESC LIMIT 1`.
+
 Une section `edition: { id?, nom? }` route l'import vers une autre édition :
 celle de cet identifiant si elle existe, sinon la seule édition de ce nom,
 sinon une édition créée vide sous ce nom — son identifiant, lui, est attribué
