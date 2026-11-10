@@ -529,25 +529,28 @@ complètes. Quatre points sont connus et se consignent :
   24 h ; et un
   navigateur qui refuse les deux mécanismes de diffusion ne purge que l'onglet
   qui se déconnecte ;
-- **l'édition est recopiée avant chaque vidage** (`sauvegarde_avant_vidage`,
+- **l'édition est recopiée avant chaque vidage, et ces copies ne sont pas
+  purgées** (`sauvegarde_avant_vidage`,
   [décision 0084](decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)) :
   une réinitialisation, un import de scénario ou la restauration d'une
   sauvegarde range d'abord l'export de scénario de l'édition — nom, prénom,
   date de naissance, adresse et téléphone de chaque animateur compris — et son
-  planning (sièges et verrous, par identifiants seulement : la colonne `plan`
-  ne porte aucune donnée nouvelle), cinq au plus par édition, les plus
-  anciennes purgées après chaque vidage abouti. Une restauration réécrit dans
-  l'édition des fiches que la sauvegarde portait : restaurer une sauvegarde
-  prise avant l'effacement d'une personne la fait revenir. La table n'a pas d'autre purge : elle disparaît avec son
-  édition, en cascade sur `edition_id`, donc à la purge annuelle du §5. Elle ne
-  part ni dans l'export SQL ni par MCP ; seul un administrateur en télécharge
-  ou en restaure une, par l'API, et les deux gestes sont journalisés. Ce qui ne la borne pas : une
-  fiche supprimée reste dans les sauvegardes prises avant sa suppression,
-  d'où le point suivant ;
+  planning (sièges et verrous, par identifiants seulement). **Une copie par
+  vidage, conservée aussi longtemps que l'édition** : la seule purge est la
+  suppression de l'édition, en cascade sur `edition_id`, donc la purge annuelle
+  du §5 ; la durée de conservation de ces copies est donc **celle de
+  l'édition**, et elle se consigne telle quelle au registre. Un administrateur
+  peut en supprimer une (`DELETE /api/planning/sauvegardes-avant-vidage/{id}`,
+  journalisé). Elles ne partent ni dans l'export SQL ni par MCP ; seul un
+  administrateur en liste, en télécharge, en restaure ou en supprime une, par
+  l'API, et chaque geste est journalisé. Ce qui ne les borne pas : une fiche
+  supprimée reste dans les sauvegardes prises avant sa suppression, et
+  restaurer l'une d'elles la fait revenir — d'où le point suivant ;
 - **l'effacement demandé par un animateur sur une édition encore active** n'a
-  pas de procédure outillée : c'est une suppression manuelle de sa fiche, **et
-  des sauvegardes avant vidage de son édition** (`DELETE FROM
-  sauvegarde_avant_vidage WHERE edition_id = '…'`), qui la portent encore. Une
+  pas de procédure outillée : c'est une suppression manuelle de sa fiche, **puis
+  de chaque sauvegarde avant vidage de son édition qui la porte**, par
+  `DELETE /api/planning/sauvegardes-avant-vidage/{id}` (le plus simple : toutes
+  celles prises avant la suppression de la fiche). Une
   demande d'effacement ne se refuse pas au motif que l'événement n'est pas
   terminé, et automatiser la purge par édition échue ne le réglera pas — c'est
   une opération distincte ;

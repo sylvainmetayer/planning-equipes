@@ -1,4 +1,4 @@
-# 0084 — Sauvegarder l'édition (scénario et planning) avant de la vider, et la restaurer d'un geste
+# 0084 — Sauvegarder l'édition (scénario et planning) avant de la vider, sans purge, et la restaurer d'un geste
 
 - **Statut** : accepté, implémenté
 - **Date** : novembre 2026
@@ -35,43 +35,50 @@ l'export de scénario, que l'import relit.
    une édition qui ne contient rien de ce qu'un vidage efface ou qu'un import
    écrase (référentiel, planning, paramètres, poids, journées types) n'en
    reçoit pas. Un état identique à la dernière sauvegarde de l'édition n'est
-   pas rangé deux fois : un geste réessayé ne chasse pas la sauvegarde utile.
+   pas rangé deux fois.
 2. **Pas de sauvegarde, pas de vidage.** La réinitialisation écrit la
-   sauvegarde et purge les plus anciennes dans la transaction même qui vide
+   sauvegarde dans la transaction même qui vide
    les tables. L'import, fait de plusieurs écritures, l'écrit dans la sienne
    **avant la première** (les paramètres) : un échec l'arrête avant qu'il ait
    rien touché. Ce qui peut le refuser passe d'abord : le fichier est lu et
    validé, le gel vérifié, et la sauvegarde elle-même est refusée pendant une
    résolution, dans l'édition que vise le fichier. Ce qui peut encore le
-   refuser après elle laisse cette sauvegarde mais **n'évince rien** : la
-   borne n'est appliquée qu'une fois l'import passé. C'est l'inverse de
+   refuser après elle laisse cette sauvegarde, qui n'évince rien. C'est l'inverse de
    l'instantané automatique, qui ne fait jamais échouer une résolution : une
    résolution ne détruit rien qu'un instantané seul ramènerait, un vidage
    détruit tout.
-3. **Cinq sauvegardes par édition**, les plus anciennes purgées après chaque
-   vidage abouti — la borne des instantanés automatiques : de quoi couvrir un
-   après-midi d'erreurs, pas une archive. Une constante, pas un réglage. La
-   purge épargne toujours la sauvegarde qu'on restaure et celle de l'état que
-   la restauration a remplacé ; après un import, elle épargne aussi les
-   sauvegardes dont le contenu est le fichier importé, si bien que réimporter
-   à la main une sauvegarde téléchargée ne l'efface pas.
+3. **Aucune purge automatique.** Toutes les sauvegardes restent jusqu'à la
+   suppression de leur édition (en cascade, donc à la purge annuelle) ou
+   jusqu'à ce qu'un administrateur en supprime une
+   (`DELETE /api/planning/sauvegardes-avant-vidage/{id}`, journalisé, limité
+   à l'édition). Une borne de cinq, purgée à chaque vidage, a d'abord été
+   retenue : trois relectures successives ont trouvé un geste qui lui faisait
+   évincer la sauvegarde même qu'il fallait garder — la sauvegarde qu'on
+   restaurait, puis l'état d'avant une restauration relancée, puis la
+   sauvegarde visée par un retour en arrière. Chaque règle d'épargne en
+   appelait une autre ; sans purge, la famille disparaît.
 4. **La restauration est un seul geste**, `POST
    /api/planning/sauvegardes-avant-vidage/{id}/restauration`, dans cet ordre :
    1. les refus, avant toute écriture : résolution en cours, famille gelée,
-      sauvegarde que l'édition ne détient pas, fichier que l'import refuserait ;
-   2. la sauvegarde de l'état actuel (origine `RESTORE`), sauf édition vide —
-      la restaurer défait la restauration ;
+      sauvegarde que l'édition ne détient pas, fichier que l'import refuserait
+      — lecture, stands invalides, exceptions ad hoc contradictoires ;
+   2. la sauvegarde de l'état actuel (origine `RESTORE`), qui nomme la
+      sauvegarde restaurée et dira si la restauration a abouti. Si la dernière
+      sauvegarde de l'édition est celle d'une restauration **échouée de la
+      même sauvegarde**, on la réutilise au lieu de sauvegarder l'édition à
+      moitié restaurée : elle reste le vrai état d'avant ;
    3. l'import du scénario **par l'import lui-même** (`ScenarioImportService`),
       qui recrée en plus, par la création habituelle, les stands et créneaux
       qu'aucun siège ne relie (l'import ordinaire les écarte et reste tel quel) ;
    4. le planning, retrouvé par clés métier (point 5) ; la restauration échoue
       si un planning non vide ne retrouve **aucun** siège ;
    5. les verrous, par l'écriture habituelle d'un verrou, ses contrôles et ses
-      avertissements ;
-   6. la purge, en épargnant les deux sauvegardes du point 3.
+      avertissements ; la sauvegarde de l'étape 2 est alors marquée « aboutie ».
 
-   La liste (`GET …`) et le fichier (`GET …/{id}`, journalisé comme l'export de
-   scénario) restent, pour lire une sauvegarde avant de la restaurer.
+   La liste (`GET …`, de la plus récente à la plus ancienne, avec l'origine,
+   la date et, pour une restauration, la sauvegarde visée et son issue) et le
+   fichier (`GET …/{id}`, journalisé comme l'export de scénario) restent, pour
+   choisir et lire une sauvegarde avant de la restaurer.
 5. **Le planning se retrouve par des clés qui ne bougent pas.** Le réimport
    donne de nouveaux identifiants (0050) : un créneau se retrouve par sa date
    et ses heures (la clé que les verrous stockent déjà), un animateur par son
@@ -94,7 +101,7 @@ l'export de scénario, que l'import relit.
 6. **Aucun outil MCP** : le contenu porte nom, prénom et date de naissance des
    animateurs, que rien ne fait sortir par MCP.
 7. **La table suit son édition** (`ON DELETE CASCADE`) et **ne part pas dans
-   l'export SQL** : elle répète, jusqu'à cinq fois, des données que le dump
+   l'export SQL** : elle répète, une fois par vidage, des données que le dump
    porte déjà.
 
 ## La restauration n'est pas atomique
@@ -113,12 +120,13 @@ prévue :
 - un échec à l'étape 2 n'a rien vidé ;
 - un échec plus loin laisse l'édition à moitié restaurée. La réponse d'erreur
   dit **à quelle étape** l'opération s'est arrêtée et **quelle sauvegarde**
-  porte l'état d'avant : la restaurer remet l'édition comme elle était, aux
-  identifiants techniques près. Une erreur métier répond `409`, une panne
-  `500` avec le même message au journal ;
-- relancer la même restauration après un échec, ou la lancer deux fois, est
-  une restauration comme une autre : l'état qu'elle remplace est sauvegardé,
-  et les deux sauvegardes utiles sont épargnées par la purge.
+  porte l'état d'avant **la première tentative** : la restaurer remet
+  l'édition comme elle était, aux identifiants techniques près. Une erreur
+  métier répond `409`, une panne `500` avec le même message au journal ;
+- relancer la même restauration après un échec réutilise cette sauvegarde-là
+  et la nomme encore, quel que soit le nombre de tentatives ; la lancer deux
+  fois de suite avec succès sauvegarde chaque fois l'état remplacé. Aucune
+  sauvegarde ne disparaît en chemin.
 
 ## Alternatives écartées
 
@@ -130,6 +138,9 @@ prévue :
   planning), première forme de cette décision : le réimport est un vidage, qui
   sauvegardait l'état courant et purgeait — parfois la sauvegarde même qu'on
   restaurait —, et le planning seul remplaçait le plan courant sans filet.
+- **Une borne avec des règles d'épargne** (la sauvegarde restaurée, celle
+  d'avant, celles dont le contenu est le fichier importé) : voir le point 3.
+  Chaque règle couvrait le cas qui l'avait fait naître, pas le suivant.
 - **Porter les affectations dans le scénario** (la section `postes` lit un
   `animateurId`, et l'ignore). L'import changerait de sens pour tous les
   fichiers, pour un cas de secours.
@@ -174,6 +185,12 @@ prévue :
   écriture concurrente entre la lecture et le vidage n'y figurerait pas. Le
   solveur, seul écrivain en arrière-plan, est déjà écarté par le refus pendant
   une résolution ; reste deux administrateurs simultanés.
-- **RGPD** : la purge annuelle (suppression de l'édition) emporte les
-  sauvegardes. Une demande d'effacement sur une édition encore en cours doit en
-  revanche les supprimer aussi, à la main ([`rgpd.md`](../rgpd.md) §7).
+- **Contrepartie de l'absence de purge** : des copies des données
+  personnelles des animateurs — une par vidage — sont conservées aussi
+  longtemps que l'édition. La purge annuelle (suppression de l'édition) les
+  emporte ; une demande d'effacement sur une édition encore en cours doit en
+  revanche supprimer, une à une, les sauvegardes qui portent la personne
+  ([`rgpd.md`](../rgpd.md) §7). La table grossit d'une sauvegarde par vidage :
+  quelques centaines de kilooctets à un mégaoctet chacune, selon la taille du
+  planning (le plan pèse comme un instantané, le scénario en sus) ; supprimer
+  celles qui ne servent plus est un geste d'administrateur.
