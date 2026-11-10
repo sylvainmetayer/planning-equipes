@@ -160,7 +160,7 @@ Pour revenir en arrière, deux gestes, avec l'en-tête `X-Edition-Id` :
    (`RESET`, `IMPORT`, `RESTORE`) et sa date ; une ligne `RESTORE` dit aussi
    quelle sauvegarde cette restauration visait (`restaureId`) et si elle a
    abouti (`restaurationAboutie`) — une restauration non aboutie a laissé
-   l'édition à moitié restaurée, et sa ligne est l'état d'avant. Le fichier
+   l'édition à moitié restaurée, et sa ligne est l'état juste avant elle. Le fichier
    d'une sauvegarde se lit par `GET /api/planning/sauvegardes-avant-vidage/{id}` ;
 2. la restaurer : `POST /api/planning/sauvegardes-avant-vidage/{id}/restauration`.
 
@@ -179,13 +179,19 @@ s'applique alors.
 **L'opération n'est pas atomique** : le dépôt n'a pas de transaction qui
 enjambe l'import, fait de plusieurs services (voir l'ADR). Si elle échoue après
 la sauvegarde de l'état actuel, l'édition reste à moitié restaurée, et la
-réponse d'erreur dit à quelle étape elle s'est arrêtée et quelle sauvegarde
-porte l'état d'avant **la première tentative** — `409` pour une erreur
+réponse d'erreur dit à quelle étape elle s'est arrêtée et nomme **la
+sauvegarde de l'état juste avant cette tentative** — `409` pour une erreur
 métier, `500` pour une panne, avec le même message au journal. **Reprise** :
 restaurer cette sauvegarde remet l'édition comme elle était ; on peut aussi
-relancer la restauration d'origine une fois la cause levée. Une relance ne
-sauvegarde pas l'édition à moitié restaurée : elle reprend la sauvegarde de la
-première tentative, et c'est encore elle que nomme une nouvelle erreur.
+relancer la restauration une fois la cause levée. Chaque tentative sauvegarde
+l'édition qu'elle remplace (sauf état identique à la dernière sauvegarde) : le
+travail fait entre deux tentatives n'est jamais perdu. Après plusieurs échecs
+de suite, l'erreur nomme deux sauvegardes : l'état le plus récent, juste avant
+la tentative, et **l'état d'origine**, d'avant la première tentative de la
+série — c'est celle-là qu'il faut restaurer pour revenir avant toute
+tentative ; si la série n'est pas certaine, l'erreur renvoie à la liste. Une
+restauration réussie dont l'issue n'a pas pu être notée dans la liste est
+rapportée réussie, avec un avertissement.
 
 Le planning se retrouve sur ce qui ne change pas au réimport : un créneau par
 sa date et ses heures, un animateur par son adresse puis par ses prénom et nom,

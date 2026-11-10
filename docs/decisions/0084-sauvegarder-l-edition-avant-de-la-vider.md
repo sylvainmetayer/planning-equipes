@@ -51,7 +51,9 @@ l'export de scénario, que l'import relit.
    suppression de leur édition (en cascade, donc à la purge annuelle) ou
    jusqu'à ce qu'un administrateur en supprime une
    (`DELETE /api/planning/sauvegardes-avant-vidage/{id}`, journalisé, limité
-   à l'édition). Une borne de cinq, purgée à chaque vidage, a d'abord été
+   à l'édition). Supprimer une sauvegarde qu'une restauration visait ne
+   supprime pas la ligne de cette restauration : sa référence passe à nul
+   (`ON DELETE SET NULL`), sans cascade. Une borne de cinq, purgée à chaque vidage, a d'abord été
    retenue : trois relectures successives ont trouvé un geste qui lui faisait
    évincer la sauvegarde même qu'il fallait garder — la sauvegarde qu'on
    restaurait, puis l'état d'avant une restauration relancée, puis la
@@ -62,11 +64,12 @@ l'export de scénario, que l'import relit.
    1. les refus, avant toute écriture : résolution en cours, famille gelée,
       sauvegarde que l'édition ne détient pas, fichier que l'import refuserait
       — lecture, stands invalides, exceptions ad hoc contradictoires ;
-   2. la sauvegarde de l'état actuel (origine `RESTORE`), qui nomme la
-      sauvegarde restaurée et dira si la restauration a abouti. Si la dernière
-      sauvegarde de l'édition est celle d'une restauration **échouée de la
-      même sauvegarde**, on la réutilise au lieu de sauvegarder l'édition à
-      moitié restaurée : elle reste le vrai état d'avant ;
+   2. la sauvegarde de l'état actuel (origine `RESTORE`), **toujours**, comme
+      avant tout vidage : seul le dédoublonnage s'en dispense, quand l'état est
+      exactement celui de la dernière sauvegarde de l'édition, qui est alors
+      celle qu'on nomme. La ligne note la sauvegarde restaurée et dira si la
+      restauration a abouti ; ces deux informations servent à la liste et au
+      message d'erreur, **jamais à décider s'il faut sauvegarder** ;
    3. l'import du scénario **par l'import lui-même** (`ScenarioImportService`),
       qui recrée en plus, par la création habituelle, les stands et créneaux
       qu'aucun siège ne relie (l'import ordinaire les écarte et reste tel quel) ;
@@ -74,6 +77,8 @@ l'export de scénario, que l'import relit.
       si un planning non vide ne retrouve **aucun** siège ;
    5. les verrous, par l'écriture habituelle d'un verrou, ses contrôles et ses
       avertissements ; la sauvegarde de l'étape 2 est alors marquée « aboutie ».
+      Si cette marque ne peut pas s'écrire, la restauration est rapportée
+      réussie, avec un avertissement : la marque ne décide de rien.
 
    La liste (`GET …`, de la plus récente à la plus ancienne, avec l'origine,
    la date et, pour une restauration, la sauvegarde visée et son issue) et le
@@ -119,14 +124,24 @@ prévue :
 - un refus (étape 1) n'écrit rien ;
 - un échec à l'étape 2 n'a rien vidé ;
 - un échec plus loin laisse l'édition à moitié restaurée. La réponse d'erreur
-  dit **à quelle étape** l'opération s'est arrêtée et **quelle sauvegarde**
-  porte l'état d'avant **la première tentative** : la restaurer remet
-  l'édition comme elle était, aux identifiants techniques près. Une erreur
-  métier répond `409`, une panne `500` avec le même message au journal ;
-- relancer la même restauration après un échec réutilise cette sauvegarde-là
-  et la nomme encore, quel que soit le nombre de tentatives ; la lancer deux
-  fois de suite avec succès sauvegarde chaque fois l'état remplacé. Aucune
-  sauvegarde ne disparaît en chemin.
+  dit **à quelle étape** l'opération s'est arrêtée et nomme **la sauvegarde
+  de l'état juste avant cette tentative** ; la restaurer remet l'édition comme
+  elle était alors, aux identifiants techniques près. Quand la tentative
+  suit d'autres tentatives échouées de la même restauration, l'une après
+  l'autre, elle nomme aussi **la sauvegarde prise avant la première** —
+  l'état d'origine —, retrouvée en remontant les lignes `RESTORE` non
+  abouties de même cible ; si une autre sauvegarde s'intercale, la série
+  n'est pas certaine et le message renvoie à la liste plutôt que de deviner.
+  Une erreur métier répond `409`, une panne `500` avec le même message au
+  journal ;
+- relancer une restauration sauvegarde l'état qu'elle remplace, comme toute
+  restauration : le travail fait à la main depuis un échec n'est jamais écrasé
+  sans copie. Aucune sauvegarde ne disparaît en chemin.
+- Une première forme réutilisait, à la relance, la sauvegarde de la première
+  tentative au lieu d'en prendre une : rien ne garantissait que l'édition
+  n'avait pas changé depuis — les modifications à la main, les résolutions et
+  les verrous n'écrivent rien dans cette table —, et la relance écrasait ce
+  travail sans copie. Elle a été retirée.
 
 ## Alternatives écartées
 
@@ -186,7 +201,7 @@ prévue :
   solveur, seul écrivain en arrière-plan, est déjà écarté par le refus pendant
   une résolution ; reste deux administrateurs simultanés.
 - **Contrepartie de l'absence de purge** : des copies des données
-  personnelles des animateurs — une par vidage — sont conservées aussi
+  personnelles des animateurs — une par vidage, hors état identique au précédent — sont conservées aussi
   longtemps que l'édition. La purge annuelle (suppression de l'édition) les
   emporte ; une demande d'effacement sur une édition encore en cours doit en
   revanche supprimer, une à une, les sauvegardes qui portent la personne
