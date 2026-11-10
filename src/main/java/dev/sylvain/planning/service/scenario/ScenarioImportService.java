@@ -203,7 +203,7 @@ public class ScenarioImportService {
         for (Creneau creneau : reference.creneauxParId().values()) {
             if (grille.add(vacation(creneau))) {
                 try {
-                    referenceDataService.createCreneau(creneau);
+                    referenceDataService.writeCreneau(creneau);
                 } catch (BusinessError refus) {
                     nonRecrees.add("Créneau " + vacation(creneau) + " : " + refus.getMessage());
                 }
@@ -214,7 +214,7 @@ public class ScenarioImportService {
         for (Stand stand : reference.standsById().values()) {
             if (!stands.contains(stand.getId())) {
                 try {
-                    referenceDataService.createStand(stand);
+                    referenceDataService.writeStand(stand);
                 } catch (BusinessError refus) {
                     nonRecrees.add("Stand " + stand.getId() + " : " + refus.getMessage());
                 }
