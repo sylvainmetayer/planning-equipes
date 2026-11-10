@@ -86,7 +86,8 @@ class GelReferentielStructuralTest {
             Map.entry("ReferentielCsvImportService#apply(ImportTarget,ReferentielCsvImportRequest)", "apply"),
             Map.entry("AnimateurCsvImportService#apply(AnimateurCsvImportRequest)", "apply"),
             Map.entry("ScenarioImportService#importBundled(String)", "importScenario"),
-            Map.entry("ScenarioImportService#importYaml(String)", "importScenario"));
+            Map.entry("ScenarioImportService#importYaml(String)", "importScenario"),
+            Map.entry("ScenarioImportService#importForRestore(String)", "importScenario"));
 
     /** A facade method → the method, classified in this test, it hands the write over to. */
     private static final Map<String, String> DELEGATES = Map.ofEntries(
