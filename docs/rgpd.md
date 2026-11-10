@@ -531,14 +531,17 @@ complètes. Quatre points sont connus et se consignent :
   qui se déconnecte ;
 - **l'édition est recopiée avant chaque vidage** (`sauvegarde_avant_vidage`,
   [décision 0084](decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)) :
-  une réinitialisation ou un import de scénario range d'abord l'export de
-  scénario de l'édition — nom, prénom, date de naissance, adresse et téléphone de chaque
-  animateur compris — et son planning (sièges et verrous, par identifiants
-  seulement : la colonne `plan` ne porte aucune donnée nouvelle), cinq au plus
-  par édition, les plus anciennes purgées à chaque nouvelle. La table n'a pas d'autre purge : elle disparaît avec son
+  une réinitialisation, un import de scénario ou la restauration d'une
+  sauvegarde range d'abord l'export de scénario de l'édition — nom, prénom,
+  date de naissance, adresse et téléphone de chaque animateur compris — et son
+  planning (sièges et verrous, par identifiants seulement : la colonne `plan`
+  ne porte aucune donnée nouvelle), cinq au plus par édition, les plus
+  anciennes purgées après chaque vidage abouti. Une restauration réécrit dans
+  l'édition des fiches que la sauvegarde portait : restaurer une sauvegarde
+  prise avant l'effacement d'une personne la fait revenir. La table n'a pas d'autre purge : elle disparaît avec son
   édition, en cascade sur `edition_id`, donc à la purge annuelle du §5. Elle ne
   part ni dans l'export SQL ni par MCP ; seul un administrateur en télécharge
-  une, journalisée comme un export de scénario. Ce qui ne la borne pas : une
+  ou en restaure une, par l'API, et les deux gestes sont journalisés. Ce qui ne la borne pas : une
   fiche supprimée reste dans les sauvegardes prises avant sa suppression,
   d'où le point suivant ;
 - **l'effacement demandé par un animateur sur une édition encore active** n'a
