@@ -71,7 +71,8 @@ class SolveurMcpToolsQueueTest {
         assertThat(idle.id()).isNull();
         assertThat(idle.avertissement()).isEqualTo("Aucun solveur ne tourne.");
         assertThatThrownBy(() -> solveurTools.solverStatus("job-inconnu"))
-                .isInstanceOf(BusinessError.NotFound.class)
+                .as("a refusal of the domain, rendered as a tool result in error")
+                .isInstanceOf(ToolCallException.class)
                 .hasMessageContaining("job-inconnu");
     }
 
