@@ -149,7 +149,13 @@ Single Quarkus service, no separate solver microservice. Package root:
     body of their own), `SolverConfiguration` (the `SolverFactory` from
     `solver/solverConfig.xml`, termination, constraint weights), `SolveRunner`
     (the solve, and the server-side preparation that always overwrites what a
-    caller sent), `PlanningWhatIf` (everything the application answers about a
+    caller sent; `solvePrepared` is the search alone, which reads no reference
+    data), `SolveExchange` (the form a prepared problem takes to be solved
+    elsewhere and the form its plan comes back in — ADR 0085, no transport
+    yet: what the public JSON hides from a caller travels, an animateur leaves
+    as an allow-list under a pseudonym and a stand-in birth date, free text
+    stays home, and the plan that comes back is scored again before it is
+    believed), `PlanningWhatIf` (everything the application answers about a
     plan without solving it again — explanation, repair, échange,
     availability; still four responsibilities in one class), `ProblemBuilder`
     (the edition's reference data turned into a problem to solve — from

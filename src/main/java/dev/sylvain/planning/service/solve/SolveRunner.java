@@ -109,15 +109,25 @@ final class SolveRunner {
         prepareProblem(problem);
         FrozenPast.pin(problem.getPostes());
         tellStartingScore(problem, onSolverReady);
-        if (FeasibilityFirstSolve.applies(problem)) {
-            return solveFeasibilityFirst(problem, budget, onSolverReady);
+        return solvePrepared(problem, budget, onSolverReady);
+    }
+
+    /**
+     * The search alone, on a problem already prepared and pinned: from here on
+     * nothing reads the reference data, which is what lets the same search run
+     * on a problem that arrived through {@link SolveExchange} (ADR 0085).
+     */
+    Solved solvePrepared(
+            PlanningEvenement prepared, SolveBudget budget, Consumer<Solver<PlanningEvenement>> onSolverReady) {
+        if (FeasibilityFirstSolve.applies(prepared)) {
+            return solveFeasibilityFirst(prepared, budget, onSolverReady);
         }
         Solver<PlanningEvenement> solver =
-                configuration.resolveSolverFactory(budget, problem).buildSolver();
+                configuration.resolveSolverFactory(budget, prepared).buildSolver();
         if (onSolverReady != null) {
             onSolverReady.accept(solver);
         }
-        return new Solved(solver.solve(problem), null);
+        return new Solved(solver.solve(prepared), null);
     }
 
     /**
