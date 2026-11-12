@@ -84,16 +84,65 @@ rien ici ne doit en dépendre.
 | Données personnelles | ne quittent pas la machine | le problème porte les dates de naissance (le statut mineur en dépend) et les disponibilités. Nom, prénom et adresse n'ont rien à y faire et ne partent pas ; chez un second prestataire, c'est un sous-traitant de plus au registre |
 | Quota et file | comptés au lancement | inchangés : ils sont décidés avant l'appel au worker |
 
+## Ce que coûte une résolution chez un hébergeur
+
+Relevé de **novembre 2026**, prix hors taxes, pour une machine de deux cœurs
+virtuels et quatre gigaoctets environ — ce qu'une résolution demande. C'est une
+photographie pour situer l'ordre de grandeur, pas un choix : la proposition
+reste celle d'un contrat, et les tarifs bougent.
+
+| Hébergeur (pays) | Offre | Prix à l'heure | Pas de facturation | Une résolution de 15 min | Source du prix |
+| --- | --- | --- | --- | --- | --- |
+| Hetzner (DE) | `cpx22`, cœurs partagés | 0,031 € | **l'heure entamée est due** ; une machine éteinte reste facturée | 0,031 € | API de l'hébergeur |
+| Hetzner (DE) | `ccx13`, cœurs dédiés | 0,069 € | idem | 0,069 € | API de l'hébergeur |
+| OVHcloud (FR) | `c3-4` | 0,046 € | **l'heure entamée est due** ; arrêtée ou en pause, le compteur tourne | 0,046 € | catalogue public |
+| OVHcloud (FR) | `b3-8` | 0,051 € | idem | 0,051 € | catalogue public |
+| Scaleway (FR) | `PLAY2-NANO`, cœurs partagés | 0,028 € | à l'heure ; l'arrondi n'est pas documenté | 0,028 € au plus | grille publique |
+| Scaleway (FR) | `POP2-HC-2C-4G`, cœurs dédiés | 0,053 € | idem | 0,053 € au plus | grille publique |
+| Scaleway (FR) | Serverless Jobs, 2 vCPU et 4 Go | 0,086 € | **à la seconde**, rien entre deux tâches | 0,022 €, sous la franchise mensuelle à notre volume | grille publique |
+| Exoscale (CH) | Standard Medium | 0,047 € | **à la seconde** | 0,012 € | comparateur tiers |
+| IONOS (DE) | deux cœurs dédiés | 0,09 à 0,11 $ | **à la minute** | 0,02 à 0,03 $ | grille publique, en dollars |
+| UpCloud (FI) | General Purpose 2 cœurs | 0,039 € | à l'heure ; éteinte, elle reste facturée | 0,039 € | comparateur tiers |
+| Infomaniak (CH) | `a2-ram4` | 0,009 à 0,016 € | au prorata dans l'heure | moins de 0,01 € | comparateur tiers |
+
+Trois lectures :
+
+- **Le prix ne départage personne.** Partout une résolution coûte quelques
+  centimes, cinquante résolutions dans le mois un à trois euros, là où garder
+  allumée la même machine coûte de vingt à quarante-cinq euros par mois. Le
+  pas de facturation compte davantage que le tarif : à l'heure entamée, un
+  worker qu'on éteint après chaque calcul paie une heure pour quinze minutes,
+  et il vaut alors mieux le laisser servir toutes les résolutions de l'heure.
+- **Ce qui départage est la vitesse d'un cœur, que le tarif ne dit pas.** Les
+  grilles annoncent une fréquence, rarement une génération de processeur, et
+  des cœurs partagés d'une génération récente peuvent valoir des cœurs dédiés
+  d'une plus ancienne. Seul le banc sur la machine candidate répond (étape 1
+  ci-dessous) ; les lignes relevées sur un comparateur tiers sont à
+  reconfirmer du même geste.
+- **Une tâche conteneur à la demande dispense du lanceur** : l'hébergeur
+  démarre l'image, la facture à la seconde et l'éteint. C'est la forme la plus
+  simple à exploiter, et celle dont la vitesse est la moins prévisible.
+
+Sur site, le coût marginal est nul : la machine existe déjà.
+
 ## Ordre proposé, si l'étude est acceptée
 
-1. Mesurer le banc sur la machine candidate. Sans un gain net sur un cœur, le
-   déport n'apporte rien et l'étude s'arrête là.
-2. Extraire de `SolveRunner` l'interface que les deux exécutions honorent, sans
-   changer de comportement.
-3. Le mode worker et son contrat, éprouvés par un test qui résout le même
-   problème sur place et à distance et compare les deux plans, à graine égale.
-4. L'appel distant derrière l'adresse d'instance, avec le repli sur place.
-5. En dernier, et seulement pour qui loue à l'usage : un lanceur.
+| Étape | Charge estimée |
+| --- | --- |
+| 1. Mesurer le banc sur la machine candidate. Sans un gain net sur un cœur, le déport n'apporte rien et l'étude s'arrête là | une heure de location |
+| 2. Extraire de `SolveRunner` l'interface que les deux exécutions honorent, sans changer de comportement | 0,5 jour |
+| 3. Le mode worker et son contrat, éprouvés par un test qui résout le même problème sur place et à distance et compare les deux plans, à graine égale | 2 à 3 jours |
+| 4. L'appel distant derrière l'adresse d'instance : suivi, arrêt, coupures, repli sur place, états de job | 3 à 4 jours |
+| 5. Documentation, configuration, sécurité, registre des traitements | 1 jour |
+| **Un worker toujours disponible — ce qui suffit sur site** | **7 à 9 jours** |
+| 6. En dernier, et seulement pour qui loue à l'usage : un lanceur, par hébergeur | 2 à 3 jours |
+
+L'étape 4 porte l'incertitude : l'arrêt, la reprise après redémarrage et
+l'atterrissage du plan vivent dans `SolverJobService`, et ce qui y suppose le
+solveur dans le même processus n'a pas été recensé. La résolution depuis zéro
+enchaîne en outre deux solveurs — la faisabilité, puis le polissage une fois
+la stabilité du plan publié rétablie : le contrat porte cet enchaînement, pas
+un appel unique.
 
 ## Options écartées
 
