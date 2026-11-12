@@ -28,7 +28,6 @@ import java.time.LocalTime;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -234,7 +233,7 @@ public class SolveurMcpTools {
     @Tool(
             name = "statut_solveur",
             description =
-                    "Statut du job en cours, ou d'un job donné par son id. Sans id et sans job actif, indique qu'aucun solveur ne tourne.",
+                    "Statut du job en cours, ou d'un job donné par son id. Sans id et sans job actif, répond status IDLE : aucun solveur ne tourne.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -242,9 +241,21 @@ public class SolveurMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     JobMcpView solverStatus(@ToolArg(description = "Id du job à interroger", required = false) String jobId) {
-        Optional<SolverJob> job = jobId != null ? solverJobService.find(jobId) : solverJobService.findActive();
-        return job.map(SolveurMcpTools::toView).orElse(null);
+        if (jobId != null) {
+            return solverJobService
+                    .find(jobId)
+                    .map(SolveurMcpTools::toView)
+                    .orElseThrow(() -> new BusinessError.NotFound("Job introuvable : " + jobId));
+        }
+        // Never null: the MCP transport cannot encode it, and answered
+        // « Internal error » to the one question an assistant asks between
+        // two solves.
+        return solverJobService.findActive().map(SolveurMcpTools::toView).orElse(IDLE);
     }
+
+    /** The answer of {@code statut_solveur} when nothing runs: no job, and a status no job ever carries. */
+    static final JobMcpView IDLE = new JobMcpView(
+            null, null, "IDLE", null, null, null, null, null, 0L, null, null, "Aucun solveur ne tourne.", null, null);
 
     @Tool(
             name = "lister_jobs",
