@@ -16,9 +16,10 @@ collecteur n'y gagne rien.
 Or la machine qui convient à l'application — une base, quelques écrans, des
 courriels — est petite, et ses cœurs sont ceux qu'on trouve sur les offres
 d'entrée de gamme ou sur un serveur ancien. Le même solveur, la même graine, la
-même trajectoire de recherche vont plusieurs fois plus vite sur un cœur récent :
+même trajectoire de recherche vont deux fois plus vite sur un cœur récent :
 le premier plan sans écart dur arrive plus tôt dans la même proportion, et le
-budget de quinze minutes polit d'autant plus loin. `SolverBenchTest` le mesure
+budget de quinze minutes polit d'autant plus loin — un facteur deux, mesuré
+plus bas. `SolverBenchTest` le mesure
 sur n'importe quelle machine candidate, avec un scénario versionné
 (`festival-hivernal.yaml`, `-Dbench.stopWhenFeasible=true` pour la faisabilité
 seule).
@@ -84,6 +85,52 @@ rien ici ne doit en dépendre.
 | Données personnelles | ne quittent pas la machine | le problème porte les dates de naissance (le statut mineur en dépend) et les disponibilités. Nom, prénom et adresse n'ont rien à y faire et ne partent pas ; chez un second prestataire, c'est un sous-traitant de plus au registre |
 | Quota et file | comptés au lancement | inchangés : ils sont décidés avant l'appel au worker |
 
+## Ce qu'un cœur vaut, mesuré
+
+La même commande partout : l'image publique Maven et JDK 25, le dépôt cloné,
+puis
+
+```bash
+mvn -q -B test -Pscenario-tests -Dtest=SolverBenchTest \
+    -Dsurefire.failIfNoSpecifiedTests=false \
+    -Dbench.scenario=festival-hivernal.yaml -Dbench.calculations=2500000 \
+    "-Djvm.args=--enable-native-access=ALL-UNNAMED -Xmx1536m -XX:+UseParallelGC"
+```
+
+dans un conteneur de deux cœurs. À nombre de calculs fixé, toutes les machines
+finissent sur **le même plan** (0 dur, -26 595 medium) : seul le temps change.
+Relevé de novembre 2026, un ou deux passages par ligne.
+
+| Machine | Processeur vu | Prix à l'heure, HT | Temps de résolution | Vitesse (petite machine = 1) |
+| --- | --- | --- | --- | --- |
+| Hetzner `cx23`, cœurs partagés — la petite machine de référence | Xeon Skylake | 0,009 € | 650 s, 625 s | 1 |
+| Scaleway `PLAY2-NANO`, cœurs partagés | EPYC 7543 | 0,028 € | 475 s | 1,3 |
+| Scaleway `POP2-HC-2C-4G`, cœurs dédiés | EPYC 7543 | 0,053 € | 386 s | 1,7 |
+| Hetzner `cpx22`, cœurs partagés | EPYC Genoa | 0,031 € | 387 s, 314 s | 1,6 à 2,0 |
+| Scaleway `BASIC3-X2C-4G`, cœurs partagés | EPYC 9555P | 0,039 € | 296 s | 2,1 |
+| Scaleway Serverless Jobs, 2 vCPU | masqué (bac à sable) | 0,086 € | 552 s, **1 395 s** | 1,1 puis **0,5** |
+
+Ce que ces lignes disent :
+
+- **La génération du processeur l'emporte sur « dédié ou partagé ».** Les
+  cœurs partagés d'une génération récente battent les cœurs dédiés de la
+  précédente, pour moins cher ; à génération égale, le dédié gagne un quart.
+- **Un cœur partagé n'a pas une vitesse, il a une plage.** Deux passages sur
+  la même machine, à une heure d'écart, s'écartent de 4 % sur l'une et de
+  23 % sur l'autre. Un gain annoncé sur une mesure unique vaut à cette marge
+  près.
+- **Le gain attendu d'une machine récente est d'un facteur deux**, non de
+  cinq : c'est ce qu'il faut mettre en face du coût du déport.
+- **Les tâches conteneur à la demande ne conviennent pas en l'état.** Le
+  second passage a mis deux fois et demie le temps du premier, sur la même
+  définition de tâche, et finit deux fois plus lent que la petite machine :
+  aucune durée de résolution ne peut y être promise. La tâche tourne en outre
+  dans un bac à sable (noyau annoncé 4.4.0, processeur masqué) où `tar` n'a
+  pas su créer les répertoires des sources — l'application n'en dépend pas,
+  mais l'environnement n'est pas celui d'un conteneur ordinaire. Deux
+  passages ne disent pas à quelle fréquence le mauvais cas arrive, seulement
+  qu'il existe.
+
 ## Ce que coûte une résolution chez un hébergeur
 
 Relevé de **novembre 2026**, prix hors taxes, pour une machine de deux cœurs
@@ -97,8 +144,9 @@ reste celle d'un contrat, et les tarifs bougent.
 | Hetzner (DE) | `ccx13`, cœurs dédiés | 0,069 € | idem | 0,069 € | API de l'hébergeur |
 | OVHcloud (FR) | `c3-4` | 0,046 € | **l'heure entamée est due** ; arrêtée ou en pause, le compteur tourne | 0,046 € | catalogue public |
 | OVHcloud (FR) | `b3-8` | 0,051 € | idem | 0,051 € | catalogue public |
-| Scaleway (FR) | `PLAY2-NANO`, cœurs partagés | 0,028 € | à l'heure ; l'arrondi n'est pas documenté | 0,028 € au plus | grille publique |
-| Scaleway (FR) | `POP2-HC-2C-4G`, cœurs dédiés | 0,053 € | idem | 0,053 € au plus | grille publique |
+| Scaleway (FR) | `PLAY2-NANO`, cœurs partagés | 0,028 € | à l'heure ; l'arrondi n'est pas documenté | 0,028 € au plus | catalogue de l'hébergeur |
+| Scaleway (FR) | `BASIC3-X2C-4G`, cœurs partagés | 0,039 € | idem | 0,039 € au plus | catalogue de l'hébergeur |
+| Scaleway (FR) | `POP2-HC-2C-4G`, cœurs dédiés | 0,053 € | idem | 0,053 € au plus | catalogue de l'hébergeur |
 | Scaleway (FR) | Serverless Jobs, 2 vCPU et 4 Go | 0,086 € | **à la seconde**, rien entre deux tâches | 0,022 €, sous la franchise mensuelle à notre volume | grille publique |
 | Exoscale (CH) | Standard Medium | 0,047 € | **à la seconde** | 0,012 € | comparateur tiers |
 | IONOS (DE) | deux cœurs dédiés | 0,09 à 0,11 $ | **à la minute** | 0,02 à 0,03 $ | grille publique, en dollars |
@@ -113,15 +161,14 @@ Trois lectures :
   pas de facturation compte davantage que le tarif : à l'heure entamée, un
   worker qu'on éteint après chaque calcul paie une heure pour quinze minutes,
   et il vaut alors mieux le laisser servir toutes les résolutions de l'heure.
-- **Ce qui départage est la vitesse d'un cœur, que le tarif ne dit pas.** Les
-  grilles annoncent une fréquence, rarement une génération de processeur, et
-  des cœurs partagés d'une génération récente peuvent valoir des cœurs dédiés
-  d'une plus ancienne. Seul le banc sur la machine candidate répond (étape 1
-  ci-dessous) ; les lignes relevées sur un comparateur tiers sont à
-  reconfirmer du même geste.
-- **Une tâche conteneur à la demande dispense du lanceur** : l'hébergeur
-  démarre l'image, la facture à la seconde et l'éteint. C'est la forme la plus
-  simple à exploiter, et celle dont la vitesse est la moins prévisible.
+- **Ce qui départage est la vitesse d'un cœur, que le tarif ne dit pas** : les
+  grilles annoncent une fréquence, rarement une génération de processeur.
+  Seules les offres de Hetzner et de Scaleway sont mesurées ci-dessus ; les
+  autres lignes, dont celles relevées sur un comparateur tiers, sont à
+  mesurer du même geste avant d'être retenues.
+- **Une tâche conteneur à la demande dispenserait du lanceur** — l'hébergeur
+  démarre l'image, la facture à la seconde et l'éteint — mais sa vitesse,
+  mesurée ci-dessus, l'écarte.
 
 Sur site, le coût marginal est nul : la machine existe déjà.
 
@@ -129,7 +176,7 @@ Sur site, le coût marginal est nul : la machine existe déjà.
 
 | Étape | Charge estimée |
 | --- | --- |
-| 1. Mesurer le banc sur la machine candidate. Sans un gain net sur un cœur, le déport n'apporte rien et l'étude s'arrête là | une heure de location |
+| 1. Mesurer le banc sur la machine candidate, deux passages au moins, par la commande ci-dessus. Sans un gain net sur un cœur, le déport n'apporte rien et l'étude s'arrête là | une heure de location |
 | 2. Extraire de `SolveRunner` l'interface que les deux exécutions honorent, sans changer de comportement | 0,5 jour |
 | 3. Le mode worker et son contrat, éprouvés par un test qui résout le même problème sur place et à distance et compare les deux plans, à graine égale | 2 à 3 jours |
 | 4. L'appel distant derrière l'adresse d'instance : suivi, arrêt, coupures, repli sur place, états de job | 3 à 4 jours |
