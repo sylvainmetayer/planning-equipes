@@ -61,6 +61,22 @@ class SolveurMcpToolsQueueTest {
     }
 
     @Test
+    void theStatusOfAnIdleSolverIsAnAnswerAndAnUnknownJobARefusal() {
+        awaitSolverIdle();
+
+        JobMcpView idle = solveurTools.solverStatus(null);
+
+        assertThat(idle).as("null is what the MCP transport cannot encode").isNotNull();
+        assertThat(idle.status()).isEqualTo("IDLE");
+        assertThat(idle.id()).isNull();
+        assertThat(idle.avertissement()).isEqualTo("Aucun solveur ne tourne.");
+        assertThatThrownBy(() -> solveurTools.solverStatus("job-inconnu"))
+                .as("a refusal of the domain, rendered as a tool result in error")
+                .isInstanceOf(ToolCallException.class)
+                .hasMessageContaining("job-inconnu");
+    }
+
+    @Test
     void aSolveCanWaitForItsTurnInsteadOfFailing() {
         loadScenario();
         JobMcpView premier = solveurTools.startSolver(4L, null, null, "E1");
