@@ -43,36 +43,49 @@ rien ici ne doit en dépendre.
   fenêtres repas, états et poids des contraintes, quotas, horizon du passé) ;
   après elle, plus rien ne lit la base. Le banc résout déjà ainsi, sans
   Quarkus ni PostgreSQL.
-- **Le problème voyage déjà en JSON** : la route de résolution qui prend un
-  planning en corps le reçoit ainsi.
+- **Le problème se sérialise, mais pas par le JSON de l'API** : celui-ci
+  écarte volontairement ce que le solveur lit et qu'un appelant ne doit pas
+  pouvoir fixer — le plan publié, les pondérations des contraintes, l'horizon
+  du passé. Le déport demande donc un format d'échange à part, que seule
+  l'application produit.
 
 ## Proposition
 
 1. **Un contrat, pas une intégration.** Le worker est **la même image**,
    lancée dans un mode où elle n'ouvre ni base ni écran et n'expose que ce
    contrat :
-   - recevoir un problème **déjà préparé**, son budget et sa graine — il ne
-     complète rien, faute de référentiel, et refuse un problème incomplet
-     plutôt que de le résoudre sous d'autres règles ;
+   - recevoir un problème **déjà préparé**, dans un format d'échange dédié,
+     avec son budget, son plateau et sa graine — il ne complète rien, faute
+     de référentiel, ignore ses propres réglages de solveur, et refuse un
+     problème incomplet plutôt que de le résoudre sous d'autres règles ;
    - publier la courbe du meilleur score, ce que l'écran Solveur lit
      aujourd'hui de `SolverScoreTrace` ;
    - accepter l'arrêt anticipé et rendre alors le meilleur plan connu ;
-   - rendre le plan final, avec son score.
-2. **L'application sait une seule chose : l'adresse d'un worker**, par une
-   variable d'environnement d'instance, et un secret partagé. **Sans adresse,
-   elle résout sur place comme aujourd'hui** : le défaut ne change pour
-   personne.
+   - rendre les affectations finales et le score annoncé. L'application les
+     repose sur son propre problème et **recalcule le score** : un écart
+     refuse le plan.
+2. **L'application sait une seule chose : comment joindre un worker**, par
+   des variables d'environnement d'instance — son adresse s'il est permanent,
+   ou celle d'un crochet qui le démarre. **Sans cela, elle résout sur place
+   comme aujourd'hui** : le défaut ne change pour personne. Toutes les
+   connexions partent de l'application, qui peut ainsi rester derrière un
+   routeur ; le lien est chiffré, et le certificat du worker épinglé.
 3. **Démarrer le worker à la demande est une pièce à part**, hors de
-   l'application : un lanceur propre à chaque hébergeur, ou rien du tout quand
-   le worker reste allumé sur une machine du réseau. L'application ne détient
-   jamais de jeton capable de créer une machine.
+   l'application : un lanceur propre à chaque hébergeur, que l'application
+   appelle par un crochet HTTP générique (démarrer, état, arrêter), ou rien
+   du tout quand le worker reste allumé sur une machine du réseau.
+   L'application ne détient jamais de jeton capable de créer une machine.
+   La machine part d'une image système nue, tire l'image de l'application à
+   la version demandée, et vit jusqu'à un délai d'inactivité.
 4. **Restent sur place**, quel que soit le réglage : la résolution
    incrémentale (une minute de budget, que le démarrage d'un worker mangerait),
    le diagnostic et les analyses sans résolution, la vérification du besoin
    tant qu'elle cède la place à tout calcul qui démarre.
-5. **Le worker indisponible ne bloque pas** : l'application le dit sur le job
-   et résout sur place, plutôt que de laisser une file en attente d'une machine
-   qui ne viendra pas.
+5. **Le worker indisponible fait échouer la tâche, avec son motif** ; à
+   l'utilisateur de relancer sur place ou de réessayer. Un repli silencieux
+   sur la petite machine a été écarté : il doublerait la durée attendue sans
+   le dire. La fin des journaux du worker est jointe à l'erreur avant que la
+   machine ne soit détruite.
 
 ## Ce que cela coûte
 
@@ -82,7 +95,7 @@ rien ici ne doit en dépendre.
 | Pannes | le processus tombe, la file est rejouée au démarrage | worker injoignable, coupure en plein calcul, résultat qui n'arrive pas : chacune doit finir en un état de job lisible |
 | Version | une seule | le worker doit être **exactement** celle de l'application : un score calculé sous d'autres contraintes ne vaut pas ici. Le contrat porte la version, le worker refuse l'écart |
 | Reproductibilité | graine fixe, même plan | conservée si la graine et le problème voyagent ; la vitesse change, pas la trajectoire |
-| Données personnelles | ne quittent pas la machine | le problème porte les dates de naissance (le statut mineur en dépend) et les disponibilités. Nom, prénom et adresse n'ont rien à y faire et ne partent pas ; chez un second prestataire, c'est un sous-traitant de plus au registre |
+| Données personnelles | ne quittent pas la machine | nom, prénom, adresse et téléphone ne partent jamais. Les identifiants sont remplacés par des identifiants aléatoires à chaque résolution. La date de naissance aussi, par une date fictive de la même tranche d'âge, sauf pour qui franchit 16 ou 18 ans pendant l'événement — envoyer « la date de majorité » reviendrait à envoyer la date de naissance. Chez un second prestataire, c'est un sous-traitant de plus au registre |
 | Quota et file | comptés au lancement | inchangés : ils sont décidés avant l'appel au worker |
 
 ## Ce qu'un cœur vaut, mesuré
@@ -178,11 +191,16 @@ Sur site, le coût marginal est nul : la machine existe déjà.
 | --- | --- |
 | 1. Mesurer le banc sur la machine candidate, deux passages au moins, par la commande ci-dessus. Sans un gain net sur un cœur, le déport n'apporte rien et l'étude s'arrête là | une heure de location |
 | 2. Extraire de `SolveRunner` l'interface que les deux exécutions honorent, sans changer de comportement | 0,5 jour |
-| 3. Le mode worker et son contrat, éprouvés par un test qui résout le même problème sur place et à distance et compare les deux plans, à graine égale | 2 à 3 jours |
-| 4. L'appel distant derrière l'adresse d'instance : suivi, arrêt, coupures, repli sur place, états de job | 3 à 4 jours |
+| 3. Le mode worker et son contrat, éprouvés par un test qui résout le même problème sur place et à distance et compare les deux plans, à graine égale et à nombre de calculs fixé ; le format d'échange, les identifiants aléatoires et la date de substitution | 3 à 4 jours |
+| 4. L'appel distant derrière l'adresse d'instance : suivi, arrêt, coupures, échec visible, score recalculé, états de job | 3 à 4 jours |
 | 5. Documentation, configuration, sécurité, registre des traitements | 1 jour |
-| **Un worker toujours disponible — ce qui suffit sur site** | **7 à 9 jours** |
-| 6. En dernier, et seulement pour qui loue à l'usage : un lanceur, par hébergeur | 2 à 3 jours |
+| **Un worker toujours disponible — ce qui suffit sur site** | **8 à 10 jours** |
+| 6. En dernier, et seulement pour qui loue à l'usage : le crochet, l'état de la machine, puis un lanceur d'exemple par forme de réseau | 4 à 6 jours |
+
+Le format d'échange est une seconde représentation du problème, à tenir en
+phase avec le domaine : un champ oublié donnerait un plan calculé sous
+d'autres règles. Le score recalculé par l'application et un test
+d'aller-retour en sont les deux filets.
 
 L'étape 4 porte l'incertitude : l'arrêt, la reprise après redémarrage et
 l'atterrissage du plan vivent dans `SolverJobService`, et ce qui y suppose le
@@ -202,5 +220,9 @@ un appel unique.
 - **Un worker qui lit la base de l'application** : il faudrait lui ouvrir la
   base, et il redeviendrait une seconde instance — celle qui envoie les
   rappels en double.
+- **Un worker qui vient chercher son travail** : il servirait une application
+  louée dont le calcul resterait sur site, derrière un routeur. C'est un
+  autre contrat ; ce cas-là demande aujourd'hui un tunnel monté par
+  l'exploitant.
 - **Changer de moteur pour le calcul déporté** : c'est l'objet de 0080, et
   d'elle seule.
